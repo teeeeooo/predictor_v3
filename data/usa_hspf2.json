@@ -10,6 +10,103 @@
     "bin_temps": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8],
     "bin_hours": [160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20]
   },
+  "test_point_schema": {
+    "canonical_source": "AHRI Analytics / AHRI 210/240-2026 Table 8 aliases",
+    "heating": {
+      "H01": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H01 Test - Heating Minimum, maximum temperature",
+        "outdoor_db_f": 62,
+        "outdoor_wb_f": 56.5
+      },
+      "H11": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H11 Test - Heating Minimum, high temperature",
+        "outdoor_db_f": 47,
+        "outdoor_wb_f": 43
+      },
+      "H12": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H12 Test - Heating Full-load, high temperature",
+        "outdoor_db_f": 47,
+        "outdoor_wb_f": 43
+      },
+      "H1N": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H1N Test - Heating Nominal, high temperature",
+        "outdoor_db_f": 47,
+        "outdoor_wb_f": 43
+      },
+      "H22": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H22 Test - Heating Full-load, frost accumulation",
+        "outdoor_db_f": 35,
+        "outdoor_wb_f": 33
+      },
+      "H2V": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H2V Test - Heating Intermediate, frost accumulation",
+        "outdoor_db_f": 35,
+        "outdoor_wb_f": 33
+      },
+      "H32": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H32 Test - Heating Full-load, low temperature",
+        "outdoor_db_f": 17,
+        "outdoor_wb_f": 15
+      },
+      "H42": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H42 Test - Heating Full-load, optional 5 F low temperature",
+        "outdoor_db_f": 5,
+        "outdoor_wb_f": 3
+      }
+    },
+    "cooling": {
+      "A2": {
+        "mode": "cooling",
+        "ahri_2026_test_name": "A2 Test - Cooling Full-load",
+        "outdoor_db_f": 95,
+        "outdoor_wb_f": 75
+      },
+      "B2": {
+        "mode": "cooling",
+        "ahri_2026_test_name": "B2 Test - Cooling Full-load",
+        "outdoor_db_f": 82,
+        "outdoor_wb_f": 65
+      },
+      "C2": {
+        "mode": "cooling",
+        "ahri_2026_test_name": "C2 Test - Cooling Full-load, dry coil",
+        "outdoor_db_f": 82,
+        "outdoor_wb_f": null
+      },
+      "D2": {
+        "mode": "cooling",
+        "ahri_2026_test_name": "D2 Test - Cooling Full-load, cyclic dry coil",
+        "outdoor_db_f": 82,
+        "outdoor_wb_f": null
+      },
+      "E2": {
+        "mode": "cooling",
+        "ahri_2026_test_name": "E2 Test - Cooling Intermediate",
+        "outdoor_db_f": 87,
+        "outdoor_wb_f": 69
+      }
+    }
+  },
+  "test_point_aliases": {
+    "legacy_to_canonical": {
+      "H1_Full": "H12",
+      "H2_Full": "H32",
+      "H3_Full": "H42"
+    },
+    "canonical_to_internal_hspf2_v2": {
+      "H12": "H1_Full",
+      "H32": "H2_Full",
+      "H42": "H3_Full"
+    }
+  },
   "test_point_temps": {
     "H1_full": 47,
     "H2_full": 17,
