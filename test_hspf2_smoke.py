@@ -8,7 +8,7 @@ test_points = {
     "H3_Full": (18000, 1900),
 }
 
-result = calc.calculate_hspf2(test_points)
+result = calc.calculate_hspf2_v2(test_points)
 
 print("HSPF2:", result["HSPF2"])
 print("Total Load:", result["total_heating_Btu"])

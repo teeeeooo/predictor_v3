@@ -275,6 +275,349 @@ class AHRIHSPF2Calculator:
 
         return max(0.0, q_tj), max(0.0, p_tj)
 
+    def _get_positive_point(self, test_points: dict, key: str) -> tuple:
+        capacity, power = self._get_point(test_points, key)
+        if capacity <= 0 or power <= 0:
+            raise ValueError(f"Invalid canonical test point {key}: capacity={capacity}, power={power}")
+        return capacity, power
+
+    def _require_ahri_kwargs(self, kwargs: dict) -> tuple:
+        missing = [
+            key for key in (
+                "t_off",
+                "t_on",
+                "defrost_t_test_minutes",
+                "defrost_t_max_minutes",
+            )
+            if key not in kwargs
+        ]
+        if missing:
+            raise ValueError(
+                "HSPF2 v3 AHRI path requires explicit Appendix J/defrost inputs: "
+                + ", ".join(missing)
+            )
+
+        t_off = kwargs["t_off"]
+        t_on = kwargs["t_on"]
+        if t_on <= t_off:
+            raise ValueError(f"Invalid Appendix J cut-in/out values: t_on={t_on}, t_off={t_off}")
+
+        defrost_t_test = kwargs["defrost_t_test_minutes"]
+        defrost_t_max = kwargs["defrost_t_max_minutes"]
+        if defrost_t_test < 90 or defrost_t_max > 720 or defrost_t_max <= 90:
+            raise ValueError(
+                "Invalid demand defrost interval inputs for AHRI Eq. 11.107: "
+                f"defrost_t_test_minutes={defrost_t_test}, defrost_t_max_minutes={defrost_t_max}"
+            )
+
+        return t_off, t_on, defrost_t_test, defrost_t_max
+
+    def _cert_low_capacity_power_at_temp(self, temp_f: float, low_points: dict) -> tuple:
+        q_h0_low, p_h0_low = low_points["H01"]
+        q_h1_low, p_h1_low = low_points["H11"]
+        q_low = q_h1_low + (q_h0_low - q_h1_low) * self._safe_div(temp_f - 47, 62 - 47)
+        p_low = p_h1_low + (p_h0_low - p_h1_low) * self._safe_div(temp_f - 47, 62 - 47)
+        return max(0.0, q_low), max(0.0, p_low)
+
+    def _cert_full_capacity_power_at_temp(
+        self,
+        temp_f: float,
+        full_points: dict,
+        nominal_point: tuple,
+        h4_point: tuple = None,
+    ) -> tuple:
+        q_h1_full, p_h1_full = full_points["H12"]
+        q_h1_nom, p_h1_nom = nominal_point
+        q_h2_full, p_h2_full = full_points["H22"]
+        q_h3_full, p_h3_full = full_points["H32"]
+
+        if temp_f >= 45:
+            q_base = self._linear(temp_f, 17, q_h3_full, 47, q_h1_full)
+            p_base = self._linear(temp_f, 17, p_h3_full, 47, p_h1_full)
+            q_full = q_base * self._safe_div(q_h1_nom, q_h1_full, 1.0)
+            p_full = p_base * self._safe_div(p_h1_nom, p_h1_full, 1.0)
+        elif temp_f > 17:
+            q_full = self._linear(temp_f, 17, q_h3_full, 35, q_h2_full)
+            p_full = self._linear(temp_f, 17, p_h3_full, 35, p_h2_full)
+        elif h4_point is not None:
+            q_h4_full, p_h4_full = h4_point
+            q_full = self._linear(temp_f, 5, q_h4_full, 17, q_h3_full)
+            p_full = self._linear(temp_f, 5, p_h4_full, 17, p_h3_full)
+        else:
+            q_full = self._linear(temp_f, 17, q_h3_full, 47, q_h1_full)
+            p_full = self._linear(temp_f, 17, p_h3_full, 47, p_h1_full)
+
+        return max(0.0, q_full), max(0.0, p_full)
+
+    def _cert_intermediate_capacity_power_at_temp(
+        self,
+        temp_f: float,
+        h2int_point: tuple,
+        low_points: dict,
+        full_points: dict,
+    ) -> tuple:
+        q_h2_int, p_h2_int = h2int_point
+        q_low_35, p_low_35 = self._cert_low_capacity_power_at_temp(35, low_points)
+        q_h0_low, p_h0_low = low_points["H01"]
+        q_h1_low, p_h1_low = low_points["H11"]
+        q_h2_full, p_h2_full = full_points["H22"]
+        q_h3_full, p_h3_full = full_points["H32"]
+
+        n_hq = self._safe_div(q_h2_int - q_low_35, q_h2_full - q_low_35)
+        n_he = self._safe_div(p_h2_int - p_low_35, p_h2_full - p_low_35)
+        if not (0.0 <= n_hq <= 1.0 and 0.0 <= n_he <= 1.0):
+            raise ValueError(
+                "HSPF2 v3 AHRI path requires H2Int capacity/power between Low(35F) and H2Full: "
+                f"N_Hq={n_hq}, N_HE={n_he}"
+            )
+        m_hq = (
+            self._safe_div(q_h0_low - q_h1_low, 62 - 47) * (1.0 - n_hq)
+            + self._safe_div(q_h2_full - q_h3_full, 35 - 17) * n_hq
+        )
+        m_he = (
+            self._safe_div(p_h0_low - p_h1_low, 62 - 47) * (1.0 - n_he)
+            + self._safe_div(p_h2_full - p_h3_full, 35 - 17) * n_he
+        )
+        q_int = q_h2_int + m_hq * (temp_f - 35)
+        p_int = p_h2_int + m_he * (temp_f - 35)
+        return max(0.0, q_int), max(0.0, p_int), {
+            "method": "ahri_210_240_2026_eq_11_199_to_11_204",
+            "N_Hq": n_hq,
+            "N_HE": n_he,
+            "M_Hq": m_hq,
+            "M_HE": m_he,
+            "q_low_35": q_low_35,
+            "p_low_35": p_low_35,
+        }
+
+    def _cert_delta_at_bin(self, temp_f: float, cop: float, t_off: float, t_on: float) -> float:
+        if temp_f <= t_off or cop < 1.0:
+            return 0.0
+        if temp_f <= t_on:
+            return 0.5
+        return 1.0
+
+    def _calculate_hspf2_v3_ahri(self, test_points: dict, **kwargs) -> dict:
+        canonical_points = self.legacy_to_canonical(test_points)
+        t_off, t_on, defrost_t_test, defrost_t_max = self._require_ahri_kwargs(kwargs)
+        required_points = ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32", "A2")
+        missing = [key for key in required_points if key not in canonical_points]
+        if missing:
+            raise ValueError(
+                "HSPF2 v3 AHRI path requires canonical AHRI test points: "
+                + ", ".join(missing)
+            )
+
+        full_points = {
+            "H12": self._get_positive_point(canonical_points, "H12"),
+            "H22": self._get_positive_point(canonical_points, "H22"),
+            "H32": self._get_positive_point(canonical_points, "H32"),
+        }
+        h4_point = None
+        h42_source = "not_provided"
+        if "H42" in canonical_points:
+            h4_point = self._get_positive_point(canonical_points, "H42")
+            h42_source = "provided"
+
+        low_points = {
+            "H01": self._get_positive_point(canonical_points, "H01"),
+            "H11": self._get_positive_point(canonical_points, "H11"),
+        }
+        h1_nom = self._get_positive_point(canonical_points, "H1N")
+        h2_int = self._get_positive_point(canonical_points, "H2Int")
+        q_a_full, _ = self._get_positive_point(canonical_points, "A2")
+
+        bin_table = self._get_region_iv_heating_bin_table()
+        bin_temps = bin_table["bin_temps_f"]
+        fractional_bin_hours = bin_table["fractional_bin_hours"]
+        hlh = bin_table["heating_load_hours"]
+        bin_hours = [frac * hlh for frac in fractional_bin_hours]
+        c_vs = bin_table.get("variable_capacity_slope_factor", 1.07)
+        t_zl = bin_table.get("zero_load_temp_f", 55)
+        t_od = bin_table.get("outdoor_design_temp_f", 5)
+        c_d_heating = kwargs.get("c_d_heating", self.defaults.get("c_d_heating", 0.25))
+        aux_eer = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0)) * 3.412
+
+        f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(defrost_t_test - 90, defrost_t_max - 90))
+        total_heating_btu = 0.0
+        total_energy_wh = 0.0
+        bin_details = []
+
+        for i, temp_f in enumerate(bin_temps):
+            hours = bin_hours[i]
+            fractional_hours = fractional_bin_hours[i]
+            if hours <= 0:
+                continue
+
+            building_load = self._building_load_v3(temp_f, q_a_full, c_vs, t_zl, t_od)
+            q_low, p_low = self._cert_low_capacity_power_at_temp(temp_f, low_points)
+            q_full, p_full = self._cert_full_capacity_power_at_temp(temp_f, full_points, h1_nom, h4_point)
+            q_int, p_int, int_meta = self._cert_intermediate_capacity_power_at_temp(
+                temp_f,
+                h2_int,
+                low_points,
+                full_points,
+            )
+
+            cop_low = self._safe_div(q_low, p_low * 3.412) if p_low > 0 else 0.0
+            cop_full = self._safe_div(q_full, p_full * 3.412) if p_full > 0 else 0.0
+            cop_int = self._safe_div(q_int, p_int * 3.412) if p_int > 0 else 0.0
+
+            if building_load <= 0:
+                operating_case = "Case 0"
+                delta_j = 1.0
+                hlf = None
+                plf = 1.0
+                cop_bin = None
+                q_comp = 0.0
+                e_comp = 0.0
+                q_aux = 0.0
+                e_aux = 0.0
+            elif building_load <= q_low:
+                operating_case = "Case I"
+                hlf = self._safe_div(building_load, q_low)
+                plf = max(0.01, 1.0 - c_d_heating * (1.0 - hlf))
+                delta_j = self._cert_delta_at_bin(temp_f, cop_low, t_off, t_on)
+                cop_bin = cop_low
+                q_comp = building_load * delta_j * hours
+                e_comp = p_low * hlf * delta_j * hours / plf
+                q_aux = building_load * (1.0 - delta_j) * hours
+                e_aux = self._safe_div(q_aux, aux_eer)
+            elif q_low < building_load < q_full:
+                operating_case = "Case II"
+                hlf = None
+                plf = 1.0
+                if not (q_low < q_int < q_full):
+                    raise ValueError(
+                        "HSPF2 v3 AHRI Case II requires q_low < q_int < q_full at every Case II bin: "
+                        f"temp_f={temp_f}, q_low={q_low}, q_int={q_int}, q_full={q_full}"
+                    )
+                if building_load <= q_int:
+                    cop_bin = cop_low + self._safe_div(building_load - q_low, q_int - q_low) * (cop_int - cop_low)
+                else:
+                    cop_bin = cop_int + self._safe_div(building_load - q_int, q_full - q_int) * (cop_full - cop_int)
+                delta_j = self._cert_delta_at_bin(temp_f, cop_bin, t_off, t_on)
+                q_comp = building_load * delta_j * hours
+                e_comp = self._safe_div(building_load, cop_bin * 3.412) * delta_j * hours
+                q_aux = building_load * (1.0 - delta_j) * hours
+                e_aux = self._safe_div(q_aux, aux_eer)
+            else:
+                operating_case = "Case III"
+                hlf = 1.0
+                plf = 1.0
+                cop_bin = cop_full
+                delta_j = self._cert_delta_at_bin(temp_f, cop_full, t_off, t_on)
+                q_comp = q_full * delta_j * hours
+                e_comp = p_full * delta_j * hours
+                q_aux = max(0.0, building_load - q_full * delta_j) * hours
+                e_aux = self._safe_div(q_aux, aux_eer)
+
+            q_j = q_comp + q_aux
+            E_j = e_comp + e_aux
+            total_heating_btu += q_j
+            total_energy_wh += E_j
+
+            bin_details.append({
+                "bin_no": i + 1,
+                "bin": i + 1,
+                "temp_F": temp_f,
+                "hours": hours,
+                "fractional_hours": fractional_hours,
+                "operating_case": operating_case,
+                "building_load": round(building_load, 2),
+                "delta_j": delta_j,
+                "HLF_j": round(hlf, 6) if hlf is not None else None,
+                "PLF_j": round(plf, 6),
+                "q_low": round(q_low, 2),
+                "p_low": round(p_low, 2),
+                "q_int": round(q_int, 2),
+                "p_int": round(p_int, 2),
+                "q_full": round(q_full, 2),
+                "p_full": round(p_full, 2),
+                "COP_low": round(cop_low, 6),
+                "COP_int": round(cop_int, 6),
+                "COP_full": round(cop_full, 6),
+                "COP_bin": round(cop_bin, 6) if cop_bin is not None else None,
+                "q_comp": round(q_comp, 2),
+                "e_comp": round(e_comp, 2),
+                "q_aux": round(q_aux, 2),
+                "e_aux": round(e_aux, 2),
+                "q_j": round(q_j, 2),
+                "E_j": round(E_j, 2),
+                "aux_ratio": round(self._safe_div(e_aux, E_j), 4) if E_j > 0 else 0.0,
+                "debug_info": {
+                    "formula_path": "ahri_210_240_2026_variable_capacity_heating",
+                    "full_capacity_method": (
+                        "eq_11_209_11_210" if temp_f >= 45
+                        else "eq_11_213_11_214" if temp_f > 17
+                        else "h4full_low_temp_line" if h4_point is not None
+                        else "no_h4full_h1full_h3full_line"
+                    ),
+                    "low_capacity_method": "eq_11_187_11_188",
+                    "intermediate_capacity_method": int_meta["method"],
+                    "intermediate_metadata": {
+                        key: round(value, 6) if isinstance(value, float) else value
+                        for key, value in int_meta.items()
+                    },
+                },
+            })
+
+        if total_energy_wh <= 0:
+            raise ValueError("HSPF2 AHRI calculation error: total_energy_wh must be > 0.")
+        if total_heating_btu <= 0:
+            raise ValueError("HSPF2 AHRI calculation error: total_heating_btu must be > 0.")
+
+        raw_hspf2_base = self._safe_div(total_heating_btu, total_energy_wh)
+        raw_hspf2 = raw_hspf2_base * f_def_seasonal
+        rounded_hspf2 = self._round_nearest_025(raw_hspf2)
+        return {
+            "raw_hspf2": raw_hspf2,
+            "raw_hspf2_base": raw_hspf2_base,
+            "rounded_hspf2": rounded_hspf2,
+            "HSPF2": rounded_hspf2,
+            "total_load": round(total_heating_btu, 3),
+            "total_energy": round(total_energy_wh, 3),
+            "total_heating_btu": round(total_heating_btu, 3),
+            "total_energy_wh": round(total_energy_wh, 3),
+            "h42_source": h42_source,
+            "bin_table": {
+                "region": bin_table.get("region"),
+                "source": bin_table.get("source", {}),
+                "heating_load_hours": hlh,
+                "fractional_bin_hours_sum": round(sum(fractional_bin_hours), 3),
+            },
+            "summary": {
+                "ahri_210_240_2026_ready": True,
+                "total_heating_btu": round(total_heating_btu, 3),
+                "total_energy_wh": round(total_energy_wh, 3),
+                "raw_hspf2_base": raw_hspf2_base,
+                "f_def_seasonal": f_def_seasonal,
+                "raw_hspf2": raw_hspf2,
+                "rounded_hspf2": rounded_hspf2,
+                "metadata": {
+                    "formula_path": "ahri_210_240_2026_variable_capacity_heating",
+                    "region": bin_table.get("region"),
+                    "heating_load_hours": hlh,
+                    "t_off": t_off,
+                    "t_on": t_on,
+                    "c_d_heating": c_d_heating,
+                    "defrost_control_type": "demand",
+                    "defrost_t_test_minutes": defrost_t_test,
+                    "defrost_t_max_minutes": defrost_t_max,
+                    "t_OBO": 45,
+                },
+                "heating_load_line": {
+                    "q_h1_calc": q_a_full,
+                    "q_h1_calc_source": "A2_cooling_capacity_95F",
+                    "q_h1_calc_scope": "variable_capacity_afull_anchor_eq11106",
+                    "C_vs": c_vs,
+                    "t_zl": t_zl,
+                    "t_od": t_od,
+                },
+            },
+            "bin_details": bin_details,
+        }
+
     def _building_load_at_temp(self, temp_f: float, design_load: float) -> float:
         balance_temp = self.constants.get("balance_temp_f", 65)
         design_temp = self.constants.get("design_temp_f", 5)
@@ -380,424 +723,12 @@ class AHRIHSPF2Calculator:
 
     def calculate_hspf2_v3(self, test_points: dict, **kwargs) -> dict:
         """
-        Production HSPF2 calculation path for the current predictor_v3 scope.
+        AHRI 210/240-2026 HSPF2 calculation path for the current predictor_v3 scope.
 
         Scope: Region IV, non-ducted single-split variable-capacity air-to-air
         heat pump with electric resistance auxiliary heat.
         """
-        full_points, h42_source = self._validate_canonical_full_load_points(test_points)
-        canonical_points = self.legacy_to_canonical(test_points)
-        low_points = {
-            "H11": canonical_points.get("H11"),
-            "H2V": canonical_points.get("H2V"),
-            "H31": canonical_points.get("H31"),
-        }
-        bin_table = self._get_region_iv_heating_bin_table()
-        c_d_heating = self.defaults.get("c_d_heating", self.defaults.get("cd_default_low", 0.25))
-        c_d = c_d_heating
-        bin_temps = bin_table["bin_temps_f"]
-        fractional_bin_hours = bin_table["fractional_bin_hours"]
-        hlh = bin_table["heating_load_hours"]
-        bin_hours = [frac * hlh for frac in fractional_bin_hours]
-
-        # AHRI 210/240-2026 Eq. 11.106: BL anchor is A2 cooling capacity (95°F AFull).
-        # heating_only=True permits H12 fallback for heating-only systems.
-        heating_only = kwargs.get("heating_only", False)
-        a2_cooling = canonical_points.get("A2")
-        if a2_cooling is not None:
-            q_h1_calc, _ = a2_cooling
-            q_h1_calc_source = "A2_cooling_capacity_95F"
-            q_h1_calc_scope = "variable_capacity_afull_anchor_eq11106"
-        elif heating_only:
-            q_h1_calc, _ = full_points["H12"]
-            q_h1_calc_source = "H12_capacity_47F_heating_only_fallback"
-            q_h1_calc_scope = "heating_only_h1full_fallback"
-        else:
-            raise ValueError(
-                "BL anchor requires cooling A2 (AFull) test point for variable-capacity "
-                "heat pump (AHRI 210/240-2026 Eq. 11.106). "
-                "Provide 'A_Full' test point or pass heating_only=True for heating-only systems."
-            )
-        assert q_h1_calc > 0
-        c_vs  = bin_table.get("variable_capacity_slope_factor", 1.07)
-        t_zl  = bin_table.get("zero_load_temp_f", 55)
-        t_od  = bin_table.get("outdoor_design_temp_f", 5)
-        t_obo = self.constants.get("t_OBO", 45)
-        t_off = self.constants.get("t_off", -10)
-        t_on = self.constants.get("t_on", -5)
-        assert t_on > t_off
-        defrost_control_type = self.constants.get("defrost_control_type", "demand")
-        defrost_t_test_minutes = self.constants.get("defrost_t_test_minutes", 90)
-        defrost_t_max_minutes = self.constants.get("defrost_t_max_minutes", 720)
-        aux_cop = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0))
-        aux_eer = aux_cop * 3.412
-
-        def _calculate_f_def(constants: dict) -> float:
-            # AHRI 210/240 Eq. 11.107: Ttest/Tmax는 온도가 아니라
-            # defrost termination 사이 시간[minutes]이다. 따라서 F_def는
-            # bin temperature 함수가 아니라 장비/시험조건 기반 상수이다.
-            if constants.get("defrost_control_type") != "demand":
-                return 1.0
-
-            t_test = max(constants.get("defrost_t_test_minutes", 90), 90)
-            t_max = min(constants.get("defrost_t_max_minutes", 720), 720)
-            if t_max <= 90:
-                # Eq. 11.107 denominator (Tmax - 90) division 방지.
-                # 유효한 demand defrost 시간 범위가 아니므로 credit 미적용.
-                return 1.0
-
-            return 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
-
-        def _hp_case_at_bin(temp_f: float, hours: float, building_load: float) -> dict:
-            q_full_raw, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
-            q_low_raw, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
-            is_frost_region = temp_f <= t_obo
-            f_def = _calculate_f_def(self.constants)
-            defrost_model = "default_linear_placeholder"
-            f_frost_capacity = 1.0  # non-AHRI ad-hoc capacity factor removed per audit
-            q_full_adj = q_full_raw
-            q_low_adj = q_low_raw
-            q_full = q_full_adj
-            q_low_tj = q_low_adj
-
-            # case 0: BL <= 0 (compressor off)
-            # Case I: BL <= q_low_tj (low speed cycling)
-            # Case II: q_low_tj < BL < q_full (modulating)
-            # Case S: BL <= q_full (full-speed cycling branch)
-            # Case III: BL > q_full (full load + auxiliary heat)
-            if building_load <= 0:
-                case = 0
-                operating_case = "Case 0"
-                plr = None
-                plf = None
-                X_j = None
-                PLF_j = 1.0
-                case_ii_alpha = None
-                case_ii_cop_interp = None
-                q_comp = 0.0
-                q_delivered = 0.0
-                compressor_energy = 0.0
-                q_aux = 0.0
-                e_aux = 0.0
-            elif q_low_tj is not None and building_load <= q_low_tj:
-                case = 1
-                operating_case = "Case I"
-                # AHRI heating cyclic degradation at low speed.
-                # X_j: load factor at bin j; PLF_j: part load factor.
-                X_j = self._safe_div(building_load, q_low_tj)
-                PLF_j = 1.0 - c_d_heating * (1.0 - X_j)
-                PLF_j = max(PLF_j, 0.01)  # Avoid near-zero PLF division.
-                plr = X_j
-                plf = PLF_j
-                case_ii_alpha = None
-                case_ii_cop_interp = None
-                q_delivered = building_load * hours
-                q_comp = q_delivered
-                compressor_energy = p_low_tj * X_j * hours / PLF_j
-                q_aux = 0.0
-                e_aux = 0.0
-            elif q_low_tj is not None and q_low_tj < building_load < q_full and q_full != q_low_tj:
-                case = 1
-                operating_case = "Case II"
-                plr = None
-                plf = None
-                X_j = None
-                PLF_j = 1.0
-                # AHRI Case II COP interpolation (AHRI 210/240-2026 Section 11.2.2.4).
-                alpha = self._safe_div(building_load - q_low_tj, q_full - q_low_tj)
-                case_ii_alpha = min(1.0, max(0.0, alpha))
-                cop_low = self._safe_div(q_low_adj, p_low_tj * 3.412)
-                cop_full = self._safe_div(q_full_adj, p_full * 3.412)
-                cop_interp = cop_low + case_ii_alpha * (cop_full - cop_low)
-                case_ii_cop_interp = cop_interp
-                p_interpolated = self._safe_div(building_load, cop_interp * 3.412)
-                q_delivered = building_load * hours
-                q_comp = q_delivered
-                compressor_energy = p_interpolated * hours
-                q_aux = 0.0
-                e_aux = 0.0
-            elif building_load <= q_full:
-                case = 1
-                operating_case = "Case S"
-                plr = self._safe_div(building_load, q_full)
-                plf = 1.0
-                X_j = None
-                PLF_j = 1.0
-                case_ii_alpha = None
-                case_ii_cop_interp = None
-                q_delivered = building_load * hours
-                q_comp = q_delivered
-                compressor_energy = p_full * plr * hours
-                q_aux = 0.0
-                e_aux = 0.0
-            else:
-                case = 2
-                operating_case = "Case III"
-                plr = None
-                plf = None
-                X_j = None
-                PLF_j = 1.0
-                case_ii_alpha = None
-                case_ii_cop_interp = None
-                q_comp = q_full * hours
-                q_delivered = building_load * hours
-                compressor_energy = p_full * hours
-                q_aux = (building_load - q_full) * hours
-                e_aux = self._safe_div(q_aux, aux_eer)
-
-            return {
-                "case": case,
-                "operating_case": operating_case,
-                "plr": plr,
-                "plf": plf,
-                "X_j": X_j,
-                "PLF_j": PLF_j,
-                "case_ii_alpha": case_ii_alpha,
-                "case_ii_cop_interp": case_ii_cop_interp,
-                "is_frost_region": is_frost_region,
-                "f_def": f_def,
-                "f_frost_capacity": f_frost_capacity,
-                "defrost_model": defrost_model,
-                "f_def_application": "seasonal_multiplier",
-                "q_full_raw": q_full_raw,
-                "q_full_adj": q_full_adj,
-                "q_low_raw": q_low_raw,
-                "q_low_adj": q_low_adj,
-                "q_full": q_full,
-                "p_full": p_full,
-                "q_comp": q_comp,
-                "q_j": q_delivered,
-                "e_comp": compressor_energy,
-                "q_aux": q_aux,
-                "e_aux": e_aux,
-            }
-
-        def _cutout_case_at_bin(temp_f: float, hours: float, building_load: float) -> dict:
-            q_delivered = building_load * hours
-            q_aux = q_delivered
-            return {
-                "case": 0,
-                "operating_case": "Cut-out",
-                "plr": None,
-                "plf": None,
-                "X_j": None,
-                "PLF_j": 1.0,
-                "case_ii_alpha": None,
-                "case_ii_cop_interp": None,
-                "is_frost_region": temp_f <= t_obo,
-                "f_def": 1.0,
-                "f_frost_capacity": 1.0,
-                "defrost_model": "cut_out_no_defrost_adjustment",
-                "f_def_application": "seasonal_multiplier",
-                "q_full_raw": 0.0,
-                "q_full_adj": 0.0,
-                "q_low_raw": None,
-                "q_low_adj": None,
-                "q_full": 0.0,
-                "p_full": 0.0,
-                "q_comp": 0.0,
-                "q_j": q_delivered,
-                "e_comp": 0.0,
-                "q_aux": q_aux,
-                "e_aux": self._safe_div(q_aux, 3.412),
-            }
-
-        total_heating_btu = 0.0
-        total_energy_wh = 0.0
-        bin_details = []
-
-        for i, temp_f in enumerate(bin_temps):
-            hours = bin_hours[i]
-            fractional_hours = fractional_bin_hours[i]
-            if hours <= 0:
-                continue
-
-            building_load = self._building_load_v3(
-                temp_f, q_h1_calc, c_vs, t_zl, t_od
-            )
-            q_full_cop, p_full_cop = self._canonical_capacity_power_at_temp(temp_f, full_points)
-            cop_j = self._safe_div(q_full_cop, p_full_cop * 3.412) if p_full_cop > 0 else 0.0
-            cop_cutout = p_full_cop > 0 and cop_j < 1.0
-            if temp_f <= t_off or cop_cutout:
-                delta_j = 0.0
-            elif temp_f <= t_on:
-                delta_j = 0.5
-            else:
-                delta_j = 1.0
-
-            if delta_j == 0.0:
-                values = _cutout_case_at_bin(temp_f, hours, building_load)
-                hp_values = None
-                cutout_values = values
-            elif delta_j == 1.0:
-                values = _hp_case_at_bin(temp_f, hours, building_load)
-                hp_values = values
-                cutout_values = None
-            else:
-                hp_values = _hp_case_at_bin(temp_f, hours, building_load)
-                cutout_values = _cutout_case_at_bin(temp_f, hours, building_load)
-                values = dict(hp_values)
-                values["operating_case"] = "Fractional"
-                values["q_comp"] = hp_values["q_comp"] * delta_j
-                values["e_comp"] = hp_values["e_comp"] * delta_j
-                values["q_aux"] = (
-                    hp_values["q_aux"] * delta_j
-                    + cutout_values["q_aux"] * (1.0 - delta_j)
-                )
-                values["e_aux"] = (
-                    hp_values["e_aux"] * delta_j
-                    + cutout_values["e_aux"] * (1.0 - delta_j)
-                )
-                values["q_j"] = values["q_comp"] + values["q_aux"]
-
-            E_j = values["e_comp"] + values["e_aux"]
-            total_heating_btu += values["q_j"]
-            total_energy_wh += E_j
-
-            # LEGACY: detailed diagnostic aliases remain at top level for
-            # existing tests and downstream readers. New consumers should prefer
-            # the same fields under debug_info for non-core diagnostics.
-            bin_details.append({
-                "bin_no": i + 1,
-                "bin": i + 1,
-                "temp_F": temp_f,
-                "hours": hours,
-                "fractional_hours": fractional_hours,
-                "operating_case": values["operating_case"],
-                "building_load": round(building_load, 2),
-                "delta_j": delta_j,
-                "cop_j": round(cop_j, 6),
-                "cop_cutout": cop_cutout,
-                "f_frost_capacity": round(values["f_frost_capacity"], 6),
-                "f_def": values["f_def"],
-                "f_def_application": values["f_def_application"],
-                "X_j": round(values["X_j"], 6) if values["X_j"] is not None else None,
-                "PLF_j": round(values["PLF_j"], 6),
-                "q_comp": round(values["q_comp"], 2),
-                "e_comp": round(values["e_comp"], 2),
-                "q_aux": round(values["q_aux"], 2),
-                "e_aux": round(values["e_aux"], 2),
-                "case": values["case"],
-                "C_D": c_d,
-                "c_d_heating": c_d_heating,
-                "is_frost_region": values["is_frost_region"],
-                "defrost_control_type": defrost_control_type,
-                "defrost_t_test_minutes": defrost_t_test_minutes,
-                "defrost_t_max_minutes": defrost_t_max_minutes,
-                "defrost_model": values["defrost_model"],
-                "q_full_raw": round(values["q_full_raw"], 2),
-                "q_full_adj": round(values["q_full_adj"], 2),
-                "q_low_raw": round(values["q_low_raw"], 2) if values["q_low_raw"] is not None else None,
-                "q_low_adj": round(values["q_low_adj"], 2) if values["q_low_adj"] is not None else None,
-                "q_full": round(values["q_full"], 2),
-                "p_full": round(values["p_full"], 2),
-                "plr": round(values["plr"], 6) if values["plr"] is not None else None,
-                "plf": round(values["plf"], 6) if values["plf"] is not None else None,
-                "hp_operating_case": hp_values["operating_case"] if hp_values is not None else None,
-                "q_comp_hp_case": round(hp_values["q_comp"], 2) if hp_values is not None else None,
-                "e_comp_hp_case": round(hp_values["e_comp"], 2) if hp_values is not None else None,
-                "q_aux_hp_case": round(hp_values["q_aux"], 2) if hp_values is not None else None,
-                "e_aux_hp_case": round(hp_values["e_aux"], 2) if hp_values is not None else None,
-                "q_aux_cutout": round(cutout_values["q_aux"], 2) if cutout_values is not None else None,
-                "e_aux_cutout": round(cutout_values["e_aux"], 2) if cutout_values is not None else None,
-                "q_j": round(values["q_j"], 2),
-                "E_j": round(E_j, 2),
-                "aux_ratio": round(self._safe_div(values["e_aux"], E_j), 4) if E_j > 0 else 0.0,
-                "debug_info": {
-                    "case": values["case"],
-                    "C_D": c_d,
-                    "c_d_heating": c_d_heating,
-                    "is_frost_region": values["is_frost_region"],
-                    "defrost_control_type": defrost_control_type,
-                    "defrost_t_test_minutes": defrost_t_test_minutes,
-                    "defrost_t_max_minutes": defrost_t_max_minutes,
-                    "defrost_model": values["defrost_model"],
-                    "f_def_application": values["f_def_application"],
-                    "q_full_raw": round(values["q_full_raw"], 2),
-                    "q_full_adj": round(values["q_full_adj"], 2),
-                    "q_low_raw": round(values["q_low_raw"], 2) if values["q_low_raw"] is not None else None,
-                    "q_low_adj": round(values["q_low_adj"], 2) if values["q_low_adj"] is not None else None,
-                    "q_full": round(values["q_full"], 2),
-                    "p_full": round(values["p_full"], 2),
-                    "plr": round(values["plr"], 6) if values["plr"] is not None else None,
-                    "plf": round(values["plf"], 6) if values["plf"] is not None else None,
-                    "case_ii_alpha": (
-                        round(values["case_ii_alpha"], 6)
-                        if values["case_ii_alpha"] is not None else None
-                    ),
-                    "case_ii_cop_interp": (
-                        round(values["case_ii_cop_interp"], 6)
-                        if values["case_ii_cop_interp"] is not None else None
-                    ),
-                    "cop_j": round(cop_j, 6),
-                    "cop_cutout": cop_cutout,
-                    "hp_operating_case": hp_values["operating_case"] if hp_values is not None else None,
-                    "q_comp_hp_case": round(hp_values["q_comp"], 2) if hp_values is not None else None,
-                    "e_comp_hp_case": round(hp_values["e_comp"], 2) if hp_values is not None else None,
-                    "q_aux_hp_case": round(hp_values["q_aux"], 2) if hp_values is not None else None,
-                    "e_aux_hp_case": round(hp_values["e_aux"], 2) if hp_values is not None else None,
-                    "q_aux_cutout": round(cutout_values["q_aux"], 2) if cutout_values is not None else None,
-                    "e_aux_cutout": round(cutout_values["e_aux"], 2) if cutout_values is not None else None,
-                    "q_j": round(values["q_j"], 2),
-                    "E_j": round(E_j, 2),
-                    "aux_ratio": round(self._safe_div(values["e_aux"], E_j), 4) if E_j > 0 else 0.0,
-                },
-            })
-
-        if total_energy_wh <= 0:
-            raise ValueError("HSPF2 calculation error: total_energy_wh must be > 0.")
-        if total_heating_btu <= 0:
-            raise ValueError("HSPF2 calculation error: total_heating_Btu must be > 0.")
-
-        raw_hspf2_base = self._safe_div(total_heating_btu, total_energy_wh)
-        f_def_seasonal = _calculate_f_def(self.constants)
-        raw_hspf2 = raw_hspf2_base * f_def_seasonal
-        if raw_hspf2 < 2 or raw_hspf2 > 20:
-            warnings.warn(f"HSPF2 sanity warning: calculated value is outside 2-20 range ({raw_hspf2:.3f})")
-
-        return {
-            "raw_hspf2": raw_hspf2,
-            "raw_hspf2_base": raw_hspf2_base,
-            "rounded_hspf2": self._round_nearest_025(raw_hspf2),
-            "HSPF2": self._round_nearest_025(raw_hspf2),
-            "total_load": round(total_heating_btu, 3),
-            "total_energy": round(total_energy_wh, 3),
-            "total_heating_btu": round(total_heating_btu, 3),
-            "total_energy_wh": round(total_energy_wh, 3),
-            "h42_source": h42_source,
-            "bin_table": {
-                "region": bin_table.get("region"),
-                "source": bin_table.get("source", {}),
-                "heating_load_hours": hlh,
-                "fractional_bin_hours_sum": round(sum(fractional_bin_hours), 3),
-            },
-            "summary": {
-                "total_heating_btu": round(total_heating_btu, 3),
-                "total_energy_wh": round(total_energy_wh, 3),
-                "raw_hspf2_base": raw_hspf2_base,
-                "f_def_seasonal": f_def_seasonal,
-                "raw_hspf2_after_f_def": raw_hspf2,
-                "raw_hspf2": raw_hspf2,
-                "rounded_hspf2": self._round_nearest_025(raw_hspf2),
-                "metadata": {
-                    "region": bin_table.get("region"),
-                    "heating_load_hours": hlh,
-                    "t_off": t_off,
-                    "t_on": t_on,
-                    "c_d_heating": c_d_heating,
-                    "defrost_control_type": defrost_control_type,
-                },
-                "heating_load_line": {
-                    "q_h1_calc": q_h1_calc,
-                    "q_h1_calc_source": q_h1_calc_source,
-                    "q_h1_calc_scope": q_h1_calc_scope,
-                    "C_vs": c_vs,
-                    "t_zl": t_zl,
-                    "t_od": t_od,
-                },
-            },
-            "bin_details": bin_details,
-        }
+        return self._calculate_hspf2_v3_ahri(test_points, **kwargs)
 
     def calculate_hspf2(self, test_points: dict, **kwargs) -> dict:
         """

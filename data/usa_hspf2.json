@@ -71,6 +71,12 @@
         "outdoor_db_f": 35,
         "outdoor_wb_f": 33
       },
+      "H2Int": {
+        "mode": "heating",
+        "ahri_2026_test_name": "H2Int Test - Heating Intermediate, frost accumulation",
+        "outdoor_db_f": 35,
+        "outdoor_wb_f": 33
+      },
       "H32": {
         "mode": "heating",
         "ahri_2026_test_name": "H32 Test - Heating Full-load, low temperature",
@@ -122,7 +128,7 @@
       "H1_Full": "H12",
       "H2_Full": "H32",
       "H3_Full": "H42",
-      "H21": "H2V",
+      "H21": "H2Int",
       "AFull": "A2",
       "A_Full": "A2",
       "A_full": "A2"

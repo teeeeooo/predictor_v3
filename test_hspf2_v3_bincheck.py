@@ -4,12 +4,24 @@ from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
 
 canonical_with_h42 = {
+    "H01": (12500, 980),
+    "H11": (12000, 1000),
     "H12": (24000, 2200),
+    "H1N": (22000, 2000),
+    "H22": (23200, 2160),
+    "H2Int": (13000, 1200),
     "H32": (22000, 2100),
     "H42": (18000, 1900),
+    "A_Full": (24000, 2500),
 }
 
-result = calc.calculate_hspf2_v3(canonical_with_h42)
+result = calc.calculate_hspf2_v3(
+    canonical_with_h42,
+    t_off=-10,
+    t_on=-5,
+    defrost_t_test_minutes=90,
+    defrost_t_max_minutes=720,
+)
 bin_details = result["bin_details"]
 
 print("HSPF2 v3 bin-level breakdown")
@@ -57,7 +69,7 @@ if capacity_lt_load_rows:
             "[경고] capacity < load 구간 발견: "
             f"bin {row['bin']}, temp={row['temp_F']}°F, "
             f"load={row['building_load']}, capacity={row['q_full']}, "
-            f"case={row['case']}"
+            f"case={row['operating_case']}"
         )
 else:
     print("[OK] 모든 bin에서 capacity >= load")
