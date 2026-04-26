@@ -72,11 +72,13 @@ canonical_with_h42 = {
     "H12": (24000, 2200),
     "H32": (22000, 2100),
     "H42": (18000, 1900),
+    "A_Full": (24000, 2500),
 }
 
 canonical_without_h42 = {
     "H12": (24000, 2200),
     "H32": (22000, 2100),
+    "A_Full": (24000, 2500),
 }
 
 canonical_with_low = {
@@ -86,6 +88,7 @@ canonical_with_low = {
     "H11": (12000, 1000),
     "H21": (10000, 900),
     "H31": (8000, 800),
+    "A_Full": (24000, 2500),
 }
 
 no_low_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42)
@@ -98,8 +101,8 @@ cutout_table["fractional_bin_hours"][14] = 0.0
 cutout_table["fractional_bin_hours"][15] = 0.001
 cutout_result = cutout_calc.calculate_hspf2_v3(canonical_with_h42)
 
-assert round(no_low_with_h42["raw_hspf2"], 6) == 10.199082
-assert round(no_low_without_h42["raw_hspf2"], 6) == 10.558441
+assert round(no_low_with_h42["raw_hspf2"], 6) == 10.155495
+assert round(no_low_without_h42["raw_hspf2"], 6) == 10.504608
 assert_case_conservation(no_low_with_h42)
 assert_case_conservation(low_result)
 assert_case_conservation(cutout_result)
@@ -117,7 +120,7 @@ for row in no_low_with_h42["bin_details"]:
     assert row["defrost_control_type"] == "demand"
     assert row["defrost_t_test_minutes"] == 90
     assert row["defrost_t_max_minutes"] == 720
-    expected_q_full_adj = round(row["q_full_raw"] * row["f_frost_capacity"] * row["f_def"], 2)
+    expected_q_full_adj = round(row["q_full_raw"] * row["f_frost_capacity"], 2)
     assert math.isclose(row["q_full_adj"], expected_q_full_adj, abs_tol=0.02)
     assert row["X_j"] is None
     assert row["PLF_j"] == 1.0

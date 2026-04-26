@@ -395,17 +395,25 @@ class AHRIHSPF2Calculator:
         hlh = bin_table["heating_load_hours"]
         bin_hours = [frac * hlh for frac in fractional_bin_hours]
 
-        # NOTE(AHRI 210/240-2024 Section 11.2.2.4, Eq. 11.181):
-        # "If the H1Full test is conducted" the calculated H1 capacity is
-        # set to the tested H1Full capacity. In this v3 scope, canonical H12
-        # is the required H1Full input, so q_H1_calc is formally mapped to
-        # H12 capacity for the heating load line.
-        # H1Nom and H3Full/CSF alternate branches are outside the current
-        # production scope; H32/H42 remain Tj capacity curve points.
-        h1_full_capacity_btu, _ = full_points["H12"]
-        q_h1_calc = h1_full_capacity_btu
+        # AHRI 210/240-2026 Eq. 11.106: BL anchor is A2 cooling capacity (95°F AFull).
+        # heating_only=True permits H12 fallback for heating-only systems.
+        heating_only = kwargs.get("heating_only", False)
+        a2_cooling = canonical_points.get("A2")
+        if a2_cooling is not None:
+            q_h1_calc, _ = a2_cooling
+            q_h1_calc_source = "A2_cooling_capacity_95F"
+            q_h1_calc_scope = "variable_capacity_afull_anchor_eq11106"
+        elif heating_only:
+            q_h1_calc, _ = full_points["H12"]
+            q_h1_calc_source = "H12_capacity_47F_heating_only_fallback"
+            q_h1_calc_scope = "heating_only_h1full_fallback"
+        else:
+            raise ValueError(
+                "BL anchor requires cooling A2 (AFull) test point for variable-capacity "
+                "heat pump (AHRI 210/240-2026 Eq. 11.106). "
+                "Provide 'A_Full' test point or pass heating_only=True for heating-only systems."
+            )
         assert q_h1_calc > 0
-        assert q_h1_calc == h1_full_capacity_btu
         c_vs  = bin_table.get("variable_capacity_slope_factor", 1.07)
         t_zl  = bin_table.get("zero_load_temp_f", 55)
         t_od  = bin_table.get("outdoor_design_temp_f", 5)
@@ -445,8 +453,8 @@ class AHRIHSPF2Calculator:
                 f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
             else:
                 f_frost_capacity = 1.0
-            q_full_adj = q_full_raw * f_frost_capacity * f_def
-            q_low_adj = q_low_raw * f_frost_capacity * f_def if q_low_raw is not None else None
+            q_full_adj = q_full_raw * f_frost_capacity
+            q_low_adj = q_low_raw * f_frost_capacity if q_low_raw is not None else None
             q_full = q_full_adj
             q_low_tj = q_low_adj
             # AHRI 210/240 Eq. 11.107 demand-defrost credit and the project
@@ -545,6 +553,7 @@ class AHRIHSPF2Calculator:
                 "f_def": f_def,
                 "f_frost_capacity": f_frost_capacity,
                 "defrost_model": defrost_model,
+                "f_def_application": "seasonal_multiplier",
                 "q_full_raw": q_full_raw,
                 "q_full_adj": q_full_adj,
                 "q_low_raw": q_low_raw,
@@ -573,6 +582,7 @@ class AHRIHSPF2Calculator:
                 "f_def": 1.0,
                 "f_frost_capacity": 1.0,
                 "defrost_model": "cut_out_no_defrost_adjustment",
+                "f_def_application": "seasonal_multiplier",
                 "q_full_raw": 0.0,
                 "q_full_adj": 0.0,
                 "q_low_raw": None,
@@ -649,6 +659,7 @@ class AHRIHSPF2Calculator:
                 "delta_j": delta_j,
                 "f_frost_capacity": round(values["f_frost_capacity"], 6),
                 "f_def": values["f_def"],
+                "f_def_application": values["f_def_application"],
                 "X_j": round(values["X_j"], 6) if values["X_j"] is not None else None,
                 "PLF_j": round(values["PLF_j"], 6),
                 "q_comp": round(values["q_comp"], 2),
@@ -690,6 +701,7 @@ class AHRIHSPF2Calculator:
                     "defrost_t_test_minutes": defrost_t_test_minutes,
                     "defrost_t_max_minutes": defrost_t_max_minutes,
                     "defrost_model": values["defrost_model"],
+                    "f_def_application": values["f_def_application"],
                     "q_full_raw": round(values["q_full_raw"], 2),
                     "q_full_adj": round(values["q_full_adj"], 2),
                     "q_low_raw": round(values["q_low_raw"], 2) if values["q_low_raw"] is not None else None,
@@ -720,12 +732,15 @@ class AHRIHSPF2Calculator:
         if total_heating_btu <= 0:
             raise ValueError("HSPF2 calculation error: total_heating_Btu must be > 0.")
 
-        raw_hspf2 = self._safe_div(total_heating_btu, total_energy_wh)
+        raw_hspf2_base = self._safe_div(total_heating_btu, total_energy_wh)
+        f_def_seasonal = _calculate_f_def(self.constants)
+        raw_hspf2 = raw_hspf2_base * f_def_seasonal
         if raw_hspf2 < 2 or raw_hspf2 > 20:
             warnings.warn(f"HSPF2 sanity warning: calculated value is outside 2-20 range ({raw_hspf2:.3f})")
 
         return {
             "raw_hspf2": raw_hspf2,
+            "raw_hspf2_base": raw_hspf2_base,
             "rounded_hspf2": self._round_nearest_025(raw_hspf2),
             "HSPF2": self._round_nearest_025(raw_hspf2),
             "total_load": round(total_heating_btu, 3),
@@ -742,6 +757,9 @@ class AHRIHSPF2Calculator:
             "summary": {
                 "total_heating_btu": round(total_heating_btu, 3),
                 "total_energy_wh": round(total_energy_wh, 3),
+                "raw_hspf2_base": raw_hspf2_base,
+                "f_def_seasonal": f_def_seasonal,
+                "raw_hspf2_after_f_def": raw_hspf2,
                 "raw_hspf2": raw_hspf2,
                 "rounded_hspf2": self._round_nearest_025(raw_hspf2),
                 "metadata": {
@@ -754,16 +772,8 @@ class AHRIHSPF2Calculator:
                 },
                 "heating_load_line": {
                     "q_h1_calc": q_h1_calc,
-                    "q_h1_calc_source": (
-                        "AHRI 210/240-2024 Section 11.2.2.4 Eq. 11.181: "
-                        "H12 capacity (47 F H1Full conducted)"
-                    ),
-                    "q_h1_calc_scope": "standard_variable_capacity_h1full_conducted",
-                    "q_h1_calc_note": (
-                        "H1Nom and H3Full/CSF alternate branches are outside "
-                        "the current production scope."
-                    ),
-                    "H1_Full_capacity": h1_full_capacity_btu,
+                    "q_h1_calc_source": q_h1_calc_source,
+                    "q_h1_calc_scope": q_h1_calc_scope,
                     "C_vs": c_vs,
                     "t_zl": t_zl,
                     "t_od": t_od,
