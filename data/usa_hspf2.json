@@ -148,7 +148,8 @@
     "t_defrost_max": 45,
     "defrost_t_test_minutes": 90,
     "defrost_t_max_minutes": 720,
-    "demand_defrost_credit_max": 1.03
+    "demand_defrost_credit_max": 1.03,
+    "t_off": -10
   },
   "defaults": {
     "cd_default_low": 0.25,
