@@ -1,0 +1,15 @@
+{
+  "name": "predictor_v3 devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:jammy",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  "postCreateCommand": "npm install -g @openai/codex"
+}
