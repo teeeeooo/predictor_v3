@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt, QSettings
 from core.calculator import ISO16358Calculator
 from core.calculator_en14825 import EN14825Calculator
 from core.calculator_ahri_seer2 import AHRICalculator
+from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 
 
 # [6] 숫자 파싱 공통 함수
@@ -38,21 +39,24 @@ class CalculatorWindow(QWidget):
 
         # 경로 설정
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
-        self.config_dir = os.path.join(project_root, "data", "region_configs")
+        self.project_root = os.path.dirname(current_dir)
+        self.config_dir = os.path.join(self.project_root, "data", "region_configs")
 
         # [7] Calculator 인스턴스 (1회 생성 후 재사용)
         self.iso_calc = None
         self.en_calc = None
         self.ahri_calc = None
+        self.hspf2_calc = None
 
         self.input_widgets_iso = {}
         self.input_widgets_en = {}
         self.input_widgets_ahri = {}
+        self.input_widgets_hspf2 = {}
 
         self.init_ui()
         self.settings = QSettings("HVAC_Calculator", "RegionSettings")
         self.scan_configs()
+        self._load_hspf2_calc()
 
     def init_ui(self):
         """메인 레이아웃 및 탭 구성"""
@@ -229,8 +233,31 @@ class CalculatorWindow(QWidget):
         group_extra.setLayout(form_extra)
         scroll_layout.addWidget(group_extra)
 
+        # Group 4: HSPF2 v3 Heating
+        group_hspf2 = QGroupBox("4. HSPF2 v3 난방 테스트 포인트")
+        form_hspf2 = QFormLayout()
+        for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
+            cap_w = QLineEdit()
+            pow_w = QLineEdit()
+            self.input_widgets_hspf2[f"{point}_cap"] = cap_w
+            self.input_widgets_hspf2[f"{point}_pow"] = pow_w
+            form_hspf2.addRow(f"{point} 능력 (Btu/h):", cap_w)
+            form_hspf2.addRow(f"{point} 전력 (W):", pow_w)
+
+        self.input_widgets_hspf2["t_off"] = QLineEdit()
+        self.input_widgets_hspf2["t_on"] = QLineEdit()
+        self.input_widgets_hspf2["defrost_t_test_minutes"] = QLineEdit()
+        self.input_widgets_hspf2["defrost_t_max_minutes"] = QLineEdit()
+
+        form_hspf2.addRow("t_off (°F):", self.input_widgets_hspf2["t_off"])
+        form_hspf2.addRow("t_on (°F):", self.input_widgets_hspf2["t_on"])
+        form_hspf2.addRow("defrost_t_test_minutes:", self.input_widgets_hspf2["defrost_t_test_minutes"])
+        form_hspf2.addRow("defrost_t_max_minutes:", self.input_widgets_hspf2["defrost_t_max_minutes"])
+        group_hspf2.setLayout(form_hspf2)
+        scroll_layout.addWidget(group_hspf2)
+
         # 에러 리셋 바인딩
-        for w in self.input_widgets_ahri.values():
+        for w in list(self.input_widgets_ahri.values()) + list(self.input_widgets_hspf2.values()):
             self.bind_error_reset(w)
 
         scroll.setWidget(scroll_content)
@@ -278,6 +305,15 @@ class CalculatorWindow(QWidget):
         except:
             self.ahri_calc = None
 
+        self._load_hspf2_calc()
+
+    def _load_hspf2_calc(self):
+        hspf2_path = os.path.join(self.project_root, "data", "usa_hspf2.json")
+        try:
+            self.hspf2_calc = AHRIHSPF2Calculator(hspf2_path)
+        except:
+            self.hspf2_calc = None
+
     def _get_float_val(self, widget: QLineEdit, field_name: str, allow_empty=False, allow_zero=False) -> float:
         """[9] 입력 유효성 검사 강화"""
         text = widget.text().strip()
@@ -312,16 +348,18 @@ class CalculatorWindow(QWidget):
         # [5] 입력 검증 로직 통일
         except InputValidationError as e:
             self.lbl_result.setText(f"⚠️ {str(e)}")
+            QMessageBox.warning(self, "입력 오류", str(e))
             if e.widget:
                 e.widget.setStyleSheet("border: 2px solid #E74C3C; background-color: #FDEDEC;")
                 e.widget.setFocus()
                 e.widget.selectAll()
         except Exception as e:
             self.lbl_result.setText(f"❌ 오류 발생: {str(e)}")
+            QMessageBox.critical(self, "계산 오류", str(e))
 
     def _clear_all_errors(self):
         """모든 위젯 스타일 리셋"""
-        for widgets in [self.input_widgets_iso, self.input_widgets_en, self.input_widgets_ahri]:
+        for widgets in [self.input_widgets_iso, self.input_widgets_en, self.input_widgets_ahri, self.input_widgets_hspf2]:
             for w in widgets.values():
                 w.setStyleSheet("")
 
@@ -357,8 +395,51 @@ class CalculatorWindow(QWidget):
         )
 
         seer2 = result.get("SEER2", 0.0)
-        # [1] 숫자 포맷 제거
-        self.lbl_result.setText(f"AHRI SEER2 ({system_type}) 결과: {seer2}")
+        result_text = f"AHRI SEER2 ({system_type}) 결과: {seer2}"
+
+        if system_type == "HP":
+            hspf2_result = self.calculate_hspf2_v3()
+            rounded_hspf2 = hspf2_result.get("rounded_hspf2")
+            result_text += f" / HSPF2 v3 결과: {rounded_hspf2}"
+
+        self.lbl_result.setText(result_text)
+
+    def _build_hspf2_v3_input(self):
+        """HSPF2 v3 UI 값을 canonical input으로 변환합니다."""
+        test_points = {
+            "A2": (self._get_float_val(self.input_widgets_ahri["A_Full_cap"], "A_Full 능력"),
+                   self._get_float_val(self.input_widgets_ahri["A_Full_pow"], "A_Full 전력")),
+        }
+
+        for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
+            test_points[point] = (
+                self._get_float_val(self.input_widgets_hspf2[f"{point}_cap"], f"{point} 능력"),
+                self._get_float_val(self.input_widgets_hspf2[f"{point}_pow"], f"{point} 전력"),
+            )
+
+        kwargs = {
+            "t_off": self._get_float_val(self.input_widgets_hspf2["t_off"], "t_off", allow_zero=True),
+            "t_on": self._get_float_val(self.input_widgets_hspf2["t_on"], "t_on", allow_zero=True),
+            "defrost_t_test_minutes": self._get_float_val(
+                self.input_widgets_hspf2["defrost_t_test_minutes"],
+                "defrost_t_test_minutes",
+                allow_zero=True,
+            ),
+            "defrost_t_max_minutes": self._get_float_val(
+                self.input_widgets_hspf2["defrost_t_max_minutes"],
+                "defrost_t_max_minutes",
+                allow_zero=True,
+            ),
+        }
+        return test_points, kwargs
+
+    def calculate_hspf2_v3(self):
+        """AHRI HSPF2 v3 strict 계산 로직 연결"""
+        if not self.hspf2_calc:
+            raise Exception("HSPF2 v3 계산기 설정 파일이 로드되지 않았습니다.")
+
+        test_points, kwargs = self._build_hspf2_v3_input()
+        return self.hspf2_calc.calculate_hspf2_v3(test_points, **kwargs)
 
     def calculate_iso(self):
         # ISO 로직 (단위 W)
