@@ -278,6 +278,7 @@ class EN14825Calculator:
         return {
             "capacity": capacity,
             "power": power,
+            "cop_pl": self._safe_div(capacity, power),
             "temp_c": float(temp_c) if temp_c is not None else None,
         }
 
@@ -333,6 +334,11 @@ class EN14825Calculator:
                 f"TOL must be <= Tbiv for SCOP heating calculation: "
                 f"TOL={points['TOL']['temp_c']}, Tbiv={points['Tbiv']['temp_c']}"
             )
+        if climate_data.get("label") == "Colder" and points["TOL"]["temp_c"] < -20:
+            raise ValueError(
+                "EN 14825 colder climate with TOL below -20°C requires an additional -15°C "
+                "capacity/COPPL calculation point. This input schema does not include that point yet."
+            )
 
         return points
 
@@ -345,50 +351,44 @@ class EN14825Calculator:
         ph = p_design_h * (tj - 16.0) / (t_design_h - 16.0)
         return max(0.0, ph)
 
-    def _scop_capacity_power_at_temp(self, tj: float, points: dict) -> tuple:
+    def _scop_capacity_cop_at_temp(self, tj: float, points: dict) -> tuple:
         tol_temp = points["TOL"]["temp_c"]
         if tj < tol_temp:
             return 0.0, 0.0, "below_tol_heat_pump_off"
 
         pairs = []
         for key, point in points.items():
-            pairs.append((point["temp_c"], point["capacity"], point["power"], key))
+            pairs.append((point["temp_c"], point["capacity"], point["cop_pl"], key))
         pairs.sort(key=lambda item: item[0])
 
         if tj <= pairs[0][0]:
-            _, capacity, power, key = pairs[0]
-            return capacity, power, f"clamped_to_{key}"
+            _, capacity, cop_pl, key = pairs[0]
+            return capacity, cop_pl, f"clamped_to_{key}"
 
         if tj >= pairs[-1][0]:
-            _, capacity, power, key = pairs[-1]
-            return capacity, power, f"clamped_to_{key}"
+            _, capacity, cop_pl, key = pairs[-1]
+            return capacity, cop_pl, f"clamped_to_{key}"
 
         for i in range(len(pairs) - 1):
-            t1, c1, p1, k1 = pairs[i]
-            t2, c2, p2, k2 = pairs[i + 1]
+            t1, c1, cop1, k1 = pairs[i]
+            t2, c2, cop2, k2 = pairs[i + 1]
             if t1 <= tj <= t2:
                 capacity = self._linear(tj, t1, c1, t2, c2)
-                power = self._linear(tj, t1, p1, t2, p2)
-                return max(0.0, capacity), max(0.0, power), f"linear_{k1}_{k2}"
+                cop_pl = self._linear(tj, t1, cop1, t2, cop2)
+                return max(0.0, capacity), max(0.0, cop_pl), f"linear_{k1}_{k2}"
 
         raise ValueError(f"SCOP interpolation failed at Tj={tj}")
 
-    def _scop_bin_cop(self, ph: float, pdh: float, power: float, cd: float) -> tuple:
+    def _scop_bin_energy_terms(self, ph: float, pdh: float, cop_pl: float) -> tuple:
         if ph <= 0:
             return 0.0, 0.0, 0.0, "no_heating_load"
-        if pdh <= 0 or power <= 0:
+        if pdh <= 0 or cop_pl <= 0:
             return 0.0, 0.0, ph, "electric_backup_only"
 
-        if pdh >= ph:
-            cr = min(1.0, self._safe_div(ph, pdh))
-            cop_dc = self._safe_div(pdh, power)
-            plf = max(1e-6, 1.0 - cd * (1.0 - cr))
-            cop_bin = cop_dc * plf
-            return cop_bin, ph, 0.0, "part_load"
-
-        cop_bin = self._safe_div(pdh, power)
-        elbu = ph - pdh
-        return cop_bin, pdh, elbu, "capacity_shortfall_with_backup"
+        elbu = max(0.0, ph - pdh)
+        heat_pump_load = ph - elbu
+        operating_case = "capacity_shortfall_with_backup" if elbu > 0 else "heat_pump_covers_load"
+        return cop_pl, heat_pump_load, elbu, operating_case
 
     def _calculate_scop_on(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
         temps = climate_data["heating_bin_temps_c"]
@@ -407,22 +407,23 @@ class EN14825Calculator:
             if ph <= 0:
                 continue
 
-            pdh, power, interpolation = self._scop_capacity_power_at_temp(float(tj), points)
-            cop_bin, compressor_heat, elbu, operating_case = self._scop_bin_cop(ph, pdh, power, cd)
-            if compressor_heat > 0 and cop_bin <= 0:
-                raise ValueError(f"SCOP COPbin must be > 0 at Tj={tj}")
+            pdh, cop_pl, interpolation = self._scop_capacity_cop_at_temp(float(tj), points)
+            cop_bin, heat_pump_load, elbu, operating_case = self._scop_bin_energy_terms(ph, pdh, cop_pl)
+            if heat_pump_load > 0 and cop_bin <= 0:
+                raise ValueError(f"SCOP COPPL must be > 0 at Tj={tj}")
 
             numerator += hj * ph
-            denominator += hj * (self._safe_div(compressor_heat, cop_bin) + elbu)
+            denominator += hj * (self._safe_div(heat_pump_load, cop_bin) + elbu)
 
             bin_details.append({
                 "temp_c": tj,
                 "hours": hj,
                 "ph": round(ph, 6),
                 "pdh": round(pdh, 6),
-                "power": round(power, 6),
+                "cop_pl": round(cop_pl, 6) if cop_pl > 0 else 0.0,
+                "equivalent_power": round(self._safe_div(pdh, cop_pl), 6) if cop_pl > 0 else 0.0,
                 "cop_bin": round(cop_bin, 6) if cop_bin > 0 else 0.0,
-                "compressor_heat": round(compressor_heat, 6),
+                "heat_pump_load": round(heat_pump_load, 6),
                 "elbu": round(elbu, 6),
                 "operating_case": operating_case,
                 "interpolation": interpolation,
@@ -504,8 +505,9 @@ class EN14825Calculator:
             "source": self.scop_config.get("source", {}),
             "bin_details": scop_on_data["bin_details"],
             "unimplemented_notes": [
-                "EN 14825 원문에서 manufacturer-declared capacity/COP interpolation constraints, rounding rules, and optional fixed/staged capacity-control branches must be verified before certification use.",
-                "This implementation covers the variable-capacity reversible air-to-air path using EU 206/2012 Annex II bins/design/operational hours and explicit user-declared A/B/C/D/TOL/Tbiv points.",
+                "The current API treats user-entered A/B/C/D/TOL/Tbiv capacity and power as already resolved part-load declared points for EN 14825 Clause 7.4.",
+                "If raw capacity-control step data is required, Clause 7.4.2.2 variable-capacity closest-step and +/-10% logic needs an expanded input schema.",
+                "SCOPnet from Equation (10) is not returned because the requested output is SCOP.",
             ],
         }
 

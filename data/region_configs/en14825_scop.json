@@ -1,19 +1,18 @@
 {
-  "standard": "EN 14825 / Commission Regulation (EU) No 206/2012 Annex II",
+  "standard": "BS EN 14825:2012 / EN 14825:2012 (E)",
   "mode": "heating",
   "metric": "SCOP",
   "unit_system": "metric",
   "system_type": "air_to_air_variable_capacity_reversible",
   "source": {
-    "document": "Commission Regulation (EU) No 206/2012",
-    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32012R0206",
+    "document": "EN14825-병합됨.pdf",
     "tables": [
-      "Annex II Table 1: cooling and heating season bins",
-      "Annex II Table 3: reference design conditions",
-      "Annex II Table 4: operational hours"
+      "Table 37: heating season bin hours",
+      "Table D.2: hours used for reference SCOP",
+      "Table D.4: crankcase heater mode hours for reference SCOP"
     ]
   },
-  "_comment": "SCOP scaffold for air conditioners excluding single/double duct. Bin hours, design conditions, and operating hours are sourced from EU 206/2012 Annex II. Detailed EN 14825 manufacturer declaration rules that are not visible in this public source are reported by calculator output as unimplemented_notes.",
+  "_comment": "SCOP scaffold for air conditioners excluding single/double duct. Bin hours and operating hours are sourced from the uploaded EN14825 PDF. The calculator treats user-entered A/B/C/D/TOL/Tbiv capacity and power as already resolved part-load declared points for Clause 7.4.",
   "heating_test_point_schema": {
     "A": {"outdoor_db_c": -7, "description": "Heating declared point A"},
     "B": {"outdoor_db_c": 2, "description": "Heating declared point B"},
