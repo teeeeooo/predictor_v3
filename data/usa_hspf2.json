@@ -1,0 +1,32 @@
+{
+  "standard": "AHRI 210/240-2023",
+  "region": "USA",
+  "mode": "heating",
+  "metric": "HSPF2",
+  "unit_system": "imperial",
+  "system_type": "air_to_air_variable_capacity",
+  "_comment": "Initial HSPF2 scaffold. TODO: Replace temporary bin_hours with confirmed AHRI 210/240 or DOE Appendix M1 table values.",
+  "bin_data": {
+    "bin_temps": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8],
+    "bin_hours": [160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20]
+  },
+  "test_point_temps": {
+    "H1_full": 47,
+    "H2_full": 17,
+    "H3_full": 5,
+    "H1_low": 47,
+    "H2_low": 17
+  },
+  "constants": {
+    "balance_temp_f": 65,
+    "design_temp_f": 5,
+    "defrost_credit_default": 1.0,
+    "demand_defrost_factor_default": 0.9,
+    "off_mode_hours": 737
+  },
+  "defaults": {
+    "cd_default_low": 0.25,
+    "cd_default_full": 0.25,
+    "p_w_off": 0.0
+  }
+}

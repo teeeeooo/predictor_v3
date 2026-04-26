@@ -1,0 +1,40 @@
+{
+  "_comment": "EN 14825:2012 유럽 SEER 규격 설정 (Reversible, Air-to-air, ≤12kW)",
+  "standard": "EN 14825:2012",
+  "region": "EU",
+  "mode": "cooling",
+  "unit_type": "reversible",
+
+  "design": {
+    "t_design_c": 35,
+    "h_ce": 350,
+    "_comment_hce": "등가 냉방시간 (h), Annex D Table D.1"
+  },
+
+  "test_point_temps": {
+    "A": 35,
+    "B": 30,
+    "C": 25,
+    "D": 20,
+    "_comment": "Table 2 Air-to-air 테스트 포인트 외기온도 (°C)"
+  },
+
+  "standby_hours": {
+    "h_to":  221,
+    "h_sb":  2142,
+    "h_ck":  2672,
+    "h_off": 0,
+    "_comment": "Annex D Reversible 기준 (Table D.1, D.3)"
+  },
+
+  "degradation": {
+    "cd_default": 0.25,
+    "_comment": "열화계수 기본값 (규격 6.4.2.1, 미측정 시 사용)"
+  },
+
+  "bin_data": {
+    "_comment": "Table 36 냉방 빈 데이터, 합계 2151h",
+    "temps": [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40],
+    "hours": [205,227,225,225,216,215,218,197,178,158,137,109,88,63,39,31,24,17,13,9,4,3,1,0]
+  }
+}

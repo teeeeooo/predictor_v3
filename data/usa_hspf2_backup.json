@@ -1,0 +1,30 @@
+{
+  "standard": "AHRI 210/240-2023",
+  "region": "USA",
+  "mode": "heating",
+  "metric": "HSPF2",
+  "unit_system": "imperial",
+  "system_type": "air_to_air_variable_capacity",
+  "_comment": "Initial HSPF2 scaffold. Fill AHRI 210/240 heating bin data and rating constants during the HSPF2 implementation task.",
+  "bin_data": {
+    "bin_temps": [],
+    "bin_hours": []
+  },
+  "test_point_temps": {
+    "H1_full": 47,
+    "H2_full": 17,
+    "H3_full": 5,
+    "H1_low": 47,
+    "H2_low": 17
+  },
+  "constants": {
+    "defrost_credit_default": 1.0,
+    "demand_defrost_factor_default": 0.9,
+    "off_mode_hours": 737
+  },
+  "defaults": {
+    "cd_default_low": 0.25,
+    "cd_default_full": 0.25,
+    "p_w_off": 0.0
+  }
+}
