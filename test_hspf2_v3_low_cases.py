@@ -69,10 +69,26 @@ no_low_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42)
 no_low_without_h42 = calc.calculate_hspf2_v3(canonical_without_h42)
 low_result = calc.calculate_hspf2_v3(canonical_with_low)
 
-assert round(no_low_with_h42["raw_hspf2"], 6) == 8.986770
-assert round(no_low_without_h42["raw_hspf2"], 6) == 9.276499
+assert round(no_low_with_h42["raw_hspf2"], 6) == 9.211381
+assert round(no_low_without_h42["raw_hspf2"], 6) == 9.511685
 assert_case_conservation(no_low_with_h42)
 assert_case_conservation(low_result)
+
+frost_rows = [row for row in no_low_with_h42["bin_details"] if 17 < row["temp_F"] < 45]
+assert frost_rows
+for row in no_low_with_h42["bin_details"]:
+    assert row["defrost_model"] == "default_linear_placeholder"
+    assert row["f_def"] == 1.03
+    assert row["defrost_control_type"] == "demand"
+    assert row["defrost_t_test_minutes"] == 90
+    assert row["defrost_t_max_minutes"] == 720
+    expected_q_full_adj = round(row["q_full_raw"] * row["f_frost_capacity"] * row["f_def"], 2)
+    assert math.isclose(row["q_full_adj"], expected_q_full_adj, abs_tol=0.02)
+    if 17 < row["temp_F"] < 45:
+        assert row["is_frost_region"] is True
+        assert row["f_frost_capacity"] < 1.0
+    else:
+        assert row["f_frost_capacity"] == 1.0
 
 operating_cases = {row["operating_case"] for row in low_result["bin_details"]}
 assert "Case I" in operating_cases

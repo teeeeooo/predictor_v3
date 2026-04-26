@@ -146,6 +146,8 @@
     "defrost_control_type": "demand",
     "t_defrost_test": 35,
     "t_defrost_max": 45,
+    "defrost_t_test_minutes": 90,
+    "defrost_t_max_minutes": 720,
     "demand_defrost_credit_max": 1.03
   },
   "defaults": {

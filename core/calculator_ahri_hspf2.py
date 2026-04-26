@@ -410,16 +410,26 @@ class AHRIHSPF2Calculator:
         t_od  = bin_table.get("outdoor_design_temp_f", 5)
         t_obo = self.constants.get("t_OBO", 45)
         defrost_control_type = self.constants.get("defrost_control_type", "demand")
-        t_defrost_test = self.constants.get("t_defrost_test", 35)
-        t_defrost_max = self.constants.get("t_defrost_max", 45)
+        defrost_t_test_minutes = self.constants.get("defrost_t_test_minutes", 90)
+        defrost_t_max_minutes = self.constants.get("defrost_t_max_minutes", 720)
         aux_cop = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0))
         aux_eer = aux_cop * 3.412
 
-        def _calc_f_def_placeholder(temp_f: float, constants: dict) -> float:
-            # AHRI Eq. 11.107 적용 예정 (Tj별 Bin 함수 구현 필요).
-            # F_def는 모든 bin에 같은 상수를 주는 값이 아니라,
-            # 각 bin temperature Tj와 defrost metadata를 받아 산정되는 hook이다.
-            return 1.0
+        def _calculate_f_def(constants: dict) -> float:
+            # AHRI 210/240 Eq. 11.107: Ttest/Tmax는 온도가 아니라
+            # defrost termination 사이 시간[minutes]이다. 따라서 F_def는
+            # bin temperature 함수가 아니라 장비/시험조건 기반 상수이다.
+            if constants.get("defrost_control_type") != "demand":
+                return 1.0
+
+            t_test = max(constants.get("defrost_t_test_minutes", 90), 90)
+            t_max = min(constants.get("defrost_t_max_minutes", 720), 720)
+            if t_max <= 90:
+                # Eq. 11.107 denominator (Tmax - 90) division 방지.
+                # 유효한 demand defrost 시간 범위가 아니므로 credit 미적용.
+                return 1.0
+
+            return 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
 
         total_heating_btu = 0.0
         total_energy_wh = 0.0
@@ -436,22 +446,23 @@ class AHRIHSPF2Calculator:
             q_full_raw, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
             q_low_raw, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
             is_frost_region = temp_f <= t_obo
-            f_def = _calc_f_def_placeholder(temp_f, self.constants)
+            f_def = _calculate_f_def(self.constants)
             defrost_model = "default_linear_placeholder"
             if 17 < temp_f < t_obo:
                 f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
             else:
                 f_frost_capacity = 1.0
-            q_full = q_full_raw * f_frost_capacity
-            q_low_tj = q_low_raw * f_frost_capacity if q_low_raw is not None else None
-            # TODO: AHRI F_def 정식 구현 위치는 T_test/T_max 스키마 확정 후 결정
+            q_full_adj = q_full_raw * f_frost_capacity * f_def
+            q_low_adj = q_low_raw * f_frost_capacity * f_def if q_low_raw is not None else None
+            q_full = q_full_adj
+            q_low_tj = q_low_adj
             # NOTE: f_frost_capacity는 AHRI F_def 정식 구현 전의 conservative
             # frost capacity placeholder이다. 이 계수는 heat pump capacity
             # q_full_raw/q_low_raw에만 적용하고, supplemental resistance heat에는
             # 적용하지 않는다.
             # NOTE(AHRI 210/240-2026 Eq. 11.107): F_def는 Demand-defrost
-            # enhancement factor로 취급한다. 1.03 고정값이 아니며,
-            # T_test 및 T_max 기반 식으로 산정해야 한다.
+            # enhancement factor이다. Ttest/Tmax는 시간[minutes]이며,
+            # heat pump capacity에만 적용하고 전력에는 적용하지 않는다.
             # NOTE(AHRI E13.12): 우선 보정 후보는 heat pump capacity
             # Q_h(Tj) = Q_h_raw(Tj) * F_def 위치이다. 소비 전력(P) 보정
             # 또는 COP 보정 여부는 아직 확정하지 않는다.
@@ -539,11 +550,15 @@ class AHRIHSPF2Calculator:
                 "is_frost_region": is_frost_region,
                 "f_def": f_def,
                 "defrost_control_type": defrost_control_type,
-                "t_defrost_test": t_defrost_test,
-                "t_defrost_max": t_defrost_max,
+                "defrost_t_test_minutes": defrost_t_test_minutes,
+                "defrost_t_max_minutes": defrost_t_max_minutes,
                 "f_frost_capacity": round(f_frost_capacity, 6),
                 "defrost_model": defrost_model,
                 "building_load": round(building_load, 2),
+                "q_full_raw": round(q_full_raw, 2),
+                "q_full_adj": round(q_full_adj, 2),
+                "q_low_raw": round(q_low_raw, 2) if q_low_raw is not None else None,
+                "q_low_adj": round(q_low_adj, 2) if q_low_adj is not None else None,
                 "q_full": round(q_full, 2),
                 "p_full": round(p_full, 2),
                 "plr": round(plr, 6) if plr is not None else None,
