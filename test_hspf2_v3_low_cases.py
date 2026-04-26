@@ -101,8 +101,8 @@ cutout_table["fractional_bin_hours"][14] = 0.0
 cutout_table["fractional_bin_hours"][15] = 0.001
 cutout_result = cutout_calc.calculate_hspf2_v3(canonical_with_h42)
 
-assert round(no_low_with_h42["raw_hspf2"], 6) == 10.155495
-assert round(no_low_without_h42["raw_hspf2"], 6) == 10.504608
+assert round(no_low_with_h42["raw_hspf2"], 6) == 10.220373
+assert round(no_low_without_h42["raw_hspf2"], 6) == 10.574039
 assert_case_conservation(no_low_with_h42)
 assert_case_conservation(low_result)
 assert_case_conservation(cutout_result)
@@ -126,9 +126,7 @@ for row in no_low_with_h42["bin_details"]:
     assert row["PLF_j"] == 1.0
     if 17 < row["temp_F"] < 45:
         assert row["is_frost_region"] is True
-        assert row["f_frost_capacity"] < 1.0
-    else:
-        assert row["f_frost_capacity"] == 1.0
+    assert row["f_frost_capacity"] == 1.0  # f_frost_capacity removed; always 1.0
 
 operating_cases = {row["operating_case"] for row in low_result["bin_details"]}
 assert "Case I" in operating_cases

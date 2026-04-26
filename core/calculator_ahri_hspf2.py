@@ -449,18 +449,11 @@ class AHRIHSPF2Calculator:
             is_frost_region = temp_f <= t_obo
             f_def = _calculate_f_def(self.constants)
             defrost_model = "default_linear_placeholder"
-            if 17 < temp_f < t_obo:
-                f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
-            else:
-                f_frost_capacity = 1.0
-            q_full_adj = q_full_raw * f_frost_capacity
-            q_low_adj = q_low_raw * f_frost_capacity if q_low_raw is not None else None
+            f_frost_capacity = 1.0  # non-AHRI ad-hoc capacity factor removed per audit
+            q_full_adj = q_full_raw
+            q_low_adj = q_low_raw
             q_full = q_full_adj
             q_low_tj = q_low_adj
-            # AHRI 210/240 Eq. 11.107 demand-defrost credit and the project
-            # frost capacity factor are applied only to heat pump capacity.
-            # Supplemental resistance heat and compressor power are not adjusted
-            # by these capacity factors in the v3 production path.
 
             # case 0: BL <= 0 (compressor off)
             # Case I: BL <= q_low_tj (low speed cycling)
@@ -475,6 +468,7 @@ class AHRIHSPF2Calculator:
                 X_j = None
                 PLF_j = 1.0
                 case_ii_alpha = None
+                case_ii_cop_interp = None
                 q_comp = 0.0
                 q_delivered = 0.0
                 compressor_energy = 0.0
@@ -491,6 +485,7 @@ class AHRIHSPF2Calculator:
                 plr = X_j
                 plf = PLF_j
                 case_ii_alpha = None
+                case_ii_cop_interp = None
                 q_delivered = building_load * hours
                 q_comp = q_delivered
                 compressor_energy = p_low_tj * X_j * hours / PLF_j
@@ -503,10 +498,14 @@ class AHRIHSPF2Calculator:
                 plf = None
                 X_j = None
                 PLF_j = 1.0
-                # AHRI Case II Power Interpolation applied.
+                # AHRI Case II COP interpolation (AHRI 210/240-2026 Section 11.2.2.4).
                 alpha = self._safe_div(building_load - q_low_tj, q_full - q_low_tj)
                 case_ii_alpha = min(1.0, max(0.0, alpha))
-                p_interpolated = p_low_tj + case_ii_alpha * (p_full - p_low_tj)
+                cop_low = self._safe_div(q_low_adj, p_low_tj * 3.412)
+                cop_full = self._safe_div(q_full_adj, p_full * 3.412)
+                cop_interp = cop_low + case_ii_alpha * (cop_full - cop_low)
+                case_ii_cop_interp = cop_interp
+                p_interpolated = self._safe_div(building_load, cop_interp * 3.412)
                 q_delivered = building_load * hours
                 q_comp = q_delivered
                 compressor_energy = p_interpolated * hours
@@ -520,6 +519,7 @@ class AHRIHSPF2Calculator:
                 X_j = None
                 PLF_j = 1.0
                 case_ii_alpha = None
+                case_ii_cop_interp = None
                 q_delivered = building_load * hours
                 q_comp = q_delivered
                 compressor_energy = p_full * plr * hours
@@ -533,8 +533,7 @@ class AHRIHSPF2Calculator:
                 X_j = None
                 PLF_j = 1.0
                 case_ii_alpha = None
-                # AHRI E13.12: Demand-defrost credit applies to heat pump
-                # capacity only; supplemental resistance heat is excluded.
+                case_ii_cop_interp = None
                 q_comp = q_full * hours
                 q_delivered = building_load * hours
                 compressor_energy = p_full * hours
@@ -549,6 +548,7 @@ class AHRIHSPF2Calculator:
                 "X_j": X_j,
                 "PLF_j": PLF_j,
                 "case_ii_alpha": case_ii_alpha,
+                "case_ii_cop_interp": case_ii_cop_interp,
                 "is_frost_region": is_frost_region,
                 "f_def": f_def,
                 "f_frost_capacity": f_frost_capacity,
@@ -578,6 +578,7 @@ class AHRIHSPF2Calculator:
                 "X_j": None,
                 "PLF_j": 1.0,
                 "case_ii_alpha": None,
+                "case_ii_cop_interp": None,
                 "is_frost_region": temp_f <= t_obo,
                 "f_def": 1.0,
                 "f_frost_capacity": 1.0,
@@ -609,7 +610,10 @@ class AHRIHSPF2Calculator:
             building_load = self._building_load_v3(
                 temp_f, q_h1_calc, c_vs, t_zl, t_od
             )
-            if temp_f <= t_off:
+            q_full_cop, p_full_cop = self._canonical_capacity_power_at_temp(temp_f, full_points)
+            cop_j = self._safe_div(q_full_cop, p_full_cop * 3.412) if p_full_cop > 0 else 0.0
+            cop_cutout = p_full_cop > 0 and cop_j < 1.0
+            if temp_f <= t_off or cop_cutout:
                 delta_j = 0.0
             elif temp_f <= t_on:
                 delta_j = 0.5
@@ -657,6 +661,8 @@ class AHRIHSPF2Calculator:
                 "operating_case": values["operating_case"],
                 "building_load": round(building_load, 2),
                 "delta_j": delta_j,
+                "cop_j": round(cop_j, 6),
+                "cop_cutout": cop_cutout,
                 "f_frost_capacity": round(values["f_frost_capacity"], 6),
                 "f_def": values["f_def"],
                 "f_def_application": values["f_def_application"],
@@ -714,6 +720,12 @@ class AHRIHSPF2Calculator:
                         round(values["case_ii_alpha"], 6)
                         if values["case_ii_alpha"] is not None else None
                     ),
+                    "case_ii_cop_interp": (
+                        round(values["case_ii_cop_interp"], 6)
+                        if values["case_ii_cop_interp"] is not None else None
+                    ),
+                    "cop_j": round(cop_j, 6),
+                    "cop_cutout": cop_cutout,
                     "hp_operating_case": hp_values["operating_case"] if hp_values is not None else None,
                     "q_comp_hp_case": round(hp_values["q_comp"], 2) if hp_values is not None else None,
                     "e_comp_hp_case": round(hp_values["e_comp"], 2) if hp_values is not None else None,
