@@ -118,12 +118,34 @@
 - 데이터: data/usa_hspf2.json (Region IV bin table, test point schema)
 
 
-### HSPF2 P2 미구현 항목 (수정 금지)
-- q_H1_calc 정식 결정 로직 (H1_Full/H1_Nom/H3_Full 기반)
-- 보간 구조 개선 (t_OBO=45°F 경계, H2Int/H22 구간)
-- H1Low/H3Low/H2Int 입력 스키마 → Case I/II 분기 구현
-- defrost penalty, off-mode
-- PLF/Cd 이외 cycling 세부 구현
+### Low Speed (P2 준비 단계)
+- Low speed canonical points:
+  - H11 (47°F low)
+  - H21 (35°F low)
+  - H31 (17°F low)
+- 선형 보간 기반 q_low(t_j), p_low(t_j) 구현 완료
+- Low 데이터 없을 경우 기존 full-only path 유지 (완전 backward compatible)
+
+### bin_details 표준 구조 (디버그/검증용)
+
+- temp_F
+- hours
+- building_load
+- q_full
+- q_low
+- q_j
+- q_comp
+- q_aux
+- E_j
+- e_comp
+- e_aux
+- operating_case
+- C_D
+
+검증:
+- q_j = q_comp + q_aux
+- E_j = e_comp + e_aux
+- q_j = building_load × hours
 
 ### COLUMNS 자동완성 구조
 - 단순 1단계 매핑: base_model.py의 on_dropdown_changed() 처리
