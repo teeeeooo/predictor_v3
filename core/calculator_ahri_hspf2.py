@@ -395,13 +395,14 @@ class AHRIHSPF2Calculator:
         hlh = bin_table["heating_load_hours"]
         bin_hours = [frac * hlh for frac in fractional_bin_hours]
 
-        # NOTE(AHRI 210/240 Section 11.2.2.3, Eq. 11.104):
-        # q_H1_calc는 Heating Load Line의 기준 capacity 인자이다.
-        # 현재 v3는 Standard 시스템용 simplified canonical fallback으로
-        # H12 capacity(47 F H1_Full)를 q_H1_calc로 그대로 사용한다.
-        # H32/H42는 Tj 성능 보간/외삽에만 사용하며 q_H1_calc 보정에는
-        # 사용하지 않는다. Full variable-capacity path에서는 H1_calc
-        # 결정 로직을 별도로 재검토한다.
+        # NOTE(AHRI 210/240-2024 Section 11.2.2.4, Eq. 11.181):
+        # "If the H1Full test is conducted" the calculated H1 capacity is
+        # set to the tested H1Full capacity. In this v3 scope, canonical H12
+        # is the required H1Full input, so q_H1_calc is formally mapped to
+        # H12 capacity for the heating load line.
+        # H1Nom and H3Full/CSF fallback branches require compressor-speed and
+        # airflow-condition metadata that v3 does not yet collect; do not infer
+        # those branches from H32/H42. H32/H42 remain Tj capacity curve points.
         h1_full_capacity_btu, _ = full_points["H12"]
         q_h1_calc = h1_full_capacity_btu
         assert q_h1_calc > 0
@@ -411,6 +412,8 @@ class AHRIHSPF2Calculator:
         t_od  = bin_table.get("outdoor_design_temp_f", 5)
         t_obo = self.constants.get("t_OBO", 45)
         t_off = self.constants.get("t_off", -10)
+        t_on = self.constants.get("t_on", -5)
+        assert t_on > t_off
         defrost_control_type = self.constants.get("defrost_control_type", "demand")
         defrost_t_test_minutes = self.constants.get("defrost_t_test_minutes", 90)
         defrost_t_max_minutes = self.constants.get("defrost_t_max_minutes", 720)
@@ -433,6 +436,156 @@ class AHRIHSPF2Calculator:
 
             return 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
 
+        def _hp_case_at_bin(temp_f: float, hours: float, building_load: float) -> dict:
+            q_full_raw, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
+            q_low_raw, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
+            is_frost_region = temp_f <= t_obo
+            f_def = _calculate_f_def(self.constants)
+            defrost_model = "default_linear_placeholder"
+            if 17 < temp_f < t_obo:
+                f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
+            else:
+                f_frost_capacity = 1.0
+            q_full_adj = q_full_raw * f_frost_capacity * f_def
+            q_low_adj = q_low_raw * f_frost_capacity * f_def if q_low_raw is not None else None
+            q_full = q_full_adj
+            q_low_tj = q_low_adj
+            # NOTE: f_frost_capacity는 AHRI F_def 정식 구현 전의 conservative
+            # frost capacity placeholder이다. 이 계수는 heat pump capacity
+            # q_full_raw/q_low_raw에만 적용하고, supplemental resistance heat에는
+            # 적용하지 않는다.
+            # NOTE(AHRI 210/240-2026 Eq. 11.107): F_def는 Demand-defrost
+            # enhancement factor이다. Ttest/Tmax는 시간[minutes]이며,
+            # heat pump capacity에만 적용하고 전력에는 적용하지 않는다.
+            # NOTE(AHRI E13.12): 우선 보정 후보는 heat pump capacity
+            # Q_h(Tj) = Q_h_raw(Tj) * F_def 위치이다. 소비 전력(P) 보정
+            # 또는 COP 보정 여부는 아직 확정하지 않는다.
+
+            # case 0: BL <= 0 (compressor off)
+            # Case I: BL <= q_low_tj (low speed cycling)
+            # Case II: q_low_tj < BL < q_full (modulating)
+            # Case S: BL <= q_full fallback (simplified full cycling)
+            # Case III: BL > q_full (full load + auxiliary heat)
+            if building_load <= 0:
+                case = 0
+                operating_case = "Case 0"
+                plr = None
+                plf = None
+                X_j = None
+                PLF_j = 1.0
+                q_comp = 0.0
+                q_delivered = 0.0
+                compressor_energy = 0.0
+                q_aux = 0.0
+                e_aux = 0.0
+            elif q_low_tj is not None and building_load <= q_low_tj:
+                case = 1
+                operating_case = "Case I"
+                # AHRI heating cyclic degradation at low speed.
+                # X_j: load factor at bin j; PLF_j: part load factor.
+                X_j = self._safe_div(building_load, q_low_tj)
+                PLF_j = 1.0 - c_d_heating * (1.0 - X_j)
+                PLF_j = max(PLF_j, 0.01)  # Avoid near-zero PLF division.
+                plr = X_j
+                plf = PLF_j
+                q_delivered = building_load * hours
+                q_comp = q_delivered
+                compressor_energy = p_low_tj * X_j * hours / PLF_j
+                q_aux = 0.0
+                e_aux = 0.0
+            elif q_low_tj is not None and q_low_tj < building_load < q_full and q_full != q_low_tj:
+                case = 1
+                operating_case = "Case II"
+                x_low = self._safe_div(q_full - building_load, q_full - q_low_tj)
+                x_full = 1.0 - x_low
+                plr = None
+                plf = None
+                X_j = None
+                PLF_j = 1.0
+                q_delivered = building_load * hours
+                q_comp = q_delivered
+                compressor_energy = (p_low_tj * x_low + p_full * x_full) * hours
+                q_aux = 0.0
+                e_aux = 0.0
+            elif building_load <= q_full:
+                case = 1
+                operating_case = "Case S"
+                plr = self._safe_div(building_load, q_full)
+                plf = 1.0
+                X_j = None
+                PLF_j = 1.0
+                q_delivered = building_load * hours
+                q_comp = q_delivered
+                compressor_energy = p_full * plr * hours
+                q_aux = 0.0
+                e_aux = 0.0
+            else:
+                case = 2
+                operating_case = "Case III"
+                plr = None
+                plf = None
+                X_j = None
+                PLF_j = 1.0
+                # NOTE(AHRI E13.12): Demand-defrost credit은 heat pump
+                # capacity에만 적용 후보로 둔다. supplemental resistance heat
+                # q_aux/e_aux에는 해당 credit을 적용하지 말 것.
+                q_comp = q_full * hours
+                q_delivered = building_load * hours
+                compressor_energy = p_full * hours
+                q_aux = (building_load - q_full) * hours
+                e_aux = self._safe_div(q_aux, aux_eer)
+
+            return {
+                "case": case,
+                "operating_case": operating_case,
+                "plr": plr,
+                "plf": plf,
+                "X_j": X_j,
+                "PLF_j": PLF_j,
+                "is_frost_region": is_frost_region,
+                "f_def": f_def,
+                "f_frost_capacity": f_frost_capacity,
+                "defrost_model": defrost_model,
+                "q_full_raw": q_full_raw,
+                "q_full_adj": q_full_adj,
+                "q_low_raw": q_low_raw,
+                "q_low_adj": q_low_adj,
+                "q_full": q_full,
+                "p_full": p_full,
+                "q_comp": q_comp,
+                "q_j": q_delivered,
+                "e_comp": compressor_energy,
+                "q_aux": q_aux,
+                "e_aux": e_aux,
+            }
+
+        def _cutout_case_at_bin(temp_f: float, hours: float, building_load: float) -> dict:
+            q_delivered = building_load * hours
+            q_aux = q_delivered
+            return {
+                "case": 0,
+                "operating_case": "Cut-out",
+                "plr": None,
+                "plf": None,
+                "X_j": None,
+                "PLF_j": 1.0,
+                "is_frost_region": temp_f <= t_obo,
+                "f_def": 1.0,
+                "f_frost_capacity": 1.0,
+                "defrost_model": "cut_out_no_defrost_adjustment",
+                "q_full_raw": 0.0,
+                "q_full_adj": 0.0,
+                "q_low_raw": None,
+                "q_low_adj": None,
+                "q_full": 0.0,
+                "p_full": 0.0,
+                "q_comp": 0.0,
+                "q_j": q_delivered,
+                "e_comp": 0.0,
+                "q_aux": q_aux,
+                "e_aux": self._safe_div(q_aux, 3.412),
+            }
+
         total_heating_btu = 0.0
         total_energy_wh = 0.0
         bin_details = []
@@ -445,167 +598,83 @@ class AHRIHSPF2Calculator:
             building_load = self._building_load_v3(
                 temp_f, q_h1_calc, c_vs, t_zl, t_od
             )
-            delta_j = 0 if temp_f <= t_off else 1
-
-            if delta_j == 0:
-                case = 0
-                operating_case = "Cut-out"
-                plr = None
-                plf = None
-                X_j = None
-                PLF_j = 1.0
-                is_frost_region = temp_f <= t_obo
-                f_def = 1.0
-                f_frost_capacity = 1.0
-                defrost_model = "cut_out_no_defrost_adjustment"
-                q_full_raw = 0.0
-                q_full_adj = 0.0
-                q_low_raw = None
-                q_low_adj = None
-                q_full = 0.0
-                p_full = 0.0
-                q_delivered = building_load * hours
-                q_comp = 0.0
-                compressor_energy = 0.0
-                q_aux = q_delivered
-                e_aux = self._safe_div(q_aux, 3.412)
+            if temp_f <= t_off:
+                delta_j = 0.0
+            elif temp_f <= t_on:
+                delta_j = 0.5
             else:
-                q_full_raw, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
-                q_low_raw, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
-                is_frost_region = temp_f <= t_obo
-                f_def = _calculate_f_def(self.constants)
-                defrost_model = "default_linear_placeholder"
-                if 17 < temp_f < t_obo:
-                    f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
-                else:
-                    f_frost_capacity = 1.0
-                q_full_adj = q_full_raw * f_frost_capacity * f_def
-                q_low_adj = q_low_raw * f_frost_capacity * f_def if q_low_raw is not None else None
-                q_full = q_full_adj
-                q_low_tj = q_low_adj
-                # NOTE: f_frost_capacity는 AHRI F_def 정식 구현 전의 conservative
-                # frost capacity placeholder이다. 이 계수는 heat pump capacity
-                # q_full_raw/q_low_raw에만 적용하고, supplemental resistance heat에는
-                # 적용하지 않는다.
-                # NOTE(AHRI 210/240-2026 Eq. 11.107): F_def는 Demand-defrost
-                # enhancement factor이다. Ttest/Tmax는 시간[minutes]이며,
-                # heat pump capacity에만 적용하고 전력에는 적용하지 않는다.
-                # NOTE(AHRI E13.12): 우선 보정 후보는 heat pump capacity
-                # Q_h(Tj) = Q_h_raw(Tj) * F_def 위치이다. 소비 전력(P) 보정
-                # 또는 COP 보정 여부는 아직 확정하지 않는다.
+                delta_j = 1.0
 
-                # case 0: BL <= 0 (compressor off)
-                # Case I: BL <= q_low_tj (low speed cycling)
-                # Case II: q_low_tj < BL < q_full (modulating)
-                # Case S: BL <= q_full fallback (simplified full cycling)
-                # Case III: BL > q_full (full load + auxiliary heat)
-                if building_load <= 0:
-                    case = 0
-                    operating_case = "Case 0"
-                    plr = None
-                    plf = None
-                    X_j = None
-                    PLF_j = 1.0
-                    q_comp = 0.0
-                    q_delivered = 0.0
-                    compressor_energy = 0.0
-                    q_aux = 0.0
-                    e_aux = 0.0
-                elif q_low_tj is not None and building_load <= q_low_tj:
-                    case = 1
-                    operating_case = "Case I"
-                    # AHRI heating cyclic degradation at low speed.
-                    # X_j: load factor at bin j; PLF_j: part load factor.
-                    X_j = self._safe_div(building_load, q_low_tj)
-                    PLF_j = 1.0 - c_d_heating * (1.0 - X_j)
-                    PLF_j = max(PLF_j, 0.01)  # Avoid near-zero PLF division.
-                    plr = X_j
-                    plf = PLF_j
-                    q_delivered = building_load * hours
-                    q_comp = q_delivered
-                    compressor_energy = p_low_tj * X_j * hours / PLF_j
-                    q_aux = 0.0
-                    e_aux = 0.0
-                elif q_low_tj is not None and q_low_tj < building_load < q_full and q_full != q_low_tj:
-                    case = 1
-                    operating_case = "Case II"
-                    x_low = self._safe_div(q_full - building_load, q_full - q_low_tj)
-                    x_full = 1.0 - x_low
-                    plr = None
-                    plf = None
-                    X_j = None
-                    PLF_j = 1.0
-                    q_delivered = building_load * hours
-                    q_comp = q_delivered
-                    compressor_energy = (p_low_tj * x_low + p_full * x_full) * hours
-                    q_aux = 0.0
-                    e_aux = 0.0
-                elif building_load <= q_full:
-                    case = 1
-                    operating_case = "Case S"
-                    plr = self._safe_div(building_load, q_full)
-                    plf = 1.0
-                    X_j = None
-                    PLF_j = 1.0
-                    q_delivered = building_load * hours
-                    q_comp = q_delivered
-                    compressor_energy = p_full * plr * hours
-                    q_aux = 0.0
-                    e_aux = 0.0
-                else:
-                    case = 2
-                    operating_case = "Case III"
-                    plr = None
-                    plf = None
-                    X_j = None
-                    PLF_j = 1.0
-                    # NOTE(AHRI E13.12): Demand-defrost credit은 heat pump
-                    # capacity에만 적용 후보로 둔다. supplemental resistance heat
-                    # q_aux/e_aux에는 해당 credit을 적용하지 말 것.
-                    q_comp = q_full * hours
-                    q_delivered = building_load * hours
-                    compressor_energy = p_full * hours
-                    q_aux = (building_load - q_full) * hours
-                    e_aux = self._safe_div(q_aux, aux_eer)
+            if delta_j == 0.0:
+                values = _cutout_case_at_bin(temp_f, hours, building_load)
+                hp_values = None
+                cutout_values = values
+            elif delta_j == 1.0:
+                values = _hp_case_at_bin(temp_f, hours, building_load)
+                hp_values = values
+                cutout_values = None
+            else:
+                hp_values = _hp_case_at_bin(temp_f, hours, building_load)
+                cutout_values = _cutout_case_at_bin(temp_f, hours, building_load)
+                values = dict(hp_values)
+                values["operating_case"] = "Fractional"
+                values["q_comp"] = hp_values["q_comp"] * delta_j
+                values["e_comp"] = hp_values["e_comp"] * delta_j
+                values["q_aux"] = (
+                    hp_values["q_aux"] * delta_j
+                    + cutout_values["q_aux"] * (1.0 - delta_j)
+                )
+                values["e_aux"] = (
+                    hp_values["e_aux"] * delta_j
+                    + cutout_values["e_aux"] * (1.0 - delta_j)
+                )
+                values["q_j"] = values["q_comp"] + values["q_aux"]
 
-            E_j = compressor_energy + e_aux
-            total_heating_btu += q_delivered
+            E_j = values["e_comp"] + values["e_aux"]
+            total_heating_btu += values["q_j"]
             total_energy_wh += E_j
 
             bin_details.append({
                 "bin": i + 1,
                 "temp_F": temp_f,
                 "hours": hours,
-                "case": case,
-                "operating_case": operating_case,
+                "case": values["case"],
+                "operating_case": values["operating_case"],
                 "delta_j": delta_j,
                 "C_D": c_d,
                 "c_d_heating": c_d_heating,
-                "X_j": round(X_j, 6) if X_j is not None else None,
-                "PLF_j": round(PLF_j, 6),
-                "is_frost_region": is_frost_region,
-                "f_def": f_def,
+                "X_j": round(values["X_j"], 6) if values["X_j"] is not None else None,
+                "PLF_j": round(values["PLF_j"], 6),
+                "is_frost_region": values["is_frost_region"],
+                "f_def": values["f_def"],
                 "defrost_control_type": defrost_control_type,
                 "defrost_t_test_minutes": defrost_t_test_minutes,
                 "defrost_t_max_minutes": defrost_t_max_minutes,
-                "f_frost_capacity": round(f_frost_capacity, 6),
-                "defrost_model": defrost_model,
+                "f_frost_capacity": round(values["f_frost_capacity"], 6),
+                "defrost_model": values["defrost_model"],
                 "building_load": round(building_load, 2),
-                "q_full_raw": round(q_full_raw, 2),
-                "q_full_adj": round(q_full_adj, 2),
-                "q_low_raw": round(q_low_raw, 2) if q_low_raw is not None else None,
-                "q_low_adj": round(q_low_adj, 2) if q_low_adj is not None else None,
-                "q_full": round(q_full, 2),
-                "p_full": round(p_full, 2),
-                "plr": round(plr, 6) if plr is not None else None,
-                "plf": round(plf, 6) if plf is not None else None,
-                "q_comp": round(q_comp, 2),
-                "q_j": round(q_delivered, 2),
-                "e_comp": round(compressor_energy, 2),
+                "q_full_raw": round(values["q_full_raw"], 2),
+                "q_full_adj": round(values["q_full_adj"], 2),
+                "q_low_raw": round(values["q_low_raw"], 2) if values["q_low_raw"] is not None else None,
+                "q_low_adj": round(values["q_low_adj"], 2) if values["q_low_adj"] is not None else None,
+                "q_full": round(values["q_full"], 2),
+                "p_full": round(values["p_full"], 2),
+                "plr": round(values["plr"], 6) if values["plr"] is not None else None,
+                "plf": round(values["plf"], 6) if values["plf"] is not None else None,
+                "hp_operating_case": hp_values["operating_case"] if hp_values is not None else None,
+                "q_comp_hp_case": round(hp_values["q_comp"], 2) if hp_values is not None else None,
+                "e_comp_hp_case": round(hp_values["e_comp"], 2) if hp_values is not None else None,
+                "q_aux_hp_case": round(hp_values["q_aux"], 2) if hp_values is not None else None,
+                "e_aux_hp_case": round(hp_values["e_aux"], 2) if hp_values is not None else None,
+                "q_aux_cutout": round(cutout_values["q_aux"], 2) if cutout_values is not None else None,
+                "e_aux_cutout": round(cutout_values["e_aux"], 2) if cutout_values is not None else None,
+                "q_comp": round(values["q_comp"], 2),
+                "q_j": round(values["q_j"], 2),
+                "e_comp": round(values["e_comp"], 2),
                 "E_j": round(E_j, 2),
-                "q_aux": round(q_aux, 2),
-                "e_aux": round(e_aux, 2),
-                "aux_ratio": round(self._safe_div(e_aux, E_j), 4) if E_j > 0 else 0.0,
+                "q_aux": round(values["q_aux"], 2),
+                "e_aux": round(values["e_aux"], 2),
+                "aux_ratio": round(self._safe_div(values["e_aux"], E_j), 4) if E_j > 0 else 0.0,
             })
 
         if total_energy_wh <= 0:
@@ -635,7 +704,15 @@ class AHRIHSPF2Calculator:
             "summary": {
                 "heating_load_line": {
                     "q_h1_calc": q_h1_calc,
-                    "q_h1_calc_source": "H12 capacity (47 F H1_Full) simplified canonical fallback",
+                    "q_h1_calc_source": (
+                        "AHRI 210/240-2024 Section 11.2.2.4 Eq. 11.181: "
+                        "H12 capacity (47 F H1Full conducted)"
+                    ),
+                    "q_h1_calc_scope": "standard_variable_capacity_h1full_conducted",
+                    "q_h1_calc_note": (
+                        "H1Nom and H3Full/CSF fallback branches require "
+                        "compressor-speed and airflow metadata not yet in v3 schema."
+                    ),
                     "H1_Full_capacity": h1_full_capacity_btu,
                     "C_vs": c_vs,
                     "t_zl": t_zl,
