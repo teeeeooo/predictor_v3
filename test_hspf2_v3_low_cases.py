@@ -48,6 +48,22 @@ def assert_case_conservation(result):
             assert math.isclose(q_aux, q_delivered, abs_tol=0.05), (
                 f"bin {bin_no} Cut-out: q_aux must carry full load"
             )
+        elif operating_case == "Fractional":
+            delta_j = row["delta_j"]
+            expected_q_comp = row["q_comp_hp_case"] * delta_j
+            expected_e_comp = row["e_comp_hp_case"] * delta_j
+            expected_q_aux = (
+                row["q_aux_hp_case"] * delta_j
+                + row["q_aux_cutout"] * (1.0 - delta_j)
+            )
+            expected_e_aux = (
+                row["e_aux_hp_case"] * delta_j
+                + row["e_aux_cutout"] * (1.0 - delta_j)
+            )
+            assert math.isclose(q_comp, expected_q_comp, abs_tol=0.05)
+            assert math.isclose(e_comp, expected_e_comp, abs_tol=0.05)
+            assert math.isclose(q_aux, expected_q_aux, abs_tol=0.05)
+            assert math.isclose(e_aux, expected_e_aux, abs_tol=0.05)
 
 
 calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
@@ -82,8 +98,8 @@ cutout_table["fractional_bin_hours"][14] = 0.0
 cutout_table["fractional_bin_hours"][15] = 0.001
 cutout_result = cutout_calc.calculate_hspf2_v3(canonical_with_h42)
 
-assert round(no_low_with_h42["raw_hspf2"], 6) == 10.215519
-assert round(no_low_without_h42["raw_hspf2"], 6) == 10.588204
+assert round(no_low_with_h42["raw_hspf2"], 6) == 10.199082
+assert round(no_low_without_h42["raw_hspf2"], 6) == 10.558441
 assert_case_conservation(no_low_with_h42)
 assert_case_conservation(low_result)
 assert_case_conservation(cutout_result)
@@ -91,7 +107,11 @@ assert_case_conservation(cutout_result)
 frost_rows = [row for row in no_low_with_h42["bin_details"] if 17 < row["temp_F"] < 45]
 assert frost_rows
 for row in no_low_with_h42["bin_details"]:
-    assert row["delta_j"] == 1
+    if row["temp_F"] == -8:
+        assert row["delta_j"] == 0.5
+        assert row["operating_case"] == "Fractional"
+    else:
+        assert row["delta_j"] == 1.0
     assert row["defrost_model"] == "default_linear_placeholder"
     assert row["f_def"] == 1.03
     assert row["defrost_control_type"] == "demand"
@@ -122,6 +142,22 @@ for row in low_result["bin_details"]:
         assert row["X_j"] is None
         assert row["PLF_j"] == 1.0
 
+fractional_rows = [row for row in no_low_with_h42["bin_details"] if row["delta_j"] == 0.5]
+assert len(fractional_rows) == 1
+fractional_row = fractional_rows[0]
+assert fractional_row["temp_F"] == -8
+assert fractional_row["hp_operating_case"] == "Case III"
+assert math.isclose(
+    fractional_row["q_aux"],
+    fractional_row["q_aux_hp_case"] * 0.5 + fractional_row["q_aux_cutout"] * 0.5,
+    abs_tol=0.05,
+)
+assert math.isclose(
+    fractional_row["e_aux"],
+    fractional_row["e_aux_hp_case"] * 0.5 + fractional_row["e_aux_cutout"] * 0.5,
+    abs_tol=0.05,
+)
+
 cutout_rows = [row for row in cutout_result["bin_details"] if row["operating_case"] == "Cut-out"]
 assert len(cutout_rows) == 1
 cutout_row = cutout_rows[0]
@@ -140,7 +176,7 @@ print("  H42 provided raw_hspf2:", round(no_low_with_h42["raw_hspf2"], 6))
 print("  H42 omitted raw_hspf2:", round(no_low_without_h42["raw_hspf2"], 6))
 print()
 print("Low-speed case activation")
-for case_name in ("Case I", "Case II", "Case S", "Case III"):
+for case_name in ("Case I", "Case II", "Case S", "Case III", "Fractional"):
     bins = [
         row["bin"] for row in low_result["bin_details"]
         if row["operating_case"] == case_name
@@ -148,6 +184,14 @@ for case_name in ("Case I", "Case II", "Case S", "Case III"):
     print(f"  {case_name}: {bins}")
 print("  raw_hspf2:", round(low_result["raw_hspf2"], 6))
 print("  rounded_hspf2:", low_result["rounded_hspf2"])
+print()
+print("Fractional cut-in diagnostic")
+print("  temp_F:", fractional_row["temp_F"])
+print("  delta_j:", fractional_row["delta_j"])
+print("  hp_operating_case:", fractional_row["hp_operating_case"])
+print("  q_comp:", fractional_row["q_comp"])
+print("  q_aux:", fractional_row["q_aux"])
+print("  e_aux:", fractional_row["e_aux"])
 print()
 print("Cut-out diagnostic")
 print("  temp_F:", cutout_row["temp_F"])

@@ -4,7 +4,7 @@
 ## 프로젝트 개요
 벽걸이형 1:1 에어컨(Air-to-Air) HVAC 시스템의
 성능/효율 ML 예측 및 HW 조합 역탐색 프로그램.
-코딩 비전문가 엔지니어가 VSCode + Cline으로 개발 중.
+코딩 비전문가 엔지니어가 VSCode + Cline / Claude Code로 개발 중.
 
 ## 개발 환경
 - 언어: Python
@@ -31,22 +31,22 @@
 2. 재학습 및 예측 검증 ← 진행 중 (별도 창)
 3. 테스트 하네스 구축 (tests/ 폴더)
 4. train_window 예측 검증 기능 추가
-5. core/calculator.py 효율 계산기 구현 ← 진행 중
+5. core/calculator 효율 계산기 구현 ← 진행 중
    Phase 1: 냉방 파이프라인 관통 (규격 쉬운 순서)
-     5-1. [거의 완성] ISO 16358-1 CSPF
+     5-1. [완료] ISO 16358-1 CSPF (Cd 이슈 확인 중)
      5-2. [완료] EN 14825 SEER
      5-3. [완료] AHRI 210/240 SEER2
    Phase 2: 난방 확장
      5-4. ISO 16358-2 HSPF
      5-5. EN 14825 SCOP
-     5-6. AHRI 210/240 HSPF2
+     5-6. [진행 중] AHRI 210/240 HSPF2 ← simplified canonical path 완성
+          P2: full variable-capacity path 구현 예정
    대상: Non-ducted, Air-to-Air, Variable capacity 1:1
 
    Phase 3: 예측기 연동
      5-7. predictor.py 예측 결과를 계산기 입력으로 변환
      5-8. ML 예측값 기반 CSPF/SEER/HSPF 자동 산출
      5-9. app_predict.py 결과 컬럼 확장
-
 
 6. 1차 배포 (PyInstaller 패키징)
 7. 역방향 탐색 설계 (core/optimizer.py)
@@ -87,14 +87,43 @@
 - 최종 목표: ML 예측값 → 효율 계산기 → CSPF/SEER 등 자동 산출
 - 파이프라인: predictor.py → calculator.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
-- 엔진 3개 구조:
-  calculator.py         — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
-  calculator_en14825.py — EN 14825 (유럽: EU SEER/SCOP)
-  calculator_ahri_seer2.py — AHRI 210/240 (미국: SEER2)
-  calculator_ahri_hspf2.py — AHRI 210/240 (미국: HSPF2)
-- 각 엔진은 냉방+난방 메서드 포함
-- 지역별 설정은 data/region_configs/*.json으로 분리 (data-driven)
-- calculator.py 제약: numpy/pandas 금지, 순수 파이썬만
+- 엔진 구조:
+  calculator.py              — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
+  calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
+  calculator_ahri_seer2.py   — AHRI 210/240 SEER2
+  calculator_ahri_hspf2.py   — AHRI 210/240 HSPF2
+- 지역별 설정은 data/region_configs/*.json 또는 data/usa*.json으로 분리 (data-driven)
+- calculator 계열 파일 제약: numpy/pandas 금지, 순수 파이썬만
+
+### HSPF2 구현 현황 (calculator_ahri_hspf2.py)
+- 대상: non-ducted, single-split, variable-capacity, air-to-air heat pump
+- 우선 지역: Region IV
+- 현재 구현 범위 (simplified canonical path):
+  - canonical test point schema: H12(47°F), H32(17°F), H42(5°F optional)
+  - H42 없으면 H12-H32 선형 외삽
+  - BL(t_j) = q_H1_calc × C_vs × (t_zl - t_j) / (t_zl - t_OD) — Eq. 11.104
+    (현재 q_H1_calc = H12 capacity 임시 대체)
+  - PLF = 1 - Cd × (1 - PLR) cycling 보정 적용
+  - fractional bin hours × HLH = absolute bin hours 적용
+  - Case Logic (v3 current implementation)
+    - Case I: BL ≤ q_low
+      - Low speed cycling
+      - PLF/Cd 적용
+    - Case II: q_low < BL < q_full
+      - Low/full modulation
+    - Case S: Low 데이터가 없는 경우 기존 simplified full cycling fallback
+    - Case III: BL > q_full
+      - Full speed + auxiliary heat
+- v2 legacy path 보존 (calculate_hspf2_v2 수정 금지)
+- 데이터: data/usa_hspf2.json (Region IV bin table, test point schema)
+
+
+### HSPF2 P2 미구현 항목 (수정 금지)
+- q_H1_calc 정식 결정 로직 (H1_Full/H1_Nom/H3_Full 기반)
+- 보간 구조 개선 (t_OBO=45°F 경계, H2Int/H22 구간)
+- H1Low/H3Low/H2Int 입력 스키마 → Case I/II 분기 구현
+- defrost penalty, off-mode
+- PLF/Cd 이외 cycling 세부 구현
 
 ### COLUMNS 자동완성 구조
 - 단순 1단계 매핑: base_model.py의 on_dropdown_changed() 처리
@@ -121,43 +150,51 @@
 
 ## 파일 구조
 HVAC_V3/
-├── app_train.py          학습+검증 마스터 UI
-├── app_predict.py        예측 전용 배포 UI
-├── app_calculator.py 효율 계산기 독립 실행 진입점 (신규)
+├── app_train.py               학습+검증 마스터 UI
+├── app_predict.py             예측 전용 배포 UI
+├── app_calculator.py          효율 계산기 독립 실행 진입점
+├── AGENTS.md                  Claude Code / Cline 공통 에이전트 규칙
 ├── core/
-│   ├── constants.py      COLUMNS, 경로, 피처 상수 (SSOT)
-│   ├── models.py         MODEL_REGISTRY
-│   ├── data_pipeline.py  전처리 전용
-│   ├── trainer.py        학습 로직 (log_callback, 엑셀 로그 지원)
-│   ├── predictor.py      순방향 예측 (학습 라이브러리 금지)
-│ ├── calculator.py ISO 16358 CSPF/HSPF 엔진 (신규, CSPF 완성)
-│ ├── calculator_en14825.py EN 14825 SEER/SCOP 엔진 (미구현)
-│ ├── calculator_ahri_seer2.py AHRI 210/240 SEER2 엔진
-│ ├── calculator_ahri_hspf2.py AHRI 210/240 HSPF2 엔진
-│   ├── optimizer.py      역탐색 추천 (미구현)
-│   ├── constraints.py    열역학 물리 제약 (미구현)
-│   ├── physics.py        열교환기 치수 계산 (미구현)
-│   └── utils.py          공통 유틸 + load_mapping_data() + 로그 유틸
+│   ├── constants.py           COLUMNS, 경로, 피처 상수 (SSOT)
+│   ├── models.py              MODEL_REGISTRY
+│   ├── data_pipeline.py       전처리 전용
+│   ├── trainer.py             학습 로직 (log_callback, 엑셀 로그 지원)
+│   ├── predictor.py           순방향 예측 (학습 라이브러리 금지)
+│   ├── calculator.py          ISO 16358 CSPF/HSPF 엔진 (CSPF 완성)
+│   ├── calculator_en14825.py  EN 14825 SEER/SCOP 엔진
+│   ├── calculator_ahri_seer2.py  AHRI 210/240 SEER2 엔진
+│   ├── calculator_ahri_hspf2.py  AHRI 210/240 HSPF2 엔진 (진행 중)
+│   ├── optimizer.py           역탐색 추천 (미구현)
+│   ├── constraints.py         열역학 물리 제약 (미구현)
+│   ├── physics.py             열교환기 치수 계산 (미구현)
+│   └── utils.py               공통 유틸 + load_mapping_data() + 로그 유틸
 ├── ui/
-│   ├── base_model.py     HVACTableModel (QAbstractTableModel)
-│   ├── base_view.py      HVACTableView + DropdownDelegate
-│   ├── predict_window.py 예측 윈도우 + ODU 캐스케이딩
-│   ├── train_window.py   학습 윈도우 + QThread 워커
-│   └── calc_window.py 효율 계산기 GUI (신규)
+│   ├── base_model.py          HVACTableModel (QAbstractTableModel)
+│   ├── base_view.py           HVACTableView + DropdownDelegate
+│   ├── predict_window.py      예측 윈도우 + ODU 캐스케이딩
+│   ├── train_window.py        학습 윈도우 + QThread 워커
+│   └── calc_window.py         효율 계산기 GUI
 ├── scripts/
-│   └── update_mapping.py Excel/CSV→JSON 변환 도구
+│   └── update_mapping.py      Excel/CSV→JSON 변환 도구
 ├── model/
-│   └── model.pkl         통합 모델 파일
+│   └── model.pkl              통합 모델 파일
 ├── data/
-│   ├── Practice_4.csv    학습 데이터
-│   ├── mapping.json      HW 매핑 데이터
-│   └── region_configs/ 지역별 효율 규격 설정 (신규)
-│       ├── thailand.json ISO 16358 태국 SEER
-│       └── korea.json KS C 9306 KC CSPF
+│   ├── Practice_4.csv         학습 데이터
+│   ├── mapping.json           HW 매핑 데이터
+│   ├── usa.json               AHRI SEER2 bin table (냉방)
+│   ├── usa_hspf2.json         AHRI HSPF2 bin table, Region IV (난방)
+│   └── region_configs/        지역별 효율 규격 설정
+│       ├── thailand.json      ISO 16358 태국 SEER
+│       ├── korea.json         KS C 9306 KC CSPF
+│       └── eu.json            EN 14825 SEER
 ├── logs/
-│   ├── train_log/        학습 결과 엑셀 로그
-│   ├── error_log/        런타임 에러 로그 (미구현)
-│   └── crash_log/        강제 종료 로그 (미구현)
+│   ├── train_log/             학습 결과 엑셀 로그
+│   ├── error_log/             런타임 에러 로그 (미구현)
+│   └── crash_log/             강제 종료 로그 (미구현)
+├── tests/
+│   ├── test_hspf2_smoke.py          HSPF2 v2 smoke test
+│   ├── test_hspf2_v3_smoke.py       HSPF2 v3 smoke test (PLF 전후 비교 포함)
+│   └── test_hspf2_v3_bincheck.py    bin-level sanity check
 ├── docs/
 │   └── skills/
 │       ├── pyqt5_dropdown_delegate.md
@@ -268,22 +305,21 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
   → dropna + drop_duplicates 안전장치 적용
 - leakage를 모델 단위로 공유하면 타겟별 교차 능력값 제외 불가
   → 타겟별 leakage 분리 구조로 변경 예정
-
 - constants.py의 EXCLUDED_FEATURES와 models.py target_rules 중복 → EXCLUDED_FEATURES 삭제
 - models.py exclude 피처명과 data_pipeline.py 실제 생성명 불일치 → 피처명 통일
 - BASE_FEATURES에 Load(%) 변수 포함 시 단위 불일치 문제 → 제거
 
-
 ## 현재 진행 상태
+
+### ML / 예측
 - [x] core/ 레이어 전체 완성
 - [x] ui/ 레이어 전체 완성
 - [x] app_train.py / app_predict.py 진입점 완성
 - [x] models.py 타겟별 leakage 분리 구조 변경
-- [x] calculator.py ISO 16358 CSPF 엔진 완성
-- [x] calc_window.py 계산기 GUI 완성
-- [x] app_calculator.py 진입점 완성
-- [x] region_configs/ 한국·태국 json 완성
-- [x] KC CSPF 계산 검증 완료 (Cd 이슈 확인 중)
+- [ ] 재학습 및 예측 검증
+
+### 계산기 — 냉방
+- [x] ISO 16358-1 CSPF 엔진 완성 (Cd 이슈 확인 중)
 - [ ] Cd 원본 확인 (성적서 대조 필요)
 - [ ] 태국 bin_hours 규격서 확인 필요
 - [ ] 35_half 목표 성능 계산 기능 추가
@@ -291,19 +327,35 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [x] EN 14825 SEER 엔진 구현 (calculator_en14825.py)
 - [x] EN 14825 SEER GUI 탭 연동 (calc_window.py)
 - [x] data/region_configs/eu.json 생성
-- [x] AHRI 210/240 SEER2 엔진 구현
+- [x] AHRI 210/240 SEER2 엔진 구현 (calculator_ahri_seer2.py)
 - [x] AHRI 210/240 SEER2 GUI 연동
 - [x] calc_window.py 다중 탭 구조 구성
+
+### 계산기 — 난방 HSPF2
+- [x] AHRI 210/240 HSPF2 simplified canonical path 구현
+  - canonical schema (H12/H32/H42), H42 외삽
+  - BL 공식 규격화 (Eq. 11.104, C_vs/t_zl/t_OD)
+  - fractional bin hours × HLH 적용
+  - PLF = 1 - Cd × (1 - PLR) cycling 보정
+  - bin-level sanity check 및 bincheck 스크립트
+  - v2 legacy path 보존
+  - AGENTS.md 생성
+- [ ] HSPF2 full variable-capacity path (P2)
+  - q_H1_calc 정식 결정 로직
+  - H1Low/H3Low/H2Int 입력 스키마
+  - Case I/II 분기 (q_Low 기반)
+  - t_OBO=45°F 보간 구조 개선
+  - defrost penalty, off-mode
 - [ ] ISO 16358-2 HSPF 엔진 구현
 - [ ] EN 14825 SCOP 엔진 구현
-- [ ] AHRI 210/240 HSPF2 엔진 구현
-- [ ] 테스트 하네스 구축
+
+### 공통
 - [ ] predictor → calculator 파이프라인 연동
+- [ ] 테스트 하네스 구축
 
 ## 다음 작업
-1. ISO 16358-2 HSPF 구현
-2. EN 14825 SCOP 구현
-3. AHRI 210/240 HSPF2 구현
-4. 냉방/난방 계산기 엔진 인터페이스 정리
-5. predictor.py → calculator.py 파이프라인 연동
-6. 테스트 하네스 구축
+1. HSPF2 full variable-capacity path 구현 (P2)
+2. ISO 16358-2 HSPF 구현
+3. EN 14825 SCOP 구현
+4. predictor.py → calculator.py 파이프라인 연동
+5. 테스트 하네스 구축
