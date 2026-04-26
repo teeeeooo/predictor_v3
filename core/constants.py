@@ -17,7 +17,7 @@ TRAIN_DATA_FILE = os.path.join(DATA_DIR, "Practice_4.csv")
 MAPPING_JSON_FILE = os.path.join(DATA_DIR, "mapping.json")
 
 # =============================================================================
-# UI 컬럼 구조 (COLUMNS) - 인덱스 0~25 (총 26개)
+# UI 컬럼 구조 (COLUMNS) - 인덱스 0~27 (총 28개)
 # =============================================================================
 COLUMNS = [
     # INPUT_COLS (인덱스 0~10, 11개)
@@ -59,11 +59,13 @@ COLUMNS = [
      "source": "compressor", "mapping_key": "Comp cc"},
 
 
-    # RESULT_COLS (인덱스 19~25, 7개)
+    # RESULT_COLS (인덱스 19~27, 9개)
     {"key": "cooling_power", "header": "냉방 소비전력", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "eer", "header": "EER (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
+    {"key": "cspf", "header": "CSPF", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "heating_power", "header": "난방 소비전력", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "cop", "header": "COP (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
+    {"key": "hspf2", "header": "HSPF2", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "ref_qty", "header": "냉매량", "width": 80, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "cooling_hz", "header": "냉방 주파수", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "heating_hz", "header": "난방 주파수", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
@@ -98,8 +100,10 @@ COL_COMP_CC      = next(i for i, c in enumerate(COLUMNS) if c["key"] == "comp_cc
 # [RESULT_COLS]
 COL_COOLING_POWER = next(i for i, c in enumerate(COLUMNS) if c["key"] == "cooling_power")
 COL_EER           = next(i for i, c in enumerate(COLUMNS) if c["key"] == "eer")
+COL_CSPF          = next(i for i, c in enumerate(COLUMNS) if c["key"] == "cspf")
 COL_HEATING_POWER = next(i for i, c in enumerate(COLUMNS) if c["key"] == "heating_power")
 COL_COP           = next(i for i, c in enumerate(COLUMNS) if c["key"] == "cop")
+COL_HSPF2         = next(i for i, c in enumerate(COLUMNS) if c["key"] == "hspf2")
 COL_REF_QTY       = next(i for i, c in enumerate(COLUMNS) if c["key"] == "ref_qty")
 COL_COOLING_HZ    = next(i for i, c in enumerate(COLUMNS) if c["key"] == "cooling_hz")
 COL_HEATING_HZ    = next(i for i, c in enumerate(COLUMNS) if c["key"] == "heating_hz")
@@ -134,4 +138,3 @@ DERIVED_FEATURES = [
 ]
 
 TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
-

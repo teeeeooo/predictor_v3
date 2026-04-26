@@ -150,7 +150,9 @@ class PredictWindow(QMainWindow):
                 results = predict_row(self.ml_model_data, row_dict)
                 
                 self.table_model.setData(self.table_model.index(row, COL_COOLING_POWER), round(results.get("Cooling Power", 0), 1), Qt.EditRole)
+                self.table_model.setData(self.table_model.index(row, COL_CSPF), "TODO: 입력부족", Qt.EditRole)
                 self.table_model.setData(self.table_model.index(row, COL_HEATING_POWER), round(results.get("Heating Power", 0), 1), Qt.EditRole)
+                self.table_model.setData(self.table_model.index(row, COL_HSPF2), "TODO: 입력부족", Qt.EditRole)
                 self.table_model.setData(self.table_model.index(row, COL_REF_QTY), round(results.get("Ref Qty", 0), 2), Qt.EditRole)
                 self.table_model.setData(self.table_model.index(row, COL_COOLING_HZ), round(results.get("Cooling Hz", 0), 1), Qt.EditRole)
                 self.table_model.setData(self.table_model.index(row, COL_HEATING_HZ), round(results.get("Heating Hz", 0), 1), Qt.EditRole)

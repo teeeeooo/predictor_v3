@@ -7,6 +7,9 @@ EN 14825:2012 SEER/SCOP 계산 엔진
 참고 규격: BS EN 14825:2012 (E)
 """
 
+import json
+import os
+
 # ── 냉방 빈 데이터 (Table 36) ─────────────────────────────
 COOLING_BIN_TEMPS = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
 COOLING_BIN_HOURS = [205, 227, 225, 225, 216, 215, 218, 197, 178, 158, 137, 109, 88, 63, 39, 31, 24, 17, 13, 9, 4, 3, 1, 0]
@@ -32,6 +35,29 @@ CD_DEFAULT = 0.25
 
 class EN14825Calculator:
     """EN 14825:2012 SEER/SCOP 계산기"""
+
+    def __init__(self, scop_config_path: str = None):
+        if scop_config_path is None:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            scop_config_path = os.path.join(base_dir, "data", "region_configs", "en14825_scop.json")
+
+        self.scop_config_path = scop_config_path
+        self.scop_config = self._load_scop_config(scop_config_path)
+
+    def _load_scop_config(self, config_path: str) -> dict:
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"SCOP config file not found: {config_path}")
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _safe_div(self, num: float, den: float, fallback: float = 0.0) -> float:
+        return num / den if den != 0 else fallback
+
+    def _linear(self, x: float, x1: float, y1: float, x2: float, y2: float) -> float:
+        if x1 == x2:
+            return y1
+        return y1 + (y2 - y1) * self._safe_div(x - x1, x2 - x1)
 
     def _validate_test_points(self, test_points: dict):
         """테스트 포인트 데이터의 무결성 검증 (피드백 4)"""
@@ -179,6 +205,308 @@ class EN14825Calculator:
             "seer":     round(seer, 3),
             "seer_on":  round(seer_on, 3),
             "qc_kwh":   round(qc_kwh, 2),
+        }
+
+    def _normalize_climate(self, climate: str) -> str:
+        if not isinstance(climate, str):
+            raise ValueError("climate must be one of: average, warmer, colder")
+        climate_key = climate.strip().lower()
+        aliases = {
+            "avg": "average",
+            "a": "average",
+            "w": "warmer",
+            "c": "colder",
+        }
+        return aliases.get(climate_key, climate_key)
+
+    def _get_scop_climate_data(self, climate: str) -> dict:
+        climate_key = self._normalize_climate(climate)
+        climates = self.scop_config.get("climates", {})
+        if climate_key not in climates:
+            raise ValueError(f"Unknown SCOP climate: {climate}. Expected one of {sorted(climates.keys())}")
+
+        climate_data = climates[climate_key]
+        temps = climate_data.get("heating_bin_temps_c", [])
+        hours = climate_data.get("heating_bin_hours", [])
+        if len(temps) != len(hours):
+            raise ValueError(f"SCOP climate {climate_key} bin temperature/hour length mismatch.")
+        if any(h < 0 for h in hours):
+            raise ValueError(f"SCOP climate {climate_key} bin hours must not contain negative values.")
+
+        expected_total = climate_data.get("heating_bin_hours_total")
+        if expected_total is not None and sum(hours) != expected_total:
+            raise ValueError(
+                f"SCOP climate {climate_key} bin hour total mismatch: "
+                f"actual={sum(hours)}, expected={expected_total}"
+            )
+
+        return climate_data
+
+    def _get_scop_operational_hours(self, climate: str, appliance_type: str) -> dict:
+        climate_key = self._normalize_climate(climate)
+        hours_by_type = self.scop_config.get("operational_hours", {})
+        if appliance_type not in hours_by_type:
+            raise ValueError(
+                f"Unknown SCOP appliance_type: {appliance_type}. "
+                f"Expected one of {sorted(hours_by_type.keys())}"
+            )
+        try:
+            return hours_by_type[appliance_type][climate_key]
+        except KeyError as exc:
+            raise ValueError(f"Missing SCOP operational hours for {appliance_type}/{climate_key}") from exc
+
+    def _parse_scop_point(self, test_points: dict, key: str) -> dict:
+        if key not in test_points:
+            raise ValueError(f"Missing SCOP test point: {key}")
+
+        value = test_points[key]
+        if isinstance(value, dict):
+            if "capacity" not in value or "power" not in value:
+                raise ValueError(f"SCOP test point {key} must include capacity and power.")
+            capacity = float(value["capacity"])
+            power = float(value["power"])
+            temp_c = value.get("temp_c", value.get("outdoor_db_c"))
+        else:
+            capacity, power = value
+            capacity = float(capacity)
+            power = float(power)
+            temp_c = None
+
+        if capacity <= 0 or power <= 0:
+            raise ValueError(f"Invalid SCOP test point {key}: capacity={capacity}, power={power}")
+
+        return {
+            "capacity": capacity,
+            "power": power,
+            "temp_c": float(temp_c) if temp_c is not None else None,
+        }
+
+    def _get_scop_point_temp(
+        self,
+        key: str,
+        point: dict,
+        climate_data: dict,
+        tbiv_temp_c: float = None,
+        tol_temp_c: float = None,
+    ) -> float:
+        if point.get("temp_c") is not None:
+            return point["temp_c"]
+
+        schema = self.scop_config.get("heating_test_point_schema", {})
+        if key in ("A", "B", "C", "D"):
+            try:
+                return float(schema[key]["outdoor_db_c"])
+            except KeyError as exc:
+                raise ValueError(f"Missing SCOP schema temperature for point {key}") from exc
+
+        if key == "Tbiv":
+            return float(tbiv_temp_c if tbiv_temp_c is not None else climate_data["tbiv_max_c"])
+        if key == "TOL":
+            return float(tol_temp_c if tol_temp_c is not None else climate_data["tol_max_c"])
+
+        raise ValueError(f"Unknown SCOP test point key: {key}")
+
+    def _validate_scop_points(
+        self,
+        test_points: dict,
+        climate_data: dict,
+        tbiv_temp_c: float = None,
+        tol_temp_c: float = None,
+    ) -> dict:
+        required_keys = ("A", "B", "C", "D", "TOL", "Tbiv")
+        points = {}
+        for key in required_keys:
+            point = self._parse_scop_point(test_points, key)
+            point["temp_c"] = self._get_scop_point_temp(key, point, climate_data, tbiv_temp_c, tol_temp_c)
+            points[key] = point
+
+        if points["Tbiv"]["temp_c"] > climate_data["tbiv_max_c"]:
+            raise ValueError(
+                f"Tbiv exceeds climate maximum: {points['Tbiv']['temp_c']} > {climate_data['tbiv_max_c']}"
+            )
+        if points["TOL"]["temp_c"] > climate_data["tol_max_c"]:
+            raise ValueError(
+                f"TOL exceeds climate maximum: {points['TOL']['temp_c']} > {climate_data['tol_max_c']}"
+            )
+        if points["TOL"]["temp_c"] > points["Tbiv"]["temp_c"]:
+            raise ValueError(
+                f"TOL must be <= Tbiv for SCOP heating calculation: "
+                f"TOL={points['TOL']['temp_c']}, Tbiv={points['Tbiv']['temp_c']}"
+            )
+
+        return points
+
+    def _heating_part_load(self, tj: float, p_design_h: float, t_design_h: float) -> float:
+        if p_design_h <= 0:
+            raise ValueError(f"p_design_h must be > 0 for SCOP calculation: {p_design_h}")
+        if t_design_h == 16:
+            raise ValueError("t_design_h cannot be 16°C for SCOP heating load line.")
+
+        ph = p_design_h * (tj - 16.0) / (t_design_h - 16.0)
+        return max(0.0, ph)
+
+    def _scop_capacity_power_at_temp(self, tj: float, points: dict) -> tuple:
+        tol_temp = points["TOL"]["temp_c"]
+        if tj < tol_temp:
+            return 0.0, 0.0, "below_tol_heat_pump_off"
+
+        pairs = []
+        for key, point in points.items():
+            pairs.append((point["temp_c"], point["capacity"], point["power"], key))
+        pairs.sort(key=lambda item: item[0])
+
+        if tj <= pairs[0][0]:
+            _, capacity, power, key = pairs[0]
+            return capacity, power, f"clamped_to_{key}"
+
+        if tj >= pairs[-1][0]:
+            _, capacity, power, key = pairs[-1]
+            return capacity, power, f"clamped_to_{key}"
+
+        for i in range(len(pairs) - 1):
+            t1, c1, p1, k1 = pairs[i]
+            t2, c2, p2, k2 = pairs[i + 1]
+            if t1 <= tj <= t2:
+                capacity = self._linear(tj, t1, c1, t2, c2)
+                power = self._linear(tj, t1, p1, t2, p2)
+                return max(0.0, capacity), max(0.0, power), f"linear_{k1}_{k2}"
+
+        raise ValueError(f"SCOP interpolation failed at Tj={tj}")
+
+    def _scop_bin_cop(self, ph: float, pdh: float, power: float, cd: float) -> tuple:
+        if ph <= 0:
+            return 0.0, 0.0, 0.0, "no_heating_load"
+        if pdh <= 0 or power <= 0:
+            return 0.0, 0.0, ph, "electric_backup_only"
+
+        if pdh >= ph:
+            cr = min(1.0, self._safe_div(ph, pdh))
+            cop_dc = self._safe_div(pdh, power)
+            plf = max(1e-6, 1.0 - cd * (1.0 - cr))
+            cop_bin = cop_dc * plf
+            return cop_bin, ph, 0.0, "part_load"
+
+        cop_bin = self._safe_div(pdh, power)
+        elbu = ph - pdh
+        return cop_bin, pdh, elbu, "capacity_shortfall_with_backup"
+
+    def _calculate_scop_on(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
+        temps = climate_data["heating_bin_temps_c"]
+        hours = climate_data["heating_bin_hours"]
+        t_design_h = float(climate_data["t_design_h_c"])
+
+        numerator = 0.0
+        denominator = 0.0
+        bin_details = []
+
+        for tj, hj in zip(temps, hours):
+            if hj <= 0:
+                continue
+
+            ph = self._heating_part_load(float(tj), p_design_h, t_design_h)
+            if ph <= 0:
+                continue
+
+            pdh, power, interpolation = self._scop_capacity_power_at_temp(float(tj), points)
+            cop_bin, compressor_heat, elbu, operating_case = self._scop_bin_cop(ph, pdh, power, cd)
+            if compressor_heat > 0 and cop_bin <= 0:
+                raise ValueError(f"SCOP COPbin must be > 0 at Tj={tj}")
+
+            numerator += hj * ph
+            denominator += hj * (self._safe_div(compressor_heat, cop_bin) + elbu)
+
+            bin_details.append({
+                "temp_c": tj,
+                "hours": hj,
+                "ph": round(ph, 6),
+                "pdh": round(pdh, 6),
+                "power": round(power, 6),
+                "cop_bin": round(cop_bin, 6) if cop_bin > 0 else 0.0,
+                "compressor_heat": round(compressor_heat, 6),
+                "elbu": round(elbu, 6),
+                "operating_case": operating_case,
+                "interpolation": interpolation,
+            })
+
+        if numerator <= 0:
+            raise ValueError("SCOPon calculation error: heating demand numerator must be > 0.")
+        if denominator <= 0:
+            raise ValueError("SCOPon calculation error: energy denominator must be > 0.")
+
+        return {
+            "scop_on": numerator / denominator,
+            "active_heating_kwh": numerator,
+            "active_energy_kwh": denominator,
+            "bin_details": bin_details,
+        }
+
+    def calculate_scop(
+        self,
+        test_points: dict,
+        p_to: float,
+        p_sb: float,
+        p_ck: float,
+        p_off: float,
+        p_design_h: float,
+        climate: str,
+        cd: float = None,
+        appliance_type: str = None,
+        tbiv_temp_c: float = None,
+        tol_temp_c: float = None,
+    ) -> dict:
+        """
+        EN 14825 / EU 206/2012 SCOP calculation path.
+
+        Required test_points: A, B, C, D, TOL, Tbiv.
+        Each value may be either (capacity, power) or
+        {"capacity": kW, "power": kW, "temp_c": optional outdoor dry-bulb}.
+        """
+        climate_key = self._normalize_climate(climate)
+        climate_data = self._get_scop_climate_data(climate_key)
+        defaults = self.scop_config.get("defaults", {})
+        if cd is None:
+            cd = defaults.get("degradation_coefficient", CD_DEFAULT)
+        if appliance_type is None:
+            appliance_type = defaults.get("appliance_type", "reversible")
+
+        points = self._validate_scop_points(test_points, climate_data, tbiv_temp_c, tol_temp_c)
+        operational_hours = self._get_scop_operational_hours(climate_key, appliance_type)
+        scop_on_data = self._calculate_scop_on(points, climate_data, p_design_h, cd)
+
+        q_h = p_design_h * operational_hours["h_he"]
+        if q_h <= 0:
+            raise ValueError(f"Reference annual heating demand must be > 0: {q_h}")
+
+        standby_kwh = (
+            operational_hours["h_to"] * p_to
+            + operational_hours["h_sb"] * p_sb
+            + operational_hours["h_ck"] * p_ck
+            + operational_hours["h_off"] * p_off
+        )
+        active_kwh = self._safe_div(q_h, scop_on_data["scop_on"])
+        total_kwh = active_kwh + standby_kwh
+        if total_kwh <= 0:
+            raise ValueError("SCOP calculation error: total annual heating energy must be > 0.")
+
+        scop = q_h / total_kwh
+        return {
+            "scop": round(scop, 3),
+            "SCOP": round(scop, 3),
+            "scop_on": round(scop_on_data["scop_on"], 3),
+            "qh_kwh": round(q_h, 3),
+            "active_kwh": round(active_kwh, 3),
+            "standby_kwh": round(standby_kwh, 3),
+            "total_kwh": round(total_kwh, 3),
+            "climate": climate_key,
+            "appliance_type": appliance_type,
+            "p_design_h": p_design_h,
+            "operational_hours": operational_hours,
+            "source": self.scop_config.get("source", {}),
+            "bin_details": scop_on_data["bin_details"],
+            "unimplemented_notes": [
+                "EN 14825 원문에서 manufacturer-declared capacity/COP interpolation constraints, rounding rules, and optional fixed/staged capacity-control branches must be verified before certification use.",
+                "This implementation covers the variable-capacity reversible air-to-air path using EU 206/2012 Annex II bins/design/operational hours and explicit user-declared A/B/C/D/TOL/Tbiv points.",
+            ],
         }
 
 if __name__ == "__main__":
