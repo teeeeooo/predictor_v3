@@ -144,25 +144,27 @@ class AHRIHSPF2Calculator:
         canonical_points = self.legacy_to_canonical(test_points)
 
         h12 = self._get_point(canonical_points, "H12")
+        h22 = self._get_point(canonical_points, "H22")  # required per AHRI 210/240-2026
         h32 = self._get_point(canonical_points, "H32")
         try:
             h42 = self._get_point(canonical_points, "H42")
             h42_source = "provided"
         except ValueError:
-            h12_temp = self.test_point_schema["heating"]["H12"]["outdoor_db_f"]
+            h22_temp = self.test_point_schema["heating"]["H22"]["outdoor_db_f"]
             h32_temp = self.test_point_schema["heating"]["H32"]["outdoor_db_f"]
             h42_temp = self.test_point_schema["heating"]["H42"]["outdoor_db_f"]
 
-            q_h12, p_h12 = h12
+            q_h22, p_h22 = h22
             q_h32, p_h32 = h32
             h42 = (
-                self._linear(h42_temp, h12_temp, q_h12, h32_temp, q_h32),
-                self._linear(h42_temp, h12_temp, p_h12, h32_temp, p_h32),
+                self._linear(h42_temp, h32_temp, q_h32, h22_temp, q_h22),
+                self._linear(h42_temp, h32_temp, p_h32, h22_temp, p_h22),
             )
             h42_source = "extrapolated"
 
         points = {
             "H12": h12,
+            "H22": h22,
             "H32": h32,
             "H42": h42,
         }
@@ -174,19 +176,24 @@ class AHRIHSPF2Calculator:
 
     def _canonical_capacity_power_at_temp(self, temp_f: float, full_points: dict) -> tuple:
         h12_temp = self.test_point_schema["heating"]["H12"]["outdoor_db_f"]
+        h22_temp = self.test_point_schema["heating"]["H22"]["outdoor_db_f"]
         h32_temp = self.test_point_schema["heating"]["H32"]["outdoor_db_f"]
         h42_temp = self.test_point_schema["heating"]["H42"]["outdoor_db_f"]
 
         q_h12, p_h12 = full_points["H12"]
+        q_h22, p_h22 = full_points["H22"]
         q_h32, p_h32 = full_points["H32"]
         q_h42, p_h42 = full_points["H42"]
 
         if temp_f >= h12_temp:
-            q_tj = self._linear(temp_f, h32_temp, q_h32, h12_temp, q_h12)
-            p_tj = self._linear(temp_f, h32_temp, p_h32, h12_temp, p_h12)
+            q_tj = self._linear(temp_f, h22_temp, q_h22, h12_temp, q_h12)
+            p_tj = self._linear(temp_f, h22_temp, p_h22, h12_temp, p_h12)
+        elif temp_f >= h22_temp:
+            q_tj = self._linear(temp_f, h22_temp, q_h22, h12_temp, q_h12)
+            p_tj = self._linear(temp_f, h22_temp, p_h22, h12_temp, p_h12)
         elif temp_f >= h32_temp:
-            q_tj = self._linear(temp_f, h32_temp, q_h32, h12_temp, q_h12)
-            p_tj = self._linear(temp_f, h32_temp, p_h32, h12_temp, p_h12)
+            q_tj = self._linear(temp_f, h32_temp, q_h32, h22_temp, q_h22)
+            p_tj = self._linear(temp_f, h32_temp, p_h32, h22_temp, p_h22)
         else:
             q_tj = self._linear(temp_f, h42_temp, q_h42, h32_temp, q_h32)
             p_tj = self._linear(temp_f, h42_temp, p_h42, h32_temp, p_h32)
@@ -194,15 +201,13 @@ class AHRIHSPF2Calculator:
         return max(0.0, q_tj), max(0.0, p_tj)
 
     def _canonical_low_capacity_power_at_temp(self, temp_f: float, low_points: dict) -> tuple:
-        # TODO(P2): H11/H21/H31은 predictor_v3 canonical low-speed 임시 명칭이다.
-        # AHRI Table 8 alias 및 35 F point의 H2Low/H2Int 매핑은 full path에서 재검토한다.
         low_point_temps = {
             "H11": 47,
-            "H21": 35,
+            "H2V": 35,
             "H31": 17,
         }
         points = []
-        for key in ("H11", "H21", "H31"):
+        for key in ("H11", "H2V", "H31"):
             value = low_points.get(key)
             if value is None:
                 continue
@@ -384,7 +389,7 @@ class AHRIHSPF2Calculator:
         canonical_points = self.legacy_to_canonical(test_points)
         low_points = {
             "H11": canonical_points.get("H11"),
-            "H21": canonical_points.get("H21"),
+            "H2V": canonical_points.get("H2V"),
             "H31": canonical_points.get("H31"),
         }
         bin_table = self._get_region_iv_heating_bin_table()
