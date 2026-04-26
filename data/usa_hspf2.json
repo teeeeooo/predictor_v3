@@ -10,6 +10,28 @@
     "bin_temps": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8],
     "bin_hours": [160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20]
   },
+  "canonical_hspf2_bin_tables": {
+    "heating": {
+      "region_iv": {
+        "source": {
+          "standard": "AHRI 210/240-2024 (I-P)",
+          "table": "Table 16",
+          "referenced_by": "DOE 10 CFR Part 430 Subpart B Appendix M1 section 5.1(b)",
+          "status": "confirmed_for_v3_smoke",
+          "note": "Region IV fractional heating bin hours. Values are table-rounded fractions; sum is expected to be 0.757."
+        },
+        "region": "IV",
+        "heating_load_hours": 1701,
+        "outdoor_design_temp_f": 5,
+        "heating_load_line_slope_factor": 1.15,
+        "variable_capacity_slope_factor": 1.07,
+        "zero_load_temp_f": 55,
+        "bin_temps_f": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8, -13, -18, -23],
+        "fractional_bin_hours": [0.0, 0.0, 0.103, 0.093, 0.100, 0.109, 0.126, 0.087, 0.055, 0.036, 0.026, 0.013, 0.006, 0.002, 0.001, 0.0, 0.0, 0.0],
+        "fractional_bin_hours_sum": 0.757
+      }
+    }
+  },
   "test_point_schema": {
     "canonical_source": "AHRI Analytics / AHRI 210/240-2026 Table 8 aliases",
     "heating": {
@@ -119,11 +141,13 @@
     "design_temp_f": 5,
     "defrost_credit_default": 1.0,
     "demand_defrost_factor_default": 0.9,
-    "off_mode_hours": 737
+    "off_mode_hours": 737,
+    "t_OBO": 45
   },
   "defaults": {
     "cd_default_low": 0.25,
     "cd_default_full": 0.25,
-    "p_w_off": 0.0
+    "p_w_off": 0.0,
+    "aux_cop": 1.0
   }
 }
