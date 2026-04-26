@@ -388,7 +388,8 @@ class AHRIHSPF2Calculator:
             "H31": canonical_points.get("H31"),
         }
         bin_table = self._get_region_iv_heating_bin_table()
-        c_d = self.defaults.get("cd_default_low", 0.25)
+        c_d_heating = self.defaults.get("c_d_heating", self.defaults.get("cd_default_low", 0.25))
+        c_d = c_d_heating
         bin_temps = bin_table["bin_temps_f"]
         fractional_bin_hours = bin_table["fractional_bin_hours"]
         hlh = bin_table["heating_load_hours"]
@@ -477,6 +478,8 @@ class AHRIHSPF2Calculator:
                 operating_case = "Case 0"
                 plr = None
                 plf = None
+                X_j = None
+                PLF_j = 1.0
                 q_comp = 0.0
                 q_delivered = 0.0
                 compressor_energy = 0.0
@@ -485,13 +488,16 @@ class AHRIHSPF2Calculator:
             elif q_low_tj is not None and building_load <= q_low_tj:
                 case = 1
                 operating_case = "Case I"
-                # Low speed cycling.
-                plr = self._safe_div(building_load, q_low_tj)
-                plf = 1.0 - c_d * (1.0 - plr)
-                plf = max(plf, 0.001)
+                # AHRI heating cyclic degradation at low speed.
+                # X_j: load factor at bin j; PLF_j: part load factor.
+                X_j = self._safe_div(building_load, q_low_tj)
+                PLF_j = 1.0 - c_d_heating * (1.0 - X_j)
+                PLF_j = max(PLF_j, 0.01)  # Avoid near-zero PLF division.
+                plr = X_j
+                plf = PLF_j
                 q_delivered = building_load * hours
                 q_comp = q_delivered
-                compressor_energy = p_low_tj * plr * hours / plf
+                compressor_energy = p_low_tj * X_j * hours / PLF_j
                 q_aux = 0.0
                 e_aux = 0.0
             elif q_low_tj is not None and q_low_tj < building_load < q_full and q_full != q_low_tj:
@@ -501,6 +507,8 @@ class AHRIHSPF2Calculator:
                 x_full = 1.0 - x_low
                 plr = None
                 plf = None
+                X_j = None
+                PLF_j = 1.0
                 q_delivered = building_load * hours
                 q_comp = q_delivered
                 compressor_energy = (p_low_tj * x_low + p_full * x_full) * hours
@@ -509,17 +517,13 @@ class AHRIHSPF2Calculator:
             elif building_load <= q_full:
                 case = 1
                 operating_case = "Case S"
-                # PLR: part load ratio (= HLF in AHRI simplified path)
                 plr = self._safe_div(building_load, q_full)
-                # PLF: part load factor, cycling degradation 보정
-                # PLF = 1 - Cd * (1 - PLR)
-                # 현재는 v3 simplified full-point path 적용.
-                # TODO(P2): q_Low 기반 AHRI full Case I/II로 교체 필요.
-                plf = 1.0 - c_d * (1.0 - plr)
-                plf = max(plf, 0.001)  # 0 나누기 방지
+                plf = 1.0
+                X_j = None
+                PLF_j = 1.0
                 q_delivered = building_load * hours
                 q_comp = q_delivered
-                compressor_energy = p_full * plr * hours / plf
+                compressor_energy = p_full * plr * hours
                 q_aux = 0.0
                 e_aux = 0.0
             else:
@@ -527,6 +531,8 @@ class AHRIHSPF2Calculator:
                 operating_case = "Case III"
                 plr = None
                 plf = None
+                X_j = None
+                PLF_j = 1.0
                 # NOTE(AHRI E13.12): Demand-defrost credit은 heat pump
                 # capacity에만 적용 후보로 둔다. supplemental resistance heat
                 # q_aux/e_aux에는 해당 credit을 적용하지 말 것.
@@ -547,6 +553,9 @@ class AHRIHSPF2Calculator:
                 "case": case,
                 "operating_case": operating_case,
                 "C_D": c_d,
+                "c_d_heating": c_d_heating,
+                "X_j": round(X_j, 6) if X_j is not None else None,
+                "PLF_j": round(PLF_j, 6),
                 "is_frost_region": is_frost_region,
                 "f_def": f_def,
                 "defrost_control_type": defrost_control_type,

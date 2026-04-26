@@ -153,6 +153,7 @@
   "defaults": {
     "cd_default_low": 0.25,
     "cd_default_full": 0.25,
+    "c_d_heating": 0.25,
     "p_w_off": 0.0,
     "aux_cop": 1.0
   }

@@ -69,8 +69,8 @@ no_low_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42)
 no_low_without_h42 = calc.calculate_hspf2_v3(canonical_without_h42)
 low_result = calc.calculate_hspf2_v3(canonical_with_low)
 
-assert round(no_low_with_h42["raw_hspf2"], 6) == 9.211381
-assert round(no_low_without_h42["raw_hspf2"], 6) == 9.511685
+assert round(no_low_with_h42["raw_hspf2"], 6) == 10.215519
+assert round(no_low_without_h42["raw_hspf2"], 6) == 10.588204
 assert_case_conservation(no_low_with_h42)
 assert_case_conservation(low_result)
 
@@ -84,6 +84,8 @@ for row in no_low_with_h42["bin_details"]:
     assert row["defrost_t_max_minutes"] == 720
     expected_q_full_adj = round(row["q_full_raw"] * row["f_frost_capacity"] * row["f_def"], 2)
     assert math.isclose(row["q_full_adj"], expected_q_full_adj, abs_tol=0.02)
+    assert row["X_j"] is None
+    assert row["PLF_j"] == 1.0
     if 17 < row["temp_F"] < 45:
         assert row["is_frost_region"] is True
         assert row["f_frost_capacity"] < 1.0
@@ -94,6 +96,16 @@ operating_cases = {row["operating_case"] for row in low_result["bin_details"]}
 assert "Case I" in operating_cases
 assert "Case II" in operating_cases
 assert "Case III" in operating_cases
+
+for row in low_result["bin_details"]:
+    if row["operating_case"] == "Case I":
+        assert row["X_j"] is not None
+        assert 0.0 <= row["X_j"] <= 1.0
+        expected_plf_j = max(0.01, 1.0 - row["c_d_heating"] * (1.0 - row["X_j"]))
+        assert math.isclose(row["PLF_j"], expected_plf_j, abs_tol=0.000001)
+    elif row["operating_case"] in ("Case II", "Case III"):
+        assert row["X_j"] is None
+        assert row["PLF_j"] == 1.0
 
 print("No-low baseline check")
 print("  H42 provided raw_hspf2:", round(no_low_with_h42["raw_hspf2"], 6))
