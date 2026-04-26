@@ -394,16 +394,32 @@ class AHRIHSPF2Calculator:
         hlh = bin_table["heating_load_hours"]
         bin_hours = [frac * hlh for frac in fractional_bin_hours]
 
-        # TODO(P1): q_H1_calc는 현재 H12 capacity 임시 대체.
-        # AHRI full path에서는 H1_Full/H1_Nom/H3_Full 기반 결정 로직으로 교체 필요.
-        # 참조: AHRI 210/240 Section 11.2.2.3, Eq. 11.171~11.176
-        q_h12_calc, _ = full_points["H12"]
+        # NOTE(AHRI 210/240 Section 11.2.2.3, Eq. 11.104):
+        # q_H1_calc는 Heating Load Line의 기준 capacity 인자이다.
+        # 현재 v3는 Standard 시스템용 simplified canonical fallback으로
+        # H12 capacity(47 F H1_Full)를 q_H1_calc로 그대로 사용한다.
+        # H32/H42는 Tj 성능 보간/외삽에만 사용하며 q_H1_calc 보정에는
+        # 사용하지 않는다. Full variable-capacity path에서는 H1_calc
+        # 결정 로직을 별도로 재검토한다.
+        h1_full_capacity_btu, _ = full_points["H12"]
+        q_h1_calc = h1_full_capacity_btu
+        assert q_h1_calc > 0
+        assert q_h1_calc == h1_full_capacity_btu
         c_vs  = bin_table.get("variable_capacity_slope_factor", 1.07)
         t_zl  = bin_table.get("zero_load_temp_f", 55)
         t_od  = bin_table.get("outdoor_design_temp_f", 5)
         t_obo = self.constants.get("t_OBO", 45)
+        defrost_control_type = self.constants.get("defrost_control_type", "demand")
+        t_defrost_test = self.constants.get("t_defrost_test", 35)
+        t_defrost_max = self.constants.get("t_defrost_max", 45)
         aux_cop = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0))
         aux_eer = aux_cop * 3.412
+
+        def _calc_f_def_placeholder(temp_f: float, constants: dict) -> float:
+            # AHRI Eq. 11.107 적용 예정 (Tj별 Bin 함수 구현 필요).
+            # F_def는 모든 bin에 같은 상수를 주는 값이 아니라,
+            # 각 bin temperature Tj와 defrost metadata를 받아 산정되는 hook이다.
+            return 1.0
 
         total_heating_btu = 0.0
         total_energy_wh = 0.0
@@ -415,13 +431,24 @@ class AHRIHSPF2Calculator:
                 continue
 
             building_load = self._building_load_v3(
-                temp_f, q_h12_calc, c_vs, t_zl, t_od
+                temp_f, q_h1_calc, c_vs, t_zl, t_od
             )
-            q_full, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
-            q_low_tj, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
+            q_full_raw, p_full = self._canonical_capacity_power_at_temp(temp_f, full_points)
+            q_low_raw, p_low_tj = self._canonical_low_capacity_power_at_temp(temp_f, low_points)
             is_frost_region = temp_f <= t_obo
-            f_def = 1.0
-            # TODO: Defrost 보정 적용 위치는 AHRI 식 확인 후 결정
+            f_def = _calc_f_def_placeholder(temp_f, self.constants)
+            defrost_model = "default_linear_placeholder"
+            if 17 < temp_f < t_obo:
+                f_frost_capacity = 0.98 + (temp_f - 17) * self._safe_div(1.0 - 0.98, t_obo - 17)
+            else:
+                f_frost_capacity = 1.0
+            q_full = q_full_raw * f_frost_capacity
+            q_low_tj = q_low_raw * f_frost_capacity if q_low_raw is not None else None
+            # TODO: AHRI F_def 정식 구현 위치는 T_test/T_max 스키마 확정 후 결정
+            # NOTE: f_frost_capacity는 AHRI F_def 정식 구현 전의 conservative
+            # frost capacity placeholder이다. 이 계수는 heat pump capacity
+            # q_full_raw/q_low_raw에만 적용하고, supplemental resistance heat에는
+            # 적용하지 않는다.
             # NOTE(AHRI 210/240-2026 Eq. 11.107): F_def는 Demand-defrost
             # enhancement factor로 취급한다. 1.03 고정값이 아니며,
             # T_test 및 T_max 기반 식으로 산정해야 한다.
@@ -511,6 +538,11 @@ class AHRIHSPF2Calculator:
                 "C_D": c_d,
                 "is_frost_region": is_frost_region,
                 "f_def": f_def,
+                "defrost_control_type": defrost_control_type,
+                "t_defrost_test": t_defrost_test,
+                "t_defrost_max": t_defrost_max,
+                "f_frost_capacity": round(f_frost_capacity, 6),
+                "defrost_model": defrost_model,
                 "building_load": round(building_load, 2),
                 "q_full": round(q_full, 2),
                 "p_full": round(p_full, 2),
@@ -548,6 +580,16 @@ class AHRIHSPF2Calculator:
                 "source": bin_table.get("source", {}),
                 "heating_load_hours": hlh,
                 "fractional_bin_hours_sum": round(sum(fractional_bin_hours), 3),
+            },
+            "summary": {
+                "heating_load_line": {
+                    "q_h1_calc": q_h1_calc,
+                    "q_h1_calc_source": "H12 capacity (47 F H1_Full) simplified canonical fallback",
+                    "H1_Full_capacity": h1_full_capacity_btu,
+                    "C_vs": c_vs,
+                    "t_zl": t_zl,
+                    "t_od": t_od,
+                },
             },
             "bin_details": bin_details,
         }

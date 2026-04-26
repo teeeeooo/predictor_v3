@@ -142,7 +142,11 @@
     "defrost_credit_default": 1.0,
     "demand_defrost_factor_default": 0.9,
     "off_mode_hours": 737,
-    "t_OBO": 45
+    "t_OBO": 45,
+    "defrost_control_type": "demand",
+    "t_defrost_test": 35,
+    "t_defrost_max": 45,
+    "demand_defrost_credit_max": 1.03
   },
   "defaults": {
     "cd_default_low": 0.25,
