@@ -422,6 +422,12 @@ class AHRIHSPF2Calculator:
             is_frost_region = temp_f <= t_obo
             f_def = 1.0
             # TODO: Defrost 보정 적용 위치는 AHRI 식 확인 후 결정
+            # NOTE(AHRI 210/240-2026 Eq. 11.107): F_def는 Demand-defrost
+            # enhancement factor로 취급한다. 1.03 고정값이 아니며,
+            # T_test 및 T_max 기반 식으로 산정해야 한다.
+            # NOTE(AHRI E13.12): 우선 보정 후보는 heat pump capacity
+            # Q_h(Tj) = Q_h_raw(Tj) * F_def 위치이다. 소비 전력(P) 보정
+            # 또는 COP 보정 여부는 아직 확정하지 않는다.
 
             # case 0: BL <= 0 (compressor off)
             # Case I: BL <= q_low_tj (low speed cycling)
@@ -483,6 +489,9 @@ class AHRIHSPF2Calculator:
                 operating_case = "Case III"
                 plr = None
                 plf = None
+                # NOTE(AHRI E13.12): Demand-defrost credit은 heat pump
+                # capacity에만 적용 후보로 둔다. supplemental resistance heat
+                # q_aux/e_aux에는 해당 credit을 적용하지 말 것.
                 q_comp = q_full * hours
                 q_delivered = building_load * hours
                 compressor_energy = p_full * hours
