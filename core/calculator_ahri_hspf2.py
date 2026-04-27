@@ -489,20 +489,26 @@ class AHRIHSPF2Calculator:
         if "H22" in canonical_points:
             full_points["H22"] = self._get_positive_point(canonical_points, "H22")
             h22_source = "tested"
+            h22_tested = True
+            h22_for_slope_source = "tested"
             h22_high_anchor_source = None
             h22_high_anchor_capacity = None
             h22_high_anchor_power = None
         else:
             q_h3_full, p_h3_full = full_points["H32"]
             q_h1_full_calc, p_h1_full_calc = full_points["H12"]
+            # AHRI 210/240-2026 Eq.11.44 and Eq.11.50 for missing H22 optional test.
             full_points["H22"] = (
-                q_h3_full + (q_h1_full_calc - q_h3_full) * self._safe_div(35 - 17, 47 - 17),
-                p_h3_full + (p_h1_full_calc - p_h3_full) * self._safe_div(35 - 17, 47 - 17),
+                0.90 * (q_h3_full + 0.6 * (q_h1_full_calc - q_h3_full)),
+                0.985 * (p_h3_full + 0.6 * (p_h1_full_calc - p_h3_full)),
             )
-            h22_source = "fallback_interp_17_47"
+            h22_source = "eq_11_44_11_50"
+            h22_tested = False
+            h22_for_slope_source = "eq_11_44_11_50"
             h22_high_anchor_source = "h1full_calc"
             h22_high_anchor_capacity = q_h1_full_calc
             h22_high_anchor_power = p_h1_full_calc
+        h22_capacity, h22_power = full_points["H22"]
         h2_int = self._get_positive_point(canonical_points, "H2Int")
         q_a_full, _ = self._get_positive_point(canonical_points, "A2")
 
@@ -707,6 +713,10 @@ class AHRIHSPF2Calculator:
                     "heating_load_hours": hlh,
                     "h12_source": h12_source,
                     "h22_source": h22_source,
+                    "h22_capacity": h22_capacity,
+                    "h22_power": h22_power,
+                    "h22_tested": h22_tested,
+                    "h22_for_slope_source": h22_for_slope_source,
                     "h22_high_anchor_source": h22_high_anchor_source,
                     "h22_high_anchor_capacity": h22_high_anchor_capacity,
                     "h22_high_anchor_power": h22_high_anchor_power,
