@@ -100,6 +100,25 @@ class EN14825Calculator:
         power = lo[1] + ratio * (hi[1] - lo[1])
         return (capa, power)
 
+    def _interpolate_cooling_eer(self, tj: float, test_points: dict) -> float:
+        """빈 온도 Tj에서 A/B/C/D 포인트의 EERpl을 직접 선형보간."""
+        t_a, t_b, t_c, t_d = T_A, T_B, T_C, T_D
+        eers = {
+            key: self._safe_div(point[0], point[1])
+            for key, point in test_points.items()
+        }
+
+        if tj >= t_a:
+            return eers["A"]
+        if tj <= t_d:
+            return eers["D"]
+
+        if t_d < tj <= t_c:
+            return self._linear(tj, t_d, eers["D"], t_c, eers["C"])
+        if t_c < tj <= t_b:
+            return self._linear(tj, t_c, eers["C"], t_b, eers["B"])
+        return self._linear(tj, t_b, eers["B"], t_a, eers["A"])
+
     def _get_pc_and_eer_pl(self, tj: float, test_points: dict, p_design_c: float, t_design_c: float, cd: float) -> tuple:
         """
         빈 온도 Tj에서의 실제 적용 부하(Pc) 및 EERpl 동시 산출.
@@ -128,7 +147,7 @@ class EN14825Calculator:
             factor = max(0.0, 1.0 - cd * (1.0 - cr))
             eer_pl = eer_dc * factor
         else:
-            # ① Tj > 20°C: 능력/전력 각각 보간 후 확인
+            # ① Tj > 20°C: 능력은 보간하고 EERpl은 A/B/C/D EER에서 직접 보간
             capa_avail, power_active = self._interpolate_capa_and_power(tj, test_points)
             
             # [피드백 3] 0 이하 전력에 대한 방어 로직
@@ -141,7 +160,11 @@ class EN14825Calculator:
             else:
                 pc = pc_raw
                 
-            eer_pl = capa_avail / power_active
+            eer_pl = self._interpolate_cooling_eer(tj, test_points)
+            if capa_avail > pc_raw:
+                cr = min(pc_raw / capa_avail, 1.0)
+                factor = max(0.0, 1.0 - cd * (1.0 - cr))
+                eer_pl *= factor
 
         return pc, eer_pl
 
@@ -334,12 +357,6 @@ class EN14825Calculator:
                 f"TOL must be <= Tbiv for SCOP heating calculation: "
                 f"TOL={points['TOL']['temp_c']}, Tbiv={points['Tbiv']['temp_c']}"
             )
-        if climate_data.get("label") == "Colder" and points["TOL"]["temp_c"] < -20:
-            raise ValueError(
-                "EN 14825 colder climate with TOL below -20°C requires an additional -15°C "
-                "capacity/COPPL calculation point. This input schema does not include that point yet."
-            )
-
         return points
 
     def _heating_part_load(self, tj: float, p_design_h: float, t_design_h: float) -> float:
@@ -353,11 +370,18 @@ class EN14825Calculator:
 
     def _scop_capacity_cop_at_temp(self, tj: float, points: dict) -> tuple:
         tol_temp = points["TOL"]["temp_c"]
-        if tj < tol_temp:
+        tbiv_temp = points["Tbiv"]["temp_c"]
+
+        if tj <= tol_temp:
             return 0.0, 0.0, "below_tol_heat_pump_off"
 
+        if tj == tbiv_temp:
+            point = points["Tbiv"]
+            return point["capacity"], point["cop_pl"], "direct_Tbiv"
+
         pairs = []
-        for key, point in points.items():
+        for key in ("A", "B", "C", "D"):
+            point = points[key]
             pairs.append((point["temp_c"], point["capacity"], point["cop_pl"], key))
         pairs.sort(key=lambda item: item[0])
 
@@ -379,7 +403,7 @@ class EN14825Calculator:
 
         raise ValueError(f"SCOP interpolation failed at Tj={tj}")
 
-    def _scop_bin_energy_terms(self, ph: float, pdh: float, cop_pl: float) -> tuple:
+    def _scop_bin_energy_terms(self, ph: float, pdh: float, cop_pl: float, cd: float) -> tuple:
         if ph <= 0:
             return 0.0, 0.0, 0.0, "no_heating_load"
         if pdh <= 0 or cop_pl <= 0:
@@ -388,6 +412,10 @@ class EN14825Calculator:
         elbu = max(0.0, ph - pdh)
         heat_pump_load = ph - elbu
         operating_case = "capacity_shortfall_with_backup" if elbu > 0 else "heat_pump_covers_load"
+        if pdh > ph:
+            cr = min(ph / pdh, 1.0)
+            factor = max(0.0, 1.0 - cd * (1.0 - cr))
+            cop_pl *= factor
         return cop_pl, heat_pump_load, elbu, operating_case
 
     def _calculate_scop_on(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
@@ -408,7 +436,7 @@ class EN14825Calculator:
                 continue
 
             pdh, cop_pl, interpolation = self._scop_capacity_cop_at_temp(float(tj), points)
-            cop_bin, heat_pump_load, elbu, operating_case = self._scop_bin_energy_terms(ph, pdh, cop_pl)
+            cop_bin, heat_pump_load, elbu, operating_case = self._scop_bin_energy_terms(ph, pdh, cop_pl, cd)
             if heat_pump_load > 0 and cop_bin <= 0:
                 raise ValueError(f"SCOP COPPL must be > 0 at Tj={tj}")
 
