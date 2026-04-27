@@ -329,6 +329,31 @@ class AHRIHSPF2Calculator:
         p_low = p_h1_low + (p_h0_low - p_h1_low) * self._safe_div(temp_f - 47, 62 - 47)
         return max(0.0, q_low), max(0.0, p_low)
 
+    def _cert_minimum_limited_low_capacity_power_at_temp(
+        self,
+        temp_f: float,
+        low_points: dict,
+        h2int_point: tuple,
+        int_point_at_temp: tuple,
+    ) -> tuple:
+        q_h0_low, p_h0_low = low_points["H01"]
+        q_h1_low, p_h1_low = low_points["H11"]
+        q_h2_int, p_h2_int = h2int_point
+        q_int, p_int = int_point_at_temp
+
+        # AHRI 210/240-2026 Eq.11.189 through Eq.11.194.
+        if temp_f >= 47:
+            q_low = q_h1_low + (q_h0_low - q_h1_low) * self._safe_div(temp_f - 47, 62 - 47)
+            p_low = p_h1_low + (p_h0_low - p_h1_low) * self._safe_div(temp_f - 47, 62 - 47)
+        elif temp_f >= 35:
+            q_low = q_h2_int + (q_h1_low - q_h2_int) * self._safe_div(temp_f - 35, 47 - 35)
+            p_low = p_h2_int + (p_h1_low - p_h2_int) * self._safe_div(temp_f - 35, 47 - 35)
+        else:
+            q_low = q_int
+            p_low = p_int
+
+        return max(0.0, q_low), max(0.0, p_low)
+
     def _cert_full_capacity_power_at_temp(
         self,
         temp_f: float,
@@ -486,6 +511,19 @@ class AHRIHSPF2Calculator:
         c_d_heating = kwargs.get("c_d_heating", self.defaults.get("c_d_heating", 0.25))
         aux_eer = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0)) * 3.412
         fdef_override = kwargs.get("fdef_override", self.defaults.get("fdef_override", 1.0))
+        minimum_speed_limited = bool(
+            kwargs.get(
+                "does_comp_limit_min_spd",
+                kwargs.get(
+                    "comp_limit_min_spd",
+                    kwargs.get(
+                        "minimum_speed_limited",
+                        kwargs.get("is_minimum_speed_limited", False),
+                    ),
+                ),
+            )
+        )
+        case_i_low_source = "eq_11_189_194" if minimum_speed_limited else "eq_11_187_188"
 
         f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
         total_heating_btu = 0.0
@@ -499,7 +537,6 @@ class AHRIHSPF2Calculator:
                 continue
 
             building_load = self._building_load_v3(temp_f, q_a_full, c_vs, t_zl, t_od)
-            q_low, p_low = self._cert_low_capacity_power_at_temp(temp_f, low_points)
             q_full, p_full = self._cert_full_capacity_power_at_temp(temp_f, full_points, h1_nom, h4_point)
             q_int, p_int, int_meta = self._cert_intermediate_capacity_power_at_temp(
                 temp_f,
@@ -507,6 +544,15 @@ class AHRIHSPF2Calculator:
                 low_points,
                 full_points,
             )
+            if minimum_speed_limited:
+                q_low, p_low = self._cert_minimum_limited_low_capacity_power_at_temp(
+                    temp_f,
+                    low_points,
+                    h2_int,
+                    (q_int, p_int),
+                )
+            else:
+                q_low, p_low = self._cert_low_capacity_power_at_temp(temp_f, low_points)
 
             cop_low = self._safe_div(q_low, p_low * 3.412) if p_low > 0 else 0.0
             cop_full = self._safe_div(q_full, p_full * 3.412) if p_full > 0 else 0.0
@@ -536,12 +582,17 @@ class AHRIHSPF2Calculator:
                 operating_case = "Case II"
                 hlf = None
                 plf = 1.0
-                if not (q_low < q_int < q_full):
+                valid_case_ii_points = (
+                    q_low <= q_int < q_full
+                    if minimum_speed_limited
+                    else q_low < q_int < q_full
+                )
+                if not valid_case_ii_points:
                     raise ValueError(
                         "HSPF2 v3 AHRI Case II requires q_low < q_int < q_full at every Case II bin: "
                         f"temp_f={temp_f}, q_low={q_low}, q_int={q_int}, q_full={q_full}"
                     )
-                if building_load <= q_int:
+                if q_int > q_low and building_load <= q_int:
                     cop_bin = cop_low + self._safe_div(building_load - q_low, q_int - q_low) * (cop_int - cop_low)
                 else:
                     cop_bin = cop_int + self._safe_div(building_load - q_int, q_full - q_int) * (cop_full - cop_int)
@@ -602,7 +653,7 @@ class AHRIHSPF2Calculator:
                         else "h4full_low_temp_line" if h4_point is not None
                         else "no_h4full_h1full_h3full_line"
                     ),
-                    "low_capacity_method": "eq_11_187_11_188",
+                    "low_capacity_method": case_i_low_source,
                     "intermediate_capacity_method": int_meta["method"],
                     "intermediate_metadata": {
                         key: round(value, 6) if isinstance(value, float) else value
@@ -649,6 +700,8 @@ class AHRIHSPF2Calculator:
                     "heating_load_hours": hlh,
                     "h12_source": h12_source,
                     "h22_source": h22_source,
+                    "minimum_speed_limited": minimum_speed_limited,
+                    "case_i_low_source": case_i_low_source,
                     "t_off": t_off,
                     "t_on": t_on,
                     "t_off_used": t_off,
