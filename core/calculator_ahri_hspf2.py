@@ -302,15 +302,19 @@ class AHRIHSPF2Calculator:
         if t_on <= t_off:
             raise ValueError(f"Invalid Appendix J cut-in/out values: t_on={t_on}, t_off={t_off}")
 
-        defrost_t_test = kwargs["defrost_t_test_minutes"]
-        defrost_t_max = kwargs["defrost_t_max_minutes"]
-        if defrost_t_test < 90 or defrost_t_max > 720 or defrost_t_max <= 90:
+        raw_t_test = kwargs["defrost_t_test_minutes"]
+        raw_t_max = kwargs["defrost_t_max_minutes"]
+        if raw_t_test <= 0 or raw_t_max <= 90:
             raise ValueError(
-                "Invalid demand defrost interval inputs for AHRI Eq. 11.107: "
-                f"defrost_t_test_minutes={defrost_t_test}, defrost_t_max_minutes={defrost_t_max}"
+                "Invalid demand defrost inputs: "
+                f"defrost_t_test_minutes={raw_t_test} must be > 0, "
+                f"defrost_t_max_minutes={raw_t_max} must be > 90"
             )
 
-        return t_off, t_on, defrost_t_test, defrost_t_max
+        t_test = max(raw_t_test, 90)
+        t_max = min(raw_t_max, 720)
+
+        return t_off, t_on, t_test, t_max, raw_t_test, raw_t_max
 
     def _cert_low_capacity_power_at_temp(self, temp_f: float, low_points: dict) -> tuple:
         q_h0_low, p_h0_low = low_points["H01"]
@@ -339,10 +343,14 @@ class AHRIHSPF2Calculator:
         elif temp_f > 17:
             q_full = self._linear(temp_f, 17, q_h3_full, 35, q_h2_full)
             p_full = self._linear(temp_f, 17, p_h3_full, 35, p_h2_full)
-        elif h4_point is not None:
+        elif h4_point is not None and temp_f > 5:
             q_h4_full, p_h4_full = h4_point
-            q_full = self._linear(temp_f, 5, q_h4_full, 17, q_h3_full)
-            p_full = self._linear(temp_f, 5, p_h4_full, 17, p_h3_full)
+            q_full = q_h4_full + (q_h3_full - q_h4_full) * self._safe_div(temp_f - 5, 17 - 5)
+            p_full = p_h4_full + (p_h3_full - p_h4_full) * self._safe_div(temp_f - 5, 17 - 5)
+        elif h4_point is not None and temp_f <= 5:
+            q_h4_full, p_h4_full = h4_point
+            q_full = q_h4_full + (q_h1_nom - q_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
+            p_full = p_h4_full + (p_h1_nom - p_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
         else:
             q_full = self._linear(temp_f, 17, q_h3_full, 47, q_h1_full)
             p_full = self._linear(temp_f, 17, p_h3_full, 47, p_h1_full)
@@ -399,7 +407,7 @@ class AHRIHSPF2Calculator:
 
     def _calculate_hspf2_v3_ahri(self, test_points: dict, **kwargs) -> dict:
         canonical_points = self.legacy_to_canonical(test_points)
-        t_off, t_on, defrost_t_test, defrost_t_max = self._require_ahri_kwargs(kwargs)
+        t_off, t_on, t_test, t_max, raw_t_test, raw_t_max = self._require_ahri_kwargs(kwargs)
         required_points = ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32", "A2")
         missing = [key for key in required_points if key not in canonical_points]
         if missing:
@@ -438,7 +446,7 @@ class AHRIHSPF2Calculator:
         c_d_heating = kwargs.get("c_d_heating", self.defaults.get("c_d_heating", 0.25))
         aux_eer = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0)) * 3.412
 
-        f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(defrost_t_test - 90, defrost_t_max - 90))
+        f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
         total_heating_btu = 0.0
         total_energy_wh = 0.0
         bin_details = []
@@ -602,8 +610,15 @@ class AHRIHSPF2Calculator:
                     "t_on": t_on,
                     "c_d_heating": c_d_heating,
                     "defrost_control_type": "demand",
-                    "defrost_t_test_minutes": defrost_t_test,
-                    "defrost_t_max_minutes": defrost_t_max,
+                    "defrost_t_test_minutes": t_test,
+                    "defrost_t_max_minutes": t_max,
+                    "defrost": {
+                        "t_test_input": raw_t_test,
+                        "t_max_input": raw_t_max,
+                        "t_test_used": t_test,
+                        "t_max_used": t_max,
+                        "clamped": raw_t_test != t_test or raw_t_max != t_max,
+                    },
                     "t_OBO": 45,
                 },
                 "heating_load_line": {

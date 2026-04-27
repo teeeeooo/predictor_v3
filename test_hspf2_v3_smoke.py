@@ -53,6 +53,15 @@ canonical_low_speed_mock = {
     "H31": (8000, 800),
 }
 
+# test fixture - not real test data
+canonical_h4_full_anchor_mock = {
+    "H12": (24000, 2200),
+    "H22": (23200, 2160),
+    "H32": (22000, 2100),
+}
+q_H4Full = 18000
+q_H3Full = canonical_h4_full_anchor_mock["H32"][0]
+
 kwargs = {
     "t_off": -10,
     "t_on": -5,
@@ -64,6 +73,18 @@ v2 = calc.calculate_hspf2_v2(legacy_points)
 v3_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42, **kwargs)
 v3_without_h42 = calc.calculate_hspf2_v3(canonical_without_h42, **kwargs)
 q_low_42, p_low_42 = calc._canonical_low_capacity_power_at_temp(42, canonical_low_speed_mock)
+q_full_at_5, _ = calc._cert_full_capacity_power_at_temp(
+    5,
+    canonical_h4_full_anchor_mock,
+    canonical_h4_full_anchor_mock["H12"],
+    (q_H4Full, 1900),
+)
+q_full_at_17, _ = calc._cert_full_capacity_power_at_temp(
+    17,
+    canonical_h4_full_anchor_mock,
+    canonical_h4_full_anchor_mock["H12"],
+    (q_H4Full, 1900),
+)
 
 v2_raw = v2["total_heating_Btu"] / v2["total_energy_Wh"]
 assert v2["HSPF2"] == 9.602
@@ -81,6 +102,10 @@ assert v3_without_h42["total_heating_btu"] == v3_without_h42["total_load"]
 assert v3_without_h42["total_energy_wh"] == v3_without_h42["total_energy"]
 assert round(q_low_42, 3) == 11166.667
 assert round(p_low_42, 3) == 958.333
+assert abs(q_full_at_5 - q_H4Full) < 1e-6, \
+    "Eq.11.215: tj=5 기준점 불일치 (H4Full anchor)"
+assert abs(q_full_at_17 - q_H3Full) < 1e-6, \
+    "Eq.11.215: tj=17 기준점 불일치 (H3Full anchor)"
 
 print_comparison("H42 provided: v2 vs v3", v2, v3_with_h42)
 print()
