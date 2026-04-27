@@ -220,14 +220,11 @@ class CalculatorWindow(QWidget):
         # Group 3: 추가 파라미터
         group_extra = QGroupBox("3. 추가 파라미터 (Optional)")
         form_extra = QFormLayout()
-        self.input_widgets_ahri["P_W_off"] = QLineEdit()
         self.input_widgets_ahri["Cd_low"] = QLineEdit()
         self.input_widgets_ahri["Cd_full"] = QLineEdit()
         
-        self.input_widgets_ahri["P_W_off"].setPlaceholderText("Off-mode 전력 (W)")
         self.input_widgets_ahri["Cd_low"].setPlaceholderText("기본값: 0.25")
         
-        form_extra.addRow("P_W_off (W):", self.input_widgets_ahri["P_W_off"])
         form_extra.addRow("Cd_low:", self.input_widgets_ahri["Cd_low"])
         form_extra.addRow("Cd_full (Optional):", self.input_widgets_ahri["Cd_full"])
         group_extra.setLayout(form_extra)
@@ -384,13 +381,11 @@ class CalculatorWindow(QWidget):
                        self._get_float_val(self.input_widgets_ahri["F_Low_pow"], "F_Low 전력")),
         }
 
-        p_w_off = self._get_float_val(self.input_widgets_ahri["P_W_off"], "P_W_off", True, True) or 0.0
         cd_low = self._get_float_val(self.input_widgets_ahri["Cd_low"], "Cd_low", True, True)
 
         result = self.ahri_calc.calculate_seer2(
             test_points=test_points,
             system_type=system_type,
-            p_w_off=p_w_off,
             cd_low=cd_low
         )
 

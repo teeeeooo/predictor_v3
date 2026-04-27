@@ -200,6 +200,5 @@ class AHRICalculator:
             "total_cooling_Btu": round(sum_q_j, 3),
             "total_energy_Wh": round(sum_E_j, 3),
             "system_type": system_type,
-            "p_w_off": p_w_off,
             "bin_details": bin_details
         }

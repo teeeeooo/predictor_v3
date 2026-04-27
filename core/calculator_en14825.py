@@ -398,6 +398,15 @@ class EN14825Calculator:
     def _scop_pl_at_declared_point(self, point: dict, load: float, cd: float) -> dict:
         capacity = point["capacity"]
         load_gap_ratio = self._safe_div(capacity - load, load) if load > 0 else 0.0
+        # EN 14825 Clause 7.4.2.2 allows variable-capacity units to use the
+        # closest capacity control step within +/-10%. With the current
+        # declared-point-only input schema, raw capacity-control step candidates
+        # are unavailable, so complete closest-step selection is not possible.
+        # This condition treats a declared capacity above the required load but
+        # within 10% as the acceptable closest step without Cd degradation; if
+        # the gap exceeds 10%, it represents cycling at the lowest step above
+        # the load. Replace this with actual closest-step selection when a raw
+        # step schema is added.
         data = self._part_load_performance(
             capacity,
             point["power"],
