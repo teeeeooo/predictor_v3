@@ -380,8 +380,9 @@ class AHRIHSPF2Calculator:
             p_full = p_h4_full + (p_h3_full - p_h4_full) * self._safe_div(temp_f - 5, 17 - 5)
         elif h4_point is not None and temp_f <= 5:
             q_h4_full, p_h4_full = h4_point
-            q_full = q_h4_full + (q_h1_nom - q_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
-            p_full = p_h4_full + (p_h1_nom - p_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
+            # AHRI 210/240-2026 Eq.11.217 and Eq.11.218.
+            q_full = q_h4_full + (q_h1_full - q_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
+            p_full = p_h4_full + (p_h1_full - p_h3_full) * self._safe_div(temp_f - 5, 47 - 17)
         else:
             q_full = self._linear(temp_f, 17, q_h3_full, 47, q_h1_full)
             p_full = self._linear(temp_f, 17, p_h3_full, 47, p_h1_full)
