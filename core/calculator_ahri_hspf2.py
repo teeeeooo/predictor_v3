@@ -674,7 +674,8 @@ class AHRIHSPF2Calculator:
             raise ValueError("HSPF2 AHRI calculation error: total_heating_btu must be > 0.")
 
         raw_hspf2_base = self._safe_div(total_heating_btu, total_energy_wh)
-        raw_hspf2 = raw_hspf2_base * f_def_seasonal * fdef_override
+        seasonal_defrost_multiplier_applied = False
+        raw_hspf2 = raw_hspf2_base * fdef_override
         rounded_hspf2 = self._round_nearest_025(raw_hspf2)
         return {
             "raw_hspf2": raw_hspf2,
@@ -722,6 +723,10 @@ class AHRIHSPF2Calculator:
                     "defrost": {
                         "mode": "override",
                         "fdef_used": fdef_override,
+                        "f_def_seasonal": f_def_seasonal,
+                        "raw_hspf2_base": raw_hspf2_base,
+                        "raw_hspf2": raw_hspf2,
+                        "seasonal_defrost_multiplier_applied": seasonal_defrost_multiplier_applied,
                         "t_test_input": raw_t_test,
                         "t_max_input": raw_t_max,
                         "t_test_used": t_test,
