@@ -658,6 +658,8 @@ class AHRIHSPF2Calculator:
                     "defrost_t_test_minutes": t_test,
                     "defrost_t_max_minutes": t_max,
                     "defrost": {
+                        "mode": "override",
+                        "fdef_used": fdef_override,
                         "t_test_input": raw_t_test,
                         "t_max_input": raw_t_max,
                         "t_test_used": t_test,
