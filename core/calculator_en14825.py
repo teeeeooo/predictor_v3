@@ -69,104 +69,130 @@ class EN14825Calculator:
             if capa <= 0 or power <= 0:
                 raise ValueError(f"Invalid value at {k}: capa={capa}, power={power}")
 
-    def _get_part_load_ratio(self, tj: float, t_design_c: float) -> float:
-        """
-        빈 온도 Tj에서의 부분부하율 계산 (규격 식 4)
-        Part load ratio = (Tj - 16) / (T_design_c - 16)
-        """
-        ratio = (tj - 16.0) / (t_design_c - 16.0)
-        return min(ratio, 1.0)  # 조건A 온도 초과 시 1.0으로 제한
+    def _cooling_load_at_temp(self, tj: float, p_design_c: float, t_design_c: float) -> float:
+        if p_design_c <= 0:
+            raise ValueError(f"p_design_c must be > 0 for SEER calculation: {p_design_c}")
+        if t_design_c == 16:
+            raise ValueError("t_design_c cannot be 16°C for SEER cooling load line.")
+        return max(0.0, p_design_c * (tj - 16.0) / (t_design_c - 16.0))
 
-    def _interpolate_capa_and_power(self, tj: float, test_points: dict) -> tuple:
-        """빈 온도 Tj에서 능력(kW)과 소비전력(kW)을 각각 독립 선형보간."""
-        t_a, t_b, t_c, t_d = T_A, T_B, T_C, T_D
+    def _cooling_condition_load(self, condition_temp: float, p_design_c: float, t_design_c: float) -> float:
+        return self._cooling_load_at_temp(condition_temp, p_design_c, t_design_c)
 
-        if tj >= t_a:
-            return test_points["A"]
-        if tj <= t_d:
-            return test_points["D"]
+    def _part_load_performance(
+        self,
+        capacity: float,
+        power: float,
+        load: float,
+        cd: float,
+        apply_degradation: bool = True,
+    ) -> dict:
+        if capacity <= 0 or power <= 0:
+            raise ValueError(f"Invalid declared point: capacity={capacity}, power={power}")
+        if load < 0:
+            raise ValueError(f"Declared point load must not be negative: {load}")
 
-        if t_d < tj <= t_c:
-            ratio = (tj - t_d) / (t_c - t_d)
-            lo, hi = test_points["D"], test_points["C"]
-        elif t_c < tj <= t_b:
-            ratio = (tj - t_c) / (t_b - t_c)
-            lo, hi = test_points["C"], test_points["B"]
-        else:  # t_b < tj < t_a
-            ratio = (tj - t_b) / (t_a - t_b)
-            lo, hi = test_points["B"], test_points["A"]
+        full_load_efficiency = capacity / power
+        if apply_degradation and capacity > load:
+            cr = self._safe_div(load, capacity)
+            degradation_factor = max(0.0, 1.0 - cd * (1.0 - cr))
+            part_load_efficiency = full_load_efficiency * degradation_factor
+        else:
+            cr = 1.0
+            part_load_efficiency = full_load_efficiency
+            degradation_factor = 1.0
 
-        capa  = lo[0] + ratio * (hi[0] - lo[0])
-        power = lo[1] + ratio * (hi[1] - lo[1])
-        return (capa, power)
-
-    def _interpolate_cooling_eer(self, tj: float, test_points: dict) -> float:
-        """빈 온도 Tj에서 A/B/C/D 포인트의 EERpl을 직접 선형보간."""
-        t_a, t_b, t_c, t_d = T_A, T_B, T_C, T_D
-        eers = {
-            key: self._safe_div(point[0], point[1])
-            for key, point in test_points.items()
+        return {
+            "full_load_efficiency": full_load_efficiency,
+            "part_load_efficiency": part_load_efficiency,
+            "cr": cr,
+            "degradation_factor": degradation_factor,
         }
 
-        if tj >= t_a:
-            return eers["A"]
-        if tj <= t_d:
-            return eers["D"]
+    def _eer_pl_at_declared_point(
+        self,
+        capacity: float,
+        power: float,
+        load: float,
+        cd: float,
+        apply_degradation: bool = True,
+    ) -> dict:
+        data = self._part_load_performance(capacity, power, load, cd, apply_degradation)
+        return {
+            "eer_dc": data["full_load_efficiency"],
+            "eer_pl": data["part_load_efficiency"],
+            "cr": data["cr"],
+            "degradation_factor": data["degradation_factor"],
+        }
 
-        if t_d < tj <= t_c:
-            return self._linear(tj, t_d, eers["D"], t_c, eers["C"])
-        if t_c < tj <= t_b:
-            return self._linear(tj, t_c, eers["C"], t_b, eers["B"])
-        return self._linear(tj, t_b, eers["B"], t_a, eers["A"])
+    def _build_cooling_eerpl_points(
+        self,
+        test_points: dict,
+        p_design_c: float,
+        t_design_c: float,
+        cd: float,
+    ) -> list:
+        point_temps = {"A": T_A, "B": T_B, "C": T_C, "D": T_D}
+        points = []
+        for key in ("D", "C", "B", "A"):
+            temp = float(point_temps[key])
+            capacity, power = test_points[key]
+            load = self._cooling_condition_load(temp, p_design_c, t_design_c)
+            perf = self._eer_pl_at_declared_point(
+                float(capacity),
+                float(power),
+                load,
+                cd,
+                apply_degradation=(key != "A"),
+            )
+            points.append({
+                "key": key,
+                "temp_c": temp,
+                "value": perf["eer_pl"],
+                "load": load,
+                "capacity": float(capacity),
+                "power": float(power),
+                "eer_dc": perf["eer_dc"],
+                "cr": perf["cr"],
+                "degradation_factor": perf["degradation_factor"],
+            })
+        return points
 
-    def _get_pc_and_eer_pl(self, tj: float, test_points: dict, p_design_c: float, t_design_c: float, cd: float) -> tuple:
-        """
-        빈 온도 Tj에서의 실제 적용 부하(Pc) 및 EERpl 동시 산출.
-        (피드백 1, 2, 3, 5, 6 반영)
+    def _interpolate_from_points(
+        self,
+        tj: float,
+        points: list,
+        value_key: str = "value",
+        extrapolate_upper: bool = False,
+    ) -> tuple:
+        if not points:
+            raise ValueError("Interpolation requires at least one point.")
 
-        Returns:
-            (pc, eer_pl) 튜플
-        """
-        # 해당 빈의 요구 부하 (raw 값)
-        plr = self._get_part_load_ratio(tj, t_design_c)
-        pc_raw  = p_design_c * plr
+        ordered = sorted(points, key=lambda point: point["temp_c"])
+        if tj <= ordered[0]["temp_c"]:
+            point = ordered[0]
+            return point[value_key], f"clamped_to_{point.get('key', point['temp_c'])}"
+        if tj >= ordered[-1]["temp_c"]:
+            if extrapolate_upper and len(ordered) >= 2:
+                low = ordered[-2]
+                high = ordered[-1]
+                value = self._linear(tj, low["temp_c"], low[value_key], high["temp_c"], high[value_key])
+                return value, f"extrapolated_{low.get('key', low['temp_c'])}_{high.get('key', high['temp_c'])}"
+            point = ordered[-1]
+            return point[value_key], f"clamped_to_{point.get('key', point['temp_c'])}"
 
-        if tj <= T_D:
-            # ② Tj <= 20°C: 조건D가 최소 운전 step
-            capa_avail, power_active = test_points["D"]
-            
-            # [피드백 2] 요구 부하(Pc)는 장비의 최소 능력(Qmin)을 초과할 수 없음
-            pc = min(pc_raw, capa_avail)
-            
-            cr = pc / capa_avail if capa_avail > 0 else 0.0
-            cr = min(cr, 1.0)
-            
-            eer_dc = capa_avail / power_active
-            
-            # [피드백 5] Cd 패널티 팩터가 극단값에서 음수가 되지 않도록 방어
-            factor = max(0.0, 1.0 - cd * (1.0 - cr))
-            eer_pl = eer_dc * factor
-        else:
-            # ① Tj > 20°C: 능력은 보간하고 EERpl은 A/B/C/D EER에서 직접 보간
-            capa_avail, power_active = self._interpolate_capa_and_power(tj, test_points)
-            
-            # [피드백 3] 0 이하 전력에 대한 방어 로직
-            if power_active <= 0:
-                raise ValueError(f"Invalid interpolated power at Tj={tj}: {power_active}")
-                
-            # [피드백 1] Capacity Limit 반영: 장비 능력이 부하에 못 미치면 풀로드 운전 처리
-            if capa_avail < pc_raw:
-                pc = capa_avail
-            else:
-                pc = pc_raw
-                
-            eer_pl = self._interpolate_cooling_eer(tj, test_points)
-            if capa_avail > pc_raw:
-                cr = min(pc_raw / capa_avail, 1.0)
-                factor = max(0.0, 1.0 - cd * (1.0 - cr))
-                eer_pl *= factor
+        for i in range(len(ordered) - 1):
+            low = ordered[i]
+            high = ordered[i + 1]
+            if low["temp_c"] <= tj <= high["temp_c"]:
+                if tj == low["temp_c"]:
+                    return low[value_key], f"direct_{low.get('key', low['temp_c'])}"
+                if tj == high["temp_c"]:
+                    return high[value_key], f"direct_{high.get('key', high['temp_c'])}"
+                value = self._linear(tj, low["temp_c"], low[value_key], high["temp_c"], high[value_key])
+                return value, f"linear_{low.get('key', low['temp_c'])}_{high.get('key', high['temp_c'])}"
 
-        return pc, eer_pl
+        raise ValueError(f"Interpolation failed at Tj={tj}")
 
     # [버그 2 수정]: p_design_c 인자 추가 및 내부 할당 코드 삭제
     def _calculate_seer_on(
@@ -181,13 +207,14 @@ class EN14825Calculator:
         """
         numerator   = 0.0  # Σ(hj × Pc(Tj))
         denominator = 0.0  # Σ(hj × Pc(Tj) / EERpl(Tj))
+        eer_points = self._build_cooling_eerpl_points(test_points, p_design_c, t_design_c, cd)
 
         for tj, hj in zip(COOLING_BIN_TEMPS, COOLING_BIN_HOURS):
             if hj == 0:
                 continue
 
-            # [피드백 6] 계산을 한 번만 하도록 _get_pc_and_eer_pl 호출 구조로 통일
-            pc, eer_pl = self._get_pc_and_eer_pl(tj, test_points, p_design_c, t_design_c, cd)
+            pc = self._cooling_load_at_temp(float(tj), p_design_c, t_design_c)
+            eer_pl, _ = self._interpolate_from_points(float(tj), eer_points)
 
             if pc <= 0:
                 continue
@@ -368,60 +395,98 @@ class EN14825Calculator:
         ph = p_design_h * (tj - 16.0) / (t_design_h - 16.0)
         return max(0.0, ph)
 
-    def _scop_capacity_cop_at_temp(self, tj: float, points: dict) -> tuple:
-        tol_temp = points["TOL"]["temp_c"]
-        tbiv_temp = points["Tbiv"]["temp_c"]
+    def _scop_pl_at_declared_point(self, point: dict, load: float, cd: float) -> dict:
+        capacity = point["capacity"]
+        load_gap_ratio = self._safe_div(capacity - load, load) if load > 0 else 0.0
+        data = self._part_load_performance(
+            capacity,
+            point["power"],
+            load,
+            cd,
+            apply_degradation=(capacity > load and load_gap_ratio > 0.10),
+        )
+        return {
+            "cop_dc": data["full_load_efficiency"],
+            "cop_pl": data["part_load_efficiency"],
+            "cr": data["cr"],
+            "degradation_factor": data["degradation_factor"],
+        }
 
-        if tj <= tol_temp:
-            return 0.0, 0.0, "below_tol_heat_pump_off"
+    def _build_scop_points(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
+        t_design_h = float(climate_data["t_design_h_c"])
+        resolved = {}
+        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+            point = dict(points[key])
+            load = self._heating_part_load(point["temp_c"], p_design_h, t_design_h)
+            perf = self._scop_pl_at_declared_point(point, load, cd)
+            point.update({
+                "key": key,
+                "load": load,
+                "cop_dc": perf["cop_dc"],
+                "cop_pl": perf["cop_pl"],
+                "cr": perf["cr"],
+                "degradation_factor": perf["degradation_factor"],
+                "value": perf["cop_pl"],
+            })
+            resolved[key] = point
 
-        if tj == tbiv_temp:
-            point = points["Tbiv"]
-            return point["capacity"], point["cop_pl"], "direct_Tbiv"
+        return {
+            "points": resolved,
+            "capacity_curve": self._scop_capacity_curve_points(resolved),
+            "coppl_curve": self._scop_coppl_curve_points(resolved),
+        }
 
-        pairs = []
+    def _scop_capacity_curve_points(self, points: dict) -> list:
+        priority = {"TOL": 60, "Tbiv": 50, "A": 40, "B": 30, "C": 20, "D": 10}
+        by_temp = {}
+        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+            point = points[key]
+            temp = point["temp_c"]
+            current = by_temp.get(temp)
+            if current is None or priority[key] > priority[current["key"]]:
+                by_temp[temp] = {
+                    "key": key,
+                    "temp_c": temp,
+                    "value": point["capacity"],
+                    "capacity": point["capacity"],
+                }
+        return sorted(by_temp.values(), key=lambda point: point["temp_c"])
+
+    def _scop_coppl_curve_points(self, points: dict) -> list:
+        curve = []
+        used_temps = set()
         for key in ("A", "B", "C", "D"):
             point = points[key]
-            pairs.append((point["temp_c"], point["capacity"], point["cop_pl"], key))
-        pairs.sort(key=lambda item: item[0])
+            used_temps.add(point["temp_c"])
+            curve.append({
+                "key": key,
+                "temp_c": point["temp_c"],
+                "value": point["cop_pl"],
+                "cop_pl": point["cop_pl"],
+            })
+        for key in ("TOL", "Tbiv"):
+            point = points[key]
+            if point["temp_c"] in used_temps:
+                continue
+            curve.append({
+                "key": key,
+                "temp_c": point["temp_c"],
+                "value": point["cop_pl"],
+                "cop_pl": point["cop_pl"],
+            })
+        return sorted(curve, key=lambda point: point["temp_c"])
 
-        if tj <= pairs[0][0]:
-            _, capacity, cop_pl, key = pairs[0]
-            return capacity, cop_pl, f"clamped_to_{key}"
+    def _capacity_at_temp_for_scop(self, tj: float, scop_points: dict) -> tuple:
+        return self._interpolate_from_points(tj, scop_points["capacity_curve"])
 
-        if tj >= pairs[-1][0]:
-            _, capacity, cop_pl, key = pairs[-1]
-            return capacity, cop_pl, f"clamped_to_{key}"
+    def _coppl_at_temp_for_scop(self, tj: float, scop_points: dict) -> tuple:
+        return self._interpolate_from_points(tj, scop_points["coppl_curve"], extrapolate_upper=True)
 
-        for i in range(len(pairs) - 1):
-            t1, c1, cop1, k1 = pairs[i]
-            t2, c2, cop2, k2 = pairs[i + 1]
-            if t1 <= tj <= t2:
-                capacity = self._linear(tj, t1, c1, t2, c2)
-                cop_pl = self._linear(tj, t1, cop1, t2, cop2)
-                return max(0.0, capacity), max(0.0, cop_pl), f"linear_{k1}_{k2}"
-
-        raise ValueError(f"SCOP interpolation failed at Tj={tj}")
-
-    def _scop_bin_energy_terms(self, ph: float, pdh: float, cop_pl: float, cd: float) -> tuple:
-        if ph <= 0:
-            return 0.0, 0.0, 0.0, "no_heating_load"
-        if pdh <= 0 or cop_pl <= 0:
-            return 0.0, 0.0, ph, "electric_backup_only"
-
-        elbu = max(0.0, ph - pdh)
-        heat_pump_load = ph - elbu
-        operating_case = "capacity_shortfall_with_backup" if elbu > 0 else "heat_pump_covers_load"
-        if pdh > ph:
-            cr = min(ph / pdh, 1.0)
-            factor = max(0.0, 1.0 - cd * (1.0 - cr))
-            cop_pl *= factor
-        return cop_pl, heat_pump_load, elbu, operating_case
-
-    def _calculate_scop_on(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
+    def _calculate_scop_on(self, scop_points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
         temps = climate_data["heating_bin_temps_c"]
         hours = climate_data["heating_bin_hours"]
         t_design_h = float(climate_data["t_design_h_c"])
+        tol_temp = scop_points["points"]["TOL"]["temp_c"]
 
         numerator = 0.0
         denominator = 0.0
@@ -435,13 +500,35 @@ class EN14825Calculator:
             if ph <= 0:
                 continue
 
-            pdh, cop_pl, interpolation = self._scop_capacity_cop_at_temp(float(tj), points)
-            cop_bin, heat_pump_load, elbu, operating_case = self._scop_bin_energy_terms(ph, pdh, cop_pl, cd)
-            if heat_pump_load > 0 and cop_bin <= 0:
+            if float(tj) < tol_temp:
+                pdh = 0.0
+                cop_pl = 0.0
+                heat_pump_load = 0.0
+                elbu = ph
+                operating_case = "below_tol_electric_backup_only"
+                capacity_source = "below_tol_heat_pump_off"
+                cop_source = "below_tol_heat_pump_off"
+                cr = 0.0
+                denominator_contribution = hj * elbu
+            else:
+                pdh, capacity_source = self._capacity_at_temp_for_scop(float(tj), scop_points)
+                cop_pl, cop_source = self._coppl_at_temp_for_scop(float(tj), scop_points)
+                if pdh >= ph:
+                    elbu = 0.0
+                    heat_pump_load = ph
+                    operating_case = "heat_pump_covers_load"
+                else:
+                    elbu = ph - pdh
+                    heat_pump_load = pdh
+                    operating_case = "capacity_shortfall_with_backup"
+                cr = self._safe_div(heat_pump_load, pdh) if pdh > 0 else 0.0
+                denominator_contribution = hj * (self._safe_div(heat_pump_load, cop_pl) + elbu)
+
+            if heat_pump_load > 0 and cop_pl <= 0:
                 raise ValueError(f"SCOP COPPL must be > 0 at Tj={tj}")
 
             numerator += hj * ph
-            denominator += hj * (self._safe_div(heat_pump_load, cop_bin) + elbu)
+            denominator += denominator_contribution
 
             bin_details.append({
                 "temp_c": tj,
@@ -450,11 +537,16 @@ class EN14825Calculator:
                 "pdh": round(pdh, 6),
                 "cop_pl": round(cop_pl, 6) if cop_pl > 0 else 0.0,
                 "equivalent_power": round(self._safe_div(pdh, cop_pl), 6) if cop_pl > 0 else 0.0,
-                "cop_bin": round(cop_bin, 6) if cop_bin > 0 else 0.0,
+                "cop_bin": round(cop_pl, 6) if cop_pl > 0 else 0.0,
+                "cr": round(cr, 6),
+                "degradation_factor": 1.0,
+                "capacity_source": capacity_source,
+                "cop_source": cop_source,
+                "denominator_contribution": round(denominator_contribution, 6),
                 "heat_pump_load": round(heat_pump_load, 6),
                 "elbu": round(elbu, 6),
                 "operating_case": operating_case,
-                "interpolation": interpolation,
+                "interpolation": f"capacity={capacity_source}; cop={cop_source}",
             })
 
         if numerator <= 0:
@@ -499,8 +591,9 @@ class EN14825Calculator:
             appliance_type = defaults.get("appliance_type", "reversible")
 
         points = self._validate_scop_points(test_points, climate_data, tbiv_temp_c, tol_temp_c)
+        scop_points = self._build_scop_points(points, climate_data, p_design_h, cd)
         operational_hours = self._get_scop_operational_hours(climate_key, appliance_type)
-        scop_on_data = self._calculate_scop_on(points, climate_data, p_design_h, cd)
+        scop_on_data = self._calculate_scop_on(scop_points, climate_data, p_design_h, cd)
 
         q_h = p_design_h * operational_hours["h_he"]
         if q_h <= 0:

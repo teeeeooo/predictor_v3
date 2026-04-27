@@ -1,5 +1,3 @@
-import pytest
-
 from core.calculator_en14825 import EN14825Calculator
 
 
@@ -33,10 +31,6 @@ def scop_points(tbiv_temp_c, tol_temp_c):
     }
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TODO: EERpl direct interpolation fix should make this golden SEER pass.",
-)
 def test_en14825_golden_seer():
     calculator = EN14825Calculator()
     result = calculator.calculate_seer(
@@ -54,10 +48,6 @@ def test_en14825_golden_seer():
     assert_golden_close(result["seer"], 9.104, "SEER")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TODO: COPPL direct interpolation fix should make this golden SCOP pass.",
-)
 def test_en14825_golden_scop_average():
     calculator = EN14825Calculator()
     result = calculator.calculate_scop(
@@ -72,10 +62,6 @@ def test_en14825_golden_scop_average():
     assert_golden_close(result["scop"], 5.108, "SCOP average")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TODO: Tbiv/B duplicate temperature point split should make this golden SCOP pass.",
-)
 def test_en14825_golden_scop_warmer():
     calculator = EN14825Calculator()
     result = calculator.calculate_scop(
@@ -90,10 +76,6 @@ def test_en14825_golden_scop_warmer():
     assert_golden_close(result["scop"], 6.008, "SCOP warmer")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TODO: Colder climate TOL below -20 C needs schema support before this golden SCOP passes.",
-)
 def test_en14825_golden_scop_colder():
     calculator = EN14825Calculator()
     result = calculator.calculate_scop(
