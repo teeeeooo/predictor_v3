@@ -30,6 +30,14 @@ class AHRIHSPF2Calculator:
         self.test_point_temps = self.config.get("test_point_temps", {})
         self.constants = self.config.get("constants", {})
         self.defaults = self.config.get("defaults", {})
+        _hspf2_defaults = {
+            "t_off": -40.0,
+            "t_on": -40.0,
+            "fdef_override": 1.0,
+        }
+        for key, value in _hspf2_defaults.items():
+            if key not in self.defaults:
+                self.defaults[key] = value
 
     def _safe_div(self, num: float, den: float, fallback: float = 0.0) -> float:
         return num / den if den != 0 else fallback
@@ -284,8 +292,6 @@ class AHRIHSPF2Calculator:
     def _require_ahri_kwargs(self, kwargs: dict) -> tuple:
         missing = [
             key for key in (
-                "t_off",
-                "t_on",
                 "defrost_t_test_minutes",
                 "defrost_t_max_minutes",
             )
@@ -297,10 +303,10 @@ class AHRIHSPF2Calculator:
                 + ", ".join(missing)
             )
 
-        t_off = kwargs["t_off"]
-        t_on = kwargs["t_on"]
-        if t_on <= t_off:
-            raise ValueError(f"Invalid Appendix J cut-in/out values: t_on={t_on}, t_off={t_off}")
+        t_off = kwargs.get("t_off", self.defaults.get("t_off", -40.0))
+        t_on = kwargs.get("t_on", self.defaults.get("t_on", -40.0))
+        if t_on < t_off:
+            raise ValueError(f"t_on({t_on}) must be >= t_off({t_off})")
 
         raw_t_test = kwargs["defrost_t_test_minutes"]
         raw_t_max = kwargs["defrost_t_max_minutes"]
@@ -408,7 +414,7 @@ class AHRIHSPF2Calculator:
     def _calculate_hspf2_v3_ahri(self, test_points: dict, **kwargs) -> dict:
         canonical_points = self.legacy_to_canonical(test_points)
         t_off, t_on, t_test, t_max, raw_t_test, raw_t_max = self._require_ahri_kwargs(kwargs)
-        required_points = ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32", "A2")
+        required_points = ("H01", "H11", "H1N", "H2Int", "H32", "A2")
         missing = [key for key in required_points if key not in canonical_points]
         if missing:
             raise ValueError(
@@ -417,8 +423,6 @@ class AHRIHSPF2Calculator:
             )
 
         full_points = {
-            "H12": self._get_positive_point(canonical_points, "H12"),
-            "H22": self._get_positive_point(canonical_points, "H22"),
             "H32": self._get_positive_point(canonical_points, "H32"),
         }
         h4_point = None
@@ -432,6 +436,42 @@ class AHRIHSPF2Calculator:
             "H11": self._get_positive_point(canonical_points, "H11"),
         }
         h1_nom = self._get_positive_point(canonical_points, "H1N")
+        if "H12" in canonical_points:
+            full_points["H12"] = self._get_positive_point(canonical_points, "H12")
+            h12_source = "tested"
+        else:
+            q_h1_nom, p_h1_nom = h1_nom
+            if kwargs.get("h1n_same_speed_as_h3", False):
+                full_points["H12"] = (q_h1_nom, p_h1_nom)
+                h12_source = "eq_11_183"
+            else:
+                q_h3_full, p_h3_full = full_points["H32"]
+                if q_h3_full == 0 or p_h3_full == 0:
+                    raise ValueError("Invalid H3Full for Eq.11.185/11.186 fallback")
+
+                unit_type = kwargs.get("unit_type", kwargs.get("system_type", "split"))
+                if str(unit_type).lower() in ("single_package", "single-package", "package", "packaged"):
+                    csf = 0.0262
+                else:
+                    csf = 0.0204
+
+                psf = 0.00455
+                full_points["H12"] = (
+                    q_h3_full * (1 + 30 * csf),
+                    p_h3_full * (1 + 30 * psf),
+                )
+                h12_source = "eq_11_185"
+        if "H22" in canonical_points:
+            full_points["H22"] = self._get_positive_point(canonical_points, "H22")
+            h22_source = "tested"
+        else:
+            q_h3_full, p_h3_full = full_points["H32"]
+            q_h1_full_calc, p_h1_full_calc = h1_nom
+            full_points["H22"] = (
+                q_h3_full + (q_h1_full_calc - q_h3_full) * self._safe_div(35 - 17, 47 - 17),
+                p_h3_full + (p_h1_full_calc - p_h3_full) * self._safe_div(35 - 17, 47 - 17),
+            )
+            h22_source = "fallback_interp_17_47"
         h2_int = self._get_positive_point(canonical_points, "H2Int")
         q_a_full, _ = self._get_positive_point(canonical_points, "A2")
 
@@ -445,6 +485,7 @@ class AHRIHSPF2Calculator:
         t_od = bin_table.get("outdoor_design_temp_f", 5)
         c_d_heating = kwargs.get("c_d_heating", self.defaults.get("c_d_heating", 0.25))
         aux_eer = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0)) * 3.412
+        fdef_override = kwargs.get("fdef_override", self.defaults.get("fdef_override", 1.0))
 
         f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
         total_heating_btu = 0.0
@@ -576,7 +617,7 @@ class AHRIHSPF2Calculator:
             raise ValueError("HSPF2 AHRI calculation error: total_heating_btu must be > 0.")
 
         raw_hspf2_base = self._safe_div(total_heating_btu, total_energy_wh)
-        raw_hspf2 = raw_hspf2_base * f_def_seasonal
+        raw_hspf2 = raw_hspf2_base * f_def_seasonal * fdef_override
         rounded_hspf2 = self._round_nearest_025(raw_hspf2)
         return {
             "raw_hspf2": raw_hspf2,
@@ -606,8 +647,12 @@ class AHRIHSPF2Calculator:
                     "formula_path": "ahri_210_240_2026_variable_capacity_heating",
                     "region": bin_table.get("region"),
                     "heating_load_hours": hlh,
+                    "h12_source": h12_source,
+                    "h22_source": h22_source,
                     "t_off": t_off,
                     "t_on": t_on,
+                    "t_off_used": t_off,
+                    "t_on_used": t_on,
                     "c_d_heating": c_d_heating,
                     "defrost_control_type": "demand",
                     "defrost_t_test_minutes": t_test,
@@ -617,6 +662,7 @@ class AHRIHSPF2Calculator:
                         "t_max_input": raw_t_max,
                         "t_test_used": t_test,
                         "t_max_used": t_max,
+                        "fdef_override": fdef_override,
                         "clamped": raw_t_test != t_test or raw_t_max != t_max,
                     },
                     "t_OBO": 45,
