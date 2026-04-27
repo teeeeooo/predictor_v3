@@ -489,14 +489,20 @@ class AHRIHSPF2Calculator:
         if "H22" in canonical_points:
             full_points["H22"] = self._get_positive_point(canonical_points, "H22")
             h22_source = "tested"
+            h22_high_anchor_source = None
+            h22_high_anchor_capacity = None
+            h22_high_anchor_power = None
         else:
             q_h3_full, p_h3_full = full_points["H32"]
-            q_h1_full_calc, p_h1_full_calc = h1_nom
+            q_h1_full_calc, p_h1_full_calc = full_points["H12"]
             full_points["H22"] = (
                 q_h3_full + (q_h1_full_calc - q_h3_full) * self._safe_div(35 - 17, 47 - 17),
                 p_h3_full + (p_h1_full_calc - p_h3_full) * self._safe_div(35 - 17, 47 - 17),
             )
             h22_source = "fallback_interp_17_47"
+            h22_high_anchor_source = "h1full_calc"
+            h22_high_anchor_capacity = q_h1_full_calc
+            h22_high_anchor_power = p_h1_full_calc
         h2_int = self._get_positive_point(canonical_points, "H2Int")
         q_a_full, _ = self._get_positive_point(canonical_points, "A2")
 
@@ -700,6 +706,9 @@ class AHRIHSPF2Calculator:
                     "heating_load_hours": hlh,
                     "h12_source": h12_source,
                     "h22_source": h22_source,
+                    "h22_high_anchor_source": h22_high_anchor_source,
+                    "h22_high_anchor_capacity": h22_high_anchor_capacity,
+                    "h22_high_anchor_power": h22_high_anchor_power,
                     "minimum_speed_limited": minimum_speed_limited,
                     "case_i_low_source": case_i_low_source,
                     "t_off": t_off,
