@@ -39,8 +39,9 @@
    Phase 2: 난방 확장
      5-4. ISO 16358-2 HSPF
      5-5. EN 14825 SCOP
-     5-6. [진행 중] AHRI 210/240 HSPF2 ← simplified canonical path 완성
-          P2: full variable-capacity path 구현 예정
+     5-6. [완료] AHRI 210/240 HSPF2 full variable-capacity path
+          (상세: docs/skills/ahri_hspf2.md 참조)
+          golden case 검증 완료 (5개 케이스, AHRI 공식 계산기 대비 diff < 0.001)
    대상: Non-ducted, Air-to-Air, Variable capacity 1:1
 
    Phase 3: 예측기 연동
@@ -96,35 +97,13 @@
 - calculator 계열 파일 제약: numpy/pandas 금지, 순수 파이썬만
 
 ### HSPF2 구현 현황 (calculator_ahri_hspf2.py)
+- 적용 규격: AHRI 210/240-2026
 - 대상: non-ducted, single-split, variable-capacity, air-to-air heat pump
 - 우선 지역: Region IV
-- 현재 구현 범위 (simplified canonical path):
-  - canonical test point schema: H12(47°F), H32(17°F), H42(5°F optional)
-  - H42 없으면 H12-H32 선형 외삽
-  - BL(t_j) = q_H1_calc × C_vs × (t_zl - t_j) / (t_zl - t_OD) — Eq. 11.104
-    (현재 q_H1_calc = H12 capacity 임시 대체)
-  - PLF = 1 - Cd × (1 - PLR) cycling 보정 적용
-  - fractional bin hours × HLH = absolute bin hours 적용
-  - Case Logic (v3 current implementation)
-    - Case I: BL ≤ q_low
-      - Low speed cycling
-      - PLF/Cd 적용
-    - Case II: q_low < BL < q_full
-      - Low/full modulation
-    - Case S: Low 데이터가 없는 경우 기존 simplified full cycling fallback
-    - Case III: BL > q_full
-      - Full speed + auxiliary heat
+- 상태: full variable-capacity path 구현 완료, golden case 검증 완료
+- 상세 구현 내용: docs/skills/ahri_hspf2.md 참조
 - v2 legacy path 보존 (calculate_hspf2_v2 수정 금지)
-- 데이터: data/usa_hspf2.json (Region IV bin table, test point schema)
-
-
-### Low Speed (P2 준비 단계)
-- Low speed canonical points:
-  - H11 (47°F low)
-  - H21 (35°F low)
-  - H31 (17°F low)
-- 선형 보간 기반 q_low(t_j), p_low(t_j) 구현 완료
-- Low 데이터 없을 경우 기존 full-only path 유지 (완전 backward compatible)
+- 데이터: data/usa_hspf2.json (Region IV bin table)
 
 ### bin_details 표준 구조 (디버그/검증용)
 
@@ -362,12 +341,9 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
   - bin-level sanity check 및 bincheck 스크립트
   - v2 legacy path 보존
   - AGENTS.md 생성
-- [ ] HSPF2 full variable-capacity path (P2)
-  - q_H1_calc 정식 결정 로직
-  - H1Low/H3Low/H2Int 입력 스키마
-  - Case I/II 분기 (q_Low 기반)
-  - t_OBO=45°F 보간 구조 개선
-  - defrost penalty, off-mode
+- [x] HSPF2 full variable-capacity path 구현 완료
+      golden case 검증 완료 (5개 케이스)
+      상세: docs/skills/ahri_hspf2.md
 - [ ] ISO 16358-2 HSPF 엔진 구현
 - [ ] EN 14825 SCOP 엔진 구현
 
@@ -376,8 +352,8 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [ ] 테스트 하네스 구축
 
 ## 다음 작업
-1. HSPF2 full variable-capacity path 구현 (P2)
-2. ISO 16358-2 HSPF 구현
-3. EN 14825 SCOP 구현
-4. predictor.py → calculator.py 파이프라인 연동
-5. 테스트 하네스 구축
+1. ISO 16358-2 HSPF 엔진 구현
+2. EN 14825 SCOP 엔진 구현
+3. predictor.py → calculator.py 파이프라인 연동
+4. 테스트 하네스 구축
+5. 재학습 및 예측 검증
