@@ -33,12 +33,12 @@
 4. train_window 예측 검증 기능 추가
 5. core/calculator 효율 계산기 구현 ← 진행 중
    Phase 1: 냉방 파이프라인 관통 (규격 쉬운 순서)
-     5-1. [완료] ISO 16358-1 CSPF (Cd 이슈 확인 중)
+     5-1. [진행 필요] ISO 16358-1 CSPF (Cd 이슈 확인 중)
      5-2. [완료] EN 14825 SEER
      5-3. [완료] AHRI 210/240 SEER2
    Phase 2: 난방 확장
      5-4. ISO 16358-2 HSPF
-     5-5. EN 14825 SCOP
+     5-5. [완료] EN 14825 SCOP
      5-6. [완료] AHRI 210/240 HSPF2 full variable-capacity path
           (상세: docs/skills/ahri_hspf2.md 참조)
           golden case 검증 완료 (5개 케이스, AHRI 공식 계산기 대비 diff < 0.001)
@@ -73,8 +73,8 @@
    "features": {타겟명: [피처목록]},
    "preprocess_version": "v1.0"}
 - Lite 안전장치 v1.0 적용 (preprocess_version 체크)
-- models.py 타겟별 leakage 분리 구조 적용 예정
-  (현재 구조는 모델 단위 공유 → 타겟 단위 분리로 변경)
+- models.py 타겟별 leakage 분리 구조 적용 확인 필요 (1차완료)
+  (모델 단위 공유 → 타겟 단위 분리로 변경)
 
 ### 아키텍처
 - app_train.py: 학습 + 예측 검증 (마스터)
@@ -224,7 +224,7 @@ Heat_Capa_per_EER, Heat_Capa_per_CondArea,
 Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 계산: np.where 벡터 연산 (0 나누기 방지)
 
-### 모델별 피처 설정 (변경 예정)
+### 모델별 피처 설정 (확인 필요)
 
 #### 현재 구조 문제점
 - leakage가 모델 단위로 공유되어 타겟별 교차 능력값 제외 불가
@@ -345,7 +345,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
       golden case 검증 완료 (5개 케이스)
       상세: docs/skills/ahri_hspf2.md
 - [ ] ISO 16358-2 HSPF 엔진 구현
-- [ ] EN 14825 SCOP 엔진 구현
+- [x] EN 14825 SCOP 엔진 구현
 
 ### 공통
 - [ ] predictor → calculator 파이프라인 연동
@@ -353,7 +353,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 
 ## 다음 작업
 1. ISO 16358-2 HSPF 엔진 구현
-2. EN 14825 SCOP 엔진 구현
-3. predictor.py → calculator.py 파이프라인 연동
-4. 테스트 하네스 구축
-5. 재학습 및 예측 검증
+2. predictor.py → calculator.py 파이프라인 연동
+3. 테스트 하네스 구축
+4. 재학습 및 예측 검증
+5. calc_window.py 업데이트 
