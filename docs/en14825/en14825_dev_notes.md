@@ -147,7 +147,7 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 
 리팩토링은 계산 결과가 바뀌지 않는다는 golden 보호가 먼저 있어야 한다. 이 프로젝트의 Lite 규칙상 명시 요청 없는 구조 변경은 금지다.
 
-## 11. PDF 확인 페이지 및 원문 체크 포인트
+## 11. PDF Review Scope and Source Checkpoints
 
 통합 전 SCOP 노트에 정리되어 있던 PDF 확인 범위는 아래와 같다. PDF는 전체 전사가 아니라 구현 검토에 필요한 Clause/Table/Equation 확인용 Secondary 근거다.
 
@@ -159,7 +159,7 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 | rendered page 9~13 | Clause 7.1~7.4, Equation 9, Equation 10, Table 37, 난방 보간, TOL 동작, fixed/variable capacity 부분부하 처리 |
 | rendered page 14~16 | Annex D 연간 수요 가정, Table D.1, Table D.2, Table D.3, Table D.4 운전 모드 시간 |
 
-## 12. 규격 표 및 수식 재현 메모
+## 12. Standard Tables and Formula Reproduction Notes
 
 냉방 공기 대 공기 부분부하 조건은 Table 2 기준 A/B/C/D 운전점을 사용한다.
 
