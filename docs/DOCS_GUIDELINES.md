@@ -43,6 +43,10 @@ docs/en14825/en14825_design_notes.md
 
 `<standard>_design_notes.md`의 `Quick Glossary`는 상세 용어 사전이 아니라 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 요약이다. 각 용어는 정의보다 물리적 의미와 제품 설계에 미치는 영향을 중심으로 적고, 공통 용어의 상세 설명은 `docs/glossary/` 하위 문서에 단일 출처로 유지한다.
 
+## Future Refactor Notice
+
+현재의 문서 구조는 임시적이다. 향후 `docs/REFACTOR_PLAN.md`에 명시된 트리거 조건이 충족되면, 문서는 역할별로 완전히 정규화될 예정이다. 그때까지는 현재의 규격별 폴더 구조를 엄격하게 유지한다.
+
 ## 3. 절대 금지 규칙
 
 | 금지 항목 | 이유 |

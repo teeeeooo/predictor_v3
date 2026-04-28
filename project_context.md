@@ -52,6 +52,7 @@
 6. 1차 배포 (PyInstaller 패키징)
 7. 역방향 탐색 설계 (core/optimizer.py)
 8. 열교환기 면적/내용적 계산 (core/physics.py)
+- [ ] 유산용 docs 및 전체 폴더 구조 리팩토링 (docs/REFACTOR_PLAN.md 참조)
 
 ## 아키텍처 핵심 결정사항 (절대 원칙)
 

@@ -17,6 +17,9 @@
 * **UI 구조 강제**: `QTableWidget` 사용 금지. 반드시 `QTableView` + `QAbstractTableModel` 구조만 허용.
 * **단일 모델 파일**: ML 모델은 반드시 단일 파일(`model.pkl`)로 통합 저장하며, 예측 시 `preprocess_version` 검증(Lite 안전장치 v1.0) 필수.
 * **단일 소스 원칙(SSOT)**: `COLUMNS` 정의는 `core/constants.py`에서만 중앙 관리하며, `MODEL_REGISTRY`는 `core/models.py` 단일 소스 유지.
+- 현재 프로젝트 구조는 최종 아키텍처가 아닌 '속도'에 최적화되어 있다.
+- 모든 리팩토링 작업 및 부채는 `docs/REFACTOR_PLAN.md`에서 추적하고 관리한다.
+- 구조적 리팩토링은 반드시 전용 리팩토링 단계(Phase)에서만 명시적인 지시에 따라 수행되어야 한다.
 
 ---
 
