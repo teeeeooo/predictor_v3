@@ -104,6 +104,17 @@ SCOP dict point는 `{"capacity": kW, "power": kW, "temp_c": optional}` 형식이
 | Cd 조건 변경 | declared capacity/load gap 경계 케이스 추가 |
 | TOL/Tbiv validation 변경 | invalid limit fail-fast 케이스 추가 |
 
+SCOP 원본 노트에서 별도 확인 대상으로 남긴 테스트 항목은 아래와 같다. 이 항목들은 전체 규격 일치도를 높일 때 우선 추가해야 한다.
+
+| 테스트 영역 | 목적 |
+| --- | --- |
+| SEER Table 36 bin behavior | 냉방 bin hour, 부하선, EERPL 보간이 온도별로 일관되는지 확인한다. |
+| average/warmer/colder climates | 기후별 Tdesignh, Tbiv/TOL 제한, Annex D 운전 시간이 분리되는지 확인한다. |
+| TOL below bin temperature | `Tj < TOL`에서 히트펌프 기여가 0이고 전기 백업만 남는지 확인한다. |
+| heat pump capacity shortfall | `Pdh(Tj) < Ph(Tj)`일 때 `elbu`가 부족분과 일치하는지 확인한다. |
+| colder `TOL < -20 C` | -15 °C 추가점이 지원되기 전까지 fail-fast 또는 명시적 미지원 note가 유지되는지 확인한다. |
+| invalid Tbiv/TOL limits | `TOL <= Tbiv`와 기후별 최대 제한을 위반할 때 실패하는지 확인한다. |
+
 기본 검증 명령:
 
 ```bash
@@ -165,6 +176,27 @@ Table 36 냉방 bin hour는 다음 값을 기준으로 한다.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | hj h | 205 | 227 | 225 | 225 | 216 | 215 | 218 | 197 | 178 | 158 | 137 | 109 | 88 | 63 | 39 | 31 | 24 | 17 | 13 | 9 | 4 | 3 | 1 | 0 |
 
+Annex D Table D.1의 냉방 운전 시간은 보조전력 합산 검증의 기준이다.
+
+| 운전 모드 | 냉방 전용 h | 가역식 h |
+| --- | ---: | ---: |
+| Total hours/year | 8760 | 8760 |
+| Off mode Hoff | 5088 | 0 |
+| Season difference | 3672 | 3672 |
+| Thermostat off Hto | 221 | 221 |
+| Standby Hsb | 2142 | 2142 |
+| Active hours without setback correction | 1309 | 1309 |
+| Setback correction | 355 | 355 |
+| Active hours corrected | 954 | 954 |
+| Equivalent active hours Hce | 350 | 350 |
+
+Annex D Table D.3의 reference SEER crankcase heater 시간은 아래 값을 기준으로 한다.
+
+| 장비 유형 | Hck h |
+| --- | ---: |
+| Cooling only | 7760 |
+| Reversible | 2672 |
+
 냉방 기준 연간 수요와 부하선은 아래 구조다. 근거: EN14825:2012 Clause 6.2, Clause 6.4.
 
 ```text
@@ -217,7 +249,7 @@ Full standard match를 위해서는 Clause 6.4.2.2와 Clause 7.4.2.2의 raw capa
 ### 문서 업데이트
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 문서 작업이면 docs/en14825 하위 EN14825 Markdown만 수정하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, docs/en14825_scop_notes.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 문서 작업이면 삭제 없이 중심 문서에 내용을 흡수하라.
 ```
 
 ### SCOP 계산 변경
