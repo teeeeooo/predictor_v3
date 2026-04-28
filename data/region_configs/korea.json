@@ -7,6 +7,8 @@
   "t_0_load": 23.0,
   "Cd": 0.25,
   "building_load_source": "declared",
+  "round_test_values": true,
+  "rounding_method": "nearest_integer_half_up",
 
   "points": {
     "35_full": "measure",
@@ -31,4 +33,3 @@
     {"tj": 36, "nj": 2}, {"tj": 37, "nj": 1}, {"tj": 38, "nj": 0}
   ]
 }
-
