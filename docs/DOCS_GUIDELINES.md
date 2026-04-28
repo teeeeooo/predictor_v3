@@ -14,16 +14,17 @@
 
 ## 2. 규격별 기본 문서 구조
 
-각 규격은 원칙적으로 아래 3개 문서로 분리한다.
+각 규격은 원칙적으로 아래 4개 문서로 분리한다.
 
 ```text
 docs/<standard>/
 - <standard>_notes.md
 - <standard>_dev_notes.md
 - <standard>_design_notes.md
+- <standard>_glossary.md
 ```
 
-용어집은 규격별 상세 문서에 중복 작성하지 않고 `docs/glossary/` 하위에서 관리한다.
+용어집은 규격별 상세 문서에 중복 작성하지 않고 각 규격 폴더의 `<standard>_glossary.md`에서 관리한다.
 
 예:
 
@@ -31,17 +32,19 @@ docs/<standard>/
 docs/en14825/en14825_notes.md
 docs/en14825/en14825_dev_notes.md
 docs/en14825/en14825_design_notes.md
+docs/en14825/en14825_glossary.md
 ```
 
 | 파일 | 역할 | 포함해야 할 내용 |
 | --- | --- | --- |
 | `<standard>_notes.md` | 규격의 기준 문서 | 규격 개요, 계산 구조, 입력/출력 스키마, 수식과 코드 매핑, 검증 결과 |
-| `<standard>_dev_notes.md` | 개발자와 Agent를 위한 구현 지침 | 코드 구현 노하우, 구현 실수 방지, 디버깅 방법, 테스트 전략, agent 재사용 프롬프트. glossary 본문은 포함하지 않고 필요 시 `docs/glossary/` 링크만 둔다. |
-| `<standard>_design_notes.md` | 제품 설계 엔지니어를 위한 해석 문서 | 코드 언급 금지, 실제 제품 설계 관점, 효율 측정값을 높이는 설계 전략, 규격 구조에서 도출되는 정량적 인사이트. 5~10개 핵심 용어로 구성된 `Quick Glossary`를 포함하고, 상세 glossary는 `docs/glossary/` 문서를 참조한다. |
+| `<standard>_dev_notes.md` | 개발자와 Agent를 위한 구현 지침 | 코드 구현 노하우, 구현 실수 방지, 디버깅 방법, 테스트 전략, agent 재사용 프롬프트. glossary 본문은 포함하지 않고 필요 시 같은 폴더의 `glossary.md` 링크만 둔다. |
+| `<standard>_design_notes.md` | 제품 설계 엔지니어를 위한 해석 문서 | 코드 언급 금지, 실제 제품 설계 관점, 효율 측정값을 높이는 설계 전략, 규격 구조에서 도출되는 정량적 인사이트. 5~10개 핵심 용어로 구성된 `Quick Glossary`를 포함하고, 상세 glossary는 같은 폴더의 `<standard>_glossary.md` 문서를 참조한다. |
+| `<standard>_glossary.md` | 단일 용어 사전(SSOT) | 설계 엔지니어용 물리적 의미와 SW 엔지니어용 변수/스키마 정보를 분리하여 작성한다. 도메인 용어, 수식 기호, 코드 변수명, 데이터 위치를 단일 출처로 관리한다. |
 
 이 분리는 문서 품질의 핵심이다. 구현 판단과 제품 설계 판단은 서로 영향을 주지만, 같은 문단에 섞이면 독자가 근거와 응용을 구분하기 어려워진다.
 
-`<standard>_design_notes.md`의 `Quick Glossary`는 상세 용어 사전이 아니라 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 요약이다. 각 용어는 정의보다 물리적 의미와 제품 설계에 미치는 영향을 중심으로 적고, 공통 용어의 상세 설명은 `docs/glossary/` 하위 문서에 단일 출처로 유지한다.
+`<standard>_design_notes.md`의 `Quick Glossary`는 상세 용어 사전이 아니라 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 요약이다. 각 용어는 정의보다 물리적 의미와 제품 설계에 미치는 영향을 중심으로 적고, 상세 용어와 코드 변수 설명은 같은 폴더의 `<standard>_glossary.md`에 단일 출처로 유지한다.
 
 ## Future Refactor Notice
 
@@ -57,8 +60,8 @@ docs/en14825/en14825_design_notes.md
 | 규격 조항 번호 없이 핵심 주장 금지 | 주장과 원문 근거를 추적할 수 있어야 함 |
 | 규격 수식과 코드 구현을 혼동 금지 | 규격의 원식, 프로젝트의 단순화, 예외 처리는 구분되어야 함 |
 | `design_notes.md`에서 코드 파일명, 함수명, 변수명 언급 금지 | 제품 설계 관점 문서가 구현 세부사항에 종속되지 않게 하기 위함 |
-| `dev_notes.md`에 glossary 본문 작성 금지 | 구현 지침과 용어 설명이 섞이지 않게 하며, 필요 시 `docs/glossary/` 링크만 사용하기 위함 |
-| 공통 용어 중복 작성 금지 | glossary는 `docs/glossary/` 하위에서 단일 출처로 관리하기 위함 |
+| `dev_notes.md`에 glossary 본문 작성 금지 | 구현 지침과 용어 설명이 섞이지 않게 하며, 필요 시 같은 폴더의 `<standard>_glossary.md` 링크만 사용하기 위함 |
+| 공통 용어 중복 작성 금지 | glossary는 각 규격 폴더의 `<standard>_glossary.md`에서 단일 출처로 관리하기 위함 |
 
 ## 4. 근거 표기 규칙
 
