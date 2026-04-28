@@ -33,7 +33,79 @@ EN14825는 계절 중 자주 나타나는 외기온과 부분부하 운전을 �
 
 왜 중요한가: 계절 지표는 특정 시험점 하나가 아니라 여러 외기온 구간과 시간 가중치의 합이다. 한 조건에서의 높은 효율이 전체 등급 개선으로 이어지려면 그 조건의 빈 시간이 충분히 크거나, 보조 전기열을 줄이는 효과가 있어야 한다.
 
-## 4. What Actually Drives the Rating
+## 4. 설계 관점 수식 해석
+
+EN14825 수식은 제품 설계자가 어떤 운전 영역을 우선 개선해야 하는지 보여준다. 아래 수식은 구현 세부사항이 아니라, 설계 용량, 부분부하 효율, 보조전력, 저온 용량이 계절 등급으로 연결되는 구조다.
+
+### 냉방 수요와 부하선
+
+```text
+Qc = Pdesignc * Hce
+Pc(Tj) = Pdesignc * (Tj - 16) / (35 - 16)
+```
+
+근거: EN14825:2012 Clause 6.2, Clause 6.4, Table 36, Annex D Table D.1.
+
+설계 해석: `Pdesignc`는 기준 연간 냉방 수요를 직접 키우고, `Pc(Tj)`는 외기온별 냉방 요구 부하를 만든다. 20~30 °C 구간의 bin 시간이 크기 때문에, 최고 외기온 정격점만 개선하는 것보다 중간 외기온에서 낮은 압축비와 낮은 팬 전력으로 안정 운전하는 설계가 SEER에 더 크게 반영될 수 있다.
+
+### 냉방 계절 효율 구조
+
+```text
+SEER = Qc / (Qc / SEERon + Hto*Pto + Hsb*Psb + Hck*Pck + Hoff*Poff)
+SEERon = sum(hj * Pc(Tj)) / sum(hj * (Pc(Tj) / EERPL(Tj)))
+```
+
+근거: EN14825:2012 Clause 6.1, Clause 6.3, Annex D Table D.1, Table D.3.
+
+설계 해석: `SEERon`은 bin hour가 큰 구간의 `EERPL`을 강하게 반영한다. 최종 `SEER`는 여기에 thermostat-off, standby, crankcase heater, off-mode 전력을 더하므로, 활성 운전 효율이 높아도 대기전력과 보호 히터 제어가 나쁘면 등급 개선이 제한된다.
+
+### 냉방 부분부하와 cycling 손실
+
+```text
+EERPL = EERDC * (1 - Cd * (1 - CR))
+CR = Pc / DC
+```
+
+근거: EN14825:2012 Clause 6.4.2.1.
+
+설계 해석: `CR`이 낮다는 것은 요구 부하보다 선언 용량이 크다는 뜻이며, 이때 `Cd`가 cycling 손실을 반영한다. 따라서 최소 안정 냉방 용량을 낮추고 저부하에서 정지/재기동 없이 운전하는 능력이 중요하다. 용량 제어 단계가 요구 부하의 ±10% 안에 들지 못하면 양쪽 단계 보간 또는 fixed-capacity 보정의 영향을 받으므로, 단계 간 간격과 각 단계의 효율을 함께 설계해야 한다. 근거: EN14825:2012 Clause 6.4.2.2.
+
+### 난방 수요와 부하선
+
+```text
+Qh = Pdesignh * Hhe
+Ph(Tj) = Pdesignh * (Tj - 16) / (Tdesignh - 16)
+```
+
+근거: EN14825:2012 Clause 7.2, Table 37, Annex D Table D.2.
+
+설계 해석: `Pdesignh`와 `Tdesignh`는 기후별 난방 부하선을 결정한다. colder 기후처럼 설계온도가 낮은 조건에서는 낮은 외기온 bin에서 요구 부하가 커지므로, 저온 압축기 운전 영역, 열교환기 여유도, 제상 손실 관리가 SCOP에 직접 연결된다.
+
+### 난방 계절 효율과 보조 전기열
+
+```text
+SCOP = Qh / (Qh / SCOPon + Hto*Pto + Hsb*Psb + Hck*Pck + Hoff*Poff)
+SCOPon = sum(hj * Ph(Tj)) / sum(hj * ((Ph(Tj) - elbu(Tj)) / COPPL(Tj) + elbu(Tj)))
+elbu(Tj) = max(0, Ph(Tj) - Pdh(Tj))
+```
+
+근거: EN14825:2012 Clause 7.1, Clause 7.3, Equation 9, Annex D Table D.2, Table D.4.
+
+설계 해석: `elbu(Tj)`는 히트펌프가 담당하지 못한 난방 부하다. 보조 전기열은 계절 에너지 분모를 크게 키우므로, 저온에서 `Pdh(Tj)`를 `Ph(Tj)`에 가깝게 유지하는 것이 SCOP 개선의 핵심이다. Tbiv를 낮추고 TOL 근처 용량을 확보하면 보조열 개입을 줄일 수 있다.
+
+### TOL 아래 운전
+
+```text
+Pdh(Tj) = 0
+COPPL(Tj) = 0
+elbu(Tj) = Ph(Tj)
+```
+
+근거: EN14825:2012 Clause 7.4, Equation 9.
+
+설계 해석: TOL 아래에서는 히트펌프 기여가 사라지고 난방 부하가 전부 보조 전기열로 넘어간다. 이 구간의 bin 시간이 작더라도 부하가 크기 때문에 SCOP를 크게 낮출 수 있다. 낮은 TOL, 안정적인 저온 압축기 운전, 제상 회복 성능은 설계 우선순위가 높다.
+
+## 5. What Actually Drives the Rating
 
 | 우선순위 | 등급을 움직이는 요소 | 영향 방향 | 근거 |
 | --- | --- | --- | --- |
@@ -43,7 +115,7 @@ EN14825는 계절 중 자주 나타나는 외기온과 부분부하 운전을 �
 | 4 | 용량 제어 단계의 세밀함 | required load 근처에서 운전할수록 degradation을 피하기 쉽다. | EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2 |
 | 5 | 대기전력과 크랭크케이스 히터 전력 | 작은 전력도 긴 시간과 곱해져 계절 지표를 낮춘다. | EN14825:2012 Annex D Table D.1~D.4 |
 
-## 5. High Impact Design Parameters
+## 6. High Impact Design Parameters
 
 | 설계 인자 | 효과 | 설계 방향 | 근거 |
 | --- | --- | --- | --- |
@@ -54,7 +126,7 @@ EN14825는 계절 중 자주 나타나는 외기온과 부분부하 운전을 �
 | 대기전력 관리 | 비활성 시간의 누적 소비전력을 낮춘다. | 제어 보드, 센서, 히터 대기 소비를 낮게 유지한다. | EN14825:2012 Annex D Table D.1~D.4 |
 | 제상 관리 | 저온 난방 효율과 용량 손실을 줄인다. | 불필요한 제상을 줄이고 회복 시간을 짧게 한다. | EN14825:2012 Clause 7.3, Table 37 |
 
-## 6. Low Impact / Misleading Design Parameters
+## 7. Low Impact / Misleading Design Parameters
 
 | 항목 | 오해 | 실제 판단 |
 | --- | --- | --- |
@@ -64,7 +136,7 @@ EN14825는 계절 중 자주 나타나는 외기온과 부분부하 운전을 �
 | 한 기후에서만 최적화 | 모든 지역 등급이 동시에 좋아질 것으로 보기 쉽다. | average, warmer, colder는 Tdesignh와 bin hour 분포가 다르다. |
 | COP peak만 추구 | 최고 효율점이 계절 지표를 지배한다고 보기 쉽다. | 빈 시간이 큰 부하 구간에서 효율을 유지하는 능력이 더 중요하다. |
 
-## 7. Seasonal Bin Strategy
+## 8. Seasonal Bin Strategy
 
 냉방은 17~40 °C bin을 사용하며, 20~25 °C 주변에 많은 시간이 배정된다. 근거: EN14825:2012 Table 36. 따라서 냉방 설계에서는 35 °C 최대 조건뿐 아니라 20~30 °C 부분부하 운전 효율을 높이는 전략이 필요하다.
 
@@ -76,7 +148,7 @@ EN14825는 계절 중 자주 나타나는 외기온과 부분부하 운전을 �
 | average | 중간 난방 부하와 저온 용량의 균형 | 빈 시간이 넓게 분포한다. | EN14825:2012 Table 37 |
 | colder | 저온 용량 유지와 보조 전기열 억제 | 낮은 온도 bin에서 부족 용량이 SCOP를 크게 낮춘다. | EN14825:2012 Equation 9, Table 37 |
 
-## 8. 규격 운전점 및 시간 기준
+## 9. 규격 운전점 및 시간 기준
 
 냉방 공기 대 공기 장비의 부분부하 조건은 A/B/C/D 운전점으로 구성된다. 근거: EN14825:2012 Clause 4, Table 2.
 
@@ -134,7 +206,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 
 설계 해석: 가장 작은 제어 단계가 요구 부하보다 높으면 fixed-capacity cycling 보정이 적용될 수 있으므로, 낮은 부하 bin에서 정지/재기동 없이 운전 가능한 최소 용량이 중요하다. 단계 수가 많더라도 각 단계의 효율이 낮거나 요구 부하 주변을 촘촘히 덮지 못하면 계절 지표 개선 효과는 제한된다.
 
-## 9. Part-load Strategy
+## 10. Part-load Strategy
 
 부분부하 효율은 EN14825 등급의 중심이다. 냉방과 난방 모두 required load에 가까운 용량으로 운전할수록 cycling 손실이 줄고, 효율 보정에서 유리하다. 근거: EN14825:2012 Clause 6.4.2.1, Clause 6.4.2.2, Clause 7.4.2.1, Clause 7.4.2.2.
 
@@ -145,7 +217,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 | 중간 부하에서 열교환기 접근온도를 낮춘다. | 압축기 소비전력을 낮추고 COP/EER을 높인다. | 팬 전력이 증가하면 순효율 개선이 줄어든다. |
 | 저부하 제어 안정성을 높인다. | 실사용 쾌적성과 계절 효율을 동시에 개선한다. | 과도한 정지/재기동은 효율과 내구성에 불리하다. |
 
-## 10. Standby / Off-mode Power Strategy
+## 11. Standby / Off-mode Power Strategy
 
 보조전력은 활성 운전 효율이 좋아도 최종 SEER/SCOP를 낮출 수 있다. 특히 크랭크케이스 히터(Crankcase heater), thermostat-off, standby, off mode는 Annex D에서 정해진 시간과 곱해져 연간 에너지에 더해진다. 근거: EN14825:2012 Annex D Table D.1, Table D.2, Table D.3, Table D.4.
 
@@ -156,7 +228,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 | crankcase heater power | 필요한 조건에서만 작동하도록 제어 | 냉매 보호와 에너지 절감의 균형이 필요하다. |
 | off-mode power | 차단 상태 소비전력 최소화 | 냉방 전용 또는 난방 전용 조건에서 영향이 커질 수 있다. |
 
-## 11. Heating-specific Strategy
+## 12. Heating-specific Strategy
 
 난방 SCOP는 저온 구간에서의 용량 부족에 민감하다. Equation 9 구조에서는 히트펌프가 담당하지 못한 열량이 보조 전기열로 들어가며, 이 에너지는 효율 1에 가까운 직접 전기열처럼 작용해 SCOP를 낮춘다. 근거: EN14825:2012 Equation 9.
 
@@ -168,7 +240,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 | 제상 손실 | 낮은 온도와 습도 조건에서 효율을 낮춘다. | 제상 시작 조건과 종료 조건을 정밀하게 잡는다. | EN14825:2012 Table 37 |
 | 보조 전기열 제어 | 직접 전기열 에너지 증가를 막는다. | 필요한 순간에만 보조열을 허용한다. | EN14825:2012 Equation 9 |
 
-## 12. Cooling-specific Strategy
+## 13. Cooling-specific Strategy
 
 냉방 SEER는 정격 최대 냉방보다 중간 외기온 부분부하 효율의 영향을 크게 받을 수 있다. Table 36에서 20~30 °C 구간의 시간이 상당하므로, 열교환기와 압축기 제어는 낮은 부하에서 높은 EER을 유지하도록 설계해야 한다. 근거: EN14825:2012 Table 36, Clause 6.3.
 
@@ -179,7 +251,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 | 실외 팬 전력 | 모든 냉방 운전점의 소비전력에 반영된다. | 열교환 이득과 팬 동력 증가를 균형 있게 조정한다. | EN14825:2012 Clause 6.3 |
 | 크랭크케이스 히터 | 비활성 시간 에너지를 증가시킨다. | 냉매 희석 방지와 저전력 제어를 함께 만족시킨다. | EN14825:2012 Annex D Table D.3 |
 
-## 13. Practical Design Checklist
+## 14. Practical Design Checklist
 
 | Check | 질문 | 관련 지표 | 근거 |
 | --- | --- | --- | --- |
@@ -191,7 +263,7 @@ Annex D 운전 시간은 비활성 모드 전력이 최종 등급에 누적되�
 | 기후별 최적화 | warmer, average, colder 중 목표 시장의 bin 분포에 맞췄는가? | SCOP | EN14825:2012 Table 37 |
 | 팬 동력 | 열교환 개선이 팬 전력 증가로 상쇄되지 않는가? | SEERon, SCOPon | EN14825:2012 Clause 6.3, Clause 7.3 |
 
-## 14. References
+## 15. References
 
 | Reference | Usage |
 | --- | --- |
