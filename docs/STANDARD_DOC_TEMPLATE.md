@@ -94,6 +94,8 @@
 
 이 문서가 구현자와 Agent에게 제공하는 역할을 설명한다. 규격 해석 문서가 아니라 구현 실수 방지와 검증 재현을 위한 문서임을 명확히 한다.
 
+glossary 본문은 이 문서에 포함하지 않는다. 필요한 경우 `docs/glossary/` 하위의 해당 glossary 문서 링크만 둔다.
+
 ### 2. Top Implementation Pitfalls
 
 가장 자주 발생하는 오류를 우선순위로 정리한다. 각 항목에는 증상, 원인, 방지 방법을 포함한다.
@@ -146,47 +148,56 @@
 
 이 문서가 제품 설계 관점에서 어떤 결정을 돕는지 설명한다. 성능 등급을 높이기 위한 물리적 방향과 규격상 가중치의 의미를 중심으로 쓴다.
 
-### 2. Metric Structure
+### 2. Quick Glossary
+
+제품 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 5~10개를 정리한다. 상세 glossary는 `docs/glossary/` 하위 문서를 참조하고, 공통 용어를 이 문서에 중복 작성하지 않는다.
+
+각 용어는 사전식 정의보다 물리적 의미와 설계 영향 중심으로 작성한다.
+
+| Term | Physical meaning | Design impact | Glossary reference |
+| --- | --- | --- | --- |
+|  |  |  |  |
+
+### 3. Metric Structure
 
 평가 지표가 어떤 운전 조건, 계절 가중치, 보조 에너지 항목으로 구성되는지 설명한다. 각 구성요소가 최종 등급에 미치는 방향을 표로 정리한다.
 
-### 3. What Actually Drives the Rating
+### 4. What Actually Drives the Rating
 
 최종 등급에 가장 큰 영향을 주는 요소를 우선순위로 적는다. 영향도가 큰 온도 구간, 부분부하 조건, 대기 전력 항목을 구분한다.
 
-### 4. High Impact Design Parameters
+### 5. High Impact Design Parameters
 
 성능 향상 효과가 큰 설계 인자를 정리한다. 압축기 용량 제어 범위, 열교환기 여유도, 팬 효율, 제상 영향, 보조열 사용 시점을 포함할 수 있다.
 
-### 5. Low Impact / Misleading Design Parameters
+### 6. Low Impact / Misleading Design Parameters
 
 등급 개선 효과가 작거나 오해하기 쉬운 설계 인자를 정리한다. 특정 정격점의 개선이 계절 지표에서 작게 반영되는 경우를 설명한다.
 
-### 6. Seasonal Bin Strategy
+### 7. Seasonal Bin Strategy
 
 계절 빈(Seasonal bin) 분포가 성능 평가에 주는 영향을 설명한다. 빈 시간이 큰 외기온 구간과 설계 우선순위를 연결한다.
 
-### 7. Part-load Strategy
+### 8. Part-load Strategy
 
 부분부하(Part-load) 운전에서 효율을 높이는 전략을 설명한다. 최소 안정 운전 용량, 사이클링 손실, 용량 제어 단계 간 간격의 의미를 포함한다.
 
-### 8. Standby / Off-mode Power Strategy
+### 9. Standby / Off-mode Power Strategy
 
 대기전력(Standby power)과 꺼짐 모드 전력(Off-mode power)이 계절 지표에 미치는 영향을 설명한다. 작은 전력값이라도 시간 가중치 때문에 중요한 경우를 구분한다.
 
-### 9. Heating-specific Strategy
+### 10. Heating-specific Strategy
 
 난방 운전에서 중요한 설계 전략을 정리한다. 저온 성능 유지, 보조열 억제, 제상 손실 관리, 이원점(Bivalent temperature)의 영향을 포함한다.
 
-### 10. Cooling-specific Strategy
+### 11. Cooling-specific Strategy
 
 냉방 운전에서 중요한 설계 전략을 정리한다. 중간 외기온 부분부하 효율, 실내외 팬 소비전력, 열교환기 접근온도, 최소 용량 운전을 포함한다.
 
-### 11. Practical Design Checklist
+### 12. Practical Design Checklist
 
 제품 설계자가 검토할 항목을 체크리스트로 정리한다. 각 항목에는 관련 성능 지표와 규격 근거를 붙인다.
 
-### 12. References
+### 13. References
 
 근거가 되는 규격 조항, 표, 부속서, 시험 조건을 정리한다. 엔지니어링 해석과 규격 원문 근거를 분리해 적는다.
-
