@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-이 문서는 EN14825 SEER/SCOP 계산 구조를 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 `docs/en14825_scop_notes.md`와 `core/calculator_en14825.py`이며, PDF는 Clause/Table/Equation 번호 확인용 Secondary 근거로만 사용한다.
+이 문서는 EN14825 SEER/SCOP 계산 구조를 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 `core/calculator_en14825.py`, `data/region_configs/en14825_scop.json`, `tests/test_en14825_golden.py`이며, PDF는 Clause/Table/Equation 번호 확인용 Secondary 근거로만 사용한다.
 
 현재 계산기는 `BS EN 14825:2012 / EN 14825:2012 (E)`의 공기 대 공기(Air-to-air), 가변 용량(Variable capacity), 1:1 가역식(Reversible) 장비를 대상으로 한다. 냉방은 SEER, 난방은 SCOP 경로를 제공하며, 난방 SCOP는 A/B/C/D/TOL/Tbiv 선언 운전점이 이미 해석된 입력이라고 본다. 이 구분이 중요한 이유는 EN14825의 원문은 capacity-control step 선택을 포함하지만, 현재 입력 스키마는 raw step 후보 목록을 받지 않기 때문이다. 근거: EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2.
 
@@ -27,18 +27,7 @@
 
 ## 3. Glossary
 
-| Term | Korean name | Reference | Meaning |
-| --- | --- | --- | --- |
-| SEER | 계절 냉방 효율 | EN14825:2012 Clause 6.1 | 연간 냉방 수요를 냉방 운전 에너지와 보조전력 에너지 합으로 나눈 지표다. |
-| SEERon | 활성 냉방 계절 효율 | EN14825:2012 Clause 6.3 | 냉방 활성 운전 중 bin별 부분부하 효율만 반영한 지표다. |
-| SCOP | 계절 난방 효율 | EN14825:2012 Clause 7.1 | 기준 연간 난방 수요를 난방 운전 에너지와 보조전력 에너지 합으로 나눈 지표다. |
-| SCOPon | 활성 난방 계절 효율 | EN14825:2012 Clause 7.3, Equation 9 | 난방 활성 운전 중 bin별 부하, 히트펌프 용량, 보조 전기 히터를 반영한 지표다. |
-| TOL | 운전 한계 온도(Operation limit temperature) | EN14825:2012 Clause 5.2, Clause 7.4 | 이 온도 아래에서는 히트펌프 난방 용량을 0으로 두고 보조 전기 히터가 부하를 담당한다. |
-| Tbiv | 이원점 온도(Bivalent temperature) | EN14825:2012 Clause 5.2, Clause 7.4 | 히트펌프 용량과 난방 부하가 만나는 기준 온도다. |
-| Cd | 성능 저하 계수(Degradation coefficient) | EN14825:2012 Clause 6.4.2.1, Clause 7.4.2.1 | 용량이 부하보다 커서 cycling이 발생할 때 효율을 낮추는 계수다. 기본값은 0.25다. |
-| CR | 용량비(Capacity ratio) | EN14825:2012 Clause 6.4.2.1, Clause 7.4.2.1 | 요구 부하를 선언 용량으로 나눈 비율이다. |
-| bin hour | 빈 시간 | EN14825:2012 Table 36, Table 37 | 특정 외기온 bin이 계절 중 지속되는 시간이다. |
-| elbu | 보조 전기 히터 부하 | EN14825:2012 Equation 9 | 난방 부하에서 히트펌프가 담당하지 못한 열량이다. |
+용어 및 수식 기호의 상세 정의는 `en14825_glossary.md`를 참조하라. 이 문서는 규격 개요, 계산 구조, 입력/출력 스키마, 수식과 코드 매핑을 기준으로 유지하고, 용어 정의 본문은 중복 작성하지 않는다.
 
 ## 4. Input Schema
 
@@ -195,15 +184,13 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 
 | Reference | Usage |
 | --- | --- |
-| `docs/en14825_scop_notes.md` | Primary: 현재 프로젝트의 EN14825 SEER/SCOP 해석 노트 |
 | `core/calculator_en14825.py` | Primary: 현재 계산 동작 기준 |
 | `data/region_configs/en14825_scop.json` | Primary: SCOP 기후별 Table 37, Annex D 데이터 기준 |
 | `tests/test_en14825_golden.py` | Primary: 현재 golden 기대값 기준 |
-| EN14825 PDF pages checked in `docs/en14825_scop_notes.md` | Secondary: Clause 6.1~6.4, Clause 7.1~7.4, Table 36, Table 37, Annex D Table D.1~D.4 근거 확인 |
+| `docs/en14825/en14825_dev_notes.md` | Secondary: PDF 확인 페이지, Clause 6.1~6.4, Clause 7.1~7.4, Table 36, Table 37, Annex D Table D.1~D.4 근거 확인 |
 
 ## 13. Prompt for Future Agent
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825_scop_notes.md, core/calculator_en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, core/calculator_en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
 ```
-

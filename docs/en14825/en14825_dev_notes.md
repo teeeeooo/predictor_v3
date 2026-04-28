@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculator_en14825.py`, `data/region_configs/en14825_scop.json`, `docs/en14825_scop_notes.md`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
+이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculator_en14825.py`, `data/region_configs/en14825_scop.json`, `tests/test_en14825_golden.py`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
 
 핵심 목적은 계산 순서, 입력 단위, 보간 규칙, Cd 적용 조건, golden 검증을 재현 가능하게 만드는 것이다. EN14825는 bin hour와 운전 모드 시간이 최종 지표에 직접 들어가므로, 작은 schema 오해가 SEER/SCOP 전체를 바꿀 수 있다. 근거: EN14825:2012 Table 36, Table 37, Annex D Table D.1~D.4.
 
@@ -136,12 +136,88 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 
 리팩토링은 계산 결과가 바뀌지 않는다는 golden 보호가 먼저 있어야 한다. 이 프로젝트의 Lite 규칙상 명시 요청 없는 구조 변경은 금지다.
 
-## 11. Prompt Snippets for Agent
+## 11. PDF 확인 페이지 및 원문 체크 포인트
+
+통합 전 SCOP 노트에 정리되어 있던 PDF 확인 범위는 아래와 같다. PDF는 전체 전사가 아니라 구현 검토에 필요한 Clause/Table/Equation 확인용 Secondary 근거다.
+
+| 확인 범위 | 핵심 내용 |
+| --- | --- |
+| rendered page 1 | Clause 4 냉방 부분부하 조건과 공기 대 공기 장비 Table 2 |
+| rendered page 2~4 | Clause 5 난방 부분부하 일반 조건, Tdesignh, average/warmer/colder 기후별 공기 대 공기 조건 |
+| rendered page 5~8 | Clause 6.1~6.4, Table 36, 냉방 부하선, 냉방 fixed/variable capacity 부분부하 처리 |
+| rendered page 9~13 | Clause 7.1~7.4, Equation 9, Equation 10, Table 37, 난방 보간, TOL 동작, fixed/variable capacity 부분부하 처리 |
+| rendered page 14~16 | Annex D 연간 수요 가정, Table D.1, Table D.2, Table D.3, Table D.4 운전 모드 시간 |
+
+## 12. 규격 표 및 수식 재현 메모
+
+냉방 공기 대 공기 부분부하 조건은 Table 2 기준 A/B/C/D 운전점을 사용한다.
+
+| 운전점 | 외기 건구온도 °C | 명목 부분부하율 |
+| --- | ---: | ---: |
+| A | 35 | 100% |
+| B | 30 | 74% |
+| C | 25 | 47% |
+| D | 20 | 21% |
+
+Table 36 냉방 bin hour는 다음 값을 기준으로 한다.
+
+| Tj °C | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| hj h | 205 | 227 | 225 | 225 | 216 | 215 | 218 | 197 | 178 | 158 | 137 | 109 | 88 | 63 | 39 | 31 | 24 | 17 | 13 | 9 | 4 | 3 | 1 | 0 |
+
+냉방 기준 연간 수요와 부하선은 아래 구조다. 근거: EN14825:2012 Clause 6.2, Clause 6.4.
+
+```text
+Qc = Pdesignc * Hce
+Pc(Tj) = Pdesignc * (Tj - 16) / (35 - 16)
+```
+
+SEER와 SEERon의 기준 구조는 아래와 같다. 근거: EN14825:2012 Clause 6.1, Clause 6.3.
+
+```text
+SEER = Qc / (Qc / SEERon + Hto*Pto + Hsb*Psb + Hck*Pck + Hoff*Poff)
+SEERon = sum(hj * Pc(Tj)) / sum(hj * (Pc(Tj) / EERPL(Tj)))
+```
+
+난방 기준 연간 수요와 부하선은 아래 구조다. 근거: EN14825:2012 Clause 7.2.
+
+```text
+Qh = Pdesignh * Hhe
+Ph(Tj) = Pdesignh * (Tj - 16) / (Tdesignh - 16)
+```
+
+SCOP와 SCOPon의 기준 구조는 아래와 같다. 근거: EN14825:2012 Clause 7.1, Clause 7.3, Equation 9.
+
+```text
+SCOP = Qh / (Qh / SCOPon + Hto*Pto + Hsb*Psb + Hck*Pck + Hoff*Poff)
+SCOPon = sum(hj * Ph(Tj)) / sum(hj * ((Ph(Tj) - elbu(Tj)) / COPPL(Tj) + elbu(Tj)))
+elbu(Tj) = max(0, Ph(Tj) - Pdh(Tj))
+```
+
+TOL 아래 bin은 히트펌프 용량과 COPPL을 0으로 두고, 전체 난방 부하를 보조 전기 히터 부하로 처리한다.
+
+```text
+Pdh(Tj) = 0
+COPPL(Tj) = 0
+elbu(Tj) = Ph(Tj)
+```
+
+난방 기후 정의와 Annex D 운전 시간은 아래 값을 기준으로 검증한다.
+
+| 기후 | Tdesignh °C | Tbiv 최대 °C | 가역식 Hto | 가역식 Hsb | 가역식 Hoff | Hhe | 가역식 Hck |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| average | -10 | 2 | 179 | 0 | 0 | 1400 | 179 |
+| warmer | 2 | 7 | 755 | 0 | 0 | 1400 | 755 |
+| colder | -22 | -7 | 131 | 0 | 0 | 2100 | 131 |
+
+Full standard match를 위해서는 Clause 6.4.2.2와 Clause 7.4.2.2의 raw capacity-control step 선택 로직, colder climate에서 `TOL < -20 °C`일 때의 -15 °C 추가점, Equation 10의 SCOPnet 반환 여부, 인증 리포트 또는 공식 worksheet 기반 golden case가 추가로 필요하다.
+
+## 13. Prompt Snippets for Agent
 
 ### 문서 업데이트
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825_scop_notes.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md만 수정하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 문서 작업이면 docs/en14825 하위 EN14825 Markdown만 수정하라.
 ```
 
 ### SCOP 계산 변경
@@ -155,4 +231,3 @@ AGENTS.md를 먼저 읽고, 수정 범위를 core/calculator_en14825.py와 필�
 ```text
 AGENTS.md와 docs/en14825/en14825_notes.md를 먼저 읽어라. data/region_configs/en14825_scop.json의 Table 37 또는 Annex D 값을 변경할 때는 출처 메타데이터를 유지하고, temperature/hour 길이와 heating_bin_hours_total이 일치하는지 확인하라.
 ```
-
