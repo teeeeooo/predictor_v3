@@ -6,6 +6,8 @@
 
 Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
+도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
+
 ## 2. Top Implementation Pitfalls
 
 | Pitfall | Symptom | Cause | Prevention | Reference |
@@ -165,4 +167,3 @@ AGENTS.md Lite 규칙을 먼저 읽어라. HSPF2는 Region IV, non-ducted single
 ```text
 AGENTS.md Lite 규칙을 먼저 읽어라. SEER2는 현재 구현 확인 가능한 범위만 신뢰하고, 공식 parity를 주장하지 말라. 먼저 AHRI 공식 계산기 또는 인증 worksheet 기반 golden case를 추가한 뒤 계산 경로를 수정하라.
 ```
-

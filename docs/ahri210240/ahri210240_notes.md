@@ -24,21 +24,9 @@
 | HSPF2 defrost seasonal multiplier 실제 적용 | 현재 raw HSPF2에는 `fdef_override`가 곱해지고 기본 1.0 | defrost 적용 정책 확정 | AHRI 210/240-2026 Equation 11.107 |
 | SEER2 full standard parity | 확인 가능한 범위만 지원 | 공식 test point schema, off-mode 반영, golden 검증 | AHRI 210/240 cooling sections |
 
-## 3. Glossary
+## 3. Glossary Pointer
 
-| Term | Korean name | Reference | Meaning |
-| --- | --- | --- | --- |
-| HSPF2 | 난방 계절 성능 계수 2 | AHRI 210/240-2026 Section 11 | 계절 난방 부하를 압축기 에너지와 보조열 에너지 합으로 나눈 지표다. |
-| SEER2 | 냉방 계절 에너지 효율 2 | AHRI 210/240 cooling rating sections | 냉방 seasonal bin에서 전달 냉방량을 소비전력 합으로 나눈 지표다. |
-| BL(tj) | bin별 건물 부하 | AHRI 210/240-2026 Equation 11.104 | 외기온 bin에서 요구되는 난방 부하다. |
-| fractional bin hours | 분수 빈 시간 | AHRI 210/240-2026 Table 16 | HLH와 곱해 absolute bin hours로 변환되는 시간 가중치다. |
-| HLH | Heating Load Hours | AHRI 210/240-2026 Table 16 | fractional bin hours를 계절 시간으로 바꾸는 난방 부하 시간이다. |
-| HLF | Heating Load Factor | AHRI 210/240-2026 Case I path | 저속 용량 대비 부하 비율이다. |
-| PLF | Part Load Factor | AHRI 210/240-2026 Case I path | cycling 손실을 반영한 부분부하 보정계수다. |
-| Fdef | Defrost factor | AHRI 210/240-2026 Equation 11.107 | demand defrost 시험 시간으로 계산되는 제상 보정 계수다. |
-| t_off / t_on | 저온 차단/재가동 온도 | AHRI 210/240-2026 Section 11 | bin별 heat pump availability를 결정한다. |
-| H01/H11/H1N/H2Int/H32 | 난방 canonical test points | AHRI 210/240-2026 Table 8 aliases, Section 11 | HSPF2 v3 필수 난방 시험점이다. |
-| A2 | 냉방 full-load test point | AHRI 210/240-2026 Table 8 aliases | HSPF2 v3에서 variable-capacity heating load line anchor로 사용된다. |
+용어 및 수식 기호의 상세 정의는 `glossary.md`를 참조하라.
 
 ## 4. Input Schema
 
@@ -227,4 +215,3 @@ python3 -B test_hspf2_v3_bincheck.py
 ```text
 AGENTS.md의 Lite 규칙만 따르고, docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 작업은 docs/skills/ahri_hspf2.md, core/calculator_ahri_hspf2.py, core/calculator_ahri_seer2.py, data/usa_hspf2.json, test_hspf2_v3_*.py를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. HSPF2 계산 로직은 명시 지시 없이 수정하지 말고, 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
 ```
-
