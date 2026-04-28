@@ -33,7 +33,7 @@
 4. train_window 예측 검증 기능 추가
 5. core/calculator 효율 계산기 구현 ← 진행 중
    Phase 1: 냉방 파이프라인 관통 (규격 쉬운 순서)
-     5-1. [진행 필요] ISO 16358-1 CSPF (Cd 이슈 확인 중)
+     5-1. [1차 수정 완료] ISO 16358-1 / KS C 9306 CSPF
      5-2. [완료] EN 14825 SEER
      5-3. [완료] AHRI 210/240 SEER2
    Phase 2: 난방 확장
@@ -87,10 +87,10 @@
 
 ### 계산기 아키텍처
 - 최종 목표: ML 예측값 → 효율 계산기 → CSPF/SEER 등 자동 산출
-- 파이프라인: predictor.py → calculator.py → 결과 표시
+- 파이프라인: predictor.py → calculator_ISO16358.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
 - 엔진 구조:
-  calculator.py              — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
+  calculator_ISO16358.py     — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
   calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
   calculator_ahri_seer2.py   — AHRI 210/240 SEER2
   calculator_ahri_hspf2.py   — AHRI 210/240 HSPF2
@@ -162,7 +162,7 @@ HVAC_V3/
 │   ├── data_pipeline.py       전처리 전용
 │   ├── trainer.py             학습 로직 (log_callback, 엑셀 로그 지원)
 │   ├── predictor.py           순방향 예측 (학습 라이브러리 금지)
-│   ├── calculator.py          ISO 16358 CSPF/HSPF 엔진 (CSPF 완성)
+│   ├── calculator_ISO16358.py ISO 16358 CSPF/HSPF 엔진 (CSPF 1차 수정 완료)
 │   ├── calculator_en14825.py  EN 14825 SEER/SCOP 엔진
 │   ├── calculator_ahri_seer2.py  AHRI 210/240 SEER2 엔진
 │   ├── calculator_ahri_hspf2.py  AHRI 210/240 HSPF2 엔진 (진행 중)
@@ -321,7 +321,11 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [ ] 재학습 및 예측 검증
 
 ### 계산기 — 냉방
-- [x] ISO 16358-1 CSPF 엔진 완성 (Cd 이슈 확인 중)
+- [x] ISO 16358-1 / KS C 9306 CSPF 계산기 1차 수정 완료
+  - 한국 경로 시험값 정수 반올림 적용 (ROUND_HALF_UP)
+  - KS 교점 방식 전력 보간 분리 적용
+  - 29°C 미만/35°C 초과 외삽 및 max capacity 초과 구간 처리 수정
+  - golden sample 검증 완료 (CSPF 6.504 일치)
 - [ ] Cd 원본 확인 (성적서 대조 필요)
 - [ ] 태국 bin_hours 규격서 확인 필요
 - [ ] 35_half 목표 성능 계산 기능 추가
@@ -354,7 +358,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 
 ## 다음 작업
 1. ISO 16358-2 HSPF 엔진 구현
-2. predictor.py → calculator.py 파이프라인 연동
+2. KS 계산식(E.1.x) 기반 전력 보간 로직 정밀 검증 및 UI 연결 준비
 3. 테스트 하네스 구축
 4. 재학습 및 예측 검증
 5. calc_window.py 업데이트 
