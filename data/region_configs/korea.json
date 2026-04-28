@@ -9,6 +9,7 @@
   "building_load_source": "declared",
   "round_test_values": true,
   "rounding_method": "nearest_integer_half_up",
+  "power_interpolation_method": "ks_intersection",
 
   "points": {
     "35_full": "measure",

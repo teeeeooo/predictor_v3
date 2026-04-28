@@ -1,4 +1,4 @@
-# core/calculator.py
+# core/calculator_ISO16358.py
 
 import json
 import os
@@ -34,6 +34,7 @@ class ISO16358Calculator:
         self.reference_point = self.config.get("reference_point", "35_full")
         self.round_test_values = self.config.get("round_test_values", False)
         self.rounding_method = self.config.get("rounding_method", None)
+        self.power_interpolation_method = self.config.get("power_interpolation_method", "capacity_linear")
         
         # 포인트 활성화 및 파생 규칙, 온도 Bin 테이블 파싱
         self.points_config = self.config.get("points", {})
@@ -361,7 +362,7 @@ class ISO16358Calculator:
                         lower_type = loads[i][2]
                         upper_type = loads[i+1][2]
                         ks_power = None
-                        if self.round_test_values:
+                        if self.power_interpolation_method == "ks_intersection":
                             ks_power = self._ks_intersection_power(
                                 tj, L_c_ref, resolved_points, lower_type, upper_type
                             )
