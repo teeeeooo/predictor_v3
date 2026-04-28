@@ -1,3 +1,5 @@
 .DS_Store
 __pycache__/
 *.pyc
+temporary.txt
+KS_C_9306.pdf
