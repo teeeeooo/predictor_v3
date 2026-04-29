@@ -14,5 +14,5 @@
     }
   },
 
-  "postCreateCommand": "npm install -g @openai/codex"
+  "postCreateCommand": "npm install -g @openai/codex && echo 'alias codex=\"codex --sandbox workspace-write --ask-for-approval untrusted\"' >> ~/.bashrc"
 }
