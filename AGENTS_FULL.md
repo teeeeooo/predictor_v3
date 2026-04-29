@@ -30,6 +30,7 @@
 * v2와 v3 계산 경로 분리 유지
 * 명시적 요청 없이 공개 함수명 또는 JSON 키 이름 변경 금지
 * 테스트 기댓값 무단 변경 금지
+* KS C 9306의 `ROUND_HALF_UP` 시험값 반올림, declared capacity 기반 `BL(t_j)`, `ks_intersection` 전력 보간 규칙 임의 변경 금지
 
 ---
 
@@ -76,12 +77,20 @@
 ---
 
 ## 🗂️ 계산기 파일 구조
-* `calculator.py` — ISO 16358 (한국 KC, 태국 EGAT 등)
+* `calculator_iso16358.py` — ISO 16358 공통 CSPF 엔진 및 region 확장 진입점 (한국 KS C 9306, 태국 EGAT 등)
 * `calculator_en14825.py` — EN 14825 (EU SEER/SCOP)
 * `calculator_ahri_seer2.py` — AHRI 210/240 SEER2
 * `calculator_ahri_hspf2.py` — AHRI 210/240 HSPF2
 * 지역별 파라미터는 `data/region_configs/*.json` 또는 `data/usa_hspf2.json`으로 분리.
 * **calculator 계열 파일 제약**: numpy/pandas 금지, 순수 파이썬(Built-in)만 사용할 것.
+
+---
+
+## 📚 규격 문서 필독 경로
+* 문서 작성 또는 수정 전 `docs/DOCS_GUIDELINES.md`와 `docs/STANDARD_DOC_TEMPLATE.md`를 먼저 확인할 것.
+* ISO16358 공통 계산기 수정 전 `docs/iso16358/iso16358_dev_notes.md`와 `docs/iso16358/iso16358_notes.md`를 확인할 것.
+* KS C 9306 region 수정 전 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`를 확인할 것.
+* KS C 9306 제품 설계 노하우는 `docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md`에만 작성하고, 구현 문서나 ISO 공통 문서에 섞지 말 것.
 
 ---
 

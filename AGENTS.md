@@ -10,7 +10,9 @@
 - numpy/pandas 금지 (순수 Python only)
 - calculate_hspf2_v2() / calculate_hspf2() 무단 수정 금지
 - UI / ML 코드 수정 금지 / JSON 필드 삭제 금지
-- ISO16358/KS C 9306 계산기 수정 시 `docs/iso16358/iso16358_dev_notes.md`와 `docs/iso16358/korea_ks_c_9306_notes.md`를 먼저 확인할 것
+- ISO16358 계산기 수정 시 `docs/iso16358/iso16358_dev_notes.md`를 먼저 확인할 것
+- KS C 9306 관련 수정 시 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`를 먼저 확인할 것
+- ISO16358/KS C 9306 공통 엔진 파일명은 `core/calculator_iso16358.py`를 기준으로 할 것
 
 ## ML
 - model.fit()에 .values 변환 금지 (feature_names_in_ 보존)

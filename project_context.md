@@ -33,7 +33,9 @@
 4. train_window 예측 검증 기능 추가
 5. core/calculator 효율 계산기 구현 ← 진행 중
    Phase 1: 냉방 파이프라인 관통 (규격 쉬운 순서)
-     5-1. [1차 수정 완료] ISO 16358-1 / KS C 9306 CSPF
+     5-1. [완료] ISO 16358-1 / KS C 9306 CSPF
+          KS C 9306 CSPF 계산기 완료
+          golden sample 검증 완료 (CSPF 6.504 일치)
      5-2. [완료] EN 14825 SEER
      5-3. [완료] AHRI 210/240 SEER2
    Phase 2: 난방 확장
@@ -90,12 +92,22 @@
 - 파이프라인: predictor.py → calculator_iso16358.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
 - 엔진 구조:
-  calculator_iso16358.py     — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
+  calculator_iso16358.py     — ISO 16358 공통 CSPF 엔진 + region 확장 (한국 KS C 9306, 태국 EGAT 등)
   calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
   calculator_ahri_seer2.py   — AHRI 210/240 SEER2
   calculator_ahri_hspf2.py   — AHRI 210/240 HSPF2
 - 지역별 설정은 data/region_configs/*.json 또는 data/usa*.json으로 분리 (data-driven)
 - calculator 계열 파일 제약: numpy/pandas 금지, 순수 파이썬만
+- ISO16358 문서 구조:
+  docs/iso16358/iso16358_notes.md — ISO16358 공통 계산 구조
+  docs/iso16358/iso16358_dev_notes.md — ISO16358 공통 구현 지침
+  docs/iso16358/iso16358_design_notes.md — ISO16358 공통 설계 인사이트
+  docs/iso16358/iso16358_glossary.md — ISO16358 공통 용어 SSOT
+- KS C 9306 문서 구조:
+  docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md — 한국 region 계산 기준
+  docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md — 한국 region 구현 지침
+  docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md — 한국 region 설계 heuristic
+  docs/iso16358/regions/ks_c_9306/ks_c_9306_glossary.md — 한국 region 용어 SSOT
 
 ### HSPF2 구현 현황 (calculator_ahri_hspf2.py)
 - 적용 규격: AHRI 210/240-2026
@@ -198,10 +210,21 @@ HVAC_V3/
 │   ├── test_hspf2_v3_smoke.py       HSPF2 v3 smoke test (PLF 전후 비교 포함)
 │   └── test_hspf2_v3_bincheck.py    bin-level sanity check
 ├── docs/
+│   ├── DOCS_GUIDELINES.md
+│   ├── STANDARD_DOC_TEMPLATE.md
+│   ├── iso16358/
+│   │   ├── iso16358_notes.md
+│   │   ├── iso16358_dev_notes.md
+│   │   ├── iso16358_design_notes.md
+│   │   ├── iso16358_glossary.md
+│   │   └── regions/
+│   │       └── ks_c_9306/
+│   │           ├── ks_c_9306_notes.md
+│   │           ├── ks_c_9306_dev_notes.md
+│   │           ├── ks_c_9306_design_notes.md
+│   │           └── ks_c_9306_glossary.md
 │   └── skills/
-│       ├── pyqt5_dropdown_delegate.md
-│       ├── cascading_autofill_pattern.md
-│       └── ...
+│       └── ahri_hspf2.md
 ├── .clinerules
 ├── BUILD_GUIDE.md
 └── project_context.md    ← 이 파일
@@ -321,14 +344,19 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [ ] 재학습 및 예측 검증
 
 ### 계산기 — 냉방
-- [x] ISO 16358-1 / KS C 9306 CSPF 계산기 1차 수정 완료
+- [x] ISO 16358-1 / KS C 9306 CSPF 계산기 완료
+  - KS C 9306 CSPF 계산기 1차 수정 완료
   - 한국 경로 시험값 정수 반올림 적용 (ROUND_HALF_UP)
   - KS 교점 방식 전력 보간 분리 적용
   - 29°C 미만/35°C 초과 외삽 및 max capacity 초과 구간 처리 수정
   - golden sample 검증 완료 (CSPF 6.504 일치)
-- [ ] Cd 원본 확인 (성적서 대조 필요)
+- [x] ISO16358 / KS C 9306 문서 구조 정규화
+  - ISO 공통 문서: docs/iso16358/
+  - KS region 문서: docs/iso16358/regions/ks_c_9306/
+- [x] KS C 9306 Cd 원본 확인 (성적서 대조 필요)
 - [ ] 태국 bin_hours 규격서 확인 필요
-- [ ] 35_half 목표 성능 계산 기능 추가
+- [x] 35_half 목표 성능 계산 helper 구현
+- [ ] 35_half 목표 성능 계산 UI 연동
 - [ ] Cd UI 입력 기능 추가
 - [x] EN 14825 SEER 엔진 구현 (calculator_en14825.py)
 - [x] EN 14825 SEER GUI 탭 연동 (calc_window.py)
@@ -357,8 +385,11 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [ ] 테스트 하네스 구축
 
 ## 다음 작업
-1. ISO 16358-2 HSPF 엔진 구현
-2. KS 계산식(E.1.x) 기반 전력 보간 로직 정밀 검증 및 UI 연결 준비
+1. ISO 16358-1 기반 계산기 확장 (태국, 인도 우선)
+2. ISO 16358-2 HSPF 엔진 구현
 3. 테스트 하네스 구축
 4. 재학습 및 예측 검증
-5. calc_window.py 업데이트 
+5. app_predict.py, app_train.py 업데이트
+6. app_calculator.py, calc_window.py 업데이트 
+7. ISO 16358-1 기반 계산기 2차 확장 (SASO, 호주 등)
+

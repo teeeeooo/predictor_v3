@@ -14,13 +14,13 @@
 
 이 프로젝트에서 지원하는 범위와 제외하는 범위를 구분한다. 제품 유형, 운전 모드, 기후 조건, 지역 조건, 용량 제어 방식 등을 표로 정리한다.
 
-### 3. Glossary
+### 3. Glossary Reference
 
-규격 용어를 한국어와 영어로 함께 정리한다. 최초 등장 시 원문 표기를 우선하고, 프로젝트에서 사용하는 의미가 좁아졌다면 별도로 적는다.
+용어 본문은 이 문서에 중복 작성하지 않는다. 상세 용어는 같은 폴더의 `<standard>_glossary.md`를 링크하고, notes 본문에는 계산 흐름을 이해하는 데 필요한 최소 참조만 둔다.
 
-| Term | Korean name | Reference | Meaning |
-| --- | --- | --- | --- |
-|  |  |  |  |
+| Glossary | Scope | Link |
+| --- | --- | --- |
+| `<standard>_glossary.md` | 공통 용어, 수식 기호, 코드/스키마 매핑, 데이터 위치 |  |
 
 ### 4. Input Schema
 
@@ -94,7 +94,7 @@
 
 이 문서가 구현자와 Agent에게 제공하는 역할을 설명한다. 규격 해석 문서가 아니라 구현 실수 방지와 검증 재현을 위한 문서임을 명확히 한다.
 
-glossary 본문은 이 문서에 포함하지 않는다. 필요한 경우 `docs/glossary/` 하위의 해당 glossary 문서 링크만 둔다.
+glossary 본문은 이 문서에 포함하지 않는다. 필요한 경우 같은 폴더의 `<standard>_glossary.md` 링크만 둔다. Parent standard 아래 region extension 문서라면 parent glossary와 region glossary 링크를 모두 둘 수 있지만, 용어 정의 본문은 glossary 문서에만 작성한다.
 
 ### 2. Top Implementation Pitfalls
 
@@ -150,9 +150,11 @@ glossary 본문은 이 문서에 포함하지 않는다. 필요한 경우 `docs/
 
 ### 2. Quick Glossary
 
-제품 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 5~10개를 정리한다. 상세 glossary는 `docs/glossary/` 하위 문서를 참조하고, 공통 용어를 이 문서에 중복 작성하지 않는다.
+제품 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 5~10개를 정리한다. 상세 glossary는 같은 폴더의 `<standard>_glossary.md` 문서를 참조하고, 공통 용어를 이 문서에 중복 작성하지 않는다.
 
 각 용어는 사전식 정의보다 물리적 의미와 설계 영향 중심으로 작성한다.
+
+이 문서에서는 코드 파일명, 함수명, 변수명, JSON key를 언급하지 않는다. 제품 설계 관점의 물리적 의미와 규격 구조 기반 인사이트만 작성한다.
 
 | Term | Physical meaning | Design impact | Glossary reference |
 | --- | --- | --- | --- |
@@ -201,3 +203,43 @@ glossary 본문은 이 문서에 포함하지 않는다. 필요한 경우 `docs/
 ### 13. References
 
 근거가 되는 규격 조항, 표, 부속서, 시험 조건을 정리한다. 엔지니어링 해석과 규격 원문 근거를 분리해 적는다.
+
+---
+
+## Template D: Region Extension
+
+공통 규격 엔진을 국가별 또는 지역별 규격으로 확장할 때는 parent standard 아래 `regions/<region_standard>/`에 4개 문서를 둔다.
+
+```text
+docs/<parent_standard>/regions/<region_standard>/
+- <region_standard>_notes.md
+- <region_standard>_dev_notes.md
+- <region_standard>_design_notes.md
+- <region_standard>_glossary.md
+```
+
+예:
+
+```text
+docs/iso16358/regions/ks_c_9306/
+- ks_c_9306_notes.md
+- ks_c_9306_dev_notes.md
+- ks_c_9306_design_notes.md
+- ks_c_9306_glossary.md
+```
+
+### Region Notes
+
+Region notes는 parent standard의 공통 계산 구조를 재작성하지 않고, region-specific 입력 조건, 파생 규칙, 보정 규칙, 출력 차이, golden sample만 정리한다. 공통 계산 구조가 필요하면 parent `<parent_standard>_notes.md`의 해당 섹션을 링크한다.
+
+### Region Dev Notes
+
+Region dev notes는 region-specific 구현 실수 방지, 디버깅 순서, 테스트 전략, Agent 재사용 프롬프트를 작성한다. Parent standard의 공통 구현 지침은 링크로 참조하고 본문을 반복하지 않는다.
+
+### Region Design Notes
+
+Region design notes는 region-specific 제품 설계 인사이트만 작성한다. 코드 언급 금지 규칙은 parent design notes와 동일하게 적용한다.
+
+### Region Glossary
+
+Region glossary는 region 고유 용어, parent 용어와 의미가 달라지는 항목, region 데이터 위치를 관리한다. Parent glossary의 공통 용어를 복사하지 않는다.

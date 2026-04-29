@@ -35,6 +35,24 @@ docs/en14825/en14825_design_notes.md
 docs/en14825/en14825_glossary.md
 ```
 
+공통 규격 엔진을 기반으로 국가별 또는 지역별 확장이 존재하는 경우에는 parent standard 아래 `regions/<region_standard>/` 폴더를 둔다. parent standard 문서는 공통 계산 구조와 공통 용어만 관리하고, region 문서는 해당 국가/지역의 입력 조건, 보정 규칙, 검증 샘플, 설계 인사이트만 관리한다.
+
+예:
+
+```text
+docs/iso16358/
+- iso16358_notes.md
+- iso16358_dev_notes.md
+- iso16358_design_notes.md
+- iso16358_glossary.md
+- regions/
+  - ks_c_9306/
+    - ks_c_9306_notes.md
+    - ks_c_9306_dev_notes.md
+    - ks_c_9306_design_notes.md
+    - ks_c_9306_glossary.md
+```
+
 | 파일 | 역할 | 포함해야 할 내용 |
 | --- | --- | --- |
 | `<standard>_notes.md` | 규격의 기준 문서 | 규격 개요, 계산 구조, 입력/출력 스키마, 수식과 코드 매핑, 검증 결과 |
@@ -45,6 +63,24 @@ docs/en14825/en14825_glossary.md
 이 분리는 문서 품질의 핵심이다. 구현 판단과 제품 설계 판단은 서로 영향을 주지만, 같은 문단에 섞이면 독자가 근거와 응용을 구분하기 어려워진다.
 
 `<standard>_design_notes.md`의 `Quick Glossary`는 상세 용어 사전이 아니라 설계자가 문서를 읽기 전에 알아야 할 핵심 용어 요약이다. 각 용어는 정의보다 물리적 의미와 제품 설계에 미치는 영향을 중심으로 적고, 상세 용어와 코드 변수 설명은 같은 폴더의 `<standard>_glossary.md`에 단일 출처로 유지한다.
+
+## 2.1 Parent Standard / Region Extension 규칙
+
+| 구분 | 역할 | 작성 원칙 |
+| --- | --- | --- |
+| parent standard | 공통 엔진, 공통 계산 흐름, 공통 용어의 기준 문서 | 국가별 특이사항을 넣지 않는다. region 문서가 parent 문서를 참조한다. |
+| region extension | parent standard를 특정 국가/지역 규격에 적용한 확장 문서 | 공통 계산 구조를 재작성하지 않고 parent 문서 링크로 연결한다. |
+| region glossary | region 고유 용어의 SSOT | parent glossary의 공통 용어를 복사하지 않는다. |
+| region design notes | 지역별 제품 설계 인사이트 | 코드 언급 금지 원칙을 동일하게 적용한다. |
+
+Region extension 문서는 반드시 아래 원칙을 따른다.
+
+- parent standard의 계산 구조, 공통 수식, 공통 용어를 본문에 반복 작성하지 않는다.
+- region 고유 규칙은 `regions/<region_standard>/<region_standard>_notes.md`에 정리한다.
+- region 구현 주의사항은 `regions/<region_standard>/<region_standard>_dev_notes.md`에 정리한다.
+- region 설계 노하우는 `regions/<region_standard>/<region_standard>_design_notes.md`에만 정리한다.
+- region 고유 용어와 데이터 위치는 `regions/<region_standard>/<region_standard>_glossary.md`에 단일 출처로 둔다.
+- ISO16358 기반 한국 KS C 9306 문서는 `docs/iso16358/regions/ks_c_9306/`를 canonical 위치로 사용한다.
 
 ## Future Refactor Notice
 
