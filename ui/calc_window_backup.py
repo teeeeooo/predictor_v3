@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
-from core.calculator_ISO16358 import ISO16358Calculator
+from core.calculator_iso16358 import ISO16358Calculator
 from core.calculator_en14825 import EN14825Calculator
 from core.calculator_ahri_seer2 import AHRICalculator
 

@@ -87,10 +87,10 @@
 
 ### 계산기 아키텍처
 - 최종 목표: ML 예측값 → 효율 계산기 → CSPF/SEER 등 자동 산출
-- 파이프라인: predictor.py → calculator_ISO16358.py → 결과 표시
+- 파이프라인: predictor.py → calculator_iso16358.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
 - 엔진 구조:
-  calculator_ISO16358.py     — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
+  calculator_iso16358.py     — ISO 16358 (아시아: 한국 KC, 태국 EGAT 등)
   calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
   calculator_ahri_seer2.py   — AHRI 210/240 SEER2
   calculator_ahri_hspf2.py   — AHRI 210/240 HSPF2
@@ -162,7 +162,7 @@ HVAC_V3/
 │   ├── data_pipeline.py       전처리 전용
 │   ├── trainer.py             학습 로직 (log_callback, 엑셀 로그 지원)
 │   ├── predictor.py           순방향 예측 (학습 라이브러리 금지)
-│   ├── calculator_ISO16358.py ISO 16358 CSPF/HSPF 엔진 (CSPF 1차 수정 완료)
+│   ├── calculator_iso16358.py ISO 16358 CSPF/HSPF 엔진 (CSPF 1차 수정 완료)
 │   ├── calculator_en14825.py  EN 14825 SEER/SCOP 엔진
 │   ├── calculator_ahri_seer2.py  AHRI 210/240 SEER2 엔진
 │   ├── calculator_ahri_hspf2.py  AHRI 210/240 HSPF2 엔진 (진행 중)

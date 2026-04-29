@@ -60,6 +60,7 @@ docs/en14825/en14825_glossary.md
 | --- | --- | --- |
 | EN14825 | `docs/en14825/en14825_notes.md`, `docs/en14825/en14825_dev_notes.md`, `docs/en14825/en14825_design_notes.md`, `docs/en14825/en14825_glossary.md` | `docs/en14825_scop_notes.md`, `docs/en14825/notes.md`, `docs/en14825/dev_notes.md`, `docs/en14825/design_notes.md` |
 | AHRI 210/240 | `docs/ahri210240/ahri210240_notes.md`, `docs/ahri210240/ahri210240_dev_notes.md`, `docs/ahri210240/ahri210240_design_notes.md`, `docs/ahri210240/ahri210240_glossary.md` | `docs/skills/ahri_hspf2.md` |
+| ISO16358 | `docs/iso16358/iso16358_notes.md`, `docs/iso16358/iso16358_dev_notes.md`, `docs/iso16358/iso16358_design_notes.md`, `docs/iso16358/iso16358_glossary.md` | `docs/iso16358/korea_ks_c_9306_notes.md` |
 
 ## 새 규격 문서를 추가할 때의 순서
 

@@ -1,4 +1,4 @@
-# core/calculator_ISO16358.py
+# core/calculator_iso16358.py
 
 import json
 import os
@@ -35,6 +35,7 @@ class ISO16358Calculator:
         self.round_test_values = self.config.get("round_test_values", False)
         self.rounding_method = self.config.get("rounding_method", None)
         self.power_interpolation_method = self.config.get("power_interpolation_method", "capacity_linear")
+        self.half_capacity_recommendation = self.config.get("half_capacity_recommendation", {})
         
         # 포인트 활성화 및 파생 규칙, 온도 Bin 테이블 파싱
         self.points_config = self.config.get("points", {})
@@ -249,21 +250,42 @@ class ISO16358Calculator:
         if phi_full_35 <= 0 or phi_min_29 <= 0:
             raise ValueError("phi_full_35 and phi_min_29 must be positive.")
 
-        phi_min_35 = phi_min_29 / 1.077
-        min_slope = (phi_min_35 - phi_min_29) / (35.0 - 29.0)
-        min_intercept = phi_min_29 - min_slope * 29.0
+        config = self.half_capacity_recommendation
+        if not config or not config.get("enabled", False):
+            raise ValueError("half_capacity_recommendation config is required and must be enabled.")
 
-        load_slope = phi_full_35 / (35.0 - 23.0)
-        load_intercept = -load_slope * 23.0
+        min_test_temp = config.get("min_test_temp")
+        full_test_temp = config.get("full_test_temp")
+        factor = config.get("min_capacity_ratio_35_to_29")
+        if min_test_temp is None or full_test_temp is None or factor is None:
+            raise ValueError("half_capacity_recommendation config is incomplete.")
+        if full_test_temp != self.t_100_load:
+            raise ValueError("half_capacity_recommendation full_test_temp must match t_100_load.")
+        if full_test_temp == min_test_temp:
+            raise ValueError("full_test_temp and min_test_temp cannot be equal (division by zero).")
+        if full_test_temp == self.t_0_load:
+            raise ValueError("full_test_temp and t_0_load cannot be equal (division by zero).")
+        if factor == 0:
+            raise ValueError("min_capacity_ratio_35_to_29 cannot be zero (division by zero).")
+
+        phi_min_35 = phi_min_29 / factor
+        min_slope = (phi_min_35 - phi_min_29) / (full_test_temp - min_test_temp)
+        min_intercept = phi_min_29 - min_slope * min_test_temp
+
+        load_slope = phi_full_35 / (full_test_temp - self.t_0_load)
+        load_intercept = -load_slope * self.t_0_load
 
         denominator = load_slope - min_slope
         if denominator == 0:
             raise ValueError("Cannot calculate T_min because load and minimum capacity are parallel.")
 
         T_min = (min_intercept - load_intercept) / denominator
-        T_mid = (T_min + 35.0) / 2.0
-        building_load_at_T_mid = phi_full_35 * (T_mid - 23.0) / (35.0 - 23.0)
-        temp_factor_at_T_mid = 1.0 + 0.077 * (35.0 - T_mid) / (35.0 - 29.0)
+        T_mid = (T_min + full_test_temp) / 2.0
+        building_load_at_T_mid = phi_full_35 * (T_mid - self.t_0_load) / (full_test_temp - self.t_0_load)
+        delta = factor - 1.0
+        temp_factor_at_T_mid = 1.0 + delta * (full_test_temp - T_mid) / (full_test_temp - min_test_temp)
+        if temp_factor_at_T_mid == 0:
+            raise ValueError("temp_factor_at_T_mid cannot be zero (division by zero).")
         recommended_phi_half_35 = building_load_at_T_mid / temp_factor_at_T_mid
 
         return {

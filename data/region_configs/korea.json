@@ -10,6 +10,12 @@
   "round_test_values": true,
   "rounding_method": "nearest_integer_half_up",
   "power_interpolation_method": "ks_intersection",
+  "half_capacity_recommendation": {
+    "enabled": true,
+    "min_test_temp": 29.0,
+    "full_test_temp": 35.0,
+    "min_capacity_ratio_35_to_29": 1.077
+  },
 
   "points": {
     "35_full": "measure",
