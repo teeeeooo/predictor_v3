@@ -8,11 +8,8 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.11"
-    },
-    "ghcr.io/devcontainers/features/sshd:1": {
-      "version": "latest"
     }
   },
 
-  "postCreateCommand": "npm install -g @openai/codex && echo 'alias codex=\"codex --sandbox workspace-write --ask-for-approval untrusted\"' >> ~/.bashrc"
+  "postCreateCommand": "npm install -g @openai/codex && sed -i '/alias codex=/d' ~/.bashrc"
 }
