@@ -11,5 +11,14 @@
     }
   },
 
-  "postCreateCommand": "npm install -g @openai/codex && sed -i '/alias codex=/d' ~/.bashrc"
+  "postCreateCommand": "npm install -g @openai/codex && python -m pip install --upgrade pip && python -m pip install pytest && sed -i '/alias codex=/d' ~/.bashrc",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
 }
