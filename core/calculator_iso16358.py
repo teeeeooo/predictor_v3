@@ -2,7 +2,7 @@
 
 import json
 import os
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
 class ISO16358Calculator:
     """
@@ -62,7 +62,10 @@ class ISO16358Calculator:
             prepared[point_key] = {}
             for data_key, value in point_data.items():
                 if data_key in ("capacity", "power"):
-                    prepared[point_key][data_key] = self._round_test_value(value)
+                    try:
+                        prepared[point_key][data_key] = self._round_test_value(value)
+                    except (InvalidOperation, ValueError, TypeError):
+                        prepared[point_key][data_key] = value
                 else:
                     prepared[point_key][data_key] = value
 
@@ -83,10 +86,38 @@ class ISO16358Calculator:
         # 1. "measure" 포인트 우선 처리
         for point_key, point_type in self.points_config.items():
             if point_type == "measure":
-                if point_key in measured_inputs:
-                    resolved[point_key] = measured_inputs[point_key]
-                else:
+                if point_key not in measured_inputs:
                     raise ValueError(f"필수 측정값 누락: '{point_key}' 포인트 데이터가 없습니다.")
+
+                point_data = measured_inputs[point_key]
+                if not isinstance(point_data, dict):
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': expected dict with capacity and power."
+                    )
+
+                for required_key in ("capacity", "power"):
+                    if required_key not in point_data:
+                        raise ValueError(
+                            f"Invalid measured point '{point_key}': "
+                            f"missing required field '{required_key}'."
+                        )
+
+                validated_point = dict(point_data)
+                for numeric_key in ("capacity", "power"):
+                    try:
+                        numeric_value = float(point_data[numeric_key])
+                    except (TypeError, ValueError):
+                        raise ValueError(
+                            f"Invalid measured point '{point_key}': {numeric_key} must be numeric."
+                        ) from None
+
+                    if numeric_value <= 0:
+                        raise ValueError(
+                            f"Invalid measured point '{point_key}': {numeric_key} must be positive."
+                        )
+                    validated_point[numeric_key] = numeric_value
+
+                resolved[point_key] = validated_point
 
         # 2. "default" 포인트 처리 (연쇄 파생 규칙 대응 루프)
         for _ in range(len(self.points_config)):
@@ -293,6 +324,334 @@ class ISO16358Calculator:
             "T_mid": T_mid,
             "building_load_at_T_mid": building_load_at_T_mid,
             "recommended_phi_half_35": recommended_phi_half_35
+        }
+
+    def _heating_points(self, measured_inputs: dict) -> list:
+        default_temps = {"H1": 7.0, "H2": 2.0, "H3": -7.0}
+        configured_temps = self.config.get("heating_test_temperatures", default_temps)
+        points = []
+
+        for key, data in measured_inputs.items():
+            if not isinstance(data, dict):
+                continue
+
+            if "capacity" not in data or "power" not in data:
+                continue
+
+            temp = data.get("temp")
+            if temp is None:
+                temp = data.get("temp_c")
+            if temp is None:
+                temp = configured_temps.get(key)
+            if temp is None:
+                continue
+
+            points.append((float(temp), float(data["capacity"]), float(data["power"])))
+
+        points.sort(key=lambda x: x[0])
+        if len(points) < 2:
+            raise ValueError("HSPF Phase 1 requires at least two heating points.")
+
+        return points
+
+    def interpolate_heating(self, tj: float, measured_inputs: dict) -> dict:
+        points = self._heating_points(measured_inputs)
+
+        if tj <= points[0][0]:
+            t1, c1, p1 = points[0]
+            t2, c2, p2 = points[1]
+        elif tj >= points[-1][0]:
+            t1, c1, p1 = points[-2]
+            t2, c2, p2 = points[-1]
+        else:
+            t1, c1, p1 = points[0]
+            t2, c2, p2 = points[1]
+            for i in range(len(points) - 1):
+                lower = points[i]
+                upper = points[i + 1]
+                if lower[0] <= tj <= upper[0]:
+                    t1, c1, p1 = lower
+                    t2, c2, p2 = upper
+                    break
+
+        if t2 == t1:
+            raise ValueError("Heating point temperatures cannot be equal.")
+
+        capacity = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
+        power = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
+        return {"capacity": capacity, "power": power}
+
+    def calc_auxiliary_heat(
+        self,
+        load: float,
+        available_capacity: float,
+        hours: float,
+        aux_cop: float = 1.0
+    ) -> dict:
+        # ISO 16358-2 HSPF Phase 1 assumes all capacity shortage is covered by make-up heat.
+        # Auxiliary capacity limiting is intentionally not modeled here.
+        if aux_cop <= 0:
+            raise ValueError("aux_cop must be positive.")
+
+        auxiliary_heat = max(0.0, load - available_capacity)
+        auxiliary_energy = auxiliary_heat * hours / aux_cop
+        return {
+            "auxiliary_heat": auxiliary_heat,
+            "auxiliary_energy": auxiliary_energy
+        }
+
+    def _heating_stage_points(self, measured_inputs: dict) -> dict:
+        stage_points = {"high": [], "half": [], "min": []}
+        for key, data in measured_inputs.items():
+            if not isinstance(data, dict):
+                continue
+            if "capacity" not in data or "power" not in data:
+                continue
+
+            key_lower = key.lower()
+            if "half" in key_lower:
+                stage = "half"
+            elif "min" in key_lower:
+                stage = "min"
+            elif (
+                "full" in key_lower
+                or "max" in key_lower
+                or "defrost" in key_lower
+            ):
+                stage = "high"
+            else:
+                continue
+
+            temp = data.get("temp")
+            if temp is None:
+                temp = data.get("temp_c")
+            if temp is None:
+                continue
+
+            stage_points[stage].append((
+                float(temp),
+                float(data["capacity"]),
+                float(data["power"]),
+            ))
+
+        for points in stage_points.values():
+            points.sort(key=lambda x: x[0])
+        return stage_points
+
+    def _has_variable_heating_points(self, measured_inputs: dict) -> bool:
+        stage_points = self._heating_stage_points(measured_inputs)
+        return (
+            len(stage_points["high"]) >= 3
+            and len(stage_points["half"]) >= 1
+            and len(stage_points["min"]) >= 1
+        )
+
+    def _point_at_temp(self, points: list, target_temp: float, label: str) -> tuple:
+        for temp, capacity, power in points:
+            if temp == target_temp:
+                return temp, capacity, power
+        raise ValueError(f"Missing heating {label} point at {target_temp}C.")
+
+    def _linear_heating_point(
+        self,
+        tj: float,
+        lower_point: tuple,
+        upper_point: tuple
+    ) -> dict:
+        t1, c1, p1 = lower_point
+        t2, c2, p2 = upper_point
+        if t2 == t1:
+            raise ValueError("Heating point temperatures cannot be equal.")
+
+        capacity = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
+        power = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
+        return {"capacity": capacity, "power": power}
+
+    def _variable_heating_performance(self, tj: float, measured_inputs: dict) -> dict:
+        stage_points = self._heating_stage_points(measured_inputs)
+        high_minus_7 = self._point_at_temp(stage_points["high"], -7.0, "high")
+        high_2 = self._point_at_temp(stage_points["high"], 2.0, "high")
+        high_7 = self._point_at_temp(stage_points["high"], 7.0, "high")
+        _, cap_high_7, power_high_7 = high_7
+
+        if cap_high_7 == 0 or power_high_7 == 0:
+            raise ValueError("7C high-stage capacity and power must be non-zero.")
+
+        if tj >= 2.0:
+            high = self._linear_heating_point(tj, high_2, high_7)
+        else:
+            high = self._linear_heating_point(tj, high_minus_7, high_2)
+
+        _, cap_half_7, power_half_7 = self._point_at_temp(
+            stage_points["half"], 7.0, "half"
+        )
+        _, cap_min_7, power_min_7 = self._point_at_temp(
+            stage_points["min"], 7.0, "min"
+        )
+
+        capacity_ratio = high["capacity"] / cap_high_7
+        power_ratio = high["power"] / power_high_7
+        return {
+            "high": high,
+            "half": {
+                "capacity": cap_half_7 * capacity_ratio,
+                "power": power_half_7 * power_ratio,
+            },
+            "min": {
+                "capacity": cap_min_7 * capacity_ratio,
+                "power": power_min_7 * power_ratio,
+            },
+        }
+
+    def _variable_heating_bin(
+        self,
+        tj: float,
+        load: float,
+        hours: float,
+        measured_inputs: dict
+    ) -> dict:
+        performance = self._variable_heating_performance(tj, measured_inputs)
+        cap_high = performance["high"]["capacity"]
+        power_high = performance["high"]["power"]
+        cap_half = performance["half"]["capacity"]
+        power_half = performance["half"]["power"]
+        cap_min = performance["min"]["capacity"]
+        power_min = performance["min"]["power"]
+
+        auxiliary_heat = 0.0
+        heat_pump_capacity = load
+        if load > cap_high:
+            operating_case = "shortage"
+            heat_pump_capacity = cap_high
+            heat_pump_power = power_high
+            auxiliary_heat = load - cap_high
+        elif load > cap_half:
+            operating_case = "interpolate_high_half"
+            if cap_high == cap_half:
+                heat_pump_power = power_high
+            else:
+                heat_pump_power = (
+                    power_half
+                    + (load - cap_half)
+                    / (cap_high - cap_half)
+                    * (power_high - power_half)
+                )
+        elif load > cap_min:
+            operating_case = "interpolate_half_min"
+            if cap_half == cap_min:
+                heat_pump_power = power_half
+            else:
+                heat_pump_power = (
+                    power_min
+                    + (load - cap_min)
+                    / (cap_half - cap_min)
+                    * (power_half - power_min)
+                )
+        else:
+            operating_case = "cyclic_min"
+            if cap_min <= 0:
+                heat_pump_power = 0.0
+            else:
+                CR = load / cap_min
+                PLF = max(1e-6, 1.0 - self.Cd * (1.0 - CR))
+                heat_pump_power = (power_min * CR) / PLF
+
+        heat_pump_energy = heat_pump_power * hours
+        auxiliary_energy = auxiliary_heat * hours
+        bin_load = load * hours
+        bin_energy = heat_pump_energy + auxiliary_energy
+        return {
+            "tj": tj,
+            "hours": hours,
+            "load": load,
+            "cap_high": cap_high,
+            "power_high": power_high,
+            "cap_half": cap_half,
+            "power_half": power_half,
+            "cap_min": cap_min,
+            "power_min": power_min,
+            "available_capacity": cap_high,
+            "heat_pump_capacity": heat_pump_capacity,
+            "compressor_heat": heat_pump_capacity,
+            "compressor_energy": heat_pump_energy,
+            "heat_pump_energy": heat_pump_energy,
+            "auxiliary_heat": auxiliary_heat,
+            "auxiliary_energy": auxiliary_energy,
+            "bin_load": bin_load,
+            "bin_energy": bin_energy,
+            "operating_case": operating_case,
+        }
+
+    def calculate_hspf(self, measured_inputs: dict, aux_cop: float = 1.0) -> dict:
+        measured_inputs = self._prepare_measured_inputs(measured_inputs)
+        if aux_cop <= 0:
+            raise ValueError("aux_cop must be positive.")
+
+        hstl = 0.0
+        hsec = 0.0
+        bin_details = []
+
+        for bin_data in self.bin_hours:
+            tj = float(bin_data.get("tj", 0))
+            hours = float(bin_data.get("nj", bin_data.get("hours", 0)))
+            if hours <= 0:
+                continue
+
+            load = float(bin_data.get("load", bin_data.get("heating_load", 0)))
+            if load <= 0:
+                continue
+
+            if self._has_variable_heating_points(measured_inputs):
+                detail = self._variable_heating_bin(tj, load, hours, measured_inputs)
+            else:
+                performance = self.interpolate_heating(tj, measured_inputs)
+                available_capacity = max(0.0, performance["capacity"])
+                compressor_heat = min(load, available_capacity)
+                compressor_energy = max(0.0, performance["power"]) * hours
+                auxiliary = self.calc_auxiliary_heat(
+                    load, available_capacity, hours, aux_cop
+                )
+                bin_load = load * hours
+                bin_energy = compressor_energy + auxiliary["auxiliary_energy"]
+                detail = {
+                    "tj": tj,
+                    "hours": hours,
+                    "load": load,
+                    "available_capacity": available_capacity,
+                    "compressor_heat": compressor_heat,
+                    "compressor_energy": compressor_energy,
+                    "heat_pump_energy": compressor_energy,
+                    "auxiliary_heat": auxiliary["auxiliary_heat"],
+                    "auxiliary_energy": auxiliary["auxiliary_energy"],
+                    "bin_load": bin_load,
+                    "bin_energy": bin_energy
+                }
+
+            hstl += detail["bin_load"]
+            hsec += detail["bin_energy"]
+            bin_details.append(detail)
+
+        if hsec <= 0:
+            return {"hspf": 0.0, "HSPF": 0.0, "HSTL": hstl, "HSEC": hsec, "bin_details": bin_details}
+
+        hspf = hstl / hsec
+        heat_pump_energy = sum(
+            item.get("heat_pump_energy", item.get("compressor_energy", 0.0))
+            for item in bin_details
+        )
+        auxiliary_energy = sum(
+            item.get("auxiliary_energy", 0.0) for item in bin_details
+        )
+        return {
+            "hspf": hspf,
+            "HSPF": hspf,
+            "hstl": hstl,
+            "HSTL": hstl,
+            "hsec": hsec,
+            "HSEC": hsec,
+            "heat_pump_energy": heat_pump_energy,
+            "auxiliary_energy": auxiliary_energy,
+            "bin_details": bin_details
         }
 
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
