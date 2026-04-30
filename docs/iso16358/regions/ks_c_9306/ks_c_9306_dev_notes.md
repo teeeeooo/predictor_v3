@@ -255,6 +255,57 @@ Canonical nested layout:
 | heating load line | `load_line.slope`, `load_line.intercept` | E.2.36~E.2.40 | 교점 온도 `t_a`~`t_g`를 계산하기 위한 optional 부하선이다. 없으면 production path는 현재 bin의 `load`와 stage capacity 위치로 power를 보간한다. |
 | region data | heating bin-hour table, frost boundaries | bin loop, E.2.20~E.2.40 branch selection | `-7.0°C`, `5.5°C` 경계는 non-frost로 처리한다. |
 
+### 9.5.1 Current KS HSPF Implementation Policies
+
+Stage별 2°C fallback 정책:
+
+| Case | Required behavior |
+| --- | --- |
+| `min`/`rated`/`intermediate` stage에 `"2"` 입력값 있음 | 입력값을 그대로 사용한다. |
+| `"2"` 입력값 없음, `"-7"` 입력값 있음 | stage별 `"-7"`과 `"7"` 사이에서 2°C 값을 선형보간한다. |
+| `"2"` 입력값 없음, `"-7"` 입력값도 없음 | Table E.5 derived factor로 `"-7"` 값을 만든 뒤 2°C 값을 선형보간한다. |
+| capacity derived `"-7"` | `7°C × 0.601` |
+| power derived `"-7"` | `7°C × 0.801` |
+| derived `"2"` formula | `value_2 = value_minus7 + (value_7 - value_minus7) × 9 / 14` |
+
+`defrost/no-frost` correction은 stage별 2°C 값을 만든 이후 curve 함수에서만 적용한다. `_ks_hspf_stage_value()`에서는 `def_over_nof` correction을 적용하지 않는다.
+
+Maximum stage 정책:
+
+| Rule | Required behavior |
+| --- | --- |
+| fallback 대상 여부 | max stage는 fallback 대상이 아니다. |
+| required anchors | `max.-7`과 `max.def`는 required anchor이다. |
+| usage | capacity E.2.26, power E.2.33에 사용한다. |
+
+KS profile fallback 금지:
+
+| Condition | Required behavior |
+| --- | --- |
+| `hspf.profile == "ks_c_9306_hspf"` | 반드시 KS path로 진입한다. |
+| `ks_c_9306_hspf` input 누락 | `ValueError`를 발생시킨다. |
+| common fallback | 금지한다. |
+
+Region config `hspf.load_line` schema:
+
+| Field | Required | Note |
+| --- | --- | --- |
+| `source` | Yes | 허용값은 `rated_heating_capacity`, `rated_cooling_capacity`, `declared_capacity`이다. |
+| `zero_load_temp` | Yes | zero heating load temperature이다. |
+| `full_load_temp` | Yes | full heating load temperature이다. |
+| `rated_capacity_factor` | Yes | 기준 capacity에 곱하는 계수이다. |
+
+현재 Korea는 `source = rated_heating_capacity`, `rated_capacity_factor = 0.82`를 사용한다. `capacity_source` key는 사용하지 않는다.
+
+Production config와 golden fixture 분리:
+
+| Location | Allowed data |
+| --- | --- |
+| production `data/region_configs/korea.json` | KS 원문 bin과 공식 계수 |
+| tests fixture | golden/sample/test 전용 2-bin 값 또는 축약 fixture |
+
+production `korea.json`에는 golden/sample/test 전용 2-bin 값을 넣지 않는다.
+
 ### 9.6 Implementation Checkpoints
 
 | Step | Fixed decision | Regression risk |
@@ -284,6 +335,17 @@ Canonical nested layout:
 | maximum shortage | `BL_h > Q_max` | heat pump output capped, auxiliary energy positive |
 | denominator accounting | fixture with shortage bins | HSEC equals heat pump energy plus auxiliary energy |
 | CSPF regression | existing KS CSPF golden sample | CSPF 6.504 remains unchanged |
+
+### 9.8 Current Regression Checklist
+
+| Check | Command / target |
+| --- | --- |
+| HSPF validation | `python3 -B -m pytest tests/test_iso16358_hspf_validation.py -v` |
+| HSPF golden | `python3 -B -m pytest tests/test_iso16358_hspf_golden.py -v` |
+| HSPF smoke | `python3 -B -m pytest tests/test_iso16358_hspf_smoke.py -v` |
+| Korea CSPF regression | CSPF one-liner must keep `6.504` |
+| JSON validation | `python3 -B -m json.tool data/region_configs/korea.json` |
+| syntax check | `python3 -B -m py_compile core/calculator_iso16358.py` |
 
 ## 10. Prompt Snippets for Agent
 

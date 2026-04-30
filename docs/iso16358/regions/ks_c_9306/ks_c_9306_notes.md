@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-KS C 9306 문서는 ISO 16358 공통 CSPF 엔진을 한국 냉방 효율 규격에 맞게 확장하는 region-specific 기준 문서이다. 공통 계산 구조는 [../../iso16358_notes.md](../../iso16358_notes.md)를 참조하며, 이 문서는 한국 규칙, 입력/출력 차이, 파생 규칙, 검증 샘플만 기록한다.
+KS C 9306 문서는 ISO 16358 공통 CSPF/HSPF 엔진을 한국 냉난방 효율 규격에 맞게 확장하는 region-specific 기준 문서이다. 공통 계산 구조는 [../../iso16358_notes.md](../../iso16358_notes.md)를 참조하며, 이 문서는 한국 규칙, 입력/출력 차이, 파생 규칙, 검증 샘플만 기록한다.
 
 근거: KS C 9306:2017 Annex E, Table E.2, Equation E.1.4. 프로젝트 해석: `data/region_configs/korea.json`은 Table E.2 bin-hour와 Equation E.1.4의 `t_0_load = 23°C` 기준을 한국 region 설정으로 반영한다.
 
@@ -10,12 +10,15 @@ KS C 9306 문서는 ISO 16358 공통 CSPF 엔진을 한국 냉방 효율 규격�
 
 | 항목 | KS C 9306 region rule | ISO common reference |
 | --- | --- | --- |
-| 기준 부하 | declared capacity 기반 BL(tj) | [ISO calculation structure](../../iso16358_notes.md#3-calculation-structure) |
-| 시험값 처리 | capacity, power, declared capacity에 ROUND_HALF_UP 정수 반올림 적용 | [ISO input schema](../../iso16358_notes.md#4-input-schema) |
-| 시험점 구성 | 35_full, 35_half, 29_min은 measured point | [ISO measured/default point resolution](../../iso16358_notes.md#3-calculation-structure) |
-| 파생 규칙 | 35_min, 29_full, 29_half를 factor로 생성 | [ISO formula mapping](../../iso16358_notes.md#6-formula-mapping) |
-| 중간 부하 전력 | `power_interpolation_method = ks_intersection` | [ISO code mapping](../../iso16358_notes.md#7-code-mapping) |
+| 기준 부하 | declared capacity 기반 BL(tj) | [ISO CSPF current status](../../iso16358_notes.md#3-cspf-current-status) |
+| 시험값 처리 | capacity, power, declared capacity에 ROUND_HALF_UP 정수 반올림 적용 | [ISO input schema](../../iso16358_notes.md#7-input-schema) |
+| 시험점 구성 | 35_full, 35_half, 29_min은 measured point | [ISO CSPF current status](../../iso16358_notes.md#3-cspf-current-status) |
+| 파생 규칙 | 35_min, 29_full, 29_half를 factor로 생성 | [ISO formula mapping](../../iso16358_notes.md#9-formula-mapping) |
+| 중간 부하 전력 | `power_interpolation_method = ks_intersection` | [ISO code mapping](../../iso16358_notes.md#10-code-mapping) |
 | bin-hour | KS C 9306 한국 냉방 bin-hour | ISO 공통 bin accumulation |
+| HSPF profile | `hspf.profile = ks_c_9306_hspf` | [ISO HSPF current status](../../iso16358_notes.md#4-hspf-current-status) |
+| HSPF bin-hour | KS C 9306 한국 난방 31-bin, `nj` 합계 2849 h | ISO HSPF seasonal accumulation |
+| HSPF load line | `hspf.load_line.source = rated_heating_capacity`, factor `0.82` | ISO HSPF profile path |
 
 ## 3. KS Input Schema
 
@@ -61,6 +64,69 @@ KS C 9306 문서는 ISO 16358 공통 CSPF 엔진을 한국 냉방 효율 규격�
 | 29/35°C 파생 규칙 | KS C 9306:2017 Annex E, Table E.2 context | configuration factor로 default point를 생성한다. | `resolve_points` |
 | `ks_intersection` power interpolation | KS C 9306:2017 Annex E | load line과 performance line의 교점 기반 전력선을 사용한다. | `_ks_intersection_power` |
 | BL > max_cap 처리 | ISO common branch reused by KS | output을 highest capacity로 제한하고 power는 highest power를 사용한다. | `calculate_cspf` |
+
+## 6.1 KS C 9306 CSPF Status
+
+| Item | Current status |
+| --- | --- |
+| Golden result | Korea KS C 9306 CSPF `6.504` pass |
+| Rounding | measured capacity, measured power, declared capacity, derived point에 ROUND_HALF_UP 적용 |
+| Building load | declared capacity 기반 CSPF BL 사용 |
+| Intermediate power | `ks_intersection` power interpolation 사용 |
+
+## 6.2 KS C 9306 HSPF Status
+
+KS C 9306 HSPF profile은 구현되어 있다. required/optional point 정책은 아래와 같다.
+
+| Temperature | Required points | Optional points |
+| --- | --- | --- |
+| 7°C | `full`, `half`, `min` | 없음 |
+| 2°C | `defrost` | `full`, `half`, `min` |
+| -7°C | `max` | `full`, `half`, `min` |
+
+`full`, `half`, `min` stage의 2°C 및 -7°C 값은 profile helper에서 파생 가능하다. `max.-7`과 `max.def`는 maximum curve anchor이므로 required point이다.
+
+## 6.3 HSPF 31-Bin Table
+
+`data/region_configs/korea.json`의 `hspf_bin_hours`는 KS C 9306 HSPF 실제 31-bin을 사용한다.
+
+| Rule | Current value |
+| --- | --- |
+| temperature range | -15°C to 15°C |
+| bin count | 31 |
+| `nj` total | 2849 h |
+| bin load fields | `load` 또는 `heating_load`를 넣지 않음 |
+| load source | `hspf.load_line`에서 bin별 BL(tj)를 계산 |
+
+production `hspf_bin_hours`에는 golden/sample/test fixture 전용 2-bin 값을 넣지 않는다.
+
+## 6.4 HSPF Load Line
+
+현재 `korea.json`의 KS C 9306 HSPF load line:
+
+| Field | Value |
+| --- | --- |
+| `source` | `rated_heating_capacity` |
+| `rated_capacity_factor` | `0.82` |
+| `full_load_temp` | `-7.0` |
+| `zero_load_temp` | `16.0` |
+
+규격 문구에는 `BLc(35) × 0.82` cooling reference가 등장한다. 다만 공식 계산 시트는 cooling rated capacity 입력 없이 heating rated capacity 기준으로 동작한다. 따라서 현재 구현은 공식 계산 시트 동작에 맞춰 `rated_heating_capacity`를 사용한다.
+
+향후 원문/시트 재검증 전 `rated_cooling_capacity`로 변경하지 않는다.
+
+## 6.5 HSPF 31-Bin Sanity Output
+
+아래 값은 현재 31-bin production configuration과 KS HSPF profile implementation의 sanity 참고값이다. official production golden으로 고정하지 않는다. 공식 31-bin golden으로 확정하려면 bin별 공식 계산표가 추가로 필요하다.
+
+| Output | Current sanity value |
+| --- | --- |
+| HSPF | 3.9589527754156744 |
+| HSTL | 5526621.7391304355 |
+| HSEC | 1395980.7182974447 |
+| heat_pump_energy | 1395888.4042877827 |
+| auxiliary_energy | 92.31400966183719 |
+| bins | 31 |
 
 ## 7. CSPF Source Clause Archive
 

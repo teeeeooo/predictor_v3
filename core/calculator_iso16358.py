@@ -358,21 +358,21 @@ class ISO16358Calculator:
         points = self._heating_points(measured_inputs)
 
         if tj <= points[0][0]:
-            t1, c1, p1 = points[0]
-            t2, c2, p2 = points[1]
+            lower, upper = points[0], points[1]
         elif tj >= points[-1][0]:
-            t1, c1, p1 = points[-2]
-            t2, c2, p2 = points[-1]
+            lower, upper = points[-2], points[-1]
         else:
-            t1, c1, p1 = points[0]
-            t2, c2, p2 = points[1]
+            selected_interval = None
             for i in range(len(points) - 1):
-                lower = points[i]
-                upper = points[i + 1]
-                if lower[0] <= tj <= upper[0]:
-                    t1, c1, p1 = lower
-                    t2, c2, p2 = upper
+                candidate_lower = points[i]
+                candidate_upper = points[i + 1]
+                if candidate_lower[0] <= tj <= candidate_upper[0]:
+                    selected_interval = (candidate_lower, candidate_upper)
                     break
+            lower, upper = selected_interval or (points[0], points[1])
+
+        t1, c1, p1 = lower
+        t2, c2, p2 = upper
 
         if t2 == t1:
             raise ValueError("Heating point temperatures cannot be equal.")

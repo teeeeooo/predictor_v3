@@ -2,20 +2,33 @@
 
 ## 1. Purpose
 
-이 문서는 ISO 16358 기반 CSPF 공통 엔진을 수정하거나 검증할 때 구현자가 따라야 할 순서, 실수 방지 규칙, 디버깅 방법, 테스트 전략을 정리한다. 용어 본문은 이 문서에 중복 작성하지 않으며, 상세 용어는 [iso16358_glossary.md](./iso16358_glossary.md)를 참조한다.
+이 문서는 ISO 16358 기반 CSPF/HSPF 엔진을 수정하거나 검증할 때 구현자가 따라야 할 순서, 실수 방지 규칙, 디버깅 방법, 테스트 전략을 정리한다. 용어 본문은 이 문서에 중복 작성하지 않으며, 상세 용어는 [iso16358_glossary.md](./iso16358_glossary.md)를 참조한다.
 
-## 2. Top Implementation Pitfalls
+## 2. Current Calculator Structure
 
-| Pitfall | Symptom | Cause | Prevention | Reference |
-| --- | --- | --- | --- | --- |
-| building load 기준 혼동 | CSPF가 region별로 크게 달라진다. | measured reference와 declared capacity를 같은 방식으로 처리한다. | `building_load_source`를 먼저 확인하고 분기한다. | ISO 16358-1:2013 Chapter 6 |
-| 시험점 누락 | `ValueError` 또는 비어 있는 interpolation 결과가 발생한다. | configuration의 `measure` point가 입력에 없다. | `points`에서 `measure` 항목을 검증한다. | ISO 16358-1:2013 Clause 6.4~6.7 |
-| 파생점 순서 오류 | default point가 unresolved 상태로 남는다. | derived rule source가 아직 만들어지지 않았다. | default point는 반복 pass로 해석하고 unresolved 목록을 에러로 노출한다. | Project implementation |
-| 온도 보간과 부하 보간 혼동 | 중간 부하 소비전력이 과소/과대 계산된다. | temperature interpolation과 capacity-range interpolation을 같은 단계로 취급한다. | 먼저 온도별 load type 성능선을 만들고, 이후 Lc 위치에 따라 power를 정한다. | ISO 16358-1:2013 Chapter 6 |
-| PLF 0 또는 음수 | 저부하 bin에서 전력값이 비정상적으로 커진다. | Cd가 크거나 X가 낮아 PLF가 0에 접근한다. | PLF 최소 방어값을 유지하고 Cd 변경 시 경계 테스트를 수행한다. | ISO 16358-1:2013 Chapter 6 |
-| zero load temperature 오류 | division by zero가 발생한다. | `t_100_load`와 `t_0_load`가 같다. | configuration load temperature를 로딩 후 검증한다. | Project implementation |
+`core/calculator_iso16358.py`는 현재 하나의 `ISO16358Calculator` 안에 아래 경로를 포함한다.
 
-## 3. Correct Calculation Order
+| Path | Entry / helper | Role |
+| --- | --- | --- |
+| CSPF path | `calculate_cspf` | ISO16358-1 common CSPF bin loop, point resolution, PLF, accumulation |
+| generic HSPF fallback | `calculate_hspf`, `interpolate_heating`, `calc_auxiliary_heat` | heating point 보간/외삽과 shortage auxiliary 처리 |
+| variable HSPF path | `_variable_heating_bin` | stage별 heating point 기반 bin detail 계산 |
+| KS C 9306 HSPF profile path | `_calculate_ks_c9306_hspf`, `_ks_hspf_*` helpers | KS C 9306 profile-specific required points, curves, load line, branch selection |
+
+이 클래스는 이미 과대화되고 있으나 지금은 구조적 리팩토링을 수행하지 않는다. 리팩토링 후보는 [REFACTOR_PLAN.md](../REFACTOR_PLAN.md)를 따른다.
+
+## 3. Safety Rules
+
+| Rule | Required action |
+| --- | --- |
+| CSPF golden `6.504`가 깨짐 | 즉시 중단하고 CSPF 변경 여부를 먼저 확인한다. |
+| HSPF golden mismatch | expected를 임의 수정하지 말고 수식/fixture/config 변경 원인을 보고한다. |
+| production region config | 규격값과 공식 계수만 둔다. golden/sample/test fixture 값을 삽입하지 않는다. |
+| golden fixture | production `korea.json`과 분리한다. |
+| numpy/pandas | ISO16358 calculator에서는 사용하지 않는다. |
+| region-specific rule | ISO common 경로에 하드코딩하지 않고 JSON/profile 또는 region helper에 둔다. |
+
+## 4. Correct CSPF Calculation Order
 
 1. region configuration을 로드한다.
 2. metadata key를 계산 대상에서 제거한다.
@@ -30,65 +43,122 @@
 11. 각 bin의 cooling output과 power에 `nj`를 곱해 누적한다.
 12. total power가 0 이하이면 0 결과를 반환하고, 아니면 CSPF를 산정한다.
 
-## 4. Data Model Notes
+## 5. HSPF Aux COP Rule
+
+HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함한다.
+
+| Path | Required behavior |
+| --- | --- |
+| generic HSPF fallback | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
+| variable HSPF path | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
+| KS C 9306 HSPF profile path | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
+
+`aux_cop <= 0`은 `ValueError`로 처리한다. 호출부 검증과 helper 내부 방어 검증이 중복되어도 허용한다.
+
+## 6. Profile-Driven Branch Rules
+
+`hspf.profile == "ks_c_9306_hspf"`이면 반드시 KS C 9306 HSPF path로 진입한다. `measured_inputs`에 `ks_c_9306_hspf`가 없으면 common fallback으로 가지 않고 `ValueError`를 발생시킨다.
+
+이 규칙의 목적은 KS profile이 선택된 상태에서 입력 누락이 조용히 HSPF `0.0` 또는 legacy fallback 결과로 바뀌는 것을 막는 것이다.
+
+## 7. HSPF Load Line Schema
+
+지원 key는 `hspf.load_line.source`이다. `capacity_source`는 사용하지 않는다.
+
+`hspf.load_line`을 정의할 경우 아래 field는 모두 필수이다.
+
+| Field | Meaning |
+| --- | --- |
+| `source` | 기준 capacity source |
+| `zero_load_temp` | zero heating load temperature |
+| `full_load_temp` | full heating load temperature |
+| `rated_capacity_factor` | 기준 capacity에 곱하는 계수 |
+
+허용 `source` 값:
+
+| Source | Meaning |
+| --- | --- |
+| `rated_heating_capacity` | caller input 또는 KS profile input의 rated heating capacity |
+| `rated_cooling_capacity` | caller input의 rated cooling capacity |
+| `declared_capacity` | caller input의 declared cooling capacity |
+
+`hspf.load_line = {}` 또는 `source` 누락은 암묵적으로 `rated_heating_capacity`를 사용하지 않고 `ValueError`로 처리한다.
+
+## 8. Top Implementation Pitfalls
+
+| Pitfall | Symptom | Cause | Prevention | Reference |
+| --- | --- | --- | --- | --- |
+| building load 기준 혼동 | CSPF/HSPF가 region별로 크게 달라진다. | measured, declared, rated heating/cooling reference를 같은 방식으로 처리한다. | `building_load_source`와 `hspf.load_line.source`를 먼저 확인한다. | ISO 16358-1:2013 Chapter 6; ISO 16358-2 |
+| 시험점 누락 | `ValueError` 또는 비어 있는 interpolation 결과가 발생한다. | configuration/profile의 required point가 입력에 없다. | CSPF `points`, HSPF profile required points를 분리 검증한다. | ISO 16358-1:2013 Clause 6.4~6.7 |
+| 파생점 순서 오류 | default point가 unresolved 상태로 남는다. | derived rule source가 아직 만들어지지 않았다. | default point는 반복 pass로 해석하고 unresolved 목록을 에러로 노출한다. | Project implementation |
+| 온도 보간과 부하 보간 혼동 | 중간 부하 소비전력이 과소/과대 계산된다. | temperature interpolation과 capacity-range interpolation을 같은 단계로 취급한다. | 먼저 온도별 성능선을 만들고 이후 load 위치에 따라 power를 정한다. | ISO 16358-1:2013 Chapter 6 |
+| auxiliary 누락 | HSPF가 과대 계산된다. | heat pump shortage를 denominator에 더하지 않는다. | HSEC가 heat pump energy plus auxiliary energy인지 확인한다. | ISO 16358-2 |
+| profile fallback | KS profile 입력 누락이 조용히 common result로 바뀐다. | profile branch 조건에 input 존재 여부를 같이 둔다. | profile만 보고 KS path로 진입하고 input 누락은 `ValueError`로 처리한다. | Project implementation |
+
+## 9. Data Model Notes
 
 | Key | Meaning | Implementation note |
 | --- | --- | --- |
-| `t_100_load` | 100% cooling load 기준 온도 | BL(tj) 직선의 상단 기준이다. |
-| `t_0_load` | 0% cooling load 기준 온도 | BL(tj) 직선의 하단 기준이다. |
-| `Cd` | degradation coefficient | PLF 보정에만 사용한다. |
-| `building_load_source` | 기준 부하 출처 | `measured` 또는 `declared`를 구분한다. |
-| `reference_point` | measured 기준 부하 point | `building_load_source = measured`일 때 사용한다. |
+| `t_100_load` | 100% cooling load 기준 온도 | CSPF BL(tj) 직선의 상단 기준이다. |
+| `t_0_load` | 0% cooling load 기준 온도 | CSPF BL(tj) 직선의 하단 기준이다. |
+| `Cd` | degradation coefficient | CSPF PLF 또는 HSPF cyclic branch에 사용한다. |
+| `building_load_source` | CSPF 기준 부하 출처 | `measured` 또는 `declared`를 구분한다. |
+| `hspf.load_line.source` | HSPF load line 기준 capacity 출처 | `capacity_source`가 아니다. |
 | `round_test_values` | 시험값 반올림 여부 | region-specific 규칙이므로 공통 기본값은 false이다. |
 | `power_interpolation_method` | 중간 용량 범위 power 계산법 | 기본값은 capacity-linear이며 지역 확장에서 바꿀 수 있다. |
-| `points` | point별 measured/default 지정 | point 이름은 temperature와 load type을 포함한다. |
-| `derived_rules` | default point 생성 규칙 | source, capacity factor, power factor를 사용한다. |
-| `bin_hours` | outdoor temperature와 hour | seasonal accumulation의 시간 가중치이다. |
+| `points` | CSPF point별 measured/default 지정 | point 이름은 temperature와 load type을 포함한다. |
+| `derived_rules` | CSPF default point 생성 규칙 | source, capacity factor, power factor를 사용한다. |
+| `bin_hours` | cooling outdoor temperature와 hour | CSPF seasonal accumulation의 시간 가중치이다. |
+| `hspf_bin_hours` | heating outdoor temperature와 hour | HSPF seasonal accumulation의 시간 가중치이다. |
 
-## 5. Interpolation / Extrapolation Rules
+## 10. Interpolation / Extrapolation Rules
 
 | Rule | Behavior | Debug focus |
 | --- | --- | --- |
 | 동일 load type에 1개 point만 있을 때 | 해당 capacity/power를 그대로 사용한다. | point 수가 의도된 것인지 확인한다. |
 | tj가 최저 시험온도 이하일 때 | 가장 낮은 두 temperature point로 외삽한다. | 외삽된 capacity가 음수로 내려가지 않는지 확인한다. |
-| tj가 최고 시험온도 이상일 때 | 가장 높은 두 temperature point로 외삽한다. | 고온 bin에서 최고 용량 초과 처리와 함께 확인한다. |
+| tj가 최고 시험온도 이상일 때 | 가장 높은 두 temperature point로 외삽한다. | 고온/저온 bin에서 capacity shortage branch와 함께 확인한다. |
 | tj가 시험온도 사이일 때 | 해당 구간의 두 point로 선형 보간한다. | temperature sorting과 point key parsing을 확인한다. |
-| Lc가 capacity 사이일 때 | 기본적으로 capacity 기준 power 선형 보간을 적용한다. | region-specific method가 켜져 있는지 확인한다. |
+| Lc 또는 BL이 capacity 사이일 때 | 기본적으로 capacity 기준 power 선형 보간을 적용한다. | region-specific method가 켜져 있는지 확인한다. |
 
-## 6. Debugging Checklist
+## 11. Debugging Checklist
 
 | Step | Check | Expected |
 | --- | --- | --- |
 | 1 | configuration path | 파일이 존재해야 한다. |
-| 2 | required measured points | `points`의 `measure` key가 모두 입력되어야 한다. |
+| 2 | required measured points | CSPF `points` 또는 HSPF profile required point가 모두 입력되어야 한다. |
 | 3 | derived points | 모든 `default` point가 resolved 되어야 한다. |
-| 4 | L_c_ref | measured 또는 declared source가 region 의도와 일치해야 한다. |
-| 5 | load temperature | `t_100_load`와 `t_0_load`가 달라야 한다. |
-| 6 | bin loop | `nj <= 0`인 bin은 누적하지 않아야 한다. |
-| 7 | PLF branch | Lc가 lowest capacity 이하일 때만 Cd가 적용되어야 한다. |
-| 8 | cap branch | Lc가 highest capacity보다 크면 cooling output이 highest capacity로 제한되어야 한다. |
-| 9 | accumulation | Wh 누적 후 kWh로 변환되어야 한다. |
+| 4 | CSPF L_c_ref | measured 또는 declared source가 region 의도와 일치해야 한다. |
+| 5 | HSPF load line | `hspf.load_line.source`와 필수 field가 명시되어야 한다. |
+| 6 | load temperature | load 기준 온도 두 값이 달라야 한다. |
+| 7 | bin loop | `nj <= 0`인 bin은 누적하지 않아야 한다. |
+| 8 | PLF/cyclic branch | load가 lowest capacity 이하일 때만 degradation이 적용되어야 한다. |
+| 9 | shortage branch | heating load가 max capacity보다 크면 auxiliary가 HSEC에 포함되어야 한다. |
+| 10 | accumulation | Wh 누적 후 필요한 출력에서 kWh로 변환되어야 한다. |
 
-## 7. Test Strategy
+## 12. Test Strategy
 
 | Test type | Purpose | Required cases |
 | --- | --- | --- |
-| Unit test | point resolution과 interpolation을 독립 검증한다. | missing measured point, chained derived point, temperature extrapolation |
-| Golden test | region sample 결과가 고정되는지 확인한다. | KS C 9306 golden sample |
-| Boundary test | 분기 경계에서 값이 안정적인지 확인한다. | Lc <= lowest, Lc > highest, csec <= 0 |
-| Configuration test | region key 변경이 의도대로 반영되는지 확인한다. | `building_load_source`, `power_interpolation_method`, `round_test_values` |
+| HSPF golden | official/sample HSPF fixture가 유지되는지 확인한다. | `tests/test_iso16358_hspf_golden.py` |
+| HSPF validation | required point, load_line schema, fallback 정책을 검증한다. | `tests/test_iso16358_hspf_validation.py` |
+| HSPF smoke | generic/variable path와 aux_cop denominator 처리를 빠르게 확인한다. | `tests/test_iso16358_hspf_smoke.py` |
+| Korea CSPF regression | KS CSPF `6.504`가 유지되는지 확인한다. | one-liner 또는 golden fixture |
+| compile check | syntax regression을 확인한다. | `python3 -B -m py_compile core/calculator_iso16358.py` |
+| JSON validation | production region config가 유효한 JSON인지 확인한다. | `python3 -B -m json.tool data/region_configs/korea.json` |
 
-## 8. Prompt Snippets for Agent
+## 13. Prompt Snippets for Agent
 
 Agent 재사용 프롬프트:
 
-> AGENTS.md와 docs/DOCS_GUIDELINES.md를 먼저 읽는다. ISO16358 공통 엔진을 수정할 때는 docs/iso16358/iso16358_notes.md, docs/iso16358/iso16358_dev_notes.md, docs/iso16358/iso16358_glossary.md를 확인한다. 국가별 특이사항은 ISO 공통 문서에 넣지 말고 docs/iso16358/regions/<region>/ 문서에 분리한다. 계산 변경 후에는 region golden sample과 branch boundary test를 실행한다.
+> AGENTS.md와 docs/DOCS_GUIDELINES.md를 먼저 읽는다. ISO16358 공통 엔진을 수정할 때는 docs/iso16358/iso16358_notes.md, docs/iso16358/iso16358_dev_notes.md, docs/iso16358/iso16358_glossary.md를 확인한다. 국가별 특이사항은 ISO 공통 문서에 넣지 말고 docs/iso16358/regions/<region>/ 문서에 분리한다. 계산 변경 후에는 HSPF golden, HSPF validation, HSPF smoke, Korea CSPF regression을 실행한다.
 
-## 9. References
+## 14. References
 
 | Source | Usage |
 | --- | --- |
 | [iso16358_notes.md](./iso16358_notes.md) | 공통 계산 구조와 mapping |
 | [iso16358_glossary.md](./iso16358_glossary.md) | 용어와 schema SSOT |
+| [regions/ks_c_9306/ks_c_9306_dev_notes.md](./regions/ks_c_9306/ks_c_9306_dev_notes.md) | KS C 9306 구현 지침 |
 | `core/calculator_iso16358.py` | 구현 동작 확인 |
 | `data/region_configs/*.json` | region configuration 확인 |

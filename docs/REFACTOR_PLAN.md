@@ -43,3 +43,20 @@ docs/
 
 ### 우선순위
 🔥 HIGH (반드시 수행해야 함)
+
+---
+
+## ISO16358 Calculator Refactor Candidates
+
+`ISO16358Calculator`는 현재 CSPF, generic HSPF, variable HSPF, KS C 9306 CSPF/HSPF helper를 모두 포함하고 있어 클래스가 과대화되고 있다.
+
+당장 리팩토링하지 않는다. 현재 우선순위는 region config 확장, `calc_window` 연결, predictor/calculator 연동이다. 리팩토링은 태국/베트남/말레이시아/인도/SASO region config 확장 후 수행한다.
+
+후보 구조:
+
+| Module | Responsibility |
+| --- | --- |
+| `calculator_iso16358.py` | ISO16358 common entry point, CSPF common path, generic HSPF fallback |
+| `calculator_iso16358_ks.py` 또는 `regions/ks_c9306.py` | KS C 9306 CSPF/HSPF profile-specific helpers, `_ks_hspf_*` helpers, `ks_intersection` helper |
+
+현재는 inheritance/plugin 구조를 도입하지 않는다. region-specific 예외가 더 쌓인 뒤 분리 여부를 판단한다.
