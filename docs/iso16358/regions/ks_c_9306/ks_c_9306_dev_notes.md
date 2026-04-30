@@ -221,6 +221,10 @@ Canonical nested layout:
             "capacity_def_over_nof": 1 / 1.12,
             "power_def_over_nof": 1 / 1.06,
             "cd": 0.25
+        },
+        "load_line": {
+            "slope": ...,
+            "intercept": ...
         }
     }
 }
@@ -233,6 +237,8 @@ Canonical nested layout:
 3. Maximum stage의 2°C defrost anchor는 `"def"`로 둔다.
 4. `capacity_def_over_nof`와 `power_def_over_nof`는 반드시 `def / nof` 방향이다.
 5. `"-7"` 값은 production에서는 Table E.5 derived value로 보완 가능하지만, golden test fixture에서는 명시 입력한다.
+6. `load_line`은 optional이다. 명시되면 E.2.36~E.2.40의 교점 온도 기반 power interpolation에 사용하고, 없으면 load 위치 기반 stage interpolation으로 fallback한다.
+7. `load_line.slope`와 `load_line.intercept`는 `BL_h(t_j) = slope * t_j + intercept` 형식의 W 단위 선형 부하선이다.
 
 | Field group | Candidate fields | Used by | Note |
 | --- | --- | --- | --- |
@@ -246,6 +252,7 @@ Canonical nested layout:
 | intermediate heating power | `power.intermediate.7`, `power.intermediate.2`, `power.intermediate.-7` | E.2.31, E.2.32, E.2.37~E.2.40 | E.2.37~E.2.40 교점 기반 power interpolation의 anchor이다. |
 | maximum heating power | `power.max.-7`, `power.max.def` | E.2.33, E.2.36, maximum shortage | E.2.33은 maximum stage 전용이다. intermediate power 변수와 섞지 않는다. |
 | correction factors | `correction.capacity_def_over_nof`, `correction.power_def_over_nof`, `correction.cd` | E.2.21, E.2.23, E.2.25, E.2.28, E.2.30, E.2.32, E.2.6 | Table E.5 기본값은 각각 `1 / 1.12`, `1 / 1.06`, `0.25`이다. |
+| heating load line | `load_line.slope`, `load_line.intercept` | E.2.36~E.2.40 | 교점 온도 `t_a`~`t_g`를 계산하기 위한 optional 부하선이다. 없으면 production path는 현재 bin의 `load`와 stage capacity 위치로 power를 보간한다. |
 | region data | heating bin-hour table, frost boundaries | bin loop, E.2.20~E.2.40 branch selection | `-7.0°C`, `5.5°C` 경계는 non-frost로 처리한다. |
 
 ### 9.6 Implementation Checkpoints
@@ -273,6 +280,7 @@ Canonical nested layout:
 | minimum-intermediate interpolation | `Q_min < BL_h <= Q_mid` | Equation E.2.37/E.2.39 branch selected |
 | intermediate-rated interpolation | `Q_mid < BL_h <= Q_rated` | Equation E.2.38/E.2.40 branch selected |
 | rated-maximum interpolation | `Q_rated < BL_h <= Q_max` | Equation E.2.36 branch selected and `P_h2(t_b)`/`P_h3(t_g)` interpolation applied |
+| intersection interpolation | fixture with `load_line.slope` and `load_line.intercept` | Equation E.2.36~E.2.40 use intersection temperatures instead of direct load-position interpolation |
 | maximum shortage | `BL_h > Q_max` | heat pump output capped, auxiliary energy positive |
 | denominator accounting | fixture with shortage bins | HSEC equals heat pump energy plus auxiliary energy |
 | CSPF regression | existing KS CSPF golden sample | CSPF 6.504 remains unchanged |
