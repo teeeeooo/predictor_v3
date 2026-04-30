@@ -32,6 +32,49 @@
     "29_half": {"source": "35_half", "capacity_factor": 1.077, "power_factor": 0.864}
   },
 
+  "hspf": {
+    "enabled": true,
+    "profile": "ks_c_9306_hspf",
+    "standard": "KS C 9306",
+    "required_points": {
+      "7": ["full", "half", "min"],
+      "2": ["defrost"],
+      "-7": ["max"]
+    },
+    "optional_points": {
+      "2": ["full", "half", "min"],
+      "-7": ["full", "half", "min"]
+    },
+    "derived_rules": {
+      "min_-7": {
+        "source": "min_7",
+        "capacity_factor": 0.601,
+        "power_factor": 0.801
+      },
+      "half_-7": {
+        "source": "half_7",
+        "capacity_factor": 0.601,
+        "power_factor": 0.801
+      },
+      "full_-7": {
+        "source": "full_7",
+        "capacity_factor": 0.601,
+        "power_factor": 0.801
+      }
+    },
+    "correction": {
+      "capacity_def_over_nof": 0.8928571428571429,
+      "power_def_over_nof": 0.9433962264150944,
+      "cd": 0.25
+    },
+    "bin_hours_key": "hspf_bin_hours"
+  },
+
+  "hspf_bin_hours": [
+    {"tj": 7.0, "nj": 1292.2955652907042, "load": 4300.0},
+    {"tj": 2.0, "nj": 258.53527218927167, "load": 4232.900447134367}
+  ],
+
   "bin_hours": [
     {"tj": 24, "nj": 152}, {"tj": 25, "nj": 146}, {"tj": 26, "nj": 140},
     {"tj": 27, "nj": 130}, {"tj": 28, "nj": 112}, {"tj": 29, "nj": 89},
