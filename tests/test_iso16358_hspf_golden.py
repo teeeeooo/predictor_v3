@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from core.calculator_iso16358 import ISO16358Calculator
 
@@ -52,7 +53,7 @@ def assert_close(actual, expected, tolerance, label, failures):
         )
 
 
-def make_phase1_calculator(tmp_path):
+def make_phase1_calculator(tmp_path, ks_profile=True):
     config_path = tmp_path / "iso16358_hspf_golden_phase1.json"
     h1_load = OFFICIAL_GOLDEN_SAMPLE["rated_heating_capacity"]
     h1_points = adapt_official_golden_for_phase1_engine()
@@ -78,43 +79,44 @@ def make_phase1_calculator(tmp_path):
     ) / h1_power
     h2_load = h2_high["capacity"] + GOLDEN_EXPECTED["auxiliary_energy"] / h2_hours
 
-    config = {
-        "mode": "heating",
-        "hspf": {
-            "enabled": True,
-            "profile": "ks_c_9306_hspf",
-            "required_points": {
-                "7": ["full", "half", "min"],
-                "2": ["defrost"],
-                "-7": ["max"],
+    hspf_config = {
+        "enabled": True,
+        "profile": "ks_c_9306_hspf",
+        "required_points": {
+            "7": ["full", "half", "min"],
+            "2": ["defrost"],
+            "-7": ["max"],
+        },
+        "optional_points": {
+            "2": ["full", "half", "min"],
+            "-7": ["full", "half", "min"],
+        },
+        "derived_rules": {
+            "min_-7": {
+                "source": "min_7",
+                "capacity_factor": 0.601,
+                "power_factor": 0.801,
             },
-            "optional_points": {
-                "2": ["full", "half", "min"],
-                "-7": ["full", "half", "min"],
+            "half_-7": {
+                "source": "half_7",
+                "capacity_factor": 0.601,
+                "power_factor": 0.801,
             },
-            "derived_rules": {
-                "min_-7": {
-                    "source": "min_7",
-                    "capacity_factor": 0.601,
-                    "power_factor": 0.801,
-                },
-                "half_-7": {
-                    "source": "half_7",
-                    "capacity_factor": 0.601,
-                    "power_factor": 0.801,
-                },
-                "full_-7": {
-                    "source": "full_7",
-                    "capacity_factor": 0.601,
-                    "power_factor": 0.801,
-                },
-            },
-            "correction": {
-                "capacity_def_over_nof": 1 / 1.12,
-                "power_def_over_nof": 1 / 1.06,
-                "cd": 0.25,
+            "full_-7": {
+                "source": "full_7",
+                "capacity_factor": 0.601,
+                "power_factor": 0.801,
             },
         },
+        "correction": {
+            "capacity_def_over_nof": 1 / 1.12,
+            "power_def_over_nof": 1 / 1.06,
+            "cd": 0.25,
+        },
+    }
+
+    config = {
+        "mode": "heating",
         "bin_hours": [
             {
                 "tj": 7.0,
@@ -128,6 +130,8 @@ def make_phase1_calculator(tmp_path):
             }
         ],
     }
+    if ks_profile:
+        config["hspf"] = hspf_config
     config_path.write_text(json.dumps(config), encoding="utf-8")
     return ISO16358Calculator(str(config_path))
 
@@ -160,7 +164,7 @@ def energy_breakdown(result):
 
 
 def test_iso16358_hspf_golden_sample(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_phase1_calculator(tmp_path, ks_profile=False)
     result = calculator.calculate_hspf(adapt_golden_points_for_phase1_engine())
     breakdown = energy_breakdown(result)
 
@@ -508,4 +512,62 @@ def test_ks_c9306_hspf_bin_uses_optional_load_line(tmp_path):
         "load-line bin energy",
         failures,
     )
+    assert not failures
+
+
+def test_korea_hspf_bin_hours_use_actual_ks_table():
+    config_path = Path(__file__).resolve().parents[1] / "data/region_configs/korea.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    hspf_bin_hours = config["hspf_bin_hours"]
+
+    assert len(hspf_bin_hours) == 31
+    assert sum(item["nj"] for item in hspf_bin_hours) == 2849
+    assert [item["j"] for item in hspf_bin_hours] == list(range(1, 32))
+    assert [item["tj"] for item in hspf_bin_hours] == list(range(-15, 16))
+    assert all("load" not in item and "heating_load" not in item for item in hspf_bin_hours)
+
+
+def test_ks_c9306_hspf_bin_load_defaults_to_config_load_line(tmp_path):
+    config_path = tmp_path / "iso16358_hspf_load_line.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "ks_c_9306_hspf",
+            "required_points": {
+                "7": ["full", "half", "min"],
+                "2": ["defrost"],
+                "-7": ["max"],
+            },
+            "correction": {
+                "capacity_def_over_nof": 1 / 1.12,
+                "power_def_over_nof": 1 / 1.06,
+                "cd": 0.25,
+            },
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 16.0,
+                "full_load_temp": -7.0,
+                "rated_capacity_factor": 0.82,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": [{"j": 1, "tj": 7, "nj": 1}],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    calculator = ISO16358Calculator(str(config_path))
+
+    result = calculator.calculate_hspf(OFFICIAL_GOLDEN_SAMPLE)
+    detail = result["bin_details"][0]
+
+    expected_load = 4300.0 * 0.82 * (16.0 - 7.0) / (16.0 - (-7.0))
+    failures = []
+    assert_close(
+        detail["load"],
+        expected_load,
+        ENERGY_TOLERANCE_WH,
+        "default KS HSPF bin load",
+        failures,
+    )
+    assert result["HSTL"] > 0
     assert not failures

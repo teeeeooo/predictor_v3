@@ -67,12 +67,48 @@
       "power_def_over_nof": 0.9433962264150944,
       "cd": 0.25
     },
+    "load_line": {
+      "source": "rated_heating_capacity",
+      "zero_load_temp": 16.0,
+      "full_load_temp": -7.0,
+      "rated_capacity_factor": 0.82,
+      "_note": "Spec uses BLc(35), but implementation uses heating rated capacity based on official calculation sheet"
+    },
     "bin_hours_key": "hspf_bin_hours"
   },
 
   "hspf_bin_hours": [
-    {"tj": 7.0, "nj": 1292.2955652907042, "load": 4300.0},
-    {"tj": 2.0, "nj": 258.53527218927167, "load": 4232.900447134367}
+    {"j": 1, "tj": -15, "nj": 2},
+    {"j": 2, "tj": -14, "nj": 3},
+    {"j": 3, "tj": -13, "nj": 5},
+    {"j": 4, "tj": -12, "nj": 6},
+    {"j": 5, "tj": -11, "nj": 6},
+    {"j": 6, "tj": -10, "nj": 9},
+    {"j": 7, "tj": -9, "nj": 14},
+    {"j": 8, "tj": -8, "nj": 21},
+    {"j": 9, "tj": -7, "nj": 30},
+    {"j": 10, "tj": -6, "nj": 43},
+    {"j": 11, "tj": -5, "nj": 59},
+    {"j": 12, "tj": -4, "nj": 77},
+    {"j": 13, "tj": -3, "nj": 89},
+    {"j": 14, "tj": -2, "nj": 114},
+    {"j": 15, "tj": -1, "nj": 136},
+    {"j": 16, "tj": 0, "nj": 317},
+    {"j": 17, "tj": 1, "nj": 182},
+    {"j": 18, "tj": 2, "nj": 187},
+    {"j": 19, "tj": 3, "nj": 191},
+    {"j": 20, "tj": 4, "nj": 192},
+    {"j": 21, "tj": 5, "nj": 184},
+    {"j": 22, "tj": 6, "nj": 173},
+    {"j": 23, "tj": 7, "nj": 140},
+    {"j": 24, "tj": 8, "nj": 138},
+    {"j": 25, "tj": 9, "nj": 124},
+    {"j": 26, "tj": 10, "nj": 106},
+    {"j": 27, "tj": 11, "nj": 88},
+    {"j": 28, "tj": 12, "nj": 74},
+    {"j": 29, "tj": 13, "nj": 58},
+    {"j": 30, "tj": 14, "nj": 45},
+    {"j": 31, "tj": 15, "nj": 36}
   ],
 
   "bin_hours": [

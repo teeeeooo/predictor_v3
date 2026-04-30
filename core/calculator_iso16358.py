@@ -469,10 +469,9 @@ class ISO16358Calculator:
 
     def _has_ks_c9306_hspf_input(self, measured_inputs: dict) -> bool:
         hspf_config = self.config.get("hspf", {})
-        return (
-            hspf_config.get("profile") == "ks_c_9306_hspf"
-            and "ks_c_9306_hspf" in measured_inputs
-        )
+        if not isinstance(hspf_config, dict):
+            return False
+        return hspf_config.get("profile") == "ks_c_9306_hspf"
 
     def _ks_hspf_input(self, measured_inputs: dict) -> dict:
         if "ks_c_9306_hspf" not in measured_inputs:
@@ -658,6 +657,16 @@ class ISO16358Calculator:
                 factor = self._ks_hspf_minus7_factor(quantity, stage)
                 return float(stage_data["7"]) * factor
 
+        if point == "2" and stage in ("min", "rated", "intermediate"):
+            if "7" in stage_data:
+                value_minus7 = self._ks_hspf_stage_value(
+                    hspf_input, quantity, stage, "-7"
+                )
+                value_7 = float(stage_data["7"])
+                return self._ks_hspf_linear(
+                    2.0, -7.0, value_minus7, 7.0, value_7
+                )
+
         if required:
             raise ValueError(
                 f"Missing KS C 9306 HSPF {quantity}.{stage}.{point} input."
@@ -770,6 +779,70 @@ class ISO16358Calculator:
         if "slope" not in load_line or "intercept" not in load_line:
             return None
         return float(load_line["slope"]), float(load_line["intercept"])
+
+    def _ks_hspf_config_load_line(self, measured_inputs: dict) -> tuple:
+        load_line = self._ks_hspf_config().get("load_line")
+        if not isinstance(load_line, dict):
+            return None
+        if "source" not in load_line:
+            raise ValueError("Invalid KS C 9306 HSPF load_line: source is required.")
+        required_fields = ("zero_load_temp", "full_load_temp", "rated_capacity_factor")
+        if any(field not in load_line for field in required_fields):
+            raise ValueError(
+                "Invalid KS C 9306 HSPF load_line: zero_load_temp, "
+                "full_load_temp, and rated_capacity_factor are required."
+            )
+
+        # KS C 9306 HSPF load line
+        # Spec text: BLh(0) = BLc(35) x 0.82 (cooling reference)
+        # However, official calculation sheet does NOT require cooling rated capacity input.
+        # Implementation uses rated_heating_capacity based on official sheet behavior.
+        # WARNING: Do NOT change to rated_cooling_capacity without full verification.
+        source = load_line["source"]
+        allowed_sources = {
+            "rated_heating_capacity",
+            "rated_cooling_capacity",
+            "declared_capacity",
+        }
+        if source not in allowed_sources:
+            raise ValueError(
+                f"Invalid KS C 9306 HSPF load_line source: {source}."
+            )
+        reference_capacity = measured_inputs.get(source)
+        if reference_capacity is None:
+            return None
+
+        zero_load_temp = float(load_line["zero_load_temp"])
+        full_load_temp = float(load_line["full_load_temp"])
+        if zero_load_temp == full_load_temp:
+            raise ValueError("KS C 9306 HSPF load line temperatures cannot be equal.")
+        full_load = float(reference_capacity) * float(load_line["rated_capacity_factor"])
+        slope = full_load / (full_load_temp - zero_load_temp)
+        intercept = -slope * zero_load_temp
+        return slope, intercept
+
+    def _ks_hspf_bin_load(
+        self,
+        bin_data: dict,
+        tj: float,
+        hspf_input: dict,
+        measured_inputs: dict
+    ) -> float:
+        if "load" in bin_data:
+            return float(bin_data["load"])
+        if "heating_load" in bin_data:
+            return float(bin_data["heating_load"])
+
+        load_line = (
+            self._ks_hspf_load_line(hspf_input)
+            or self._ks_hspf_config_load_line(measured_inputs)
+        )
+        if load_line is None:
+            raise ValueError(
+                "Missing KS C 9306 HSPF bin load and load line configuration."
+            )
+        slope, intercept = load_line
+        return max(0.0, slope * tj + intercept)
 
     def _ks_hspf_capacity_line(
         self,
@@ -1041,7 +1114,9 @@ class ISO16358Calculator:
             if hours <= 0:
                 continue
 
-            load = float(bin_data.get("load", bin_data.get("heating_load", 0)))
+            load = self._ks_hspf_bin_load(
+                bin_data, tj, hspf_input, measured_inputs
+            )
             if load <= 0:
                 continue
 
