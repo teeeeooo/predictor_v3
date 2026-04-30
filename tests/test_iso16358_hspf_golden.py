@@ -80,6 +80,41 @@ def make_phase1_calculator(tmp_path):
 
     config = {
         "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "ks_c_9306_hspf",
+            "required_points": {
+                "7": ["full", "half", "min"],
+                "2": ["defrost"],
+                "-7": ["max"],
+            },
+            "optional_points": {
+                "2": ["full", "half", "min"],
+                "-7": ["full", "half", "min"],
+            },
+            "derived_rules": {
+                "min_-7": {
+                    "source": "min_7",
+                    "capacity_factor": 0.601,
+                    "power_factor": 0.801,
+                },
+                "half_-7": {
+                    "source": "half_7",
+                    "capacity_factor": 0.601,
+                    "power_factor": 0.801,
+                },
+                "full_-7": {
+                    "source": "full_7",
+                    "capacity_factor": 0.601,
+                    "power_factor": 0.801,
+                },
+            },
+            "correction": {
+                "capacity_def_over_nof": 1 / 1.12,
+                "power_def_over_nof": 1 / 1.06,
+                "cd": 0.25,
+            },
+        },
         "bin_hours": [
             {
                 "tj": 7.0,
