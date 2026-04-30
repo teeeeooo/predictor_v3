@@ -169,6 +169,45 @@ def test_iso16358_hspf_golden_sample(tmp_path):
     assert not failures, "TODO: ISO16358-2 HSPF golden mismatch:\n" + "\n".join(failures)
 
 
+def test_ks_c9306_hspf_production_schema_golden_sample(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    result = calculator.calculate_hspf(OFFICIAL_GOLDEN_SAMPLE)
+    breakdown = energy_breakdown(result)
+
+    hstl = result.get("hstl", result.get("HSTL"))
+    hsec = result.get("hsec", result.get("HSEC"))
+    hspf = result["hspf"]
+
+    failures = []
+    assert_close(
+        hspf, GOLDEN_EXPECTED["hspf"], HSPF_TOLERANCE, "HSPF", failures
+    )
+    assert_close(
+        hstl, GOLDEN_EXPECTED["hstl"], ENERGY_TOLERANCE_WH, "HSTL Wh", failures
+    )
+    assert_close(
+        hsec, GOLDEN_EXPECTED["hsec"], ENERGY_TOLERANCE_WH, "HSEC Wh", failures
+    )
+    assert_close(
+        breakdown["heat_pump_energy"],
+        GOLDEN_EXPECTED["heat_pump_energy"],
+        ENERGY_TOLERANCE_WH,
+        "heat pump energy Wh",
+        failures,
+    )
+    assert_close(
+        breakdown["auxiliary_energy"],
+        GOLDEN_EXPECTED["auxiliary_energy"],
+        ENERGY_TOLERANCE_WH,
+        "auxiliary energy Wh",
+        failures,
+    )
+
+    cases = [item["operating_case"] for item in result["bin_details"]]
+    assert cases == ["intermediate_rated", "maximum_shortage"]
+    assert not failures, "TODO: KS C 9306 HSPF golden mismatch:\n" + "\n".join(failures)
+
+
 def test_official_golden_fixture_uses_confirmed_schema():
     sample = OFFICIAL_GOLDEN_SAMPLE["ks_c_9306_hspf"]
 
@@ -196,3 +235,90 @@ def test_official_golden_fixture_uses_confirmed_schema():
         failures,
     )
     assert not failures
+
+
+def explicit_ks_hspf_curve_fixture():
+    return {
+        "ks_c_9306_hspf": {
+            "capacity": {
+                "min": {"7": 1000.0, "2": 900.0, "-7": 600.0},
+                "rated": {"7": 3000.0, "2": 2700.0, "-7": 1800.0},
+                "intermediate": {"7": 2000.0, "2": 1800.0, "-7": 1200.0},
+                "max": {"-7": 3200.0, "def": 4000.0},
+            },
+            "power": {
+                "min": {"7": 200.0, "2": 250.0, "-7": 160.0},
+                "rated": {"7": 800.0, "2": 900.0, "-7": 640.0},
+                "intermediate": {"7": 500.0, "2": 600.0, "-7": 400.0},
+                "max": {"-7": 1000.0, "def": 1300.0},
+            },
+            "correction": {
+                "capacity_def_over_nof": 0.9,
+                "power_def_over_nof": 1.1,
+                "cd": 0.25,
+            },
+        }
+    }
+
+
+def test_ks_c9306_hspf_curve_anchors(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
+
+    assert calculator._ks_hspf_capacity_curve(7.0, hspf_input, "min") == 1000.0
+    assert calculator._ks_hspf_capacity_curve(7.0, hspf_input, "rated") == 3000.0
+    assert (
+        calculator._ks_hspf_capacity_curve(7.0, hspf_input, "intermediate")
+        == 2000.0
+    )
+    assert calculator._ks_hspf_capacity_curve(-7.0, hspf_input, "max") == 3200.0
+    assert calculator._ks_hspf_capacity_curve(2.0, hspf_input, "max") == 4000.0
+
+    assert calculator._ks_hspf_power_curve(7.0, hspf_input, "min") == 200.0
+    assert calculator._ks_hspf_power_curve(7.0, hspf_input, "rated") == 800.0
+    assert (
+        calculator._ks_hspf_power_curve(7.0, hspf_input, "intermediate")
+        == 500.0
+    )
+    assert calculator._ks_hspf_power_curve(-7.0, hspf_input, "max") == 1000.0
+    assert calculator._ks_hspf_power_curve(2.0, hspf_input, "max") == 1300.0
+
+
+def test_ks_c9306_hspf_frost_boundaries_and_ratios(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
+
+    assert not calculator._ks_hspf_is_frost_region(-7.0)
+    assert calculator._ks_hspf_is_frost_region(2.0)
+    assert not calculator._ks_hspf_is_frost_region(5.5)
+
+    assert calculator._ks_hspf_capacity_curve(2.0, hspf_input, "min") == 810.0
+    assert calculator._ks_hspf_power_curve(2.0, hspf_input, "min") == 275.0
+
+
+def test_ks_c9306_hspf_operating_cases(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
+
+    cyclic = calculator._ks_hspf_bin(7.0, 500.0, 2.0, hspf_input)
+    assert cyclic["operating_case"] == "cyclic_minimum"
+    assert cyclic["auxiliary_heat"] == 0.0
+
+    min_mid = calculator._ks_hspf_bin(7.0, 1500.0, 2.0, hspf_input)
+    assert min_mid["operating_case"] == "minimum_intermediate"
+    assert min_mid["auxiliary_heat"] == 0.0
+
+    mid_rated = calculator._ks_hspf_bin(7.0, 2500.0, 2.0, hspf_input)
+    assert mid_rated["operating_case"] == "intermediate_rated"
+    assert mid_rated["auxiliary_heat"] == 0.0
+
+    rated_max = calculator._ks_hspf_bin(7.0, 3500.0, 2.0, hspf_input)
+    assert rated_max["operating_case"] == "rated_maximum"
+    assert rated_max["auxiliary_heat"] == 0.0
+
+    shortage = calculator._ks_hspf_bin(7.0, 5000.0, 2.0, hspf_input)
+    assert shortage["operating_case"] == "maximum_shortage"
+    assert shortage["auxiliary_heat"] > 0.0
+    assert shortage["bin_energy"] == (
+        shortage["heat_pump_energy"] + shortage["auxiliary_energy"]
+    )
