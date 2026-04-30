@@ -13,6 +13,7 @@
 - ISO16358 계산기 수정 시 `docs/iso16358/iso16358_dev_notes.md`를 먼저 확인할 것
 - KS C 9306 관련 수정 시 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`를 먼저 확인할 것
 - ISO16358/KS C 9306 공통 엔진 파일명은 `core/calculator_iso16358.py`를 기준으로 할 것
+- data/region_configs/*.json 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`를 확인할 것.
 
 ## ML
 - model.fit()에 .values 변환 금지 (feature_names_in_ 보존)

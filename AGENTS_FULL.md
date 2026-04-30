@@ -83,6 +83,7 @@
 * `calculator_ahri_hspf2.py` — AHRI 210/240 HSPF2
 * 지역별 파라미터는 `data/region_configs/*.json` 또는 `data/usa_hspf2.json`으로 분리.
 * **calculator 계열 파일 제약**: numpy/pandas 금지, 순수 파이썬(Built-in)만 사용할 것.
+* data/region_configs/*.json 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`를 확인할 것.
 
 ---
 
