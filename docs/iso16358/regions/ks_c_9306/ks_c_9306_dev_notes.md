@@ -109,10 +109,54 @@ BL(tj)가 해당 온도의 최고 capacity보다 크면 장비가 요구 부하�
 | Minimum power lines | Equation E.2.27, Equation E.2.28 | 최소 운전 난방 소비전력선 | 무착상/착상 영역을 분리한다. |
 | Rated power lines | Equation E.2.29, Equation E.2.30 | 정격 운전 난방 소비전력선 | 무착상/착상 영역을 분리한다. |
 | Intermediate power lines | Equation E.2.31, Equation E.2.32 | 중간 운전 난방 소비전력선 | 무착상/착상 영역을 분리한다. |
-| Maximum power line | Equation E.2.33 | 최대 운전 난방 소비전력선 | 최대 능력 부족 구간에서 heat pump power로 사용한다. |
+| Maximum power line | Equation E.2.33 | 최대 운전 난방 소비전력선 | `P_h(t_j) = P_h3(-7.0) + (P_def - P_h3(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))`로 확정한다. 최대 능력 부족 구간에서 heat pump power로 사용한다. |
 | Rated-maximum operating selection | Equation E.2.36 | rated-maximum interpolation | `P_h(t_j) = P_h23(t_j) = P_h3(t_g) + (P_h2(t_b) - P_h3(t_g)) * (t_j - t_g) / (t_b - t_g)`. 여기서 `P_h2(t_b)`는 Equation E.2.30의 `t_j`에 `t_b`를 대입한 값이고, `P_h3(t_g)`는 Equation E.2.33의 `t_j`에 `t_g`를 대입한 값이다. |
-| 3-point operating selection, non-frost region | Equation E.2.37, Equation E.2.38 | minimum-intermediate, intermediate-rated interpolation | building load가 두 운전 능력선 사이에 있을 때 각 운전선과 building load의 교점 온도를 기준으로 power를 보간한다. |
-| 3-point operating selection, frost region | Equation E.2.39, Equation E.2.40 | frost-region interpolation | 착상 영역에서 동일한 구조를 적용한다. 원문 이미지로 식 분자/분모의 온도 방향을 재확인한다. |
+| 3-point operating selection, non-frost region | Equation E.2.37, Equation E.2.38 | minimum-intermediate, intermediate-rated interpolation | building load가 두 운전 능력선 사이에 있을 때 각 운전선과 building load의 교점 온도를 기준으로 power를 보간한다. 식 본문은 아래 확정 표를 따른다. |
+| 3-point operating selection, frost region | Equation E.2.39, Equation E.2.40 | frost-region interpolation | 착상 영역에서 동일한 구조를 적용한다. 식 본문은 아래 확정 표를 따른다. |
+
+### 9.1.1 Confirmed HSPF Performance Equations
+
+아래 식은 원문 이미지, 기계판 추출물, 사용자 수기 확인을 종합해 구현 기준으로 고정한 난방 능력 및 소비전력 식이다. 괄호, stage 첨자, 교점 온도 방향은 그대로 유지한다.
+
+Capacity curve:
+
+| Equation | Region / case | Confirmed formula | Evaluation note |
+| --- | --- | --- | --- |
+| E.2.20 | minimum, non-frost | `Phi_hr(t_j) = Phi_hr1(t_j) = Phi_hr1(-7.0) + (Phi_hr1 - Phi_hr1(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `Phi_hr1`은 7°C 최소 운전 난방 능력이다. |
+| E.2.21 | minimum, frost | `Phi_hr(t_j) = Phi_def1(t_j) = Phi_hr1(-7.0) + (Phi_hr1(2) * (Phi_def / Phi_nof) - Phi_hr1(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 최소 운전점에 defrost/no-frost ratio를 적용한다. 이중 제상 보정을 피한다. |
+| E.2.22 | rated, non-frost | `Phi_hr(t_j) = Phi_hr2(t_j) = Phi_hr2(-7.0) + (Phi_hr2 - Phi_hr2(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `Phi_hr2`는 7°C 정격 운전 난방 능력이다. |
+| E.2.23 | rated, frost | `Phi_hr(t_j) = Phi_def2(t_j) = Phi_hr2(-7.0) + (Phi_hr2(2) * (Phi_def / Phi_nof) - Phi_hr2(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 정격 운전점에 defrost/no-frost ratio를 적용한다. |
+| E.2.24 | intermediate, non-frost | `Phi_hr(t_j) = Phi_hrm(t_j) = Phi_hrm(-7.0) + (Phi_hrm - Phi_hrm(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `Phi_hrm`은 7°C 중간 운전 난방 능력이다. |
+| E.2.25 | intermediate, frost | `Phi_hr(t_j) = Phi_defm(t_j) = Phi_hrm(-7.0) + (Phi_hrm(2) * (Phi_def / Phi_nof) - Phi_hrm(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 중간 운전점에 defrost/no-frost ratio를 적용한다. |
+| E.2.26 | maximum operation | `Phi_hr(t_j) = Phi_hr3(t_j) = Phi_hr3(-7.0) + (Phi_def - Phi_hr3(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 최대 운전 저온 능력과 2°C 제상 능력을 연결한다. |
+
+Power curve:
+
+| Equation | Region / case | Confirmed formula | Evaluation note |
+| --- | --- | --- | --- |
+| E.2.27 | minimum, non-frost | `P_h(t_j) = P_h1(t_j) = P_h1(-7.0) + (P_h1 - P_h1(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `P_h1`은 7°C 최소 운전 난방 소비전력이다. |
+| E.2.28 | minimum, frost | `P_h(t_j) = P_def1(t_j) = P_h1(-7.0) + (P_h1(2) * (P_def / P_nof) - P_h1(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 최소 운전점에 defrost/no-frost power ratio를 적용한다. |
+| E.2.29 | rated, non-frost | `P_h(t_j) = P_h2(t_j) = P_h2(-7.0) + (P_h2 - P_h2(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `P_h2`는 7°C 정격 운전 난방 소비전력이다. |
+| E.2.30 | rated, frost | `P_h(t_j) = P_def2(t_j) = P_h2(-7.0) + (P_h2(2) * (P_def / P_nof) - P_h2(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 정격 운전점에 defrost/no-frost power ratio를 적용한다. |
+| E.2.31 | intermediate, non-frost | `P_h(t_j) = P_hm(t_j) = P_hm(-7.0) + (P_hm - P_hm(-7.0)) * (t_j - (-7.0)) / (7 - (-7.0))` | `P_hm`은 7°C 중간 운전 난방 소비전력이다. |
+| E.2.32 | intermediate, frost | `P_h(t_j) = P_defm(t_j) = P_hm(-7.0) + (P_hm(2) * (P_def / P_nof) - P_hm(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | 2°C 중간 운전점에 defrost/no-frost power ratio를 적용한다. |
+| E.2.33 | maximum operation | `P_h(t_j) = P_h3(-7.0) + (P_def - P_h3(-7.0)) * (t_j - (-7.0)) / (2 - (-7.0))` | `P_h3(-7.0)`는 최대 운전 저온 소비전력, `P_def`는 2°C 제상 조건 최대 운전 소비전력으로 해석한다. 중간 운전 첨자와 섞지 않는다. |
+| E.2.37 | non-frost, minimum-intermediate | `P_h(t_j) = P_h1m(t_j) = P_hm(t_e) + (P_h1(t_c) - P_hm(t_e)) * (t_j - t_e) / (t_c - t_e)` | `P_h1(t_c)`는 E.2.27에 `t_c`를 대입한 값이고, `P_hm(t_e)`는 E.2.31에 `t_e`를 대입한 값이다. |
+| E.2.38 | non-frost, intermediate-rated | `P_h(t_j) = P_h2m(t_j) = P_h2(t_a) + (P_hm(t_e) - P_h2(t_a)) * (t_j - t_a) / (t_e - t_a)` | `P_h2(t_a)`는 E.2.29에 `t_a`를 대입한 값이고, `P_hm(t_e)`는 E.2.31에 `t_e`를 대입한 값이다. |
+| E.2.39 | frost, minimum-intermediate | `P_h(t_j) = P_h1m(t_j) = P_hm(t_f) + (P_h1(t_d) - P_hm(t_f)) * (t_j - t_f) / (t_d - t_f)` | `P_h1(t_d)`는 E.2.28에 `t_d`를 대입한 값이고, `P_hm(t_f)`는 E.2.32에 `t_f`를 대입한 값이다. |
+| E.2.40 | frost, intermediate-rated | `P_h(t_j) = P_hm2(t_j) = P_h2(t_b) + (P_hm(t_f) - P_h2(t_b)) * (t_j - t_b) / (t_f - t_b)` | `P_h2(t_b)`는 E.2.30에 `t_b`를 대입한 값이고, `P_hm(t_f)`는 E.2.32에 `t_f`를 대입한 값이다. |
+
+교점 온도 정의:
+
+| Symbol | Meaning |
+| --- | --- |
+| `t_a` | 무착상 영역에서 building load와 정격 운전 능력선 E.2.22가 만나는 온도 |
+| `t_b` | 착상 영역에서 building load와 정격 운전 능력선 E.2.23이 만나는 온도 |
+| `t_c` | 무착상 영역에서 building load와 최소 운전 능력선 E.2.20이 만나는 온도 |
+| `t_d` | 착상 영역에서 building load와 최소 운전 능력선 E.2.21이 만나는 온도 |
+| `t_e` | 무착상 영역에서 building load와 중간 운전 능력선 E.2.24가 만나는 온도 |
+| `t_f` | 착상 영역에서 building load와 중간 운전 능력선 E.2.25가 만나는 온도 |
+| `t_g` | building load와 최대 운전 능력선 E.2.26이 만나는 온도 |
 
 ### 9.2 Correct HSPF Calculation Order
 
@@ -152,17 +196,94 @@ Equation E.2.36은 사용자 원문 확인으로 수식 본문과 보간 방향�
 | defrost measured points | KS 문서는 stage별 난방 제상 능력/전력과 난방 제상 무착상 능력/전력을 별도 시험 항목으로 둔다. | production schema에서는 단일 H2 defrost 값을 전체 stage에 공통 적용하지 말고, stage-specific defrost/no-frost fields를 구분한다. |
 | fallback rule | H2/H3 half/min 실측이 없으면 H1 partial point를 high-stage 온도 변화율로 보정하는 임시 fallback을 쓸 수 있다. | 공식에 없는 fallback은 TODO로 표시하고 golden test 전용 adapter와 production path를 구분한다. |
 
-### 9.5 HSPF Test Strategy
+### 9.5 Production Input Schema
+
+아래 구조를 KS C 9306 HSPF production 입력 스키마로 확정한다. 기존 JSON key 변경 없이 HSPF production path 안에서 nested field로 수용한다. Phase 1 synthetic H1/H2/H3 입력은 legacy/simple HSPF path로 유지하고, KS C 9306 production 입력과 같은 의미로 취급하지 않는다.
+
+Canonical nested layout:
+
+```python
+{
+    "ks_c_9306_hspf": {
+        "capacity": {
+            "min": {"7": ..., "2": ..., "-7": ...},
+            "rated": {"7": ..., "2": ..., "-7": ...},
+            "intermediate": {"7": ..., "2": ..., "-7": ...},
+            "max": {"-7": ..., "def": ...}
+        },
+        "power": {
+            "min": {"7": ..., "2": ..., "-7": ...},
+            "rated": {"7": ..., "2": ..., "-7": ...},
+            "intermediate": {"7": ..., "2": ..., "-7": ...},
+            "max": {"-7": ..., "def": ...}
+        },
+        "correction": {
+            "capacity_def_over_nof": 1 / 1.12,
+            "power_def_over_nof": 1 / 1.06,
+            "cd": 0.25
+        },
+        "load_line": {
+            "slope": ...,
+            "intercept": ...
+        }
+    }
+}
+```
+
+확정 원칙:
+
+1. Stage key는 `min`, `rated`, `intermediate`, `max`를 사용한다.
+2. Temperature key는 `"7"`, `"2"`, `"-7"` 문자열을 사용한다.
+3. Maximum stage의 2°C defrost anchor는 `"def"`로 둔다.
+4. `capacity_def_over_nof`와 `power_def_over_nof`는 반드시 `def / nof` 방향이다.
+5. `"-7"` 값은 production에서는 Table E.5 derived value로 보완 가능하지만, golden test fixture에서는 명시 입력한다.
+6. `load_line`은 optional이다. 명시되면 E.2.36~E.2.40의 교점 온도 기반 power interpolation에 사용하고, 없으면 load 위치 기반 stage interpolation으로 fallback한다.
+7. `load_line.slope`와 `load_line.intercept`는 `BL_h(t_j) = slope * t_j + intercept` 형식의 W 단위 선형 부하선이다.
+
+| Field group | Candidate fields | Used by | Note |
+| --- | --- | --- | --- |
+| rated reference | existing rated capacity inputs | E.2.4, HSTL sanity check | 난방 building load가 냉방 기준과 연결되는지 원문 기준을 재확인한다. golden HSTL이 맞는 helper는 임의 변경하지 않는다. |
+| minimum heating capacity | `capacity.min.7`, `capacity.min.2`, `capacity.min.-7` | E.2.20, E.2.21, E.2.37, E.2.39 | 7°C, 2°C, -7°C stage 값을 분리한다. `capacity.min.-7`은 Table E.5 derived value일 수 있다. |
+| rated heating capacity | `capacity.rated.7`, `capacity.rated.2`, `capacity.rated.-7` | E.2.22, E.2.23, E.2.36, E.2.38, E.2.40 | rated stage capacity curve와 교점 계산에 사용한다. |
+| intermediate heating capacity | `capacity.intermediate.7`, `capacity.intermediate.2`, `capacity.intermediate.-7` | E.2.24, E.2.25, E.2.37~E.2.40 | intermediate stage가 없을 때 fallback을 production 공식처럼 숨기지 않는다. |
+| maximum heating capacity | `capacity.max.-7`, `capacity.max.def` | E.2.26, maximum shortage | 최대 운전 저온 능력과 2°C 제상 능력을 연결한다. |
+| minimum heating power | `power.min.7`, `power.min.2`, `power.min.-7` | E.2.27, E.2.28, E.2.37, E.2.39 | cyclic minimum과 minimum-intermediate interpolation에 필요하다. |
+| rated heating power | `power.rated.7`, `power.rated.2`, `power.rated.-7` | E.2.29, E.2.30, E.2.36, E.2.38, E.2.40 | rated branch와 rated-maximum interpolation에 필요하다. |
+| intermediate heating power | `power.intermediate.7`, `power.intermediate.2`, `power.intermediate.-7` | E.2.31, E.2.32, E.2.37~E.2.40 | E.2.37~E.2.40 교점 기반 power interpolation의 anchor이다. |
+| maximum heating power | `power.max.-7`, `power.max.def` | E.2.33, E.2.36, maximum shortage | E.2.33은 maximum stage 전용이다. intermediate power 변수와 섞지 않는다. |
+| correction factors | `correction.capacity_def_over_nof`, `correction.power_def_over_nof`, `correction.cd` | E.2.21, E.2.23, E.2.25, E.2.28, E.2.30, E.2.32, E.2.6 | Table E.5 기본값은 각각 `1 / 1.12`, `1 / 1.06`, `0.25`이다. |
+| heating load line | `load_line.slope`, `load_line.intercept` | E.2.36~E.2.40 | 교점 온도 `t_a`~`t_g`를 계산하기 위한 optional 부하선이다. 없으면 production path는 현재 bin의 `load`와 stage capacity 위치로 power를 보간한다. |
+| region data | heating bin-hour table, frost boundaries | bin loop, E.2.20~E.2.40 branch selection | `-7.0°C`, `5.5°C` 경계는 non-frost로 처리한다. |
+
+### 9.6 Implementation Checkpoints
+
+| Step | Fixed decision | Regression risk |
+| --- | --- | --- |
+| 1 | 기존 CSPF path와 public API를 변경하지 않는다. | CSPF golden `6.504`가 깨지면 HSPF 작업을 중단한다. |
+| 2 | KS C 9306 HSPF production path는 ISO common calculator 안에 두되, KS-only assumptions는 region-specific branch로 격리한다. | KS C 9306 식이 ISO 16358 generic HSPF path에 섞이면 다른 region 확장이 어려워진다. |
+| 3 | E.2.20~E.2.33 성능선 helper를 먼저 만들고, E.2.36~E.2.40 operating selection은 그 helper의 평가값만 사용한다. | 같은 식을 branch마다 재작성하면 첨자 혼동이 발생한다. |
+| 4 | frost/non-frost branch를 먼저 결정한 뒤 해당 영역의 capacity/power curve를 평가한다. | defrost ratio를 interpolation 뒤에 다시 적용하면 이중 보정된다. |
+| 5 | capacity shortage와 cyclic minimum은 별도 branch로 유지한다. | shortage를 PLF로 처리하거나 cyclic을 auxiliary로 처리하면 HSEC가 틀어진다. |
+| 6 | auxiliary energy는 HSEC에 반드시 포함하고, HSTL은 전체 building load로 유지한다. | auxiliary 누락은 HSPF 과대평가로 이어진다. |
+
+### 9.7 HSPF Test Strategy
 
 | Test | Input | Expected |
 | --- | --- | --- |
-| HSPF golden sample | rated heating capacity 4300 W, H1 full/half/min, H2 defrost/full-equivalent, H3 max/full-equivalent | HSPF 3.689, HSTL 6651225.0 Wh, HSEC 1802769.7 Wh |
+| HSPF official golden sample | rated heating capacity 4300 W, 7°C full/half/min, 2°C defrost, -7°C max | HSPF 3.689, HSTL 6651225.0 Wh, heat pump energy 1785292.6 Wh, auxiliary energy 17477.1 Wh, HSEC 1802769.7 Wh |
+| production schema fixture | same official measured points represented as `ks_c_9306_hspf.capacity.*`, `ks_c_9306_hspf.power.*`, and `correction.*` | fixture keys follow the confirmed nested schema before production implementation starts |
+| Phase 1 adapter fixture | official measured points mapped to H1 full/half/min, H2 defrost/full-equivalent, H3 max/full-equivalent | temporary adapter only; do not treat it as the production KS C 9306 input schema |
+| E.2.20~E.2.33 curve anchors | one fixture with explicit 7°C, 2°C, -7°C values | each curve returns the exact anchor value at its anchor temperature |
+| frost boundary | `t_j = -7.0°C`, `t_j = 5.5°C` | boundary values are treated as non-frost region |
+| frost interior | representative `-7.0°C < t_j < 5.5°C` | E.2.21/E.2.23/E.2.25 and E.2.28/E.2.30/E.2.32 are selected |
 | cyclic minimum | `BL_h(t_j) <= Q_min(t_j)` | PLF applied, auxiliary energy 0 |
 | minimum-intermediate interpolation | `Q_min < BL_h <= Q_mid` | Equation E.2.37/E.2.39 branch selected |
 | intermediate-rated interpolation | `Q_mid < BL_h <= Q_rated` | Equation E.2.38/E.2.40 branch selected |
 | rated-maximum interpolation | `Q_rated < BL_h <= Q_max` | Equation E.2.36 branch selected and `P_h2(t_b)`/`P_h3(t_g)` interpolation applied |
+| intersection interpolation | fixture with `load_line.slope` and `load_line.intercept` | Equation E.2.36~E.2.40 use intersection temperatures instead of direct load-position interpolation |
 | maximum shortage | `BL_h > Q_max` | heat pump output capped, auxiliary energy positive |
-| frost boundary | `t_j = -7.0°C`, `t_j = 5.5°C` | boundary values are treated as non-frost region |
+| denominator accounting | fixture with shortage bins | HSEC equals heat pump energy plus auxiliary energy |
+| CSPF regression | existing KS CSPF golden sample | CSPF 6.504 remains unchanged |
 
 ## 10. Prompt Snippets for Agent
 

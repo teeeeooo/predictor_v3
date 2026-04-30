@@ -2,9 +2,9 @@
 
 ## 1. Purpose
 
-이 문서는 KS C 9306의 한국 냉방 CSPF 구조가 제품 설계에 주는 방향성을 설명한다. 공통 ISO 계절 효율 개념은 [../../iso16358_design_notes.md](../../iso16358_design_notes.md)를 참조하고, 이 문서는 한국 확장 조건에서 중요한 engineering heuristic만 다룬다.
+이 문서는 KS C 9306의 한국 냉방 CSPF 및 난방 HSPF 구조가 제품 설계에 주는 방향성을 설명한다. 공통 ISO 계절 효율 개념은 [../../iso16358_design_notes.md](../../iso16358_design_notes.md)를 참조하고, 이 문서는 한국 확장 조건에서 중요한 engineering heuristic만 다룬다.
 
-근거: KS C 9306:2017 Annex E, Table E.2, Equation E.1.4.
+근거: KS C 9306:2017 Annex E, Table E.2, Table E.4, Table E.5, Equation E.1.4, Equation E.2.20~E.2.40.
 
 ## 2. Quick Glossary
 
@@ -124,11 +124,28 @@ PLF 손실은 요구 부하가 장비 최소 운전 능력보다 낮을 때 발�
 | half power가 minimum과 full 사이에서 급격히 튀지 않는지 확인한다. | 3점식 전력 보간의 annual power 증가를 줄인다. |
 | 고온 bin에서 full capacity가 building load를 따라가는지 확인한다. | cooling output cap으로 인한 계절 냉방량 손실을 막는다. |
 
-## 9. References
+## 9. Heating HSPF Design Notes
+
+KS C 9306 난방 HSPF는 냉방 CSPF와 반대로 외기온도가 낮아질수록 building load가 커진다. 따라서 설계 검토의 중심은 고온 저부하에서의 cycling 손실뿐 아니라 저온 고부하에서의 capacity shortage, auxiliary heat, defrost 영향을 동시에 줄이는 데 있다.
+
+| Design focus | Heating-specific meaning | Design impact |
+| --- | --- | --- |
+| frost region | 착상 영역에서는 능력과 소비전력 곡선이 무착상 영역과 분리된다. | 2°C 근처 실측 제상 성능을 과소평가하거나 이중 보정하지 않도록 stage별 defrost 성능을 확인해야 한다. |
+| maximum capacity | 저온 bin에서 building load가 최대 운전 능력을 넘으면 부족분은 보조열로 채워진다. | 최대 운전 저온 능력이 부족하면 HSPF denominator가 빠르게 증가한다. |
+| minimum capacity | 온화한 난방 bin에서 building load가 최소 운전 능력보다 낮으면 cycling 손실이 발생한다. | 최소 안정 운전 능력을 낮추면 저부하 난방 bin의 효율 손실을 줄일 수 있다. |
+| intermediate capacity | 최소, 중간, 정격 운전선 사이의 전력 보간이 계절 소비전력을 만든다. | 중간 운전 성능선은 저부하와 고부하 양쪽을 부드럽게 연결하도록 배치해야 한다. |
+| auxiliary heat | heat pump가 감당하지 못한 난방 부하는 계절 소비전력에 직접 합산된다. | capacity shortage와 auxiliary heat는 성능 설계에서 같은 사건으로 추적해야 한다. |
+
+엔지니어링 해석: 냉방에서는 capacity excess와 part-load penalty가 주요 손실원이지만, 난방에서는 defrost penalty와 저온 capacity shortage가 동일하게 중요하다. 한국 난방 bin-hour에서 시간이 많은 온도대의 중간 운전 효율을 확보하면서, 저온부 최대 운전 능력이 auxiliary heat를 과도하게 부르지 않는 균형점을 잡아야 한다.
+
+## 10. References
 
 | Source | Usage |
 | --- | --- |
-| KS C 9306:2017 Annex E | 한국 CSPF 계산 구조 |
+| KS C 9306:2017 Annex E | 한국 CSPF/HSPF 계산 구조 |
 | KS C 9306:2017 Table E.2 | 한국 냉방 bin-hour 기반 설계 타겟 |
+| KS C 9306:2017 Table E.4 | 한국 난방 bin-hour 기반 설계 타겟 |
+| KS C 9306:2017 Table E.5 | 난방 보정 계수 및 효율 저하 계수 |
 | KS C 9306:2017 Equation E.1.4 | declared capacity 기반 building load |
+| KS C 9306:2017 Equation E.2.20~E.2.40 | 가변 용량형 난방 성능선과 운전점 선택 구조 |
 | [../../iso16358_design_notes.md](../../iso16358_design_notes.md) | ISO 공통 seasonal design insight |
