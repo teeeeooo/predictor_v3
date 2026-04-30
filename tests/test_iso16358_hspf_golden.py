@@ -322,3 +322,155 @@ def test_ks_c9306_hspf_operating_cases(tmp_path):
     assert shortage["bin_energy"] == (
         shortage["heat_pump_energy"] + shortage["auxiliary_energy"]
     )
+
+
+def test_ks_c9306_hspf_intersection_power_formulas(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
+    load_line = (100.0, 500.0)
+
+    min_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "min", False, load_line
+    )
+    intermediate_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "intermediate", False, load_line
+    )
+    min_power = calculator._ks_hspf_power_curve(
+        min_temp, hspf_input, "min", False
+    )
+    intermediate_power = calculator._ks_hspf_power_curve(
+        intermediate_temp, hspf_input, "intermediate", False
+    )
+    expected_min_mid = calculator._ks_hspf_linear(
+        7.0, intermediate_temp, intermediate_power, min_temp, min_power
+    )
+    actual_min_mid = calculator._ks_hspf_power_by_intersection(
+        7.0, hspf_input, "minimum_intermediate", load_line
+    )
+
+    rated_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "rated", False, load_line
+    )
+    rated_power = calculator._ks_hspf_power_curve(
+        rated_temp, hspf_input, "rated", False
+    )
+    expected_mid_rated = calculator._ks_hspf_linear(
+        7.0, rated_temp, rated_power, intermediate_temp, intermediate_power
+    )
+    actual_mid_rated = calculator._ks_hspf_power_by_intersection(
+        7.0, hspf_input, "intermediate_rated", load_line
+    )
+
+    failures = []
+    assert_close(
+        actual_min_mid,
+        expected_min_mid,
+        ENERGY_TOLERANCE_WH,
+        "E.2.37 intersection power",
+        failures,
+    )
+    assert_close(
+        actual_mid_rated,
+        expected_mid_rated,
+        ENERGY_TOLERANCE_WH,
+        "E.2.38 intersection power",
+        failures,
+    )
+    assert not failures
+
+
+def test_ks_c9306_hspf_frost_intersection_power_formulas(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
+    load_line = (-100.0, 3500.0)
+
+    min_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "min", True, load_line
+    )
+    intermediate_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "intermediate", True, load_line
+    )
+    rated_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "rated", True, load_line
+    )
+    max_temp = calculator._ks_hspf_intersection_temp(
+        hspf_input, "max", True, load_line
+    )
+
+    min_power = calculator._ks_hspf_power_curve(min_temp, hspf_input, "min", True)
+    intermediate_power = calculator._ks_hspf_power_curve(
+        intermediate_temp, hspf_input, "intermediate", True
+    )
+    rated_power = calculator._ks_hspf_power_curve(
+        rated_temp, hspf_input, "rated", True
+    )
+    max_power = calculator._ks_hspf_power_curve(max_temp, hspf_input, "max", True)
+
+    expected_min_mid = calculator._ks_hspf_linear(
+        0.0, intermediate_temp, intermediate_power, min_temp, min_power
+    )
+    actual_min_mid = calculator._ks_hspf_power_by_intersection(
+        0.0, hspf_input, "minimum_intermediate", load_line
+    )
+
+    expected_mid_rated = calculator._ks_hspf_linear(
+        0.0, rated_temp, rated_power, intermediate_temp, intermediate_power
+    )
+    actual_mid_rated = calculator._ks_hspf_power_by_intersection(
+        0.0, hspf_input, "intermediate_rated", load_line
+    )
+
+    expected_rated_max = calculator._ks_hspf_linear(
+        0.0, max_temp, max_power, rated_temp, rated_power
+    )
+    actual_rated_max = calculator._ks_hspf_power_by_intersection(
+        0.0, hspf_input, "rated_maximum", load_line
+    )
+
+    failures = []
+    assert_close(
+        actual_min_mid,
+        expected_min_mid,
+        ENERGY_TOLERANCE_WH,
+        "E.2.39 intersection power",
+        failures,
+    )
+    assert_close(
+        actual_mid_rated,
+        expected_mid_rated,
+        ENERGY_TOLERANCE_WH,
+        "E.2.40 intersection power",
+        failures,
+    )
+    assert_close(
+        actual_rated_max,
+        expected_rated_max,
+        ENERGY_TOLERANCE_WH,
+        "E.2.36 intersection power",
+        failures,
+    )
+    assert not failures
+
+
+def test_ks_c9306_hspf_bin_uses_optional_load_line(tmp_path):
+    calculator = make_phase1_calculator(tmp_path)
+    data = explicit_ks_hspf_curve_fixture()
+    data["ks_c_9306_hspf"]["load_line"] = {"slope": 100.0, "intercept": 500.0}
+    hspf_input = data["ks_c_9306_hspf"]
+
+    row = calculator._ks_hspf_bin(7.0, 1200.0, 2.0, hspf_input)
+    expected_power = calculator._ks_hspf_power_by_intersection(
+        7.0, hspf_input, "minimum_intermediate", (100.0, 500.0)
+    )
+
+    failures = []
+    assert row["operating_case"] == "minimum_intermediate"
+    assert row["load_line_used"]
+    assert_close(
+        row["heat_pump_energy"],
+        expected_power * 2.0,
+        ENERGY_TOLERANCE_WH,
+        "load-line bin energy",
+        failures,
+    )
+    assert not failures
