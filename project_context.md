@@ -378,6 +378,13 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
       golden case 검증 완료 (5개 케이스)
       상세: docs/skills/ahri_hspf2.md
 - [ ] ISO 16358-2 HSPF 엔진 구현
+  - [x] KS C 9306 HSPF golden/validation smoke 통과
+  - [x] Korea HSPF 31-bin 적용
+  - [ ] production 안정화 진행 중
+- [ ] ISO 16358-2 HSPF load line capacity source 지역별 확인
+  - Korea / KS C 9306: 공식 계산 시트 기준 `rated_heating_capacity × 0.82`로 임시 확정
+  - Spec text에는 `BLc(35) × 0.82` cooling reference가 있어 주석 유지 필요
+  - Australia / New Zealand AS/NZS 3823.4.2는 원문 확인 전 임의 구현 금지
 - [x] EN 14825 SCOP 엔진 구현
 
 ### 공통
