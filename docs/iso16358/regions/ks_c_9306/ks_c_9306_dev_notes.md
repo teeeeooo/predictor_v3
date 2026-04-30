@@ -263,7 +263,9 @@ Canonical nested layout:
 
 | Test | Input | Expected |
 | --- | --- | --- |
-| HSPF golden sample | rated heating capacity 4300 W, H1 full/half/min, H2 defrost/full-equivalent, H3 max/full-equivalent | HSPF 3.689, HSTL 6651225.0 Wh, HSEC 1802769.7 Wh |
+| HSPF official golden sample | rated heating capacity 4300 W, 7°C full/half/min, 2°C defrost, -7°C max | HSPF 3.689, HSTL 6651225.0 Wh, heat pump energy 1785292.6 Wh, auxiliary energy 17477.1 Wh, HSEC 1802769.7 Wh |
+| production schema fixture | same official measured points represented as `ks_c_9306_hspf.capacity.*`, `ks_c_9306_hspf.power.*`, and `correction.*` | fixture keys follow the confirmed nested schema before production implementation starts |
+| Phase 1 adapter fixture | official measured points mapped to H1 full/half/min, H2 defrost/full-equivalent, H3 max/full-equivalent | temporary adapter only; do not treat it as the production KS C 9306 input schema |
 | E.2.20~E.2.33 curve anchors | one fixture with explicit 7°C, 2°C, -7°C values | each curve returns the exact anchor value at its anchor temperature |
 | frost boundary | `t_j = -7.0°C`, `t_j = 5.5°C` | boundary values are treated as non-frost region |
 | frost interior | representative `-7.0°C < t_j < 5.5°C` | E.2.21/E.2.23/E.2.25 and E.2.28/E.2.30/E.2.32 are selected |
