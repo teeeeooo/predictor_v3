@@ -1189,8 +1189,12 @@ class ISO16358Calculator:
         tj: float,
         load: float,
         hours: float,
-        measured_inputs: dict
+        measured_inputs: dict,
+        aux_cop: float = 1.0
     ) -> dict:
+        if aux_cop <= 0:
+            raise ValueError("aux_cop must be positive.")
+
         performance = self._variable_heating_performance(tj, measured_inputs)
         cap_high = performance["high"]["capacity"]
         power_high = performance["high"]["power"]
@@ -1238,7 +1242,7 @@ class ISO16358Calculator:
                 heat_pump_power = (power_min * CR) / PLF
 
         heat_pump_energy = heat_pump_power * hours
-        auxiliary_energy = auxiliary_heat * hours
+        auxiliary_energy = auxiliary_heat * hours / aux_cop
         bin_load = load * hours
         bin_energy = heat_pump_energy + auxiliary_energy
         return {
@@ -1286,7 +1290,9 @@ class ISO16358Calculator:
                 continue
 
             if self._has_variable_heating_points(measured_inputs):
-                detail = self._variable_heating_bin(tj, load, hours, measured_inputs)
+                detail = self._variable_heating_bin(
+                    tj, load, hours, measured_inputs, aux_cop
+                )
             else:
                 performance = self.interpolate_heating(tj, measured_inputs)
                 available_capacity = max(0.0, performance["capacity"])

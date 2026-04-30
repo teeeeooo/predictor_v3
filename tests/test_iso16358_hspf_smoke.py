@@ -38,6 +38,16 @@ def hspf_points():
     }
 
 
+def variable_hspf_points():
+    return {
+        "H3_full": {"temp": -7.0, "capacity": 3000.0, "power": 800.0},
+        "H2_full": {"temp": 2.0, "capacity": 4000.0, "power": 900.0},
+        "H1_full": {"temp": 7.0, "capacity": 4500.0, "power": 1000.0},
+        "H1_half": {"temp": 7.0, "capacity": 2500.0, "power": 600.0},
+        "H1_min": {"temp": 7.0, "capacity": 1200.0, "power": 300.0},
+    }
+
+
 def test_hspf_phase1_auxiliary_heat_and_seasonal_totals(tmp_path):
     calculator = make_calculator(tmp_path)
 
@@ -73,3 +83,31 @@ def test_hspf_h1_h2_h3_interpolation_and_low_temp_extrapolation(tmp_path):
     extrapolated = calculator.interpolate_heating(-10.0, hspf_points())
     assert_close(extrapolated["capacity"], 2000.0, "below H3 capacity extrapolation")
     assert_close(extrapolated["power"], 2300.0 / 3.0, "below H3 power extrapolation")
+
+
+def test_variable_hspf_auxiliary_energy_uses_aux_cop(tmp_path):
+    calculator = make_calculator(tmp_path)
+
+    result_cop_1 = calculator.calculate_hspf(variable_hspf_points(), aux_cop=1.0)
+    result_cop_2 = calculator.calculate_hspf(variable_hspf_points(), aux_cop=2.0)
+    first_bin_cop_1 = result_cop_1["bin_details"][0]
+    first_bin_cop_2 = result_cop_2["bin_details"][0]
+
+    assert first_bin_cop_1["operating_case"] == "shortage"
+    assert_close(first_bin_cop_1["auxiliary_heat"], 750.0, "auxiliary heat COP 1")
+    assert_close(first_bin_cop_1["auxiliary_energy"], 1500.0, "auxiliary energy COP 1")
+    assert_close(first_bin_cop_2["auxiliary_energy"], 750.0, "auxiliary energy COP 2")
+    assert_close(
+        first_bin_cop_1["heat_pump_energy"],
+        first_bin_cop_2["heat_pump_energy"],
+        "heat pump energy independent of aux COP",
+    )
+    assert_close(
+        result_cop_1["heat_pump_energy"],
+        result_cop_2["heat_pump_energy"],
+        "seasonal heat pump energy independent of aux COP",
+    )
+
+    expected_hsec_delta = result_cop_1["auxiliary_energy"] - result_cop_2["auxiliary_energy"]
+    actual_hsec_delta = result_cop_1["HSEC"] - result_cop_2["HSEC"]
+    assert_close(actual_hsec_delta, expected_hsec_delta, "HSEC aux COP delta")
