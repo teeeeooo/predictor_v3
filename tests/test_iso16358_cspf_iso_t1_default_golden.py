@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from core.calculator_iso16358 import ISO16358Calculator
 
 
@@ -12,6 +10,12 @@ FIXTURE_PATH = (
 )
 FIXTURE_ID = "southeast_asia_iso_basic_cspf_4_665"
 CSPF_TOLERANCE = 0.001
+PROVENANCE_PENDING_REASON = (
+    "provenance-pending: 4개 control sample 확보, "
+    "ISO xlsm audit 결과 엔진 수식 구조 동일 확인, "
+    "xlsm cached output 불일치로 golden 신뢰 불가. "
+    "Phase 2에서 재검토."
+)
 
 
 def load_iso_t1_fixture():
@@ -29,6 +33,7 @@ def make_iso_t1_default_2point_calculator(tmp_path, fixture):
         "reference_point": "35_full",
         "Cd": 0.25,
         "building_load_source": "measured",
+        "power_interpolation_method": "iso_boundary_eer",
         "points": {
             "35_full": "measure",
             "35_half": "measure",
@@ -53,17 +58,12 @@ def make_iso_t1_default_2point_calculator(tmp_path, fixture):
     return ISO16358Calculator(str(config_path))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "provenance-pending: 4개 control sample 확보, "
-        "ISO xlsm audit 결과 엔진 수식 구조 동일 확인, "
-        "xlsm cached output 불일치로 golden 신뢰 불가. "
-        "Phase 2에서 재검토."
-    ),
-)
 def test_iso_t1_default_2point_cspf_4_665_one_sample_regression(tmp_path):
-    """1-sample regression, not certification-grade validation."""
+    """1-sample regression, not certification-grade validation.
+
+    The reference remains provenance-pending; see PROVENANCE_PENDING_REASON.
+    """
+    assert PROVENANCE_PENDING_REASON.startswith("provenance-pending")
     fixture = load_iso_t1_fixture()
     calculator = make_iso_t1_default_2point_calculator(tmp_path, fixture)
 

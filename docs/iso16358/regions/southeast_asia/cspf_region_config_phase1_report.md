@@ -457,3 +457,49 @@ their current verified behavior.
 
 No code change to `core/calculator_iso16358.py` has been made in this audit
 turn, and no production region config has been added.
+
+## ISO Boundary EER Method Implementation
+
+The mismatch source is now narrowed to the full-half branch, not the low-load
+branch. The low-load formula remains the existing `X * P_half(tj) / FPL`
+calculation for the ISO T1 Required-test-only / Minimum Not Measure path.
+
+New opt-in method:
+`power_interpolation_method = "iso_boundary_eer"`.
+
+Scope:
+
+| Path | Behavior |
+| --- | --- |
+| default / missing method | unchanged capacity-linear interpolation |
+| `ks_intersection` | unchanged KS C 9306 path |
+| `iso_boundary_eer` low-load branch | unchanged `X * lowest_pow / PLF` |
+| `iso_boundary_eer` half < load <= full | official xlsm boundary-EER interpolation, then `P(tj) = Lc / EER(tj)` |
+| HSPF paths | unchanged |
+
+Implemented boundary formula:
+
+```text
+tb = (6*ref*t0 + 6*phi_full35*dt + 35*(phi_full29-phi_full35)*dt)
+     / (6*ref + (phi_full29-phi_full35)*dt)
+
+tc = (6*ref*t0 + 6*phi_half35*dt + 35*(phi_half29-phi_half35)*dt)
+     / (6*ref + (phi_half29-phi_half35)*dt)
+
+EER_tb = phi_full(tb) / P_full(tb)
+EER_tc = phi_half(tc) / P_half(tc)
+EER(tj) = EER_tc + (EER_tb-EER_tc)/(tb-tc) * (tj-tc)
+P(tj) = Lc / EER(tj)
+```
+
+Control regression results using `iso_boundary_eer`:
+
+| sample id | expected CSPF | actual CSPF | actual CSTL | actual CSEC | status |
+| --- | ---: | ---: | ---: | ---: | --- |
+| southeast_asia_iso_basic_cspf_4_665 | 4.665 | 4.665 | 1973.107 kWh | 422.932 kWh | pass, provenance-pending control |
+| asean_report_table7_variable_speed_cspf_4_76 | 4.760 | 4.756 | 2639.280 kWh | 554.991 kWh | pass within published rounding |
+| jatl_slide_variable_capacity_cspf_4_86 | 4.860 | 4.858 | 2052.773 kWh | 422.574 kWh | pass within slide rounding |
+| jatl_tool_required_test_only_cspf_4_93 | 4.930 | 4.928 | 2052.773 kWh | 416.513 kWh | pass within tool rounding |
+
+Korea CSPF remains on the existing KS path and keeps the 6.504 regression.
+No production `iso_t1_default_2point.json` config has been added in this turn.
