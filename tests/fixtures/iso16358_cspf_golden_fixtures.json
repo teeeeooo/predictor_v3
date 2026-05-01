@@ -1,0 +1,406 @@
+{
+  "schema_version": 2,
+  "purpose": "CSPF golden fixtures for ISO16358 region config expansion tests. These values must not be copied into production region configs.",
+  "source_note": "Structured from user-provided raw golden_data text for ISO16358-1 CSPF region config expansion.",
+  "fixtures": {
+    "southeast_asia_iso_basic_cspf_4_665": {
+      "id": "southeast_asia_iso_basic_cspf_4_665",
+      "name": "ISO16358-1 T1 basic two-point CSPF 4.665",
+      "aliases": [
+        "user_iso_t1_default_cspf_4_665"
+      ],
+      "standard": "ISO16358-1",
+      "status": "1_sample_regression_not_certification_grade",
+      "region_family": "ISO16358-1 T1 default 2-point",
+      "source_description": "User-provided ISO T1 default two-point golden data; ISO16358-1 default bin for Southeast Asia: Thailand, Vietnam, Malaysia, Philippines, Indonesia",
+      "candidate_regions": [
+        "Thailand",
+        "Vietnam",
+        "Malaysia",
+        "Philippines",
+        "Indonesia"
+      ],
+      "measured_points": {
+        "35_full": {
+          "capacity": 2691.334,
+          "power": 889.5
+        },
+        "35_half": {
+          "capacity": 1249.055,
+          "power": 303.2
+        }
+      },
+      "expected": {
+        "cspf": 4.665,
+        "total_bin_hours": 1817
+      },
+      "bin_hours": [
+        {"tj": 21, "nj": 100},
+        {"tj": 22, "nj": 139},
+        {"tj": 23, "nj": 165},
+        {"tj": 24, "nj": 196},
+        {"tj": 25, "nj": 210},
+        {"tj": 26, "nj": 215},
+        {"tj": 27, "nj": 210},
+        {"tj": 28, "nj": 181},
+        {"tj": 29, "nj": 150},
+        {"tj": 30, "nj": 120},
+        {"tj": 31, "nj": 75},
+        {"tj": 32, "nj": 35},
+        {"tj": 33, "nj": 11},
+        {"tj": 34, "nj": 6},
+        {"tj": 35, "nj": 4},
+        {"tj": 36, "nj": 0},
+        {"tj": 37, "nj": 0},
+        {"tj": 38, "nj": 0},
+        {"tj": 39, "nj": 0},
+        {"tj": 40, "nj": 0},
+        {"tj": 41, "nj": 0},
+        {"tj": 42, "nj": 0},
+        {"tj": 43, "nj": 0}
+      ],
+      "notes": [
+        "One-sample regression fixture, not certification-grade validation.",
+        "Fixture also covers requested control sample id user_iso_t1_default_cspf_4_665 without duplicating data.",
+        "Production config candidate filename for this profile is iso_t1_default_2point.json."
+      ]
+    },
+    "india_iseer_5_00": {
+      "id": "india_iseer_5_00",
+      "name": "India two-point ISEER 5.00",
+      "standard": "India ISEER",
+      "status": "fixture_complete_regression_not_enabled",
+      "region": "India",
+      "metric": "ISEER",
+      "measured_points": {
+        "35_full": {
+          "capacity": 5104,
+          "power": 1352
+        },
+        "35_half": {
+          "capacity": 2544.9,
+          "power": 457
+        }
+      },
+      "expected": {
+        "cstl_kwh": 3950.65,
+        "csec_kwh": 790.82,
+        "iseer": 5.0,
+        "total_bin_hours": 1600
+      },
+      "bin_hours": [
+        {"tj": 21, "nj": 0},
+        {"tj": 22, "nj": 0},
+        {"tj": 23, "nj": 0},
+        {"tj": 24, "nj": 146},
+        {"tj": 25, "nj": 163},
+        {"tj": 26, "nj": 177},
+        {"tj": 27, "nj": 183},
+        {"tj": 28, "nj": 167},
+        {"tj": 29, "nj": 150},
+        {"tj": 30, "nj": 125},
+        {"tj": 31, "nj": 104},
+        {"tj": 32, "nj": 86},
+        {"tj": 33, "nj": 67},
+        {"tj": 34, "nj": 54},
+        {"tj": 35, "nj": 46},
+        {"tj": 36, "nj": 36},
+        {"tj": 37, "nj": 28},
+        {"tj": 38, "nj": 22},
+        {"tj": 39, "nj": 16},
+        {"tj": 40, "nj": 12},
+        {"tj": 41, "nj": 9},
+        {"tj": 42, "nj": 6},
+        {"tj": 43, "nj": 3}
+      ],
+      "notes": [
+        "Regression fixture only; production India config needs standard-specific review before creation."
+      ]
+    },
+    "saso_cspf_4_95": {
+      "id": "saso_cspf_4_95",
+      "name": "SASO four-point CSPF 4.95",
+      "standard": "SASO CSPF",
+      "status": "fixture_complete_regression_not_enabled",
+      "region": "SASO",
+      "metric": "CSPF",
+      "measured_points": {
+        "46_full": {
+          "capacity": 5418,
+          "power": 1971
+        },
+        "35_full": {
+          "capacity": 6058,
+          "power": 1611
+        },
+        "35_half": {
+          "capacity": 3036,
+          "power": 566
+        },
+        "35_min": {
+          "capacity": 1780,
+          "power": 284
+        }
+      },
+      "expected": {
+        "cstl_kwh": 21546,
+        "csec_kwh": 4349,
+        "cspf": 4.95,
+        "total_bin_hours": 8415
+      },
+      "bin_hours": [
+        {"tj": 20, "nj": 0},
+        {"tj": 21, "nj": 267},
+        {"tj": 22, "nj": 279},
+        {"tj": 23, "nj": 281},
+        {"tj": 24, "nj": 314},
+        {"tj": 25, "nj": 309},
+        {"tj": 26, "nj": 341},
+        {"tj": 27, "nj": 357},
+        {"tj": 28, "nj": 366},
+        {"tj": 29, "nj": 411},
+        {"tj": 30, "nj": 435},
+        {"tj": 31, "nj": 464},
+        {"tj": 32, "nj": 501},
+        {"tj": 33, "nj": 492},
+        {"tj": 34, "nj": 456},
+        {"tj": 35, "nj": 408},
+        {"tj": 36, "nj": 395},
+        {"tj": 37, "nj": 360},
+        {"tj": 38, "nj": 357},
+        {"tj": 39, "nj": 335},
+        {"tj": 40, "nj": 325},
+        {"tj": 41, "nj": 290},
+        {"tj": 42, "nj": 240},
+        {"tj": 43, "nj": 200},
+        {"tj": 44, "nj": 130},
+        {"tj": 45, "nj": 78},
+        {"tj": 46, "nj": 24},
+        {"tj": 47, "nj": 0},
+        {"tj": 48, "nj": 0},
+        {"tj": 49, "nj": 0},
+        {"tj": 50, "nj": 0, "source": "blank"}
+      ],
+      "notes": [
+        "SASO 50 C bin was blank in the source.",
+        "source blank interpreted as 0 for total consistency."
+      ]
+    },
+    "hong_kong_cspf_4_83": {
+      "id": "hong_kong_cspf_4_83",
+      "name": "Hong Kong two-point CSPF 4.83",
+      "standard": "Hong Kong CSPF",
+      "status": "fixture_complete_regression_not_enabled",
+      "region": "Hong Kong",
+      "metric": "CSPF",
+      "measured_points": {
+        "35_full": {
+          "capacity": 3500,
+          "power": 1000
+        },
+        "35_half": {
+          "capacity": 1750,
+          "power": 400
+        }
+      },
+      "expected": {
+        "cspf": 4.83,
+        "total_bin_hours": 1200
+      },
+      "bin_hours": [
+        {"tj": 21, "nj": 0},
+        {"tj": 22, "nj": 0},
+        {"tj": 23, "nj": 0},
+        {"tj": 24, "nj": 67},
+        {"tj": 25, "nj": 117},
+        {"tj": 26, "nj": 147},
+        {"tj": 27, "nj": 177},
+        {"tj": 28, "nj": 210},
+        {"tj": 29, "nj": 183},
+        {"tj": 30, "nj": 114},
+        {"tj": 31, "nj": 75},
+        {"tj": 32, "nj": 56},
+        {"tj": 33, "nj": 33},
+        {"tj": 34, "nj": 15},
+        {"tj": 35, "nj": 5},
+        {"tj": 36, "nj": 1},
+        {"tj": 37, "nj": 0},
+        {"tj": 38, "nj": 0},
+        {"tj": 39, "nj": 0},
+        {"tj": 40, "nj": 0},
+        {"tj": 41, "nj": 0},
+        {"tj": 42, "nj": 0},
+        {"tj": 43, "nj": 0}
+      ],
+      "notes": [
+        "Regression fixture only; production Hong Kong config needs standard-specific review before creation."
+      ]
+    },
+    "asean_report_table7_variable_speed_cspf_4_76": {
+      "id": "asean_report_table7_variable_speed_cspf_4_76",
+      "name": "ASEAN report Table 7 variable-speed CSPF 4.76",
+      "standard": "ISO16358-1",
+      "status": "published_report_control_sample_not_certification_golden",
+      "region": "ASEAN",
+      "metric": "CSPF",
+      "source_description": "ASEAN AC EE Harmonization Final Report Feb 2021 Table 7 control sample",
+      "measured_points": {
+        "35_full": {
+          "capacity": 3600,
+          "power": 1080
+        },
+        "35_half": {
+          "capacity": 1800,
+          "power": 432
+        }
+      },
+      "expected": {
+        "cspf": 4.76,
+        "annual_energy_consumption_kwh": 555,
+        "total_bin_hours": 1817
+      },
+      "bin_hours_source_fixture": "southeast_asia_iso_basic_cspf_4_665",
+      "bin_hours": [
+        {"tj": 21, "nj": 100},
+        {"tj": 22, "nj": 139},
+        {"tj": 23, "nj": 165},
+        {"tj": 24, "nj": 196},
+        {"tj": 25, "nj": 210},
+        {"tj": 26, "nj": 215},
+        {"tj": 27, "nj": 210},
+        {"tj": 28, "nj": 181},
+        {"tj": 29, "nj": 150},
+        {"tj": 30, "nj": 120},
+        {"tj": 31, "nj": 75},
+        {"tj": 32, "nj": 35},
+        {"tj": 33, "nj": 11},
+        {"tj": 34, "nj": 6},
+        {"tj": 35, "nj": 4},
+        {"tj": 36, "nj": 0},
+        {"tj": 37, "nj": 0},
+        {"tj": 38, "nj": 0},
+        {"tj": 39, "nj": 0},
+        {"tj": 40, "nj": 0},
+        {"tj": 41, "nj": 0},
+        {"tj": 42, "nj": 0},
+        {"tj": 43, "nj": 0}
+      ],
+      "notes": [
+        "Published report example/control sample, not a production golden for certification.",
+        "Variable-speed sample uses 35 C full and half measured points plus ISO predetermined 29 C equations.",
+        "Minimum capacity is not considered for ASEAN/India/Japan/China <= 7.1 kW per user-provided report summary."
+      ]
+    },
+    "jatl_slide_variable_capacity_cspf_4_86": {
+      "id": "jatl_slide_variable_capacity_cspf_4_86",
+      "name": "JATL slide variable-capacity CSPF 4.86",
+      "standard": "ISO16358-1",
+      "status": "control_sample_not_certification_grade",
+      "region": "ISO T1 Default",
+      "metric": "CSPF",
+      "source_description": "JATL variable capacity slide image",
+      "measured_points": {
+        "35_full": {
+          "capacity": 2800,
+          "power": 800
+        },
+        "35_half": {
+          "capacity": 1400,
+          "power": 330
+        }
+      },
+      "expected": {
+        "cspf": 4.86,
+        "total_bin_hours": 1817
+      },
+      "bin_hours_source_fixture": "southeast_asia_iso_basic_cspf_4_665",
+      "bin_hours": [
+        {"tj": 21, "nj": 100},
+        {"tj": 22, "nj": 139},
+        {"tj": 23, "nj": 165},
+        {"tj": 24, "nj": 196},
+        {"tj": 25, "nj": 210},
+        {"tj": 26, "nj": 215},
+        {"tj": 27, "nj": 210},
+        {"tj": 28, "nj": 181},
+        {"tj": 29, "nj": 150},
+        {"tj": 30, "nj": 120},
+        {"tj": 31, "nj": 75},
+        {"tj": 32, "nj": 35},
+        {"tj": 33, "nj": 11},
+        {"tj": 34, "nj": 6},
+        {"tj": 35, "nj": 4},
+        {"tj": 36, "nj": 0},
+        {"tj": 37, "nj": 0},
+        {"tj": 38, "nj": 0},
+        {"tj": 39, "nj": 0},
+        {"tj": 40, "nj": 0},
+        {"tj": 41, "nj": 0},
+        {"tj": 42, "nj": 0},
+        {"tj": 43, "nj": 0}
+      ],
+      "notes": [
+        "Control sample, not certification-grade golden.",
+        "Variable-capacity two-point structure: 35 C full/half measured, 29 C full/half default, minimum not considered."
+      ]
+    },
+    "jatl_tool_required_test_only_cspf_4_93": {
+      "id": "jatl_tool_required_test_only_cspf_4_93",
+      "name": "JATL ISO 16358-1 Amd1 tool required-test-only CSPF 4.93",
+      "standard": "ISO16358-1 Amd1",
+      "status": "control_sample_not_certification_grade",
+      "region": "ISO T1 Default",
+      "metric": "CSPF",
+      "source_description": "JATL ISO 16358-1 Amd1 CSPF calculation tool slide image",
+      "test_item": "Required test only",
+      "minimum_performance": "Not Measure",
+      "measured_points": {
+        "35_full": {
+          "capacity": 2800,
+          "power": 700
+        },
+        "35_half": {
+          "capacity": 1400,
+          "power": 330
+        }
+      },
+      "expected": {
+        "cstl_kwh": 2053,
+        "csec_kwh": 417,
+        "cspf": 4.93,
+        "total_bin_hours": 1817
+      },
+      "bin_hours_source_fixture": "southeast_asia_iso_basic_cspf_4_665",
+      "bin_hours": [
+        {"tj": 21, "nj": 100},
+        {"tj": 22, "nj": 139},
+        {"tj": 23, "nj": 165},
+        {"tj": 24, "nj": 196},
+        {"tj": 25, "nj": 210},
+        {"tj": 26, "nj": 215},
+        {"tj": 27, "nj": 210},
+        {"tj": 28, "nj": 181},
+        {"tj": 29, "nj": 150},
+        {"tj": 30, "nj": 120},
+        {"tj": 31, "nj": 75},
+        {"tj": 32, "nj": 35},
+        {"tj": 33, "nj": 11},
+        {"tj": 34, "nj": 6},
+        {"tj": 35, "nj": 4},
+        {"tj": 36, "nj": 0},
+        {"tj": 37, "nj": 0},
+        {"tj": 38, "nj": 0},
+        {"tj": 39, "nj": 0},
+        {"tj": 40, "nj": 0},
+        {"tj": 41, "nj": 0},
+        {"tj": 42, "nj": 0},
+        {"tj": 43, "nj": 0}
+      ],
+      "notes": [
+        "Control sample, not certification-grade golden.",
+        "Required test only; minimum performance is not measured.",
+        "29 C full/half points are default values."
+      ]
+    }
+  }
+}
