@@ -66,57 +66,46 @@ def assert_case_conservation(result):
             assert math.isclose(e_aux, expected_e_aux, abs_tol=0.05)
 
 
-calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+def test_hspf2_v3_case_activation_and_conservation():
+    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    canonical_points = {
+        "H01": (12500, 980),
+        "H11": (12000, 1000),
+        "H12": (24000, 2200),
+        "H1N": (22000, 2000),
+        "H22": (23200, 2160),
+        "H2Int": (13000, 1200),
+        "H32": (22000, 2100),
+        "H42": (18000, 1900),
+        "A_Full": (24000, 2500),
+    }
+    kwargs = {
+        "t_off": -10,
+        "t_on": -5,
+        "defrost_t_test_minutes": 90,
+        "defrost_t_max_minutes": 720,
+    }
 
-canonical_points = {
-    "H01": (12500, 980),
-    "H11": (12000, 1000),
-    "H12": (24000, 2200),
-    "H1N": (22000, 2000),
-    "H22": (23200, 2160),
-    "H2Int": (13000, 1200),
-    "H32": (22000, 2100),
-    "H42": (18000, 1900),
-    "A_Full": (24000, 2500),
-}
+    result = calc.calculate_hspf2_v3(canonical_points, **kwargs)
 
-kwargs = {
-    "t_off": -10,
-    "t_on": -5,
-    "defrost_t_test_minutes": 90,
-    "defrost_t_max_minutes": 720,
-}
+    assert_case_conservation(result)
+    assert result["summary"]["ahri_210_240_2026_ready"] is True
 
-result = calc.calculate_hspf2_v3(canonical_points, **kwargs)
-assert_case_conservation(result)
-assert result["summary"]["ahri_210_240_2026_ready"] is True
+    operating_cases = {row["operating_case"] for row in result["bin_details"]}
+    assert "Case I" in operating_cases
+    assert "Case II" in operating_cases
+    assert "Case III" in operating_cases
 
-operating_cases = {row["operating_case"] for row in result["bin_details"]}
-assert "Case I" in operating_cases
-assert "Case II" in operating_cases
-assert "Case III" in operating_cases
+    for row in result["bin_details"]:
+        if row["operating_case"] == "Case I":
+            assert row["HLF_j"] is not None
+            assert 0.0 <= row["HLF_j"] <= 1.0
+            expected_plf_j = max(0.01, 1.0 - 0.25 * (1.0 - row["HLF_j"]))
+            assert math.isclose(row["PLF_j"], expected_plf_j, abs_tol=0.000001)
+        elif row["operating_case"] in ("Case II", "Case III"):
+            assert row["PLF_j"] == 1.0
+            assert row["HLF_j"] in (None, 1.0)
 
-for row in result["bin_details"]:
-    if row["operating_case"] == "Case I":
-        assert row["HLF_j"] is not None
-        assert 0.0 <= row["HLF_j"] <= 1.0
-        expected_plf_j = max(0.01, 1.0 - 0.25 * (1.0 - row["HLF_j"]))
-        assert math.isclose(row["PLF_j"], expected_plf_j, abs_tol=0.000001)
-    elif row["operating_case"] in ("Case II", "Case III"):
-        assert row["PLF_j"] == 1.0
-        assert row["HLF_j"] in (None, 1.0)
-
-fractional_rows = [row for row in result["bin_details"] if row["delta_j"] == 0.5]
-assert len(fractional_rows) == 1
-assert fractional_rows[0]["temp_F"] == -8
-
-print("AHRI strict case activation")
-for case_name in ("Case I", "Case II", "Case III"):
-    bins = [
-        row["bin"] for row in result["bin_details"]
-        if row["operating_case"] == case_name
-    ]
-    print(f"  {case_name}: {bins}")
-print("  raw_hspf2:", round(result["raw_hspf2"], 6))
-print("  rounded_hspf2:", result["rounded_hspf2"])
-print("  fractional temp_F:", fractional_rows[0]["temp_F"])
+    fractional_rows = [row for row in result["bin_details"] if row["delta_j"] == 0.5]
+    assert len(fractional_rows) == 1
+    assert fractional_rows[0]["temp_F"] == -8
