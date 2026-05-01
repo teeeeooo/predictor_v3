@@ -273,6 +273,77 @@ class ISO16358Calculator:
         p_upper = power_at(upper_line, t_upper)
         return p_upper - ((p_upper - p_lower) / (t_upper - t_lower)) * (t_upper - tj)
 
+    def _iso_boundary_temperature(
+        self,
+        ref_capacity: float,
+        capacity_35: float,
+        capacity_29: float
+    ) -> float:
+        dt = self.t_100_load - self.t_0_load
+        denominator = 6 * ref_capacity + (capacity_29 - capacity_35) * dt
+        if denominator == 0:
+            raise ValueError("Cannot calculate ISO boundary EER temperature.")
+        return (
+            6 * ref_capacity * self.t_0_load
+            + 6 * capacity_35 * dt
+            + 35 * (capacity_29 - capacity_35) * dt
+        ) / denominator
+
+    def _iso_linear_29_35(self, value_35: float, value_29: float, tj: float) -> float:
+        return value_35 + (value_29 - value_35) / (35 - 29) * (35 - tj)
+
+    def _iso_boundary_eer(self, resolved_points: dict, load_type: str) -> tuple:
+        point_35 = resolved_points.get(f"35_{load_type}")
+        point_29 = resolved_points.get(f"29_{load_type}")
+        if point_35 is None or point_29 is None:
+            raise ValueError(
+                f"ISO boundary EER requires 35_{load_type} and 29_{load_type}."
+            )
+
+        ref_point = resolved_points.get(self.reference_point)
+        if ref_point is None:
+            raise ValueError(
+                f"Reference point '{self.reference_point}' not found for ISO boundary EER."
+            )
+
+        boundary_temp = self._iso_boundary_temperature(
+            ref_point["capacity"],
+            point_35["capacity"],
+            point_29["capacity"],
+        )
+        capacity = self._iso_linear_29_35(
+            point_35["capacity"], point_29["capacity"], boundary_temp
+        )
+        power = self._iso_linear_29_35(
+            point_35["power"], point_29["power"], boundary_temp
+        )
+        if power <= 0:
+            raise ValueError("ISO boundary EER power must be positive.")
+        return boundary_temp, capacity / power
+
+    def _iso_boundary_eer_power(
+        self,
+        tj: float,
+        Lc: float,
+        resolved_points: dict,
+        lower_type: str,
+        upper_type: str
+    ) -> float:
+        if {lower_type, upper_type} != {"half", "full"}:
+            return None
+
+        t_upper, eer_upper = self._iso_boundary_eer(resolved_points, upper_type)
+        t_lower, eer_lower = self._iso_boundary_eer(resolved_points, lower_type)
+        if t_upper == t_lower:
+            return None
+
+        eer_tj = eer_lower + (eer_upper - eer_lower) / (t_upper - t_lower) * (
+            tj - t_lower
+        )
+        if eer_tj <= 0:
+            return None
+        return Lc / eer_tj
+
     def recommend_35_half_capacity(self, phi_full_35: float, phi_min_29: float) -> dict:
         """
         35°C 중간 운전 능력 목표값 산정을 위한 독립 helper입니다.
@@ -1439,6 +1510,16 @@ class ISO16358Calculator:
                             )
                         if ks_power is not None:
                             P_tj = ks_power
+                        elif self.power_interpolation_method == "iso_boundary_eer":
+                            iso_power = self._iso_boundary_eer_power(
+                                tj, Lc, resolved_points, lower_type, upper_type
+                            )
+                            if iso_power is not None:
+                                P_tj = iso_power
+                            elif c2 == c1:
+                                P_tj = p1
+                            else:
+                                P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
                         elif c2 == c1:
                             P_tj = p1
                         else:
