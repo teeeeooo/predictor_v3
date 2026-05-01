@@ -141,6 +141,75 @@ ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. �
 - golden이 1개뿐이면 “1-sample smoke/golden”으로 표시하고 인증급 검증으로 보지 않는다.
 - 공식 계산시트와 다른 결과가 나오면 먼저 input schema와 bin_hours를 확인한다.
 
+### 5.4 ISO16358 CSPF 엔진 재설계
+
+#### 등록일
+
+2026-05-01
+
+#### 트리거 조건 (이미 충족됨)
+
+- SASO T3 추가 시 `iso_boundary_eer`가 35/29 hard-code로 인해 `ValueError`를 발생시킨다.
+- Hong Kong / India / SASO 추가 과정에서 지역별 patch method(`ks_intersection`, `iso_boundary_eer`, `iso_boundary_temperature_rounding`)가 누적되었다.
+- 공식 ISO16358 xlsm 시트의 T1/T3 x required/optional x measured/default matrix를 현재 config schema로 표현할 수 없다.
+
+#### 현재 구조의 문제
+
+- `_iso_boundary_eer()`가 `35_{type}` / `29_{type}`을 하드코딩한다.
+- T1/T3 climate profile 구분이 없다.
+- temperature anchor matrix가 없다. 예를 들어 46/35/29 anchor를 구조적으로 선언할 수 없다.
+- `required_only` / `with_optional_test` 선택 표현이 없다.
+- min-half 구간 공식 분기 없이 capacity-linear fallback에 의존한다.
+- 지역 추가마다 calculator 수정이 필요해질 위험이 커졌다.
+
+#### 목표 구조
+
+- `cspf_profile` schema를 도입한다.
+  - `climate_profile`: T1 / T3
+  - `test_selection`: `required_only` / `with_optional_test`
+  - `temperature_anchors`: `[46, 35, 29]` 등
+  - `load_levels`: `full` / `half` / `minimum`
+  - point source matrix: `measured` / `default` / `derived` / `not_used`
+  - `power_model.branches`: 구간별 계산 방식 선언
+- 기존 flat config는 legacy path로 유지한다.
+- 새 schema는 병렬 opt-in으로만 동작한다.
+- 지역 추가 시 calculator 수정 없이 config만으로 처리할 수 있게 한다.
+
+#### 단계별 계획
+
+Phase R1 — Schema layer 추가 (calculator 계산 결과 변경 없음)
+
+- `cspf_profile` schema validator를 추가한다.
+- point resolver(`measured` / `default` / `derived` / `not_used`)를 추가한다.
+- T1 default profile을 새 schema로 mirror한 diagnostic test를 추가한다.
+- 기존 regression은 전부 유지해야 한다.
+
+Phase R2 — SASO T3 구현 (새 schema 기반)
+
+- T3 climate profile 분기를 구현한다.
+- `46_full` high-anchor branch를 추가한다.
+- `saso.json`을 새 schema로 작성한다.
+- SASO CSPF 4.95 golden regression을 추가한다.
+
+Phase R3 — 기존 config 마이그레이션 (선택적)
+
+- `iso_t1_default_2point` / `hong_kong` / `india_iseer`를 새 schema로 순차 전환한다.
+- legacy flat config path에는 deprecation 경고만 추가한다.
+
+#### 보호 조건 (어떤 단계에서도 위반 금지)
+
+- Korea CSPF 6.504 regression을 유지한다.
+- ISO T1 default CSPF 4.665 regression을 유지한다.
+- India ISEER xlsx-compatible 4.993을 유지한다.
+- Hong Kong current engine 4.882 regression을 유지한다.
+- Cd / derived factor / hidden 보정을 금지한다.
+- 기존 public function signature는 가능하면 유지한다.
+
+#### 현재 상태
+
+- Phase R1 대기 중이다.
+- SASO xfail은 Phase R2 완료까지 유지한다.
+
 ---
 
 ## 6. KS C 9306 유지보수 계획
