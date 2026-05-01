@@ -399,4 +399,6 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 5. app_predict.py, app_train.py 업데이트
 6. app_calculator.py, calc_window.py 업데이트 
 7. ISO 16358-1 기반 계산기 2차 확장 (SASO, 호주 등)
-
+8. AHRI 설정 파일 위치 재정리 검토
+   - `data/usa_hspf2.json`은 AHRI HSPF2 bin table, test point schema, alias를 함께 담고 있어 `data/region_configs/`로 단순 이동하기 전 구조 검토 필요
+   - 후보: `data/ahri/usa_hspf2.json` 또는 AHRI 전용 config 디렉터리

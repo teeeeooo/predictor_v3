@@ -43,9 +43,7 @@
 |   |   |-- thailand.json
 |   |   `-- usa.json
 |   |-- skills.md
-|   |-- usa_hspf2.json
-|   |-- usa_hspf2_backup.json
-|   `-- usa_hspf2_pre_smoke_backup.json
+|   `-- usa_hspf2.json
 |-- docs
 |   |-- .DS_Store
 |   |-- DOCS_GUIDELINES.md
