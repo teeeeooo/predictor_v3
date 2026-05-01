@@ -1,0 +1,55 @@
+{
+  "_comment": "India ISEER custom bin profile from user-provided source file 'iso 16358 temp_bin, golden_data.txt'. ISO 16358-1 2-point variable-capacity structure follows iso_t1_default_2point.json; only bin_hours are India-specific.",
+  "region": "India ISEER",
+  "standard": "India ISEER / ISO 16358-1:2013 custom bin",
+  "t_100_load": 35.0,
+  "reference_point": "35_full",
+  "t_0_load": 23.0,
+  "Cd": 0.25,
+  "building_load_source": "measured",
+  "power_interpolation_method": "iso_boundary_eer",
+  "iso_boundary_temperature_rounding": "excel_round_0",
+  "points": {
+    "35_full": "measure",
+    "35_half": "measure",
+    "29_full": "default",
+    "29_half": "default"
+  },
+  "derived_rules": {
+    "29_full": {
+      "source": "35_full",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    },
+    "29_half": {
+      "source": "35_half",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    }
+  },
+  "bin_hours": [
+    {"tj": 21, "nj": 0},
+    {"tj": 22, "nj": 0},
+    {"tj": 23, "nj": 0},
+    {"tj": 24, "nj": 146},
+    {"tj": 25, "nj": 163},
+    {"tj": 26, "nj": 177},
+    {"tj": 27, "nj": 183},
+    {"tj": 28, "nj": 167},
+    {"tj": 29, "nj": 150},
+    {"tj": 30, "nj": 125},
+    {"tj": 31, "nj": 104},
+    {"tj": 32, "nj": 86},
+    {"tj": 33, "nj": 67},
+    {"tj": 34, "nj": 54},
+    {"tj": 35, "nj": 46},
+    {"tj": 36, "nj": 36},
+    {"tj": 37, "nj": 28},
+    {"tj": 38, "nj": 22},
+    {"tj": 39, "nj": 16},
+    {"tj": 40, "nj": 12},
+    {"tj": 41, "nj": 9},
+    {"tj": 42, "nj": 6},
+    {"tj": 43, "nj": 3}
+  ]
+}

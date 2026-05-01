@@ -6,12 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 REGION_CONFIGS = [
     ROOT / "data/region_configs/korea.json",
     ROOT / "data/region_configs/iso_t1_default_2point.json",
+    ROOT / "data/region_configs/hong_kong.json",
+    ROOT / "data/region_configs/india_iseer.json",
+    ROOT / "data/region_configs/saso.json",
 ]
 
 ALLOWED_POWER_INTERPOLATION_METHODS = {
     "capacity_linear",
     "ks_intersection",
     "iso_boundary_eer",
+}
+
+ALLOWED_ISO_BOUNDARY_TEMPERATURE_ROUNDING = {
+    "excel_round_0",
 }
 
 REQUIRED_TOP_LEVEL_KEYS = {
@@ -103,8 +110,40 @@ def test_region_config_power_interpolation_method_is_valid_when_present():
             )
 
 
+def test_region_config_iso_boundary_temperature_rounding_is_valid_when_present():
+    for path in REGION_CONFIGS:
+        config = load_config(path)
+        rounding = config.get("iso_boundary_temperature_rounding")
+        if rounding is not None:
+            assert rounding in ALLOWED_ISO_BOUNDARY_TEMPERATURE_ROUNDING, (
+                f"{path.name} has invalid iso_boundary_temperature_rounding "
+                f"{rounding!r}"
+            )
+
+
 def test_iso_t1_default_2point_bin_total_is_1817():
     config = load_config(ROOT / "data/region_configs/iso_t1_default_2point.json")
     total_hours = sum(row["nj"] for row in config["bin_hours"])
 
     assert total_hours == 1817
+
+
+def test_hong_kong_bin_total_is_1200():
+    config = load_config(ROOT / "data/region_configs/hong_kong.json")
+    total_hours = sum(row["nj"] for row in config["bin_hours"])
+
+    assert total_hours == 1200
+
+
+def test_india_iseer_bin_total_is_1600():
+    config = load_config(ROOT / "data/region_configs/india_iseer.json")
+    total_hours = sum(row["nj"] for row in config["bin_hours"])
+
+    assert total_hours == 1600
+
+
+def test_saso_bin_total_is_8415():
+    config = load_config(ROOT / "data/region_configs/saso.json")
+    total_hours = sum(row["nj"] for row in config["bin_hours"])
+
+    assert total_hours == 8415

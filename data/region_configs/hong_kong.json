@@ -1,0 +1,54 @@
+{
+  "_comment": "Hong Kong CSPF custom bin profile from user-provided source file 'iso 16358 temp_bin, golden_data.txt'. ISO 16358-1 2-point variable-capacity structure follows iso_t1_default_2point.json; only bin_hours are Hong Kong-specific.",
+  "region": "Hong Kong",
+  "standard": "Hong Kong CSPF / ISO 16358-1:2013 custom bin",
+  "t_100_load": 35.0,
+  "reference_point": "35_full",
+  "t_0_load": 20.0,
+  "Cd": 0.25,
+  "building_load_source": "measured",
+  "power_interpolation_method": "iso_boundary_eer",
+  "points": {
+    "35_full": "measure",
+    "35_half": "measure",
+    "29_full": "default",
+    "29_half": "default"
+  },
+  "derived_rules": {
+    "29_full": {
+      "source": "35_full",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    },
+    "29_half": {
+      "source": "35_half",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    }
+  },
+  "bin_hours": [
+    {"tj": 21, "nj": 0},
+    {"tj": 22, "nj": 0},
+    {"tj": 23, "nj": 0},
+    {"tj": 24, "nj": 67},
+    {"tj": 25, "nj": 117},
+    {"tj": 26, "nj": 147},
+    {"tj": 27, "nj": 177},
+    {"tj": 28, "nj": 210},
+    {"tj": 29, "nj": 183},
+    {"tj": 30, "nj": 114},
+    {"tj": 31, "nj": 75},
+    {"tj": 32, "nj": 56},
+    {"tj": 33, "nj": 33},
+    {"tj": 34, "nj": 15},
+    {"tj": 35, "nj": 5},
+    {"tj": 36, "nj": 1},
+    {"tj": 37, "nj": 0},
+    {"tj": 38, "nj": 0},
+    {"tj": 39, "nj": 0},
+    {"tj": 40, "nj": 0},
+    {"tj": 41, "nj": 0},
+    {"tj": 42, "nj": 0},
+    {"tj": 43, "nj": 0}
+  ]
+}

@@ -35,6 +35,7 @@ class ISO16358Calculator:
         self.round_test_values = self.config.get("round_test_values", False)
         self.rounding_method = self.config.get("rounding_method", None)
         self.power_interpolation_method = self.config.get("power_interpolation_method", "capacity_linear")
+        self.iso_boundary_temperature_rounding = self.config.get("iso_boundary_temperature_rounding", None)
         self.half_capacity_recommendation = self.config.get("half_capacity_recommendation", {})
         
         # 포인트 활성화 및 파생 규칙, 온도 Bin 테이블 파싱
@@ -48,6 +49,16 @@ class ISO16358Calculator:
         Python round()의 bankers rounding을 피하기 위해 ROUND_HALF_UP을 사용합니다.
         """
         return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+    def _round_iso_boundary_temperature(self, value: float) -> float:
+        if self.iso_boundary_temperature_rounding is None:
+            return value
+        if self.iso_boundary_temperature_rounding == "excel_round_0":
+            return float(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        raise ValueError(
+            "Unsupported iso_boundary_temperature_rounding: "
+            f"{self.iso_boundary_temperature_rounding}."
+        )
 
     def _prepare_measured_inputs(self, measured_inputs: dict) -> dict:
         if not self.round_test_values:
@@ -283,11 +294,12 @@ class ISO16358Calculator:
         denominator = 6 * ref_capacity + (capacity_29 - capacity_35) * dt
         if denominator == 0:
             raise ValueError("Cannot calculate ISO boundary EER temperature.")
-        return (
+        boundary_temp = (
             6 * ref_capacity * self.t_0_load
             + 6 * capacity_35 * dt
             + 35 * (capacity_29 - capacity_35) * dt
         ) / denominator
+        return self._round_iso_boundary_temperature(boundary_temp)
 
     def _iso_linear_29_35(self, value_35: float, value_29: float, tj: float) -> float:
         return value_35 + (value_29 - value_35) / (35 - 29) * (35 - tj)
