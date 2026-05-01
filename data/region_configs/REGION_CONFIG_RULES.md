@@ -5,6 +5,12 @@
 - 테스트 fixture는 tests/fixtures/ 아래에 둔다.
 - data/region_configs/*.json에 숫자를 추가/변경할 때는 출처를 주석 또는 인접 문서에 남긴다.
 - 기존 region의 CSPF/HSPF 값을 바꿀 때는 해당 golden/regression test를 실행한다.
+- Phase 1 production config와 Phase 2 planned config를 구분한다.
+- production region config에는 sample/golden/test 전용 값을 넣지 않는다.
+- source golden과 current-engine regression이 다를 경우 production config를 golden에 맞추기 위해 Cd, bin, derived factor를 임의 변경하지 않는다.
+- source golden은 xfail 또는 reference note로 보존하고, 원인 분석 후 공식 계산기 구조 차이가 확인되면 docs/REFACTOR_PLAN.md에 등록한다.
+- official xlsx compatibility 옵션은 region config에 opt-in으로 명시하고, 다른 region 기본 동작을 바꾸지 않는다.
+- SASO T3는 cspf_profile schema Phase R2 전까지 production config로 강제 편입하지 않는다.
 
 ## ISO 16358-2 / HSPF Load Line Rule
 

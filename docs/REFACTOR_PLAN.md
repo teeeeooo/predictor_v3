@@ -12,13 +12,13 @@
 
 | 영역 | 현재 상태 | 리팩토링 판단 |
 |---|---|---|
-| ISO 16358 CSPF | KS C 9306 CSPF 경로 구현 및 golden 검증 완료. 일부 국가 region config 확장 예정. | 엔진 대수정 금지. region config 확장 우선. |
+| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin current-engine regression 완료. SASO T3는 Phase R2 대기. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. |
 | ISO 16358 HSPF | KS C 9306 HSPF profile, validation, golden, smoke test 구축 완료. | 공통/지역 분리는 보류. |
-| AHRI 210/240 HSPF2 | simplified canonical path 및 full variable-capacity path 구현 완료. | 안정화 유지. |
+| AHRI 210/240 SEER2/HSPF2 | SEER2 및 HSPF2 full variable-capacity path 구현 완료. | Phase 1 UI 연결 대상으로 유지. |
 | EN 14825 SEER/SCOP | 계산 엔진 구현 및 주요 검증 완료. | 당장 대규모 리팩토링 불필요. |
-| Region config | 한국 중심에서 글로벌 CSPF region 확장 단계로 진입 예정. | config 규칙 문서와 golden 방어 강화 필요. |
+| Region config | Phase 1 production config와 Phase 2 planned config를 구분하는 단계. | golden/sample/test 전용 값은 production config에 넣지 않는다. |
 | Docs | notes / dev_notes / design_notes / glossary 구조로 정리 중. | 기존 임시 구조 정리 완료 방향. |
-| UI calculator | calc_window.py에 계산기 연결 예정. | 계산 엔진 완료 후 진행. |
+| UI calculator | Phase 1 검증 profile 중심으로 Calculator UI v1 연결 예정. | optional matrix와 SASO T3는 planned로 표시하거나 미노출. |
 | ML pipeline | app_trainer.py / app_predictor.py pipeline 재개 예정. | 출근 후 실제 학습 데이터 환경에서 진행. |
 
 ---
@@ -28,9 +28,10 @@
 | 우선순위 | 항목 | 상태 | 판단 |
 |---|---|---|---|
 | P0 | 계산 결과 회귀 방어 | 진행 중 | golden / smoke / validation test 유지 |
-| P1 | ISO 16358 CSPF region config 확장 | 예정 | 태국, 베트남, 말레이시아, 인도, SASO 우선 |
+| P1 | 계산기 Phase 1 scope 문서화 | 진행 중 | 검증 완료 profile만 UI/배포 대상으로 확정 |
 | P1 | calc_window.py 계산기 연결 | 예정 | 학습 데이터 없는 환경에서 진행 가능 |
 | P1 | app_trainer / app_predictor pipeline 연결 | 예정 | 학습 데이터 있는 환경에서 진행 |
+| P2 | ISO 16358 CSPF cspf_profile schema | 보류 | Phase R1에서 official sheet adapter 기반으로 진행 |
 | P2 | docs 구조 최신화 | 진행 중 | notes/dev_notes/design_notes/glossary 정리 |
 | P2 | region config 수정 규칙 정리 | 진행 중 | golden 끼워맞춤 방지 |
 | P3 | ISO16358Calculator 구조 분리 | 보류 | region 예외가 더 쌓인 뒤 판단 |
@@ -126,11 +127,11 @@ ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. �
 
 | 그룹 | 국가/지역 | 작업 방향 |
 |---|---|---|
-| ISO 기본 bin 계열 | Thailand, Vietnam, Malaysia | 기존 ISO 기본형 config 복제 및 metadata 정리 |
-| custom bin 계열 | India | bin_hours 교체, golden sample 1차 검증 |
-| custom bin 계열 | Hong Kong | 자료 확보 후 bin_hours 교체 |
+| ISO 기본 bin 계열 | Southeast Asia T1 default | `iso_t1_default_2point.json` production config 사용 |
+| custom bin 계열 | India | ISEER xlsx-compatible boundary temperature rounding opt-in 유지 |
+| custom bin 계열 | Hong Kong | custom bin 2-point current-engine regression 유지, source golden mismatch는 Phase 2 보류 |
 | custom bin 계열 | Brazil | 기존 Brazil adaptation 자료 확인 후 적용 |
-| 4-point 가능성 | SASO / Saudi Arabia | 엔진 수정 없이 config로 먼저 시도, 필요 시 별도 검토 |
+| 4-point 가능성 | SASO / Saudi Arabia | T3 및 official sheet optional matrix를 cspf_profile Phase R2 이후 구현 |
 
 ### 5.3 방어 규칙
 
@@ -209,6 +210,31 @@ Phase R3 — 기존 config 마이그레이션 (선택적)
 
 - Phase R1 대기 중이다.
 - SASO xfail은 Phase R2 완료까지 유지한다.
+
+### 5.5 계산기 Phase 1 배포 범위
+
+Phase 1에서는 한 번에 모든 지역을 완전 구현해서 배포하지 않는다. 이미 regression/golden 검증이 끝난 주요 지역과 규격만 UI와 배포 대상에 포함하고, 계산기에 포함되지 않은 지역은 기존 공식 엑셀 시트를 계속 사용하게 한다.
+
+#### Phase 1 포함
+
+- Korea KS C 9306 CSPF/HSPF
+- ISO16358-1 T1 default 2-point CSPF
+- India ISEER xlsx-compatible
+- Hong Kong custom bin current-engine regression
+- EN14825 SEER/SCOP
+- AHRI SEER2/HSPF2
+
+#### Phase 1 제외
+
+- SASO T3
+- ISO16358 official sheet full optional matrix
+- 모든 required/optional/default 조합 완전 구현
+
+#### UI v1 원칙
+
+- 검증된 profile만 노출한다.
+- optional 선택 UI는 비활성화하거나 노출하지 않는다.
+- SASO는 planned 또는 Phase R2 상태로 표시한다.
 
 ---
 
@@ -462,41 +488,38 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 
 ## 15. 가까운 실행 순서
 
-### Step 1 — ISO16358 문서 마무리
+### Step 1 — 계산기 Phase 1 scope 문서화
 
-- `iso16358_notes.md` 업데이트
-- `iso16358_dev_notes.md` 업데이트
-- `ks_c_9306_notes.md` 업데이트
-- `ks_c_9306_dev_notes.md` 업데이트
-- glossary/design_notes 초안 검토 후 반영
+- Phase 1 production profile과 Phase 2 planned profile을 구분한다.
+- UI v1에 노출할 region/standard 목록을 확정한다.
+- 공식 엑셀 시트 유지 대상 지역을 문서에 남긴다.
 
-### Step 2 — ISO16358 CSPF region 확장
+### Step 2 — Calculator UI v1 연결
 
-- Thailand
-- Vietnam
-- Malaysia
-- India
-- SASO
-- 필요 시 Hong Kong / Brazil
+- `app_calculator.py` / `calc_window.py`에서 검증된 profile만 선택 가능하게 한다.
+- optional 선택 UI는 비활성화하거나 미노출한다.
+- SASO는 planned 또는 Phase R2로 표시한다.
 
-### Step 3 — calc_window.py 연결
+### Step 3 — predictor → calculator pipeline 연결
 
-- region 선택
-- CSPF 계산
-- KS HSPF 계산
-- 결과 panel 정리
+- predictor 출력값을 calculator 입력 schema로 변환한다.
+- ML 예측값 기반 CSPF/SEER/HSPF 자동 산출 경로를 연결한다.
+- app_predict.py 결과 컬럼 확장 범위를 확인한다.
 
-### Step 4 — ML pipeline 재개
+### Step 4 — 역방향 예측 MVP
 
-- app_trainer.py 실행 검증
-- app_predictor.py 실행 검증
-- feature schema 확인
-- model artifact 구조 정리
+- 목표 성능/효율 입력에서 HW 조합을 추천하는 최소 기능을 설계한다.
+- 물리 제약과 단조 제약을 먼저 적용하고 통계 최적화는 후순위로 둔다.
 
-### Step 5 — 구조 리팩토링 재평가
+### Step 5 — ISO16358 cspf_profile schema Phase R1
 
-- region 확장 후 ISO16358Calculator 분리 필요성 재판단
-- ML pipeline 안정화 후 trainer/predictor 리팩토링 판단
+- cspf_profile schema validator를 추가한다.
+- 기존 계산 결과가 바뀌지 않는 mirror/diagnostic test부터 추가한다.
+
+### Step 6 — SASO T3 Phase R2
+
+- T3 climate profile과 `46_full` high-anchor branch를 구현한다.
+- SASO CSPF 4.95 golden regression을 추가한다.
 
 ---
 

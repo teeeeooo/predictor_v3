@@ -14,6 +14,8 @@
 - KS C 9306 관련 수정 시 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`를 먼저 확인할 것
 - ISO16358/KS C 9306 공통 엔진 파일명은 `core/calculator_iso16358.py`를 기준으로 할 것
 - data/region_configs/*.json 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`를 확인할 것.
+- 계산기 Phase 1에서는 검증 완료 profile만 UI/배포 대상으로 삼고, SASO T3 및 ISO16358 optional matrix는 REFACTOR_PLAN의 Phase R1/R2 지시에 따를 것.
+- production region config에 golden/sample/test 전용 값을 넣지 말 것.
 - docs 폴더 내에 *_notes.md 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`를 확인할 것.
 
 ## ML

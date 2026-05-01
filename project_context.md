@@ -1,4 +1,4 @@
-# HVAC V3 프로젝트 컨텍스트
+# predictor_v3 프로젝트 컨텍스트
 # 새 대화 시작 시 반드시 이 파일을 첨부할 것
 
 ## 프로젝트 개요
@@ -20,7 +20,7 @@
 - V2: PyQt5 + XGBoost (완료, HVAC_V2_Archive 보관)
 - V3: 현재 진행 중
 
-## V3 최종 목표
+## predictor_v3 최종 목표
 1. 순방향: HW 사양 입력 → 소비전력/효율 예측
 2. 역방향: 목표 성능/효율 입력 → HW 조합 추천
 3. 규격 계산: ISO16358-1, SEER 등 rule-based
@@ -31,25 +31,29 @@
 2. 재학습 및 예측 검증 ← 진행 중 (별도 창)
 3. 테스트 하네스 구축 (tests/ 폴더)
 4. train_window 예측 검증 기능 추가
-5. core/calculator 효율 계산기 구현 ← 진행 중
-   Phase 1: 냉방 파이프라인 관통 (규격 쉬운 순서)
-     5-1. [완료] ISO 16358-1 / KS C 9306 CSPF
-          KS C 9306 CSPF 계산기 완료
-          golden sample 검증 완료 (CSPF 6.504 일치)
-     5-2. [완료] EN 14825 SEER
-     5-3. [완료] AHRI 210/240 SEER2
-   Phase 2: 난방 확장
-     5-4. ISO 16358-2 HSPF
-     5-5. [완료] EN 14825 SCOP
-     5-6. [완료] AHRI 210/240 HSPF2 full variable-capacity path
+5. core/calculator 효율 계산기 구현 ← Phase 1 scope 정리 및 UI 연결 예정
+   Phase 1: 검증 완료 profile 중심 Calculator UI v1 배포 범위
+     5-1. [완료] Korea KS C 9306 CSPF/HSPF
+          CSPF golden sample 검증 완료 (CSPF 6.504 일치)
+          HSPF profile / validation / golden / smoke 완료
+     5-2. [완료] ISO 16358-1 T1 default 2-point CSPF production config
+     5-3. [완료] India ISEER xlsx-compatible path
+     5-4. [완료] Hong Kong custom bin 2-point config
+          source golden mismatch는 Phase 2에서 cspf_profile schema 이후 재검토
+     5-5. [완료] EN 14825 SEER/SCOP
+     5-6. [완료] AHRI 210/240 SEER2/HSPF2 full variable-capacity path
           (상세: docs/skills/ahri_hspf2.md 참조)
           golden case 검증 완료 (5개 케이스, AHRI 공식 계산기 대비 diff < 0.001)
+   Phase 2: ISO16358 official sheet 구조 확장
+     5-7. ISO16358 cspf_profile schema Phase R1
+     5-8. SASO T3 Phase R2
+     5-9. ISO16358 official sheet full optional matrix 단계적 구현
    대상: Non-ducted, Air-to-Air, Variable capacity 1:1
 
    Phase 3: 예측기 연동
-     5-7. predictor.py 예측 결과를 계산기 입력으로 변환
-     5-8. ML 예측값 기반 CSPF/SEER/HSPF 자동 산출
-     5-9. app_predict.py 결과 컬럼 확장
+     5-10. predictor.py 예측 결과를 계산기 입력으로 변환
+     5-11. ML 예측값 기반 CSPF/SEER/HSPF 자동 산출
+     5-12. app_predict.py 결과 컬럼 확장
 
 6. 1차 배포 (PyInstaller 패키징)
 7. 역방향 탐색 설계 (core/optimizer.py)
@@ -91,8 +95,9 @@
 - 최종 목표: ML 예측값 → 효율 계산기 → CSPF/SEER 등 자동 산출
 - 파이프라인: predictor.py → calculator_iso16358.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
+- Phase 1 배포 원칙: 검증 완료 profile만 UI에 노출하고, SASO T3 및 ISO16358 optional matrix는 docs/REFACTOR_PLAN.md의 Phase R1/R2 이후로 넘긴다.
 - 엔진 구조:
-  calculator_iso16358.py     — ISO 16358 공통 CSPF 엔진 + region 확장 (한국 KS C 9306, 태국 EGAT 등)
+  calculator_iso16358.py     — ISO 16358 공통 CSPF/HSPF 엔진 + region 확장 (한국 KS C 9306, ISO T1 default, India, Hong Kong 등)
   calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
   calculator_ahri_seer2.py   — AHRI 210/240 SEER2
   calculator_ahri_hspf2.py   — AHRI 210/240 HSPF2
@@ -163,7 +168,7 @@
 - get_timestamp_dir(), save_train_log_to_excel(): utils.py에 구현
 
 ## 파일 구조
-HVAC_V3/
+predictor_v3/
 ├── app_train.py               학습+검증 마스터 UI
 ├── app_predict.py             예측 전용 배포 UI
 ├── app_calculator.py          효율 계산기 독립 실행 진입점
@@ -177,7 +182,7 @@ HVAC_V3/
 │   ├── calculator_iso16358.py ISO 16358 CSPF/HSPF 엔진 (CSPF 1차 수정 완료)
 │   ├── calculator_en14825.py  EN 14825 SEER/SCOP 엔진
 │   ├── calculator_ahri_seer2.py  AHRI 210/240 SEER2 엔진
-│   ├── calculator_ahri_hspf2.py  AHRI 210/240 HSPF2 엔진 (진행 중)
+│   ├── calculator_ahri_hspf2.py  AHRI 210/240 HSPF2 엔진
 │   ├── optimizer.py           역탐색 추천 (미구현)
 │   ├── constraints.py         열역학 물리 제약 (미구현)
 │   ├── physics.py             열교환기 치수 계산 (미구현)
@@ -198,9 +203,14 @@ HVAC_V3/
 │   ├── usa.json               AHRI SEER2 bin table (냉방)
 │   ├── usa_hspf2.json         AHRI HSPF2 bin table, Region IV (난방)
 │   └── region_configs/        지역별 효율 규격 설정
-│       ├── thailand.json      ISO 16358 태국 SEER
-│       ├── korea.json         KS C 9306 KC CSPF
-│       └── eu.json            EN 14825 SEER
+│       ├── iso_t1_default_2point.json  ISO 16358-1 T1 default 2-point CSPF
+│       ├── korea.json                  KS C 9306 CSPF/HSPF
+│       ├── india_iseer.json            India ISEER xlsx-compatible
+│       ├── hong_kong.json              Hong Kong custom bin 2-point CSPF
+│       ├── saso.json                   SASO T3 planned / Phase R2
+│       ├── eu.json                     EN 14825 SEER
+│       ├── en14825_scop.json           EN 14825 SCOP
+│       └── usa.json                    AHRI SEER2 region config
 ├── logs/
 │   ├── train_log/             학습 결과 엑셀 로그
 │   ├── error_log/             런타임 에러 로그 (미구현)
@@ -345,20 +355,30 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 
 ### 계산기 — 냉방
 - [x] ISO 16358-1 / KS C 9306 CSPF 계산기 완료
-  - KS C 9306 CSPF 계산기 1차 수정 완료
   - 한국 경로 시험값 정수 반올림 적용 (ROUND_HALF_UP)
   - KS 교점 방식 전력 보간 분리 적용
   - 29°C 미만/35°C 초과 외삽 및 max capacity 초과 구간 처리 수정
   - golden sample 검증 완료 (CSPF 6.504 일치)
+- [x] ISO T1 default 2-point CSPF production config 완료
+  - `iso_t1_default_2point.json` 기준 regression 유지
+- [x] India ISEER xlsx-compatible path 완료
+  - boundary temperature rounding opt-in 적용
+  - xlsx-compatible regression 유지
+- [x] Hong Kong custom bin 2-point config 완료
+  - current-engine regression 유지
+  - source golden mismatch는 Phase 2 보류
+- [ ] SASO T3
+  - cspf_profile schema Phase R2 이후 구현 예정
+  - 현재는 official sheet full optional matrix와 함께 Phase 2 planned로 관리
 - [x] ISO16358 / KS C 9306 문서 구조 정규화
   - ISO 공통 문서: docs/iso16358/
   - KS region 문서: docs/iso16358/regions/ks_c_9306/
 - [x] KS C 9306 Cd 원본 확인 (성적서 대조 필요)
-- [ ] 태국 bin_hours 규격서 확인 필요
 - [x] 35_half 목표 성능 계산 helper 구현
 - [ ] 35_half 목표 성능 계산 UI 연동
 - [ ] Cd UI 입력 기능 추가
 - [x] EN 14825 SEER 엔진 구현 (calculator_en14825.py)
+- [x] EN 14825 SCOP 엔진 구현
 - [x] EN 14825 SEER GUI 탭 연동 (calc_window.py)
 - [x] data/region_configs/eu.json 생성
 - [x] AHRI 210/240 SEER2 엔진 구현 (calculator_ahri_seer2.py)
@@ -377,28 +397,26 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [x] HSPF2 full variable-capacity path 구현 완료
       golden case 검증 완료 (5개 케이스)
       상세: docs/skills/ahri_hspf2.md
-- [ ] ISO 16358-2 HSPF 엔진 구현
+- [x] ISO 16358-2 HSPF KS C 9306 profile / validation / golden / smoke 완료
   - [x] KS C 9306 HSPF golden/validation smoke 통과
   - [x] Korea HSPF 31-bin 적용
-  - [ ] production 안정화 진행 중
+- [ ] 한국 외 ISO 16358-2 HSPF production 확장 확인 필요
 - [ ] ISO 16358-2 HSPF load line capacity source 지역별 확인
   - Korea / KS C 9306: 공식 계산 시트 기준 `rated_heating_capacity × 0.82`로 임시 확정
   - Spec text에는 `BLc(35) × 0.82` cooling reference가 있어 주석 유지 필요
   - Australia / New Zealand AS/NZS 3823.4.2는 원문 확인 전 임의 구현 금지
-- [x] EN 14825 SCOP 엔진 구현
 
 ### 공통
 - [ ] predictor → calculator 파이프라인 연동
 - [ ] 테스트 하네스 구축
 
 ## 다음 작업
-1. ISO 16358-1 기반 계산기 확장 (태국, 인도 우선)
-2. ISO 16358-2 HSPF 엔진 구현
-3. 테스트 하네스 구축
-4. 재학습 및 예측 검증
-5. app_predict.py, app_train.py 업데이트
-6. app_calculator.py, calc_window.py 업데이트 
-7. ISO 16358-1 기반 계산기 2차 확장 (SASO, 호주 등)
-8. AHRI 설정 파일 위치 재정리 검토
+1. docs/REFACTOR_PLAN.md 기준 계산기 Phase 1 scope 정리
+2. app_calculator.py / calc_window.py Calculator UI v1 연결
+3. predictor → calculator pipeline 연결
+4. 역방향 예측 MVP 설계
+5. ISO16358 cspf_profile schema Phase R1
+6. SASO T3 Phase R2
+7. AHRI 설정 파일 위치 재정리 검토
    - `data/usa_hspf2.json`은 AHRI HSPF2 bin table, test point schema, alias를 함께 담고 있어 `data/region_configs/`로 단순 이동하기 전 구조 검토 필요
    - 후보: `data/ahri/usa_hspf2.json` 또는 AHRI 전용 config 디렉터리
