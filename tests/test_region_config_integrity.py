@@ -5,8 +5,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REGION_CONFIGS = [
     ROOT / "data/region_configs/korea.json",
-    ROOT / "data/region_configs/thailand.json",
+    ROOT / "data/region_configs/iso_t1_default_2point.json",
 ]
+
+ALLOWED_POWER_INTERPOLATION_METHODS = {
+    "capacity_linear",
+    "ks_intersection",
+    "iso_boundary_eer",
+}
 
 REQUIRED_TOP_LEVEL_KEYS = {
     "region",
@@ -85,3 +91,20 @@ def test_region_config_points_and_derived_rules_are_consistent():
             assert rule.get("power_factor", 0) > 0, (
                 f"{path.name} derived rule {rule_name} power_factor must be > 0"
             )
+
+
+def test_region_config_power_interpolation_method_is_valid_when_present():
+    for path in REGION_CONFIGS:
+        config = load_config(path)
+        method = config.get("power_interpolation_method")
+        if method is not None:
+            assert method in ALLOWED_POWER_INTERPOLATION_METHODS, (
+                f"{path.name} has invalid power_interpolation_method {method!r}"
+            )
+
+
+def test_iso_t1_default_2point_bin_total_is_1817():
+    config = load_config(ROOT / "data/region_configs/iso_t1_default_2point.json")
+    total_hours = sum(row["nj"] for row in config["bin_hours"])
+
+    assert total_hours == 1817

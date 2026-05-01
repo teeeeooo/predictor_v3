@@ -503,3 +503,36 @@ Control regression results using `iso_boundary_eer`:
 
 Korea CSPF remains on the existing KS path and keeps the 6.504 regression.
 No production `iso_t1_default_2point.json` config has been added in this turn.
+
+## Production ISO T1 Default Config
+
+Production config added:
+`data/region_configs/iso_t1_default_2point.json`.
+
+This config is the common ISO 16358-1 T1 default 2-point variable-capacity CSPF
+profile for Thailand, Vietnam, Malaysia, Philippines, and Indonesia where the
+ISO reference bin is used.
+
+Config decisions:
+
+| Item | Decision |
+| --- | --- |
+| bin table | ISO T1 reference bin, 21-35 C nonzero hours, 1817 h total |
+| zero-hour rows | 36-43 C retained to preserve source/fixture shape |
+| measured points | 35 C full and 35 C half |
+| default points | 29 C full and 29 C half |
+| default factors | capacity factor 1.077, power factor 0.914 |
+| degradation coefficient | `Cd = 0.25` |
+| load reference | measured `35_full` |
+| power interpolation | `power_interpolation_method = "iso_boundary_eer"` |
+
+`data/region_configs/thailand.json` was deleted. The previous Thailand config
+used a 2397 h bin table that did not match the user-provided ASEAN/ISO T1
+default reference bin. No Thailand EGAT-specific bin is active in this phase.
+Thailand should use the common `iso_t1_default_2point.json` profile until a
+separate EGAT source is provided and validated.
+
+The production config remains separated from `korea.json`. Korea keeps the KS C
+9306 profile and the existing `ks_intersection` behavior. The user ISO T1
+4.665 result is covered only as a 1-sample control regression, not
+certification-grade validation.
