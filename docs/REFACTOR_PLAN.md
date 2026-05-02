@@ -1,4 +1,38 @@
-# 프로젝트 전체 리팩토링 백로그 (REFACTOR_PLAN)
+
+## ISO16358 CSPF xlsm 구조 확인 메모
+
+### 확인일
+2026-05-03
+
+### T1 구조
+- T1 result는 Y15에서 시작해 내부 CSPF 계산 셀을 참조한다.
+- T1 CSTL/CSEC는 각각 CK49 및 CZ49로 계산된다 (SUM(CK18:CK48), SUM(CZ18:CZ48)).
+- T1 actual calculation rows는 18~48 범위이다.
+- T1은 35↔29 단일 boundary_eer segment를 사용한다.
+- T1 boundary temperature / boundary EER table은 CK5~CK7 및 CN5~CN8 계열이다.
+
+### T3 구조
+- T3 result는 Y40 → CF112 → CK163/CZ163 경로로 계산된다.
+- T3 CSTL/CSEC는 각각 CK132:CK162 및 CZ132:CZ162를 합산한다.
+- T3 actual calculation rows는 132~162 범위이다.
+- T3는 T1과 동일한 bin-row 계산 템플릿을 사용한다.
+- 단, anchor는 piecewise 구조이다:
+  - tj <= 35: 35↔29 segment
+  - tj > 35: 46↔35 segment
+- T3 anchor/boundary 관련 table은 CC115:CN126 및 CK115:CN124 근처에 있다.
+
+### 설계 결론
+- SASO/T3는 flat region config와 hard-coded 35/29 iso_boundary_eer만으로는 표현하기 어렵다.
+- 하지만 공식 xlsm 구조상 T3는 별도 계산 엔진이 아니라 T1과 같은 bin-row template에 piecewise anchor를 적용한 구조다.
+- 따라서 SASO 전용 one-off method보다 generic cspf_profile schema가 적합하다.
+- 새 schema는 다음 개념을 표현해야 한다:
+  - climate_profile: T1 / T3
+  - temperature_segments:
+    - T1: [35, 29]
+    - T3: tj > 35 → [46, 35], tj <= 35 → [35, 29]
+  - test_selection: required_only / with_optional_test
+  - point_source_matrix: measured / default / derived / not_used
+  - power_model: boundary_eer / piecewise_boundary_eer
 
 ## 0. 문서 목적
 
