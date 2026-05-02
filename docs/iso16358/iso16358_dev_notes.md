@@ -153,12 +153,122 @@ Agent 재사용 프롬프트:
 
 > AGENTS.md와 docs/DOCS_GUIDELINES.md를 먼저 읽는다. ISO16358 공통 엔진을 수정할 때는 docs/iso16358/iso16358_notes.md, docs/iso16358/iso16358_dev_notes.md, docs/iso16358/iso16358_glossary.md를 확인한다. 국가별 특이사항은 ISO 공통 문서에 넣지 말고 docs/iso16358/regions/<region>/ 문서에 분리한다. 계산 변경 후에는 HSPF golden, HSPF validation, HSPF smoke, Korea CSPF regression을 실행한다.
 
-## 14. References
 
-| Source | Usage |
-| --- | --- |
-| [iso16358_notes.md](./iso16358_notes.md) | 공통 계산 구조와 mapping |
-| [iso16358_glossary.md](./iso16358_glossary.md) | 용어와 schema SSOT |
-| [regions/ks_c_9306/ks_c_9306_dev_notes.md](./regions/ks_c_9306/ks_c_9306_dev_notes.md) | KS C 9306 구현 지침 |
-| `core/calculator_iso16358.py` | 구현 동작 확인 |
-| `data/region_configs/*.json` | region configuration 확인 |
+## 15. Official XLSM Analysis: Variable Capacity Unit CSPF Structure
+
+This section documents the detailed analysis of the official ISO16358-1_AMD1 Calculation Tool XLSM file, specifically focusing on the T1 variable-capacity CSPF calculation structure within the 'Variable Capacity unit' sheet.
+
+### 15.1. Analysis Background
+
+-   **Workbook:** `20181107 ISO16358-1_AMD1 Calculation_tool_FINAL (1).xlsm`
+-   **Sheet:** `Variable Capacity unit`
+-   **Direct Extraction:** Formulas for row 18, columns CC:CZ were directly extracted. Key boundary temperature and EER cells (CK5, CK6, CK7, CN5, CN6, CN7, CN8) were also directly extracted.
+
+### 15.2. Row 18 Column Interpretation (CC:CZ)
+
+The following table summarizes the interpretation of key columns in row 18, which represents a single bin calculation.
+
+| Column | Meaning |
+| :----- | :------ |
+| CC     | bin temperature (Outdoor Temperature) |
+| CD     | bin hour (`nj`) |
+| CE     | Cooling Load (`Lc(tj)`) |
+| CF     | Part Load Factor (`FPL(tj)`) |
+| CG     | Operation Factor (`X(tj)`) |
+| CH     | Full Capacity at `tj` (`φful(tj)`) |
+| CI     | Half Capacity at `tj` (`φhaf(tj)`) |
+| CJ     | Minimum Capacity at `tj` (`φmin(tj)`) |
+| CK     | LCST (Cooling Seasonal Total Load) row component |
+| CL     | Full Power Input at `tj` (`Pful(tj)`) |
+| CM     | Half Power Input at `tj` (`Phaf(tj)`) |
+| CN     | Minimum Power Input at `tj` (`Pmin(tj)`) |
+| CO     | Full EER at `tj` (`EER,ful(tj)`) |
+| CP     | Half EER at `tj` (`EER,haf(tj)`) |
+| CQ     | Minimum EER at `tj` (`EER,min(tj)`) |
+| CR     | Branch EER (`Lc<=min` case) |
+| CS     | Branch EER (`min<Lc<=half` case) |
+| CT     | Branch EER (`half<Lc<=full` case) |
+| CU     | Branch EER (`full<Lc` case) |
+| CV     | Branch Power (`Lc<=min` case) |
+| CW     | Branch Power (`min<Lc<=half` case) |
+| CX     | Branch Power (`half<Lc<=full` case) |
+| CY     | Branch Power (`full<Lc` case) |
+| CZ     | CCSE (Cooling Seasonal Energy Consumption) row component |
+
+### 15.3. Key Boundary Cells
+
+The following cells define critical boundary temperatures and EER values used in the calculation logic, particularly for interpolation and branching.
+
+-   `CK5` = `tb` (Balance Temperature 1)
+-   `CK6` = `tc` (Balance Temperature 2)
+-   `CK7` = `tp` (Balance Temperature 3)
+-   `CN5` = `EER(t0)` (EER at reference temperature t0, possibly CH8)
+-   `CN6` = `EER,ful(tb)` (Full capacity EER at balance temperature tb)
+-   `CN7` = `EER,haf(tc)` (Half capacity EER at balance temperature tc)
+-   `CN8` = `EER,min(tp)` (Minimum capacity EER at balance temperature tp)
+
+### 15.4. Key Formulas
+
+Extracted formulas from the XLSM file:
+
+-   **`CE18` (Cooling Load `Lc(tj)`):**
+    `=IF($CC$3*($CC18-$CH$8)/($CH$9-$CH$8)<0,0,$CC$3*($CC18-$CH$8)/($CH$9-$CH$8))`
+
+-   **`CF18` (Part Load Factor `FPL(tj)`):**
+    `=1-$CH$5*(1-$CG18)`
+
+-   **`CG18` (Operation Factor `X(tj)`):**
+    `=IF($CE18<$CJ18,$CE18/$CJ18,1)`
+
+-   **`CK18` (LCST row component):**
+    `=IF($CE18<$CH18,$CE18*$CD18,$CH18*$CD18)`
+
+-   **`CS18` (Branch EER `min<Lc<=half` case):**
+    `=IF(AND($CJ18<$CE18,$CE18<=$CI18),$CN$8+($CN$7-$CN$8)/($CK$6-$CK$7)*($CC18-$CK$7),0)`
+
+-   **`CT18` (Branch EER `half<Lc<=full` case):**
+    `=IF(AND($CI18<$CE18,$CE18<=$CH18),$CN$7+($CN$6-$CN$7)/($CK$5-$CK$6)*($CC18-$CK$6),0)`
+
+-   **`CV18` (Branch Power `Lc<=min` case):**
+    `=IF($CJ18>=$CE18,$CN18,0)`
+
+-   **`CW18` (Branch Power `min<Lc<=half` case):**
+    `=IF($CS18>0,$CE18/$CS18,0)`
+
+-   **`CX18` (Branch Power `half<Lc<=full` case):**
+    `=IF($CT18>0,$CE18/$CT18,0)`
+
+-   **`CY18` (Branch Power `full<Lc` case):**
+    `=IF($CU18>0,$CH18/$CU18,0)`
+
+-   **`CZ18` (CCSE row component):**
+    `=IF($CF18=0,0,$CG18*$CV18*$CD18/$CF18+$CW18*$CD18+$CX18*$CD18+$CY18*$CD18)`
+
+-   **`CK5` (`tb`):**
+    `=(6*$CC$3*$CH$8+6*$CC$6*($CH$9-$CH$8)+35*($CC$11-$CC$6)*($CH$9-$CH$8))/(6*$CC$3+($CC$11-$CC$6)*($CH$9-$CH$8))`
+
+-   **`CK6` (`tc`):**
+    `=(6*$CC$3*$CH$8+6*$CD$6*($CH$9-$CH$8)+35*($CD$11-$CD$6)*($CH$9-$CH$8))/(6*$CC$3+($CD$11-$CD$6)*($CH$9-$CH$8))`
+
+-   **`CK7` (`tp`):**
+    `=(6*$CC$3*$CH$8+6*$CE$6*($CH$9-$CH$8)+35*($CE$11-$CE$6)*($CH$9-$CH$8))/(6*$CC$3+($CE$11-$CE$6)*($CH$9-$CH$8))`
+
+-   **`CN5` (`EER(t0)`):**
+    `=($CE$6+($CE$11-$CE$6)/(35-29)*(35-$CH$8))/($CE$7+($CE$12-$CE$7)/(35-29)*(35-$CH$8))`
+
+-   **`CN6` (`EER,ful(tb)`):**
+    `=($CC$6+($CC$11-$CC$6)/(35-29)*(35-$CK$5))/($CC$7+($CC$12-$CC$7)/(35-29)*(35-$CK$5))`
+
+-   **`CN7` (`EER,haf(tc)`):**
+    `=($CD$6+($CD$11-$CD$6)/(35-29)*(35-$CK$6))/($CD$7+($CD$12-$CD$7)/(35-29)*(35-$CK$6))`
+
+-   **`CN8` (`EER,min(tp)`):**
+    `=($CE$6+($CE$11-$CE$6)/(35-29)*(35-$CK$7))/($CE$7+($CE$12-$CE$7)/(35-29)*(35-$CK$7))`
+
+### 15.5. Engineering Interpretation
+
+-   **Complex EER/Power Calculation:** The official Excel sheet does not simply choose one branch and linearly interpolate power by capacity based on temperature. Instead, it computes specific "boundary temperatures" (`tb`, `tc`, `tp` from CK5, CK6, CK7) and "boundary EERs" (`EER(t0)`, `EER,ful(tb)`, `EER,haf(tc)`, `EER,min(tp)` from CN5, CN6, CN7, CN8). These derived boundary EERs are then used to calculate branch EER/power contributions, indicating a more nuanced piecewise linear interpolation approach.
+-   **`cspf_calculator.py` Evaluation:** The existing `cspf_calculator.py` is valuable as an exploration tool, but it is not directly production-accurate if it does not precisely replicate this boundary-temperature and boundary-EER driven branching logic. Significant refactoring and re-implementation of the power calculation block in `cspf_calculator.py` would be necessary to align with the XLSM's methodology.
+-   **`calculator_iso16358.py` Alignment:** The `iso_boundary_eer` direction within `calculator_iso16358.py` is structurally aligned with the XLSM's approach. This architectural choice should be preserved and further developed to accurately model the boundary EERs.
+-   **India Boundary Temperature Rounding:** The rounding of India boundary temperatures is structurally meaningful because `CK5` through `CK7` (tb, tc, tp) directly drive the interpolation of branch EERs. Any deviation in these boundary temperatures will impact the subsequent EER calculations.
+-   **SASO T3 and `cspf_profile` Schema:** SASO T3 calculations should *not* be added as a one-off method before a generalized `cspf_profile` schema is implemented. The T3 calculation likely requires generalizing this boundary-temperature / boundary-EER structure beyond the hard-coded 35/29 anchors, which necessitates a more flexible and configurable profile schema to avoid technical debt.
