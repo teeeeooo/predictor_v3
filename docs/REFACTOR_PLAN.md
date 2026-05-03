@@ -200,20 +200,18 @@ Phase R1 — `cspf_test_profile` opt-in layer 추가 (calculator 계산 결과 �
 - [대기] T1 `with_optional_test` minimum branch
 - [대기] T3 piecewise boundary path
 
-Phase R2a — ISO16358 T3 profile calculation path
+Phase R2 — SASO T3 official xlsm alignment (In progress)
 
-- T3 climate profile 분기를 구현한다.
-- T3 piecewise segment를 적용한다.
-  - `tj > 35`: 46↔35
-  - `tj <= 35`: 35↔29
-- `46_full` high-anchor를 generic profile branch로 처리한다.
-- 기존 T1 profile 및 legacy regression을 유지한다.
+- [완료] T1/T3 profile smoke/resolver coverage 확보
+- [완료] 공식 xlsm direct capacity-power linear interpolation 로직 확인 및 적용
+- [완료] SASO T3 t100=46 / ref46 load line 확인 및 config 정렬
+- [완료] T3 29_full derived point 필요성 확인 및 resolver 추가
+- [완료] CSTL alignment (CSTL ≈ 21,546 kWh 달성)
+- [진행 중] CSEC divergence (+340 kWh) 원인 분석
+- [예정] 공식 xlsm CZ132:CZ162 full-bin row trace 재확인 (특히 30~34°C)
+- [예정] SASO T3 CSPF 4.954 hard regression 최종 통과
 
-Phase R2b — SASO T3 region config and regression
-
-- `saso.json`을 `cspf_test_profile` 기반 config로 작성한다.
-- SASO CSPF 4.95 control/golden regression을 추가한다.
-- SASO 전용 calculator branch 또는 hard-code는 추가하지 않는다.
+#### 보호 조건 (어떤 단계에서도 위반 금지)
 
 Phase R3 — 기존 config 마이그레이션 (선택적)
 

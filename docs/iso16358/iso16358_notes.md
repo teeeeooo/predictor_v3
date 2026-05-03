@@ -42,14 +42,26 @@ ISO16358-1 CSPF는 기존 flat region config path를 유지하면서, variable-c
 | Out of scope | Fixed, two-stage, multi-stage |
 | T1 required_only resolver | Implemented |
 | T1 required_only calculation path | Implemented |
-| T1 with_optional_test | Planned |
-| T3 required_only | Planned |
-| T3 with_optional_test | Planned |
+| T1 with_optional_test | Implemented |
+| T3 required_only | Implemented |
+| T3 with_optional_test | Implemented (SASO T3 alignment in progress) |
 | Legacy flat config path | Preserved |
 
-T1 `required_only`에서는 35°C full/half measured point만 필수로 받고, 29°C full/half point는 default factor로 생성한다. Minimum point는 생성하지 않으며, half point를 lowest continuous operating point로 사용한다.
+### 3.2 Official xlsm Profile Path Rules
 
-T3는 아직 계산 path에 연결하지 않았지만, 공식 xlsm 역추적 결과에 따라 `tj > 35`에서는 46↔35 segment, `tj <= 35`에서는 35↔29 segment를 사용할 예정이다.
+20181107 ISO16358-1_AMD1 공식 계산 시트(xlsm) 추적 결과 확정된 규칙:
+
+1. **Power Interpolation**: Boundary EER 방식이 아닌, **Direct capacity-power linear interpolation**을 사용한다.
+   - $P(t_j) = P_{low}(t_j) + \frac{L_c(t_j) - C_{low}(t_j)}{C_{high}(t_j) - C_{low}(t_j)} \times (P_{high}(t_j) - P_{low}(t_j))$
+2. **Low Load (Cycling)**: 최저 연속 운전 용량 미만 부하 시 PLF 보정을 적용한다.
+   - $X = L_c(t_j) / C_{lowest}(t_j)$
+   - $PLF = 1 - C_d \times (1 - X)$
+   - $P(t_j) = P_{lowest}(t_j) \times X / PLF$
+3. **High Load (Saturated)**: 건물 부하가 최대 능력을 초과할 경우, 공급 냉방량을 최대 능력으로 제한(cap)한다.
+   - $cooling\_output = \min(L_c(t_j), C_{full}(t_j))$
+   - $P(t_j) = P_{full}(t_j)$
+   - unmet load는 연간 냉방량(CSTL) 합계에서 제외한다.
+4. **SASO T3 Load Line**: $t_{100}\_load = 46.0$, $t_{0}\_load = 20.0$, $reference\_point = "46\_full"$을 기준으로 한다. ($t_{100}=35$ 가설은 폐기)
 
 ## 4. HSPF Current Status
 

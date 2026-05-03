@@ -374,9 +374,13 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [x] Hong Kong custom bin 2-point config 완료
   - current-engine regression 유지
   - source golden mismatch는 Phase 2 보류
-- [ ] SASO T3
-  - cspf_profile schema Phase R2 이후 구현 예정
-  - 현재는 official sheet full optional matrix와 함께 Phase 2 planned로 관리
+- [ ] SASO T3 (진행 중)
+  - cspf_profile schema Phase R2 진행 중
+  - 공식 xlsm 기준 t100=46 / ref46 load line 정렬 완료
+  - CSTL alignment 완료 (21,547 kWh), CSEC mismatch (+340 kWh) 조사 중
+  - 공식 xlsm direct capacity-power linear interpolation 로직 반영 완료
+  - T3 29_full derived point resolver 추가 완료
+  - 현재 전체 pytest: 93 passed, 2 xfailed (SASO CSEC mismatch 및 4.954 hard regression 대기 중)
 - [x] ISO16358 / KS C 9306 문서 구조 정규화
   - ISO 공통 문서: docs/iso16358/
   - KS region 문서: docs/iso16358/regions/ks_c_9306/
