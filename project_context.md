@@ -431,3 +431,120 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 7. AHRI 설정 파일 위치 재정리 검토
    - `data/usa_hspf2.json`은 AHRI HSPF2 bin table, test point schema, alias를 함께 담고 있어 `data/region_configs/`로 단순 이동하기 전 구조 검토 필요
    - 후보: `data/ahri/usa_hspf2.json` 또는 AHRI 전용 config 디렉터리
+
+
+
+## 2026-05-04 — Calculator UI 2점식 ISO/ISEER 1차 구현 및 다음 작업 메모
+## 임시 작성이므로 Calculator UI 1차 구현 완료시 삭제할것
+
+### 오늘 완료된 작업
+
+- `core/calculator_iso16358.py`
+  - `calculate_cspf()` 및 관련 CSPF profile 경로 반환값에 `bin_details` 추가.
+  - 기존 핵심 반환값인 `cspf`, `annual_cooling_kwh`, `annual_power_kwh` 계산 로직은 유지.
+  - `bin_details`는 UI 상세보기의 Trace Table / graph 표시용 데이터로 사용 예정.
+
+- `ui/calculators_2point.py`
+  - 2점식 ISO/ISEER batch 계산 UI 신규 파일로 분리 구현.
+  - `QTableView + QAbstractTableModel` 기반 `TwoPointTableModel` 구현.
+  - `TraceTableModel`, `TraceDetailPanel`, `BinGraphWidget` 구현.
+  - ISO T1과 India ISEER을 별도 config/calculator로 분리 계산.
+    - ISO: `data/region_configs/iso_t1_default_2point.json`
+    - ISEER: `data/region_configs/india_iseer.json`
+  - 실시간 자동 계산 구조 구현.
+  - 입력값 부족/오류 시 결과 clear 처리.
+  - 대량 붙여넣기 성능 방어를 위해 `_bulk_updating` 플래그 및 affected rows 일괄 재계산 구조 추가.
+  - QPainter 기반 단순 graph 2종 구현.
+    - Bin Hours
+    - Load vs Capacity
+  - `matplotlib`, `pyqtgraph` 등 외부 그래프 의존성은 추가하지 않음.
+
+- `ui/calc_window.py`
+  - 기존 Calculator UI에 2점식 ISO/ISEER UI를 연결했으나, legacy UI가 완전히 제거되지 않은 상태.
+
+### 검증 상태
+
+- `py_compile` 통과:
+  - `core/calculator_iso16358.py`
+  - `ui/calc_window.py`
+  - `ui/calculators_2point.py`
+
+- `CalculatorWindow()` 생성 테스트는 macOS에서 크래시 없이 통과.
+- ISO T1 / bin_details 관련 테스트는 통과 확인.
+- 전체 pytest는 현재 `saso.json` legacy schema / SASO T3 known issue 3건으로 fail 상태.
+  - 이번 2점식 ISO/ISEER UI 작업과 직접 관련된 실패는 아님.
+
+### 현재 UI 문제
+
+현재 UI는 기능이 일부 구현되었지만, 기존 ISO legacy UI 위에 새 2점식 UI가 덧붙은 형태라 최종 의도와 다름.
+
+확인된 문제:
+
+1. 기존 legacy UI가 남아 있음
+   - 하단에 `[계산하기]` 버튼이 그대로 표시됨.
+   - `"결과 대기 중..."` 같은 legacy 결과 라벨이 남아 있음.
+   - 실시간 자동 계산 UI로 확정했으므로 계산 실행 버튼은 없어야 함.
+
+2. 테이블 선택 UX 문제
+   - 셀 하나를 클릭해도 행 전체가 선택된 것처럼 보임.
+   - 실제 입력은 해당 셀에만 들어가지만, 사용자가 현재 셀을 선택한 것인지 행을 선택한 것인지 구분하기 어려움.
+   - 셀 단위 선택/편집 UX로 조정 필요.
+
+3. 엑셀 복사/붙여넣기 미동작
+   - 엑셀에서 값을 복사해 batch table에 붙여넣는 기능이 기대대로 동작하지 않음.
+   - macOS 기준 `Cmd+V`, 가능하면 `Ctrl+V`도 확인 필요.
+   - `TwoPointTableView.keyPressEvent`, clipboard TSV parsing, `model.paste_tsv()` 연결을 우선 점검해야 함.
+
+4. 메인 테이블 가로 폭 문제
+   - 행/컬럼 전체 너비 대비 프로그램 창 너비가 좁아 많은 열이 보이지 않음.
+   - 기본 창 크기, 컬럼 폭, horizontal scroll, header resize mode 재조정 필요.
+
+5. 상세보기 Trace Table 높이 문제
+   - 상세보기 토글 오픈 시 trace table 영역에 행이 약 2개만 보여서 검증이 불편함.
+   - trace table이 최소 10~15행 이상 보이도록 상세 영역 높이 조정 필요.
+   - 필요하면 `QSplitter` 또는 scroll/resize 정책 검토.
+
+6. 디자인/스타일 미흡
+   - 첨부한 스타일 레퍼런스처럼 rounded / soft / card-like UI가 충분히 반영되지 않음.
+   - 현재는 기본 PyQt 스타일에 가까움.
+   - 단, 다음 작업의 최우선은 legacy 제거와 UX 정리이며, 디자인은 과한 리팩토링 없이 최소 개선부터 진행.
+
+### 다음 작업 방향
+
+다음 작업은 기능 추가가 아니라 **Calculator ISO 탭 UI 재구성 / legacy 제거 / UX 안정화**가 목표다.
+
+핵심 방향:
+
+- 전체 앱을 밀지 않는다.
+- core 계산 로직은 건드리지 않는다.
+- `bin_details` 추가와 `ui/calculators_2point.py`의 모델/계산 구조는 유지한다.
+- `calc_window.py`의 기존 ISO legacy UI만 과감히 제거한다.
+- ISO 탭 content는 새 `TwoPointCalculatorWidget` 또는 equivalent wrapper 하나로 교체한다.
+- `calc_window.py`는 최상위 탭 조립과 placeholder 배치 중심으로 최소화한다.
+
+다음 작업 권장 순서:
+
+1. 기존 ISO legacy UI 제거
+   - `[계산하기]` 버튼 제거
+   - `lbl_result` / `"결과 대기 중..."` 제거
+   - `combo_region_iso` 기반 legacy flow 제거
+   - `on_calculate()`에서 ISO 탭 처리 제거
+
+2. ISO 탭을 새 2점식 UI 전용 위젯으로 교체
+   - `ui/calculators_2point.py`의 구조를 활용
+   - `calc_window.py`에는 새 위젯만 배치
+
+3. 엑셀 붙여넣기 기능 수정
+   - macOS `Cmd+V` 확인
+   - TSV paste 후 affected rows만 계산
+
+4. 테이블 선택/편집 UX 개선
+   - 행 전체 선택처럼 보이지 않게 수정
+   - 셀 단위 선택이 명확히 보이도록 조정
+
+5. 창 크기 / 테이블 컬럼 폭 / 상세보기 높이 개선
+   - 기본 창 크기 확대
+   - 주요 컬럼 가시성 개선
+   - trace table 최소 표시 행 수 확대
+
+6. 이후 Korea CSPF / SASO T3 / EN14825 / AHRI210240 UI 확장은 2점식 탭 UX 안정화 후 진행

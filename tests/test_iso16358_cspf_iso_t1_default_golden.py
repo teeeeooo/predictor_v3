@@ -74,3 +74,25 @@ def test_iso_t1_default_2point_cspf_4_665_one_sample_regression(tmp_path):
         f"expected={fixture['expected']['cspf']}, actual={result['cspf']}, "
         "not certification-grade validation"
     )
+
+def test_iso_t1_default_2point_bin_details_structure(tmp_path):
+    fixture = load_iso_t1_fixture()
+    calculator = make_iso_t1_default_2point_calculator(tmp_path, fixture)
+    result = calculator.calculate_cspf(fixture["measured_points"])
+
+    assert "bin_details" in result
+    bin_details = result["bin_details"]
+    assert isinstance(bin_details, list)
+    
+    # check that we have bin details and keys are correct
+    assert len(bin_details) > 0
+    for detail in bin_details:
+        assert "bin_no" in detail
+        assert "tj" in detail
+        assert "nj" in detail
+        assert "lc" in detail
+        assert "capacity" in detail
+        assert "power" in detail
+        assert "eer" in detail
+        assert "cstl_bin" in detail
+        assert "csec_bin" in detail

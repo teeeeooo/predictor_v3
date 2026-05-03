@@ -1493,14 +1493,27 @@ class ISO16358Calculator:
         
         cstl, csec = 0.0, 0.0
         delta_t = self.t_100_load - self.t_0_load
+        bin_details = []
         
-        for bin_data in self.bin_hours:
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
             tj = float(bin_data.get("tj", 0))
             nj = float(bin_data.get("nj", 0))
-            if nj <= 0: continue
+            if nj <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
+                continue
             
             Lc = L_c_ref * (tj - self.t_0_load) / delta_t
-            if Lc <= 0: continue
+            if Lc <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
+                continue
 
             interp = self.interpolate(tj, resolved)
             loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp.items()]
@@ -1551,7 +1564,26 @@ class ISO16358Calculator:
             cstl += cooling_output * nj
             csec += P_tj * nj
             
-        return {"cspf": round(cstl / csec, 3), "annual_cooling_kwh": round(cstl / 1000.0, 3), "annual_power_kwh": round(csec / 1000.0, 3)}
+            eer = None
+            if P_tj > 0:
+                eer = cooling_output / P_tj
+                
+            bin_details.append({
+                "bin_no": idx,
+                "tj": tj,
+                "nj": nj,
+                "lc": Lc,
+                "capacity": cooling_output,
+                "power": P_tj,
+                "eer": eer,
+                "cstl_bin": cooling_output * nj,
+                "csec_bin": P_tj * nj
+            })
+            
+        if csec <= 0:
+            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
+            
+        return {"cspf": round(cstl / csec, 3), "annual_cooling_kwh": round(cstl / 1000.0, 3), "annual_power_kwh": round(csec / 1000.0, 3), "bin_details": bin_details}
 
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
         """
@@ -1601,28 +1633,49 @@ class ISO16358Calculator:
         
         cstl = 0.0  
         csec = 0.0  
+        bin_details = []
 
-        for bin_data in self.bin_hours:
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
             tj = float(bin_data.get("tj", 0))
             nj = float(bin_data.get("nj", 0))
             if nj <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
 
             # a. 건물 냉방 부하 계산 (온도별 능력이 아닌, 고정된 L_c_ref 및 방어된 delta_t 사용)
             Lc = L_c_ref * (tj - self.t_0_load) / delta_t
 
             if Lc <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
 
             # 해당 온도의 부하 조건별 능력/전력 동적 보간
             interp_tj = self.interpolate(tj, resolved_points)
             if "full" not in interp_tj:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue  
 
             loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp_tj.items()]
             loads.sort(key=lambda x: x[0])
             
             if not loads:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
                 
             lowest_cap, lowest_pow, _ = loads[0]
@@ -1676,11 +1729,28 @@ class ISO16358Calculator:
             cstl += cooling_output * nj
             csec += P_tj * nj
 
+            eer = None
+            if P_tj > 0:
+                eer = cooling_output / P_tj
+                
+            bin_details.append({
+                "bin_no": idx,
+                "tj": tj,
+                "nj": nj,
+                "lc": Lc,
+                "capacity": cooling_output,
+                "power": P_tj,
+                "eer": eer,
+                "cstl_bin": cooling_output * nj,
+                "csec_bin": P_tj * nj
+            })
+
         if csec <= 0:
-            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0}
+            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
 
         return {
             "cspf": round(cstl / csec, 3),
             "annual_cooling_kwh": round(cstl / 1000.0, 3),
-            "annual_power_kwh": round(csec / 1000.0, 3)
+            "annual_power_kwh": round(csec / 1000.0, 3),
+            "bin_details": bin_details
         }
