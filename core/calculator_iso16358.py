@@ -82,6 +82,54 @@ class ISO16358Calculator:
 
         return prepared
 
+    def _has_cspf_test_profile(self) -> bool:
+        return "cspf_test_profile" in self.config
+
+    def _get_cspf_profile_cd(self) -> float:
+        if "Cd" in self.config:
+            return float(self.config["Cd"])
+        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        return 0.27 if profile == "T3" else 0.25
+
+    def _get_active_load_levels(self) -> list:
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        selection = profile_cfg.get("test_selection")
+        if selection == "with_optional_test":
+            return ["full", "half", "min"]
+        return ["full", "half"]
+
+    def _get_cspf_temperature_segments(self) -> list:
+        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        if profile == "T3":
+            return [{"boundary": 35.0, "high": [46, 35], "low": [35, 29]}]
+        return [{"boundary": None, "high": [35, 29]}]
+
+    def _resolve_cspf_profile_points(self, measured: dict) -> dict:
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        climate = profile_cfg.get("climate_profile")
+        selection = profile_cfg.get("test_selection")
+        
+        resolved = {k: v for k, v in measured.items()}
+        
+        def _set_point(key, cap, pwr):
+            if key not in resolved:
+                resolved[key] = {"capacity": cap, "power": pwr}
+
+        if climate == "T1":
+            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
+            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            if selection == "with_optional_test":
+                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
+        
+        elif climate == "T3":
+            _set_point("46_half", resolved["35_half"]["capacity"] * 0.859, resolved["35_half"]["power"] * 1.25)
+            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            if selection == "with_optional_test":
+                _set_point("46_min", resolved["35_min"]["capacity"] * 0.859, resolved["35_min"]["power"] * 1.25)
+                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
+        
+        return resolved
+
     def resolve_points(self, measured_inputs: dict) -> dict:
         """
         입력된 측정값(measure)과 JSON의 파생 규칙(default)을 해석하여
@@ -92,6 +140,9 @@ class ISO16358Calculator:
         Returns:
             dict: 모든 포인트가 채워진 딕셔너리
         """
+        if self._has_cspf_test_profile():
+            return self._resolve_cspf_profile_points(measured_inputs)
+
         resolved = {}
 
         # 1. "measure" 포인트 우선 처리
@@ -1427,6 +1478,63 @@ class ISO16358Calculator:
             "bin_details": bin_details
         }
 
+    def _profile_capacity_power_at(self, points: dict, load_type: str, tj: float, high_val: int, low_val: int) -> tuple:
+        p_35 = points[f"{high_val}_{load_type}"]
+        p_29 = points[f"{low_val}_{load_type}"]
+        
+        c = p_35["capacity"] + (p_29["capacity"] - p_35["capacity"]) / (low_val - high_val) * (tj - high_val)
+        p = p_35["power"] + (p_29["power"] - p_35["power"]) / (low_val - high_val) * (tj - high_val)
+        return c, p
+
+    def _calculate_cspf_profile(self, measured: dict, L_c_ref: float) -> dict:
+        resolved = self._resolve_cspf_profile_points(measured)
+        cd = self._get_cspf_profile_cd()
+        
+        cstl, csec = 0.0, 0.0
+        delta_t = self.t_100_load - self.t_0_load
+        
+        for bin_data in self.bin_hours:
+            tj = float(bin_data.get("tj", 0))
+            nj = float(bin_data.get("nj", 0))
+            if nj <= 0: continue
+            
+            Lc = L_c_ref * (tj - self.t_0_load) / delta_t
+            if Lc <= 0: continue
+
+            interp = self.interpolate(tj, resolved)
+            loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp.items()]
+            loads.sort(key=lambda x: x[0])
+            
+            lowest_cap, lowest_pow, lowest_type = loads[0]
+            highest_cap, highest_pow, highest_type = loads[-1]
+            
+            cooling_output = Lc
+            if Lc <= lowest_cap:
+                X = Lc / lowest_cap
+                PLF = max(1e-6, 1.0 - cd * (1.0 - X))
+                P_tj = (X * lowest_pow) / PLF
+            elif Lc > highest_cap:
+                cooling_output = highest_cap
+                P_tj = highest_pow
+            else:
+                # Use interpolation method
+                ks_power = None
+                if self.power_interpolation_method == "ks_intersection":
+                    ks_power = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
+                
+                if ks_power is not None:
+                    P_tj = ks_power
+                elif self.power_interpolation_method == "iso_boundary_eer":
+                    iso_power = self._iso_boundary_eer_power(tj, Lc, resolved, lowest_type, highest_type)
+                    P_tj = iso_power if iso_power is not None else (lowest_pow + (highest_pow - lowest_pow) * (Lc - lowest_cap) / (highest_cap - lowest_cap))
+                else:
+                    P_tj = lowest_pow + (highest_pow - lowest_pow) * (Lc - lowest_cap) / (highest_cap - lowest_cap)
+            
+            cstl += cooling_output * nj
+            csec += P_tj * nj
+            
+        return {"cspf": round(cstl / csec, 3), "annual_cooling_kwh": round(cstl / 1000.0, 3), "annual_power_kwh": round(csec / 1000.0, 3)}
+
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
         """
         지역별 설정과 측정값을 융합하여 최종 연간 CSPF 효율 및 전력량을 계산합니다.
@@ -1440,6 +1548,14 @@ class ISO16358Calculator:
             dict: CSPF 점수, 연간 냉방량(kWh), 연간 소비전력(kWh)
         """
         measured_inputs = self._prepare_measured_inputs(measured_inputs)
+        
+        if self._has_cspf_test_profile():
+            resolved = self._resolve_cspf_profile_points(measured_inputs)
+            # Use reference point from config if available, else 35_full
+            ref_key = self.reference_point
+            L_c_ref = resolved[ref_key]["capacity"]
+            return self._calculate_cspf_profile(measured_inputs, L_c_ref)
+            
         resolved_points = self.resolve_points(measured_inputs)
         
         if self.building_load_source == "declared":
