@@ -146,7 +146,7 @@ ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. �
 
 #### 등록일
 
-2026-05-01
+2026-05-01, (5/3 수정)
 
 #### 트리거 조건 (이미 충족됨)
 
@@ -178,19 +178,42 @@ ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. �
 
 #### 단계별 계획
 
-Phase R1 — Schema layer 추가 (calculator 계산 결과 변경 없음)
+#### Scope clarification
 
-- `cspf_profile` schema validator를 추가한다.
-- point resolver(`measured` / `default` / `derived` / `not_used`)를 추가한다.
-- T1 default profile을 새 schema로 mirror한 diagnostic test를 추가한다.
-- 기존 regression은 전부 유지해야 한다.
+현재 프로젝트의 ISO16358 CSPF profile path는 variable-capacity / inverter-only를 대상으로 한다. Fixed, two-stage, multi-stage unit 지원은 명시적으로 scope 밖이며, 이를 위한 schema abstraction이나 branch는 추가하지 않는다.
 
-Phase R2 — SASO T3 구현 (새 schema 기반)
+Phase R1 — `cspf_test_profile` opt-in layer 추가 (calculator 계산 결과 변경 없음)
+
+- [완료] `cspf_test_profile` 감지 helper 추가
+- [완료] point resolver 추가
+- [완료] Cd default resolver 추가
+- [완료] temperature segment metadata 추가
+- [완료] active load levels metadata 추가
+- [완료] T1 `required_only` calculation path 추가
+- [완료] legacy ISO T1 default parity 확인
+
+- [완료] T1 `required_only` profile path를 legacy ISO T1 default path와 parity 검증한다.
+  - `tests/test_iso16358_cspf_profile_calculation.py`
+  - legacy ISO T1 default production regression `4.665` 유지 확인
+- [계속 유지] 기존 regression은 전부 유지해야 한다.
+  - 현재 기준: 전체 pytest `85 passed, 2 xfailed`
+- [대기] T1 `with_optional_test` minimum branch
+- [대기] T3 piecewise boundary path
+
+Phase R2a — ISO16358 T3 profile calculation path
 
 - T3 climate profile 분기를 구현한다.
-- `46_full` high-anchor branch를 추가한다.
-- `saso.json`을 새 schema로 작성한다.
-- SASO CSPF 4.95 golden regression을 추가한다.
+- T3 piecewise segment를 적용한다.
+  - `tj > 35`: 46↔35
+  - `tj <= 35`: 35↔29
+- `46_full` high-anchor를 generic profile branch로 처리한다.
+- 기존 T1 profile 및 legacy regression을 유지한다.
+
+Phase R2b — SASO T3 region config and regression
+
+- `saso.json`을 `cspf_test_profile` 기반 config로 작성한다.
+- SASO CSPF 4.95 control/golden regression을 추가한다.
+- SASO 전용 calculator branch 또는 hard-code는 추가하지 않는다.
 
 Phase R3 — 기존 config 마이그레이션 (선택적)
 
@@ -208,7 +231,21 @@ Phase R3 — 기존 config 마이그레이션 (선택적)
 
 #### 현재 상태
 
-- Phase R1 대기 중이다.
+- Phase R1 진행 중이다.
+- 완료:
+  - `cspf_test_profile` opt-in 감지
+  - variable/inverter-only profile resolver
+  - T1 `required_only` resolved point 생성
+  - T1 `required_only` calculation path
+  - legacy ISO T1 default path parity 확인
+  - debug/audit/trace 임시 파일 제거
+  - 전체 pytest `85 passed, 2 xfailed`
+- 남음:
+  - T1 `with_optional_test` minimum branch
+  - T3 `required_only` piecewise 46↔35 / 35↔29 path
+  - T3 `with_optional_test` minimum branch
+  - SASO T3 config/golden regression
+- SASO xfail은 Phase R2 완료까지 유지한다.
 - SASO xfail은 Phase R2 완료까지 유지한다.
 
 ### 5.5 계산기 Phase 1 배포 범위

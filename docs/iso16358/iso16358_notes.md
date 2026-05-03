@@ -30,6 +30,27 @@ ISO 16358-1 CSPF common 엔진은 구현되어 있다. Korea KS C 9306 CSPF gold
 | building load | `building_load_source`, `reference_point`, `declared_capacity`, load temperatures로 결정한다. |
 | region-specific branch | 공통 CSPF 흐름 안에서 config key로만 분기한다. |
 
+### 3.1 CSPF `cspf_test_profile` opt-in path status
+
+ISO16358-1 CSPF는 기존 flat region config path를 유지하면서, variable-capacity / inverter-only 장비를 위한 `cspf_test_profile` opt-in path를 병렬로 도입하고 있다.
+
+현재 구현 상태:
+
+| Item | Status |
+| --- | --- |
+| Target unit type | Variable-capacity / inverter-only |
+| Out of scope | Fixed, two-stage, multi-stage |
+| T1 required_only resolver | Implemented |
+| T1 required_only calculation path | Implemented |
+| T1 with_optional_test | Planned |
+| T3 required_only | Planned |
+| T3 with_optional_test | Planned |
+| Legacy flat config path | Preserved |
+
+T1 `required_only`에서는 35°C full/half measured point만 필수로 받고, 29°C full/half point는 default factor로 생성한다. Minimum point는 생성하지 않으며, half point를 lowest continuous operating point로 사용한다.
+
+T3는 아직 계산 path에 연결하지 않았지만, 공식 xlsm 역추적 결과에 따라 `tj > 35`에서는 46↔35 segment, `tj <= 35`에서는 35↔29 segment를 사용할 예정이다.
+
 ## 4. HSPF Current Status
 
 ISO 16358-2 HSPF의 현재 구현은 계절 난방 부하와 계절 소비전력의 Wh 누적 구조를 따른다.
@@ -77,6 +98,9 @@ production region config에는 규격값과 공식 계수만 둔다. golden/samp
 | `aux_cop` | 보조열 COP | dimensionless | Optional | 0보다 커야 한다. | caller input |
 | `bin_hours` | cooling outdoor temperature bin hours | h | CSPF Yes | `nj`가 0 이하인 bin은 누적에서 제외된다. | region configuration |
 | `hspf_bin_hours` | heating outdoor temperature bin hours | h | HSPF Yes | `nj`가 0 이하인 bin은 누적에서 제외된다. | region configuration |
+| `cspf_test_profile` | ISO16358 CSPF variable-capacity profile selector | object | Optional | 있으면 profile path로 진입하고, 없으면 legacy flat config path를 사용한다. | region configuration |
+| `climate_profile` | CSPF climate profile | enum | Profile path Yes | `T1` 또는 `T3` | `cspf_test_profile.climate_profile` |
+| `test_selection` | required/optional test selection | enum | Profile path Yes | `required_only` 또는 `with_optional_test` | `cspf_test_profile.test_selection` |
 
 ## 8. Output Schema
 

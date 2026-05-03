@@ -44,10 +44,15 @@
      5-6. [완료] AHRI 210/240 SEER2/HSPF2 full variable-capacity path
           (상세: docs/skills/ahri_hspf2.md 참조)
           golden case 검증 완료 (5개 케이스, AHRI 공식 계산기 대비 diff < 0.001)
-   Phase 2: ISO16358 official sheet 구조 확장
-     5-7. ISO16358 cspf_profile schema Phase R1
-     5-8. SASO T3 Phase R2
-     5-9. ISO16358 official sheet full optional matrix 단계적 구현
+Phase 2: ISO16358 official sheet structure expansion
+  5-7. [진행 중] ISO16358 cspf_test_profile Phase R1
+       - 완료: variable/inverter-only profile resolver
+       - 완료: T1 required_only calculation path
+       - 완료: legacy ISO T1 default path parity 확인
+       - 전체 pytest: 85 passed, 2 xfailed
+       - 남음: T1 optional minimum, T3 required_only piecewise, T3 optional minimum
+  5-8. SASO T3 Phase R2
+  5-9. ISO16358 official sheet full optional matrix 단계적 구현
    대상: Non-ducted, Air-to-Air, Variable capacity 1:1
 
    Phase 3: 예측기 연동
@@ -113,6 +118,8 @@
   docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md — 한국 region 구현 지침
   docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md — 한국 region 설계 heuristic
   docs/iso16358/regions/ks_c_9306/ks_c_9306_glossary.md — 한국 region 용어 SSOT
+- ISO16358 CSPF는 기존 flat config path를 유지하면서, `cspf_test_profile` opt-in path를 병렬로 추가 중이다.
+- 현재 `cspf_test_profile`은 variable/inverter-only 대상이며, fixed/two-stage/multi-stage는 프로젝트 scope 밖이다.
 
 ### HSPF2 구현 현황 (calculator_ahri_hspf2.py)
 - 적용 규격: AHRI 210/240-2026
