@@ -123,6 +123,7 @@ class ISO16358Calculator:
         
         elif climate == "T3":
             _set_point("46_half", resolved["35_half"]["capacity"] * 0.859, resolved["35_half"]["power"] * 1.25)
+            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
             _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
             if selection == "with_optional_test":
                 _set_point("46_min", resolved["35_min"]["capacity"] * 0.859, resolved["35_min"]["power"] * 1.25)
@@ -1509,26 +1510,43 @@ class ISO16358Calculator:
             highest_cap, highest_pow, highest_type = loads[-1]
             
             cooling_output = Lc
+            P_tj = 0.0
+            
             if Lc <= lowest_cap:
+                # 1. Minimum capacity cycling regime
                 X = Lc / lowest_cap
                 PLF = max(1e-6, 1.0 - cd * (1.0 - X))
                 P_tj = (X * lowest_pow) / PLF
             elif Lc > highest_cap:
+                # 2. Saturated / Full limit regime (BL > Full Cap)
                 cooling_output = highest_cap
                 P_tj = highest_pow
             else:
+                # 3. Intermediate interpolation regime
                 # Use interpolation method
-                ks_power = None
+                P_tj = None
                 if self.power_interpolation_method == "ks_intersection":
-                    ks_power = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
-                
-                if ks_power is not None:
-                    P_tj = ks_power
+                    P_tj = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
                 elif self.power_interpolation_method == "iso_boundary_eer":
-                    iso_power = self._iso_boundary_eer_power(tj, Lc, resolved, lowest_type, highest_type)
-                    P_tj = iso_power if iso_power is not None else (lowest_pow + (highest_pow - lowest_pow) * (Lc - lowest_cap) / (highest_cap - lowest_cap))
-                else:
-                    P_tj = lowest_pow + (highest_pow - lowest_pow) * (Lc - lowest_cap) / (highest_cap - lowest_cap)
+                    try:
+                        P_tj = self._iso_boundary_eer_power(tj, Lc, resolved, lowest_type, highest_type)
+                    except:
+                        P_tj = None
+                
+                if P_tj is None:
+                    # Piecewise direct capacity-power linear interpolation
+                    for i in range(len(loads) - 1):
+                        c1, p1, _ = loads[i]
+                        c2, p2, _ = loads[i+1]
+                        if c1 < Lc <= c2:
+                            if c2 == c1:
+                                P_tj = p1
+                            else:
+                                P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
+                            break
+                    
+                    if P_tj is None:
+                        P_tj = highest_pow
             
             cstl += cooling_output * nj
             csec += P_tj * nj

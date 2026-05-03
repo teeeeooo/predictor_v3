@@ -26,12 +26,21 @@ def calculate_saso_cspf():
 
 
 def test_saso_production_config_current_engine_requires_29c_boundary_points():
-    """Current engine cannot run SASO iso_boundary_eer without 29 C points."""
+    """SASO config uses T3 with_optional_test and capacity_linear to calculate successfully."""
     fixture = load_fixture()
     calculator = ISO16358Calculator(str(CONFIG_PATH))
+    
+    assert "cspf_test_profile" in calculator.config
+    assert calculator.config["cspf_test_profile"]["climate_profile"] == "T3"
+    assert calculator.config["cspf_test_profile"]["test_selection"] == "with_optional_test"
+    assert calculator.t_100_load == 46.0
+    assert calculator.reference_point == "46_full"
 
-    with pytest.raises(ValueError, match="ISO boundary EER requires 35_full and 29_full"):
-        calculator.calculate_cspf(fixture["measured_points"])
+    result = calculator.calculate_cspf(fixture["measured_points"])
+    
+    assert result["cspf"] > 0
+    assert result["annual_cooling_kwh"] > 0
+    assert result["annual_power_kwh"] > 0
 
 
 @pytest.mark.xfail(

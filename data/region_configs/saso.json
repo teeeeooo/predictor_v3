@@ -1,22 +1,17 @@
 {
-  "_comment": "SASO CSPF T3. 46°C full included 4-point profile. bin total 8415. golden CSPF 4.95.",
+  "_comment": "SASO CSPF T3. golden CSPF 4.954. t_100_load=46 per final xlsm trace.",
   "region": "SASO",
-  "standard": "SASO / ISO 16358-1:2013 T3 custom bin",
-  "t_100_load": 46.0,
-  "reference_point": "46_full",
-  "t_0_load": 20.0,
-  "Cd": 0.25,
-  "building_load_source": "measured",
-  "power_interpolation_method": "iso_boundary_eer",
-  "points": {
-    "46_full": "measure",
-    "35_full": "measure",
-    "35_half": "measure",
-    "35_min": "measure"
+  "standard": "SASO / ISO 16358-1:2013 T3",
+  "cspf_test_profile": {
+    "climate_profile": "T3",
+    "test_selection": "with_optional_test"
   },
-  "derived_rules": {},
+  "t_100_load": 46.0,
+  "t_0_load": 20.0,
+  "reference_point": "46_full",
+  "Cd": 0.27,
+  "power_interpolation_method": "capacity_linear",
   "bin_hours": [
-    {"tj": 20, "nj": 0},
     {"tj": 21, "nj": 267},
     {"tj": 22, "nj": 279},
     {"tj": 23, "nj": 281},
@@ -42,9 +37,6 @@
     {"tj": 43, "nj": 200},
     {"tj": 44, "nj": 130},
     {"tj": 45, "nj": 78},
-    {"tj": 46, "nj": 24},
-    {"tj": 47, "nj": 0},
-    {"tj": 48, "nj": 0},
-    {"tj": 49, "nj": 0}
+    {"tj": 46, "nj": 24}
   ]
 }
