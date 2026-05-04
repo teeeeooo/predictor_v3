@@ -94,6 +94,9 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | 온도 보간과 부하 보간 혼동 | 중간 부하 소비전력이 과소/과대 계산된다. | temperature interpolation과 capacity-range interpolation을 같은 단계로 취급한다. | 먼저 온도별 성능선을 만들고 이후 load 위치에 따라 power를 정한다. | ISO 16358-1:2013 Chapter 6 |
 | auxiliary 누락 | HSPF가 과대 계산된다. | heat pump shortage를 denominator에 더하지 않는다. | HSEC가 heat pump energy plus auxiliary energy인지 확인한다. | ISO 16358-2 |
 | profile fallback | KS profile 입력 누락이 조용히 common result로 바뀐다. | profile branch 조건에 input 존재 여부를 같이 둔다. | profile만 보고 KS path로 진입하고 input 누락은 `ValueError`로 처리한다. | Project implementation |
+| Profile path가 legacy 결과를 바꿈 | 기존 ISO T1 default regression이 바뀐다. | `cspf_test_profile` 분기가 legacy path에 누출된다. | profile key가 있을 때만 새 path로 진입하고, legacy config 결과를 항상 regression으로 보호한다. |
+| required_only에서 min point 합성 | 저부하 bin의 PLF branch가 달라져 CSPF가 변한다. | optional minimum과 required_only를 같은 구조로 처리한다. | required_only에서는 half를 lowest continuous operating point로 사용한다. |
+| T3를 35/29 hard-code로 계산 | 46°C high anchor를 사용하는 T3에서 ValueError 또는 잘못된 보간이 발생한다. | 기존 `iso_boundary_eer` 구조를 그대로 재사용한다. | T3는 `tj > 35`에서 46↔35, `tj <= 35`에서 35↔29 segment를 선택한다. |
 
 ## 9. Data Model Notes
 
@@ -110,6 +113,9 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | `derived_rules` | CSPF default point 생성 규칙 | source, capacity factor, power factor를 사용한다. |
 | `bin_hours` | cooling outdoor temperature와 hour | CSPF seasonal accumulation의 시간 가중치이다. |
 | `hspf_bin_hours` | heating outdoor temperature와 hour | HSPF seasonal accumulation의 시간 가중치이다. |
+| `cspf_test_profile` | CSPF variable/inverter profile path selector | legacy flat config와 병렬로 동작하는 opt-in key이다. 없는 경우 기존 path를 반드시 유지한다. |
+| `cspf_test_profile.climate_profile` | T1/T3 climate profile | T1은 35↔29 단일 segment, T3는 46↔35 / 35↔29 piecewise segment를 사용한다. |
+| `cspf_test_profile.test_selection` | required_only / with_optional_test | required_only에서는 minimum point를 합성하지 않는다. optional minimum 선택 시에만 min branch를 활성화한다. |
 
 ## 10. Interpolation / Extrapolation Rules
 
@@ -135,6 +141,9 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | 8 | PLF/cyclic branch | load가 lowest capacity 이하일 때만 degradation이 적용되어야 한다. |
 | 9 | shortage branch | heating load가 max capacity보다 크면 auxiliary가 HSEC에 포함되어야 한다. |
 | 10 | accumulation | Wh 누적 후 필요한 출력에서 kWh로 변환되어야 한다. |
+| 11 | CSPF profile parity | profile path와 legacy path의 CSTL/CSEC/CSPF가 같은 fixture에서 일치해야 한다. |
+| 12 | profile active load levels | `required_only`는 full/half, `with_optional_test`는 full/half/min인지 확인한다. |
+| 13 | profile segment selection | T1은 35↔29, T3는 46↔35 및 35↔29 segment가 맞는지 확인한다. |
 
 ## 12. Test Strategy
 
@@ -146,6 +155,8 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | Korea CSPF regression | KS CSPF `6.504`가 유지되는지 확인한다. | one-liner 또는 golden fixture |
 | compile check | syntax regression을 확인한다. | `python3 -B -m py_compile core/calculator_iso16358.py` |
 | JSON validation | production region config가 유효한 JSON인지 확인한다. | `python3 -B -m json.tool data/region_configs/korea.json` |
+| CSPF profile resolver | `cspf_test_profile`의 measured/default/not_used point resolution을 검증한다. | `tests/test_iso16358_cspf_profile_resolver.py` |
+| CSPF profile calculation | profile path가 legacy ISO T1 default path와 parity를 유지하는지 검증한다. | `tests/test_iso16358_cspf_profile_calculation.py` |
 
 ## 13. Prompt Snippets for Agent
 

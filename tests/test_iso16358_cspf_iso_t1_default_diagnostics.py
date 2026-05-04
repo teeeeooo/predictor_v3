@@ -176,11 +176,9 @@ def test_korea_cspf_regression_unchanged_by_diagnostics():
         declared_capacity=6000,
     )
 
-    assert result == {
-        "cspf": 6.504,
-        "annual_cooling_kwh": 1943.798,
-        "annual_power_kwh": 298.852,
-    }
+    assert result["cspf"] == 6.504
+    assert result["annual_cooling_kwh"] == 1943.798
+    assert result["annual_power_kwh"] == 298.852
 
 
 def test_iso_t1_default_and_asean_control_mismatch_direction(tmp_path):

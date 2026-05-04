@@ -96,30 +96,82 @@ class CalculatorWindow(QWidget):
         widget.textChanged.connect(lambda: widget.setStyleSheet(""))
 
     def init_iso_tab(self):
-        """ISO 탭: 단위 W 적용"""
+        """ISO 탭: 2점식(ISO/ISEER) batch UI"""
+        from ui.calculators_2point import TwoPointTableView, TwoPointTableModel, TraceDetailPanel
+        from PyQt5.QtWidgets import QHeaderView, QAbstractItemView
+
         layout = QVBoxLayout(self.tab_iso)
         
-        self.combo_region_iso = QComboBox()
-        self.combo_region_iso.currentIndexChanged.connect(self.on_region_changed_iso)
-        layout.addWidget(QLabel("지역 설정:"))
-        layout.addWidget(self.combo_region_iso)
+        layout.addWidget(QLabel("비교 세트: ISO T1 / India ISEER (고정)"))
 
-        group = QGroupBox("입력 데이터")
-        form = QFormLayout()
-        
-        self.input_widgets_iso["100%_capacity"] = QLineEdit()
-        self.input_widgets_iso["100%_power"] = QLineEdit()
-        
-        # [2] 단위 명시
-        form.addRow("정격 냉방 능력 (W):", self.input_widgets_iso["100%_capacity"])
-        form.addRow("정격 소비전력 (W):", self.input_widgets_iso["100%_power"])
-        
-        for w in self.input_widgets_iso.values():
-            self.bind_error_reset(w)
-            
-        group.setLayout(form)
-        layout.addWidget(group)
-        layout.addStretch()
+        self.two_point_view = TwoPointTableView()
+        self.two_point_model = TwoPointTableModel()
+        self.two_point_view.setModel(self.two_point_model)
+        self.two_point_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.two_point_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.two_point_view.setMinimumHeight(150)
+        layout.addWidget(self.two_point_view)
+
+        btn_layout = QHBoxLayout()
+        self.btn_add_row = QPushButton("행 추가")
+        self.btn_del_row = QPushButton("행 삭제")
+        self.btn_trace_toggle = QPushButton("상세 보기 ↓")
+        self.lbl_iso_status = QLabel("입력 대기")
+
+        btn_layout.addWidget(self.btn_add_row)
+        btn_layout.addWidget(self.btn_del_row)
+        btn_layout.addWidget(self.btn_trace_toggle)
+        btn_layout.addWidget(self.lbl_iso_status)
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+        self.trace_panel = TraceDetailPanel()
+        self.trace_panel.set_table_model(self.two_point_model)
+        self.trace_panel.setVisible(False)
+        layout.addWidget(self.trace_panel)
+
+        self.btn_add_row.clicked.connect(self.two_point_model.add_row)
+        self.btn_del_row.clicked.connect(self._del_selected_row)
+        self.btn_trace_toggle.clicked.connect(self._toggle_trace_panel)
+        self.two_point_model.row_updated.connect(self._on_row_updated)
+        self.two_point_model.model_results_changed.connect(self._on_model_results_changed)
+
+        # Load calculators
+        iso_path = os.path.join(self.config_dir, "iso_t1_default_2point.json")
+        iseer_path = os.path.join(self.config_dir, "india_iseer.json")
+        try:
+            self.iso_t1_calc = ISO16358Calculator(iso_path)
+            self.iseer_calc = ISO16358Calculator(iseer_path)
+            self.two_point_model.set_calculators(self.iso_t1_calc, self.iseer_calc)
+        except Exception as e:
+            self.lbl_iso_status.setText(f"오류: 설정 파일 로드 실패 ({e})")
+
+    def _del_selected_row(self):
+        indexes = self.two_point_view.selectionModel().selectedRows()
+        if indexes:
+            row = indexes[0].row()
+            self.two_point_model.remove_row(row)
+
+    def _toggle_trace_panel(self):
+        if self.trace_panel.isVisible():
+            self.trace_panel.setVisible(False)
+            self.btn_trace_toggle.setText("상세 보기 ↓")
+        else:
+            self.trace_panel.setVisible(True)
+            self.btn_trace_toggle.setText("상세 닫기 ↑")
+            self.trace_panel.refresh_available_rows()
+
+    def _on_row_updated(self, row):
+        if self.trace_panel.isVisible():
+            self.trace_panel.update_for_selected_row()
+
+    def _on_model_results_changed(self):
+        self.lbl_iso_status.setText("자동 계산 완료")
+        if self.trace_panel.isVisible():
+            self.trace_panel.refresh_available_rows()
+
+    def on_region_changed_iso(self, index):
+        pass
 
     def init_en_tab(self):
         """EN 탭: 단위 kW 적용"""
@@ -276,11 +328,14 @@ class CalculatorWindow(QWidget):
                     
                     # standard 문자열에 포함된 키워드로 탭 분류
                     if "ahri" in standard:
-                        self.combo_region_ahri.addItem(f)
+                        if hasattr(self, 'combo_region_ahri'):
+                            self.combo_region_ahri.addItem(f)
                     elif "en" in standard or "14825" in standard:
-                        self.combo_region_en.addItem(f)
+                        if hasattr(self, 'combo_region_en'):
+                            self.combo_region_en.addItem(f)
                     elif "iso" in standard or "16358" in standard:
-                        self.combo_region_iso.addItem(f)
+                        if hasattr(self, 'combo_region_iso'):
+                            self.combo_region_iso.addItem(f)
             except Exception as e:
                 print(f"⚠️ 설정 파일 로드 실패 ({f}): {e}")
 
@@ -437,8 +492,8 @@ class CalculatorWindow(QWidget):
         return self.hspf2_calc.calculate_hspf2_v3(test_points, **kwargs)
 
     def calculate_iso(self):
-        # ISO 로직 (단위 W)
-        self.lbl_result.setText("ISO 계산 결과 (W 기준)")
+        # 2점식 ISO/ISEER 탭은 실시간 계산이므로 수동 계산 버튼 동작 안 함.
+        pass
 
     def calculate_en(self):
         # EN 로직 (단위 kW)

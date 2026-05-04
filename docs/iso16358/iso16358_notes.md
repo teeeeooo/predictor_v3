@@ -30,6 +30,39 @@ ISO 16358-1 CSPF common 엔진은 구현되어 있다. Korea KS C 9306 CSPF gold
 | building load | `building_load_source`, `reference_point`, `declared_capacity`, load temperatures로 결정한다. |
 | region-specific branch | 공통 CSPF 흐름 안에서 config key로만 분기한다. |
 
+### 3.1 CSPF `cspf_test_profile` opt-in path status
+
+ISO16358-1 CSPF는 기존 flat region config path를 유지하면서, variable-capacity / inverter-only 장비를 위한 `cspf_test_profile` opt-in path를 병렬로 도입하고 있다.
+
+현재 구현 상태:
+
+| Item | Status |
+| --- | --- |
+| Target unit type | Variable-capacity / inverter-only |
+| Out of scope | Fixed, two-stage, multi-stage |
+| T1 required_only resolver | Implemented |
+| T1 required_only calculation path | Implemented |
+| T1 with_optional_test | Implemented |
+| T3 required_only | Implemented |
+| T3 with_optional_test | Implemented (SASO T3 alignment in progress) |
+| Legacy flat config path | Preserved |
+
+### 3.2 Official xlsm Profile Path Rules
+
+20181107 ISO16358-1_AMD1 공식 계산 시트(xlsm) 추적 결과 확정된 규칙:
+
+1. **Power Interpolation**: Boundary EER 방식이 아닌, **Direct capacity-power linear interpolation**을 사용한다.
+   - $P(t_j) = P_{low}(t_j) + \frac{L_c(t_j) - C_{low}(t_j)}{C_{high}(t_j) - C_{low}(t_j)} \times (P_{high}(t_j) - P_{low}(t_j))$
+2. **Low Load (Cycling)**: 최저 연속 운전 용량 미만 부하 시 PLF 보정을 적용한다.
+   - $X = L_c(t_j) / C_{lowest}(t_j)$
+   - $PLF = 1 - C_d \times (1 - X)$
+   - $P(t_j) = P_{lowest}(t_j) \times X / PLF$
+3. **High Load (Saturated)**: 건물 부하가 최대 능력을 초과할 경우, 공급 냉방량을 최대 능력으로 제한(cap)한다.
+   - $cooling\_output = \min(L_c(t_j), C_{full}(t_j))$
+   - $P(t_j) = P_{full}(t_j)$
+   - unmet load는 연간 냉방량(CSTL) 합계에서 제외한다.
+4. **SASO T3 Load Line**: $t_{100}\_load = 46.0$, $t_{0}\_load = 20.0$, $reference\_point = "46\_full"$을 기준으로 한다. ($t_{100}=35$ 가설은 폐기)
+
 ## 4. HSPF Current Status
 
 ISO 16358-2 HSPF의 현재 구현은 계절 난방 부하와 계절 소비전력의 Wh 누적 구조를 따른다.
@@ -77,6 +110,9 @@ production region config에는 규격값과 공식 계수만 둔다. golden/samp
 | `aux_cop` | 보조열 COP | dimensionless | Optional | 0보다 커야 한다. | caller input |
 | `bin_hours` | cooling outdoor temperature bin hours | h | CSPF Yes | `nj`가 0 이하인 bin은 누적에서 제외된다. | region configuration |
 | `hspf_bin_hours` | heating outdoor temperature bin hours | h | HSPF Yes | `nj`가 0 이하인 bin은 누적에서 제외된다. | region configuration |
+| `cspf_test_profile` | ISO16358 CSPF variable-capacity profile selector | object | Optional | 있으면 profile path로 진입하고, 없으면 legacy flat config path를 사용한다. | region configuration |
+| `climate_profile` | CSPF climate profile | enum | Profile path Yes | `T1` 또는 `T3` | `cspf_test_profile.climate_profile` |
+| `test_selection` | required/optional test selection | enum | Profile path Yes | `required_only` 또는 `with_optional_test` | `cspf_test_profile.test_selection` |
 
 ## 8. Output Schema
 

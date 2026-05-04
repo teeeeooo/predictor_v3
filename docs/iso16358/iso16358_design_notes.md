@@ -75,6 +75,14 @@ ISO 16358 계열 지표는 시험점 성능이 그대로 평균되는 구조가 
 | Low-temperature maximum capacity | auxiliary heat 발생을 막는다. | 저온 max 성능은 capacity 증가와 power 증가의 trade-off로 판단한다. |
 | 용량 단계 간 간격 | 단계 사이 소비전력 보간 결과에 영향을 준다. | 단계 간 능력 차이를 과도하게 벌리지 않는다. |
 
+### Required-only vs optional minimum test impact
+
+ISO 16358 CSPF에서 variable-capacity 장비가 minimum capacity test를 수행하지 않는 경우, half capacity point가 실질적인 최저 연속 운전점처럼 작용한다. 이 경우 half capacity가 실제 저부하 영역보다 높게 설정되어 있으면, 장시간 bin에서 cycling loss가 커질 수 있다.
+
+Optional minimum test를 포함하면 저부하 연속 운전 능력을 더 직접적으로 반영할 수 있으므로, minimum capacity와 minimum power의 실제 설계 품질이 계절 효율에 드러난다.
+
+엔지니어링 해석: required-only 평가에서는 half 운전점의 위치가 저부하 효율까지 대표하게 되므로, half capacity를 지나치게 높게 잡는 설계는 불리해질 수 있다. optional minimum 평가에서는 minimum 운전점 자체의 효율과 안정성이 중요해진다.
+
 ---
 
 ## 6. Low Impact / Misleading Design Parameters

@@ -82,6 +82,55 @@ class ISO16358Calculator:
 
         return prepared
 
+    def _has_cspf_test_profile(self) -> bool:
+        return "cspf_test_profile" in self.config
+
+    def _get_cspf_profile_cd(self) -> float:
+        if "Cd" in self.config:
+            return float(self.config["Cd"])
+        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        return 0.27 if profile == "T3" else 0.25
+
+    def _get_active_load_levels(self) -> list:
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        selection = profile_cfg.get("test_selection")
+        if selection == "with_optional_test":
+            return ["full", "half", "min"]
+        return ["full", "half"]
+
+    def _get_cspf_temperature_segments(self) -> list:
+        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        if profile == "T3":
+            return [{"boundary": 35.0, "high": [46, 35], "low": [35, 29]}]
+        return [{"boundary": None, "high": [35, 29]}]
+
+    def _resolve_cspf_profile_points(self, measured: dict) -> dict:
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        climate = profile_cfg.get("climate_profile")
+        selection = profile_cfg.get("test_selection")
+        
+        resolved = {k: v for k, v in measured.items()}
+        
+        def _set_point(key, cap, pwr):
+            if key not in resolved:
+                resolved[key] = {"capacity": cap, "power": pwr}
+
+        if climate == "T1":
+            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
+            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            if selection == "with_optional_test":
+                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
+        
+        elif climate == "T3":
+            _set_point("46_half", resolved["35_half"]["capacity"] * 0.859, resolved["35_half"]["power"] * 1.25)
+            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
+            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            if selection == "with_optional_test":
+                _set_point("46_min", resolved["35_min"]["capacity"] * 0.859, resolved["35_min"]["power"] * 1.25)
+                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
+        
+        return resolved
+
     def resolve_points(self, measured_inputs: dict) -> dict:
         """
         입력된 측정값(measure)과 JSON의 파생 규칙(default)을 해석하여
@@ -92,6 +141,9 @@ class ISO16358Calculator:
         Returns:
             dict: 모든 포인트가 채워진 딕셔너리
         """
+        if self._has_cspf_test_profile():
+            return self._resolve_cspf_profile_points(measured_inputs)
+
         resolved = {}
 
         # 1. "measure" 포인트 우선 처리
@@ -1427,6 +1479,112 @@ class ISO16358Calculator:
             "bin_details": bin_details
         }
 
+    def _profile_capacity_power_at(self, points: dict, load_type: str, tj: float, high_val: int, low_val: int) -> tuple:
+        p_35 = points[f"{high_val}_{load_type}"]
+        p_29 = points[f"{low_val}_{load_type}"]
+        
+        c = p_35["capacity"] + (p_29["capacity"] - p_35["capacity"]) / (low_val - high_val) * (tj - high_val)
+        p = p_35["power"] + (p_29["power"] - p_35["power"]) / (low_val - high_val) * (tj - high_val)
+        return c, p
+
+    def _calculate_cspf_profile(self, measured: dict, L_c_ref: float) -> dict:
+        resolved = self._resolve_cspf_profile_points(measured)
+        cd = self._get_cspf_profile_cd()
+        
+        cstl, csec = 0.0, 0.0
+        delta_t = self.t_100_load - self.t_0_load
+        bin_details = []
+        
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
+            tj = float(bin_data.get("tj", 0))
+            nj = float(bin_data.get("nj", 0))
+            if nj <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
+                continue
+            
+            Lc = L_c_ref * (tj - self.t_0_load) / delta_t
+            if Lc <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
+                continue
+
+            interp = self.interpolate(tj, resolved)
+            loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp.items()]
+            loads.sort(key=lambda x: x[0])
+            
+            lowest_cap, lowest_pow, lowest_type = loads[0]
+            highest_cap, highest_pow, highest_type = loads[-1]
+            
+            cooling_output = Lc
+            P_tj = 0.0
+            
+            if Lc <= lowest_cap:
+                # 1. Minimum capacity cycling regime
+                X = Lc / lowest_cap
+                PLF = max(1e-6, 1.0 - cd * (1.0 - X))
+                P_tj = (X * lowest_pow) / PLF
+            elif Lc > highest_cap:
+                # 2. Saturated / Full limit regime (BL > Full Cap)
+                cooling_output = highest_cap
+                P_tj = highest_pow
+            else:
+                # 3. Intermediate interpolation regime
+                # Use interpolation method
+                P_tj = None
+                if self.power_interpolation_method == "ks_intersection":
+                    P_tj = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
+                elif self.power_interpolation_method == "iso_boundary_eer":
+                    try:
+                        P_tj = self._iso_boundary_eer_power(tj, Lc, resolved, lowest_type, highest_type)
+                    except:
+                        P_tj = None
+                
+                if P_tj is None:
+                    # Piecewise direct capacity-power linear interpolation
+                    for i in range(len(loads) - 1):
+                        c1, p1, _ = loads[i]
+                        c2, p2, _ = loads[i+1]
+                        if c1 < Lc <= c2:
+                            if c2 == c1:
+                                P_tj = p1
+                            else:
+                                P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
+                            break
+                    
+                    if P_tj is None:
+                        P_tj = highest_pow
+            
+            cstl += cooling_output * nj
+            csec += P_tj * nj
+            
+            eer = None
+            if P_tj > 0:
+                eer = cooling_output / P_tj
+                
+            bin_details.append({
+                "bin_no": idx,
+                "tj": tj,
+                "nj": nj,
+                "lc": Lc,
+                "capacity": cooling_output,
+                "power": P_tj,
+                "eer": eer,
+                "cstl_bin": cooling_output * nj,
+                "csec_bin": P_tj * nj
+            })
+            
+        if csec <= 0:
+            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
+            
+        return {"cspf": round(cstl / csec, 3), "annual_cooling_kwh": round(cstl / 1000.0, 3), "annual_power_kwh": round(csec / 1000.0, 3), "bin_details": bin_details}
+
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
         """
         지역별 설정과 측정값을 융합하여 최종 연간 CSPF 효율 및 전력량을 계산합니다.
@@ -1440,6 +1598,14 @@ class ISO16358Calculator:
             dict: CSPF 점수, 연간 냉방량(kWh), 연간 소비전력(kWh)
         """
         measured_inputs = self._prepare_measured_inputs(measured_inputs)
+        
+        if self._has_cspf_test_profile():
+            resolved = self._resolve_cspf_profile_points(measured_inputs)
+            # Use reference point from config if available, else 35_full
+            ref_key = self.reference_point
+            L_c_ref = resolved[ref_key]["capacity"]
+            return self._calculate_cspf_profile(measured_inputs, L_c_ref)
+            
         resolved_points = self.resolve_points(measured_inputs)
         
         if self.building_load_source == "declared":
@@ -1467,28 +1633,49 @@ class ISO16358Calculator:
         
         cstl = 0.0  
         csec = 0.0  
+        bin_details = []
 
-        for bin_data in self.bin_hours:
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
             tj = float(bin_data.get("tj", 0))
             nj = float(bin_data.get("nj", 0))
             if nj <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
 
             # a. 건물 냉방 부하 계산 (온도별 능력이 아닌, 고정된 L_c_ref 및 방어된 delta_t 사용)
             Lc = L_c_ref * (tj - self.t_0_load) / delta_t
 
             if Lc <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
 
             # 해당 온도의 부하 조건별 능력/전력 동적 보간
             interp_tj = self.interpolate(tj, resolved_points)
             if "full" not in interp_tj:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue  
 
             loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp_tj.items()]
             loads.sort(key=lambda x: x[0])
             
             if not loads:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0
+                })
                 continue
                 
             lowest_cap, lowest_pow, _ = loads[0]
@@ -1542,11 +1729,28 @@ class ISO16358Calculator:
             cstl += cooling_output * nj
             csec += P_tj * nj
 
+            eer = None
+            if P_tj > 0:
+                eer = cooling_output / P_tj
+                
+            bin_details.append({
+                "bin_no": idx,
+                "tj": tj,
+                "nj": nj,
+                "lc": Lc,
+                "capacity": cooling_output,
+                "power": P_tj,
+                "eer": eer,
+                "cstl_bin": cooling_output * nj,
+                "csec_bin": P_tj * nj
+            })
+
         if csec <= 0:
-            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0}
+            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
 
         return {
             "cspf": round(cstl / csec, 3),
             "annual_cooling_kwh": round(cstl / 1000.0, 3),
-            "annual_power_kwh": round(csec / 1000.0, 3)
+            "annual_power_kwh": round(csec / 1000.0, 3),
+            "bin_details": bin_details
         }
