@@ -50,5 +50,39 @@
     {"tj": 41, "nj": 0},
     {"tj": 42, "nj": 0},
     {"tj": 43, "nj": 0}
+  ],
+  "hspf": {
+    "enabled": true,
+    "profile": "iso16358_2_hspf",
+    "standard": "ISO 16358-2",
+    "extended_mode": false,
+    "correction": {
+      "cd": 0.25,
+      "aux_cop": 1.0
+    },
+    "frost_boundaries": {
+      "lower": -7.0,
+      "upper": 5.5
+    },
+    "load_line": {
+      "source": "rated_heating_capacity",
+      "zero_load_temp": 17.0,
+      "full_load_temp": 0.0,
+      "rated_capacity_factor": 0.82,
+      "_note": "ISO 16358-2 Section 6.2: ratio of heating capacity at 0C to standard heating capacity at 7C is 0.82"
+    }
+  },
+  "hspf_bin_hours": [
+    {"j":1,  "tj": 6,  "nj": 1},
+    {"j":2,  "tj": 7,  "nj": 4},
+    {"j":3,  "tj": 8,  "nj": 6},
+    {"j":4,  "tj": 9,  "nj": 11},
+    {"j":5,  "tj": 10, "nj": 15},
+    {"j":6,  "tj": 11, "nj": 19},
+    {"j":7,  "tj": 12, "nj": 24},
+    {"j":8,  "tj": 13, "nj": 29},
+    {"j":9,  "tj": 14, "nj": 38},
+    {"j":10, "tj": 15, "nj": 44},
+    {"j":11, "tj": 16, "nj": 49}
   ]
 }
