@@ -16,4 +16,5 @@
 - **`PROJECT_CHARTER.md`**: 프로젝트의 최종 목표와 장기 방향을 정의하는 앵커 문서입니다.
 - **`project_brief.md`**: 새 대화 시작 시점의 얇은 현재 상태 요약 문서입니다. (현재 문서)
 - **`project_log.md`**: Try/Fail/Success 이력 기록, 결정 사항, 반복 실수 방지용 기록 문서입니다.
+- **`docs/architecture/project_architecture.md`**: 프로젝트의 주요 기술 구조, 피처 정의, UI 컬럼 매핑 정보를 정리한 문서입니다.
 - **`docs/REFACTOR_PLAN.md`**: 살아있는 개발 계획과 남은 작업(TODO)을 관리하는 문서입니다.

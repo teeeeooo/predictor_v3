@@ -17,7 +17,22 @@
 
 이 클래스는 이미 과대화되고 있으나 지금은 구조적 리팩토링을 수행하지 않는다. 리팩토링 후보는 [REFACTOR_PLAN.md](../REFACTOR_PLAN.md)를 따른다.
 
-## 3. Safety Rules
+## 3. bin_details 표준 구조 (디버그/검증용)
+
+CSPF/HSPF 계산 과정에서 각 bin별 중간 결과값은 `bin_details` 리스트에 저장됩니다. 필드명은 계산 경로(CSPF, HSPF, KS C 9306 등)에 따라 다를 수 있으나, ISO common HSPF를 기준으로 아래 표준 필드를 주로 사용합니다.
+
+- **온도/시간**: `tj` (Bin temp), `nj` (Bin hours)
+- **부하/능력**: `bl_h` (Heating load), `pi_j` (Heating capacity), `P_j` (Power input)
+- **소비전력**: `heat_pump_energy`, `auxiliary_energy`, `E_j` (Total energy)
+- **상태**: `case` (Operating case: Case 1, 2, 3 등)
+
+**핵심 검증식:**
+- `E_j` (Total bin energy) = `heat_pump_energy` + `auxiliary_energy`
+- `HSTL` (Seasonal Total Load) = `sum(bl_h * nj)`
+- `HSEC` (Seasonal Total Energy) = `sum(E_j)`
+- `bl_h * nj` = `pi_j * nj` + (Shortage capacity) (부하 만족 여부 확인)
+
+## 4. Safety Rules
 
 | Rule | Required action |
 | --- | --- |
