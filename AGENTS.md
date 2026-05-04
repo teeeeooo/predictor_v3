@@ -78,6 +78,9 @@ sed -n '120,260p' core/calculator_iso16358.py
 작업자는 작업 시작 전에 아래 유형 중 하나로 작업을 분류한다.
 상세 내용은 필요시 AGENT_TASK_ROUTER.md를 참고한다.
 
+- 기본 작업 시작 시 `AGENTS.md`만 필수로 읽는다.
+- 작업 유형별 세부 절차가 필요하거나, Commit/Git 정리, Notes 정리/문서 리팩토링, Logic 수정, 테스트 추가 작업을 수행할 때는 `AGENT_TASK_ROUTER.md`의 해당 항목만 확인한다.
+
 - Commit/Git 정리
 - Logic 수정
 - Smoke/Golden/Validation test 추가
