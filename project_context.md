@@ -45,13 +45,15 @@
           (상세: docs/skills/ahri_hspf2.md 참조)
           golden case 검증 완료 (5개 케이스, AHRI 공식 계산기 대비 diff < 0.001)
 Phase 2: ISO16358 official sheet structure expansion
-  5-7. [진행 중] ISO16358 cspf_test_profile Phase R1
+  5-7. [완료] ISO16358 cspf_test_profile Phase R1/R2
        - 완료: variable/inverter-only profile resolver
-       - 완료: T1 required_only calculation path
+       - 완료: T1 required_only / with_optional_test smoke/sanity
+       - 완료: T3 required_only / with_optional_test resolver/smoke
        - 완료: legacy ISO T1 default path parity 확인
-       - 전체 pytest: 85 passed, 2 xfailed
-       - 남음: T1 optional minimum, T3 required_only piecewise, T3 optional minimum
-  5-8. SASO T3 Phase R2
+       - 완료: SASO T3 official xlsm golden regression
+       - 전체 pytest: 97 passed, 1 xfailed
+       - 범위: variable/inverter-only profile path. fixed/two-stage/multi-stage는 scope 밖
+  5-8. [완료] SASO T3 Phase R2
   5-9. ISO16358 official sheet full optional matrix 단계적 구현
    대상: Non-ducted, Air-to-Air, Variable capacity 1:1
 
@@ -100,7 +102,7 @@ Phase 2: ISO16358 official sheet structure expansion
 - 최종 목표: ML 예측값 → 효율 계산기 → CSPF/SEER 등 자동 산출
 - 파이프라인: predictor.py → calculator_iso16358.py → 결과 표시
 - 독립 배포: app_calculator.py로 계산기만 별도 패키징 가능
-- Phase 1 배포 원칙: 검증 완료 profile만 UI에 노출하고, SASO T3 및 ISO16358 optional matrix는 docs/REFACTOR_PLAN.md의 Phase R1/R2 이후로 넘긴다.
+- Phase 1 배포 원칙: 검증 완료 profile만 UI에 노출한다. SASO T3는 official golden regression 완료 상태이나 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 검토한다.
 - 엔진 구조:
   calculator_iso16358.py     — ISO 16358 공통 CSPF/HSPF 엔진 + region 확장 (한국 KS C 9306, ISO T1 default, India, Hong Kong 등)
   calculator_en14825.py      — EN 14825 (유럽: EU SEER/SCOP)
@@ -118,8 +120,10 @@ Phase 2: ISO16358 official sheet structure expansion
   docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md — 한국 region 구현 지침
   docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md — 한국 region 설계 heuristic
   docs/iso16358/regions/ks_c_9306/ks_c_9306_glossary.md — 한국 region 용어 SSOT
-- ISO16358 CSPF는 기존 flat config path를 유지하면서, `cspf_test_profile` opt-in path를 병렬로 추가 중이다.
+- ISO16358 CSPF는 기존 flat config path를 유지하면서, `cspf_test_profile` opt-in path를 병렬로 운영한다.
 - 현재 `cspf_test_profile`은 variable/inverter-only 대상이며, fixed/two-stage/multi-stage는 프로젝트 scope 밖이다.
+- SASO T3 official golden 경로는 `climate_profile=T3`, `test_selection=with_optional_test`, `t_100_load=46.0`, `t_0_load=20.0`, `reference_point="46_full"`, `Cd=0.27`, `power_interpolation_method="iso_boundary_eer"`이다.
+- T3 boundary EER는 `_iso_boundary_eer_t3_piecewise()` helper가 T3 `cspf_test_profile` guard 안에서만 처리한다.
 
 ### HSPF2 구현 현황 (calculator_ahri_hspf2.py)
 - 적용 규격: AHRI 210/240-2026
@@ -214,7 +218,7 @@ predictor_v3/
 │       ├── korea.json                  KS C 9306 CSPF/HSPF
 │       ├── india_iseer.json            India ISEER xlsx-compatible
 │       ├── hong_kong.json              Hong Kong custom bin 2-point CSPF
-│       ├── saso.json                   SASO T3 planned / Phase R2
+│       ├── saso.json                   SASO T3 official xlsm golden regression
 │       ├── eu.json                     EN 14825 SEER
 │       ├── en14825_scop.json           EN 14825 SCOP
 │       └── usa.json                    AHRI SEER2 region config
@@ -374,13 +378,15 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 - [x] Hong Kong custom bin 2-point config 완료
   - current-engine regression 유지
   - source golden mismatch는 Phase 2 보류
-- [ ] SASO T3 (진행 중)
-  - cspf_profile schema Phase R2 진행 중
-  - 공식 xlsm 기준 t100=46 / ref46 load line 정렬 완료
-  - CSTL alignment 완료 (21,547 kWh), CSEC mismatch (+340 kWh) 조사 중
-  - 공식 xlsm direct capacity-power linear interpolation 로직 반영 완료
-  - T3 29_full derived point resolver 추가 완료
-  - 현재 전체 pytest: 93 passed, 2 xfailed (SASO CSEC mismatch 및 4.954 hard regression 대기 중)
+- [x] SASO T3 official xlsm golden regression 완료
+  - `cspf_test_profile`: `climate_profile=T3`, `test_selection=with_optional_test`
+  - load line: `t_100_load=46.0`, `t_0_load=20.0`, `reference_point="46_full"`, `Cd=0.27`
+  - power model: `power_interpolation_method="iso_boundary_eer"`
+  - T3 helper: `_iso_boundary_eer_t3_piecewise()`
+  - T3 29_full default point 동작 확인/유지: capacity `1.077 × 35_full`, power `0.914 × 35_full`
+  - golden result: CSTL ≈ 21,547.386 kWh, CSEC ≈ 4,349.020 kWh, CSPF ≈ 4.955 W/W
+  - official target: CSTL ≈ 21,546 kWh, CSEC ≈ 4,349 kWh, CSPF ≈ 4.954 W/W
+  - 전체 pytest: 97 passed, 1 xfailed
 - [x] ISO16358 / KS C 9306 문서 구조 정규화
   - ISO 공통 문서: docs/iso16358/
   - KS region 문서: docs/iso16358/regions/ks_c_9306/
@@ -426,8 +432,8 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 2. app_calculator.py / calc_window.py Calculator UI v1 연결
 3. predictor → calculator pipeline 연결
 4. 역방향 예측 MVP 설계
-5. ISO16358 cspf_profile schema Phase R1
-6. SASO T3 Phase R2
+5. Hong Kong source golden CSPF 4.83 formula review pending xfail 검토 (후순위)
+6. ISO16358 official sheet full optional matrix 단계적 구현 검토
 7. AHRI 설정 파일 위치 재정리 검토
    - `data/usa_hspf2.json`은 AHRI HSPF2 bin table, test point schema, alias를 함께 담고 있어 `data/region_configs/`로 단순 이동하기 전 구조 검토 필요
    - 후보: `data/ahri/usa_hspf2.json` 또는 AHRI 전용 config 디렉터리
@@ -471,8 +477,8 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 
 - `CalculatorWindow()` 생성 테스트는 macOS에서 크래시 없이 통과.
 - ISO T1 / bin_details 관련 테스트는 통과 확인.
-- 전체 pytest는 현재 `saso.json` legacy schema / SASO T3 known issue 3건으로 fail 상태.
-  - 이번 2점식 ISO/ISEER UI 작업과 직접 관련된 실패는 아님.
+- 전체 pytest는 SASO T3 Phase R2-2 완료 후 `97 passed, 1 xfailed` 상태.
+  - 남은 xfailed는 Hong Kong source golden CSPF 4.83 formula review pending이며, 이번 2점식 ISO/ISEER UI 작업과 직접 관련된 실패는 아님.
 
 ### 현재 UI 문제
 

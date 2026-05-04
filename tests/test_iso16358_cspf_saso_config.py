@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from core.calculator_iso16358 import ISO16358Calculator
 
 
@@ -26,7 +24,7 @@ def calculate_saso_cspf():
 
 
 def test_saso_production_config_current_engine_requires_29c_boundary_points():
-    """SASO config uses T3 with_optional_test and capacity_linear to calculate successfully."""
+    """SASO config uses T3 with_optional_test and ISO boundary EER."""
     fixture = load_fixture()
     calculator = ISO16358Calculator(str(CONFIG_PATH))
     
@@ -35,6 +33,7 @@ def test_saso_production_config_current_engine_requires_29c_boundary_points():
     assert calculator.config["cspf_test_profile"]["test_selection"] == "with_optional_test"
     assert calculator.t_100_load == 46.0
     assert calculator.reference_point == "46_full"
+    assert calculator.power_interpolation_method == "iso_boundary_eer"
 
     result = calculator.calculate_cspf(fixture["measured_points"])
     
@@ -43,15 +42,7 @@ def test_saso_production_config_current_engine_requires_29c_boundary_points():
     assert result["annual_power_kwh"] > 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "SASO source fixture expects CSPF 4.95, but current iso_boundary_eer "
-        "implementation requires 29 C full/half points for half-full branches. "
-        "SASO config intentionally has no derived 29 C points."
-    ),
-)
-def test_saso_source_golden_cspf_4_95_pending_formula_review():
+def test_saso_source_golden_cspf_4_95():
     fixture, result = calculate_saso_cspf()
 
     assert abs(result["cspf"] - fixture["expected"]["cspf"]) <= CSPF_TOLERANCE

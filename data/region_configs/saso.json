@@ -10,7 +10,10 @@
   "t_0_load": 20.0,
   "reference_point": "46_full",
   "Cd": 0.27,
-  "power_interpolation_method": "capacity_linear",
+  "building_load_source": "measured",
+  "points": {},
+  "derived_rules": {},
+  "power_interpolation_method": "iso_boundary_eer",
   "bin_hours": [
     {"tj": 21, "nj": 267},
     {"tj": 22, "nj": 279},

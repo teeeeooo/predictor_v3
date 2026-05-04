@@ -46,13 +46,13 @@
 
 | 영역 | 현재 상태 | 리팩토링 판단 |
 |---|---|---|
-| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin current-engine regression 완료. SASO T3는 Phase R2 대기. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. |
+| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin current-engine regression 완료. ISO16358 `cspf_test_profile` T1/T3 smoke 및 SASO T3 official xlsm golden regression 완료. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. Legacy flat path와 기존 regression은 보호 대상이다. |
 | ISO 16358 HSPF | KS C 9306 HSPF profile, validation, golden, smoke test 구축 완료. | 공통/지역 분리는 보류. |
 | AHRI 210/240 SEER2/HSPF2 | SEER2 및 HSPF2 full variable-capacity path 구현 완료. | Phase 1 UI 연결 대상으로 유지. |
 | EN 14825 SEER/SCOP | 계산 엔진 구현 및 주요 검증 완료. | 당장 대규모 리팩토링 불필요. |
 | Region config | Phase 1 production config와 Phase 2 planned config를 구분하는 단계. | golden/sample/test 전용 값은 production config에 넣지 않는다. |
 | Docs | notes / dev_notes / design_notes / glossary 구조로 정리 중. | 기존 임시 구조 정리 완료 방향. |
-| UI calculator | Phase 1 검증 profile 중심으로 Calculator UI v1 연결 예정. | optional matrix와 SASO T3는 planned로 표시하거나 미노출. |
+| UI calculator | Phase 1 검증 profile 중심으로 Calculator UI v1 연결 예정. | fixed/two-stage/multi-stage profile matrix는 scope 밖이다. SASO T3 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 결정한다. |
 | ML pipeline | app_trainer.py / app_predictor.py pipeline 재개 예정. | 출근 후 실제 학습 데이터 환경에서 진행. |
 
 ---
@@ -230,20 +230,36 @@ Phase R1 — `cspf_test_profile` opt-in layer 추가 (calculator 계산 결과 �
   - `tests/test_iso16358_cspf_profile_calculation.py`
   - legacy ISO T1 default production regression `4.665` 유지 확인
 - [계속 유지] 기존 regression은 전부 유지해야 한다.
-  - 현재 기준: 전체 pytest `85 passed, 2 xfailed`
-- [대기] T1 `with_optional_test` minimum branch
-- [대기] T3 piecewise boundary path
+  - 현재 기준: 전체 pytest `97 passed, 1 xfailed`
+- [완료] T1 `with_optional_test` minimum branch smoke/sanity 확인
+- [완료] T3 `required_only` / `with_optional_test` resolver/smoke 확인
 
-Phase R2 — SASO T3 official xlsm alignment (In progress)
+Phase R2 — SASO T3 official xlsm alignment (Complete)
 
-- [완료] T1/T3 profile smoke/resolver coverage 확보
-- [완료] 공식 xlsm direct capacity-power linear interpolation 로직 확인 및 적용
+- [완료] T1 required_only / with_optional_test smoke/sanity 검증 완료
+- [완료] T3 required_only / with_optional_test resolver/smoke 검증 완료
 - [완료] SASO T3 t100=46 / ref46 load line 확인 및 config 정렬
-- [완료] T3 29_full derived point 필요성 확인 및 resolver 추가
-- [완료] CSTL alignment (CSTL ≈ 21,546 kWh 달성)
-- [진행 중] CSEC divergence (+340 kWh) 원인 분석
-- [예정] 공식 xlsm CZ132:CZ162 full-bin row trace 재확인 (특히 30~34°C)
-- [예정] SASO T3 CSPF 4.954 hard regression 최종 통과
+- [완료] T3 29_full default point 동작 확인 및 테스트 커버 유지
+  - 29_full capacity = `1.077 × 35_full capacity`
+  - 29_full power = `0.914 × 35_full power`
+  - git diff 기준 Phase R2-2 신규 추가가 아니라 현재 구현 동작으로 확인/유지됨
+- [완료] T3 piecewise boundary EER helper 추가
+  - 기존 T1/legacy `_iso_boundary_eer()` 시그니처와 동작은 유지
+  - T3 profile에서는 `_iso_boundary_eer_t3_piecewise()`가 `tj <= 35`에서 29↔35, `tj > 35`에서 35↔46 anchor를 사용
+  - `_iso_boundary_eer_power()`는 `cspf_test_profile.climate_profile == "T3"` guard 안에서만 T3 helper를 사용
+- [완료] T3 `with_optional_test`의 `{min, half}` 및 `{half, full}` bracket support
+  - 기존 `_iso_boundary_eer_power()`의 half-full 제한 때문에 T3 min-half가 capacity_linear fallback을 타던 문제를 해소
+  - 기존 `_iso_boundary_eer()`의 29/35 고정 구조는 T1/legacy 보호를 위해 유지
+- [완료] SASO T3 golden regression
+  - config: `climate_profile=T3`, `test_selection=with_optional_test`, `t_100_load=46.0`, `t_0_load=20.0`, `reference_point="46_full"`, `Cd=0.27`, `power_interpolation_method="iso_boundary_eer"`
+  - golden sample: 46_full 5418/1971, 35_full 6058/1611, 35_half 3036/566, 35_min 1780/284
+  - result: CSTL ≈ `21,547.386 kWh`, CSEC ≈ `4,349.020 kWh`, CSPF ≈ `4.955 W/W`
+  - official target: CSTL ≈ `21,546 kWh`, CSEC ≈ `4,349 kWh`, CSPF ≈ `4.954 W/W`
+- [완료] Boundary diagnostic
+  - Tb ≈ `45.2479°C`, Tc ≈ `34.6371°C`, Tp ≈ `29.1799°C`
+  - `tj > 35` full segment는 `46_full`이 BL reference이므로 intersection이 `46.0°C`
+- [완료] 전체 pytest `97 passed, 1 xfailed`
+  - remaining xfail은 Hong Kong source golden CSPF 4.83 formula review pending이며 SASO T3 Phase R2-2 완료 기준과 무관하다.
 
 #### 보호 조건 (어떤 단계에서도 위반 금지)
 
@@ -263,22 +279,25 @@ Phase R3 — 기존 config 마이그레이션 (선택적)
 
 #### 현재 상태
 
-- Phase R1 진행 중이다.
+- Phase R1/R2의 `cspf_test_profile` variable/inverter profile path 검증이 완료되었다.
 - 완료:
   - `cspf_test_profile` opt-in 감지
   - variable/inverter-only profile resolver
-  - T1 `required_only` resolved point 생성
-  - T1 `required_only` calculation path
+  - T1 `required_only` / `with_optional_test` smoke/sanity
+  - T3 `required_only` / `with_optional_test` resolver/smoke
+  - T3 piecewise boundary EER path
+  - SASO T3 official xlsm golden regression
   - legacy ISO T1 default path parity 확인
   - debug/audit/trace 임시 파일 제거
-  - 전체 pytest `85 passed, 2 xfailed`
+  - 전체 pytest `97 passed, 1 xfailed`
+- 보호:
+  - `iso_boundary_eer` 전역 동작 변경 금지
+  - T3 helper는 T3 `cspf_test_profile` guard 안에서만 동작
+  - Korea CSPF 6.504, ISO T1 default 4.665, India, Hong Kong 기존 regression 유지
+  - hidden factor / golden fitting 계수 추가 금지
 - 남음:
-  - T1 `with_optional_test` minimum branch
-  - T3 `required_only` piecewise 46↔35 / 35↔29 path
-  - T3 `with_optional_test` minimum branch
-  - SASO T3 config/golden regression
-- SASO xfail은 Phase R2 완료까지 유지한다.
-- SASO xfail은 Phase R2 완료까지 유지한다.
+  - Hong Kong source golden CSPF 4.83 formula review pending xfail 유지
+  - Calculator UI v1 연결 범위 검토
 
 ### 5.5 계산기 Phase 1 배포 범위
 
@@ -295,15 +314,15 @@ Phase 1에서는 한 번에 모든 지역을 완전 구현해서 배포하지 �
 
 #### Phase 1 제외
 
-- SASO T3
 - ISO16358 official sheet full optional matrix
 - 모든 required/optional/default 조합 완전 구현
+- fixed/two-stage/multi-stage `cspf_test_profile` abstraction
 
 #### UI v1 원칙
 
 - 검증된 profile만 노출한다.
 - optional 선택 UI는 비활성화하거나 노출하지 않는다.
-- SASO는 planned 또는 Phase R2 상태로 표시한다.
+- SASO T3는 official golden regression 완료 상태이나 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 검토한다.
 
 ---
 
@@ -567,7 +586,7 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 
 - `app_calculator.py` / `calc_window.py`에서 검증된 profile만 선택 가능하게 한다.
 - optional 선택 UI는 비활성화하거나 미노출한다.
-- SASO는 planned 또는 Phase R2로 표시한다.
+- SASO T3는 official golden regression 완료 상태로 표시할 수 있으나, UI 노출 여부는 2점식 ISO/ISEER 탭 안정화 이후 별도 검토한다.
 
 ### Step 3 — predictor → calculator pipeline 연결
 
@@ -587,8 +606,8 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 
 ### Step 6 — SASO T3 Phase R2
 
-- T3 climate profile과 `46_full` high-anchor branch를 구현한다.
-- SASO CSPF 4.95 golden regression을 추가한다.
+- 완료: T3 climate profile과 `46_full` high-anchor branch를 구현했다.
+- 완료: SASO CSPF 4.954 official xlsm golden regression을 추가하고 전체 pytest `97 passed, 1 xfailed`를 확인했다.
 
 ---
 

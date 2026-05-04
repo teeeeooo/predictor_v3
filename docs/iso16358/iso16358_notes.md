@@ -44,15 +44,17 @@ ISO16358-1 CSPF는 기존 flat region config path를 유지하면서, variable-c
 | T1 required_only calculation path | Implemented |
 | T1 with_optional_test | Implemented |
 | T3 required_only | Implemented |
-| T3 with_optional_test | Implemented (SASO T3 alignment in progress) |
+| T3 with_optional_test | Implemented; SASO T3 official xlsm golden regression complete |
 | Legacy flat config path | Preserved |
 
 ### 3.2 Official xlsm Profile Path Rules
 
 20181107 ISO16358-1_AMD1 공식 계산 시트(xlsm) 추적 결과 확정된 규칙:
 
-1. **Power Interpolation**: Boundary EER 방식이 아닌, **Direct capacity-power linear interpolation**을 사용한다.
-   - $P(t_j) = P_{low}(t_j) + \frac{L_c(t_j) - C_{low}(t_j)}{C_{high}(t_j) - C_{low}(t_j)} \times (P_{high}(t_j) - P_{low}(t_j))$
+1. **Power Interpolation**: variable/inverter profile path의 중간 부하 구간은 boundary temperature / boundary EER 기반으로 계산한다.
+   - 기존 T1/legacy `_iso_boundary_eer()`는 29↔35 anchor와 기존 public behavior를 유지한다.
+   - T3 profile에서는 `tj <= 35`일 때 29↔35, `tj > 35`일 때 35↔46 anchor를 사용하는 piecewise boundary EER가 필요하다.
+   - T3 `with_optional_test`에서는 `{min, half}`와 `{half, full}` bracket을 모두 처리해야 한다.
 2. **Low Load (Cycling)**: 최저 연속 운전 용량 미만 부하 시 PLF 보정을 적용한다.
    - $X = L_c(t_j) / C_{lowest}(t_j)$
    - $PLF = 1 - C_d \times (1 - X)$
@@ -62,6 +64,46 @@ ISO16358-1 CSPF는 기존 flat region config path를 유지하면서, variable-c
    - $P(t_j) = P_{full}(t_j)$
    - unmet load는 연간 냉방량(CSTL) 합계에서 제외한다.
 4. **SASO T3 Load Line**: $t_{100}\_load = 46.0$, $t_{0}\_load = 20.0$, $reference\_point = "46\_full"$을 기준으로 한다. ($t_{100}=35$ 가설은 폐기)
+
+### 3.3 SASO T3 Phase R2-2 Verification
+
+SASO T3 official golden 경로는 `cspf_test_profile.climate_profile = "T3"`와 `test_selection = "with_optional_test"`를 사용한다. 이 경로는 fixed, two-stage, multi-stage 장비가 아니라 variable-capacity / inverter-only profile path 검증 범위이다.
+
+| Item | Value |
+| --- | --- |
+| `t_100_load` | `46.0` |
+| `t_0_load` | `20.0` |
+| `reference_point` | `"46_full"` |
+| `Cd` | `0.27` |
+| `power_interpolation_method` | `"iso_boundary_eer"` |
+
+Golden sample:
+
+| Point | Capacity | Power |
+| --- | --- | --- |
+| `46_full` | 5418 | 1971 |
+| `35_full` | 6058 | 1611 |
+| `35_half` | 3036 | 566 |
+| `35_min` | 1780 | 284 |
+
+검증 결과:
+
+| Metric | Actual | Official target | Result |
+| --- | --- | --- | --- |
+| CSTL | ≈ 21,547.386 kWh | ≈ 21,546 kWh | Pass |
+| CSEC | ≈ 4,349.020 kWh | ≈ 4,349 kWh | Pass |
+| CSPF | ≈ 4.955 W/W | ≈ 4.954 W/W | Pass |
+
+Boundary diagnostic:
+
+| Boundary | Value | Note |
+| --- | --- | --- |
+| Tb | ≈ 45.2479°C | full boundary, official trace reference |
+| Tc | ≈ 34.6371°C | half boundary |
+| Tp | ≈ 29.1799°C | minimum boundary |
+| `tj > 35` full segment | 46.0°C | `46_full`이 BL reference이므로 high segment full intersection이 46.0°C이다. |
+
+프로젝트 해석: T3 29_full default point는 현재 resolver 동작으로 확인/유지된다. 29_full capacity는 `1.077 × 35_full capacity`, 29_full power는 `0.914 × 35_full power`이며, Phase R2-2 문서에서는 신규 추가가 아니라 동작 확인 및 테스트 커버로 취급한다.
 
 ## 4. HSPF Current Status
 

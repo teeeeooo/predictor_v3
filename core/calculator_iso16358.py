@@ -385,6 +385,58 @@ class ISO16358Calculator:
             raise ValueError("ISO boundary EER power must be positive.")
         return boundary_temp, capacity / power
 
+    def _iso_boundary_eer_t3_piecewise(
+        self,
+        resolved_points: dict,
+        load_type: str,
+        tj: float
+    ) -> tuple:
+        if tj > 35.0:
+            high_temp = 46.0
+            low_temp = 35.0
+        else:
+            high_temp = 35.0
+            low_temp = 29.0
+
+        point_high = resolved_points.get(f"{int(high_temp)}_{load_type}")
+        point_low = resolved_points.get(f"{int(low_temp)}_{load_type}")
+        if point_high is None or point_low is None:
+            raise ValueError(
+                "T3 ISO boundary EER requires "
+                f"{int(high_temp)}_{load_type} and {int(low_temp)}_{load_type}."
+            )
+
+        ref_point = resolved_points.get(self.reference_point)
+        if ref_point is None:
+            raise ValueError(
+                f"Reference point '{self.reference_point}' not found for T3 ISO boundary EER."
+            )
+
+        load_dt = self.t_100_load - self.t_0_load
+        segment_dt = high_temp - low_temp
+        if load_dt == 0 or segment_dt == 0:
+            raise ValueError("Cannot calculate T3 ISO boundary EER temperature.")
+
+        load_slope = ref_point["capacity"] / load_dt
+        load_intercept = -load_slope * self.t_0_load
+        capacity_slope = (
+            point_high["capacity"] - point_low["capacity"]
+        ) / segment_dt
+        capacity_intercept = point_high["capacity"] - capacity_slope * high_temp
+        denominator = load_slope - capacity_slope
+        if denominator == 0:
+            return None
+
+        boundary_temp = (capacity_intercept - load_intercept) / denominator
+        boundary_temp = self._round_iso_boundary_temperature(boundary_temp)
+        capacity = capacity_slope * boundary_temp + capacity_intercept
+        power_slope = (point_high["power"] - point_low["power"]) / segment_dt
+        power_intercept = point_high["power"] - power_slope * high_temp
+        power = power_slope * boundary_temp + power_intercept
+        if power <= 0:
+            raise ValueError("T3 ISO boundary EER power must be positive.")
+        return boundary_temp, capacity / power
+
     def _iso_boundary_eer_power(
         self,
         tj: float,
@@ -393,6 +445,32 @@ class ISO16358Calculator:
         lower_type: str,
         upper_type: str
     ) -> float:
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        if profile_cfg and profile_cfg.get("climate_profile") == "T3":
+            if {lower_type, upper_type} not in ({"min", "half"}, {"half", "full"}):
+                return None
+
+            upper_boundary = self._iso_boundary_eer_t3_piecewise(
+                resolved_points, upper_type, tj
+            )
+            lower_boundary = self._iso_boundary_eer_t3_piecewise(
+                resolved_points, lower_type, tj
+            )
+            if upper_boundary is None or lower_boundary is None:
+                return None
+
+            t_upper, eer_upper = upper_boundary
+            t_lower, eer_lower = lower_boundary
+            if t_upper == t_lower:
+                return None
+
+            eer_tj = eer_lower + (eer_upper - eer_lower) / (t_upper - t_lower) * (
+                tj - t_lower
+            )
+            if eer_tj <= 0:
+                return None
+            return Lc / eer_tj
+
         if {lower_type, upper_type} != {"half", "full"}:
             return None
 
@@ -1542,7 +1620,20 @@ class ISO16358Calculator:
                     P_tj = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
                 elif self.power_interpolation_method == "iso_boundary_eer":
                     try:
-                        P_tj = self._iso_boundary_eer_power(tj, Lc, resolved, lowest_type, highest_type)
+                        profile_cfg = self.config.get("cspf_test_profile", {})
+                        if profile_cfg.get("climate_profile") == "T3":
+                            for i in range(len(loads) - 1):
+                                c1, _, lower_type = loads[i]
+                                c2, _, upper_type = loads[i + 1]
+                                if c1 < Lc <= c2:
+                                    P_tj = self._iso_boundary_eer_power(
+                                        tj, Lc, resolved, lower_type, upper_type
+                                    )
+                                    break
+                        else:
+                            P_tj = self._iso_boundary_eer_power(
+                                tj, Lc, resolved, lowest_type, highest_type
+                            )
                     except:
                         P_tj = None
                 
