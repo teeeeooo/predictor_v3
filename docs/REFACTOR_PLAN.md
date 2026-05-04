@@ -828,7 +828,7 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 - ISO 16358-2 완전 구현 Phase에서 별도 추적한다.
 - 구현 전 선행 조건:
   - ISO 16358-2 pitfalls / calculation order 문서 작성
-  - Hong Kong HSPF golden 후보값 재확인: Measure #1 `3.643`, Measure #2 `4.572`
+  - Hong Kong HSPF golden 후보값 재확인: Measure #1 `3.643`, Measure #2 `4.571`
   - 기존 KS C 9306 HSPF regression 보호 확인
 - Preliminary observations, not implementation decisions:
   - `Lh(tj) = cap_0 × (12.75 - tj) / 12.75`

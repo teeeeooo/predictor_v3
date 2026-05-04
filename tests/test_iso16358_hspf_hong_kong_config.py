@@ -16,13 +16,14 @@ def test_hong_kong_hspf_golden_case_1():
         "7_half": {"capacity": 3200, "power": 800}
     }
     
-    # Re-calculate expectation based on engine behavior or check rules.
-    # If the provided golden (3.643) was based on a different assumption, 
-    # we need to verify if the formula (e.g. Footnote d) was applied correctly.
+    # Golden value verified by manual calculation:
+    # -7_full derived: cap=6300*0.64=4032, pwr=1500*0.82=1230
+    # -7_half derived: cap=3200*0.64=2048, pwr=800*0.82=656
+    # 2_full footnote d: cap=5490.0, pwr=1403.57
+    # 2_half footnote d: cap=2788.57, pwr=748.57
+    # L_h_ref=6300*0.82=5166, HSTL=273190.24, HSEC=74988.35
+    # HSPF raw=3.6431 → round(3)=3.643
     result = calc.calculate_hspf(measured_inputs)
-    # Based on my investigation, the calculation seems correct, so if test fails, 
-    # I should report the discrepancy or update expectations if they were derived 
-    # under a different interpretation.
     assert result["hspf"] == pytest.approx(3.643, abs=0.001)
 
 def test_hong_kong_hspf_golden_case_2():
@@ -51,3 +52,49 @@ def test_hong_kong_hspf_requires_explicit_rated_heating_capacity():
     }
     with pytest.raises(ValueError, match="rated_heating_capacity"):
         calc.calculate_hspf(measured_inputs)
+
+def test_hong_kong_hspf_rated_capacity_zero_or_negative():
+    calc = get_calculator()
+    with pytest.raises(ValueError):
+        calc.calculate_hspf({"rated_heating_capacity": 0, "7_full": {"capacity": 6300, "power": 1500}, "7_half": {"capacity": 3200, "power": 800}})
+    with pytest.raises(ValueError):
+        calc.calculate_hspf({"rated_heating_capacity": -1, "7_full": {"capacity": 6300, "power": 1500}, "7_half": {"capacity": 3200, "power": 800}})
+
+def test_hong_kong_hspf_missing_7_full():
+    calc = get_calculator()
+    with pytest.raises(ValueError, match="7_full"):
+        calc.calculate_hspf({"rated_heating_capacity": 6300, "7_half": {"capacity": 3200, "power": 800}})
+
+def test_hong_kong_hspf_missing_7_half():
+    calc = get_calculator()
+    with pytest.raises(ValueError, match="7_half"):
+        calc.calculate_hspf({"rated_heating_capacity": 6300, "7_full": {"capacity": 6300, "power": 1500}})
+
+def test_hong_kong_hspf_invalid_point_values():
+    calc = get_calculator()
+    with pytest.raises(ValueError):
+        calc.calculate_hspf({"rated_heating_capacity": 6300, "7_full": {"capacity": 6300, "power": 0}, "7_half": {"capacity": 3200, "power": 800}})
+    with pytest.raises(ValueError):
+        calc.calculate_hspf({"rated_heating_capacity": 6300, "7_full": {"capacity": -1, "power": 1500}, "7_half": {"capacity": 3200, "power": 800}})
+    with pytest.raises(ValueError):
+        calc.calculate_hspf({"rated_heating_capacity": 6300, "7_full": {"capacity": 6300}, "7_half": {"capacity": 3200, "power": 800}})
+
+def test_hong_kong_hspf_aux_cop_zero():
+    calc = get_calculator()
+    measured_inputs = {"rated_heating_capacity": 6300, "7_full": {"capacity": 6300, "power": 1500}, "7_half": {"capacity": 3200, "power": 800}}
+    with pytest.raises(ValueError):
+        calc.calculate_hspf(measured_inputs, aux_cop=0)
+
+def test_hong_kong_hspf_2half_measured_ignored():
+    calc = get_calculator()
+    base = {
+        "rated_heating_capacity": 6300,
+        "7_full": {"capacity": 6300, "power": 1500},
+        "7_half": {"capacity": 3200, "power": 800}
+    }
+    variant = base.copy()
+    variant["2_half"] = {"capacity": 999999, "power": 1}
+    
+    base_res = calc.calculate_hspf(base)
+    variant_res = calc.calculate_hspf(variant)
+    assert base_res["hspf"] == pytest.approx(variant_res["hspf"], abs=0.000001)
