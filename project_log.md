@@ -70,3 +70,31 @@
 - 계산기 UI의 가치는 타이핑 편의성보다 "데이터 붙여넣기(Paste)와 정확한 결과 확인"에 있음.
 - UI skinning은 구조가 확정된 뒤에 수행해야 editor, selection, repaint 타이밍 이슈를 방지할 수 있음.
 - 여러 규격을 동시에 구현하기보다 하나의 대표 경로(ISO16358/CSPF)를 먼저 안정화한 뒤 반복 적용하는 것이 효율적임.
+
+---
+
+## 2026-05-04 — V2 주요 시행착오 정리
+
+### Tried
+- V2 개발 과정에서 `QTableWidget` 사용, 모델 파일 분리 저장, `.values`를 통한 데이터 학습 등을 시도함.
+- `constants.py`에 설정 로드 로직(파일 I/O)을 포함하고, `EXCLUDED_FEATURES`를 별도로 관리함.
+
+### Result
+- V3 설계의 기초가 되는 다양한 아키텍처적 교훈을 얻음.
+- UI는 `QTableView`로, 모델은 통합 저장 구조로, 데이터 파이프라인은 `feature_names_in_` 보존 방식으로 개선됨.
+
+### Failed / Risk
+- **UI/UX**: `QTableWidget`과 `blockSignals` 미사용으로 인한 이벤트 루프 꼬임 및 유지보수 어려움 발생.
+- **ML/Data**: `.values` 변환으로 피처 이름 정보가 소실되거나, 데이터 누수(Leakage) 관리 미흡으로 타겟별 성능 왜곡 발생.
+- **Infrastructure**: 모델 파일 분리 저장으로 인한 버전 불일치 리스크 및 `constants.py` 내 파일 I/O로 인한 임포트 부작용 경험.
+
+### Decision
+- **UI 표준화**: `QTableView` + `QAbstractTableModel` 구조로 전면 교체.
+- **SSOT(Single Source of Truth)**: `core/constants.py`를 설정의 단일 소스로 유지하되 파일 I/O는 제외.
+- **통합 모델**: 모델 객체와 피처 리스트를 하나의 `.pkl` 파일에 담는 통합 저장 구조 채택.
+- **Leakage 엄격 분리**: 타겟별로 독립된 Leakage 리스트를 관리하도록 `models.py` 구조 개선.
+
+### Lesson
+- 프레임워크의 편의성(`QTableWidget`)보다 구조적 안정성(`QTableView`)이 장기적으로 유리함.
+- 데이터 학습 시 피처 이름을 끝까지 유지하는 것이 디버깅과 모델 검증에 필수적임.
+- 순수 상수 파일(`constants.py`)과 실행 유틸리티(`utils.py`)를 철저히 분리해야 순환 참조 및 예기치 못한 부작용을 막을 수 있음.
