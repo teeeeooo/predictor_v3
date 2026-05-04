@@ -70,14 +70,13 @@ class TwoPointTableModel(QAbstractTableModel):
             "No", "35°C Full Cap [W]", "35°C Full Pwr [W]", 
             "35°C Half Cap [W]", "35°C Half Pwr [W]",
             "EER Full", "EER Half", "ISO CSPF", "India ISEER",
-            "India CSEC [kWh]", "Hong Kong CSPF"
+            "India CSEC [kWh]"
         ]
         self._rows = []
         self._updating = False
         self._bulk_updating = False
         self.iso_t1_calc = None
         self.iseer_calc = None
-        self.hong_kong_calc = None
         for _ in range(3):
             self.add_row(emit=False)
             
@@ -90,7 +89,6 @@ class TwoPointTableModel(QAbstractTableModel):
     def set_calculators(self, iso_t1_calc, iseer_calc, hong_kong_calc=None):
         self.iso_t1_calc = iso_t1_calc
         self.iseer_calc = iseer_calc
-        self.hong_kong_calc = hong_kong_calc
         self.recalculate_rows(range(len(self._rows)))
 
     def rowCount(self, parent=QModelIndex()):
@@ -128,16 +126,15 @@ class TwoPointTableModel(QAbstractTableModel):
             elif col == 4: return item["half_pwr"]
             elif col == 5: return f"{item['eer_full']:.2f}" if item["eer_full"] is not None else ""
             elif col == 6: return f"{item['eer_half']:.2f}" if item["eer_half"] is not None else ""
-            elif col == 7: return f"{item['iso_cspf']:.3f}" if item["iso_cspf"] is not None else ""
-            elif col == 8: return f"{item['iseer']:.3f}" if item["iseer"] is not None else ""
+            elif col == 7: return f"{item['iso_cspf']:.2f}" if item["iso_cspf"] is not None else ""
+            elif col == 8: return f"{item['iseer']:.2f}" if item["iseer"] is not None else ""
             elif col == 9: return f"{item['iseer_csec']:.1f}" if item["iseer_csec"] is not None else ""
-            elif col == 10: return f"{item['hong_kong_cspf']:.3f}" if item["hong_kong_cspf"] is not None else ""
             
         elif role == Qt.BackgroundRole:
             if col == 0: return QColor("#F0F0F0")
             elif 1 <= col <= 4: return QColor("white")
             elif 5 <= col <= 6: return QColor("#E8F5E9")
-            elif 7 <= col <= 10:
+            elif 7 <= col <= 9:
                 if item.get("error"):
                     return QColor("#FFEBEE")
                 return QColor("#E3F2FD")
@@ -215,8 +212,7 @@ class TwoPointTableModel(QAbstractTableModel):
             "eer_full": None, "eer_half": None,
             "iso_cspf": None, "iseer": None, "iseer_csec": None,
             "iso_cstl": None, "iso_csec": None, "iseer_cstl": None,
-            "hong_kong_cspf": None, "hong_kong_cstl": None, "hong_kong_csec": None,
-            "iso_bin_details": None, "iseer_bin_details": None, "hong_kong_bin_details": None,
+            "iso_bin_details": None, "iseer_bin_details": None,
             "error": None
         })
         self.endInsertRows()
@@ -242,15 +238,11 @@ class TwoPointTableModel(QAbstractTableModel):
         item["iso_cstl"] = None
         item["iso_csec"] = None
         item["iseer_cstl"] = None
-        item["hong_kong_cspf"] = None
-        item["hong_kong_cstl"] = None
-        item["hong_kong_csec"] = None
         item["iso_bin_details"] = None
         item["iseer_bin_details"] = None
-        item["hong_kong_bin_details"] = None
         item["error"] = None
         if emit:
-            self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 10))
+            self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 9))
             self.row_updated.emit(row_index)
             self.model_results_changed.emit()
 
@@ -285,7 +277,6 @@ class TwoPointTableModel(QAbstractTableModel):
             
             iso_res = self.iso_t1_calc.calculate_cspf(inputs)
             iseer_res = self.iseer_calc.calculate_cspf(inputs)
-            hong_kong_res = self.hong_kong_calc.calculate_cspf(inputs) if self.hong_kong_calc else {}
             
             item["iso_cspf"] = iso_res.get("cspf")
             item["iso_cstl"] = iso_res.get("annual_cooling_kwh")
@@ -296,27 +287,19 @@ class TwoPointTableModel(QAbstractTableModel):
             item["iseer_cstl"] = iseer_res.get("annual_cooling_kwh")
             item["iseer_csec"] = iseer_res.get("annual_power_kwh")
             item["iseer_bin_details"] = iseer_res.get("bin_details")
-            item["hong_kong_cspf"] = hong_kong_res.get("cspf")
-            item["hong_kong_cstl"] = hong_kong_res.get("annual_cooling_kwh")
-            item["hong_kong_csec"] = hong_kong_res.get("annual_power_kwh")
-            item["hong_kong_bin_details"] = hong_kong_res.get("bin_details")
             item["error"] = None
         except Exception as e:
             item["error"] = "계산 오류: " + str(e)
             item["iso_cspf"] = None
             item["iseer"] = None
             item["iseer_csec"] = None
-            item["hong_kong_cspf"] = None
             item["iso_cstl"] = None
             item["iso_csec"] = None
             item["iseer_cstl"] = None
-            item["hong_kong_cstl"] = None
-            item["hong_kong_csec"] = None
             item["iso_bin_details"] = None
             item["iseer_bin_details"] = None
-            item["hong_kong_bin_details"] = None
             
-        self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 10))
+        self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 9))
         self.row_updated.emit(row_index)
 
     def get_row_result(self, row_index):
@@ -604,6 +587,159 @@ class TraceDetailPanel(QWidget):
         self.iseer_graph.clear()
 
 
+class ProfileInputGridModel(QAbstractTableModel):
+    values_changed = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self._points = []
+        self._values = []
+        self._bulk_updating = False
+
+    def rowCount(self, parent=QModelIndex()):
+        return 2
+
+    def columnCount(self, parent=QModelIndex()):
+        return len(self._points)
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal and 0 <= section < len(self._points):
+                return self._points[section][0]
+            if orientation == Qt.Vertical:
+                return ("Capacity [W]", "Power [W]")[section]
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+        return QVariant()
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.NoItemFlags
+        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return QVariant()
+        row = index.row()
+        col = index.column()
+        if role in (Qt.DisplayRole, Qt.EditRole):
+            return self._values[row][col]
+        if role == Qt.BackgroundRole:
+            return QColor("#FFFFFF")
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+        return QVariant()
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if not index.isValid() or role != Qt.EditRole:
+            return False
+        self._values[index.row()][index.column()] = str(value).strip()
+        self.dataChanged.emit(index, index)
+        if not self._bulk_updating:
+            self.values_changed.emit()
+        return True
+
+    def set_points(self, points):
+        old = {}
+        for col, (_, key) in enumerate(self._points):
+            if self._values:
+                old[key] = (self._values[0][col], self._values[1][col])
+
+        self.beginResetModel()
+        self._points = list(points)
+        self._values = [["" for _ in self._points], ["" for _ in self._points]]
+        for col, (_, key) in enumerate(self._points):
+            if key in old:
+                self._values[0][col], self._values[1][col] = old[key]
+        self.endResetModel()
+        self.values_changed.emit()
+
+    def paste_tsv(self, start_row, start_col, text):
+        if not text:
+            return
+        rows = text.strip("\n").split("\n")
+        if not rows:
+            return
+        self._bulk_updating = True
+        changed = False
+        try:
+            for r_offset, line in enumerate(rows):
+                row = start_row + r_offset
+                if row >= self.rowCount():
+                    break
+                for c_offset, value in enumerate(line.split("\t")):
+                    col = start_col + c_offset
+                    if col >= self.columnCount():
+                        break
+                    self._values[row][col] = value.strip()
+                    changed = True
+        finally:
+            self._bulk_updating = False
+        if changed:
+            top = self.index(start_row, start_col)
+            bottom = self.index(self.rowCount() - 1, self.columnCount() - 1)
+            self.dataChanged.emit(top, bottom)
+            self.values_changed.emit()
+
+    def parsed_points(self, required_keys=None):
+        required = set(required_keys or [key for _, key in self._points])
+        parsed = {}
+        for col, (_, key) in enumerate(self._points):
+            if key not in required:
+                continue
+            cap = self._parse_cell(self._values[0][col])
+            pwr = self._parse_cell(self._values[1][col])
+            if cap is None or pwr is None:
+                return None
+            parsed[key] = {"capacity": cap, "power": pwr}
+        return parsed
+
+    def value(self, point_key, field):
+        row = 0 if field == "capacity" else 1
+        for col, (_, key) in enumerate(self._points):
+            if key == point_key:
+                return self._parse_cell(self._values[row][col])
+        return None
+
+    def _parse_cell(self, text):
+        value = str(text).replace(",", "").strip()
+        if not value:
+            return None
+        try:
+            number = float(value)
+        except ValueError:
+            return None
+        return number if number > 0 else None
+
+
+class ProfileInputGridView(QTableView):
+    def __init__(self):
+        super().__init__()
+        self.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
+        self.verticalHeader().setDefaultAlignment(Qt.AlignCenter)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        self.verticalHeader().setDefaultSectionSize(34)
+        self.setAlternatingRowColors(False)
+        self.setMinimumHeight(118)
+        self.setMaximumHeight(126)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Paste):
+            model = self.model()
+            indexes = self.selectedIndexes()
+            if model and hasattr(model, "paste_tsv") and indexes:
+                model.paste_tsv(
+                    min(index.row() for index in indexes),
+                    min(index.column() for index in indexes),
+                    QApplication.clipboard().text(),
+                )
+            return
+        super().keyPressEvent(event)
+
+
 class RegionResultTableModel(QAbstractTableModel):
     def __init__(self):
         super().__init__()
@@ -635,8 +771,8 @@ class RegionResultTableModel(QAbstractTableModel):
             if row[0] and any(row[1:]):
                 return QColor("#EAF4FF")
             return QColor("#FAFAFA")
-        if role == Qt.TextAlignmentRole and col > 0:
-            return Qt.AlignRight | Qt.AlignVCenter
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
         return QVariant()
 
     def set_schema(self, headers, rows):
@@ -695,9 +831,9 @@ class RegionDetailTab(QWidget):
             self.clear()
             return
         self.summary.setText(
-            f"CSPF: {_fmt(result.get('cspf'), 3)}   "
-            f"CSTL [kWh]: {_fmt(result.get('annual_cooling_kwh'), 3)}   "
-            f"CSEC [kWh]: {_fmt(result.get('annual_power_kwh'), 3)}"
+            f"CSPF: {_fmt(result.get('cspf'), 2)}   "
+            f"CSTL [kWh]: {_fmt(result.get('annual_cooling_kwh'), 1)}   "
+            f"CSEC [kWh]: {_fmt(result.get('annual_power_kwh'), 1)}"
         )
         details = result.get("bin_details") or []
         self.table_model.set_data(details)
@@ -712,11 +848,11 @@ class RegionDetailTab(QWidget):
 class BatchTwoPointDialog(QDialog):
     def __init__(self, calculators, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("2점식 ISO/ISEER/Hong Kong Batch 계산")
+        self.setWindowTitle("ISO/ISEER 2점식 Multi 입력")
         self.resize(1180, 540)
 
         layout = QVBoxLayout(self)
-        title = QLabel("2점식 ISO/ISEER/Hong Kong Multi 입력")
+        title = QLabel("ISO/ISEER 2점식 Multi 입력")
         title.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(title)
 
@@ -724,7 +860,6 @@ class BatchTwoPointDialog(QDialog):
         self.model.set_calculators(
             calculators.get("iso"),
             calculators.get("india"),
-            calculators.get("hong_kong"),
         )
         self.view = TwoPointTableView()
         self.view.setModel(self.model)
@@ -757,20 +892,24 @@ class BatchTwoPointDialog(QDialog):
 
 
 class IsoCspfSingleWidget(QWidget):
-    PROFILE_TWO_POINT = "2점식 ISO/ISEER/Hong Kong"
+    PROFILE_TWO_POINT = "ISO / ISEER 2점식"
+    PROFILE_HONG_KONG = "Hong Kong CSPF"
     PROFILE_SASO_T3 = "SASO T3"
 
     TWO_POINT_REGIONS = [
-        ("iso", "ISO 16358-1 공통"),
+        ("iso", "ISO 16358-1"),
         ("india", "India ISEER"),
-        ("hong_kong", "Hong Kong CSPF"),
     ]
+
+    TWO_POINT_INPUTS = [("35 Full", "35_full"), ("35 Half", "35_half")]
+    SASO_INPUTS_REQUIRED = [("46 Full", "46_full"), ("35 Full", "35_full"), ("35 Half", "35_half")]
+    SASO_INPUTS_WITH_MIN = SASO_INPUTS_REQUIRED + [("35 Min", "35_min")]
 
     def __init__(self, config_dir, parent=None):
         super().__init__(parent)
         self.config_dir = config_dir
         self.calculators = {}
-        self.input_widgets = {}
+        self.saso_path = os.path.join(self.config_dir, "saso.json")
         self.results = {}
         self._updating_profile = False
         self._load_calculators()
@@ -805,15 +944,16 @@ class IsoCspfSingleWidget(QWidget):
         top_layout = QHBoxLayout(top)
         top_layout.addWidget(QLabel("Profile"))
         self.combo_profile = QComboBox()
-        self.combo_profile.addItems([self.PROFILE_TWO_POINT, self.PROFILE_SASO_T3])
+        self.combo_profile.addItems([self.PROFILE_TWO_POINT, self.PROFILE_HONG_KONG, self.PROFILE_SASO_T3])
         top_layout.addWidget(self.combo_profile)
         top_layout.addStretch()
-        self.btn_batch = QPushButton("Batch 계산")
+        self.btn_batch = QPushButton("Multi 입력")
         top_layout.addWidget(self.btn_batch)
         layout.addWidget(top)
 
         self.input_panel = self._panel()
         self.input_layout = QVBoxLayout(self.input_panel)
+        self.input_layout.setSpacing(8)
         layout.addWidget(self.input_panel)
 
         result_panel = self._panel()
@@ -825,7 +965,7 @@ class IsoCspfSingleWidget(QWidget):
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.result_table.verticalHeader().setVisible(False)
         self.result_table.setAlternatingRowColors(True)
-        self.result_table.setMinimumHeight(150)
+        self.result_table.setMinimumHeight(132)
         result_layout.addWidget(self.result_table)
         self.status = QLabel("계산 대기")
         self.status.setStyleSheet("color: #526071;")
@@ -861,93 +1001,89 @@ class IsoCspfSingleWidget(QWidget):
         self._updating_profile = True
         try:
             self._clear_layout(self.input_layout)
-            self.input_widgets = {}
             self.results = {}
             self.result_model.clear()
             self._clear_detail_tabs()
-            if self.combo_profile.currentText() == self.PROFILE_SASO_T3:
+            profile = self.combo_profile.currentText()
+            if profile == self.PROFILE_SASO_T3:
                 self._build_saso_inputs()
                 self._build_detail_tabs([("saso", "SASO T3")])
+                self.btn_batch.setEnabled(False)
+                self.btn_batch.setToolTip("SASO T3 Multi 입력은 후속 지원 예정입니다.")
+            elif profile == self.PROFILE_HONG_KONG:
+                self._build_hong_kong_inputs()
+                self._build_detail_tabs([("hong_kong", "Hong Kong CSPF")])
+                self.btn_batch.setEnabled(False)
+                self.btn_batch.setToolTip("Hong Kong Multi 입력은 후속 지원 예정입니다.")
             else:
                 self._build_two_point_inputs()
                 self._build_detail_tabs(self.TWO_POINT_REGIONS)
+                self.btn_batch.setEnabled(True)
+                self.btn_batch.setToolTip("")
             self.status.setText("계산 대기")
         finally:
             self._updating_profile = False
         self._recalculate()
 
     def _build_two_point_inputs(self):
-        grid = QGridLayout()
-        grid.addWidget(QLabel(""), 0, 0)
-        grid.addWidget(QLabel("Full"), 0, 1, 1, 2, Qt.AlignCenter)
-        grid.addWidget(QLabel("Half"), 0, 3, 1, 2, Qt.AlignCenter)
-        grid.addWidget(QLabel(""), 1, 0)
-        for col, text in enumerate(["Capacity [W]", "Power [W]", "Capacity [W]", "Power [W]"], start=1):
-            grid.addWidget(QLabel(text), 1, col)
-        grid.addWidget(QLabel("35°C"), 2, 0)
-        for col, key in enumerate(["35_full_capacity", "35_full_power", "35_half_capacity", "35_half_power"], start=1):
-            widget = self._line_edit(key)
-            grid.addWidget(widget, 2, col)
-        self.input_layout.addLayout(grid)
+        self.input_layout.addWidget(QLabel("시험 입력"))
+        self._install_input_grid(self.TWO_POINT_INPUTS)
+
+    def _build_hong_kong_inputs(self):
+        top = QHBoxLayout()
+        label = QLabel("Rated/Declared Capacity [W]")
+        self.declared_capacity = QLineEdit()
+        self.declared_capacity.setPlaceholderText("예: 3500")
+        self.declared_capacity.textChanged.connect(self._recalculate)
+        top.addWidget(label)
+        top.addWidget(self.declared_capacity)
+        top.addStretch()
+        self.input_layout.addLayout(top)
+        self.input_layout.addWidget(QLabel("시험 입력"))
+        self._install_input_grid(self.TWO_POINT_INPUTS)
 
     def _build_saso_inputs(self):
-        grid = QGridLayout()
-        grid.addWidget(QLabel("Point"), 0, 0)
-        grid.addWidget(QLabel("Capacity [W]"), 0, 1)
-        grid.addWidget(QLabel("Power [W]"), 0, 2)
-        rows = [
-            ("46°C Full", "46_full_capacity", "46_full_power"),
-            ("35°C Full", "35_full_capacity", "35_full_power"),
-            ("35°C Half", "35_half_capacity", "35_half_power"),
-            ("35°C Minimum", "35_min_capacity", "35_min_power"),
-        ]
-        for row, (label, cap_key, pwr_key) in enumerate(rows, start=1):
-            grid.addWidget(QLabel(label), row, 0)
-            grid.addWidget(self._line_edit(cap_key), row, 1)
-            grid.addWidget(self._line_edit(pwr_key), row, 2)
         self.chk_saso_min = QCheckBox("35°C Minimum 사용")
         self.input_layout.addWidget(self.chk_saso_min)
-        self.input_layout.addLayout(grid)
         self.chk_saso_min.toggled.connect(self._on_saso_min_toggled)
-        self._on_saso_min_toggled(False)
-
-    def _line_edit(self, key):
-        widget = QLineEdit()
-        widget.setPlaceholderText("0")
-        widget.textChanged.connect(self._recalculate)
-        self.input_widgets[key] = widget
-        return widget
+        self.input_layout.addWidget(QLabel("시험 입력"))
+        self._install_input_grid(self.SASO_INPUTS_REQUIRED)
 
     def _on_saso_min_toggled(self, checked):
-        for key in ("35_min_capacity", "35_min_power"):
-            widget = self.input_widgets.get(key)
-            if widget:
-                widget.setEnabled(checked)
+        self.input_model.set_points(self.SASO_INPUTS_WITH_MIN if checked else self.SASO_INPUTS_REQUIRED)
         self._recalculate()
+
+    def _install_input_grid(self, points):
+        self.input_model = ProfileInputGridModel()
+        self.input_view = ProfileInputGridView()
+        self.input_view.setModel(self.input_model)
+        self.input_model.values_changed.connect(self._recalculate)
+        self.input_model.set_points(points)
+        self.input_layout.addWidget(self.input_view)
 
     def _recalculate(self):
         if self._updating_profile:
             return
-        if self.combo_profile.currentText() == self.PROFILE_SASO_T3:
+        profile = self.combo_profile.currentText()
+        if profile == self.PROFILE_SASO_T3:
             self._recalculate_saso()
+        elif profile == self.PROFILE_HONG_KONG:
+            self._recalculate_hong_kong()
         else:
             self._recalculate_two_point()
 
     def _recalculate_two_point(self):
-        data = self._parse_inputs(["35_full_capacity", "35_full_power", "35_half_capacity", "35_half_power"])
-        headers = ["Region", "EER-Full", "EER-Half", "CSPF", "CSTL [kWh]", "CSEC [kWh]"]
+        measured = self.input_model.parsed_points()
+        headers = ["Region/Profile", "EER-Full", "EER-Half", "CSPF/SEER", "CSTL [kWh]", "CSEC [kWh]"]
         blank_rows = [[label, "", "", "", "", ""] for _, label in self.TWO_POINT_REGIONS]
-        if data is None:
+        if measured is None:
             self.results = {}
             self.result_model.set_schema(headers, blank_rows)
+            self._resize_result_table()
             self._update_detail_tabs()
             self.status.setText("입력값 부족")
             return
 
-        measured = {
-            "35_full": {"capacity": data["35_full_capacity"], "power": data["35_full_power"]},
-            "35_half": {"capacity": data["35_half_capacity"], "power": data["35_half_power"]},
-        }
         rows = []
         self.results = {}
         for key, label in self.TWO_POINT_REGIONS:
@@ -956,60 +1092,82 @@ class IsoCspfSingleWidget(QWidget):
                 self.results[key] = result
                 rows.append([
                     label,
-                    _fmt(data["35_full_capacity"] / data["35_full_power"], 2),
-                    _fmt(data["35_half_capacity"] / data["35_half_power"], 2),
-                    _fmt(result.get("cspf"), 3),
-                    _fmt(result.get("annual_cooling_kwh"), 3),
-                    _fmt(result.get("annual_power_kwh"), 3),
+                    _fmt(_eer(measured, "35_full"), 2),
+                    _fmt(_eer(measured, "35_half"), 2),
+                    _fmt(result.get("cspf"), 2),
+                    _fmt(result.get("annual_cooling_kwh"), 1),
+                    _fmt(result.get("annual_power_kwh"), 1),
                 ])
             except Exception:
                 rows.append([label, "", "", "", "", ""])
         self.result_model.set_schema(headers, rows)
+        self._resize_result_table()
         self._update_detail_tabs()
         self.status.setText("자동 계산 완료" if self.results else "계산 대기")
 
-    def _recalculate_saso(self):
-        required = [
-            "46_full_capacity", "46_full_power",
-            "35_full_capacity", "35_full_power",
-            "35_half_capacity", "35_half_power",
-        ]
-        if self.chk_saso_min.isChecked():
-            required.extend(["35_min_capacity", "35_min_power"])
-        data = self._parse_inputs(required)
-        headers = [
-            "Region/Profile", "EER 46-Full", "EER 35-Full", "EER 35-Half",
-            "EER 35-Min", "CSPF", "CSTL [kWh]", "CSEC [kWh]"
-        ]
-        if data is None:
+    def _recalculate_hong_kong(self):
+        measured = self.input_model.parsed_points()
+        declared_capacity = _parse_positive_number(self.declared_capacity.text())
+        headers = ["Region/Profile", "EER-Full", "EER-Half", "CSPF", "CSTL [kWh]", "CSEC [kWh]"]
+        if measured is None or declared_capacity is None:
             self.results = {}
-            self.result_model.set_schema(headers, [["SASO T3", "", "", "", "", "", "", ""]])
+            self.result_model.set_schema(headers, [["Hong Kong CSPF", "", "", "", "", ""]])
+            self._resize_result_table()
             self._update_detail_tabs()
             self.status.setText("입력값 부족")
             return
 
-        measured = {
-            "46_full": {"capacity": data["46_full_capacity"], "power": data["46_full_power"]},
-            "35_full": {"capacity": data["35_full_capacity"], "power": data["35_full_power"]},
-            "35_half": {"capacity": data["35_half_capacity"], "power": data["35_half_power"]},
-        }
-        eer_min = ""
-        if self.chk_saso_min.isChecked():
-            measured["35_min"] = {"capacity": data["35_min_capacity"], "power": data["35_min_power"]}
-            eer_min = _fmt(data["35_min_capacity"] / data["35_min_power"], 2)
+        try:
+            result = self.calculators["hong_kong"].calculate_cspf(
+                measured,
+                declared_capacity=declared_capacity,
+            )
+            self.results = {"hong_kong": result}
+            row = [
+                "Hong Kong CSPF",
+                _fmt(_eer(measured, "35_full"), 2),
+                _fmt(_eer(measured, "35_half"), 2),
+                _fmt(result.get("cspf"), 2),
+                _fmt(result.get("annual_cooling_kwh"), 1),
+                _fmt(result.get("annual_power_kwh"), 1),
+            ]
+            self.status.setText("자동 계산 완료")
+        except Exception:
+            self.results = {}
+            row = ["Hong Kong CSPF", "", "", "", "", ""]
+            self.status.setText("계산 대기")
+        self.result_model.set_schema(headers, [row])
+        self._resize_result_table()
+        self._update_detail_tabs()
+
+    def _recalculate_saso(self):
+        use_min = self.chk_saso_min.isChecked()
+        points = self.SASO_INPUTS_WITH_MIN if use_min else self.SASO_INPUTS_REQUIRED
+        measured = self.input_model.parsed_points([key for _, key in points])
+        headers = [
+            "Region/Profile", "EER 46-Full", "EER 35-Full", "EER 35-Half",
+            "EER 35-Min", "CSPF", "CSTL [kWh]", "CSEC [kWh]"
+        ]
+        if measured is None:
+            self.results = {}
+            self.result_model.set_schema(headers, [["SASO T3", "", "", "", "", "", "", ""]])
+            self._resize_result_table()
+            self._update_detail_tabs()
+            self.status.setText("입력값 부족")
+            return
 
         try:
-            result = self.calculators["saso"].calculate_cspf(measured)
+            result = self._saso_calculator(use_min).calculate_cspf(measured)
             self.results = {"saso": result}
             row = [
                 "SASO T3",
-                _fmt(data["46_full_capacity"] / data["46_full_power"], 2),
-                _fmt(data["35_full_capacity"] / data["35_full_power"], 2),
-                _fmt(data["35_half_capacity"] / data["35_half_power"], 2),
-                eer_min,
-                _fmt(result.get("cspf"), 3),
-                _fmt(result.get("annual_cooling_kwh"), 3),
-                _fmt(result.get("annual_power_kwh"), 3),
+                _fmt(_eer(measured, "46_full"), 2),
+                _fmt(_eer(measured, "35_full"), 2),
+                _fmt(_eer(measured, "35_half"), 2),
+                _fmt(_eer(measured, "35_min"), 2) if use_min else "",
+                _fmt(result.get("cspf"), 2),
+                _fmt(result.get("annual_cooling_kwh"), 1),
+                _fmt(result.get("annual_power_kwh"), 1),
             ]
             self.status.setText("자동 계산 완료")
         except Exception:
@@ -1017,25 +1175,14 @@ class IsoCspfSingleWidget(QWidget):
             row = ["SASO T3", "", "", "", "", "", "", ""]
             self.status.setText("계산 대기")
         self.result_model.set_schema(headers, [row])
+        self._resize_result_table()
         self._update_detail_tabs()
 
-    def _parse_inputs(self, keys):
-        parsed = {}
-        for key in keys:
-            widget = self.input_widgets.get(key)
-            if not widget:
-                return None
-            text = widget.text().replace(",", "").strip()
-            if not text:
-                return None
-            try:
-                value = float(text)
-            except ValueError:
-                return None
-            if value <= 0:
-                return None
-            parsed[key] = value
-        return parsed
+    def _saso_calculator(self, use_min):
+        calculator = ISO16358Calculator(self.saso_path)
+        if not use_min:
+            calculator.config.setdefault("cspf_test_profile", {})["test_selection"] = "required_only"
+        return calculator
 
     def _build_detail_tabs(self, tabs):
         self.detail_widgets = {}
@@ -1053,6 +1200,14 @@ class IsoCspfSingleWidget(QWidget):
         for key, widget in self.detail_widgets.items():
             widget.set_result(self.results.get(key))
 
+    def _resize_result_table(self):
+        header = self.result_table.horizontalHeader()
+        if self.result_model.columnCount() > 0:
+            header.setSectionResizeMode(0, QHeaderView.Interactive)
+            self.result_table.setColumnWidth(0, 180)
+        for col in range(1, self.result_model.columnCount()):
+            header.setSectionResizeMode(col, QHeaderView.Stretch)
+
     def _toggle_detail(self):
         visible = not self.detail_panel.isVisible()
         self.detail_panel.setVisible(visible)
@@ -1061,6 +1216,8 @@ class IsoCspfSingleWidget(QWidget):
             self._update_detail_tabs()
 
     def _open_batch_dialog(self):
+        if not self.btn_batch.isEnabled():
+            return
         dialog = BatchTwoPointDialog(self.calculators, self)
         dialog.exec_()
 
@@ -1082,3 +1239,21 @@ def _fmt(value, digits):
         return f"{float(value):.{digits}f}"
     except (TypeError, ValueError):
         return ""
+
+
+def _parse_positive_number(text):
+    try:
+        value = float(str(text).replace(",", "").strip())
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def _eer(measured, point_key):
+    point = measured.get(point_key)
+    if not point:
+        return None
+    power = point.get("power")
+    if not power:
+        return None
+    return point.get("capacity") / power

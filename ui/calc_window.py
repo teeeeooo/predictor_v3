@@ -34,7 +34,7 @@ class CalculatorWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("효율 계산기 (ISO / EN / AHRI)")
-        self.resize(600, 850)
+        self.resize(980, 850)
 
         # 경로 설정
         current_dir = os.path.dirname(os.path.abspath(__file__))
