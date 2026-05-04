@@ -323,6 +323,220 @@ Phase 1에서는 한 번에 모든 지역을 완전 구현해서 배포하지 �
 - optional 선택 UI는 비활성화하거나 노출하지 않는다.
 - SASO T3는 official golden regression 완료 상태이나 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 검토한다.
 
+## Calculator UI Refactor Plan (임시, 완료 후 삭제 필요. 2026-05-04 기준)
+
+### Goal
+
+Calculator UI는 단순한 단건 계산기가 아니라, 시험실 엔지니어가 엑셀/성적서 데이터를 빠르게 붙여넣고 여러 규격 결과를 검산할 수 있는 엔지니어링 계산 패널로 정리한다.
+
+단기 목표는 “예쁜 UI”가 아니라 다음이다.
+
+- 정확한 계산 연결
+- 규격별 profile 구조 정리
+- 스프레드시트 친화적 입력
+- 입력값 변경 시 즉시 계산
+- 입력값 부족/오류 시 안전한 clear
+- trace table / graph 기반 검증 가능성 확보
+
+디자인 skinning은 모든 주요 계산기 UI 연결 이후 별도 단계에서 진행한다.
+
+### Current UI Architecture
+
+현재 ISO/CSPF UI는 다음 구조로 정리되어 있다.
+
+- `ui/calc_window.py`
+  - Calculator window 및 top-level tab 조립 담당
+  - legacy ISO 계산 UI 제거됨
+
+- `ui/calculators_2point.py`
+  - ISO/CSPF UI 본체
+  - `ProfileInputGridModel`
+  - `ProfileInputGridView`
+  - `RegionResultTableModel`
+  - `TraceTableModel`
+  - `BinGraphWidget`
+  - `BatchTwoPointDialog`
+  - `IsoCspfSingleWidget`
+
+### ProfileInputGrid Direction
+
+메인 단건 입력부는 `QTableView + QAbstractTableModel` 기반의 2행 x N열 grid를 유지한다.
+
+기본 구조:
+
+    Test Point 1   Test Point 2   ...
+    Capacity       input          input
+    Power          input          input
+
+지원 기능:
+
+- 2행 x N열 TSV paste
+- undo
+- Enter 이동
+- 방향키 이동
+- cell 단위 선택
+- 입력값 변경 시 즉시 재계산
+- invalid 입력 시 결과 clear
+
+지원하지 않는 것:
+
+- 1행 x 2N pair paste
+- 완전한 Excel clone
+- 복잡한 병합 header
+- 디자인 skinning 선행 적용
+
+### Current Profiles
+
+#### ISO / ISEER 2-point
+
+입력:
+
+- 35 Full
+- 35 Half
+
+출력:
+
+- ISO 16358-1
+- India ISEER
+
+#### Hong Kong CSPF
+
+입력:
+
+- Rated/Declared Capacity [W]
+- 35 Full
+- 35 Half
+
+출력:
+
+- Hong Kong CSPF
+
+#### SASO T3
+
+입력:
+
+- 46 Full
+- 35 Full
+- 35 Half
+- optional 35 Min
+
+동작:
+
+- 35 Min checkbox OFF:
+  - `46_full / 35_full / 35_half`
+  - required-only 3점식
+- 35 Min checkbox ON:
+  - `46_full / 35_full / 35_half / 35_min`
+  - 4점식
+
+출력:
+
+- SASO T3
+
+### Refactor Phases
+
+#### Phase UI-1 — ISO/CSPF Base Stabilization
+
+Status: In progress / mostly complete
+
+Scope:
+
+- ISO/ISEER 2점식 profile
+- Hong Kong profile
+- SASO T3 profile
+- ProfileInputGrid paste/undo/Enter 이동
+- Multi 입력 dialog ISO/ISEER 2점식 전용
+- trace table / graph 기본 표시
+
+Remaining:
+
+- 상세보기 graph/table 좌우 배치
+- 상세 영역 스크롤 구조 개선
+- graph 축/tick/label 개선
+- Load vs Capacity graph 최신 데이터 갱신 확인/수정
+
+#### Phase UI-2 — ISO16358-2 HSPF UI 연결
+
+Prerequisite:
+
+- ISO16358-2 HSPF calculation engine implementation completed
+- official calculator / golden case cross-check completed
+- HSPF required measured points and result schema finalized
+- bin_details or equivalent trace structure available
+
+Scope:
+
+- HSPF profile 추가
+- HSPF input grid 구성
+- HSPF result table 연결
+- HSPF trace table / graph 연결
+- CSPF/HSPF profile 전환 시 data isolation 보장
+
+#### Phase UI-3 — EN14825 UI 연결
+
+Prerequisite:
+
+- EN14825 calculation engine stable
+- required input point schema clarified
+
+Scope:
+
+- EN14825 profile/tab 추가
+- A/B/C/D 등 입력 grid 구성
+- SEER/SCOP result table 연결
+- trace/graph 연결 가능성 검토
+
+#### Phase UI-4 — AHRI 210/240 UI 연결
+
+Prerequisite:
+
+- AHRI SEER2/HSPF2 calculation engine stable
+- required input point schema clarified
+
+Scope:
+
+- AHRI profile/tab 추가
+- SEER2/HSPF2 input grid 구성
+- result table 연결
+- trace/graph 연결 가능성 검토
+
+#### Phase UI-5 — Multi Input Expansion
+
+Scope:
+
+- 현재 Multi dialog는 ISO/ISEER 2점식 전용
+- 후속으로 Hong Kong Multi 입력 검토
+  - row별 Rated/Declared Capacity 필요
+- 후속으로 SASO T3 Multi 입력 검토
+  - 3점식/4점식 입력 구조 필요
+- per-No 2행 x N열 구조는 별도 설계 필요
+
+#### Phase UI-6 — UI Skinning / Visual Polish
+
+Prerequisite:
+
+- ISO/CSPF, HSPF, EN14825, AHRI UI 연결 완료
+- 입력 profile 구조가 안정화됨
+- 계산/붙여넣기/undo/trace/graph 동작 검증 완료
+
+Scope:
+
+- QSS 정리
+- card-like panels
+- rounded input cells
+- tab styling
+- improved result cards
+- possible `QStyledItemDelegate.paint()` for input cell skinning
+- graph/table visual polish
+
+Important:
+
+- Skinning phase must not change calculation logic.
+- Skinning phase must not change model data flow.
+- Input paste/undo/navigation behavior must be preserved.
+
+## Calculator UI Refactor Plan 끝부분. 여기까지 임시
+
 ---
 
 ## 6. KS C 9306 유지보수 계획

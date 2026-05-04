@@ -561,3 +561,115 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
    - trace table 최소 표시 행 수 확대
 
 6. 이후 Korea CSPF / SASO T3 / EN14825 / AHRI210240 UI 확장은 2점식 탭 UX 안정화 후 진행
+
+
+## 2026-05-04 — Calculator UI 작업 현황 및 다음 단계
+## (임시임, 완료 후 삭제 필요)
+
+### 현재 Calculator UI 방향
+
+Calculator UI는 당분간 **기능/구조 안정화 우선**으로 진행한다.  
+디자인 skinning은 모든 주요 규격 UI 연결 후 마지막 단계에서 수행한다.
+
+Calculator UI 방향 정리:
+- ISO/CSPF UI는 single-input-first + profile-based structure로 전환.
+- 메인 입력은 QTableView/QAbstractTableModel 기반 2행 x N열 ProfileInputGrid로 유지.
+- profile은 ISO/ISEER 2점식, Hong Kong CSPF, SASO T3로 분리.
+- Hong Kong은 declared_capacity 입력 연결 완료.
+- SASO는 3점식/4점식 checkbox 분기 연결 완료.
+- Multi 입력은 현재 ISO/ISEER 2점식 전용.
+- 디자인 skinning은 후순위. 우선 HSPF, EN14825, AHRI UI 연결 완료 후 진행.
+
+최종 방향:
+
+1. ISO16358-2 HSPF 계산기 구현
+   - 공식 규격서 / 공식 계산기 / golden case 교차검증이 가능한 상태에서 구현한다.
+   - HSPF 계산 엔진이 안정화되면 UI profile로 연결한다.
+
+2. Calculator UI 기본 기능 구현
+   - 우선 ISO 계열부터 안정화한다.
+   - CSPF / HSPF profile 선택 구조를 정리한다.
+   - 메인 input grid, result table, detail trace/graph 기본 UX를 확정한다.
+   - 디자인보다 입력/복붙/계산/clear/trace 안정성을 우선한다.
+
+3. EN14825, AHRI 210/240 UI 연결
+   - 이미 구현된 계산 엔진을 Calculator UI에 연결한다.
+   - 각 규격별 입력 grid 구조를 맞춘다.
+   - 이 단계까지는 “투박하지만 정확한 엔지니어링 툴”을 목표로 한다.
+
+4. UI 디자인 다듬기
+   - 전체 입력 구조와 규격별 profile이 확정된 뒤 진행한다.
+   - QSS / delegate paint / rounded input / card layout / tab style 등을 적용한다.
+   - 이 단계 전까지는 과도한 디자인 skinning을 하지 않는다.
+
+### 현재 ISO/CSPF UI 구현 상태
+
+- ISO/CSPF UI는 single-input-first 구조로 전환됨.
+- 메인 입력부는 `ProfileInputGridModel` / `ProfileInputGridView` 기반.
+  - `QTableView + QAbstractTableModel`
+  - 2행 x N열 grid
+  - row 0 = `Capacity [W]`
+  - row 1 = `Power [W]`
+  - `QKeySequence.Paste` 기반 TSV 붙여넣기 지원
+  - `QKeySequence.Undo` 기반 undo 지원
+  - Enter 입력 후 다음 셀 이동 지원
+- profile은 3개로 분리됨.
+  - ISO / ISEER 2점식
+  - Hong Kong CSPF
+  - SASO T3
+- ISO / ISEER 2점식 profile:
+  - 입력: 35 Full, 35 Half
+  - 결과: ISO 16358-1, India ISEER
+- Hong Kong profile:
+  - Rated/Declared Capacity [W] 입력 추가
+  - 35 Full, 35 Half 입력
+  - `declared_capacity=` 연결
+  - Hong Kong CSPF 계산 정상 확인
+- SASO T3 profile:
+  - checkbox OFF: `46_full / 35_full / 35_half` 3점식
+  - checkbox ON: `46_full / 35_full / 35_half / 35_min` 4점식
+  - `35_min`은 checkbox ON일 때만 `measured_inputs`에 포함
+  - SASO 3점식/4점식 계산 정상 확인
+- Multi 입력 dialog:
+  - 현재 ISO/ISEER 2점식 전용
+  - paste / `_bulk_updating` / affected rows 재계산 구조 유지
+  - Hong Kong Multi, SASO Multi는 후속
+- 기존 legacy 요소는 제거됨.
+  - `[계산하기]` 버튼 없음
+  - `"결과 대기 중..."` 없음
+  - `lbl_result` 없음
+  - `combo_region_iso` 없음
+- 금지 항목:
+  - `matplotlib`, `pyqtgraph`, `QTableWidget`, `setCellWidget`, PyQt6 사용 금지
+- 관련 pytest:
+  - Hong Kong CSPF
+  - SASO T3 regression/config
+  - T3 profile
+  - 최근 확인 기준 14 passed
+
+### 현재 남은 ISO/CSPF UI 이슈
+
+1. 상세보기 graph/table 좌우 배치 필요.
+2. 상세 영역 스크롤 구조 개선 필요.
+3. QPainter graph 축/tick/label 개선 필요.
+4. Load vs Capacity graph가 입력 변경을 최신 `bin_details`로 반영하는지 실제 확인 및 필요 시 수정 필요.
+5. Multi dialog per-No 2행 x N열 구조 재설계는 후속.
+6. Hong Kong Multi 입력 후속.
+7. SASO T3 Multi 입력 후속.
+8. Korea CSPF UI 후속.
+9. EN14825 UI 후속.
+10. AHRI210240 UI 후속.
+11. 디자인 skinning은 모든 기본 UI 연결 후 진행.
+
+### UI 설계 판단
+
+메인 단건 입력부도 반드시 다중 셀 붙여넣기를 지원해야 한다.  
+사용자가 값을 하나씩 타이핑해야 한다면 이 계산기 UI의 목적이 약해진다.
+
+따라서 메인 입력부는 `QLineEdit` 나열 방식이 아니라 `QTableView + QAbstractTableModel` 기반의 `ProfileInputGrid`로 유지한다.
+
+단, 현재는 디자인보다 기능 안정성이 우선이다.  
+스프레드시트 기능과 부드러운 UI 디자인은 PyQt5에서도 양립 가능하지만, rounded input box나 card-like UI를 구현하려면 `QStyledItemDelegate.paint()`와 QSS를 이용한 별도 skinning 턴이 필요하다.
+
+디자인 skinning은 지금 하지 않는다.  
+입력 구조, profile 구조, EN14825/AHRI UI 연결까지 완료된 뒤 마지막 단계에서 수행한다.
