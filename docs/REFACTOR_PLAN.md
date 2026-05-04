@@ -46,13 +46,13 @@
 
 | 영역 | 현재 상태 | 리팩토링 판단 |
 |---|---|---|
-| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin source golden regression 완료. ISO16358 `cspf_test_profile` T1/T3 smoke 및 SASO T3 official xlsm golden regression 완료. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. Legacy flat path와 기존 regression은 보호 대상이다. |
-| ISO 16358 HSPF | KS C 9306 HSPF profile, validation, golden, smoke test 구축 완료. | 공통/지역 분리는 보류. |
+| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin source golden regression 완료. ISO16358 `cspf_test_profile` T1/T3 smoke 및 SASO T3 official xlsm golden regression 완료. | Phase 1에서는 검증 완료 profile만 UI에 노출한다. cspf_profile/schema 전환은 ISO16358-2 HSPF 공통화 이후, Predictor 연동 전 필수 안정화 단계로 수행한다. |
+| ISO 16358 HSPF | KS C 9306 HSPF profile, validation, golden, smoke test 구축 완료. | ISO16358-2 HSPF 공통화가 다음 핵심 작업이며, 이후 CSPF/HSPF profile schema 전환으로 연결한다. |
 | AHRI 210/240 SEER2/HSPF2 | SEER2 및 HSPF2 full variable-capacity path 구현 완료. | Phase 1 UI 연결 대상으로 유지. |
 | EN 14825 SEER/SCOP | 계산 엔진 구현 및 주요 검증 완료. | 당장 대규모 리팩토링 불필요. |
 | Region config | Phase 1 production config와 Phase 2 planned config를 구분하는 단계. | golden/sample/test 전용 값은 production config에 넣지 않는다. |
 | Docs | notes / dev_notes / design_notes / glossary 구조로 정리 중. | 기존 임시 구조 정리 완료 방향. |
-| UI calculator | Phase 1 검증 profile 중심으로 Calculator UI v1 연결 예정. | fixed/two-stage/multi-stage profile matrix는 scope 밖이다. SASO T3 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 결정한다. |
+| UI calculator | Phase 1 검증 profile 중심으로 Calculator UI v1 연결 예정. | fixed/two-stage/multi-stage profile matrix는 scope 밖이다. SASO T3는 Calculator UI v1에 기본 노출 완료. Multi 입력, 고급 optional matrix, UI polish는 후속 작업이다. |
 | ML pipeline | app_trainer.py / app_predictor.py pipeline 재개 예정. | 출근 후 실제 학습 데이터 환경에서 진행. |
 
 ---
@@ -65,7 +65,7 @@
 | P1 | 계산기 Phase 1 scope 문서화 | 진행 중 | 검증 완료 profile만 UI/배포 대상으로 확정 |
 | P1 | calc_window.py 계산기 연결 | 예정 | 학습 데이터 없는 환경에서 진행 가능 |
 | P1 | app_trainer / app_predictor pipeline 연결 | 예정 | 학습 데이터 있는 환경에서 진행 |
-| P2 | ISO 16358 CSPF cspf_profile schema | 보류 | Phase R1에서 official sheet adapter 기반으로 진행 |
+| P2 | ISO 16358 CSPF/HSPF profile schema | Predictor 전 필수 | ISO16358-2 HSPF 공통화 이후, Calculator/Predictor 연동 전에 수행 |
 | P2 | docs 구조 최신화 | 진행 중 | notes/dev_notes/design_notes/glossary 정리 |
 | P2 | region config 수정 규칙 정리 | 진행 중 | golden 끼워맞춤 방지 |
 | P3 | ISO16358Calculator 구조 분리 | 보류 | region 예외가 더 쌓인 뒤 판단 |
@@ -157,385 +157,55 @@ region-specific 예외가 더 쌓이면 아래 구조를 검토한다.
 
 ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. 엔진 수정 없이 config와 test로 처리하는 것을 원칙으로 한다.
 
-### 5.2 우선 확장 후보
-
-| 그룹 | 국가/지역 | 작업 방향 |
-|---|---|---|
-| ISO 기본 bin 계열 | Southeast Asia T1 default | `iso_t1_default_2point.json` production config 사용 |
-| custom bin 계열 | India | ISEER xlsx-compatible boundary temperature rounding opt-in 유지 |
-| custom bin 계열 | Hong Kong | custom bin 2-point source golden regression 유지. Measured CSPF는 measured performance point와 declared/rated full capacity load anchor를 분리 사용한다. |
-| custom bin 계열 | Brazil | 기존 Brazil adaptation 자료 확인 후 적용 |
-| 4-point 가능성 | SASO / Saudi Arabia | T3 및 official sheet optional matrix를 cspf_profile Phase R2 이후 구현 |
-
-### 5.3 방어 규칙
-
-- Cd를 golden에 맞추기 위해 바꾸지 않는다.
-- derived_rules를 golden에 맞추기 위해 바꾸지 않는다.
-- 온도 bin만 다른 국가라면 계산식은 건드리지 않는다.
-- golden sample은 가능하면 국가별 2개 이상 확보한다.
-- golden이 1개뿐이면 “1-sample smoke/golden”으로 표시하고 인증급 검증으로 보지 않는다.
-- 공식 계산시트와 다른 결과가 나오면 먼저 input schema와 bin_hours를 확인한다.
-
-### 5.4 ISO16358 CSPF 엔진 재설계
-
-#### 등록일
-
-2026-05-01, (5/3 수정)
-
-#### 트리거 조건 (이미 충족됨)
-
-- SASO T3 추가 시 `iso_boundary_eer`가 35/29 hard-code로 인해 `ValueError`를 발생시킨다.
-- Hong Kong / India / SASO 추가 과정에서 지역별 patch method(`ks_intersection`, `iso_boundary_eer`, `iso_boundary_temperature_rounding`)가 누적되었다.
-- 공식 ISO16358 xlsm 시트의 T1/T3 x required/optional x measured/default matrix를 현재 config schema로 표현할 수 없다.
-
-#### 현재 구조의 문제
-
-- `_iso_boundary_eer()`가 `35_{type}` / `29_{type}`을 하드코딩한다.
-- T1/T3 climate profile 구분이 없다.
-- temperature anchor matrix가 없다. 예를 들어 46/35/29 anchor를 구조적으로 선언할 수 없다.
-- `required_only` / `with_optional_test` 선택 표현이 없다.
-- min-half 구간 공식 분기 없이 capacity-linear fallback에 의존한다.
-- 지역 추가마다 calculator 수정이 필요해질 위험이 커졌다.
-
-#### 목표 구조
-
-- `cspf_profile` schema를 도입한다.
-  - `climate_profile`: T1 / T3
-  - `test_selection`: `required_only` / `with_optional_test`
-  - `temperature_anchors`: `[46, 35, 29]` 등
-  - `load_levels`: `full` / `half` / `minimum`
-  - point source matrix: `measured` / `default` / `derived` / `not_used`
-  - `power_model.branches`: 구간별 계산 방식 선언
-- 기존 flat config는 legacy path로 유지한다.
-- 새 schema는 병렬 opt-in으로만 동작한다.
-- 지역 추가 시 calculator 수정 없이 config만으로 처리할 수 있게 한다.
-
-#### 단계별 계획
-
-#### Scope clarification
-
-현재 프로젝트의 ISO16358 CSPF profile path는 variable-capacity / inverter-only를 대상으로 한다. Fixed, two-stage, multi-stage unit 지원은 명시적으로 scope 밖이며, 이를 위한 schema abstraction이나 branch는 추가하지 않는다.
-
-Phase R1 — `cspf_test_profile` opt-in layer 추가 (calculator 계산 결과 변경 없음)
-
-- [완료] `cspf_test_profile` 감지 helper 추가
-- [완료] point resolver 추가
-- [완료] Cd default resolver 추가
-- [완료] temperature segment metadata 추가
-- [완료] active load levels metadata 추가
-- [완료] T1 `required_only` calculation path 추가
-- [완료] legacy ISO T1 default parity 확인
-
-- [완료] T1 `required_only` profile path를 legacy ISO T1 default path와 parity 검증한다.
-  - `tests/test_iso16358_cspf_profile_calculation.py`
-  - legacy ISO T1 default production regression `4.665` 유지 확인
-- [계속 유지] 기존 regression은 전부 유지해야 한다.
-  - 현재 기준: 전체 pytest `99 passed`
-- [완료] T1 `with_optional_test` minimum branch smoke/sanity 확인
-- [완료] T3 `required_only` / `with_optional_test` resolver/smoke 확인
-
-Phase R2 — SASO T3 official xlsm alignment (Complete)
-
-- [완료] T1 required_only / with_optional_test smoke/sanity 검증 완료
-- [완료] T3 required_only / with_optional_test resolver/smoke 검증 완료
-- [완료] SASO T3 t100=46 / ref46 load line 확인 및 config 정렬
-- [완료] T3 29_full default point 동작 확인 및 테스트 커버 유지
-  - 29_full capacity = `1.077 × 35_full capacity`
-  - 29_full power = `0.914 × 35_full power`
-  - git diff 기준 Phase R2-2 신규 추가가 아니라 현재 구현 동작으로 확인/유지됨
-- [완료] T3 piecewise boundary EER helper 추가
-  - 기존 T1/legacy `_iso_boundary_eer()` 시그니처와 동작은 유지
-  - T3 profile에서는 `_iso_boundary_eer_t3_piecewise()`가 `tj <= 35`에서 29↔35, `tj > 35`에서 35↔46 anchor를 사용
-  - `_iso_boundary_eer_power()`는 `cspf_test_profile.climate_profile == "T3"` guard 안에서만 T3 helper를 사용
-- [완료] T3 `with_optional_test`의 `{min, half}` 및 `{half, full}` bracket support
-  - 기존 `_iso_boundary_eer_power()`의 half-full 제한 때문에 T3 min-half가 capacity_linear fallback을 타던 문제를 해소
-  - 기존 `_iso_boundary_eer()`의 29/35 고정 구조는 T1/legacy 보호를 위해 유지
-- [완료] SASO T3 golden regression
-  - config: `climate_profile=T3`, `test_selection=with_optional_test`, `t_100_load=46.0`, `t_0_load=20.0`, `reference_point="46_full"`, `Cd=0.27`, `power_interpolation_method="iso_boundary_eer"`
-  - golden sample: 46_full 5418/1971, 35_full 6058/1611, 35_half 3036/566, 35_min 1780/284
-  - result: CSTL ≈ `21,547.386 kWh`, CSEC ≈ `4,349.020 kWh`, CSPF ≈ `4.955 W/W`
-  - official target: CSTL ≈ `21,546 kWh`, CSEC ≈ `4,349 kWh`, CSPF ≈ `4.954 W/W`
-- [완료] Boundary diagnostic
-  - Tb ≈ `45.2479°C`, Tc ≈ `34.6371°C`, Tp ≈ `29.1799°C`
-  - `tj > 35` full segment는 `46_full`이 BL reference이므로 intersection이 `46.0°C`
-- [완료] 전체 pytest `99 passed`
+### 5.2 현재 상태 및 완료 내역
 
-#### 보호 조건 (어떤 단계에서도 위반 금지)
+- **완료된 작업**: `cspf_test_profile` schema 도입, T1/T3 climate profile 분기, SASO T3 official xlsm golden regression 완료 (109 passed).
+- 완료된 세부 테스트 기록과 방어 규칙, 초기 엔진 재설계 배경은 `project_log.md` 및 `docs/iso16358/` 하위 문서에 보존됨.
 
-Phase R3 — 기존 config 마이그레이션 (선택적)
+### 5.3 Phase R3 — Predictor 연동 전 필수 Schema 마이그레이션
 
-- `iso_t1_default_2point` / `hong_kong` / `india_iseer`를 새 schema로 순차 전환한다.
-- legacy flat config path에는 deprecation 경고만 추가한다.
+Phase R3는 단순 보류 작업이 아니라 Predictor 연동 전에 반드시 수행해야 하는 **필수 안정화 단계**이다.
 
-#### 보호 조건 (어떤 단계에서도 위반 금지)
+- **목표**: 기존 CSPF region config(`iso_t1_default_2point`, `hong_kong`, `india_iseer` 등)를 `cspf_test_profile` 기반의 새 schema로 전환.
+- **방향**: HSPF 역시 같은 profile/config/handler 구조로 확장 가능하게 설계한다.
+- **보호 조건**: 기존 public API와 regression test(Korea CSPF 6.504, ISO T1 default 4.665 등)는 무조건 유지한다.
+- **후속 확장**: optional matrix / full optional 지원은 공통 profile/config/handler 구조가 확립된 이후 후속 항목으로 진행한다.
 
-- Korea CSPF 6.504 regression을 유지한다.
-- ISO T1 default CSPF 4.665 regression을 유지한다.
-- India ISEER xlsx-compatible 4.993을 유지한다.
-- Hong Kong CSPF source golden regression을 유지한다.
-- Cd / derived factor / hidden 보정을 금지한다.
-- 기존 public function signature는 가능하면 유지한다.
+### 5.4 계산기 Phase 1 배포 범위 & UI v1 원칙
 
-#### 현재 상태
+Phase 1에서는 검증이 끝난 주요 지역과 규격만 UI와 배포 대상에 포함한다.
 
-- Phase R1/R2의 `cspf_test_profile` variable/inverter profile path 검증이 완료되었다.
-- 완료:
-  - `cspf_test_profile` opt-in 감지
-  - variable/inverter-only profile resolver
-  - T1 `required_only` / `with_optional_test` smoke/sanity
-  - T3 `required_only` / `with_optional_test` resolver/smoke
-  - T3 piecewise boundary EER path
-  - SASO T3 official xlsm golden regression
-  - legacy ISO T1 default path parity 확인
-  - debug/audit/trace 임시 파일 제거
-  - 전체 pytest `99 passed`
-- 보호:
-  - `iso_boundary_eer` 전역 동작 변경 금지
-  - T3 helper는 T3 `cspf_test_profile` guard 안에서만 동작
-  - Korea CSPF 6.504, ISO T1 default 4.665, India, Hong Kong source golden regression 유지
-  - hidden factor / golden fitting 계수 추가 금지
-- 남음:
-  - Calculator UI v1 연결 범위 검토
-  - Hong Kong HSPF는 ISO 16358-2 완전 구현 Phase로 별도 추적한다. 구현 전 pitfalls/calculation order 문서 작성과 golden 후보값 재확인이 필요하다.
+- **포함**: Korea KS C 9306 CSPF/HSPF, ISO16358-1 T1 default 2-point CSPF, India ISEER xlsx-compatible, Hong Kong custom bin source golden regression, EN14825 SEER/SCOP, AHRI SEER2/HSPF2
+- **제외**: ISO16358 official sheet full optional matrix, fixed/two-stage/multi-stage abstraction
+- **UI 원칙**: 검증된 profile만 노출한다. optional 선택 UI는 비활성화하거나 노출하지 않는다.
 
-### 5.5 계산기 Phase 1 배포 범위
+## Calculator UI Refactor Plan (요약)
 
-Phase 1에서는 한 번에 모든 지역을 완전 구현해서 배포하지 않는다. 이미 regression/golden 검증이 끝난 주요 지역과 규격만 UI와 배포 대상에 포함하고, 계산기에 포함되지 않은 지역은 기존 공식 엑셀 시트를 계속 사용하게 한다.
+(과거의 UI 구조 결정 및 Profile 입출력 명세는 `project_log.md` 및 `docs/architecture/project_architecture.md`를 참조할 것)
 
-#### Phase 1 포함
+### Phase UI-1 — ISO/CSPF Base Stabilization (진행 중)
 
-- Korea KS C 9306 CSPF/HSPF
-- ISO16358-1 T1 default 2-point CSPF
-- India ISEER xlsx-compatible
-- Hong Kong custom bin source golden regression
-- EN14825 SEER/SCOP
-- AHRI SEER2/HSPF2
+- **상태**: ISO/ISEER 2점식, Hong Kong, SASO T3 UI Profile 기본 노출 완료. (SASO T3는 이미 UI에 노출되어 있음)
+- **남은 작업**: 상세보기 graph/table 좌우 배치, 상세 영역 스크롤 구조 개선, graph 축/tick/label 개선, Load vs Capacity graph 최신 데이터 갱신 확인/수정.
+- **후속 (별도 Phase)**: SASO T3 Multi 입력, 고급 optional matrix.
 
-#### Phase 1 제외
+### Phase UI-2 — ISO16358-2 HSPF UI 연결
 
-- ISO16358 official sheet full optional matrix
-- 모든 required/optional/default 조합 완전 구현
-- fixed/two-stage/multi-stage `cspf_test_profile` abstraction
+- **선행**: ISO16358-2 HSPF calculation engine 공통화 구현 및 검증 완료.
+- **범위**: HSPF profile 추가, input grid 구성, result table 연결, trace/graph 연결. CSPF/HSPF 데이터 격리.
 
-#### UI v1 원칙
+### Phase UI-3 & UI-4 — EN14825 / AHRI 210/240 UI 연결
 
-- 검증된 profile만 노출한다.
-- optional 선택 UI는 비활성화하거나 노출하지 않는다.
-- SASO T3는 official golden regression 완료 상태이나 UI 노출 여부는 Calculator UI v1 연결 단계에서 별도 검토한다.
+- EN14825 및 AHRI SEER2/HSPF2 계산 엔진 안정화 및 입력 스키마 확정 후 순차적 UI 탭 및 결과 테이블 연결.
 
-## Calculator UI Refactor Plan (임시, 완료 후 삭제 필요. 2026-05-04 기준)
+### Phase UI-5 — Multi Input Expansion
 
-### Goal
+- Hong Kong: Rated/Declared Capacity 입력 구조 및 Multi 입력 확장 검토.
+- SASO T3: 3/4점식 입력 구조, Multi 입력, 고급 optional matrix 확장 검토.
 
-Calculator UI는 단순한 단건 계산기가 아니라, 시험실 엔지니어가 엑셀/성적서 데이터를 빠르게 붙여넣고 여러 규격 결과를 검산할 수 있는 엔지니어링 계산 패널로 정리한다.
+### Phase UI-6 — UI Skinning / Visual Polish
 
-단기 목표는 “예쁜 UI”가 아니라 다음이다.
-
-- 정확한 계산 연결
-- 규격별 profile 구조 정리
-- 스프레드시트 친화적 입력
-- 입력값 변경 시 즉시 계산
-- 입력값 부족/오류 시 안전한 clear
-- trace table / graph 기반 검증 가능성 확보
-
-디자인 skinning은 모든 주요 계산기 UI 연결 이후 별도 단계에서 진행한다.
-
-### Current UI Architecture
-
-현재 ISO/CSPF UI는 다음 구조로 정리되어 있다.
-
-- `ui/calc_window.py`
-  - Calculator window 및 top-level tab 조립 담당
-  - legacy ISO 계산 UI 제거됨
-
-- `ui/calculators_2point.py`
-  - ISO/CSPF UI 본체
-  - `ProfileInputGridModel`
-  - `ProfileInputGridView`
-  - `RegionResultTableModel`
-  - `TraceTableModel`
-  - `BinGraphWidget`
-  - `BatchTwoPointDialog`
-  - `IsoCspfSingleWidget`
-
-### ProfileInputGrid Direction
-
-메인 단건 입력부는 `QTableView + QAbstractTableModel` 기반의 2행 x N열 grid를 유지한다.
-
-기본 구조:
-
-    Test Point 1   Test Point 2   ...
-    Capacity       input          input
-    Power          input          input
-
-지원 기능:
-
-- 2행 x N열 TSV paste
-- undo
-- Enter 이동
-- 방향키 이동
-- cell 단위 선택
-- 입력값 변경 시 즉시 재계산
-- invalid 입력 시 결과 clear
-
-지원하지 않는 것:
-
-- 1행 x 2N pair paste
-- 완전한 Excel clone
-- 복잡한 병합 header
-- 디자인 skinning 선행 적용
-
-### Current Profiles
-
-#### ISO / ISEER 2-point
-
-입력:
-
-- 35 Full
-- 35 Half
-
-출력:
-
-- ISO 16358-1
-- India ISEER
-
-#### Hong Kong CSPF
-
-입력:
-
-- Rated/Declared Capacity [W]
-- 35 Full
-- 35 Half
-
-출력:
-
-- Hong Kong CSPF
-
-#### SASO T3
-
-입력:
-
-- 46 Full
-- 35 Full
-- 35 Half
-- optional 35 Min
-
-동작:
-
-- 35 Min checkbox OFF:
-  - `46_full / 35_full / 35_half`
-  - required-only 3점식
-- 35 Min checkbox ON:
-  - `46_full / 35_full / 35_half / 35_min`
-  - 4점식
-
-출력:
-
-- SASO T3
-
-### Refactor Phases
-
-#### Phase UI-1 — ISO/CSPF Base Stabilization
-
-Status: In progress / mostly complete
-
-Scope:
-
-- ISO/ISEER 2점식 profile
-- Hong Kong profile
-- SASO T3 profile
-- ProfileInputGrid paste/undo/Enter 이동
-- Multi 입력 dialog ISO/ISEER 2점식 전용
-- trace table / graph 기본 표시
-
-Remaining:
-
-- 상세보기 graph/table 좌우 배치
-- 상세 영역 스크롤 구조 개선
-- graph 축/tick/label 개선
-- Load vs Capacity graph 최신 데이터 갱신 확인/수정
-
-#### Phase UI-2 — ISO16358-2 HSPF UI 연결
-
-Prerequisite:
-
-- ISO16358-2 HSPF calculation engine implementation completed
-- official calculator / golden case cross-check completed
-- HSPF required measured points and result schema finalized
-- bin_details or equivalent trace structure available
-
-Scope:
-
-- HSPF profile 추가
-- HSPF input grid 구성
-- HSPF result table 연결
-- HSPF trace table / graph 연결
-- CSPF/HSPF profile 전환 시 data isolation 보장
-
-#### Phase UI-3 — EN14825 UI 연결
-
-Prerequisite:
-
-- EN14825 calculation engine stable
-- required input point schema clarified
-
-Scope:
-
-- EN14825 profile/tab 추가
-- A/B/C/D 등 입력 grid 구성
-- SEER/SCOP result table 연결
-- trace/graph 연결 가능성 검토
-
-#### Phase UI-4 — AHRI 210/240 UI 연결
-
-Prerequisite:
-
-- AHRI SEER2/HSPF2 calculation engine stable
-- required input point schema clarified
-
-Scope:
-
-- AHRI profile/tab 추가
-- SEER2/HSPF2 input grid 구성
-- result table 연결
-- trace/graph 연결 가능성 검토
-
-#### Phase UI-5 — Multi Input Expansion
-
-Scope:
-
-- 현재 Multi dialog는 ISO/ISEER 2점식 전용
-- 후속으로 Hong Kong Multi 입력 검토
-  - row별 Rated/Declared Capacity 필요
-- 후속으로 SASO T3 Multi 입력 검토
-  - 3점식/4점식 입력 구조 필요
-- per-No 2행 x N열 구조는 별도 설계 필요
-
-#### Phase UI-6 — UI Skinning / Visual Polish
-
-Prerequisite:
-
-- ISO/CSPF, HSPF, EN14825, AHRI UI 연결 완료
-- 입력 profile 구조가 안정화됨
-- 계산/붙여넣기/undo/trace/graph 동작 검증 완료
-
-Scope:
-
-- QSS 정리
-- card-like panels
-- rounded input cells
-- tab styling
-- improved result cards
-- possible `QStyledItemDelegate.paint()` for input cell skinning
-- graph/table visual polish
-
-Important:
-
-- Skinning phase must not change calculation logic.
-- Skinning phase must not change model data flow.
-- Input paste/undo/navigation behavior must be preserved.
-
-## Calculator UI Refactor Plan 끝부분. 여기까지 임시
+- 기능 검증 완료 후 UI 디자인 개선 (QSS, delegate paint 등). 디자인 적용 시 계산 로직 및 모델 데이터 흐름 변경 금지.
 
 ---
 
@@ -664,6 +334,8 @@ docs/
 - ISO16358 design_notes 초안 작성
 - KS C 9306 design_notes 초안 작성
 - REGION_CONFIG_RULES 작성/정리 진행
+- SASO T3 b T3 climate profile과 `46_full` high-anchor branch를 구현 완료
+- SASO CSPF 4.954 official xlsm golden regression을 추가 완료
 
 ### 9.4 문서 작성 금지사항
 
@@ -799,7 +471,7 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 
 - `app_calculator.py` / `calc_window.py`에서 검증된 profile만 선택 가능하게 한다.
 - optional 선택 UI는 비활성화하거나 미노출한다.
-- SASO T3는 official golden regression 완료 상태로 표시할 수 있으나, UI 노출 여부는 2점식 ISO/ISEER 탭 안정화 이후 별도 검토한다.
+- SASO T3는 official golden regression 완료 및 Calculator UI v1 profile 기본 노출 완료. 후속 작업은 Multi 입력 / 고급 optional matrix / UI polish로 제한한다.
 
 ### Step 3 — predictor → calculator pipeline 연결
 
@@ -817,12 +489,7 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 - cspf_profile schema validator를 추가한다.
 - 기존 계산 결과가 바뀌지 않는 mirror/diagnostic test부터 추가한다.
 
-### Step 6 — SASO T3 Phase R2
-
-- 완료: T3 climate profile과 `46_full` high-anchor branch를 구현했다.
-- 완료: SASO CSPF 4.954 official xlsm golden regression을 추가했다.
-
-### Step 7 — Hong Kong ISO 16358-2 HSPF Review
+### Step 6 — Hong Kong ISO 16358-2 HSPF Review
 
 - Hong Kong HSPF는 이번 Hong Kong CSPF golden 전환 범위 밖이다.
 - ISO 16358-2 완전 구현 Phase에서 별도 추적한다.
