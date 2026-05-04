@@ -289,3 +289,45 @@ Extracted formulas from the XLSM file:
 -   **T3 29_full default point:** The T3 resolver behavior for 29_full is confirmed and maintained: capacity is `1.077 × 35_full capacity`, and power is `0.914 × 35_full power`. Treat this as confirmed resolver behavior and test coverage, not as a Phase R2-2-only new rule.
 -   **Hong Kong CSPF load anchor:** Hong Kong measured CSPF uses measured 35_full / 35_half capacity and power for the performance curve, but uses declared/rated 35_full capacity as the building-load anchor. Use `building_load_source = "declared"` and pass rated 35_full capacity as `declared_capacity`. Do not tune Cd or derived factors to match the source tool.
 -   **Hong Kong HSPF follow-up:** Hong Kong HSPF is out of scope for the CSPF golden conversion. Before implementation, write ISO 16358-2 pitfalls / calculation order notes, reconfirm candidate golden values (Measure #1 3.643, Measure #2 4.572), and protect KS C 9306 HSPF regressions. Current Hong Kong HSPF observations are preliminary only, including the `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` candidate, possible `cap_0 = 7°C full heating capacity × 0.82`, frost/non-frost branching, and boundary temperatures `ta`, `td`, `te`, `tg`.
+
+## 14. ISO 16358-2 HSPF Calculation Order
+
+| Step | Action | Description |
+| :--- | :--- | :--- |
+| 1 | Load configuration | region config를 로드한다. (hspf_bin_hours, load_line, frost 경계, Cd, aux_cop 포함) |
+| 2 | Validate points | required measured points를 검증한다. 7°C Full, 7°C Half 필수. 2°C Full (Extended 없는 경우) 필수. 단, source golden 재현용 regional/profile config에서 명시적으로 허용한 경우에만 2°C Full derived 계산을 허용한다. |
+| 3 | Resolve derived points | optional/derived points를 해석한다. -7°C Full/Half (Table 1 계수), 2°C Full/Half (각주 d 수식) 등. 2°C Half는 measured 값이 있어도 각주 d 처리 원칙에 따라 재계산한다. |
+| 4 | Determine L_h_ref | load line 기준값 L_h_ref를 결정한다. L_h_ref = rated_capacity_factor × pi_source (ISO 16358-2 default: 0.82 × pi_ful(7)). |
+| 5 | Iterate bin hours | hspf_bin_hours를 순회한다. nj <= 0인 bin은 skip한다. |
+| 6 | Calculate BL_h(tj) | BL_h(tj) = L_h_ref × (t_0_heat - tj) / (t_0_heat - t_100_heat) (ISO 16358-2 default: t_0=17, t_100=0). BL_h(tj) <= 0이면 해당 bin skip. |
+| 7 | Determine frost status | tj가 frost 구간인지 판정한다. -7°C < tj < 5.5°C 이면 frost, 그 외 non-frost. |
+| 8 | Evaluate performance | frost/non-frost에 따라 stage별(Full, Half, Min) capacity/power curve를 평가한다. pi_x(tj) 및 P_x(tj) 계산. |
+| 9 | Determine operating case | operating case를 결정한다. BL_h와 stage별 capacity 비교. stage 우선순위: Min > Half > Full. |
+| 10 | Cycling branch | BL_h <= lowest_stage_pi: PLF = 1 - Cd × (1 - X), X = BL_h / pi_min. heat_pump_energy = (X × P_min / PLF) × nj. |
+| 11 | Interpolation branch | lowest_stage_pi < BL_h <= pi_ful: 인접 stage 사이 capacity-linear power 보간. heat_pump_energy = P_interp × nj. |
+| 12 | Saturated branch | BL_h > pi_ful: heat_pump_output = pi_ful(tj) × nj, heat_pump_energy = P_ful(tj) × nj. auxiliary_heat = BL_h(tj) - pi_ful(tj). auxiliary_energy = auxiliary_heat × nj / aux_cop. |
+| 13 | Accumulate HSTL/HSEC | HSTL += BL_h(tj) × nj (건물 부하 전체). HSEC += heat_pump_energy + auxiliary_energy. |
+| 14 | Finalize HSPF | HSPF = HSTL / HSEC, 3 significant digits로 반올림한다. |
+
+## 15. ISO 16358-2 HSPF Top Pitfalls
+
+| Pitfall | Symptom | Prevention |
+| :--- | :--- | :--- |
+| KS path와 ISO common path 혼용 | KS golden이 바뀐다. | hspf.profile == "ks_c_9306_hspf"이면 반드시 KS path로만 진입한다. ISO common HSPF는 별도 entry point로 분리한다. |
+| frost/non-frost 수식 혼용 | frost 구간 capacity/power가 과대 또는 과소 계산된다. | tj 판정을 수식 적용 직전에 반드시 수행한다. -7.0 < tj < 5.5 → frost 수식, 그 외 → non-frost 수식. |
+| 2°C measured Half를 직접 사용 | 규격 각주 c 위반. 결과가 reference sheet와 다르다. | 2°C Half는 measured 값이 있어도 각주 d 수식으로 재계산한다. |
+| 각주 d 수식 적용 순서 오류 | -7°C derived point가 없어 각주 d 수식이 실패한다. | -7°C derived point를 먼저 만든 뒤 각주 d 수식을 적용한다. |
+| HSTL에 heat pump output만 누적 | auxiliary 발생 bin에서 HSTL이 과소 계산되어 HSPF가 낮게 나온다. | HSTL은 항상 BL_h(tj) × nj 전체를 누적한다. heat pump output이 아니다. |
+| auxiliary_energy를 HSEC에서 누락 | HSPF가 과대 계산된다. | HSEC = heat_pump_energy + auxiliary_energy. aux_cop = 1.0 (전기히터 가정, 규격 미명시). |
+| BL_h(tj) <= 0인 bin을 누적 | 냉방 구간 bin이 HSTL을 음수로 끌어내린다. | BL_h(tj) <= 0이면 해당 bin을 skip한다. |
+| bin_details에서 KS 필드 구조 재사용 | ISO common HSPF bin_details와 KS bin_details가 섞인다. | ISO common HSPF bin_details는 KS 전용 필드를 포함하지 않는다. 표준 필드: tj, nj, bl_h, pi_j, P_j, case, heat_pump_energy, auxiliary_energy, E_j. |
+
+## 16. ISO 16358-2 HSPF Test Strategy
+
+| Test type | Purpose | Required cases |
+| :--- | :--- | :--- |
+| HSPF Hong Kong golden #1 | Hong Kong bin_hours 기반 golden 검증 | 7_full=6300W/1500W, 7_half=3200W/800W, Cd=0.25, Expected HSPF: 3.643 |
+| HSPF Hong Kong golden #2 | Hong Kong bin_hours 기반 golden 검증 | 7_full=6100W/1300W, 7_half=3000W/600W, Cd=0.25, Expected HSPF: 4.572 |
+| KS C 9306 HSPF regression | 기존 golden 유지 확인 | HSPF 3.689 유지 확인 (변경 없어야 함) |
+| Korea CSPF regression | Korea CSPF golden 유지 확인 | CSPF 6.504 유지 확인 (변경 없어야 함) |
+| validation smoke | 에러 처리 및 경계 조건 검증 | required point 누락 시 ValueError, BL_h <= 0 bin skip 확인, aux_cop = 0 시 ValueError |
