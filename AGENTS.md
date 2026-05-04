@@ -89,3 +89,4 @@ sed -n '120,260p' core/calculator_iso16358.py
 
 Logic 수정 시에는 지역별 하드코딩을 먼저 하지 않는다.
 공통 엔진, profile/config, handler 구조로 표현 가능한지 먼저 확인한다.
+단순 docs 문구 수정은 지정된 파일/문장만 수정하고, 검색·테스트·주변 문서 검토를 하지 않는다.
