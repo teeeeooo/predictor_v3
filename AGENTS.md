@@ -70,6 +70,7 @@ Codex/agent 작업 시 토큰 사용량을 줄이기 위해 대형 파일 전체
 ```bash
 rg -n "def calculate_cspf|class ISO16358Calculator" core/calculator_iso16358.py
 sed -n '120,260p' core/calculator_iso16358.py
+```
 
 ## Task Router
 
