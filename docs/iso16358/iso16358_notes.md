@@ -105,6 +105,29 @@ Boundary diagnostic:
 
 프로젝트 해석: T3 29_full default point는 현재 resolver 동작으로 확인/유지된다. 29_full capacity는 `1.077 × 35_full capacity`, 29_full power는 `0.914 × 35_full power`이며, Phase R2-2 문서에서는 신규 추가가 아니라 동작 확인 및 테스트 커버로 취급한다.
 
+### 3.4 Hong Kong CSPF Source Golden Verification
+
+Hong Kong CSPF source tool은 rated input과 measured input을 분리해 사용한다. 프로젝트 해석: measured CSPF 계산에서 performance curve는 measured 35_full / 35_half capacity and power를 사용하고, building-load anchor는 declared/rated 35_full capacity를 사용한다. Rated full power, rated half capacity, rated half power는 measured CSPF 계산에 영향을 주지 않는 것으로 확인되었다.
+
+| Item | Value |
+| --- | --- |
+| `t_100_load` | `35.0` |
+| `t_0_load` | `23.0` |
+| `building_load_source` | `"declared"` |
+| `declared_capacity` | rated 35_full capacity, source sample `3500 W` |
+| `power_interpolation_method` | `"iso_boundary_eer"` |
+| 29°C defaults | 35°C point capacity × `1.077`, power × `0.914` |
+
+Golden verification:
+
+| Case | Performance points | Load anchor | CSPF |
+| --- | --- | --- | --- |
+| Rated | 35_full `3500/1000`, 35_half `1750/400` | 3500 W | 4.746 |
+| Measure #1 | 35_full `3600/900`, 35_half `1700/380` | 3500 W | 4.939 |
+| Measure #2 | 35_full `3400/800`, 35_half `1800/410` | 3500 W | 4.880 |
+
+검증 상태: Hong Kong CSPF source golden xfail은 golden regression으로 전환되었고, 전체 pytest는 `99 passed`이다.
+
 ## 4. HSPF Current Status
 
 ISO 16358-2 HSPF의 현재 구현은 계절 난방 부하와 계절 소비전력의 Wh 누적 구조를 따른다.
@@ -123,6 +146,23 @@ ISO 16358-2 HSPF의 현재 구현은 계절 난방 부하와 계절 소비전력
 | HSPF common fallback | heating point를 온도 기준으로 보간/외삽하고 부족분을 auxiliary로 누적한다. |
 | variable HSPF path | stage별 heating point를 사용해 load 위치별 운전점을 선택한다. |
 | KS C 9306 HSPF profile path | `hspf.profile = ks_c_9306_hspf`일 때 KS profile-specific helper를 사용한다. |
+
+### 4.1 Hong Kong HSPF Preliminary Notes
+
+Hong Kong HSPF는 이번 Hong Kong CSPF golden 전환 범위 밖이다. 아래 내용은 구현 확정안이 아니라 ISO 16358-2 완전 구현 Phase에서 재검증할 관찰값이다. 구현 전에는 ISO 16358-2 pitfalls / calculation order 문서 작성, Hong Kong HSPF golden 후보값 재확인, 기존 KS C 9306 HSPF regression 보호 확인을 선행한다.
+
+| Item | Preliminary observation |
+| --- | --- |
+| Heating load line | `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` 후보 |
+| `cap_0` | 7°C full heating capacity × `0.82` 후보. ISO 16358-2 계수로 재검증 필요 |
+| temperature anchors | `t_limit = 12.75°C`, `t_0_heat = 17°C`, `t_100_heat = 0°C` 후보 |
+| measured HSPF load source | Rated 변경이 Measured HSPF에 영향 없음. `building_load_source = "measured"` 후보 |
+| 2°C full non-frost extrapolation | capacity `0.8714`, power `0.9357` 후보 |
+| 2°C full frost extrapolation | capacity `0.7781`, power `0.8829` 후보 |
+| 2°C half frost extrapolation | capacity `0.7781`, power `0.9286` 후보 |
+| other required behavior | `Cd_heating = 0.25`, frost/non-frost branch, boundary temperature(`ta`, `td`, `te`, `tg`) 계산 필요 |
+| golden candidates | Measure #1 `3.643`, Measure #2 `4.572` 재확인 필요 |
+| reference design | AHRI HSPF2 구현을 구조 참고로 사용할 수 있으나 계수와 calculation order는 ISO 16358-2 기준으로 별도 검증 |
 
 ## 5. CSPF vs HSPF Structure Difference
 

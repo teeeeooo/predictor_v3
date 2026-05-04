@@ -46,7 +46,7 @@
 
 | 영역 | 현재 상태 | 리팩토링 판단 |
 |---|---|---|
-| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin current-engine regression 완료. ISO16358 `cspf_test_profile` T1/T3 smoke 및 SASO T3 official xlsm golden regression 완료. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. Legacy flat path와 기존 regression은 보호 대상이다. |
+| ISO 16358 CSPF | KS C 9306 CSPF, ISO T1 default 2-point, India ISEER xlsx-compatible, Hong Kong custom bin source golden regression 완료. ISO16358 `cspf_test_profile` T1/T3 smoke 및 SASO T3 official xlsm golden regression 완료. | Phase 1에서는 검증 완료 profile만 UI에 노출하고, cspf_profile 대형 리팩토링은 보류. Legacy flat path와 기존 regression은 보호 대상이다. |
 | ISO 16358 HSPF | KS C 9306 HSPF profile, validation, golden, smoke test 구축 완료. | 공통/지역 분리는 보류. |
 | AHRI 210/240 SEER2/HSPF2 | SEER2 및 HSPF2 full variable-capacity path 구현 완료. | Phase 1 UI 연결 대상으로 유지. |
 | EN 14825 SEER/SCOP | 계산 엔진 구현 및 주요 검증 완료. | 당장 대규모 리팩토링 불필요. |
@@ -163,7 +163,7 @@ ISO 16358-1 CSPF 기반 국가들을 region config 중심으로 확장한다. �
 |---|---|---|
 | ISO 기본 bin 계열 | Southeast Asia T1 default | `iso_t1_default_2point.json` production config 사용 |
 | custom bin 계열 | India | ISEER xlsx-compatible boundary temperature rounding opt-in 유지 |
-| custom bin 계열 | Hong Kong | custom bin 2-point current-engine regression 유지, source golden mismatch는 Phase 2 보류 |
+| custom bin 계열 | Hong Kong | custom bin 2-point source golden regression 유지. Measured CSPF는 measured performance point와 declared/rated full capacity load anchor를 분리 사용한다. |
 | custom bin 계열 | Brazil | 기존 Brazil adaptation 자료 확인 후 적용 |
 | 4-point 가능성 | SASO / Saudi Arabia | T3 및 official sheet optional matrix를 cspf_profile Phase R2 이후 구현 |
 
@@ -230,7 +230,7 @@ Phase R1 — `cspf_test_profile` opt-in layer 추가 (calculator 계산 결과 �
   - `tests/test_iso16358_cspf_profile_calculation.py`
   - legacy ISO T1 default production regression `4.665` 유지 확인
 - [계속 유지] 기존 regression은 전부 유지해야 한다.
-  - 현재 기준: 전체 pytest `97 passed, 1 xfailed`
+  - 현재 기준: 전체 pytest `99 passed`
 - [완료] T1 `with_optional_test` minimum branch smoke/sanity 확인
 - [완료] T3 `required_only` / `with_optional_test` resolver/smoke 확인
 
@@ -258,8 +258,7 @@ Phase R2 — SASO T3 official xlsm alignment (Complete)
 - [완료] Boundary diagnostic
   - Tb ≈ `45.2479°C`, Tc ≈ `34.6371°C`, Tp ≈ `29.1799°C`
   - `tj > 35` full segment는 `46_full`이 BL reference이므로 intersection이 `46.0°C`
-- [완료] 전체 pytest `97 passed, 1 xfailed`
-  - remaining xfail은 Hong Kong source golden CSPF 4.83 formula review pending이며 SASO T3 Phase R2-2 완료 기준과 무관하다.
+- [완료] 전체 pytest `99 passed`
 
 #### 보호 조건 (어떤 단계에서도 위반 금지)
 
@@ -273,7 +272,7 @@ Phase R3 — 기존 config 마이그레이션 (선택적)
 - Korea CSPF 6.504 regression을 유지한다.
 - ISO T1 default CSPF 4.665 regression을 유지한다.
 - India ISEER xlsx-compatible 4.993을 유지한다.
-- Hong Kong current engine 4.882 regression을 유지한다.
+- Hong Kong CSPF source golden regression을 유지한다.
 - Cd / derived factor / hidden 보정을 금지한다.
 - 기존 public function signature는 가능하면 유지한다.
 
@@ -289,15 +288,15 @@ Phase R3 — 기존 config 마이그레이션 (선택적)
   - SASO T3 official xlsm golden regression
   - legacy ISO T1 default path parity 확인
   - debug/audit/trace 임시 파일 제거
-  - 전체 pytest `97 passed, 1 xfailed`
+  - 전체 pytest `99 passed`
 - 보호:
   - `iso_boundary_eer` 전역 동작 변경 금지
   - T3 helper는 T3 `cspf_test_profile` guard 안에서만 동작
-  - Korea CSPF 6.504, ISO T1 default 4.665, India, Hong Kong 기존 regression 유지
+  - Korea CSPF 6.504, ISO T1 default 4.665, India, Hong Kong source golden regression 유지
   - hidden factor / golden fitting 계수 추가 금지
 - 남음:
-  - Hong Kong source golden CSPF 4.83 formula review pending xfail 유지
   - Calculator UI v1 연결 범위 검토
+  - Hong Kong HSPF는 ISO 16358-2 완전 구현 Phase로 별도 추적한다. 구현 전 pitfalls/calculation order 문서 작성과 golden 후보값 재확인이 필요하다.
 
 ### 5.5 계산기 Phase 1 배포 범위
 
@@ -308,7 +307,7 @@ Phase 1에서는 한 번에 모든 지역을 완전 구현해서 배포하지 �
 - Korea KS C 9306 CSPF/HSPF
 - ISO16358-1 T1 default 2-point CSPF
 - India ISEER xlsx-compatible
-- Hong Kong custom bin current-engine regression
+- Hong Kong custom bin source golden regression
 - EN14825 SEER/SCOP
 - AHRI SEER2/HSPF2
 
@@ -607,7 +606,24 @@ region config를 수정할 때는 최소한 아래를 확인한다.
 ### Step 6 — SASO T3 Phase R2
 
 - 완료: T3 climate profile과 `46_full` high-anchor branch를 구현했다.
-- 완료: SASO CSPF 4.954 official xlsm golden regression을 추가하고 전체 pytest `97 passed, 1 xfailed`를 확인했다.
+- 완료: SASO CSPF 4.954 official xlsm golden regression을 추가했다.
+
+### Step 7 — Hong Kong ISO 16358-2 HSPF Review
+
+- Hong Kong HSPF는 이번 Hong Kong CSPF golden 전환 범위 밖이다.
+- ISO 16358-2 완전 구현 Phase에서 별도 추적한다.
+- 구현 전 선행 조건:
+  - ISO 16358-2 pitfalls / calculation order 문서 작성
+  - Hong Kong HSPF golden 후보값 재확인: Measure #1 `3.643`, Measure #2 `4.572`
+  - 기존 KS C 9306 HSPF regression 보호 확인
+- Preliminary observations, not implementation decisions:
+  - `Lh(tj) = cap_0 × (12.75 - tj) / 12.75`
+  - `cap_0 = 7°C full heating capacity × 0.82` 후보이며 ISO 16358-2 계수로 재검증 필요
+  - `t_limit = 12.75°C`, `t_0_heat = 17°C`, `t_100_heat = 0°C` 후보
+  - Rated 변경이 Measured HSPF에 영향 없음. `building_load_source = "measured"` 후보
+  - 2°C 외삽 계수 후보: full non-frost cap `0.8714`, pwr `0.9357`; full frost cap `0.7781`, pwr `0.8829`; half frost only cap `0.7781`, pwr `0.9286`
+  - `Cd_heating = 0.25`, frost/non-frost 분기, boundary temperature(`ta`, `td`, `te`, `tg`) 계산 필요
+  - AHRI HSPF2 구현은 reference design으로 참조 가능하지만 계수와 calculation order는 ISO 16358-2 기준으로 별도 검증한다.
 
 ---
 

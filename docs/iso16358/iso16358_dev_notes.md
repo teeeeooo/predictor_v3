@@ -158,6 +158,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | CSPF profile resolver | `cspf_test_profile`의 measured/default/not_used point resolution을 검증한다. | `tests/test_iso16358_cspf_profile_resolver.py` |
 | CSPF profile calculation | profile path가 legacy ISO T1 default path와 parity를 유지하는지 검증한다. | `tests/test_iso16358_cspf_profile_calculation.py` |
 | SASO T3 golden | T3 piecewise boundary EER, min-half/half-full bracket, `46_full` load line을 검증한다. | `tests/test_iso16358_cspf_saso_t3_regression.py` |
+| Hong Kong CSPF golden | declared/rated full capacity load anchor와 measured performance curve 분리 동작을 검증한다. | `tests/test_iso16358_cspf_hong_kong_config.py` |
 
 ## 13. Prompt Snippets for Agent
 
@@ -286,3 +287,5 @@ Extracted formulas from the XLSM file:
 -   **SASO T3 and `cspf_test_profile` Schema:** SASO T3 Phase R2-2 is aligned through the `cspf_test_profile` opt-in path, not a one-off public calculator method. The legacy T1 `_iso_boundary_eer()` behavior remains unchanged, while T3 uses `_iso_boundary_eer_t3_piecewise()` only when `cspf_test_profile.climate_profile == "T3"`. This helper selects 29↔35 for `tj <= 35` and 35↔46 for `tj > 35`, and `_iso_boundary_eer_power()` handles both `{min, half}` and `{half, full}` brackets under that T3 guard.
 -   **SASO T3 Boundary Diagnostics:** The verified golden sample produces Tb ≈ 45.2479°C, Tc ≈ 34.6371°C, and Tp ≈ 29.1799°C. For the `tj > 35` full segment, the intersection is 46.0°C because `46_full` is the building-load reference point.
 -   **T3 29_full default point:** The T3 resolver behavior for 29_full is confirmed and maintained: capacity is `1.077 × 35_full capacity`, and power is `0.914 × 35_full power`. Treat this as confirmed resolver behavior and test coverage, not as a Phase R2-2-only new rule.
+-   **Hong Kong CSPF load anchor:** Hong Kong measured CSPF uses measured 35_full / 35_half capacity and power for the performance curve, but uses declared/rated 35_full capacity as the building-load anchor. Use `building_load_source = "declared"` and pass rated 35_full capacity as `declared_capacity`. Do not tune Cd or derived factors to match the source tool.
+-   **Hong Kong HSPF follow-up:** Hong Kong HSPF is out of scope for the CSPF golden conversion. Before implementation, write ISO 16358-2 pitfalls / calculation order notes, reconfirm candidate golden values (Measure #1 3.643, Measure #2 4.572), and protect KS C 9306 HSPF regressions. Current Hong Kong HSPF observations are preliminary only, including the `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` candidate, possible `cap_0 = 7°C full heating capacity × 0.82`, frost/non-frost branching, and boundary temperatures `ta`, `td`, `te`, `tg`.

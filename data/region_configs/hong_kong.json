@@ -1,12 +1,12 @@
 {
-  "_comment": "Hong Kong CSPF custom bin profile from user-provided source file 'iso 16358 temp_bin, golden_data.txt'. ISO 16358-1 2-point variable-capacity structure follows iso_t1_default_2point.json; only bin_hours are Hong Kong-specific.",
+  "_comment": "Hong Kong CSPF custom bin profile from user-provided source file 'iso 16358 temp_bin, golden_data.txt'. ISO 16358-1 2-point variable-capacity structure follows iso_t1_default_2point.json; bin_hours and Tnoload=23 C are Hong Kong-specific. Source tool measured CSPF uses rated 35_full capacity as the building-load anchor.",
   "region": "Hong Kong",
   "standard": "Hong Kong CSPF / ISO 16358-1:2013 custom bin",
   "t_100_load": 35.0,
   "reference_point": "35_full",
-  "t_0_load": 20.0,
+  "t_0_load": 23.0,
   "Cd": 0.25,
-  "building_load_source": "measured",
+  "building_load_source": "declared",
   "power_interpolation_method": "iso_boundary_eer",
   "points": {
     "35_full": "measure",

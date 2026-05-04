@@ -39,7 +39,7 @@
      5-2. [완료] ISO 16358-1 T1 default 2-point CSPF production config
      5-3. [완료] India ISEER xlsx-compatible path
      5-4. [완료] Hong Kong custom bin 2-point config
-          source golden mismatch는 Phase 2에서 cspf_profile schema 이후 재검토
+          source golden regression 전환 완료
      5-5. [완료] EN 14825 SEER/SCOP
      5-6. [완료] AHRI 210/240 SEER2/HSPF2 full variable-capacity path
           (상세: docs/skills/ahri_hspf2.md 참조)
@@ -51,7 +51,7 @@ Phase 2: ISO16358 official sheet structure expansion
        - 완료: T3 required_only / with_optional_test resolver/smoke
        - 완료: legacy ISO T1 default path parity 확인
        - 완료: SASO T3 official xlsm golden regression
-       - 전체 pytest: 97 passed, 1 xfailed
+       - 전체 pytest: 99 passed
        - 범위: variable/inverter-only profile path. fixed/two-stage/multi-stage는 scope 밖
   5-8. [완료] SASO T3 Phase R2
   5-9. ISO16358 official sheet full optional matrix 단계적 구현
@@ -376,8 +376,11 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
   - boundary temperature rounding opt-in 적용
   - xlsx-compatible regression 유지
 - [x] Hong Kong custom bin 2-point config 완료
-  - current-engine regression 유지
-  - source golden mismatch는 Phase 2 보류
+  - source golden regression 전환 완료
+  - measured CSPF는 measured 35_full / 35_half capacity and power로 performance curve를 만들고, declared/rated 35_full capacity를 building-load anchor로 사용한다.
+  - Hong Kong Tnoload = 23°C, `t_0_load = 23.0`, `building_load_source = "declared"`
+  - `calculate_cspf(..., declared_capacity=3500)` 방식으로 source behavior 재현
+  - golden result: Rated CSPF 4.746, Measure #1 4.939, Measure #2 4.880
 - [x] SASO T3 official xlsm golden regression 완료
   - `cspf_test_profile`: `climate_profile=T3`, `test_selection=with_optional_test`
   - load line: `t_100_load=46.0`, `t_0_load=20.0`, `reference_point="46_full"`, `Cd=0.27`
@@ -386,7 +389,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
   - T3 29_full default point 동작 확인/유지: capacity `1.077 × 35_full`, power `0.914 × 35_full`
   - golden result: CSTL ≈ 21,547.386 kWh, CSEC ≈ 4,349.020 kWh, CSPF ≈ 4.955 W/W
   - official target: CSTL ≈ 21,546 kWh, CSEC ≈ 4,349 kWh, CSPF ≈ 4.954 W/W
-  - 전체 pytest: 97 passed, 1 xfailed
+  - 전체 pytest: 99 passed
 - [x] ISO16358 / KS C 9306 문서 구조 정규화
   - ISO 공통 문서: docs/iso16358/
   - KS region 문서: docs/iso16358/regions/ks_c_9306/
@@ -422,6 +425,11 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
   - Korea / KS C 9306: 공식 계산 시트 기준 `rated_heating_capacity × 0.82`로 임시 확정
   - Spec text에는 `BLc(35) × 0.82` cooling reference가 있어 주석 유지 필요
   - Australia / New Zealand AS/NZS 3823.4.2는 원문 확인 전 임의 구현 금지
+- [ ] Hong Kong HSPF는 별도 ISO 16358-2 완전 구현 Phase에서 추적
+  - 이번 Hong Kong CSPF golden 전환 범위 밖
+  - 구현 전 ISO 16358-2 pitfalls / calculation order 문서 작성 필요
+  - golden 후보값 재확인 필요: Measure #1 3.643, Measure #2 4.572
+  - 현재 관찰값은 preliminary note이며 구현 확정안이 아님
 
 ### 공통
 - [ ] predictor → calculator 파이프라인 연동
@@ -432,7 +440,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 2. app_calculator.py / calc_window.py Calculator UI v1 연결
 3. predictor → calculator pipeline 연결
 4. 역방향 예측 MVP 설계
-5. Hong Kong source golden CSPF 4.83 formula review pending xfail 검토 (후순위)
+5. Hong Kong HSPF preliminary notes 재검증 및 ISO 16358-2 pitfalls/calculation order 문서 작성 (후순위)
 6. ISO16358 official sheet full optional matrix 단계적 구현 검토
 7. AHRI 설정 파일 위치 재정리 검토
    - `data/usa_hspf2.json`은 AHRI HSPF2 bin table, test point schema, alias를 함께 담고 있어 `data/region_configs/`로 단순 이동하기 전 구조 검토 필요
@@ -477,8 +485,7 @@ Heat_Capa_per_EvapArea, Heat_Capa_per_cc
 
 - `CalculatorWindow()` 생성 테스트는 macOS에서 크래시 없이 통과.
 - ISO T1 / bin_details 관련 테스트는 통과 확인.
-- 전체 pytest는 SASO T3 Phase R2-2 완료 후 `97 passed, 1 xfailed` 상태.
-  - 남은 xfailed는 Hong Kong source golden CSPF 4.83 formula review pending이며, 이번 2점식 ISO/ISEER UI 작업과 직접 관련된 실패는 아님.
+- 전체 pytest는 Hong Kong CSPF source golden 전환 후 `99 passed` 상태.
 
 ### 현재 UI 문제
 
