@@ -4,10 +4,10 @@
 ## 1. 현재 상태 및 마일스톤
 - **테스트 및 검증:** Validation smoke/golden 안정화가 완료되었습니다. 전체 테스트 통과 기준은 **109 passed** 입니다.
 - **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다.
-- **다음 큰 작업:** 
-  1. 문서 리팩토링
-  2. Calculator UI v1 구현
-  3. ISO16358-2 HSPF 공통화
+- **다음 큰 작업 후보:**
+  1. 문서 리팩토링 마무리
+  2. ISO16358-2 HSPF 공통화
+  3. Calculator UI v1 기본 기능
   4. Predictor 연동
 
 ## 2. 문서 가이드

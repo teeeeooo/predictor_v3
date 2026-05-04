@@ -18,3 +18,56 @@
 - **PyQt5 유지:** PyQt5를 표준으로 유지하며, PyQt6로의 전환은 금지합니다.
 - **API 안정성:** `core` 모듈의 calculator public API는 신중하게 유지합니다.
 - **UI 분리:** Train/Predict UI 작업과 계산기 UI 작업을 섞어 진행하여 기존 코드를 깨뜨리지 않도록 철저히 분리합니다.
+
+## 4. 장기 마일스톤
+
+### Phase 1 — 계산 엔진 안정화
+- ISO 16358, KS C 9306, EN14825, AHRI 210/240 계산 경로를 golden/smoke/validation test로 보호한다.
+- 지역 차이는 가능한 한 `data/region_configs/`와 profile/config/handler 구조로 표현한다.
+
+완료 기준:
+- 주요 계산 경로가 regression test로 보호된다.
+- 계산 로직 변경 시 전체 테스트로 회귀를 방어할 수 있다.
+
+### Phase 2 — Calculator UI v1
+- 엔지니어가 규격 계산 입력값을 직접 넣고 결과를 확인할 수 있는 UI를 만든다.
+- 우선 ISO16358/CSPF부터 안정화하고, HSPF/EN14825/AHRI는 단계적으로 연결한다.
+
+완료 기준:
+- UI 입력값이 core calculator와 정확히 연결된다.
+- 계산 결과와 주요 중간값을 확인할 수 있다.
+- Train/Predict UI를 깨지 않는다.
+
+### Phase 3 — Predictor 파이프라인 안정화
+- `app_train.py`, `app_predict.py` 흐름을 안정적으로 검증한다.
+- feature mapping, target별 leakage 방지, model output 신뢰성을 확보한다.
+
+완료 기준:
+- 학습/예측 결과가 재현 가능하다.
+- 주요 데이터 변환 과정이 문서화된다.
+
+### Phase 4 — Calculator ↔ Predictor 연동
+- 예측된 capacity/power/성능값을 규격 계산기에 연결한다.
+- predictor output이 calculator input으로 안전하게 변환되도록 한다.
+
+완료 기준:
+- 단위, 조건점, region profile 불일치를 방어한다.
+- 예측 결과 기반 CSPF/HSPF/SEER/SCOP 계산이 가능하다.
+
+### Phase 5 — 역방향 탐색 엔진
+- 목표 효율 또는 목표 성능을 만족하기 위한 입력 조합을 역방향으로 탐색한다.
+- 예: 목표 CSPF 달성을 위한 capacity/power/part-load 조건 추천.
+
+완료 기준:
+- 사용자가 목표값을 입력하면 가능한 조합 또는 개선 방향을 제안한다.
+- 규격 계산 제약과 ML 예측 제약을 함께 고려한다.
+
+## 5. 문서 운영 원칙
+
+- 규칙은 `AGENTS.md`에 둔다.
+- 상세 작업 라우팅은 `AGENT_TASK_ROUTER.md`에 둔다.
+- 장기 방향은 `PROJECT_CHARTER.md`에 둔다.
+- 현재 상태 요약은 `project_brief.md`에 둔다.
+- 작업 기록과 try/fail/success는 `project_log.md`에 둔다.
+- 앞으로 할 일과 우선순위는 `docs/REFACTOR_PLAN.md`에 둔다.
+- 같은 내용을 여러 문서에 중복으로 길게 기록하지 않는다.
