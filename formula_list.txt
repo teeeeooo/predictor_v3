@@ -1,0 +1,121 @@
+Formula at BD7: =IF($BC$7=2,"Optional test","Required test")
+Formula at P9: =$H$9/$L$9
+Formula at P10: =$H$10/$L$10
+Formula at P11: =$H$11/$L$11
+Formula at BD11: =IF($BC$7=2,IF($BC$11=2,"Measure","Not Measure"),"Not Measure")
+Formula at Y12: =data!$D$7
+Formula at AC12: =data!$F$7
+Formula at Y13: ='Variable Capacity unit'!$CK$49/1000
+Formula at AC13: ='Variable Capacity unit'!CK108/1000
+Formula at AK13: =$D$9
+Formula at H14: =$H$8
+Formula at L14: =$L$8
+Formula at P14: =$P$8
+Formula at Y14: ='Variable Capacity unit'!$CZ$49/1000
+Formula at AC14: ='Variable Capacity unit'!CZ108/1000
+Formula at AK14: =$D$10
+Formula at D15: =$D$9
+Formula at P15: =$H$15/$L$15
+Formula at Y15: ='Variable Capacity unit'!$CF$3
+Formula at AC15: ='Variable Capacity unit'!CF62
+Formula at AK15: =$D$11
+Formula at BD15: =IF(AND($BC$7=2,$BC$11=2),IF($BC$15=2,"Measure","Default"),"Default")
+Formula at D16: =$D$10
+Formula at P16: =$H$16/$L$16
+Formula at AK16: =$D$9
+Formula at D17: =$D$11
+Formula at P17: =$H$17/$L$17
+Formula at Y17: ='Variable Capacity unit'!$CH$5
+Formula at AC17: ='Variable Capacity unit'!CH64
+Formula at AK17: =$D$10
+Formula at BD17: =IF(AND($BC$7=2,$BC$17=2),"Measure","Default")
+Formula at AK18: =$D$11
+Formula at BD18: =IF(AND($BC$7=2,$BC$11=2),"Measure","Not Measure")
+Formula at H20: =$H$8
+Formula at L20: =$L$8
+Formula at P20: =$P$8
+Formula at AK22: =$D$21
+Formula at AK23: =$D$22
+Formula at AK24: =$D$23
+Formula at AK25: =$D$24
+Formula at C30: =$C$6
+Formula at AI31: =$AI$6
+Formula at H32: =$H$8
+Formula at L32: =$L$8
+Formula at P32: =$P$8
+Formula at AK32: =$AK$7
+Formula at AR32: =$AR$7
+Formula at AX32: =$AX$7
+Formula at BD32: =IF($BC$32=2,"Optional test","Required test")
+Formula at D33: =$D$9
+Formula at P33: =$H$33/$L$33
+Formula at AI33: =$AI$8
+Formula at D34: =$D$10
+Formula at P34: =$H$34/$L$34
+Formula at AK34: =$AK$9
+Formula at D35: =$D$11
+Formula at P35: =$H$35/$L$35
+Formula at AK35: =$AK$10
+Formula at AK36: =$AK$11
+Formula at AR36: =$AR$11
+Formula at AX36: =$AX$11
+Formula at BD36: =IF($BC$32=2,IF($BC$36=2,"Measure","Not Measure"),"Not Measure")
+Formula at Y37: =data!$I$7
+Formula at AC37: =data!$K$7
+Formula at H38: =$H$8
+Formula at L38: =$L$8
+Formula at P38: =$P$8
+Formula at U38: =$U$13
+Formula at Y38: ='Variable Capacity unit'!$CK$163/1000
+Formula at AC38: ='Variable Capacity unit'!CK223/1000
+Formula at AK38: =$D$9
+Formula at D39: =$D$9
+Formula at P39: =$H$39/$L$39
+Formula at U39: =$U$14
+Formula at Y39: ='Variable Capacity unit'!$CZ$163/1000
+Formula at AC39: ='Variable Capacity unit'!CZ223/1000
+Formula at AK39: =$D$10
+Formula at BD39: =IF($BC$32=2,IF($BC$39=2,"Measure","Default"),"Default")
+Formula at D40: =$D$10
+Formula at P40: =$H$40/$L$40
+Formula at U40: =$U$15
+Formula at Y40: ='Variable Capacity unit'!$CF$112
+Formula at AC40: ='Variable Capacity unit'!CF172
+Formula at AK40: =$D$11
+Formula at BD40: =IF(AND($BC$32=2,$BC$36=2),IF($BC$40=2,"Measure","Default"),"Default")
+Formula at D41: =$D$11
+Formula at P41: =$H$41/$L$41
+Formula at AI41: =$AI$13
+Formula at AK41: =$D$9
+Formula at U42: =$U$17
+Formula at Y42: ='Variable Capacity unit'!$CH$114
+Formula at AC42: ='Variable Capacity unit'!CH174
+Formula at AK42: =$D$10
+Formula at AK43: =$D$11
+Formula at BD43: =IF(AND($BC$32=2,$BC$36=2),"Measure","Default")
+Formula at H44: =$H$8
+Formula at L44: =$L$8
+Formula at P44: =$P$8
+Formula at AI44: =$AI$16
+Formula at AK44: =$D$9
+Formula at D45: =$D$9
+Formula at P45: ='Variable Capacity unit'!$CC$127
+Formula at AK45: =$D$10
+Formula at BD45: =IF($BC$32=2,IF($BC$45=2,"Measure","Default"),"Default")
+Formula at D46: =$D$10
+Formula at P46: =$H$46/$L$46
+Formula at AK46: =$D$11
+Formula at BD46: =IF(AND($BC32=2,$BC$36=2),IF($BC$46=2,"Measure","Default"),"Default")
+Formula at D47: =$D$11
+Formula at P47: =$H$47/$L$47
+Formula at H50: =$H$8
+Formula at L50: =$L$8
+Formula at P50: =$P$8
+Formula at AK50: =$D$21
+Formula at D51: =$D$21
+Formula at AK51: =$D$22
+Formula at D52: =$D$22
+Formula at AK52: =$D$23
+Formula at D53: =$D$23
+Formula at AK53: =$D$24
+Formula at D54: =$D$24
