@@ -4,9 +4,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QTableView, QHeaderView, QAbstractItemView,
                              QApplication, QTabWidget, QPushButton, QDialog,
                              QGridLayout, QLineEdit, QCheckBox, QFrame,
-                             QSizePolicy)
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal, QTimer
-from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence
+                             QSizePolicy, QStyledItemDelegate, QAbstractItemDelegate)
+from PyQt5.QtCore import (Qt, QAbstractTableModel, QModelIndex, QVariant,
+                          pyqtSignal, QTimer, QEvent, QItemSelectionModel)
+from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence, QBrush
 
 from core.calculator_iso16358 import ISO16358Calculator
 
@@ -373,14 +374,17 @@ class BinGraphWidget(QWidget):
     def set_mode(self, mode):
         self.mode = mode
         self.update()
+        self.repaint()
 
     def set_data(self, bin_details):
         self.bin_details = bin_details or []
         self.update()
+        self.repaint()
 
     def clear(self):
         self.bin_details = []
         self.update()
+        self.repaint()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -444,19 +448,29 @@ class BinGraphWidget(QWidget):
                 pts_lc.append((x, get_y(d["lc"])))
                 pts_cap.append((x, get_y(d["capacity"])))
 
-            # Draw Load
-            painter.setPen(QPen(QColor("red"), 2))
-            for i in range(len(pts_lc)-1):
-                painter.drawLine(int(pts_lc[i][0]), int(pts_lc[i][1]), int(pts_lc[i+1][0]), int(pts_lc[i+1][1]))
-            # Draw Capacity
-            painter.setPen(QPen(QColor("green"), 2))
+            capacity_pen = QPen(QColor("#2E7D32"), 3)
+            load_pen = QPen(QColor("#C62828"), 2)
+            load_pen.setStyle(Qt.DashLine)
+
+            painter.setPen(capacity_pen)
             for i in range(len(pts_cap)-1):
                 painter.drawLine(int(pts_cap[i][0]), int(pts_cap[i][1]), int(pts_cap[i+1][0]), int(pts_cap[i+1][1]))
+            painter.setBrush(QBrush(QColor("#2E7D32")))
+            for x, y in pts_cap:
+                painter.drawRect(int(x) - 3, int(y) - 3, 6, 6)
+
+            painter.setPen(load_pen)
+            for i in range(len(pts_lc)-1):
+                painter.drawLine(int(pts_lc[i][0]), int(pts_lc[i][1]), int(pts_lc[i+1][0]), int(pts_lc[i+1][1]))
+            painter.setBrush(QBrush(QColor("#C62828")))
+            for x, y in pts_lc:
+                painter.drawEllipse(int(x) - 3, int(y) - 3, 6, 6)
 
             # Legend
-            painter.setPen(QColor("red"))
+            painter.setBrush(Qt.NoBrush)
+            painter.setPen(QColor("#C62828"))
             painter.drawText(self.width() - 120, margin_t + 10, "Cooling Load")
-            painter.setPen(QColor("green"))
+            painter.setPen(QColor("#2E7D32"))
             painter.drawText(self.width() - 120, margin_t + 25, "Capacity")
             painter.setPen(QColor("black"))
             painter.drawText(margin_l, margin_t - 5, "Watts")
@@ -595,6 +609,7 @@ class ProfileInputGridModel(QAbstractTableModel):
         self._points = []
         self._values = []
         self._bulk_updating = False
+        self._undo_stack = []
 
     def rowCount(self, parent=QModelIndex()):
         return 2
@@ -633,7 +648,15 @@ class ProfileInputGridModel(QAbstractTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or role != Qt.EditRole:
             return False
-        self._values[index.row()][index.column()] = str(value).strip()
+        new_value = str(value).strip()
+        row = index.row()
+        col = index.column()
+        old_value = self._values[row][col]
+        if old_value == new_value:
+            return True
+        if not self._bulk_updating:
+            self._undo_stack.append([(row, col, old_value)])
+        self._values[row][col] = new_value
         self.dataChanged.emit(index, index)
         if not self._bulk_updating:
             self.values_changed.emit()
@@ -651,6 +674,7 @@ class ProfileInputGridModel(QAbstractTableModel):
         for col, (_, key) in enumerate(self._points):
             if key in old:
                 self._values[0][col], self._values[1][col] = old[key]
+        self._undo_stack = []
         self.endResetModel()
         self.values_changed.emit()
 
@@ -662,6 +686,7 @@ class ProfileInputGridModel(QAbstractTableModel):
             return
         self._bulk_updating = True
         changed = False
+        undo_entry = []
         try:
             for r_offset, line in enumerate(rows):
                 row = start_row + r_offset
@@ -671,15 +696,38 @@ class ProfileInputGridModel(QAbstractTableModel):
                     col = start_col + c_offset
                     if col >= self.columnCount():
                         break
-                    self._values[row][col] = value.strip()
-                    changed = True
+                    new_value = value.strip()
+                    old_value = self._values[row][col]
+                    if old_value != new_value:
+                        undo_entry.append((row, col, old_value))
+                        self._values[row][col] = new_value
+                        changed = True
         finally:
             self._bulk_updating = False
         if changed:
+            self._undo_stack.append(undo_entry)
             top = self.index(start_row, start_col)
             bottom = self.index(self.rowCount() - 1, self.columnCount() - 1)
             self.dataChanged.emit(top, bottom)
             self.values_changed.emit()
+
+    def undo(self):
+        if not self._undo_stack:
+            return
+        entry = self._undo_stack.pop()
+        changed_indexes = []
+        for row, col, old_value in entry:
+            if 0 <= row < self.rowCount() and 0 <= col < self.columnCount():
+                self._values[row][col] = old_value
+                changed_indexes.append(self.index(row, col))
+        if not changed_indexes:
+            return
+        min_row = min(index.row() for index in changed_indexes)
+        max_row = max(index.row() for index in changed_indexes)
+        min_col = min(index.column() for index in changed_indexes)
+        max_col = max(index.column() for index in changed_indexes)
+        self.dataChanged.emit(self.index(min_row, min_col), self.index(max_row, max_col))
+        self.values_changed.emit()
 
     def parsed_points(self, required_keys=None):
         required = set(required_keys or [key for _, key in self._points])
@@ -712,19 +760,71 @@ class ProfileInputGridModel(QAbstractTableModel):
         return number if number > 0 else None
 
 
+class ProfileInputGridDelegate(QStyledItemDelegate):
+    def __init__(self, view):
+        super().__init__(view)
+        self.view = view
+
+    def createEditor(self, parent, option, index):
+        editor = super().createEditor(parent, option, index)
+        editor.installEventFilter(self)
+        if hasattr(editor, "setAlignment"):
+            editor.setAlignment(Qt.AlignCenter)
+        return editor
+
+    def eventFilter(self, editor, event):
+        if event.type() == QEvent.KeyPress and event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.commitData.emit(editor)
+            self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
+            self.view.move_to_next_cell()
+            return True
+        return super().eventFilter(editor, event)
+
+
 class ProfileInputGridView(QTableView):
     def __init__(self):
         super().__init__()
         self.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setItemDelegate(ProfileInputGridDelegate(self))
+        self.setShowGrid(True)
+        self.setGridStyle(Qt.SolidLine)
+        self.setCornerButtonEnabled(False)
+        self.setTabKeyNavigation(True)
         self.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
         self.verticalHeader().setDefaultAlignment(Qt.AlignCenter)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.verticalHeader().setDefaultSectionSize(34)
+        self.verticalHeader().setHighlightSections(False)
+        self.horizontalHeader().setHighlightSections(False)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setAlternatingRowColors(False)
-        self.setMinimumHeight(118)
-        self.setMaximumHeight(126)
+        self.setFixedHeight(96)
+        self.setStyleSheet("""
+            QTableView {
+                background: #FFFFFF;
+                gridline-color: #AEB8C4;
+                border: 1px solid #AEB8C4;
+                selection-background-color: #CFE5FF;
+                selection-color: #102A43;
+            }
+            QTableView::item {
+                border: 1px solid #C4CCD6;
+                padding: 4px;
+            }
+            QHeaderView::section {
+                background: #F3F6F9;
+                border: 1px solid #B7C0CC;
+                padding: 4px;
+                font-weight: 600;
+            }
+        """)
+
+    def fit_to_contents(self):
+        height = self.horizontalHeader().height() + self.verticalHeader().length() + (2 * self.frameWidth())
+        self.setFixedHeight(max(height, 90))
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Paste):
@@ -737,7 +837,33 @@ class ProfileInputGridView(QTableView):
                     QApplication.clipboard().text(),
                 )
             return
+        if event.matches(QKeySequence.Undo):
+            model = self.model()
+            if model and hasattr(model, "undo"):
+                model.undo()
+            return
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.move_to_next_cell()
+            return
         super().keyPressEvent(event)
+
+    def move_to_next_cell(self):
+        model = self.model()
+        current = self.currentIndex()
+        if not model or not current.isValid():
+            return
+        row = current.row()
+        col = current.column() + 1
+        if col >= model.columnCount():
+            col = 0
+            row += 1
+        if row >= model.rowCount():
+            row = model.rowCount() - 1
+            col = model.columnCount() - 1
+        next_index = model.index(row, col)
+        self.setCurrentIndex(next_index)
+        self.selectionModel().select(next_index, QItemSelectionModel.ClearAndSelect)
+        self.edit(next_index)
 
 
 class RegionResultTableModel(QAbstractTableModel):
@@ -1051,6 +1177,7 @@ class IsoCspfSingleWidget(QWidget):
 
     def _on_saso_min_toggled(self, checked):
         self.input_model.set_points(self.SASO_INPUTS_WITH_MIN if checked else self.SASO_INPUTS_REQUIRED)
+        QTimer.singleShot(0, self.input_view.fit_to_contents)
         self._recalculate()
 
     def _install_input_grid(self, points):
@@ -1060,6 +1187,7 @@ class IsoCspfSingleWidget(QWidget):
         self.input_model.values_changed.connect(self._recalculate)
         self.input_model.set_points(points)
         self.input_layout.addWidget(self.input_view)
+        QTimer.singleShot(0, self.input_view.fit_to_contents)
 
     def _recalculate(self):
         if self._updating_profile:
