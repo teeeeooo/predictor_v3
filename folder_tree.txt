@@ -1,107 +1,131 @@
 .
-|-- .DS_Store
-|-- .claude
-|   `-- settings.local.json
-|-- .devcontainer
-|   `-- devcontainer.json
-|-- .gitignore
-|-- .pytest_cache
-|   |-- .gitignore
-|   |-- CACHEDIR.TAG
-|   |-- README.md
-|   `-- v
-|       `-- cache
-|           |-- lastfailed
-|           `-- nodeids
-|-- AGENTS.md
-|-- AGENTS_FULL.md
-|-- KS_C_9306.pdf
-|-- README.md
-|-- app_calculator.py
-|-- app_predict.py
-|-- app_train.py
-|-- core
-|   |-- .DS_Store
-|   |-- calculator_ahri_hspf2.py
-|   |-- calculator_ahri_seer2.py
-|   |-- calculator_en14825.py
-|   |-- calculator_iso16358.py
-|   |-- constants.py
-|   |-- data_pipeline.py
-|   |-- models.py
-|   |-- predictor.py
-|   |-- trainer.py
-|   `-- utils.py
-|-- data
-|   |-- .DS_Store
-|   |-- region_configs
-|   |   |-- .DS_Store
-|   |   |-- REGION_CONFIG_RULES.md
-|   |   |-- en14825_scop.json
-|   |   |-- eu.json
-|   |   |-- korea.json
-|   |   |-- thailand.json
-|   |   `-- usa.json
-|   |-- skills.md
-|   `-- usa_hspf2.json
-|-- docs
-|   |-- .DS_Store
-|   |-- DOCS_GUIDELINES.md
-|   |-- FORMULA_REFERENCE_GUIDE.md
-|   |-- README.md
-|   |-- REFACTOR_PLAN.md
-|   |-- STANDARD_DOC_TEMPLATE.md
-|   |-- ahri210240
-|   |   |-- ahri210240_design_notes.md
-|   |   |-- ahri210240_dev_notes.md
-|   |   |-- ahri210240_glossary.md
-|   |   `-- ahri210240_notes.md
-|   |-- en14825
-|   |   |-- design_notes.md
-|   |   |-- dev_notes.md
-|   |   |-- en14825_design_notes.md
-|   |   |-- en14825_dev_notes.md
-|   |   |-- en14825_glossary.md
-|   |   |-- en14825_notes.md
-|   |   `-- notes.md
-|   |-- en14825_scop_notes.md
-|   |-- iso16358
-|   |   |-- .DS_Store
-|   |   |-- iso16358_design_notes.md
-|   |   |-- iso16358_dev_notes.md
-|   |   |-- iso16358_glossary.md
-|   |   |-- iso16358_notes.md
-|   |   `-- regions
-|   |       |-- .DS_Store
-|   |       `-- ks_c_9306
-|   |           |-- .DS_Store
-|   |           |-- ks_c_9306_design_notes.md
-|   |           |-- ks_c_9306_dev_notes.md
-|   |           |-- ks_c_9306_glossary.md
-|   |           `-- ks_c_9306_notes.md
-|   `-- skills
-|       `-- ahri_hspf2.md
-|-- predictor_v3.code-workspace
-|-- project_context.md
-|-- scripts
-|   |-- .DS_Store
-|   `-- update_mapping.py
-|-- temporary.txt
-|-- test_hspf2_smoke.py
-|-- test_hspf2_v3_bincheck.py
-|-- test_hspf2_v3_h2int.py
-|-- test_hspf2_v3_low_cases.py
-|-- test_hspf2_v3_smoke.py
-|-- tests
-|   |-- test_en14825_golden.py
-|   |-- test_iso16358_hspf_golden.py
-|   |-- test_iso16358_hspf_smoke.py
-|   `-- test_iso16358_hspf_validation.py
-|-- ui
-|   |-- .DS_Store
-|   |-- base_model.py
-|   |-- base_view.py
-|   |-- calc_window.py
-|   |-- predict_window.py
-|   `-- train_window.py
-`-- usa.json
+./__pycache__
+./20181107 ISO16358-1_AMD1 Calculation_tool_FINAL (1).xlsm
+./20181107 ISO16358-1_AMD1 Calculation_tool_FINAL.xlsm
+./AGENTS_FULL.md
+./AGENTS.md
+./app_calculator.py
+./app_predict.py
+./app_train.py
+./core
+./core/__pycache__
+./core/calculator_ahri_hspf2.py
+./core/calculator_ahri_seer2.py
+./core/calculator_en14825.py
+./core/calculator_iso16358.py
+./core/constants.py
+./core/data_pipeline.py
+./core/models.py
+./core/predictor.py
+./core/trainer.py
+./core/utils.py
+./cspf_calculator.py
+./data
+./data/region_configs
+./data/region_configs/en14825_scop.json
+./data/region_configs/eu.json
+./data/region_configs/hong_kong.json
+./data/region_configs/india_iseer.json
+./data/region_configs/iso_t1_default_2point.json
+./data/region_configs/korea.json
+./data/region_configs/REGION_CONFIG_RULES.md
+./data/region_configs/saso.json
+./data/region_configs/usa.json
+./data/skills.md
+./data/usa_hspf2.json
+./docs
+./docs/ahri210240
+./docs/ahri210240/ahri210240_design_notes.md
+./docs/ahri210240/ahri210240_dev_notes.md
+./docs/ahri210240/ahri210240_glossary.md
+./docs/ahri210240/ahri210240_notes.md
+./docs/DOCS_GUIDELINES.md
+./docs/en14825
+./docs/en14825_scop_notes.md
+./docs/en14825/design_notes.md
+./docs/en14825/dev_notes.md
+./docs/en14825/en14825_design_notes.md
+./docs/en14825/en14825_dev_notes.md
+./docs/en14825/en14825_glossary.md
+./docs/en14825/en14825_notes.md
+./docs/en14825/notes.md
+./docs/FORMULA_REFERENCE_GUIDE.md
+./docs/iso16358
+./docs/iso16358/iso16358_design_notes.md
+./docs/iso16358/iso16358_dev_notes.md
+./docs/iso16358/iso16358_glossary.md
+./docs/iso16358/iso16358_notes.md
+./docs/iso16358/regions
+./docs/iso16358/regions/aus
+./docs/iso16358/regions/aus/aus_notes.md
+./docs/iso16358/regions/ks_c_9306
+./docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md
+./docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md
+./docs/iso16358/regions/ks_c_9306/ks_c_9306_glossary.md
+./docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md
+./docs/iso16358/regions/southeast_asia
+./docs/iso16358/regions/southeast_asia/cspf_region_config_phase1_report.md
+./docs/README.md
+./docs/REFACTOR_PLAN.md
+./docs/skills
+./docs/skills/ahri_hspf2.md
+./docs/STANDARD_DOC_TEMPLATE.md
+./dump_bin_inputs.py
+./dump_bins.py
+./extract_formulas.py
+./find_cspf.py
+./Folder_tree.txt
+./formula_list.txt
+./InverterACmastersheetprotected-1.xlsx
+./iso 16358 temp_bin, golden_data.txt
+./KS_C_9306.pdf
+./OPTIMO_naming.md
+./predictor_v3.code-workspace
+./project_context.md
+./README.md
+./SASO DRAFT 2663-0000.pdf
+./scripts
+./scripts/update_mapping.py
+./temporary.txt
+./tests
+./tests/__pycache__
+./tests/diagnostics
+./tests/diagnostics/diag_iso_t1_plf_breakdown.py
+./tests/fixtures
+./tests/fixtures/iso16358_cspf_golden_fixtures.json
+./tests/test_ahri_hspf2_bincheck.py
+./tests/test_ahri_hspf2_h2int.py
+./tests/test_ahri_hspf2_low_cases.py
+./tests/test_ahri_hspf2_smoke.py
+./tests/test_ahri_hspf2_v3_smoke.py
+./tests/test_ahri_seer2_smoke.py
+./tests/test_en14825_golden.py
+./tests/test_iso16358_cspf_asean_report_examples.py
+./tests/test_iso16358_cspf_clause67_bin_diagnostics.py
+./tests/test_iso16358_cspf_fixture_validation.py
+./tests/test_iso16358_cspf_hong_kong_config.py
+./tests/test_iso16358_cspf_india_iseer_config.py
+./tests/test_iso16358_cspf_iso_boundary_eer_control_regression.py
+./tests/test_iso16358_cspf_iso_t1_2point_control_samples.py
+./tests/test_iso16358_cspf_iso_t1_default_config.py
+./tests/test_iso16358_cspf_iso_t1_default_diagnostics.py
+./tests/test_iso16358_cspf_iso_t1_default_golden.py
+./tests/test_iso16358_cspf_official_tool_formula_diagnostics.py
+./tests/test_iso16358_cspf_profile_calculation.py
+./tests/test_iso16358_cspf_profile_resolver.py
+./tests/test_iso16358_cspf_saso_config.py
+./tests/test_iso16358_cspf_saso_t3_regression.py
+./tests/test_iso16358_cspf_t3_profile.py
+./tests/test_iso16358_hspf_golden.py
+./tests/test_iso16358_hspf_hong_kong_config.py
+./tests/test_iso16358_hspf_smoke.py
+./tests/test_iso16358_hspf_validation.py
+./tests/test_region_config_integrity.py
+./ui
+./ui/__pycache__
+./ui/base_model.py
+./ui/base_view.py
+./ui/calc_window.py
+./ui/calculators_2point.py
+./ui/predict_window.py
+./ui/train_window.py
