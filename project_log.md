@@ -1,21 +1,6 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
-## 2026-05-05 — AHRI USA config 통합 감사 및 보류 결정
-
-### Result
-- `data/usa_hspf2.json`과 `data/region_configs/usa.json`의 통합 가능성을 검토함.
-- 두 calculator가 모두 top-level flat schema를 직접 기대함.
-- `bin_data`, `test_point_temps`, `constants`, `defaults`가 cooling/heating 사이에서 충돌할 가능성이 있음을 확인함.
-- `REGION_CONFIG_RULES.md`에 scaffold/primary config 승격 규칙이 빠져 있었음을 확인하고 보강함.
-
-### Decision
-- 단기에는 두 config를 완전 통합하지 않음.
-- `data/usa_hspf2.json`은 향후 `data/region_configs/usa_hspf2.json`으로 위치 이동만 검토함.
-- 완전 통합은 `cooling` / `heating` namespace schema migration에서 별도 검토함.
-
----
-
 ## 2026-05-04 — Validation smoke/golden 안정화
 
 ### Result
@@ -122,3 +107,30 @@
 - `docs/en14825/notes.md`, `design_notes.md`, `dev_notes.md`를 삭제함.
 - 내용이 모두 `en14825_` 접두사가 붙은 신형 문서에 병합/통합되어 있음을 확인 후 삭제.
 - `docs/README.md` 및 `docs/REFACTOR_PLAN.md`에 남아 있던 구형 파일명 참조 업데이트 완료.
+
+## 2026-05-05 — AHRI USA config 통합 감사 및 보류 결정
+
+### Tried
+- `data/usa_hspf2.json`을 `data/region_configs/usa.json`에 통합할 수 있는지 검토함.
+- `core/calculator_ahri_hspf2.py`와 `core/calculator_ahri_seer2.py`의 config 접근 방식을 확인함.
+- HSPF2/SEER2 테스트와 문서의 `data/usa_hspf2.json` 참조를 확인함.
+
+### Result
+- `AHRIHSPF2Calculator`와 `AHRICalculator` 모두 top-level flat schema를 직접 기대하고 있음을 확인함.
+- `bin_data`, `test_point_temps`, `constants`, `defaults`가 HSPF2와 SEER2에서 서로 다른 의미로 사용되므로 단일 `usa.json`에 즉시 통합하면 schema 충돌 위험이 큼.
+- Codex 통합 작업은 실제 파일 변경 없이 중단함.
+
+### Failed / Risk
+- `data/usa_hspf2.json`과 `data/region_configs/usa.json`을 단순 병합하면 cooling/heating 설정이 top-level에서 충돌할 수 있음.
+- nested schema로 통합하려면 calculator 로딩 로직 변경이 필요하므로 현재 범위보다 큼.
+- agent가 통합 작업에서 schema 충돌 판단으로 장시간 정체될 수 있음.
+
+### Decision
+- 단기에는 `data/usa_hspf2.json`과 `data/region_configs/usa.json`을 통합하지 않는다.
+- `data/region_configs/usa.json`은 SEER2/cooling 전용 flat config로 유지한다.
+- `data/usa_hspf2.json`은 HSPF2 전용 flat config로 유지하되, 다음 정리 작업에서 `data/region_configs/usa_hspf2.json`으로 위치만 이동하는 방향을 우선 검토한다.
+- 완전 통합은 향후 AHRI config schema를 `cooling` / `heating` namespace로 분리할 때 별도 Phase에서 수행한다.
+
+### Lesson
+- 위치 정리와 schema 통합은 분리해서 진행해야 한다.
+- config 파일 통합 전에는 calculator가 기대하는 top-level key를 먼저 확인해야 한다.
