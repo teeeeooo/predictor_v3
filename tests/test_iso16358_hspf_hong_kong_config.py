@@ -33,7 +33,15 @@ def test_hong_kong_hspf_golden_case_2():
         "7_full": {"capacity": 6100, "power": 1300},
         "7_half": {"capacity": 3000, "power": 600}
     }
-    
+
+    # Golden value verified by manual calculation:
+    # -7_full derived: cap=6100*0.64=3904, pwr=1300*0.82=1066
+    # -7_half derived: cap=3000*0.64=1920, pwr=600*0.82=492
+    # 2_full footnote d: cap=5315.71, pwr=1216.43
+    # 2_half footnote d: cap=2614.29, pwr=561.43
+    # L_h_ref=6100*0.82=5002, HSTL=264517.53, HSEC=57863.68
+    # HSPF raw=4.5714 → round(3)=4.571
+
     result = calc.calculate_hspf(measured_inputs)
     assert result["hspf"] == pytest.approx(4.571, abs=0.001)
 
