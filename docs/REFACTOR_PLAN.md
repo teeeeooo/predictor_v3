@@ -170,7 +170,7 @@ SEER/SCOP 엔진 구현 완료. 특이사항은 문서로 관리.
 ```text
 docs/
 ├── ahri210240/     (glossary, notes, design_notes, dev_notes)
-├── en14825/        (glossary, notes, design_notes, dev_notes)
+├── en14825/        (en14825_glossary, en14825_notes, en14825_design_notes, en14825_dev_notes)
 └── iso16358/       (glossary, notes, design_notes, dev_notes, regions/ks_c_9306/...)
 ```
 

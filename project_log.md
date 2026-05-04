@@ -31,7 +31,7 @@
 
 ### Decision
 - 장기 방향은 `PROJECT_CHARTER.md`.
-- 현재 상태 요약은 `project_brief.md`.
+- 단기 상태 요약은 `project_brief.md`.
 - 작업 기록은 `project_log.md`.
 - 살아있는 계획은 `docs/REFACTOR_PLAN.md`.
 
@@ -98,3 +98,12 @@
 - 프레임워크의 편의성(`QTableWidget`)보다 구조적 안정성(`QTableView`)이 장기적으로 유리함.
 - 데이터 학습 시 피처 이름을 끝까지 유지하는 것이 디버깅과 모델 검증에 필수적임.
 - 순수 상수 파일(`constants.py`)과 실행 유틸리티(`utils.py`)를 철저히 분리해야 순환 참조 및 예기치 못한 부작용을 막을 수 있음.
+
+---
+
+## 2026-05-05 — docs/en14825 중복 문서 감사 및 제거
+
+### Result
+- `docs/en14825/notes.md`, `design_notes.md`, `dev_notes.md`를 삭제함.
+- 내용이 모두 `en14825_` 접두사가 붙은 신형 문서에 병합/통합되어 있음을 확인 후 삭제.
+- `docs/README.md` 및 `docs/REFACTOR_PLAN.md`에 남아 있던 구형 파일명 참조 업데이트 완료.
