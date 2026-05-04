@@ -1,8 +1,14 @@
+import os
+
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QTableView, QHeaderView, QAbstractItemView,
-                             QApplication, QTabWidget)
+                             QApplication, QTabWidget, QPushButton, QDialog,
+                             QGridLayout, QLineEdit, QCheckBox, QFrame,
+                             QSizePolicy)
 from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal, QTimer
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence
+
+from core.calculator_iso16358 import ISO16358Calculator
 
 class TraceTableModel(QAbstractTableModel):
     def __init__(self):
@@ -63,13 +69,15 @@ class TwoPointTableModel(QAbstractTableModel):
         self._headers = [
             "No", "35°C Full Cap [W]", "35°C Full Pwr [W]", 
             "35°C Half Cap [W]", "35°C Half Pwr [W]",
-            "EER Full", "EER Half", "ISO CSPF", "ISEER", "ISEER CSEC [kWh]"
+            "EER Full", "EER Half", "ISO CSPF", "India ISEER",
+            "India CSEC [kWh]", "Hong Kong CSPF"
         ]
         self._rows = []
         self._updating = False
         self._bulk_updating = False
         self.iso_t1_calc = None
         self.iseer_calc = None
+        self.hong_kong_calc = None
         for _ in range(3):
             self.add_row(emit=False)
             
@@ -79,9 +87,10 @@ class TwoPointTableModel(QAbstractTableModel):
         self._debounce_timer.timeout.connect(self._recalculate_pending)
         self._pending_recalc_rows = set()
 
-    def set_calculators(self, iso_t1_calc, iseer_calc):
+    def set_calculators(self, iso_t1_calc, iseer_calc, hong_kong_calc=None):
         self.iso_t1_calc = iso_t1_calc
         self.iseer_calc = iseer_calc
+        self.hong_kong_calc = hong_kong_calc
         self.recalculate_rows(range(len(self._rows)))
 
     def rowCount(self, parent=QModelIndex()):
@@ -122,12 +131,13 @@ class TwoPointTableModel(QAbstractTableModel):
             elif col == 7: return f"{item['iso_cspf']:.3f}" if item["iso_cspf"] is not None else ""
             elif col == 8: return f"{item['iseer']:.3f}" if item["iseer"] is not None else ""
             elif col == 9: return f"{item['iseer_csec']:.1f}" if item["iseer_csec"] is not None else ""
+            elif col == 10: return f"{item['hong_kong_cspf']:.3f}" if item["hong_kong_cspf"] is not None else ""
             
         elif role == Qt.BackgroundRole:
             if col == 0: return QColor("#F0F0F0")
             elif 1 <= col <= 4: return QColor("white")
             elif 5 <= col <= 6: return QColor("#E8F5E9")
-            elif 7 <= col <= 9:
+            elif 7 <= col <= 10:
                 if item.get("error"):
                     return QColor("#FFEBEE")
                 return QColor("#E3F2FD")
@@ -205,7 +215,8 @@ class TwoPointTableModel(QAbstractTableModel):
             "eer_full": None, "eer_half": None,
             "iso_cspf": None, "iseer": None, "iseer_csec": None,
             "iso_cstl": None, "iso_csec": None, "iseer_cstl": None,
-            "iso_bin_details": None, "iseer_bin_details": None,
+            "hong_kong_cspf": None, "hong_kong_cstl": None, "hong_kong_csec": None,
+            "iso_bin_details": None, "iseer_bin_details": None, "hong_kong_bin_details": None,
             "error": None
         })
         self.endInsertRows()
@@ -231,11 +242,15 @@ class TwoPointTableModel(QAbstractTableModel):
         item["iso_cstl"] = None
         item["iso_csec"] = None
         item["iseer_cstl"] = None
+        item["hong_kong_cspf"] = None
+        item["hong_kong_cstl"] = None
+        item["hong_kong_csec"] = None
         item["iso_bin_details"] = None
         item["iseer_bin_details"] = None
+        item["hong_kong_bin_details"] = None
         item["error"] = None
         if emit:
-            self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 9))
+            self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 10))
             self.row_updated.emit(row_index)
             self.model_results_changed.emit()
 
@@ -270,6 +285,7 @@ class TwoPointTableModel(QAbstractTableModel):
             
             iso_res = self.iso_t1_calc.calculate_cspf(inputs)
             iseer_res = self.iseer_calc.calculate_cspf(inputs)
+            hong_kong_res = self.hong_kong_calc.calculate_cspf(inputs) if self.hong_kong_calc else {}
             
             item["iso_cspf"] = iso_res.get("cspf")
             item["iso_cstl"] = iso_res.get("annual_cooling_kwh")
@@ -280,19 +296,27 @@ class TwoPointTableModel(QAbstractTableModel):
             item["iseer_cstl"] = iseer_res.get("annual_cooling_kwh")
             item["iseer_csec"] = iseer_res.get("annual_power_kwh")
             item["iseer_bin_details"] = iseer_res.get("bin_details")
+            item["hong_kong_cspf"] = hong_kong_res.get("cspf")
+            item["hong_kong_cstl"] = hong_kong_res.get("annual_cooling_kwh")
+            item["hong_kong_csec"] = hong_kong_res.get("annual_power_kwh")
+            item["hong_kong_bin_details"] = hong_kong_res.get("bin_details")
             item["error"] = None
         except Exception as e:
             item["error"] = "계산 오류: " + str(e)
             item["iso_cspf"] = None
             item["iseer"] = None
             item["iseer_csec"] = None
+            item["hong_kong_cspf"] = None
             item["iso_cstl"] = None
             item["iso_csec"] = None
             item["iseer_cstl"] = None
+            item["hong_kong_cstl"] = None
+            item["hong_kong_csec"] = None
             item["iso_bin_details"] = None
             item["iseer_bin_details"] = None
+            item["hong_kong_bin_details"] = None
             
-        self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 9))
+        self.dataChanged.emit(self.index(row_index, 7), self.index(row_index, 10))
         self.row_updated.emit(row_index)
 
     def get_row_result(self, row_index):
@@ -578,3 +602,483 @@ class TraceDetailPanel(QWidget):
         self.iseer_summary.setText("결과 없음")
         self.iseer_table_model.clear()
         self.iseer_graph.clear()
+
+
+class RegionResultTableModel(QAbstractTableModel):
+    def __init__(self):
+        super().__init__()
+        self._headers = []
+        self._rows = []
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._rows)
+
+    def columnCount(self, parent=QModelIndex()):
+        return len(self._headers)
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self._headers[section]
+        return QVariant()
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return QVariant()
+
+        row = self._rows[index.row()]
+        col = index.column()
+        if role == Qt.DisplayRole:
+            return row[col] if col < len(row) else ""
+        if role == Qt.BackgroundRole:
+            if col == 0:
+                return QColor("#F4F6F8")
+            if row[0] and any(row[1:]):
+                return QColor("#EAF4FF")
+            return QColor("#FAFAFA")
+        if role == Qt.TextAlignmentRole and col > 0:
+            return Qt.AlignRight | Qt.AlignVCenter
+        return QVariant()
+
+    def set_schema(self, headers, rows):
+        self.beginResetModel()
+        self._headers = headers
+        self._rows = rows
+        self.endResetModel()
+
+    def clear(self):
+        self.beginResetModel()
+        self._rows = []
+        self.endResetModel()
+
+
+class RegionDetailTab(QWidget):
+    def __init__(self, title):
+        super().__init__()
+        self.title = title
+        layout = QVBoxLayout(self)
+        layout.setSpacing(8)
+
+        self.summary = QLabel("결과 없음")
+        self.summary.setStyleSheet(
+            "background: #F4F6F8; border: 1px solid #D8DEE6; "
+            "border-radius: 8px; padding: 10px 12px; font-weight: bold;"
+        )
+        layout.addWidget(self.summary)
+
+        selector_row = QHBoxLayout()
+        selector_row.addWidget(QLabel("Graph"))
+        self.graph_combo = QComboBox()
+        self.graph_combo.addItem("Bin Hours", "bin_hours")
+        self.graph_combo.addItem("Load vs Capacity", "load_capacity")
+        selector_row.addWidget(self.graph_combo)
+        selector_row.addStretch()
+        layout.addLayout(selector_row)
+
+        self.graph = BinGraphWidget()
+        self.graph.setMinimumHeight(210)
+        layout.addWidget(self.graph)
+
+        self.table_model = TraceTableModel()
+        self.table = QTableView()
+        self.table.setModel(self.table_model)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setMinimumHeight(260)
+        layout.addWidget(self.table)
+
+        self.graph_combo.currentIndexChanged.connect(self._on_graph_mode_changed)
+
+    def _on_graph_mode_changed(self):
+        self.graph.set_mode(self.graph_combo.currentData())
+
+    def set_result(self, result):
+        if not result:
+            self.clear()
+            return
+        self.summary.setText(
+            f"CSPF: {_fmt(result.get('cspf'), 3)}   "
+            f"CSTL [kWh]: {_fmt(result.get('annual_cooling_kwh'), 3)}   "
+            f"CSEC [kWh]: {_fmt(result.get('annual_power_kwh'), 3)}"
+        )
+        details = result.get("bin_details") or []
+        self.table_model.set_data(details)
+        self.graph.set_data(details)
+
+    def clear(self):
+        self.summary.setText("결과 없음")
+        self.table_model.clear()
+        self.graph.clear()
+
+
+class BatchTwoPointDialog(QDialog):
+    def __init__(self, calculators, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("2점식 ISO/ISEER/Hong Kong Batch 계산")
+        self.resize(1180, 540)
+
+        layout = QVBoxLayout(self)
+        title = QLabel("2점식 ISO/ISEER/Hong Kong Multi 입력")
+        title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        layout.addWidget(title)
+
+        self.model = TwoPointTableModel()
+        self.model.set_calculators(
+            calculators.get("iso"),
+            calculators.get("india"),
+            calculators.get("hong_kong"),
+        )
+        self.view = TwoPointTableView()
+        self.view.setModel(self.model)
+        self.view.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.view.verticalHeader().setVisible(False)
+        self.view.setAlternatingRowColors(True)
+        layout.addWidget(self.view)
+
+        buttons = QHBoxLayout()
+        self.btn_add = QPushButton("행 추가")
+        self.btn_remove = QPushButton("행 삭제")
+        self.status = QLabel("입력 컬럼에 붙여넣으면 자동 계산됩니다.")
+        buttons.addWidget(self.btn_add)
+        buttons.addWidget(self.btn_remove)
+        buttons.addWidget(self.status)
+        buttons.addStretch()
+        layout.addLayout(buttons)
+
+        self.btn_add.clicked.connect(self.model.add_row)
+        self.btn_remove.clicked.connect(self._remove_selected_row)
+        self.model.model_results_changed.connect(lambda: self.status.setText("자동 계산 완료"))
+
+    def _remove_selected_row(self):
+        indexes = self.view.selectionModel().selectedIndexes()
+        if not indexes:
+            return
+        self.model.remove_row(min(index.row() for index in indexes))
+
+
+class IsoCspfSingleWidget(QWidget):
+    PROFILE_TWO_POINT = "2점식 ISO/ISEER/Hong Kong"
+    PROFILE_SASO_T3 = "SASO T3"
+
+    TWO_POINT_REGIONS = [
+        ("iso", "ISO 16358-1 공통"),
+        ("india", "India ISEER"),
+        ("hong_kong", "Hong Kong CSPF"),
+    ]
+
+    def __init__(self, config_dir, parent=None):
+        super().__init__(parent)
+        self.config_dir = config_dir
+        self.calculators = {}
+        self.input_widgets = {}
+        self.results = {}
+        self._updating_profile = False
+        self._load_calculators()
+        self._init_ui()
+        self._apply_profile()
+
+    def _load_calculators(self):
+        paths = {
+            "iso": "iso_t1_default_2point.json",
+            "india": "india_iseer.json",
+            "hong_kong": "hong_kong.json",
+            "saso": "saso.json",
+        }
+        for key, filename in paths.items():
+            self.calculators[key] = ISO16358Calculator(os.path.join(self.config_dir, filename))
+
+    def _init_ui(self):
+        self.setStyleSheet("""
+            QWidget { background: #F6F7F9; }
+            QFrame#panel { background: #FFFFFF; border: 1px solid #DCE1E7; border-radius: 8px; }
+            QLineEdit { background: #FFFFFF; border: 1px solid #C8D0DA; border-radius: 5px; padding: 6px; }
+            QLineEdit:disabled { background: #EEF1F4; color: #8A94A3; }
+            QPushButton { background: #2F6F9F; color: white; border: 0; border-radius: 6px; padding: 8px 12px; }
+            QPushButton:hover { background: #285F88; }
+            QTableView { background: #FFFFFF; alternate-background-color: #F8FAFC; gridline-color: #E1E6EE; }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+
+        top = self._panel()
+        top_layout = QHBoxLayout(top)
+        top_layout.addWidget(QLabel("Profile"))
+        self.combo_profile = QComboBox()
+        self.combo_profile.addItems([self.PROFILE_TWO_POINT, self.PROFILE_SASO_T3])
+        top_layout.addWidget(self.combo_profile)
+        top_layout.addStretch()
+        self.btn_batch = QPushButton("Batch 계산")
+        top_layout.addWidget(self.btn_batch)
+        layout.addWidget(top)
+
+        self.input_panel = self._panel()
+        self.input_layout = QVBoxLayout(self.input_panel)
+        layout.addWidget(self.input_panel)
+
+        result_panel = self._panel()
+        result_layout = QVBoxLayout(result_panel)
+        result_layout.addWidget(QLabel("Region/Profile 결과"))
+        self.result_model = RegionResultTableModel()
+        self.result_table = QTableView()
+        self.result_table.setModel(self.result_model)
+        self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.result_table.verticalHeader().setVisible(False)
+        self.result_table.setAlternatingRowColors(True)
+        self.result_table.setMinimumHeight(150)
+        result_layout.addWidget(self.result_table)
+        self.status = QLabel("계산 대기")
+        self.status.setStyleSheet("color: #526071;")
+        result_layout.addWidget(self.status)
+        layout.addWidget(result_panel)
+
+        self.btn_detail = QPushButton("상세 보기 ↓")
+        self.btn_detail.setStyleSheet(
+            "background: #FFFFFF; color: #2F455C; border: 1px solid #C8D0DA; "
+            "border-radius: 6px; padding: 8px 12px;"
+        )
+        layout.addWidget(self.btn_detail)
+
+        self.detail_panel = self._panel()
+        self.detail_layout = QVBoxLayout(self.detail_panel)
+        self.detail_tabs = QTabWidget()
+        self.detail_layout.addWidget(self.detail_tabs)
+        self.detail_panel.setVisible(False)
+        layout.addWidget(self.detail_panel)
+        layout.addStretch()
+
+        self.combo_profile.currentIndexChanged.connect(self._apply_profile)
+        self.btn_batch.clicked.connect(self._open_batch_dialog)
+        self.btn_detail.clicked.connect(self._toggle_detail)
+
+    def _panel(self):
+        panel = QFrame()
+        panel.setObjectName("panel")
+        panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        return panel
+
+    def _apply_profile(self):
+        self._updating_profile = True
+        try:
+            self._clear_layout(self.input_layout)
+            self.input_widgets = {}
+            self.results = {}
+            self.result_model.clear()
+            self._clear_detail_tabs()
+            if self.combo_profile.currentText() == self.PROFILE_SASO_T3:
+                self._build_saso_inputs()
+                self._build_detail_tabs([("saso", "SASO T3")])
+            else:
+                self._build_two_point_inputs()
+                self._build_detail_tabs(self.TWO_POINT_REGIONS)
+            self.status.setText("계산 대기")
+        finally:
+            self._updating_profile = False
+        self._recalculate()
+
+    def _build_two_point_inputs(self):
+        grid = QGridLayout()
+        grid.addWidget(QLabel(""), 0, 0)
+        grid.addWidget(QLabel("Full"), 0, 1, 1, 2, Qt.AlignCenter)
+        grid.addWidget(QLabel("Half"), 0, 3, 1, 2, Qt.AlignCenter)
+        grid.addWidget(QLabel(""), 1, 0)
+        for col, text in enumerate(["Capacity [W]", "Power [W]", "Capacity [W]", "Power [W]"], start=1):
+            grid.addWidget(QLabel(text), 1, col)
+        grid.addWidget(QLabel("35°C"), 2, 0)
+        for col, key in enumerate(["35_full_capacity", "35_full_power", "35_half_capacity", "35_half_power"], start=1):
+            widget = self._line_edit(key)
+            grid.addWidget(widget, 2, col)
+        self.input_layout.addLayout(grid)
+
+    def _build_saso_inputs(self):
+        grid = QGridLayout()
+        grid.addWidget(QLabel("Point"), 0, 0)
+        grid.addWidget(QLabel("Capacity [W]"), 0, 1)
+        grid.addWidget(QLabel("Power [W]"), 0, 2)
+        rows = [
+            ("46°C Full", "46_full_capacity", "46_full_power"),
+            ("35°C Full", "35_full_capacity", "35_full_power"),
+            ("35°C Half", "35_half_capacity", "35_half_power"),
+            ("35°C Minimum", "35_min_capacity", "35_min_power"),
+        ]
+        for row, (label, cap_key, pwr_key) in enumerate(rows, start=1):
+            grid.addWidget(QLabel(label), row, 0)
+            grid.addWidget(self._line_edit(cap_key), row, 1)
+            grid.addWidget(self._line_edit(pwr_key), row, 2)
+        self.chk_saso_min = QCheckBox("35°C Minimum 사용")
+        self.input_layout.addWidget(self.chk_saso_min)
+        self.input_layout.addLayout(grid)
+        self.chk_saso_min.toggled.connect(self._on_saso_min_toggled)
+        self._on_saso_min_toggled(False)
+
+    def _line_edit(self, key):
+        widget = QLineEdit()
+        widget.setPlaceholderText("0")
+        widget.textChanged.connect(self._recalculate)
+        self.input_widgets[key] = widget
+        return widget
+
+    def _on_saso_min_toggled(self, checked):
+        for key in ("35_min_capacity", "35_min_power"):
+            widget = self.input_widgets.get(key)
+            if widget:
+                widget.setEnabled(checked)
+        self._recalculate()
+
+    def _recalculate(self):
+        if self._updating_profile:
+            return
+        if self.combo_profile.currentText() == self.PROFILE_SASO_T3:
+            self._recalculate_saso()
+        else:
+            self._recalculate_two_point()
+
+    def _recalculate_two_point(self):
+        data = self._parse_inputs(["35_full_capacity", "35_full_power", "35_half_capacity", "35_half_power"])
+        headers = ["Region", "EER-Full", "EER-Half", "CSPF", "CSTL [kWh]", "CSEC [kWh]"]
+        blank_rows = [[label, "", "", "", "", ""] for _, label in self.TWO_POINT_REGIONS]
+        if data is None:
+            self.results = {}
+            self.result_model.set_schema(headers, blank_rows)
+            self._update_detail_tabs()
+            self.status.setText("입력값 부족")
+            return
+
+        measured = {
+            "35_full": {"capacity": data["35_full_capacity"], "power": data["35_full_power"]},
+            "35_half": {"capacity": data["35_half_capacity"], "power": data["35_half_power"]},
+        }
+        rows = []
+        self.results = {}
+        for key, label in self.TWO_POINT_REGIONS:
+            try:
+                result = self.calculators[key].calculate_cspf(measured)
+                self.results[key] = result
+                rows.append([
+                    label,
+                    _fmt(data["35_full_capacity"] / data["35_full_power"], 2),
+                    _fmt(data["35_half_capacity"] / data["35_half_power"], 2),
+                    _fmt(result.get("cspf"), 3),
+                    _fmt(result.get("annual_cooling_kwh"), 3),
+                    _fmt(result.get("annual_power_kwh"), 3),
+                ])
+            except Exception:
+                rows.append([label, "", "", "", "", ""])
+        self.result_model.set_schema(headers, rows)
+        self._update_detail_tabs()
+        self.status.setText("자동 계산 완료" if self.results else "계산 대기")
+
+    def _recalculate_saso(self):
+        required = [
+            "46_full_capacity", "46_full_power",
+            "35_full_capacity", "35_full_power",
+            "35_half_capacity", "35_half_power",
+        ]
+        if self.chk_saso_min.isChecked():
+            required.extend(["35_min_capacity", "35_min_power"])
+        data = self._parse_inputs(required)
+        headers = [
+            "Region/Profile", "EER 46-Full", "EER 35-Full", "EER 35-Half",
+            "EER 35-Min", "CSPF", "CSTL [kWh]", "CSEC [kWh]"
+        ]
+        if data is None:
+            self.results = {}
+            self.result_model.set_schema(headers, [["SASO T3", "", "", "", "", "", "", ""]])
+            self._update_detail_tabs()
+            self.status.setText("입력값 부족")
+            return
+
+        measured = {
+            "46_full": {"capacity": data["46_full_capacity"], "power": data["46_full_power"]},
+            "35_full": {"capacity": data["35_full_capacity"], "power": data["35_full_power"]},
+            "35_half": {"capacity": data["35_half_capacity"], "power": data["35_half_power"]},
+        }
+        eer_min = ""
+        if self.chk_saso_min.isChecked():
+            measured["35_min"] = {"capacity": data["35_min_capacity"], "power": data["35_min_power"]}
+            eer_min = _fmt(data["35_min_capacity"] / data["35_min_power"], 2)
+
+        try:
+            result = self.calculators["saso"].calculate_cspf(measured)
+            self.results = {"saso": result}
+            row = [
+                "SASO T3",
+                _fmt(data["46_full_capacity"] / data["46_full_power"], 2),
+                _fmt(data["35_full_capacity"] / data["35_full_power"], 2),
+                _fmt(data["35_half_capacity"] / data["35_half_power"], 2),
+                eer_min,
+                _fmt(result.get("cspf"), 3),
+                _fmt(result.get("annual_cooling_kwh"), 3),
+                _fmt(result.get("annual_power_kwh"), 3),
+            ]
+            self.status.setText("자동 계산 완료")
+        except Exception:
+            self.results = {}
+            row = ["SASO T3", "", "", "", "", "", "", ""]
+            self.status.setText("계산 대기")
+        self.result_model.set_schema(headers, [row])
+        self._update_detail_tabs()
+
+    def _parse_inputs(self, keys):
+        parsed = {}
+        for key in keys:
+            widget = self.input_widgets.get(key)
+            if not widget:
+                return None
+            text = widget.text().replace(",", "").strip()
+            if not text:
+                return None
+            try:
+                value = float(text)
+            except ValueError:
+                return None
+            if value <= 0:
+                return None
+            parsed[key] = value
+        return parsed
+
+    def _build_detail_tabs(self, tabs):
+        self.detail_widgets = {}
+        for key, label in tabs:
+            tab = RegionDetailTab(label)
+            self.detail_widgets[key] = tab
+            self.detail_tabs.addTab(tab, label)
+
+    def _clear_detail_tabs(self):
+        self.detail_widgets = {}
+        while self.detail_tabs.count():
+            self.detail_tabs.removeTab(0)
+
+    def _update_detail_tabs(self):
+        for key, widget in self.detail_widgets.items():
+            widget.set_result(self.results.get(key))
+
+    def _toggle_detail(self):
+        visible = not self.detail_panel.isVisible()
+        self.detail_panel.setVisible(visible)
+        self.btn_detail.setText("상세 닫기 ↑" if visible else "상세 보기 ↓")
+        if visible:
+            self._update_detail_tabs()
+
+    def _open_batch_dialog(self):
+        dialog = BatchTwoPointDialog(self.calculators, self)
+        dialog.exec_()
+
+    def _clear_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            child_layout = item.layout()
+            if child_layout:
+                self._clear_layout(child_layout)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+
+def _fmt(value, digits):
+    if value is None:
+        return ""
+    try:
+        return f"{float(value):.{digits}f}"
+    except (TypeError, ValueError):
+        return ""

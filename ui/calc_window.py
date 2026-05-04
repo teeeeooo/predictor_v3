@@ -4,12 +4,11 @@ import os
 import json
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
-                             QPushButton, QMessageBox, QScrollArea, QFrame,
-                             QTabWidget, QRadioButton, QButtonGroup)
+                             QMessageBox, QScrollArea, QFrame, QTabWidget,
+                             QRadioButton, QButtonGroup)
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
-from core.calculator_iso16358 import ISO16358Calculator
 from core.calculator_en14825 import EN14825Calculator
 from core.calculator_ahri_seer2 import AHRICalculator
 from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
@@ -79,99 +78,18 @@ class CalculatorWindow(QWidget):
 
         main_layout.addWidget(self.tabs)
 
-        self.btn_calculate = QPushButton("계산하기")
-        self.btn_calculate.setMinimumHeight(45)
-        self.btn_calculate.setStyleSheet("font-weight: bold; font-size: 14px;")
-        self.btn_calculate.clicked.connect(self.on_calculate)
-        main_layout.addWidget(self.btn_calculate)
-
-        self.lbl_result = QLabel("결과 대기 중...")
-        self.lbl_result.setAlignment(Qt.AlignCenter)
-        self.lbl_result.setStyleSheet("font-size: 15px; font-weight: bold; color: #2C3E50; border: 1px solid #BDC3C7; padding: 10px;")
-        main_layout.addWidget(self.lbl_result)
-
     # [1] 에러 스타일링 리셋 로직 (공통 헬퍼)
     def bind_error_reset(self, widget: QLineEdit):
         """사용자가 수정을 시작하면 붉은 테두리를 해제합니다."""
         widget.textChanged.connect(lambda: widget.setStyleSheet(""))
 
     def init_iso_tab(self):
-        """ISO 탭: 2점식(ISO/ISEER) batch UI"""
-        from ui.calculators_2point import TwoPointTableView, TwoPointTableModel, TraceDetailPanel
-        from PyQt5.QtWidgets import QHeaderView, QAbstractItemView
+        """ISO/CSPF 탭: 단건 입력 우선 UI"""
+        from ui.calculators_2point import IsoCspfSingleWidget
 
         layout = QVBoxLayout(self.tab_iso)
-        
-        layout.addWidget(QLabel("비교 세트: ISO T1 / India ISEER (고정)"))
-
-        self.two_point_view = TwoPointTableView()
-        self.two_point_model = TwoPointTableModel()
-        self.two_point_view.setModel(self.two_point_model)
-        self.two_point_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.two_point_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.two_point_view.setMinimumHeight(150)
-        layout.addWidget(self.two_point_view)
-
-        btn_layout = QHBoxLayout()
-        self.btn_add_row = QPushButton("행 추가")
-        self.btn_del_row = QPushButton("행 삭제")
-        self.btn_trace_toggle = QPushButton("상세 보기 ↓")
-        self.lbl_iso_status = QLabel("입력 대기")
-
-        btn_layout.addWidget(self.btn_add_row)
-        btn_layout.addWidget(self.btn_del_row)
-        btn_layout.addWidget(self.btn_trace_toggle)
-        btn_layout.addWidget(self.lbl_iso_status)
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
-
-        self.trace_panel = TraceDetailPanel()
-        self.trace_panel.set_table_model(self.two_point_model)
-        self.trace_panel.setVisible(False)
-        layout.addWidget(self.trace_panel)
-
-        self.btn_add_row.clicked.connect(self.two_point_model.add_row)
-        self.btn_del_row.clicked.connect(self._del_selected_row)
-        self.btn_trace_toggle.clicked.connect(self._toggle_trace_panel)
-        self.two_point_model.row_updated.connect(self._on_row_updated)
-        self.two_point_model.model_results_changed.connect(self._on_model_results_changed)
-
-        # Load calculators
-        iso_path = os.path.join(self.config_dir, "iso_t1_default_2point.json")
-        iseer_path = os.path.join(self.config_dir, "india_iseer.json")
-        try:
-            self.iso_t1_calc = ISO16358Calculator(iso_path)
-            self.iseer_calc = ISO16358Calculator(iseer_path)
-            self.two_point_model.set_calculators(self.iso_t1_calc, self.iseer_calc)
-        except Exception as e:
-            self.lbl_iso_status.setText(f"오류: 설정 파일 로드 실패 ({e})")
-
-    def _del_selected_row(self):
-        indexes = self.two_point_view.selectionModel().selectedRows()
-        if indexes:
-            row = indexes[0].row()
-            self.two_point_model.remove_row(row)
-
-    def _toggle_trace_panel(self):
-        if self.trace_panel.isVisible():
-            self.trace_panel.setVisible(False)
-            self.btn_trace_toggle.setText("상세 보기 ↓")
-        else:
-            self.trace_panel.setVisible(True)
-            self.btn_trace_toggle.setText("상세 닫기 ↑")
-            self.trace_panel.refresh_available_rows()
-
-    def _on_row_updated(self, row):
-        if self.trace_panel.isVisible():
-            self.trace_panel.update_for_selected_row()
-
-    def _on_model_results_changed(self):
-        self.lbl_iso_status.setText("자동 계산 완료")
-        if self.trace_panel.isVisible():
-            self.trace_panel.refresh_available_rows()
-
-    def on_region_changed_iso(self, index):
-        pass
+        self.iso_cspf_widget = IsoCspfSingleWidget(self.config_dir)
+        layout.addWidget(self.iso_cspf_widget)
 
     def init_en_tab(self):
         """EN 탭: 단위 kW 적용"""
@@ -333,15 +251,11 @@ class CalculatorWindow(QWidget):
                     elif "en" in standard or "14825" in standard:
                         if hasattr(self, 'combo_region_en'):
                             self.combo_region_en.addItem(f)
-                    elif "iso" in standard or "16358" in standard:
-                        if hasattr(self, 'combo_region_iso'):
-                            self.combo_region_iso.addItem(f)
             except Exception as e:
                 print(f"⚠️ 설정 파일 로드 실패 ({f}): {e}")
 
 
     def on_region_changed_iso(self, index):
-        # self.iso_calc = ISO16358Calculator(path)
         pass
 
     def on_region_changed_en(self, index):
@@ -399,14 +313,12 @@ class CalculatorWindow(QWidget):
                 
         # [5] 입력 검증 로직 통일
         except InputValidationError as e:
-            self.lbl_result.setText(f"⚠️ {str(e)}")
             QMessageBox.warning(self, "입력 오류", str(e))
             if e.widget:
                 e.widget.setStyleSheet("border: 2px solid #E74C3C; background-color: #FDEDEC;")
                 e.widget.setFocus()
                 e.widget.selectAll()
         except Exception as e:
-            self.lbl_result.setText(f"❌ 오류 발생: {str(e)}")
             QMessageBox.critical(self, "계산 오류", str(e))
 
     def _clear_all_errors(self):
@@ -452,7 +364,7 @@ class CalculatorWindow(QWidget):
             rounded_hspf2 = hspf2_result.get("rounded_hspf2")
             result_text += f" / HSPF2 v3 결과: {rounded_hspf2}"
 
-        self.lbl_result.setText(result_text)
+        return result_text
 
     def _build_hspf2_v3_input(self):
         """HSPF2 v3 UI 값을 canonical input으로 변환합니다."""
@@ -497,4 +409,4 @@ class CalculatorWindow(QWidget):
 
     def calculate_en(self):
         # EN 로직 (단위 kW)
-        self.lbl_result.setText("EN 계산 결과 (kW 기준)")
+        return "EN 계산 결과 (kW 기준)"
