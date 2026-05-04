@@ -5,6 +5,7 @@
 - Train/Predict 분리: app_train.py ↔ app_predict.py 병합 금지
 - core/predictor.py에 optuna/sklearn/shap/matplotlib import 금지
 - COLUMNS → core/constants.py, MODEL_REGISTRY → core/models.py 단일 소스 유지
+- Commit/Git 정리 시 `AGENT_TASK_ROUTER.md`의 Documentation Sync & Lifecycle Gate를 수행한다.
 
 ## 계산기
 - numpy/pandas 금지 (순수 Python only)
@@ -84,7 +85,6 @@ sed -n '120,260p' core/calculator_iso16358.py
 - Notes 정리 / 문서 리팩토링
 - UI 수정
 - ML/Predictor 수정
-- Commit/Git 정리 작업에서는 AGENT_TASK_ROUTER.md의 Documentation Sync Gate를 수행하고, 필요한 경우 project_log.md / project_brief.md / docs/REFACTOR_PLAN.md 갱신 여부를 먼저 보고한다.
 
 작업 유형에 맞는 문서만 읽고, 관련 없는 긴 문서를 열람하지 않는다.
 대형 파일은 먼저 `rg`/`grep`으로 위치를 찾고 필요한 범위만 `sed -n`으로 읽는다.

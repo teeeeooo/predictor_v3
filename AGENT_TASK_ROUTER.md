@@ -23,41 +23,46 @@
 1. `git status`
 2. `git diff --stat`
 3. 변경 파일 성격 확인
-4. Documentation Sync Gate 수행
-5. 테스트 결과가 사용자가 보고한 내용과 일치하는지 확인
-6. 명확한 commit message 작성
-7. commit/push 수행
+4. Documentation Sync & Lifecycle Gate 수행 → [문서 동기화 판단] 출력
+5. 갱신 필요로 판단된 문서가 있으면 먼저 수정하고, 수정 완료 후에만 다음 단계로 진행한다.
+   갱신 불필요면 바로 테스트 확인 단계로 진행한다.
+6. 테스트 결과가 사용자가 보고한 내용과 일치하는지 확인
+7. 명확한 commit message 작성
+8. commit/push 수행
 
-#### Documentation Sync Gate
+#### Documentation Sync & Lifecycle Gate
 
-commit 전에 diff를 보고 아래를 판단한다.
+commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 문서의 수명주기를 함께 판단한다.
 
-1. `project_log.md` 갱신 필요 여부
-   - 다음 중 하나면 필요:
-     - 작업이 완료됨
-     - 중요한 시행착오/실패/결정이 발생함
-     - 같은 실수를 반복하지 않기 위한 교훈이 생김
-     - 문서 구조, 계산 로직, UI 구조, schema 방향이 바뀜
-   - 단순 오타/문구 수정이면 생략 가능.
+1. `project_log.md`
+   - 새 작업 결과, 실패, 결정, 교훈은 append한다.
+   - 이미 끝난 작업의 상세 기록은 `project_log.md`에 보존한다.
+   - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
 
-2. `docs/REFACTOR_PLAN.md` 갱신 필요 여부
-   - 다음 중 하나면 필요:
-     - TODO 우선순위가 바뀜
-     - 완료된 작업 때문에 다음 실행 순서가 바뀜
-     - 보류/삭제/이동 후보가 새로 생김
-     - 계획 문서와 실제 diff가 불일치함
-   - 이미 REFACTOR_PLAN.md 자체를 수정한 commit이면, 추가 수정 필요 여부만 확인한다.
+2. `docs/REFACTOR_PLAN.md`
+   - 살아있는 TODO / 보류 항목 / 다음 실행 순서만 유지한다.
+   - 완료된 TODO는 다음 중 하나로 처리한다.
+     - 단순 완료: 체크/완료 문구 없이 제거하거나 짧게 축약
+     - 후속 영향 있음: “완료됨. 후속 TODO는 ...” 형태로 1~2줄만 유지
+     - 상세 보존 필요: project_log.md 또는 관련 dev_notes에 기록하고 REFACTOR_PLAN에서는 제거/참조만 남김
+   - 새 TODO를 추가할 때는 기존 완료 항목을 함께 줄인다.
+   - 같은 섹션에 새 항목만 계속 append하지 않는다.
 
-3. `project_brief.md` 갱신 필요 여부
-   - 다음 중 하나면 필요:
-     - 새 대화 시작 시 반드시 알아야 할 대표 상태가 바뀜
-     - 다음 큰 작업 순서가 바뀜
-     - 프로젝트 구조/문서 체계/핵심 제약이 바뀜
-   - 세부 작업 완료 기록만 있으면 갱신하지 않는다.
+3. `project_brief.md`
+   - 새 대화 시작에 필요한 현재 상태만 유지한다.
+   - 완료 이력의 상세 나열을 금지한다.
+   - 대표 상태가 바뀌면 기존 문장을 교체/축약하고, 새 문장을 덧붙이기만 하지 않는다.
+   - 오래된 “다음 작업”은 최신 우선순위로 교체한다.
 
-4. 규격별 notes/dev_notes 갱신 필요 여부
-   - 계산 로직, 규격 해석, golden 근거, schema 의미가 바뀐 경우에만 관련 문서의 필요한 섹션을 확인한다.
-   - 단순 문서 정리 commit에서는 규격별 notes 전체를 읽지 않는다.
+4. 규격별 `notes/dev_notes/design_notes`
+   - 규격 해석, 계산 근거, schema 의미처럼 나중에 재사용될 지식만 보존한다.
+   - 단순 완료 기록은 dev_notes에 중복 추가하지 않고 project_log.md로 보낸다.
+   - 이미 REFACTOR_PLAN이나 project_log에 있는 내용을 그대로 복사하지 않는다.
+
+5. `docs/archive/`
+   - 원본 분석, 폐기된 계획, 더 이상 active TODO가 아닌 긴 기록만 이동 후보로 분류한다.
+   - agent가 임의로 archive 이동/삭제하지 않는다.
+   - 이동이 필요하면 “archive 후보”로 보고하고 사용자 승인 후 수행한다.
 
 출력:
 - [문서 동기화 판단]
