@@ -148,7 +148,31 @@ SEER2는 현재 HSPF2처럼 official calculator parity가 정리되어 있지 �
 
 계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. 특히 `calculate_hspf2_v2()`와 `calculate_hspf2()`는 보호 대상이다.
 
-## 11. Prompt Snippets for Agent
+## 11. HSPF2 v3 구현 현황 및 검증 기준
+
+### 구현 현황
+- **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
+- **핵심 엔진**: `core/calculator_ahri_hspf2.py`의 `calculate_hspf2_v3` (v2 legacy 대비 정교한 canonical path)
+- **입력 체계**: `legacy_to_canonical()`을 통해 다양한 입력 변수명을 표준 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
+- **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
+
+### 검증 및 디버깅 기준
+- **Metadata Trace**: `h12_source`, `h22_source` 등을 통해 H12/H22 fallback 발생 여부를 반드시 확인해야 함.
+- **Bin-level 검증**: 결과 딕셔너리의 `bin_details`를 통해 각 Bin별 `operating_case` (I, II, III), `delta_j` (availability), 보조열(`auxiliary_energy`) 투입 시점을 전수 조사할 수 있음.
+- **Intermediate Path**: `intermediate_metadata`의 `N_Hq`, `N_HE`가 0~1 범위 내에 있는지 확인하여 비물리적 보간 여부를 감시함.
+
+### 주요 테스트 세트
+로직 수정 시 아래 테스트를 최우선으로 실행하여 회귀(Regression)를 방어함:
+- `tests/test_ahri_hspf2_v3_smoke.py`: 기본 연산 및 v2/v3 비교
+- `tests/test_ahri_hspf2_low_cases.py`: 저온 영역 Case activation 및 에너지 보존 검증
+- `tests/test_ahri_hspf2_h2int.py`: Intermediate speed 민감도 테스트
+- `tests/test_ahri_hspf2_bincheck.py`: Bin 단위의 물리적 타당성(음수 방지 등) 검증
+
+### 주의사항
+- `fdef_override` 정책: Eq. 11.107에 따른 seasonal defrost multiplier 적용 여부를 `summary.metadata.defrost`에서 확인 가능함.
+- **유지보수**: AHRI 공식 계산기(Official Calculator)와의 Parity를 유지하는 것이 최우선이며, 임의의 scaling factor 도입을 금지함.
+
+## 12. Prompt Snippets for Agent
 
 ### AHRI 문서 작업
 
