@@ -70,3 +70,22 @@ Codex/agent 작업 시 토큰 사용량을 줄이기 위해 대형 파일 전체
 ```bash
 rg -n "def calculate_cspf|class ISO16358Calculator" core/calculator_iso16358.py
 sed -n '120,260p' core/calculator_iso16358.py
+
+## Task Router
+
+작업자는 작업 시작 전에 아래 유형 중 하나로 작업을 분류한다.
+상세 내용은 필요시 AGENT_TASK_ROUTER.md를 참고한다.
+
+- Commit/Git 정리
+- Logic 수정
+- Smoke/Golden/Validation test 추가
+- 단순 docs 문구 수정
+- Notes 정리 / 문서 리팩토링
+- UI 수정
+- ML/Predictor 수정
+
+작업 유형에 맞는 문서만 읽고, 관련 없는 긴 문서를 열람하지 않는다.
+대형 파일은 먼저 `rg`/`grep`으로 위치를 찾고 필요한 범위만 `sed -n`으로 읽는다.
+
+Logic 수정 시에는 지역별 하드코딩을 먼저 하지 않는다.
+공통 엔진, profile/config, handler 구조로 표현 가능한지 먼저 확인한다.
