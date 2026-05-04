@@ -1518,29 +1518,35 @@ class ISO16358Calculator:
         """
         ISO 16358-2 HSPF common engine (v1: Full/Half stages only).
         """
-        # 1. Validation
-        if "7_full" not in measured_inputs or "7_half" not in measured_inputs:
-            raise ValueError("ISO 16358-2 HSPF requires '7_full' and '7_half' measured inputs.")
-        
+        # 1. Validation for rated_heating_capacity
         if rated_heating_capacity <= 0:
             raise ValueError("rated_heating_capacity must be positive.")
+
+        # Extract only point dictionaries for resolution
+        points_for_resolution = {}
+        for k, v in measured_inputs.items():
+            if isinstance(v, dict) and "capacity" in v and "power" in v:
+                points_for_resolution[k] = v
+
+        # 1. Validation for required measured points
+        required_points = ["7_full", "7_half"]
+        for p_key in required_points:
+            if p_key not in points_for_resolution:
+                raise ValueError(f"ISO 16358-2 HSPF requires '{p_key}' measured inputs.")
+            p_data = points_for_resolution[p_key]
+            # Ensure capacity and power are positive numbers
+            if not isinstance(p_data["capacity"], (int, float)) or p_data["capacity"] <= 0:
+                raise ValueError(f"Measured point '{p_key}' capacity must be a positive number.")
+            if not isinstance(p_data["power"], (int, float)) or p_data["power"] <= 0:
+                raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
 
         hspf_cfg = self.config.get("hspf", {})
         aux_cop = hspf_cfg.get("aux_cop", 1.0)
         if aux_cop <= 0:
             raise ValueError("aux_cop must be positive.")
 
-        # Validate measured points for positive capacity/power
-        for p_key in ["7_full", "7_half", "2_full", "2_half", "-7_full", "-7_half"]:
-            if p_key in measured_inputs:
-                p_data = measured_inputs[p_key]
-                if "capacity" not in p_data or "power" not in p_data:
-                    raise ValueError(f"Measured point '{p_key}' is missing capacity or power.")
-                if p_data["capacity"] <= 0 or p_data["power"] <= 0:
-                    raise ValueError(f"Measured point '{p_key}' capacity and power must be positive.")
-
-        # 2. Point Resolution
-        resolved = {k: dict(v) for k, v in measured_inputs.items()}
+        # 2. Point Resolution - Start with only the validated point dictionaries
+        resolved = {k: dict(v) for k, v in points_for_resolution.items()}
         
         # Step 1: -7°C derived point (if not measured)
         for stage in ["full", "half"]:
