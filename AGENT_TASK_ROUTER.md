@@ -8,20 +8,63 @@
 읽을 문서:
 - `AGENTS.md`
 
+조건부로 읽을 문서:
+- 문서 리팩토링, TODO 변경, 계획 변경, 완료 기록이 포함된 diff인 경우:
+  - `project_log.md`의 최근 섹션 또는 관련 키워드
+  - `project_brief.md`
+  - `docs/REFACTOR_PLAN.md`의 관련 섹션
+
 읽지 말 것:
 - `PROJECT_CHARTER.md`
-- `project_brief.md`
-- `project_log.md`
 - `AGENTS_FULL.md`
-- 규격별 notes 문서
+- 규격별 notes 문서 전체
 
 절차:
 1. `git status`
 2. `git diff --stat`
 3. 변경 파일 성격 확인
-4. 테스트 결과가 사용자가 보고한 내용과 일치하는지 확인
-5. 명확한 commit message 작성
-6. commit/push 수행
+4. Documentation Sync Gate 수행
+5. 테스트 결과가 사용자가 보고한 내용과 일치하는지 확인
+6. 명확한 commit message 작성
+7. commit/push 수행
+
+#### Documentation Sync Gate
+
+commit 전에 diff를 보고 아래를 판단한다.
+
+1. `project_log.md` 갱신 필요 여부
+   - 다음 중 하나면 필요:
+     - 작업이 완료됨
+     - 중요한 시행착오/실패/결정이 발생함
+     - 같은 실수를 반복하지 않기 위한 교훈이 생김
+     - 문서 구조, 계산 로직, UI 구조, schema 방향이 바뀜
+   - 단순 오타/문구 수정이면 생략 가능.
+
+2. `docs/REFACTOR_PLAN.md` 갱신 필요 여부
+   - 다음 중 하나면 필요:
+     - TODO 우선순위가 바뀜
+     - 완료된 작업 때문에 다음 실행 순서가 바뀜
+     - 보류/삭제/이동 후보가 새로 생김
+     - 계획 문서와 실제 diff가 불일치함
+   - 이미 REFACTOR_PLAN.md 자체를 수정한 commit이면, 추가 수정 필요 여부만 확인한다.
+
+3. `project_brief.md` 갱신 필요 여부
+   - 다음 중 하나면 필요:
+     - 새 대화 시작 시 반드시 알아야 할 대표 상태가 바뀜
+     - 다음 큰 작업 순서가 바뀜
+     - 프로젝트 구조/문서 체계/핵심 제약이 바뀜
+   - 세부 작업 완료 기록만 있으면 갱신하지 않는다.
+
+4. 규격별 notes/dev_notes 갱신 필요 여부
+   - 계산 로직, 규격 해석, golden 근거, schema 의미가 바뀐 경우에만 관련 문서의 필요한 섹션을 확인한다.
+   - 단순 문서 정리 commit에서는 규격별 notes 전체를 읽지 않는다.
+
+출력:
+- [문서 동기화 판단]
+  - project_log.md: 필요/불필요 + 이유
+  - REFACTOR_PLAN.md: 필요/불필요 + 이유
+  - project_brief.md: 필요/불필요 + 이유
+  - 규격별 notes/dev_notes: 필요/불필요 + 이유
 
 주의:
 - `temporary.txt`는 로컬 scratch 파일이며 `.gitignore` 대상이므로 커밋하지 않는다.
