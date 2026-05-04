@@ -59,6 +59,8 @@ Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, 
 
 `data/usa_hspf2.json`의 `_comment`에는 초기 scaffold 잔여 문구가 있으나, v3 경로는 `canonical_hspf2_bin_tables.heating.region_iv`를 사용한다. 문서 작성 시 legacy `bin_data`와 canonical Region IV table을 혼동하면 안 된다.
 
+현재 `data/region_configs/usa.json`은 SEER2/cooling flat config이고, `data/usa_hspf2.json`은 HSPF2/heating flat config이다. 두 계산기 모두 top-level key를 직접 읽으므로 단순 병합은 금지한다. 단기 방향은 HSPF2 config를 `data/region_configs/usa_hspf2.json`으로 위치 이동하는 것이며, 완전 통합은 `cooling` / `heating` namespace schema migration 이후 별도 검토한다.
+
 ## 5. Interpolation / Extrapolation Rules
 
 | Path | Rule | Boundary behavior | Reference |

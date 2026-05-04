@@ -1,6 +1,21 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-05 — AHRI USA config 통합 감사 및 보류 결정
+
+### Result
+- `data/usa_hspf2.json`과 `data/region_configs/usa.json`의 통합 가능성을 검토함.
+- 두 calculator가 모두 top-level flat schema를 직접 기대함.
+- `bin_data`, `test_point_temps`, `constants`, `defaults`가 cooling/heating 사이에서 충돌할 가능성이 있음을 확인함.
+- `REGION_CONFIG_RULES.md`에 scaffold/primary config 승격 규칙이 빠져 있었음을 확인하고 보강함.
+
+### Decision
+- 단기에는 두 config를 완전 통합하지 않음.
+- `data/usa_hspf2.json`은 향후 `data/region_configs/usa_hspf2.json`으로 위치 이동만 검토함.
+- 완전 통합은 `cooling` / `heating` namespace schema migration에서 별도 검토함.
+
+---
+
 ## 2026-05-04 — Validation smoke/golden 안정화
 
 ### Result
