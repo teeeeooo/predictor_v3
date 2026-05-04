@@ -1,5 +1,32 @@
-# predictor_v3 에이전트 규칙
-작업 시작 전 이 파일을 반드시 읽을 것
+# predictor_v3 상세 에이전트 규칙
+
+이 문서는 predictor_v3의 상세 에이전트 규칙 보관소다.
+
+기본 작업 시작 시에는 `AGENTS.md`를 먼저 읽는다.  
+작업 유형 분류와 읽을 문서 선택은 `AGENT_TASK_ROUTER.md`를 따른다.  
+`AGENTS_FULL.md`는 사용자가 명시적으로 요청했거나, 대규모/고위험 작업에서 상세 규칙 확인이 필요할 때만 읽는다.
+
+## 이 파일을 읽는 경우
+
+- 사용자가 명시적으로 `AGENTS_FULL.md`를 읽으라고 요청한 경우
+- Train/Predict 경계 변경
+- ML pipeline 구조 변경
+- calculator public API 변경 가능성이 있는 작업
+- PyQt model/view 구조 변경
+- 배포/패키징 구조 변경
+- 프로젝트 전반의 아키텍처 리팩토링
+- 장기 금지 규칙의 상세 근거 확인이 필요한 경우
+
+## 현재 문서 체계
+
+- `AGENTS.md`: 매 작업 시작용 Lite 규칙
+- `AGENT_TASK_ROUTER.md`: 작업 유형별 상세 라우팅
+- `PROJECT_CHARTER.md`: 장기 방향과 최종 목표
+- `project_brief.md`: 새 대화 시작용 현재 상태 요약
+- `project_log.md`: try/fail/success, 결정, 시행착오 기록
+- `docs/REFACTOR_PLAN.md`: 살아있는 계획과 남은 작업
+- `docs/architecture/project_architecture.md`: 기술 구조, ML feature, UI COLUMNS, 로그 구조
+
 
 ## 프로젝트 정보
 * 프로젝트명: predictor_v3
