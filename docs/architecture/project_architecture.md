@@ -28,20 +28,23 @@
 - 특정 모델(예: 전력) 학습 시 다른 타겟(예: 냉매량)이 입력으로 포함되지 않도록 `core/models.py`에서 타겟별 Leakage 리스트를 엄격히 관리합니다.
 
 ### 전처리 전략
-- **One-hot Encoding**: 냉매(R410A, R32 등) 및 팽창장치(EEV, Capi)는 `base_model.py`에서 실시간으로 One-hot 변환되어 ML 입력으로 전달됩니다.
+- **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는 ML 입력 전 `ui/base_model.py`에서 실시간으로 One-hot 피처로 변환됩니다.
+  - 관련 키: `R410A`, `R32`, `R290` (냉매), `EEV`, `Capi` (팽창장치)
+  - 모델 예측/학습 시 DataFrame 직접 전달을 유지하여 피처 이름을 보존해야 하며, `.values` 변환으로 인해 `feature_names_in_` 속성을 잃지 않도록 주의합니다.
 
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
-`core/constants.py`의 `COLUMNS` 정의를 따르며 크게 세 그룹으로 나뉩니다.
+UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크게 세 그룹으로 나뉩니다.
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
 
-### 데이터 연동 로직
-- **1단계 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 매핑은 `base_model.py`에서 처리합니다.
-- **4단계 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 복합 선택 및 그에 따른 면적/체적 매핑은 `predict_window.py`에서 전담합니다.
+### COLUMNS 자동완성 구조
+- **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계 매핑은 `ui/base_model.py`에서 전담합니다.
+- **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 4단계 복합 캐스케이딩 및 그에 따른 면적/체적 매핑 로직은 단순 매핑과 분리되어 `ui/predict_window.py`가 전담합니다.
 
 ## 4. 로그 시스템
-- 학습 결과는 `logs/train_log/YYYYMMDD_HHMM/` 폴더에 `summary.xlsx` 형태로 저장됩니다.
-- 로그 유틸리티는 `core/utils.py`에 구현되어 있으며, 경로는 `constants.py`에서 관리합니다.
+- 학습 로그는 `logs/train_log/YYYYMMDD_HHMM/` 구조로 저장됩니다 (`summary.xlsx` 포함).
+- 로그 경로 및 관련 상수는 `core/constants.py`에서 관리하며, 실제 로그 처리 및 폴더 생성 유틸리티는 `core/utils.py`에서 담당합니다.
+- 파일 I/O에 의한 부작용(side effect)을 방지하기 위해 `constants.py`에는 순수 상수만 선언하는 원칙을 따릅니다.
