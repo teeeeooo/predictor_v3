@@ -47,6 +47,15 @@ def test_region_configs_have_required_top_level_keys():
         assert not missing, f"{path.name} missing top-level keys: {sorted(missing)}"
 
 
+def test_ahri_hspf2_config_uses_region_configs_path():
+    new_path = ROOT / "data" / "region_configs" / "usa_hspf2.json"
+    old_path = ROOT / "data" / "usa_hspf2.json"
+
+    assert new_path.exists()
+    assert not old_path.exists()
+    assert isinstance(load_config(new_path), dict)
+
+
 def test_region_config_bin_hours_are_valid():
     for path in REGION_CONFIGS:
         config = load_config(path)

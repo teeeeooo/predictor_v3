@@ -19,6 +19,7 @@
   - `data/region_configs/` 하위로 이동하고 코드/테스트/문서 참조를 갱신한다.
   - 즉시 이동할 수 없으면 예외 사유와 후속 TODO를 `docs/REFACTOR_PLAN.md` 또는 관련 dev_notes에 기록한다.
 - 같은 region/standard의 cooling/heating config를 통합할 때는 기존 calculator가 기대하는 schema를 먼저 확인한다.
+- AHRI SEER2/cooling은 `data/region_configs/usa.json`, AHRI HSPF2/heating은 `data/region_configs/usa_hspf2.json`을 사용하며 현재 flat schema가 달라 단순 병합하지 않는다.
 - top-level key(`bin_data`, `test_point_temps`, `constants`, `defaults`)의 의미가 mode별로 다르면 단순 병합하지 않는다.
 - 완전 통합은 `cooling` / `heating` namespace 또는 loader compatibility가 준비된 뒤 수행한다.
 
