@@ -259,11 +259,11 @@
 
 ### Failed / Risk
 - case 2~7은 min stage, extended/frost optional branch가 아직 ISO common HSPF path에 구현되지 않아 xfail 유지가 필요하다.
-- `hspf.table1_default_fallback`은 production region config가 아니라 golden fixture test config에서만 사용 중이다.
+- `hspf.table1_default_fallback`을 읽는 코드 경로는 추가됐지만, 현재 production region config에는 해당 key를 추가하지 않았다.
 
 ### Decision
 - ISO default-bin seven-case matrix는 입력 적법성 validation이 아니라 measured/default toggle branch regression으로 다룬다.
-- 이번 phase에서는 case 1 no-min/default fallback만 pass시키고, 7개 전체 계산 엔진 확장은 별도 phase로 남긴다.
+- 이번 phase에서는 case 1 no-min/default fallback만 pass시키고, case 2~7 계산 엔진 확장은 별도 phase로 남긴다.
 - production region config와 public API는 변경하지 않는다.
 
 ### Lesson
