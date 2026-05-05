@@ -1510,10 +1510,17 @@ class ISO16358Calculator:
             p2 = resolved[f"2_{stage}"]
             return pm7["power"] + (p2["power"] - pm7["power"]) * (tj + 7.0) / 9.0
 
+    def _iso_hspf_table1_default_factors(self, hspf_cfg: dict) -> tuple:
+        table1_defaults = hspf_cfg.get("table1_default_fallback", {})
+        capacity_factor = table1_defaults.get("minus7_capacity_factor", 0.64)
+        power_factor = table1_defaults.get("minus7_power_factor", 0.82)
+        return float(capacity_factor), float(power_factor)
+
     def calculate_hspf_iso16358_common(
         self,
         measured_inputs: dict,
-        rated_heating_capacity: float
+        rated_heating_capacity: float,
+        aux_cop: float = 1.0
     ) -> dict:
         """
         ISO 16358-2 HSPF common engine (v1: Full/Half stages only).
@@ -1541,12 +1548,17 @@ class ISO16358Calculator:
                 raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
 
         hspf_cfg = self.config.get("hspf", {})
-        aux_cop = hspf_cfg.get("aux_cop", 1.0)
+        correction_cfg = hspf_cfg.get("correction", {})
+        if aux_cop == 1.0:
+            aux_cop = correction_cfg.get("aux_cop", 1.0)
         if aux_cop <= 0:
             raise ValueError("aux_cop must be positive.")
 
         # 2. Point Resolution - Start with only the validated point dictionaries
         resolved = {k: dict(v) for k, v in points_for_resolution.items()}
+        minus7_capacity_factor, minus7_power_factor = (
+            self._iso_hspf_table1_default_factors(hspf_cfg)
+        )
         
         # Step 1: -7°C derived point (if not measured)
         for stage in ["full", "half"]:
@@ -1554,8 +1566,8 @@ class ISO16358Calculator:
             key_7 = f"7_{stage}"
             if key_m7 not in resolved:
                 resolved[key_m7] = {
-                    "capacity": resolved[key_7]["capacity"] * 0.64,
-                    "power": resolved[key_7]["power"] * 0.82
+                    "capacity": resolved[key_7]["capacity"] * minus7_capacity_factor,
+                    "power": resolved[key_7]["power"] * minus7_power_factor
                 }
         
         # Step 2: 2°C point generation (Footnote d / Footnote c)
@@ -1576,11 +1588,31 @@ class ISO16358Calculator:
 
         # 3. Load line parameters
         load_line_cfg = hspf_cfg.get("load_line", {})
-        rated_capacity_factor = load_line_cfg.get("rated_capacity_factor", 0.82)
-        zero_load_temp = load_line_cfg.get("zero_load_temp", 17.0)
-        full_load_temp = load_line_cfg.get("full_load_temp", 0.0)
+        if load_line_cfg.get("source") != "rated_heating_capacity":
+            source = load_line_cfg.get("source")
+            raise ValueError(f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF.")
+        required_load_line_fields = [
+            "zero_load_temp",
+            "full_load_temp",
+            "rated_capacity_factor",
+        ]
+        if any(field not in load_line_cfg for field in required_load_line_fields):
+            raise ValueError(
+                "Invalid ISO 16358-2 HSPF load_line: zero_load_temp, "
+                "full_load_temp, and rated_capacity_factor are required."
+            )
+        zero_load_temp = float(load_line_cfg["zero_load_temp"])
+        full_load_temp = float(load_line_cfg["full_load_temp"])
+        rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
+        if zero_load_temp == full_load_temp:
+            raise ValueError("Invalid ISO 16358-2 HSPF load_line: zero_load_temp and full_load_temp must differ.")
+        if rated_capacity_factor <= 0:
+            raise ValueError("Invalid ISO 16358-2 HSPF load_line: rated_capacity_factor must be positive.")
         
         L_h_ref = rated_heating_capacity * rated_capacity_factor
+        frost_boundaries = hspf_cfg.get("frost_boundaries", {})
+        frost_lower = float(frost_boundaries.get("lower", -7.0))
+        frost_upper = float(frost_boundaries.get("upper", 5.5))
         
         # 4. Bin calculation
         hstl, hsec = 0.0, 0.0
@@ -1602,7 +1634,7 @@ class ISO16358Calculator:
                 continue
             
             # Frost determination
-            frost = -7.0 < tj < 5.5
+            frost = frost_lower < tj < frost_upper
             
             # Capacity and Power curves for Full and Half
             pi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, frost)
@@ -1699,7 +1731,8 @@ class ISO16358Calculator:
 
             return self.calculate_hspf_iso16358_common(
                 measured_inputs=measured_inputs,
-                rated_heating_capacity=float(rated_heating_capacity)
+                rated_heating_capacity=float(rated_heating_capacity),
+                aux_cop=aux_cop
             )
 
         if self._has_ks_c9306_hspf_input(measured_inputs):

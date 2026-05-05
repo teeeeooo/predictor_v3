@@ -303,7 +303,7 @@ Extracted formulas from the XLSM file:
 -   **SASO T3 Boundary Diagnostics:** The verified golden sample produces Tb ≈ 45.2479°C, Tc ≈ 34.6371°C, and Tp ≈ 29.1799°C. For the `tj > 35` full segment, the intersection is 46.0°C because `46_full` is the building-load reference point.
 -   **T3 29_full default point:** The T3 resolver behavior for 29_full is confirmed and maintained: capacity is `1.077 × 35_full capacity`, and power is `0.914 × 35_full power`. Treat this as confirmed resolver behavior and test coverage, not as a Phase R2-2-only new rule.
 -   **Hong Kong CSPF load anchor:** Hong Kong measured CSPF uses measured 35_full / 35_half capacity and power for the performance curve, but uses declared/rated 35_full capacity as the building-load anchor. Use `building_load_source = "declared"` and pass rated 35_full capacity as `declared_capacity`. Do not tune Cd or derived factors to match the source tool.
--   **Hong Kong HSPF follow-up:** Hong Kong HSPF is out of scope for the CSPF golden conversion. Before implementation, write ISO 16358-2 pitfalls / calculation order notes, reconfirm candidate golden values (Measure #1 3.643, Measure #2 4.572), and protect KS C 9306 HSPF regressions. Current Hong Kong HSPF observations are preliminary only, including the `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` candidate, possible `cap_0 = 7°C full heating capacity × 0.82`, frost/non-frost branching, and boundary temperatures `ta`, `td`, `te`, `tg`.
+-   **Hong Kong HSPF follow-up:** Hong Kong HSPF is out of scope for the CSPF golden conversion. Before implementation, write ISO 16358-2 pitfalls / calculation order notes, reconfirm candidate golden values (Measure #1 3.643, Measure #2 4.571), and protect KS C 9306 HSPF regressions. Current Hong Kong HSPF observations are preliminary only, including the `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` candidate, possible `cap_0 = 7°C full heating capacity × 0.82`, frost/non-frost branching, and boundary temperatures `ta`, `td`, `te`, `tg`.
 
 ## 14. ISO 16358-2 HSPF Calculation Order
 
@@ -342,7 +342,7 @@ Extracted formulas from the XLSM file:
 | Test type | Purpose | Required cases |
 | :--- | :--- | :--- |
 | HSPF Hong Kong golden #1 | Hong Kong bin_hours 기반 golden 검증 | 7_full=6300W/1500W, 7_half=3200W/800W, Cd=0.25, Expected HSPF: 3.643 |
-| HSPF Hong Kong golden #2 | Hong Kong bin_hours 기반 golden 검증 | 7_full=6100W/1300W, 7_half=3000W/600W, Cd=0.25, Expected HSPF: 4.572 |
+| HSPF Hong Kong golden #2 | Hong Kong bin_hours 기반 golden 검증 | 7_full=6100W/1300W, 7_half=3000W/600W, Cd=0.25, Expected HSPF: 4.571 |
 | KS C 9306 HSPF regression | 기존 golden 유지 확인 | HSPF 3.689 유지 확인 (변경 없어야 함) |
 | Korea CSPF regression | Korea CSPF golden 유지 확인 | CSPF 6.504 유지 확인 (변경 없어야 함) |
 | validation smoke | 에러 처리 및 경계 조건 검증 | required point 누락 시 ValueError, BL_h <= 0 bin skip 확인, aux_cop = 0 시 ValueError |

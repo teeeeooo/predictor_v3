@@ -1,11 +1,20 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from core.calculator_iso16358 import ISO16358Calculator
 
 
 HSPF_TOLERANCE = 0.001
 ENERGY_TOLERANCE_WH = 1.0
+ISO_COMMON_HSPF_TOLERANCE = 0.001
+ISO_COMMON_ENERGY_TOLERANCE_KWH = 0.5
+ISO_HSPF_GOLDEN_FIXTURE_PATH = (
+    Path(__file__).resolve().parent
+    / "fixtures"
+    / "iso16358_hspf_golden_fixtures.json"
+)
 
 GOLDEN_EXPECTED = {
     "hspf": 3.689,
@@ -136,6 +145,118 @@ def make_phase1_calculator(tmp_path, ks_profile=True):
     return ISO16358Calculator(str(config_path))
 
 
+def load_iso_hspf_golden_fixture():
+    fixture_data = json.loads(ISO_HSPF_GOLDEN_FIXTURE_PATH.read_text(encoding="utf-8"))
+    return fixture_data["fixtures"]["iso16358_2_hspf_default_bin_seven_case_matrix"]
+
+
+def iso_hspf_xfail_reason(case):
+    case_id = case["case_id"]
+    if case_id == 1:
+        return "ISO16358-2 common HSPF v1: full/half-only path, min stage not implemented"
+    if case_id == 2:
+        return "ISO16358-2 common HSPF v1: min stage not implemented"
+    return "ISO16358-2 common HSPF v1: extended/frost optional branch not implemented"
+
+
+def iso_hspf_golden_cases():
+    fixture = load_iso_hspf_golden_fixture()
+    cases = []
+    for case in fixture["cases"]:
+        if case["case_id"] == 1:
+            cases.append(pytest.param(case, id="case_1"))
+        else:
+            cases.append(
+                pytest.param(
+                    case,
+                    marks=pytest.mark.xfail(
+                        reason=iso_hspf_xfail_reason(case),
+                        strict=True,
+                    ),
+                    id=f"case_{case['case_id']}",
+                )
+            )
+    return cases
+
+
+def make_iso_common_golden_calculator(tmp_path):
+    fixture = load_iso_hspf_golden_fixture()
+    config_path = tmp_path / "iso16358_hspf_common_golden.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {
+                "cd": fixture["conditions"]["cd"],
+                "aux_cop": fixture["conditions"]["aux_cop"],
+            },
+            "frost_boundaries": {"lower": -7.0, "upper": 5.5},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 0.82,
+            },
+            "table1_default_fallback": fixture["conditions"]["table1_default_fallback"],
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": fixture["bin_hours"],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    return ISO16358Calculator(str(config_path))
+
+
+def iso_common_golden_measured_inputs(case):
+    point_pool = load_iso_hspf_golden_fixture()["measured_point_pool"]
+    measured = {
+        "rated_heating_capacity": point_pool["7_full"]["capacity"],
+        "7_full": dict(point_pool["7_full"]),
+        "7_half": dict(point_pool["7_half"]),
+    }
+    for point_key in case["points"]:
+        measured[point_key] = dict(point_pool[point_key])
+    return measured
+
+
+def iso_common_golden_actuals(result):
+    return {
+        "hspf": result["hspf"],
+        "hstl_kwh": result["hstl_wh"] / 1000.0,
+        "hsec_kwh": result["hsec_wh"] / 1000.0,
+        "branches": ",".join(
+            sorted({item["case"] for item in result.get("bin_details", [])})
+        ),
+    }
+
+
+def iso_common_golden_failure_table(case, actual):
+    expected = case["expected"]
+    return "\n".join(
+        [
+            "| case | metric | expected | actual | delta | branches |",
+            "| --- | --- | ---: | ---: | ---: | --- |",
+            (
+                f"| {case['case_id']} | HSPF | {expected['hspf']:.3f} | "
+                f"{actual['hspf']:.3f} | {actual['hspf'] - expected['hspf']:.3f} | "
+                f"{actual['branches']} |"
+            ),
+            (
+                f"| {case['case_id']} | LHST kWh | {expected['lhst_kwh']:.3f} | "
+                f"{actual['hstl_kwh']:.3f} | "
+                f"{actual['hstl_kwh'] - expected['lhst_kwh']:.3f} | "
+                f"{actual['branches']} |"
+            ),
+            (
+                f"| {case['case_id']} | CHSE kWh | {expected['chse_kwh']:.3f} | "
+                f"{actual['hsec_kwh']:.3f} | "
+                f"{actual['hsec_kwh'] - expected['chse_kwh']:.3f} | "
+                f"{actual['branches']} |"
+            ),
+        ]
+    )
+
+
 def adapt_golden_points_for_phase1_engine():
     return adapt_official_golden_for_phase1_engine()
 
@@ -161,6 +282,47 @@ def energy_breakdown(result):
             item.get("auxiliary_energy", 0.0) for item in bin_details
         ),
     }
+
+
+@pytest.mark.parametrize("case", iso_hspf_golden_cases())
+def test_iso16358_2_hspf_seven_case_golden_matrix(tmp_path, case):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    total_bin_hours = sum(item["nj"] for item in fixture["bin_hours"])
+    expected = case["expected"]
+
+    assert total_bin_hours == expected["total_bin_hours"]
+
+    result = calculator.calculate_hspf(iso_common_golden_measured_inputs(case))
+    actual = iso_common_golden_actuals(result)
+
+    failures = []
+    assert_close(
+        actual["hspf"],
+        expected["hspf"],
+        ISO_COMMON_HSPF_TOLERANCE,
+        "HSPF",
+        failures,
+    )
+    assert_close(
+        actual["hstl_kwh"],
+        expected["lhst_kwh"],
+        ISO_COMMON_ENERGY_TOLERANCE_KWH,
+        "LHST kWh",
+        failures,
+    )
+    assert_close(
+        actual["hsec_kwh"],
+        expected["chse_kwh"],
+        ISO_COMMON_ENERGY_TOLERANCE_KWH,
+        "CHSE kWh",
+        failures,
+    )
+
+    assert not failures, (
+        "ISO 16358-2 HSPF seven-case golden mismatch:\n"
+        + iso_common_golden_failure_table(case, actual)
+    )
 
 
 def test_iso16358_hspf_golden_sample(tmp_path):

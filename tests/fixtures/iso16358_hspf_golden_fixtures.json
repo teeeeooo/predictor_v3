@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "purpose": "ISO16358-2 HSPF golden fixtures for the default Table 3 bin-hour matrix. These values must not be copied into production region configs.",
+  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. Current common HSPF engine is full/half-only v1, so these cases are expected to xfail until min/extended/frost optional branches are implemented.",
+  "fixtures": {
+    "iso16358_2_hspf_default_bin_seven_case_matrix": {
+      "id": "iso16358_2_hspf_default_bin_seven_case_matrix",
+      "name": "ISO16358-2 HSPF default Table 3 seven-case golden matrix",
+      "standard": "ISO16358-2",
+      "status": "xfail_until_common_hspf_optional_matrix_supported",
+      "metric": "HSPF",
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.25,
+        "aux_cop": 1.0,
+        "table1_default_fallback": {
+          "minus7_capacity_factor": 0.5,
+          "minus7_power_factor": 1.105
+        }
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 4300.0, "power": 1320.0},
+        "7_half": {"capacity": 2300.0, "power": 450.0},
+        "7_min": {"capacity": 680.0, "power": 150.0},
+        "2_ext": {"capacity": 4200.0, "power": 1700.0},
+        "2_full": {"capacity": 2800.0, "power": 800.0},
+        "2_half": {"capacity": 1500.0, "power": 300.0},
+        "-7_ext": {"capacity": 1700.0, "power": 1300.0},
+        "-7_full": {"capacity": 2400.0, "power": 800.0},
+        "-7_half": {"capacity": 1000.0, "power": 300.0}
+      },
+      "bin_hours": [
+        {"tj": -10, "nj": 0},
+        {"tj": -9, "nj": 0},
+        {"tj": -8, "nj": 0},
+        {"tj": -7, "nj": 0},
+        {"tj": -6, "nj": 0},
+        {"tj": -5, "nj": 0},
+        {"tj": -4, "nj": 0},
+        {"tj": -3, "nj": 0},
+        {"tj": -2, "nj": 0},
+        {"tj": -1, "nj": 4},
+        {"tj": 0, "nj": 15},
+        {"tj": 1, "nj": 33},
+        {"tj": 2, "nj": 68},
+        {"tj": 3, "nj": 119},
+        {"tj": 4, "nj": 169},
+        {"tj": 5, "nj": 200},
+        {"tj": 6, "nj": 234},
+        {"tj": 7, "nj": 250},
+        {"tj": 8, "nj": 260},
+        {"tj": 9, "nj": 265},
+        {"tj": 10, "nj": 260},
+        {"tj": 11, "nj": 245},
+        {"tj": 12, "nj": 215},
+        {"tj": 13, "nj": 192},
+        {"tj": 14, "nj": 151},
+        {"tj": 15, "nj": 110},
+        {"tj": 16, "nj": 76}
+      ],
+      "cases": [
+        {
+          "case_id": 1,
+          "label": "7min no, Extended no",
+          "points": [],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.225,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1156.0
+          }
+        },
+        {
+          "case_id": 2,
+          "label": "7min yes, Extended no",
+          "points": ["7_min"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.291,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1138.0
+          }
+        },
+        {
+          "case_id": 3,
+          "label": "7min yes, Extended yes",
+          "points": ["7_min", "2_ext"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.388,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1126.0
+          }
+        },
+        {
+          "case_id": 4,
+          "label": "7min yes, Extended yes, 7Full f measured",
+          "points": ["7_min", "2_ext", "2_full"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.426,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1104.0
+          }
+        },
+        {
+          "case_id": 5,
+          "label": "7min yes, Extended yes, 7Full f / 7Half f measured",
+          "points": ["7_min", "2_ext", "2_full", "2_half"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.462,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1095.0
+          }
+        },
+        {
+          "case_id": 6,
+          "label": "7min yes, Extended yes, 7Full f / 7Half f / -7Ext measured",
+          "points": ["7_min", "2_ext", "2_full", "2_half", "-7_ext"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.397,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1111.0
+          }
+        },
+        {
+          "case_id": 7,
+          "label": "7min yes, Extended yes, 7Full f / 7Half f / -7Ext / -7Full measured",
+          "points": ["7_min", "2_ext", "2_full", "2_half", "-7_ext", "-7_full"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.375,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1117.0
+          }
+        }
+      ],
+      "notes": [
+        "Reference bin-hours are ISO16358-2 Table 3 values and are not scaled.",
+        "Expected field names keep source terminology: LHST kWh and CHSE kWh."
+      ]
+    }
+  }
+}

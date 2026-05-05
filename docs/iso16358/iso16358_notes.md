@@ -161,7 +161,7 @@ Hong Kong HSPF는 이번 Hong Kong CSPF golden 전환 범위 밖이다. 아래 �
 | 2°C full frost extrapolation | capacity `0.7781`, power `0.8829` 후보 |
 | 2°C half frost extrapolation | capacity `0.7781`, power `0.9286` 후보 |
 | other required behavior | `Cd_heating = 0.25`, frost/non-frost branch, boundary temperature(`ta`, `td`, `te`, `tg`) 계산 필요 |
-| golden candidates | Measure #1 `3.643`, Measure #2 `4.572` 재확인 필요 |
+| golden candidates | Measure #1 `3.643`, Measure #2 `4.571` 재확인 필요 |
 | reference design | AHRI HSPF2 구현을 구조 참고로 사용할 수 있으나 계수와 calculation order는 ISO 16358-2 기준으로 별도 검증 |
 
 ## 5. CSPF vs HSPF Structure Difference

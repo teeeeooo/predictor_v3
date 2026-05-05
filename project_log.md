@@ -242,3 +242,30 @@
 ### Lesson
 - config 통합보다 먼저 selector contract와 fail-fast guard를 확보해야 한다.
 - resolver는 초기에는 얇게 유지해야 기존 계산기와 테스트를 안전하게 보호할 수 있다.
+
+---
+
+## 2026-05-05 — ISO16358-2 HSPF default-bin case 1 안정화
+
+### Tried
+- ISO16358-2 HSPF default Table 3 bin-hour seven-case fixture를 `tests/fixtures/`로 분리했다.
+- case 1만 xfail 해제하고, case 2~7은 strict xfail로 유지했다.
+- ISO common HSPF path가 config의 `hspf.table1_default_fallback` 계수를 읽어 `-7_full/-7_half` default point를 생성하도록 최소 확장했다.
+
+### Result
+- case 1은 HSPF 4.225, LHST/HSTL 약 4885.377 kWh, CHSE/HSEC 약 1156.245 kWh로 golden tolerance 안에 들어왔다.
+- 기존 Hong Kong HSPF golden과 기존 HSPF smoke/validation/golden 묶음은 통과했다.
+- 전체 테스트는 `136 passed, 6 xfailed` 상태다.
+
+### Failed / Risk
+- case 2~7은 min stage, extended/frost optional branch가 아직 ISO common HSPF path에 구현되지 않아 xfail 유지가 필요하다.
+- `hspf.table1_default_fallback`은 production region config가 아니라 golden fixture test config에서만 사용 중이다.
+
+### Decision
+- ISO default-bin seven-case matrix는 입력 적법성 validation이 아니라 measured/default toggle branch regression으로 다룬다.
+- 이번 phase에서는 case 1 no-min/default fallback만 pass시키고, 7개 전체 계산 엔진 확장은 별도 phase로 남긴다.
+- production region config와 public API는 변경하지 않는다.
+
+### Lesson
+- ISO default-bin fixture는 HSTL을 맞추기 위해 bin-hours를 scale하지 않고 Table 3 reference bin-hours를 그대로 유지해야 한다.
+- optional measured point matrix는 validation 규칙과 계산 branch regression을 분리해서 다뤄야 한다.

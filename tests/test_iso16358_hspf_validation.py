@@ -42,6 +42,44 @@ def make_ks_config_calculator(tmp_path, load_line):
     return ISO16358Calculator(str(config_path))
 
 
+def make_iso_common_calculator(tmp_path, hspf_overrides=None, bin_hours=None):
+    config_path = tmp_path / "iso16358_hspf_common_validation_config.json"
+    hspf_config = {
+        "enabled": True,
+        "profile": "iso16358_2_hspf",
+        "correction": {"cd": 0.25, "aux_cop": 1.0},
+        "frost_boundaries": {"lower": -7.0, "upper": 5.5},
+        "load_line": {
+            "source": "rated_heating_capacity",
+            "zero_load_temp": 17.0,
+            "full_load_temp": 0.0,
+            "rated_capacity_factor": 0.82,
+        },
+        "bin_hours_key": "hspf_bin_hours",
+    }
+    if hspf_overrides:
+        for key, value in hspf_overrides.items():
+            if isinstance(value, dict) and isinstance(hspf_config.get(key), dict):
+                hspf_config[key].update(value)
+            else:
+                hspf_config[key] = value
+    config = {
+        "mode": "heating",
+        "hspf": hspf_config,
+        "hspf_bin_hours": bin_hours or [{"j": 1, "tj": -10, "nj": 1}],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    return ISO16358Calculator(str(config_path))
+
+
+def iso_common_points():
+    return {
+        "rated_heating_capacity": 2000.0,
+        "7_full": {"capacity": 2000.0, "power": 500.0},
+        "7_half": {"capacity": 900.0, "power": 260.0},
+    }
+
+
 def test_ks_c9306_hspf_input_must_be_dict(tmp_path):
     calculator = make_phase1_calculator(tmp_path)
 
@@ -257,6 +295,105 @@ def test_ks_c9306_hspf_config_load_line_rated_heating_source_passes(tmp_path):
     result = calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
 
     assert result["HSPF"] > 0
+
+
+def test_iso_common_hspf_config_aux_cop_must_be_positive(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"correction": {"aux_cop": 0}},
+    )
+
+    with pytest.raises(ValueError, match="aux_cop must be positive"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_call_aux_cop_changes_auxiliary_energy(tmp_path):
+    calculator = make_iso_common_calculator(tmp_path)
+
+    result_cop_1 = calculator.calculate_hspf(iso_common_points(), aux_cop=1.0)
+    result_cop_2 = calculator.calculate_hspf(iso_common_points(), aux_cop=2.0)
+
+    assert result_cop_1["auxiliary_energy_wh"] > result_cop_2["auxiliary_energy_wh"]
+    assert result_cop_1["hsec_wh"] > result_cop_2["hsec_wh"]
+    assert result_cop_1["hspf"] < result_cop_2["hspf"]
+
+
+def test_iso_common_hspf_frost_boundaries_come_from_config(tmp_path):
+    measured = iso_common_points()
+    measured["2_full"] = {"capacity": 1000.0, "power": 900.0}
+    frost_calculator = make_iso_common_calculator(
+        tmp_path,
+        bin_hours=[{"j": 1, "tj": 0, "nj": 1}],
+    )
+    non_frost_calculator = make_iso_common_calculator(
+        tmp_path,
+        {"frost_boundaries": {"lower": 1.0, "upper": 5.5}},
+        bin_hours=[{"j": 1, "tj": 0, "nj": 1}],
+    )
+
+    frost_result = frost_calculator.calculate_hspf(measured)
+    non_frost_result = non_frost_calculator.calculate_hspf(measured)
+
+    assert frost_result["bin_details"][0]["P_j"] != pytest.approx(
+        non_frost_result["bin_details"][0]["P_j"],
+        abs=0.000001,
+    )
+
+
+def test_iso_common_hspf_load_line_source_is_required(tmp_path):
+    calculator = make_iso_common_calculator(tmp_path)
+    calculator.config["hspf"]["load_line"].pop("source")
+
+    with pytest.raises(ValueError, match="Unsupported or missing load_line source"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_load_line_source_must_be_allowed(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"load_line": {"source": "declared_capacity"}},
+    )
+
+    with pytest.raises(ValueError, match="Unsupported or missing load_line source"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_load_line_required_fields(tmp_path):
+    calculator = make_iso_common_calculator(tmp_path)
+    calculator.config["hspf"]["load_line"].pop("zero_load_temp")
+
+    with pytest.raises(ValueError, match="zero_load_temp"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_load_line_values_must_be_numeric(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"load_line": {"full_load_temp": "invalid"}},
+    )
+
+    with pytest.raises(ValueError):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_load_line_temperatures_must_differ(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"load_line": {"zero_load_temp": 17.0, "full_load_temp": 17.0}},
+    )
+
+    with pytest.raises(ValueError, match="zero_load_temp and full_load_temp must differ"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_load_line_rated_capacity_factor_must_be_positive(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"load_line": {"rated_capacity_factor": 0}},
+    )
+
+    with pytest.raises(ValueError, match="rated_capacity_factor must be positive"):
+        calculator.calculate_hspf(iso_common_points())
 
 
 def test_ks_c9306_hspf_lower_stage_2c_and_minus7_are_optional(tmp_path):
