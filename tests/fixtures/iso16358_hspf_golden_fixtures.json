@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "ISO16358-2 HSPF golden fixtures for the default Table 3 bin-hour matrix. These values must not be copied into production region configs.",
-  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. Current common HSPF engine is full/half-only v1, so these cases are expected to xfail until min/extended/frost optional branches are implemented.",
+  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. Current common HSPF engine is full/half-only v1, so these cases are expected to xfail until min/extended/frost optional branches are implemented. external_calculator_minus7_fallback_override uses 0.5 / 1.105 only to reproduce the user-provided external calculator golden matrix. It is not the ISO 16358-2 Table 1 default. The production ISO Table 1 default remains 0.64 / 0.82.",
   "fixtures": {
     "iso16358_2_hspf_default_bin_seven_case_matrix": {
       "id": "iso16358_2_hspf_default_bin_seven_case_matrix",
@@ -13,7 +13,7 @@
         "standby_off_power": 0,
         "cd": 0.25,
         "aux_cop": 1.0,
-        "table1_default_fallback": {
+        "external_calculator_minus7_fallback_override": {
           "minus7_capacity_factor": 0.5,
           "minus7_power_factor": 1.105
         }

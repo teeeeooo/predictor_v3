@@ -198,7 +198,9 @@ def make_iso_common_golden_calculator(tmp_path):
                 "full_load_temp": 0.0,
                 "rated_capacity_factor": 0.82,
             },
-            "table1_default_fallback": fixture["conditions"]["table1_default_fallback"],
+            "external_calculator_minus7_fallback_override": (
+                fixture["conditions"]["external_calculator_minus7_fallback_override"]
+            ),
             "bin_hours_key": "hspf_bin_hours",
         },
         "hspf_bin_hours": fixture["bin_hours"],

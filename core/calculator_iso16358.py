@@ -1510,10 +1510,10 @@ class ISO16358Calculator:
             p2 = resolved[f"2_{stage}"]
             return pm7["power"] + (p2["power"] - pm7["power"]) * (tj + 7.0) / 9.0
 
-    def _iso_hspf_table1_default_factors(self, hspf_cfg: dict) -> tuple:
-        table1_defaults = hspf_cfg.get("table1_default_fallback", {})
-        capacity_factor = table1_defaults.get("minus7_capacity_factor", 0.64)
-        power_factor = table1_defaults.get("minus7_power_factor", 0.82)
+    def _iso_hspf_minus7_fallback_factors(self, hspf_cfg: dict) -> tuple:
+        minus7_fallback = hspf_cfg.get("external_calculator_minus7_fallback_override", {})
+        capacity_factor = minus7_fallback.get("minus7_capacity_factor", 0.64)
+        power_factor = minus7_fallback.get("minus7_power_factor", 0.82)
         return float(capacity_factor), float(power_factor)
 
     def calculate_hspf_iso16358_common(
@@ -1557,7 +1557,7 @@ class ISO16358Calculator:
         # 2. Point Resolution - Start with only the validated point dictionaries
         resolved = {k: dict(v) for k, v in points_for_resolution.items()}
         minus7_capacity_factor, minus7_power_factor = (
-            self._iso_hspf_table1_default_factors(hspf_cfg)
+            self._iso_hspf_minus7_fallback_factors(hspf_cfg)
         )
         
         # Step 1: -7°C derived point (if not measured)
