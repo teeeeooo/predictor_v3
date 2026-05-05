@@ -1,5 +1,5 @@
 # predictor_v3 Agent Rules (Lite)
-전체 규칙은 AGENTS_FULL.md 파일에 정의되어 있다. 사용자가 '전체 규칙 확인' 또는 'AGENTS_FULL.md 읽어'라고 명시적으로 요청하는 경우에만 해당 파일을 열람하십시오.
+전체 규칙: AGENTS_FULL.md 참조
 
 ## 절대 원칙
 - Train/Predict 분리: app_train.py ↔ app_predict.py 병합 금지
