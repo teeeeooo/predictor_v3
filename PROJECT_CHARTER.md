@@ -3,6 +3,8 @@
 ## 1. 프로젝트 목적 및 최종 목표
 `predictor_v3`는 단순 계산기가 아니라, **시험 데이터 → 규격 계산 → ML 예측 → 목표 성능/효율 역방향 탐색**으로 이어지는 통합 엔지니어링 도구입니다.
 최종 목표는 목표 CSPF, HSPF, SEER, SCOP 또는 목표 성능을 만족하기 위한 capacity, power, part-load 조건을 역방향으로 탐색하는 엔진을 구축하는 것입니다.
+장기적으로 사용자가 목표 성능과 대상 지역/규격을 입력하면 후보 HW 조합을 평가하고 추천하는 역탐색 엔진을 구축합니다.
+계산기는 이 과정에서 지역/규격별 CSPF/HSPF/SEER2/HSPF2/SCOP 등을 산출하는 계절효율 평가 엔진 역할을 합니다.
 
 ## 2. 진행 순서 원칙
 작업은 다음 순서로 진행하여 시스템의 안정성을 확보합니다.
@@ -18,6 +20,8 @@
 - **PyQt5 유지:** PyQt5를 표준으로 유지하며, PyQt6로의 전환은 금지합니다.
 - **API 안정성:** `core` 모듈의 calculator public API는 신중하게 유지합니다.
 - **UI 분리:** Train/Predict UI 작업과 계산기 UI 작업을 섞어 진행하여 기존 코드를 깨뜨리지 않도록 철저히 분리합니다.
+- **Schema boundary 분리:** region config, HW candidate input, ML output/result schema, calculator result schema를 섞지 않습니다.
+- **Architecture contract 위치:** calculator profile resolver와 역탐색 boundary의 상세 기준은 `docs/architecture/project_architecture.md`에 둡니다.
 
 ## 4. 장기 마일스톤
 

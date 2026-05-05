@@ -80,6 +80,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - `AGENTS.md`
 - 관련 규격의 notes/dev_notes/design_notes 중 필요한 문서
 - 필요한 경우 `docs/REFACTOR_PLAN.md`의 해당 섹션
+- routing/schema boundary가 관련되면 `docs/architecture/project_architecture.md`의 calculator profile resolver 관련 섹션
 
 조건부로 읽을 문서:
 - 새 대화 시작 직후 방향이 불명확하면 `project_brief.md`
@@ -98,13 +99,48 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 5. 최소 수정한다.
 6. 관련 smoke/golden/validation test를 먼저 실행한다.
 7. 필요 시 전체 테스트를 실행한다.
+8. 계산 로직 수정 시 region config와 HW candidate input을 혼동하지 않는다.
+9. 계산 엔진이 ML feature schema 또는 UI table schema에 직접 의존하지 않게 한다.
+10. ML predicted values는 calculator input adapter를 통해 들어와야 하며 region config에 섞지 않는다.
+11. standard-specific dev notes와 architecture 문서의 calculator boundary를 필요한 범위만 확인한다.
 
 금지:
 - golden 값 임의 변경
 - public API 무단 변경
 - region-specific hardcoding 우선 구현
 
-### 3. Smoke / Golden / Validation test 추가
+### 3. Coding work / architecture-sensitive changes
+
+대상:
+- calculator profile resolver 추가/수정
+- region config resolver 추가/수정
+- `calc_window.py` routing 변경
+- calculator registry / profile manifest / selector behavior 변경
+- nested config 후보 또는 schema boundary 변경
+- ML output → calculator input adapter 설계
+- calculator result schema normalization
+- UI, core calculator, config loader, ML module 사이의 연결 변경
+
+읽을 문서:
+- `AGENTS.md`
+- `docs/architecture/project_architecture.md`의 calculator profile resolver 관련 섹션
+- 관련 규격의 dev_notes/notes 중 필요한 섹션
+- 필요 시 `docs/REFACTOR_PLAN.md`의 관련 섹션
+
+절차:
+1. selector 입력과 output contract를 먼저 정의한다.
+2. filename scanning보다 explicit selector/manifest/registry contract를 우선한다.
+3. compatibility layer는 얇게 유지하고, 초기에는 기존 flat `config_path` 또는 기존 calculator input을 반환한다.
+4. ambiguous selector combination은 fail-fast 한다.
+5. local one-off conditional로 구조 문제를 덮지 않는다.
+
+금지:
+- region config, HW candidate input, ML feature schema, calculator result schema 혼합
+- nested region config를 production calculator에 직접 전달
+- calculator engine이 UI table schema 또는 ML registry에 직접 의존
+- public API 또는 diagnostics schema를 별도 phase 없이 변경
+
+### 4. Smoke / Golden / Validation test 추가
 
 읽을 문서:
 - `AGENTS.md`
@@ -123,7 +159,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 주의:
 - golden 값 변경은 공식 계산기, 수기 계산, 기존 확정 문서 중 하나의 근거가 있을 때만 허용한다.
 
-#### 4. 단순 docs 문구 수정
+### 5. 단순 docs 문구 수정
 
 대상:
 - 오타 수정
@@ -159,7 +195,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 운영 팁:
 - 문장 1~2개 치환 수준이면 agent보다 사용자가 직접 수정하는 것이 더 빠를 수 있다.
 
-### 5. Notes 내용 정리 / 문서 리팩토링
+### 6. Notes 내용 정리 / 문서 리팩토링
 
 읽을 문서:
 - `AGENTS.md`

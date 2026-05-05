@@ -48,3 +48,89 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 - 학습 로그는 `logs/train_log/YYYYMMDD_HHMM/` 구조로 저장됩니다 (`summary.xlsx` 포함).
 - 로그 경로 및 관련 상수는 `core/constants.py`에서 관리하며, 실제 로그 처리 및 폴더 생성 유틸리티는 `core/utils.py`에서 담당합니다.
 - 파일 I/O에 의한 부작용(side effect)을 방지하기 위해 `constants.py`에는 순수 상수만 선언하는 원칙을 따릅니다.
+
+## 5. Calculator profile resolver and inverse-search architecture
+
+이 섹션은 calculator routing, region config resolver, 역탐색 연동 작업의 architecture boundary 기준이다.
+
+### Final target flow
+
+장기 목표 흐름은 다음과 같다.
+
+```text
+User target
+→ Candidate HW generator / inverse search
+→ Calculator profile resolver
+→ Regional calculator engine
+→ Regional metric result
+→ Ranking / recommendation
+```
+
+사용자가 목표 성능, 목표 CSPF/HSPF/SEER2/HSPF2/SCOP, 대상 지역/규격을 입력하면 역탐색이 후보 HW 조합을 만들고, 계산기는 각 후보를 지역/규격별 계절효율 기준으로 평가한다.
+
+### Calculator role in inverse search
+
+계산기는 ML 모델이나 UI table이 아니라 **지역/규격별 seasonal metric 평가 엔진**이다. 역탐색 단계는 후보 HW 입력을 계산기 입력으로 변환한 뒤 계산기를 호출하고, 계산 결과를 ranking/recommendation 단계에 전달한다.
+
+### Region config vs HW candidate input
+
+`region config`는 규격과 지역에 속한 정적 기준 데이터만 담는다.
+
+- climate/bin hours
+- standard constants
+- test condition metadata
+- degradation defaults
+- regional calculation rules
+- mode/metric/profile metadata
+
+`HW candidate input`은 역탐색 후보 또는 사용자/ML에서 온 성능 입력값이다.
+
+- capacity at test points
+- power at test points
+- compressor/fan/control candidate values
+- cooling/heating performance points
+- 후보 HW 조합의 계산 입력값
+
+production region config에는 candidate 값, golden/sample/test 전용 값, ML prediction 값을 넣지 않는다.
+
+### ML output vs calculator input
+
+ML output은 calculator input이 아니다. 예측된 capacity/power/Hz 등은 `predicted_points → calculator_input` adapter를 거쳐 계산기에 전달한다. ML result를 region config에 섞거나, calculator가 ML feature schema를 직접 읽게 하지 않는다.
+
+### Calculator profile resolver contract
+
+초기 resolver는 nested schema 변환기가 아니라 기존 flat config path를 안전하게 선택하는 manifest/selector 계층이다.
+
+초기 profile record는 최소한 다음 필드를 가진다.
+
+- `profile_id`
+- `standard`
+- `region`
+- `metric`
+- `mode`
+- `calculator_id`
+- `config_path`
+- `enabled`
+
+resolver는 explicit selector/manifest/registry contract를 우선한다. filename scanning은 장기적으로 제거 대상이며, ambiguous selector combination은 fail-fast 해야 한다.
+
+### UI / calc_window.py routing contract
+
+`calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
+
+UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 입력 수집과 표시를 담당하고, calculator selection과 config resolution은 manifest/profile contract를 따른다.
+
+### Result schema boundary
+
+Calculator result schema와 ML feature schema는 분리한다. Calculator result는 metric value, units, summary, bin details, diagnostics 같은 평가 결과를 담고, ML feature schema는 학습/예측 입력 컬럼과 target/leakage rule을 담는다.
+
+필요하면 UI 또는 recommendation layer에서 calculator return dict를 normalized result envelope로 감싸되, core calculator public API와 diagnostics key/value는 별도 phase 없이 변경하지 않는다.
+
+### Forbidden coupling
+
+- region config에 HW candidate input 또는 ML prediction 값을 넣지 않는다.
+- calculator engine이 `core/constants.py`의 `COLUMNS`나 `core/models.py`의 `MODEL_REGISTRY`에 직접 의존하지 않는다.
+- ML feature/result schema를 calculator result schema로 재사용하지 않는다.
+- nested region config를 production calculator에 직접 전달하지 않는다.
+- AHRI SEER2/cooling `usa.json`과 AHRI HSPF2/heating `usa_hspf2.json`을 단순 병합하지 않는다.
+- local one-off conditional로 selector/routing 문제를 덮지 않는다.

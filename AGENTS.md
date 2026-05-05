@@ -33,6 +33,9 @@
 - 지정된 파일/함수만 수정, 관련 없는 코드 수정 금지
 - 함수명/JSON key 변경 금지
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하라. 명시적인 지시가 없는 한 절대로 먼저 리팩토링을 수행하지 마라.
+- routing/schema/architecture-sensitive 변경은 `AGENT_TASK_ROUTER.md`를 먼저 따른다.
+- router가 지시하는 경우에만 `docs/architecture/project_architecture.md`의 관련 섹션을 확인한다.
+- region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 
 ## 출력
 - 코드만 출력, 작업 완료 시 [수정 파일] / [변경 내용] / [테스트 결과] 형식 유지

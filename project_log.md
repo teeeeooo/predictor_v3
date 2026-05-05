@@ -188,3 +188,29 @@
 - branch guard 테스트는 exact seasonal value보다 “영향을 받아야 하는 값 / 영향을 받으면 안 되는 값”을 관계성으로 검증하는 편이 안전하다.
 - production code를 분리할 때는 bin loop나 Case dispatch처럼 위험한 영역보다 이미 guard가 충분한 작은 resolver부터 시작해야 한다.
 - phase마다 로그를 남기기보다 config relocation, guard hardening처럼 의미 있는 묶음 단위로 기록하는 것이 project_log의 검색성과 유지보수성에 더 좋다.
+
+---
+
+## 2026-05-05 — Calculator architecture safety docs 1차 정리
+
+### Tried
+- AHRI config 통합 Audit 결과를 바탕으로 calculator resolver, UI routing, 다지역 config, ML/역탐색 연동까지 고려한 문서 안전망을 정리함.
+
+### Result
+- project_architecture.md를 calculator profile resolver와 inverse-search architecture의 상세 기준 문서로 사용하기로 함.
+- AGENT_TASK_ROUTER.md에서 architecture-sensitive coding work와 calculator logic work가 project_architecture.md를 참조하도록 연결함.
+- AGENTS.md에는 Lite guard만 두고, 상세 구조는 router를 통해 읽도록 결정함.
+
+### Failed / Risk
+- project_architecture.md가 참조되지 않으면 작업자가 구조 원칙을 놓칠 수 있음.
+- region config, HW candidate input, ML schema, calculator result schema가 섞이면 leakage와 의미 충돌 위험이 있음.
+
+### Decision
+- 상세 설명은 project_architecture.md에 둔다.
+- 작업 유형별 참조 규칙은 AGENT_TASK_ROUTER.md에 둔다.
+- 항상 읽는 AGENTS.md에는 짧은 guard만 둔다.
+- 결정 이력은 project_log.md에 남긴다.
+
+### Lesson
+- 문서는 작성보다 “작업자가 언제 읽게 되는지”가 중요하다.
+- architecture 문서는 router와 연결되어야 실제 안전망이 된다.
