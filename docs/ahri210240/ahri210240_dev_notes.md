@@ -86,6 +86,41 @@ Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, 
 | Defrost | Eq.11.107 값을 trace하고 raw에는 `fdef_override` 적용 | 현재 정책을 명확히 추적 | AHRI 210/240-2026 Equation 11.107 |
 | SEER2 low cycling | Case 1에서 `PLF = 1 - cd_low * (1 - CLF)` | low cooling cycling 손실 | Project current implementation |
 
+### HSPF2 v3 diagnostics contract
+
+HSPF2 v3 diagnostics는 계산 경로 회귀를 추적하기 위한 project trace다. 테스트가 아래 key/value를 guard로 사용하므로, rename 또는 위치 이동은 별도 phase에서만 수행한다.
+
+`summary.metadata` contract:
+
+| Key | Current values / type | Meaning |
+| --- | --- | --- |
+| `h12_source` | `tested`, `eq_11_183`, `eq_11_185` | H12/H1Full source 또는 fallback equation trace |
+| `h22_source` | `tested`, `eq_11_44_11_50` | H22/H2Full source 또는 fallback equation trace |
+| `minimum_speed_limited` | boolean | minimum-speed limiting branch 활성 여부 |
+| `case_i_low_source` | `eq_11_187_188`, `eq_11_189_194` | Case I low-speed capacity/power path trace |
+| `t_OBO` | number | AHRI v3 path에서 사용하는 OBO boundary trace |
+
+Top-level diagnostics:
+
+| Key | Current values / type | Meaning |
+| --- | --- | --- |
+| `h42_source` | `provided`, `not_provided` | H42 low-temperature full-speed anchor 제공 여부. 현재 `summary.metadata`가 아니라 result top-level key이며, 이번 phase에서는 위치를 변경하지 않는다. |
+
+`bin_details[].debug_info` contract:
+
+| Key | Current values / type | Meaning |
+| --- | --- | --- |
+| `full_capacity_method` | `eq_11_209_11_210`, `eq_11_213_11_214`, `h4full_low_temp_line`, `no_h4full_h1full_h3full_line` | bin별 full-speed capacity/power path trace |
+| `low_capacity_method` | `eq_11_187_188`, `eq_11_189_194` | bin별 low-speed path trace |
+| `intermediate_capacity_method` | `ahri_210_240_2026_eq_11_199_to_11_204` | H2Int intermediate interpolation path trace |
+| `intermediate_metadata` | dict | H2Int envelope와 slope trace. 주요 key는 `N_Hq`, `N_HE`, `M_Hq`, `M_HE`, `q_low_35`, `p_low_35`이다. |
+
+Naming policy note:
+- 현재 source/method 값은 equation 기반 이름(`eq_11_183`, `eq_11_44_11_50`)과 descriptive 이름(`h4full_low_temp_line`, `not_provided`)이 섞여 있다.
+- 이번 phase에서는 기존 key/value를 rename하지 않는다.
+- `h42_source`를 `summary.metadata`로 이동하거나 mirror하는 작업은 code/API 변경 가능성이 있으므로 보류한다.
+- diagnostics key/value를 변경해야 할 경우 먼저 테스트와 문서 contract를 함께 갱신한다.
+
 ## 7. Debugging Checklist
 
 | Check | What to inspect | Expected |
