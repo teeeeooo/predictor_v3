@@ -437,6 +437,58 @@ class AHRIHSPF2Calculator:
             return 0.5
         return 1.0
 
+    def _resolve_h12_full_capacity_point(self, canonical_points: dict, full_points: dict, h1_nom: tuple, **kwargs):
+        if "H12" in canonical_points:
+            return self._get_positive_point(canonical_points, "H12"), "tested"
+
+        q_h1_nom, p_h1_nom = h1_nom
+        if kwargs.get("h1n_same_speed_as_h3", False):
+            return (q_h1_nom, p_h1_nom), "eq_11_183"
+
+        q_h3_full, p_h3_full = full_points["H32"]
+        if q_h3_full == 0 or p_h3_full == 0:
+            raise ValueError("Invalid H3Full for Eq.11.185/11.186 fallback")
+
+        unit_type = kwargs.get("unit_type", kwargs.get("system_type", "split"))
+        if str(unit_type).lower() in ("single_package", "single-package", "package", "packaged"):
+            csf = 0.0262
+        else:
+            csf = 0.0204
+
+        psf = 0.00455
+        return (
+            q_h3_full * (1 + 30 * csf),
+            p_h3_full * (1 + 30 * psf),
+        ), "eq_11_185"
+
+    def _resolve_h22_full_capacity_point(self, canonical_points: dict, full_points: dict):
+        if "H22" in canonical_points:
+            return (
+                self._get_positive_point(canonical_points, "H22"),
+                "tested",
+                True,
+                "tested",
+                None,
+                None,
+                None,
+            )
+
+        q_h3_full, p_h3_full = full_points["H32"]
+        q_h1_full_calc, p_h1_full_calc = full_points["H12"]
+        # AHRI 210/240-2026 Eq.11.44 and Eq.11.50 for missing H22 optional test.
+        return (
+            (
+                0.90 * (q_h3_full + 0.6 * (q_h1_full_calc - q_h3_full)),
+                0.985 * (p_h3_full + 0.6 * (p_h1_full_calc - p_h3_full)),
+            ),
+            "eq_11_44_11_50",
+            False,
+            "eq_11_44_11_50",
+            "h1full_calc",
+            q_h1_full_calc,
+            p_h1_full_calc,
+        )
+
     def _calculate_hspf2_v3_ahri(self, test_points: dict, **kwargs) -> dict:
         canonical_points = self.legacy_to_canonical(test_points)
         t_off, t_on, t_test, t_max, raw_t_test, raw_t_max = self._require_ahri_kwargs(kwargs)
@@ -462,53 +514,18 @@ class AHRIHSPF2Calculator:
             "H11": self._get_positive_point(canonical_points, "H11"),
         }
         h1_nom = self._get_positive_point(canonical_points, "H1N")
-        if "H12" in canonical_points:
-            full_points["H12"] = self._get_positive_point(canonical_points, "H12")
-            h12_source = "tested"
-        else:
-            q_h1_nom, p_h1_nom = h1_nom
-            if kwargs.get("h1n_same_speed_as_h3", False):
-                full_points["H12"] = (q_h1_nom, p_h1_nom)
-                h12_source = "eq_11_183"
-            else:
-                q_h3_full, p_h3_full = full_points["H32"]
-                if q_h3_full == 0 or p_h3_full == 0:
-                    raise ValueError("Invalid H3Full for Eq.11.185/11.186 fallback")
-
-                unit_type = kwargs.get("unit_type", kwargs.get("system_type", "split"))
-                if str(unit_type).lower() in ("single_package", "single-package", "package", "packaged"):
-                    csf = 0.0262
-                else:
-                    csf = 0.0204
-
-                psf = 0.00455
-                full_points["H12"] = (
-                    q_h3_full * (1 + 30 * csf),
-                    p_h3_full * (1 + 30 * psf),
-                )
-                h12_source = "eq_11_185"
-        if "H22" in canonical_points:
-            full_points["H22"] = self._get_positive_point(canonical_points, "H22")
-            h22_source = "tested"
-            h22_tested = True
-            h22_for_slope_source = "tested"
-            h22_high_anchor_source = None
-            h22_high_anchor_capacity = None
-            h22_high_anchor_power = None
-        else:
-            q_h3_full, p_h3_full = full_points["H32"]
-            q_h1_full_calc, p_h1_full_calc = full_points["H12"]
-            # AHRI 210/240-2026 Eq.11.44 and Eq.11.50 for missing H22 optional test.
-            full_points["H22"] = (
-                0.90 * (q_h3_full + 0.6 * (q_h1_full_calc - q_h3_full)),
-                0.985 * (p_h3_full + 0.6 * (p_h1_full_calc - p_h3_full)),
-            )
-            h22_source = "eq_11_44_11_50"
-            h22_tested = False
-            h22_for_slope_source = "eq_11_44_11_50"
-            h22_high_anchor_source = "h1full_calc"
-            h22_high_anchor_capacity = q_h1_full_calc
-            h22_high_anchor_power = p_h1_full_calc
+        full_points["H12"], h12_source = self._resolve_h12_full_capacity_point(
+            canonical_points, full_points, h1_nom, **kwargs
+        )
+        (
+            full_points["H22"],
+            h22_source,
+            h22_tested,
+            h22_for_slope_source,
+            h22_high_anchor_source,
+            h22_high_anchor_capacity,
+            h22_high_anchor_power,
+        ) = self._resolve_h22_full_capacity_point(canonical_points, full_points)
         h22_capacity, h22_power = full_points["H22"]
         h2_int = self._get_positive_point(canonical_points, "H2Int")
         q_a_full, _ = self._get_positive_point(canonical_points, "A2")
