@@ -6,6 +6,8 @@
 - core/predictor.py에 optuna/sklearn/shap/matplotlib import 금지
 - COLUMNS → core/constants.py, MODEL_REGISTRY → core/models.py 단일 소스 유지
 - Commit/Git 정리 시 `AGENT_TASK_ROUTER.md`의 Documentation Sync & Lifecycle Gate를 수행한다.
+- Architecture/resolver/adapter/routing/schema/guard-test decision은 작은 diff라도 `AGENT_TASK_ROUTER.md` 기준에 따라 `project_log.md` 갱신 여부를 판단한다.
+- 새 로그를 append하기 전 최근 2~3개 로그와 merge 가능한 관련 작업인지 먼저 판단한다.
 
 ## 계산기
 - numpy/pandas 금지 (순수 Python only)
