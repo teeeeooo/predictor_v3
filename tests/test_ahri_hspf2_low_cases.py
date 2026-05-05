@@ -67,7 +67,7 @@ def assert_case_conservation(result):
 
 
 def test_hspf2_v3_case_activation_and_conservation():
-    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
     canonical_points = {
         "H01": (12500, 980),
         "H11": (12000, 1000),

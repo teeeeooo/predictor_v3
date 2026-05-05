@@ -151,7 +151,7 @@ SEER2/HSPF2 v3 full variable-capacity path 구현 및 검증 완료.
 
 ### 7.3 Config cleanup mini phase
 
-- 단기 TODO: `data/usa_hspf2.json`을 `data/region_configs/usa_hspf2.json`으로 이동하고 테스트/문서 참조를 갱신한다.
+- [DONE] 단기 TODO: `data/usa_hspf2.json`을 `data/region_configs/usa_hspf2.json`으로 이동하고 테스트/문서 참조를 갱신한다.
 - 보류: `data/region_configs/usa.json`과 HSPF2 config의 완전 통합은 현재 flat schema 충돌 위험 때문에 보류한다.
 - 재검토 조건: `cooling` / `heating` namespace 또는 loader compatibility 설계 후 재검토한다.
 

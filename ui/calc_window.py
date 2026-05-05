@@ -274,7 +274,7 @@ class CalculatorWindow(QWidget):
         self._load_hspf2_calc()
 
     def _load_hspf2_calc(self):
-        hspf2_path = os.path.join(self.project_root, "data", "usa_hspf2.json")
+        hspf2_path = os.path.join(self.project_root, "data", "region_configs", "usa_hspf2.json")
         try:
             self.hspf2_calc = AHRIHSPF2Calculator(hspf2_path)
         except:

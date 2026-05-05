@@ -8,7 +8,7 @@ def case_ii_rows(result):
 
 
 def test_hspf2_v3_h2int_power_changes_intermediate_path_only():
-    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
 
     base_points = {
         "H01": (12500, 980),

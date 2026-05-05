@@ -2,7 +2,7 @@ from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 
 
 def test_hspf2_v3_smoke_and_legacy_delta():
-    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
     legacy_points = {
         "H1_Full": (24000, 2200),
         "H2_Full": (22000, 2100),

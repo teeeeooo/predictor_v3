@@ -4,7 +4,7 @@
 
 이 문서는 AHRI 210/240 HSPF2/SEER2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 생산 경로이며, SEER2는 현재 계산 코드에서 확인 가능한 범위만 다룬다.
 
-Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
+Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
 도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
 
@@ -51,15 +51,15 @@ Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, 
 
 | Data | Location | Meaning | Validation |
 | --- | --- | --- | --- |
-| canonical HSPF2 bin table | `data/usa_hspf2.json` | Region IV Table 16 fractional bin hours | length, non-negative, sum 0.757 |
-| HSPF2 test point schema | `data/usa_hspf2.json` | H01/H11/H12/H1N/H22/H2Int/H32/H42/A2 alias and temperatures | canonical key lookup |
-| HSPF2 legacy aliases | `data/usa_hspf2.json` | old names to canonical names | conflicting value fail-fast |
+| canonical HSPF2 bin table | `data/region_configs/usa_hspf2.json` | Region IV Table 16 fractional bin hours | length, non-negative, sum 0.757 |
+| HSPF2 test point schema | `data/region_configs/usa_hspf2.json` | H01/H11/H12/H1N/H22/H2Int/H32/H42/A2 alias and temperatures | canonical key lookup |
+| HSPF2 legacy aliases | `data/region_configs/usa_hspf2.json` | old names to canonical names | conflicting value fail-fast |
 | HSPF2 bin details | HSPF2 return dict | bin별 case, BL, q/p low/int/full, COP, auxiliary | smoke and case tests inspect |
 | SEER2 config | `core/calculator_ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
 
-`data/usa_hspf2.json`의 `_comment`에는 초기 scaffold 잔여 문구가 있으나, v3 경로는 `canonical_hspf2_bin_tables.heating.region_iv`를 사용한다. 문서 작성 시 legacy `bin_data`와 canonical Region IV table을 혼동하면 안 된다.
+`data/region_configs/usa_hspf2.json`의 `_comment`에는 초기 scaffold 잔여 문구가 있으나, v3 경로는 `canonical_hspf2_bin_tables.heating.region_iv`를 사용한다. 문서 작성 시 legacy `bin_data`와 canonical Region IV table을 혼동하면 안 된다.
 
-현재 `data/region_configs/usa.json`은 SEER2/cooling flat config이고, `data/usa_hspf2.json`은 HSPF2/heating flat config이다. 두 계산기 모두 top-level key를 직접 읽으므로 단순 병합은 금지한다. 단기 방향은 HSPF2 config를 `data/region_configs/usa_hspf2.json`으로 위치 이동하는 것이며, 완전 통합은 `cooling` / `heating` namespace schema migration 이후 별도 검토한다.
+현재 `data/region_configs/usa.json`은 SEER2/cooling flat config이고, `data/region_configs/usa_hspf2.json`은 HSPF2/heating flat config이다. 두 계산기 모두 top-level key를 직접 읽으므로 단순 병합은 금지한다. 완전 통합은 `cooling` / `heating` namespace schema migration 이후 별도 검토한다.
 
 ## 5. Interpolation / Extrapolation Rules
 

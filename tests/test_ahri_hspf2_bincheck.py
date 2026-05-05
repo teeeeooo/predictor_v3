@@ -25,7 +25,7 @@ def ahri_kwargs():
 
 
 def test_hspf2_v3_bin_values_are_non_negative():
-    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
     result = calc.calculate_hspf2_v3(canonical_hspf2_points(), **ahri_kwargs())
 
     for row in result["bin_details"]:
@@ -36,7 +36,7 @@ def test_hspf2_v3_bin_values_are_non_negative():
 
 
 def test_hspf2_v3_capacity_shortage_bins_use_case_iii():
-    calc = AHRIHSPF2Calculator("data/usa_hspf2.json")
+    calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
     result = calc.calculate_hspf2_v3(canonical_hspf2_points(), **ahri_kwargs())
 
     capacity_lt_load_rows = [
