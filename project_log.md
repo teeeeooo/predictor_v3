@@ -134,3 +134,33 @@
 ### Lesson
 - 위치 정리와 schema 통합은 분리해서 진행해야 한다.
 - config 파일 통합 전에는 calculator가 기대하는 top-level key를 먼저 확인해야 한다.
+
+---
+
+## 2026-05-05 — AHRI HSPF2 config 위치 이동
+
+### Tried
+- AHRI HSPF2 전용 config를 `data/usa_hspf2.json`에서 `data/region_configs/usa_hspf2.json`으로 이동했다.
+- 실행 코드, 테스트, AHRI 문서의 구 경로 참조를 새 경로로 갱신했다.
+- `docs/REFACTOR_PLAN.md`의 AHRI HSPF2 config cleanup TODO를 완료 상태로 표시했다.
+
+### Result
+- config 이동은 rename 100%로 처리되었고 JSON 값 변경은 없었다.
+- `data/region_configs/usa.json`은 SEER2/cooling 전용 flat config로 유지했다.
+- `data/region_configs/usa_hspf2.json`은 HSPF2/heating 전용 flat config로 분리 유지했다.
+- AHRI HSPF2 테스트와 AHRI 관련 테스트가 통과했다.
+
+### Failed / Risk
+- `usa.json`과 `usa_hspf2.json`은 모두 top-level flat schema를 사용하므로 단순 병합 시 `bin_data`, `test_point_temps`, `constants`, `defaults`, `mode` 충돌 위험이 있다.
+- 향후 통합은 단순 파일 병합이 아니라 `cooling` / `heating` namespace 또는 loader compatibility 설계가 필요하다.
+- 과거 기록성 문서에는 구 경로 문자열이 남을 수 있으므로 grep 결과 해석 시 실행 참조와 기록 참조를 구분해야 한다.
+
+### Decision
+- 당장은 `usa.json`과 `usa_hspf2.json`을 병합하지 않는다.
+- AHRI HSPF2는 region profile selector 방식이 아니라 canonical input normalization + optional fallback handler 방식으로 유지한다.
+- 완전 통합은 loader/schema 설계 후 별도 phase에서 검토한다.
+
+### Lesson
+- config 위치 이동과 schema 통합은 별도 작업으로 분리해야 한다.
+- 경로 정리 작업에서는 JSON 값, 계산 로직, expected value를 함께 건드리지 않는다.
+- grep 잔여 결과는 실행 참조인지 과거 기록인지 구분해서 판단해야 한다.
