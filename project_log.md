@@ -214,3 +214,31 @@
 ### Lesson
 - 문서는 작성보다 “작업자가 언제 읽게 되는지”가 중요하다.
 - architecture 문서는 router와 연결되어야 실제 안전망이 된다.
+
+---
+
+## 2026-05-05 — Calculator profile resolver 최소 구현
+
+### Tried
+- AHRI SEER2/HSPF2 config 혼선을 막기 위해 범용 calculator profile resolver의 최소 구현을 추가함.
+- 초기 profile은 AHRI USA SEER2/cooling과 AHRI USA HSPF2/heating만 등록함.
+- resolver는 JSON을 열거나 변환하지 않고 기존 flat `config_path`만 반환하도록 제한함.
+
+### Result
+- `core/calculator_profiles.py`에 `CalculatorProfile`, `list_calculator_profiles()`, `resolve_calculator_profile()` 추가.
+- `ahri_usa_seer2`는 `data/region_configs/usa.json`으로, `ahri_usa_hspf2`는 `data/region_configs/usa_hspf2.json`으로 명시 resolve됨.
+- 잘못되거나 모호한 selector 조합은 `ValueError`로 fail-fast함.
+- `tests/test_calculator_profiles.py`에 AHRI routing guard 추가.
+
+### Failed / Risk
+- `calc_window.py`는 아직 resolver를 사용하지 않으므로 filename scan 기반 UI routing risk는 남아 있음.
+- resolver는 아직 AHRI profile만 포함하며, ISO/Korea/Hong Kong/SASO/EN profile 확장은 후속 phase로 남김.
+
+### Decision
+- 이번 phase에서는 resolver를 flat config path selector로만 유지한다.
+- nested schema 변환, calculator 실행, public API 변경, UI 전환은 하지 않는다.
+- UI routing 전환은 별도 phase로 분리하고, 우선 ISO16358-2 HSPF 구현으로 이동한다.
+
+### Lesson
+- config 통합보다 먼저 selector contract와 fail-fast guard를 확보해야 한다.
+- resolver는 초기에는 얇게 유지해야 기존 계산기와 테스트를 안전하게 보호할 수 있다.
