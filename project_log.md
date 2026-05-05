@@ -108,85 +108,83 @@
 - 내용이 모두 `en14825_` 접두사가 붙은 신형 문서에 병합/통합되어 있음을 확인 후 삭제.
 - `docs/README.md` 및 `docs/REFACTOR_PLAN.md`에 남아 있던 구형 파일명 참조 업데이트 완료.
 
-## 2026-05-05 — AHRI USA config 통합 감사 및 보류 결정
-
-### Tried
-- `data/usa_hspf2.json`을 `data/region_configs/usa.json`에 통합할 수 있는지 검토함.
-- `core/calculator_ahri_hspf2.py`와 `core/calculator_ahri_seer2.py`의 config 접근 방식을 확인함.
-- HSPF2/SEER2 테스트와 문서의 `data/usa_hspf2.json` 참조를 확인함.
-
-### Result
-- `AHRIHSPF2Calculator`와 `AHRICalculator` 모두 top-level flat schema를 직접 기대하고 있음을 확인함.
-- `bin_data`, `test_point_temps`, `constants`, `defaults`가 HSPF2와 SEER2에서 서로 다른 의미로 사용되므로 단일 `usa.json`에 즉시 통합하면 schema 충돌 위험이 큼.
-- Codex 통합 작업은 실제 파일 변경 없이 중단함.
-
-### Failed / Risk
-- `data/usa_hspf2.json`과 `data/region_configs/usa.json`을 단순 병합하면 cooling/heating 설정이 top-level에서 충돌할 수 있음.
-- nested schema로 통합하려면 calculator 로딩 로직 변경이 필요하므로 현재 범위보다 큼.
-- agent가 통합 작업에서 schema 충돌 판단으로 장시간 정체될 수 있음.
-
-### Decision
-- 단기에는 `data/usa_hspf2.json`과 `data/region_configs/usa.json`을 통합하지 않는다.
-- `data/region_configs/usa.json`은 SEER2/cooling 전용 flat config로 유지한다.
-- `data/usa_hspf2.json`은 HSPF2 전용 flat config로 유지하되, 다음 정리 작업에서 `data/region_configs/usa_hspf2.json`으로 위치만 이동하는 방향을 우선 검토한다.
-- 완전 통합은 향후 AHRI config schema를 `cooling` / `heating` namespace로 분리할 때 별도 Phase에서 수행한다.
-
-### Lesson
-- 위치 정리와 schema 통합은 분리해서 진행해야 한다.
-- config 파일 통합 전에는 calculator가 기대하는 top-level key를 먼저 확인해야 한다.
-
 ---
 
-## 2026-05-05 — AHRI HSPF2 config 위치 이동
+## 2026-05-05 — AHRI HSPF2 config relocation 및 guard 정리
 
 ### Tried
-- AHRI HSPF2 전용 config를 `data/usa_hspf2.json`에서 `data/region_configs/usa_hspf2.json`으로 이동했다.
+- `data/usa_hspf2.json`을 `data/region_configs/usa.json`에 즉시 통합할 수 있는지 감사했다.
+- `AHRIHSPF2Calculator`와 `AHRICalculator`의 config 접근 방식을 확인했다.
+- 단순 통합 대신 AHRI HSPF2 전용 config를 `data/region_configs/usa_hspf2.json`으로 위치 이동했다.
 - 실행 코드, 테스트, AHRI 문서의 구 경로 참조를 새 경로로 갱신했다.
-- `docs/REFACTOR_PLAN.md`의 AHRI HSPF2 config cleanup TODO를 완료 상태로 표시했다.
+- `tests/test_region_config_integrity.py`에 HSPF2 config path guard를 추가했다.
+- `data/region_configs/REGION_CONFIG_RULES.md`에 AHRI SEER2/cooling config와 AHRI HSPF2/heating config를 단순 병합하지 않는다는 규칙을 보강했다.
 
 ### Result
-- config 이동은 rename 100%로 처리되었고 JSON 값 변경은 없었다.
-- `data/region_configs/usa.json`은 SEER2/cooling 전용 flat config로 유지했다.
-- `data/region_configs/usa_hspf2.json`은 HSPF2/heating 전용 flat config로 분리 유지했다.
+- `data/usa_hspf2.json` → `data/region_configs/usa_hspf2.json` 이동은 rename 100%로 처리되었고 JSON 값 변경은 없었다.
+- `data/region_configs/usa.json`은 AHRI SEER2/cooling 전용 flat config로 유지했다.
+- `data/region_configs/usa_hspf2.json`은 AHRI HSPF2/heating 전용 flat config로 분리 유지했다.
+- 구 경로 `data/usa_hspf2.json`이 다시 생기지 않도록 path guard 테스트를 추가했다.
 - AHRI HSPF2 테스트와 AHRI 관련 테스트가 통과했다.
 
 ### Failed / Risk
-- `usa.json`과 `usa_hspf2.json`은 모두 top-level flat schema를 사용하므로 단순 병합 시 `bin_data`, `test_point_temps`, `constants`, `defaults`, `mode` 충돌 위험이 있다.
-- 향후 통합은 단순 파일 병합이 아니라 `cooling` / `heating` namespace 또는 loader compatibility 설계가 필요하다.
-- 과거 기록성 문서에는 구 경로 문자열이 남을 수 있으므로 grep 결과 해석 시 실행 참조와 기록 참조를 구분해야 한다.
+- `usa.json`과 `usa_hspf2.json`은 모두 top-level flat schema를 사용하므로 단순 병합 시 `bin_data`, `test_point_temps`, `constants`, `defaults`, `mode` 등의 key 의미가 충돌할 수 있다.
+- 완전 통합은 단순 파일 병합이 아니라 `cooling` / `heating` namespace 또는 loader compatibility 설계가 필요하다.
+- 과거 기록성 문서와 local scratch에는 구 경로 문자열이 남을 수 있으므로 grep 결과 해석 시 실행 참조와 기록 참조를 구분해야 한다.
+- agent가 config 통합 작업에서 schema 충돌 판단 없이 진행하면 계산기 로딩 로직까지 불필요하게 확장될 위험이 있다.
 
 ### Decision
-- 당장은 `usa.json`과 `usa_hspf2.json`을 병합하지 않는다.
+- 당장은 `data/region_configs/usa.json`과 `data/region_configs/usa_hspf2.json`을 병합하지 않는다.
+- AHRI SEER2/cooling은 `data/region_configs/usa.json`을 사용한다.
+- AHRI HSPF2/heating은 `data/region_configs/usa_hspf2.json`을 사용한다.
 - AHRI HSPF2는 region profile selector 방식이 아니라 canonical input normalization + optional fallback handler 방식으로 유지한다.
-- 완전 통합은 loader/schema 설계 후 별도 phase에서 검토한다.
+- 완전 통합은 AHRI config schema를 `cooling` / `heating` namespace로 분리하거나 compatibility loader를 설계한 뒤 별도 phase에서 검토한다.
 
 ### Lesson
 - config 위치 이동과 schema 통합은 별도 작업으로 분리해야 한다.
+- config 파일 통합 전에는 calculator가 기대하는 top-level key와 loader 방식을 먼저 확인해야 한다.
 - 경로 정리 작업에서는 JSON 값, 계산 로직, expected value를 함께 건드리지 않는다.
-- grep 잔여 결과는 실행 참조인지 과거 기록인지 구분해서 판단해야 한다.
+- config 이동 후에는 경로 회귀 방지 테스트를 함께 추가하는 것이 안전하다.
+- path guard 테스트는 계산값이나 schema 세부 항목까지 검증하지 않고, 존재 경로와 JSON 유효성 수준으로 좁게 유지한다.
 
-## 2026-05-05 — AHRI HSPF2 config path guard 추가
+---
+
+## 2026-05-05 — AHRI HSPF2 v3 guard 및 첫 safe refactor 정리
 
 ### Tried
-- `data/region_configs/usa_hspf2.json` 경로를 고정하기 위한 회귀 방지 테스트를 `tests/test_region_config_integrity.py`에 추가했다.
-- 구 경로 `data/usa_hspf2.json`이 다시 생기지 않도록 존재하지 않음을 확인하는 guard를 추가했다.
-- `data/region_configs/REGION_CONFIG_RULES.md`에 AHRI SEER2/cooling config와 AHRI HSPF2/heating config를 단순 병합하지 않는다는 규칙을 1줄 보강했다.
+- AHRI HSPF2 v3 계산 경로에서 H12/H22 optional fallback source metadata를 직접 검증하는 테스트를 추가했다.
+- H12 tested, Eq.11.183 fallback, Eq.11.185 fallback 경로와 H22 tested, Eq.11.44/11.50 fallback 경로를 guard했다.
+- H2Int가 `minimum_speed_limited=True` branch에서 low path와 intermediate path에 미치는 영향을 테스트로 고정했다.
+- H42 provided/missing 정책을 테스트로 보강하고, full-speed low-temperature line 선택이 달라지는지 확인했다.
+- `summary.metadata`, top-level `h42_source`, `bin_details[].debug_info` 등 HSPF2 v3 diagnostics 구조를 감사했다.
+- `docs/ahri210240/ahri210240_dev_notes.md`에 HSPF2 v3 diagnostics contract를 문서화했다.
+- `_calculate_hspf2_v3_ahri()`에서 H12/H22 fallback 결정 책임만 helper로 분리했다.
 
 ### Result
-- 새 guard 테스트가 통과했다.
-- 기존 AHRI HSPF2 테스트와 AHRI 관련 테스트가 모두 통과했다.
-- `data/region_configs/usa.json`은 수정하지 않았고, `usa_hspf2.json`과 병합하지 않았다.
+- H12/H22 fallback source guard 테스트가 추가되어 `h12_source`, `h22_source` 회귀를 직접 잡을 수 있게 되었다.
+- H2Int power 변경이 `minimum_speed_limited=True`에서 `p_low`, `p_int`에는 영향을 주고, full-speed path에는 영향을 주지 않는 것을 확인했다.
+- H42 제공/미제공에 따라 `full_capacity_method`, `q_full`, `p_full`이 달라지고, H12/H22 source metadata는 오염되지 않는 것을 확인했다.
+- HSPF2 v3 diagnostics key/value의 현재 contract를 문서에 남겼다.
+- H12/H22 fallback resolver helper를 분리했지만 bin loop, Case I/II/III, H2Int, H42 policy, diagnostics 구조는 변경하지 않았다.
+- AHRI HSPF2 테스트와 AHRI 관련 테스트가 통과했다.
 
 ### Failed / Risk
-- 과거 기록성 문서와 local scratch에는 구 경로 문자열이 남을 수 있다.
-- 향후 grep 결과를 볼 때 실행 참조와 기록성 참조를 구분해야 한다.
-- `usa.json`과 `usa_hspf2.json`은 현재 flat schema가 달라 단순 병합 시 key 의미 충돌 위험이 있다.
+- `_calculate_hspf2_v3_ahri()`는 여전히 bin loop, Case dispatch, defrost/cutoff, auxiliary heat, diagnostics 생성 책임을 많이 가지고 있다.
+- H22 resolver helper 반환값이 다소 많지만, 이번 단계에서는 dataclass/schema 도입 없이 기존 변수 흐름을 유지했다.
+- `h42_source`는 현재 `summary.metadata`가 아니라 top-level result key이므로 위치 일관성이 약하다.
+- diagnostics 값은 equation 기반 이름과 descriptive 이름이 섞여 있어 향후 rename/move 시 테스트와 문서 contract를 함께 갱신해야 한다.
+- bin loop / Case resolver 리팩토링은 계산 결과 변경 위험이 크므로 아직 진행하지 않았다.
 
 ### Decision
-- AHRI SEER2/cooling은 `data/region_configs/usa.json`을 사용한다.
-- AHRI HSPF2/heating은 `data/region_configs/usa_hspf2.json`을 사용한다.
-- 두 config의 완전 통합은 `cooling` / `heating` namespace 또는 loader compatibility 설계 이후 별도 phase에서 검토한다.
+- AHRI HSPF2 v3의 계산 결과를 바꾸는 리팩토링은 하지 않는다.
+- 현재 단계에서는 H12/H22 fallback resolver 분리까지만 safe refactor로 인정한다.
+- H2Int, H42, Case I/II/III, bin loop, diagnostics 구조 변경은 후속 calculator.py 리팩토링 phase로 미룬다.
+- diagnostics key/value rename이나 `h42_source` 위치 변경은 별도 phase에서 검토한다.
+- 당분간은 AHRI config 통합 설계와 ISO16358-2 HSPF 구성 작업을 우선한다.
 
 ### Lesson
-- config 이동 후에는 경로 회귀 방지 테스트를 함께 추가해야 한다.
-- 경로 guard 테스트는 계산값이나 schema 세부 항목까지 검증하지 않고, 존재 경로와 JSON 유효성 수준으로 좁게 유지하는 것이 안전하다.
+- 규격 계산기 리팩토링은 계산 로직을 먼저 고치기보다 source metadata, branch guard, diagnostics contract를 먼저 고정해야 안전하다.
+- fallback 경로는 최종 HSPF2 값만 보는 smoke test보다 source metadata를 직접 assert하는 guard가 필요하다.
+- branch guard 테스트는 exact seasonal value보다 “영향을 받아야 하는 값 / 영향을 받으면 안 되는 값”을 관계성으로 검증하는 편이 안전하다.
+- production code를 분리할 때는 bin loop나 Case dispatch처럼 위험한 영역보다 이미 guard가 충분한 작은 resolver부터 시작해야 한다.
+- phase마다 로그를 남기기보다 config relocation, guard hardening처럼 의미 있는 묶음 단위로 기록하는 것이 project_log의 검색성과 유지보수성에 더 좋다.
