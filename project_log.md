@@ -164,3 +164,29 @@
 - config 위치 이동과 schema 통합은 별도 작업으로 분리해야 한다.
 - 경로 정리 작업에서는 JSON 값, 계산 로직, expected value를 함께 건드리지 않는다.
 - grep 잔여 결과는 실행 참조인지 과거 기록인지 구분해서 판단해야 한다.
+
+## 2026-05-05 — AHRI HSPF2 config path guard 추가
+
+### Tried
+- `data/region_configs/usa_hspf2.json` 경로를 고정하기 위한 회귀 방지 테스트를 `tests/test_region_config_integrity.py`에 추가했다.
+- 구 경로 `data/usa_hspf2.json`이 다시 생기지 않도록 존재하지 않음을 확인하는 guard를 추가했다.
+- `data/region_configs/REGION_CONFIG_RULES.md`에 AHRI SEER2/cooling config와 AHRI HSPF2/heating config를 단순 병합하지 않는다는 규칙을 1줄 보강했다.
+
+### Result
+- 새 guard 테스트가 통과했다.
+- 기존 AHRI HSPF2 테스트와 AHRI 관련 테스트가 모두 통과했다.
+- `data/region_configs/usa.json`은 수정하지 않았고, `usa_hspf2.json`과 병합하지 않았다.
+
+### Failed / Risk
+- 과거 기록성 문서와 local scratch에는 구 경로 문자열이 남을 수 있다.
+- 향후 grep 결과를 볼 때 실행 참조와 기록성 참조를 구분해야 한다.
+- `usa.json`과 `usa_hspf2.json`은 현재 flat schema가 달라 단순 병합 시 key 의미 충돌 위험이 있다.
+
+### Decision
+- AHRI SEER2/cooling은 `data/region_configs/usa.json`을 사용한다.
+- AHRI HSPF2/heating은 `data/region_configs/usa_hspf2.json`을 사용한다.
+- 두 config의 완전 통합은 `cooling` / `heating` namespace 또는 loader compatibility 설계 이후 별도 phase에서 검토한다.
+
+### Lesson
+- config 이동 후에는 경로 회귀 방지 테스트를 함께 추가해야 한다.
+- 경로 guard 테스트는 계산값이나 schema 세부 항목까지 검증하지 않고, 존재 경로와 JSON 유효성 수준으로 좁게 유지하는 것이 안전하다.
