@@ -253,7 +253,8 @@
 - ISO common HSPF path가 config의 `hspf.table1_default_fallback` 계수를 읽어 `-7_full/-7_half` default point를 생성하도록 최소 확장했다.
 
 ### Result
-- case 1은 HSPF 4.225, LHST/HSTL 약 4885.377 kWh, CHSE/HSEC 약 1156.245 kWh로 golden tolerance 안에 들어왔다.
+- 당시 내부 raw 계산 기준 case 1은 HSPF 4.225, LHST/HSTL 약 4885.377 kWh, CHSE/HSEC 약 1156.245 kWh로 계산되었다.
+- 이후 external calculator 기준 expected가 HSPF 4.222, LHST 4885 kWh, CHSE 1157 kWh로 정정되면서, case 1은 GEMS/ZERL 계열 locked calculator의 undocumented rounding discrepancy 가능성으로 xfail 관리로 전환되었다.
 - 기존 Hong Kong HSPF golden과 기존 HSPF smoke/validation/golden 묶음은 통과했다.
 - 전체 테스트는 `136 passed, 6 xfailed` 상태다.
 
@@ -264,6 +265,7 @@
 ### Decision
 - ISO default-bin seven-case matrix는 입력 적법성 validation이 아니라 measured/default toggle branch regression으로 다룬다.
 - 이번 phase에서는 case 1 no-min/default fallback만 pass시키고, case 2~7 계산 엔진 확장은 별도 phase로 남긴다.
+- 이 로그의 case 1 pass 판단은 이후 official expected 정정 전의 중간 상태로 취급한다.
 - production region config와 public API는 변경하지 않는다.
 
 ### Lesson
@@ -326,6 +328,10 @@
 - external golden fallback override는 fixture scope로만 유지하고, override 없는 ISO common HSPF config는 production Table 1 default 0.64 / 0.82를 사용해야 한다.
 - `2_ext` 단독으로 `7_ext`를 만들지 않는다. Formula 50 frost branch는 ISO Table 1의 -7 extended default와 2°C extended measured anchor만 사용하며, Formula 47 non-frost branch나 extended capacity operation은 별도 slice로 남긴다.
 
+### Follow-up Note
+- 이후 case 3 진단에서 Formula 50 단일 branch 확장만으로는 Excel calculator의 `Y(Min) Y(Extd)` branch를 재현할 수 없음을 확인했다.
+- Excel calculator는 case 3에서 `CG = BM+BO+BQ+BS+BT+BU+BX+BZ+CB+CD+CE+CF` component-sum 구조를 사용하므로, 기존 single selected `P_j` branch 모델과 구조 차이가 있다.
+
 ### Lesson
 - min stage 도입은 lowest-stage cycling branch와 min~half interpolation branch만 바꿔야 하며, half~full branch를 함께 조정하면 slice boundary가 흐려진다.
 - expected 정정은 slice 대상 case에만 적용하고, 후속 Formula slice의 golden은 별도 작업으로 남겨야 한다.
@@ -352,3 +358,36 @@
 ### Lesson
 - fixture correction과 regional load-line bug fix는 커밋을 분리해야 추적성이 좋다.
 - region config source 변경은 validation guard와 notes를 함께 갱신해야 역방향 수정 위험을 줄일 수 있다.
+
+## 2026-05-07 — ISO16358-2 HSPF case 1 known discrepancy xfail 전환
+
+### Tried
+- ISO16358-2 HSPF case 1 official expected를 HSPF 4.222, LHST 4885 kWh, CHSE 1157 kWh 기준으로 재진단했다.
+- case 1 bin-level LHST/HSEC를 출력해 Python raw 계산과 external calculator expected 차이를 비교했다.
+- P_j W 단위 ceil/round/floor, per-bin HSEC rounding, final CHSE rounding 후보를 비교했다.
+- 호주/뉴질랜드 Energy Rating SEER calculator 또는 GEMS/ZERL 계열 locked Excel calculator의 administrative rounding 가능성을 검토했다.
+
+### Result
+- LHST raw 4885.376706 kWh는 whole-kWh rounding 시 4885 kWh로 official과 정합했다.
+- CHSE raw 1156.244820 kWh는 일반 final rounding 시 1156 kWh가 되어 official 1157 kWh와 불일치했다.
+- official HSPF 4.222는 4885 / 1157 기준으로 설명된다.
+- P_j W ceil(0)은 case 1을 1157 kWh로 맞출 수 있었지만, case 2의 기존 official match를 1139 → 1140으로 깨뜨렸다.
+- case 1만 known discrepancy xfail로 전환했고, common ISO core 계산 로직과 fixture expected 값은 수정하지 않았다.
+- ISO HSPF golden test는 `16 passed, 7 xfailed`, full tests는 `142 passed, 7 xfailed` 상태가 되었다.
+
+### Failed / Risk
+- locked Excel 내부 공식은 직접 확인하지 못해, case 1 mismatch 원인은 확정하지 못했다.
+- 단순 final rounding, per-bin HSEC rounding, global P_j W ceil은 모두 common ISO rule로 채택하기 어렵다.
+- GEMS/ZERL 또는 AS/NZS calculator compatibility를 common ISO core에 직접 넣으면 case 2 등 기존 pass 경로를 오염시킬 위험이 있다.
+
+### Decision
+- case 1은 GEMS/ZERL locked calculator의 undocumented branch-specific intermediate rounding 가능성으로 known discrepancy xfail 관리한다.
+- P_j W ceil(0)은 common ISO core에 구현하지 않는다.
+- Excel compatibility가 필요하면 별도 profile/report-layer 또는 trace-only path에서 다룬다.
+- case 1 정리 후 case 3부터 순차 진단한다.
+
+### Lesson
+- external calculator golden과 ISO common formula reproduction은 분리해서 관리해야 한다.
+- case 하나를 맞추는 rounding rule이 다른 pass case를 깨는지 반드시 negative audit해야 한다.
+- known discrepancy xfail reason에는 “왜 core에 넣지 않는지”까지 남겨야 한다.
+
