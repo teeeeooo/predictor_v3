@@ -303,7 +303,8 @@ Extracted formulas from the XLSM file:
 -   **SASO T3 Boundary Diagnostics:** The verified golden sample produces Tb ≈ 45.2479°C, Tc ≈ 34.6371°C, and Tp ≈ 29.1799°C. For the `tj > 35` full segment, the intersection is 46.0°C because `46_full` is the building-load reference point.
 -   **T3 29_full default point:** The T3 resolver behavior for 29_full is confirmed and maintained: capacity is `1.077 × 35_full capacity`, and power is `0.914 × 35_full power`. Treat this as confirmed resolver behavior and test coverage, not as a Phase R2-2-only new rule.
 -   **Hong Kong CSPF load anchor:** Hong Kong measured CSPF uses measured 35_full / 35_half capacity and power for the performance curve, but uses declared/rated 35_full capacity as the building-load anchor. Use `building_load_source = "declared"` and pass rated 35_full capacity as `declared_capacity`. Do not tune Cd or derived factors to match the source tool.
--   **Hong Kong HSPF follow-up:** Hong Kong HSPF is out of scope for the CSPF golden conversion. Before implementation, write ISO 16358-2 pitfalls / calculation order notes, reconfirm candidate golden values (Measure #1 3.643, Measure #2 4.571), and protect KS C 9306 HSPF regressions. Current Hong Kong HSPF observations are preliminary only, including the `Lh(tj) = cap_0 × (12.75 - tj) / 12.75` candidate, possible `cap_0 = 7°C full heating capacity × 0.82`, frost/non-frost branching, and boundary temperatures `ta`, `td`, `te`, `tg`.
+-   **Hong Kong HSPF boundary:** Hong Kong HSPF should share the ISO 16358-2 common HSPF bin integration core, not become a separate core algorithm. Hong Kong MEELS / Code of Practice specific 7°C Full/Half inputs and low-temperature extrapolation belong in a region/profile handler or preprocessor that emits canonical ISO 16358-2 HSPF input points before calling the common core.
+-   **Hong Kong HSPF extrapolation examples:** Treat values such as `Calculated Full Capacity at 0°C = 0.82 × phi_full(7°C)` and `Calculated Full Power Input at 0°C = 0.91 × P_full(7°C)` as handler/preprocessor-derived canonical points. The common core must not branch on Hong Kong, MEELS, region/country flags, or `trace_metadata`; it should only consume the resulting canonical points.
 
 ## 14. ISO 16358-2 HSPF Calculation Order
 
@@ -336,6 +337,7 @@ Extracted formulas from the XLSM file:
 | auxiliary_energy를 HSEC에서 누락 | HSPF가 과대 계산된다. | HSEC = heat_pump_energy + auxiliary_energy. aux_cop = 1.0 (전기히터 가정, 규격 미명시). |
 | BL_h(tj) <= 0인 bin을 누적 | 냉방 구간 bin이 HSTL을 음수로 끌어내린다. | BL_h(tj) <= 0이면 해당 bin을 skip한다. |
 | bin_details에서 KS 필드 구조 재사용 | ISO common HSPF bin_details와 KS bin_details가 섞인다. | ISO common HSPF bin_details는 KS 전용 필드를 포함하지 않는다. 표준 필드: tj, nj, bl_h, pi_j, P_j, case, heat_pump_energy, auxiliary_energy, E_j. |
+| Hong Kong HSPF를 core 분기로 구현 | ISO common core가 지역별 정책에 오염된다. | Hong Kong MEELS extrapolation은 handler/preprocessor에서 canonical point로 변환하고, core는 region/country/trace_metadata를 계산 분기에 사용하지 않는다. |
 
 ## 16. ISO 16358-2 HSPF Test Strategy
 
