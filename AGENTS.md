@@ -100,3 +100,19 @@ sed -n '120,260p' core/calculator_iso16358.py
 Logic 수정 시에는 지역별 하드코딩을 먼저 하지 않는다.
 공통 엔진, profile/config, handler 구조로 표현 가능한지 먼저 확인한다.
 단순 docs 문구 수정은 지정된 파일/문장만 수정하고, 검색·테스트·주변 문서 검토를 하지 않는다.
+
+## Design Gate Rule
+
+predictor_v3에서는 “먼저 구현하고 나중에 공통화”하는 흐름을 피한다.  
+새 작업이 공통 구조와 특화 구조의 경계를 건드릴 가능성이 있으면, 구현 전에 `grill-me` skill로 Design Gate를 통과한다.
+
+기본 원칙은 다음과 같다.
+
+- global standard logic은 canonical core에 먼저 정의한다.
+- country/region-specific behavior는 명시적인 handler, adapter, config override, profile branch로 분리한다.
+- national variant가 global/common path를 암묵적으로 변경해서는 안 된다.
+- UI는 계산기 내부 구현이 아니라 canonical input/output 계약에 의존해야 한다.
+- public API 변경은 사용자의 명시 승인 없이는 하지 않는다.
+- 테스트는 common behavior와 regional override behavior를 구분해야 한다.
+
+Design Gate 결과는 `docs/designs/` 아래에 기록하거나, 최소한 Codex 구현 프롬프트 안에 포함한다.
