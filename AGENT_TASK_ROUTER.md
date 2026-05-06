@@ -9,20 +9,34 @@
 - `AGENTS.md`
 
 조건부로 읽을 문서:
-- 문서 리팩토링, TODO 변경, 계획 변경, 완료 기록이 포함된 diff인 경우:
-  - `project_log.md`의 최근 섹션 또는 관련 키워드
-  - `project_brief.md`
-  - `docs/REFACTOR_PLAN.md`의 관련 섹션
+- Documentation Sync & Lifecycle Gate의 1차 판단 후 필요가 확정된 문서만 읽는다.
+- `project_log.md` 최근 2~3개 로그는 아래 경우에만 읽는다.
+  - 계산 공식/분기/수학적 계약 변경
+  - input schema 또는 config contract 변경
+  - region config 의미 변경
+  - architecture/resolver/adapter/registry/manifest boundary 변경
+  - 중요한 guard-test decision 확정
+  - 사용자가 “로그 남겨”, “project_log 업데이트”, “작업 기록 작성”을 명시
+- `docs/REFACTOR_PLAN.md`는 살아있는 TODO / 다음 실행 순서가 실제로 바뀐 경우에만 읽는다.
+- `project_brief.md`는 새 대화 시작에 필요한 대표 상태가 바뀐 경우에만 읽는다.
+- 규격별 notes/dev_notes/design_notes는 새 규격 해석이나 재사용 가능한 계산 근거가 확정된 경우에만 읽는다.
 
 읽지 말 것:
 - `PROJECT_CHARTER.md`
 - `AGENTS_FULL.md`
 - 규격별 notes 문서 전체
 
+Lightweight documentation gate 원칙:
+- 커밋마다 문서 전체를 확인하지 않는다.
+- 기본 커밋 절차에서는 `git status`, `git diff --stat`, staged diff summary 또는 변경 파일 목록, `AGENTS.md`만 먼저 본다.
+- Documentation Sync & Lifecycle Gate의 1차 판단은 문서 읽기 없이 파일명, diff stat, 변경 성격, 사용자의 명시 요청만으로 수행한다.
+- 판단이 애매하면 문서를 읽거나 수정하지 말고 최종 보고에 `documentation update may be needed` 또는 `project_log update recommended`라고 남긴다.
+- 사용자가 명시 요청하지 않은 애매한 문서 갱신은 자동 수행하지 않는다.
+
 절차:
 1. `git status`
 2. `git diff --stat`
-3. 변경 파일 성격 확인
+3. staged diff summary 또는 변경 파일 목록 확인
 4. Documentation Sync & Lifecycle Gate 수행 → [문서 동기화 판단] 출력
 5. 갱신 필요로 판단된 문서가 있으면 먼저 수정하고, 수정 완료 후에만 다음 단계로 진행한다.
    갱신 불필요면 바로 테스트 확인 단계로 진행한다.
@@ -33,13 +47,14 @@
 #### Documentation Sync & Lifecycle Gate
 
 commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 문서의 수명주기를 함께 판단한다.
+1차 판단은 문서 읽기 없이 파일명, diff stat, 변경 성격, 사용자의 명시 요청을 기준으로 수행한다.
 
 1. `project_log.md`
-   - 새 작업 결과, 실패, 결정, 교훈은 append한다.
+   - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
    - 이미 끝난 작업의 상세 기록은 `project_log.md`에 보존한다.
    - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
    - 갱신 여부를 diff 크기만으로 판단하지 않는다.
-   - 작은 코드 변경이라도 architecture direction, phase boundary, resolver/adapter/registry/manifest contract, schema boundary, routing decision, compatibility layer, 중요한 guard-test decision을 고정하면 로그 대상이다.
+   - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
    - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
    - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
    - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
@@ -48,6 +63,8 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
 
 2. `docs/REFACTOR_PLAN.md`
+   - 살아있는 TODO / 다음 실행 순서가 실제로 바뀐 경우에만 읽고 수정한다.
+   - 단순 bug fix, fixture correction, validation guard, test cleanup, commit message 작성만으로는 읽지 않는다.
    - 살아있는 TODO / 보류 항목 / 다음 실행 순서만 유지한다.
    - 완료된 TODO는 다음 중 하나로 처리한다.
      - 단순 완료: 체크/완료 문구 없이 제거하거나 짧게 축약
@@ -57,12 +74,15 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 같은 섹션에 새 항목만 계속 append하지 않는다.
 
 3. `project_brief.md`
+   - 새 대화 시작에 필요한 대표 상태가 바뀐 경우에만 읽고 수정한다.
+   - 단순 bug fix, fixture correction, validation guard, test cleanup, commit message 작성만으로는 읽지 않는다.
    - 새 대화 시작에 필요한 현재 상태만 유지한다.
    - 완료 이력의 상세 나열을 금지한다.
    - 대표 상태가 바뀌면 기존 문장을 교체/축약하고, 새 문장을 덧붙이기만 하지 않는다.
    - 오래된 “다음 작업”은 최신 우선순위로 교체한다.
 
 4. 규격별 `notes/dev_notes/design_notes`
+   - 새 규격 해석이나 재사용 가능한 계산 근거가 확정된 경우에만 읽고 수정한다.
    - 규격 해석, 계산 근거, schema 의미처럼 나중에 재사용될 지식만 보존한다.
    - 단순 완료 기록은 dev_notes에 중복 추가하지 않고 project_log.md로 보낸다.
    - 이미 REFACTOR_PLAN이나 project_log에 있는 내용을 그대로 복사하지 않는다.
