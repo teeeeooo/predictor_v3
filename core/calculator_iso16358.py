@@ -1585,6 +1585,79 @@ class ISO16358Calculator:
             and "power" in candidate
         )
 
+    def _iso_hspf_extended_minus7_default(self, resolved: dict) -> dict:
+        ext_2_f = resolved["2_ext"]
+        return {
+            "capacity": float(ext_2_f["capacity"]) * 0.734,
+            "power": float(ext_2_f["power"]) * 0.877,
+        }
+
+    def _iso_hspf_extended_frost_curve(self, tj: float, resolved: dict) -> dict:
+        ext_m7 = self._iso_hspf_extended_minus7_default(resolved)
+        ext_2_f = resolved["2_ext"]
+        return {
+            "capacity": ext_m7["capacity"]
+            + (float(ext_2_f["capacity"]) - ext_m7["capacity"]) * (tj + 7.0) / 9.0,
+            "power": ext_m7["power"]
+            + (float(ext_2_f["power"]) - ext_m7["power"]) * (tj + 7.0) / 9.0,
+        }
+
+    def _iso_hspf_extended_frost_line(self, resolved: dict) -> tuple:
+        ext_m7 = self._iso_hspf_extended_minus7_default(resolved)
+        ext_2_f = resolved["2_ext"]
+        slope = (float(ext_2_f["capacity"]) - ext_m7["capacity"]) / 9.0
+        intercept = ext_m7["capacity"] - slope * -7.0
+        return slope, intercept
+
+    def _iso_hspf_extended_frost_intersection_temp(
+        self,
+        resolved: dict,
+        load_line: tuple
+    ) -> float:
+        load_slope, load_intercept = load_line
+        capacity_slope, capacity_intercept = self._iso_hspf_extended_frost_line(
+            resolved
+        )
+        denominator = load_slope - capacity_slope
+        if denominator == 0:
+            raise ValueError(
+                "ISO 16358-2 HSPF load line and extended capacity line are parallel."
+            )
+        return (capacity_intercept - load_intercept) / denominator
+
+    def _iso_hspf_formula50_full_extended_frost_power(
+        self,
+        tj: float,
+        bl_h: float,
+        resolved: dict,
+        load_line: tuple
+    ) -> dict:
+        tg = self._iso_hspf_intersection_temp("full", resolved, True, load_line)
+        tf = self._iso_hspf_extended_frost_intersection_temp(resolved, load_line)
+        denominator = tf - tg
+        if denominator == 0:
+            raise ValueError(
+                "ISO 16358-2 HSPF full and extended boundary temperatures are equal."
+            )
+
+        cop_full_f_tg = self._iso_hspf_boundary_cop(tg, "full", resolved, True)
+        ext_tf = self._iso_hspf_extended_frost_curve(tf, resolved)
+        if ext_tf["power"] <= 0:
+            raise ValueError("ISO 16358-2 HSPF extended boundary power must be positive.")
+        cop_ext_f_tf = ext_tf["capacity"] / ext_tf["power"]
+        cop_fe_f = cop_full_f_tg + (
+            (cop_ext_f_tf - cop_full_f_tg) * (tj - tg) / denominator
+        )
+        if cop_fe_f <= 0:
+            raise ValueError("ISO 16358-2 HSPF Formula 50 branch COP must be positive.")
+
+        return {
+            "P_fe": bl_h / cop_fe_f,
+            "tg": tg,
+            "tf": tf,
+            "cop_fe_f": cop_fe_f,
+        }
+
     def calculate_hspf_iso16358_common(
         self,
         measured_inputs: dict,
@@ -1742,6 +1815,7 @@ class ISO16358Calculator:
             hp_energy = 0.0
             aux_energy = 0.0
             p_j = 0.0
+            trace = {}
             
             if bl_h <= pi_lowest:
                 # Case A: Cycling
@@ -1765,6 +1839,32 @@ class ISO16358Calculator:
                 p_interp = p_half + (p_full - p_half) * (bl_h - pi_half) / (pi_full - pi_half)
                 hp_energy = p_interp * nj
                 p_j = p_interp
+            elif frost and self._iso_hspf_has_extended_candidate(resolved):
+                ext_f = self._iso_hspf_extended_frost_curve(tj, resolved)
+                if bl_h <= ext_f["capacity"]:
+                    case = "formula50_full_extended_frost"
+                    formula50 = self._iso_hspf_formula50_full_extended_frost_power(
+                        tj, bl_h, resolved, load_line
+                    )
+                    hp_energy = formula50["P_fe"] * nj
+                    p_j = formula50["P_fe"]
+                    trace = {
+                        "branch": case,
+                        "pi_ext_f": ext_f["capacity"],
+                        "p_ext_f": ext_f["power"],
+                        "tg": formula50["tg"],
+                        "tf": formula50["tf"],
+                        "cop_fe_f": formula50["cop_fe_f"],
+                        "P_fe": formula50["P_fe"],
+                        "backup_heat": 0.0,
+                    }
+                else:
+                    # Case C: Saturated
+                    case = "saturated"
+                    hp_energy = p_full * nj
+                    p_j = p_full
+                    aux_heat = bl_h - pi_full
+                    aux_energy = aux_heat * nj / aux_cop
             else:
                 # Case C: Saturated
                 case = "saturated"
@@ -1786,7 +1886,7 @@ class ISO16358Calculator:
                 "heat_pump_energy": hp_energy,
                 "auxiliary_energy": aux_energy,
                 "E_j": hp_energy + aux_energy
-            })
+            } | trace)
 
         if hsec <= 0:
             return {
