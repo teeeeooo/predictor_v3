@@ -1577,6 +1577,14 @@ class ISO16358Calculator:
         power_factor = minus7_fallback.get("minus7_power_factor", 0.82)
         return float(capacity_factor), float(power_factor)
 
+    def _iso_hspf_has_extended_candidate(self, resolved: dict) -> bool:
+        candidate = resolved.get("2_ext")
+        return (
+            isinstance(candidate, dict)
+            and "capacity" in candidate
+            and "power" in candidate
+        )
+
     def calculate_hspf_iso16358_common(
         self,
         measured_inputs: dict,

@@ -412,6 +412,32 @@ def test_iso16358_hspf_external_golden_minus7_override_is_fixture_scoped(tmp_pat
     )
 
 
+def test_iso16358_hspf_resolves_2_ext_as_canonical_extended_candidate(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    resolved = iso_common_golden_measured_inputs(case)
+
+    assert calculator._iso_hspf_has_extended_candidate(resolved)
+
+
+def test_iso16358_hspf_does_not_activate_extended_from_metadata(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+
+    metadata_only_inputs = [
+        {"trace_metadata": {"source_region": "external", "2_ext": True}},
+        {"case_label": "7min yes, Extended yes"},
+        {"region": "external"},
+        {"country": "external"},
+        {"profile": "iso16358_2_hspf"},
+        {"standard": "ISO16358-2"},
+        {"2_ext": True},
+        {"2_ext": {"trace_metadata": "extended"}},
+    ]
+    for resolved in metadata_only_inputs:
+        assert not calculator._iso_hspf_has_extended_candidate(resolved)
+
+
 def test_iso16358_hspf_golden_sample(tmp_path):
     calculator = make_phase1_calculator(tmp_path, ks_profile=False)
     result = calculator.calculate_hspf(adapt_golden_points_for_phase1_engine())

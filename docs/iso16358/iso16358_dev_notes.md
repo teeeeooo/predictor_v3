@@ -308,6 +308,27 @@ Extracted formulas from the XLSM file:
 
 ## 14. ISO 16358-2 HSPF Calculation Order
 
+### 14.1. Table 1 / Formula 30 Interpretation Note
+
+ISO 16358-2 Table 1의 measurement/default matrix는 다음처럼 해석한다.
+
+- 7°C Standard heating: Full/Half는 measured required, Min은 optional이다.
+- 2°C Low-temperature heating: extended mode가 있으면 Extended_f measured가 required이고 Full_f는 optional이다. extended mode가 없으면 Full_f measured가 required이다. Half_f는 optional/default이고 Min은 tested point가 아니다.
+- -7°C Extra-low-temperature heating: Extended/Full/Half는 optional/default이고 Min은 tested point가 아니다.
+
+프로젝트 해석: production ISO Table 1 default에서 -7°C Full/Half default는 capacity factor 0.64, power factor 0.82를 유지한다. `external_calculator_minus7_fallback_override`의 0.5 / 1.105는 seven-case external calculator / official-sheet reproduction fixture 전용이며 production ISO default와 섞지 않는다.
+
+ISO 16358-2 Table 1 footnote c/d는 measured 2°C frosting point와 calculated non-frost 2°C point를 같은 값으로 collapse하지 않는다는 의미로 처리한다. footnote d가 적용될 때 `pi_x(2)`와 `P_x(2)`는 -7°C to 7°C line에서 계산한다.
+
+ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지한다.
+
+- Cycling branch는 Formula 9/10을 사용하며 `Σ X × P × nj / F_PL` 형태로 HSEC에 기여한다.
+- Half to Full non-frost branch는 Formula 46 + Formula 45 path다.
+- Half to Full frost branch는 Formula 49 + Formula 45 path다.
+- Full to Extended branch는 Formula 47/50 path이며 completed Slice 1A 범위가 아니다.
+
+현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 external calculator / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 external override는 guard test로 계속 분리한다.
+
 | Step | Action | Description |
 | :--- | :--- | :--- |
 | 1 | Load configuration | region config를 로드한다. (hspf_bin_hours, load_line, frost 경계, Cd, aux_cop 포함) |
