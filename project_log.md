@@ -312,16 +312,19 @@
 - seven-case fixture가 external calculator / official-sheet reproduction fixture임을 note로 명시하고, production ISO Table 1 default 0.64 / 0.82와 fixture override 0.5 / 1.105를 각각 guard test로 고정했다.
 - 후속 guard로 `2_ext`를 계산 branch가 아닌 canonical optional extended candidate로만 감지하는 helper/test를 추가했다. 계산 결과와 case 3~7 xfail 상태는 바꾸지 않았다.
 - `docs/iso16358/iso16358_dev_notes.md`에 Table 1 / Formula 30 해석 메모를 추가해 production default, external override, footnote c/d, Formula 46/49 보류 결정을 정리했다.
+- Formula 50 frost full-to-extended branch를 canonical 조건으로만 추가했다. `2_ext`를 `pi_ext,f(2)` / `P_ext,f(2)` anchor로 사용하고, ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)` 및 Formula 25 선형 보간으로 extended frost curve를 평가한다.
+- Formula 50 적용 후 case 3 actual은 HSPF 4.308, HSEC 1134.088 kWh로 이동했고, case 1/2 regression은 발생하지 않았다. case 3~7 xfail은 유지했다.
+- AHRI 210/240 notes에는 ISO16358 Formula 30/50 branch 구조를 AHRI HSPF2 Case I/II/III path로 이식하지 말라는 cross-standard boundary note를 추가했다.
 
 ### Failed / Risk
 - case 1의 최신 external golden 4.222 / 1157은 half~full Formula 46/49 slice에서 다시 다룰 항목으로 남겼다.
-- case 3~7은 extended/frost optional branch와 후속 Formula 46/47/49/50 범위가 남아 있어 strict xfail을 유지한다.
+- case 3~7은 Formula 50 일부가 들어갔지만, Formula 46/47/49와 `L_h > pi_ext,f` extended capacity operation 범위가 남아 있어 strict xfail을 유지한다.
 
 ### Decision
 - Slice 1A는 case 2 calculation only로 닫고, extended branch나 Hong Kong/Korea handler/profile은 변경하지 않는다.
 - Hong Kong/MEELS/region/country 여부는 common core 계산 분기 조건으로 사용하지 않는다.
 - external golden fallback override는 fixture scope로만 유지하고, override 없는 ISO common HSPF config는 production Table 1 default 0.64 / 0.82를 사용해야 한다.
-- `2_ext` 단독으로 full extended temperature curve를 합성하지 않는다. extended_saturated branch 구현 전 공식 row trace 또는 명시 anchor semantics를 추가 확인한다.
+- `2_ext` 단독으로 `7_ext`를 만들지 않는다. Formula 50 frost branch는 ISO Table 1의 -7 extended default와 2°C extended measured anchor만 사용하며, Formula 47 non-frost branch나 extended capacity operation은 별도 slice로 남긴다.
 
 ### Lesson
 - min stage 도입은 lowest-stage cycling branch와 min~half interpolation branch만 바꿔야 하며, half~full branch를 함께 조정하면 slice boundary가 흐려진다.

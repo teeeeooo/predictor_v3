@@ -164,6 +164,7 @@
 | H12/H22 missing fallback source를 metadata에 남긴다. | 실측값과 계산값의 HSPF2 차이를 추적해야 한다. | AHRI 210/240-2026 Equation 11.44, Equation 11.50, Equation 11.181~11.186 |
 | H2Int는 Low(35°F)와 H2Full 사이여야 한다. | intermediate slope가 envelope 밖으로 나가면 Case II COP interpolation이 물리적으로 깨진다. | AHRI 210/240-2026 Equation 11.199~11.204 |
 | Case I에만 PLF가 적용된다. | Case II/III에 PLF를 적용하면 에너지 합산이 달라진다. | AHRI 210/240-2026 Case I path |
+| ISO16358-2 Formula 30/50 branch 구조를 AHRI HSPF2에 이식하지 않는다. | ISO의 2°C extended frost point, `P_fe`, `P_ext`, `P_RH` 항은 AHRI HSPF2 Section 11의 Hxx point resolver와 Case I/II/III 구조와 다르다. | AHRI 210/240-2026 Section 11; ISO16358-2 Table 1, Formula 30 |
 | defrost 입력은 필수지만, 현재 seasonal multiplier 적용은 `fdef_override` 정책을 따른다. | Equation 11.107 계산값과 실제 raw multiplier 적용을 혼동하면 결과가 달라진다. | AHRI 210/240-2026 Equation 11.107 |
 | SEER2는 현재 구현 확인 가능한 범위만 문서화한다. | HSPF2 수준의 공식 parity가 아직 문서화/검증되지 않았다. | Project current implementation |
 

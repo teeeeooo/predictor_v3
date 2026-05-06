@@ -325,9 +325,9 @@ ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지
 - Cycling branch는 Formula 9/10을 사용하며 `Σ X × P × nj / F_PL` 형태로 HSEC에 기여한다.
 - Half to Full non-frost branch는 Formula 46 + Formula 45 path다.
 - Half to Full frost branch는 Formula 49 + Formula 45 path다.
-- Full to Extended branch는 Formula 47/50 path이며 completed Slice 1A 범위가 아니다.
+- Full to Extended branch는 Formula 47/50 path다. 현재 common core는 Formula 50 frost full-to-extended branch만 구현한다. Formula 47 non-frost full-to-extended branch와 `L_h > pi_ext,f` extended capacity operation은 아직 구현하지 않는다.
 
-현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 external calculator / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 external override는 guard test로 계속 분리한다.
+현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 external calculator / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 external override는 guard test로 계속 분리한다. Formula 50에서 extended frost curve는 ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)`와 Formula 25 `P_ext(tj)` 선형 보간을 사용한다.
 
 | Step | Action | Description |
 | :--- | :--- | :--- |
@@ -342,9 +342,10 @@ ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지
 | 9 | Determine operating case | operating case를 결정한다. BL_h와 stage별 capacity 비교. stage 우선순위: Min > Half > Full. |
 | 10 | Cycling branch | BL_h <= lowest_stage_pi: PLF = 1 - Cd × (1 - X), X = BL_h / pi_min. heat_pump_energy = (X × P_min / PLF) × nj. |
 | 11 | Interpolation branch | lowest_stage_pi < BL_h <= pi_ful: 인접 stage 사이 capacity-linear power 보간. heat_pump_energy = P_interp × nj. |
-| 12 | Saturated branch | BL_h > pi_ful: heat_pump_output = pi_ful(tj) × nj, heat_pump_energy = P_ful(tj) × nj. auxiliary_heat = BL_h(tj) - pi_ful(tj). auxiliary_energy = auxiliary_heat × nj / aux_cop. |
-| 13 | Accumulate HSTL/HSEC | HSTL += BL_h(tj) × nj (건물 부하 전체). HSEC += heat_pump_energy + auxiliary_energy. |
-| 14 | Finalize HSPF | HSPF = HSTL / HSEC, 3 significant digits로 반올림한다. |
+| 12 | Formula 50 frost full-to-extended branch | extended candidate가 있고 frost range에서 pi_ful,f(tj) < BL_h(tj) <= pi_ext,f(tj)이면 COP_fe,f(tj)를 tg~tf 사이에서 보간하고 P_fe(tj)=BL_h(tj)/COP_fe,f(tj)를 HSEC에 반영한다. backup heat는 0이다. |
+| 13 | Saturated branch | BL_h > pi_ful이고 Formula 50 조건이 아니면 heat_pump_output = pi_ful(tj) × nj, heat_pump_energy = P_ful(tj) × nj. auxiliary_heat = BL_h(tj) - pi_ful(tj). auxiliary_energy = auxiliary_heat × nj / aux_cop. |
+| 14 | Accumulate HSTL/HSEC | HSTL += BL_h(tj) × nj (건물 부하 전체). HSEC += heat_pump_energy + auxiliary_energy. |
+| 15 | Finalize HSPF | HSPF = HSTL / HSEC, 3 significant digits로 반올림한다. |
 
 ## 15. ISO 16358-2 HSPF Top Pitfalls
 

@@ -17,6 +17,7 @@ Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, 
 | H12/H22 optional fallback을 추적하지 않음 | official calculator와 차이가 났을 때 원인 추적이 어렵다. | tested/fallback source metadata 누락 | `h12_source`, `h22_source`를 유지한다. | AHRI 210/240-2026 Equation 11.44, 11.50, 11.181~11.186 |
 | H2Int envelope 검증을 완화 | Case II COP interpolation이 비물리적으로 된다. | H2Int가 Low(35°F)와 H2Full 사이가 아님 | `N_Hq`, `N_HE`가 0~1인지 fail-fast 한다. | AHRI 210/240-2026 Equation 11.199~11.204 |
 | Case I PLF를 Case II/III에도 적용 | energy denominator가 과대 또는 과소 계산된다. | cycling correction 적용 위치 혼동 | Case I에만 `PLF = 1 - Cd * (1 - HLF)` 적용한다. | AHRI 210/240-2026 Case I path |
+| ISO16358 HSPF Formula 30/50 branch를 AHRI HSPF2에 이식 | Case I/II/III energy trace가 표준과 맞지 않는다. | ISO Table 1의 2°C/-7°C extended frost matrix와 AHRI HSPF2 Hxx test point 체계를 혼동함 | AHRI HSPF2는 Section 11의 Case I/II/III, H01/H11/H12/H22/H2Int/H32/H42 경로만 사용한다. ISO `P_fe`, `P_ext`, `P_RH` 구조는 AHRI path에 넣지 않는다. | AHRI 210/240-2026 Section 11; ISO16358-2 Table 1, Formula 30 |
 | defrost trace와 multiplier 적용을 혼동 | raw HSPF2가 예상과 다르게 변한다. | Eq.11.107 계산값과 `fdef_override` 적용 정책 혼동 | `summary.metadata.defrost`의 `f_def_seasonal`, `fdef_used`, `seasonal_defrost_multiplier_applied`를 함께 확인한다. | AHRI 210/240-2026 Equation 11.107 |
 | SEER2를 HSPF2와 같은 검증 수준으로 가정 | 문서와 실제 신뢰 수준이 불일치한다. | SEER2 official parity 테스트가 부족함 | SEER2는 현재 구현 확인 범위로만 설명한다. | Project current implementation |
 
@@ -82,6 +83,7 @@ Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, 
 | Heating Case I PLF | `PLF = max(0.01, 1 - Cd * (1 - HLF))` | low-speed cycling 손실 반영 | AHRI 210/240-2026 Case I path |
 | Heating Case II | PLF 1.0, COP_bin interpolation | 용량이 low와 full 사이이므로 intermediate COP를 사용 | AHRI 210/240-2026 Case II path |
 | Heating Case III | PLF 1.0, full-speed plus auxiliary | full capacity 부족분은 보조열 | AHRI 210/240-2026 Case III path |
+| Cross-standard branch boundary | ISO16358-2 Formula 30의 `P_fe`, `P_ext`, `P_RH` 항은 AHRI HSPF2 v3 denominator 구조로 가져오지 않는다. | AHRI HSPF2는 Section 11 Case I/II/III와 Hxx point resolver가 기준이며, ISO 2°C extended frost branch와 test matrix는 별도 표준의 해석이다. | AHRI 210/240-2026 Section 11; ISO16358-2 Formula 30 |
 | `delta_j` | `temp <= t_off` 또는 COP < 1이면 0, `temp <= t_on`이면 0.5, 그 외 1.0 | heat pump availability 반영 | AHRI 210/240-2026 Section 11 |
 | Defrost | Eq.11.107 값을 trace하고 raw에는 `fdef_override` 적용 | 현재 정책을 명확히 추적 | AHRI 210/240-2026 Equation 11.107 |
 | SEER2 low cycling | Case 1에서 `PLF = 1 - cd_low * (1 - CLF)` | low cooling cycling 손실 | Project current implementation |
