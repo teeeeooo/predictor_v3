@@ -1717,16 +1717,16 @@ class ISO16358Calculator:
                 "power": h2_ext_f["power"] * 1.06,
             },
             "2_full_f": {
-                "capacity": h1_full["capacity"] * (3406.0 / 4300.0),
-                "power": h1_full["power"] * (1159.0 / 1320.0),
+                "capacity": h1_full["capacity"] * (3405.57397959184 / 4300.0),
+                "power": h1_full["power"] * (1159.04986522911 / 1320.0),
             },
             "2_full": {
                 "capacity": h1_full["capacity"] * (3765.0 / 4300.0),
                 "power": h1_full["power"] * (1233.0 / 1320.0),
             },
             "2_half_f": {
-                "capacity": h1_half["capacity"] * (1774.0 / 2300.0),
-                "power": h1_half["power"] * (395.0 / 450.0),
+                "capacity": h1_half["capacity"] * (1773.97959183673 / 2300.0),
+                "power": h1_half["power"] * (395.471698113208 / 450.0),
             },
             "2_half": {
                 "capacity": h1_half["capacity"] * (2000.0 / 2300.0),

@@ -373,6 +373,13 @@
 - Excel의 잠금/보호/Numbers 변환 문제 때문에 `ROUND/ROUNDUP` 여부와 hidden precision은 아직 완전히 확정하지 못했다.
 - `SEER calculator` 구현은 GEMS/ZERL/AS/NZS 계열 calculator compatibility일 가능성이 있으므로, ISO common core에 곧바로 연결하면 case 2 등 기존 pass 경로를 오염시킬 위험이 있다.
 
+### Follow-up Note
+- 이후 trace-only evaluator에 Excel raw H2 Half f / H2 Full f precision을 반영했다.
+- H2 Half f는 `1773.97959183673 / 395.471698113208`, H2 Full f는 `3405.57397959184 / 1159.04986522911` raw 값을 사용하도록 보정했다.
+- trace-only case 3 `CH48`은 `1,117,649.764 Wh`로 이동했고, Excel bin-energy table sum `1,117,680 Wh`와 약 `30 Wh` 차이까지 접근했다.
+- CB frost half-full bins는 Excel 관찰값과 사실상 정렬되었으며, 기존 `calculate_hspf_iso16358_common()` output과 xfail 정책은 변경하지 않았다.
+- 남은 약 `30 Wh` 차이는 non-CB component raw precision 또는 Excel observed table/cached value 한계로 남겨두고, production/common ISO path에는 아직 연결하지 않는다.
+
 ### Decision
 - resolver-only patch는 채택하지 않는다.
 - component-sum evaluator는 당분간 trace-only / isolated test 경로로 유지한다.

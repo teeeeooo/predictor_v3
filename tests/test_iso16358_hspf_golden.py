@@ -393,11 +393,11 @@ def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
     }
     details_by_temp = {item["tj"]: item for item in trace["bin_details"]}
 
-    assert trace["ch48_wh"] == pytest.approx(1117679.0, abs=600.0)
+    assert trace["ch48_wh"] == pytest.approx(1117650.0, abs=50.0)
     assert len(details_by_temp) == len(observed_total_power)
     for tj, expected_power in observed_total_power.items():
         detail = details_by_temp[tj]
-        assert detail["CG_total_power"] == pytest.approx(expected_power, abs=1.2)
+        assert detail["CG_total_power"] == pytest.approx(expected_power, abs=1.0)
         assert detail["CH_energy"] == pytest.approx(
             detail["CG_total_power"] * detail["hours"],
             abs=1e-9,
@@ -405,6 +405,12 @@ def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
         assert set(detail["active_components"]).issubset(
             {"BM", "BO", "BQ", "BS", "BT", "BU", "BX", "BZ", "CB", "CD", "CE", "CF"}
         )
+
+    resolved = trace["resolved_points"]
+    assert resolved["2_half_f"]["capacity"] == pytest.approx(1773.97959183673)
+    assert resolved["2_half_f"]["power"] == pytest.approx(395.471698113208)
+    assert resolved["2_full_f"]["capacity"] == pytest.approx(3405.57397959184)
+    assert resolved["2_full_f"]["power"] == pytest.approx(1159.04986522911)
 
 
 def test_iso16358_hspf_production_table1_default_minus7_fallback(tmp_path):
