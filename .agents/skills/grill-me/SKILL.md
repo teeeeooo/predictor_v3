@@ -101,6 +101,8 @@ When stopping, summarize:
 
 ## Final Output Format
 
+For non-calculator tasks, reinterpret "Core vs Handler Boundary" as the relevant module boundary, such as UI vs Core, Pipeline vs Model, Common vs Specialized, or Document Lifecycle boundary.
+
 When the user asks for the final summary, produce:
 
 # Design Gate Summary

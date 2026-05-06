@@ -116,3 +116,5 @@ predictor_v3에서는 “먼저 구현하고 나중에 공통화”하는 흐름
 - 테스트는 common behavior와 regional override behavior를 구분해야 한다.
 
 Design Gate 결과는 `docs/designs/` 아래에 기록하거나, 최소한 Codex 구현 프롬프트 안에 포함한다.
+
+Design Gate Summary가 없거나 사용자가 명시적으로 생략을 승인하지 않은 상태에서는 구현을 시작하지 않는다.
