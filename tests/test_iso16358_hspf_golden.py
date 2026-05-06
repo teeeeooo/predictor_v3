@@ -485,7 +485,10 @@ def test_iso16358_hspf_golden_sample(tmp_path):
 
 def test_ks_c9306_hspf_production_schema_golden_sample(tmp_path):
     calculator = make_phase1_calculator(tmp_path)
-    result = calculator.calculate_hspf(OFFICIAL_GOLDEN_SAMPLE)
+    result = calculator.calculate_hspf({
+        **OFFICIAL_GOLDEN_SAMPLE,
+        "rated_cooling_capacity": 4300.0,
+    })
     breakdown = energy_breakdown(result)
 
     hstl = result.get("hstl", result.get("HSTL"))
@@ -820,9 +823,9 @@ def test_ks_c9306_hspf_bin_load_defaults_to_config_load_line(tmp_path):
                 "cd": 0.25,
             },
             "load_line": {
-                "source": "rated_heating_capacity",
+                "source": "rated_cooling_capacity",
                 "zero_load_temp": 16.0,
-                "full_load_temp": -7.0,
+                "full_load_temp": 0.0,
                 "rated_capacity_factor": 0.82,
             },
             "bin_hours_key": "hspf_bin_hours",
@@ -832,10 +835,15 @@ def test_ks_c9306_hspf_bin_load_defaults_to_config_load_line(tmp_path):
     config_path.write_text(json.dumps(config), encoding="utf-8")
     calculator = ISO16358Calculator(str(config_path))
 
-    result = calculator.calculate_hspf(OFFICIAL_GOLDEN_SAMPLE)
+    result = calculator.calculate_hspf({
+        **OFFICIAL_GOLDEN_SAMPLE,
+        "rated_cooling_capacity": 4300.0,
+    })
     detail = result["bin_details"][0]
 
-    expected_load = 4300.0 * 0.82 * (16.0 - 7.0) / (16.0 - (-7.0))
+    # BL_h(tj) = (rated_cooling_capacity * 0.82) * (16 - Tj) / (16 - 0)
+    # rated_cooling_capacity = 4300.0
+    expected_load = (4300.0 * 0.82) * (16.0 - 7.0) / (16.0 - 0.0)
     failures = []
     assert_close(
         detail["load"],

@@ -87,14 +87,14 @@
           "points": ["7_min", "2_ext"],
           "expected": {
             "total_bin_hours": 2866,
-            "hspf": 4.388,
+            "hspf": 4.338,
             "lhst_kwh": 4885.0,
             "chse_kwh": 1126.0
           }
         },
         {
           "case_id": 4,
-          "label": "7min yes, Extended yes, 7Full f measured",
+          "label": "7min yes, Extended yes, 2Full f measured",
           "points": ["7_min", "2_ext", "2_full"],
           "expected": {
             "total_bin_hours": 2866,
@@ -105,7 +105,7 @@
         },
         {
           "case_id": 5,
-          "label": "7min yes, Extended yes, 7Full f / 7Half f measured",
+          "label": "7min yes, Extended yes, 2Full f / 2Half f measured",
           "points": ["7_min", "2_ext", "2_full", "2_half"],
           "expected": {
             "total_bin_hours": 2866,
@@ -116,7 +116,7 @@
         },
         {
           "case_id": 6,
-          "label": "7min yes, Extended yes, 7Full f / 7Half f / -7Ext measured",
+          "label": "7min yes, Extended yes, 2Full f / 2Half f / -7Ext measured",
           "points": ["7_min", "2_ext", "2_full", "2_half", "-7_ext"],
           "expected": {
             "total_bin_hours": 2866,
@@ -127,13 +127,24 @@
         },
         {
           "case_id": 7,
-          "label": "7min yes, Extended yes, 7Full f / 7Half f / -7Ext / -7Full measured",
+          "label": "7min yes, Extended yes, 2Full f / 2Half f / -7Ext / -7Full measured",
           "points": ["7_min", "2_ext", "2_full", "2_half", "-7_ext", "-7_full"],
           "expected": {
             "total_bin_hours": 2866,
             "hspf": 4.375,
             "lhst_kwh": 4885.0,
             "chse_kwh": 1117.0
+          }
+        },
+        {
+          "case_id": 8,
+          "label": "7min yes, Extended yes, 2Full f / 2Half f / -7Ext / -7Full / -7Half measured",
+          "points": ["7_min", "2_ext", "2_full", "2_half", "-7_ext", "-7_full", "-7_half"],
+          "expected": {
+            "total_bin_hours": 2866,
+            "hspf": 4.396,
+            "lhst_kwh": 4885.0,
+            "chse_kwh": 1111.0
           }
         }
       ],
