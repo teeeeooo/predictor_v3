@@ -269,3 +269,28 @@
 ### Lesson
 - ISO default-bin fixture는 HSTL을 맞추기 위해 bin-hours를 scale하지 않고 Table 3 reference bin-hours를 그대로 유지해야 한다.
 - optional measured point matrix는 validation 규칙과 계산 branch regression을 분리해서 다뤄야 한다.
+
+---
+
+## 2026-05-06 — Design Gate 및 grill-me workflow 도입
+
+### Tried
+- `grill-me` skill을 추가하고, AGENTS.md에 Design Gate Rule을 연결했다.
+- `docs/designs/TEMPLATE_DESIGN_GATE.md`를 생성했다.
+- ISO16358-2 HSPF core/handler boundary를 dry run으로 검증했다.
+
+### Result
+- global core는 canonical-only input을 받고, region/profile fallback은 handler/config/profile 책임으로 분리하기로 했다.
+- forbidden field validation은 trace_metadata를 제외한 input tree에서 recursive하게 수행하기로 했다.
+- validation 실패는 core에서 exception으로 중단하고, wrapper/UI에서만 structured error result로 변환하기로 했다.
+
+### Failed / Risk
+- skill summary는 자동 파일 생성이 아니라 터미널 출력만 수행했다.
+- forbidden denylist가 과도하면 정상 canonical field를 막을 수 있다.
+
+### Decision
+- 큰 설계 작업은 구현 전 `grill-me` Design Gate를 먼저 통과한다.
+- Design Gate 결과는 `docs/designs/` 또는 구현 프롬프트에 남긴다.
+
+### Lesson
+- “먼저 구현하고 나중에 공통화”를 막으려면 core/handler boundary와 validation rule을 구현 전에 문서화해야 한다.
