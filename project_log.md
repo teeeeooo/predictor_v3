@@ -309,6 +309,7 @@
 - case 2는 HSPF 4.289, LHST/HSTL 4885 kWh, CHSE/HSEC 1139 kWh golden tolerance 안에 들어왔다.
 - 전체 테스트는 `137 passed, 5 xfailed` 상태다.
 - magic correction factor `1.01861`은 추가하지 않았다.
+- seven-case fixture가 external calculator / official-sheet reproduction fixture임을 note로 명시하고, production ISO Table 1 default 0.64 / 0.82와 fixture override 0.5 / 1.105를 각각 guard test로 고정했다.
 
 ### Failed / Risk
 - case 1의 최신 external golden 4.222 / 1157은 half~full Formula 46/49 slice에서 다시 다룰 항목으로 남겼다.
@@ -317,7 +318,9 @@
 ### Decision
 - Slice 1A는 case 2 calculation only로 닫고, extended branch나 Hong Kong/Korea handler/profile은 변경하지 않는다.
 - Hong Kong/MEELS/region/country 여부는 common core 계산 분기 조건으로 사용하지 않는다.
+- external golden fallback override는 fixture scope로만 유지하고, override 없는 ISO common HSPF config는 production Table 1 default 0.64 / 0.82를 사용해야 한다.
 
 ### Lesson
 - min stage 도입은 lowest-stage cycling branch와 min~half interpolation branch만 바꿔야 하며, half~full branch를 함께 조정하면 slice boundary가 흐려진다.
 - expected 정정은 slice 대상 case에만 적용하고, 후속 Formula slice의 golden은 별도 작업으로 남겨야 한다.
+- external calculator reproduction fixture와 production standard default는 같은 common core를 지나더라도 config scope를 테스트로 분리해야 한다.

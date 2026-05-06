@@ -207,6 +207,33 @@ def make_iso_common_golden_calculator(tmp_path):
     return ISO16358Calculator(str(config_path))
 
 
+def make_iso_common_production_default_calculator(tmp_path):
+    fixture = load_iso_hspf_golden_fixture()
+    config_path = tmp_path / "iso16358_hspf_production_default.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {
+                "cd": fixture["conditions"]["cd"],
+                "aux_cop": fixture["conditions"]["aux_cop"],
+            },
+            "frost_boundaries": {"lower": -7.0, "upper": 5.5},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 0.82,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": fixture["bin_hours"],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    return ISO16358Calculator(str(config_path))
+
+
 def iso_common_golden_measured_inputs(case):
     point_pool = load_iso_hspf_golden_fixture()["measured_point_pool"]
     measured = {
@@ -322,6 +349,66 @@ def test_iso16358_2_hspf_seven_case_golden_matrix(tmp_path, case):
     assert not failures, (
         "ISO 16358-2 HSPF seven-case golden mismatch:\n"
         + iso_common_golden_failure_table(case, actual)
+    )
+
+
+def test_iso16358_hspf_production_table1_default_minus7_fallback(tmp_path):
+    calculator = make_iso_common_production_default_calculator(tmp_path)
+    capacity_factor, power_factor = calculator._iso_hspf_minus7_fallback_factors(
+        calculator.config["hspf"]
+    )
+    point_pool = load_iso_hspf_golden_fixture()["measured_point_pool"]
+
+    assert capacity_factor == pytest.approx(0.64), (
+        "Production ISO Table 1 -7 capacity fallback must remain 0.64."
+    )
+    assert power_factor == pytest.approx(0.82), (
+        "Production ISO Table 1 -7 power fallback must remain 0.82."
+    )
+    assert point_pool["7_full"]["capacity"] * capacity_factor == pytest.approx(2752.0), (
+        "Production default -7_full capacity must resolve from 0.64 * 7_full."
+    )
+    assert point_pool["7_full"]["power"] * power_factor == pytest.approx(1082.4), (
+        "Production default -7_full power must resolve from 0.82 * 7_full."
+    )
+    assert point_pool["7_half"]["capacity"] * capacity_factor == pytest.approx(1472.0), (
+        "Production default -7_half capacity must resolve from 0.64 * 7_half."
+    )
+    assert point_pool["7_half"]["power"] * power_factor == pytest.approx(369.0), (
+        "Production default -7_half power must resolve from 0.82 * 7_half."
+    )
+
+
+def test_iso16358_hspf_external_golden_minus7_override_is_fixture_scoped(tmp_path):
+    fixture = load_iso_hspf_golden_fixture()
+    override = fixture["conditions"]["external_calculator_minus7_fallback_override"]
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    capacity_factor, power_factor = calculator._iso_hspf_minus7_fallback_factors(
+        calculator.config["hspf"]
+    )
+    point_pool = fixture["measured_point_pool"]
+
+    assert override == {
+        "minus7_capacity_factor": 0.5,
+        "minus7_power_factor": 1.105,
+    }, "External golden fixture must keep its scoped -7 fallback override."
+    assert capacity_factor == pytest.approx(0.5), (
+        "External golden -7 capacity fallback must remain fixture-scoped at 0.5."
+    )
+    assert power_factor == pytest.approx(1.105), (
+        "External golden -7 power fallback must remain fixture-scoped at 1.105."
+    )
+    assert point_pool["7_full"]["capacity"] * capacity_factor == pytest.approx(2150.0), (
+        "External golden -7_full capacity must resolve from 0.5 * 7_full."
+    )
+    assert point_pool["7_full"]["power"] * power_factor == pytest.approx(1458.6), (
+        "External golden -7_full power must resolve from 1.105 * 7_full."
+    )
+    assert point_pool["7_half"]["capacity"] * capacity_factor == pytest.approx(1150.0), (
+        "External golden -7_half capacity must resolve from 0.5 * 7_half."
+    )
+    assert point_pool["7_half"]["power"] * power_factor == pytest.approx(497.25), (
+        "External golden -7_half power must resolve from 1.105 * 7_half."
     )
 
 

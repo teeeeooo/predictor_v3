@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "ISO16358-2 HSPF golden fixtures for the default Table 3 bin-hour matrix. These values must not be copied into production region configs.",
-  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. Current common HSPF engine is full/half-only v1, so these cases are expected to xfail until min/extended/frost optional branches are implemented. external_calculator_minus7_fallback_override uses 0.5 / 1.105 only to reproduce the user-provided external calculator golden matrix. It is not the ISO 16358-2 Table 1 default. The production ISO Table 1 default remains 0.64 / 0.82.",
+  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. This is an external calculator / official-sheet reproduction fixture, not a production ISO Table 1 default fixture. external_calculator_minus7_fallback_override uses 0.5 / 1.105 only to reproduce the user-provided external calculator golden matrix. It is not the ISO 16358-2 Table 1 default. The production ISO Table 1 default remains 0.64 / 0.82 and must be preserved by separate production/default-path guards.",
   "fixtures": {
     "iso16358_2_hspf_default_bin_seven_case_matrix": {
       "id": "iso16358_2_hspf_default_bin_seven_case_matrix",
@@ -139,7 +139,9 @@
       ],
       "notes": [
         "Reference bin-hours are ISO16358-2 Table 3 values and are not scaled.",
-        "Expected field names keep source terminology: LHST kWh and CHSE kWh."
+        "Expected field names keep source terminology: LHST kWh and CHSE kWh.",
+        "Do not mix this external calculator fallback matrix with Hong Kong-style reduced input handling or production ISO Table 1 default behavior in the common core.",
+        "Case 1 latest official 4.222 / 1157 is close to the current 4.225 / 1156 baseline, but audit showed it is not recovered by simply adding required 2_full or switching to ISO Table 1 0.64 / 0.82 defaults."
       ]
     }
   }
