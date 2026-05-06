@@ -1660,6 +1660,279 @@ class ISO16358Calculator:
             "cop_fe_f": cop_fe_f,
         }
 
+    def _iso_hspf_pair_power_by_boundary_cop(
+        self,
+        tj: float,
+        bl_h: float,
+        low_stage: str,
+        high_stage: str,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
+    ) -> float:
+        low_temp = self._iso_hspf_intersection_temp(
+            low_stage, resolved, frost, load_line
+        )
+        high_temp = self._iso_hspf_intersection_temp(
+            high_stage, resolved, frost, load_line
+        )
+        denominator = low_temp - high_temp
+        if denominator == 0:
+            raise ValueError(
+                "ISO 16358-2 HSPF branch boundary temperatures are equal."
+            )
+
+        cop_low = self._iso_hspf_boundary_cop(low_temp, low_stage, resolved, frost)
+        cop_high = self._iso_hspf_boundary_cop(high_temp, high_stage, resolved, frost)
+        cop_pair = cop_high + (cop_low - cop_high) * (tj - high_temp) / denominator
+        if cop_pair <= 0:
+            raise ValueError("ISO 16358-2 HSPF branch COP must be positive.")
+        return bl_h / cop_pair
+
+    def _iso_hspf_y_min_y_extd_case3_points(self, measured_inputs: dict) -> dict:
+        """
+        Trace-only point resolver for the GEMS/ZERL Y(Min) Y(Extd) case 3 audit.
+
+        The constants are the extracted workbook "data used" relationships for the
+        case 3 golden sample. This helper is intentionally not called from the
+        common ISO HSPF calculation path.
+        """
+        required = ("7_full", "7_half", "7_min", "2_ext")
+        for key in required:
+            if key not in measured_inputs:
+                raise ValueError(f"Y_MIN_Y_EXTD trace requires '{key}'.")
+
+        h1_full = measured_inputs["7_full"]
+        h1_half = measured_inputs["7_half"]
+        h1_min = measured_inputs["7_min"]
+        h2_ext_f = measured_inputs["2_ext"]
+
+        return {
+            "7_full": dict(h1_full),
+            "7_half": dict(h1_half),
+            "7_min": dict(h1_min),
+            "2_ext_f": dict(h2_ext_f),
+            "2_ext": {
+                "capacity": h2_ext_f["capacity"] * 1.12,
+                "power": h2_ext_f["power"] * 1.06,
+            },
+            "2_full_f": {
+                "capacity": h1_full["capacity"] * (3406.0 / 4300.0),
+                "power": h1_full["power"] * (1159.0 / 1320.0),
+            },
+            "2_full": {
+                "capacity": h1_full["capacity"] * (3765.0 / 4300.0),
+                "power": h1_full["power"] * (1233.0 / 1320.0),
+            },
+            "2_half_f": {
+                "capacity": h1_half["capacity"] * (1774.0 / 2300.0),
+                "power": h1_half["power"] * (395.0 / 450.0),
+            },
+            "2_half": {
+                "capacity": h1_half["capacity"] * (2000.0 / 2300.0),
+                "power": h1_half["power"] * (420.0 / 450.0),
+            },
+            "2_min_f": {
+                "capacity": h1_min["capacity"] * (529.0 / 680.0),
+                "power": h1_min["power"] * (132.0 / 150.0),
+            },
+            "2_min": {
+                "capacity": h1_min["capacity"] * (593.0 / 680.0),
+                "power": h1_min["power"] * (140.0 / 150.0),
+            },
+            "-7_ext": {
+                "capacity": h2_ext_f["capacity"] * (3468.0 / 4200.0),
+                "power": h2_ext_f["power"] * (1568.0 / 1700.0),
+            },
+            "-7_full": {
+                "capacity": h1_full["capacity"] * (2801.28 / 4300.0),
+                "power": h1_full["power"] * (1076.66 / 1320.0),
+            },
+            "-7_half": {
+                "capacity": h1_half["capacity"] * (1459.2 / 2300.0),
+                "power": h1_half["power"] * (367.36 / 450.0),
+            },
+            "-7_min": {
+                "capacity": h1_min["capacity"] * (435.0 / 680.0),
+                "power": h1_min["power"] * (123.0 / 150.0),
+            },
+        }
+
+    def _iso_hspf_y_min_y_extd_ext_curve(
+        self,
+        tj: float,
+        resolved: dict,
+        frost: bool
+    ) -> dict:
+        ext_2 = resolved["2_ext_f"] if frost else resolved["2_ext"]
+        ext_m7 = resolved["-7_ext"]
+        return {
+            "capacity": ext_m7["capacity"]
+            + (ext_2["capacity"] - ext_m7["capacity"]) * (tj + 7.0) / 9.0,
+            "power": ext_m7["power"]
+            + (ext_2["power"] - ext_m7["power"]) * (tj + 7.0) / 9.0,
+        }
+
+    def calculate_hspf_iso16358_y_min_y_extd_trace(
+        self,
+        measured_inputs: dict,
+        rated_heating_capacity: float
+    ) -> dict:
+        """
+        Trace-only GEMS/ZERL CH branch evaluator for ISO16358-2 HSPF case 3.
+
+        This path is isolated from calculate_hspf_iso16358_common() and exists
+        only to audit the Y(Min) Y(Extd) component-sum model against extracted
+        workbook observations.
+        """
+        hspf_cfg = self.config.get("hspf", {})
+        correction_cfg = hspf_cfg.get("correction", {})
+        cd = float(correction_cfg.get("cd", self.Cd))
+        aux_cop = float(correction_cfg.get("aux_cop", 1.0))
+        if aux_cop <= 0:
+            raise ValueError("aux_cop must be positive.")
+
+        load_line_cfg = hspf_cfg.get("load_line", {})
+        zero_load_temp = float(load_line_cfg["zero_load_temp"])
+        full_load_temp = float(load_line_cfg["full_load_temp"])
+        rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
+        l_h_ref = rated_heating_capacity * rated_capacity_factor
+        load_line = (
+            -l_h_ref / (zero_load_temp - full_load_temp),
+            l_h_ref * zero_load_temp / (zero_load_temp - full_load_temp),
+        )
+
+        frost_boundaries = hspf_cfg.get("frost_boundaries", {})
+        frost_lower = float(frost_boundaries.get("lower", -7.0))
+        frost_upper = float(frost_boundaries.get("upper", 5.5))
+        bin_hours_key = hspf_cfg.get("bin_hours_key", "hspf_bin_hours")
+
+        resolved = self._iso_hspf_y_min_y_extd_case3_points(measured_inputs)
+        bin_details = []
+        hstl = 0.0
+        ch48 = 0.0
+
+        for bin_data in self.config.get(bin_hours_key, []):
+            tj = float(bin_data.get("tj", 0.0))
+            hours = float(bin_data.get("nj", 0.0))
+            if hours <= 0:
+                continue
+
+            lc = l_h_ref * (zero_load_temp - tj) / (
+                zero_load_temp - full_load_temp
+            )
+            if lc <= 0:
+                continue
+
+            frost = frost_lower < tj < frost_upper
+            phi_min = self._iso_hspf_capacity_curve(tj, "min", resolved, frost)
+            phi_half = self._iso_hspf_capacity_curve(tj, "half", resolved, frost)
+            phi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, frost)
+            ext = self._iso_hspf_y_min_y_extd_ext_curve(tj, resolved, frost)
+            phi_ext = ext["capacity"]
+            p_ext = ext["power"]
+
+            components = {
+                "BM": 0.0,
+                "BO": 0.0,
+                "BQ": 0.0,
+                "BS": 0.0,
+                "BT": 0.0,
+                "BU": 0.0,
+                "BX": 0.0,
+                "BZ": 0.0,
+                "CB": 0.0,
+                "CD": 0.0,
+                "CE": 0.0,
+                "CF": 0.0,
+            }
+            active_components = []
+
+            if frost:
+                if lc <= phi_min:
+                    x = lc / phi_min
+                    fpl = 1.0 - cd * (1.0 - x)
+                    p_min = self._iso_hspf_power_curve(tj, "min", resolved, True)
+                    components["BX"] = x * p_min / fpl
+                    active_components.append("BX")
+                elif lc <= phi_half:
+                    components["BZ"] = self._iso_hspf_pair_power_by_boundary_cop(
+                        tj, lc, "min", "half", resolved, True, load_line
+                    )
+                    active_components.append("BZ")
+                elif lc <= phi_full:
+                    components["CB"] = self._iso_hspf_pair_power_by_boundary_cop(
+                        tj, lc, "half", "full", resolved, True, load_line
+                    )
+                    active_components.append("CB")
+                elif lc <= phi_ext:
+                    formula_resolved = dict(resolved)
+                    formula_resolved["2_ext"] = resolved["2_ext_f"]
+                    formula50 = self._iso_hspf_formula50_full_extended_frost_power(
+                        tj, lc, formula_resolved, load_line
+                    )
+                    components["CD"] = formula50["P_fe"]
+                    active_components.append("CD")
+                else:
+                    components["CE"] = p_ext
+                    components["CF"] = (lc - phi_ext) / aux_cop
+                    active_components.extend(["CE", "CF"])
+            else:
+                if lc <= phi_min:
+                    x = lc / phi_min
+                    fpl = 1.0 - cd * (1.0 - x)
+                    p_min = self._iso_hspf_power_curve(tj, "min", resolved, False)
+                    components["BM"] = x * p_min / fpl
+                    active_components.append("BM")
+                elif lc <= phi_half:
+                    components["BO"] = self._iso_hspf_pair_power_by_boundary_cop(
+                        tj, lc, "min", "half", resolved, False, load_line
+                    )
+                    active_components.append("BO")
+                elif lc <= phi_full:
+                    components["BQ"] = self._iso_hspf_pair_power_by_boundary_cop(
+                        tj, lc, "half", "full", resolved, False, load_line
+                    )
+                    active_components.append("BQ")
+                elif lc <= phi_ext:
+                    components["BS"] = self._iso_hspf_pair_power_by_boundary_cop(
+                        tj, lc, "full", "ext", resolved, False, load_line
+                    )
+                    active_components.append("BS")
+                else:
+                    components["BT"] = p_ext
+                    components["BU"] = (lc - phi_ext) / aux_cop
+                    active_components.extend(["BT", "BU"])
+
+            cg_total_power = sum(components.values())
+            ch_energy = cg_total_power * hours
+            hstl += lc * hours
+            ch48 += ch_energy
+
+            bin_details.append({
+                "tj": tj,
+                "hours": hours,
+                "Lc": lc,
+                "frost": frost,
+                "phi_min": phi_min,
+                "phi_half": phi_half,
+                "phi_full": phi_full,
+                "phi_ext": phi_ext,
+                **components,
+                "CG_total_power": cg_total_power,
+                "CH_energy": ch_energy,
+                "active_components": active_components,
+            })
+
+        hspf = hstl / ch48 if ch48 > 0 else 0.0
+        return {
+            "hspf": hspf,
+            "hstl_wh": hstl,
+            "ch48_wh": ch48,
+            "bin_details": bin_details,
+            "resolved_points": resolved,
+        }
+
     def calculate_hspf_iso16358_common(
         self,
         measured_inputs: dict,

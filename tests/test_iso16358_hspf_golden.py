@@ -357,6 +357,56 @@ def test_iso16358_2_hspf_seven_case_golden_matrix(tmp_path, case):
     )
 
 
+def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+
+    common_result = calculator.calculate_hspf(measured)
+    assert common_result["hspf"] == pytest.approx(4.308, abs=0.001)
+    assert common_result["hsec_wh"] == pytest.approx(1134087.840521695, abs=1e-6)
+
+    trace = calculator.calculate_hspf_iso16358_y_min_y_extd_trace(
+        measured,
+        rated_heating_capacity=measured["rated_heating_capacity"],
+    )
+    observed_total_power = {
+        -1.0: 1482.0,
+        0.0: 1298.0,
+        1.0: 1136.0,
+        2.0: 971.0,
+        3.0: 833.0,
+        4.0: 715.0,
+        5.0: 614.0,
+        6.0: 456.0,
+        7.0: 412.0,
+        8.0: 373.0,
+        9.0: 333.0,
+        10.0: 293.0,
+        11.0: 253.0,
+        12.0: 212.0,
+        13.0: 170.0,
+        14.0: 134.0,
+        15.0: 95.0,
+        16.0: 51.0,
+    }
+    details_by_temp = {item["tj"]: item for item in trace["bin_details"]}
+
+    assert trace["ch48_wh"] == pytest.approx(1117679.0, abs=600.0)
+    assert len(details_by_temp) == len(observed_total_power)
+    for tj, expected_power in observed_total_power.items():
+        detail = details_by_temp[tj]
+        assert detail["CG_total_power"] == pytest.approx(expected_power, abs=1.2)
+        assert detail["CH_energy"] == pytest.approx(
+            detail["CG_total_power"] * detail["hours"],
+            abs=1e-9,
+        )
+        assert set(detail["active_components"]).issubset(
+            {"BM", "BO", "BQ", "BS", "BT", "BU", "BX", "BZ", "CB", "CD", "CE", "CF"}
+        )
+
+
 def test_iso16358_hspf_production_table1_default_minus7_fallback(tmp_path):
     calculator = make_iso_common_production_default_calculator(tmp_path)
     capacity_factor, power_factor = calculator._iso_hspf_minus7_fallback_factors(
