@@ -68,11 +68,11 @@
       "cd": 0.25
     },
     "load_line": {
-      "source": "rated_heating_capacity",
+      "source": "rated_cooling_capacity",
       "zero_load_temp": 16.0,
-      "full_load_temp": -7.0,
+      "full_load_temp": 0.0,
       "rated_capacity_factor": 0.82,
-      "_note": "Spec uses BLc(35), but implementation uses heating rated capacity based on official calculation sheet"
+      "_note": "BL_h(0°C) = rated_cooling_capacity * 0.82"
     },
     "bin_hours_key": "hspf_bin_hours"
   },

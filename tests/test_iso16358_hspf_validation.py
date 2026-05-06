@@ -276,25 +276,66 @@ def test_ks_c9306_hspf_config_load_line_source_must_be_allowed(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="Invalid KS C 9306 HSPF load_line source: unknown_capacity",
+        match="KS C 9306 HSPF requires rated_cooling_capacity, not 'unknown_capacity'",
     ):
         calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
 
 
-def test_ks_c9306_hspf_config_load_line_rated_heating_source_passes(tmp_path):
+def test_ks_c9306_hspf_config_load_line_requires_cooling_capacity_source(tmp_path):
     calculator = make_ks_config_calculator(
         tmp_path,
         {
             "source": "rated_heating_capacity",
             "zero_load_temp": 16.0,
-            "full_load_temp": -7.0,
+            "full_load_temp": 0.0,
             "rated_capacity_factor": 0.82,
         },
     )
 
-    result = calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
+    with pytest.raises(
+        ValueError,
+        match="KS C 9306 HSPF requires rated_cooling_capacity, not 'rated_heating_capacity'",
+    ):
+        calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
+
+
+def test_ks_c9306_hspf_config_load_line_missing_cooling_capacity_value(tmp_path):
+    calculator = make_ks_config_calculator(
+        tmp_path,
+        {
+            "source": "rated_cooling_capacity",
+            "zero_load_temp": 16.0,
+            "full_load_temp": 0.0,
+            "rated_capacity_factor": 0.82,
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="KS C 9306 HSPF requires rated_cooling_capacity for heating building load",
+    ):
+        calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
+
+
+def test_ks_c9306_hspf_config_load_line_with_cooling_capacity_passes(tmp_path):
+    calculator = make_ks_config_calculator(
+        tmp_path,
+        {
+            "source": "rated_cooling_capacity",
+            "zero_load_temp": 16.0,
+            "full_load_temp": 0.0,
+            "rated_capacity_factor": 0.82,
+        },
+    )
+    calculator.config["hspf_bin_hours"] = [{"j": 1, "tj": 0.0, "nj": 1}]
+    data = schema_completeness_fixture_not_expected_tuning()
+    data["rated_cooling_capacity"] = 3600.0
+
+    result = calculator.calculate_hspf(data)
 
     assert result["HSPF"] > 0
+    assert result["bin_details"][0]["bin_load"] == pytest.approx(2952.0)
+
 
 
 def test_iso_common_hspf_config_aux_cop_must_be_positive(tmp_path):
@@ -319,25 +360,23 @@ def test_iso_common_hspf_call_aux_cop_changes_auxiliary_energy(tmp_path):
 
 
 def test_iso_common_hspf_frost_boundaries_come_from_config(tmp_path):
-    measured = iso_common_points()
-    measured["2_full"] = {"capacity": 1000.0, "power": 900.0}
-    frost_calculator = make_iso_common_calculator(
-        tmp_path,
-        bin_hours=[{"j": 1, "tj": 0, "nj": 1}],
-    )
+    bin_hours = [{"j": 1, "tj": -3.0, "nj": 1}]
+    points = iso_common_points() | {
+        "2_ext": {"capacity": 2600.0, "power": 700.0},
+    }
+    frost_calculator = make_iso_common_calculator(tmp_path, bin_hours=bin_hours)
     non_frost_calculator = make_iso_common_calculator(
         tmp_path,
-        {"frost_boundaries": {"lower": 1.0, "upper": 5.5}},
-        bin_hours=[{"j": 1, "tj": 0, "nj": 1}],
+        {"frost_boundaries": {"lower": -2.0, "upper": 5.5}},
+        bin_hours=bin_hours,
     )
 
-    frost_result = frost_calculator.calculate_hspf(measured)
-    non_frost_result = non_frost_calculator.calculate_hspf(measured)
+    frost_result = frost_calculator.calculate_hspf(points)
+    non_frost_result = non_frost_calculator.calculate_hspf(points)
 
-    assert frost_result["bin_details"][0]["P_j"] != pytest.approx(
-        non_frost_result["bin_details"][0]["P_j"],
-        abs=0.000001,
-    )
+    assert frost_result["bin_details"][0]["case"] == "formula50_full_extended_frost"
+    assert non_frost_result["bin_details"][0]["case"] == "saturated"
+
 
 
 def test_iso_common_hspf_load_line_source_is_required(tmp_path):

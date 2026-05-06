@@ -1006,31 +1006,27 @@ class ISO16358Calculator:
                 "full_load_temp, and rated_capacity_factor are required."
             )
 
-        # KS C 9306 HSPF load line
-        # Spec text: BLh(0) = BLc(35) x 0.82 (cooling reference)
-        # However, official calculation sheet does NOT require cooling rated capacity input.
-        # Implementation uses rated_heating_capacity based on official sheet behavior.
-        # WARNING: Do NOT change to rated_cooling_capacity without full verification.
+        # KS C 9306 HSPF load line: BL_h(0°C) = rated_cooling_capacity * 0.82
         source = load_line["source"]
-        allowed_sources = {
-            "rated_heating_capacity",
-            "rated_cooling_capacity",
-            "declared_capacity",
-        }
-        if source not in allowed_sources:
+        if source != "rated_cooling_capacity":
             raise ValueError(
-                f"Invalid KS C 9306 HSPF load_line source: {source}."
+                f"KS C 9306 HSPF requires rated_cooling_capacity, not '{source}'."
             )
+            
         reference_capacity = measured_inputs.get(source)
         if reference_capacity is None:
-            return None
+            raise ValueError("KS C 9306 HSPF requires rated_cooling_capacity for heating building load.")
+        
+        self._validate_ks_hspf_positive_number(reference_capacity, "rated_cooling_capacity")
 
         zero_load_temp = float(load_line["zero_load_temp"])
         full_load_temp = float(load_line["full_load_temp"])
         if zero_load_temp == full_load_temp:
             raise ValueError("KS C 9306 HSPF load line temperatures cannot be equal.")
-        full_load = float(reference_capacity) * float(load_line["rated_capacity_factor"])
-        slope = full_load / (full_load_temp - zero_load_temp)
+        
+        # BL_h(tj) = (rated_cooling_capacity * 0.82) * (zero_load_temp - tj) / (zero_load_temp - 0)
+        full_load_at_0 = float(reference_capacity) * float(load_line["rated_capacity_factor"])
+        slope = full_load_at_0 / (full_load_temp - zero_load_temp)
         intercept = -slope * zero_load_temp
         return slope, intercept
 
@@ -1586,6 +1582,12 @@ class ISO16358Calculator:
         )
 
     def _iso_hspf_extended_minus7_default(self, resolved: dict) -> dict:
+        if "-7_ext" in resolved:
+            return {
+                "capacity": float(resolved["-7_ext"]["capacity"]),
+                "power": float(resolved["-7_ext"]["power"]),
+            }
+        
         ext_2_f = resolved["2_ext"]
         return {
             "capacity": float(ext_2_f["capacity"]) * 0.734,
@@ -1722,23 +1724,23 @@ class ISO16358Calculator:
                 }
         
         # Step 2: 2°C point generation (Footnote d / Footnote c)
-        # Footnote c: measured 2_half must be re-calculated using footnote d even if it exists.
-        # Footnote d: Pi_x(2) = Pi_x(-7) + [Pi_x(7) - Pi_x(-7)] * 9/14
+        # Footnote c: When this value is measured, pi_x(2) and/or P_x(2) shall not be calculated 
+        # from this measured value, but the equations in footnote d shall be used instead.
         for stage in active_stages:
             key_2 = f"2_{stage}"
             key_2_f = f"2_{stage}_f"
             key_7 = f"7_{stage}"
             key_m7 = f"-7_{stage}"
 
+            # Preserve measured 2_full for trace/debug if present, but do not use as anchor
             if key_2 in resolved:
-                resolved[key_2_f] = dict(resolved[key_2])
+                resolved[f"measured_{key_2}"] = dict(resolved[key_2])
             
             calculated_2 = {
                 "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
                 "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
             }
-            if key_2_f not in resolved:
-                resolved[key_2_f] = dict(calculated_2)
+            resolved[key_2_f] = dict(calculated_2)
             resolved[key_2] = dict(calculated_2)
 
         # 3. Load line parameters

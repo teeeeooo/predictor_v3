@@ -106,14 +106,12 @@ production `hspf_bin_hours`에는 golden/sample/test fixture 전용 2-bin 값을
 
 | Field | Value |
 | --- | --- |
-| `source` | `rated_heating_capacity` |
+| `source` | `rated_cooling_capacity` |
 | `rated_capacity_factor` | `0.82` |
-| `full_load_temp` | `-7.0` |
+| `full_load_temp` | `0.0` |
 | `zero_load_temp` | `16.0` |
 
-규격 문구에는 `BLc(35) × 0.82` cooling reference가 등장한다. 다만 공식 계산 시트는 cooling rated capacity 입력 없이 heating rated capacity 기준으로 동작한다. 따라서 현재 구현은 공식 계산 시트 동작에 맞춰 `rated_heating_capacity`를 사용한다.
-
-향후 원문/시트 재검증 전 `rated_cooling_capacity`로 변경하지 않는다.
+규격 문구의 `BLc(35) × 0.82` cooling reference를 따른다. 현재 구현은 `rated_cooling_capacity`를 필수 입력으로 요구하며, 0°C 난방 부하는 `rated_cooling_capacity × 0.82`로 계산한다.
 
 ## 6.5 HSPF 31-Bin Sanity Output
 

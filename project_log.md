@@ -330,3 +330,25 @@
 - min stage 도입은 lowest-stage cycling branch와 min~half interpolation branch만 바꿔야 하며, half~full branch를 함께 조정하면 slice boundary가 흐려진다.
 - expected 정정은 slice 대상 case에만 적용하고, 후속 Formula slice의 golden은 별도 작업으로 남겨야 한다.
 - external calculator reproduction fixture와 production standard default는 같은 common core를 지나더라도 config scope를 테스트로 분리해야 한다.
+
+---
+
+## 2026-05-06 — ISO HSPF fixture 정정 및 KS cooling load-line 고정
+
+### Tried
+- ISO16358-2 HSPF seven-case fixture label/expected를 정정하고 case 8을 추가했다.
+- KS C 9306 HSPF region config load line을 heating-rated 기준에서 cooling-rated 기준으로 전환했다.
+- ISO common frost boundary guard를 skip 없이 실제 branch 검증으로 복구했다.
+
+### Result
+- KS C 9306 HSPF config load line은 `rated_cooling_capacity`만 허용하며, `BL_h(0°C) = rated_cooling_capacity × 0.82`를 테스트로 고정했다.
+- `rated_heating_capacity` source 또는 cooling capacity 누락은 `ValueError`로 실패한다.
+- 전체 테스트는 `143 passed, 6 xfailed` 상태다.
+
+### Decision
+- KS C 9306 HSPF production load-line source는 `rated_cooling_capacity`로 고정한다.
+- ISO common frost boundary test는 KS load-line 변경과 독립된 guard로 유지하며 skip 처리하지 않는다.
+
+### Lesson
+- fixture correction과 regional load-line bug fix는 커밋을 분리해야 추적성이 좋다.
+- region config source 변경은 validation guard와 notes를 함께 갱신해야 역방향 수정 위험을 줄일 수 있다.

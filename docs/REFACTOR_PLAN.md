@@ -128,7 +128,7 @@
 한국 고유 관행(시험점, 보정계수)을 존중하여 common ISO와 무리하게 통합하지 않는다.
 
 - KS HSPF는 `ks_c_9306_hspf` 전용 프로필 사용.
-- HSPF load line은 한국 공식 시트 기준(`rated_cap * 0.82`) 유지.
+- HSPF load line은 냉방 정격 기준(`rated_cooling_capacity * 0.82`) 유지.
 - 규격과 시트 간 차이는 문서로 보존.
 
 ### 6.2 주의 항목

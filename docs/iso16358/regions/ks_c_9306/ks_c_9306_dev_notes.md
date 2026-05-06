@@ -295,7 +295,7 @@ Region config `hspf.load_line` schema:
 | `full_load_temp` | Yes | full heating load temperature이다. |
 | `rated_capacity_factor` | Yes | 기준 capacity에 곱하는 계수이다. |
 
-현재 Korea는 `source = rated_heating_capacity`, `rated_capacity_factor = 0.82`를 사용한다. `capacity_source` key는 사용하지 않는다.
+현재 Korea는 `source = rated_cooling_capacity`, `full_load_temp = 0.0`, `rated_capacity_factor = 0.82`를 사용한다. `capacity_source` key는 사용하지 않는다.
 
 Production config와 golden fixture 분리:
 
