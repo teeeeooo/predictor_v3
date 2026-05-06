@@ -383,3 +383,4 @@
 - Excel calculator 기반 golden을 맞출 때는 Formula 번호 단위 구현만으로 부족할 수 있다.
 - 계산기 시트가 component-sum table 구조를 쓰는 경우, Python 코드도 동일한 중간 trace 구조를 먼저 재현해야 한다.
 - Codex에는 Excel 파일 전체를 읽히지 말고, ChatGPT/수동 분석으로 추출한 핵심 facts만 전달하는 방식이 토큰과 오해를 줄인다.
+- 추가 Excel formula extraction에서 CH/CG/component path에 ROUND/ROUNDUP이 없고, H2/H3 default resolver 및 BM~CF gate 구조가 cell formula 기준으로 확인되었다. 잔여 차이는 rounding보다 frost `CB` component의 raw dependency 차이로 좁혀졌다.
