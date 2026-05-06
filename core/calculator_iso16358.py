@@ -1482,7 +1482,7 @@ class ISO16358Calculator:
 
     def _iso_hspf_capacity_curve(self, tj: float, stage: str, resolved: dict, frost: bool) -> float:
         """
-        ISO 16358-2 heating capacity curve evaluation for v1 (full/half only).
+        ISO 16358-2 heating capacity curve evaluation.
         """
         p7 = resolved[f"7_{stage}"]
         pm7 = resolved[f"-7_{stage}"]
@@ -1492,12 +1492,12 @@ class ISO16358Calculator:
             return pm7["capacity"] + (p7["capacity"] - pm7["capacity"]) * (tj + 7.0) / 14.0
         else:
             # frost: -7.0 < tj < 5.5
-            p2 = resolved[f"2_{stage}"]
+            p2 = resolved.get(f"2_{stage}_f", resolved[f"2_{stage}"])
             return pm7["capacity"] + (p2["capacity"] - pm7["capacity"]) * (tj + 7.0) / 9.0
 
     def _iso_hspf_power_curve(self, tj: float, stage: str, resolved: dict, frost: bool) -> float:
         """
-        ISO 16358-2 heating power curve evaluation for v1 (full/half only).
+        ISO 16358-2 heating power curve evaluation.
         """
         p7 = resolved[f"7_{stage}"]
         pm7 = resolved[f"-7_{stage}"]
@@ -1507,8 +1507,69 @@ class ISO16358Calculator:
             return pm7["power"] + (p7["power"] - pm7["power"]) * (tj + 7.0) / 14.0
         else:
             # frost: -7.0 < tj < 5.5
-            p2 = resolved[f"2_{stage}"]
+            p2 = resolved.get(f"2_{stage}_f", resolved[f"2_{stage}"])
             return pm7["power"] + (p2["power"] - pm7["power"]) * (tj + 7.0) / 9.0
+
+    def _iso_hspf_capacity_line(self, stage: str, resolved: dict, frost: bool) -> tuple:
+        if frost:
+            t1, t2 = -7.0, 2.0
+        else:
+            t1, t2 = -7.0, 7.0
+        c1 = self._iso_hspf_capacity_curve(t1, stage, resolved, frost)
+        c2 = self._iso_hspf_capacity_curve(t2, stage, resolved, frost)
+        slope = (c2 - c1) / (t2 - t1)
+        intercept = c1 - slope * t1
+        return slope, intercept
+
+    def _iso_hspf_intersection_temp(
+        self,
+        stage: str,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
+    ) -> float:
+        load_slope, load_intercept = load_line
+        capacity_slope, capacity_intercept = self._iso_hspf_capacity_line(
+            stage, resolved, frost
+        )
+        denominator = load_slope - capacity_slope
+        if denominator == 0:
+            raise ValueError("ISO 16358-2 HSPF load line and capacity line are parallel.")
+        return (capacity_intercept - load_intercept) / denominator
+
+    def _iso_hspf_boundary_cop(
+        self,
+        temp: float,
+        stage: str,
+        resolved: dict,
+        frost: bool
+    ) -> float:
+        capacity = self._iso_hspf_capacity_curve(temp, stage, resolved, frost)
+        power = self._iso_hspf_power_curve(temp, stage, resolved, frost)
+        if power <= 0:
+            raise ValueError("ISO 16358-2 HSPF boundary power must be positive.")
+        return capacity / power
+
+    def _iso_hspf_min_half_power_by_formula_44_48(
+        self,
+        tj: float,
+        bl_h: float,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
+    ) -> float:
+        min_temp = self._iso_hspf_intersection_temp("min", resolved, frost, load_line)
+        half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
+        denominator = min_temp - half_temp
+        if denominator == 0:
+            raise ValueError("ISO 16358-2 HSPF min and half boundary temperatures are equal.")
+
+        cop_min = self._iso_hspf_boundary_cop(min_temp, "min", resolved, frost)
+        cop_half = self._iso_hspf_boundary_cop(half_temp, "half", resolved, frost)
+        cop_mh = cop_half + (cop_min - cop_half) * (tj - half_temp) / denominator
+        if cop_mh <= 0:
+            raise ValueError("ISO 16358-2 HSPF min-half branch COP must be positive.")
+        return bl_h / cop_mh
 
     def _iso_hspf_minus7_fallback_factors(self, hspf_cfg: dict) -> tuple:
         minus7_fallback = hspf_cfg.get("external_calculator_minus7_fallback_override", {})
@@ -1546,6 +1607,11 @@ class ISO16358Calculator:
                 raise ValueError(f"Measured point '{p_key}' capacity must be a positive number.")
             if not isinstance(p_data["power"], (int, float)) or p_data["power"] <= 0:
                 raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
+        for p_key, p_data in points_for_resolution.items():
+            if not isinstance(p_data["capacity"], (int, float)) or p_data["capacity"] <= 0:
+                raise ValueError(f"Measured point '{p_key}' capacity must be a positive number.")
+            if not isinstance(p_data["power"], (int, float)) or p_data["power"] <= 0:
+                raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
 
         hspf_cfg = self.config.get("hspf", {})
         correction_cfg = hspf_cfg.get("correction", {})
@@ -1560,8 +1626,12 @@ class ISO16358Calculator:
             self._iso_hspf_minus7_fallback_factors(hspf_cfg)
         )
         
+        active_stages = ["full", "half"]
+        if "7_min" in resolved:
+            active_stages.append("min")
+
         # Step 1: -7°C derived point (if not measured)
-        for stage in ["full", "half"]:
+        for stage in active_stages:
             key_m7 = f"-7_{stage}"
             key_7 = f"7_{stage}"
             if key_m7 not in resolved:
@@ -1573,18 +1643,22 @@ class ISO16358Calculator:
         # Step 2: 2°C point generation (Footnote d / Footnote c)
         # Footnote c: measured 2_half must be re-calculated using footnote d even if it exists.
         # Footnote d: Pi_x(2) = Pi_x(-7) + [Pi_x(7) - Pi_x(-7)] * 9/14
-        for stage in ["full", "half"]:
+        for stage in active_stages:
             key_2 = f"2_{stage}"
+            key_2_f = f"2_{stage}_f"
             key_7 = f"7_{stage}"
             key_m7 = f"-7_{stage}"
+
+            if key_2 in resolved:
+                resolved[key_2_f] = dict(resolved[key_2])
             
-            # Apply footnote d for half stage regardless of measurement (footnote c)
-            # Apply footnote d for full stage only if missing
-            if stage == "half" or key_2 not in resolved:
-                resolved[key_2] = {
-                    "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
-                    "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
-                }
+            calculated_2 = {
+                "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
+                "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
+            }
+            if key_2_f not in resolved:
+                resolved[key_2_f] = dict(calculated_2)
+            resolved[key_2] = dict(calculated_2)
 
         # 3. Load line parameters
         load_line_cfg = hspf_cfg.get("load_line", {})
@@ -1610,6 +1684,10 @@ class ISO16358Calculator:
             raise ValueError("Invalid ISO 16358-2 HSPF load_line: rated_capacity_factor must be positive.")
         
         L_h_ref = rated_heating_capacity * rated_capacity_factor
+        load_line = (
+            -L_h_ref / (zero_load_temp - full_load_temp),
+            L_h_ref * zero_load_temp / (zero_load_temp - full_load_temp),
+        )
         frost_boundaries = hspf_cfg.get("frost_boundaries", {})
         frost_lower = float(frost_boundaries.get("lower", -7.0))
         frost_upper = float(frost_boundaries.get("upper", 5.5))
@@ -1641,10 +1719,16 @@ class ISO16358Calculator:
             p_full = self._iso_hspf_power_curve(tj, "full", resolved, frost)
             pi_half = self._iso_hspf_capacity_curve(tj, "half", resolved, frost)
             p_half = self._iso_hspf_power_curve(tj, "half", resolved, frost)
+            has_min_stage = "min" in active_stages
+            if has_min_stage:
+                pi_min = self._iso_hspf_capacity_curve(tj, "min", resolved, frost)
+                p_min = self._iso_hspf_power_curve(tj, "min", resolved, frost)
+            else:
+                pi_min = None
+                p_min = None
             
-            # Lowest stage is Half for v1
-            pi_lowest = pi_half
-            p_lowest = p_half
+            pi_lowest = pi_min if has_min_stage else pi_half
+            p_lowest = p_min if has_min_stage else p_half
             
             case = "skip"
             hp_energy = 0.0
@@ -1659,6 +1743,13 @@ class ISO16358Calculator:
                 plf = 1.0 - cd * (1.0 - X)
                 hp_energy = (X * p_lowest / plf) * nj
                 p_j = X * p_lowest / plf
+            elif has_min_stage and bl_h <= pi_half:
+                case = "min_half_interpolation_frost" if frost else "min_half_interpolation"
+                p_interp = self._iso_hspf_min_half_power_by_formula_44_48(
+                    tj, bl_h, resolved, frost, load_line
+                )
+                hp_energy = p_interp * nj
+                p_j = p_interp
             elif bl_h <= pi_full:
                 # Case B: Interpolation
                 case = "interpolation"

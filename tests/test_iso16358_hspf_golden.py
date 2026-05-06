@@ -154,8 +154,6 @@ def iso_hspf_xfail_reason(case):
     case_id = case["case_id"]
     if case_id == 1:
         return "ISO16358-2 common HSPF v1: full/half-only path, min stage not implemented"
-    if case_id == 2:
-        return "ISO16358-2 common HSPF v1: min stage not implemented"
     return "ISO16358-2 common HSPF v1: extended/frost optional branch not implemented"
 
 
@@ -163,8 +161,8 @@ def iso_hspf_golden_cases():
     fixture = load_iso_hspf_golden_fixture()
     cases = []
     for case in fixture["cases"]:
-        if case["case_id"] == 1:
-            cases.append(pytest.param(case, id="case_1"))
+        if case["case_id"] in (1, 2):
+            cases.append(pytest.param(case, id=f"case_{case['case_id']}"))
         else:
             cases.append(
                 pytest.param(

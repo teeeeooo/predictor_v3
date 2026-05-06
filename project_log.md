@@ -294,3 +294,30 @@
 
 ### Lesson
 - “먼저 구현하고 나중에 공통화”를 막으려면 core/handler boundary와 validation rule을 구현 전에 문서화해야 한다.
+
+---
+
+## 2026-05-06 — ISO16358-2 HSPF default-bin case 2 안정화
+
+### Tried
+- ISO common HSPF path에서 `7_min`이 제공된 경우에만 minimum stage를 활성화했다.
+- case 2 범위에서 min~half branch를 Formula 44/48 boundary COP interpolation과 Formula 45 `P(tj) = Lh(tj) / COP(tj)` 경로로 계산했다.
+- case 2는 xfail 해제하고, case 3~7은 strict xfail로 유지했다.
+
+### Result
+- case 1 full/half-only regression은 기존 baseline으로 pass 유지했다.
+- case 2는 HSPF 4.289, LHST/HSTL 4885 kWh, CHSE/HSEC 1139 kWh golden tolerance 안에 들어왔다.
+- 전체 테스트는 `137 passed, 5 xfailed` 상태다.
+- magic correction factor `1.01861`은 추가하지 않았다.
+
+### Failed / Risk
+- case 1의 최신 external golden 4.222 / 1157은 half~full Formula 46/49 slice에서 다시 다룰 항목으로 남겼다.
+- case 3~7은 extended/frost optional branch와 후속 Formula 46/47/49/50 범위가 남아 있어 strict xfail을 유지한다.
+
+### Decision
+- Slice 1A는 case 2 calculation only로 닫고, extended branch나 Hong Kong/Korea handler/profile은 변경하지 않는다.
+- Hong Kong/MEELS/region/country 여부는 common core 계산 분기 조건으로 사용하지 않는다.
+
+### Lesson
+- min stage 도입은 lowest-stage cycling branch와 min~half interpolation branch만 바꿔야 하며, half~full branch를 함께 조정하면 slice boundary가 흐려진다.
+- expected 정정은 slice 대상 case에만 적용하고, 후속 Formula slice의 golden은 별도 작업으로 남겨야 한다.

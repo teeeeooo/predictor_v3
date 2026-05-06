@@ -76,9 +76,9 @@
           "points": ["7_min"],
           "expected": {
             "total_bin_hours": 2866,
-            "hspf": 4.291,
+            "hspf": 4.289,
             "lhst_kwh": 4885.0,
-            "chse_kwh": 1138.0
+            "chse_kwh": 1139.0
           }
         },
         {
