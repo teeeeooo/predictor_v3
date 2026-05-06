@@ -28,6 +28,7 @@ This skill is for pre-coding design clarification. It is especially important wh
 - If the user gives a vague, contradictory, hand-wavy, or overly broad answer, ask a sharper follow-up instead of moving on.
 - If the user answers with a new branch or hidden assumption, follow that branch until it is resolved before returning to the previous branch.
 - If a question can be answered by inspecting the codebase, inspect only the relevant files/ranges instead of asking the user.
+- Documentation files under `docs/designs/` may be created only when the user asks for a final summary or Design Gate Summary, unless the user explicitly asks not to create files.
 
 ## predictor_v3 Design Principles
 
@@ -98,6 +99,27 @@ When stopping, summarize:
 - required tests
 - document updates
 - next concrete action
+
+## Design Document Persistence
+
+When the user asks for a final summary, implementation plan, or Design Gate Summary, create a design document under `docs/designs/` unless the user explicitly asks not to create a file.
+
+Before creating the file:
+- Do not edit code.
+- Ensure `docs/designs/` exists.
+- Use a concise kebab-case filename.
+- Prefer the current date if available from the environment or conversation context.
+- Use this filename pattern:
+  - `docs/designs/YYYY-MM-DD-<short-task-name>.md`
+
+The saved document must include the full Design Gate Summary using the Final Output Format below.
+
+After saving the document, report:
+- created file path
+- unresolved risks
+- whether implementation may start or still needs user approval
+
+If the user asks for “summary only”, “출력만”, “파일 만들지 마”, or equivalent, do not create a file and only print the summary.
 
 ## Final Output Format
 
