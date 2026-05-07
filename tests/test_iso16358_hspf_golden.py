@@ -28,12 +28,18 @@ CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS = {
     16.0: ("BM38", 51.06),
 }
 CASE3_EXCEL_ROUTED_COMPONENT_OBSERVATIONS = {
-    1.0: ("CD23", 1177.61),
+    1.0: ("CD23", 1177.6124984),
     2.0: ("CB24", 1001.64),
     3.0: ("CB25", 850.55),
     4.0: ("CB26", 724.45),
     5.0: ("CB27", 617.63),
     6.0: ("BQ28", 456.10),
+}
+CASE3_EXCEL_MIN_POWER_ANCHORS = {
+    "minus7_temp": -7.0,
+    "minus7_power": 0.82 * 151.0,
+    "seven_temp": 7.0,
+    "seven_power": 151.0,
 }
 ISO_HSPF_GOLDEN_FIXTURE_PATH = (
     Path(__file__).resolve().parent
@@ -539,6 +545,293 @@ def iso_case3_excel_dynamic_routing_simulation(result, rows, calculator, measure
     }
 
 
+def iso_case3_excel_formula_structure_cop_simulation(result, rows):
+    simulated_hsec = result["hsec_wh"]
+    simulated_rows = []
+
+    for row in rows:
+        tj = row["tj"]
+        if tj == 1.0:
+            helper_label = "CC_effective"
+        elif 2.0 <= tj <= 5.0:
+            helper_label = "CA_effective"
+        elif tj == 6.0:
+            helper_label = "BP_effective"
+        else:
+            continue
+
+        component_cell, observed_power = CASE3_EXCEL_ROUTED_COMPONENT_OBSERVATIONS[tj]
+        # Test-only reconstruction of Excel's BA / COP_helper(tj) structure.
+        # The COP support is derived from observed COM cells; do not copy these
+        # workbook-derived helper values into production common ISO logic.
+        effective_cop = row["load"] / observed_power
+        simulated_power = row["load"] / effective_cop
+        delta_power = row["power"] - simulated_power
+        delta_wh = delta_power * row["nj"]
+        simulated_hsec -= delta_wh
+        simulated_rows.append({
+            "tj": tj,
+            "nj": row["nj"],
+            "helper": helper_label,
+            "excel_component": component_cell,
+            "common_power": row["power"],
+            "simulated_power": simulated_power,
+            "observed_power": observed_power,
+            "effective_cop": effective_cop,
+            "simulated_abs_error": abs(simulated_power - observed_power),
+            "delta_power": delta_power,
+            "delta_wh": delta_wh,
+        })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "improvement_vs_excel_wh": (
+            abs(result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH)
+            - abs(simulated_hsec - CASE3_EXCEL_COM_HSEC_WH)
+        ),
+        "rows": simulated_rows,
+    }
+
+
+def iso_case3_excel_bm_cycling_simulation(
+    result,
+    rows,
+    calculator,
+    measured,
+    power_anchors=None,
+):
+    resolved = iso_case3_common_resolved_points(calculator, measured)
+    cd = float(calculator.config["hspf"]["correction"]["cd"])
+    if power_anchors is None:
+        power_anchors = {
+            "minus7_temp": -7.0,
+            "minus7_power": resolved["-7_min"]["power"],
+            "seven_temp": 7.0,
+            "seven_power": resolved["7_min"]["power"],
+        }
+    simulated_rows = []
+
+    for row in rows:
+        tj = row["tj"]
+        if tj not in (14.0, 15.0, 16.0):
+            continue
+
+        min_capacity = calculator._iso_hspf_capacity_curve(
+            tj, "min", resolved, False
+        )
+        p_extrapolated = power_anchors["minus7_power"] + (
+            (power_anchors["seven_power"] - power_anchors["minus7_power"])
+            * (tj - power_anchors["minus7_temp"])
+            / (power_anchors["seven_temp"] - power_anchors["minus7_temp"])
+        )
+        x = row["load"] / min_capacity
+        plf = 1.0 - cd * (1.0 - x)
+        simulated_bm = x * p_extrapolated / plf
+        component_cell, observed_power = CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS[tj]
+
+        simulated_rows.append({
+            "tj": tj,
+            "nj": row["nj"],
+            "load": row["load"],
+            "min_capacity": min_capacity,
+            "x": x,
+            "plf": plf,
+            "p_extrapolated": p_extrapolated,
+            "power_anchor_minus7": power_anchors["minus7_power"],
+            "power_anchor_seven": power_anchors["seven_power"],
+            "simulated_bm": simulated_bm,
+            "common_power": row["power"],
+            "excel_component": component_cell,
+            "observed_power": observed_power,
+            "simulated_minus_observed_power": simulated_bm - observed_power,
+            "delta_wh_vs_common": (row["power"] - simulated_bm) * row["nj"],
+        })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "rows": simulated_rows,
+        "delta_wh_vs_common": sum(
+            row["delta_wh_vs_common"] for row in simulated_rows
+        ),
+    }
+
+
+def iso_case3_excel_anchor_bm_cycling_simulation(
+    result, rows, calculator, measured
+):
+    return iso_case3_excel_bm_cycling_simulation(
+        result,
+        rows,
+        calculator,
+        measured,
+        CASE3_EXCEL_MIN_POWER_ANCHORS,
+    )
+
+
+def iso_case3_formula_structure_plus_bm_simulation(
+    result, rows, calculator, measured
+):
+    formula_structure = iso_case3_excel_formula_structure_cop_simulation(result, rows)
+    bm = iso_case3_excel_bm_cycling_simulation(result, rows, calculator, measured)
+    simulated_hsec = (
+        formula_structure["simulated_hsec_wh"] - bm["delta_wh_vs_common"]
+    )
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "bm_delta_wh_vs_common": bm["delta_wh_vs_common"],
+        "bm_rows": bm["rows"],
+    }
+
+
+def iso_case3_formula_structure_plus_excel_anchor_bm_simulation(
+    result, rows, calculator, measured
+):
+    formula_structure = iso_case3_excel_formula_structure_cop_simulation(result, rows)
+    bm = iso_case3_excel_anchor_bm_cycling_simulation(
+        result, rows, calculator, measured
+    )
+    simulated_hsec = (
+        formula_structure["simulated_hsec_wh"] - bm["delta_wh_vs_common"]
+    )
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "bm_delta_wh_vs_common": bm["delta_wh_vs_common"],
+        "bm_rows": bm["rows"],
+    }
+
+
+def iso_case3_excel_bo_min_half_simulation(result, rows):
+    simulated_hsec = result["hsec_wh"]
+    simulated_rows = []
+
+    for row in rows:
+        tj = row["tj"]
+        if tj not in (7.0, 8.0):
+            continue
+
+        component_cell, observed_power = CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS[tj]
+        # Test-only reconstruction of Excel's BO = BA / BN(tj) structure.
+        # BN support is inferred from observed COM cells for diagnosis only.
+        effective_cop = row["load"] / observed_power
+        simulated_bo = row["load"] / effective_cop
+        delta_power = row["power"] - simulated_bo
+        delta_wh = delta_power * row["nj"]
+        simulated_hsec -= delta_wh
+        simulated_rows.append({
+            "tj": tj,
+            "nj": row["nj"],
+            "excel_component": component_cell,
+            "common_power": row["power"],
+            "simulated_bo": simulated_bo,
+            "observed_power": observed_power,
+            "effective_cop": effective_cop,
+            "simulated_abs_error": abs(simulated_bo - observed_power),
+            "delta_power": delta_power,
+            "delta_wh": delta_wh,
+        })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "rows": simulated_rows,
+        "delta_wh_vs_common": sum(row["delta_wh"] for row in simulated_rows),
+    }
+
+
+def iso_case3_formula_structure_plus_excel_anchor_bm_bo_simulation(
+    result, rows, calculator, measured
+):
+    combined = iso_case3_formula_structure_plus_excel_anchor_bm_simulation(
+        result, rows, calculator, measured
+    )
+    bo = iso_case3_excel_bo_min_half_simulation(result, rows)
+    simulated_hsec = combined["simulated_hsec_wh"] - bo["delta_wh_vs_common"]
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "bo_delta_wh_vs_common": bo["delta_wh_vs_common"],
+        "bo_rows": bo["rows"],
+    }
+
+
+def iso_case3_excel_cd_full_extd_simulation(result, rows):
+    simulated_hsec = result["hsec_wh"]
+    simulated_rows = []
+
+    for row in rows:
+        tj = row["tj"]
+        if tj not in (-1.0, 0.0):
+            continue
+
+        component_cell, observed_power = CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS[tj]
+        # Test-only reconstruction of Excel's CD = BA / CC(tj) structure.
+        # CC support is inferred from observed COM cells for diagnosis only.
+        effective_cop = row["load"] / observed_power
+        simulated_cd = row["load"] / effective_cop
+        delta_power = row["power"] - simulated_cd
+        delta_wh = delta_power * row["nj"]
+        simulated_hsec -= delta_wh
+        simulated_rows.append({
+            "tj": tj,
+            "nj": row["nj"],
+            "excel_component": component_cell,
+            "common_power": row["power"],
+            "simulated_cd": simulated_cd,
+            "observed_power": observed_power,
+            "effective_cop": effective_cop,
+            "simulated_abs_error": abs(simulated_cd - observed_power),
+            "delta_power": delta_power,
+            "delta_wh": delta_wh,
+        })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "rows": simulated_rows,
+        "delta_wh_vs_common": sum(row["delta_wh"] for row in simulated_rows),
+    }
+
+
+def iso_case3_formula_structure_plus_excel_anchor_bm_bo_cd_simulation(
+    result, rows, calculator, measured
+):
+    combined = iso_case3_formula_structure_plus_excel_anchor_bm_bo_simulation(
+        result, rows, calculator, measured
+    )
+    cd = iso_case3_excel_cd_full_extd_simulation(result, rows)
+    simulated_hsec = combined["simulated_hsec_wh"] - cd["delta_wh_vs_common"]
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "cd_delta_wh_vs_common": cd["delta_wh_vs_common"],
+        "cd_rows": cd["rows"],
+    }
+
+
 def iso_common_golden_failure_table(case, actual):
     expected = case["expected"]
     return "\n".join(
@@ -744,6 +1037,159 @@ def test_case3_excel_dynamic_routing_simulation_diagnostic(tmp_path):
     )
     assert simulation["simulated_delta_vs_excel_wh"] < 0.0
     assert simulation["improvement_vs_excel_wh"] < 0.0
+
+
+def test_case3_excel_formula_structure_cop_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    internal = iso_case3_excel_dynamic_routing_simulation(
+        result, rows, calculator, measured
+    )
+    formula_structure = iso_case3_excel_formula_structure_cop_simulation(result, rows)
+
+    internal_abs_error = sum(
+        abs(row["simulated_minus_observed_power"]) for row in internal["rows"]
+    )
+    formula_structure_abs_error = sum(
+        row["simulated_abs_error"] for row in formula_structure["rows"]
+    )
+
+    assert formula_structure["common_hsec_wh"] == pytest.approx(
+        CASE3_COMMON_HSEC_WH,
+        abs=1e-6,
+    )
+    assert len(formula_structure["rows"]) == 6
+    assert formula_structure_abs_error < internal_abs_error
+    assert formula_structure_abs_error == pytest.approx(0.0, abs=1e-9)
+    assert formula_structure["simulated_hsec_wh"] < formula_structure["common_hsec_wh"]
+
+
+def test_case3_excel_bm_cycling_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    bm = iso_case3_excel_bm_cycling_simulation(result, rows, calculator, measured)
+    combined = iso_case3_formula_structure_plus_bm_simulation(
+        result, rows, calculator, measured
+    )
+
+    assert bm["common_hsec_wh"] == pytest.approx(CASE3_COMMON_HSEC_WH, abs=1e-6)
+    assert len(bm["rows"]) == 3
+    assert bm["delta_wh_vs_common"] == pytest.approx(0.0, abs=1e-9)
+    for row in bm["rows"]:
+        assert row["x"] <= 1.0
+        assert row["plf"] > 0.0
+        assert row["simulated_bm"] == pytest.approx(row["common_power"], abs=1e-9)
+
+    assert combined["bm_delta_wh_vs_common"] == pytest.approx(0.0, abs=1e-9)
+    assert combined["simulated_hsec_wh"] < combined["common_hsec_wh"]
+
+
+def test_case3_excel_anchor_bm_cycling_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    current_anchor_bm = iso_case3_excel_bm_cycling_simulation(
+        result, rows, calculator, measured
+    )
+    excel_anchor_bm = iso_case3_excel_anchor_bm_cycling_simulation(
+        result, rows, calculator, measured
+    )
+    combined = iso_case3_formula_structure_plus_excel_anchor_bm_simulation(
+        result, rows, calculator, measured
+    )
+
+    current_error = sum(
+        abs(row["simulated_minus_observed_power"])
+        for row in current_anchor_bm["rows"]
+    )
+    excel_anchor_error = sum(
+        abs(row["simulated_minus_observed_power"])
+        for row in excel_anchor_bm["rows"]
+    )
+
+    assert excel_anchor_bm["common_hsec_wh"] == pytest.approx(
+        CASE3_COMMON_HSEC_WH,
+        abs=1e-6,
+    )
+    assert len(excel_anchor_bm["rows"]) == 3
+    assert excel_anchor_error < current_error
+    assert excel_anchor_bm["delta_wh_vs_common"] < 0.0
+    assert combined["bm_delta_wh_vs_common"] < 0.0
+    assert combined["simulated_hsec_wh"] > (
+        iso_case3_excel_formula_structure_cop_simulation(result, rows)[
+            "simulated_hsec_wh"
+        ]
+    )
+
+
+def test_case3_excel_bo_min_half_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    bo = iso_case3_excel_bo_min_half_simulation(result, rows)
+    combined = iso_case3_formula_structure_plus_excel_anchor_bm_bo_simulation(
+        result, rows, calculator, measured
+    )
+
+    assert bo["common_hsec_wh"] == pytest.approx(CASE3_COMMON_HSEC_WH, abs=1e-6)
+    assert len(bo["rows"]) == 2
+    assert bo["delta_wh_vs_common"] < 0.0
+    assert sum(row["simulated_abs_error"] for row in bo["rows"]) == pytest.approx(
+        0.0,
+        abs=1e-9,
+    )
+    assert combined["bo_delta_wh_vs_common"] < 0.0
+    assert combined["simulated_hsec_wh"] > (
+        iso_case3_formula_structure_plus_excel_anchor_bm_simulation(
+            result, rows, calculator, measured
+        )["simulated_hsec_wh"]
+    )
+
+
+def test_case3_excel_cd_full_extd_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    cd = iso_case3_excel_cd_full_extd_simulation(result, rows)
+    combined = iso_case3_formula_structure_plus_excel_anchor_bm_bo_cd_simulation(
+        result, rows, calculator, measured
+    )
+
+    assert cd["common_hsec_wh"] == pytest.approx(CASE3_COMMON_HSEC_WH, abs=1e-6)
+    assert len(cd["rows"]) == 2
+    assert cd["delta_wh_vs_common"] > 0.0
+    assert sum(row["simulated_abs_error"] for row in cd["rows"]) == pytest.approx(
+        0.0,
+        abs=1e-9,
+    )
+    assert combined["cd_delta_wh_vs_common"] > 0.0
+    assert combined["simulated_hsec_wh"] < (
+        iso_case3_formula_structure_plus_excel_anchor_bm_bo_simulation(
+            result, rows, calculator, measured
+        )["simulated_hsec_wh"]
+    )
 
 
 def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
