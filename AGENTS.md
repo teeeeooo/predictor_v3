@@ -14,6 +14,8 @@
 - calculate_hspf2_v2() / calculate_hspf2() 무단 수정 금지
 - UI / ML 코드 수정 금지 / JSON 필드 삭제 금지
 - ISO16358 계산기 수정 시 `docs/iso16358/iso16358_dev_notes.md`를 먼저 확인할 것
+- ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`를 확인한다. 이 문서는 일반 계산 로직 수정, UI 작업, AHRI/EN/KS 작업에서는 읽지 않는다.
+- Excel COM packet 작업 역할: ChatGPT는 runner input packet 설계와 chat_packet 해석, Company PC runner는 original Excel COM 계산/full_dump 저장/chat_packet 생성, Codex는 repo 수정/테스트/diff 확인, User는 회사 PC 실행 후 chat_packet만 전달.
 - KS C 9306 관련 수정 시 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`를 먼저 확인할 것
 - ISO16358/KS C 9306 공통 엔진 파일명은 `core/calculator_iso16358.py`를 기준으로 할 것
 - data/region_configs/*.json 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`를 확인할 것.
@@ -52,6 +54,7 @@ Codex/agent 작업 시 토큰 사용량을 줄이기 위해 대형 파일 전체
 - `rg`, `grep -n`, `sed -n` 등을 사용해 수정 대상 함수, 클래스, 테스트, 섹션 위치를 먼저 찾는다.
 - 위치를 확인한 뒤 필요한 줄 범위만 읽고 수정한다.
 - 관련 없는 문서, 긴 guideline, AGENTS_FULL.md, 대형 source file을 습관적으로 열람하지 않는다.
+- `docs/iso16358/excel_com_runner_packet_protocol.md`도 조건부 문서다. 이미 확인한 세션에서는 전체를 반복해서 읽지 말고 필요한 heading만 `rg`/`sed`로 확인한다.
 - AGENTS_FULL.md는 사용자가 명시적으로 요청한 경우에만 읽는다.
 
 ### 예외

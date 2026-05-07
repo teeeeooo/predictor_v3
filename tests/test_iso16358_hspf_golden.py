@@ -10,6 +10,31 @@ HSPF_TOLERANCE = 0.001
 ENERGY_TOLERANCE_WH = 1.0
 ISO_COMMON_HSPF_TOLERANCE = 0.001
 ISO_COMMON_ENERGY_TOLERANCE_KWH = 0.5
+CASE3_EXCEL_COM_HSEC_WH = 1126120.47
+CASE3_COMMON_HSEC_WH = 1134087.840521695
+CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS = {
+    -1.0: ("CD21", 1504.01),
+    0.0: ("CD22", 1330.47),
+    1.0: ("CB23", 0.00),
+    2.0: ("CB24", 1001.64),
+    3.0: ("CB25", 850.55),
+    4.0: ("CB26", 724.45),
+    5.0: ("CB27", 617.63),
+    6.0: ("BO28", 0.00),
+    7.0: ("BO29", 412.16),
+    8.0: ("BO30", 372.91),
+    14.0: ("BM36", 134.33),
+    15.0: ("BM37", 95.49),
+    16.0: ("BM38", 51.06),
+}
+CASE3_EXCEL_ROUTED_COMPONENT_OBSERVATIONS = {
+    1.0: ("CD23", 1177.61),
+    2.0: ("CB24", 1001.64),
+    3.0: ("CB25", 850.55),
+    4.0: ("CB26", 724.45),
+    5.0: ("CB27", 617.63),
+    6.0: ("BQ28", 456.10),
+}
 ISO_HSPF_GOLDEN_FIXTURE_PATH = (
     Path(__file__).resolve().parent
     / "fixtures"
@@ -159,6 +184,14 @@ def iso_hspf_xfail_reason(case):
             "rounding; do not implement P_j W ceil(0) in common ISO core "
             "because it breaks case 2"
         )
+    if case_id == 3:
+        return (
+            "ISO16358-2 HSPF case 3: original Windows Excel COM aligns with "
+            "fixture CHSE 1126/HSPF 4.338, while common path remains high at "
+            "about CHSE 1134/HSPF 4.308; investigate Formula 49 frost "
+            "half-full or optional branch selection, not the old converted "
+            "workbook 1118 kWh observation"
+        )
     return "ISO16358-2 common HSPF v1: extended/frost optional branch not implemented"
 
 
@@ -262,6 +295,250 @@ def iso_common_golden_actuals(result):
     }
 
 
+def iso_case3_common_resolved_points(calculator, measured):
+    resolved = {
+        key: dict(value)
+        for key, value in measured.items()
+        if isinstance(value, dict) and "capacity" in value and "power" in value
+    }
+    hspf_cfg = calculator.config["hspf"]
+    capacity_factor, power_factor = calculator._iso_hspf_minus7_fallback_factors(
+        hspf_cfg
+    )
+    active_stages = ["full", "half"]
+    if "7_min" in resolved:
+        active_stages.append("min")
+
+    for stage in active_stages:
+        key_m7 = f"-7_{stage}"
+        key_7 = f"7_{stage}"
+        if key_m7 not in resolved:
+            resolved[key_m7] = {
+                "capacity": resolved[key_7]["capacity"] * capacity_factor,
+                "power": resolved[key_7]["power"] * power_factor,
+            }
+
+    for stage in active_stages:
+        key_2 = f"2_{stage}"
+        key_7 = f"7_{stage}"
+        key_m7 = f"-7_{stage}"
+        calculated_2 = {
+            "capacity": resolved[key_m7]["capacity"]
+            + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
+            "power": resolved[key_m7]["power"]
+            + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0,
+        }
+        resolved[f"{key_2}_f"] = dict(calculated_2)
+        resolved[key_2] = dict(calculated_2)
+
+    return resolved
+
+
+def iso_case3_common_load_line(calculator, measured):
+    load_line_cfg = calculator.config["hspf"]["load_line"]
+    rated_capacity = measured["rated_heating_capacity"]
+    rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
+    zero_load_temp = float(load_line_cfg["zero_load_temp"])
+    full_load_temp = float(load_line_cfg["full_load_temp"])
+    load_ref = rated_capacity * rated_capacity_factor
+    return (
+        -load_ref / (zero_load_temp - full_load_temp),
+        load_ref * zero_load_temp / (zero_load_temp - full_load_temp),
+    )
+
+
+def iso_case3_common_path_bin_level_diagnostic(result, calculator=None, measured=None):
+    resolved = None
+    load_line = None
+    if calculator is not None and measured is not None:
+        resolved = iso_case3_common_resolved_points(calculator, measured)
+        load_line = iso_case3_common_load_line(calculator, measured)
+
+    rows = []
+    for detail in result["bin_details"]:
+        tj = detail["tj"]
+        frost = -7.0 < tj < 5.5
+        component = CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS.get(tj)
+        row = {
+            "tj": tj,
+            "nj": detail["nj"],
+            "frost": frost,
+            "load": detail["bl_h"],
+            "case": detail["case"],
+            "capacity": detail["pi_j"],
+            "power": detail["P_j"],
+            "hsec_wh": detail["E_j"],
+            "auxiliary_wh": detail["auxiliary_energy"],
+        }
+        if resolved is not None and detail["case"] == "interpolation":
+            low_stage = "half"
+            high_stage = "full"
+            low_capacity = calculator._iso_hspf_capacity_curve(
+                tj, low_stage, resolved, frost
+            )
+            high_capacity = calculator._iso_hspf_capacity_curve(
+                tj, high_stage, resolved, frost
+            )
+            low_power = calculator._iso_hspf_power_curve(tj, low_stage, resolved, frost)
+            high_power = calculator._iso_hspf_power_curve(
+                tj, high_stage, resolved, frost
+            )
+            formula49_power = None
+            low_boundary_temp = None
+            high_boundary_temp = None
+            low_boundary_cop = None
+            high_boundary_cop = None
+            if frost:
+                low_boundary_temp = calculator._iso_hspf_intersection_temp(
+                    low_stage, resolved, True, load_line
+                )
+                high_boundary_temp = calculator._iso_hspf_intersection_temp(
+                    high_stage, resolved, True, load_line
+                )
+                low_boundary_cop = calculator._iso_hspf_boundary_cop(
+                    low_boundary_temp, low_stage, resolved, True
+                )
+                high_boundary_cop = calculator._iso_hspf_boundary_cop(
+                    high_boundary_temp, high_stage, resolved, True
+                )
+                formula49_power = calculator._iso_hspf_pair_power_by_boundary_cop(
+                    tj, detail["bl_h"], low_stage, high_stage, resolved, True, load_line
+                )
+            row.update({
+                "lower_anchor": low_stage,
+                "upper_anchor": high_stage,
+                "lower_capacity": low_capacity,
+                "upper_capacity": high_capacity,
+                "lower_power": low_power,
+                "upper_power": high_power,
+                "formula49_equivalent_applied": False,
+                "formula49_equivalent_power": formula49_power,
+                "formula49_equivalent_delta": (
+                    detail["P_j"] - formula49_power
+                    if formula49_power is not None
+                    else None
+                ),
+                "formula49_lower_boundary_temp": low_boundary_temp,
+                "formula49_upper_boundary_temp": high_boundary_temp,
+                "formula49_lower_boundary_cop": low_boundary_cop,
+                "formula49_upper_boundary_cop": high_boundary_cop,
+                "interpolation_method": "capacity_linear_power_at_bin",
+            })
+        if component:
+            cell, excel_power = component
+            row.update({
+                "excel_cell": cell,
+                "excel_power": excel_power,
+                "excel_power_delta": detail["P_j"] - excel_power,
+                "excel_hsec_delta_wh": (detail["P_j"] - excel_power) * detail["nj"],
+            })
+        rows.append(row)
+    return rows
+
+
+def iso_case3_formula49_equivalent_simulation(result, rows):
+    simulated_hsec = result["hsec_wh"]
+    simulated_rows = []
+    for row in rows:
+        if (
+            1.0 <= row["tj"] <= 5.0
+            and row["frost"]
+            and row["case"] == "interpolation"
+            and row.get("formula49_equivalent_power") is not None
+        ):
+            delta_power = row["power"] - row["formula49_equivalent_power"]
+            delta_wh = delta_power * row["nj"]
+            simulated_hsec -= delta_wh
+            simulated_rows.append({
+                "tj": row["tj"],
+                "nj": row["nj"],
+                "common_power": row["power"],
+                "formula49_equivalent_power": row["formula49_equivalent_power"],
+                "delta_power": delta_power,
+                "delta_wh": delta_wh,
+                "lower_anchor": row["lower_anchor"],
+                "upper_anchor": row["upper_anchor"],
+                "lower_capacity": row["lower_capacity"],
+                "upper_capacity": row["upper_capacity"],
+                "lower_power": row["lower_power"],
+                "upper_power": row["upper_power"],
+                "lower_boundary_temp": row["formula49_lower_boundary_temp"],
+                "upper_boundary_temp": row["formula49_upper_boundary_temp"],
+                "lower_boundary_cop": row["formula49_lower_boundary_cop"],
+                "upper_boundary_cop": row["formula49_upper_boundary_cop"],
+            })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "improvement_vs_excel_wh": (
+            abs(result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH)
+            - abs(simulated_hsec - CASE3_EXCEL_COM_HSEC_WH)
+        ),
+        "rows": simulated_rows,
+    }
+
+
+def iso_case3_excel_dynamic_routing_simulation(result, rows, calculator, measured):
+    resolved = iso_case3_common_resolved_points(calculator, measured)
+    load_line = iso_case3_common_load_line(calculator, measured)
+    simulated_hsec = result["hsec_wh"]
+    simulated_rows = []
+
+    for row in rows:
+        tj = row["tj"]
+        if tj == 1.0:
+            routed_label = "CD_equivalent"
+            routed_power = calculator._iso_hspf_formula50_full_extended_frost_power(
+                tj, row["load"], resolved, load_line
+            )["P_fe"]
+        elif 2.0 <= tj <= 5.0:
+            routed_label = "CB_equivalent"
+            routed_power = calculator._iso_hspf_pair_power_by_boundary_cop(
+                tj, row["load"], "half", "full", resolved, True, load_line
+            )
+        elif tj == 6.0:
+            routed_label = "BQ_equivalent"
+            routed_power = calculator._iso_hspf_pair_power_by_boundary_cop(
+                tj, row["load"], "half", "full", resolved, False, load_line
+            )
+        else:
+            continue
+
+        delta_power = row["power"] - routed_power
+        delta_wh = delta_power * row["nj"]
+        simulated_hsec -= delta_wh
+        observed = CASE3_EXCEL_ROUTED_COMPONENT_OBSERVATIONS[tj]
+        simulated_rows.append({
+            "tj": tj,
+            "nj": row["nj"],
+            "routing": routed_label,
+            "common_power": row["power"],
+            "simulated_power": routed_power,
+            "delta_power": delta_power,
+            "delta_wh": delta_wh,
+            "excel_component": observed[0],
+            "excel_observed_power": observed[1],
+            "simulated_minus_observed_power": routed_power - observed[1],
+        })
+
+    return {
+        "common_hsec_wh": result["hsec_wh"],
+        "simulated_hsec_wh": simulated_hsec,
+        "excel_hsec_wh": CASE3_EXCEL_COM_HSEC_WH,
+        "current_delta_vs_excel_wh": result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH,
+        "simulated_delta_vs_excel_wh": simulated_hsec - CASE3_EXCEL_COM_HSEC_WH,
+        "improvement_vs_excel_wh": (
+            abs(result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH)
+            - abs(simulated_hsec - CASE3_EXCEL_COM_HSEC_WH)
+        ),
+        "rows": simulated_rows,
+    }
+
+
 def iso_common_golden_failure_table(case, actual):
     expected = case["expected"]
     return "\n".join(
@@ -357,6 +634,118 @@ def test_iso16358_2_hspf_seven_case_golden_matrix(tmp_path, case):
     )
 
 
+def test_case3_common_path_bin_level_trace_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+    by_temp = {row["tj"]: row for row in rows}
+
+    assert result["hspf"] == pytest.approx(4.308, abs=0.001)
+    assert result["hsec_wh"] == pytest.approx(CASE3_COMMON_HSEC_WH, abs=1e-6)
+    assert result["hsec_wh"] - CASE3_EXCEL_COM_HSEC_WH == pytest.approx(
+        7967.370521695,
+        abs=1e-6,
+    )
+    assert sum(row["hsec_wh"] for row in rows) == pytest.approx(
+        CASE3_COMMON_HSEC_WH,
+        abs=1e-6,
+    )
+
+    assert by_temp[-1.0]["case"] == "formula50_full_extended_frost"
+    assert by_temp[0.0]["case"] == "formula50_full_extended_frost"
+    assert by_temp[2.0]["case"] == "interpolation"
+    assert by_temp[3.0]["case"] == "interpolation"
+    assert by_temp[4.0]["case"] == "interpolation"
+    assert by_temp[7.0]["case"] == "min_half_interpolation"
+    assert by_temp[14.0]["case"] == "cycling"
+
+    for tj in (1.0, 2.0, 3.0, 4.0, 5.0):
+        row = by_temp[tj]
+        assert row["frost"]
+        assert row["case"] == "interpolation"
+        assert row["lower_anchor"] == "half"
+        assert row["upper_anchor"] == "full"
+        assert row["lower_capacity"] < row["load"] <= row["upper_capacity"]
+        assert row["formula49_equivalent_applied"] is False
+        assert row["interpolation_method"] == "capacity_linear_power_at_bin"
+
+    assert by_temp[2.0]["formula49_equivalent_power"] is not None
+    assert by_temp[2.0]["formula49_equivalent_delta"] > 0.0
+
+    frost_half_full_candidate_wh = sum(
+        by_temp[tj]["excel_hsec_delta_wh"] for tj in (2.0, 3.0, 4.0)
+    )
+    frost_full_extended_candidate_wh = sum(
+        by_temp[tj]["excel_hsec_delta_wh"] for tj in (-1.0, 0.0)
+    )
+    non_frost_low_branch_candidate_wh = sum(
+        by_temp[tj]["excel_hsec_delta_wh"] for tj in (7.0, 8.0, 14.0, 15.0, 16.0)
+    )
+
+    assert frost_half_full_candidate_wh > 30000.0
+    assert frost_full_extended_candidate_wh > 2000.0
+    assert non_frost_low_branch_candidate_wh < -9000.0
+
+
+def test_case3_formula49_equivalent_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    simulation = iso_case3_formula49_equivalent_simulation(result, rows)
+
+    assert simulation["common_hsec_wh"] == pytest.approx(
+        CASE3_COMMON_HSEC_WH,
+        abs=1e-6,
+    )
+    assert len(simulation["rows"]) == 5
+    assert simulation["simulated_hsec_wh"] < simulation["common_hsec_wh"]
+    assert simulation["current_delta_vs_excel_wh"] == pytest.approx(
+        7967.370521695,
+        abs=1e-6,
+    )
+    assert simulation["simulated_delta_vs_excel_wh"] < 0.0
+    assert simulation["improvement_vs_excel_wh"] < 0.0
+
+
+def test_case3_excel_dynamic_routing_simulation_diagnostic(tmp_path):
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    case = next(item for item in fixture["cases"] if item["case_id"] == 3)
+    measured = iso_common_golden_measured_inputs(case)
+    result = calculator.calculate_hspf(measured)
+    rows = iso_case3_common_path_bin_level_diagnostic(result, calculator, measured)
+
+    simulation = iso_case3_excel_dynamic_routing_simulation(
+        result, rows, calculator, measured
+    )
+    by_temp = {row["tj"]: row for row in simulation["rows"]}
+
+    assert simulation["common_hsec_wh"] == pytest.approx(
+        CASE3_COMMON_HSEC_WH,
+        abs=1e-6,
+    )
+    assert len(simulation["rows"]) == 6
+    assert by_temp[1.0]["routing"] == "CD_equivalent"
+    assert by_temp[2.0]["routing"] == "CB_equivalent"
+    assert by_temp[5.0]["routing"] == "CB_equivalent"
+    assert by_temp[6.0]["routing"] == "BQ_equivalent"
+    assert simulation["simulated_hsec_wh"] < simulation["common_hsec_wh"]
+    assert simulation["current_delta_vs_excel_wh"] == pytest.approx(
+        7967.370521695,
+        abs=1e-6,
+    )
+    assert simulation["simulated_delta_vs_excel_wh"] < 0.0
+    assert simulation["improvement_vs_excel_wh"] < 0.0
+
+
 def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
     calculator = make_iso_common_golden_calculator(tmp_path)
     fixture = load_iso_hspf_golden_fixture()
@@ -365,12 +754,14 @@ def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
 
     common_result = calculator.calculate_hspf(measured)
     assert common_result["hspf"] == pytest.approx(4.308, abs=0.001)
-    assert common_result["hsec_wh"] == pytest.approx(1134087.840521695, abs=1e-6)
+    assert common_result["hsec_wh"] == pytest.approx(CASE3_COMMON_HSEC_WH, abs=1e-6)
 
     trace = calculator.calculate_hspf_iso16358_y_min_y_extd_trace(
         measured,
         rated_heating_capacity=measured["rated_heating_capacity"],
     )
+    # Legacy trace for the old converted-workbook observation only; it is not
+    # the AS/NZS original calculator reference and is not wired into common ISO.
     observed_total_power = {
         -1.0: 1482.0,
         0.0: 1298.0,

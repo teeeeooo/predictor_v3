@@ -113,11 +113,13 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 조건부로 읽을 문서:
 - 새 대화 시작 직후 방향이 불명확하면 `project_brief.md`
 - 과거 실패가 의심되면 `project_log.md`에서 관련 키워드만 검색
+- ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
 
 읽지 말 것:
 - `AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 문서 전체
 - 대형 파일 전체
+- 일반 계산 로직 수정, UI 작업, AHRI/EN/KS 작업에서는 `docs/iso16358/excel_com_runner_packet_protocol.md`
 
 절차:
 1. 먼저 공통 엔진으로 풀 수 있는 문제인지 확인한다.
@@ -186,6 +188,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 주의:
 - golden 값 변경은 공식 계산기, 수기 계산, 기존 확정 문서 중 하나의 근거가 있을 때만 허용한다.
+- ISO16358-2 HSPF case reference extraction 또는 Excel COM chat_packet/full_dump 해석이 관련되면 `docs/iso16358/excel_com_runner_packet_protocol.md`를 조건부로 확인한다. 역할 분리: ChatGPT는 runner input packet 설계와 chat_packet 해석, Company PC runner는 original Excel COM 계산/full_dump 저장/chat_packet 생성, Codex는 repo 수정/테스트/diff 확인, User는 회사 PC 실행 후 chat_packet만 전달.
 
 ### 5. 단순 docs 문구 수정
 
