@@ -3,6 +3,13 @@
 작업자는 먼저 작업 유형을 분류한 뒤, 해당 유형에 필요한 문서만 읽는다.
 불필요한 긴 문서를 습관적으로 읽지 않는다.
 
+### 0. Work Contract / Execution Discipline
+
+모든 작업은 수정 전에 Goal / Scope / Non-goals / Verification을 짧게 확정한다.
+사용자가 네 항목을 제공한 경우 임의 확장하지 않는다.
+모든 changed line은 Goal과 직접 연결되어야 한다.
+Codex는 설계자가 아니라 적용/검증 담당으로 움직이며, 불확실한 규격/fixture/case/region 해석은 임의 결정하지 않는다.
+
 ### 1. Commit / Git 정리
 
 읽을 문서:
@@ -133,6 +140,9 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 9. 계산 엔진이 ML feature schema 또는 UI table schema에 직접 의존하지 않게 한다.
 10. ML predicted values는 calculator input adapter를 통해 들어와야 하며 region config에 섞지 않는다.
 11. standard-specific dev notes와 architecture 문서의 calculator boundary를 필요한 범위만 확인한다.
+12. golden mismatch는 expected 값 수정 전에 branch trace, intermediate 값, 공식식 매핑을 먼저 비교한다.
+13. production path와 external calculator compatibility path를 섞지 않는다.
+14. 완료 보고에는 공식식/fixture/external calculator/reference trace 중 어떤 근거를 사용했는지 명시한다.
 
 금지:
 - golden 값 임의 변경
@@ -226,7 +236,40 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 운영 팁:
 - 문장 1~2개 치환 수준이면 agent보다 사용자가 직접 수정하는 것이 더 빠를 수 있다.
 
-### 6. Notes 내용 정리 / 문서 리팩토링
+### 6. Agent rule / router 수정
+
+대상:
+- `AGENTS.md`
+- `AGENT_TASK_ROUTER.md`
+- agent 작업 규칙, 문서 읽기 규칙, task routing 규칙
+
+읽을 문서:
+- `AGENTS.md`
+- `AGENT_TASK_ROUTER.md`의 관련 섹션만
+
+읽지 말 것:
+- `AGENTS_FULL.md` unless explicitly requested
+- 관련 없는 규격 notes/dev_notes 전체
+- 코드 파일
+- 테스트 파일
+
+절차:
+1. Goal / Scope / Non-goals / Verification을 먼저 확인한다.
+2. 기존 규칙과 중복되는 문장은 추가하지 않는다.
+3. `AGENTS.md`는 짧은 공통 원칙만 유지한다.
+4. 작업 유형별 세부 절차는 `AGENT_TASK_ROUTER.md`에 둔다.
+5. 기존 문서 읽기 최소화 정책을 약화시키지 않는다.
+6. Codex 역할을 설계자가 아니라 적용/검증 담당으로 유지한다.
+7. 수정 후 `AGENTS.md`와 `AGENT_TASK_ROUTER.md` diff만 확인한다.
+
+금지:
+- 원문 방법론 장황 복붙
+- 기존 router 구조 대규모 재작성
+- 작업 유형 이름 무단 변경
+- 기존 금지 규칙 완화
+- 코드/테스트 수정
+
+### 7. Notes 내용 정리 / 문서 리팩토링
 
 읽을 문서:
 - `AGENTS.md`

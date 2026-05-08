@@ -44,6 +44,13 @@
 ## 출력
 - 코드만 출력, 작업 완료 시 [수정 파일] / [변경 내용] / [테스트 결과] 형식 유지
 
+## Agent Work Discipline
+
+- 작업 전 Goal / Scope / Non-goals / Verification을 확인한다.
+- 요청 범위를 넘는 추상화, 리팩토링, formatting/comment/import 정리를 하지 않는다.
+- 불확실한 규격/fixture/case/region 해석은 임의 결정하지 않는다.
+- 완료 보고에는 변경 파일, 변경 이유, 검증, 남은 위험을 포함한다.
+
 ## Token Budget / File Reading Policy
 
 Codex/agent 작업 시 토큰 사용량을 줄이기 위해 대형 파일 전체를 불필요하게 읽지 않는다.
