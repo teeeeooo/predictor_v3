@@ -124,6 +124,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 조건부로 읽을 문서:
 - 새 대화 시작 직후 방향이 불명확하면 `project_brief.md`
 - 과거 실패가 의심되면 `project_log.md`에서 관련 키워드만 검색
+- `data/region_configs/*.json` 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`
 - ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
 
 읽지 말 것:
@@ -171,6 +172,9 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - `docs/architecture/project_architecture.md`의 calculator profile resolver 관련 섹션
 - 관련 규격의 dev_notes/notes 중 필요한 섹션
 - 필요 시 `docs/REFACTOR_PLAN.md`의 관련 섹션
+
+조건부로 읽을 문서:
+- `data/region_configs/*.json` 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`
 
 절차:
 1. selector 입력과 output contract를 먼저 정의한다.
@@ -285,6 +289,8 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 조건부로 읽을 문서:
 - 과거 결정/실패 이력이 필요하면 `project_log.md`
+- 신규 standard/region 문서 생성 또는 규격 문서 구조 변경 시 `docs/README.md`, `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`
+- formula/variable/term/glossary entry 작성 또는 수정 시 `docs/FORMULA_REFERENCE_GUIDE.md`
 
 절차:
 1. 먼저 문서 역할을 분류한다.
@@ -293,3 +299,25 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 4. 작업 결과는 `project_log.md`에 기록한다.
 5. 앞으로 할 일이 바뀐 경우에만 `docs/REFACTOR_PLAN.md`를 수정한다.
 6. 프로젝트 대표 상태가 바뀐 경우에만 `project_brief.md`를 수정한다.
+7. 단순 docs 문구 수정은 이 섹션으로 확장하지 않고 `단순 docs 문구 수정` 경로를 유지한다.
+
+### 8. ML/Predictor 수정
+
+읽을 문서:
+- `AGENTS.md`
+- 관련 ML/Predictor 코드의 필요한 함수/클래스 범위
+
+조건부로 읽을 문서:
+- ML feature engineering, physical constraint, data quality, monotonicity, target leakage, extrapolation risk 작업이면 `docs/knowledge/README.md`와 관련 knowledge 문서의 필요한 heading
+- ML schema/feature boundary 또는 calculator input/output boundary가 관련되면 `docs/architecture/project_architecture.md`의 관련 heading
+
+절차:
+1. `rg`/`grep`으로 대상 feature, model, predictor 위치를 먼저 찾는다.
+2. 필요한 범위만 `sed -n`으로 읽고 최소 수정한다.
+3. feature_names_in_ 보존, target leakage, Cooling/Heating 모델 분리 여부를 확인한다.
+
+금지:
+- docs/knowledge 문서를 calculator 공식/fixture/region config/golden expected 변경 근거로 사용
+- calculator core와 ML feature schema 혼합
+- target leakage 유발 feature 추가
+- unrelated refactor
