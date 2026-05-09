@@ -23,19 +23,104 @@ def get_neutralized_fixture():
     }
 
 def test_iso_hspf_common_matches_ks_oracle_on_neutralized_fixture():
+    """
+    H-2a/H-2b: Verify consistency for base points (no cycling, Cd=0).
+    At exact test points, both paths should yield identical results.
+    """
     calc = ISO16358Calculator("data/region_configs/korea.json")
-    ks_input = get_neutralized_fixture()
+    calc.Cd = 0.0
     
-    bin_row_ks = calc._ks_hspf_bin(7.0, 1200.0, 2.0, ks_input)
+    ks_input = get_neutralized_fixture()
+    ks_input["correction"]["cd"] = 0.0
+    
+    tj = 7.0
+    load = 1000.0 # Exactly at min_capacity
+    hours = 2.0
+    
+    bin_row_ks = calc._ks_hspf_bin(tj, load, hours, ks_input)
+    
+    # Equivalent ISO inputs
+    measured_inputs = {
+        "7_full": {"capacity": 3000.0, "power": 800.0, "temp": 7.0},
+        "7_half": {"capacity": 2000.0, "power": 500.0, "temp": 7.0},
+        "7_min": {"capacity": 1000.0, "power": 200.0, "temp": 7.0},
+        "-7_full": {"capacity": 3000.0, "power": 800.0, "temp": -7.0},
+        "2_full": {"capacity": 3000.0, "power": 800.0, "temp": 2.0},
+    }
+    
+    bin_row_iso = calc._variable_heating_bin(tj, load, hours, measured_inputs)
     
     # Analyze the result
-    print(f"\nBin Row: {bin_row_ks}")
+    print(f"\nBin Row (non-cycling, Cd=0): {bin_row_ks}")
     
-    # In KS path, 'bin_energy' seems to be something else.
-    # Check compressor_energy and heat_pump_energy
-    assert "compressor_energy" in bin_row_ks
-    assert "heat_pump_energy" in bin_row_ks
+    assert bin_row_ks["heat_pump_capacity"] == 1000.0
+    assert bin_row_ks["heat_pump_energy"] == pytest.approx(bin_row_iso["heat_pump_energy"])
+    assert bin_row_ks["heat_pump_energy"] == pytest.approx(200.0 * 2.0)
+
+def test_iso_hspf_common_matches_ks_oracle_on_neutralized_cycling_fixture():
+    """
+    H-2b: Verify consistency for cycling and non-zero Cd cases.
+    Ensures that both ISO common path and KS path follow the same shared formula
+    for cycling (load < min_capacity) when Cd > 0.
+    """
+    calc = ISO16358Calculator("data/region_configs/korea.json")
     
-    # Verify consistency: bin_energy might be total?
-    # Actually, check if load was satisfied by heat_pump_capacity
-    assert bin_row_ks["heat_pump_capacity"] == 1200.0
+    # Set Cd = 0.35 for both paths
+    cd_val = 0.35
+    calc.Cd = cd_val
+    
+    # 1. Neutralized KS fixture for cycling
+    # Load < Min Capacity
+    ks_input = {
+        "capacity": {
+            "min": {"7": 1000.0, "-7": 1000.0},
+            "intermediate": {"7": 2000.0, "-7": 2000.0},
+            "rated": {"7": 3000.0, "-7": 3000.0},
+            "max": {"-7": 3000.0, "def": 3000.0}
+        },
+        "power": {
+            "min": {"7": 200.0, "-7": 200.0},
+            "intermediate": {"7": 500.0, "-7": 500.0},
+            "rated": {"7": 800.0, "-7": 800.0},
+            "max": {"-7": 1000.0, "def": 1000.0}
+        },
+        "correction": {"cd": cd_val},
+        "load_line": {"slope": 100.0, "intercept": 500.0, "source": "test"}
+    }
+    
+    tj = 7.0
+    load = 400.0 # CR = 400 / 1000 = 0.4
+    hours = 10.0
+    
+    bin_row_ks = calc._ks_hspf_bin(tj, load, hours, ks_input)
+    
+    # 2. Equivalent ISO common inputs
+    measured_inputs = {
+        "7_full": {"capacity": 3000.0, "power": 800.0, "temp": 7.0},
+        "7_half": {"capacity": 2000.0, "power": 500.0, "temp": 7.0},
+        "7_min": {"capacity": 1000.0, "power": 200.0, "temp": 7.0},
+        "-7_full": {"capacity": 3000.0, "power": 800.0, "temp": -7.0},
+        "2_full": {"capacity": 3000.0, "power": 800.0, "temp": 2.0},
+    }
+    
+    bin_row_iso = calc._variable_heating_bin(tj, load, hours, measured_inputs)
+    
+    # 3. Compare
+    print(f"\nTJ: {tj}, Load: {load}, Cd: {cd_val}")
+    print(f"KS Bin: {bin_row_ks}")
+    print(f"ISO Bin: {bin_row_iso}")
+    
+    assert bin_row_ks["operating_case"] == "cyclic_minimum"
+    assert bin_row_iso["operating_case"] == "cyclic_min"
+    
+    # Manual verification:
+    # CR = 400 / 1000 = 0.4
+    # PLF = 1.0 - 0.35 * (1.0 - 0.4) = 1.0 - 0.35 * 0.6 = 1.0 - 0.21 = 0.79
+    # Power = (200 * 0.4) / 0.79 = 80 / 0.79 = 101.2658227848
+    # Energy = 101.2658227848 * 10 = 1012.658227848
+    
+    assert bin_row_ks["heat_pump_energy"] == pytest.approx(1012.658227848)
+    assert bin_row_ks["heat_pump_energy"] == pytest.approx(bin_row_iso["heat_pump_energy"])
+    assert bin_row_ks["compressor_energy"] == pytest.approx(bin_row_iso["compressor_energy"])
+    assert bin_row_ks["capacity_load_ratio"] == pytest.approx(0.4)
+    assert bin_row_ks["part_load_factor"] == pytest.approx(0.79)

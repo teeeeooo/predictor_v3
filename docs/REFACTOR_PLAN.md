@@ -139,7 +139,7 @@
 - AS/NZS 3823.4.2 규격 확인 전 호주/뉴질랜드 구현 금지.
 - ISO16358-2 HSPF common path는 `tests/test_iso16358_hspf_formula_micro.py` H-1a safe branch 및 H-1b-1 Formula 50 frost branch micro tests로 보호한다. Above-extended intended contract는 strict xfail로 기록했으며 implementation fix 전까지 current fallback을 expected로 고정하지 않는다.
 - KS shared-formula oracle consistency gate는 surrogate oracle / cross-path consistency check로만 사용하고 common ISO expected로 승격하지 않는다.
-- AS/NZS Excel HSPF exact matching은 ISO common HSPF가 아니라 별도 compatibility calculator/profile 및 guard test 설계 후 구현한다.
+- AS/NZS Excel HSPF exact matching은 ISO common HSPF가 아니라 별도 compatibility calculator/profile 및 guard test 설계 후 구현한다. (현재 Z-phase로 보류됨)
 - 2°C 외삽 시 선형보간 방식(`-7 ↔ 7`) 유지.
 
 ---

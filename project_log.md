@@ -1,6 +1,24 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-10 — Phase H-2b: ISO HSPF KS oracle cycling / nonzero Cd extension 완료
+
+### Result
+- `tests/test_iso16358_hspf_ks_oracle.py`에 cycling 및 $C_d > 0$ 케이스 검증 테스트 추가 완료.
+- ISO common path와 KS path가 cycling ($load < min\_capacity$) 영역에서 동일한 $PLF$ 공식을 공유함을 neutralized fixture를 통해 실증함.
+- $C_d=0.35, CR=0.4$ 조건에서 $heat\_pump\_energy$가 소수점 10자리 이상 일치함을 확인.
+
+### Decision
+- **AS/NZS row-level exact reconstruction 보류**: AS/NZS Excel component row subset extraction 및 exact matching 작업은 현재 ISO16358-2 common HSPF 마무리 단계에서 제외하고, 향후 별도 호환 계산기 구현 단계인 **Z-phase**로 보류함.
+- 현재 우선순위를 ISO16358-2 common HSPF 엔진 마무리 및 UI 연결로 집중함.
+
+### Verification
+- `pytest tests/test_iso16358_hspf_ks_oracle.py` -> `2 passed`.
+- `pytest tests/test_iso16358_hspf_formula_micro.py` -> `7 passed`.
+- 전체 테스트 `250 passed, 9 xfailed`. (AS/NZS 미구현분 xfail 유지)
+
+---
+
 ## 2026-05-04 — Validation smoke/golden 안정화
 
 ### Result

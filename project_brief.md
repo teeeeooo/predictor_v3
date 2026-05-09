@@ -2,14 +2,13 @@
 이 문서는 새 대화창 시작 시 현재 상태를 빠르게 파악하기 위한 요약 문서입니다.
 
 ## 1. 현재 상태 및 마일스톤
-- **테스트 및 검증:** Validation smoke/golden 안정화가 완료되었습니다. 전체 테스트 통과 기준은 **109 passed** 입니다.
-- **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다.
+- **테스트 및 검증:** Validation smoke/golden 안정화 및 KS oracle cycling consistency(H-2b) 검증이 완료되었습니다. 전체 테스트 통과 기준은 **250 passed** 입니다.
+- **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다. ISO HSPF는 Formula micro golden 및 KS shared-formula oracle로 이중 보호 중입니다.
 - **다음 큰 작업 후보:**
-  1. 문서 리팩토링 마무리
-  2. ISO16358-2 HSPF 공통화
-  3. Calculator UI v1 기본 기능
-  4. Predictor 연동
-- **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS Excel compatibility path로 분리합니다. AS/NZS Excel `1126.120 kWh` / `4.33824` / `1126120.47 Wh`는 `ASNZS_EXCEL_COMPAT` reference이며 common ISO expected가 아닙니다. Track A 검증은 Formula micro golden, branch invariant, PLF edge case, KS shared-formula oracle consistency gate 중심으로 구축합니다.
+  1. ISO16358-2 common HSPF 마무리 및 UI 연결 (진행 중)
+  2. 문서 리팩토링 마무리
+  3. Predictor 연동
+- **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS Excel compatibility path로 분리합니다. AS/NZS Excel `1126.120 kWh` / `4.33824` / `1126120.47 Wh`는 `ASNZS_EXCEL_COMPAT` reference이며 common ISO expected가 아닙니다. AS/NZS row-level exact reconstruction 작업은 Z-phase로 보류되었습니다.
 
 ## 2. 문서 가이드
 - **`AGENTS.md`**: 매 작업 시작 시 확인하는 얇은(Lite) 규칙 문서입니다.
