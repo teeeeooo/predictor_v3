@@ -70,6 +70,43 @@ Track A validation phases:
 - Phase H-3: AS/NZS Excel compatibility guard/design.
 - Phase H-4: compatibility module skeleton.
 
+Phase H-1 test design:
+
+- Purpose: validate the ISO16358-2 common HSPF path with hand-calculated micro fixtures and invariants, not with AS/NZS Excel final values.
+- Do not use AS/NZS Excel `4.33824`, `1126.120 kWh`, or `1126120.47 Wh` as H-1 expected values.
+- Do not use KS C 9306 path results as H-1 expected values; KS consistency belongs to Phase H-2.
+- Recommended test file: `tests/test_iso16358_hspf_formula_micro.py`.
+- Alternate name if the suite grows around behavioral properties: `tests/test_iso16358_hspf_invariants.py`.
+- Keep all micro fixture data under the test namespace. Do not add H-1 micro values to production `data/region_configs`.
+
+Candidate H-1 tests:
+
+- `test_hspf_power_at_half_load_equals_half_power`
+- `test_hspf_power_at_full_load_equals_full_power`
+- `test_hspf_cycling_below_min_uses_plf`
+- `test_hspf_half_to_full_interpolation_matches_hand_calculation`
+- `test_hspf_full_to_extended_branch_uses_formula_50`
+- `test_hspf_above_extended_adds_auxiliary_energy`
+- `test_hspf_bin_accumulation_matches_hand_calculation`
+
+Assertion strategy:
+
+- Prefer bin-level diagnostics over final HSPF alone.
+- Public ISO common result currently exposes `bin_details` with `tj`, `nj`, `bl_h`, `pi_j`, `P_j`, `case`, `heat_pump_energy`, `auxiliary_energy`, and `E_j`, plus top-level `hstl_wh`, `hsec_wh`, `heat_pump_energy_wh`, and `auxiliary_energy_wh`.
+- Use public `calculate_hspf()` / `calculate_hspf_iso16358_common()` result diagnostics first.
+- Private helpers may be used only for narrow formula micro checks when public diagnostics are insufficient, for example `_iso_hspf_capacity_curve`, `_iso_hspf_power_curve`, `_iso_hspf_min_half_power_by_formula_44_48`, and `_iso_hspf_formula50_full_extended_frost_power`.
+- Do not change production API in Phase H-1. If diagnostics are insufficient, design minimal diagnostics exposure as a separate phase.
+
+Candidate micro fixtures:
+
+- Half boundary identity: set load equal to half capacity. Expect `P_j = P_half`, no auxiliary energy, and boundary/interpolation behavior consistent with the selected branch.
+- Full boundary identity: set load equal to full capacity. Expect `P_j = P_full` and no auxiliary energy.
+- Below minimum cycling PLF: set load to `0.5 * min_capacity` with explicit `Cd`. Expect `X = 0.5`, `PLF = 1 - Cd * (1 - X)`, `P_j = X * P_min / PLF`, `E_j = P_j * bin_hours`, and no auxiliary energy.
+- Half-to-full interpolation: set `half_capacity < load < full_capacity`. Expect half-full interpolation and hand-calculated `P_j`.
+- Full-to-extended Formula 50: set frost-bin `full_capacity < load <= extended_capacity`. Expect `formula50_full_extended_frost`, hand-calculated `P_j`, and no auxiliary energy.
+- Above extended auxiliary: implementation check required before locking expected values. Current common path enters `saturated` when Formula 50 is unavailable or `load > extended_capacity`, uses full-stage power, and computes auxiliary from `load - full_capacity`; if the intended ISO contract is extended-capacity saturation, that should be resolved before H-1 expected values are frozen.
+- Accumulation invariant: use a tiny 2-3 bin fixture. Expect `hstl_wh = sum(load_j * hours_j)`, `hsec_wh = sum(E_j)`, and `hspf = hstl_wh / hsec_wh` before final rounding.
+
 KS shared-formula oracle consistency gate:
 
 - Use the implemented KS C 9306 HSPF path as a surrogate oracle / cross-path consistency gate only.

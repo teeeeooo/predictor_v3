@@ -481,3 +481,49 @@
 
 #### Lesson
 - shared formula 검증은 결과 숫자보다 입력 조건, stage mapping, correction factor 통제, bin-level diagnostics를 먼저 고정해야 한다.
+
+### Follow-up — Phase H-1 ISO HSPF formula micro test design
+
+#### Tried
+- ISO16358-2 common HSPF 구현 위치와 기존 테스트 구조를 읽기 전용으로 조사했다.
+- H-1 테스트가 final workbook value가 아니라 public `bin_details`와 hand-calculated micro fixtures로 설계 가능한지 확인했다.
+
+#### Result
+- Track A common path는 `calculate_hspf()`가 `profile=iso16358_2_hspf`일 때 `calculate_hspf_iso16358_common()`으로 진입한다.
+- Public result는 `bin_details`의 `tj`, `nj`, `bl_h`, `pi_j`, `P_j`, `case`, `heat_pump_energy`, `auxiliary_energy`, `E_j`와 top-level `hstl_wh` / `hsec_wh`를 노출하므로 H-1의 주요 invariant는 API 변경 없이 설계 가능하다.
+- 권장 파일명은 `tests/test_iso16358_hspf_formula_micro.py`이며, 대안은 `tests/test_iso16358_hspf_invariants.py`로 정리했다.
+- Above-extended auxiliary case는 현재 common path가 Formula 50 밖에서 full-stage saturated convention을 쓰므로 expected freeze 전에 implementation check가 필요하다고 문서화했다.
+
+#### Failed / Risk
+- Formula 47/49/50 전체가 독립 pure helper로 완전히 분리되어 있지는 않으므로, 일부 micro test는 public bin result 또는 좁은 private helper를 사용해야 한다.
+- capacity boundary detail이 public `bin_details`에 모두 노출되지는 않아, 필요한 경우 최소 diagnostics exposure를 별도 phase로 설계해야 한다.
+
+#### Decision
+- H-1은 AS/NZS Excel `4.33824` 또는 KS path result를 expected로 사용하지 않는다.
+- H-1 micro fixture는 tests namespace에만 두고 production region config와 분리한다.
+- final HSPF 단독 assertion보다 bin-level diagnostics와 accumulation invariant를 우선한다.
+
+#### Lesson
+- HSPF common path 검증은 큰 golden 하나보다 branch를 강제로 고정하는 tiny fixture와 bin-level diagnostics가 먼저 필요하다.
+
+### Follow-up — Phase H-1a ISO HSPF safe branch micro tests
+
+#### Tried
+- `tests/test_iso16358_hspf_formula_micro.py`를 추가해 ISO16358-2 common HSPF safe branch를 hand-calculated micro fixture로 검증했다.
+- AS/NZS Excel final value, KS C 9306 path result, production region config 값을 expected로 사용하지 않았다.
+
+#### Result
+- half boundary, full boundary, below-min cycling PLF, half-to-full interpolation, tiny-bin accumulation invariant 테스트를 추가했다.
+- 테스트는 public `calculate_hspf()` result의 `bin_details`, `hstl_wh`, `hsec_wh`, `heat_pump_energy_wh`, `auxiliary_energy_wh`만 사용한다.
+- `python3 -m pytest tests/test_iso16358_hspf_formula_micro.py -q` 결과 `5 passed`.
+
+#### Failed / Risk
+- `python -m pytest ...`는 환경에 `python` 명령이 없어 실행되지 않았다. 동일 대상은 `python3`로 통과했다.
+- full-to-extended Formula 50 및 above-extended auxiliary contract는 아직 expected로 고정하지 않았다.
+
+#### Decision
+- H-1a는 safe branch micro tests로 닫고, extended/auxiliary contract는 H-1b에서 별도 확인한다.
+- micro fixture는 tests namespace에만 유지한다.
+
+#### Lesson
+- H-1 safe branch는 production API 변경 없이 public bin diagnostics만으로 검증 가능하다.

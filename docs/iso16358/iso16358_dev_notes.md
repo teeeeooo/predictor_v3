@@ -362,6 +362,23 @@ Track A validation phases:
 - Phase H-3: AS/NZS Excel compatibility guard/design.
 - Phase H-4: compatibility module skeleton.
 
+Phase H-1 formula micro golden / invariant test design:
+
+- Recommended file: `tests/test_iso16358_hspf_formula_micro.py`.
+- Alternative if grouped by properties: `tests/test_iso16358_hspf_invariants.py`.
+- H-1 must use hand-calculated micro fixtures, not AS/NZS Excel final values and not KS path result values.
+- Micro fixture values belong under the tests namespace only. Do not copy them into production region config.
+- Use the public ISO common result first: `bin_details` currently exposes `tj`, `nj`, `bl_h`, `pi_j`, `P_j`, `case`, `heat_pump_energy`, `auxiliary_energy`, and `E_j`; top-level output exposes `hstl_wh`, `hsec_wh`, `heat_pump_energy_wh`, and `auxiliary_energy_wh`.
+- Candidate test cases:
+  - half boundary identity: load equals half capacity -> `P_j = P_half`, auxiliary energy `0`.
+  - full boundary identity: load equals full capacity -> `P_j = P_full`, auxiliary energy `0`.
+  - cycling below minimum: load equals `0.5 * min_capacity`; assert `X`, `PLF`, `P_j`, `E_j`, and auxiliary energy by hand calculation.
+  - half-to-full interpolation: assert branch and hand-calculated `P_j`.
+  - Formula 50 full-to-extended: assert `formula50_full_extended_frost`, hand-calculated `P_j`, and auxiliary energy `0`.
+  - above extended auxiliary: confirm current implementation convention before freezing expected values. Current common path falls through to `saturated` outside Formula 50 and computes auxiliary from full-stage capacity.
+  - tiny 2-3 bin accumulation: assert `hstl_wh`, `hsec_wh`, and pre-rounded `hstl_wh / hsec_wh`.
+- If public diagnostics are insufficient, prefer a private helper micro test over changing production API in H-1. Minimal diagnostics exposure must be a separate design phase.
+
 KS shared-formula oracle consistency gate:
 
 - Use the implemented KS C 9306 HSPF path as a surrogate oracle / cross-path consistency gate only.
