@@ -639,3 +639,27 @@
 
 #### Lesson
 - Intended-contract xfail은 불확실한 behavior를 pass 기준으로 굳히지 않으면서 다음 구현 phase의 target을 명확히 남기는 데 유효하다.
+
+### Follow-up — Phase H-6b/H-6c Formula 45/49 routing contradiction
+
+#### Tried
+- ISO16358-2 common HSPF 엔진에 Formula 45(non-frost)/Formula 49(frost) half-to-full 구간 private helper를 구현 및 검증했다.
+- `calculate_hspf_iso16358_common` 메인 라우팅의 `bl_h <= pi_full` 분기에 이 helper를 임시 연결해 영향을 진단했다.
+
+#### Result
+- `_iso_hspf_half_full_power_by_formula_45_49` helper와 마이크로 테스트는 성공적으로 구현되어 커밋되었다.
+- 메인 라우팅에 적용 시 잘 통과하던 `case_2`의 HSPF가 기대값(4.289)을 벗어나 4.478로 오차가 발생했다.
+- `case_3`의 결과 역시 HSPF 4.499로 이동하며 외부 Excel COM 기대값(4.338)에서 더 멀어졌다.
+
+#### Failed / Risk
+- `case_2`의 기대값(4.289)은 엄격한 ISO Variable-Stage 수학 모델(Formula 45/49 적용)이 아니라, Two-Stage용 '선형 보간(capacity-linear)'을 썼을 때만 도출된다.
+- 즉, Golden Matrix의 데이터는 ISO 표준 로직이 아닌 특정 조건(예: Extended 유무)에 따라 Formula 45/49와 선형 보간을 혼용하는 workbook-derived convention일 위험이 크다.
+- 이 비표준 동작을 맞추기 위해 ISO 공통 코어(Track A)를 수정하면 엔진의 규격 일관성이 파괴된다.
+
+#### Decision
+- Formula 45/49 helper는 private 상태로 유지하고 메인 라우팅 통합은 보류(deferred)한다.
+- `case_2`의 패스 유지를 위해 현재의 capacity-linear interpolation 라우팅을 롤백하여 유지한다.
+- 향후 `case_3` 기대값을 순수 ISO common expected가 아닌 AS/NZS workbook convention 계열로 분리하는 정책 논의가 필요하다.
+
+#### Lesson
+- 외부 엑셀 계산기에서 추출된 Golden Expected 데이터는 반드시 규격 기반의 교차 검증을 거쳐야 하며, 모순된 fixture-fitting을 ISO 엔진에 하드코딩해서는 안 된다.
