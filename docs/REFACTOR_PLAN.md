@@ -134,7 +134,7 @@
 ### 6.2 주의 항목
 
 - AS/NZS 3823.4.2 규격 확인 전 호주/뉴질랜드 구현 금지.
-- ISO16358-2 HSPF common path는 `tests/test_iso16358_hspf_formula_micro.py` H-1a safe branch 및 H-1b-1 Formula 50 frost branch micro tests로 보호한다. Above-extended saturated behavior는 contract 확인 전 expected로 고정하지 않는다.
+- ISO16358-2 HSPF common path는 `tests/test_iso16358_hspf_formula_micro.py` H-1a safe branch 및 H-1b-1 Formula 50 frost branch micro tests로 보호한다. Above-extended intended contract는 strict xfail로 기록했으며 implementation fix 전까지 current fallback을 expected로 고정하지 않는다.
 - KS shared-formula oracle consistency gate는 surrogate oracle / cross-path consistency check로만 사용하고 common ISO expected로 승격하지 않는다.
 - AS/NZS Excel HSPF exact matching은 ISO common HSPF가 아니라 별도 compatibility calculator/profile 및 guard test 설계 후 구현한다.
 - 2°C 외삽 시 선형보간 방식(`-7 ↔ 7`) 유지.
@@ -274,7 +274,7 @@ docs/
 ### Step 2 — ISO 16358-2 HSPF 공통화
 - 한국 외 국가(Hong Kong 등) HSPF 확장을 위한 공통 엔진 구현.
 - `ISO16358Calculator` 내 variable-capacity heating 로직 정교화.
-- Track A H-1a safe branch 및 H-1b-1 Formula 50 frost branch micro tests 완료. Above-extended auxiliary contract, KS shared-formula oracle consistency gate, Track B AS/NZS Excel compatibility guard test를 분리 설계.
+- Track A H-1a safe branch 및 H-1b-1 Formula 50 frost branch micro tests 완료. H-1b-2 above-extended intended contract는 strict xfail로 기록. Implementation fix, KS shared-formula oracle consistency gate, Track B AS/NZS Excel compatibility guard test를 분리 설계.
 
 ### Step 3 — CSPF/HSPF region config schema 전환
 - `cspf_test_profile`을 포함한 통합 schema 도입.

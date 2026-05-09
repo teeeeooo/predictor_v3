@@ -194,6 +194,40 @@ def test_hspf_formula50_full_to_extended_matches_boundary_cop(tmp_path):
     assert result["hsec_wh"] == pytest.approx(expected_power * hours)
 
 
+@pytest.mark.xfail(
+    reason=(
+        "Current common path uses full-stage saturated fallback; intended "
+        "contract is extended-cap saturation."
+    ),
+    strict=True,
+)
+def test_hspf_above_extended_uses_extended_cap_and_auxiliary_xfail(tmp_path):
+    load = 2400.0
+    hours = 2.0
+    aux_cop = 1.0
+    calculator = make_iso_micro_calculator(
+        tmp_path,
+        [{"j": 1, "tj": 0.0, "nj": hours}],
+    )
+    result = calculator.calculate_hspf(
+        iso_points_with_extended(rated_heating_capacity=load),
+        aux_cop=aux_cop,
+    )
+    detail = single_detail(result)
+    expected_unmet_load = load - EXTENDED_CAPACITY
+    expected_heat_pump_energy = EXTENDED_POWER * hours
+    expected_auxiliary_energy = expected_unmet_load * hours / aux_cop
+    expected_e_j = expected_heat_pump_energy + expected_auxiliary_energy
+
+    assert detail["case"] == "saturated"
+    assert detail["P_j"] == pytest.approx(EXTENDED_POWER)
+    assert detail["heat_pump_energy"] == pytest.approx(expected_heat_pump_energy)
+    assert detail["auxiliary_energy"] == pytest.approx(expected_auxiliary_energy)
+    assert detail["E_j"] == pytest.approx(expected_e_j)
+    assert result["hstl_wh"] == pytest.approx(load * hours)
+    assert result["hsec_wh"] == pytest.approx(expected_e_j)
+
+
 def test_hspf_tiny_bin_accumulation_matches_hand_calculation(tmp_path):
     calculator = make_iso_micro_calculator(
         tmp_path,

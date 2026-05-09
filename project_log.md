@@ -574,3 +574,26 @@
 
 #### Lesson
 - Formula 50 branch는 public diagnostics가 충분해 production API 변경 없이 hand-calculated micro test로 고정할 수 있다.
+
+### Follow-up — Phase H-1b-2 above-extended intended-contract xfail
+
+#### Tried
+- `tests/test_iso16358_hspf_formula_micro.py`에 above-extended intended contract를 strict xfail test로 추가했다.
+- Current full-stage saturated fallback을 expected로 사용하지 않고, extended-cap saturation contract를 test-only expectation으로 명시했다.
+
+#### Result
+- `test_hspf_above_extended_uses_extended_cap_and_auxiliary_xfail` 추가.
+- Intended expected는 equipment capacity cap `Phi_ext(tj)`, equipment power `P_ext(tj)`, unmet load `load - Phi_ext(tj)`, auxiliary energy `unmet_load * hours / aux_cop`, `HSTL = load * hours`, `HSEC = P_ext * hours + auxiliary_energy`로 구성했다.
+- `python3 -m pytest tests/test_iso16358_hspf_formula_micro.py -q` 결과 `6 passed, 1 xfailed`.
+- `python3 -m pytest tests/test_iso16358_hspf_validation.py tests/test_iso16358_hspf_golden.py -q` 결과 `60 passed, 7 xfailed`.
+
+#### Failed / Risk
+- Current diagnostics do not expose `phi_ext` / `p_ext` in saturated branch, so xfail expected uses test-local hand calculation.
+- Implementation fix 전까지 above-extended branch는 intended contract와 다르다.
+
+#### Decision
+- Above-extended behavior는 strict xfail로만 기록하고 current fallback을 normative expected로 고정하지 않는다.
+- Implementation fix는 별도 Phase H-1b-3로 분리한다.
+
+#### Lesson
+- Intended-contract xfail은 불확실한 behavior를 pass 기준으로 굳히지 않으면서 다음 구현 phase의 target을 명확히 남기는 데 유효하다.
