@@ -2136,10 +2136,13 @@ class ISO16358Calculator:
                 else:
                     # Case C: Saturated
                     case = "saturated"
-                    hp_energy = p_full * nj
-                    p_j = p_full
-                    aux_heat = bl_h - pi_full
+                    hp_energy = ext_f["power"] * nj
+                    p_j = ext_f["power"]
+                    aux_heat = bl_h - ext_f["capacity"]
                     aux_energy = aux_heat * nj / aux_cop
+                    trace = {
+                        "pi_j": ext_f["capacity"],
+                    }
             else:
                 # Case C: Saturated
                 case = "saturated"

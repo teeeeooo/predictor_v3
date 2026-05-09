@@ -194,14 +194,7 @@ def test_hspf_formula50_full_to_extended_matches_boundary_cop(tmp_path):
     assert result["hsec_wh"] == pytest.approx(expected_power * hours)
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Current common path uses full-stage saturated fallback; intended "
-        "contract is extended-cap saturation."
-    ),
-    strict=True,
-)
-def test_hspf_above_extended_uses_extended_cap_and_auxiliary_xfail(tmp_path):
+def test_hspf_above_extended_uses_extended_cap_and_auxiliary(tmp_path):
     load = 2400.0
     hours = 2.0
     aux_cop = 1.0
@@ -220,6 +213,7 @@ def test_hspf_above_extended_uses_extended_cap_and_auxiliary_xfail(tmp_path):
     expected_e_j = expected_heat_pump_energy + expected_auxiliary_energy
 
     assert detail["case"] == "saturated"
+    assert detail["pi_j"] == pytest.approx(EXTENDED_CAPACITY)
     assert detail["P_j"] == pytest.approx(EXTENDED_POWER)
     assert detail["heat_pump_energy"] == pytest.approx(expected_heat_pump_energy)
     assert detail["auxiliary_energy"] == pytest.approx(expected_auxiliary_energy)
