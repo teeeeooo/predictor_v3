@@ -185,8 +185,8 @@ def test_pure_iso_track_a_half_to_full_formula_49_frost_route_level_xfail(tmp_pa
     
     fixture = load_pure_iso_track_a_fixture()
     case = fixture["cases"]["half_to_full_formula_49_frost_one_bin"]
-    
-    # Load = 1500W at -7C. Ref_Cap = 1500 * 17 / (17 - (-7)) = 1500 * 17/24 = 1062.5 W
+    # Load = 1150W at -7C. 
+    # Measured point pool at -7C: half(800/300), full(1500/450)
     measured = {
         "rated_heating_capacity": 1062.5,
         "7_full": case["measured_point_pool"]["7_full"],
@@ -194,9 +194,10 @@ def test_pure_iso_track_a_half_to_full_formula_49_frost_route_level_xfail(tmp_pa
         "-7_full": case["measured_point_pool"]["-7_full"],
         "-7_half": case["measured_point_pool"]["-7_half"],
     }
-    
+
     result = calculator.calculate_hspf(measured)
-    
+
+    # This assertion is expected to fail or xfail if current routing is incorrect for pure ISO
     assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
     assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
     assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
