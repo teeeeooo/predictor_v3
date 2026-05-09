@@ -1,31 +1,33 @@
-# predictor_v3 상세 에이전트 규칙
+# predictor_v3 상세 에이전트 규칙 (Detailed Domain Reference)
 
-이 문서는 predictor_v3의 상세 에이전트 규칙 보관소다.
+이 문서는 predictor_v3의 상세 설계 근거, 도메인 지식, 그리고 역사적 규칙을 담은 **Detailed Domain Reference** 저장소다.
 
-기본 작업 시작 시에는 `AGENTS.md`를 먼저 읽는다.  
-작업 유형 분류와 읽을 문서 선택은 `AGENT_TASK_ROUTER.md`를 따른다.  
-`AGENTS_FULL.md`는 사용자가 명시적으로 요청했거나, 대규모/고위험 작업에서 상세 규칙 확인이 필요할 때만 읽는다.
+**주의: 본 문서는 에이전트가 기본적으로(Default) 읽는 문서가 아니다.**
+에이전트는 실무 작업을 위해 `AGENTS.md`(Active Working Rules)와 `AGENT_TASK_ROUTER.md`(Routing)를 먼저 읽어야 한다. 
+본 문서는 사용자가 명시적으로 요청했거나, 대규모/고위험 작업에서 상세한 Rationale 확인이 필요할 때만 선별적으로 읽는다.
 
 ## 이 파일을 읽는 경우
 
 - 사용자가 명시적으로 `AGENTS_FULL.md`를 읽으라고 요청한 경우
-- Train/Predict 경계 변경
-- ML pipeline 구조 변경
-- calculator public API 변경 가능성이 있는 작업
-- PyQt model/view 구조 변경
-- 배포/패키징 구조 변경
-- 프로젝트 전반의 아키텍처 리팩토링
-- 장기 금지 규칙의 상세 근거 확인이 필요한 경우
+- 설계 의도(Rationale) 파악이 필요한 고위험 작업
+- Train/Predict 경계 및 ML pipeline 상세 규칙 확인
+- PyInstaller 배포/패키징 binaries 매핑 규칙 확인
+- AHRI 210/240 HSPF2 full variable-capacity 상세 구현 범위 확인
+- 아키텍처 절대 원칙의 역사적 근거 확인
 
 ## 현재 문서 체계
 
-- `AGENTS.md`: 매 작업 시작용 Lite 규칙
-- `AGENT_TASK_ROUTER.md`: 작업 유형별 상세 라우팅
-- `PROJECT_CHARTER.md`: 장기 방향과 최종 목표
-- `project_brief.md`: 새 대화 시작용 현재 상태 요약
-- `project_log.md`: try/fail/success, 결정, 시행착오 기록
-- `docs/REFACTOR_PLAN.md`: 살아있는 계획과 남은 작업
-- `docs/architecture/project_architecture.md`: 기술 구조, ML feature, UI COLUMNS, 로그 구조
+- `AGENTS.md`: 매 세션 시작 시 확인하는 **Active Working Rules**
+- `AGENT_TASK_ROUTER.md`: 작업 유형별 상세 라우팅 가이드
+- `PROJECT_CHARTER.md`: 프로젝트의 최종 목표와 Phase 1~5 마일스톤
+- `project_brief.md`: 새 대화 세션 시작 시 현재 상태 요약 (Handoff)
+- `docs/WORK_PLAN.md`: 현재 우선순위, 상세 실행 순서, Z-phase 항목 관리
+- `docs/REFACTOR_PLAN.md`: 리팩토링 후보, 구조 분리 트리거, 구조적 가드레일
+- `project_log.md`: Try/Fail/Success 이력 및 의사결정 기록 (Decision History)
+- `docs/designs/*`: 아키텍처 및 구현 관련 큰 설계 결정문 (Design Gate Records)
+
+## Migration & Archive Note
+ML/UI/Packaging/AHRI 등의 상세 구현 규칙은 아직 각각의 Owner 문서로 이관 전 상태다. 해당 내용의 이관 및 검증이 완료될 때까지 본 문서를 보존하며, 이관 완료 후 `docs/archive/` 이동 여부를 결정한다.
 
 
 ## 프로젝트 정보

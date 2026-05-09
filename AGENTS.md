@@ -1,5 +1,7 @@
-# predictor_v3 Agent Rules (Lite)
-전체 규칙: AGENTS_FULL.md 참조
+# predictor_v3 Agent Rules
+
+본 문서는 실무 작업을 수행하는 에이전트가 매 세션 시작 시 반드시 준수해야 할 **Active Working Rules**다.
+상세한 설계 근거(Rationale)나 역사적 배경은 `AGENTS_FULL.md`를 참조하되, 사용자의 명시적 요청이 있거나 고위험 작업에서 상세 맥락 파악이 필요한 경우에만 제한적으로 확인한다.
 
 ## 절대 원칙
 - Train/Predict 분리: app_train.py ↔ app_predict.py 병합 금지
