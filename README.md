@@ -7,7 +7,7 @@
 이 저장소의 목적은 다음 역할을 안정적으로 분리해 운영하는 것이다.
 
 - ML 모델로 제품 성능값을 예측한다.
-- EN14825, AHRI 210/240, ISO16358 계열 seasonal efficiency calculator를 rule-based deterministic path로 계산한다.
+- EN14825, AHRI 210/240, ISO 16358 계열 seasonal efficiency calculator를 rule-based deterministic path로 계산한다.
 - 지역별/규격별 config와 profile을 통해 계산 조건을 관리한다.
 - Calculator UI, 테스트, 문서, agent workflow 규칙을 함께 유지한다.
 
@@ -73,7 +73,7 @@ General workflow rules:
 | `docs/architecture/` | Architecture contracts and module boundaries |
 | `docs/en14825/` | EN14825 canonical standard documents |
 | `docs/ahri210240/` | AHRI 210/240 canonical standard documents |
-| `docs/iso16358/` | ISO16358 canonical standard documents and region extensions |
+| `docs/iso16358/` | ISO 16358 canonical standard documents and region extensions |
 | `docs/knowledge/` | ML-only knowledge base, not calculator authority |
 | `docs/designs/` | Design Gate summaries and design records |
 
