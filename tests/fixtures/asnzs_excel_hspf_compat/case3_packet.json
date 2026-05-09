@@ -1,0 +1,50 @@
+{
+  "reference_type": "ASNZS_EXCEL_COMPAT",
+  "calculator_id": "asnzs_excel_hspf",
+  "case_id": "case3",
+  "packet_kind": "excel_com_chat_packet_subset",
+  "source": {
+    "kind": "windows_excel_com",
+    "workbook_family": "AS/NZS Energy Rating SEER calculator",
+    "workbook_version": "implementation_check_required",
+    "packet_id": "case3",
+    "note": "Subset packet for ASNZS_EXCEL_COMPAT mapping tests only; not ISO common expected."
+  },
+  "namespace_guard": {
+    "not_iso_common_expected": true,
+    "not_region_config": true,
+    "not_ui_visible": true,
+    "not_full_dump": true
+  },
+  "anchors": {
+    "outputs": {
+      "H12": {
+        "semantic_name": "hstl_kwh_candidate",
+        "status": "candidate",
+        "value": 1126.120
+      },
+      "H13": {
+        "semantic_name": "hspf_candidate",
+        "status": "candidate",
+        "value": 4.33824
+      },
+      "CH48": {
+        "semantic_name": "ch48_wh_reference",
+        "status": "candidate",
+        "value": 1126120.47
+      }
+    },
+    "helper_columns": {
+      "BN": {"status": "implementation_check_required"},
+      "BP": {"status": "implementation_check_required"},
+      "BY": {"status": "implementation_check_required"},
+      "CA": {"status": "implementation_check_required"},
+      "CC": {"status": "implementation_check_required"}
+    },
+    "component_columns": {
+      "CB": {"status": "implementation_check_required"},
+      "CD": {"status": "implementation_check_required"},
+      "BQ": {"status": "implementation_check_required"}
+    }
+  }
+}

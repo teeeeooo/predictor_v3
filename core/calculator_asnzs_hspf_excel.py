@@ -12,17 +12,27 @@ CALCULATOR_ID = "asnzs_excel_hspf"
 class ASNZSExcelHSPFCompatibilityCalculator:
     def calculate_hspf(self, measured_inputs: dict, options: dict = None) -> dict:
         """
-        AS/NZS Excel HSPF compatibility calculation is not implemented yet.
-        
-        This skeleton must not be used as common HSPF.
-        
-        Input contract: Hybrid Input (canonical performance points + compatibility options).
-        Boundary: Reference type must be ASNZS_EXCEL_COMPAT.
+        AS/NZS Excel HSPF compatibility calculation - Partial Implementation (Component Accumulation Only).
         """
-        raise NotImplementedError(
-            "AS/NZS Excel HSPF compatibility calculation is not implemented yet. "
-            "This skeleton must not be used as common HSPF. "
-            "Boundary: ASNZS_EXCEL_COMPAT."
+        if not isinstance(measured_inputs, dict):
+            raise ValueError("measured_inputs must be a dict.")
+        
+        if measured_inputs.get("reference_type") != REFERENCE_TYPE:
+            raise ValueError(f"reference_type must be {REFERENCE_TYPE}.")
+            
+        required_fields = ["component_details", "hstl_wh", "hspf"]
+        for field in required_fields:
+            if field not in measured_inputs:
+                raise ValueError(f"Missing required field: {field}")
+        
+        options = options or {}
+        matched_reference = options.get("matched_reference")
+        
+        return self._build_component_accumulation_result(
+            hstl_wh=measured_inputs["hstl_wh"],
+            component_details=measured_inputs["component_details"],
+            hspf=measured_inputs["hspf"],
+            matched_reference=matched_reference
         )
 
     def _cop_from_capacity_power(self, capacity_w: float, power_w: float) -> float:
@@ -52,6 +62,93 @@ class ASNZSExcelHSPFCompatibilityCalculator:
         if "capacity_w" not in point or "power_w" not in point:
             raise ValueError("Point must contain capacity_w and power_w.")
         return self._cop_from_capacity_power(point["capacity_w"], point["power_w"])
+
+    def _component_power_from_load_and_cop(self, load_w: float, helper_cop: float) -> float:
+        if load_w < 0:
+            raise ValueError("Load cannot be negative.")
+        if helper_cop <= 0:
+            raise ValueError("Helper COP must be positive.")
+        return load_w / helper_cop
+
+    def _component_energy_from_power(self, power_w: float, hours: float) -> float:
+        if power_w < 0:
+            raise ValueError("Power cannot be negative.")
+        if hours < 0:
+            raise ValueError("Hours cannot be negative.")
+        return power_w * hours
+
+    def _sum_component_energies(self, components: list[dict]) -> float:
+        total = 0.0
+        for comp in components:
+            if "energy_wh" not in comp:
+                raise KeyError("Component missing energy_wh.")
+            energy = comp["energy_wh"]
+            if energy < 0:
+                raise ValueError("Energy cannot be negative.")
+            total += energy
+        return total
+
+    def _build_component_energy_detail(self, name: str, load_w: float, helper_cop: float, hours: float, anchor: str = None) -> dict:
+        power_w = self._component_power_from_load_and_cop(load_w, helper_cop)
+        energy_wh = self._component_energy_from_power(power_w, hours)
+        return {
+            "name": name,
+            "anchor": anchor,
+            "load_w": load_w,
+            "helper_cop": helper_cop,
+            "power_w": power_w,
+            "hours": hours,
+            "energy_wh": energy_wh,
+        }
+
+    def _build_compatibility_result_envelope(
+        self,
+        *,
+        hstl_wh: float,
+        hsec_wh: float,
+        hspf: float,
+        workbook_diagnostics: dict = None,
+        matched_reference: dict = None,
+    ) -> dict:
+        if hstl_wh < 0:
+            raise ValueError("hstl_wh cannot be negative.")
+        if hsec_wh <= 0:
+            raise ValueError("hsec_wh must be positive.")
+        if hspf < 0:
+            raise ValueError("hspf cannot be negative.")
+            
+        import copy
+        envelope = {
+            "reference_type": REFERENCE_TYPE,
+            "calculator_id": CALCULATOR_ID,
+            "hstl_wh": hstl_wh,
+            "hsec_wh": hsec_wh,
+            "hspf": hspf,
+            "workbook_diagnostics": copy.deepcopy(workbook_diagnostics) if workbook_diagnostics else {},
+            "matched_reference": copy.deepcopy(matched_reference) if matched_reference else {},
+        }
+        return envelope
+
+    def _build_component_accumulation_result(
+        self,
+        *,
+        hstl_wh: float,
+        component_details: list,
+        hspf: float,
+        matched_reference: dict = None,
+    ) -> dict:
+        hsec_wh = self._sum_component_energies(component_details)
+        workbook_diagnostics = {
+            "component_details": list(component_details),
+            "output_anchors": get_workbook_output_anchor_map(),
+        }
+        return self._build_compatibility_result_envelope(
+            hstl_wh=hstl_wh,
+            hsec_wh=hsec_wh,
+            hspf=hspf,
+            workbook_diagnostics=workbook_diagnostics,
+            matched_reference=matched_reference,
+        )
 
 # Workbook helper column anchor map
 # Excel workbook compatibility helper columns only; not common formula.
@@ -86,3 +183,27 @@ WORKBOOK_HELPER_COLUMNS = {
 def get_workbook_helper_column_map() -> dict:
     import copy
     return copy.deepcopy(WORKBOOK_HELPER_COLUMNS)
+
+# Workbook output anchor map
+# Excel workbook compatibility output anchors only; not common formula.
+WORKBOOK_OUTPUT_ANCHORS = {
+    "CG": {
+        "semantic_name": "component_energy_sum_candidate",
+        "status": "implementation_check_required",
+        "description": "AS/NZS workbook compatibility output anchor for CG; not ISO common formula.",
+    },
+    "CH": {
+        "semantic_name": "heating_energy_component_or_total_candidate",
+        "status": "implementation_check_required",
+        "description": "AS/NZS workbook compatibility output anchor for CH; not ISO common formula.",
+    },
+    "CH48": {
+        "semantic_name": "case_total_hsec_wh_reference",
+        "status": "candidate",
+        "description": "AS/NZS workbook compatibility reference anchor for CH48 Wh; not ISO common expected.",
+    },
+}
+
+def get_workbook_output_anchor_map() -> dict:
+    import copy
+    return copy.deepcopy(WORKBOOK_OUTPUT_ANCHORS)
