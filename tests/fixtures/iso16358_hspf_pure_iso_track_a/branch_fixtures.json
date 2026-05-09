@@ -71,6 +71,28 @@
         "hsec_wh": 333.3333333333333,
         "hspf": 4.5
       }
+    },
+    "half_to_full_formula_49_frost_one_bin": {
+      "case_id": "half_to_full_formula_49_frost_one_bin",
+      "label": "Half-to-full frost interpolation Formula 49",
+      "points": ["half", "full"],
+      "bin_hours": [{"tj": -7.0, "nj": 1.0}],
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.0,
+        "aux_cop": 1.0
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 1500.0, "power": 450.0},
+        "-7_half": {"capacity": 800.0, "power": 300.0}
+      },
+      "expected": {
+        "hstl_wh": 1500.0,
+        "hsec_wh": 319.1489361702128,
+        "hspf": 4.7
+      }
     }
   }
 }
