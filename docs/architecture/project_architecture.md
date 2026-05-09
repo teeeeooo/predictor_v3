@@ -40,9 +40,19 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
 
-### COLUMNS 자동완성 구조
+### 3.2 COLUMNS 자동완성 구조
 - **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계 매핑은 `ui/base_model.py`에서 전담합니다.
 - **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 4단계 복합 캐스케이딩 및 그에 따른 면적/체적 매핑 로직은 단순 매핑과 분리되어 `ui/predict_window.py`가 전담합니다.
+
+### 3.3 UI Model/View Guardrails
+- **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
+- **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
+- **State Rendering**: 상태별 배경색을 통해 시각적 일관성을 확보한다.
+  - 직접 입력 컬럼 (`INPUT_COLS`): 흰색 (`#FFFFFF`)
+  - 자동 매핑 컬럼 (`AUTO_COLS`): 회색 (`#F2F2F2`) (단, 사용자가 수동 수정한 경우 흰색으로 전환)
+  - 결과 출력 컬럼 (`RESULT_COLS`): 연녹색 (`#E6F3E6`)
+- **Event Safety**: 무한 루프(Recursion) 및 신호 복구 누락 방지를 위해, `blockSignals(True/False)` 호출 시 반드시 `try/finally` 블록으로 감싼다.
+- **Calculator Boundary**: UI 구현의 편의를 이유로 core calculator의 validation 정책을 약화하거나 우회하지 않는다. Train/Predict UI와 Calculator UI는 프로젝트 헌장(`PROJECT_CHARTER.md`)의 원칙에 따라 철저히 분리된다.
 
 ## 4. 로그 시스템
 - 학습 로그는 `logs/train_log/YYYYMMDD_HHMM/` 구조로 저장됩니다 (`summary.xlsx` 포함).
