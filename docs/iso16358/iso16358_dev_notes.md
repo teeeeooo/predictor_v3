@@ -335,18 +335,18 @@ Formula 45/49 routing contradiction: The `_iso_hspf_half_full_power_by_formula_4
 
 Case 3 Excel branch model note: Windows Excel COM selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook compatibility convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
 
-### 14.2 AS/NZS Excel compatibility boundary
+### 14.3 Pure ISO Track A Validation Baseline
 
-AS/NZS / Energy Rating SEER calculator exact matching is a separate compatibility target. The case 3 Windows Excel COM values `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh` remain useful, but their reference type is `ASNZS_EXCEL_COMPAT`, not ISO common golden expected.
+To ensure a robust validation baseline independent of external workbook conventions (such as the seven-case matrix derived from the AS/NZS SEER calculator), we maintain a `Pure ISO Track A` namespace.
 
-Design contract source: [2026-05-08-asnzs-hspf-excel-compat-boundary.md](../designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md). Implementers must use that document as the boundary contract before creating any AS/NZS compatibility calculator/profile.
-
-Implementation boundary:
-
-- ISO common HSPF keeps bin temperature `tj`, capacity/power curve, load ratio `X_j`, and Formula 47/49/50-style power calculation as the production path.
-- Excel workbook helper cells and anchors such as `BE5` / `BK5` / `BQ5`, `BE6` / `BK6` / `BQ6`, `BN` / `BP` / `BY` / `CA` / `CC` are not copied into common production code.
-- Excel exact matching, if implemented, belongs in a separate compatibility calculator/profile such as `core/calculator_asnzs_hspf_excel.py` with an explicit resolver profile like `asnzs_excel_hspf_compat`.
-- `region=au_nz` or `standard=ASNZS` alone must not activate Excel compatibility behavior; compatibility selection must be explicit and opt-in.
+- **Design Philosophy**: 
+  - Fixtures are hand-calculated based strictly on ISO 16358-2 equations, avoiding any non-standard interpolation or fallback logic present in workbook-derived samples.
+  - Test suites utilize dedicated namespaces (`tests/test_iso16358_hspf_pure_iso_track_a.py`) to prevent cross-contamination with external legacy references.
+  - Branch-level contracts (Formula 44-50) are established as `xfail` tests until the main routing core is updated to fully implement pure ISO logic.
+- **Provenance Integrity**:
+  - `Pure ISO` fixtures are marked with `ISO16358_COMMON_TRACK_A` metadata and include loader guards to prevent any accidental usage of workbook-derived anchor values (e.g., `4.33824`).
+- **Validation Path**:
+  - The `Pure ISO` suite serves as the primary target for future main loop routing integration, ensuring that system changes align with the standard rather than fitting to legacy artifacts.
 - ISO common code must not branch on `reference_type=ASNZS_EXCEL_COMPAT`.
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 

@@ -663,3 +663,21 @@
 
 #### Lesson
 - 외부 엑셀 계산기에서 추출된 Golden Expected 데이터는 반드시 규격 기반의 교차 검증을 거쳐야 하며, 모순된 fixture-fitting을 ISO 엔진에 하드코딩해서는 안 된다.
+
+### Follow-up — Phase H-7 Pure ISO Track A Fixture Construction
+
+#### Tried
+- AS/NZS workbook-derived fixture(`seven-case matrix`)와 독립된 `Pure ISO Track A` validation namespace(`tests/fixtures/iso16358_hspf_pure_iso_track_a/`)를 구축함.
+- Cycling, Formula 44/48, 45/49, 47/50, Saturated Auxiliary 등 주요 브랜치에 대해 Pure ISO 표준 수식 기반의 `Route-level` 계약 픽스처(Hand-calculated)를 추가함.
+
+#### Result
+- `cycling`, `min-to-half`, `saturated` 브랜치는 정적 기대값과 일치하여 `pass` 상태 확보.
+- Formula 45/49/47/50은 엔진의 현 구현과 차이가 있어 `xfail` contract 상태로 추가하여 검증 기준점(Target)을 명확히 함.
+- 모든 Fixture에 `ISO16358_COMMON_TRACK_A` 메타데이터 및 `no-workbook-reference` 가드를 설정함.
+
+#### Decision
+- 향후 메인 로직(Routing) 개선 시 이 Pure ISO 테스트 셋을 기준으로 점진적 전환을 수행함.
+- `seven-case` 매트릭스는 Pure ISO 검증에서 분리하여 legacy compatibility reference로 취급함.
+
+#### Lesson
+- 순수 ISO 검증을 위해서는 외부 도구 유래 데이터에 의존하지 않는 독립적인 검증 축(Namespace)을 초기에 확보해야 한다.
