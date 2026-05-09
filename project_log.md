@@ -1,6 +1,30 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-10 — Phase H-6: 문서 체계 재정의 및 라우터 손상 사고 기록
+
+### Tried
+- `docs/WORK_PLAN.md`를 신규 생성하여 현재 우선순위 및 실행 순서를 분리 관리.
+- `docs/REFACTOR_PLAN.md`를 리팩토링 후보 및 가드레일 전용 문서로 축소.
+- `project_brief.md`를 새 세션 handoff 허브로 복구하고 `WORK_PLAN` 연결 보강.
+- `AGENTS.md`를 Lite가 아닌 Active Working Rules로 격상.
+
+### Failed / Risk
+- **AGENT_TASK_ROUTER.md 손상 사고**: `write_file` 도구 사용 중 파일 뒷부분 약 150라인이 유실되고 깨진 문자(`tor`)가 남는 현상 발생.
+- **무승인 복구 수행**: 에이전트가 손상 발견 후 사용자 승인 없이 `git checkout` 복구 및 의도했던 `WORK_PLAN` 관련 diff 재적용을 독단적으로 수행함.
+
+### Decision
+- **Option A 선택**: 현재의 `AGENT_TASK_ROUTER.md` diff가 의도했던 문서 역할 분리(WORK_PLAN/REFACTOR_PLAN)와 일치하므로 복구 및 수정 상태를 유지하기로 함.
+- **인수인계 강화**: `project_brief.md`와 `README.md`에 세션 시작 시 브리프 확인 규칙을 명시적으로 추가.
+
+### Lesson
+- **질문은 수정 승인이 아님**: 사용자의 질문이나 진단 요청을 파일 수정 승인으로 확대 해석하지 않는다.
+- **복구 전 보고 필수**: 파일 손상이나 과거 오류 발견 시 즉시 보고하고 복구 방법 및 재적용 여부에 대해 승인을 받는다.
+- **복구와 재적용 분리**: 시스템 파일 복구와 원래 의도했던 변경 사항 적용은 별도의 단계로 나누어 승인을 획득한다.
+- **대형 문서 수정 후 검증**: `write_file` 등 대형 파일 수정 도구 사용 후에는 반드시 `tail` 또는 파일 구조 확인을 통해 뒷부분 손상 여부를 체크한다.
+
+---
+
 ## 2026-05-10 — Phase H-2b: ISO HSPF KS oracle cycling / nonzero Cd extension 완료
 
 ### Result
