@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "schema_version": 1,
+    "reference_type": "ISO16358_COMMON_TRACK_A",
+    "source": "hand_calculated_iso_formula_fixture",
+    "not_external_workbook_reference": true,
+    "not_asnzs_energy_rating_workbook": true
+  },
+  "cases": {}
+}
