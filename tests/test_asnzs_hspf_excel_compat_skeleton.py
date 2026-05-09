@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE, CALCULATOR_ID
 
 def build_minimal_hybrid_input():
@@ -32,9 +31,12 @@ def test_asnzs_excel_hspf_not_implemented_message_names_boundary():
     msg = str(excinfo.value)
     assert "ASNZS_EXCEL_COMPAT" in msg
     assert "not implemented" in msg.lower()
-    assert "not iso common" in msg.lower()
+    # Ensure it's not the ISO common HSPF
+    assert "not be used as" in msg
+    assert "common hspf" in msg.lower()
 
 def test_asnzs_excel_hspf_production_region_config_not_created():
+    from pathlib import Path
     path = Path("data/region_configs/asnzs_excel_hspf.json")
     assert not path.exists()
 
