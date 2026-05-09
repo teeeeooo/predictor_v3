@@ -1567,6 +1567,41 @@ class ISO16358Calculator:
             raise ValueError("ISO 16358-2 HSPF min-half branch COP must be positive.")
         return bl_h / cop_mh
 
+    def _iso_hspf_half_full_power_by_formula_45_49(
+        self,
+        tj: float,
+        bl_h: float,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
+    ) -> dict:
+        half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
+        full_temp = self._iso_hspf_intersection_temp("full", resolved, frost, load_line)
+        denominator = half_temp - full_temp
+        if denominator == 0:
+            raise ValueError("ISO 16358-2 HSPF half and full boundary temperatures are equal.")
+
+        cop_half = self._iso_hspf_boundary_cop(half_temp, "half", resolved, frost)
+        cop_full = self._iso_hspf_boundary_cop(full_temp, "full", resolved, frost)
+        cop_hf = cop_full + (cop_half - cop_full) * (tj - full_temp) / denominator
+        if cop_hf <= 0:
+            raise ValueError("ISO 16358-2 HSPF half-full branch COP must be positive.")
+
+        pi_half = self._iso_hspf_capacity_curve(tj, "half", resolved, frost)
+        pi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, frost)
+        if bl_h < pi_half - 1e-5 or bl_h > pi_full + 1e-5:
+            raise ValueError(f"Load {bl_h} is outside the half ({pi_half}) to full ({pi_full}) capacity range.")
+
+        branch_id = "formula49_half_full_frost" if frost else "formula45_half_full"
+
+        return {
+            "P_hf": bl_h / cop_hf,
+            "branch": branch_id,
+            "cop_half": cop_half,
+            "cop_full": cop_full,
+            "cop_hf": cop_hf,
+        }
+
     def _iso_hspf_minus7_fallback_factors(self, hspf_cfg: dict) -> tuple:
         minus7_fallback = hspf_cfg.get("external_calculator_minus7_fallback_override", {})
         capacity_factor = minus7_fallback.get("minus7_capacity_factor", 0.64)

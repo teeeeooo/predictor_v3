@@ -245,3 +245,104 @@ def test_hspf_tiny_bin_accumulation_matches_hand_calculation(tmp_path):
     assert result["heat_pump_energy_wh"] == pytest.approx(expected_hsec)
     assert result["auxiliary_energy_wh"] == pytest.approx(0.0)
     assert result["hspf"] == pytest.approx(round(expected_hstl / expected_hsec, 3))
+
+
+def test_hspf_formula45_half_to_full_matches_boundary_cop(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_half": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_half": {"capacity": 1000.0, "power": 250.0},
+    }
+    load_line = (-100.0, 1700.0)
+    tj = 2.0
+    bl_h = 1500.0
+    
+    result = calculator._iso_hspf_half_full_power_by_formula_45_49(
+        tj, bl_h, resolved, False, load_line
+    )
+    
+    assert result["branch"] == "formula45_half_full"
+    assert result["cop_half"] == pytest.approx(4.0)
+    assert result["cop_full"] == pytest.approx(5.0)
+    assert result["cop_hf"] == pytest.approx(4.5)
+    assert result["P_hf"] == pytest.approx(1500.0 / 4.5)
+
+
+def test_hspf_formula49_frost_half_to_full_matches_boundary_cop(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_half": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_half": {"capacity": 1000.0, "power": 250.0},
+    }
+    load_line = (-100.0, 1700.0)
+    tj = 0.0
+    bl_h = 1500.0
+    
+    result = calculator._iso_hspf_half_full_power_by_formula_45_49(
+        tj, bl_h, resolved, True, load_line
+    )
+    
+    assert result["branch"] == "formula49_half_full_frost"
+    assert result["cop_half"] == pytest.approx(4.0)
+    assert result["cop_full"] == pytest.approx(5.0)
+    assert result["cop_hf"] == pytest.approx(4.7)
+    assert result["P_hf"] == pytest.approx(1500.0 / 4.7)
+
+
+def test_hspf_formula45_49_rejects_load_outside_half_full_range(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_half": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_half": {"capacity": 1000.0, "power": 250.0},
+    }
+    load_line = (-100.0, 1700.0)
+    tj = 2.0
+    
+    with pytest.raises(ValueError, match="outside the half"):
+        calculator._iso_hspf_half_full_power_by_formula_45_49(
+            tj, 500.0, resolved, False, load_line
+        )
+        
+    with pytest.raises(ValueError, match="outside the half"):
+        calculator._iso_hspf_half_full_power_by_formula_45_49(
+            tj, 2500.0, resolved, False, load_line
+        )
+
+
+def test_hspf_formula45_49_boundary_identity(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_half": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_half": {"capacity": 1000.0, "power": 250.0},
+    }
+    load_line = (-100.0, 1700.0)
+    
+    tj_half = 7.0
+    bl_h_half = 1000.0
+    result_half = calculator._iso_hspf_half_full_power_by_formula_45_49(
+        tj_half, bl_h_half, resolved, False, load_line
+    )
+    assert result_half["P_hf"] == pytest.approx(250.0)
+    
+    tj_full = -3.0
+    bl_h_full = 2000.0
+    result_full = calculator._iso_hspf_half_full_power_by_formula_45_49(
+        tj_full, bl_h_full, resolved, False, load_line
+    )
+    assert result_full["P_hf"] == pytest.approx(400.0)
