@@ -8,21 +8,25 @@
 
 ## 2. Scope
 
-| 항목 | 현재 지원 | 근거 | 설명 |
-| --- | --- | --- | --- |
-| HSPF2 생산 경로 | v3 AHRI path | AHRI 210/240-2026 Section 11 | `calculate_hspf2()`는 v3 경로로 연결된다. |
-| HSPF2 legacy 경로 | v2 reference path | Project legacy reference | `calculate_hspf2_v2()`는 기존 단순 경로로 유지된다. |
-| HSPF2 대상 | Region IV, non-ducted, single-split, variable-capacity, air-to-air heat pump | AHRI 210/240-2026 Table 16 | 현재 bin table은 Region IV fractional heating bin hours를 사용한다. |
-| HSPF2 보조열 | 전기 저항 보조열 | AHRI 210/240-2026 Equation 11 계열 | `aux_cop` 기본 1.0을 사용한다. |
-| HSPF2 defrost | demand defrost 입력 필수, seasonal multiplier는 override 기본 1.0 | AHRI 210/240-2026 Equation 11.107 | `defrost_t_test_minutes`, `defrost_t_max_minutes`는 필수 입력이다. |
-| SEER2 현재 범위 | variable-capacity cooling bin 계산 | AHRI 210/240 cooling rating structure | 현재 구현 확인 가능한 A/B/E/F 중심 계산만 문서화한다. |
+### Current HSPF2 implementation scope
 
-| 제외 또는 제한 항목 | 현재 상태 | 필요한 추가 입력 | 근거 |
-| --- | --- | --- | --- |
-| HSPF2 Region IV 외 지역 | 미지원 | 해당 지역 Table 16 bin data와 HLH | AHRI 210/240-2026 Table 16 |
-| ducted, multi-split, VRF, dual fuel, furnace 특수 케이스 | 미지원 | 장비 유형별 시험점, 부하선, 보조열 규칙 | AHRI 210/240-2026 Section 11 |
-| HSPF2 defrost seasonal multiplier 실제 적용 | 현재 raw HSPF2에는 `fdef_override`가 곱해지고 기본 1.0 | defrost 적용 정책 확정 | AHRI 210/240-2026 Equation 11.107 |
-| SEER2 full standard parity | 확인 가능한 범위만 지원 | 공식 test point schema, off-mode 반영, golden 검증 | AHRI 210/240 cooling sections |
+현재 AHRI HSPF2 구현 우선 지원 범위는 다음과 같다.
+
+- **적용 규격**: AHRI 210/240
+- **장비 유형**: non-ducted, single-split, variable-capacity, air-to-air heat pump
+- **적용 지역**: Region IV 중심 (`fractional heating bin hours` 사용)
+- **생산 경로**: v3 AHRI path (`calculate_hspf2()`)
+- **보조열**: 전기 저항 보조열 (`aux_cop` 1.0)
+- **Defrost**: demand defrost 기반 (seasonal multiplier는 현재 override 1.0 기본 적용)
+- **SEER2 현재 범위**: variable-capacity cooling bin 계산 (확인 가능한 A/B/E/F 중심)
+
+### Future extension boundary
+
+아래 항목은 영구적인 구현 금지가 아니며, 명시적인 확장 요청 및 별도의 설계(Design Gate) 전까지는 현재 지원 범위를 벗어난 확장 후보로 취급한다.
+
+- **장비 유형 확장**: ducted ESP, multi-split, VRF, dual fuel, furnace, zoning, northern heat pump, two-compressor special cases
+- **지역 확장**: Region IV 외 지역 (Table 16 bin data 및 HLH 필요)
+- **SEER2/Defrost 고도화**: SEER2 full standard parity (off-mode 등 반영), HSPF2 defrost seasonal multiplier 실제 적용 정책 확정
 
 ## 3. Glossary Pointer
 
