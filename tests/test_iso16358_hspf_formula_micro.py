@@ -346,3 +346,87 @@ def test_hspf_formula45_49_boundary_identity(tmp_path):
         tj_full, bl_h_full, resolved, False, load_line
     )
     assert result_full["P_hf"] == pytest.approx(400.0)
+
+
+def test_hspf_formula47_full_to_extended_matches_boundary_cop(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_ext": {"capacity": 3000.0, "power": 750.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_ext": {"capacity": 3000.0, "power": 750.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_ext": {"capacity": 3000.0, "power": 750.0},
+    }
+    load_line = (-100.0, 1700.0)
+    tj = 6.0
+    bl_h = 2500.0
+    
+    result = calculator._iso_hspf_formula47_full_extended_non_frost_power(
+        tj, bl_h, resolved, load_line
+    )
+    
+    # Calculate the intersection temperatures for validation
+    full_temp = calculator._iso_hspf_intersection_temp("full", resolved, False, load_line)
+    ext_temp = calculator._iso_hspf_intersection_temp("ext", resolved, False, load_line)
+    
+    assert result["branch"] == "formula47_full_extended"
+    assert result["cop_full"] == pytest.approx(5.0)
+    assert result["cop_ext"] == pytest.approx(4.0)
+    
+    expected_cop_fe = 4.0 + (5.0 - 4.0) * (tj - ext_temp) / (full_temp - ext_temp)
+    assert result["cop_fe"] == pytest.approx(expected_cop_fe)
+    assert result["P_fe"] == pytest.approx(2500.0 / expected_cop_fe)
+
+
+def test_hspf_formula47_boundary_identity(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_ext": {"capacity": 3000.0, "power": 750.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_ext": {"capacity": 3000.0, "power": 750.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_ext": {"capacity": 3000.0, "power": 750.0},
+    }
+    load_line = (-100.0, 1700.0)
+    
+    tj_full = calculator._iso_hspf_intersection_temp("full", resolved, False, load_line)
+    bl_h_full = calculator._iso_hspf_capacity_curve(tj_full, "full", resolved, False)
+    result_full = calculator._iso_hspf_formula47_full_extended_non_frost_power(
+        tj_full, bl_h_full, resolved, load_line
+    )
+    expected_p_full = calculator._iso_hspf_power_curve(tj_full, "full", resolved, False)
+    assert result_full["P_fe"] == pytest.approx(expected_p_full)
+    
+    tj_ext = calculator._iso_hspf_intersection_temp("ext", resolved, False, load_line)
+    bl_h_ext = calculator._iso_hspf_capacity_curve(tj_ext, "ext", resolved, False)
+    result_ext = calculator._iso_hspf_formula47_full_extended_non_frost_power(
+        tj_ext, bl_h_ext, resolved, load_line
+    )
+    expected_p_ext = calculator._iso_hspf_power_curve(tj_ext, "ext", resolved, False)
+    assert result_ext["P_fe"] == pytest.approx(expected_p_ext)
+
+
+def test_hspf_formula47_rejects_load_outside_full_extended_range(tmp_path):
+    calculator = make_iso_micro_calculator(tmp_path, [])
+    resolved = {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_ext": {"capacity": 3000.0, "power": 750.0},
+        "2_full": {"capacity": 2000.0, "power": 400.0},
+        "2_ext": {"capacity": 3000.0, "power": 750.0},
+        "-7_full": {"capacity": 2000.0, "power": 400.0},
+        "-7_ext": {"capacity": 3000.0, "power": 750.0},
+    }
+    load_line = (-100.0, 1700.0)
+    tj = 6.0
+    
+    with pytest.raises(ValueError, match="outside the full .* to extended"):
+        calculator._iso_hspf_formula47_full_extended_non_frost_power(
+            tj, 1500.0, resolved, load_line
+        )
+        
+    with pytest.raises(ValueError, match="outside the full .* to extended"):
+        calculator._iso_hspf_formula47_full_extended_non_frost_power(
+            tj, 3500.0, resolved, load_line
+        )

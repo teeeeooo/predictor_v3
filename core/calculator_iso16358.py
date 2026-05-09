@@ -1695,6 +1695,46 @@ class ISO16358Calculator:
             "cop_fe_f": cop_fe_f,
         }
 
+    def _iso_hspf_formula47_full_extended_non_frost_power(
+        self,
+        tj: float,
+        bl_h: float,
+        resolved: dict,
+        load_line: tuple
+    ) -> dict:
+        full_temp = self._iso_hspf_intersection_temp("full", resolved, False, load_line)
+        # Note: Extended non-frost boundary temperature assumes the use of "ext" stage (e.g. 2_ext/7_ext if defined).
+        # ISO 16358-2 uses the extended capacity intersection. For the non-frost boundary, the common assumption 
+        # is using the non-frost curve.
+        ext_temp = self._iso_hspf_intersection_temp("ext", resolved, False, load_line)
+        
+        denominator = full_temp - ext_temp
+        if denominator == 0:
+            raise ValueError("ISO 16358-2 HSPF full and extended boundary temperatures are equal.")
+
+        cop_full = self._iso_hspf_boundary_cop(full_temp, "full", resolved, False)
+        cop_ext = self._iso_hspf_boundary_cop(ext_temp, "ext", resolved, False)
+        
+        # COP is linear with temperature between ext_temp and full_temp
+        cop_fe = cop_ext + (cop_full - cop_ext) * (tj - ext_temp) / denominator
+        if cop_fe <= 0:
+            raise ValueError("ISO 16358-2 HSPF Formula 47 branch COP must be positive.")
+
+        pi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, False)
+        pi_ext = self._iso_hspf_capacity_curve(tj, "ext", resolved, False)
+        if bl_h < pi_full - 1e-5 or bl_h > pi_ext + 1e-5:
+            raise ValueError(f"Load {bl_h} is outside the full ({pi_full}) to extended ({pi_ext}) capacity range.")
+
+        return {
+            "P_fe": bl_h / cop_fe,
+            "branch": "formula47_full_extended",
+            "cop_full": cop_full,
+            "cop_ext": cop_ext,
+            "cop_fe": cop_fe,
+            "full_temp": full_temp,
+            "ext_temp": ext_temp,
+        }
+
     def _iso_hspf_pair_power_by_boundary_cop(
         self,
         tj: float,
