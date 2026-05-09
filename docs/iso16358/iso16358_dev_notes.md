@@ -379,6 +379,15 @@ Phase H-1 formula micro golden / invariant test design:
   - tiny 2-3 bin accumulation: assert `hstl_wh`, `hsec_wh`, and pre-rounded `hstl_wh / hsec_wh`.
 - If public diagnostics are insufficient, prefer a private helper micro test over changing production API in H-1. Minimal diagnostics exposure must be a separate design phase.
 
+Phase H-1b extended / auxiliary contract check:
+
+- Current full-to-extended frost behavior is explicit and observable: `pi_full_f(tj) < BL_h(tj) <= pi_ext_f(tj)` selects `formula50_full_extended_frost`.
+- Formula 50 uses boundary COP interpolation between full and extended boundary temperatures (`tg`, `tf`) and sets `P_j = BL_h(tj) / COP_fe_f`.
+- Public diagnostics for this branch include `case`, `branch`, `pi_ext_f`, `p_ext_f`, `tg`, `tf`, `cop_fe_f`, `P_fe`, `P_j`, and `backup_heat`.
+- In the Formula 50 branch, auxiliary energy is `0`, `HSTL` accumulates total building load, and `HSEC` accumulates heat pump energy.
+- Current above-extended behavior is not locked as the Track A contract: if `BL_h(tj) > pi_ext_f(tj)`, the common path falls through to `saturated`, uses `P_full`, and computes auxiliary from `BL_h(tj) - pi_full(tj)`.
+- Do not write a normative above-extended expected test until the intended ISO common contract is confirmed. If characterization is needed before that, keep it separate from H-1b contract tests.
+
 KS shared-formula oracle consistency gate:
 
 - Use the implemented KS C 9306 HSPF path as a surrogate oracle / cross-path consistency gate only.

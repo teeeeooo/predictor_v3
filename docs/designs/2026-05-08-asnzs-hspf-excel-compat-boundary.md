@@ -107,6 +107,17 @@ Candidate micro fixtures:
 - Above extended auxiliary: implementation check required before locking expected values. Current common path enters `saturated` when Formula 50 is unavailable or `load > extended_capacity`, uses full-stage power, and computes auxiliary from `load - full_capacity`; if the intended ISO contract is extended-capacity saturation, that should be resolved before H-1 expected values are frozen.
 - Accumulation invariant: use a tiny 2-3 bin fixture. Expect `hstl_wh = sum(load_j * hours_j)`, `hsec_wh = sum(E_j)`, and `hspf = hstl_wh / hsec_wh` before final rounding.
 
+Phase H-1b extended / auxiliary contract check:
+
+- Full-to-extended Formula 50, frost range: current Track A common path enters `formula50_full_extended_frost` when an extended candidate exists and `pi_full_f(tj) < load <= pi_ext_f(tj)`.
+- Formula 50 power is based on boundary COP interpolation: full boundary COP at `tg`, extended boundary COP at `tf`, then `P_j = load / COP_fe_f`.
+- Public bin diagnostics expose `case`, `branch`, `pi_ext_f`, `p_ext_f`, `tg`, `tf`, `cop_fe_f`, `P_fe`, `P_j`, and `backup_heat`.
+- Auxiliary energy is `0` in this Formula 50 branch; `HSTL` accumulates total building load and `HSEC` accumulates `P_j * hours`.
+- This Formula 50 frost branch is suitable for H-1b micro testing with hand-calculated boundary COP values.
+- Above-extended load: current Track A common path falls through to `saturated` when Formula 50 is unavailable or `load > pi_ext_f(tj)`.
+- In that current saturated path, equipment power is `P_full`, public `pi_j` is `pi_full`, unmet load is calculated as `load - pi_full`, and auxiliary energy is `(load - pi_full) * hours / aux_cop`.
+- Do not freeze the above-extended saturated behavior as normative expected yet. It needs contract review because the equipment cap is full-stage capacity, not extended-stage capacity, even when an extended candidate exists.
+
 KS shared-formula oracle consistency gate:
 
 - Use the implemented KS C 9306 HSPF path as a surrogate oracle / cross-path consistency gate only.

@@ -527,3 +527,27 @@
 
 #### Lesson
 - H-1 safe branch는 production API 변경 없이 public bin diagnostics만으로 검증 가능하다.
+
+### Follow-up — Phase H-1b extended / auxiliary contract check
+
+#### Tried
+- ISO16358-2 common HSPF path의 Formula 50 full-to-extended branch와 load > extended branch를 코드 읽기 및 임시 public API snippet으로 관찰했다.
+- 테스트 구현이나 expected freeze 없이 current behavior만 분류했다.
+
+#### Result
+- `full < load <= extended` frost bin은 `formula50_full_extended_frost`로 진입한다.
+- Formula 50 branch는 `tg` / `tf` boundary COP interpolation을 사용하고 `P_j = load / COP_fe_f`를 계산한다.
+- 해당 branch의 public diagnostics는 `case`, `branch`, `pi_ext_f`, `p_ext_f`, `tg`, `tf`, `cop_fe_f`, `P_fe`, `P_j`, `backup_heat`를 포함한다.
+- Formula 50 branch에서는 auxiliary energy가 `0`이고, `HSTL`은 total building load, `HSEC`은 heat pump energy를 누적한다.
+- `load > extended`는 현재 `saturated`로 떨어지고 `P_full`, `pi_full`, `load - pi_full` 기준 auxiliary를 사용한다.
+
+#### Failed / Risk
+- above-extended current behavior는 extended capacity가 아니라 full capacity 기준으로 auxiliary를 계산하므로, 의도된 ISO common contract인지 판단 보류가 필요하다.
+- 이 behavior를 지금 normative expected로 고정하면 향후 ISO contract 확인과 충돌할 수 있다.
+
+#### Decision
+- H-1b Formula 50 frost branch micro test는 hand-calculated boundary COP 기반으로 구현해도 된다.
+- above-extended auxiliary test는 contract 확인 전에는 구현 보류하거나, 별도 characterization/xfail로만 다룬다.
+
+#### Lesson
+- full-to-extended와 above-extended는 같은 extended candidate를 쓰더라도 검증 안정성이 다르다. Formula 50 branch는 관찰 가능한 contract가 있지만, above-extended saturated branch는 먼저 규격 의도를 확인해야 한다.
