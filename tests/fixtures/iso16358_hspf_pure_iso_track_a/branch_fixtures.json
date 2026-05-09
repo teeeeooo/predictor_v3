@@ -6,5 +6,27 @@
     "not_external_workbook_reference": true,
     "not_asnzs_energy_rating_workbook": true
   },
-  "cases": {}
+  "cases": {
+    "cycling_cd_one_bin": {
+      "case_id": "cycling_cd_one_bin",
+      "label": "Below-min cycling with Cd=0.35",
+      "points": ["min"],
+      "bin_hours": [{"tj": 7.0, "nj": 1.0}],
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.35,
+        "aux_cop": 1.0
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_half": {"capacity": 1000.0, "power": 250.0},
+        "7_min": {"capacity": 1000.0, "power": 250.0}
+      },
+      "expected": {
+        "hstl_wh": 400.0,
+        "hsec_wh": 126.58227848101266,
+        "hspf": 3.16
+      }
+    }
+  }
 }
