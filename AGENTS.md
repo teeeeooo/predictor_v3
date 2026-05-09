@@ -46,6 +46,7 @@
 
 ## Agent Work Discipline
 
+- 새 Codex/agent 세션을 시작하거나 작업 맥락이 불명확하면 `project_brief.md`를 먼저 확인한다.
 - 작업 전 Goal / Scope / Non-goals / Verification을 확인한다.
 - 요청 범위를 넘는 추상화, 리팩토링, formatting/comment/import 정리를 하지 않는다.
 - 불확실한 규격/fixture/case/region 해석은 임의 결정하지 않는다.

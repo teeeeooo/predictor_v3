@@ -47,7 +47,8 @@ README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이�
 | `AGENT_TASK_ROUTER.md` | Task-specific reading and execution routing |
 | `project_brief.md` | Short current-state summary for new sessions |
 | `project_log.md` | Work history, decisions, failures, and lessons |
-| `docs/REFACTOR_PLAN.md` | Living TODO and future refactor plan |
+| `docs/WORK_PLAN.md` | Current priorities and next execution order |
+| `docs/REFACTOR_PLAN.md` | Refactoring candidates and structure triggers |
 
 ## Agent Workflow
 
