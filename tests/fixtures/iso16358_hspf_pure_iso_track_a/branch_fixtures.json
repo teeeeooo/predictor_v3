@@ -135,6 +135,25 @@
         "hsec_wh": 516.1290322580645,
         "hspf": 3.875
       }
+    },
+    "saturated_auxiliary_one_bin": {
+      "case_id": "saturated_auxiliary_one_bin",
+      "label": "Saturated auxiliary heating",
+      "points": ["full"],
+      "bin_hours": [{"tj": 7.0, "nj": 1.0}],
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.0,
+        "aux_cop": 1.0
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 3000.0, "power": 750.0}
+      },
+      "expected": {
+        "hstl_wh": 3500.0,
+        "hsec_wh": 1250.0,
+        "hspf": 2.8
+      }
     }
   }
 }
