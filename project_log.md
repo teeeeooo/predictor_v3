@@ -551,3 +551,26 @@
 
 #### Lesson
 - full-to-extended와 above-extended는 같은 extended candidate를 쓰더라도 검증 안정성이 다르다. Formula 50 branch는 관찰 가능한 contract가 있지만, above-extended saturated branch는 먼저 규격 의도를 확인해야 한다.
+
+### Follow-up — Phase H-1b-1 Formula 50 micro test
+
+#### Tried
+- `tests/test_iso16358_hspf_formula_micro.py`에 Formula 50 full-to-extended frost branch micro test를 추가했다.
+- Expected는 AS/NZS Excel value나 KS path result가 아니라 boundary COP hand calculation으로 산출했다.
+
+#### Result
+- `test_hspf_formula50_full_to_extended_matches_boundary_cop` 추가.
+- Test asserts `formula50_full_extended_frost`, `tg`, `tf`, `cop_fe_f`, `P_fe`, `P_j`, `E_j`, auxiliary `0`, `hstl_wh`, `hsec_wh`.
+- `python3 -m pytest tests/test_iso16358_hspf_formula_micro.py -q` 결과 `6 passed`.
+- `python3 -m pytest tests/test_iso16358_hspf_validation.py tests/test_iso16358_hspf_golden.py -q` 결과 `60 passed, 7 xfailed`.
+
+#### Failed / Risk
+- Above-extended saturated / auxiliary behavior는 여전히 expected로 고정하지 않았다.
+- Formula 47 non-frost full-to-extended branch는 아직 별도 확인 대상이다.
+
+#### Decision
+- H-1b-1은 Formula 50 frost branch micro invariant로 닫는다.
+- Above-extended auxiliary contract는 H-1b-2에서 별도로 확인한다.
+
+#### Lesson
+- Formula 50 branch는 public diagnostics가 충분해 production API 변경 없이 hand-calculated micro test로 고정할 수 있다.

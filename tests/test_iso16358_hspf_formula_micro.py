@@ -11,6 +11,8 @@ HALF_CAPACITY = 1000.0
 HALF_POWER = 300.0
 MIN_CAPACITY = 400.0
 MIN_POWER = 100.0
+EXTENDED_CAPACITY = 2200.0
+EXTENDED_POWER = 700.0
 CD = 0.25
 
 
@@ -49,6 +51,13 @@ def iso_points(*, rated_heating_capacity, include_min=False):
     }
     if include_min:
         points["7_min"] = {"capacity": MIN_CAPACITY, "power": MIN_POWER}
+    return points
+
+
+def iso_points_with_extended(*, rated_heating_capacity):
+    points = iso_points(rated_heating_capacity=rated_heating_capacity)
+    points["2_ext"] = {"capacity": EXTENDED_CAPACITY, "power": EXTENDED_POWER}
+    points["-7_ext"] = {"capacity": EXTENDED_CAPACITY, "power": EXTENDED_POWER}
     return points
 
 
@@ -144,6 +153,45 @@ def test_hspf_half_to_full_interpolation_matches_hand_calculation(tmp_path):
     assert detail["P_j"] == pytest.approx(expected_power)
     assert detail["E_j"] == pytest.approx(expected_power * detail["nj"])
     assert detail["auxiliary_energy"] == pytest.approx(0.0)
+
+
+def test_hspf_formula50_full_to_extended_matches_boundary_cop(tmp_path):
+    load = 1900.0
+    hours = 2.0
+    calculator = make_iso_micro_calculator(
+        tmp_path,
+        [{"j": 1, "tj": 0.0, "nj": hours}],
+    )
+    result = calculator.calculate_hspf(
+        iso_points_with_extended(rated_heating_capacity=load)
+    )
+    detail = single_detail(result)
+
+    expected_tg = 17.0 * (load - FULL_CAPACITY) / load
+    expected_tf = 17.0 * (load - EXTENDED_CAPACITY) / load
+    full_boundary_cop = FULL_CAPACITY / FULL_POWER
+    extended_boundary_cop = EXTENDED_CAPACITY / EXTENDED_POWER
+    expected_cop = full_boundary_cop + (
+        (extended_boundary_cop - full_boundary_cop)
+        * (0.0 - expected_tg)
+        / (expected_tf - expected_tg)
+    )
+    expected_power = load / expected_cop
+
+    assert detail["case"] == "formula50_full_extended_frost"
+    assert detail["branch"] == "formula50_full_extended_frost"
+    assert detail["bl_h"] == pytest.approx(load)
+    assert detail["pi_ext_f"] == pytest.approx(EXTENDED_CAPACITY)
+    assert detail["p_ext_f"] == pytest.approx(EXTENDED_POWER)
+    assert detail["tg"] == pytest.approx(expected_tg)
+    assert detail["tf"] == pytest.approx(expected_tf)
+    assert detail["cop_fe_f"] == pytest.approx(expected_cop)
+    assert detail["P_fe"] == pytest.approx(expected_power)
+    assert detail["P_j"] == pytest.approx(expected_power)
+    assert detail["E_j"] == pytest.approx(expected_power * hours)
+    assert detail["auxiliary_energy"] == pytest.approx(0.0)
+    assert result["hstl_wh"] == pytest.approx(load * hours)
+    assert result["hsec_wh"] == pytest.approx(expected_power * hours)
 
 
 def test_hspf_tiny_bin_accumulation_matches_hand_calculation(tmp_path):
