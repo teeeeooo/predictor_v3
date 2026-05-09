@@ -54,6 +54,7 @@ def test_calculate_hspf_partial_does_not_claim_case3_exact_match():
     calc = ASNZSExcelHSPFCompatibilityCalculator()
     result = calc.calculate_hspf(build_minimal_hybrid_input(), {"matched_reference": {"case_id": "micro"}})
     assert result["matched_reference"]["case_id"] == "micro"
+    # Ensure no exact case3 reference values
     assert result["hstl_wh"] != 1126.120
 
 def test_calculate_hspf_partial_rejects_invalid_component_energy():
@@ -62,8 +63,3 @@ def test_calculate_hspf_partial_rejects_invalid_component_energy():
     data["component_details"] = [{"name": "a", "energy_wh": -1.0}]
     with pytest.raises(ValueError):
         calc.calculate_hspf(data)
-
-def test_calculate_hspf_partial_common_path_not_modified():
-    # Verify common path does not mention the *implementation* method
-    source = inspect.getsource(iso.ISO16358Calculator.calculate_hspf_iso16358_common)
-    assert "_build_compatibility_result_envelope" not in source

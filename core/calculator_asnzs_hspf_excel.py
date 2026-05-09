@@ -150,8 +150,66 @@ class ASNZSExcelHSPFCompatibilityCalculator:
             matched_reference=matched_reference,
         )
 
+    def _reconstruct_helper_cops_from_row(self, row: dict, helper_columns: list[str] = None) -> dict:
+        if helper_columns is None:
+            helper_columns = list(WORKBOOK_HELPER_COLUMNS.keys())
+            
+        helper_cops = {}
+        for col in helper_columns:
+            if col not in row:
+                raise KeyError(f"Missing helper column: {col}")
+            try:
+                val = float(row[col])
+            except (ValueError, TypeError):
+                raise ValueError(f"Helper column {col} must be numeric.")
+            
+            if val <= 0:
+                raise ValueError(f"Helper COP {col} must be positive.")
+            helper_cops[col] = val
+            
+        return {
+            "temperature_c": row.get("temperature_c"),
+            "helper_cops": helper_cops
+        }
+
+    def _select_helper_cop(self, helper_cops: dict, anchor: str) -> float:
+        if anchor not in helper_cops:
+            raise KeyError(f"Missing anchor: {anchor}")
+        val = helper_cops[anchor]
+        if val <= 0:
+            raise ValueError(f"Helper COP {anchor} must be positive.")
+        return val
+
+    def _build_component_detail_from_workbook_row(
+        self,
+        row: dict,
+        *,
+        component_anchor: str,
+        load_key: str,
+        helper_anchor: str,
+        hours_key: str,
+    ) -> dict:
+        if not component_anchor:
+            raise ValueError("component_anchor cannot be empty.")
+        
+        required_keys = [load_key, helper_anchor, hours_key]
+        for key in required_keys:
+            if key not in row:
+                raise KeyError(f"Missing row key: {key}")
+        
+        try:
+            load_w = float(row[load_key])
+            hours = float(row[hours_key])
+            helper_cops = self._reconstruct_helper_cops_from_row(row, helper_columns=[helper_anchor])
+            helper_cop = self._select_helper_cop(helper_cops["helper_cops"], helper_anchor)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid numeric value in workbook row.")
+            
+        detail = self._build_component_energy_detail(component_anchor, load_w, helper_cop, hours, anchor=component_anchor)
+        detail["helper_anchor"] = helper_anchor
+        return detail
+
 # Workbook helper column anchor map
-# Excel workbook compatibility helper columns only; not common formula.
 WORKBOOK_HELPER_COLUMNS = {
     "BN": {
         "semantic_name": "helper_cop_bn",
@@ -185,7 +243,6 @@ def get_workbook_helper_column_map() -> dict:
     return copy.deepcopy(WORKBOOK_HELPER_COLUMNS)
 
 # Workbook output anchor map
-# Excel workbook compatibility output anchors only; not common formula.
 WORKBOOK_OUTPUT_ANCHORS = {
     "CG": {
         "semantic_name": "component_energy_sum_candidate",
