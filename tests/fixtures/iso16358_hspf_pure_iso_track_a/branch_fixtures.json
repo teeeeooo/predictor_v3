@@ -27,6 +27,30 @@
         "hsec_wh": 126.58227848101266,
         "hspf": 3.16
       }
-    }
-  }
-}
+    },
+    "min_to_half_formula_44_48_one_bin": {
+      "case_id": "min_to_half_formula_44_48_one_bin",
+      "label": "Min-to-half interpolation Formula 44/48",
+      "points": ["min", "half"],
+      "bin_hours": [{"tj": 7.0, "nj": 1.0}],
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.0,
+        "aux_cop": 1.0
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 3000.0, "power": 600.0},
+        "7_half": {"capacity": 2000.0, "power": 400.0},
+        "7_min": {"capacity": 1000.0, "power": 250.0},
+        "-7_full": {"capacity": 2500.0, "power": 550.0},
+        "-7_half": {"capacity": 1500.0, "power": 350.0},
+        "-7_min": {"capacity": 500.0, "power": 200.0}
+      },
+      "expected": {
+        "hstl_wh": 1500.0,
+        "hsec_wh": 332.4593827903378,
+        "hspf": 4.512
+      }
+      }
+      }
+      }
