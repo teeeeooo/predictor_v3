@@ -161,6 +161,86 @@ def test_pure_iso_track_a_half_to_full_formula_45_non_frost_route_level_xfail(tm
     assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
 
 
+@pytest.mark.xfail(reason="Formula 47 non-frost full-to-extended routing is intentionally deferred; current main route falls back to saturated handling pending Pure ISO routing phase.", strict=True)
+def test_pure_iso_track_a_full_to_extended_formula_47_non_frost_route_level_xfail(tmp_path):
+    config_path = tmp_path / "iso16358_pure_iso_config.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {"cd": 0.0, "aux_cop": 1.0},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 1.0,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": [{"tj": 7.0, "nj": 1.0}]
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    calculator = ISO16358Calculator(str(config_path))
+    
+    fixture = load_pure_iso_track_a_fixture()
+    case = fixture["cases"]["full_to_extended_formula_47_non_frost_one_bin"]
+    
+    # Load = 2500W at 7C. 
+    # Ref_Cap: load = 2500W at 7C. Ref_Cap = 2500 * 17 / 10 = 4250 W
+    measured = {
+        "rated_heating_capacity": 4250.0,
+        "7_full": case["measured_point_pool"]["7_full"],
+        "7_ext": case["measured_point_pool"]["7_ext"],
+    }
+    
+    result = calculator.calculate_hspf(measured)
+    
+    assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
+    assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
+    assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
+
+
+@pytest.mark.xfail(reason="Formula 47 non-frost full-to-extended routing is intentionally deferred; current main route falls back to saturated handling pending Pure ISO routing phase.", strict=True)
+def test_pure_iso_track_a_full_to_extended_formula_47_non_frost_route_level_xfail(tmp_path):
+    config_path = tmp_path / "iso16358_pure_iso_config.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {"cd": 0.0, "aux_cop": 1.0},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 1.0,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": [{"tj": 7.0, "nj": 1.0}]
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    calculator = ISO16358Calculator(str(config_path))
+    
+    fixture = load_pure_iso_track_a_fixture()
+    case = fixture["cases"]["full_to_extended_formula_47_non_frost_one_bin"]
+    
+    # Load = 2500W at 7C. 
+    # Ref_Cap: load = 2500W at 7C. Ref_Cap = 2500 * 17 / 10 = 4250 W
+    measured = {
+        "rated_heating_capacity": 4250.0,
+        "7_full": case["measured_point_pool"]["7_full"],
+        "7_ext": case["measured_point_pool"]["7_ext"],
+    }
+    
+    result = calculator.calculate_hspf(measured)
+    
+    assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
+    assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
+    assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
+
+
 @pytest.mark.xfail(reason="Formula 49 frost half-to-full routing is intentionally deferred; current main route uses capacity-linear interpolation pending Pure ISO routing phase.", strict=True)
 def test_pure_iso_track_a_half_to_full_formula_49_frost_route_level_xfail(tmp_path):
     config_path = tmp_path / "iso16358_pure_iso_config.json"
@@ -198,6 +278,86 @@ def test_pure_iso_track_a_half_to_full_formula_49_frost_route_level_xfail(tmp_pa
     result = calculator.calculate_hspf(measured)
 
     # This assertion is expected to fail or xfail if current routing is incorrect for pure ISO
+    assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
+    assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
+    assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
+
+
+@pytest.mark.xfail(reason="Formula 47 non-frost full-to-extended routing is intentionally deferred; current main route falls back to saturated handling pending Pure ISO routing phase.", strict=True)
+def test_pure_iso_track_a_full_to_extended_formula_47_non_frost_route_level_xfail(tmp_path):
+    config_path = tmp_path / "iso16358_pure_iso_config.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {"cd": 0.0, "aux_cop": 1.0},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 1.0,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": [{"tj": 7.0, "nj": 1.0}]
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    calculator = ISO16358Calculator(str(config_path))
+    
+    fixture = load_pure_iso_track_a_fixture()
+    case = fixture["cases"]["full_to_extended_formula_47_non_frost_one_bin"]
+    
+    # Load = 2500W at 7C. 
+    # Ref_Cap: load = 2500W at 7C. Ref_Cap = 2500 * 17 / 10 = 4250 W
+    measured = {
+        "rated_heating_capacity": 4250.0,
+        "7_full": case["measured_point_pool"]["7_full"],
+        "7_ext": case["measured_point_pool"]["7_ext"],
+    }
+    
+    result = calculator.calculate_hspf(measured)
+    
+    assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
+    assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
+    assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)
+
+
+@pytest.mark.xfail(reason="Formula 47 non-frost full-to-extended routing is intentionally deferred; current main route falls back to saturated handling pending Pure ISO routing phase.", strict=True)
+def test_pure_iso_track_a_full_to_extended_formula_47_non_frost_route_level_xfail(tmp_path):
+    config_path = tmp_path / "iso16358_pure_iso_config.json"
+    config = {
+        "mode": "heating",
+        "hspf": {
+            "enabled": True,
+            "profile": "iso16358_2_hspf",
+            "correction": {"cd": 0.0, "aux_cop": 1.0},
+            "load_line": {
+                "source": "rated_heating_capacity",
+                "zero_load_temp": 17.0,
+                "full_load_temp": 0.0,
+                "rated_capacity_factor": 1.0,
+            },
+            "bin_hours_key": "hspf_bin_hours",
+        },
+        "hspf_bin_hours": [{"tj": 7.0, "nj": 1.0}]
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    calculator = ISO16358Calculator(str(config_path))
+    
+    fixture = load_pure_iso_track_a_fixture()
+    case = fixture["cases"]["full_to_extended_formula_47_non_frost_one_bin"]
+    
+    # Load = 2500W at 7C. 
+    # Ref_Cap: load = 2500W at 7C. Ref_Cap = 2500 * 17 / 10 = 4250 W
+    measured = {
+        "rated_heating_capacity": 4250.0,
+        "7_full": case["measured_point_pool"]["7_full"],
+        "7_ext": case["measured_point_pool"]["7_ext"],
+    }
+    
+    result = calculator.calculate_hspf(measured)
+    
     assert result["hstl_wh"] == pytest.approx(case["expected"]["hstl_wh"])
     assert result["hsec_wh"] == pytest.approx(case["expected"]["hsec_wh"], abs=1e-6)
     assert result["hspf"] == pytest.approx(case["expected"]["hspf"], abs=0.01)

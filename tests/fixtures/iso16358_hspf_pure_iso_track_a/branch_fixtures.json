@@ -93,6 +93,26 @@
         "hsec_wh": 383.3333333333333,
         "hspf": 3.0
       }
+    },
+    "full_to_extended_formula_47_non_frost_one_bin": {
+      "case_id": "full_to_extended_formula_47_non_frost_one_bin",
+      "label": "Full-to-extended interpolation Formula 47",
+      "points": ["full", "ext"],
+      "bin_hours": [{"tj": 7.0, "nj": 1.0}],
+      "conditions": {
+        "standby_off_power": 0,
+        "cd": 0.0,
+        "aux_cop": 1.0
+      },
+      "measured_point_pool": {
+        "7_full": {"capacity": 2000.0, "power": 400.0},
+        "7_ext": {"capacity": 3000.0, "power": 750.0}
+      },
+      "expected": {
+        "hstl_wh": 2500.0,
+        "hsec_wh": 555.5555555555555,
+        "hspf": 4.5
+      }
     }
   }
 }
