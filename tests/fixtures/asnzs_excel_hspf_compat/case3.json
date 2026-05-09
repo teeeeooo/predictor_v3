@@ -1,0 +1,20 @@
+{
+  "reference_type": "ASNZS_EXCEL_COMPAT",
+  "calculator_id": "asnzs_excel_hspf",
+  "case_id": "case3",
+  "source": {
+    "kind": "windows_excel_com",
+    "workbook_family": "AS/NZS Energy Rating SEER calculator",
+    "note": "Reference values are Excel compatibility references, not ISO common expected values."
+  },
+  "expected": {
+    "hstl_kwh": 1126.120,
+    "hspf": 4.33824,
+    "ch48_wh": 1126120.47
+  },
+  "namespace_guard": {
+    "not_iso_common_expected": true,
+    "not_region_config": true,
+    "not_ui_visible": true
+  }
+}
