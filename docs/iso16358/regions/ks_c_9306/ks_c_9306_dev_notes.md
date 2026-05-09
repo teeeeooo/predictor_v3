@@ -15,6 +15,14 @@
 | 외삽 과신 | 고온/저온 bin에서 비현실적인 capacity/power가 나온다. | 시험점 두 개로 선형 외삽한다. | 외삽 bin과 BL > max_cap branch를 함께 점검한다. |
 | BL > max_cap 처리 변경 | cooling output이 과대 계산된다. | 요구 부하를 항상 처리한다고 가정한다. | 최고 용량 초과 시 output cap을 유지한다. |
 
+### Do not generalize KS-specific rules to ISO common path
+
+위의 KS C 9306 전용 관행들은 ISO common path로 무리하게 흡수하거나 보편 적용해서는 안 된다. 이는 golden mismatch 해결이나 리팩토링 과정에서 임의로 변경하면 안 되는 강력한 safety boundary다.
+
+- **ROUND_HALF_UP 반올림**: KS 시험값(Korean path)에만 적용하며, ISO 16358 common calculator 전체에 보편 적용하지 않는다.
+- **BL(t_j) 산정 기준**: KS HSPF load line 및 `BL(t_j)`는 declared/rated cooling capacity 기반 계약을 엄격히 유지한다.
+- **전력 보간 방식**: KS C 9306 전력 보간은 `ks_intersection` path를 유지하며, 타 region에 강제 적용하지 않는다.
+
 ## 3. `round_test_values` Application
 
 | Target | Applied | Reason |
