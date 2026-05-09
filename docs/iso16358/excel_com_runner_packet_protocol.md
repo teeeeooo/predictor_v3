@@ -124,6 +124,7 @@ print chat_packet only
 
 - Excel COM result from the original Windows workbook is the trusted reference.
 - Windows Excel COM `H12` / `H13` / `CH48` values from the AS/NZS workbook are AS/NZS Excel compatibility references. Do not auto-promote them to ISO common golden expected values.
+- Excel COM packet values belong to Track B compatibility reference handling, not Track A ISO common golden promotion.
 - Converted workbook and Numbers observations are diagnostic artifacts only. They may help formula text or dependency-map analysis, but they are not calculation references.
 - Do not wire an Excel compatibility helper into the production common ISO path without an explicit design decision.
 - Prefer `REFERENCE_TYPE=ASNZS_EXCEL_COMPAT` in `chat_packet` when the baseline comes from the AS/NZS / Energy Rating SEER calculator workbook.

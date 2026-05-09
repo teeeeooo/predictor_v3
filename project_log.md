@@ -409,7 +409,7 @@
 #### Decision
 - AS/NZS Excel exact matching은 별도 compatibility calculator/profile 후보로 분리한다.
 - common ISO HSPF path에 `BA / COP_helper(tj)` workbook helper convention을 직접 연결하지 않는다.
-- 후보 profile은 `profile_id=asnz_excel_hspf_compat`, `calculator_id=asnz_excel_hspf`처럼 explicit resolver record로만 다룬다.
+- 후보 profile은 `profile_id=asnzs_excel_hspf_compat`, `calculator_id=asnzs_excel_hspf`처럼 explicit resolver record로만 다룬다.
 
 #### Lesson
 - external workbook baseline은 값 자체보다 reference type을 먼저 고정해야 한다.
@@ -422,7 +422,7 @@
 - profile identity, input/reference namespace, resolver opt-in boundary, future guard test 후보를 정리했다.
 
 #### Result
-- 후보 identity는 `profile_id=asnz_excel_hspf_compat`, `calculator_id=asnz_excel_hspf`, `reference_type=ASNZS_EXCEL_COMPAT`로 정리했다.
+- 후보 identity는 `profile_id=asnzs_excel_hspf_compat`, `calculator_id=asnzs_excel_hspf`, `reference_type=ASNZS_EXCEL_COMPAT`로 정리했다.
 - `region=au_nz` 또는 `standard=ASNZS`만으로 compatibility mode가 자동 활성화되면 안 된다는 resolver boundary를 추가했다.
 - Windows Excel COM dump/chat_packet 값은 production region config가 아니라 reference artifact 또는 test fixture namespace에만 둔다고 명시했다.
 
@@ -437,3 +437,47 @@
 
 #### Lesson
 - compatibility calculator는 계산식보다 먼저 selector contract와 golden namespace를 분리해야 한다.
+
+### Follow-up — ISO16358-2 HSPF dual-track architecture contract
+
+#### Tried
+- ISO16358-2 HSPF 후속 구현 전 Track A common ISO path와 Track B AS/NZS Excel compatibility path를 문서상 분리했다.
+- legacy AS/NZS 후보 명칭을 `asnzs_*` canonical naming으로 정리했다.
+
+#### Result
+- Track A는 `calculator_iso16358.py`의 ISO Formula 47/49/50-style common path로 유지하고, AS/NZS Excel final value를 common golden으로 쓰지 않는다고 명시했다.
+- Track A 검증은 final Excel golden이 아니라 formula micro golden, branch routing invariant, cycling PLF edge case, accumulation invariant, auxiliary energy invariant 중심으로 설계하기로 했다.
+- Track B는 Windows Excel COM exact matching용 별도 calculator/profile/test namespace로 격리하고, `1126.120 kWh` / `4.33824` / `1126120.47 Wh`를 `ASNZS_EXCEL_COMPAT` reference에만 둔다고 명시했다.
+
+#### Failed / Risk
+- Track A와 Track B test namespace가 섞이면 ISO common expected가 workbook compatibility convention에 오염될 수 있다.
+- naming이 canonical `asnzs_*`로 통일되지 않으면 resolver/profile 구현 시 migration bug가 생길 수 있다.
+
+#### Decision
+- canonical naming은 `asnzs_excel_hspf_compat`, `asnzs_excel_hspf`, `data/region_configs/asnzs_excel_hspf.json`으로 통일한다.
+- AS/NZS Excel compatibility는 opt-in Track B로만 선택하고 common ISO calculator는 `ASNZS_EXCEL_COMPAT` reference type을 읽어 분기하지 않는다.
+
+#### Lesson
+- HSPF 구현 전에는 final-number matching보다 track boundary, selector contract, micro invariant 검증 단위를 먼저 고정해야 한다.
+
+### Follow-up — KS shared-formula oracle consistency gate
+
+#### Tried
+- Track A ISO common HSPF 검증 전략에 KS shared-formula oracle consistency gate를 추가했다.
+- KS C 9306 HSPF path를 surrogate oracle / cross-path consistency gate로만 쓰는 조건을 문서화했다.
+
+#### Result
+- Phase H-1~H-4 순서를 formula micro golden, KS shared-formula oracle consistency gate, AS/NZS Excel compatibility guard/design, compatibility module skeleton으로 정리했다.
+- KS oracle gate는 ISO16358-2 bin hours, ISO common load-line basis, stage mapping, KS-specific correction factor 통제를 전제로 한다고 명시했다.
+- 비교 기준은 final HSPF보다 branch, load, capacity boundary, `P_j`, `E_j`, auxiliary energy, HSTL/HSEC accumulation 같은 bin-level diagnostics 중심으로 잡았다.
+
+#### Failed / Risk
+- KS path 결과를 common ISO expected로 승격하면 Track A 검증 기준이 region path에 종속될 수 있다.
+- correction factor 통제가 빠지면 shared-formula consistency가 아니라 KS policy difference를 비교하게 된다.
+
+#### Decision
+- KS path는 shared-formula consistency와 accumulation/branch sanity check용 surrogate oracle로만 사용한다.
+- final HSPF assertion은 보조 지표로만 둔다.
+
+#### Lesson
+- shared formula 검증은 결과 숫자보다 입력 조건, stage mapping, correction factor 통제, bin-level diagnostics를 먼저 고정해야 한다.

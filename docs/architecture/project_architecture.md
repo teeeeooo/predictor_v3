@@ -121,19 +121,21 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
 AS/NZS / Energy Rating SEER calculator Excel HSPF exact matching은 ISO16358 common HSPF expected가 아니라 AS/NZS Excel compatibility reference로 분류한다. 후보 profile record는 다음처럼 common ISO profile과 구분한다.
 
 ```text
-profile_id=asnz_excel_hspf_compat
+profile_id=asnzs_excel_hspf_compat
 standard=ASNZS
 region=au_nz
 metric=HSPF
 mode=heating
-calculator_id=asnz_excel_hspf
-config_path=data/region_configs/asnz_excel_hspf.json
+calculator_id=asnzs_excel_hspf
+config_path=data/region_configs/asnzs_excel_hspf.json
 enabled=false
 ```
 
 `enabled=false`는 구현과 golden guard가 완료되기 전 UI/배포 대상이 아님을 뜻한다. 실제 구현 후보는 `core/calculator_asnzs_hspf_excel.py` 같은 별도 compatibility module이며, `calculator_iso16358.py` common path에 Excel workbook helper cell convention을 추가하지 않는다.
 
 Compatibility profile 선택은 opt-in이어야 한다. `region=au_nz` 또는 `standard=ASNZS` 같은 일반 metadata만으로 compatibility mode를 자동 활성화하지 않으며, common ISO calculator가 `reference_type=ASNZS_EXCEL_COMPAT`를 읽고 내부 분기하는 구조도 금지한다.
+
+ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)는 별도 calculator/profile/test namespace로 유지한다. Excel COM dump, golden/sample/test-only value는 production region config에 넣지 않고, compatibility reference artifact 또는 test fixture namespace에서만 다룬다.
 
 ### UI / calc_window.py routing contract
 

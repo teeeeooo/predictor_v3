@@ -9,7 +9,7 @@
   2. ISO16358-2 HSPF 공통화
   3. Calculator UI v1 기본 기능
   4. Predictor 연동
-- **ISO16358-2 HSPF / AS/NZS 경계:** case 3의 `1126.120 kWh` / `4.33824`는 AS/NZS Excel compatibility reference로 재분류되었고 ISO common expected가 아닙니다. AS/NZS exact matching은 opt-in compatibility calculator/profile로만 설계하며, `region=au_nz` 또는 `standard=ASNZS`만으로 자동 활성화하지 않고 `calculator_iso16358.py` common path에는 Excel helper column convention을 직접 넣지 않습니다.
+- **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS Excel compatibility path로 분리합니다. AS/NZS Excel `1126.120 kWh` / `4.33824` / `1126120.47 Wh`는 `ASNZS_EXCEL_COMPAT` reference이며 common ISO expected가 아닙니다. Track A 검증은 Formula micro golden, branch invariant, PLF edge case, KS shared-formula oracle consistency gate 중심으로 구축합니다.
 
 ## 2. 문서 가이드
 - **`AGENTS.md`**: 매 작업 시작 시 확인하는 얇은(Lite) 규칙 문서입니다.

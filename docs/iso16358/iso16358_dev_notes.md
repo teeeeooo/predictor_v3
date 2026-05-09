@@ -343,10 +343,35 @@ Implementation boundary:
 
 - ISO common HSPF keeps bin temperature `tj`, capacity/power curve, load ratio `X_j`, and Formula 47/49/50-style power calculation as the production path.
 - Excel workbook helper cells and anchors such as `BE5` / `BK5` / `BQ5`, `BE6` / `BK6` / `BQ6`, `BN` / `BP` / `BY` / `CA` / `CC` are not copied into common production code.
-- Excel exact matching, if implemented, belongs in a separate compatibility calculator/profile such as `core/calculator_asnzs_hspf_excel.py` with an explicit resolver profile like `asnz_excel_hspf_compat`.
+- Excel exact matching, if implemented, belongs in a separate compatibility calculator/profile such as `core/calculator_asnzs_hspf_excel.py` with an explicit resolver profile like `asnzs_excel_hspf_compat`.
 - `region=au_nz` or `standard=ASNZS` alone must not activate Excel compatibility behavior; compatibility selection must be explicit and opt-in.
 - ISO common code must not branch on `reference_type=ASNZS_EXCEL_COMPAT`.
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
+
+Track A validation strategy:
+
+- Treat ISO16358-2 common HSPF as the production standard path, not an AS/NZS Excel reproduction path.
+- Do not use `H13 = 4.33824` or `H12 = 1126.120 kWh` as Track A final golden expected values.
+- Until final-result coverage is sufficient, prefer formula micro golden and invariants: branch routing, cycling PLF, HSTL/HSEC accumulation, and auxiliary energy inclusion.
+- Candidate edge cases include load equal to half/full capacity, load equal to `0.5 * min capacity` for PLF, full-to-extended Formula 50 routing, and load greater than extended capacity with auxiliary energy.
+
+Track A validation phases:
+
+- Phase H-1: ISO HSPF formula micro golden tests.
+- Phase H-2: KS shared-formula oracle consistency gate.
+- Phase H-3: AS/NZS Excel compatibility guard/design.
+- Phase H-4: compatibility module skeleton.
+
+KS shared-formula oracle consistency gate:
+
+- Use the implemented KS C 9306 HSPF path as a surrogate oracle / cross-path consistency gate only.
+- Do not promote KS path results to common ISO expected values.
+- Use the gate for shared-formula consistency plus accumulation and branch sanity checking.
+- In test fixture scope, apply ISO16358-2 bin hours to the KS path and align the load-line basis with the ISO common path.
+- Declare stage mapping explicitly: KS rated <-> ISO full, KS intermediate <-> ISO half, KS min <-> ISO min, KS max <-> ISO extended.
+- Control KS-specific correction factors and policy knobs: defrost correction, -7°C fallback / capacity / power factor, `Cd`, `aux_cop`, and Korean-only correction.
+- Compare bin-level diagnostics first: branch, load, capacity boundary, `P_j`, `E_j`, auxiliary energy, and HSTL / HSEC accumulation.
+- Treat final HSPF assertion as a secondary signal only.
 
 | Step | Action | Description |
 | :--- | :--- | :--- |
@@ -370,7 +395,7 @@ Implementation boundary:
 
 | Pitfall | Symptom | Prevention |
 | :--- | :--- | :--- |
-| KS path와 ISO common path 혼용 | KS golden이 바뀐다. | hspf.profile == "ks_c_9306_hspf"이면 반드시 KS path로만 진입한다. ISO common HSPF는 별도 entry point로 분리한다. |
+| KS path와 ISO common path 혼용 | KS regression value가 바뀐다. | hspf.profile == "ks_c_9306_hspf"이면 반드시 KS path로만 진입한다. ISO common HSPF는 별도 entry point로 분리한다. |
 | frost/non-frost 수식 혼용 | frost 구간 capacity/power가 과대 또는 과소 계산된다. | tj 판정을 수식 적용 직전에 반드시 수행한다. -7.0 < tj < 5.5 → frost 수식, 그 외 → non-frost 수식. |
 | 2°C measured Half를 직접 사용 | 규격 각주 c 위반. 결과가 reference sheet와 다르다. | 2°C Half는 measured 값이 있어도 각주 d 수식으로 재계산한다. |
 | 각주 d 수식 적용 순서 오류 | -7°C derived point가 없어 각주 d 수식이 실패한다. | -7°C derived point를 먼저 만든 뒤 각주 d 수식을 적용한다. |
