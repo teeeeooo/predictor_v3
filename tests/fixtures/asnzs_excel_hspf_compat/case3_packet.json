@@ -40,11 +40,43 @@
       "BY": {"status": "implementation_check_required"},
       "CA": {"status": "implementation_check_required"},
       "CC": {"status": "implementation_check_required"}
-    },
-    "component_columns": {
-      "CB": {"status": "implementation_check_required"},
-      "CD": {"status": "implementation_check_required"},
-      "BQ": {"status": "implementation_check_required"}
     }
-  }
+  },
+  "component_rows": [
+    {
+      "tj": -1.0,
+      "observed_power_w": 1504.01,
+      "anchor": "CD21",
+      "status": "source_verified",
+      "note": "Observation from CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS"
+    },
+    {
+      "tj": 0.0,
+      "observed_power_w": 1330.47,
+      "anchor": "CD22",
+      "status": "source_verified",
+      "note": "Observation from CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS"
+    },
+    {
+      "tj": 2.0,
+      "observed_power_w": 1001.64,
+      "anchor": "CB24",
+      "status": "source_verified",
+      "note": "Observation from CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS"
+    },
+    {
+      "tj": 7.0,
+      "observed_power_w": 412.16,
+      "anchor": "BO29",
+      "status": "source_verified",
+      "note": "Observation from CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS"
+    },
+    {
+      "tj": 14.0,
+      "observed_power_w": 134.33,
+      "anchor": "BM36",
+      "status": "source_verified",
+      "note": "Observation from CASE3_EXCEL_COM_COMPONENT_OBSERVATIONS"
+    }
+  ]
 }
