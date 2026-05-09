@@ -41,6 +41,9 @@
 | P3 | Predictor / Calculator 연동 | 예정 | ML 예측값 기반 seasonal metric 자동 산출 |
 | P4 | 역방향 탐색 엔진 (MVP) | 예정 | 목표 성능 기반 HW 조합 추천 |
 
+## Blockers & Architecture Gaps
+- UI/calc_window direct config scanning: 현재 UI 계층이 config 파일을 직접 스캔하여 주입하고 있어 프로필 리졸버 가드가 우회됨. (H-3c Audit 완료)
+
 ---
 
 ## 3. 실행 원칙
