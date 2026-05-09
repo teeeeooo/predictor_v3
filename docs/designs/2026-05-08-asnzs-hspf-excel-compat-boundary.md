@@ -44,12 +44,48 @@ ISO16358-2 HSPF common path와 AS/NZS / Energy Rating SEER calculator Excel exac
 - Public API impact: none in this documentation phase.
 - Backward compatibility: current ISO common HSPF output, xfail policy, fixtures, and tests remain unchanged.
 
+## Design Contract Candidate
+
+Calculator/profile identity:
+
+- `profile_id`: `asnz_excel_hspf_compat`
+- `calculator_id`: `asnz_excel_hspf`
+- `standard`: `ASNZS`
+- `region`: `au_nz`
+- `metric`: `HSPF`
+- `mode`: `heating`
+- `reference_type`: `ASNZS_EXCEL_COMPAT`
+- candidate module: `core/calculator_asnzs_hspf_excel.py`
+- candidate config: `data/region_configs/asnz_excel_hspf.json`
+
+Input contract candidate:
+
+- Reuse common ISO canonical heating test input where possible.
+- Keep workbook-specific helper convention inside the compatibility calculator only.
+- Do not put candidate values, golden/sample/test-only values, Excel dump values, or ML predictions into production region config.
+- Treat Windows Excel COM `full_dump` / `chat_packet` values as reference artifacts or test fixture namespace data only.
+
+Resolver boundary:
+
+- The resolver must select AS/NZS Excel compatibility through explicit `profile_id` / `calculator_id`.
+- `region=au_nz` or `standard=ASNZS` alone must not enable compatibility mode.
+- ISO common calculator code must not branch internally on `reference_type=ASNZS_EXCEL_COMPAT`.
+- The compatibility profile is opt-in only.
+
+Golden/reference namespace:
+
+- `4.33824`, `1126.120 kWh`, and `1126120.47 Wh` are not ISO common golden expected values.
+- These values belong only under the `ASNZS_EXCEL_COMPAT` namespace / reference type.
+- Common ISO golden tests and AS/NZS Excel compatibility golden tests must be distinguishable by filename, fixture namespace, and assertion message.
+
 ## Required Tests
 
 - No tests are changed in this documentation phase.
 - Future implementation should add explicit AS/NZS Excel compatibility golden tests separate from ISO common golden tests.
 - Future guard tests should prove that ISO common expected values do not silently adopt AS/NZS Excel compatibility baselines.
 - Future resolver tests should verify that `asnz_excel_hspf_compat` is selected only by explicit profile/calculator id.
+- Future guard tests should verify that `region=au_nz` / `standard=ASNZS` alone does not activate compatibility mode.
+- Future guard tests should verify that Excel helper convention is not imported or replicated in `calculator_iso16358.py`.
 
 ## Migration / Refactor Path
 

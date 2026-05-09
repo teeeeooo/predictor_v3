@@ -337,11 +337,15 @@ Case 3 Excel branch model note: Windows Excel COM selects active HSPF components
 
 AS/NZS / Energy Rating SEER calculator exact matching is a separate compatibility target. The case 3 Windows Excel COM values `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh` remain useful, but their reference type is `ASNZS_EXCEL_COMPAT`, not ISO common golden expected.
 
+Design contract source: [2026-05-08-asnzs-hspf-excel-compat-boundary.md](../designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md). Implementers must use that document as the boundary contract before creating any AS/NZS compatibility calculator/profile.
+
 Implementation boundary:
 
 - ISO common HSPF keeps bin temperature `tj`, capacity/power curve, load ratio `X_j`, and Formula 47/49/50-style power calculation as the production path.
 - Excel workbook helper cells and anchors such as `BE5` / `BK5` / `BQ5`, `BE6` / `BK6` / `BQ6`, `BN` / `BP` / `BY` / `CA` / `CC` are not copied into common production code.
 - Excel exact matching, if implemented, belongs in a separate compatibility calculator/profile such as `core/calculator_asnzs_hspf_excel.py` with an explicit resolver profile like `asnz_excel_hspf_compat`.
+- `region=au_nz` or `standard=ASNZS` alone must not activate Excel compatibility behavior; compatibility selection must be explicit and opt-in.
+- ISO common code must not branch on `reference_type=ASNZS_EXCEL_COMPAT`.
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 
 | Step | Action | Description |

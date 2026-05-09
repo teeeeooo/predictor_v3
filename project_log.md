@@ -414,3 +414,26 @@
 #### Lesson
 - external workbook baseline은 값 자체보다 reference type을 먼저 고정해야 한다.
 - common standard implementation과 compatibility reproduction은 같은 HSPF 숫자를 다뤄도 golden namespace를 분리해야 한다.
+
+### Follow-up — AS/NZS Excel HSPF compatibility design contract
+
+#### Tried
+- boundary decision 이후 구현 전 design contract를 문서에 고정했다.
+- profile identity, input/reference namespace, resolver opt-in boundary, future guard test 후보를 정리했다.
+
+#### Result
+- 후보 identity는 `profile_id=asnz_excel_hspf_compat`, `calculator_id=asnz_excel_hspf`, `reference_type=ASNZS_EXCEL_COMPAT`로 정리했다.
+- `region=au_nz` 또는 `standard=ASNZS`만으로 compatibility mode가 자동 활성화되면 안 된다는 resolver boundary를 추가했다.
+- Windows Excel COM dump/chat_packet 값은 production region config가 아니라 reference artifact 또는 test fixture namespace에만 둔다고 명시했다.
+
+#### Failed / Risk
+- compatibility profile이 일반 ASNZS metadata로 자동 선택되면 common ISO path가 오염될 수 있다.
+- guard test 없이 구현하면 ISO common golden과 AS/NZS compatibility golden namespace가 섞일 수 있다.
+
+#### Decision
+- AS/NZS Excel HSPF compatibility는 explicit opt-in profile/calculator로만 선택한다.
+- common ISO calculator는 `ASNZS_EXCEL_COMPAT` reference type을 보고 내부 분기하지 않는다.
+- 구현 전 guard test 설계가 필요하다.
+
+#### Lesson
+- compatibility calculator는 계산식보다 먼저 selector contract와 golden namespace를 분리해야 한다.

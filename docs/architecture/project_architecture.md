@@ -133,6 +133,8 @@ enabled=false
 
 `enabled=false`는 구현과 golden guard가 완료되기 전 UI/배포 대상이 아님을 뜻한다. 실제 구현 후보는 `core/calculator_asnzs_hspf_excel.py` 같은 별도 compatibility module이며, `calculator_iso16358.py` common path에 Excel workbook helper cell convention을 추가하지 않는다.
 
+Compatibility profile 선택은 opt-in이어야 한다. `region=au_nz` 또는 `standard=ASNZS` 같은 일반 metadata만으로 compatibility mode를 자동 활성화하지 않으며, common ISO calculator가 `reference_type=ASNZS_EXCEL_COMPAT`를 읽고 내부 분기하는 구조도 금지한다.
+
 ### UI / calc_window.py routing contract
 
 `calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
@@ -154,3 +156,4 @@ Calculator result schema와 ML feature schema는 분리한다. Calculator result
 - AHRI SEER2/cooling `usa.json`과 AHRI HSPF2/heating `usa_hspf2.json`을 단순 병합하지 않는다.
 - local one-off conditional로 selector/routing 문제를 덮지 않는다.
 - external calculator compatibility convention을 common ISO calculator path에 직접 섞지 않는다.
+- standard/region metadata만으로 external compatibility mode를 자동 선택하지 않는다.
