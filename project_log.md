@@ -391,3 +391,26 @@
 - 계산기 시트가 component-sum table 구조를 쓰는 경우, Python 코드도 동일한 중간 trace 구조를 먼저 재현해야 한다.
 - Codex에는 Excel 파일 전체를 읽히지 말고, ChatGPT/수동 분석으로 추출한 핵심 facts만 전달하는 방식이 토큰과 오해를 줄인다.
 - 추가 Excel formula extraction에서 CH/CG/component path에 ROUND/ROUNDUP이 없고, H2/H3 default resolver 및 BM~CF gate 구조가 cell formula 기준으로 확인되었다. 잔여 차이는 rounding보다 frost `CB` component의 raw dependency 차이로 좁혀졌다.
+
+### Follow-up — AS/NZS Excel compatibility boundary decision
+
+#### Tried
+- Windows Excel COM original AS/NZS / Energy Rating SEER calculator case 3 baseline `H12 = 1126.120 kWh`, `H13 = 4.33824`, `CH48 = 1126120.47 Wh`를 ISO common golden 후보로 둘지 compatibility reference로 둘지 재분류했다.
+- workbook의 `BN` / `BP` / `BY` / `CA` / `CC` COP helper column convention을 ISO Formula 47/49/50 common path와 비교했다.
+
+#### Result
+- case 3 Excel COM baseline은 폐기하지 않고 AS/NZS Excel compatibility reference로 보존한다.
+- common ISO path actual `HSEC ≈ 1134087.8405 Wh`, `HSPF ≈ 4.308`과 Excel `1126.120 kWh`, `4.33824`의 차이는 ISO expected mismatch가 아니라 reference type mismatch로 취급한다.
+
+#### Failed / Risk
+- Excel workbook helper cells를 common production code에 복제하면 `calculator_iso16358.py`가 external workbook layout에 결합될 위험이 있다.
+- converted workbook / Numbers 값은 formula text나 dependency map 분석에는 쓸 수 있지만 계산값 reference로 쓰면 golden이 오염될 수 있다.
+
+#### Decision
+- AS/NZS Excel exact matching은 별도 compatibility calculator/profile 후보로 분리한다.
+- common ISO HSPF path에 `BA / COP_helper(tj)` workbook helper convention을 직접 연결하지 않는다.
+- 후보 profile은 `profile_id=asnz_excel_hspf_compat`, `calculator_id=asnz_excel_hspf`처럼 explicit resolver record로만 다룬다.
+
+#### Lesson
+- external workbook baseline은 값 자체보다 reference type을 먼저 고정해야 한다.
+- common standard implementation과 compatibility reproduction은 같은 HSPF 숫자를 다뤄도 golden namespace를 분리해야 한다.

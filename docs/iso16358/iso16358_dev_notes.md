@@ -329,9 +329,20 @@ ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지
 
 현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 external calculator / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 external override는 guard test로 계속 분리한다. Formula 50에서 extended frost curve는 ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)`와 Formula 25 `P_ext(tj)` 선형 보간을 사용한다.
 
-Case 3 reference clarification: original Windows Excel COM execution of the AS/NZS / Energy Rating SEER calculator `Inverter AC` sheet aligns with the fixture baseline CHSE 1126 kWh / HSPF 4.338. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix.
+Case 3 reference clarification: original Windows Excel COM execution of the AS/NZS / Energy Rating SEER calculator `Inverter AC` sheet aligns with `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh`. This baseline is an AS/NZS Excel compatibility reference, not an ISO common expected value. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix.
 
-Case 3 Excel branch model note: Windows Excel COM selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. Current common path mismatch is likely related to generic capacity-power interpolation being used where Excel decomposes ISO branch formulas into load divided by boundary-COP helpers. Do not copy workbook anchor cell values directly into production; treat them as Excel helper decomposition of ISO Formula 47/49/50-style branch formulas.
+Case 3 Excel branch model note: Windows Excel COM selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook compatibility convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
+
+### 14.2 AS/NZS Excel compatibility boundary
+
+AS/NZS / Energy Rating SEER calculator exact matching is a separate compatibility target. The case 3 Windows Excel COM values `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh` remain useful, but their reference type is `ASNZS_EXCEL_COMPAT`, not ISO common golden expected.
+
+Implementation boundary:
+
+- ISO common HSPF keeps bin temperature `tj`, capacity/power curve, load ratio `X_j`, and Formula 47/49/50-style power calculation as the production path.
+- Excel workbook helper cells and anchors such as `BE5` / `BK5` / `BQ5`, `BE6` / `BK6` / `BQ6`, `BN` / `BP` / `BY` / `CA` / `CC` are not copied into common production code.
+- Excel exact matching, if implemented, belongs in a separate compatibility calculator/profile such as `core/calculator_asnzs_hspf_excel.py` with an explicit resolver profile like `asnz_excel_hspf_compat`.
+- Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 
 | Step | Action | Description |
 | :--- | :--- | :--- |
@@ -364,6 +375,7 @@ Case 3 Excel branch model note: Windows Excel COM selects active HSPF components
 | BL_h(tj) <= 0인 bin을 누적 | 냉방 구간 bin이 HSTL을 음수로 끌어내린다. | BL_h(tj) <= 0이면 해당 bin을 skip한다. |
 | bin_details에서 KS 필드 구조 재사용 | ISO common HSPF bin_details와 KS bin_details가 섞인다. | ISO common HSPF bin_details는 KS 전용 필드를 포함하지 않는다. 표준 필드: tj, nj, bl_h, pi_j, P_j, case, heat_pump_energy, auxiliary_energy, E_j. |
 | Hong Kong HSPF를 core 분기로 구현 | ISO common core가 지역별 정책에 오염된다. | Hong Kong MEELS extrapolation은 handler/preprocessor에서 canonical point로 변환하고, core는 region/country/trace_metadata를 계산 분기에 사용하지 않는다. |
+| AS/NZS Excel helper convention을 common path에 연결 | ISO common expected가 workbook layout에 종속된다. | Windows Excel COM 값은 `ASNZS_EXCEL_COMPAT` reference로 분리하고, exact matching은 별도 compatibility calculator/profile에서만 다룬다. |
 
 ## 16. ISO 16358-2 HSPF Test Strategy
 

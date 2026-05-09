@@ -134,6 +134,7 @@
 ### 6.2 주의 항목
 
 - AS/NZS 3823.4.2 규격 확인 전 호주/뉴질랜드 구현 금지.
+- AS/NZS Excel HSPF exact matching은 ISO common HSPF가 아니라 별도 compatibility calculator/profile 설계 후 구현한다.
 - 2°C 외삽 시 선형보간 방식(`-7 ↔ 7`) 유지.
 
 ---
@@ -271,6 +272,7 @@ docs/
 ### Step 2 — ISO 16358-2 HSPF 공통화
 - 한국 외 국가(Hong Kong 등) HSPF 확장을 위한 공통 엔진 구현.
 - `ISO16358Calculator` 내 variable-capacity heating 로직 정교화.
+- AS/NZS Excel HSPF exact matching은 common ISO path에 섞지 않고 별도 compatibility calculator/profile 후보로 분리.
 
 ### Step 3 — CSPF/HSPF region config schema 전환
 - `cspf_test_profile`을 포함한 통합 schema 도입.

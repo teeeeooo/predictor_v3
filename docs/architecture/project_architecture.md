@@ -114,6 +114,25 @@ ML output은 calculator input이 아니다. 예측된 capacity/power/Hz 등은 `
 
 resolver는 explicit selector/manifest/registry contract를 우선한다. filename scanning은 장기적으로 제거 대상이며, ambiguous selector combination은 fail-fast 해야 한다.
 
+### External calculator compatibility profiles
+
+외부 계산기 또는 공식 workbook의 exact-match convention은 common standard calculator path에 직접 섞지 않는다. 해당 convention을 재현해야 할 때는 별도 compatibility calculator/profile을 명시적으로 등록하고, common ISO/AHRI/EN path의 expected/golden과 reference type을 분리한다.
+
+AS/NZS / Energy Rating SEER calculator Excel HSPF exact matching은 ISO16358 common HSPF expected가 아니라 AS/NZS Excel compatibility reference로 분류한다. 후보 profile record는 다음처럼 common ISO profile과 구분한다.
+
+```text
+profile_id=asnz_excel_hspf_compat
+standard=ASNZS
+region=au_nz
+metric=HSPF
+mode=heating
+calculator_id=asnz_excel_hspf
+config_path=data/region_configs/asnz_excel_hspf.json
+enabled=false
+```
+
+`enabled=false`는 구현과 golden guard가 완료되기 전 UI/배포 대상이 아님을 뜻한다. 실제 구현 후보는 `core/calculator_asnzs_hspf_excel.py` 같은 별도 compatibility module이며, `calculator_iso16358.py` common path에 Excel workbook helper cell convention을 추가하지 않는다.
+
 ### UI / calc_window.py routing contract
 
 `calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
@@ -134,3 +153,4 @@ Calculator result schema와 ML feature schema는 분리한다. Calculator result
 - nested region config를 production calculator에 직접 전달하지 않는다.
 - AHRI SEER2/cooling `usa.json`과 AHRI HSPF2/heating `usa_hspf2.json`을 단순 병합하지 않는다.
 - local one-off conditional로 selector/routing 문제를 덮지 않는다.
+- external calculator compatibility convention을 common ISO calculator path에 직접 섞지 않는다.
