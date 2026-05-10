@@ -354,29 +354,88 @@ To ensure a robust validation baseline independent of external workbook conventi
 
 워크북 골든(Workbook Golden) 검증 시 허용 오차(Tolerance)를 체계적으로 결정하기 위한 캘리브레이션 계획이다. 단순 감(Intuition)이 아니라 독립 손계산/Python 계산과의 비교를 통해 오차 범위를 확정한다.
 
-#### 목적
+#### 14.4.1 목적
 - 워크북의 내부 반올림 및 중간 helper column 처리에 따른 오차 한계를 명확히 한다.
 - 공통 엔진(Track A)이 워크북 골든을 어디까지 추적해야 하는지 가이드라인을 제공한다.
 
-#### Calibration Case 후보
-- **Load line only / HSTL**: bin-hour 누적 오차 확인.
-- **Cycling + Cd**: Formula 9/10 degradation 오차 확인.
-- **Min-to-Half (Formula 44/48)**: 저부하 보간 오차 확인.
-- **Half-to-Full (Formula 45)**: 중간부하 보간 오차 확인.
-- **Frost Half-to-Full (Formula 49)**: 성애 구간 보간 오차 확인.
-- **Full-to-Extended (Formula 47)**: 고부하 보간 오차 확인.
-- **Frost Full-to-Extended (Formula 50)**: 성애 구간 고부하 보간 오차 확인.
-- **Saturated Auxiliary**: 용량 부족 구간 백업 히터 오차 확인.
+#### 14.4.2 Calibration Design Principles
+- **최소 입력 원칙**: 특정 브랜치(Branch)만 활성화되도록 입력을 최소화하여 변수를 격리한다.
+- **정수/단순 소수점 우선**: 반올림 오차를 추적하기 쉬운 입력을 우선 사용한다.
+- **독립 검증**: 워크북의 중간 helper(BN, BP, BY, CA, CC 등)를 무시하고 규격 공식(Formula 44-50)에 따른 직접 계산값과 비교한다.
 
-#### 초기 가설 (Provisional Tolerances)
-- **HSTL**: ±0.5 kWh (Bin 누적에 따른 부동소수점 오차)
-- **CHSE/HSEC**: ±1~3 kWh (Branch 선택 및 helper column precision 오차)
-- **HSPF**: ±0.01 (최종 지표 반올림 오차)
+#### 14.4.3 Calibration Case 세부 설계
 
-#### 정밀 Calibration 후 목표 (Target Tolerances)
-- **HSTL**: ±0.01 kWh
-- **CHSE/HSEC**: ±0.1~0.5 kWh
-- **HSPF**: ±0.001~0.003
+| Case ID | Case Name | 목적 | 입력 설계 원칙 | 기대 확인 항목 | Workbook 기록 항목 | 독립 계산 비교 항목 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CAL-01** | **Load line / HSTL** | Bin 누적 오차 격리 | Bin hours 100개 이상, Load line slope가 큰 경우 | `sum(bl_h * nj)`의 정밀도 | `HSTL` (kWh/Wh) | `sum(rated_cap * factor * temp_ratio * nj)` |
+| **CAL-02** | **Cycling + Cd** | 저부하 degradation 오차 | `load < min_capacity`, `Cd=0.25` 고정 | `PLF`, `X`, `X*P/PLF` 정밀도 | `FPL`, `X`, `BM`/`BX` | Formula 9/10 기반 직접 PLF 계산 |
+| **CAL-03** | **Min-to-Half (F44/48)** | 저부하 보간 오차 | `min < load < half`, non-frost | Formula 44/48 보간 정밀도 | `BN`, `BO` | Formula 44/48 직접 보간 |
+| **CAL-04** | **Half-to-Full (F45)** | 중간부하 보간 오차 | `half < load < full`, non-frost | Formula 45 보간 정밀도 | `BP`, `BQ` | Formula 45 직접 보간 |
+| **CAL-05** | **Frost Half-to-Full (F49)** | 성애 보간 오차 | `half < load < full`, frost (2~5°C) | Formula 49 보간 정밀도 | `CA`, `CB` | Formula 49 직접 보간 |
+| **CAL-06** | **Full-to-Extended (F47)** | 고부하 보간 오차 | `full < load < extended`, non-frost | Formula 47 보간 정밀도 | `BS` | Formula 47 직접 보간 |
+| **CAL-07** | **Frost Full-to-Ext (F50)** | 성애 고부하 보간 오차 | `full < load < extended`, frost | Formula 50 보간 정밀도 | `CC`, `CD` | Formula 50 직접 보간 |
+| **CAL-08** | **Saturated Auxiliary** | 백업 히터 오차 | `load > extended_capacity` 또는 `load > full_capacity` | `auxiliary_heat` 누적 정밀도 | `BU`, `CF`, `HSEC` | `(load - cap) * hours / aux_cop` |
+
+#### 14.4.5 Excel Workbook (Inverter AC) 입력 가이드
+
+워크북의 `Inverter AC` 시트에서 캘리브레이션을 위해 조정해야 할 주요 셀 주소와 항목이다.
+
+| 항목 | 셀 주소 (추정) | 설정값 / 비고 |
+| :--- | :--- | :--- |
+| **Zone Selector** | `E5` | "ISO 16358" 고정 |
+| **Standby/Off Power** | `H4` | 0 (변수 격리를 위해 0 권장) |
+| **Degradation Coeff (Cd)**| `H5` | 0.25 (표준값) |
+| **7min YES/NO** | `K25` | YES 또는 NO |
+| **Extended YES/NO** | `K26` | YES 또는 NO |
+| **7°C Full Cap/Power** | `G41` / `H41` | 설계값 입력 |
+| **7°C Half Cap/Power** | `G42` / `H42` | 설계값 입력 |
+| **7°C Min Cap/Power** | `G43` / `H43` | 설계값 입력 |
+| **2°C Ext_f Cap/Power** | `G44` / `H44` | 설계값 입력 (Extended YES 시) |
+| **2°C Full_f Cap/Power** | `G45` / `H45` | 설계값 입력 (Optional check) |
+| **2°C Half_f Cap/Power** | `G46` / `H46` | 설계값 입력 (Optional check) |
+| **-7°C Ext Cap/Power** | `G47` / `H47` | 설계값 입력 |
+| **-7°C Full Cap/Power** | `G48` / `H48` | 설계값 입력 |
+| **-7°C Half Cap/Power** | `G49` / `H49` | 설계값 입력 |
+
+*주: 셀 주소는 워크북 버전에 따라 다를 수 있으므로 입력 전 확인이 필요함 (cell address check required).*
+
+#### 14.4.6 Calibration Numeric Case 설계 (Detailed)
+
+독립 계산과 비교하기 용이하도록 설계된 단순 숫자 입력 세트이다. 모든 케이스에서 `phi_full(7) = 3000W`, `factor = 0.82` (L_h_ref = 2460W)를 기본으로 가정한다.
+
+| Case ID | Branch Target | 7_full (W) | 7_half (W) | 7_min (W) | 2_ext_f (W) | -7_full (W) | Optional Points | 설계 의도 및 Expected Behavior |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CAL-01** | **Load line** | 3000 / 1000 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | HSTL 누적 오차만 확인. |
+| **CAL-02** | **Cycling** | 3000 / 1000 | 1500 / 400 | **2000 / 500** | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `load(1447) < min(2000)` 유도. |
+| **CAL-03** | **Min-to-Half** | 3000 / 1000 | **2000 / 500** | **1000 / 200** | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `min(1000) < load(1447) < half(2000)` 유도. |
+| **CAL-04** | **Half-to-Full** | **3000 / 1000** | **1000 / 200** | 500 / 100 | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `half(1000) < load(1447) < full(3000)` 유도. |
+| **CAL-05** | **Frost H-to-F** | 3000 / 1000 | 1500 / 400 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | 2°C bin(`load=2171`)에서 `half_f < load < full_f` 유도. |
+| **CAL-06** | **Full-to-Ext** | **1000 / 300** | 500 / 150 | 0 / 0 | **3000 / 1000** | 0 / 0 | Ext YES | Non-frost bin에서 `full < load < ext` 유도. (needs dry-run) |
+| **CAL-07** | **Frost F-to-E** | 3000 / 1000 | 1500 / 400 | 0 / 0 | **3000 / 1200** | 0 / 0 | Ext YES | 2°C bin(`load=2171`)에서 `full_f < load < ext_f` 유도. |
+| **CAL-08** | **Saturated** | **2000 / 600** | 1000 / 200 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | -7°C bin(`load=3473`)에서 `load > full` 유도 (Aux heat). |
+
+#### 14.4.7 Output Capture Template
+
+사용자가 워크북 실행 후 기록해야 할 항목이다. 독립 계산(Independent Calculation) 열은 손계산 또는 Python 스크립트 결과를 기입한다.
+
+| Case ID | 측정 항목 | Workbook Output (A) | Independent Calc (B) | Delta (A-B) | 비고 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **HSTL** | CAL-01 Seasonal Load | | | | |
+| **HSEC** | CAL-01 Seasonal Energy | | | | |
+| **P_j (7°C)** | CAL-02 Cycling Power | | | | |
+| **P_j (7°C)** | CAL-03 Min-Half Power | | | | |
+| **P_j (7°C)** | CAL-04 Half-Full Power | | | | |
+| **P_j (2°C)** | CAL-05 Frost H-F Power | | | | |
+| **P_j (tj)** | CAL-06 Full-Ext Power | | | | (tj 선택 필요) |
+| **P_j (2°C)** | CAL-07 Frost F-E Power | | | | |
+| **Aux_j (-7°C)**| CAL-08 Saturated Aux | | | | |
+| **HSPF** | CAL-xx Final HSPF | | | | (각 케이스별) |
+
+#### 14.4.8 Calibration 이후 다음 작업
+1. 워크북 수동 입력 및 결과 Capture (CAL-01~08).
+2. 독립 손계산 또는 Python Micro 스크립트 작성 및 비교.
+3. 오차 분석을 통한 최종 **Target Tolerances** 확정.
+4. 확정된 오차를 `tests/test_iso16358_hspf_golden.py`의 `ISO_COMMON_ENERGY_TOLERANCE_KWH` 등에 반영.
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 
 Track A validation strategy:
