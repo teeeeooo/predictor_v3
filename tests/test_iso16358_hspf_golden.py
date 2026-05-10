@@ -185,20 +185,19 @@ def iso_hspf_xfail_reason(case):
     case_id = case["case_id"]
     if case_id == 1:
         return (
-            "ISO16358-2 HSPF case 1 known discrepancy: GEMS/ZERL locked "
-            "calculator may apply undocumented branch-specific intermediate "
-            "rounding; do not implement P_j W ceil(0) in common ISO core "
-            "because it breaks case 2"
+            "ISO16358-2 HSPF case 1 known discrepancy: ISO 16358 mode workbook "
+            "oracle may apply undocumented branch-specific intermediate "
+            "rounding; current Python common routing does not yet fully "
+            "reproduce this workbook-specific boundary behavior"
         )
     if case_id == 3:
         return (
-            "ISO16358-2 HSPF case 3: original Windows Excel COM aligns with "
-            "fixture CHSE 1126/HSPF 4.338, while common path remains high at "
-            "about CHSE 1134/HSPF 4.308; investigate Formula 49 frost "
-            "half-full or optional branch selection, not the old converted "
-            "workbook 1118 kWh observation"
+            "ISO16358-2 HSPF case 3: ISO 16358 mode workbook oracle aligns "
+            "with fixture CHSE 1126/HSPF 4.338, while common path remains high "
+            "at about CHSE 1134/HSPF 4.308; investigate Formula 49 frost "
+            "half-full or optional branch selection in workbook oracle"
         )
-    return "ISO16358-2 common HSPF v1: extended/frost optional branch not implemented"
+    return "ISO16358-2 common HSPF v1: workbook-golden optional/frost/boundary routing not fully implemented"
 
 
 def iso_hspf_golden_cases():
@@ -1207,7 +1206,7 @@ def test_iso16358_hspf_case3_y_min_y_extd_trace_only_component_sum(tmp_path):
         rated_heating_capacity=measured["rated_heating_capacity"],
     )
     # Legacy trace for the old converted-workbook observation only; it is not
-    # the AS/NZS original calculator reference and is not wired into common ISO.
+    # the workbook oracle reference and is not wired into common ISO.
     observed_total_power = {
         -1.0: 1482.0,
         0.0: 1298.0,

@@ -1,6 +1,21 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-10 — ISO16358-2 HSPF golden provenance correction
+
+### Result
+- `tests/fixtures/iso16358_hspf_golden_fixtures.json`의 case 1~8 출처를 'ISO 16358 mode workbook golden'으로 정정함.
+- 기존에 AS/NZS reference 또는 Z-phase compatibility로 분류했던 표현을 정정하고, 해당 goldens는 AS/NZS-mode가 아닌 ISO 16358-mode workbook oracle임을 명시함.
+- `tests/test_iso16358_hspf_golden.py`의 xfail 사유를 GEMS/ZERL/ASNZS 대신 workbook oracle의 optional/frost/boundary routing 미구현으로 정정함.
+- `docs/iso16358/iso16358_dev_notes.md`에 'ISO 16358 Workbook Golden Tolerance Calibration Plan'을 추가함.
+
+### Decision
+- Pure ISO Track A는 branch 수식 단위 검증 보조 fixture로 역할을 고정함.
+- AS/NZS HSPF calculator(Z-phase) 논의는 이번 ISO 16358 workbook golden과 엄격히 분리함.
+- 워크북 골든의 오차 범위를 감이 아닌 캘리브레이션 계획에 따라 체계적으로 정하기로 함.
+
+---
+
 ## 2026-05-10 — Phase H-6: 문서 체계 재정의 및 라우터 손상 사고 기록
 
 ### Tried

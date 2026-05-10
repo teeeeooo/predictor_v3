@@ -327,27 +327,56 @@ ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지
 - Half to Full frost branch는 Formula 49 + Formula 45 path다.
 - Full to Extended branch는 Formula 47/50 path다. 현재 common core는 Formula 50 frost full-to-extended branch만 구현한다. Formula 47 non-frost full-to-extended branch와 `L_h > pi_ext,f` extended capacity operation은 아직 구현하지 않는다.
 
-현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 external calculator / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 external override는 guard test로 계속 분리한다. Formula 50에서 extended frost curve는 ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)`와 Formula 25 `P_ext(tj)` 선형 보간을 사용한다.
+현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 ISO 16358 mode workbook oracle / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 workbook oracle override는 guard test로 계속 분리한다. Formula 50에서 extended frost curve는 ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)`와 Formula 25 `P_ext(tj)` 선형 보간을 사용한다.
 
-Case 3 reference clarification: original Windows Excel COM execution of the AS/NZS / Energy Rating SEER calculator `Inverter AC` sheet aligns with `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh`. This baseline is an AS/NZS Excel compatibility reference, not an ISO common expected value. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix.
+Case 3 reference clarification: original Windows Excel COM execution of the SEER calculator `Inverter AC` sheet in E5="ISO 16358" mode aligns with `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh`. This baseline is an ISO 16358 mode workbook oracle / reference, not an AS/NZS-mode compatibility reference. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix in the workbook oracle.
 
-Formula 45/49 routing contradiction: The `_iso_hspf_half_full_power_by_formula_45_49` helper is implemented and verified via micro-tests. However, wiring this helper into the common main routing for the half-to-full range breaks Case 2 (HSPF shifts from 4.289 to 4.478). Case 2's golden expected value mathematically requires Two-Stage capacity-linear interpolation, despite having a `7_min` stage that mandates Variable-Stage Formula 45/49 logic under strict ISO rules. This exposes a workbook-derived provenance risk in the seven-case matrix, where Formula 45/49 and linear interpolation are mixed conditionally (likely based on the presence of Extended stages). Therefore, do not wire Formula 45/49 into the common main routing yet. Do not attempt to fit the ISO common core to this AS/NZS workbook convention.
+Formula 45/49 routing contradiction: The `_iso_hspf_half_full_power_by_formula_45_49` helper is implemented and verified via micro-tests. However, wiring this helper into the common main routing for the half-to-full range breaks Case 2 (HSPF shifts from 4.289 to 4.478). Case 2's workbook oracle expected value mathematically requires Two-Stage capacity-linear interpolation, despite having a `7_min` stage that mandates Variable-Stage Formula 45/49 logic under strict ISO rules. This exposes a workbook oracle provenance risk in the seven-case matrix, where Formula 45/49 and linear interpolation are mixed conditionally (likely based on the presence of Extended stages). Therefore, do not wire Formula 45/49 into the common main routing yet. Do not attempt to fit the ISO common core to this workbook oracle convention.
 
-Case 3 Excel branch model note: Windows Excel COM selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook compatibility convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
+Case 3 workbook branch model note: Windows Excel COM (ISO 16358 mode) selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook oracle convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
 
 ### 14.3 Pure ISO Track A Validation Baseline
 
-To ensure a robust validation baseline independent of external workbook conventions (such as the seven-case matrix derived from the AS/NZS SEER calculator), we maintain a `Pure ISO Track A` namespace.
+To ensure a robust validation baseline independent of external workbook conventions (such as the seven-case matrix derived from the ISO 16358 mode workbook oracle), we maintain a `Pure ISO Track A` namespace.
 
 - **Design Philosophy**: 
   - Fixtures are hand-calculated based strictly on ISO 16358-2 equations, avoiding any non-standard interpolation or fallback logic present in workbook-derived samples.
   - Test suites utilize dedicated namespaces (`tests/test_iso16358_hspf_pure_iso_track_a.py`) to prevent cross-contamination with external legacy references.
   - Branch-level contracts (Formula 44-50) are established as `xfail` tests until the main routing core is updated to fully implement pure ISO logic.
+- **Role and Relationship**:
+  - Pure ISO Track A is a branch-level formula verification aid (branch 수식 단위 검증 보조 fixture).
+  - Workbook goldens (ISO 16358 mode) serve as seasonal oracle benchmarks.
+  - The two paths are complementary: Track A focuses on mathematical correctness of individual formulas, while workbook goldens focus on seasonal integration parity with the official-sheet reproduction.
 - **Provenance Integrity**:
   - `Pure ISO` fixtures are marked with `ISO16358_COMMON_TRACK_A` metadata and include loader guards to prevent any accidental usage of workbook-derived anchor values (e.g., `4.33824`).
-- **Validation Path**:
-  - The `Pure ISO` suite serves as the primary target for future main loop routing integration, ensuring that system changes align with the standard rather than fitting to legacy artifacts.
-- ISO common code must not branch on `reference_type=ASNZS_EXCEL_COMPAT`.
+
+### 14.4 ISO 16358 Workbook Golden Tolerance Calibration Plan
+
+워크북 골든(Workbook Golden) 검증 시 허용 오차(Tolerance)를 체계적으로 결정하기 위한 캘리브레이션 계획이다. 단순 감(Intuition)이 아니라 독립 손계산/Python 계산과의 비교를 통해 오차 범위를 확정한다.
+
+#### 목적
+- 워크북의 내부 반올림 및 중간 helper column 처리에 따른 오차 한계를 명확히 한다.
+- 공통 엔진(Track A)이 워크북 골든을 어디까지 추적해야 하는지 가이드라인을 제공한다.
+
+#### Calibration Case 후보
+- **Load line only / HSTL**: bin-hour 누적 오차 확인.
+- **Cycling + Cd**: Formula 9/10 degradation 오차 확인.
+- **Min-to-Half (Formula 44/48)**: 저부하 보간 오차 확인.
+- **Half-to-Full (Formula 45)**: 중간부하 보간 오차 확인.
+- **Frost Half-to-Full (Formula 49)**: 성애 구간 보간 오차 확인.
+- **Full-to-Extended (Formula 47)**: 고부하 보간 오차 확인.
+- **Frost Full-to-Extended (Formula 50)**: 성애 구간 고부하 보간 오차 확인.
+- **Saturated Auxiliary**: 용량 부족 구간 백업 히터 오차 확인.
+
+#### 초기 가설 (Provisional Tolerances)
+- **HSTL**: ±0.5 kWh (Bin 누적에 따른 부동소수점 오차)
+- **CHSE/HSEC**: ±1~3 kWh (Branch 선택 및 helper column precision 오차)
+- **HSPF**: ±0.01 (최종 지표 반올림 오차)
+
+#### 정밀 Calibration 후 목표 (Target Tolerances)
+- **HSTL**: ±0.01 kWh
+- **CHSE/HSEC**: ±0.1~0.5 kWh
+- **HSPF**: ±0.001~0.003
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 
 Track A validation strategy:

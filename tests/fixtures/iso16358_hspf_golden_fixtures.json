@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "ISO16358-2 HSPF golden fixtures for the default Table 3 bin-hour matrix. These values must not be copied into production region configs.",
-  "source_note": "Structured from user-provided ISO16358-2 HSPF seven-case golden data. This is an external calculator / official-sheet reproduction fixture, not a production ISO Table 1 default fixture. external_calculator_minus7_fallback_override uses 0.5 / 1.105 only to reproduce the user-provided external calculator golden matrix. It is not the ISO 16358-2 Table 1 default. The production ISO Table 1 default remains 0.64 / 0.82 and must be preserved by separate production/default-path guards.",
+  "source_note": "Structured from user-provided ISO 16358 mode workbook golden data (Inverter AC sheet, E5='ISO 16358', standby/off power=0, Cd=0.25). This is an ISO 16358 workbook oracle / official-sheet reproduction fixture, not a production ISO Table 1 default fixture or an AS/NZS-mode reference. external_calculator_minus7_fallback_override uses 0.5 / 1.105 only to reproduce this specific workbook oracle. It is not the ISO 16358-2 Table 1 default. The production ISO Table 1 default remains 0.64 / 0.82 and must be preserved by separate production/default-path guards.",
   "fixtures": {
     "iso16358_2_hspf_default_bin_seven_case_matrix": {
       "id": "iso16358_2_hspf_default_bin_seven_case_matrix",
