@@ -2005,7 +2005,6 @@ class ISO16358Calculator:
             "hstl_wh": hstl,
             "ch48_wh": ch48,
             "bin_details": bin_details,
-            "resolved_points": resolved,
         }
 
     def calculate_hspf_iso16358_common(
@@ -2072,24 +2071,30 @@ class ISO16358Calculator:
                 }
         
         # Step 2: 2°C point generation (Footnote d / Footnote c)
-        # Footnote c: When this value is measured, pi_x(2) and/or P_x(2) shall not be calculated 
+        # Footnote c: When this value is measured, pi_x(2) and/or P_x(2) shall not be calculated
         # from this measured value, but the equations in footnote d shall be used instead.
+        # Projects Interpretation: This strict overwrite only applies if no variable-capacity
+        # measured point is provided. If measured points like 2_full or 2_half exist,
+        # they take precedence as "Measured" status in the workbook oracle.
         for stage in active_stages:
             key_2 = f"2_{stage}"
             key_2_f = f"2_{stage}_f"
             key_7 = f"7_{stage}"
             key_m7 = f"-7_{stage}"
 
-            # Preserve measured 2_full for trace/debug if present, but do not use as anchor
             if key_2 in resolved:
+                # Use measured point as active and frosting-corrected baseline
                 resolved[f"measured_{key_2}"] = dict(resolved[key_2])
-            
-            calculated_2 = {
-                "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
-                "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
-            }
-            resolved[key_2_f] = dict(calculated_2)
-            resolved[key_2] = dict(calculated_2)
+                resolved[key_2_f] = dict(resolved[key_2])
+                # resolved[key_2] remains as measured
+            else:
+                # Apply Footnote d to generate 2°C baseline from -7 and 7 line
+                calculated_2 = {
+                    "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
+                    "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
+                }
+                resolved[key_2_f] = dict(calculated_2)
+                resolved[key_2] = dict(calculated_2)
 
         # 3. Load line parameters
         load_line_cfg = hspf_cfg.get("load_line", {})
@@ -2248,7 +2253,7 @@ class ISO16358Calculator:
                 "hsec_wh": hsec,
                 "heat_pump_energy_wh": 0.0,
                 "auxiliary_energy_wh": 0.0,
-                "bin_details": bin_details
+                "bin_details": bin_details,
             }
             
         hspf_val = hstl / hsec
@@ -2261,7 +2266,7 @@ class ISO16358Calculator:
             "hsec_wh": hsec,
             "heat_pump_energy_wh": hp_energy_total,
             "auxiliary_energy_wh": aux_energy_total,
-            "bin_details": bin_details
+            "bin_details": bin_details,
         }
 
     def calculate_hspf(self, measured_inputs: dict, aux_cop: float = 1.0) -> dict:

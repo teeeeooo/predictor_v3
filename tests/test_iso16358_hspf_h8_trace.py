@@ -35,13 +35,12 @@ def trace_case(calculator, case):
     # Capture inputs and common actuals
     actuals = iso_common_golden_actuals(result)
     
-    # Task 1: Point Resolution Trace (Simulated as we can't easily reach internal 'resolved' dict 
-    # without modifying core, so we look at the inputs provided to calculate_hspf)
+    # Task 1: Point Trace summary
     point_trace = {
         "case_id": case["case_id"],
         "label": case["label"],
         "measured_keys": list(measured.keys()),
-        "actual_results": actuals
+        "actual_results": actuals,
     }
     
     # Task 2: Bin-level Branch Trace
@@ -100,18 +99,21 @@ def test_iso16358_hspf_h8_invariants_audit(tmp_path):
         measured = iso_common_golden_measured_inputs(cases[cid])
         results[cid] = calculator.calculate_hspf(measured)
     
-    # Invariant 1: Case 4/5 actual matches Case 3 (Current behavior: Frost points ignored)
+    # Invariant 1: Case 4/5 actual vs Case 3 (Current behavior: Frost points used if available)
     c3_hsec = results[3]["hsec_wh"]
     c4_hsec = results[4]["hsec_wh"]
     c5_hsec = results[5]["hsec_wh"]
     
     print(f"\n[INVARIANT] Case 3 HSEC: {c3_hsec:.2f}")
-    print(f"[INVARIANT] Case 4 HSEC: {c4_hsec:.2f} (Diff: {c4_hsec - c3_hsec:.2f})")
-    print(f"[INVARIANT] Case 5 HSEC: {c5_hsec:.2f} (Diff: {c5_hsec - c3_hsec:.2f})")
+    print(f"[INVARIANT] Case 4 HSEC: {c4_hsec:.2f} (Diff vs C3: {c4_hsec - c3_hsec:.2f})")
+    print(f"[INVARIANT] Case 5 HSEC: {c5_hsec:.2f} (Diff vs C4: {c5_hsec - c4_hsec:.2f})")
     
-    if abs(c4_hsec - c3_hsec) < 1e-6 and abs(c5_hsec - c3_hsec) < 1e-6:
-        print("[INVARIANT] Current behavior confirmed: Frost points (2_full, 2_half) are effectively IGNORED.")
+    if abs(c4_hsec - c3_hsec) > 1e-6:
+        print("[INVARIANT] Case 4 is now DIFFERENT from Case 3 (2_full reflected).")
         
+    if abs(c5_hsec - c4_hsec) > 1e-6:
+        print("[INVARIANT] Case 5 is now DIFFERENT from Case 4 (2_half reflected).")
+
     # Invariant 2: Case 6/7/8 changes with -7 points
     c6_hsec = results[6]["hsec_wh"]
     c7_hsec = results[7]["hsec_wh"]
