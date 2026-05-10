@@ -407,7 +407,7 @@ To ensure a robust validation baseline independent of external workbook conventi
 | Case ID | Branch Target | 7_full (W) | 7_half (W) | 7_min (W) | 2_ext_f (W) | 2_full_f (W) | 설계 의도 및 핵심 조건 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **CAL-01** | **Load line** | 3000 / 1000 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | HSTL 누적 오차 격리 확인. |
-| **CAL-02** | **Cycling** | 3000 / 1000 | 2000 / 800 | 1000 / 300 | 0 / 0 | 0 / 0 | `load(144.7) < min(1000)` 유도. |
+| **CAL-02** | **Cycling** | 3000 / 1000 | 2000 / 800 | 1000 / 300 | 0 / 0 | 0 / 0 | `load(434.1) < min(1000)` 유도. |
 | **CAL-03** | **Min-to-Half** | 3000 / 1000 | 2000 / 800 | 1000 / 300 | 0 / 0 | 0 / 0 | `min(1000) < load(1447) < half(2000)`. |
 | **CAL-04** | **Half-to-Full** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 0 / 0 | 0 / 0 | `half(1000) < load(1447) < full(3000)`. |
 | **CAL-05** | **Frost H-to-F** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 4000 / 1500 | 3000 / 1000 | **D46, D50 = "Measured"** 필수 반영. |
@@ -415,7 +415,7 @@ To ensure a robust validation baseline independent of external workbook conventi
 | **CAL-07** | **Frost F-to-E** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 4000 / 1500 | 1000 / 400 | **K88=1.5** 및 boundary extrapolation 기준. |
 | **CAL-08** | **Saturated** | 1000 / 400 | 500 / 250 | 0 / 0 | 1500 / 600 | 1000 / 400 | **D54-56="Measured"**, `load > max_cap`. |
 
-#### 14.4.7 Output Capture Template (Actual Results)
+#### 14.4.7 Selected Output Capture Results
 
 워크북 실행 후 기록된 최종 결과이다. 독립 계산(Independent Calculation) 열은 손계산 또는 Python 스크립트 결과를 기입한다.
 
