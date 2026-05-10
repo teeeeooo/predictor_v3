@@ -1764,6 +1764,387 @@ class ISO16358Calculator:
             raise ValueError("ISO 16358-2 HSPF branch COP must be positive.")
         return bl_h / cop_pair
 
+    def _iso_hspf_normalize_common_points(self, measured_inputs: dict) -> dict:
+        points = {}
+        for key, value in measured_inputs.items():
+            if not (
+                isinstance(value, dict)
+                and "capacity" in value
+                and "power" in value
+            ):
+                continue
+            capacity = value["capacity"]
+            power = value["power"]
+            if not isinstance(capacity, (int, float)) or capacity <= 0:
+                raise ValueError(
+                    f"Measured point '{key}' capacity must be a positive number."
+                )
+            if not isinstance(power, (int, float)) or power <= 0:
+                raise ValueError(
+                    f"Measured point '{key}' power must be a positive number."
+                )
+            points[key] = {
+                "capacity": float(capacity),
+                "power": float(power),
+            }
+
+        for required_key in ("7_full", "7_half"):
+            if required_key not in points:
+                raise ValueError(
+                    f"ISO 16358-2 HSPF requires '{required_key}' measured inputs."
+                )
+        return points
+
+    def _iso_hspf_point_on_minus7_to_7_line(
+        self,
+        resolved: dict,
+        stage: str,
+        temp: float = 2.0
+    ) -> dict:
+        key_7 = f"7_{stage}"
+        key_m7 = f"-7_{stage}"
+        return {
+            "capacity": resolved[key_m7]["capacity"]
+            + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"])
+            * (temp + 7.0)
+            / 14.0,
+            "power": resolved[key_m7]["power"]
+            + (resolved[key_7]["power"] - resolved[key_m7]["power"])
+            * (temp + 7.0)
+            / 14.0,
+        }
+
+    def _iso_hspf_resolve_common_points(
+        self,
+        points: dict,
+        hspf_cfg: dict
+    ) -> tuple:
+        resolved = {key: dict(value) for key, value in points.items()}
+        active_stages = ["full", "half"]
+        if "7_min" in resolved:
+            active_stages.append("min")
+
+        minus7_capacity_factor, minus7_power_factor = (
+            self._iso_hspf_minus7_fallback_factors(hspf_cfg)
+        )
+        for stage in active_stages:
+            key_7 = f"7_{stage}"
+            key_m7 = f"-7_{stage}"
+            if key_m7 not in resolved:
+                resolved[key_m7] = {
+                    "capacity": resolved[key_7]["capacity"] * minus7_capacity_factor,
+                    "power": resolved[key_7]["power"] * minus7_power_factor,
+                }
+
+        for stage in active_stages:
+            calculated_2 = self._iso_hspf_point_on_minus7_to_7_line(
+                resolved, stage
+            )
+            measured_2 = resolved.get(f"2_{stage}")
+            if measured_2 is not None:
+                resolved[f"2_{stage}_f"] = dict(measured_2)
+            else:
+                resolved[f"2_{stage}_f"] = dict(calculated_2)
+            resolved[f"2_{stage}"] = calculated_2
+
+        return resolved, active_stages
+
+    def _iso_hspf_common_load_line(
+        self,
+        hspf_cfg: dict,
+        rated_heating_capacity: float
+    ) -> dict:
+        load_line_cfg = hspf_cfg.get("load_line", {})
+        if load_line_cfg.get("source") != "rated_heating_capacity":
+            source = load_line_cfg.get("source")
+            raise ValueError(
+                f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF."
+            )
+        required_fields = (
+            "zero_load_temp",
+            "full_load_temp",
+            "rated_capacity_factor",
+        )
+        if any(field not in load_line_cfg for field in required_fields):
+            raise ValueError(
+                "Invalid ISO 16358-2 HSPF load_line: zero_load_temp, "
+                "full_load_temp, and rated_capacity_factor are required."
+            )
+
+        zero_load_temp = float(load_line_cfg["zero_load_temp"])
+        full_load_temp = float(load_line_cfg["full_load_temp"])
+        rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
+        if zero_load_temp == full_load_temp:
+            raise ValueError(
+                "Invalid ISO 16358-2 HSPF load_line: zero_load_temp and full_load_temp must differ."
+            )
+        if rated_capacity_factor <= 0:
+            raise ValueError(
+                "Invalid ISO 16358-2 HSPF load_line: rated_capacity_factor must be positive."
+            )
+
+        l_h_ref = rated_heating_capacity * rated_capacity_factor
+        denominator = zero_load_temp - full_load_temp
+        return {
+            "zero_load_temp": zero_load_temp,
+            "full_load_temp": full_load_temp,
+            "rated_capacity_factor": rated_capacity_factor,
+            "l_h_ref": l_h_ref,
+            "line": (
+                -l_h_ref / denominator,
+                l_h_ref * zero_load_temp / denominator,
+            ),
+        }
+
+    def _iso_hspf_has_non_frost_extended_candidate(self, resolved: dict) -> bool:
+        return (
+            self._iso_hspf_has_extended_candidate(resolved)
+            and "7_ext" in resolved
+            and "-7_ext" in resolved
+        )
+
+    def _iso_hspf_common_stage_snapshot(
+        self,
+        tj: float,
+        resolved: dict,
+        active_stages: list,
+        frost: bool
+    ) -> dict:
+        snapshot = {}
+        for stage in ("min", "half", "full"):
+            if stage not in active_stages:
+                continue
+            snapshot[stage] = {
+                "capacity": self._iso_hspf_capacity_curve(
+                    tj, stage, resolved, frost
+                ),
+                "power": self._iso_hspf_power_curve(tj, stage, resolved, frost),
+            }
+
+        if frost and self._iso_hspf_has_extended_candidate(resolved):
+            snapshot["ext"] = self._iso_hspf_extended_frost_curve(tj, resolved)
+        elif (not frost) and self._iso_hspf_has_non_frost_extended_candidate(resolved):
+            snapshot["ext"] = {
+                "capacity": self._iso_hspf_capacity_curve(
+                    tj, "ext", resolved, False
+                ),
+                "power": self._iso_hspf_power_curve(tj, "ext", resolved, False),
+            }
+        return snapshot
+
+    def _iso_hspf_select_common_branch(
+        self,
+        bl_h: float,
+        snapshot: dict,
+        active_stages: list,
+        frost: bool
+    ) -> str:
+        lowest_stage = "min" if "min" in active_stages else "half"
+        if bl_h <= snapshot[lowest_stage]["capacity"]:
+            return "cycling"
+        if "min" in active_stages and bl_h <= snapshot["half"]["capacity"]:
+            return "min_half_formula48" if frost else "min_half_formula44"
+        if bl_h <= snapshot["full"]["capacity"]:
+            return "half_full_formula49" if frost else "half_full_formula45"
+        if "ext" in snapshot and bl_h <= snapshot["ext"]["capacity"]:
+            return "full_extended_formula50" if frost else "full_extended_formula47"
+        return "saturated"
+
+    def _iso_hspf_stage_pair_power_by_x(
+        self,
+        bl_h: float,
+        low_stage: dict,
+        high_stage: dict
+    ) -> dict:
+        low_capacity = low_stage["capacity"]
+        high_capacity = high_stage["capacity"]
+        denominator = high_capacity - low_capacity
+        if denominator == 0:
+            raise ValueError(
+                "ISO 16358-2 HSPF stage capacities must differ for interpolation."
+            )
+
+        x = (bl_h - low_capacity) / denominator
+        power = low_stage["power"] + x * (high_stage["power"] - low_stage["power"])
+        return {"X": x, "P_j": power}
+
+    def _iso_hspf_calculate_common_branch_power(
+        self,
+        branch: str,
+        bl_h: float,
+        snapshot: dict,
+        active_stages: list,
+        cd: float
+    ) -> dict:
+        if branch == "cycling":
+            lowest_stage = "min" if "min" in active_stages else "half"
+            capacity = snapshot[lowest_stage]["capacity"]
+            power = snapshot[lowest_stage]["power"]
+            x = bl_h / capacity
+            plf = 1.0 - cd * (1.0 - x)
+            if plf <= 0:
+                raise ValueError("ISO 16358-2 HSPF cycling PLF must be positive.")
+            p_j = x * power / plf
+            return {
+                "case": "cycling",
+                "P_j": p_j,
+                "pi_j": bl_h,
+                "heat_pump_energy_rate": p_j,
+                "auxiliary_heat_rate": 0.0,
+                "trace": {
+                    "X": x,
+                    "PLF": plf,
+                    "cycling_stage": lowest_stage,
+                },
+            }
+
+        if branch in ("min_half_formula44", "min_half_formula48"):
+            interpolated = self._iso_hspf_stage_pair_power_by_x(
+                bl_h, snapshot["min"], snapshot["half"]
+            )
+            p_j = interpolated["P_j"]
+            return {
+                "case": "min_half_interpolation_frost"
+                if branch == "min_half_formula48"
+                else "min_half_interpolation",
+                "P_j": p_j,
+                "pi_j": bl_h,
+                "heat_pump_energy_rate": p_j,
+                "auxiliary_heat_rate": 0.0,
+                "trace": {
+                    "branch": branch,
+                    "X": interpolated["X"],
+                },
+            }
+
+        if branch in ("half_full_formula45", "half_full_formula49"):
+            interpolated = self._iso_hspf_stage_pair_power_by_x(
+                bl_h, snapshot["half"], snapshot["full"]
+            )
+            p_j = interpolated["P_j"]
+            return {
+                "case": "formula49_half_full_frost"
+                if branch == "half_full_formula49"
+                else "formula45_half_full",
+                "P_j": p_j,
+                "pi_j": bl_h,
+                "heat_pump_energy_rate": p_j,
+                "auxiliary_heat_rate": 0.0,
+                "trace": {
+                    "branch": branch,
+                    "X": interpolated["X"],
+                },
+            }
+
+        if branch == "full_extended_formula47":
+            interpolated = self._iso_hspf_stage_pair_power_by_x(
+                bl_h, snapshot["full"], snapshot["ext"]
+            )
+            p_j = interpolated["P_j"]
+            return {
+                "case": "formula47_full_extended",
+                "P_j": p_j,
+                "pi_j": bl_h,
+                "heat_pump_energy_rate": p_j,
+                "auxiliary_heat_rate": 0.0,
+                "trace": {
+                    "branch": branch,
+                    "X": interpolated["X"],
+                },
+            }
+
+        if branch == "full_extended_formula50":
+            interpolated = self._iso_hspf_stage_pair_power_by_x(
+                bl_h, snapshot["full"], snapshot["ext"]
+            )
+            p_j = interpolated["P_j"]
+            trace = {
+                "branch": "formula50_full_extended_frost",
+                "pi_ext_f": snapshot["ext"]["capacity"],
+                "p_ext_f": snapshot["ext"]["power"],
+                "X": interpolated["X"],
+                "backup_heat": 0.0,
+            }
+            return {
+                "case": "formula50_full_extended_frost",
+                "P_j": p_j,
+                "pi_j": bl_h,
+                "heat_pump_energy_rate": p_j,
+                "auxiliary_heat_rate": 0.0,
+                "trace": trace,
+            }
+
+        available_stage = "ext" if "ext" in snapshot else "full"
+        available_capacity = snapshot[available_stage]["capacity"]
+        available_power = snapshot[available_stage]["power"]
+        return {
+            "case": "saturated",
+            "P_j": available_power,
+            "pi_j": available_capacity,
+            "heat_pump_energy_rate": available_power,
+            "auxiliary_heat_rate": max(0.0, bl_h - available_capacity),
+            "trace": {
+                "saturated_stage": available_stage,
+                "backup_heat": max(0.0, bl_h - available_capacity),
+            },
+        }
+
+    def _iso_hspf_evaluate_common_bin(
+        self,
+        bin_data: dict,
+        resolved: dict,
+        active_stages: list,
+        load_line_info: dict,
+        frost_boundaries: dict,
+        cd: float,
+        aux_cop: float
+    ) -> dict:
+        tj = float(bin_data.get("tj", 0))
+        nj = float(bin_data.get("nj", 0))
+        if nj <= 0:
+            return {}
+
+        zero_load_temp = load_line_info["zero_load_temp"]
+        full_load_temp = load_line_info["full_load_temp"]
+        bl_h = load_line_info["l_h_ref"] * (zero_load_temp - tj) / (
+            zero_load_temp - full_load_temp
+        )
+        if bl_h <= 0:
+            return {}
+
+        frost_lower = float(frost_boundaries.get("lower", -7.0))
+        frost_upper = float(frost_boundaries.get("upper", 5.5))
+        frost = frost_lower < tj < frost_upper
+        snapshot = self._iso_hspf_common_stage_snapshot(
+            tj, resolved, active_stages, frost
+        )
+        branch = self._iso_hspf_select_common_branch(
+            bl_h, snapshot, active_stages, frost
+        )
+        branch_result = self._iso_hspf_calculate_common_branch_power(
+            branch,
+            bl_h,
+            snapshot,
+            active_stages,
+            cd,
+        )
+
+        heat_pump_energy = branch_result["heat_pump_energy_rate"] * nj
+        auxiliary_energy = branch_result["auxiliary_heat_rate"] * nj / aux_cop
+        detail = {
+            "tj": tj,
+            "nj": nj,
+            "bl_h": bl_h,
+            "pi_j": branch_result["pi_j"],
+            "P_j": branch_result["P_j"],
+            "case": branch_result["case"],
+            "heat_pump_energy": heat_pump_energy,
+            "auxiliary_energy": auxiliary_energy,
+            "E_j": heat_pump_energy + auxiliary_energy,
+        }
+        detail.update(branch_result["trace"])
+        return detail
+
     def _iso_hspf_y_min_y_extd_case3_points(self, measured_inputs: dict) -> dict:
         """
         Trace-only point resolver for the GEMS/ZERL Y(Min) Y(Extd) case 3 audit.
@@ -2014,237 +2395,48 @@ class ISO16358Calculator:
         aux_cop: float = 1.0
     ) -> dict:
         """
-        ISO 16358-2 HSPF common engine (v1: Full/Half stages only).
+        ISO 16358-2 HSPF common engine.
         """
-        # 1. Validation for rated_heating_capacity
         if rated_heating_capacity <= 0:
             raise ValueError("rated_heating_capacity must be positive.")
-
-        # Extract only point dictionaries for resolution
-        points_for_resolution = {}
-        for k, v in measured_inputs.items():
-            if isinstance(v, dict) and "capacity" in v and "power" in v:
-                points_for_resolution[k] = v
-
-        # 1. Validation for required measured points
-        required_points = ["7_full", "7_half"]
-        for p_key in required_points:
-            if p_key not in points_for_resolution:
-                raise ValueError(f"ISO 16358-2 HSPF requires '{p_key}' measured inputs.")
-            p_data = points_for_resolution[p_key]
-            # Ensure capacity and power are positive numbers
-            if not isinstance(p_data["capacity"], (int, float)) or p_data["capacity"] <= 0:
-                raise ValueError(f"Measured point '{p_key}' capacity must be a positive number.")
-            if not isinstance(p_data["power"], (int, float)) or p_data["power"] <= 0:
-                raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
-        for p_key, p_data in points_for_resolution.items():
-            if not isinstance(p_data["capacity"], (int, float)) or p_data["capacity"] <= 0:
-                raise ValueError(f"Measured point '{p_key}' capacity must be a positive number.")
-            if not isinstance(p_data["power"], (int, float)) or p_data["power"] <= 0:
-                raise ValueError(f"Measured point '{p_key}' power must be a positive number.")
 
         hspf_cfg = self.config.get("hspf", {})
         correction_cfg = hspf_cfg.get("correction", {})
         if aux_cop == 1.0:
-            aux_cop = correction_cfg.get("aux_cop", 1.0)
+            aux_cop = float(correction_cfg.get("aux_cop", 1.0))
         if aux_cop <= 0:
             raise ValueError("aux_cop must be positive.")
+        cd = float(correction_cfg.get("cd", self.Cd))
 
-        # 2. Point Resolution - Start with only the validated point dictionaries
-        resolved = {k: dict(v) for k, v in points_for_resolution.items()}
-        minus7_capacity_factor, minus7_power_factor = (
-            self._iso_hspf_minus7_fallback_factors(hspf_cfg)
+        points = self._iso_hspf_normalize_common_points(measured_inputs)
+        resolved, active_stages = self._iso_hspf_resolve_common_points(
+            points, hspf_cfg
         )
-        
-        active_stages = ["full", "half"]
-        if "7_min" in resolved:
-            active_stages.append("min")
-
-        # Step 1: -7°C derived point (if not measured)
-        for stage in active_stages:
-            key_m7 = f"-7_{stage}"
-            key_7 = f"7_{stage}"
-            if key_m7 not in resolved:
-                resolved[key_m7] = {
-                    "capacity": resolved[key_7]["capacity"] * minus7_capacity_factor,
-                    "power": resolved[key_7]["power"] * minus7_power_factor
-                }
-        
-        # Step 2: 2°C point generation (Footnote d / Footnote c)
-        # Footnote c: When this value is measured, pi_x(2) and/or P_x(2) shall not be calculated
-        # from this measured value, but the equations in footnote d shall be used instead.
-        # Projects Interpretation: This strict overwrite only applies if no variable-capacity
-        # measured point is provided. If measured points like 2_full or 2_half exist,
-        # they take precedence as "Measured" status in the workbook oracle.
-        for stage in active_stages:
-            key_2 = f"2_{stage}"
-            key_2_f = f"2_{stage}_f"
-            key_7 = f"7_{stage}"
-            key_m7 = f"-7_{stage}"
-
-            if key_2 in resolved:
-                # Use measured point as active and frosting-corrected baseline
-                resolved[f"measured_{key_2}"] = dict(resolved[key_2])
-                resolved[key_2_f] = dict(resolved[key_2])
-                # resolved[key_2] remains as measured
-            else:
-                # Apply Footnote d to generate 2°C baseline from -7 and 7 line
-                calculated_2 = {
-                    "capacity": resolved[key_m7]["capacity"] + (resolved[key_7]["capacity"] - resolved[key_m7]["capacity"]) * 9.0 / 14.0,
-                    "power": resolved[key_m7]["power"] + (resolved[key_7]["power"] - resolved[key_m7]["power"]) * 9.0 / 14.0
-                }
-                resolved[key_2_f] = dict(calculated_2)
-                resolved[key_2] = dict(calculated_2)
-
-        # 3. Load line parameters
-        load_line_cfg = hspf_cfg.get("load_line", {})
-        if load_line_cfg.get("source") != "rated_heating_capacity":
-            source = load_line_cfg.get("source")
-            raise ValueError(f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF.")
-        required_load_line_fields = [
-            "zero_load_temp",
-            "full_load_temp",
-            "rated_capacity_factor",
-        ]
-        if any(field not in load_line_cfg for field in required_load_line_fields):
-            raise ValueError(
-                "Invalid ISO 16358-2 HSPF load_line: zero_load_temp, "
-                "full_load_temp, and rated_capacity_factor are required."
-            )
-        zero_load_temp = float(load_line_cfg["zero_load_temp"])
-        full_load_temp = float(load_line_cfg["full_load_temp"])
-        rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
-        if zero_load_temp == full_load_temp:
-            raise ValueError("Invalid ISO 16358-2 HSPF load_line: zero_load_temp and full_load_temp must differ.")
-        if rated_capacity_factor <= 0:
-            raise ValueError("Invalid ISO 16358-2 HSPF load_line: rated_capacity_factor must be positive.")
-        
-        L_h_ref = rated_heating_capacity * rated_capacity_factor
-        load_line = (
-            -L_h_ref / (zero_load_temp - full_load_temp),
-            L_h_ref * zero_load_temp / (zero_load_temp - full_load_temp),
+        load_line_info = self._iso_hspf_common_load_line(
+            hspf_cfg, rated_heating_capacity
         )
         frost_boundaries = hspf_cfg.get("frost_boundaries", {})
-        frost_lower = float(frost_boundaries.get("lower", -7.0))
-        frost_upper = float(frost_boundaries.get("upper", 5.5))
-        
-        # 4. Bin calculation
+
         hstl, hsec = 0.0, 0.0
         bin_details = []
         bin_hours_key = hspf_cfg.get("bin_hours_key", "hspf_bin_hours")
-        hspf_bin_hours = self.config.get(bin_hours_key, [])
 
-        for bin_data in hspf_bin_hours:
-            tj = float(bin_data.get("tj", 0))
-            nj = float(bin_data.get("nj", 0))
-            
-            if nj <= 0:
+        for bin_data in self.config.get(bin_hours_key, []):
+            detail = self._iso_hspf_evaluate_common_bin(
+                bin_data,
+                resolved,
+                active_stages,
+                load_line_info,
+                frost_boundaries,
+                cd,
+                aux_cop,
+            )
+            if not detail:
                 continue
-            
-            # BL_h(tj) = L_h_ref * (t_0 - tj) / (t_0 - t_100)
-            bl_h = L_h_ref * (zero_load_temp - tj) / (zero_load_temp - full_load_temp)
-            
-            if bl_h <= 0:
-                continue
-            
-            # Frost determination
-            frost = frost_lower < tj < frost_upper
-            
-            # Capacity and Power curves for Full and Half
-            pi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, frost)
-            p_full = self._iso_hspf_power_curve(tj, "full", resolved, frost)
-            pi_half = self._iso_hspf_capacity_curve(tj, "half", resolved, frost)
-            p_half = self._iso_hspf_power_curve(tj, "half", resolved, frost)
-            has_min_stage = "min" in active_stages
-            if has_min_stage:
-                pi_min = self._iso_hspf_capacity_curve(tj, "min", resolved, frost)
-                p_min = self._iso_hspf_power_curve(tj, "min", resolved, frost)
-            else:
-                pi_min = None
-                p_min = None
-            
-            pi_lowest = pi_min if has_min_stage else pi_half
-            p_lowest = p_min if has_min_stage else p_half
-            
-            case = "skip"
-            hp_energy = 0.0
-            aux_energy = 0.0
-            p_j = 0.0
-            trace = {}
-            
-            if bl_h <= pi_lowest:
-                # Case A: Cycling
-                case = "cycling"
-                X = bl_h / pi_lowest
-                cd = hspf_cfg.get("correction", {}).get("cd", self.Cd)
-                plf = 1.0 - cd * (1.0 - X)
-                hp_energy = (X * p_lowest / plf) * nj
-                p_j = X * p_lowest / plf
-            elif has_min_stage and bl_h <= pi_half:
-                case = "min_half_interpolation_frost" if frost else "min_half_interpolation"
-                p_interp = self._iso_hspf_min_half_power_by_formula_44_48(
-                    tj, bl_h, resolved, frost, load_line
-                )
-                hp_energy = p_interp * nj
-                p_j = p_interp
-            elif bl_h <= pi_full:
-                # Case B: Interpolation
-                case = "interpolation"
-                # Capacity-linear power interpolation
-                p_interp = p_half + (p_full - p_half) * (bl_h - pi_half) / (pi_full - pi_half)
-                hp_energy = p_interp * nj
-                p_j = p_interp
-            elif frost and self._iso_hspf_has_extended_candidate(resolved):
-                ext_f = self._iso_hspf_extended_frost_curve(tj, resolved)
-                if bl_h <= ext_f["capacity"]:
-                    case = "formula50_full_extended_frost"
-                    formula50 = self._iso_hspf_formula50_full_extended_frost_power(
-                        tj, bl_h, resolved, load_line
-                    )
-                    hp_energy = formula50["P_fe"] * nj
-                    p_j = formula50["P_fe"]
-                    trace = {
-                        "branch": case,
-                        "pi_ext_f": ext_f["capacity"],
-                        "p_ext_f": ext_f["power"],
-                        "tg": formula50["tg"],
-                        "tf": formula50["tf"],
-                        "cop_fe_f": formula50["cop_fe_f"],
-                        "P_fe": formula50["P_fe"],
-                        "backup_heat": 0.0,
-                    }
-                else:
-                    # Case C: Saturated
-                    case = "saturated"
-                    hp_energy = ext_f["power"] * nj
-                    p_j = ext_f["power"]
-                    aux_heat = bl_h - ext_f["capacity"]
-                    aux_energy = aux_heat * nj / aux_cop
-                    trace = {
-                        "pi_j": ext_f["capacity"],
-                    }
-            else:
-                # Case C: Saturated
-                case = "saturated"
-                hp_energy = p_full * nj
-                p_j = p_full
-                aux_heat = bl_h - pi_full
-                aux_energy = aux_heat * nj / aux_cop
-                
-            hstl += bl_h * nj
-            hsec += hp_energy + aux_energy
-            
-            bin_details.append({
-                "tj": tj,
-                "nj": nj,
-                "bl_h": bl_h,
-                "pi_j": pi_full if bl_h > pi_full else bl_h, # HP output
-                "P_j": p_j,
-                "case": case,
-                "heat_pump_energy": hp_energy,
-                "auxiliary_energy": aux_energy,
-                "E_j": hp_energy + aux_energy
-            } | trace)
+
+            hstl += detail["bl_h"] * detail["nj"]
+            hsec += detail["E_j"]
+            bin_details.append(detail)
 
         if hsec <= 0:
             return {
