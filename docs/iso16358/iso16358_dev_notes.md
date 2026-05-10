@@ -316,7 +316,7 @@ ISO 16358-2 Table 1의 measurement/default matrix는 다음처럼 해석한다.
 - 2°C Low-temperature heating: extended mode가 있으면 Extended_f measured가 required이고 Full_f는 optional이다. extended mode가 없으면 Full_f measured가 required이다. Half_f는 optional/default이고 Min은 tested point가 아니다.
 - -7°C Extra-low-temperature heating: Extended/Full/Half는 optional/default이고 Min은 tested point가 아니다.
 
-프로젝트 해석: production ISO Table 1 default에서 -7°C Full/Half default는 capacity factor 0.64, power factor 0.82를 유지한다. `external_calculator_minus7_fallback_override`의 0.5 / 1.105는 seven-case external calculator / official-sheet reproduction fixture 전용이며 production ISO default와 섞지 않는다.
+프로젝트 해석: production ISO Table 1 default에서 -7°C Full/Half default는 capacity factor 0.64, power factor 0.82를 유지한다. `external_calculator_minus7_fallback_override`의 0.5 / 1.105는 seven-case ISO 16358 mode workbook oracle / official-sheet reproduction fixture 전용이며 production ISO default와 섞지 않는다.
 
 ISO 16358-2 Table 1 footnote c/d는 measured 2°C frosting point와 calculated non-frost 2°C point를 같은 값으로 collapse하지 않는다는 의미로 처리한다. footnote d가 적용될 때 `pi_x(2)`와 `P_x(2)`는 -7°C to 7°C line에서 계산한다.
 
@@ -329,9 +329,9 @@ ISO 16358-2 Formula 30의 denominator branch 해석은 다음 boundary를 유지
 
 현재 프로젝트 결정: point resolver semantics와 fixture scope가 정리되기 전까지 Formula 46/49를 blind implementation 하지 않는다. seven-case fixture는 ISO 16358 mode workbook oracle / official-sheet reproduction fixture이며 production ISO Table 1 default validation fixture가 아니다. production ISO default와 workbook oracle override는 guard test로 계속 분리한다. Formula 50에서 extended frost curve는 ISO Table 1 default `pi_ext(-7)=0.734*pi_ext(2)`, `P_ext(-7)=0.877*P_ext(2)`와 Formula 25 `P_ext(tj)` 선형 보간을 사용한다.
 
-Case 3 reference clarification: original Windows Excel COM execution of the SEER calculator `Inverter AC` sheet in E5="ISO 16358" mode aligns with `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh`. This baseline is an ISO 16358 mode workbook oracle / reference, not an AS/NZS-mode compatibility reference. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix in the workbook oracle.
+Case 3 reference clarification: original Windows Excel COM execution of the SEER calculator `Inverter AC` sheet in E5="ISO 16358" mode aligns with `H12 = 1126.120 kWh`, `H13 = 4.33824`, and `CH48 = 1126120.47 Wh`. This baseline is an ISO 16358 mode workbook oracle / reference benchmark. The old CH48 about 1,117,680 Wh, displayed CHSE about 1118 kWh, HSPF about 4.371 observation is demoted to a converted-workbook diagnostic artifact. The trace-only component-sum helper must remain separated from common ISO production output; the next investigation target is the Formula 49 frost half-full branch / optional branch selection matrix in the workbook oracle.
 
-Formula 45/49 routing contradiction: The `_iso_hspf_half_full_power_by_formula_45_49` helper is implemented and verified via micro-tests. However, wiring this helper into the common main routing for the half-to-full range breaks Case 2 (HSPF shifts from 4.289 to 4.478). Case 2's workbook oracle expected value mathematically requires Two-Stage capacity-linear interpolation, despite having a `7_min` stage that mandates Variable-Stage Formula 45/49 logic under strict ISO rules. This exposes a workbook oracle provenance risk in the seven-case matrix, where Formula 45/49 and linear interpolation are mixed conditionally (likely based on the presence of Extended stages). Therefore, do not wire Formula 45/49 into the common main routing yet. Do not attempt to fit the ISO common core to this workbook oracle convention.
+Formula 45/49 routing contradiction (superseded): Previous observation noted that wiring Formula 45/49 into the main routing broke Case 2 (shifting HSPF from 4.289 to 4.478). However, CAL-01~08 dry-runs confirmed that the workbook oracle mathematically uses COP-linear (Formula 45/49) logic but applies it conditionally based on selector/boundary states. Do not attempt to fit the ISO common core to this workbook oracle convention before the golden case 1~8 diff audit is complete.
 
 Case 3 workbook branch model note: Windows Excel COM (ISO 16358 mode) selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook oracle convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
 
@@ -383,53 +383,50 @@ To ensure a robust validation baseline independent of external workbook conventi
 | 항목 | 셀 주소 (추정) | 설정값 / 비고 |
 | :--- | :--- | :--- |
 | **Zone Selector** | `E5` | "ISO 16358" 고정 |
-| **Standby/Off Power** | `H4` | 0 (변수 격리를 위해 0 권장) |
-| **Degradation Coeff (Cd)**| `H5` | 0.25 (표준값) |
+| **Standby/Off Power** | `C64:C67` | 0 (변수 격리를 위해 0 권장) |
+| **Degradation Coeff (Cd)**| `E59` | 0.25 (표준값) |
 | **7min YES/NO** | `K25` | YES 또는 NO |
 | **Extended YES/NO** | `K26` | YES 또는 NO |
 | **7°C Full Cap/Power** | `G41` / `H41` | 설계값 입력 |
 | **7°C Half Cap/Power** | `G42` / `H42` | 설계값 입력 |
 | **7°C Min Cap/Power** | `G43` / `H43` | 설계값 입력 |
 | **2°C Ext_f Cap/Power** | `G44` / `H44` | 설계값 입력 (Extended YES 시) |
-| **2°C Full_f Cap/Power** | `G45` / `H45` | 설계값 입력 (Optional check) |
-| **2°C Half_f Cap/Power** | `G46` / `H46` | 설계값 입력 (Optional check) |
-| **-7°C Ext Cap/Power** | `G47` / `H47` | 설계값 입력 |
-| **-7°C Full Cap/Power** | `G48` / `H48` | 설계값 입력 |
-| **-7°C Half Cap/Power** | `G49` / `H49` | 설계값 입력 |
+| **2°C Full_f (Optional)** | `G46` / `H46` | **D46="Measured"** 시 active 반영 |
+| **2°C Full_f (Required)** | `G48` / `H48` | Measured 행 우선 사용 권장 |
+| **2°C Half_f (Optional)** | `G50` / `H50` | **D50="Measured"** 시 active 반영 |
+| **-7°C Ext Cap/Power** | `G54` / `H54` | **D54="Measured"** 시 active 반영 |
+| **-7°C Full Cap/Power** | `G55` / `H55` | **D55="Measured"** 시 active 반영 |
+| **-7°C Half Cap/Power** | `G56` / `H56` | **D56="Measured"** 시 active 반영 |
 
 *주: 셀 주소는 워크북 버전에 따라 다를 수 있으므로 입력 전 확인이 필요함 (cell address check required).*
 
-#### 14.4.6 Calibration Numeric Case 설계 (Detailed)
+#### 14.4.6 Calibration Numeric Case 설계 (Final Execution Set)
 
-독립 계산과 비교하기 용이하도록 설계된 단순 숫자 입력 세트이다. 모든 케이스에서 `phi_full(7) = 3000W`, `factor = 0.82` (L_h_ref = 2460W)를 기본으로 가정한다.
+독립 계산과 비교하기 용이하도록 실제 실행된 숫자 입력 세트이다. 모든 케이스에서 `phi_full(7) = 3000W`, `factor = 0.82` (L_h_ref = 2460W)를 기본으로 가정한다.
 
-| Case ID | Branch Target | 7_full (W) | 7_half (W) | 7_min (W) | 2_ext_f (W) | -7_full (W) | Optional Points | 설계 의도 및 Expected Behavior |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **CAL-01** | **Load line** | 3000 / 1000 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | HSTL 누적 오차만 확인. |
-| **CAL-02** | **Cycling** | 3000 / 1000 | 1500 / 400 | **2000 / 500** | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `load(1447) < min(2000)` 유도. |
-| **CAL-03** | **Min-to-Half** | 3000 / 1000 | **2000 / 500** | **1000 / 200** | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `min(1000) < load(1447) < half(2000)` 유도. |
-| **CAL-04** | **Half-to-Full** | **3000 / 1000** | **1000 / 200** | 500 / 100 | 0 / 0 | 0 / 0 | 7min YES | 7°C bin에서 `half(1000) < load(1447) < full(3000)` 유도. |
-| **CAL-05** | **Frost H-to-F** | 3000 / 1000 | 1500 / 400 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | 2°C bin(`load=2171`)에서 `half_f < load < full_f` 유도. |
-| **CAL-06** | **Full-to-Ext** | **1000 / 300** | 500 / 150 | 0 / 0 | **3000 / 1000** | 0 / 0 | Ext YES | Non-frost bin에서 `full < load < ext` 유도. (needs dry-run) |
-| **CAL-07** | **Frost F-to-E** | 3000 / 1000 | 1500 / 400 | 0 / 0 | **3000 / 1200** | 0 / 0 | Ext YES | 2°C bin(`load=2171`)에서 `full_f < load < ext_f` 유도. |
-| **CAL-08** | **Saturated** | **2000 / 600** | 1000 / 200 | 0 / 0 | 0 / 0 | 0 / 0 | ALL OFF | -7°C bin(`load=3473`)에서 `load > full` 유도 (Aux heat). |
+| Case ID | Branch Target | 7_full (W) | 7_half (W) | 7_min (W) | 2_ext_f (W) | 2_full_f (W) | 설계 의도 및 핵심 조건 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CAL-01** | **Load line** | 3000 / 1000 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | HSTL 누적 오차 격리 확인. |
+| **CAL-02** | **Cycling** | 3000 / 1000 | 2000 / 800 | 1000 / 300 | 0 / 0 | 0 / 0 | `load(144.7) < min(1000)` 유도. |
+| **CAL-03** | **Min-to-Half** | 3000 / 1000 | 2000 / 800 | 1000 / 300 | 0 / 0 | 0 / 0 | `min(1000) < load(1447) < half(2000)`. |
+| **CAL-04** | **Half-to-Full** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 0 / 0 | 0 / 0 | `half(1000) < load(1447) < full(3000)`. |
+| **CAL-05** | **Frost H-to-F** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 4000 / 1500 | 3000 / 1000 | **D46, D50 = "Measured"** 필수 반영. |
+| **CAL-06** | **Full-to-Ext** | 1000 / 400 | 500 / 250 | 200 / 100 | 6000 / 2000 | 0 / 0 | **K88=2.5** 조정으로 `load > full` 유도. |
+| **CAL-07** | **Frost F-to-E** | 3000 / 1000 | 1000 / 400 | 300 / 100 | 4000 / 1500 | 1000 / 400 | **K88=1.5** 및 boundary extrapolation 기준. |
+| **CAL-08** | **Saturated** | 1000 / 400 | 500 / 250 | 0 / 0 | 1500 / 600 | 1000 / 400 | **D54-56="Measured"**, `load > max_cap`. |
 
-#### 14.4.7 Output Capture Template
+#### 14.4.7 Output Capture Template (Actual Results)
 
-사용자가 워크북 실행 후 기록해야 할 항목이다. 독립 계산(Independent Calculation) 열은 손계산 또는 Python 스크립트 결과를 기입한다.
+워크북 실행 후 기록된 최종 결과이다. 독립 계산(Independent Calculation) 열은 손계산 또는 Python 스크립트 결과를 기입한다.
 
 | Case ID | 측정 항목 | Workbook Output (A) | Independent Calc (B) | Delta (A-B) | 비고 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **HSTL** | CAL-01 Seasonal Load | | | | |
-| **HSEC** | CAL-01 Seasonal Energy | | | | |
-| **P_j (7°C)** | CAL-02 Cycling Power | | | | |
-| **P_j (7°C)** | CAL-03 Min-Half Power | | | | |
-| **P_j (7°C)** | CAL-04 Half-Full Power | | | | |
-| **P_j (2°C)** | CAL-05 Frost H-F Power | | | | |
-| **P_j (tj)** | CAL-06 Full-Ext Power | | | | (tj 선택 필요) |
-| **P_j (2°C)** | CAL-07 Frost F-E Power | | | | |
-| **Aux_j (-7°C)**| CAL-08 Saturated Aux | | | | |
-| **HSPF** | CAL-xx Final HSPF | | | | (각 케이스별) |
+| **HSTL** | CAL-01 Seasonal Load | 3408.402 | 3408.402 | 0.00 | kWh 기준 |
+| **P_j (7°C)** | CAL-02 Cycling Power | 142.88 | 142.88 | 0.00 | W 기준 |
+| **P_j (7°C)** | CAL-04 Half-Full Power | 553.42 | 554.06 | -0.64 | F45 (COP-linear) |
+| **P_j (2°C)** | CAL-05 Frost H-F Power | 721.73 | 723.53 | -1.80 | F49 (Selector-aware) |
+| **P_j (2°C)** | CAL-07 Frost F-E Power | 1489.26 | 1487.45 | +1.81 | F50 (Boundary-aware) |
+| **Aux_j (-1°C)**| CAL-08 Saturated Aux | 2409.80 | 2409.80 | 0.00 | aux_cop=1.0 |
 
 #### 14.4.8 Calibration Results Summary
 
@@ -463,7 +460,7 @@ To ensure a robust validation baseline independent of external workbook conventi
 
 #### 14.4.10 Tolerance Decision (Draft)
 
-캘리브레이션 결과를 바탕으로 한 초기 허용 오차 가이드라인:
+캘리브레이션 결과를 바탕으로 한 초기 허용 오차 가이드라인 (dry-run 기반 1차 확인/정리):
 
 - **HSTL / Load-line**: 매우 엄격한 오차(Very Tight, ±0.01 kWh) 적용 가능.
 - **Cycling / Saturated Auxiliary**: 물리적 한계값으로 매우 엄격한 오차(±0.1 W) 적용 가능.
@@ -475,12 +472,13 @@ To ensure a robust validation baseline independent of external workbook conventi
 1. **Golden Case 1~8 Current Python Diff Audit**: 현재 구현된 Python 코드와 워크북 골든 사이의 bin-level 차이 전수 조사.
 2. **Tolerance Finalization**: 전수 조사 결과를 바탕으로 최종 `pytest` 허용 오차 수치 확정.
 3. **H-8 Routing Implementation Design**: 캘리브레이션으로 규명된 워크북 동작을 Python common core에 이식하기 위한 상세 설계.
-- Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
+
+- Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match workbook oracle output before final tolerance decision.
 
 Track A validation strategy:
 
-- Treat ISO16358-2 common HSPF as the production standard path, not an AS/NZS Excel reproduction path.
-- Do not use `H13 = 4.33824` or `H12 = 1126.120 kWh` as Track A final golden expected values.
+- Treat ISO16358-2 common HSPF as the production standard path, with workbook goldens (ISO 16358 mode) serving as oracle benchmarks.
+- `H13 = 4.33824` and `H12 = 1126.120 kWh` are the ISO 16358 mode workbook oracle references for Case 3.
 - Until final-result coverage is sufficient, prefer formula micro golden and invariants: branch routing, cycling PLF, HSTL/HSEC accumulation, and auxiliary energy inclusion.
 - Candidate edge cases include load equal to half/full capacity, load equal to `0.5 * min capacity` for PLF, full-to-extended Formula 50 routing, and load greater than extended capacity with auxiliary energy.
 
@@ -488,14 +486,14 @@ Track A validation phases:
 
 - Phase H-1: ISO HSPF formula micro golden tests.
 - Phase H-2: KS shared-formula oracle consistency gate.
-- Phase H-3: AS/NZS Excel compatibility guard/design.
-- Phase H-4: compatibility module skeleton.
+- Phase H-3: Track B / AS/NZS workbook compatibility guard/design.
+- Phase H-4: Track B compatibility module skeleton.
 
 Phase H-1 formula micro golden / invariant test design:
 
 - Recommended file: `tests/test_iso16358_hspf_formula_micro.py`.
 - Alternative if grouped by properties: `tests/test_iso16358_hspf_invariants.py`.
-- H-1 must use hand-calculated micro fixtures, not AS/NZS Excel final values and not KS path result values.
+- H-1 must use hand-calculated micro fixtures, not workbook reproduction values and not KS path result values.
 - Micro fixture values belong under the tests namespace only. Do not copy them into production region config.
 - Use the public ISO common result first: `bin_details` currently exposes `tj`, `nj`, `bl_h`, `pi_j`, `P_j`, `case`, `heat_pump_energy`, `auxiliary_energy`, and `E_j`; top-level output exposes `hstl_wh`, `hsec_wh`, `heat_pump_energy_wh`, and `auxiliary_energy_wh`.
 - Candidate test cases:
@@ -559,7 +557,7 @@ KS shared-formula oracle consistency gate:
 | BL_h(tj) <= 0인 bin을 누적 | 냉방 구간 bin이 HSTL을 음수로 끌어내린다. | BL_h(tj) <= 0이면 해당 bin을 skip한다. |
 | bin_details에서 KS 필드 구조 재사용 | ISO common HSPF bin_details와 KS bin_details가 섞인다. | ISO common HSPF bin_details는 KS 전용 필드를 포함하지 않는다. 표준 필드: tj, nj, bl_h, pi_j, P_j, case, heat_pump_energy, auxiliary_energy, E_j. |
 | Hong Kong HSPF를 core 분기로 구현 | ISO common core가 지역별 정책에 오염된다. | Hong Kong MEELS extrapolation은 handler/preprocessor에서 canonical point로 변환하고, core는 region/country/trace_metadata를 계산 분기에 사용하지 않는다. |
-| AS/NZS Excel helper convention을 common path에 연결 | ISO common expected가 workbook layout에 종속된다. | Windows Excel COM 값은 `ASNZS_EXCEL_COMPAT` reference로 분리하고, exact matching은 별도 compatibility calculator/profile에서만 다룬다. |
+| workbook oracle convention을 common path에 연결 | ISO common expected가 workbook layout에 종속된다. | Windows Excel COM (ISO 16358 mode) 값은 oracle benchmark로 분리하고, exact parity는 캘리브레이션을 통한 허용 오차 범위 내에서만 추구한다. |
 
 ## 16. ISO 16358-2 HSPF Test Strategy
 
