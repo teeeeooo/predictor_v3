@@ -335,6 +335,19 @@ Formula 45/49 routing contradiction (superseded): Previous observation noted tha
 
 Case 3 workbook branch model note: Windows Excel COM (ISO 16358 mode) selects active HSPF components from `BA` building load and boundary capacity columns. Non-frost candidates are `BM` cycling, `BO` min-half, `BQ` half-full, `BS` full-extd, `BT` extd, `BU` extd+backup; frost candidates are `BX` cycling, `BZ` min-half, `CB` half-full, `CD` full-extd, `CE` extd, `CF` extd+backup. Middle branch component power is not direct capacity-power interpolation; it is `BA / COP_helper(tj)` such as `BN` non-frost min-half, `BP` non-frost half-full, `BY` frost min-half, `CA` frost half-full, and `CC` frost full-extd. Case 3 observed routing is 1°C -> `CD`, 2~5°C -> `CB`, and 6°C -> `BQ`. The `BN` / `BP` / `BY` / `CA` / `CC` helper columns are treated as workbook oracle convention, not a mathematically equivalent common implementation of ISO Formula 47/49/50. Do not copy workbook anchor cell values directly into production or reproduce the helper convention in the ISO common path.
 
+### 14.2. ISO16358-2 HSPF common path baseline
+
+As of commits `07ca56a` and `2ca1040`, the ISO16358-2 HSPF common path is the pure ISO baseline, not a workbook-helper reproduction path.
+
+- Common HSPF branch power uses X-based stage-to-stage interpolation, not workbook/COP intersection helper columns.
+- CAL01/02/08 are implementation references for load line / HSTL, cycling + Cd / PLF, and saturated auxiliary behavior.
+- CAL03~07 workbook reconstruction numbers are branch evidence only; do not use them as expected-matching targets for the common core.
+- Formula 47 non-frost full-to-extended is enabled only when canonical `7_ext` and `-7_ext` inputs are both present.
+- Formula 50 frost full-to-extended is enabled only when canonical `-7_ext` and either `2_ext` or `2_ext_f` are present.
+- The common core must not synthesize `7_ext` or `-7_ext` from `2_ext`.
+- If extended points are incomplete, the bin falls back to full-stage saturated / auxiliary handling.
+- Workbook- or region-specific extended point synthesis belongs in a preprocessor or handler, not in the common ISO core.
+
 ### 14.3 Pure ISO Track A Validation Baseline
 
 To ensure a robust validation baseline independent of external workbook conventions (such as the seven-case matrix derived from the ISO 16358 mode workbook oracle), we maintain a `Pure ISO Track A` namespace.

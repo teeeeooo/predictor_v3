@@ -696,3 +696,30 @@
 
 #### Lesson
 - 순수 ISO 검증을 위해서는 외부 도구 유래 데이터에 의존하지 않는 독립적인 검증 축(Namespace)을 초기에 확보해야 한다.
+
+## 2026-05-11 — ISO16358-2 HSPF common path 순수 ISO 기준선 확정
+
+### Tried
+- 07ca56a에서 ISO16358-2 HSPF common path를 순수 X 기반 stage-to-stage interpolation 구조로 전환함.
+- 2ca1040에서 frost extended branch guard를 강화함.
+
+### Result
+- common path에서 workbook/COP 교점 보간을 제거함.
+- Formula 47은 7_ext + -7_ext가 있을 때만 활성화하도록 정리함.
+- Formula 50은 -7_ext + (2_ext 또는 2_ext_f)가 있을 때만 활성화하도록 정리함.
+- 2_ext만으로 7_ext 또는 -7_ext를 자동 생성하지 않음.
+- extended point가 부족하면 full 기준 saturated/auxiliary로 처리함.
+
+### Failed / Risk
+- 기존 workbook golden / old interpolation / old COP-boundary diagnostic 테스트는 known mismatch로 남아 있음.
+- workbook oracle과 pure ISO common path 결과는 다를 수 있음.
+- CAL03~07 workbook reconstruction 숫자는 expected matching 기준으로 사용하지 않음.
+
+### Decision
+- CAL01/02/08은 구현 기준으로 사용한다.
+- CAL03~07은 branch 참고 자료로만 두고, workbook 숫자에 맞춰 core를 보정하지 않는다.
+- Hong Kong 등 region 영향은 pure ISO common path 기준선 확정 후 별도 판단한다.
+
+### Lesson
+- workbook oracle 재현과 ISO common path 구현을 섞지 않는다.
+- extended point는 common core에서 근거 없이 합성하지 않는다.
