@@ -49,6 +49,9 @@ def trace_case(calculator, case):
         if detail["nj"] <= 0:
             continue
         
+        # Capture more details from calculator internal trace if possible
+        # Some fields like 'tg', 'tf', 'pi_ext_f' are in the trace dict merged into bin_details
+        
         bin_traces.append({
             "tj": detail["tj"],
             "nj": detail["nj"],
@@ -59,7 +62,16 @@ def trace_case(calculator, case):
             "E_j": detail["E_j"],
             "auxiliary_energy": detail["auxiliary_energy"],
             "frost": -7.0 < detail["tj"] < 5.5,
-            "family": get_formula_family(detail["case"])
+            "family": get_formula_family(detail["case"]),
+            "cap_full": detail.get("cap_rated") or detail.get("phi_full"),
+            "pwr_full": detail.get("power_rated"),
+            "cap_half": detail.get("cap_intermediate") or detail.get("phi_half"),
+            "pwr_half": detail.get("power_intermediate"),
+            "pi_ext_f": detail.get("pi_ext_f"),
+            # Capture Formula 50 internals from trace dict
+            "tg": detail.get("tg"),
+            "tf": detail.get("tf"),
+            "cop_fe_f": detail.get("cop_fe_f")
         })
         
     return point_trace, bin_traces
@@ -74,17 +86,53 @@ def test_iso16358_hspf_h8_trace_audit(tmp_path, case):
     point_trace, bin_traces = trace_case(calculator, case)
     
     print(f"\n[TRACE] Case {point_trace['case_id']}: {point_trace['label']}")
-    print(f"[TRACE] Measured Inputs: {point_trace['measured_keys']}")
     print(f"[TRACE] Actual Results: HSPF={point_trace['actual_results']['hspf']:.3f}, "
-          f"HSTL={point_trace['actual_results']['hstl_kwh']:.2f}, "
           f"HSEC={point_trace['actual_results']['hsec_kwh']:.2f}")
     
-    # Display top 3 bins by energy or specific interesting temps
-    print("| tj | nj | load | Branch | P_j | Family |")
-    # Focus on tj=2 (frost) and tj=7 (non-frost)
+    # Display interesting bins
+    print("| tj | nj | load | pi_full | Branch | P_j | Family | TF | COP_FE |")
     for bt in bin_traces:
-        if bt["tj"] in [2.0, 7.0, -1.0]:
-             print(f"| {bt['tj']} | {bt['nj']} | {bt['bl_h']:.1f} | {bt['case']} | {bt['P_j']:.2f} | {bt['family']} |")
+        if bt["tj"] in [-1.0, 0.0, 1.0, 2.0, 6.0, 7.0]:
+             tj = bt["tj"]
+             nj = bt["nj"]
+             load = bt["bl_h"]
+             cap_full = bt.get("cap_full")
+             cap_str = f"{cap_full:.1f}" if cap_full is not None else "N/A"
+             case_name = bt["case"]
+             pj = bt["P_j"]
+             family = bt["family"]
+             tf = bt.get("tf")
+             tf_str = f"{tf:.2f}" if tf is not None else "N/A"
+             cop = bt.get("cop_fe_f")
+             cop_str = f"{cop:.2f}" if cop is not None else "N/A"
+             print(f"| {tj} | {nj} | {load:.1f} | {cap_str} | {case_name} | {pj:.2f} | {family} | {tf_str} | {cop_str} |")
+
+def test_iso16358_hspf_h8_case3_4_5_flip_audit(tmp_path):
+    """
+    Detailed audit of branch flips between Case 3, 4, and 5.
+    """
+    calculator = make_iso_common_golden_calculator(tmp_path)
+    fixture = load_iso_hspf_golden_fixture()
+    cases = {c["case_id"]: c for c in fixture["cases"]}
+    
+    results = {}
+    traces = {}
+    for cid in [3, 4, 5]:
+        point_trace, bin_traces = trace_case(calculator, cases[cid])
+        results[cid] = point_trace["actual_results"]
+        traces[cid] = {bt["tj"]: bt for bt in bin_traces}
+
+    print("\n[FLIP AUDIT] Comparing tj=2.0 (Frost Boundary)")
+    for cid in [3, 4, 5]:
+        bt = traces[cid][2.0]
+        print(f"Case {cid}: Load={bt['bl_h']:.1f}, Full={bt['cap_full'] if bt['cap_full'] else 'N/A'}, "
+              f"Branch={bt['case']}, P_j={bt['P_j']:.2f}, Family={bt['family']}")
+
+    print("\n[FLIP AUDIT] Comparing tj=1.0")
+    for cid in [3, 4, 5]:
+        bt = traces[cid][1.0]
+        print(f"Case {cid}: Load={bt['bl_h']:.1f}, Full={bt['cap_full'] if bt['cap_full'] else 'N/A'}, "
+              f"Branch={bt['case']}, P_j={bt['P_j']:.2f}, Family={bt['family']}")
 
 def test_iso16358_hspf_h8_invariants_audit(tmp_path):
     """
