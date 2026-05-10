@@ -431,11 +431,50 @@ To ensure a robust validation baseline independent of external workbook conventi
 | **Aux_j (-7°C)**| CAL-08 Saturated Aux | | | | |
 | **HSPF** | CAL-xx Final HSPF | | | | (각 케이스별) |
 
-#### 14.4.8 Calibration 이후 다음 작업
-1. 워크북 수동 입력 및 결과 Capture (CAL-01~08).
-2. 독립 손계산 또는 Python Micro 스크립트 작성 및 비교.
-3. 오차 분석을 통한 최종 **Target Tolerances** 확정.
-4. 확정된 오차를 `tests/test_iso16358_hspf_golden.py`의 `ISO_COMMON_ENERGY_TOLERANCE_KWH` 등에 반영.
+#### 14.4.8 Calibration Results Summary
+
+| CAL ID | Target Branch | Inspected tj | Workbook Result | Independent Candidate | Diff | Closest Method | Confidence | Remaining Uncertainty |
+| :--- | :--- | :---: | :--- | :--- | :--- | :--- | :---: | :--- |
+| **CAL-01** | Load-line/HSTL | N/A | 3408.402 kWh | 3408.402 kWh | 0.00 | Exact | High | None |
+| **CAL-02** | Cycling + Cd | 14°C | 142.88 W | 142.88 W | 0.00 | Exact | High | None |
+| **CAL-03** | Min-to-Half | 7°C | 491.75 W | 488.73 W | +3.02 | COP-linear | Medium | Extrapolation precision |
+| **CAL-04** | Non-frost H-to-F | 7°C | 553.42 W | 554.06 W | -0.64 | COP-linear (F45) | High | 0.1% rounding |
+| **CAL-05** | **Frost H-to-F** | 2°C | **721.73 W** | 723.53 W | **-1.80** | COP-linear (F49) | High | 0.25% boundary |
+| **CAL-06** | Non-frost F-to-E | 7°C | 575.27 W | 580.12 W | -4.85 | COP-linear (F47) | High | 0.8% extrapolation |
+| **CAL-07** | **Frost F-to-E** | 2°C | 1489.26 W | 1487.45 W | +1.81 | COP-linear (F50) | High | 0.1% boundary |
+| **CAL-08** | Saturated Aux | -1°C | 2409.80 W | 2409.80 W | 0.00 | Exact | High | None |
+
+*주: CAL-05의 초기 결과(788.6 W)는 입력값(7_half/7_min) 불일치로 인한 오염된 결과였으며, 최종 보정 실행(721.73 W)을 통해 모든 브랜치가 COP-linear 체계임을 실증함.*
+
+#### 14.4.9 Selector and Active Value Logic (Lessons Learned)
+
+워크북의 `Inverter AC` 시트는 입력값과 실제 계산값이 아래와 같은 다중 레이어 구조를 가짐:
+
+- **B열 (Availability)**: `YES`/`NO` 필터. 계산 가용 여부 결정.
+- **D열 (Source Selector)**: `Measured`/`Default` 토글. 핵심 변수.
+- **G/H열 (Measured Input)**: 사용자 직접 입력 필드.
+- **J/K열 (Default Value)**: 규격 외삽/계산에 의한 자동 생성 필드.
+- **M/N열 (Active Value)**: 실제 계산 엔진이 참조하는 최종 필드.
+
+**핵심 교훈**:
+1. Optional row(46, 50, 54, 55, 56 등)는 G/H열에 값을 넣는 것만으로는 부족하며, 반드시 **D열을 "Measured"로 변경**해야 M/N열(Active)에 반영됨.
+2. `K25`(7min) 및 `K26`(Extended) 가용성 플래그가 `YES`여야 관련 브랜치가 활성화됨.
+3. 2°C Full/Half 등의 경계값 결정 시, 워크북은 입력 행(`Row 48` 등)보다 외삽 열(`BE` 등)의 수치를 우선 참조하는 경향이 있음.
+
+#### 14.4.10 Tolerance Decision (Draft)
+
+캘리브레이션 결과를 바탕으로 한 초기 허용 오차 가이드라인:
+
+- **HSTL / Load-line**: 매우 엄격한 오차(Very Tight, ±0.01 kWh) 적용 가능.
+- **Cycling / Saturated Auxiliary**: 물리적 한계값으로 매우 엄격한 오차(±0.1 W) 적용 가능.
+- **Non-frost Formula 45/47**: COP-linear 체계를 따르므로 엄격한 오차(±1~5 W) 적용 가능.
+- **Frost Formula 49/50**: 보정 로직을 포함하되 COP-linear에 수렴하므로 중간 오차(±2~10 W) 적용 가능.
+- **Min-to-Half**: 외삽 정밀도에 따라 약간의 편차 허용 필요.
+
+#### 14.4.11 다음 작업 (Next Steps)
+1. **Golden Case 1~8 Current Python Diff Audit**: 현재 구현된 Python 코드와 워크북 골든 사이의 bin-level 차이 전수 조사.
+2. **Tolerance Finalization**: 전수 조사 결과를 바탕으로 최종 `pytest` 허용 오차 수치 확정.
+3. **H-8 Routing Implementation Design**: 캘리브레이션으로 규명된 워크북 동작을 Python common core에 이식하기 위한 상세 설계.
 - Fixture/golden/test expected values for ISO common HSPF must not be silently changed to match AS/NZS Excel compatibility output.
 
 Track A validation strategy:
