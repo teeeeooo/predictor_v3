@@ -137,18 +137,23 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
    - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
 
-2. `docs/REFACTOR_PLAN.md`
-   - 살아있는 TODO / 다음 실행 순서가 실제로 바뀐 경우에만 읽고 수정한다.
+2. `docs/WORK_PLAN.md`
+   - 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목이 실제로 바뀐 경우에만 읽고 수정한다.
    - 단순 bug fix, fixture correction, validation guard, test cleanup, commit message 작성만으로는 읽지 않는다.
-   - 살아있는 TODO / 보류 항목 / 다음 실행 순서만 유지한다.
-   - 완료된 TODO는 다음 중 하나로 처리한다.
+   - 실행 순서와 우선순위만 유지하고, 완료 이력의 상세 나열은 피한다.
+
+3. `docs/REFACTOR_PLAN.md`
+   - 리팩토링 후보, 구조 분리 트리거, guardrail, 분리 전략이 실제로 바뀐 경우에만 읽고 수정한다.
+   - 단순 bug fix, fixture correction, validation guard, test cleanup, commit message 작성만으로는 읽지 않는다.
+   - 실행 순서나 일반 TODO-list가 아니라 구조 개선 후보와 분리 전략을 관리한다.
+   - 완료된 리팩토링 후보는 다음 중 하나로 처리한다.
      - 단순 완료: 체크/완료 문구 없이 제거하거나 짧게 축약
-     - 후속 영향 있음: “완료됨. 후속 TODO는 ...” 형태로 1~2줄만 유지
+     - 후속 영향 있음: “완료됨. 후속 구조 분리 후보는 ...” 형태로 1~2줄만 유지
      - 상세 보존 필요: project_log.md 또는 관련 dev_notes에 기록하고 REFACTOR_PLAN에서는 제거/참조만 남김
-   - 새 TODO를 추가할 때는 기존 완료 항목을 함께 줄인다.
+   - 새 리팩토링 후보를 추가할 때는 기존 완료 항목을 함께 줄인다.
    - 같은 섹션에 새 항목만 계속 append하지 않는다.
 
-3. `project_brief.md`
+4. `project_brief.md`
    - 새 대화 시작에 필요한 대표 상태가 바뀐 경우에만 읽고 수정한다.
    - 단순 bug fix, fixture correction, validation guard, test cleanup, commit message 작성만으로는 읽지 않는다.
    - 새 대화 시작에 필요한 현재 상태만 유지한다.
@@ -156,13 +161,13 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 대표 상태가 바뀌면 기존 문장을 교체/축약하고, 새 문장을 덧붙이기만 하지 않는다.
    - 오래된 “다음 작업”은 최신 우선순위로 교체한다.
 
-4. 규격별 `notes/dev_notes/design_notes`
+5. 규격별 `notes/dev_notes/design_notes`
    - 새 규격 해석이나 재사용 가능한 계산 근거가 확정된 경우에만 읽고 수정한다.
    - 규격 해석, 계산 근거, schema 의미처럼 나중에 재사용될 지식만 보존한다.
    - 단순 완료 기록은 dev_notes에 중복 추가하지 않고 project_log.md로 보낸다.
    - 이미 REFACTOR_PLAN이나 project_log에 있는 내용을 그대로 복사하지 않는다.
 
-5. `docs/archive/`
+6. `docs/archive/`
    - 원본 분석, 폐기된 계획, 더 이상 active TODO가 아닌 긴 기록만 이동 후보로 분류한다.
    - agent가 임의로 archive 이동/삭제하지 않는다.
    - 이동이 필요하면 “archive 후보”로 보고하고 사용자 승인 후 수행한다.
