@@ -35,6 +35,26 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         config_path="data/region_configs/usa_hspf2.json",
         enabled=True,
     ),
+    CalculatorProfile(
+        profile_id="ks_c9306_cspf",
+        standard="KS_C_9306",
+        region="korea",
+        metric="CSPF",
+        mode="cooling",
+        calculator_id="ks_c9306",
+        config_path="data/region_configs/korea.json",
+        enabled=True,
+    ),
+    CalculatorProfile(
+        profile_id="ks_c9306_hspf",
+        standard="KS_C_9306",
+        region="korea",
+        metric="HSPF",
+        mode="heating",
+        calculator_id="ks_c9306",
+        config_path="data/region_configs/korea.json",
+        enabled=True,
+    ),
 )
 
 
