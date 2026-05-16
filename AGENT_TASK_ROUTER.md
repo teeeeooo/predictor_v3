@@ -14,6 +14,46 @@ commit/push, tracked file 삭제, irreversible/external action은 사용자 명�
 preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 pass가 아니라 weaker evidence로 보고한다.
 완료 보고 전 Goal / Scope / Non-goals / Verification 대비 blocked, skipped, weaker-verified 항목을 확인한다.
 
+### Shared Guardrails
+
+`AGENTS.md`는 routing clue만 남기는 lite entrypoint다. 아래 세부 guardrail은 task route와 함께 적용한다.
+
+공통 코드 경계:
+- Train/Predict 분리: `app_train.py`와 `app_predict.py`를 병합하지 않는다.
+- `core/predictor.py`에 `optuna`, `sklearn`, `shap`, `matplotlib`를 import하지 않는다.
+- `COLUMNS`는 `core/constants.py`, `MODEL_REGISTRY`는 `core/models.py`를 단일 소스로 유지한다.
+- 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
+- 대형 파일은 먼저 `rg` / `grep -n`으로 대상 위치를 찾고, 필요한 범위만 `sed -n`으로 읽는다.
+
+계산기 경계:
+- 계산기 구현에는 `numpy` / `pandas`를 사용하지 않고 순수 Python을 유지한다.
+- `calculate_hspf2_v2()` / `calculate_hspf2()`는 사용자 명시 지시 없이 수정하지 않는다.
+- ISO16358 계산기 수정 시 `docs/iso16358/iso16358_dev_notes.md`의 필요한 섹션을 먼저 확인한다.
+- ISO16358 / KS C 9306 공통 엔진 파일명은 `core/calculator_iso16358.py`를 기준으로 한다.
+- `data/region_configs/*.json` 수정 전 `data/region_configs/REGION_CONFIG_RULES.md`를 확인한다.
+- production region config에는 golden/sample/test 전용 값을 넣지 않는다.
+- 계산기 Phase 1에서는 검증 완료 profile만 UI/배포 대상으로 삼고, SASO T3 및 ISO16358 optional matrix는 `docs/REFACTOR_PLAN.md`의 Phase R1/R2 지시에 따른다.
+- ISO16358-2 HSPF Excel reference 작업에서 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출이 언급되면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
+- Excel COM packet 작업 역할은 다음과 같이 분리한다: ChatGPT는 runner input packet 설계와 chat_packet 해석, Company PC runner는 original Excel COM 계산/full_dump 저장/chat_packet 생성, Codex는 repo 수정/테스트/diff 확인, User는 회사 PC 실행 후 chat_packet만 전달.
+- KS C 9306 관련 수정 시 `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md`와 `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md`의 필요한 섹션을 먼저 확인한다.
+
+ML 경계:
+- `model.fit()`에 `.values` 변환을 넣지 않아 `feature_names_in_`을 보존한다.
+- Cooling / Heating 모델은 완전히 독립으로 유지하고 MultiOutput으로 합치지 않는다.
+- 통계 수치보다 물리 제약을 우선하며 monotone constraints를 유지한다.
+
+UI 경계:
+- `QTableWidget`을 새로 쓰지 않고 `QTableView` + `QAbstractTableModel`을 사용한다.
+- `setCellWidget`을 새로 쓰지 않고 `QStyledItemDelegate`를 사용한다.
+- `blockSignals`는 반드시 `try/finally`로 감싼다.
+- UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
+
+문서 경계:
+- `docs` 폴더 내 `*_notes.md` 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`의 필요한 범위를 확인한다.
+- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 고위험 작업에서 상세 배경이 필요한 경우에만 제한적으로 확인한다.
+- 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
+- region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
+
 ### Result Report Workflow
 
 tracked file 변경이 있는 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.
@@ -432,7 +472,30 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 6. 프로젝트 대표 상태가 바뀐 경우에만 `project_brief.md`를 수정한다.
 7. 단순 docs 문구 수정은 이 섹션으로 확장하지 않고 `단순 docs 문구 수정` 경로를 유지한다.
 
-### 8. ML/Predictor 수정
+### 8. UI 수정
+
+읽을 문서:
+- `AGENTS.md`
+- 관련 UI 코드의 필요한 클래스/함수 범위
+
+조건부로 읽을 문서:
+- UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
+- UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
+
+절차:
+1. 기존 model/view/delegate 구조를 먼저 확인한다.
+2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다.
+3. signal blocking은 `try/finally`로 복구를 보장한다.
+4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
+5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.
+
+금지:
+- `QTableWidget` 신규 도입
+- `setCellWidget` 신규 도입
+- UI 편의를 이유로 calculator result schema, ML feature schema, region config를 변경
+- unrelated refactor
+
+### 9. ML/Predictor 수정
 
 읽을 문서:
 - `AGENTS.md`

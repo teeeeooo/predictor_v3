@@ -737,3 +737,14 @@
 ### Decision
 - report 본문은 `project_log.md`에 복사하지 않고, 확정된 decision / failure / lesson / process rule 변화만 짧게 남긴다.
 - summary에 포함된 active reports는 archive 후보로 보고한 뒤 lifecycle maintenance에서 번호와 파일명을 유지해 이동한다.
+
+### Follow-up — AGENTS.md lite entrypoint slimming
+
+#### Result
+- `AGENTS.md`는 매 세션 시작용 lite entrypoint로 축약하고, 세부 guardrail과 작업별 절차는 `AGENT_TASK_ROUTER.md`가 owner가 되도록 정리했다.
+- 계산기, ML, UI, 문서 trigger 세부 규칙은 router의 Shared Guardrails와 UI route로 보존했다.
+- ` AGENTS_md_slimming_plan.md`를 Markdown route simulation 결과로 채워 AGENTS slimming 후에도 주요 case의 routing clue가 유지됨을 확인했다.
+
+#### Decision
+- `AGENTS.md`에는 route entrypoint, non-negotiable boundary, document trigger만 남긴다.
+- 작업별 조건부 문서 읽기, report mode, UI/ML/calculator 세부 실행 규칙은 `AGENT_TASK_ROUTER.md`에서 관리한다.
