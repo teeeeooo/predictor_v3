@@ -27,7 +27,9 @@
 - `docs/designs/*`: 아키텍처 및 구현 관련 큰 설계 결정문 (Design Gate Records)
 
 ## Migration & Archive Note
-ML/UI/Packaging/AHRI 등의 상세 구현 규칙은 아직 각각의 Owner 문서로 이관 전 상태다. 해당 내용의 이관 및 검증이 완료될 때까지 본 문서를 보존하며, 이관 완료 후 `docs/archive/` 이동 여부를 결정한다.
+본 문서는 active working rules가 아니라 Detailed Domain Reference이다.
+Packaging, UI, ML knowledge, KS C 9306, AHRI HSPF2, ML training/model artifact guardrails는 각각의 owner 문서로 이관되었다.
+본 문서는 아직 archive 이동 전 상태이며, 최종 archive 이동은 사용자 명시 승인 후 별도 작업으로 수행한다.
 
 
 ## 프로젝트 정보
@@ -135,19 +137,17 @@ ML/UI/Packaging/AHRI 등의 상세 구현 규칙은 아직 각각의 Owner 문�
 
 ---
 
-## 💻 코딩 규칙 및 보고 형식
+## 💻 코딩 규칙 및 보고 기준
 * 작은 단위로 수정 — 한 번에 한 파일만 수정.
 * 관련 없는 코드 리팩토링 금지.
 * 계산기 작업 중 UI 파일(`ui/`) 수정 금지.
 * 계산기 작업 중 ML predictor/trainer 코드 수정 금지.
 * 계산 로직 변경 시 반드시 smoke test 또는 assert 추가.
 
-**[작업 완료 보고 형식] (반드시 이 형식으로 보고할 것)**
-* [수정 파일] 파일명
-* [변경 내용]
-   - 수정/추가/제거: 내용
-* [테스트 결과]
-   - 실행 명령: python3 -B ...
-   - 주요 출력값
-   - assert pass/fail
-* [다음 작업] 확인 후 말씀해 주세요.
+현재 완료 보고, commit, result report workflow는 `AGENTS.md`와 `AGENT_TASK_ROUTER.md`를 따른다.
+아래의 과거 bracket-style 완료 보고 형식은 historical example이며 더 이상 active rule이 아니다.
+
+Historical example:
+- [수정 파일]
+- [변경 내용]
+- [테스트 결과]
