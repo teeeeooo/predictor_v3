@@ -45,6 +45,12 @@
 
 ## 출력
 - 코드만 출력, 작업 완료 시 [수정 파일] / [변경 내용] / [테스트 결과] 형식 유지
+- 모든 agent 작업의 상세 결과는 터미널에 길게 출력하지 않고 `result_reports/active/` 아래 Markdown report로 저장한다.
+- report 파일명은 `NNN_verb-target-scope.md` 형식을 사용한다 (예: `001_review-iso-hspf-routing.md`).
+- 터미널 출력은 task별 `OK/NG` 한 줄 요약과 report path만 남긴다. 문제가 있거나 blocked이면 원인을 짧게 덧붙인다.
+- report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
+- 코드/문서 변경 커밋과 report 커밋은 가능하면 분리한다.
+- 세부 규칙은 `AGENT_TASK_ROUTER.md`의 Result Report Workflow를 따른다.
 
 ## Agent Work Discipline
 

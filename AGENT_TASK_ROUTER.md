@@ -14,6 +14,63 @@ commit/push, tracked file 삭제, irreversible/external action은 사용자 명�
 preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 pass가 아니라 weaker evidence로 보고한다.
 완료 보고 전 Goal / Scope / Non-goals / Verification 대비 blocked, skipped, weaker-verified 항목을 확인한다.
 
+### Result Report Workflow
+
+모든 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.
+report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달하는 작업 산출물이므로 항상 commit/push한다.
+
+경로:
+- `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
+- `result_reports/summaries/` — 누적 report를 묶은 요약 report
+- `result_reports/archive/` — summary 생성 후 보관되는 원본 report
+
+파일명:
+- `NNN_verb-target-scope.md`
+- 예: `001_review-iso-hspf-routing.md`
+- 예: `002_fix-hspf-formula44-50.md`
+
+다음 번호 산정:
+- `result_reports/active/`, `result_reports/archive/`, `result_reports/summaries/` 안의 기존 report 번호 중 최대값 + 1을 사용한다.
+- 기존 파일이 없으면 `001`부터 시작한다.
+
+터미널 출력:
+- task별 한 줄 요약만 출력한다.
+- 형식: `task N: OK/NG - short summary`
+- 마지막 줄에 report path를 출력한다.
+- 문제가 있거나 blocked이면 원인을 짧게 출력한다.
+
+report 기본 섹션:
+- Goal
+- Scope
+- Non-goals
+- Verification
+- Task Results
+- Test Results
+- Changed Files
+- Known Failures / Risks
+- Next Suggested Action
+- Scope Compliance
+- Commit / Push
+
+Commit / Push:
+- report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
+- 코드/문서 변경이 있는 작업은 source/docs 변경 커밋과 report 커밋을 가능하면 분리한다.
+- report 커밋 메시지는 `report: ...` 형식을 사용한다.
+- audit/report-only 작업은 report 파일만 커밋한다.
+- report에는 관련 source commit hash 또는 `source change 없음`을 명시한다.
+- push 결과를 report와 terminal summary에 남긴다.
+
+운영:
+- `result_reports/active/` report가 약 10개 쌓이거나 큰 작업 묶음이 끝나면 summary report를 만든다.
+- summary 생성 후 원본 report는 `result_reports/archive/` 이동 후보로 보고한다.
+- archive 이동은 사용자 승인 후 수행한다.
+- `project_log.md`에는 report 전문을 복사하지 않고, 확정된 결정/실패/교훈만 짧게 반영한다.
+
+주의:
+- report 작성 때문에 code/test/docs 범위를 임의 확장하지 않는다.
+- source/docs 변경과 report 변경을 한 커밋에 섞어야 하는 경우, 커밋 메시지와 report에 이유를 남긴다.
+- `temporary.txt`, workbook/reference_files, unrelated untracked files는 report commit에 포함하지 않는다.
+
 ### 1. Commit / Git 정리
 
 읽을 문서:
@@ -54,7 +111,8 @@ Lightweight documentation gate 원칙:
    갱신 불필요면 바로 테스트 확인 단계로 진행한다.
 6. 테스트 결과가 사용자가 보고한 내용과 일치하는지 확인
 7. 명확한 commit message 작성
-8. commit/push 수행
+8. source/docs 변경 커밋 후 report 커밋을 별도로 만들고 push한다 (Result Report Workflow 참조).
+9. 최종 터미널 보고에는 source commit hash, report commit hash, pushed branch를 포함한다.
 
 #### Documentation Sync & Lifecycle Gate
 
