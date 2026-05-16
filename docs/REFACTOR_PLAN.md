@@ -16,11 +16,19 @@
 
 ## Active refactor candidates
 
-### 1. `calculator_iso16358.py` structure audit
-- **왜 후보인지**: 클래스 및 파일 크기 비대화로 인한 유지보수성 저하 우려.
-- **지금 바로 분리하지 않는 이유**: ISO HSPF 공통화 작업 및 xfail 해소 작업이 진행 중이므로 계산 안정성이 우선임.
-- **분리 트리거**: HSPF 공통화 완료 및 completion 기준 도달 시.
-- **지켜야 할 guard**: public API, golden result, region config boundary 유지.
+### 1. Calculator architecture reset: ISO / KS / ASNZS 3-module 분리
+- **왜 후보인지**: 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임.
+- **목표 boundary**:
+  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF), region config를 붙여서 쓰는 유일한 계열.
+  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF).
+  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용 (Z-phase 후보).
+- **Next work order**:
+  1. `core/calculator_ks_c9306.py`를 생성하고 KS CSPF/HSPF를 ISO common path에서 분리한다.
+  2. `core/calculator_iso16358.py`를 ISO 16358 CSPF/HSPF 전용으로 정리/재작성한다 (region config는 이 계열에서만 사용).
+  3. AS/NZS workbook oracle은 `core/calculator_asnzs_hspf_excel.py` Z-phase compatibility calculator로 보류한다.
+  4. profile resolver / Calculator UI 연결은 위 calculator boundary가 안정화된 뒤 별도 작업으로 진행한다.
+- **Reference branch**: `work/iso-hspf-refactor-ui-followup`은 merge 대상이 아니라 reference/spike로만 둔다. diff cherry-pick 또는 merge는 수행하지 않는다.
+- **지켜야 할 guard**: public API, golden result, region config boundary 유지. KS C 9306을 ISO region config common path에 합치지 않고, AS/NZS workbook oracle convention을 ISO common path에 섞지 않는다.
 
 ### 2. ISO CSPF/HSPF helper separation
 - **CSPF/HSPF helper 분리 후보**: bin loop, point resolution, energy accumulation 등 공통 로직 모듈화.
@@ -28,9 +36,9 @@
 - **production path와 compatibility path 분리**: 표준 경로와 호환성 경로(Z-phase)의 코드 베이스 격리.
 
 ### 3. KS C 9306 helper separation
-- **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 별도 모듈로 관리.
-- **common ISO로 무리하게 흡수하지 않음**: 규격 간의 미세한 차이를 강제로 통합하여 공통 엔진을 복잡하게 만들지 않음.
-- **분리 트리거**: KS 관련 조건 분기가 공통 엔진 가독성을 해칠 때.
+- **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 `core/calculator_ks_c9306.py` 별도 모듈로 관리.
+- **common ISO로 무리하게 흡수하지 않음**: KS C 9306은 AHRI / EN14825처럼 special calculator로 분리하며, ISO16358 region config common path에 합치지 않는다.
+- **분리 트리거**: ISO 계열 boundary 정리 직후 첫 단계로 수행.
 
 ### 4. profile/schema resolver cleanup
 - **region config / profile schema / calculator input boundary**: 각 레이어 간의 데이터 계약 명확화.

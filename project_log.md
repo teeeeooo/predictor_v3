@@ -782,3 +782,18 @@
 ### Decision
 - 패키징 요청 시 추측성 build command를 만들지 않고 `docs/PACKAGING.md`의 원칙과 실제 증거를 기준으로 작업한다.
 - `docs/archive/AGENTS_FULL.md`는 packaging 기본 경로에서 제외하고, historical detail이 꼭 필요할 때만 제한적으로 확인한다.
+
+## 2026-05-17 — Calculator architecture reset: ISO / KS / ASNZS boundary
+
+### Decision
+- 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬였으므로 분리/재작성이 필요하다고 판단했다.
+- 계산기 모듈을 세 축으로 고정한다.
+  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF). region config를 붙여서 쓰는 유일한 계열. Hong Kong / India / SASO 등 ISO 기반 지역 profile은 이 모듈에 속한다.
+  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). AHRI / EN14825처럼 ISO common path와 분리해 다룬다.
+  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator로, Z-phase 후보로 보류한다.
+- region config는 ISO16358 계열에만 붙여 쓰고, KS C 9306 또는 AS/NZS Excel compatibility를 ISO region config common path에 합치지 않는다.
+- 다음 구현 순서: KS 분리 → ISO16358 정리/재작성 → AS/NZS Z-phase → profile/UI 연결.
+- `work/iso-hspf-refactor-ui-followup` 브랜치는 merge 대상이 아니라 reference/spike로만 둔다.
+
+### Scope
+- 이번 작업은 architecture/work plan/project_log 문서 갱신만 수행했고, code/tests/fixtures/UI/profile resolver는 수정하지 않았다.

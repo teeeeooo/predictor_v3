@@ -13,13 +13,13 @@
 - AS/NZS Excel exact matching은 Z-phase
 
 ## Near-term execution order
-1. ISO16358-2 HSPF remaining xfail audit / 해소
-2. HSPF completion 기준 정리
-3. `calculator_iso16358.py` structure audit
-4. CSPF/HSPF schema/profile 정리
-5. Calculator UI follow-up
-6. ML / inverse-search 복귀
-Z. AS/NZS HSPF compatibility / Excel exact matching 별도 phase
+1. `core/calculator_ks_c9306.py` 생성 및 KS CSPF/HSPF 분리
+2. `core/calculator_iso16358.py`를 ISO16358 CSPF/HSPF 전용으로 정리/재작성 (region config는 이 계열에서만 사용)
+3. profile resolver / Calculator UI 연결 (calculator boundary 안정화 후 별도 작업)
+4. ML / inverse-search 복귀
+Z. `core/calculator_asnzs_hspf_excel.py` AS/NZS workbook oracle compatibility calculator 별도 phase
+
+`work/iso-hspf-refactor-ui-followup` 브랜치는 merge하지 않고 reference/spike로만 둔다.
 
 ## Medium-term milestones
 - CSPF/HSPF profile/schema consolidation

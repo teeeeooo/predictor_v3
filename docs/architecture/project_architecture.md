@@ -146,6 +146,28 @@ ML output은 calculator input이 아니다. 예측된 capacity/power/Hz 등은 `
 
 resolver는 explicit selector/manifest/registry contract를 우선한다. filename scanning은 장기적으로 제거 대상이며, ambiguous selector combination은 fail-fast 해야 한다.
 
+### Calculator module boundary (ISO / KS / ASNZS)
+
+계산기 모듈은 세 축으로 분리한다. resolver는 `calculator_id`를 통해 세 모듈을 명시적으로 구분해야 하며, 한 모듈에 다른 규격의 책임을 합치지 않는다.
+
+- `core/calculator_iso16358.py` — ISO 16358 전용 계산기.
+  - ISO16358-1 CSPF, ISO16358-2 HSPF를 담당한다.
+  - `data/region_configs/*.json`을 통한 region config를 사용하는 유일한 계열이다.
+  - Hong Kong / India / SASO 등 ISO 16358 기반 지역 profile은 이 모듈에 속한다.
+  - resolver에서는 `calculator_id=iso16358`로 식별한다.
+- `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator.
+  - KS CSPF, KS HSPF를 담당한다.
+  - AHRI / EN14825처럼 ISO common path와 분리된 special calculator로 취급한다.
+  - ISO16358 region config common path에 KS C 9306 로직을 억지로 합치지 않는다.
+  - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
+- `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용 후보.
+  - ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator이다.
+  - AS/NZS workbook oracle convention을 ISO common path에 섞지 않는다.
+  - 현재는 Z-phase 후보이며 이번 단계에서는 구현하지 않는다.
+  - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
+
+resolver는 `calculator_id` 값으로 위 세 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
+
 ### External calculator compatibility profiles
 
 외부 계산기 또는 공식 workbook의 exact-match convention은 common standard calculator path에 직접 섞지 않는다. 해당 convention을 재현해야 할 때는 별도 compatibility calculator/profile을 명시적으로 등록하고, common ISO/AHRI/EN path의 expected/golden과 reference type을 분리한다.
