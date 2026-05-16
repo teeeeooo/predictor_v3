@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt, QSettings
 from core.calculator_en14825 import EN14825Calculator
 from core.calculator_ahri_seer2 import AHRICalculator
 from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculator_dispatcher import create_calculator_for_profile
 
 
 # [6] 숫자 파싱 공통 함수
@@ -274,9 +275,8 @@ class CalculatorWindow(QWidget):
         self._load_hspf2_calc()
 
     def _load_hspf2_calc(self):
-        hspf2_path = os.path.join(self.project_root, "data", "region_configs", "usa_hspf2.json")
         try:
-            self.hspf2_calc = AHRIHSPF2Calculator(hspf2_path)
+            self.hspf2_calc = create_calculator_for_profile(profile_id="ahri_usa_hspf2")
         except:
             self.hspf2_calc = None
 
