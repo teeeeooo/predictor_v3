@@ -82,9 +82,19 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 
 터미널 출력:
 - task별 한 줄 요약만 출력한다.
-- 형식: `task N: OK/NG - short summary`
-- 마지막 줄에 report path를 출력한다.
+- 표준 출력 형식은 다음 세 종류 줄로 구성한다.
+  - `task N: OK/NG - short summary`
+  - `modified: path/to/file1, path/to/file2`
+  - `report: result_reports/active/NNN_name.md`
+- task별 OK/NG 줄을 모두 출력한 뒤 `modified:` 한 줄, 마지막에 `report:` 한 줄을 출력한다.
+- `modified:` 작성 규칙:
+  - 이번 작업에서 실제로 수정/생성/삭제된 파일 경로만 comma-separated로 적는다.
+  - source/docs 변경과 report 파일이 모두 있으면 모두 포함할 수 있다.
+  - report-only 작업이면 report 파일만 포함한다.
+  - 중단/blocked로 파일 변경이 없으면 `modified: none`을 사용한다.
+  - pre-existing unrelated dirty/staged/untracked 파일이나 작업 범위 밖 파일은 포함하지 않는다.
 - 문제가 있거나 blocked이면 원인을 짧게 출력한다.
+- `modified:` 줄은 사람이 한눈에 보기 위한 보조 정보이며, report 파일 내부의 `Changed Files` 섹션은 그대로 유지한다.
 
 Report mode:
 - Report required:

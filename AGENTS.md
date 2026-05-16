@@ -63,3 +63,8 @@ Design Gate Summary가 없거나 사용자가 명시적으로 생략을 승인�
 - report 파일명과 report mode는 `AGENT_TASK_ROUTER.md`의 Result Report Workflow를 따른다.
 - 코드/문서 변경 커밋과 report 커밋은 가능하면 분리한다.
 - 최종 보고에는 변경 파일, 변경 이유, 검증, 남은 위험을 포함한다.
+- 터미널 결과 보고는 다음 순서로 짧게 출력한다.
+  - task별 `task N: OK/NG - short summary` 한 줄.
+  - `modified: <comma-separated paths>` 한 줄. 이번 작업에서 실제로 수정/생성/삭제된 파일 경로만 적는다. report-only 작업이면 report 파일만 적고, 중단/blocked로 변경이 없으면 `modified: none`을 사용한다. unrelated, pre-existing dirty/staged/untracked 파일은 포함하지 않는다.
+  - `report: <report path>` 한 줄.
+- 상세 내용은 Markdown report에 기록하고 터미널 출력은 위 형식으로 짧게 유지한다.
