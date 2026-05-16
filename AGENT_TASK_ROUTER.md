@@ -175,6 +175,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 출력:
 - [문서 동기화 판단]
   - project_log.md: 필요/불필요 + 이유
+  - WORK_PLAN.md: 필요/불필요 + 이유
   - REFACTOR_PLAN.md: 필요/불필요 + 이유
   - project_brief.md: 필요/불필요 + 이유
   - 규격별 notes/dev_notes: 필요/불필요 + 이유
