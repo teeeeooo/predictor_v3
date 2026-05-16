@@ -32,6 +32,10 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 다음 번호 산정:
 - `result_reports/active/`, `result_reports/archive/`, `result_reports/summaries/` 안의 기존 report 번호 중 최대값 + 1을 사용한다.
 - 기존 파일이 없으면 `001`부터 시작한다.
+- 새 CLI agent 세션, 다른 agent, iMac, Codespaces 환경 모두 현재 checkout 상태의 report 번호를 기준으로 한다.
+- 새 세션이라고 `001`부터 다시 시작하지 않는다.
+- 번호 산정을 위해 agent가 임의로 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
+- repository 최신화는 사용자가 직접 수행한다고 가정한다.
 
 터미널 출력:
 - task별 한 줄 요약만 출력한다.
@@ -59,6 +63,7 @@ Commit / Push:
 - audit/report-only 작업은 report 파일만 커밋한다.
 - report에는 관련 source commit hash 또는 `source change 없음`을 명시한다.
 - push 결과를 report와 terminal summary에 남긴다.
+- 사용자 명시 요청 없이는 report commit/push 과정에서 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
 
 운영:
 - `result_reports/active/` report가 약 10개 쌓이거나 큰 작업 묶음이 끝나면 summary report를 만든다.
