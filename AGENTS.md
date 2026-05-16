@@ -1,7 +1,7 @@
 # predictor_v3 Agent Rules
 
 본 문서는 실무 작업을 수행하는 에이전트가 매 세션 시작 시 반드시 준수해야 할 **Active Working Rules**다.
-상세한 설계 근거(Rationale)나 역사적 배경은 `AGENTS_FULL.md`를 참조하되, 사용자의 명시적 요청이 있거나 고위험 작업에서 상세 맥락 파악이 필요한 경우에만 제한적으로 확인한다.
+상세한 설계 근거(Rationale)나 역사적 배경은 archived detailed reference인 `docs/archive/AGENTS_FULL.md`를 참조하되, 사용자의 명시적 요청이 있거나 고위험 작업에서 상세 맥락 파악이 필요한 경우에만 제한적으로 확인한다.
 
 ## 절대 원칙
 - Train/Predict 분리: app_train.py ↔ app_predict.py 병합 금지
@@ -68,9 +68,9 @@ Codex/agent 작업 시 토큰 사용량을 줄이기 위해 대형 파일 전체
 - 코드 수정 작업에서는 먼저 전체 파일을 읽지 않는다.
 - `rg`, `grep -n`, `sed -n` 등을 사용해 수정 대상 함수, 클래스, 테스트, 섹션 위치를 먼저 찾는다.
 - 위치를 확인한 뒤 필요한 줄 범위만 읽고 수정한다.
-- 관련 없는 문서, 긴 guideline, AGENTS_FULL.md, 대형 source file을 습관적으로 열람하지 않는다.
+- 관련 없는 문서, 긴 guideline, `docs/archive/AGENTS_FULL.md`, 대형 source file을 습관적으로 열람하지 않는다.
 - `docs/iso16358/excel_com_runner_packet_protocol.md`도 조건부 문서다. 이미 확인한 세션에서는 전체를 반복해서 읽지 말고 필요한 heading만 `rg`/`sed`로 확인한다.
-- AGENTS_FULL.md는 사용자가 명시적으로 요청한 경우에만 읽는다.
+- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청한 경우에만 읽는다.
 
 ### 예외
 

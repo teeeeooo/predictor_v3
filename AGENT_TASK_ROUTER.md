@@ -97,7 +97,7 @@ Commit / Push:
 
 읽지 말 것:
 - `PROJECT_CHARTER.md`
-- `AGENTS_FULL.md`
+- `docs/archive/AGENTS_FULL.md`
 - 규격별 notes 문서 전체
 
 Lightweight documentation gate 원칙:
@@ -192,7 +192,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
 
 읽지 말 것:
-- `AGENTS_FULL.md` unless explicitly requested
+- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 문서 전체
 - 대형 파일 전체
 - 일반 계산 로직 수정, UI 작업, AHRI/EN/KS 작업에서는 `docs/iso16358/excel_com_runner_packet_protocol.md`
@@ -289,7 +289,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 없는 문서 전체
 - `project_log.md`
 - `PROJECT_CHARTER.md`
-- `AGENTS_FULL.md`
+- `docs/archive/AGENTS_FULL.md`
 - 코드 파일
 - 테스트 파일
 
@@ -321,7 +321,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - `AGENT_TASK_ROUTER.md`의 관련 섹션만
 
 읽지 말 것:
-- `AGENTS_FULL.md` unless explicitly requested
+- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 notes/dev_notes 전체
 - 코드 파일
 - 테스트 파일
