@@ -32,6 +32,12 @@
   - 관련 키: `R410A`, `R32`, `R290` (냉매), `EEV`, `Capi` (팽창장치)
   - 모델 예측/학습 시 DataFrame 직접 전달을 유지하여 피처 이름을 보존해야 하며, `.values` 변환으로 인해 `feature_names_in_` 속성을 잃지 않도록 주의합니다.
 
+### ML 학습 및 모델 artifact 가드레일
+- **기본 artifact 계약**: 현재 기본 모델 artifact는 `core/constants.py`의 `MODEL_FILE`이 가리키는 `model.pkl` 단일 artifact 계약을 따른다. target별 또는 모델별 artifact 분리는 별도 설계 없이 임의로 도입하지 않는다.
+- **전처리 호환성 guard**: 학습/예측 전처리 호환성 확인을 위해 `preprocess_version` 또는 동등한 전처리 버전 검증 guard를 유지한다. 이 항목은 architecture contract이며, 현재 구현 완료 범위를 과장하지 않는다.
+- **Train/Predict runtime boundary**: `core/trainer.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/trainer.py`와 `core/predictor.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
+- **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
+
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
