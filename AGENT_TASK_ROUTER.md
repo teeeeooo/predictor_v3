@@ -16,8 +16,8 @@ preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 
 
 ### Result Report Workflow
 
-모든 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.
-report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달하는 작업 산출물이므로 항상 commit/push한다.
+tracked file 변경이 있는 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.
+report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달하는 작업 산출물이므로 생성한 경우 항상 commit/push한다.
 
 경로:
 - `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
@@ -47,10 +47,23 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - 문제가 있거나 blocked이면 원인을 짧게 출력한다.
 
 Report mode:
+- Report required:
+  - tracked file을 생성/수정/삭제/이동한 작업
+  - code/docs/test/config/model artifact에 실제 변경이 있는 작업
+  - audit 결과가 향후 참조 산출물로 남아야 하는 작업
+  - summary/archive/`project_log.md` lifecycle maintenance를 실제 수행한 작업
+  - 사용자가 report 작성을 명시한 작업
 - Full report mode는 logic/code 수정, architecture-sensitive 변경, calculator/golden/fixture/config 변경, test 추가/수정, schema/contract/public API 영향 작업에 사용한다.
 - Compact report mode는 단순 docs 문구 수정, router wording 정리, link/path 표현 수정, report lifecycle maintenance, 코드 영향 없는 audit/report-only 작업에 사용할 수 있다.
 - Compact report 최소 섹션은 Goal, Scope, Changed Files, Verification, Known Risks, Commit / Push로 한다.
 - Compact report를 쓰더라도 scope compliance와 금지 파일 미수정 여부는 Verification 또는 Known Risks 안에서 짧게 확인한다.
+- No-report / terminal-only mode는 파일 수정 없는 상태 확인, `git status`, `git log`, `git diff --name-only`, push 여부 확인, “커밋해도 돼?”, “push 됐는지 확인해줘” 같은 단순 확인에 사용할 수 있다.
+- 사용자가 명시적으로 “확인만”, “수정하지 말고 보고만”을 요청했고 결과를 장기 산출물로 남길 필요가 없거나, 단순 질문/원인 분석만 하고 repo 파일을 수정하지 않은 경우에도 No-report / terminal-only mode를 사용할 수 있다.
+- No-report / terminal-only mode 출력은 terminal/final response에 `status: clean`, `latest commit: ...`, `push: confirmed`, `files changed: none`처럼 짧게 남긴다.
+- No-report / terminal-only mode에서는 Markdown report를 만들지 않고 report commit/push도 하지 않는다.
+- No-report / terminal-only mode는 파일 수정이 없어야만 사용한다. 파일을 수정했다면 단순 작업이라도 최소 Compact report를 작성한다.
+- 계산 로직, golden, fixture, config, schema/contract/public API, architecture-sensitive 변경에는 No-report / terminal-only mode를 사용하지 않는다.
+- No-report / terminal-only mode는 lifecycle maintenance 수행 권한을 의미하지 않으며, 이 mode에서는 summary/archive/`project_log.md` maintenance를 자동 수행하지 않는다. 필요하면 `lifecycle maintenance pending` 정도만 짧게 보고한다.
 
 Full report 기본 섹션:
 - Goal
