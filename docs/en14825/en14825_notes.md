@@ -187,11 +187,11 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 | `core/calculator_en14825.py` | Primary: 현재 계산 동작 기준 |
 | `data/region_configs/en14825_scop.json` | Primary: SCOP 기후별 Table 37, Annex D 데이터 기준 |
 | `tests/test_en14825_golden.py` | Primary: 현재 golden 기대값 기준 |
-| `docs/en14825_scop_notes.md` | Primary support: PDF 확인 페이지와 원본 SEER/SCOP 요약 보존 |
+| `docs/archive/standards_legacy/en14825_scop_notes.md` | Historical archive: PDF 확인 페이지와 원본 SEER/SCOP 요약 보존 |
 | `docs/en14825/en14825_dev_notes.md` | Secondary: PDF 확인 페이지, Clause 6.1~6.4, Clause 7.1~7.4, Table 36, Table 37, Annex D Table D.1~D.4 근거 확인 |
 
 ## 13. Prompt for Future Agent
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, docs/en14825_scop_notes.md, core/calculator_en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, core/calculator_en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF 검토 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
 ```

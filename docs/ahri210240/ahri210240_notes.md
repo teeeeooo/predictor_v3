@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-이 문서는 AHRI 210/240 계열의 HSPF2와 SEER2 계산 자산을 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, 관련 HSPF2 테스트 파일이다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다.
+이 문서는 AHRI 210/240 계열의 HSPF2와 SEER2 계산 자산을 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 이 문서와 `docs/ahri210240/ahri210240_dev_notes.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, 관련 HSPF2 테스트 파일이다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다.
 
 현재 프로젝트에서 가장 깊게 검증된 경로는 AHRI 210/240-2026 HSPF2 v3 경로다. 적용 대상은 non-ducted, single-split, variable-capacity, air-to-air heat pump이며, 우선 지역은 Region IV다. SEER2는 현재 계산 코드에서 확인 가능한 variable-capacity cooling bin 계산 범위만 문서화한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107, Equation 11.181~11.218.
 
@@ -186,11 +186,11 @@
 
 | Case | Source | Expected | Actual | Tolerance | Result |
 | --- | --- | ---: | ---: | ---: | --- |
-| HSPF2 official Case #1 | `docs/skills/ahri_hspf2.md` | 9.448025 raw | 9.447720 raw | 약 -0.0003 | pass 기준 |
-| HSPF2 official Case #2 | `docs/skills/ahri_hspf2.md` | 8.821440 raw | 8.821297 raw | 약 -0.0001 | pass 기준 |
-| H22 tested | `docs/skills/ahri_hspf2.md` | rounded 9.52 | rounded 9.52 | project 기준 | pass |
-| H12 tested | `docs/skills/ahri_hspf2.md` | rounded 9.47 | rounded 9.47 | project 기준 | pass |
-| Eq.11.183 fallback | `docs/skills/ahri_hspf2.md` | rounded 9.438 | rounded 9.438 | project 기준 | pass |
+| HSPF2 official Case #1 | `docs/archive/standards_legacy/ahri_hspf2.md` | 9.448025 raw | 9.447720 raw | 약 -0.0003 | pass 기준 |
+| HSPF2 official Case #2 | `docs/archive/standards_legacy/ahri_hspf2.md` | 8.821440 raw | 8.821297 raw | 약 -0.0001 | pass 기준 |
+| H22 tested | `docs/archive/standards_legacy/ahri_hspf2.md` | rounded 9.52 | rounded 9.52 | project 기준 | pass |
+| H12 tested | `docs/archive/standards_legacy/ahri_hspf2.md` | rounded 9.47 | rounded 9.47 | project 기준 | pass |
+| Eq.11.183 fallback | `docs/archive/standards_legacy/ahri_hspf2.md` | rounded 9.438 | rounded 9.438 | project 기준 | pass |
 | v3 smoke | `test_hspf2_v3_smoke.py` | Region IV, 13 active bins, H42 source trace | assert 기준 | n/a | pass 조건 |
 | Case activation | `test_hspf2_v3_low_cases.py` | Case I/II/III 존재, -8°F fractional row | assert 기준 | n/a | pass 조건 |
 | H2Int sensitivity | `test_hspf2_v3_h2int.py` | H2Int power change affects raw HSPF2 | assert 기준 | n/a | pass 조건 |
@@ -208,7 +208,7 @@ python3 -B test_hspf2_v3_bincheck.py
 
 | Reference | Usage |
 | --- | --- |
-| `docs/skills/ahri_hspf2.md` | Primary: HSPF2 구현 상세와 official calculator 비교값 |
+| `docs/archive/standards_legacy/ahri_hspf2.md` | Historical archive: HSPF2 구현 상세 원본과 official calculator 비교값 |
 | `core/calculator_ahri_hspf2.py` | Primary: HSPF2 v3/v2 계산 동작 |
 | `core/calculator_ahri_seer2.py` | Primary: 현재 SEER2 계산 가능 범위 |
 | `data/region_configs/usa_hspf2.json` | Primary: HSPF2 Region IV bin table, schema, aliases |
@@ -218,5 +218,5 @@ python3 -B test_hspf2_v3_bincheck.py
 ## 13. Prompt for Future Agent
 
 ```text
-AGENTS.md의 Lite 규칙만 따르고, docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 작업은 docs/skills/ahri_hspf2.md, core/calculator_ahri_hspf2.py, core/calculator_ahri_seer2.py, data/region_configs/usa_hspf2.json, test_hspf2_v3_*.py를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. HSPF2 계산 로직은 명시 지시 없이 수정하지 말고, 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
+AGENTS.md의 Lite 규칙만 따르고, docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 작업은 docs/ahri210240/ahri210240_notes.md, docs/ahri210240/ahri210240_dev_notes.md, core/calculator_ahri_hspf2.py, core/calculator_ahri_seer2.py, data/region_configs/usa_hspf2.json, test_hspf2_v3_*.py를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. 과거 HSPF2 구현 상세 원본은 필요할 때만 docs/archive/standards_legacy/ahri_hspf2.md를 historical source로 참조하라. HSPF2 계산 로직은 명시 지시 없이 수정하지 말고, 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
 ```

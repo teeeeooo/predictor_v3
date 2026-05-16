@@ -77,6 +77,15 @@ SCOP dict point는 `{"capacity": kW, "power": kW, "temp_c": optional}` 형식이
 
 현재 SCOP API는 raw capacity-control step list를 받지 않는다. 따라서 Clause 7.4.2.2의 완전한 closest-step selection은 구현할 수 없고, 현재 조건은 declared point만으로 가능한 보수적 해석이다. raw step schema가 추가되면 `_scop_pl_at_declared_point()`의 조건은 실제 step 선택 로직으로 대체해야 한다.
 
+Legacy SCOP note에서 보존된 raw capacity-control step 해석은 아래와 같다. 이 항목들은 현재 동작이 아니라, 향후 raw step schema가 생겼을 때 구현해야 할 규격 방향이다.
+
+| Raw step item | Preserved interpretation | Reference |
+| --- | --- | --- |
+| Closest step selection | required load에 도달하는 가장 가까운 capacity-control step 또는 increment를 선택한다. | EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2 |
+| +/-10% miss | 선택 step이 required load의 +/-10% 안에 들지 못하면 required load 양쪽의 step 결과를 사용한다. | EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2 |
+| Step interpolation | 양쪽 step의 capacity와 EERPL/COPPL 사이에서 required load 기준으로 보간한다. | EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2 |
+| Minimum step oversize | 가장 작은 control step도 required load보다 크면 fixed-capacity degradation 식을 적용한다. | EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2 |
+
 ## 7. Debugging Checklist
 
 | Check | What to inspect | Expected |
@@ -242,6 +251,17 @@ elbu(Tj) = Ph(Tj)
 | warmer | 2 | 7 | 755 | 0 | 0 | 1400 | 755 |
 | colder | -22 | -7 | 131 | 0 | 0 | 2100 | 131 |
 
+공기 대 공기 난방 part-load 조건 온도는 아래 값으로 해석한다. 근거: EN14825:2012 Clause 5.2.
+
+| Point | Average °C | Warmer °C | Colder °C |
+| --- | ---: | ---: | ---: |
+| A | -7 | not applicable | -7 |
+| B | 2 | 2 | 2 |
+| C | 7 | 7 | 7 |
+| D | 12 | 12 | 12 |
+| E | TOL | TOL | TOL |
+| F | Tbiv | Tbiv | Tbiv |
+
 Full standard match를 위해서는 Clause 6.4.2.2와 Clause 7.4.2.2의 raw capacity-control step 선택 로직, colder climate에서 `TOL < -20 °C`일 때의 -15 °C 추가점, Equation 10의 SCOPnet 반환 여부, 인증 리포트 또는 공식 worksheet 기반 golden case가 추가로 필요하다.
 
 ## 13. Prompt Snippets for Agent
@@ -249,7 +269,7 @@ Full standard match를 위해서는 Clause 6.4.2.2와 Clause 7.4.2.2의 raw capa
 ### 문서 업데이트
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, docs/en14825_scop_notes.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 문서 작업이면 삭제 없이 중심 문서에 내용을 흡수하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF review 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라.
 ```
 
 ### SCOP 계산 변경

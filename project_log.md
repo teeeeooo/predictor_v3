@@ -760,3 +760,14 @@
 ### Decision
 - `data/skills.md`는 active data source가 아니라 V2 pattern archive로 취급한다.
 - owner 문서에는 active guardrail과 reusable lesson을 두고, 긴 raw code pattern은 archive에 보존한다.
+
+## 2026-05-16 — EN14825/AHRI legacy standard notes absorption
+
+### Result
+- EN14825 legacy SCOP note의 raw capacity-control step 해석, heating part-load 조건, PDF review scope, future work 근거를 `docs/en14825/` canonical 문서로 흡수했다.
+- AHRI legacy HSPF2 note의 HSPF2 official case source, fallback path, defrost trace, metadata trace 근거를 `docs/ahri210240/` canonical 문서 기준으로 정리했다.
+- 두 legacy 원본은 `docs/archive/standards_legacy/`로 이동하고, active 문서에서는 historical source로만 참조하도록 낮췄다.
+
+### Decision
+- EN14825와 AHRI 210/240의 active 기준은 각 standard 폴더의 `*_notes.md`와 `*_dev_notes.md`로 둔다.
+- archive 파일은 과거 검토 범위와 official comparison 원본을 확인할 때만 참조한다.

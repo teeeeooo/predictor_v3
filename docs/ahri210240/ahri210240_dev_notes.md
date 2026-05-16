@@ -4,7 +4,7 @@
 
 이 문서는 AHRI 210/240 HSPF2/SEER2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 생산 경로이며, SEER2는 현재 계산 코드에서 확인 가능한 범위만 다룬다.
 
-Primary 기준은 `docs/skills/ahri_hspf2.md`, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
+Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
 도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
 
@@ -165,11 +165,11 @@ python3 -B test_hspf2_v3_bincheck.py
 
 | Case | Purpose | Current source |
 | --- | --- | --- |
-| Official Case #1 | AHRI 공식 계산기와 raw HSPF2 근접성 확인 | `docs/skills/ahri_hspf2.md` |
-| Official Case #2 | 다른 A2 anchor에서 공식 계산기 근접성 확인 | `docs/skills/ahri_hspf2.md` |
-| H22 tested | optional tested point 우선 사용 확인 | `docs/skills/ahri_hspf2.md` |
-| H12 tested | tested H1Full path 확인 | `docs/skills/ahri_hspf2.md` |
-| Eq.11.183 | H1N same speed fallback 확인 | `docs/skills/ahri_hspf2.md` |
+| Official Case #1 | AHRI 공식 계산기와 raw HSPF2 근접성 확인 | `docs/archive/standards_legacy/ahri_hspf2.md` |
+| Official Case #2 | 다른 A2 anchor에서 공식 계산기 근접성 확인 | `docs/archive/standards_legacy/ahri_hspf2.md` |
+| H22 tested | optional tested point 우선 사용 확인 | `docs/archive/standards_legacy/ahri_hspf2.md` |
+| H12 tested | tested H1Full path 확인 | `docs/archive/standards_legacy/ahri_hspf2.md` |
+| Eq.11.183 | H1N same speed fallback 확인 | `docs/archive/standards_legacy/ahri_hspf2.md` |
 | H2Int sensitivity | intermediate power가 Case II COP에 영향을 주는지 확인 | `test_hspf2_v3_h2int.py` |
 | Case activation | Case I/II/III, fractional availability 확인 | `test_hspf2_v3_low_cases.py` |
 
@@ -216,7 +216,7 @@ SEER2는 현재 HSPF2처럼 official calculator parity가 정리되어 있지 �
 ### AHRI 문서 작업
 
 ```text
-AGENTS.md의 Lite 규칙만 따르고 docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 문서는 docs/skills/ahri_hspf2.md, AHRI HSPF2/SEER2 계산 코드, 관련 tests를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
+AGENTS.md의 Lite 규칙만 따르고 docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC_TEMPLATE.md, docs/FORMULA_REFERENCE_GUIDE.md를 먼저 읽어라. AHRI 문서는 docs/ahri210240/ahri210240_notes.md, docs/ahri210240/ahri210240_dev_notes.md, AHRI HSPF2/SEER2 계산 코드, 관련 tests를 Primary로 삼고, AHRI PDF는 Section/Table/Equation 확인용 Secondary로만 사용하라. 과거 HSPF2 구현 상세 원본은 필요할 때만 docs/archive/standards_legacy/ahri_hspf2.md를 historical source로 참조하라. 문서 작업이면 docs/ahri210240/ 하위만 수정하라.
 ```
 
 ### HSPF2 계산 작업
