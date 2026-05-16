@@ -19,16 +19,17 @@
 ### 1. Calculator architecture reset: ISO / KS / ASNZS 3-module 분리
 - **왜 후보인지**: 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임.
 - **목표 boundary**:
-  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF), region config를 붙여서 쓰는 유일한 계열.
-  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF).
+  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF). Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
+  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). `data/region_configs/korea.json`은 ISO common path가 아니라 이 모듈이 직접 해석한다.
   - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용 (Z-phase 후보).
+- **Region config 저장소**: `data/region_configs/`는 ISO16358 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. AHRI(`usa.json`, `usa_hspf2.json`)와 KS(`korea.json`)도 이 폴더에 둘 수 있으며, 각 JSON은 자기 calculator가 직접 해석한다.
 - **Next work order**:
   1. `core/calculator_ks_c9306.py`를 생성하고 KS CSPF/HSPF를 ISO common path에서 분리한다.
-  2. `core/calculator_iso16358.py`를 ISO 16358 CSPF/HSPF 전용으로 정리/재작성한다 (region config는 이 계열에서만 사용).
+  2. `core/calculator_iso16358.py`를 ISO 16358 CSPF/HSPF 전용으로 정리/재작성한다 (ISO 기반 regional profile JSON 해석을 ISO calculator에 한정).
   3. AS/NZS workbook oracle은 `core/calculator_asnzs_hspf_excel.py` Z-phase compatibility calculator로 보류한다.
   4. profile resolver / Calculator UI 연결은 위 calculator boundary가 안정화된 뒤 별도 작업으로 진행한다.
 - **Reference branch**: `work/iso-hspf-refactor-ui-followup`은 merge 대상이 아니라 reference/spike로만 둔다. diff cherry-pick 또는 merge는 수행하지 않는다.
-- **지켜야 할 guard**: public API, golden result, region config boundary 유지. KS C 9306을 ISO region config common path에 합치지 않고, AS/NZS workbook oracle convention을 ISO common path에 섞지 않는다.
+- **지켜야 할 guard**: public API, golden result, calculator boundary 유지. KS C 9306 region config 해석을 ISO common path에 합치지 않고, AS/NZS workbook oracle convention을 ISO common path에 섞지 않는다.
 
 ### 2. ISO CSPF/HSPF helper separation
 - **CSPF/HSPF helper 분리 후보**: bin loop, point resolution, energy accumulation 등 공통 로직 모듈화.
@@ -37,7 +38,7 @@
 
 ### 3. KS C 9306 helper separation
 - **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 `core/calculator_ks_c9306.py` 별도 모듈로 관리.
-- **common ISO로 무리하게 흡수하지 않음**: KS C 9306은 AHRI / EN14825처럼 special calculator로 분리하며, ISO16358 region config common path에 합치지 않는다.
+- **common ISO로 무리하게 흡수하지 않음**: KS C 9306은 AHRI / EN14825처럼 special calculator로 분리하며, ISO16358 common path가 `korea.json` 같은 KS region config를 해석하지 않도록 boundary를 유지한다.
 - **분리 트리거**: ISO 계열 boundary 정리 직후 첫 단계로 수행.
 
 ### 4. profile/schema resolver cleanup

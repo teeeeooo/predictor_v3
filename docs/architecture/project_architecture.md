@@ -106,6 +106,8 @@ User target
 
 ### Region config vs HW candidate input
 
+`data/region_configs/`는 ISO16358 전용 저장소가 아니라, 여러 calculator가 공유할 수 있는 정적 standard/region config 저장소이다. calculator code에 하드코딩하지 않을 정적 standard/region 데이터를 한 곳에 모으는 것이 1차 목적이며, ISO16358 / KS C 9306 / AHRI / EN14825 등 각 calculator가 자기 모듈에서 직접 해당 JSON을 해석한다. 어떤 calculator가 어떤 JSON을 읽는지는 [[calculator-module-boundary-iso-ks-asnzs]] 섹션 boundary를 따른다.
+
 `region config`는 규격과 지역에 속한 정적 기준 데이터만 담는다.
 
 - climate/bin hours
@@ -148,25 +150,26 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
 
 ### Calculator module boundary (ISO / KS / ASNZS)
 
-계산기 모듈은 세 축으로 분리한다. resolver는 `calculator_id`를 통해 세 모듈을 명시적으로 구분해야 하며, 한 모듈에 다른 규격의 책임을 합치지 않는다.
+계산기 모듈은 세 축으로 분리한다. resolver는 `calculator_id`를 통해 세 모듈을 명시적으로 구분해야 하며, 한 모듈에 다른 규격의 책임을 합치지 않는다. `data/region_configs/`의 JSON은 어느 한 calculator의 전용 저장소가 아니며, 아래 boundary가 어떤 JSON을 어떤 calculator가 직접 해석하는지를 정한다.
 
 - `core/calculator_iso16358.py` — ISO 16358 전용 계산기.
   - ISO16358-1 CSPF, ISO16358-2 HSPF를 담당한다.
-  - `data/region_configs/*.json`을 통한 region config를 사용하는 유일한 계열이다.
-  - Hong Kong / India / SASO 등 ISO 16358 기반 지역 profile은 이 모듈에 속한다.
+  - Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile을 region config (`data/region_configs/hong_kong.json`, `india_iseer.json`, `saso.json`, `iso_t1_default_2point.json` 등)로 구현하는 대표 사례이다.
   - resolver에서는 `calculator_id=iso16358`로 식별한다.
 - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator.
   - KS CSPF, KS HSPF를 담당한다.
   - AHRI / EN14825처럼 ISO common path와 분리된 special calculator로 취급한다.
-  - ISO16358 region config common path에 KS C 9306 로직을 억지로 합치지 않는다.
+  - `data/region_configs/korea.json`을 사용할 수 있으나, 해당 config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 한다. ISO16358 common path와 KS region config 해석을 섞지 않는다.
   - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
 - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용 후보.
   - ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator이다.
-  - AS/NZS workbook oracle convention을 ISO common path에 섞지 않는다.
+  - AS/NZS workbook oracle convention을 ISO common path에 섞지 않으며, 자체 compatibility config로 opt-in 한다.
   - 현재는 Z-phase 후보이며 이번 단계에서는 구현하지 않는다.
   - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
 
-resolver는 `calculator_id` 값으로 위 세 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
+AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculator는 `data/region_configs/usa.json`(SEER2/cooling)과 `data/region_configs/usa_hspf2.json`(HSPF2/heating)을 사용할 수 있으며, 이 JSON들은 ISO common path가 아니라 AHRI calculator가 해석한다.
+
+resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
 
 ### External calculator compatibility profiles
 

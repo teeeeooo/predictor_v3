@@ -788,10 +788,10 @@
 ### Decision
 - 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬였으므로 분리/재작성이 필요하다고 판단했다.
 - 계산기 모듈을 세 축으로 고정한다.
-  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF). region config를 붙여서 쓰는 유일한 계열. Hong Kong / India / SASO 등 ISO 기반 지역 profile은 이 모듈에 속한다.
-  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). AHRI / EN14825처럼 ISO common path와 분리해 다룬다.
+  - `core/calculator_iso16358.py` — ISO 16358 전용 (ISO16358-1 CSPF, ISO16358-2 HSPF). Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
+  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). AHRI / EN14825처럼 ISO common path와 분리해 다루며, `data/region_configs/korea.json`은 이 모듈이 직접 해석한다.
   - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator로, Z-phase 후보로 보류한다.
-- region config는 ISO16358 계열에만 붙여 쓰고, KS C 9306 또는 AS/NZS Excel compatibility를 ISO region config common path에 합치지 않는다.
+- `data/region_configs/`는 ISO16358 전용 저장소가 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. ISO16358은 region config로 Hong Kong / India / SASO 등 regional profile을 구현하는 대표 케이스이며, KS C 9306도 `korea.json` 같은 region config를 사용할 수 있다. 단, KS config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 하고, AHRI(`usa.json`, `usa_hspf2.json`) 등 다른 special calculator도 동일 원칙을 따른다. AS/NZS workbook oracle은 ISO common path에 섞지 않고 별도 compatibility calculator/profile로 둔다.
 - 다음 구현 순서: KS 분리 → ISO16358 정리/재작성 → AS/NZS Z-phase → profile/UI 연결.
 - `work/iso-hspf-refactor-ui-followup` 브랜치는 merge 대상이 아니라 reference/spike로만 둔다.
 

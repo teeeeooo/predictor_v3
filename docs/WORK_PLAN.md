@@ -15,7 +15,7 @@
 
 ## Near-term execution order
 1. `core/calculator_ks_c9306.py` 생성 및 KS CSPF/HSPF 분리
-2. `core/calculator_iso16358.py`를 ISO16358 CSPF/HSPF 전용으로 정리/재작성 (region config는 이 계열에서만 사용)
+2. `core/calculator_iso16358.py`를 ISO16358 CSPF/HSPF 전용으로 정리/재작성 (ISO 기반 regional profile JSON 해석을 ISO calculator에 한정)
 3. profile resolver / Calculator UI 연결 (calculator boundary 안정화 후 별도 작업)
 4. ML / inverse-search 복귀
 Z. `core/calculator_asnzs_hspf_excel.py` AS/NZS workbook oracle compatibility calculator 별도 phase

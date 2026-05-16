@@ -1,5 +1,8 @@
 # Region Config Rules
 
+- `data/region_configs/`는 ISO16358 전용 저장소가 아니라, 여러 calculator가 공유하는 정적 standard/region config 저장소이다. calculator code에 하드코딩하지 않을 standard constants / bin hours / test point rules / load-line metadata / derived factor 같은 정적 데이터를 한 곳에 모은다.
+- 각 JSON은 한 calculator가 직접 해석한다. ISO16358은 Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하고, KS C 9306 calculator는 `korea.json`을 직접 해석한다 (ISO common path가 해석하지 않는다). AHRI calculator는 `usa.json`, `usa_hspf2.json`을 해석한다.
+- AS/NZS workbook oracle compatibility는 ISO common path에 섞지 않고 별도 opt-in compatibility calculator/profile로 다룬다. 해당 config도 이 폴더에 둘 수 있으나 ISO common config와 schema/해석 경로를 섞지 않는다.
 - region config는 production 규격 데이터만 저장한다.
 - golden/sample/test 전용 값은 절대 넣지 않는다.
 - 테스트 fixture는 tests/fixtures/ 아래에 둔다.
