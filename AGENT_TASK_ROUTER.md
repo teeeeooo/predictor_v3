@@ -515,3 +515,39 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - calculator core와 ML feature schema 혼합
 - target leakage 유발 feature 추가
 - unrelated refactor
+
+### 10. Packaging / 배포 빌드
+
+대상:
+- 로컬/배포 패키징 요청
+- PyInstaller, `.spec`, onefile/onedir, binary dependency, crash logging 관련 작업
+- 패키징 실패 재현, 패키징 산출물 검증, 배포 환경 정리
+
+읽을 문서:
+- `AGENTS.md`
+- `docs/PACKAGING.md`
+
+조건부로 읽을 문서:
+- 기존 packaging 실패나 결정이 언급되면 `project_log.md`에서 관련 키워드만 검색한다.
+- 실제 entrypoint, import, resource 경로 확인이 필요하면 관련 앱 entrypoint와 packaging 대상 파일의 필요한 범위만 확인한다.
+- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 `docs/PACKAGING.md`로 부족한 historical detail이 필요한 경우에만 제한적으로 확인한다.
+
+읽지 말 것:
+- 관련 없는 규격 notes/dev_notes 전체
+- 계산기, ML, UI 코드 전체
+- `docs/archive/AGENTS_FULL.md` 전체
+
+절차:
+1. 대상 platform, output 형태, packaging 목적, 검증 방식을 먼저 확인한다.
+2. 확정된 build command나 `.spec` 파일이 없으면 임의로 canonical command를 만들지 않는다.
+3. 배포용 환경은 개발 환경과 분리하고, `venv_deploy` 또는 동등한 별도 환경 원칙을 따른다.
+4. packaging 작업 중 계산기, ML, UI 핵심 로직 변경을 함께 진행하지 않는다.
+5. binary dependency, resource path, crash logging 확인은 실제 packaging 증거 또는 명시된 실패 로그를 기준으로 한다.
+6. packaging workflow, 실패 원인, 배포 결정이 확정되면 `project_log.md` 갱신 여부를 판단한다.
+7. 완료 보고에는 수행한 build/검증 명령, 산출물 확인 범위, 생략한 검증을 구분해 남긴다.
+
+금지:
+- 추측성 build command를 canonical 문서나 README에 기록
+- 일반 개발용 `venv`와 배포용 환경 혼용
+- packaging 작업에 unrelated logic/UI/ML refactor 포함
+- 검증 없이 큰 외부 dependency 추가

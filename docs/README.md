@@ -11,6 +11,7 @@
 | `DOCS_GUIDELINES.md` | 프로젝트 전체 규격 문서 작성 철학, 금지 규칙, 근거 표기, 품질 기준을 정의한다. |
 | `STANDARD_DOC_TEMPLATE.md` | 규격별 `notes`, `dev_notes`, `design_notes`, `glossary` 문서를 만들 때 복사해서 쓰는 표준 템플릿이다. |
 | `FORMULA_REFERENCE_GUIDE.md` | 수식, 변수, 용어를 정리할 때 사용하는 공통 형식과 예시를 제공한다. |
+| `PACKAGING.md` | 로컬/배포 패키징 원칙과 패키징 작업 시 확인해야 할 owner 문서다. |
 | `WORK_PLAN.md` | 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목을 관리하는 실행 순서 문서다. |
 | `REFACTOR_PLAN.md` | 일반 TODO-list가 아니라 리팩토링 후보, 구조 분리 트리거, guardrail, 분리 전략을 관리하는 문서다. |
 | `README.md` | `docs` 폴더의 목적, 문서 구조, 새 문서 작성 순서를 안내한다. |

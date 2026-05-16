@@ -24,6 +24,7 @@
 - 단순 docs 문구 수정
 - Agent rule / router 수정
 - Notes 내용 정리 / 문서 리팩토링
+- Packaging / 배포 빌드
 - UI 수정
 - ML/Predictor 수정
 

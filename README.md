@@ -71,6 +71,7 @@ General workflow rules:
 | `docs/DOCS_GUIDELINES.md` | Standard documentation philosophy, structure, and evidence rules |
 | `docs/STANDARD_DOC_TEMPLATE.md` | Template for standard `notes`, `dev_notes`, `design_notes`, and `glossary` docs |
 | `docs/FORMULA_REFERENCE_GUIDE.md` | Formula, variable, and term documentation format |
+| `docs/PACKAGING.md` | Local/deployment packaging principles and packaging-task owner doc |
 | `docs/architecture/` | Architecture contracts and module boundaries |
 | `docs/en14825/` | EN14825 canonical standard documents |
 | `docs/ahri210240/` | AHRI 210/240 canonical standard documents |

@@ -771,3 +771,14 @@
 ### Decision
 - EN14825와 AHRI 210/240의 active 기준은 각 standard 폴더의 `*_notes.md`와 `*_dev_notes.md`로 둔다.
 - archive 파일은 과거 검토 범위와 official comparison 원본을 확인할 때만 참조한다.
+
+## 2026-05-16 — Packaging route owner 연결
+
+### Result
+- `docs/PACKAGING.md`를 패키징 작업의 active owner 문서로 라우팅했다.
+- `AGENT_TASK_ROUTER.md`에 Packaging / 배포 빌드 route를 추가해 PyInstaller, `.spec`, binary dependency, crash logging, packaging 실패 재현 작업의 기본 참조 경로를 고정했다.
+- `AGENTS.md`, root `README.md`, `docs/README.md`에서 `docs/PACKAGING.md` inbound를 추가했다.
+
+### Decision
+- 패키징 요청 시 추측성 build command를 만들지 않고 `docs/PACKAGING.md`의 원칙과 실제 증거를 기준으로 작업한다.
+- `docs/archive/AGENTS_FULL.md`는 packaging 기본 경로에서 제외하고, historical detail이 꼭 필요할 때만 제한적으로 확인한다.
