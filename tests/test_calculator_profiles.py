@@ -96,5 +96,49 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
     assert {profile.profile_id for profile in profiles} == {
         "ahri_usa_seer2",
         "ahri_usa_hspf2",
+        "ks_c9306_cspf",
+        "ks_c9306_hspf",
     }
     assert all(profile.enabled for profile in profiles)
+
+
+def test_resolve_ks_c9306_cspf_by_profile_id_returns_korea_json():
+    profile = resolve_calculator_profile(profile_id="ks_c9306_cspf")
+
+    assert profile.profile_id == "ks_c9306_cspf"
+    assert profile.calculator_id == "ks_c9306"
+    assert profile.config_path == "data/region_configs/korea.json"
+    assert profile.metric == "CSPF"
+    assert profile.mode == "cooling"
+
+
+def test_resolve_ks_c9306_hspf_by_profile_id_returns_korea_json():
+    profile = resolve_calculator_profile(profile_id="ks_c9306_hspf")
+
+    assert profile.profile_id == "ks_c9306_hspf"
+    assert profile.calculator_id == "ks_c9306"
+    assert profile.config_path == "data/region_configs/korea.json"
+    assert profile.metric == "HSPF"
+    assert profile.mode == "heating"
+
+
+def test_resolve_ks_c9306_cspf_by_selector():
+    profile = resolve_calculator_profile(
+        standard="KS_C_9306",
+        region="korea",
+        metric="CSPF",
+        mode="cooling",
+    )
+
+    assert profile.profile_id == "ks_c9306_cspf"
+
+
+def test_resolve_ks_c9306_hspf_by_selector():
+    profile = resolve_calculator_profile(
+        standard="KS_C_9306",
+        region="korea",
+        metric="HSPF",
+        mode="heating",
+    )
+
+    assert profile.profile_id == "ks_c9306_hspf"
