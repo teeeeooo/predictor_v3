@@ -23,7 +23,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
 - `result_reports/summaries/` — 누적 report를 묶은 요약 report
 - `result_reports/archive/` — summary 생성 후 보관되는 원본 report
-- `summaries/`와 `archive/` 폴더는 실제 summary/archive 작업이 승인된 별도 phase에서 필요할 때 생성한다.
+- `summaries/`와 `archive/` 폴더는 실제 summary/archive 또는 lifecycle maintenance 작업에서 필요할 때 생성한다.
 
 파일명:
 - `NNN_verb-target-scope.md`
@@ -80,6 +80,33 @@ Commit / Push:
 - `project_log.md`에는 report 전문을 복사하지 않는다.
 - summary에 포함된 원본 active reports는 `result_reports/archive/` 이동 후보로 보고한다.
 - archive 이동은 사용자 승인 후 별도 작업으로 수행하며, 이동 시 report 번호나 파일명은 바꾸지 않는다.
+
+Lifecycle check:
+- agent가 result report를 생성/commit/push하는 작업을 마무리할 때마다 최종 보고 전에 lightweight lifecycle check를 수행한다.
+- check는 문서 전체를 읽는 것이 아니라 파일명, report 개수, 현재 작업 성격만으로 1차 판단한다.
+- Trigger 조건:
+  - `result_reports/active/`에 report가 약 8~12개 쌓인 경우
+  - 하나의 workstream/arc가 명확히 끝난 경우
+  - 이미 summary가 존재하지만 covered active reports가 아직 archive로 이동되지 않은 경우
+  - summary에서 `project_log.md` update recommended로 판단했지만 아직 반영되지 않은 경우
+- Trigger를 만족하면 agent는 lifecycle maintenance 필요성을 최종 보고에만 남기고 끝내지 않는다.
+- 작업 scope가 허용하고 working tree가 안전하면 별도 lifecycle maintenance step으로 진행한다.
+- lifecycle maintenance는 source/code 작업과 섞지 않고 별도 commit으로 처리한다.
+- summary가 없으면 `result_reports/summaries/`에 summary report를 생성한다.
+- summary가 이미 있으면 중복 summary를 만들지 말고 기존 summary를 기준으로 남은 lifecycle 작업만 수행한다.
+- summary 생성 또는 기존 summary 확인 후 `project_log.md` 갱신 필요 여부를 판단한다.
+- 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
+- report 본문을 `project_log.md`에 복사하지 않는다.
+- summary에 포함된 covered active reports는 `result_reports/archive/`로 이동한다.
+- archive 폴더가 없으면 lifecycle maintenance 단계에서 생성할 수 있다.
+- archive 이동 시 report 번호와 파일명은 변경하지 않는다.
+- summary report 자체는 `result_reports/summaries/`에 남긴다.
+- 이 lifecycle maintenance는 result report, summary, archive, `project_log.md`에 한정된 standing approval이다.
+- 코드, 테스트, model artifact, calculator 문서, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` 수정 권한을 의미하지 않는다.
+- source code 변경 작업 도중이면 source/docs commit과 lifecycle maintenance commit을 분리한다.
+- working tree가 불안정하거나 scope가 섞일 위험이 있으면 lifecycle maintenance를 수행하지 말고 `lifecycle maintenance pending`으로 보고한다.
+- 이미 `result_reports/summaries/011_summary-agent-rules-doc-workflow.md`처럼 summary가 존재하고 covered active reports가 남아 있으면 새 summary를 만들지 않는다.
+- 기존 summary의 archive candidates와 `project_log.md` sync judgment를 기준으로 후속 lifecycle maintenance를 이어간다.
 
 주의:
 - report 작성 때문에 code/test/docs 범위를 임의 확장하지 않는다.
