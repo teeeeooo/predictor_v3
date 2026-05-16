@@ -46,7 +46,13 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - 마지막 줄에 report path를 출력한다.
 - 문제가 있거나 blocked이면 원인을 짧게 출력한다.
 
-report 기본 섹션:
+Report mode:
+- Full report mode는 logic/code 수정, architecture-sensitive 변경, calculator/golden/fixture/config 변경, test 추가/수정, schema/contract/public API 영향 작업에 사용한다.
+- Compact report mode는 단순 docs 문구 수정, router wording 정리, link/path 표현 수정, report lifecycle maintenance, 코드 영향 없는 audit/report-only 작업에 사용할 수 있다.
+- Compact report 최소 섹션은 Goal, Scope, Changed Files, Verification, Known Risks, Commit / Push로 한다.
+- Compact report를 쓰더라도 scope compliance와 금지 파일 미수정 여부는 Verification 또는 Known Risks 안에서 짧게 확인한다.
+
+Full report 기본 섹션:
 - Goal
 - Scope
 - Non-goals
@@ -83,7 +89,12 @@ Commit / Push:
 
 Lifecycle check:
 - agent가 result report를 생성/commit/push하는 작업을 마무리할 때마다 최종 보고 전에 lightweight lifecycle check를 수행한다.
-- check는 문서 전체를 읽는 것이 아니라 파일명, report 개수, 현재 작업 성격만으로 1차 판단한다.
+- routine lifecycle check는 metadata-only check로 수행한다.
+- 기본 확인 대상은 파일명, active report 개수, `result_reports/summaries/` 존재 여부, `result_reports/archive/` 존재 여부, 현재 작업 성격이다.
+- routine check 단계에서는 `result_reports/active/*.md` 본문을 읽지 않는다.
+- 이미 summary가 있는 경우에도 routine check에서 summary 본문 전체를 읽지 않는다.
+- Trigger가 충족되어 실제 summary/project_log/archive maintenance 단계로 들어갈 때만 필요한 report 또는 summary의 관련 섹션을 선별적으로 읽는다.
+- 필요한 경우 `Covered Reports`, `Archive Candidates`, `Project Log Sync Judgment` 같은 관련 heading만 제한적으로 확인한다.
 - Trigger 조건:
   - `result_reports/active/`에 report가 약 8~12개 쌓인 경우
   - 하나의 workstream/arc가 명확히 끝난 경우
