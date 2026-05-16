@@ -8,7 +8,7 @@
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
-  - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, AHRI, EN14825)
+  - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등)
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
 - **`ui/`**: PyQt5 기반 GUI 구성 요소

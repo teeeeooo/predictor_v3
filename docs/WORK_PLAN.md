@@ -7,8 +7,9 @@
 - 구조 리팩토링 후보와 트리거는 `docs/REFACTOR_PLAN.md`를 본다.
 
 ## Current milestone focus
-- ISO16358-2 common HSPF 마무리
-- remaining xfail audit / 해소
+- Calculator architecture reset 실행 (ISO / KS / ASNZS 3-module boundary)
+- KS C 9306 CSPF/HSPF를 `core/calculator_ks_c9306.py`로 분리
+- `core/calculator_iso16358.py`를 ISO16358 CSPF/HSPF 전용으로 정리/재작성하기 위한 선행 작업
 - production ISO common path와 AS/NZS Excel compatibility path 분리 유지
 - AS/NZS Excel exact matching은 Z-phase
 
