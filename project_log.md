@@ -749,6 +749,13 @@
 - `AGENTS.md`에는 route entrypoint, non-negotiable boundary, document trigger만 남긴다.
 - 작업별 조건부 문서 읽기, report mode, UI/ML/calculator 세부 실행 규칙은 `AGENT_TASK_ROUTER.md`에서 관리한다.
 
+### Follow-up — Agent terminal output `modified:` 표준 줄 추가
+
+#### Decision
+- 모든 agent 작업의 터미널 결과 보고는 task별 `task N: OK/NG - short summary` 줄 → `modified: <comma-separated paths>` 줄 → `report: <report path>` 줄 3-line 표준 형식을 따른다.
+- `modified:`에는 이번 작업에서 실제 수정/생성/삭제된 파일 경로만 포함하고, blocked / 변경 없음은 `modified: none`을 사용한다. unrelated, pre-existing dirty/staged/untracked 파일은 포함하지 않는다.
+- 상세 변경 목록은 계속 report 내부 `Changed Files` 섹션에 두고, 터미널 출력은 위 형식으로 짧게 유지한다.
+
 ## 2026-05-16 — V2 skills pattern archive and owner-doc split
 
 ### Result
@@ -797,3 +804,17 @@
 
 ### Scope
 - 이번 작업은 architecture/work plan/project_log 문서 갱신만 수행했고, code/tests/fixtures/UI/profile resolver는 수정하지 않았다.
+
+### Follow-up — KS C 9306 separation, profile registration, dispatcher foundation
+
+#### Result
+- `core/calculator_ks_c9306.py`에 `KSC9306Calculator`를 생성하고 KS C 9306 HSPF body와 CSPF intersection helper (`_ks_cspf_performance_line`, `_ks_cspf_intersection_power`)를 behavior-preserving하게 이동했다. ISO16358 측은 기존 호출 경로 보호를 위한 thin delegating wrappers만 남겼다.
+- `KSC9306Calculator`에 `calculate_cspf` / `calculate_hspf` public entry와 `from_config_path` / `from_iso_calculator` factory를 마련했다. 현재 `calculate_cspf`는 ISO common CSPF engine을 lazy import해 delegate하는 thin path 성격이며, ISO 측 `power_interpolation_method == "ks_intersection"` 분기는 아직 그대로 남아 있다.
+- `core/calculator_profiles.py`에 KS profile 두 개 (`ks_c9306_cspf`, `ks_c9306_hspf`, `calculator_id=ks_c9306`, `config_path=data/region_configs/korea.json`, `enabled=True`)를 manifest에 등록했다. `tests/test_calculator_profiles.py`의 enabled snapshot은 KS 두 profile 포함으로 갱신하고 KS resolver lookup 가드 4건을 추가했다.
+- `core/calculator_dispatcher.py`를 신규 추가해 `create_calculator_for_profile(...)`이 profile resolver 결과를 받아 `KSC9306Calculator` / `AHRICalculator` / `AHRIHSPF2Calculator`로 instance를 생성하도록 했다. unsupported calculator_id는 fail-fast. `tests/test_calculator_dispatcher.py`에 smoke 7건 추가.
+- ISO16358 profile manifest 등록과 Calculator UI selector 연결은 본 단계 후속 작업으로 분리되어 있다.
+
+#### Decision
+- profile resolver (`core/calculator_profiles.py`)는 순수 manifest/selector를 유지하고, calculator 인스턴스 생성은 `core/calculator_dispatcher.py`가 담당한다.
+- ISO common engine 안의 KS-aware 분기 (`ks_intersection`) 와 ISO 측 KS thin wrappers의 완전 제거는 ISO common engine을 KS-unaware로 분리하는 후속 작업이 wiring된 다음 진행한다.
+- 16개 ISO common HSPF / pure ISO track A / case 3 Excel trace pre-existing failures는 본 workstream에서 다루지 않고 유지한다.
