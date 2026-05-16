@@ -748,3 +748,15 @@
 #### Decision
 - `AGENTS.md`에는 route entrypoint, non-negotiable boundary, document trigger만 남긴다.
 - 작업별 조건부 문서 읽기, report mode, UI/ML/calculator 세부 실행 규칙은 `AGENT_TASK_ROUTER.md`에서 관리한다.
+
+## 2026-05-16 — V2 skills pattern archive and owner-doc split
+
+### Result
+- `data/skills.md`의 V2 pattern 원본을 `docs/archive/skills_v2_patterns.md`로 이동해 raw code/example를 보존했다.
+- UI delegate, dropdown target mapping, cascading autofill, MODEL_REGISTRY/artifact pattern은 `docs/architecture/project_architecture.md`로 분리했다.
+- XGBoost/RFE feature-selection pattern은 `docs/knowledge/hvac_ml_feature_engineering.md`로 분리했다.
+- ML safety gate, snapshot, test harness, optimization harness pattern은 `docs/knowledge/hvac_ml_data_quality.md`로 분리했다.
+
+### Decision
+- `data/skills.md`는 active data source가 아니라 V2 pattern archive로 취급한다.
+- owner 문서에는 active guardrail과 reusable lesson을 두고, 긴 raw code pattern은 archive에 보존한다.

@@ -38,6 +38,13 @@
 - **Train/Predict runtime boundary**: `core/trainer.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/trainer.py`와 `core/predictor.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
 - **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
 
+### MODEL_REGISTRY 확장성 패턴
+- **SSOT**: target별 mandatory, excluded, leakage, RFE 사용 여부, result key는 `core/models.py`의 `MODEL_REGISTRY`를 기준으로 관리한다.
+- **확장 규칙**: 새 모델 target 추가 시 trainer, predictor, feature tests에 하드코딩 분기를 반복하지 않고 registry entry를 통해 순회 가능하게 유지한다.
+- **단일 artifact**: V2에서 target별 artifact를 분리했다가 버전 불일치 위험이 커졌으므로, 기본 저장 단위는 `model.pkl` 단일 artifact 계약을 유지한다.
+- **호환성 주의**: pkl 저장 구조를 단순 dict로 바꾸면 SHAP 등 외부 라이브러리 호환성이 깨질 수 있다. 모델 dict value는 `OptimalModel` 같은 wrapper object로 유지하고, save-data root에 metadata를 추가하는 방향을 우선한다.
+- **자동 테스트 방향**: feature/leakage 테스트는 target별 하드코딩보다 `MODEL_REGISTRY`를 순회해 mandatory/leakage/snapshot contract를 확인한다.
+
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
@@ -49,6 +56,11 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 ### 3.2 COLUMNS 자동완성 구조
 - **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계 매핑은 `ui/base_model.py`에서 전담합니다.
 - **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 4단계 복합 캐스케이딩 및 그에 따른 면적/체적 매핑 로직은 단순 매핑과 분리되어 `ui/predict_window.py`가 전담합니다.
+- **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 `Dict[int, list[int]]` 형태로 `core/constants.py`에서 관리한다.
+- **안전한 target lookup**: target column 조회는 직접 인덱싱보다 `.get(col, [])`를 사용해 매핑 없는 열의 `KeyError`를 방지한다.
+- **ML feature name mapping**: UI 표시 header와 ML feature name이 다를 수 있으므로 `COLUMNS`에는 `ml_feature` 같은 명시적 mapping key를 둔다. `predictor.py`에 header 보정 dict를 하드코딩하지 않는다.
+- **Cascading autofill 단계**: 계층형 자동완성은 데이터 조회, signal-blocked value write, UI 상태/rendering update의 3단계를 분리한다.
+- **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
 ### 3.3 UI Model/View Guardrails
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
@@ -58,6 +70,10 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
   - 자동 매핑 컬럼 (`AUTO_COLS`): 회색 (`#F2F2F2`) (단, 사용자가 수동 수정한 경우 흰색으로 전환)
   - 결과 출력 컬럼 (`RESULT_COLS`): 연녹색 (`#E6F3E6`)
 - **Event Safety**: 무한 루프(Recursion) 및 신호 복구 누락 방지를 위해, `blockSignals(True/False)` 호출 시 반드시 `try/finally` 블록으로 감싼다.
+- **1-click editor UX**: 드롭다운 editor를 한 번의 클릭으로 열어야 할 때는 `QStyledItemDelegate`의 editor lifecycle 안에서 `QTimer.singleShot(0, editor.showPopup)` 패턴을 사용한다. `time.sleep`으로 UI event timing을 제어하지 않는다.
+- **Paste path isolation**: 붙여넣기는 dropdown change event와 다른 경로로 들어오므로 `on_paste_complete()` 같은 별도 처리 흐름에서 값 검증과 자동입력 상태 복구를 수행한다.
+- **Handler naming stability**: dropdown 변경 handler 이름을 `_apply_mapping()` / `on_dropdown_changed()`처럼 섞지 않는다. 이벤트 wiring 이름이 바뀌면 AttributeError가 paste/autofill 경로에서 늦게 드러날 수 있다.
+- **Deprecated V2 example**: 과거 `QTableWidget` 기반 delegate 예제는 active architecture가 아니라 V2 시행착오 보존 자료로만 취급한다. 원본 패턴은 `docs/archive/skills_v2_patterns.md`에 보존되어 있다.
 - **Calculator Boundary**: UI 구현의 편의를 이유로 core calculator의 validation 정책을 약화하거나 우회하지 않는다. Train/Predict UI와 Calculator UI는 프로젝트 헌장(`PROJECT_CHARTER.md`)의 원칙에 따라 철저히 분리된다.
 
 ## 4. 로그 시스템

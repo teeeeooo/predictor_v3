@@ -44,6 +44,27 @@ Examples:
 
 The current `prepare_pipeline()` implementation visibly drops the active target columns plus the global `TARGETS` list before building `X`. `MODEL_REGISTRY.target_rules` defines the target-specific `exclude` or `allowed` boundary that model orchestration should apply around that candidate feature pool. These rules are the current feature boundary reference, not a claim that every base feature is mandatory for every model.
 
+## XGBoost RFE Feature Selection Pattern
+
+XGBoost training and RFECV/RFE feature selection must preserve pandas DataFrame column names.
+
+Rules:
+- pass a DataFrame into `model.fit()` and selector `.fit()`; do not convert `X` to `.values`;
+- build candidate features only after removing the active target, global excluded target columns, target-specific excluded columns, leakage columns, and mandatory columns;
+- run RFE/RFECV only on the remaining candidate pool;
+- append mandatory features back to the final selected list after candidate selection;
+- keep target-specific feature boundaries independent for Cooling, Heating, frequency, power, and refrigerant quantity targets.
+
+Rationale:
+- `.values` removes feature names and can break `feature_names_in_` based train/predict alignment;
+- V2 used `OptimalModel.features` as a workaround after feature names were lost, but the current preferred pattern is DataFrame-native training;
+- RandomForest to XGBoost migrations must remove leftover `.values` habits before model fitting.
+
+Snapshot expectations:
+- keep a candidate-pool snapshot, such as `features_<target>_candidates.json`, to detect RFE input drift;
+- keep a selected-feature snapshot, such as `features_<target>_selected.json`, to detect selection-result drift;
+- do not rely on the candidate snapshot alone because RFE output can change while the input pool is unchanged.
+
 ## Validated Derived Feature Families
 
 The current `DERIVED_FEATURES` are validated ratio-based families and should be preserved unless a dedicated ML feature review changes them.

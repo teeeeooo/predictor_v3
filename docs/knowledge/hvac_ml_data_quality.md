@@ -73,6 +73,40 @@ Train/predict alignment checks should verify:
 - one-hot refrigerant and expansion-device columns use the same names in training and prediction;
 - target-specific `exclude` or `allowed` rules were applied before model input.
 
+## ML Safety Gates
+
+Use fail-fast gates before training or prediction reaches model `.fit()` / `.predict()`.
+
+Safety checks:
+- **Preprocess version**: saved model metadata, such as `preprocess_version`, must match the current preprocessing contract. Store this on the project model wrapper, not by mutating a third-party XGBoost object directly.
+- **Feature freeze**: compare required model features, preferably from `model.feature_names_in_` or the wrapper's recorded feature list, against the current DataFrame columns before prediction.
+- **Data leakage hard gate**: target-specific leakage features must be blocked before training starts. If leakage rules fail, do not enter `fit()`.
+
+V2 lessons:
+- attaching metadata directly to XGBoost objects is fragile across serialization and version updates;
+- CSPF/HSPF are rule-based calculator outputs and should not enter the ML feature pool or leakage rule target set as ordinary model inputs;
+- refrigerant quantity leakage is easy to miss because it may be a target for one model and a tempting candidate feature for another.
+
+## Test Harness Strategy
+
+Use layered test gates so routine edits do not accidentally weaken ML or UI contracts.
+
+1. **Feature harness**: run frequently and keep it fast. Check `MODEL_REGISTRY` against the current feature pool, verify leakage exclusions, and compare candidate/selected feature snapshots.
+2. **UI logic harness**: run when UI state logic changes. Check AUTO_COLS editable/read-only transitions, signal blocking, and master-dropdown driven reset behavior.
+3. **ML sanity harness**: run when model behavior changes. Check broad physical sanity, monotonicity review flags, and prediction repeatability for identical inputs.
+4. **Optimization harness**: run only when explicitly requested, such as with a `--run-optuna` flag. Do not refresh Optuna results as part of ordinary fast validation.
+
+Execution rules:
+- UI, data, or feature code changes should run the current fast non-slow test gate before completion reporting;
+- ML model or parameter changes should run the broader model-relevant test gate;
+- completion reports should name the verifier that actually ran, and skipped preferred verifiers are weaker evidence rather than pass signals.
+
+Snapshot management:
+- candidate snapshots watch the RFE input pool;
+- selected snapshots watch the RFE output;
+- both are required;
+- update snapshots only for intentional feature contract changes, not automatically after every training run.
+
 ## Physical Sanity Checks
 
 `physical_constraints_for_ml.md` provides sanity-check guidance for HVAC tendencies, monotonicity caveats, and review flags. Treat it as a review aid, not as a strict deletion rule and not as calculator authority.
