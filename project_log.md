@@ -723,3 +723,17 @@
 ### Lesson
 - workbook oracle 재현과 ISO common path 구현을 섞지 않는다.
 - extended point는 common core에서 근거 없이 합성하지 않는다.
+
+## 2026-05-16 — Agent result report lifecycle workflow 정착
+
+### Result
+- Result Report Workflow를 committed artifact 방식으로 정착시켰다.
+- report numbering은 `active` / `summaries` / `archive` 전체에서 global sequential로 유지한다.
+- summary는 strict phase가 아니라 workstream/arc 기준으로 묶고, summary 생성 시 `project_log.md` 갱신 필요 여부를 판단한다.
+- routine lifecycle check는 metadata-only로 제한하고, 단순 docs/router/report lifecycle 작업에는 compact report를 허용한다.
+- `AGENTS_FULL.md`는 `docs/archive/AGENTS_FULL.md`로 이동되어 active rule source에서 제외되었다.
+- `AGENT_TASK_ROUTER.md`가 active routing/report workflow owner가 되었다.
+
+### Decision
+- report 본문은 `project_log.md`에 복사하지 않고, 확정된 decision / failure / lesson / process rule 변화만 짧게 남긴다.
+- summary에 포함된 active reports는 archive 후보로 보고한 뒤 lifecycle maintenance에서 번호와 파일명을 유지해 이동한다.
