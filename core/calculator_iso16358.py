@@ -279,29 +279,6 @@ class ISO16358Calculator:
 
         return interpolated
 
-    def _performance_line(self, resolved_points: dict, load_type: str) -> tuple:
-        points = []
-        for point_key, data in resolved_points.items():
-            parts = point_key.split("_")
-            if len(parts) != 2 or parts[1] != load_type:
-                continue
-            points.append((float(parts[0]), data["capacity"], data["power"]))
-
-        points.sort(key=lambda x: x[0])
-        if len(points) < 2:
-            return None
-
-        t1, c1, p1 = points[0]
-        t2, c2, p2 = points[-1]
-        if t2 == t1:
-            return None
-
-        capacity_slope = (c2 - c1) / (t2 - t1)
-        capacity_intercept = c1 - capacity_slope * t1
-        power_slope = (p2 - p1) / (t2 - t1)
-        power_intercept = p1 - power_slope * t1
-        return capacity_slope, capacity_intercept, power_slope, power_intercept
-
     def _ks_intersection_power(
         self,
         tj: float,
@@ -310,33 +287,15 @@ class ISO16358Calculator:
         lower_type: str,
         upper_type: str
     ) -> float:
-        lower_line = self._performance_line(resolved_points, lower_type)
-        upper_line = self._performance_line(resolved_points, upper_type)
-        if lower_line is None or upper_line is None:
-            return None
-
-        load_slope = L_c_ref / (self.t_100_load - self.t_0_load)
-        load_intercept = -load_slope * self.t_0_load
-
-        def intersection_temperature(line):
-            capacity_slope, capacity_intercept, _, _ = line
-            denominator = load_slope - capacity_slope
-            if denominator == 0:
-                return None
-            return (capacity_intercept - load_intercept) / denominator
-
-        def power_at(line, temp):
-            _, _, power_slope, power_intercept = line
-            return power_slope * temp + power_intercept
-
-        t_lower = intersection_temperature(lower_line)
-        t_upper = intersection_temperature(upper_line)
-        if t_lower is None or t_upper is None or t_upper == t_lower:
-            return None
-
-        p_lower = power_at(lower_line, t_lower)
-        p_upper = power_at(upper_line, t_upper)
-        return p_upper - ((p_upper - p_lower) / (t_upper - t_lower)) * (t_upper - tj)
+        return self._ks_calculator()._ks_cspf_intersection_power(
+            tj,
+            L_c_ref,
+            resolved_points,
+            lower_type,
+            upper_type,
+            self.t_100_load,
+            self.t_0_load,
+        )
 
     def _iso_boundary_temperature(
         self,
