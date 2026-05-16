@@ -23,6 +23,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
 - `result_reports/summaries/` — 누적 report를 묶은 요약 report
 - `result_reports/archive/` — summary 생성 후 보관되는 원본 report
+- `summaries/`와 `archive/` 폴더는 실제 summary/archive 작업이 승인된 별도 phase에서 필요할 때 생성한다.
 
 파일명:
 - `NNN_verb-target-scope.md`
@@ -34,6 +35,8 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - 기존 파일이 없으면 `001`부터 시작한다.
 - 새 CLI agent 세션, 다른 agent, iMac, Codespaces 환경 모두 현재 checkout 상태의 report 번호를 기준으로 한다.
 - 새 세션이라고 `001`부터 다시 시작하지 않는다.
+- 개별 작업 report는 항상 전역 sequential numbering을 유지한다.
+- phase-specific numbering은 사용하지 않고, phase별 report 폴더도 만들지 않는다.
 - 번호 산정을 위해 agent가 임의로 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
 - repository 최신화는 사용자가 직접 수행한다고 가정한다.
 
@@ -66,10 +69,17 @@ Commit / Push:
 - 사용자 명시 요청 없이는 report commit/push 과정에서 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
 
 운영:
-- `result_reports/active/` report가 약 10개 쌓이거나 큰 작업 묶음이 끝나면 summary report를 만든다.
-- summary 생성 후 원본 report는 `result_reports/archive/` 이동 후보로 보고한다.
-- archive 이동은 사용자 승인 후 수행한다.
-- `project_log.md`에는 report 전문을 복사하지 않고, 확정된 결정/실패/교훈만 짧게 반영한다.
+- Summary grouping / archive cycle은 원본 report의 번호 체계가 아니라 summary report로 관리한다.
+- summary는 strict phase가 아니라 workstream/arc 기준으로 묶는다.
+- workstream 예시는 `agent-rules`, `iso16358-hspf`, `docs-linktree`, `calculator-ui`, `ml-knowledge` 등이다.
+- 중간에 다른 작업이 끼어도, 나중에 관련 report들을 summary에서 함께 묶을 수 있다.
+- `result_reports/active/` report가 약 8~12개 쌓였거나 하나의 큰 작업 흐름이 끝났을 때 summary report 생성을 고려한다.
+- summary 생성 시 covered reports를 검토하고 `project_log.md` 갱신 필요 여부를 판단한다.
+- 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
+- 단순 문구 수정, 단순 report 정리, 의사결정 없는 작업 묶음이면 `project_log.md` 갱신을 생략할 수 있다.
+- `project_log.md`에는 report 전문을 복사하지 않는다.
+- summary에 포함된 원본 active reports는 `result_reports/archive/` 이동 후보로 보고한다.
+- archive 이동은 사용자 승인 후 별도 작업으로 수행하며, 이동 시 report 번호나 파일명은 바꾸지 않는다.
 
 주의:
 - report 작성 때문에 code/test/docs 범위를 임의 확장하지 않는다.
