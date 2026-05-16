@@ -20,6 +20,8 @@ class KSC9306Calculator:
         self.config = config
         self.bin_hours = bin_hours if bin_hours is not None else config.get("bin_hours", [])
         self.Cd = default_cd
+        self._config_path = None
+        self._iso_calculator_ref = None
 
     @classmethod
     def from_config_path(cls, config_path: str) -> "KSC9306Calculator":
@@ -28,11 +30,13 @@ class KSC9306Calculator:
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
         config.pop("_comment", None)
-        return cls(
+        instance = cls(
             config,
             bin_hours=config.get("bin_hours", []),
             default_cd=config.get("Cd", 0.25),
         )
+        instance._config_path = config_path
+        return instance
 
     @classmethod
     def from_iso_calculator(cls, iso_calculator) -> "KSC9306Calculator":
@@ -40,7 +44,41 @@ class KSC9306Calculator:
         instance.config = iso_calculator.config
         instance.bin_hours = iso_calculator.bin_hours
         instance.Cd = iso_calculator.Cd
+        instance._config_path = None
+        instance._iso_calculator_ref = iso_calculator
         return instance
+
+    # ------------------------------------------------------------------
+    # Public KS C 9306 CSPF entry
+    #
+    # KS CSPF는 ISO common CSPF engine과 동일한 코드 경로를 따르며 KS
+    # 고유 동작은 config flag로 표현된다 (예: ``round_test_values``,
+    # ``rounding_method``, ``power_interpolation_method=ks_intersection``).
+    # 이번 단계에서는 KS CSPF 전용 reimplementation 대신 ISO16358Calculator의
+    # 기존 CSPF engine으로 위임하는 thin public entry만 제공한다. 미래
+    # profile resolver 작업이 ``KSC9306Calculator``를 직접 호출할 수 있도록
+    # 진입점만 준비하는 목적이다.
+    # ------------------------------------------------------------------
+
+    def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
+        if self._iso_calculator_ref is not None:
+            return self._iso_calculator_ref.calculate_cspf(
+                measured_inputs, declared_capacity=declared_capacity
+            )
+
+        # Lazy import to avoid circular dependency with ``core.calculator_iso16358``.
+        from core.calculator_iso16358 import ISO16358Calculator
+
+        if self._config_path is not None:
+            iso_view = ISO16358Calculator(self._config_path)
+        else:
+            raise ValueError(
+                "KSC9306Calculator.calculate_cspf requires either an attached ISO "
+                "calculator (from_iso_calculator) or a config path (from_config_path)."
+            )
+        return iso_view.calculate_cspf(
+            measured_inputs, declared_capacity=declared_capacity
+        )
 
     # ------------------------------------------------------------------
     # KS C 9306 CSPF helpers
