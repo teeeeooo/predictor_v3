@@ -34,8 +34,8 @@ Read ` AGENTS_md_slimming_plan.md` and update `AGENTS.md` plus necessary documen
 ## Commit / Push
 
 - Source/docs commit: `f2ec714`.
-- Report commit: pending at report creation; this report is intended to be committed separately with `report: record agent routing slimming`.
-- Push: pending at report creation.
+- Report creation commit: `5f6490b`.
+- Push: confirmed. `git push` reported `eae6ca1..5f6490b  main -> main`.
 
 ## Lifecycle Check
 
