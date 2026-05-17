@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
                              QMessageBox, QScrollArea, QFrame, QTabWidget,
                              QRadioButton, QButtonGroup, QPushButton,
-                             QTableView, QHeaderView, QAbstractItemView)
+                             QHeaderView, QAbstractItemView)
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
@@ -19,6 +19,7 @@ from ui.spreadsheet_table import (
     coerce_numeric,
     make_ahri_hspf2_table_model,
     make_ahri_seer2_table_model,
+    SpreadsheetTableView,
 )
 
 
@@ -232,7 +233,7 @@ class CalculatorWindow(QWidget):
         )
         seer2_layout = QVBoxLayout()
         self.ahri_seer2_model = make_ahri_seer2_table_model(self)
-        self.ahri_seer2_view = QTableView()
+        self.ahri_seer2_view = SpreadsheetTableView()
         self.ahri_seer2_view.setModel(self.ahri_seer2_model)
         self.ahri_seer2_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.ahri_seer2_view.setEditTriggers(
@@ -275,7 +276,7 @@ class CalculatorWindow(QWidget):
         hspf2_layout = QVBoxLayout()
 
         self.ahri_hspf2_model = make_ahri_hspf2_table_model(self)
-        self.ahri_hspf2_view = QTableView()
+        self.ahri_hspf2_view = SpreadsheetTableView()
         self.ahri_hspf2_view.setModel(self.ahri_hspf2_model)
         self.ahri_hspf2_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.ahri_hspf2_view.setEditTriggers(

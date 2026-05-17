@@ -1,10 +1,10 @@
 """Reusable spreadsheet-like table model and helpers for PyQt5 UIs.
 
 This module is the first concrete slice of the global contract in
-``docs/ui/SPREADSHEET_TABLE_CONTRACT.md``. It is intentionally
-view-agnostic: it provides a ``QAbstractTableModel`` subclass and
-pure-Python helpers (TSV parse/format, point-dict conversion) that any
-``QTableView`` in this project can attach to without further work.
+``docs/ui/SPREADSHEET_TABLE_CONTRACT.md``. It provides a
+``QAbstractTableModel`` subclass, a thin ``QTableView`` controller, and
+pure-Python helpers (TSV parse/format, point-dict conversion) that
+table-shaped UI surfaces in this project can reuse.
 
 Scope of this first slice:
 
@@ -28,22 +28,24 @@ Out of scope (deferred to follow-up slices):
 - Read-only / auto-column flagging and background color rendering.
 - ``QStyledItemDelegate`` editor lifecycle and 1-click dropdown
   wiring.
-- View-side selection model, keybindings, Tab / Enter navigation,
-  paste path isolation in the controller.
-- AHRI / EN14825 / ISO16358 UI integration.
+- Tab / Enter navigation and redo.
+- AHRI SEER2 / HSPF2 UI integration is covered by this slice;
+  EN14825 / ISO16358 UI integration remains out of scope.
 
 PyQt5 import guard: the pure-Python helpers (``parse_tsv``,
 ``format_tsv``, ``points_from_grid``, ``coerce_numeric``) work without
-PyQt5. The ``SpreadsheetTableModel`` class requires PyQt5; when PyQt5
-is missing the class is exposed as ``None`` so this module still
-imports cleanly in non-GUI environments and tests can skip via
-``pytest.importorskip``.
+PyQt5. The ``SpreadsheetTableModel`` and ``SpreadsheetTableView``
+classes require PyQt5; when PyQt5 is missing those classes are exposed
+as ``None`` so this module still imports cleanly in non-GUI
+environments and tests can skip via ``pytest.importorskip``.
 """
 
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 try:
     from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+    from PyQt5.QtGui import QKeySequence
+    from PyQt5.QtWidgets import QApplication, QTableView
     _PYQT_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised only on PyQt5-less envs
     _PYQT_AVAILABLE = False
@@ -172,6 +174,80 @@ def points_from_grid(
 
 
 if _PYQT_AVAILABLE:
+
+    class SpreadsheetTableView(QTableView):
+        """QTableView controller for SpreadsheetTableModel operations.
+
+        Clipboard-facing key handlers stay thin wrappers around
+        testable methods that accept/return TSV strings. Selection
+        state remains owned by QTableView / QItemSelectionModel.
+        """
+
+        def copy_selection_tsv(self) -> str:
+            model = self.model()
+            if model is None or not hasattr(model, "selected_to_tsv"):
+                return ""
+            cells = self._selected_cells()
+            return model.selected_to_tsv(cells)
+
+        def paste_tsv_at_selection(self, tsv: str) -> int:
+            model = self.model()
+            if model is None or not hasattr(model, "paste_tsv"):
+                return 0
+            anchor = self._selection_anchor()
+            if anchor is None:
+                return 0
+            row, col = anchor
+            return model.paste_tsv(row, col, tsv)
+
+        def clear_selection(self) -> int:
+            model = self.model()
+            if model is None or not hasattr(model, "clear_cells"):
+                return 0
+            cells = self._selected_cells()
+            if not cells:
+                return 0
+            return model.clear_cells(cells)
+
+        def undo_last(self) -> bool:
+            model = self.model()
+            if model is None or not hasattr(model, "undo"):
+                return False
+            return bool(model.undo())
+
+        def keyPressEvent(self, event):
+            if event.matches(QKeySequence.Copy):
+                QApplication.clipboard().setText(self.copy_selection_tsv())
+                event.accept()
+                return
+            if event.matches(QKeySequence.Paste):
+                self.paste_tsv_at_selection(QApplication.clipboard().text())
+                event.accept()
+                return
+            if event.matches(QKeySequence.Undo):
+                self.undo_last()
+                event.accept()
+                return
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.clear_selection()
+                event.accept()
+                return
+            super().keyPressEvent(event)
+
+        def _selected_cells(self) -> List[Tuple[int, int]]:
+            indexes = self.selectionModel().selectedIndexes() if self.selectionModel() else []
+            return sorted({(idx.row(), idx.column()) for idx in indexes})
+
+        def _selection_anchor(self) -> Optional[Tuple[int, int]]:
+            cells = self._selected_cells()
+            if cells:
+                rows = [row for row, _ in cells]
+                cols = [col for _, col in cells]
+                return min(rows), min(cols)
+            current = self.currentIndex()
+            if current.isValid():
+                return current.row(), current.column()
+            return None
 
     class SpreadsheetTableModel(QAbstractTableModel):
         """Editable ``QAbstractTableModel`` for spreadsheet-like input.
@@ -393,6 +469,7 @@ if _PYQT_AVAILABLE:
 
 else:
     SpreadsheetTableModel = None  # type: ignore[assignment]
+    SpreadsheetTableView = None  # type: ignore[assignment]
 
 
 # ---------------------------------------------------------------------------

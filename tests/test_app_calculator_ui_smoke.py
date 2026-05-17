@@ -9,6 +9,7 @@ pytest.importorskip("PyQt5")
 from PyQt5.QtWidgets import QApplication
 
 from ui.calc_window import CalculatorWindow
+from ui.spreadsheet_table import SpreadsheetTableView
 
 
 def _qapp():
@@ -156,6 +157,7 @@ def test_ahri_seer2_input_uses_horizontal_table_layout():
         assert app is QApplication.instance()
         assert window.ahri_seer2_model is not None
         assert window.ahri_seer2_view is not None
+        assert isinstance(window.ahri_seer2_view, SpreadsheetTableView)
         assert window.ahri_seer2_model.column_labels == [
             "A_Full",
             "B_Full",
@@ -303,6 +305,7 @@ def test_ahri_hspf2_input_uses_horizontal_table_layout():
         assert app is QApplication.instance()
         assert window.ahri_hspf2_model is not None
         assert window.ahri_hspf2_view is not None
+        assert isinstance(window.ahri_hspf2_view, SpreadsheetTableView)
         assert window.ahri_hspf2_model.column_labels == [
             "H01",
             "H11",
