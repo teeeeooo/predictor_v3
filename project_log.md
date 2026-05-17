@@ -878,3 +878,14 @@
 #### Decision
 - KS calculator는 더 이상 ISO calculator object reference를 보유하지 않는다.
 - Legacy ISO wrapper는 기존 호출 경로 보존용으로만 KS calculator를 즉시 생성한다.
+
+### Follow-up — ISO separation Step 3a new ISO CSPF implementation
+
+#### Result
+- 새 `core/calculator_iso16358.py`에 ISO 16358-1 CSPF 전용 구현을 추가했다.
+- ISO T1 default, Hong Kong, India ISEER, SASO T3, ASEAN/control CSPF tests를 legacy import에서 새 ISO calculator import로 되돌렸다.
+- 새 ISO 파일에서 KS/ASNZS/workbook/`ks_intersection`/test-value rounding 흔적이 없음을 grep으로 확인했다.
+
+#### Decision
+- Step 3a는 CSPF만 구현한다. `calculate_hspf()`는 Step 3b 전까지 `NotImplementedError`를 유지한다.
+- HSPF tests와 ASNZS negative assertion tests는 아직 legacy target을 유지한다.
