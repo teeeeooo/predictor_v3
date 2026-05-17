@@ -955,3 +955,21 @@
 #### Decision
 - Active 문서 생성/archive 이동 또는 owner/inbound/outbound 변화가 있으면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
 - Report lifecycle은 active 원본을 계속 쌓지 않고 summary와 archive로 닫는다. 이번 cycle 이후 active에는 현재 진행 작업 report만 남기는 구조를 기준으로 한다.
+
+### Follow-up — Audit result next actions
+
+#### Result
+- `audit_result.md`의 “지금 당장 할 수 있는 다음 작업” 4개를 완료했다.
+- ISO separation 후속 상태를 문서/주석에 맞췄다: `core/calculator_iso16358.py` 상단 docstring에서 HSPF 미구현 문구를 제거하고, `iso_separation_result.md`는 archive/summary 이동 상태를 반영했다.
+- Legacy HSPF workbook diagnostic test를 `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py`로 이동하고 active import/docs reference를 정리했다.
+- `ui_resolver_audit_result.md`를 작성해 `app_calculator.py` / `ui/calc_window.py`의 resolver-backed 전환 범위를 정리했다.
+- `ui/calc_window.py`의 AHRI SEER2 생성 경로를 direct `AHRICalculator(path)`에서 `create_calculator_for_profile(profile_id="ahri_usa_seer2")`로 전환했다.
+
+#### Verification
+- Legacy HSPF diagnostic move targeted check: `60 passed, 17 xfailed`.
+- UI resolver targeted checks: `30 passed`.
+- Full suite: `288 passed, 23 xfailed`.
+
+#### Decision
+- EN14825 UI tab은 EN profiles가 등록될 때까지 direct/stub 상태로 유지한다.
+- ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary 설계를 먼저 수행한다.

@@ -98,6 +98,7 @@
 | `iso_separation_result.md` | ISO separation result record | ISO separation plan, completion docs | reports, plan |
 | `iso_remaining_work_completion.md` | ISO remaining work completion result | ISO remaining work completion | `iso_separation_result.md` |
 | `ui_resolver_audit_result.md` | UI resolver audit result | app calculator / UI resolver tasks | `ui/calc_window.py`, `core/calculator_dispatcher.py`, `core/calculator_profiles.py` |
+| `audit_result_next_actions_completion.md` | Audit-result next actions completion report | `audit_result.md` follow-up tasks | result report 056, `project_log.md` |
 
 ## Watchlist
 
