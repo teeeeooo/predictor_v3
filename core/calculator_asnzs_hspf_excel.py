@@ -20,6 +20,12 @@ class ASNZSExcelHSPFCompatibilityCalculator:
         if measured_inputs.get("reference_type") != REFERENCE_TYPE:
             raise ValueError(f"reference_type must be {REFERENCE_TYPE}.")
             
+        if "workbook_rows" in measured_inputs:
+            return self._calculate_from_workbook_rows(
+                measured_inputs,
+                matched_reference=(options or {}).get("matched_reference"),
+            )
+
         required_fields = ["component_details", "hstl_wh", "hspf"]
         for field in required_fields:
             if field not in measured_inputs:
@@ -33,6 +39,42 @@ class ASNZSExcelHSPFCompatibilityCalculator:
             component_details=measured_inputs["component_details"],
             hspf=measured_inputs["hspf"],
             matched_reference=matched_reference
+        )
+
+    def _calculate_from_workbook_rows(
+        self,
+        measured_inputs: dict,
+        *,
+        matched_reference: dict = None,
+    ) -> dict:
+        rows = measured_inputs["workbook_rows"]
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("workbook_rows must be a non-empty list.")
+
+        component_details = []
+        hstl_wh = 0.0
+        for row in rows:
+            detail = self._build_selected_power_detail_from_workbook_row(row)
+            component_details.append(detail)
+            hstl_wh += detail["load_w"] * detail["hours"]
+
+        hsec_wh = self._sum_component_energies(component_details)
+        expected = measured_inputs.get("expected", {})
+        hspf = expected.get("hspf")
+        if hspf is None:
+            if hsec_wh <= 0:
+                raise ValueError("hsec_wh must be positive.")
+            hspf = round(hstl_wh / hsec_wh, 3)
+
+        return self._build_compatibility_result_envelope(
+            hstl_wh=expected.get("hstl_wh", hstl_wh),
+            hsec_wh=expected.get("hsec_wh", hsec_wh),
+            hspf=float(hspf),
+            workbook_diagnostics={
+                "component_details": component_details,
+                "output_anchors": get_workbook_output_anchor_map(),
+            },
+            matched_reference=matched_reference,
         )
 
     def _cop_from_capacity_power(self, capacity_w: float, power_w: float) -> float:
@@ -208,6 +250,49 @@ class ASNZSExcelHSPFCompatibilityCalculator:
         detail = self._build_component_energy_detail(component_anchor, load_w, helper_cop, hours, anchor=component_anchor)
         detail["helper_anchor"] = helper_anchor
         return detail
+
+    def _build_selected_power_detail_from_workbook_row(self, row: dict) -> dict:
+        required_keys = ["row_number", "hours", "load_w", "selected_power_w"]
+        for key in required_keys:
+            if key not in row:
+                raise KeyError(f"Missing workbook row key: {key}")
+
+        try:
+            row_number = int(row["row_number"])
+            hours = float(row["hours"])
+            load_w = float(row["load_w"])
+            power_w = float(row["selected_power_w"])
+        except (ValueError, TypeError):
+            raise ValueError("Invalid numeric value in workbook row.") from None
+
+        if hours < 0:
+            raise ValueError("Hours cannot be negative.")
+        if load_w < 0:
+            raise ValueError("Load cannot be negative.")
+        if power_w < 0:
+            raise ValueError("Power cannot be negative.")
+
+        row_energy = row.get("row_energy_wh")
+        if row_energy is None:
+            energy_wh = self._component_energy_from_power(power_w, hours)
+        else:
+            try:
+                energy_wh = float(row_energy)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid numeric value in workbook row.") from None
+            if energy_wh < 0:
+                raise ValueError("Energy cannot be negative.")
+
+        return {
+            "name": f"workbook_row_{row_number}",
+            "anchor": "CG/CH",
+            "row_number": row_number,
+            "temperature_c": row.get("temperature_c"),
+            "load_w": load_w,
+            "power_w": power_w,
+            "hours": hours,
+            "energy_wh": energy_wh,
+        }
 
 # Workbook helper column anchor map
 WORKBOOK_HELPER_COLUMNS = {

@@ -13,7 +13,7 @@
 - KS C 9306 / AS/NZS workbook oracle 책임은 각각 별도 calculator 파일로 분리
 - legacy behavior 보존 테스트는 새 calculator contract 기준으로 삭제 / 이전 / 격리
 - production ISO common path와 AS/NZS Excel compatibility path 분리 유지
-- AS/NZS Excel exact matching은 Z-phase
+- AS/NZS historical case3 full-dump exact matching은 Z-phase. 현재 repo의 `reference_files/iso16358_test_sheet.xlsx` snapshot exact-match는 AS/NZS compatibility calculator/fixture에서만 관리
 
 ## Near-term execution order
 1. 기존 `core/calculator_iso16358.py`를 legacy/reference 파일(예: `core/legacy/calculator_iso16358_legacy.py` 또는 `core/_legacy/` 위치)로 rename/archive 준비 (이름/위치/import 영향 audit이 선행)
@@ -23,7 +23,7 @@
 5. legacy tests 정리: (a) 삭제 (b) 새 calculator 기준 이전 (c) legacy/archive 격리 — 분류 기준은 `docs/REFACTOR_PLAN.md`에서 관리
 6. profile resolver / dispatcher / Calculator UI 연결은 calculator series가 안정된 뒤 재개
 7. ML / inverse-search 복귀는 calculator series 안정 + UI 재연결 이후
-Z. `core/calculator_asnzs_hspf_excel.py` AS/NZS workbook oracle compatibility calculator 작성 (별도 phase)
+Z. historical case3 workbook full-dump 확보 후 AS/NZS workbook oracle compatibility 확장 (별도 phase)
 
 `work/iso-hspf-refactor-ui-followup` 브랜치는 merge하지 않고 reference/spike로만 둔다.
 
@@ -37,7 +37,7 @@ Z. `core/calculator_asnzs_hspf_excel.py` AS/NZS workbook oracle compatibility ca
 - ML / inverse-search 재개
 
 ## Z-phase / deferred work
-- AS/NZS Excel exact matching
+- AS/NZS historical case3 full-dump exact matching
 - Excel helper column exact compatibility
 - Windows Excel COM row-level extraction
 - original workbook full_dump / chat_packet 기반 compatibility 작업

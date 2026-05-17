@@ -153,6 +153,7 @@ Track B — AS/NZS Excel HSPF compatibility path:
 - Keep a separate calculator/profile/test namespace.
 - Isolate from Track A through resolver opt-in guards.
 - Keep `1126.120 kWh`, `4.33824`, and `1126120.47 Wh` only under the `ASNZS_EXCEL_COMPAT` reference namespace.
+- Current local workbook snapshot exact-match (`reference_files/iso16358_test_sheet.xlsx`) is allowed only under the same `ASNZS_EXCEL_COMPAT` namespace and must not update ISO common expected values. Historical case3 parity still requires the matching full dump/workbook version.
 
 ## Design Contract Candidate
 
@@ -190,8 +191,7 @@ Golden/reference namespace:
 
 ## Required Tests
 
-- No tests are changed in this documentation phase.
-- Future implementation should add explicit AS/NZS Excel compatibility golden tests separate from ISO common golden tests.
+- Explicit AS/NZS Excel compatibility golden tests must remain separate from ISO common golden tests.
 - Future guard tests should prove that ISO common expected values do not silently adopt AS/NZS Excel compatibility baselines.
 - Future resolver tests should verify that `asnzs_excel_hspf_compat` is selected only by explicit profile/calculator id.
 - Future guard tests should verify that `region=au_nz` / `standard=ASNZS` alone does not activate compatibility mode.
@@ -203,11 +203,12 @@ Golden/reference namespace:
 2. Add an explicit AS/NZS Excel compatibility profile only after the compatibility module contract is approved.
 3. Implement Excel exact matching in a separate compatibility calculator/profile, not in `calculator_iso16358.py`.
 4. Promote Windows Excel COM baselines only as `REFERENCE_TYPE=ASNZS_EXCEL_COMPAT`, not as ISO common golden expected.
+5. Treat current local workbook snapshot exact-match as a separate fixture from historical case3 packet/full-dump parity.
 
 ## Non-goals
 
-- No code implementation.
-- No test, fixture, expected, or xfail change.
+- No ISO common code implementation.
+- No ISO common test, fixture, expected, or xfail change.
 - No production region config change.
 - No workbook helper cell replication in common ISO code.
 - No claim that the AS/NZS Excel baseline is invalid; only its reference type is reclassified.

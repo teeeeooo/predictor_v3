@@ -900,3 +900,16 @@
 #### Decision
 - `tests/test_iso16358_hspf_golden.py`와 `tests/_legacy/test_iso16358_hspf_h8_trace.py`는 converted-workbook/case3 trace 진단 의도가 섞여 있어 legacy target을 유지한다.
 - 기존 ISO HSPF baseline `16 failed, 269 passed, 13 xfailed`는 기대값/tolerance/xfail 조정 없이 유지한다.
+
+### Follow-up — ISO separation Step 4 AS/NZS compatibility snapshot
+
+#### Result
+- AS/NZS Excel compatibility negative assertion tests가 새 `core.calculator_iso16358` 모듈을 검사하도록 전환했다.
+- `reference_files/iso16358_test_sheet.xlsx` current workbook snapshot에서 `Inverter AC` row 21-47과 output anchors (`BB48`, `CH48`, `H12`, `H13`)를 추출해 `tests/fixtures/asnzs_excel_hspf_compat/workbook_inverter_ac_current.json` fixture를 추가했다.
+- `core/calculator_asnzs_hspf_excel.py`에 `ASNZS_EXCEL_COMPAT` workbook row snapshot input path를 추가하고, current workbook exact-match test를 추가했다.
+- `PROJECT_BRIEF.md`, `project_brief.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md`, `docs/architecture/project_architecture.md`, `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md`, `iso_seperation_plan.md`를 current snapshot / historical case3 full-dump 구분에 맞춰 갱신했다.
+
+#### Decision
+- Current workbook snapshot exact-match는 AS/NZS compatibility path에서만 다룬다.
+- Historical case3 packet/full-dump parity는 workbook version mismatch 때문에 계속 Z-phase로 유지한다.
+- ISO common expected/golden/tolerance/xfail은 변경하지 않는다.

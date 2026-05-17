@@ -144,6 +144,8 @@ CSPF → HSPF 순서. KS / AS/NZS / workbook helper / legacy diagnostic 흔적 �
 
 **중요 audit 결과 (plan 작성 중 발견):** `core/calculator_asnzs_hspf_excel.py`는 **이미 존재** (267 lines, 15 methods, complete skeleton). 14개 `test_asnzs_hspf_excel_compat_*.py`도 이미 작성되어 현재 `8 passed, 1 xfailed` 상태로 동작 중. ISO legacy 모듈에는 ASNZS 로직이 0건이고, 9개 ASNZS test의 `ISO16358Calculator` import는 모두 **negative assertion**(ISO common에 helper가 들어가지 않았음을 guard)이다. 따라서 Step 4의 실제 작업은 원래 plan보다 훨씬 작다.
 
+**진행 메모 (Step 4 실행 후):** ASNZS negative assertion tests는 새 `core.calculator_iso16358` target으로 전환했다. `reference_files/iso16358_test_sheet.xlsx` current workbook snapshot은 `tests/fixtures/asnzs_excel_hspf_compat/workbook_inverter_ac_current.json`로 분리했고, exact-match는 `core/calculator_asnzs_hspf_excel.py`의 `ASNZS_EXCEL_COMPAT` path에서만 검증한다. Historical case3 packet/full-dump parity는 여전히 Z-phase다.
+
 ### 4a. ASNZS negative-assertion test의 import target 재확인 (1 cycle)
 - 수정 대상:
   - `tests/test_asnzs_hspf_excel_compat_*.py` 중 `from core.calculator_iso16358 import ISO16358Calculator as iso` 패턴 사용 파일들.
@@ -265,7 +267,7 @@ CSPF → HSPF 순서. KS / AS/NZS / workbook helper / legacy diagnostic 흔적 �
 - `core/calculator_ks_c9306.py` (Step 1a, 1b, 2c)
 - `core/calculator_iso16358.py` (Step 2b — rename + 새 skeleton, Step 3a/3b — 본 구현, Step 5a 사용처)
 - `core/calculator_iso16358_legacy.py` (Step 2b 생성)
-- `core/calculator_asnzs_hspf_excel.py` (이미 존재 — 267 lines, 15 methods. Step 4a는 negative-assertion import target 재확인 위주, 실제 calculator는 무수정)
+- `core/calculator_asnzs_hspf_excel.py` (이미 존재하던 compatibility calculator. Step 4a에서 negative-assertion import target을 새 ISO로 재확인했고, Step 4b에서 current workbook snapshot exact-match path를 추가)
 - `core/calculator_dispatcher.py` (Step 5a)
 - `core/calculator_profiles.py` (Step 5a)
 - `ui/calculators_2point.py:12, 1053, 1310` (Step 2b, Step 5b)
