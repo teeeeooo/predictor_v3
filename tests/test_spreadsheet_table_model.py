@@ -9,8 +9,14 @@ pytest.importorskip("PyQt5")
 from PyQt5.QtCore import Qt  # noqa: E402
 
 from ui.spreadsheet_table import (  # noqa: E402
+    AHRI_HSPF2_COLUMNS,
+    AHRI_HSPF2_ROW_LABELS,
+    AHRI_SEER2_COLUMNS,
+    AHRI_SEER2_ROW_LABELS,
     SpreadsheetTableModel,
     format_tsv,
+    make_ahri_hspf2_table_model,
+    make_ahri_seer2_table_model,
     parse_tsv,
     points_from_grid,
 )
@@ -293,5 +299,73 @@ def test_as_point_dict_rejects_empty_power():
     )
     model.set_cell(0, 0, "36000")
     # Row 1 stays empty.
+    with pytest.raises(ValueError, match="non-numeric capacity or power"):
+        model.as_point_dict()
+
+
+# ---------- AHRI SEER2 factory ----------
+
+
+def test_ahri_seer2_factory_uses_locked_column_and_row_labels():
+    model = make_ahri_seer2_table_model()
+
+    assert model.column_labels == list(AHRI_SEER2_COLUMNS)
+    assert model.row_labels == list(AHRI_SEER2_ROW_LABELS)
+    assert model.rowCount() == 2
+    assert model.columnCount() == 5
+
+
+# ---------- AHRI HSPF2 factory ----------
+
+
+def test_ahri_hspf2_columns_and_rows_match_design_doc():
+    assert AHRI_HSPF2_COLUMNS == (
+        "H01",
+        "H11",
+        "H12",
+        "H1N",
+        "H22",
+        "H2Int",
+        "H32",
+    )
+    assert AHRI_HSPF2_ROW_LABELS == ("능력 [Btu/h]", "전력 [W]")
+
+
+def test_ahri_hspf2_factory_uses_locked_column_and_row_labels():
+    model = make_ahri_hspf2_table_model()
+
+    assert model.column_labels == list(AHRI_HSPF2_COLUMNS)
+    assert model.row_labels == list(AHRI_HSPF2_ROW_LABELS)
+    assert model.rowCount() == 2
+    assert model.columnCount() == 7
+
+
+def test_ahri_hspf2_as_point_dict_returns_calculator_test_point_shape():
+    model = make_ahri_hspf2_table_model()
+    sample = {
+        "H01": (12500, 980),
+        "H11": (12000, 1000),
+        "H12": (24000, 2200),
+        "H1N": (22000, 2000),
+        "H22": (23200, 2160),
+        "H2Int": (13000, 1200),
+        "H32": (22000, 2100),
+    }
+    for col_idx, point_id in enumerate(AHRI_HSPF2_COLUMNS):
+        capacity, power = sample[point_id]
+        model.set_cell(0, col_idx, str(capacity))
+        model.set_cell(1, col_idx, str(power))
+
+    points = model.as_point_dict(capacity_row=0, power_row=1)
+
+    assert points == {point_id: (float(c), float(p)) for point_id, (c, p) in sample.items()}
+
+
+def test_ahri_hspf2_as_point_dict_rejects_missing_value():
+    model = make_ahri_hspf2_table_model()
+    # Fill every column except H22 capacity.
+    model.set_cell(0, 0, "12500")
+    model.set_cell(1, 0, "980")
+    # Leave H22 capacity empty; point_id index 4 → column 4.
     with pytest.raises(ValueError, match="non-numeric capacity or power"):
         model.as_point_dict()

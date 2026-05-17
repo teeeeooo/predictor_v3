@@ -433,3 +433,48 @@ def make_ahri_seer2_table_model(parent=None):
         column_labels=list(AHRI_SEER2_COLUMNS),
         parent=parent,
     )
+
+
+AHRI_HSPF2_COLUMNS: Tuple[str, ...] = (
+    "H01",
+    "H11",
+    "H12",
+    "H1N",
+    "H22",
+    "H2Int",
+    "H32",
+)
+AHRI_HSPF2_ROW_LABELS: Tuple[str, ...] = ("능력 [Btu/h]", "전력 [W]")
+
+
+def make_ahri_hspf2_table_model(parent=None):
+    """Build a :class:`SpreadsheetTableModel` shaped for AHRI HSPF2 v3 input.
+
+    Columns: ``H01, H11, H12, H1N, H22, H2Int, H32``. Rows:
+    ``능력 [Btu/h]`` (capacity row, index 0) and ``전력 [W]`` (power
+    row, index 1).
+
+    Auxiliary HSPF2 inputs (``t_off``, ``t_on``,
+    ``defrost_t_test_minutes``, ``defrost_t_max_minutes``) are not
+    per-point and stay in a separate compact form; this table covers
+    only the seven heating test points.
+
+    Use ``model.as_point_dict(capacity_row=0, power_row=1)`` to obtain
+    ``{"H01": (capacity, power), ...}`` — the per-point portion of
+    ``HSPF2Calculator.calculate_hspf2_v3``'s ``test_points`` dict
+    (``A2`` is sourced separately from the AHRI SEER2 table's
+    ``A_Full`` column).
+
+    Raises:
+        ImportError: when PyQt5 is not installed.
+    """
+    if SpreadsheetTableModel is None:  # pragma: no cover - PyQt5-less env
+        raise ImportError(
+            "make_ahri_hspf2_table_model requires PyQt5; "
+            "SpreadsheetTableModel is unavailable in this environment."
+        )
+    return SpreadsheetTableModel(
+        row_labels=list(AHRI_HSPF2_ROW_LABELS),
+        column_labels=list(AHRI_HSPF2_COLUMNS),
+        parent=parent,
+    )

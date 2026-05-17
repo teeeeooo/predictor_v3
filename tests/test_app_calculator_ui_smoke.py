@@ -130,6 +130,20 @@ def _fill_ahri_seer2_table(window, points):
         window.ahri_seer2_model.set_cell(1, col, str(power))
 
 
+def _fill_ahri_hspf2_table(window, points):
+    """Helper: write ``{point: (capacity, power)}`` into the HSPF2 table model.
+
+    HSPF2 v3 heating test points (H01..H32) live in their own
+    horizontal table; auxiliary fields (t_off / t_on / defrost
+    minutes) stay in the compact form and are not handled here.
+    """
+    columns = window.ahri_hspf2_model.column_labels
+    for point, (capacity, power) in points.items():
+        col = columns.index(point)
+        window.ahri_hspf2_model.set_cell(0, col, str(capacity))
+        window.ahri_hspf2_model.set_cell(1, col, str(power))
+
+
 def test_ahri_seer2_input_uses_horizontal_table_layout():
     """AHRI SEER2 입력은 horizontal QTableView + model로 노출되고,
     기존 5-point per-cell QLineEdit key는 더 이상 ``input_widgets_ahri``에
@@ -220,18 +234,18 @@ def test_ahri_hp_calculate_button_displays_seer2_and_hspf2_results():
             },
         )
 
-        hspf2_points = {
-            "H01": (12500, 980),
-            "H11": (12000, 1000),
-            "H12": (24000, 2200),
-            "H1N": (22000, 2000),
-            "H22": (23200, 2160),
-            "H2Int": (13000, 1200),
-            "H32": (22000, 2100),
-        }
-        for point, (capacity, power) in hspf2_points.items():
-            window.input_widgets_hspf2[f"{point}_cap"].setText(str(capacity))
-            window.input_widgets_hspf2[f"{point}_pow"].setText(str(power))
+        _fill_ahri_hspf2_table(
+            window,
+            {
+                "H01": (12500, 980),
+                "H11": (12000, 1000),
+                "H12": (24000, 2200),
+                "H1N": (22000, 2000),
+                "H22": (23200, 2160),
+                "H2Int": (13000, 1200),
+                "H32": (22000, 2100),
+            },
+        )
 
         window.input_widgets_hspf2["t_off"].setText("-10")
         window.input_widgets_hspf2["t_on"].setText("-5")
@@ -274,29 +288,83 @@ def test_ahri_calculate_button_displays_result_text():
         window.close()
 
 
-def test_hspf2_input_widgets_have_no_duplicate_rows():
-    """HSPF2 입력 form은 각 point별로 cap/pow widget 하나씩만 보유해야 한다.
+def test_ahri_hspf2_input_uses_horizontal_table_layout():
+    """AHRI HSPF2 v3 입력은 horizontal QTableView + model로 노출된다.
 
-    중복 addRow가 들어가면 widget dict가 덮어쓰이거나 row count가 늘어나
-    UI가 어긋난다. 18개 (= 7 points × 2 + 4 extras) 키만 등록되는지 확인한다.
+    H01..H32 per-point QLineEdit (``*_cap`` / ``*_pow``) key는
+    ``input_widgets_hspf2``에서 모두 제거되고, auxiliary 4개 key
+    (``t_off``, ``t_on``, ``defrost_t_test_minutes``,
+    ``defrost_t_max_minutes``)만 compact form으로 유지된다.
     """
     app = _qapp()
     window = CalculatorWindow()
 
     try:
         assert app is QApplication.instance()
+        assert window.ahri_hspf2_model is not None
+        assert window.ahri_hspf2_view is not None
+        assert window.ahri_hspf2_model.column_labels == [
+            "H01",
+            "H11",
+            "H12",
+            "H1N",
+            "H22",
+            "H2Int",
+            "H32",
+        ]
+        assert window.ahri_hspf2_model.row_labels == [
+            "능력 [Btu/h]",
+            "전력 [W]",
+        ]
 
         for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
-            assert f"{point}_cap" in window.input_widgets_hspf2
-            assert f"{point}_pow" in window.input_widgets_hspf2
-            cap_widget = window.input_widgets_hspf2[f"{point}_cap"]
-            pow_widget = window.input_widgets_hspf2[f"{point}_pow"]
-            assert cap_widget is not pow_widget
+            assert f"{point}_cap" not in window.input_widgets_hspf2
+            assert f"{point}_pow" not in window.input_widgets_hspf2
 
-        for extra_key in ("t_off", "t_on", "defrost_t_test_minutes", "defrost_t_max_minutes"):
+        for extra_key in (
+            "t_off",
+            "t_on",
+            "defrost_t_test_minutes",
+            "defrost_t_max_minutes",
+        ):
             assert extra_key in window.input_widgets_hspf2
 
-        assert len(window.input_widgets_hspf2) == 18
+        assert set(window.input_widgets_hspf2.keys()) == {
+            "t_off",
+            "t_on",
+            "defrost_t_test_minutes",
+            "defrost_t_max_minutes",
+        }
+    finally:
+        window.close()
+
+
+def test_ahri_hspf2_table_as_point_dict_matches_calculator_input_shape():
+    """HSPF2 table의 ``as_point_dict`` 결과가 HSPF2 v3 calculator의
+    per-point input 형태와 같다 (A2는 별도, SEER2 table에서 읽음).
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        sample = {
+            "H01": (12500, 980),
+            "H11": (12000, 1000),
+            "H12": (24000, 2200),
+            "H1N": (22000, 2000),
+            "H22": (23200, 2160),
+            "H2Int": (13000, 1200),
+            "H32": (22000, 2100),
+        }
+        _fill_ahri_hspf2_table(window, sample)
+        points = window.ahri_hspf2_model.as_point_dict(
+            capacity_row=0, power_row=1
+        )
+        assert points == {
+            point_id: (float(c), float(p))
+            for point_id, (c, p) in sample.items()
+        }
     finally:
         window.close()
 

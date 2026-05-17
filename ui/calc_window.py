@@ -17,6 +17,7 @@ from core.calculator_profiles import (
 
 from ui.spreadsheet_table import (
     coerce_numeric,
+    make_ahri_hspf2_table_model,
     make_ahri_seer2_table_model,
 )
 
@@ -66,6 +67,12 @@ class CalculatorWindow(QWidget):
         # SPREADSHEET_TABLE_CONTRACT.md를 따른다.
         self.ahri_seer2_model = None
         self.ahri_seer2_view = None
+
+        # AHRI HSPF2 v3 입력도 동일한 horizontal table 형태로 받는다.
+        # columns: H01/H11/H12/H1N/H22/H2Int/H32, rows: 능력/전력.
+        # t_off / t_on / defrost_* 같은 auxiliary 입력은 별도 compact form.
+        self.ahri_hspf2_model = None
+        self.ahri_hspf2_view = None
 
         self.init_ui()
         self.settings = QSettings("HVAC_Calculator", "RegionSettings")
@@ -259,27 +266,53 @@ class CalculatorWindow(QWidget):
         group_extra.setLayout(form_extra)
         scroll_layout.addWidget(group_extra)
 
-        # Group 3: HSPF2 v3 Heating (vertical form, table 전환은 다음 slice)
+        # Group 3: HSPF2 v3 Heating — horizontal spreadsheet-like table
+        # for the seven heating test points, plus a compact form for the
+        # auxiliary fields (t_off / t_on / defrost minutes). See
+        # docs/ui/SPREADSHEET_TABLE_CONTRACT.md and the calculator
+        # horizontal-table-input design doc.
         group_hspf2 = QGroupBox("3. HSPF2 v3 난방 테스트 포인트")
-        form_hspf2 = QFormLayout()
-        for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
-            cap_w = QLineEdit()
-            pow_w = QLineEdit()
-            self.input_widgets_hspf2[f"{point}_cap"] = cap_w
-            self.input_widgets_hspf2[f"{point}_pow"] = pow_w
-            form_hspf2.addRow(f"{point} 능력 (Btu/h):", cap_w)
-            form_hspf2.addRow(f"{point} 전력 (W):", pow_w)
+        hspf2_layout = QVBoxLayout()
 
+        self.ahri_hspf2_model = make_ahri_hspf2_table_model(self)
+        self.ahri_hspf2_view = QTableView()
+        self.ahri_hspf2_view.setModel(self.ahri_hspf2_model)
+        self.ahri_hspf2_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.ahri_hspf2_view.setEditTriggers(
+            QAbstractItemView.DoubleClicked
+            | QAbstractItemView.SelectedClicked
+            | QAbstractItemView.EditKeyPressed
+            | QAbstractItemView.AnyKeyPressed
+        )
+        self.ahri_hspf2_view.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
+        self.ahri_hspf2_view.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents
+        )
+        self.ahri_hspf2_view.setMinimumHeight(110)
+        hspf2_layout.addWidget(self.ahri_hspf2_view)
+
+        # Auxiliary HSPF2 inputs stay as a compact form (not per-point).
+        form_hspf2_aux = QFormLayout()
         self.input_widgets_hspf2["t_off"] = QLineEdit()
         self.input_widgets_hspf2["t_on"] = QLineEdit()
         self.input_widgets_hspf2["defrost_t_test_minutes"] = QLineEdit()
         self.input_widgets_hspf2["defrost_t_max_minutes"] = QLineEdit()
 
-        form_hspf2.addRow("t_off (°F):", self.input_widgets_hspf2["t_off"])
-        form_hspf2.addRow("t_on (°F):", self.input_widgets_hspf2["t_on"])
-        form_hspf2.addRow("defrost_t_test_minutes:", self.input_widgets_hspf2["defrost_t_test_minutes"])
-        form_hspf2.addRow("defrost_t_max_minutes:", self.input_widgets_hspf2["defrost_t_max_minutes"])
-        group_hspf2.setLayout(form_hspf2)
+        form_hspf2_aux.addRow("t_off (°F):", self.input_widgets_hspf2["t_off"])
+        form_hspf2_aux.addRow("t_on (°F):", self.input_widgets_hspf2["t_on"])
+        form_hspf2_aux.addRow(
+            "defrost_t_test_minutes:",
+            self.input_widgets_hspf2["defrost_t_test_minutes"],
+        )
+        form_hspf2_aux.addRow(
+            "defrost_t_max_minutes:",
+            self.input_widgets_hspf2["defrost_t_max_minutes"],
+        )
+        hspf2_layout.addLayout(form_hspf2_aux)
+
+        group_hspf2.setLayout(hspf2_layout)
         scroll_layout.addWidget(group_hspf2)
 
         # 에러 리셋 바인딩
@@ -409,6 +442,46 @@ class CalculatorWindow(QWidget):
             out[point_id] = self._read_ahri_seer2_point(point_id, col_index=col_idx)
         return out
 
+    def _read_ahri_hspf2_table_points(self):
+        """AHRI HSPF2 table에서 7-point ``test_points`` 부분 dict를 읽는다.
+
+        Returns ``{column_label: (capacity, power)}`` for the seven
+        heating columns (H01..H32). The ``A2`` point used by HSPF2 v3
+        is sourced separately from the AHRI SEER2 table; this helper
+        does **not** include it. Empty / non-numeric / non-positive
+        cells raise :class:`InputValidationError` with a Korean
+        message naming the offending column and field.
+        """
+        if self.ahri_hspf2_model is None:
+            raise InputValidationError(
+                "AHRI HSPF2 입력 테이블이 초기화되지 않았습니다."
+            )
+        columns = self.ahri_hspf2_model.column_labels
+        out = {}
+        for col_idx, point_id in enumerate(columns):
+            cap_raw = self.ahri_hspf2_model.get_cell(0, col_idx)
+            pow_raw = self.ahri_hspf2_model.get_cell(1, col_idx)
+            capacity = coerce_numeric(cap_raw)
+            power = coerce_numeric(pow_raw)
+            if capacity is None:
+                raise InputValidationError(
+                    f"AHRI HSPF2 {point_id} 능력 (Btu/h) 값을 입력해주세요."
+                )
+            if capacity <= 0:
+                raise InputValidationError(
+                    f"AHRI HSPF2 {point_id} 능력 (Btu/h)은 0보다 큰 값이어야 합니다."
+                )
+            if power is None:
+                raise InputValidationError(
+                    f"AHRI HSPF2 {point_id} 전력 (W) 값을 입력해주세요."
+                )
+            if power <= 0:
+                raise InputValidationError(
+                    f"AHRI HSPF2 {point_id} 전력 (W)은 0보다 큰 값이어야 합니다."
+                )
+            out[point_id] = (capacity, power)
+        return out
+
     def _read_ahri_seer2_point(self, point_id, col_index=None):
         """AHRI SEER2 table의 단일 column 값을 ``(capacity, power)``로 읽는다.
 
@@ -512,18 +585,14 @@ class CalculatorWindow(QWidget):
         """HSPF2 v3 UI 값을 canonical input으로 변환합니다.
 
         A2는 AHRI SEER2 horizontal table의 ``A_Full`` 열에서 읽는다.
-        나머지 HSPF2 point는 기존 vertical form (``input_widgets_hspf2``)을
-        그대로 사용한다.
+        HSPF2 heating point (H01..H32)는 AHRI HSPF2 horizontal table에서
+        읽는다. t_off / t_on / defrost minutes는 별도 compact form
+        (``input_widgets_hspf2``)에서 읽는다.
         """
         test_points = {
             "A2": self._read_ahri_seer2_point("A_Full"),
         }
-
-        for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
-            test_points[point] = (
-                self._get_float_val(self.input_widgets_hspf2[f"{point}_cap"], f"{point} 능력"),
-                self._get_float_val(self.input_widgets_hspf2[f"{point}_pow"], f"{point} 전력"),
-            )
+        test_points.update(self._read_ahri_hspf2_table_points())
 
         kwargs = {
             "t_off": self._get_float_val(self.input_widgets_hspf2["t_off"], "t_off", allow_zero=True),
