@@ -2,6 +2,7 @@
 
 import json
 import os
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
 class KSC9306Calculator:
@@ -60,7 +61,52 @@ class KSC9306Calculator:
     # 진입점만 준비하는 목적이다.
     # ------------------------------------------------------------------
 
+    def _round_test_value(self, value: float) -> int:
+        """KS C 9306 시험값 정수 반올림 helper.
+
+        Python ``round()``의 banker's rounding을 피하기 위해 ROUND_HALF_UP을
+        사용한다. ISO16358Calculator의 동명 helper와 동일한 방식이어서, KS 측
+        선전처리 후 ISO delegate 경로에서 다시 호출되어도 정수 -> 정수
+        idempotent 결과로 동일 값을 유지한다.
+        """
+        return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+    def _prepare_measured_inputs(self, measured_inputs: dict) -> dict:
+        """KS CSPF 시험값 dict의 capacity/power만 정수화한 새 dict를 반환한다.
+
+        ``self.config["round_test_values"]``가 truthy일 때만 정수화하며,
+        그렇지 않으면 원본 dict를 그대로 돌려준다. unknown field는 보존하고,
+        원본 dict는 mutate하지 않는다.
+        """
+        if not self.config.get("round_test_values", False):
+            return measured_inputs
+
+        prepared = {}
+        for point_key, point_data in measured_inputs.items():
+            if not isinstance(point_data, dict):
+                prepared[point_key] = point_data
+                continue
+
+            prepared[point_key] = {}
+            for data_key, value in point_data.items():
+                if data_key in ("capacity", "power"):
+                    try:
+                        prepared[point_key][data_key] = self._round_test_value(value)
+                    except (InvalidOperation, ValueError, TypeError):
+                        prepared[point_key][data_key] = value
+                else:
+                    prepared[point_key][data_key] = value
+
+        return prepared
+
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
+        measured_inputs = self._prepare_measured_inputs(measured_inputs)
+        if declared_capacity is not None and self.config.get("round_test_values", False):
+            try:
+                declared_capacity = self._round_test_value(declared_capacity)
+            except (InvalidOperation, ValueError, TypeError):
+                pass
+
         if self._iso_calculator_ref is not None:
             return self._iso_calculator_ref.calculate_cspf(
                 measured_inputs, declared_capacity=declared_capacity
