@@ -1,7 +1,7 @@
 import pytest
 import json
 import pathlib
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_iso16358_legacy import ISO16358Calculator
 
 def load_pure_iso_track_a_fixture():
     path = "tests/fixtures/iso16358_hspf_pure_iso_track_a/branch_fixtures.json"

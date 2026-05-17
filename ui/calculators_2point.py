@@ -9,7 +9,7 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QModelIndex, QVariant,
                           pyqtSignal, QTimer, QEvent, QItemSelectionModel)
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence, QBrush
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_iso16358_legacy import ISO16358Calculator
 
 class TraceTableModel(QAbstractTableModel):
     def __init__(self):

@@ -1,7 +1,7 @@
 import pytest
 import inspect
 from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
-import core.calculator_iso16358 as iso
+import core.calculator_iso16358_legacy as iso
 
 def test_component_accumulation_result_sums_hsec_from_components():
     calc = ASNZSExcelHSPFCompatibilityCalculator()

@@ -855,3 +855,15 @@
 #### Decision
 - Step 2b는 test behavior를 바꾸지 않는 rename/import retarget 작업으로 제한한다.
 - Baseline `269 passed, 16 failed, 13 xfailed`를 Step 2b 검증 기준으로 유지한다.
+
+### Follow-up — ISO separation Step 2b legacy rename
+
+#### Result
+- 기존 `core/calculator_iso16358.py` 구현을 `core/calculator_iso16358_legacy.py`로 이동했다.
+- 새 `core/calculator_iso16358.py`는 Step 3 전용 `NotImplementedError` skeleton으로 생성했고 legacy alias를 두지 않았다.
+- 33개 test file과 `ui/calculators_2point.py`의 legacy caller를 `core.calculator_iso16358_legacy` import로 retarget했다.
+- Diagnostic/mixed tests 4개를 `tests/_legacy/`로 이동하고 `tests/_legacy/__init__.py`를 추가했다.
+
+#### Decision
+- Step 2b는 behavior-preserving legacy rename으로 제한했다. 새 ISO implementation, ISO profile 등록, UI dispatcher 전환은 Step 3~5로 유지한다.
+- Moved legacy diagnostic test의 fixture path는 `tests/fixtures/`를 계속 보도록 보정했다.

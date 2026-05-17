@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_iso16358_legacy import ISO16358Calculator
 from core.calculator_ks_c9306 import KSC9306Calculator
 
 
 FIXTURE_PATH = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parents[1]
     / "fixtures/iso16358_cspf_golden_fixtures.json"
 )
 FIXTURE_ID = "southeast_asia_iso_basic_cspf_4_665"

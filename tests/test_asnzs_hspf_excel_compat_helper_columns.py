@@ -1,6 +1,6 @@
 import pytest
 from core.calculator_asnzs_hspf_excel import WORKBOOK_HELPER_COLUMNS, get_workbook_helper_column_map
-import core.calculator_iso16358 as iso
+import core.calculator_iso16358_legacy as iso
 import inspect
 
 def test_workbook_helper_column_map_contains_expected_anchors():

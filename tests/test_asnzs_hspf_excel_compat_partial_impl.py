@@ -1,7 +1,7 @@
 import pytest
 import inspect
 from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE
-import core.calculator_iso16358 as iso
+import core.calculator_iso16358_legacy as iso
 
 def build_minimal_hybrid_input():
     return {

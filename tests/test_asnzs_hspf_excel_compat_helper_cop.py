@@ -51,5 +51,5 @@ def test_helper_cop_reconstruction_stays_in_asnzs_module():
     assert hasattr(mod.ASNZSExcelHSPFCompatibilityCalculator, "_cop_from_capacity_power")
     
     # Check common path does not have these
-    import core.calculator_iso16358 as iso
+    import core.calculator_iso16358_legacy as iso
     assert not hasattr(iso.ISO16358Calculator, "_cop_from_capacity_power")

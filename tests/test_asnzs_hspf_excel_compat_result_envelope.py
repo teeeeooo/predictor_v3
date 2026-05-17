@@ -1,7 +1,7 @@
 import pytest
 import copy
 from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE, CALCULATOR_ID
-import core.calculator_iso16358 as iso
+import core.calculator_iso16358_legacy as iso
 import inspect
 
 def test_result_envelope_contains_compatibility_identity():
