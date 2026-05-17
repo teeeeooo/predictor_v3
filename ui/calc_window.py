@@ -5,7 +5,7 @@ import json
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
                              QMessageBox, QScrollArea, QFrame, QTabWidget,
-                             QRadioButton, QButtonGroup)
+                             QRadioButton, QButtonGroup, QPushButton)
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
@@ -77,6 +77,16 @@ class CalculatorWindow(QWidget):
         self.tabs.addTab(self.tab_ahri, "AHRI 210/240")
 
         main_layout.addWidget(self.tabs)
+
+        action_layout = QHBoxLayout()
+        self.button_calculate = QPushButton("계산 실행")
+        self.button_calculate.clicked.connect(self.on_calculate)
+        self.result_label = QLabel("결과 대기")
+        self.result_label.setWordWrap(True)
+        self.result_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        action_layout.addWidget(self.button_calculate)
+        action_layout.addWidget(self.result_label, 1)
+        main_layout.addLayout(action_layout)
 
     # [1] 에러 스타일링 리셋 로직 (공통 헬퍼)
     def bind_error_reset(self, widget: QLineEdit):
@@ -331,14 +341,19 @@ class CalculatorWindow(QWidget):
         """계산 실행"""
         current_tab = self.tabs.currentWidget()
         self._clear_all_errors() # 초기화
+        result_text = None
 
         try:
             if current_tab == self.tab_iso:
-                self.calculate_iso()
+                result_text = self.calculate_iso()
             elif current_tab == self.tab_en:
-                self.calculate_en()
+                result_text = self.calculate_en()
             elif current_tab == self.tab_ahri:
-                self.calculate_ahri()
+                result_text = self.calculate_ahri()
+
+            if result_text is not None:
+                self.result_label.setText(str(result_text))
+            return result_text
                 
         # [5] 입력 검증 로직 통일
         except InputValidationError as e:

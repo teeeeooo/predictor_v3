@@ -60,3 +60,30 @@ def test_ahri_combo_uses_profile_ids_for_dispatcher_selection():
         assert hasattr(window.ahri_calc, "calculate_seer2")
     finally:
         window.close()
+
+
+def test_ahri_calculate_button_displays_result_text():
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.tabs.setCurrentWidget(window.tab_ahri)
+        window.radio_ac.setChecked(True)
+
+        sample_points = {
+            "A_Full": (36000, 3000),
+            "B_Full": (30000, 2200),
+            "B_Low": (18000, 1200),
+            "E_Int": (24000, 1700),
+            "F_Low": (12000, 900),
+        }
+        for point, (capacity, power) in sample_points.items():
+            window.input_widgets_ahri[f"{point}_cap"].setText(str(capacity))
+            window.input_widgets_ahri[f"{point}_pow"].setText(str(power))
+
+        window.button_calculate.click()
+
+        assert "AHRI SEER2 (AC) 결과:" in window.result_label.text()
+    finally:
+        window.close()
