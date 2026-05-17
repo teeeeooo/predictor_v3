@@ -973,3 +973,22 @@
 #### Decision
 - EN14825 UI tab은 EN profiles가 등록될 때까지 direct/stub 상태로 유지한다.
 - ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary 설계를 먼저 수행한다.
+
+### Follow-up — audit_2 immediate next actions completion
+
+#### Result
+- `reference_files/audit_2.md`의 “지금 당장 할 수 있는 다음 작업” 5개를 단계별로 처리했다.
+- Root audit/result 문서는 active 운영 문서가 아니라 `reference_files/*.md` reference snapshot으로 분류하고, `ACTIVE_DOCUMENTS.md` scope/root result 기준을 정리했다.
+- Active HSPF validation test는 더 이상 `tests._legacy` helper를 import하지 않고 `tests/helpers/iso16358_hspf_samples.py` shared helper를 사용한다.
+- `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 검증했다. 다만 `ui/calc_window.py` 안에서 calculate button/result display 연결은 아직 발견되지 않아 별도 UI follow-up으로 남겼다.
+- AHRI SEER2 UI selector는 JSON filename scan이 아니라 `list_calculator_profiles()` 기반 profile-id item data를 통해 dispatcher를 호출한다.
+- Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`에 기록하고 architecture/work plan/refactor plan/brief/inventory 문서에 링크를 반영했다.
+
+#### Verification
+- Active HSPF helper split targeted check: `60 passed, 17 xfailed`.
+- Calculator UI smoke / profile selector targeted check: `32 passed`.
+- Full completion verification은 최종 report와 result report에 기록한다.
+
+#### Decision
+- ML / inverse-search 복귀 전 첫 구현 slice는 adapter helper 추가로 제한한다.
+- Core calculator public API, diagnostics schema, region config 의미는 adapter 설계/구현 초기에 변경하지 않는다.

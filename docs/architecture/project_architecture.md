@@ -131,6 +131,8 @@ production region config에는 candidate 값, golden/sample/test 전용 값, ML 
 
 ML output은 calculator input이 아니다. 예측된 capacity/power/Hz 등은 `predicted_points → calculator_input` adapter를 거쳐 계산기에 전달한다. ML result를 region config에 섞거나, calculator가 ML feature schema를 직접 읽게 하지 않는다.
 
+2026-05-17 Design Gate에서 `ML output or HW candidate → PredictedPointsEnvelope → CalculatorInputEnvelope → core calculator call → CalculatorResultEnvelope → RankingCandidateEnvelope` 흐름을 확정했다. 상세 data shape와 migration path는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 따른다.
+
 ### Calculator profile resolver contract
 
 초기 resolver는 nested schema 변환기가 아니라 기존 flat config path를 안전하게 선택하는 manifest/selector 계층이다.
@@ -217,6 +219,8 @@ UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 
 Calculator result schema와 ML feature schema는 분리한다. Calculator result는 metric value, units, summary, bin details, diagnostics 같은 평가 결과를 담고, ML feature schema는 학습/예측 입력 컬럼과 target/leakage rule을 담는다.
 
 필요하면 UI 또는 recommendation layer에서 calculator return dict를 normalized result envelope로 감싸되, core calculator public API와 diagnostics key/value는 별도 phase 없이 변경하지 않는다.
+
+Normalized envelope는 adapter/recommendation boundary의 계약이며, core calculator가 UI table schema 또는 `MODEL_REGISTRY`를 읽는 구조로 확장하지 않는다. 기존 calculator return dict는 envelope의 `raw_result` 아래에 보존한다.
 
 ### Forbidden coupling
 

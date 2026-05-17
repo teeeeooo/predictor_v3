@@ -24,6 +24,7 @@
 | 경로 | 역할 |
 | --- | --- |
 | `docs/architecture/` | 프로젝트 구조, UI/ML/calculator boundary, model artifact guardrail 같은 architecture 문서를 둔다. |
+| `docs/designs/` | Design Gate Summary와 큰 boundary decision record를 둔다. |
 | `docs/knowledge/` | ML feature engineering, data quality, physical constraints 등 재사용 가능한 knowledge 문서를 둔다. |
 | `docs/archive/` | 더 이상 active TODO가 아닌 과거 상세 reference, 폐기 계획, 보존 자료를 둔다. |
 

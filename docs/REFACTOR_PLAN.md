@@ -26,9 +26,9 @@
   - 기존 `core/calculator_iso16358.py`의 현 내용은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
 - **Region config 저장소**: `data/region_configs/`는 ISO 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - **Next work order**:
-  1. `app_calculator.py` / `ui/calc_window.py`의 resolver-backed UI 경로를 audit한다.
-  2. Audit 결과에 따라 유지할 direct config scan과 resolver로 옮길 calculator construction 경로를 분리한다.
-  3. Calculator result envelope / ML adapter boundary를 설계한 뒤 ML / inverse-search 작업으로 복귀한다.
+  1. 완료된 UI audit과 AHRI selector cleanup 상태를 유지한다. `ui/calc_window.py`는 PyQt offscreen launch smoke와 AHRI profile-id selector guard로 보호한다.
+  2. Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 기준으로 한다.
+  3. ML / inverse-search 복귀 전 첫 refactor slice는 adapter helper 추가로 제한하고, core calculator public API와 region config 의미를 변경하지 않는다.
   4. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
 - **tests 정책 (이번 reset에 한정)**: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator contract 기준으로 이전하고, diagnostic / workbook-mixed 테스트는 삭제 또는 legacy/archive 디렉터리로 격리한다. 새 calculator skeleton 단계에서 해당 분류 audit을 선행한다.
 - **037~043 사이클의 미세 cleanup은 종료**: KS measured input prep 분리(037), CSPF point resolution 분리(038), standalone body 구현(039), audit(040), legacy delegate 제거(041), ISO ks_intersection 분기 제거 audit(042) 및 구현(043) 같은 작업은 이번 reset 이후 더 이상 다음 작업으로 제안하지 않는다.
@@ -49,6 +49,7 @@
 - **region config / profile schema / calculator input boundary**: 각 레이어 간의 데이터 계약 명확화.
 - **nested config 직접 주입 금지**: 계산기 core가 config 파일 구조에 직접 의존하지 않도록 resolver를 통한 데이터 전달.
 - **resolver-backed path 필요성**: 신규 규격 추가 시 유연한 확장을 위한 프로필 리졸버 강화.
+- **adapter boundary 기준**: result envelope / ML adapter 작업은 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`의 `PredictedPointsEnvelope` / `CalculatorInputEnvelope` / `CalculatorResultEnvelope` 흐름을 따른다.
 
 ### 5. UI resolver-backed config selection
 - **UI가 config 파일을 직접 scan하는 경로 정리 후보**: 현재 UI 계층이 리졸버 가드를 우회하여 파일을 직접 스캔하는 문제 해결.
