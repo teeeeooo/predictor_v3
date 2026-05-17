@@ -943,3 +943,15 @@
 #### Decision
 - AS/NZS completion 범위는 current local Energy Rating workbook compatibility로 한정한다. Public web evidence만으로 official AS/NZS production formula parity를 주장하지 않는다.
 - Historical AS/NZS case3 full-dump exact parity는 matching workbook/full dump 확보 전까지 Z-phase로 유지한다.
+
+### Follow-up — Active document inventory and report lifecycle summary
+
+#### Result
+- `ACTIVE_DOCUMENTS.md`를 root에 추가해 active 문서 목록, owner 역할, primary inbound/outbound 관계, watchlist를 한 파일에서 관리하도록 했다.
+- `AGENT_TASK_ROUTER.md`, `README.md`, `docs/README.md`에서 여러 문서에 걸친 업데이트 시 `ACTIVE_DOCUMENTS.md`를 먼저 확인하도록 inbound를 추가했다.
+- `result_reports/active/034`~`053`을 `result_reports/summaries/054_summary-calculator-ui-iso-separation.md`로 요약했다.
+- 요약된 active reports 034~053은 번호/파일명을 유지한 채 `result_reports/archive/`로 이동했다.
+
+#### Decision
+- Active 문서 생성/archive 이동 또는 owner/inbound/outbound 변화가 있으면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
+- Report lifecycle은 active 원본을 계속 쌓지 않고 summary와 archive로 닫는다. 이번 cycle 이후 active에는 현재 진행 작업 report만 남기는 구조를 기준으로 한다.
