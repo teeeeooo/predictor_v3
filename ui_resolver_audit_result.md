@@ -39,6 +39,12 @@ The immediate implementation should be limited to AHRI SEER2 UI construction:
 - Do not change ISO CSPF behavior because `IsoCspfSingleWidget` already uses profile dispatcher.
 - Do not introduce ML schema, calculator result adapter, or inverse-search behavior in this UI cleanup.
 
+## Implemented Follow-Up
+
+- `ui/calc_window.py::on_region_changed_ahri()` now constructs AHRI SEER2 through `create_calculator_for_profile(profile_id="ahri_usa_seer2")`.
+- Direct `AHRICalculator` / `AHRIHSPF2Calculator` imports were removed from `ui/calc_window.py`.
+- EN and ISO stub behavior was left unchanged.
+
 ## Verification For Implementation Step
 
 - `python3 -B -m py_compile app_calculator.py ui/calc_window.py ui/calculators_2point.py core/calculator_dispatcher.py core/calculator_profiles.py`

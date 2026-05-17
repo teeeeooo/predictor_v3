@@ -10,8 +10,6 @@ from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
 from core.calculator_en14825 import EN14825Calculator
-from core.calculator_ahri_seer2 import AHRICalculator
-from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 from core.calculator_dispatcher import create_calculator_for_profile
 
 
@@ -264,11 +262,8 @@ class CalculatorWindow(QWidget):
         pass
 
     def on_region_changed_ahri(self, index):
-        filename = self.combo_region_ahri.currentText()
-        path = os.path.join(self.config_dir, filename)
-        # [7] 인스턴스 1회 생성
         try:
-            self.ahri_calc = AHRICalculator(path)
+            self.ahri_calc = create_calculator_for_profile(profile_id="ahri_usa_seer2")
         except:
             self.ahri_calc = None
 
