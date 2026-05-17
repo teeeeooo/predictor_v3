@@ -1,6 +1,50 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-17 — Audit 5 next actions completion (074 ~ 080)
+
+### Result
+- audit_5의 6개 next action을 단계별 source/report 분리 커밋으로 완료함.
+  최종 reference report는 `reference_files/audit_5_next_actions_completion.md`.
+- 074: active 문서 (`project_log.md`, `docs/WORK_PLAN.md`,
+  `project_brief.md`) 를 audit_4 completion 상태로 동기화.
+- 075: `CalculatorInputEnvelope` shape을 design doc과 정렬.
+  `{calculator_profile_id, standard, region, mode, metric, measured_inputs,
+  options}` 구조로 잠그고 source vocabulary는
+  `manual_candidate / ml_prediction / fixture` 로 고정. `measured_inputs`는
+  dict, extra key는 fail-fast. `measured_inputs_as_test_points()` helper로
+  calculator public API 보존.
+- 076: `en14825_seer` profile 추가 (SCOP config 재사용). EN tab은 metric-aware
+  로 `calculate_seer` / `calculate_scop` 분기. SCOP 경로 동작은 변경 없음.
+- 077: AHRI HP 모드 + SEER2 + HSPF2 v3 결과가 result label에 함께 출력되는
+  happy-path smoke 추가.
+- 078: `core/calculator_prediction_adapter.py` 신설 — AHRI SEER2 한정
+  `PredictedPointsEnvelope` validator/helper + CalculatorInputEnvelope 변환.
+  단위 변환은 의도적으로 envelope 밖.
+- 079: `core/calculator_ranking_adapter.py` 신설 — CalculatorResultEnvelope →
+  RankingCandidateEnvelope 최소 smoke (score 기본값은 metric value).
+
+### Decision
+- Envelope adapter chain `PredictedPoints → CalculatorInput →
+  CalculatorResult → RankingCandidate`는 모두 adapter-owned이고 calculator
+  public API와 region config 의미는 변경하지 않는다.
+- 단위 변환은 adapter chain 안에 포함하지 않는다. caller가 일관된 단위
+  (AHRI SEER2: Btu/h capacity, W power) 로 미리 정규화해야 한다.
+- 첫 slice는 `ahri_usa_seer2` profile 단일 지원. EN / KS / ISO profile
+  확장은 후속 slice로 분리한다.
+- RankingCandidateEnvelope은 `raw_result` / `diagnostics`를 노출하지 않는다.
+  ranking layer는 envelope fields만 소비한다.
+- EN14825 SEER profile은 SCOP의 region config JSON을 재사용한다 (SEER
+  path가 SCOP 정적 키를 읽지 않음).
+
+### Verification
+- `python3 -B -m pytest -q` → `364 passed, 23 xfailed`.
+- Source commits: `3acc966, 614dfd6, 80ef665, 223192b, f4e9d84, dd283dc`.
+- Report commits: `0759744, 9fe1097, 01b6909, 73180d2, 379f4e3, 754dd94,
+  1704f1d`.
+
+---
+
 ## 2026-05-17 — Audit 4 next actions completion (069 ~ 073)
 
 ### Result
