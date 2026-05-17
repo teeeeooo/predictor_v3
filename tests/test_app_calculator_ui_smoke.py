@@ -117,6 +117,82 @@ def test_en_combo_switching_to_seer_profile_tracks_metric():
         window.close()
 
 
+def _fill_ahri_seer2_table(window, points):
+    """Helper: write ``{point: (capacity, power)}`` into the SEER2 table model.
+
+    Used by AHRI smoke tests to populate the horizontal table input
+    without touching the OS clipboard or a real QTableView paste path.
+    """
+    columns = window.ahri_seer2_model.column_labels
+    for point, (capacity, power) in points.items():
+        col = columns.index(point)
+        window.ahri_seer2_model.set_cell(0, col, str(capacity))
+        window.ahri_seer2_model.set_cell(1, col, str(power))
+
+
+def test_ahri_seer2_input_uses_horizontal_table_layout():
+    """AHRI SEER2 입력은 horizontal QTableView + model로 노출되고,
+    기존 5-point per-cell QLineEdit key는 더 이상 ``input_widgets_ahri``에
+    존재하지 않는다. Cd_low / Cd_full만 compact form으로 남는다.
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        assert window.ahri_seer2_model is not None
+        assert window.ahri_seer2_view is not None
+        assert window.ahri_seer2_model.column_labels == [
+            "A_Full",
+            "B_Full",
+            "B_Low",
+            "E_Int",
+            "F_Low",
+        ]
+        assert window.ahri_seer2_model.row_labels == [
+            "능력 [Btu/h]",
+            "전력 [W]",
+        ]
+        # input_widgets_ahri에서 per-point QLineEdit key는 모두 제거된다.
+        for point in ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low"):
+            assert f"{point}_cap" not in window.input_widgets_ahri
+            assert f"{point}_pow" not in window.input_widgets_ahri
+        # Cd_low / Cd_full은 compact form으로 유지된다.
+        assert "Cd_low" in window.input_widgets_ahri
+        assert "Cd_full" in window.input_widgets_ahri
+    finally:
+        window.close()
+
+
+def test_ahri_seer2_table_as_point_dict_matches_calculator_input_shape():
+    """Table model의 ``as_point_dict`` 결과가 calculate_seer2 입력 형태와 같다."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        sample = {
+            "A_Full": (36000, 3000),
+            "B_Full": (30000, 2200),
+            "B_Low": (18000, 1200),
+            "E_Int": (24000, 1700),
+            "F_Low": (12000, 900),
+        }
+        _fill_ahri_seer2_table(window, sample)
+        points = window.ahri_seer2_model.as_point_dict(
+            capacity_row=0, power_row=1
+        )
+        assert points == {
+            "A_Full": (36000.0, 3000.0),
+            "B_Full": (30000.0, 2200.0),
+            "B_Low": (18000.0, 1200.0),
+            "E_Int": (24000.0, 1700.0),
+            "F_Low": (12000.0, 900.0),
+        }
+    finally:
+        window.close()
+
+
 def test_ahri_hp_calculate_button_displays_seer2_and_hspf2_results():
     """AHRI HP 모드에서 SEER2 + HSPF2 v3 결과가 result label에 모두 표시된다.
 
@@ -133,16 +209,16 @@ def test_ahri_hp_calculate_button_displays_seer2_and_hspf2_results():
         window.tabs.setCurrentWidget(window.tab_ahri)
         window.radio_hp.setChecked(True)
 
-        ahri_points = {
-            "A_Full": (24000, 2500),
-            "B_Full": (22000, 2000),
-            "B_Low": (12000, 1200),
-            "E_Int": (15000, 1500),
-            "F_Low": (10000, 1000),
-        }
-        for point, (capacity, power) in ahri_points.items():
-            window.input_widgets_ahri[f"{point}_cap"].setText(str(capacity))
-            window.input_widgets_ahri[f"{point}_pow"].setText(str(power))
+        _fill_ahri_seer2_table(
+            window,
+            {
+                "A_Full": (24000, 2500),
+                "B_Full": (22000, 2000),
+                "B_Low": (12000, 1200),
+                "E_Int": (15000, 1500),
+                "F_Low": (10000, 1000),
+            },
+        )
 
         hspf2_points = {
             "H01": (12500, 980),
@@ -180,16 +256,16 @@ def test_ahri_calculate_button_displays_result_text():
         window.tabs.setCurrentWidget(window.tab_ahri)
         window.radio_ac.setChecked(True)
 
-        sample_points = {
-            "A_Full": (36000, 3000),
-            "B_Full": (30000, 2200),
-            "B_Low": (18000, 1200),
-            "E_Int": (24000, 1700),
-            "F_Low": (12000, 900),
-        }
-        for point, (capacity, power) in sample_points.items():
-            window.input_widgets_ahri[f"{point}_cap"].setText(str(capacity))
-            window.input_widgets_ahri[f"{point}_pow"].setText(str(power))
+        _fill_ahri_seer2_table(
+            window,
+            {
+                "A_Full": (36000, 3000),
+                "B_Full": (30000, 2200),
+                "B_Low": (18000, 1200),
+                "E_Int": (24000, 1700),
+                "F_Low": (12000, 900),
+            },
+        )
 
         window.button_calculate.click()
 
@@ -315,8 +391,9 @@ def test_en_calculate_button_displays_scop_result_text():
 def test_hspf2_required_input_raises_validation_error_when_missing():
     """HP 모드에서 HSPF2 필수 입력이 비어 있으면 InputValidationError가 발생한다.
 
-    on_calculate는 QMessageBox 호출을 포함하므로 calculate_hspf2_v3를 직접 호출해
-    validation 경로만 점검한다.
+    HSPF2 A2 값은 AHRI SEER2 table의 ``A_Full`` 열에서 읽으므로 그 셀만
+    채우고 ``calculate_hspf2_v3``를 직접 호출한다. on_calculate는
+    QMessageBox 호출을 포함하므로 validation 경로만 직접 점검한다.
     """
     from ui.calc_window import InputValidationError
 
@@ -325,8 +402,9 @@ def test_hspf2_required_input_raises_validation_error_when_missing():
 
     try:
         assert app is QApplication.instance()
-        window.input_widgets_ahri["A_Full_cap"].setText("36000")
-        window.input_widgets_ahri["A_Full_pow"].setText("3000")
+        a_full_col = window.ahri_seer2_model.column_labels.index("A_Full")
+        window.ahri_seer2_model.set_cell(0, a_full_col, "36000")
+        window.ahri_seer2_model.set_cell(1, a_full_col, "3000")
 
         with pytest.raises(InputValidationError):
             window.calculate_hspf2_v3()

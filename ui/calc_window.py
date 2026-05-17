@@ -4,7 +4,8 @@ import os
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
                              QMessageBox, QScrollArea, QFrame, QTabWidget,
-                             QRadioButton, QButtonGroup, QPushButton)
+                             QRadioButton, QButtonGroup, QPushButton,
+                             QTableView, QHeaderView, QAbstractItemView)
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
@@ -12,6 +13,11 @@ from core.calculator_dispatcher import create_calculator_for_profile
 from core.calculator_profiles import (
     list_calculator_profiles,
     resolve_calculator_profile,
+)
+
+from ui.spreadsheet_table import (
+    coerce_numeric,
+    make_ahri_seer2_table_model,
 )
 
 
@@ -53,6 +59,13 @@ class CalculatorWindow(QWidget):
         self.input_widgets_en = {}
         self.input_widgets_ahri = {}
         self.input_widgets_hspf2 = {}
+
+        # AHRI SEER2 입력은 horizontal QTableView + QAbstractTableModel로
+        # 받는다. 각 cooling test point (A_Full/B_Full/B_Low/E_Int/F_Low)는
+        # column이고, row 0 = 능력 [Btu/h], row 1 = 전력 [W]이다.
+        # SPREADSHEET_TABLE_CONTRACT.md를 따른다.
+        self.ahri_seer2_model = None
+        self.ahri_seer2_view = None
 
         self.init_ui()
         self.settings = QSettings("HVAC_Calculator", "RegionSettings")
@@ -205,44 +218,36 @@ class CalculatorWindow(QWidget):
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
 
-        # [3] AHRI 입력 UI 시각적 그룹화
-        
-        # Group 1: Full Load
-        group_full = QGroupBox("1. Full Load 조건 (95°F / 82°F)")
-        form_full = QFormLayout()
-        self.input_widgets_ahri["A_Full_cap"] = QLineEdit()
-        self.input_widgets_ahri["A_Full_pow"] = QLineEdit()
-        self.input_widgets_ahri["B_Full_cap"] = QLineEdit()
-        self.input_widgets_ahri["B_Full_pow"] = QLineEdit()
-        
-        form_full.addRow("A_Full 능력 (Btu/h):", self.input_widgets_ahri["A_Full_cap"])
-        form_full.addRow("A_Full 전력 (W):", self.input_widgets_ahri["A_Full_pow"])
-        form_full.addRow("B_Full 능력 (Btu/h):", self.input_widgets_ahri["B_Full_cap"])
-        form_full.addRow("B_Full 전력 (W):", self.input_widgets_ahri["B_Full_pow"])
-        group_full.setLayout(form_full)
-        scroll_layout.addWidget(group_full)
+        # [3] AHRI SEER2 입력 UI: horizontal spreadsheet-like table.
+        # 조건이 column, 능력/전력이 row인 형태로 통합한다.
+        group_seer2 = QGroupBox(
+            "1. SEER2 냉방 시험 포인트 (A_Full ~ F_Low)"
+        )
+        seer2_layout = QVBoxLayout()
+        self.ahri_seer2_model = make_ahri_seer2_table_model(self)
+        self.ahri_seer2_view = QTableView()
+        self.ahri_seer2_view.setModel(self.ahri_seer2_model)
+        self.ahri_seer2_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.ahri_seer2_view.setEditTriggers(
+            QAbstractItemView.DoubleClicked
+            | QAbstractItemView.SelectedClicked
+            | QAbstractItemView.EditKeyPressed
+            | QAbstractItemView.AnyKeyPressed
+        )
+        self.ahri_seer2_view.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
+        self.ahri_seer2_view.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents
+        )
+        # Row height fits two rows comfortably without scrolling.
+        self.ahri_seer2_view.setMinimumHeight(110)
+        seer2_layout.addWidget(self.ahri_seer2_view)
+        group_seer2.setLayout(seer2_layout)
+        scroll_layout.addWidget(group_seer2)
 
-        # Group 2: Part Load / Low Speed
-        group_part = QGroupBox("2. Part Load / Low Speed 조건")
-        form_part = QFormLayout()
-        self.input_widgets_ahri["B_Low_cap"] = QLineEdit()
-        self.input_widgets_ahri["B_Low_pow"] = QLineEdit()
-        self.input_widgets_ahri["E_Int_cap"] = QLineEdit()
-        self.input_widgets_ahri["E_Int_pow"] = QLineEdit()
-        self.input_widgets_ahri["F_Low_cap"] = QLineEdit()
-        self.input_widgets_ahri["F_Low_pow"] = QLineEdit()
-        
-        form_part.addRow("B_Low 능력 (Btu/h):", self.input_widgets_ahri["B_Low_cap"])
-        form_part.addRow("B_Low 전력 (W):", self.input_widgets_ahri["B_Low_pow"])
-        form_part.addRow("E_Int 능력 (Btu/h):", self.input_widgets_ahri["E_Int_cap"])
-        form_part.addRow("E_Int 전력 (W):", self.input_widgets_ahri["E_Int_pow"])
-        form_part.addRow("F_Low 능력 (Btu/h):", self.input_widgets_ahri["F_Low_cap"])
-        form_part.addRow("F_Low 전력 (W):", self.input_widgets_ahri["F_Low_pow"])
-        group_part.setLayout(form_part)
-        scroll_layout.addWidget(group_part)
-
-        # Group 3: 추가 파라미터
-        group_extra = QGroupBox("3. 추가 파라미터 (Optional)")
+        # Group 2: SEER2 추가 파라미터 (Optional)
+        group_extra = QGroupBox("2. 추가 파라미터 (Optional)")
         form_extra = QFormLayout()
         self.input_widgets_ahri["Cd_low"] = QLineEdit()
         self.input_widgets_ahri["Cd_full"] = QLineEdit()
@@ -254,8 +259,8 @@ class CalculatorWindow(QWidget):
         group_extra.setLayout(form_extra)
         scroll_layout.addWidget(group_extra)
 
-        # Group 4: HSPF2 v3 Heating
-        group_hspf2 = QGroupBox("4. HSPF2 v3 난방 테스트 포인트")
+        # Group 3: HSPF2 v3 Heating (vertical form, table 전환은 다음 slice)
+        group_hspf2 = QGroupBox("3. HSPF2 v3 난방 테스트 포인트")
         form_hspf2 = QFormLayout()
         for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
             cap_w = QLineEdit()
@@ -388,6 +393,59 @@ class CalculatorWindow(QWidget):
 
         return val
 
+    def _read_ahri_seer2_table_points(self):
+        """AHRI SEER2 table에서 5-point ``test_points`` dict를 읽는다.
+
+        Returns ``{column_label: (capacity, power)}`` for every column.
+        Empty / non-numeric / non-positive cells raise
+        :class:`InputValidationError` with a Korean message describing
+        the offending cell.
+        """
+        if self.ahri_seer2_model is None:
+            raise InputValidationError("AHRI SEER2 입력 테이블이 초기화되지 않았습니다.")
+        columns = self.ahri_seer2_model.column_labels
+        out = {}
+        for col_idx, point_id in enumerate(columns):
+            out[point_id] = self._read_ahri_seer2_point(point_id, col_index=col_idx)
+        return out
+
+    def _read_ahri_seer2_point(self, point_id, col_index=None):
+        """AHRI SEER2 table의 단일 column 값을 ``(capacity, power)``로 읽는다.
+
+        ``InputValidationError``를 던지며, 값이 없거나 숫자가 아니거나
+        0 이하이면 어떤 셀이 문제인지 명확한 한글 메시지로 알린다.
+        """
+        if self.ahri_seer2_model is None:
+            raise InputValidationError("AHRI SEER2 입력 테이블이 초기화되지 않았습니다.")
+        columns = self.ahri_seer2_model.column_labels
+        if col_index is None:
+            if point_id not in columns:
+                raise InputValidationError(
+                    f"AHRI SEER2 테이블에 알 수 없는 포인트: {point_id!r}"
+                )
+            col_index = columns.index(point_id)
+        cap_raw = self.ahri_seer2_model.get_cell(0, col_index)
+        pow_raw = self.ahri_seer2_model.get_cell(1, col_index)
+        capacity = coerce_numeric(cap_raw)
+        power = coerce_numeric(pow_raw)
+        if capacity is None:
+            raise InputValidationError(
+                f"AHRI SEER2 {point_id} 능력 (Btu/h) 값을 입력해주세요."
+            )
+        if capacity <= 0:
+            raise InputValidationError(
+                f"AHRI SEER2 {point_id} 능력 (Btu/h)은 0보다 큰 값이어야 합니다."
+            )
+        if power is None:
+            raise InputValidationError(
+                f"AHRI SEER2 {point_id} 전력 (W) 값을 입력해주세요."
+            )
+        if power <= 0:
+            raise InputValidationError(
+                f"AHRI SEER2 {point_id} 전력 (W)은 0보다 큰 값이어야 합니다."
+            )
+        return (capacity, power)
+
     # [8] 탭 전환 상태 꼬임 방지
     def on_calculate(self):
         """계산 실행"""
@@ -427,22 +485,10 @@ class CalculatorWindow(QWidget):
         """AHRI SEER2 계산 로직"""
         if not self.ahri_calc:
             raise Exception("AHRI 계산기 설정 파일이 로드되지 않았습니다.")
-        
+
         system_type = "HP" if self.radio_hp.isChecked() else "AC"
 
-        # 데이터 추출
-        test_points = {
-            "A_Full": (self._get_float_val(self.input_widgets_ahri["A_Full_cap"], "A_Full 능력"),
-                       self._get_float_val(self.input_widgets_ahri["A_Full_pow"], "A_Full 전력")),
-            "B_Full": (self._get_float_val(self.input_widgets_ahri["B_Full_cap"], "B_Full 능력"),
-                       self._get_float_val(self.input_widgets_ahri["B_Full_pow"], "B_Full 전력")),
-            "B_Low":  (self._get_float_val(self.input_widgets_ahri["B_Low_cap"], "B_Low 능력"),
-                       self._get_float_val(self.input_widgets_ahri["B_Low_pow"], "B_Low 전력")),
-            "E_Int":  (self._get_float_val(self.input_widgets_ahri["E_Int_cap"], "E_Int 능력"),
-                       self._get_float_val(self.input_widgets_ahri["E_Int_pow"], "E_Int 전력")),
-            "F_Low":  (self._get_float_val(self.input_widgets_ahri["F_Low_cap"], "F_Low 능력"),
-                       self._get_float_val(self.input_widgets_ahri["F_Low_pow"], "F_Low 전력")),
-        }
+        test_points = self._read_ahri_seer2_table_points()
 
         cd_low = self._get_float_val(self.input_widgets_ahri["Cd_low"], "Cd_low", True, True)
 
@@ -463,10 +509,14 @@ class CalculatorWindow(QWidget):
         return result_text
 
     def _build_hspf2_v3_input(self):
-        """HSPF2 v3 UI 값을 canonical input으로 변환합니다."""
+        """HSPF2 v3 UI 값을 canonical input으로 변환합니다.
+
+        A2는 AHRI SEER2 horizontal table의 ``A_Full`` 열에서 읽는다.
+        나머지 HSPF2 point는 기존 vertical form (``input_widgets_hspf2``)을
+        그대로 사용한다.
+        """
         test_points = {
-            "A2": (self._get_float_val(self.input_widgets_ahri["A_Full_cap"], "A_Full 능력"),
-                   self._get_float_val(self.input_widgets_ahri["A_Full_pow"], "A_Full 전력")),
+            "A2": self._read_ahri_seer2_point("A_Full"),
         }
 
         for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):

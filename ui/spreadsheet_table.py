@@ -393,3 +393,43 @@ if _PYQT_AVAILABLE:
 
 else:
     SpreadsheetTableModel = None  # type: ignore[assignment]
+
+
+# ---------------------------------------------------------------------------
+# Profile-specific factories (calculator UI consumes these)
+# ---------------------------------------------------------------------------
+
+AHRI_SEER2_COLUMNS: Tuple[str, ...] = (
+    "A_Full",
+    "B_Full",
+    "B_Low",
+    "E_Int",
+    "F_Low",
+)
+AHRI_SEER2_ROW_LABELS: Tuple[str, ...] = ("능력 [Btu/h]", "전력 [W]")
+
+
+def make_ahri_seer2_table_model(parent=None):
+    """Build a :class:`SpreadsheetTableModel` shaped for AHRI SEER2 input.
+
+    Columns: ``A_Full, B_Full, B_Low, E_Int, F_Low``. Rows:
+    ``능력 [Btu/h]`` (capacity row, index 0) and ``전력 [W]`` (power
+    row, index 1).
+
+    Use ``model.as_point_dict(capacity_row=0, power_row=1)`` to obtain
+    ``{"A_Full": (capacity, power), ...}`` — exactly the
+    ``test_points`` shape ``AHRICalculator.calculate_seer2`` expects.
+
+    Raises:
+        ImportError: when PyQt5 is not installed.
+    """
+    if SpreadsheetTableModel is None:  # pragma: no cover - PyQt5-less env
+        raise ImportError(
+            "make_ahri_seer2_table_model requires PyQt5; "
+            "SpreadsheetTableModel is unavailable in this environment."
+        )
+    return SpreadsheetTableModel(
+        row_labels=list(AHRI_SEER2_ROW_LABELS),
+        column_labels=list(AHRI_SEER2_COLUMNS),
+        parent=parent,
+    )
