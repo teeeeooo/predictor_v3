@@ -49,6 +49,7 @@ UI 경계:
 - UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
 
 문서 경계:
+- 문서 업데이트 범위가 둘 이상이면 먼저 `ACTIVE_DOCUMENTS.md`에서 active document owner와 inbound/outbound 관계를 확인한다.
 - `docs` 폴더 내 `*_notes.md` 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`의 필요한 범위를 확인한다.
 - `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 고위험 작업에서 상세 배경이 필요한 경우에만 제한적으로 확인한다.
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
@@ -234,6 +235,11 @@ Lightweight documentation gate 원칙:
 
 commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 문서의 수명주기를 함께 판단한다.
 1차 판단은 문서 읽기 없이 파일명, diff stat, 변경 성격, 사용자의 명시 요청을 기준으로 수행한다.
+
+0. `ACTIVE_DOCUMENTS.md`
+   - 문서 업데이트 요청, docs lifecycle 작업, 여러 문서에 걸친 변경이면 먼저 active document owner와 inbound/outbound 관계를 확인한다.
+   - 새 active 문서를 만들거나 archive로 이동하면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
+   - 단일 코드 변경만 있고 문서 갱신 요청이 없으면 이 파일을 읽지 않아도 된다.
 
 1. `project_log.md`
    - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.

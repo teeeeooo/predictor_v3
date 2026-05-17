@@ -8,6 +8,7 @@
 
 | 파일 | 목적 |
 | --- | --- |
+| `../ACTIVE_DOCUMENTS.md` | active 문서 목록과 inbound/outbound owner 관계를 관리한다. |
 | `DOCS_GUIDELINES.md` | 프로젝트 전체 규격 문서 작성 철학, 금지 규칙, 근거 표기, 품질 기준을 정의한다. |
 | `STANDARD_DOC_TEMPLATE.md` | 규격별 `notes`, `dev_notes`, `design_notes`, `glossary` 문서를 만들 때 복사해서 쓰는 표준 템플릿이다. |
 | `FORMULA_REFERENCE_GUIDE.md` | 수식, 변수, 용어를 정리할 때 사용하는 공통 형식과 예시를 제공한다. |
@@ -78,13 +79,14 @@ docs/en14825/en14825_glossary.md
 ## 새 규격 문서를 추가할 때의 순서
 
 1. `AGENTS.md`와 `AGENT_TASK_ROUTER.md`의 해당 작업 유형을 확인한다.
-2. 신규 규격 문서 생성 또는 규격 문서 구조 변경이면 `docs/DOCS_GUIDELINES.md`를 확인한다.
-3. 새 standard canonical 문서를 만들 때는 `docs/STANDARD_DOC_TEMPLATE.md`에서 필요한 템플릿을 복사한다.
-4. `docs/<standard>/` 폴더를 만들고 `notes`, `dev_notes`, `design_notes`, `glossary` 4개 문서를 분리해 작성한다.
-5. 핵심 주장마다 조항, 표, 부속서, 수식 번호를 붙인다.
-6. formula, variable, term, glossary entry를 작성하거나 수정할 때는 `docs/FORMULA_REFERENCE_GUIDE.md` 형식에 맞춰 정리한다.
-7. 개발 노하우와 제품 설계 노하우가 섞이지 않았는지 점검한다.
-8. 빈 문단, 근거 없는 추정, "TODO만 남김" 상태가 없는지 확인한다.
+2. 여러 active 문서에 걸친 업데이트라면 `ACTIVE_DOCUMENTS.md`에서 owner 문서와 inbound/outbound 관계를 확인한다.
+3. 신규 규격 문서 생성 또는 규격 문서 구조 변경이면 `docs/DOCS_GUIDELINES.md`를 확인한다.
+4. 새 standard canonical 문서를 만들 때는 `docs/STANDARD_DOC_TEMPLATE.md`에서 필요한 템플릿을 복사한다.
+5. `docs/<standard>/` 폴더를 만들고 `notes`, `dev_notes`, `design_notes`, `glossary` 4개 문서를 분리해 작성한다.
+6. 핵심 주장마다 조항, 표, 부속서, 수식 번호를 붙인다.
+7. formula, variable, term, glossary entry를 작성하거나 수정할 때는 `docs/FORMULA_REFERENCE_GUIDE.md` 형식에 맞춰 정리한다.
+8. 개발 노하우와 제품 설계 노하우가 섞이지 않았는지 점검한다.
+9. 빈 문단, 근거 없는 추정, "TODO만 남김" 상태가 없는지 확인한다.
 
 ## Agent 문서 작업 필독 파일
 
