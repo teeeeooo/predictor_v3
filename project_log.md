@@ -992,3 +992,21 @@
 #### Decision
 - ML / inverse-search 복귀 전 첫 구현 slice는 adapter helper 추가로 제한한다.
 - Core calculator public API, diagnostics schema, region config 의미는 adapter 설계/구현 초기에 변경하지 않는다.
+
+### Follow-up — audit_3 immediate next actions completion
+
+#### Result
+- `reference_files/audit_3.md`의 “지금 당장 할 수 있는 다음 작업” 5개를 단계별로 처리했다.
+- `tests/test_app_calculator_ui_smoke.py`는 `pytest.importorskip("PyQt5")`를 사용해 PyQt 없는 환경에서 collection error 대신 UI smoke skip이 가능하도록 보강했다.
+- `ui/calc_window.py`에 공통 계산 버튼과 결과 label을 추가하고, AHRI AC 입력 smoke에서 `calculate_ahri()` return 문자열이 UI에 표시되는 경로를 검증했다.
+- `core/calculator_result_adapter.py`에 `ahri_usa_seer2` 전용 `wrap_calculator_result_envelope()` 첫 slice를 추가했다. 기존 calculator return dict는 `raw_result` 아래 보존한다.
+- `tests/test_calculator_schema_boundaries.py`를 추가해 calculator import boundary, region config runtime key, adapter-owned envelope term 경계를 guard한다.
+- `en14825_scop` profile과 `calculator_id=en14825` dispatcher path를 등록하고, `ui/calc_window.py` EN combo를 profile-id item data 기반 selector로 전환했다.
+
+#### Verification
+- Targeted audit_3 checks: `49 passed`.
+- Full suite: `301 passed, 23 xfailed`.
+
+#### Decision
+- EN tab은 profile/dispatcher construction까지 resolver-backed로 전환했지만, `calculate_en()`의 실제 UI 계산 출력은 별도 EN UI calculation task로 유지한다.
+- Adapter implementation은 AHRI SEER2 result envelope 첫 slice로 제한한다. `CalculatorInputEnvelope`, ranking, ML / inverse-search caller 구현은 아직 시작하지 않는다.
