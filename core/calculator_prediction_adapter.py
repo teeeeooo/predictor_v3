@@ -13,8 +13,12 @@ It is intentionally narrow:
 - ``source`` is locked to the design vocabulary
   (``manual_candidate / ml_prediction / fixture``).
 - ``model_target`` is locked to ``cooling / heating / multi``.
-- Units are not converted; capacity must be ``Btu/h`` and power must be
-  ``W`` for AHRI SEER2. Other units fail fast.
+- Per-point units depend on ``source``: ``ml_prediction`` requires
+  capacity and power in W (ML canonical); ``manual_candidate`` /
+  ``fixture`` require profile-native units (AHRI SEER2: capacity
+  Btu/h, power W). Conversion runs through
+  ``core.calculator_unit_adapter`` only when source is
+  ``ml_prediction``.
 
 ML / inverse-search callers should produce a
 ``PredictedPointsEnvelope`` here, then call
@@ -29,14 +33,14 @@ from core.calculator_input_adapter import (
     build_calculator_input_envelope,
 )
 from core.calculator_profiles import resolve_calculator_profile
+from core.calculator_unit_adapter import (
+    expected_source_units,
+    normalize_points_to_profile_native,
+)
 
 
 _REQUIRED_POINTS_BY_PROFILE = {
     "ahri_usa_seer2": ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low"),
-}
-
-_EXPECTED_UNITS_BY_PROFILE = {
-    "ahri_usa_seer2": {"capacity_unit": "Btu/h", "power_unit": "W"},
 }
 
 _ALLOWED_INNER_POINT_KEYS = {"capacity", "power", "capacity_unit", "power_unit"}
@@ -81,7 +85,10 @@ def _validate_metadata(metadata: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
 
 
 def _validate_point(
-    profile_id: str, point_key: str, raw_point: Any
+    profile_id: str,
+    source: str,
+    point_key: str,
+    raw_point: Any,
 ) -> Dict[str, Any]:
     if not isinstance(raw_point, Mapping):
         raise TypeError(
@@ -110,18 +117,18 @@ def _validate_point(
             f"capacity={capacity}, power={power}"
         )
 
-    expected_units = _EXPECTED_UNITS_BY_PROFILE[profile_id]
-    if raw_point["capacity_unit"] != expected_units["capacity_unit"]:
+    expected_units = expected_source_units(profile_id, source)
+    if raw_point["capacity_unit"] != expected_units["capacity"]:
         raise ValueError(
             f"Point {point_key!r} capacity_unit must be "
-            f"{expected_units['capacity_unit']!r}; got {raw_point['capacity_unit']!r}. "
-            f"Unit conversion is intentionally not handled in this slice."
+            f"{expected_units['capacity']!r} when source is {source!r}; "
+            f"got {raw_point['capacity_unit']!r}."
         )
-    if raw_point["power_unit"] != expected_units["power_unit"]:
+    if raw_point["power_unit"] != expected_units["power"]:
         raise ValueError(
             f"Point {point_key!r} power_unit must be "
-            f"{expected_units['power_unit']!r}; got {raw_point['power_unit']!r}. "
-            f"Unit conversion is intentionally not handled in this slice."
+            f"{expected_units['power']!r} when source is {source!r}; "
+            f"got {raw_point['power_unit']!r}."
         )
 
     return {
@@ -189,7 +196,9 @@ def build_predicted_points_envelope(
 
     validated_points: Dict[str, Dict[str, Any]] = {}
     for key in required:
-        validated_points[key] = _validate_point(profile_id, key, points[key])
+        validated_points[key] = _validate_point(
+            profile_id, resolved_source, key, points[key]
+        )
 
     return {
         "source": resolved_source,
@@ -206,10 +215,19 @@ def predicted_points_to_calculator_input_envelope(
     """Convert a validated ``PredictedPointsEnvelope`` into a
     ``CalculatorInputEnvelope`` for the given profile.
 
-    No unit conversion is performed. ``source`` from the predicted-points
-    envelope is preserved and placed into ``options["source"]`` of the
-    calculator-input envelope. ``metadata`` (``candidate_id`` /
-    ``model_version``) is copied through ``options`` as well.
+    Behavior by source:
+
+    - ``ml_prediction``: input points must be in W canonical units. The
+      unit adapter converts capacity from W to Btu/h (AHRI SEER2) and
+      keeps power in W. The resulting envelope carries a
+      ``units_trace`` with ``conversion_applied=True``.
+    - ``manual_candidate`` / ``fixture``: input points must already be
+      in profile-native units. No conversion is performed and
+      ``units_trace.conversion_applied`` is ``False``.
+
+    ``metadata`` (``candidate_id`` / ``model_version``) and
+    ``model_target`` are copied through ``options`` on the resulting
+    calculator-input envelope.
     """
     if not isinstance(envelope, Mapping):
         raise TypeError("envelope must be a mapping")
@@ -223,12 +241,10 @@ def predicted_points_to_calculator_input_envelope(
     if not isinstance(points, Mapping):
         raise TypeError("envelope['points'] must be a mapping")
 
-    capacity_power_only: Dict[str, Dict[str, float]] = {}
-    for key, raw_point in points.items():
-        capacity_power_only[key] = {
-            "capacity": raw_point["capacity"],
-            "power": raw_point["power"],
-        }
+    source = envelope["source"]
+    native_points, units_trace = normalize_points_to_profile_native(
+        profile_id, points, source=source
+    )
 
     metadata = envelope.get("metadata") or {}
     options: Dict[str, Any] = {}
@@ -241,7 +257,8 @@ def predicted_points_to_calculator_input_envelope(
 
     return build_calculator_input_envelope(
         profile_id=profile_id,
-        points=capacity_power_only,
-        source=envelope["source"],
+        points=native_points,
+        source=source,
         options=options or None,
+        units_trace=units_trace,
     )

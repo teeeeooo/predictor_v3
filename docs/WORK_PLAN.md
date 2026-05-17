@@ -21,14 +21,20 @@
 - Calculator core / region config 가드는 banned-key 및 adapter-owned term 가드 (`tests/test_calculator_schema_boundaries.py`)로 강화 완료.
 - ISO16358-2 HSPF official exact 16-case verification은 active diagnostic으로 추가했다. 현재 계산기 actual은 5개 case match, 11개 case mismatch이며 mismatch case는 strict xfail로 보존한다.
 - ISO16358-2 HSPF official exact fixture는 official data (input / description / expected)만 남기도록 정리했고, current-implementation status (match/mismatch xfail list)는 `tests/test_iso16358_hspf_official_exact_golden.py`의 `XFAIL_CASE_IDS` constant로 분리했다.
+- ISO16358-2 HSPF mismatch 원인 분석은 사용자가 별도 규격 원문 audit으로 진행하는 외부 작업이며, repo immediate next action에 포함하지 않는다. xfail case 목록은 그대로 유지한다.
 - AHRI / EN14825 horizontal table-input UI와 ML W ↔ calculator-native unit boundary는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md`에 설계 완료. 첫 구현 slice는 AHRI SEER2 table input 한 곳으로 제한한다.
+- ML W ↔ AHRI SEER2 Btu/h capacity 변환은 `core/calculator_unit_adapter.py`로 분리했고, PredictedPointsEnvelope → CalculatorInputEnvelope → CalculatorResultEnvelope → RankingCandidateEnvelope end-to-end smoke (`tests/test_calculator_envelope_chain.py`)가 chain 무결성을 보호한다.
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
-2. ISO16358-2 HSPF official exact 16-case mismatch를 먼저 분석한다. UI redesign, calculator table-input UI 구현, 또는 추가 table UI slice는 이 mismatch 분석 뒤로 둔다.
-3. 그 뒤 Calculator UI v1 follow-up을 별도 UI 작업으로 다룬다. 현재 `ui/calc_window.py`에는 launch smoke, AHRI/EN profile selector guard, AHRI AC calculate button/result-display smoke, EN SCOP result smoke, HSPF2 form layout guard, HSPF2 validation guard가 있다. AHRI / EN14825 horizontal table-input UI 설계는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` 기준으로 AHRI SEER2 → AHRI HSPF2 → EN14825 SCOP → EN14825 SEER 순서로 slice를 분리한다. 그 뒤 unit adapter slice (W ↔ profile-native)를 별도로 둔다.
-4. ML / inverse-search 복귀는 envelope adapter chain의 첫 AHRI SEER2 slice 상태를 유지한 뒤 별도 작업으로 다룬다.
-5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
+2. ISO16358-2 HSPF official exact 16-case mismatch는 사용자가 규격 원문 audit으로 별도 진행하는 외부 작업이므로 repo immediate next action에서 제외한다. mismatch 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
+3. Repo 다음 순서는 다음 sequence로 둔다:
+   1. unit normalization adapter — AHRI SEER2 외 profile은 후속. `core/calculator_unit_adapter.py` 기준.
+   2. envelope chain end-to-end smoke — `tests/test_calculator_envelope_chain.py` 기준.
+   3. AHRI SEER2 horizontal table-input UI slice — `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` 기준.
+4. 위 3 이후 AHRI HSPF2 → EN14825 SCOP → EN14825 SEER table-input UI slice 순서로 확장한다. 같은 시점에 unit adapter도 ISO / KS / EN profile 으로 확장한다.
+5. ML / inverse-search 복귀는 envelope adapter chain + unit adapter 상태를 유지한 뒤 별도 작업으로 다룬다.
+6. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 
 `work/iso-hspf-refactor-ui-followup` 브랜치는 merge하지 않고 reference/spike로만 둔다.
 

@@ -106,12 +106,69 @@ def _validate_source(source: str) -> str:
     return source
 
 
+_UNITS_TRACE_REQUIRED_KEYS = {"source_units", "target_units", "conversion_applied"}
+
+
+def _validate_units_trace(
+    profile_id: str, units_trace: Optional[Mapping[str, Any]]
+) -> Dict[str, Any]:
+    """Validate a caller-provided ``units_trace`` or build a no-op default.
+
+    The default trace records ``source_units == target_units ==
+    profile-native`` and ``conversion_applied=False``, which matches
+    the contract for manual / fixture sources that already arrive in
+    profile-native units. ``target_units`` must always equal the
+    profile-native unit mapping; otherwise ``measured_inputs`` would
+    not be calculator-ready.
+    """
+    expected_target = _EXPECTED_UNITS_BY_PROFILE[profile_id]
+    if units_trace is None:
+        return {
+            "source_units": dict(expected_target),
+            "target_units": dict(expected_target),
+            "conversion_applied": False,
+        }
+    if not isinstance(units_trace, Mapping):
+        raise TypeError("units_trace must be a mapping when provided")
+    missing = _UNITS_TRACE_REQUIRED_KEYS - set(units_trace.keys())
+    if missing:
+        raise KeyError(
+            f"units_trace missing required keys: {sorted(missing)}"
+        )
+    extra = set(units_trace.keys()) - _UNITS_TRACE_REQUIRED_KEYS
+    if extra:
+        raise ValueError(
+            f"units_trace has unexpected keys: {sorted(extra)}. "
+            f"Allowed: {sorted(_UNITS_TRACE_REQUIRED_KEYS)}."
+        )
+    source_units = units_trace["source_units"]
+    target_units = units_trace["target_units"]
+    if not isinstance(source_units, Mapping) or not isinstance(target_units, Mapping):
+        raise TypeError(
+            "units_trace['source_units'] and units_trace['target_units'] "
+            "must be mappings"
+        )
+    if dict(target_units) != expected_target:
+        raise ValueError(
+            f"units_trace target_units {dict(target_units)!r} must match "
+            f"profile-native units {expected_target!r}"
+        )
+    if not isinstance(units_trace["conversion_applied"], bool):
+        raise TypeError("units_trace['conversion_applied'] must be a bool")
+    return {
+        "source_units": dict(source_units),
+        "target_units": dict(target_units),
+        "conversion_applied": units_trace["conversion_applied"],
+    }
+
+
 def build_calculator_input_envelope(
     profile_id: str,
     points: Mapping[str, Any],
     units: Optional[Mapping[str, str]] = None,
     source: str = "manual_candidate",
     options: Optional[Mapping[str, Any]] = None,
+    units_trace: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build a CalculatorInputEnvelope for a supported calculator profile.
 
@@ -126,6 +183,12 @@ def build_calculator_input_envelope(
             fail fast.
         source: One of ``manual_candidate``, ``ml_prediction``, ``fixture``.
         options: Optional caller-owned options dict copied into the envelope.
+        units_trace: Optional ``{source_units, target_units,
+            conversion_applied}`` mapping describing where the input
+            values came from. When omitted a no-op trace is recorded
+            (``source_units == target_units == profile-native``,
+            ``conversion_applied=False``). ``target_units`` must match
+            profile-native or validation fails.
 
     Returns:
         Dict matching the design doc shape:
@@ -166,11 +229,13 @@ def build_calculator_input_envelope(
 
     resolved_units = _validate_units(profile_id, units)
     resolved_source = _validate_source(source)
+    resolved_units_trace = _validate_units_trace(profile_id, units_trace)
     profile = resolve_calculator_profile(profile_id=profile_id)
 
     envelope_options: Dict[str, Any] = {
         "units": resolved_units,
         "source": resolved_source,
+        "units_trace": resolved_units_trace,
     }
     if options:
         for key, value in options.items():

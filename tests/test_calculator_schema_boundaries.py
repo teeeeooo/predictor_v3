@@ -49,6 +49,7 @@ ADAPTER_MODULES = {
     Path("core/calculator_input_adapter.py"),
     Path("core/calculator_prediction_adapter.py"),
     Path("core/calculator_ranking_adapter.py"),
+    Path("core/calculator_unit_adapter.py"),
 }
 
 

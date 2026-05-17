@@ -181,3 +181,88 @@ def test_envelope_rejects_malformed_point_value():
     bad["A_Full"] = "36000,3000"
     with pytest.raises(TypeError, match="must be a .capacity, power."):
         build_calculator_input_envelope("ahri_usa_seer2", bad)
+
+
+def test_envelope_default_units_trace_is_no_op_when_omitted():
+    envelope = build_calculator_input_envelope("ahri_usa_seer2", SAMPLE_TUPLE_POINTS)
+
+    trace = envelope["options"]["units_trace"]
+    assert trace == {
+        "source_units": {"capacity": "Btu/h", "power": "W"},
+        "target_units": {"capacity": "Btu/h", "power": "W"},
+        "conversion_applied": False,
+    }
+
+
+def test_envelope_accepts_caller_provided_units_trace_for_ml_prediction():
+    trace = {
+        "source_units": {"capacity": "W", "power": "W"},
+        "target_units": {"capacity": "Btu/h", "power": "W"},
+        "conversion_applied": True,
+    }
+    envelope = build_calculator_input_envelope(
+        "ahri_usa_seer2",
+        SAMPLE_TUPLE_POINTS,
+        source="ml_prediction",
+        units_trace=trace,
+    )
+
+    assert envelope["options"]["units_trace"] == trace
+    # measured_inputs still holds calculator-native values; envelope helper
+    # remains usable by the existing calculator path.
+    assert envelope["measured_inputs"]["A_Full"] == {"capacity": 36000.0, "power": 3000.0}
+    test_points = measured_inputs_as_test_points(envelope)
+    assert test_points["A_Full"] == (36000.0, 3000.0)
+
+
+def test_envelope_rejects_units_trace_target_other_than_profile_native():
+    bad_trace = {
+        "source_units": {"capacity": "W", "power": "W"},
+        "target_units": {"capacity": "kW", "power": "kW"},
+        "conversion_applied": True,
+    }
+    with pytest.raises(ValueError, match="must match profile-native units"):
+        build_calculator_input_envelope(
+            "ahri_usa_seer2",
+            SAMPLE_TUPLE_POINTS,
+            units_trace=bad_trace,
+        )
+
+
+def test_envelope_rejects_units_trace_missing_keys():
+    bad_trace = {"source_units": {"capacity": "W", "power": "W"}}
+    with pytest.raises(KeyError, match="missing required keys"):
+        build_calculator_input_envelope(
+            "ahri_usa_seer2",
+            SAMPLE_TUPLE_POINTS,
+            units_trace=bad_trace,
+        )
+
+
+def test_envelope_rejects_units_trace_extra_keys():
+    bad_trace = {
+        "source_units": {"capacity": "Btu/h", "power": "W"},
+        "target_units": {"capacity": "Btu/h", "power": "W"},
+        "conversion_applied": False,
+        "note": "irrelevant",
+    }
+    with pytest.raises(ValueError, match="unexpected keys"):
+        build_calculator_input_envelope(
+            "ahri_usa_seer2",
+            SAMPLE_TUPLE_POINTS,
+            units_trace=bad_trace,
+        )
+
+
+def test_envelope_rejects_units_trace_via_options_reserved_key():
+    bad_options_trace = {
+        "source_units": {"capacity": "Btu/h", "power": "W"},
+        "target_units": {"capacity": "Btu/h", "power": "W"},
+        "conversion_applied": False,
+    }
+    with pytest.raises(ValueError, match="reserved key"):
+        build_calculator_input_envelope(
+            "ahri_usa_seer2",
+            SAMPLE_TUPLE_POINTS,
+            options={"units_trace": bad_options_trace},
+        )
