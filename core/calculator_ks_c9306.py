@@ -9,12 +9,13 @@ class KSC9306Calculator:
     """KS C 9306 전용 special calculator.
 
     ISO 16358 common path와 분리된 KS C 9306 CSPF/HSPF 전용 special
-    calculator이다. 현재는 KS C 9306 HSPF 계산 (`calculate_hspf`) 및 ISO16358
-    common path가 delegation으로 호출하는 KS 전용 helper를 보유한다.
+    calculator이다. KS C 9306 HSPF 계산 (`calculate_hspf`)과 KS 전용
+    helper를 이 모듈의 책임으로 둔다.
 
     Behavior-preserving extraction: 이 클래스는 기존
     ``ISO16358Calculator``의 ``_ks_hspf_*`` / ``_calculate_ks_c9306_hspf``
-    로직을 그대로 옮긴 결과이며 계산식은 변경하지 않는다.
+    로직을 그대로 옮긴 결과이며 계산식은 변경하지 않는다. Step 2 legacy
+    rename 전까지 ``from_iso_calculator`` compatibility factory는 유지한다.
     """
 
     def __init__(self, config: dict, bin_hours=None, default_cd: float = 0.25):

@@ -4,9 +4,10 @@ import json
 import pytest
 
 from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_ks_c9306 import KSC9306Calculator
 from tests.test_iso16358_hspf_golden import (
     OFFICIAL_GOLDEN_SAMPLE,
-    make_phase1_calculator,
+    make_ks_phase1_calculator,
 )
 
 
@@ -39,7 +40,7 @@ def make_ks_config_calculator(tmp_path, load_line):
         "hspf_bin_hours": [{"j": 1, "tj": 7, "nj": 1}],
     }
     config_path.write_text(json.dumps(config), encoding="utf-8")
-    return ISO16358Calculator(str(config_path))
+    return KSC9306Calculator.from_config_path(str(config_path))
 
 
 def make_iso_common_calculator(tmp_path, hspf_overrides=None, bin_hours=None):
@@ -81,21 +82,21 @@ def iso_common_points():
 
 
 def test_ks_c9306_hspf_input_must_be_dict(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
 
     with pytest.raises(ValueError, match="ks_c_9306_hspf: must be dict"):
         calculator.calculate_hspf({"ks_c_9306_hspf": "invalid"})
 
 
 def test_ks_c9306_hspf_profile_requires_ks_input(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
 
     with pytest.raises(ValueError, match="Missing ks_c_9306_hspf input"):
         calculator.calculate_hspf({})
 
 
 def test_ks_c9306_hspf_capacity_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity")
 
@@ -104,7 +105,7 @@ def test_ks_c9306_hspf_capacity_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_power_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "power")
 
@@ -113,7 +114,7 @@ def test_ks_c9306_hspf_power_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_capacity_rated_7_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity", "rated", "7")
 
@@ -125,7 +126,7 @@ def test_ks_c9306_hspf_capacity_rated_7_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_capacity_intermediate_7_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity", "intermediate", "7")
 
@@ -137,7 +138,7 @@ def test_ks_c9306_hspf_capacity_intermediate_7_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_capacity_min_7_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity", "min", "7")
 
@@ -149,7 +150,7 @@ def test_ks_c9306_hspf_capacity_min_7_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_capacity_defrost_2_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity", "max", "def")
 
@@ -161,7 +162,7 @@ def test_ks_c9306_hspf_capacity_defrost_2_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_capacity_max_minus7_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "capacity", "max", "-7")
 
@@ -173,7 +174,7 @@ def test_ks_c9306_hspf_capacity_max_minus7_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_power_max_def_is_required(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     remove_nested(data, "ks_c_9306_hspf", "power", "max", "def")
 
@@ -185,7 +186,7 @@ def test_ks_c9306_hspf_power_max_def_is_required(tmp_path):
 
 
 def test_ks_c9306_hspf_negative_capacity_is_invalid(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     data["ks_c_9306_hspf"]["capacity"]["min"]["7"] = -1.0
 
@@ -197,7 +198,7 @@ def test_ks_c9306_hspf_negative_capacity_is_invalid(tmp_path):
 
 
 def test_ks_c9306_hspf_correction_cd_must_be_less_than_one(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     data["ks_c_9306_hspf"]["correction"]["cd"] = 1.0
 
@@ -209,7 +210,7 @@ def test_ks_c9306_hspf_correction_cd_must_be_less_than_one(tmp_path):
 
 
 def test_ks_c9306_hspf_load_line_requires_slope_and_intercept(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     data["ks_c_9306_hspf"]["load_line"] = {"slope": 100.0}
 
@@ -436,7 +437,7 @@ def test_iso_common_hspf_load_line_rated_capacity_factor_must_be_positive(tmp_pa
 
 
 def test_ks_c9306_hspf_lower_stage_2c_and_minus7_are_optional(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
 
     for quantity in ("capacity", "power"):
@@ -450,7 +451,7 @@ def test_ks_c9306_hspf_lower_stage_2c_and_minus7_are_optional(tmp_path):
 
 
 def test_ks_c9306_hspf_stage_2c_derived_from_rule_based_minus7(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     hspf_input = data["ks_c_9306_hspf"]
 
@@ -481,7 +482,7 @@ def test_ks_c9306_hspf_stage_2c_derived_from_rule_based_minus7(tmp_path):
 
 
 def test_ks_c9306_hspf_stage_2c_derived_from_input_minus7(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     hspf_input = data["ks_c_9306_hspf"]
 
@@ -507,7 +508,7 @@ def test_ks_c9306_hspf_stage_2c_derived_from_input_minus7(tmp_path):
 
 
 def test_ks_c9306_hspf_stage_2c_input_overrides_fallback(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
     hspf_input = data["ks_c_9306_hspf"]
 
@@ -527,7 +528,7 @@ def test_ks_c9306_hspf_stage_2c_input_overrides_fallback(tmp_path):
 
 
 def test_ks_c9306_hspf_frost_runtime_accepts_missing_lower_stage_2c(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
 
     for quantity in ("capacity", "power"):
@@ -542,7 +543,7 @@ def test_ks_c9306_hspf_frost_runtime_accepts_missing_lower_stage_2c(tmp_path):
 
 
 def test_ks_c9306_hspf_golden_fixture_passes_validation(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = schema_completeness_fixture_not_expected_tuning()
 
     result = calculator.calculate_hspf(data)

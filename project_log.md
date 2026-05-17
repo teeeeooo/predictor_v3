@@ -832,3 +832,15 @@
 - profile resolver (`core/calculator_profiles.py`)는 순수 manifest/selector를 유지하고, calculator 인스턴스 생성은 `core/calculator_dispatcher.py`가 담당한다.
 - ISO common engine 안의 KS-aware 분기 (`ks_intersection`) 와 ISO 측 KS thin wrappers의 완전 제거는 ISO common engine을 KS-unaware로 분리하는 후속 작업이 wiring된 다음 진행한다.
 - 16개 ISO common HSPF / pure ISO track A / case 3 Excel trace pre-existing failures는 본 workstream에서 다루지 않고 유지한다.
+
+### Follow-up — ISO separation Step 1 KS HSPF test routing
+
+#### Result
+- `iso_seperation_plan.md` Step 1 범위에서 KS C 9306 HSPF 테스트가 ISO calculator의 KS delegation을 통하지 않고 `KSC9306Calculator`를 직접 사용하도록 retarget했다.
+- `tests/test_iso16358_hspf_ks_oracle.py`는 KS row 계산을 `KSC9306Calculator`로 수행하고 ISO common row 계산은 `ISO16358Calculator`로 유지해 shared-formula 비교 의도를 보존했다.
+- `tests/test_iso16358_hspf_validation.py`와 `tests/test_iso16358_hspf_golden.py`의 KS 전용 validation/golden/helper 테스트는 `make_ks_phase1_calculator()` 또는 `KSC9306Calculator.from_config_path(...)`로 전환했다.
+- `core/calculator_ks_c9306.py`의 class docstring에서 transitional delegation 표현을 정리했고, Step 2 legacy rename 전까지 `from_iso_calculator` compatibility factory는 유지한다고 명시했다.
+
+#### Decision
+- Step 1에서는 ISO module rename, legacy 이동, UI import 변경, `from_iso_calculator` 제거를 하지 않는다. 해당 작업은 `iso_seperation_plan.md` Step 2 범위로 유지한다.
+- ISO common HSPF golden/diagnostic pre-existing failures는 기대값, tolerance, xfail을 조정하지 않고 baseline으로 유지한다.

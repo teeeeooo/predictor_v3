@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_ks_c9306 import KSC9306Calculator
 
 
 HSPF_TOLERANCE = 0.001
@@ -93,7 +94,7 @@ def assert_close(actual, expected, tolerance, label, failures):
         )
 
 
-def make_phase1_calculator(tmp_path, ks_profile=True):
+def make_phase1_config_path(tmp_path, ks_profile=True):
     config_path = tmp_path / "iso16358_hspf_golden_phase1.json"
     h1_load = OFFICIAL_GOLDEN_SAMPLE["rated_heating_capacity"]
     h1_points = adapt_official_golden_for_phase1_engine()
@@ -173,7 +174,17 @@ def make_phase1_calculator(tmp_path, ks_profile=True):
     if ks_profile:
         config["hspf"] = hspf_config
     config_path.write_text(json.dumps(config), encoding="utf-8")
+    return config_path
+
+
+def make_phase1_calculator(tmp_path, ks_profile=True):
+    config_path = make_phase1_config_path(tmp_path, ks_profile=ks_profile)
     return ISO16358Calculator(str(config_path))
+
+
+def make_ks_phase1_calculator(tmp_path):
+    config_path = make_phase1_config_path(tmp_path, ks_profile=True)
+    return KSC9306Calculator.from_config_path(str(config_path))
 
 
 def load_iso_hspf_golden_fixture():
@@ -1378,7 +1389,7 @@ def test_iso16358_hspf_golden_sample(tmp_path):
 
 
 def test_ks_c9306_hspf_production_schema_golden_sample(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     result = calculator.calculate_hspf({
         **OFFICIAL_GOLDEN_SAMPLE,
         "rated_cooling_capacity": 4300.0,
@@ -1473,7 +1484,7 @@ def explicit_ks_hspf_curve_fixture():
 
 
 def test_ks_c9306_hspf_curve_anchors(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
 
     assert calculator._ks_hspf_capacity_curve(7.0, hspf_input, "min") == 1000.0
@@ -1496,7 +1507,7 @@ def test_ks_c9306_hspf_curve_anchors(tmp_path):
 
 
 def test_ks_c9306_hspf_frost_boundaries_and_ratios(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
 
     assert not calculator._ks_hspf_is_frost_region(-7.0)
@@ -1508,7 +1519,7 @@ def test_ks_c9306_hspf_frost_boundaries_and_ratios(tmp_path):
 
 
 def test_ks_c9306_hspf_operating_cases(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
 
     cyclic = calculator._ks_hspf_bin(7.0, 500.0, 2.0, hspf_input)
@@ -1536,7 +1547,7 @@ def test_ks_c9306_hspf_operating_cases(tmp_path):
 
 
 def test_ks_c9306_hspf_intersection_power_formulas(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
     load_line = (100.0, 500.0)
 
@@ -1591,7 +1602,7 @@ def test_ks_c9306_hspf_intersection_power_formulas(tmp_path):
 
 
 def test_ks_c9306_hspf_frost_intersection_power_formulas(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     hspf_input = explicit_ks_hspf_curve_fixture()["ks_c_9306_hspf"]
     load_line = (-100.0, 3500.0)
 
@@ -1664,7 +1675,7 @@ def test_ks_c9306_hspf_frost_intersection_power_formulas(tmp_path):
 
 
 def test_ks_c9306_hspf_bin_uses_optional_load_line(tmp_path):
-    calculator = make_phase1_calculator(tmp_path)
+    calculator = make_ks_phase1_calculator(tmp_path)
     data = explicit_ks_hspf_curve_fixture()
     data["ks_c_9306_hspf"]["load_line"] = {"slope": 100.0, "intercept": 500.0}
     hspf_input = data["ks_c_9306_hspf"]
@@ -1727,7 +1738,7 @@ def test_ks_c9306_hspf_bin_load_defaults_to_config_load_line(tmp_path):
         "hspf_bin_hours": [{"j": 1, "tj": 7, "nj": 1}],
     }
     config_path.write_text(json.dumps(config), encoding="utf-8")
-    calculator = ISO16358Calculator(str(config_path))
+    calculator = KSC9306Calculator.from_config_path(str(config_path))
 
     result = calculator.calculate_hspf({
         **OFFICIAL_GOLDEN_SAMPLE,

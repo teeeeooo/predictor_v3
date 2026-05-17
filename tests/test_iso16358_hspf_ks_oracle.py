@@ -1,5 +1,6 @@
 import pytest
 from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_ks_c9306 import KSC9306Calculator
 
 # This test is a test-only shared-formula oracle probe. 
 # It does not define ISO official expected values.
@@ -27,8 +28,10 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_fixture():
     H-2a/H-2b: Verify consistency for base points (no cycling, Cd=0).
     At exact test points, both paths should yield identical results.
     """
-    calc = ISO16358Calculator("data/region_configs/korea.json")
-    calc.Cd = 0.0
+    ks_calc = KSC9306Calculator.from_config_path("data/region_configs/korea.json")
+    iso_calc = ISO16358Calculator("data/region_configs/korea.json")
+    ks_calc.Cd = 0.0
+    iso_calc.Cd = 0.0
     
     ks_input = get_neutralized_fixture()
     ks_input["correction"]["cd"] = 0.0
@@ -37,7 +40,7 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_fixture():
     load = 1000.0 # Exactly at min_capacity
     hours = 2.0
     
-    bin_row_ks = calc._ks_hspf_bin(tj, load, hours, ks_input)
+    bin_row_ks = ks_calc._ks_hspf_bin(tj, load, hours, ks_input)
     
     # Equivalent ISO inputs
     measured_inputs = {
@@ -48,7 +51,7 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_fixture():
         "2_full": {"capacity": 3000.0, "power": 800.0, "temp": 2.0},
     }
     
-    bin_row_iso = calc._variable_heating_bin(tj, load, hours, measured_inputs)
+    bin_row_iso = iso_calc._variable_heating_bin(tj, load, hours, measured_inputs)
     
     # Analyze the result
     print(f"\nBin Row (non-cycling, Cd=0): {bin_row_ks}")
@@ -63,11 +66,13 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_cycling_fixture():
     Ensures that both ISO common path and KS path follow the same shared formula
     for cycling (load < min_capacity) when Cd > 0.
     """
-    calc = ISO16358Calculator("data/region_configs/korea.json")
+    ks_calc = KSC9306Calculator.from_config_path("data/region_configs/korea.json")
+    iso_calc = ISO16358Calculator("data/region_configs/korea.json")
     
     # Set Cd = 0.35 for both paths
     cd_val = 0.35
-    calc.Cd = cd_val
+    ks_calc.Cd = cd_val
+    iso_calc.Cd = cd_val
     
     # 1. Neutralized KS fixture for cycling
     # Load < Min Capacity
@@ -92,7 +97,7 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_cycling_fixture():
     load = 400.0 # CR = 400 / 1000 = 0.4
     hours = 10.0
     
-    bin_row_ks = calc._ks_hspf_bin(tj, load, hours, ks_input)
+    bin_row_ks = ks_calc._ks_hspf_bin(tj, load, hours, ks_input)
     
     # 2. Equivalent ISO common inputs
     measured_inputs = {
@@ -103,7 +108,7 @@ def test_iso_hspf_common_matches_ks_oracle_on_neutralized_cycling_fixture():
         "2_full": {"capacity": 3000.0, "power": 800.0, "temp": 2.0},
     }
     
-    bin_row_iso = calc._variable_heating_bin(tj, load, hours, measured_inputs)
+    bin_row_iso = iso_calc._variable_heating_bin(tj, load, hours, measured_inputs)
     
     # 3. Compare
     print(f"\nTJ: {tj}, Load: {load}, Cd: {cd_val}")
