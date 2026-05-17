@@ -1,6 +1,38 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-17 — Audit 4 next actions completion (069 ~ 073)
+
+### Result
+- `reference_files/audit_4.md`가 제시한 4개 next action을 단계별 source/report
+  분리 커밋으로 완료함. 최종 reference report는
+  `reference_files/audit_4_next_actions_completion.md`에 작성.
+- 069: HSPF2 UI 중복 row guard. `ui/calc_window.py`에는 실제 중복이 없었고,
+  `tests/test_app_calculator_ui_smoke.py`에 회귀 방지 smoke 2건만 추가.
+- 070: EN14825 UI → `calculate_scop()` 연결. EN tab에 TOL/Tbiv/p_design_h/
+  climate/standby 입력을 추가하고 placeholder `calculate_en()`을 실제 SCOP
+  계산 경로로 교체. standby power는 W → kW 변환을 UI 어댑터에서 수행.
+- 071: `core/calculator_input_adapter.py` 신설 (AHRI SEER2 한정 첫 slice).
+  Tuple/Dict 입력, Btu/h·W 단위만 허용, fail-fast로 8건 테스트.
+- 072: `tests/test_calculator_schema_boundaries.py`의 banned region key 및
+  adapter-owned term 가드 확장. 9개 production region config 모두 통과 확인.
+
+### Decision
+- Calculator boundary는 계속 result adapter + input adapter의 두 축으로 유지.
+  ML caller 도입 전에 schema 정합성 (`source` vocabulary, envelope shape) 을
+  먼저 고정하기로 한다 (다음 audit_5 task 2~3).
+- region config는 정적 standard/region data로 유지하고, 모든 runtime/ML/ranking
+  관련 key는 가드 테스트로 차단.
+
+### Verification
+- `python3 -B -m pytest -q` → `312 passed, 23 xfailed` (PyQt5 사용 가능 환경
+  기준). PyQt5가 없는 sandbox에서는 UI smoke 7개가 skip되어 `305 passed,
+  1 skipped, 23 xfailed`.
+- Source commits: `e35ea2f, b673293, f7c7527, 2a3b680`.
+- Report commits: `afa9e13, 798be75, 30c0d9c, 7819a50, e3f37f6`.
+
+---
+
 ## 2026-05-17 — Calculator series reset direction
 
 ### Decision

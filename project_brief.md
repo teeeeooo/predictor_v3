@@ -6,7 +6,7 @@
 - **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다. ISO HSPF는 Formula micro golden 및 KS shared-formula oracle로 이중 보호 중입니다.
 - **실행 로드맵:** 현재 우선순위와 상세 실행 순서는 `docs/WORK_PLAN.md`를 따른다.
 - **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS workbook compatibility calculator(Energy Rating SEER Excel workbook reference)로 분리합니다. AS/NZS current workbook snapshot exact-match는 HSPF/CSPF 모두 별도 compatibility path에서만 다루며, historical case3 full-dump 재현은 계속 Z-phase입니다.
-- **Calculator UI / ML adapter 경계:** `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 보호하고, AHRI SEER2와 EN14825 SCOP selector는 profile resolver 기반입니다. ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 기준으로 합니다.
+- **Calculator UI / ML adapter 경계:** `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 보호하고, AHRI SEER2와 EN14825 SCOP selector는 profile resolver 기반입니다. EN14825 tab은 placeholder가 아니라 실제 `calculate_scop()`을 호출하며 TOL/Tbiv/p_design_h/climate/standby 입력을 UI에서 받습니다. ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 기준으로 하며, AHRI SEER2 input/result envelope 첫 slice (`core/calculator_input_adapter.py`, `core/calculator_result_adapter.py`)와 schema boundary 가드(`tests/test_calculator_schema_boundaries.py`)가 적용되어 있습니다.
 
 ## 2. 문서 가이드
 - **`AGENTS.md`**: 매 작업 시작 시 확인하는 얇은(Lite) 규칙 문서입니다.
