@@ -1,12 +1,12 @@
-predictor_v3 ISO separation audit 결과
-결론
+# predictor_v3 ISO separation audit 결과
+## 결론
 
 전체적으로 ISO / KS / AS/NZS 책임 분리는 성공한 상태로 보인다. PROJECT_CHARTER.md의 “계산식 신뢰성 → 테스트 → 입력 구조 → UI → Predictor” 순서도 대체로 지켰고, docs/architecture/project_architecture.md의 calculator boundary 기준에도 거의 맞는다.
 
 다만 **“ML 및 app_calculator.py 구현 가능 상태”**로 보면 아직 완성은 아니다.
 현재 상태는 계산기 core 분리는 완료, UI/ML 연결을 시작할 수 있는 기반은 생김, 하지만 UI resolver 정리와 calculator→ML adapter 설계는 아직 필요한 단계다.
 
-확인한 기준
+## 확인한 기준
 AGENTS.md
 PROJECT_CHARTER.md
 project_brief.md
@@ -23,7 +23,7 @@ result_reports/summaries/054_summary-calculator-ui-iso-separation.md
 
 검증 결과
 
-직접 실행한 검증:
+##직접 실행한 검증:
 
 python3 -B -m py_compile \
   core/calculator_iso16358.py \
@@ -55,7 +55,7 @@ python3 -B -m pytest -q
 
 테스트 상태는 iso_remaining_work_completion.md에 적힌 결과와 일치한다.
 
-잘 된 부분
+## 잘 된 부분
 1. ISO / KS / AS/NZS 계산기 분리
 
 docs/architecture/project_architecture.md는 다음 구조를 요구한다.
@@ -97,7 +97,7 @@ ui/calculators_2point.py의 ISO CSPF 단건 UI는 create_calculator_for_profile(
 ACTIVE_DOCUMENTS.md가 생겼고, AGENT_TASK_ROUTER.md, README.md, docs/README.md에서 이 문서를 참조한다.
 result_reports/active/034~053을 result_reports/archive/로 이동하고, result_reports/summaries/054_summary-calculator-ui-iso-separation.md로 요약한 흐름도 맞다.
 
-발견한 문제 / 남은 위험
+## 발견한 문제 / 남은 위험
 1. core/calculator_iso16358.py 상단 docstring이 오래됨
 
 현재 파일 상단에 다음 취지의 문구가 남아 있다.
@@ -204,7 +204,8 @@ calculator result envelope / adapter 설계
 ML output → calculator input adapter 설계
 candidate HW input과 region config가 섞이지 않도록 별도 schema 정의
 app_calculator interactive smoke
-지금 당장 할 수 있는 다음 작업
+
+## 지금 당장 할 수 있는 다음 작업
 다음 작업 1: 문서/주석 정합성 cleanup
 
 이 작업은 코드 동작을 바꾸지 않는 범위로 먼저 하는 게 좋다.
