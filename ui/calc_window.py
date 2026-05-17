@@ -100,32 +100,71 @@ class CalculatorWindow(QWidget):
         layout.addWidget(self.iso_cspf_widget)
 
     def init_en_tab(self):
-        """EN 탭: 단위 kW 적용"""
+        """EN 탭: 단위 kW 적용 (EN 14825 SCOP)"""
         layout = QVBoxLayout(self.tab_en)
-        
+
         self.combo_region_en = QComboBox()
         self.combo_region_en.currentIndexChanged.connect(self.on_region_changed_en)
         layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_en)
 
-        group = QGroupBox("A/B/C/D 테스트 포인트")
+        group = QGroupBox("A/B/C/D/TOL/Tbiv 테스트 포인트 (kW)")
         form = QFormLayout()
-        points = ["A", "B", "C", "D"]
+        points = ["A", "B", "C", "D", "TOL", "Tbiv"]
         for pt in points:
             cap_w = QLineEdit()
             pow_w = QLineEdit()
             self.input_widgets_en[f"{pt}_capacity"] = cap_w
             self.input_widgets_en[f"{pt}_power"] = pow_w
-            
+
             # [2] 단위 명시
             form.addRow(f"{pt} 조건 능력 (kW):", cap_w)
             form.addRow(f"{pt} 조건 소비전력 (kW):", pow_w)
-            
+
             self.bind_error_reset(cap_w)
             self.bind_error_reset(pow_w)
-            
+
         group.setLayout(form)
         layout.addWidget(group)
+
+        # SCOP 추가 파라미터 (p_design_h, climate, TOL/Tbiv temp, standby)
+        scop_group = QGroupBox("SCOP 계산 파라미터")
+        scop_form = QFormLayout()
+
+        self.input_widgets_en["p_design_h"] = QLineEdit()
+        self.combo_climate_en = QComboBox()
+        self.combo_climate_en.addItem("Average", "average")
+        self.combo_climate_en.addItem("Warmer", "warmer")
+        self.combo_climate_en.addItem("Colder", "colder")
+        self.input_widgets_en["TOL_temp_c"] = QLineEdit()
+        self.input_widgets_en["Tbiv_temp_c"] = QLineEdit()
+        self.input_widgets_en["p_to_w"] = QLineEdit()
+        self.input_widgets_en["p_sb_w"] = QLineEdit()
+        self.input_widgets_en["p_ck_w"] = QLineEdit()
+        self.input_widgets_en["p_off_w"] = QLineEdit()
+
+        scop_form.addRow("p_design_h (kW):", self.input_widgets_en["p_design_h"])
+        scop_form.addRow("기후 (climate):", self.combo_climate_en)
+        scop_form.addRow("TOL 온도 (°C):", self.input_widgets_en["TOL_temp_c"])
+        scop_form.addRow("Tbiv 온도 (°C):", self.input_widgets_en["Tbiv_temp_c"])
+        scop_form.addRow("p_to (W):", self.input_widgets_en["p_to_w"])
+        scop_form.addRow("p_sb (W):", self.input_widgets_en["p_sb_w"])
+        scop_form.addRow("p_ck (W):", self.input_widgets_en["p_ck_w"])
+        scop_form.addRow("p_off (W):", self.input_widgets_en["p_off_w"])
+
+        for key in (
+            "p_design_h",
+            "TOL_temp_c",
+            "Tbiv_temp_c",
+            "p_to_w",
+            "p_sb_w",
+            "p_ck_w",
+            "p_off_w",
+        ):
+            self.bind_error_reset(self.input_widgets_en[key])
+
+        scop_group.setLayout(scop_form)
+        layout.addWidget(scop_group)
         layout.addStretch()
 
     def init_ahri_tab(self):
@@ -447,5 +486,42 @@ class CalculatorWindow(QWidget):
         pass
 
     def calculate_en(self):
-        # EN 로직 (단위 kW)
-        return "EN 계산 결과 (kW 기준)"
+        """EN 14825 SCOP 계산 (UI 입력 → calculate_scop dict 변환)."""
+        if not self.en_calc:
+            raise Exception("EN 계산기 설정 파일이 로드되지 않았습니다.")
+
+        test_points = {}
+        for pt in ("A", "B", "C", "D", "TOL", "Tbiv"):
+            cap = self._get_float_val(self.input_widgets_en[f"{pt}_capacity"], f"{pt} 능력")
+            pwr = self._get_float_val(self.input_widgets_en[f"{pt}_power"], f"{pt} 소비전력")
+            test_points[pt] = (cap, pwr)
+
+        p_design_h = self._get_float_val(self.input_widgets_en["p_design_h"], "p_design_h")
+        climate = self.combo_climate_en.currentData() or "average"
+        tol_temp_c = self._get_float_val(
+            self.input_widgets_en["TOL_temp_c"], "TOL 온도", allow_zero=True
+        )
+        tbiv_temp_c = self._get_float_val(
+            self.input_widgets_en["Tbiv_temp_c"], "Tbiv 온도", allow_zero=True
+        )
+
+        # Standby powers는 UI에서 W로 입력받아 calculator API의 kW로 변환합니다.
+        p_to_w = self._get_float_val(self.input_widgets_en["p_to_w"], "p_to", allow_zero=True)
+        p_sb_w = self._get_float_val(self.input_widgets_en["p_sb_w"], "p_sb", allow_zero=True)
+        p_ck_w = self._get_float_val(self.input_widgets_en["p_ck_w"], "p_ck", allow_zero=True)
+        p_off_w = self._get_float_val(self.input_widgets_en["p_off_w"], "p_off", allow_zero=True)
+
+        result = self.en_calc.calculate_scop(
+            test_points=test_points,
+            p_to=p_to_w / 1000.0,
+            p_sb=p_sb_w / 1000.0,
+            p_ck=p_ck_w / 1000.0,
+            p_off=p_off_w / 1000.0,
+            p_design_h=p_design_h,
+            climate=climate,
+            tbiv_temp_c=tbiv_temp_c,
+            tol_temp_c=tol_temp_c,
+        )
+
+        scop = result.get("scop", result.get("SCOP", 0.0))
+        return f"EN14825 SCOP ({climate}) 결과: {scop}"

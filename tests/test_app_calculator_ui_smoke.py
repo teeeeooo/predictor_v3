@@ -144,6 +144,48 @@ def test_hspf2_input_widgets_have_no_duplicate_rows():
         window.close()
 
 
+def test_en_calculate_button_displays_scop_result_text():
+    """EN tab의 SCOP 입력을 채운 뒤 계산 버튼을 누르면 SCOP 결과 텍스트가 표시된다.
+
+    Sample 값은 tests/test_en14825_golden.py의 average 케이스를 기준으로 사용한다.
+    Standby power는 W 단위로 입력된다는 UI 계약을 함께 점검한다.
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.tabs.setCurrentWidget(window.tab_en)
+
+        sample_points = {
+            "A": (2.1598, 0.6062),
+            "B": (1.3293, 0.2542),
+            "C": (0.9083, 0.1540),
+            "D": (0.9299, 0.1231),
+            "TOL": (2.3698, 0.8067),
+            "Tbiv": (2.3669, 0.7820),
+        }
+        for pt, (cap, pwr) in sample_points.items():
+            window.input_widgets_en[f"{pt}_capacity"].setText(str(cap))
+            window.input_widgets_en[f"{pt}_power"].setText(str(pwr))
+
+        window.input_widgets_en["p_design_h"].setText("2.4")
+        # combo_climate_en defaults to first item ("average")
+        window.input_widgets_en["TOL_temp_c"].setText("-11")
+        window.input_widgets_en["Tbiv_temp_c"].setText("-10")
+        window.input_widgets_en["p_to_w"].setText("6.6")
+        window.input_widgets_en["p_sb_w"].setText("1.2")
+        window.input_widgets_en["p_ck_w"].setText("0")
+        window.input_widgets_en["p_off_w"].setText("1.2")
+
+        window.button_calculate.click()
+
+        assert "EN14825 SCOP" in window.result_label.text()
+        assert "결과:" in window.result_label.text()
+    finally:
+        window.close()
+
+
 def test_hspf2_required_input_raises_validation_error_when_missing():
     """HP 모드에서 HSPF2 필수 입력이 비어 있으면 InputValidationError가 발생한다.
 
