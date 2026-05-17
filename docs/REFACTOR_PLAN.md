@@ -52,8 +52,9 @@
 - **adapter boundary 기준**: result envelope / ML adapter 작업은 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`의 `PredictedPointsEnvelope` / `CalculatorInputEnvelope` / `CalculatorResultEnvelope` 흐름을 따른다.
 
 ### 5. UI resolver-backed config selection
-- **UI가 config 파일을 직접 scan하는 경로 정리 후보**: 현재 UI 계층이 리졸버 가드를 우회하여 파일을 직접 스캔하는 문제 해결.
-- **calculator profile resolver 우회 방지**: UI에서도 항상 `core/calculator_profiles.py`를 통해 설정을 로드하도록 강제.
+- **진행 상태**: `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP combo는 profile registry item data 기반으로 전환했다.
+- **남은 후보**: ISO 2-point subwidget 등 다른 UI 경로에 남아 있는 direct config scan은 별도 UI 작업으로 audit한다.
+- **calculator profile resolver 우회 방지**: UI에서도 calculator construction은 `core/calculator_profiles.py` / dispatcher 경로를 우선한다.
 
 ## Deferred refactor candidates
 - common seasonal bin engine

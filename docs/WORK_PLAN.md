@@ -14,12 +14,12 @@
 - legacy behavior 보존 테스트는 `core/_legacy/`와 `tests/_legacy/` 또는 explicit xfail diagnostic으로 격리한다.
 - production ISO common path와 AS/NZS Excel compatibility path 분리 유지
 - AS/NZS historical case3 full-dump exact matching은 Z-phase. 현재 repo의 `reference_files/iso16358_test_sheet.xlsx` HSPF/CSPF snapshot exact-match는 AS/NZS compatibility calculator/fixture에서만 관리
-- `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 확인했고, AHRI SEER2 selector는 resolver-backed profile selection으로 전환했다.
+- `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 확인했고, AHRI SEER2와 EN14825 SCOP selector는 resolver-backed profile selection으로 전환했다.
 - Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`에 설계 완료했다.
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
-2. Calculator UI v1 follow-up은 별도 UI 작업으로 다룬다. 현재 `ui/calc_window.py`에는 launch smoke와 AHRI profile selector guard가 있으나 calculate button/result-display 연결은 아직 별도 작업이다.
+2. Calculator UI v1 follow-up은 별도 UI 작업으로 다룬다. 현재 `ui/calc_window.py`에는 launch smoke, AHRI/EN profile selector guard, AHRI AC calculate button/result-display smoke가 있다.
 3. ML / inverse-search 복귀 전 첫 구현 slice는 calculator adapter helper를 작게 추가하고, 기존 calculator public API와 region config 의미를 변경하지 않는다.
 4. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
 Z. historical case3 workbook full-dump 확보 후 AS/NZS workbook oracle compatibility 확장 (별도 phase)

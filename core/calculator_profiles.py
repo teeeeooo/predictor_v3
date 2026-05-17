@@ -36,6 +36,16 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         enabled=True,
     ),
     CalculatorProfile(
+        profile_id="en14825_scop",
+        standard="EN_14825",
+        region="europe",
+        metric="SCOP",
+        mode="heating",
+        calculator_id="en14825",
+        config_path="data/region_configs/en14825_scop.json",
+        enabled=True,
+    ),
+    CalculatorProfile(
         profile_id="ks_c9306_cspf",
         standard="KS_C_9306",
         region="korea",

@@ -1,7 +1,6 @@
 # ui/calc_window.py
 
 import os
-import json
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
                              QMessageBox, QScrollArea, QFrame, QTabWidget,
@@ -9,7 +8,6 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
-from core.calculator_en14825 import EN14825Calculator
 from core.calculator_dispatcher import create_calculator_for_profile
 from core.calculator_profiles import list_calculator_profiles
 
@@ -107,7 +105,7 @@ class CalculatorWindow(QWidget):
         
         self.combo_region_en = QComboBox()
         self.combo_region_en.currentIndexChanged.connect(self.on_region_changed_en)
-        layout.addWidget(QLabel("지역 설정:"))
+        layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_en)
 
         group = QGroupBox("A/B/C/D 테스트 포인트")
@@ -243,7 +241,7 @@ class CalculatorWindow(QWidget):
     def scan_configs(self):
         """설정 파일과 profile registry를 규격(Standard)에 맞는 콤보박스에 추가"""
         self._populate_ahri_profiles()
-        self._populate_en_configs()
+        self._populate_en_profiles()
 
     def _populate_ahri_profiles(self):
         """AHRI UI는 enabled calculator profile만 선택지로 노출합니다."""
@@ -263,41 +261,38 @@ class CalculatorWindow(QWidget):
         if self.combo_region_ahri.count() > 0:
             self.on_region_changed_ahri(self.combo_region_ahri.currentIndex())
 
-    def _populate_en_configs(self):
-        """EN 탭은 EN profile 등록 전까지 기존 JSON 스캔 경로를 유지합니다."""
-        if hasattr(self, 'combo_region_en'):
-            was_blocked = self.combo_region_en.blockSignals(True)
-            try:
-                self.combo_region_en.clear()
-            finally:
-                self.combo_region_en.blockSignals(was_blocked)
-
-        if not os.path.exists(self.config_dir): 
+    def _populate_en_profiles(self):
+        """EN UI는 enabled calculator profile만 선택지로 노출합니다."""
+        if not hasattr(self, 'combo_region_en'):
             return
-            
-        files = [f for f in os.listdir(self.config_dir) if f.endswith('.json')]
-        
-        for f in files:
-            path = os.path.join(self.config_dir, f)
-            try:
-                with open(path, 'r', encoding='utf-8') as file:
-                    data = json.load(file)
-                    standard = data.get("standard", "").lower()
-                    
-                    # standard 문자열에 포함된 키워드로 탭 분류
-                    if "en" in standard or "14825" in standard:
-                        if hasattr(self, 'combo_region_en'):
-                            self.combo_region_en.addItem(f)
-            except Exception as e:
-                print(f"⚠️ 설정 파일 로드 실패 ({f}): {e}")
 
+        was_blocked = self.combo_region_en.blockSignals(True)
+        try:
+            self.combo_region_en.clear()
+            for profile in list_calculator_profiles():
+                if profile.standard == "EN_14825":
+                    label = f"{profile.standard} / {profile.region.upper()} / {profile.metric}"
+                    self.combo_region_en.addItem(label, profile.profile_id)
+        finally:
+            self.combo_region_en.blockSignals(was_blocked)
+
+        if self.combo_region_en.count() > 0:
+            self.on_region_changed_en(self.combo_region_en.currentIndex())
 
     def on_region_changed_iso(self, index):
         pass
 
     def on_region_changed_en(self, index):
-        # self.en_calc = EN14825Calculator(path)
-        pass
+        profile_id = None
+        if hasattr(self, 'combo_region_en') and index >= 0:
+            profile_id = self.combo_region_en.itemData(index)
+        if not profile_id:
+            profile_id = "en14825_scop"
+
+        try:
+            self.en_calc = create_calculator_for_profile(profile_id=profile_id)
+        except:
+            self.en_calc = None
 
     def on_region_changed_ahri(self, index):
         profile_id = None

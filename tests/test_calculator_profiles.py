@@ -24,6 +24,18 @@ def test_resolve_ahri_hspf2_by_profile_id_returns_usa_hspf2_json():
     assert profile.config_path == "data/region_configs/usa_hspf2.json"
 
 
+def test_resolve_en14825_scop_by_profile_id_returns_scop_json():
+    profile = resolve_calculator_profile(profile_id="en14825_scop")
+
+    assert profile.profile_id == "en14825_scop"
+    assert profile.standard == "EN_14825"
+    assert profile.region == "europe"
+    assert profile.metric == "SCOP"
+    assert profile.mode == "heating"
+    assert profile.calculator_id == "en14825"
+    assert profile.config_path == "data/region_configs/en14825_scop.json"
+
+
 def test_resolve_ahri_seer2_by_selector():
     profile = resolve_calculator_profile(
         standard="AHRI_210_240",
@@ -96,6 +108,7 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
     assert {profile.profile_id for profile in profiles} == {
         "ahri_usa_seer2",
         "ahri_usa_hspf2",
+        "en14825_scop",
         "ks_c9306_cspf",
         "ks_c9306_hspf",
         "iso_t1_default_2point_cspf",

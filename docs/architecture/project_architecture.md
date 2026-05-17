@@ -170,6 +170,7 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
   - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
 
 AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculator는 `data/region_configs/usa.json`(SEER2/cooling)과 `data/region_configs/usa_hspf2.json`(HSPF2/heating)을 사용할 수 있으며, 이 JSON들은 ISO common path가 아니라 AHRI calculator가 해석한다.
+EN14825 calculator는 `data/region_configs/en14825_scop.json`(SCOP/heating)을 사용할 수 있으며, resolver에서는 `calculator_id=en14825`로 식별한다.
 
 resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
 
@@ -213,6 +214,8 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 `calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
 
 UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 입력 수집과 표시를 담당하고, calculator selection과 config resolution은 manifest/profile contract를 따른다.
+
+현재 `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP selector는 profile label과 `profile_id` item data를 사용한다. Calculator construction은 `create_calculator_for_profile()` 경로를 따른다.
 
 ### Result schema boundary
 

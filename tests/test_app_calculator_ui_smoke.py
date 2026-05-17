@@ -62,6 +62,34 @@ def test_ahri_combo_uses_profile_ids_for_dispatcher_selection():
         window.close()
 
 
+def test_en_combo_uses_profile_ids_for_dispatcher_selection():
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        profile_ids = [
+            window.combo_region_en.itemData(index)
+            for index in range(window.combo_region_en.count())
+        ]
+        labels = [
+            window.combo_region_en.itemText(index)
+            for index in range(window.combo_region_en.count())
+        ]
+
+        assert "en14825_scop" in profile_ids
+        assert all(not label.endswith(".json") for label in labels)
+
+        index = profile_ids.index("en14825_scop")
+        window.combo_region_en.setCurrentIndex(index)
+        window.on_region_changed_en(index)
+
+        assert window.en_calc is not None
+        assert hasattr(window.en_calc, "calculate_scop")
+    finally:
+        window.close()
+
+
 def test_ahri_calculate_button_displays_result_text():
     app = _qapp()
     window = CalculatorWindow()
