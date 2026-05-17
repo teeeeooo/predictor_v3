@@ -2,7 +2,7 @@
 이 문서는 새 대화창 시작 시 현재 상태를 빠르게 파악하기 위한 요약 문서입니다.
 
 ## 1. 현재 상태 및 마일스톤
-- **테스트 및 검증:** Validation smoke/golden 안정화 및 KS oracle cycling consistency(H-2b) 검증이 완료되었습니다. 전체 테스트 통과 기준은 **250 passed** 입니다.
+- **테스트 및 검증:** Validation smoke/golden 안정화 및 KS oracle cycling consistency(H-2b) 검증이 완료되었습니다. 현재 full-suite baseline은 **280 passed, 16 failed, 13 xfailed**이며, 16 failures는 known ISO HSPF baseline입니다.
 - **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다. ISO HSPF는 Formula micro golden 및 KS shared-formula oracle로 이중 보호 중입니다.
 - **실행 로드맵:** 현재 우선순위와 상세 실행 순서는 `docs/WORK_PLAN.md`를 따른다.
 - **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS HSPF calculator(Energy Rating SEER Excel workbook reference)로 분리합니다. AS/NZS current workbook snapshot exact-match는 별도 compatibility calculator/fixture에서만 다루며, historical case3 full-dump 재현은 계속 Z-phase입니다.

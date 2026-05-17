@@ -9,7 +9,7 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QModelIndex, QVariant,
                           pyqtSignal, QTimer, QEvent, QItemSelectionModel)
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence, QBrush
 
-from core.calculator_iso16358_legacy import ISO16358Calculator
+from core.calculator_dispatcher import create_calculator_for_profile
 
 class TraceTableModel(QAbstractTableModel):
     def __init__(self):
@@ -1035,7 +1035,6 @@ class IsoCspfSingleWidget(QWidget):
         super().__init__(parent)
         self.config_dir = config_dir
         self.calculators = {}
-        self.saso_path = os.path.join(self.config_dir, "saso.json")
         self.results = {}
         self._updating_profile = False
         self._load_calculators()
@@ -1043,14 +1042,14 @@ class IsoCspfSingleWidget(QWidget):
         self._apply_profile()
 
     def _load_calculators(self):
-        paths = {
-            "iso": "iso_t1_default_2point.json",
-            "india": "india_iseer.json",
-            "hong_kong": "hong_kong.json",
-            "saso": "saso.json",
+        profiles = {
+            "iso": "iso_t1_default_2point_cspf",
+            "india": "india_iseer_cspf",
+            "hong_kong": "hong_kong_cspf",
+            "saso": "saso_t3_cspf",
         }
-        for key, filename in paths.items():
-            self.calculators[key] = ISO16358Calculator(os.path.join(self.config_dir, filename))
+        for key, profile_id in profiles.items():
+            self.calculators[key] = create_calculator_for_profile(profile_id=profile_id)
 
     def _init_ui(self):
         self.setStyleSheet("""
@@ -1307,7 +1306,7 @@ class IsoCspfSingleWidget(QWidget):
         self._update_detail_tabs()
 
     def _saso_calculator(self, use_min):
-        calculator = ISO16358Calculator(self.saso_path)
+        calculator = create_calculator_for_profile(profile_id="saso_t3_cspf")
         if not use_min:
             calculator.config.setdefault("cspf_test_profile", {})["test_selection"] = "required_only"
         return calculator

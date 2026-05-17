@@ -913,3 +913,15 @@
 - Current workbook snapshot exact-match는 AS/NZS compatibility path에서만 다룬다.
 - Historical case3 packet/full-dump parity는 workbook version mismatch 때문에 계속 Z-phase로 유지한다.
 - ISO common expected/golden/tolerance/xfail은 변경하지 않는다.
+
+### Follow-up — ISO separation Step 5 profile/dispatcher/UI reconnection
+
+#### Result
+- `core/calculator_profiles.py`에 ISO CSPF profiles 4개를 등록했다: `iso_t1_default_2point_cspf`, `india_iseer_cspf`, `hong_kong_cspf`, `saso_t3_cspf`.
+- `asnzs_excel_hspf_compat` profile은 `enabled=False`로 등록해 explicit exposure 전까지 resolver 대상에서 제외했다.
+- `core/calculator_dispatcher.py`가 `calculator_id=iso16358`와 `calculator_id=asnzs_excel_hspf`를 생성할 수 있도록 확장했다.
+- `ui/calculators_2point.py`는 legacy ISO 직접 import/instantiation 대신 dispatcher profile id로 새 ISO calculator를 생성하도록 전환했다.
+
+#### Decision
+- AS/NZS compatibility profile은 manifest에는 존재하지만 disabled 상태를 유지한다.
+- UI는 아직 기존 CSPF 화면 구조를 유지하며, profile/dispatcher 경로로만 calculator 생성 책임을 이동했다.

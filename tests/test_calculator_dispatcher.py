@@ -2,6 +2,7 @@ import pytest
 
 from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 from core.calculator_ahri_seer2 import AHRICalculator
+from core.calculator_iso16358 import ISO16358Calculator
 from core.calculator_dispatcher import create_calculator_for_profile
 from core.calculator_ks_c9306 import KSC9306Calculator
 
@@ -50,6 +51,21 @@ def test_dispatcher_returns_ahri_hspf2_calculator_for_ahri_hspf2_profile_id():
     calculator = create_calculator_for_profile(profile_id="ahri_usa_hspf2")
 
     assert isinstance(calculator, AHRIHSPF2Calculator)
+
+
+@pytest.mark.parametrize(
+    "profile_id",
+    [
+        "iso_t1_default_2point_cspf",
+        "india_iseer_cspf",
+        "hong_kong_cspf",
+        "saso_t3_cspf",
+    ],
+)
+def test_dispatcher_returns_iso_calculator_for_iso_profiles(profile_id):
+    calculator = create_calculator_for_profile(profile_id=profile_id)
+
+    assert isinstance(calculator, ISO16358Calculator)
 
 
 def test_dispatcher_fail_fast_on_unknown_profile_id():

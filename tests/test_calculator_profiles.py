@@ -98,6 +98,10 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
         "ahri_usa_hspf2",
         "ks_c9306_cspf",
         "ks_c9306_hspf",
+        "iso_t1_default_2point_cspf",
+        "india_iseer_cspf",
+        "hong_kong_cspf",
+        "saso_t3_cspf",
     }
     assert all(profile.enabled for profile in profiles)
 
@@ -142,3 +146,56 @@ def test_resolve_ks_c9306_hspf_by_selector():
     )
 
     assert profile.profile_id == "ks_c9306_hspf"
+
+
+@pytest.mark.parametrize(
+    "profile_id, region, metric, config_path",
+    [
+        (
+            "iso_t1_default_2point_cspf",
+            "generic_t1",
+            "CSPF",
+            "data/region_configs/iso_t1_default_2point.json",
+        ),
+        (
+            "india_iseer_cspf",
+            "india",
+            "ISEER",
+            "data/region_configs/india_iseer.json",
+        ),
+        (
+            "hong_kong_cspf",
+            "hong_kong",
+            "CSPF",
+            "data/region_configs/hong_kong.json",
+        ),
+        (
+            "saso_t3_cspf",
+            "saso",
+            "CSPF",
+            "data/region_configs/saso.json",
+        ),
+    ],
+)
+def test_resolve_iso16358_cspf_profiles(profile_id, region, metric, config_path):
+    profile = resolve_calculator_profile(profile_id=profile_id)
+
+    assert profile.standard == "ISO_16358"
+    assert profile.region == region
+    assert profile.metric == metric
+    assert profile.mode == "cooling"
+    assert profile.calculator_id == "iso16358"
+    assert profile.config_path == config_path
+
+
+def test_asnzs_excel_hspf_compat_profile_is_disabled_until_explicit_exposure():
+    profiles = list_calculator_profiles(enabled_only=False)
+    profile = next(
+        item for item in profiles if item.profile_id == "asnzs_excel_hspf_compat"
+    )
+
+    assert profile.calculator_id == "asnzs_excel_hspf"
+    assert profile.enabled is False
+
+    with pytest.raises(ValueError, match="match exactly one enabled profile"):
+        resolve_calculator_profile(profile_id="asnzs_excel_hspf_compat")
