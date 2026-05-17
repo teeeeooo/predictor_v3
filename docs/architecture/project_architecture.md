@@ -171,6 +171,18 @@ AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculato
 
 resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
 
+#### Calculator series reset direction (2026-05-17 결정)
+
+위 boundary는 목표 구조이며, 현재 `core/calculator_iso16358.py`는 그 목표와 일치하지 않는다. 다음 단계에서는 기존 파일을 부분 cleanup으로 살리지 않고 legacy/reference로 격하한 뒤 새 파일들을 명확한 책임으로 재작성한다.
+
+- 기존 `core/calculator_iso16358.py`는 KS C 9306 / AS/NZS workbook diagnostic / legacy helper가 혼재된 상태이므로 cleanup 누적이 아닌 **legacy/reference 격하** 대상이다.
+- 새 `core/calculator_iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당하도록 다시 작성한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
+- `core/calculator_ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
+- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 Z-phase 또는 별도 compatibility phase에서 작성한다.
+- `data/region_configs/`는 ISO 전용이 아닌 다중 calculator 공유 정적 standard/region config 저장소이며, 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
+- tests 정책: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator 기준으로 이전하고, diagnostic/workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리한다. (자세한 실행 순서는 `docs/WORK_PLAN.md`와 `docs/REFACTOR_PLAN.md` 참조.)
+- profile / dispatcher / UI 연결은 새 calculator series가 안정화된 뒤 재개한다.
+
 ### External calculator compatibility profiles
 
 외부 계산기 또는 공식 workbook의 exact-match convention은 common standard calculator path에 직접 섞지 않는다. 해당 convention을 재현해야 할 때는 별도 compatibility calculator/profile을 명시적으로 등록하고, common ISO/AHRI/EN path의 expected/golden과 reference type을 분리한다.

@@ -1,6 +1,20 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-17 — Calculator series reset direction
+
+### Decision
+- 기존 `core/calculator_iso16358.py`의 부분 cleanup 누적(037~043 사이클)으로는 ISO / KS / ASNZS boundary가 정렬되지 않음을 확인하고, 점진 cleanup 방향을 중단함.
+- 기존 파일은 legacy/reference로 격하하고, ISO / KS / ASNZS 3개 축의 새 calculator 파일을 명확한 책임으로 재작성하기로 결정함.
+  - 새 `core/calculator_iso16358.py` — ISO 16358 CSPF/HSPF common standard logic 전용.
+  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (`data/region_configs/korea.json` 직접 해석).
+  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle compatibility 전용 (Z-phase / 별도 compatibility phase).
+- tests 정책 정정: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator contract 기준으로 이전하고, diagnostic / workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리.
+- profile resolver / dispatcher / UI 연결은 새 calculator series가 안정화된 뒤 재개.
+- 상세 실행 순서는 `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` 및 `docs/architecture/project_architecture.md` Calculator module boundary 섹션 참조.
+
+---
+
 ## 2026-05-10 — ISO16358-2 HSPF golden provenance correction
 
 ### Result
