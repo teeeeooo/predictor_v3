@@ -844,3 +844,14 @@
 #### Decision
 - Step 1에서는 ISO module rename, legacy 이동, UI import 변경, `from_iso_calculator` 제거를 하지 않는다. 해당 작업은 `iso_seperation_plan.md` Step 2 범위로 유지한다.
 - ISO common HSPF golden/diagnostic pre-existing failures는 기대값, tolerance, xfail을 조정하지 않고 baseline으로 유지한다.
+
+### Follow-up — ISO separation Step 2a pre-rename audit
+
+#### Result
+- `core.calculator_iso16358` direct import sites를 다시 grep해 33개 test files와 1개 UI file(`ui/calculators_2point.py`)을 확인했다.
+- Step 2b atomic rename 기준을 고정했다: `core/calculator_iso16358.py`는 `core/calculator_iso16358_legacy.py`로 이동하고, 새 `core/calculator_iso16358.py`는 `NotImplementedError` skeleton으로 둔다.
+- Diagnostic/mixed test는 `tests/_legacy/`로 이동하고, pure ISO / regional ISO / ASNZS negative assertion / KS-ISO oracle tests는 원 위치에서 legacy import로 retarget한 뒤 Step 3~4에서 선택적으로 새 calculator로 되돌린다.
+
+#### Decision
+- Step 2b는 test behavior를 바꾸지 않는 rename/import retarget 작업으로 제한한다.
+- Baseline `269 passed, 16 failed, 13 xfailed`를 Step 2b 검증 기준으로 유지한다.
