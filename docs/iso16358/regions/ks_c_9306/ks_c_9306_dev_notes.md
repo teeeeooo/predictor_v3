@@ -349,7 +349,7 @@ production `korea.json`에는 golden/sample/test 전용 2-bin 값을 넣지 않�
 | Check | Command / target |
 | --- | --- |
 | HSPF validation | `python3 -B -m pytest tests/test_iso16358_hspf_validation.py -v` |
-| HSPF golden | `python3 -B -m pytest tests/test_iso16358_hspf_golden.py -v` |
+| HSPF golden | `python3 -B -m pytest tests/_legacy/test_iso16358_hspf_golden_diagnostic.py -v` |
 | HSPF smoke | `python3 -B -m pytest tests/test_iso16358_hspf_smoke.py -v` |
 | Korea CSPF regression | CSPF one-liner must keep `6.504` |
 | JSON validation | `python3 -B -m json.tool data/region_configs/korea.json` |

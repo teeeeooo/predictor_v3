@@ -5,7 +5,7 @@ import pytest
 
 from core.calculator_iso16358 import ISO16358Calculator
 from core.calculator_ks_c9306 import KSC9306Calculator
-from tests.test_iso16358_hspf_golden import (
+from tests._legacy.test_iso16358_hspf_golden_diagnostic import (
     OFFICIAL_GOLDEN_SAMPLE,
     make_ks_phase1_calculator,
 )

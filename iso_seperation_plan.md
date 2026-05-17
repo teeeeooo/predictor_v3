@@ -27,7 +27,7 @@ KS C 9306 standalone body (039) / legacy delegate 제거 (041) / ISO ks_intersec
 - `core/calculator_ks_c9306.py` (1243 lines): CSPF/HSPF 모두 standalone. ISO 모듈 import 없음. `_iso_calculator_ref`는 `from_iso_calculator()` factory 전용 (ISO→KS HSPF delegation block에서만 사용됨).
 - `core/calculator_iso16358.py`: line 7 `KSC9306Calculator` import + line 635-782 HSPF delegation block (24+ wrappers + `_calculate_ks_c9306_hspf`) 잔존.
 - ISO16358Calculator 직접 import 사이트: **31 test files + 3 UI 사이트 (`ui/calculators_2point.py:12, 1053, 1310`)**.
-- Korea config 직접 consumer: `core/calculator_profiles.py:45,55`, `tests/test_iso16358_cspf_iso_t1_default_diagnostics.py:170` (이미 KS 사용), `tests/test_iso16358_hspf_golden.py:1691`, `tests/test_iso16358_hspf_ks_oracle.py:30,66`, `tests/test_region_config_integrity.py:7`.
+- Korea config 직접 consumer: `core/calculator_profiles.py:45,55`, `tests/test_iso16358_cspf_iso_t1_default_diagnostics.py:170` (이미 KS 사용), `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py`, `tests/test_iso16358_hspf_ks_oracle.py:30,66`, `tests/test_region_config_integrity.py:7`.
 - UI 4개 ISO config (`iso_t1_default_2point.json / india_iseer.json / hong_kong.json / saso.json`) → `ISO16358Calculator(path)` 직접 인스턴스화. Korea config는 UI 진입점 없음.
 - profile/dispatcher: `ks_c9306_cspf / ks_c9306_hspf / ahri_usa_seer2 / ahri_usa_hspf2`만 등록. `iso16358` profile 없음.
 - Baseline: `269 passed, 16 failed, 13 xfailed` (16 failures는 모두 pre-existing ISO HSPF, 본 plan과 무관).
@@ -50,7 +50,7 @@ KS는 이미 standalone이므로 잔여 cleanup + KS-측 test 사이트 이전�
 - 수정 대상:
   - `tests/test_iso16358_hspf_ks_oracle.py` (line 30, 66) — `ISO16358Calculator("data/region_configs/korea.json")` → `KSC9306Calculator.from_config_path("data/region_configs/korea.json")`. `._ks_hspf_bin(...)`, `._variable_heating_bin(...)` 호출은 KS module의 동일 이름 method를 호출하도록 retarget (이미 KS module에 동일 method가 있는지 grep 확인 필요).
   - `tests/test_iso16358_hspf_validation.py` (line ~84-100, `test_ks_c9306_hspf_input_must_be_dict`) — `ISO16358Calculator` 경유를 `KSC9306Calculator`로 retarget.
-  - `tests/test_iso16358_hspf_golden.py` (line 1691 부근) — Korea config 사용 golden row만 `KSC9306Calculator`로 retarget. ISO common HSPF 부분은 그대로 (Step 2에서 _legacy 모듈 import로 retarget).
+  - `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` — Korea config 사용 golden row만 `KSC9306Calculator`로 retarget. ISO common HSPF 부분은 그대로 legacy diagnostic으로 유지.
   - 파일명 자체 rename은 본 단계에서 보류 (Step 2 archive 단계에서 일괄 결정).
 - 검증: 위 3개 파일 단독 pytest pass, KS-tag 회귀 0, 전체 baseline 유지.
 
@@ -281,7 +281,7 @@ CSPF → HSPF 순서. KS / AS/NZS / workbook helper / legacy diagnostic 흔적 �
 - `core/calculator_profiles.py` (Step 5a)
 - `ui/calculators_2point.py:12, 1053, 1310` (Step 2b, Step 5b)
 - `tests/_legacy/` (Step 2b 생성)
-- `tests/test_iso16358_hspf_ks_oracle.py`, `tests/test_iso16358_hspf_validation.py`, `tests/test_iso16358_hspf_golden.py` (Step 1b)
+- `tests/test_iso16358_hspf_ks_oracle.py`, `tests/test_iso16358_hspf_validation.py`, `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` (Step 1b)
 - `tests/test_iso16358_cspf_*.py` (Step 2b + Step 3a)
 - `tests/test_iso16358_hspf_*.py` (Step 2b + Step 3b)
 - `tests/test_asnzs_hspf_excel_compat_*.py` (Step 2b 잠정 retarget + Step 4a 정식 retarget)

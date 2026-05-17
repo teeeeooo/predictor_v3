@@ -51,7 +51,7 @@ CASE3_EXCEL_MIN_POWER_ANCHORS = {
     "seven_power": 151.0,
 }
 ISO_HSPF_GOLDEN_FIXTURE_PATH = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parent.parent
     / "fixtures"
     / "iso16358_hspf_golden_fixtures.json"
 )
@@ -1713,7 +1713,7 @@ def test_ks_c9306_hspf_bin_uses_optional_load_line(tmp_path):
 
 
 def test_korea_hspf_bin_hours_use_actual_ks_table():
-    config_path = Path(__file__).resolve().parents[1] / "data/region_configs/korea.json"
+    config_path = Path(__file__).resolve().parents[2] / "data/region_configs/korea.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     hspf_bin_hours = config["hspf_bin_hours"]
 
