@@ -61,6 +61,15 @@ def test_dispatcher_returns_en14825_calculator_for_en14825_scop_profile_id():
     assert calculator.scop_config_path == "data/region_configs/en14825_scop.json"
 
 
+def test_dispatcher_returns_en14825_calculator_for_en14825_seer_profile_id():
+    calculator = create_calculator_for_profile(profile_id="en14825_seer")
+
+    assert isinstance(calculator, EN14825Calculator)
+    # SEER 경로는 SCOP config의 정적 키를 읽지 않지만 calculator constructor가
+    # 로드를 요구하므로 dispatcher는 같은 config_path를 사용한다.
+    assert calculator.scop_config_path == "data/region_configs/en14825_scop.json"
+
+
 @pytest.mark.parametrize(
     "profile_id",
     [

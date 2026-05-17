@@ -9,7 +9,10 @@ from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
 from core.calculator_dispatcher import create_calculator_for_profile
-from core.calculator_profiles import list_calculator_profiles
+from core.calculator_profiles import (
+    list_calculator_profiles,
+    resolve_calculator_profile,
+)
 
 
 # [6] 숫자 파싱 공통 함수
@@ -42,6 +45,7 @@ class CalculatorWindow(QWidget):
         # [7] Calculator 인스턴스 (1회 생성 후 재사용)
         self.iso_calc = None
         self.en_calc = None
+        self.en_profile = None
         self.ahri_calc = None
         self.hspf2_calc = None
 
@@ -100,7 +104,7 @@ class CalculatorWindow(QWidget):
         layout.addWidget(self.iso_cspf_widget)
 
     def init_en_tab(self):
-        """EN 탭: 단위 kW 적용 (EN 14825 SCOP)"""
+        """EN 탭: 단위 kW 적용 (EN 14825 SEER + SCOP)"""
         layout = QVBoxLayout(self.tab_en)
 
         self.combo_region_en = QComboBox()
@@ -127,10 +131,11 @@ class CalculatorWindow(QWidget):
         group.setLayout(form)
         layout.addWidget(group)
 
-        # SCOP 추가 파라미터 (p_design_h, climate, TOL/Tbiv temp, standby)
-        scop_group = QGroupBox("SCOP 계산 파라미터")
-        scop_form = QFormLayout()
+        # SEER/SCOP 계산 파라미터 (metric에 따라 일부만 사용)
+        param_group = QGroupBox("SEER/SCOP 계산 파라미터")
+        param_form = QFormLayout()
 
+        self.input_widgets_en["p_design_c"] = QLineEdit()
         self.input_widgets_en["p_design_h"] = QLineEdit()
         self.combo_climate_en = QComboBox()
         self.combo_climate_en.addItem("Average", "average")
@@ -143,16 +148,18 @@ class CalculatorWindow(QWidget):
         self.input_widgets_en["p_ck_w"] = QLineEdit()
         self.input_widgets_en["p_off_w"] = QLineEdit()
 
-        scop_form.addRow("p_design_h (kW):", self.input_widgets_en["p_design_h"])
-        scop_form.addRow("기후 (climate):", self.combo_climate_en)
-        scop_form.addRow("TOL 온도 (°C):", self.input_widgets_en["TOL_temp_c"])
-        scop_form.addRow("Tbiv 온도 (°C):", self.input_widgets_en["Tbiv_temp_c"])
-        scop_form.addRow("p_to (W):", self.input_widgets_en["p_to_w"])
-        scop_form.addRow("p_sb (W):", self.input_widgets_en["p_sb_w"])
-        scop_form.addRow("p_ck (W):", self.input_widgets_en["p_ck_w"])
-        scop_form.addRow("p_off (W):", self.input_widgets_en["p_off_w"])
+        param_form.addRow("p_design_c (kW, SEER):", self.input_widgets_en["p_design_c"])
+        param_form.addRow("p_design_h (kW, SCOP):", self.input_widgets_en["p_design_h"])
+        param_form.addRow("기후 (climate, SCOP):", self.combo_climate_en)
+        param_form.addRow("TOL 온도 (°C, SCOP):", self.input_widgets_en["TOL_temp_c"])
+        param_form.addRow("Tbiv 온도 (°C, SCOP):", self.input_widgets_en["Tbiv_temp_c"])
+        param_form.addRow("p_to (W):", self.input_widgets_en["p_to_w"])
+        param_form.addRow("p_sb (W):", self.input_widgets_en["p_sb_w"])
+        param_form.addRow("p_ck (W):", self.input_widgets_en["p_ck_w"])
+        param_form.addRow("p_off (W):", self.input_widgets_en["p_off_w"])
 
         for key in (
+            "p_design_c",
             "p_design_h",
             "TOL_temp_c",
             "Tbiv_temp_c",
@@ -163,8 +170,8 @@ class CalculatorWindow(QWidget):
         ):
             self.bind_error_reset(self.input_widgets_en[key])
 
-        scop_group.setLayout(scop_form)
-        layout.addWidget(scop_group)
+        param_group.setLayout(param_form)
+        layout.addWidget(param_group)
         layout.addStretch()
 
     def init_ahri_tab(self):
@@ -301,17 +308,26 @@ class CalculatorWindow(QWidget):
             self.on_region_changed_ahri(self.combo_region_ahri.currentIndex())
 
     def _populate_en_profiles(self):
-        """EN UI는 enabled calculator profile만 선택지로 노출합니다."""
+        """EN UI는 enabled calculator profile만 선택지로 노출합니다.
+
+        SCOP / SEER profile을 모두 노출하며, SCOP을 첫 항목으로 둔다.
+        """
         if not hasattr(self, 'combo_region_en'):
             return
 
         was_blocked = self.combo_region_en.blockSignals(True)
         try:
             self.combo_region_en.clear()
-            for profile in list_calculator_profiles():
-                if profile.standard == "EN_14825":
-                    label = f"{profile.standard} / {profile.region.upper()} / {profile.metric}"
-                    self.combo_region_en.addItem(label, profile.profile_id)
+            en_profiles = [
+                profile
+                for profile in list_calculator_profiles()
+                if profile.standard == "EN_14825"
+            ]
+            # SCOP을 먼저 노출해 기존 사용자 경험을 유지한다.
+            en_profiles.sort(key=lambda profile: 0 if profile.metric == "SCOP" else 1)
+            for profile in en_profiles:
+                label = f"{profile.standard} / {profile.region.upper()} / {profile.metric}"
+                self.combo_region_en.addItem(label, profile.profile_id)
         finally:
             self.combo_region_en.blockSignals(was_blocked)
 
@@ -330,8 +346,10 @@ class CalculatorWindow(QWidget):
 
         try:
             self.en_calc = create_calculator_for_profile(profile_id=profile_id)
+            self.en_profile = resolve_calculator_profile(profile_id=profile_id)
         except:
             self.en_calc = None
+            self.en_profile = None
 
     def on_region_changed_ahri(self, index):
         profile_id = None
@@ -486,10 +504,45 @@ class CalculatorWindow(QWidget):
         pass
 
     def calculate_en(self):
-        """EN 14825 SCOP 계산 (UI 입력 → calculate_scop dict 변환)."""
+        """EN 14825 계산 (선택된 profile metric에 따라 SEER 또는 SCOP 분기)."""
         if not self.en_calc:
             raise Exception("EN 계산기 설정 파일이 로드되지 않았습니다.")
 
+        metric = self.en_profile.metric if self.en_profile else "SCOP"
+
+        # Standby powers는 UI에서 W로 입력받아 calculator API의 kW로 변환합니다.
+        p_to_w = self._get_float_val(self.input_widgets_en["p_to_w"], "p_to", allow_zero=True)
+        p_sb_w = self._get_float_val(self.input_widgets_en["p_sb_w"], "p_sb", allow_zero=True)
+        p_ck_w = self._get_float_val(self.input_widgets_en["p_ck_w"], "p_ck", allow_zero=True)
+        p_off_w = self._get_float_val(self.input_widgets_en["p_off_w"], "p_off", allow_zero=True)
+
+        if metric == "SEER":
+            test_points = {}
+            for pt in ("A", "B", "C", "D"):
+                cap = self._get_float_val(
+                    self.input_widgets_en[f"{pt}_capacity"], f"{pt} 능력"
+                )
+                pwr = self._get_float_val(
+                    self.input_widgets_en[f"{pt}_power"], f"{pt} 소비전력"
+                )
+                test_points[pt] = (cap, pwr)
+
+            p_design_c = self._get_float_val(
+                self.input_widgets_en["p_design_c"], "p_design_c"
+            )
+
+            result = self.en_calc.calculate_seer(
+                test_points=test_points,
+                p_to=p_to_w / 1000.0,
+                p_sb=p_sb_w / 1000.0,
+                p_ck=p_ck_w / 1000.0,
+                p_off=p_off_w / 1000.0,
+                p_design_c=p_design_c,
+            )
+            seer = result.get("seer", 0.0)
+            return f"EN14825 SEER 결과: {seer}"
+
+        # SCOP path (default for backward compatibility)
         test_points = {}
         for pt in ("A", "B", "C", "D", "TOL", "Tbiv"):
             cap = self._get_float_val(self.input_widgets_en[f"{pt}_capacity"], f"{pt} 능력")
@@ -504,12 +557,6 @@ class CalculatorWindow(QWidget):
         tbiv_temp_c = self._get_float_val(
             self.input_widgets_en["Tbiv_temp_c"], "Tbiv 온도", allow_zero=True
         )
-
-        # Standby powers는 UI에서 W로 입력받아 calculator API의 kW로 변환합니다.
-        p_to_w = self._get_float_val(self.input_widgets_en["p_to_w"], "p_to", allow_zero=True)
-        p_sb_w = self._get_float_val(self.input_widgets_en["p_sb_w"], "p_sb", allow_zero=True)
-        p_ck_w = self._get_float_val(self.input_widgets_en["p_ck_w"], "p_ck", allow_zero=True)
-        p_off_w = self._get_float_val(self.input_widgets_en["p_off_w"], "p_off", allow_zero=True)
 
         result = self.en_calc.calculate_scop(
             test_points=test_points,

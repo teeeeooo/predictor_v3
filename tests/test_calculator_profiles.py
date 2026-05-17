@@ -36,6 +36,30 @@ def test_resolve_en14825_scop_by_profile_id_returns_scop_json():
     assert profile.config_path == "data/region_configs/en14825_scop.json"
 
 
+def test_resolve_en14825_seer_by_profile_id_shares_calculator_with_scop():
+    profile = resolve_calculator_profile(profile_id="en14825_seer")
+
+    assert profile.profile_id == "en14825_seer"
+    assert profile.standard == "EN_14825"
+    assert profile.region == "europe"
+    assert profile.metric == "SEER"
+    assert profile.mode == "cooling"
+    assert profile.calculator_id == "en14825"
+    # SEER 경로는 SCOP config의 정적 키를 읽지 않으므로 같은 config_path를 공유한다.
+    assert profile.config_path == "data/region_configs/en14825_scop.json"
+
+
+def test_resolve_en14825_seer_by_selector():
+    profile = resolve_calculator_profile(
+        standard="EN_14825",
+        region="europe",
+        metric="SEER",
+        mode="cooling",
+    )
+
+    assert profile.profile_id == "en14825_seer"
+
+
 def test_resolve_ahri_seer2_by_selector():
     profile = resolve_calculator_profile(
         standard="AHRI_210_240",
@@ -109,6 +133,7 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
         "ahri_usa_seer2",
         "ahri_usa_hspf2",
         "en14825_scop",
+        "en14825_seer",
         "ks_c9306_cspf",
         "ks_c9306_hspf",
         "iso_t1_default_2point_cspf",

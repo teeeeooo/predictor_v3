@@ -78,6 +78,7 @@ def test_en_combo_uses_profile_ids_for_dispatcher_selection():
         ]
 
         assert "en14825_scop" in profile_ids
+        assert "en14825_seer" in profile_ids
         assert all(not label.endswith(".json") for label in labels)
 
         index = profile_ids.index("en14825_scop")
@@ -86,6 +87,32 @@ def test_en_combo_uses_profile_ids_for_dispatcher_selection():
 
         assert window.en_calc is not None
         assert hasattr(window.en_calc, "calculate_scop")
+        assert hasattr(window.en_calc, "calculate_seer")
+        assert window.en_profile is not None
+        assert window.en_profile.metric == "SCOP"
+    finally:
+        window.close()
+
+
+def test_en_combo_switching_to_seer_profile_tracks_metric():
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        profile_ids = [
+            window.combo_region_en.itemData(index)
+            for index in range(window.combo_region_en.count())
+        ]
+        assert "en14825_seer" in profile_ids
+
+        seer_index = profile_ids.index("en14825_seer")
+        window.combo_region_en.setCurrentIndex(seer_index)
+        window.on_region_changed_en(seer_index)
+
+        assert window.en_profile is not None
+        assert window.en_profile.metric == "SEER"
+        assert window.en_profile.mode == "cooling"
     finally:
         window.close()
 
@@ -140,6 +167,51 @@ def test_hspf2_input_widgets_have_no_duplicate_rows():
             assert extra_key in window.input_widgets_hspf2
 
         assert len(window.input_widgets_hspf2) == 18
+    finally:
+        window.close()
+
+
+def test_en_calculate_button_displays_seer_result_text_for_seer_profile():
+    """EN tab의 SEER profile 선택 시 SEER 결과 텍스트가 표시된다.
+
+    sample 값은 tests/test_en14825_golden.py::test_en14825_golden_seer
+    에서 그대로 가져온다 (수치 비교는 골든 테스트가 보장).
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.tabs.setCurrentWidget(window.tab_en)
+
+        profile_ids = [
+            window.combo_region_en.itemData(index)
+            for index in range(window.combo_region_en.count())
+        ]
+        seer_index = profile_ids.index("en14825_seer")
+        window.combo_region_en.setCurrentIndex(seer_index)
+        window.on_region_changed_en(seer_index)
+
+        seer_points = {
+            "A": (3.6233, 0.847),
+            "B": (2.4691, 0.389),
+            "C": (1.5150, 0.137),
+            "D": (1.1277, 0.062),
+        }
+        for pt, (cap, pwr) in seer_points.items():
+            window.input_widgets_en[f"{pt}_capacity"].setText(str(cap))
+            window.input_widgets_en[f"{pt}_power"].setText(str(pwr))
+
+        window.input_widgets_en["p_design_c"].setText("3.5")
+        window.input_widgets_en["p_to_w"].setText("6.6")
+        window.input_widgets_en["p_sb_w"].setText("1.2")
+        window.input_widgets_en["p_ck_w"].setText("0")
+        window.input_widgets_en["p_off_w"].setText("1.2")
+
+        window.button_calculate.click()
+
+        assert "EN14825 SEER" in window.result_label.text()
+        assert "결과:" in window.result_label.text()
     finally:
         window.close()
 
