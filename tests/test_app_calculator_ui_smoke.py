@@ -117,6 +117,60 @@ def test_en_combo_switching_to_seer_profile_tracks_metric():
         window.close()
 
 
+def test_ahri_hp_calculate_button_displays_seer2_and_hspf2_results():
+    """AHRI HP 모드에서 SEER2 + HSPF2 v3 결과가 result label에 모두 표시된다.
+
+    AHRI SEER2 필수 5 포인트(A_Full ~ F_Low)와 HSPF2 v3 필수 입력 (H01..H32,
+    t_off/t_on, defrost minutes)을 채워서 계산 버튼 클릭 후 result label에
+    "AHRI SEER2 (HP) 결과:"와 "HSPF2 v3 결과:"가 모두 포함되는지만 확인하는
+    happy-path smoke. 수치 비교는 calculator 단위 테스트가 보장한다.
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.tabs.setCurrentWidget(window.tab_ahri)
+        window.radio_hp.setChecked(True)
+
+        ahri_points = {
+            "A_Full": (24000, 2500),
+            "B_Full": (22000, 2000),
+            "B_Low": (12000, 1200),
+            "E_Int": (15000, 1500),
+            "F_Low": (10000, 1000),
+        }
+        for point, (capacity, power) in ahri_points.items():
+            window.input_widgets_ahri[f"{point}_cap"].setText(str(capacity))
+            window.input_widgets_ahri[f"{point}_pow"].setText(str(power))
+
+        hspf2_points = {
+            "H01": (12500, 980),
+            "H11": (12000, 1000),
+            "H12": (24000, 2200),
+            "H1N": (22000, 2000),
+            "H22": (23200, 2160),
+            "H2Int": (13000, 1200),
+            "H32": (22000, 2100),
+        }
+        for point, (capacity, power) in hspf2_points.items():
+            window.input_widgets_hspf2[f"{point}_cap"].setText(str(capacity))
+            window.input_widgets_hspf2[f"{point}_pow"].setText(str(power))
+
+        window.input_widgets_hspf2["t_off"].setText("-10")
+        window.input_widgets_hspf2["t_on"].setText("-5")
+        window.input_widgets_hspf2["defrost_t_test_minutes"].setText("90")
+        window.input_widgets_hspf2["defrost_t_max_minutes"].setText("720")
+
+        window.button_calculate.click()
+
+        text = window.result_label.text()
+        assert "AHRI SEER2 (HP) 결과:" in text
+        assert "HSPF2 v3 결과:" in text
+    finally:
+        window.close()
+
+
 def test_ahri_calculate_button_displays_result_text():
     app = _qapp()
     window = CalculatorWindow()
