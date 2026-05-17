@@ -79,6 +79,11 @@ ML output or HW candidate
 }
 ```
 
+`source` is intentionally not a top-level key in this envelope. Provenance
+belongs on `PredictedPointsEnvelope`. The implementation copies the
+upstream `source` value into `options["source"]` so the calculator input
+layer carries the same vocabulary without re-asserting ownership of it.
+
 ### CalculatorResultEnvelope
 
 ```python
@@ -136,6 +141,26 @@ ML output or HW candidate
 - No region config schema change.
 - No UI table schema change.
 - No public API rename.
+
+## Implementation Status (as of 2026-05-17 audit_5 task 2)
+
+- `CalculatorResultEnvelope` first slice landed for `ahri_usa_seer2` in
+  `core/calculator_result_adapter.py` (see report 065 / 071).
+- `CalculatorInputEnvelope` first slice now matches the design shape above:
+  `{calculator_profile_id, standard, region, mode, metric, measured_inputs,
+  options}`, with `options` carrying `units` and `source`.
+- `source` vocabulary is locked to `manual_candidate`, `ml_prediction`,
+  `fixture` (legacy values `manual` / `predicted` are explicitly rejected).
+- Unit conversion is intentionally out of scope: capacity must be `Btu/h`
+  and power must be `W` for the AHRI SEER2 profile.
+- Extra point keys, extra inner keys per point, extra unit keys, and
+  options that re-define reserved keys all fail fast.
+- A small helper `measured_inputs_as_test_points(envelope)` is exposed for
+  callers that still need the legacy tuple form that
+  `AHRICalculator.calculate_seer2` accepts; the calculator public API is
+  unchanged.
+- `PredictedPointsEnvelope` and `RankingCandidateEnvelope` remain
+  design-only and are scheduled for follow-up slices.
 
 ## Next Codex Implementation Prompt
 

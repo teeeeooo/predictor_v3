@@ -2,8 +2,8 @@
 
 This module converts an upstream candidate/prediction input (whether from a
 manual candidate-like dict or a future ``PredictedPointsEnvelope``) into a
-``CalculatorInputEnvelope`` dict that can be passed straight into the
-``ahri_usa_seer2`` calculator without changing the calculator's public API.
+``CalculatorInputEnvelope`` dict that matches
+``docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md``.
 
 It is intentionally narrow:
 
@@ -11,6 +11,8 @@ It is intentionally narrow:
 - The point set is fixed to ``A_Full, B_Full, B_Low, E_Int, F_Low``.
 - Units are not converted; the adapter explicitly requires capacity in Btu/h
   and power in W and fails fast otherwise.
+- Extra point keys, extra inner keys, or unknown ``source`` values fail fast
+  so the envelope contract stays strict until ML callers stabilize.
 
 ML / inverse-search callers should layer on top of this envelope instead of
 fanning out new calculator entry points.
@@ -29,10 +31,25 @@ _EXPECTED_UNITS_BY_PROFILE = {
     "ahri_usa_seer2": {"capacity": "Btu/h", "power": "W"},
 }
 
+_ALLOWED_INNER_POINT_KEYS = {"capacity", "power"}
 
-def _coerce_capacity_power(point_key: str, raw_point: Any) -> tuple:
-    """Accept either (cap, pow) sequence or {capacity, power} dict and return floats."""
+ALLOWED_SOURCE_VALUES = ("manual_candidate", "ml_prediction", "fixture")
+
+
+def _coerce_capacity_power(point_key: str, raw_point: Any) -> Dict[str, float]:
+    """Return ``{"capacity": float, "power": float}`` after strict validation.
+
+    Accept either a ``(capacity, power)`` sequence or a
+    ``{"capacity": ..., "power": ...}`` mapping. Extra inner keys, missing
+    keys, malformed sequences, and non-positive values all fail fast.
+    """
     if isinstance(raw_point, Mapping):
+        extra = set(raw_point.keys()) - _ALLOWED_INNER_POINT_KEYS
+        if extra:
+            raise ValueError(
+                f"Point {point_key!r} mapping has unexpected keys: {sorted(extra)}. "
+                f"Allowed inner keys: {sorted(_ALLOWED_INNER_POINT_KEYS)}."
+            )
         if "capacity" not in raw_point or "power" not in raw_point:
             raise KeyError(
                 f"Point {point_key!r} dict must contain 'capacity' and 'power' keys."
@@ -54,16 +71,22 @@ def _coerce_capacity_power(point_key: str, raw_point: Any) -> tuple:
             f"Point {point_key!r} must have positive capacity and power: "
             f"capacity={capacity}, power={power}"
         )
-    return capacity, power
+    return {"capacity": capacity, "power": power}
 
 
 def _validate_units(profile_id: str, units: Optional[Mapping[str, str]]) -> Dict[str, str]:
-    """Reject mismatched units to keep the first slice unit-safe."""
+    """Reject mismatched or unexpected units to keep the first slice unit-safe."""
     expected = _EXPECTED_UNITS_BY_PROFILE[profile_id]
     if units is None:
         return dict(expected)
     if not isinstance(units, Mapping):
         raise TypeError("units must be a mapping of {capacity, power} → unit string")
+    extra = set(units.keys()) - set(expected.keys())
+    if extra:
+        raise ValueError(
+            f"Unexpected unit keys for {profile_id!r}: {sorted(extra)}. "
+            f"Allowed: {sorted(expected.keys())}."
+        )
     for key, expected_unit in expected.items():
         provided = units.get(key, expected_unit)
         if provided != expected_unit:
@@ -74,29 +97,48 @@ def _validate_units(profile_id: str, units: Optional[Mapping[str, str]]) -> Dict
     return dict(expected)
 
 
+def _validate_source(source: str) -> str:
+    if source not in ALLOWED_SOURCE_VALUES:
+        raise ValueError(
+            f"Unknown source value: {source!r}. Allowed values: "
+            f"{ALLOWED_SOURCE_VALUES}."
+        )
+    return source
+
+
 def build_calculator_input_envelope(
     profile_id: str,
     points: Mapping[str, Any],
     units: Optional[Mapping[str, str]] = None,
-    source: str = "manual",
+    source: str = "manual_candidate",
+    options: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build a CalculatorInputEnvelope for a supported calculator profile.
 
     Args:
         profile_id: Currently only ``"ahri_usa_seer2"`` is supported.
-        points: Mapping that contains the required AHRI SEER2 test points
-            (``A_Full``, ``B_Full``, ``B_Low``, ``E_Int``, ``F_Low``). Each value
-            may be either ``(capacity, power)`` or
-            ``{"capacity": ..., "power": ...}``.
+        points: Mapping that contains exactly the required AHRI SEER2 test
+            points (``A_Full``, ``B_Full``, ``B_Low``, ``E_Int``, ``F_Low``).
+            Each value may be either ``(capacity, power)`` or
+            ``{"capacity": ..., "power": ...}``. Extra point keys fail fast.
         units: Optional ``{"capacity": "Btu/h", "power": "W"}`` mapping. The
-            adapter does NOT convert units; mismatches fail fast.
-        source: Free-form provenance tag (``"manual"``, ``"predicted"``, ...).
+            adapter does NOT convert units; mismatches or extra unit keys
+            fail fast.
+        source: One of ``manual_candidate``, ``ml_prediction``, ``fixture``.
+        options: Optional caller-owned options dict copied into the envelope.
 
     Returns:
-        Dict with ``calculator_profile_id``, ``calculator_id``, ``test_points``,
-        ``units``, and ``source`` keys. ``test_points`` is a dict of
-        ``{point_key: (capacity, power)}`` and can be passed straight to
-        ``AHRICalculator.calculate_seer2(test_points=...)``.
+        Dict matching the design doc shape:
+
+        ``{
+            calculator_profile_id, standard, region, mode, metric,
+            measured_inputs, options
+        }``
+
+        ``measured_inputs`` is a dict of
+        ``{point_key: {"capacity": float, "power": float}}``. Pass it through
+        :func:`measured_inputs_as_test_points` to obtain the tuple form
+        accepted by ``AHRICalculator.calculate_seer2``.
     """
     if profile_id not in _REQUIRED_POINTS_BY_PROFILE:
         raise ValueError(
@@ -104,23 +146,60 @@ def build_calculator_input_envelope(
         )
     if not isinstance(points, Mapping):
         raise TypeError("points must be a mapping of point_key → (capacity, power)")
+    if options is not None and not isinstance(options, Mapping):
+        raise TypeError("options must be a mapping when provided")
 
     required = _REQUIRED_POINTS_BY_PROFILE[profile_id]
     missing = [key for key in required if key not in points]
     if missing:
         raise KeyError(f"Missing required points for {profile_id!r}: {missing}")
+    extra = [key for key in points.keys() if key not in required]
+    if extra:
+        raise ValueError(
+            f"Unexpected point keys for {profile_id!r}: {sorted(extra)}. "
+            f"Allowed points: {list(required)}."
+        )
 
-    test_points: Dict[str, tuple] = {}
+    measured_inputs: Dict[str, Dict[str, float]] = {}
     for key in required:
-        test_points[key] = _coerce_capacity_power(key, points[key])
+        measured_inputs[key] = _coerce_capacity_power(key, points[key])
 
     resolved_units = _validate_units(profile_id, units)
+    resolved_source = _validate_source(source)
     profile = resolve_calculator_profile(profile_id=profile_id)
+
+    envelope_options: Dict[str, Any] = {
+        "units": resolved_units,
+        "source": resolved_source,
+    }
+    if options:
+        for key, value in options.items():
+            if key in envelope_options:
+                raise ValueError(
+                    f"options must not redefine reserved key {key!r}; pass via "
+                    f"the dedicated parameter instead."
+                )
+            envelope_options[key] = value
 
     return {
         "calculator_profile_id": profile.profile_id,
-        "calculator_id": profile.calculator_id,
-        "test_points": test_points,
-        "units": resolved_units,
-        "source": source,
+        "standard": profile.standard,
+        "region": profile.region,
+        "mode": profile.mode,
+        "metric": profile.metric,
+        "measured_inputs": measured_inputs,
+        "options": envelope_options,
     }
+
+
+def measured_inputs_as_test_points(envelope: Mapping[str, Any]) -> Dict[str, tuple]:
+    """Convert ``envelope["measured_inputs"]`` into the calculator tuple form.
+
+    Calculators like ``AHRICalculator.calculate_seer2`` still accept
+    ``{point_key: (capacity, power)}``. This helper performs that one
+    flattening step without changing the calculator public API.
+    """
+    measured = envelope.get("measured_inputs")
+    if not isinstance(measured, Mapping):
+        raise KeyError("envelope is missing measured_inputs mapping")
+    return {key: (value["capacity"], value["power"]) for key, value in measured.items()}
