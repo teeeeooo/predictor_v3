@@ -889,3 +889,14 @@
 #### Decision
 - Step 3a는 CSPF만 구현한다. `calculate_hspf()`는 Step 3b 전까지 `NotImplementedError`를 유지한다.
 - HSPF tests와 ASNZS negative assertion tests는 아직 legacy target을 유지한다.
+
+### Follow-up — ISO separation Step 3b new ISO HSPF common implementation
+
+#### Result
+- 새 `core/calculator_iso16358.py`에 ISO 16358-2 HSPF common/Phase 1 helper와 `calculate_hspf_iso16358_common()` / `calculate_hspf()` entry를 추가했다.
+- Step 3b 범위의 active HSPF tests 7개를 legacy import에서 새 ISO calculator import로 되돌렸다: smoke, formula micro, compatibility boundary, Hong Kong config, pure ISO Track A, validation ISO common subset, KS oracle의 ISO-side shared formula probe.
+- 새 ISO 파일에서 KS delegation, AS/NZS workbook helper, case3 trace-only entry가 없는 것을 grep으로 확인했다.
+
+#### Decision
+- `tests/test_iso16358_hspf_golden.py`와 `tests/_legacy/test_iso16358_hspf_h8_trace.py`는 converted-workbook/case3 trace 진단 의도가 섞여 있어 legacy target을 유지한다.
+- 기존 ISO HSPF baseline `16 failed, 269 passed, 13 xfailed`는 기대값/tolerance/xfail 조정 없이 유지한다.

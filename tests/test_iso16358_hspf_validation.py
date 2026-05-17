@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from core.calculator_iso16358_legacy import ISO16358Calculator
+from core.calculator_iso16358 import ISO16358Calculator
 from core.calculator_ks_c9306 import KSC9306Calculator
 from tests.test_iso16358_hspf_golden import (
     OFFICIAL_GOLDEN_SAMPLE,
