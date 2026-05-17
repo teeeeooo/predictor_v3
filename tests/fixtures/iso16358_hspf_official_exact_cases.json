@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "description": "User-provided ISO16358-2 HSPF official exact 16-case expected values. Expected values must not be edited to match current calculator actuals.",
+  "units": {
+    "capacity": "W",
+    "power": "W",
+    "HSTL": "kWh",
+    "HSEC": "kWh",
+    "HSPF": "W/W"
+  },
+  "comparison": {
+    "HSTL_decimals": 1,
+    "HSEC_decimals": 1,
+    "HSPF_decimals": 3
+  },
+  "config": {
+    "cd": 0.25,
+    "aux_cop": 1.0,
+    "frost_boundaries": {"lower": -7.0, "upper": 5.5},
+    "load_line": {
+      "source": "rated_heating_capacity",
+      "zero_load_temp": 17.0,
+      "full_load_temp": 0.0,
+      "rated_capacity_factor": 0.82
+    }
+  },
+  "point_pool": {
+    "7_full": {"capacity": 4300.0, "power": 1320.0},
+    "7_half": {"capacity": 2300.0, "power": 450.0},
+    "7_min": {"capacity": 680.0, "power": 150.0},
+    "2_ext": {"capacity": 4200.0, "power": 1700.0},
+    "2_full": {"capacity": 2800.0, "power": 800.0},
+    "2_half": {"capacity": 1500.0, "power": 300.0},
+    "-7_ext": {"capacity": 1700.0, "power": 1300.0},
+    "-7_full": {"capacity": 2400.0, "power": 800.0},
+    "-7_half": {"capacity": 1000.0, "power": 300.0}
+  },
+  "bin_hours": [
+    {"tj": -10, "nj": 0},
+    {"tj": -9, "nj": 0},
+    {"tj": -8, "nj": 0},
+    {"tj": -7, "nj": 0},
+    {"tj": -6, "nj": 0},
+    {"tj": -5, "nj": 0},
+    {"tj": -4, "nj": 0},
+    {"tj": -3, "nj": 0},
+    {"tj": -2, "nj": 0},
+    {"tj": -1, "nj": 4},
+    {"tj": 0, "nj": 15},
+    {"tj": 1, "nj": 33},
+    {"tj": 2, "nj": 68},
+    {"tj": 3, "nj": 119},
+    {"tj": 4, "nj": 169},
+    {"tj": 5, "nj": 200},
+    {"tj": 6, "nj": 234},
+    {"tj": 7, "nj": 250},
+    {"tj": 8, "nj": 260},
+    {"tj": 9, "nj": 265},
+    {"tj": 10, "nj": 260},
+    {"tj": 11, "nj": 245},
+    {"tj": 12, "nj": 215},
+    {"tj": 13, "nj": 192},
+    {"tj": 14, "nj": 151},
+    {"tj": 15, "nj": 110},
+    {"tj": 16, "nj": 76}
+  ],
+  "cases": [
+    {
+      "case_id": 1,
+      "description": "7_min no, extended mode no, -7_full/-7_half/-7_ext default",
+      "points": [],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527},
+      "current_status": "match"
+    },
+    {
+      "case_id": 2,
+      "description": "7_min yes, extended mode no, -7_full/-7_half/-7_ext default",
+      "points": ["7_min"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.4, "HSPF": 4.603},
+      "current_status": "match"
+    },
+    {
+      "case_id": 3,
+      "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default",
+      "points": ["2_ext"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 4,
+      "description": "7_min yes, extended mode yes, -7_full/-7_half/-7_ext default",
+      "points": ["7_min", "2_ext"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 5,
+      "description": "7_min no, extended mode no, -7_full/-7_half default, -7_ext measured",
+      "points": ["-7_ext"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527},
+      "current_status": "match"
+    },
+    {
+      "case_id": 6,
+      "description": "7_min no, extended mode no, -7_half/-7_ext default, -7_full measured",
+      "points": ["-7_full"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535},
+      "current_status": "match"
+    },
+    {
+      "case_id": 7,
+      "description": "7_min no, extended mode no, -7_full/-7_ext default, -7_half measured",
+      "points": ["-7_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1080.7, "HSPF": 4.520},
+      "current_status": "match"
+    },
+    {
+      "case_id": 8,
+      "description": "7_min no, extended mode no, -7_full/-7_half/-7_ext measured",
+      "points": ["-7_full", "-7_half", "-7_ext"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 9,
+      "description": "7_min yes, extended mode yes, -7_half/-7_ext default, -7_full measured",
+      "points": ["7_min", "2_ext", "-7_full"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1058.0, "HSPF": 4.617},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 10,
+      "description": "7_min yes, extended mode yes, -7_full/-7_ext default, -7_half measured",
+      "points": ["7_min", "2_ext", "-7_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1064.4, "HSPF": 4.590},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 11,
+      "description": "7_min yes, extended mode yes, -7_ext default, -7_full/-7_half measured",
+      "points": ["7_min", "2_ext", "-7_full", "-7_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 12,
+      "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f measured",
+      "points": ["2_ext", "2_full"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 13,
+      "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
+      "points": ["2_ext", "2_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 14,
+      "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
+      "points": ["2_ext", "2_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 15,
+      "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f, 2_half_f measured",
+      "points": ["2_ext", "2_full", "2_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
+      "current_status": "mismatch"
+    },
+    {
+      "case_id": 16,
+      "description": "7_min yes, extended mode yes, -7_full/-7_half/-7_ext, 2_full_f, 2_half_f measured",
+      "points": ["7_min", "2_ext", "-7_full", "-7_half", "-7_ext", "2_full", "2_half"],
+      "expected": {"HSTL": 4885.4, "HSEC": 1066.3, "HSPF": 4.582},
+      "current_status": "mismatch"
+    }
+  ],
+  "notes": [
+    "case #13/#14 description duplicate, expected identical, preserved as provided",
+    "2_full_f and 2_half_f measured are represented through current public schema input keys 2_full and 2_half."
+  ]
+}

@@ -1,6 +1,46 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-17 — ISO16358-2 HSPF official exact golden verification
+
+### Tried
+- 사용자가 제공한 ISO16358-2 HSPF 공식 원문 exact expected 16개 case를
+  현행 `core/calculator_iso16358.py` public schema에 맞춰 diagnostic golden
+  fixture/test로 추가함.
+- `2_full_f` / `2_half_f` measured 조건은 현행 입력 schema의 `2_full` /
+  `2_half` measured point로 매핑했고, `-7_*` measured/default 조건은 optional
+  input 포함/제외 경로로 검증함.
+- case #13/#14의 중복 설명과 동일 expected는 임의 해석 없이 그대로 보존함.
+
+### Result
+- 현재 계산기 actual 기준 16개 중 5개 case가 expected와 rounded match:
+  case 1, 2, 5, 6, 7.
+- 11개 case는 mismatch:
+  case 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16.
+- 신규 테스트는 mismatch case를 `xfail(strict=True)`로 보존하여 전체 pytest를
+  깨뜨리지 않는 active diagnostic anchor로 동작함.
+
+### Failed-Risk
+- 공식 원문 exact expected 기준의 active passing golden anchor는 아직 확보되지
+  않았음.
+- 큰 delta는 `2_full` / `2_half` measured frost/extended 경로가 포함된 case
+  12, 15, 16에서 집중되고, 나머지는 extended mode 및 `-7_*` measured/default
+  조합에서 소규모 delta가 발생함.
+
+### Decision
+- 이번 작업에서는 expected 값과 `core/calculator_iso16358.py` 계산식을 수정하지
+  않는다.
+- mismatch 분석을 다음 blocking task로 두고, calculator table-input UI design
+  audit / UI redesign / table-input 구현은 mismatch 분석 뒤로 둔다.
+
+### Lesson
+- 공식 원문 exact expected 기준과 현재 계산기 actual 검증 결과는 문서와 report에서
+  명확히 분리해야 한다.
+- 현행 public schema에서 measured `2_full_f` / `2_half_f`는 입력 key
+  `2_full` / `2_half`를 통해 resolver가 `_f` reference point로 보존한다.
+
+---
+
 ## 2026-05-17 — Audit 5 next actions completion (074 ~ 080)
 
 ### Result
