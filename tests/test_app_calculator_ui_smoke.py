@@ -115,3 +115,52 @@ def test_ahri_calculate_button_displays_result_text():
         assert "AHRI SEER2 (AC) 결과:" in window.result_label.text()
     finally:
         window.close()
+
+
+def test_hspf2_input_widgets_have_no_duplicate_rows():
+    """HSPF2 입력 form은 각 point별로 cap/pow widget 하나씩만 보유해야 한다.
+
+    중복 addRow가 들어가면 widget dict가 덮어쓰이거나 row count가 늘어나
+    UI가 어긋난다. 18개 (= 7 points × 2 + 4 extras) 키만 등록되는지 확인한다.
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+
+        for point in ("H01", "H11", "H12", "H1N", "H22", "H2Int", "H32"):
+            assert f"{point}_cap" in window.input_widgets_hspf2
+            assert f"{point}_pow" in window.input_widgets_hspf2
+            cap_widget = window.input_widgets_hspf2[f"{point}_cap"]
+            pow_widget = window.input_widgets_hspf2[f"{point}_pow"]
+            assert cap_widget is not pow_widget
+
+        for extra_key in ("t_off", "t_on", "defrost_t_test_minutes", "defrost_t_max_minutes"):
+            assert extra_key in window.input_widgets_hspf2
+
+        assert len(window.input_widgets_hspf2) == 18
+    finally:
+        window.close()
+
+
+def test_hspf2_required_input_raises_validation_error_when_missing():
+    """HP 모드에서 HSPF2 필수 입력이 비어 있으면 InputValidationError가 발생한다.
+
+    on_calculate는 QMessageBox 호출을 포함하므로 calculate_hspf2_v3를 직접 호출해
+    validation 경로만 점검한다.
+    """
+    from ui.calc_window import InputValidationError
+
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.input_widgets_ahri["A_Full_cap"].setText("36000")
+        window.input_widgets_ahri["A_Full_pow"].setText("3000")
+
+        with pytest.raises(InputValidationError):
+            window.calculate_hspf2_v3()
+    finally:
+        window.close()
