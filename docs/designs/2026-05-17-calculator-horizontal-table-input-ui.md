@@ -1,5 +1,17 @@
 # Design Gate — Calculator Horizontal Table Input UI + Unit Boundary
 
+> **Scope note.** This design doc is **calculator-specific**. It
+> defines the AHRI / EN14825 table shape (columns, rows, unit
+> labels), the ML W ↔ calculator-native unit boundary, and the
+> migration order from the current vertical `QFormLayout` to a
+> horizontal table. Spreadsheet-like behavior (copy/paste TSV,
+> multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation,
+> numeric validation, paste path isolation, 1-click editor lifecycle,
+> `blockSignals` try/finally) is **not** owned here — it is owned by
+> `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. Every slice below
+> implicitly follows that contract; do not duplicate its rules in this
+> document.
+
 ## Goal
 
 Two coupled design decisions for the calculator UI / adapter layer. No
@@ -42,6 +54,12 @@ implementation in this slice.
 
 ### Table input UI
 
+- Every AHRI / EN14825 table follows the global
+  `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. The spreadsheet-like UX,
+  copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo,
+  Tab/Enter navigation, numeric validation, paste path isolation,
+  1-click editor lifecycle, and `blockSignals` try/finally rules are
+  not restated here; the contract is the single owner.
 - The new input surface for AHRI / EN14825 is a `QTableView` driven by
   a `QAbstractTableModel`. Each table is profile-shape-aware (column
   set is fixed by the calculator profile).
@@ -53,9 +71,6 @@ implementation in this slice.
 - The unit column is intentionally not part of the table. Units are
   carried only on the row label or the table title because the
   calculator profile already pins the input units.
-- `QTableWidget` and `setCellWidget` shortcuts are not allowed even for
-  the first slice. `blockSignals` calls during programmatic updates
-  must use `try/finally`.
 
 ### Unit boundary
 

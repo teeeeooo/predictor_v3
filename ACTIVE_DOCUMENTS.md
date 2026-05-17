@@ -40,6 +40,7 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
+| `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` | Global spreadsheet-like PyQt table contract | UI table tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | every PyQt table surface (calculator, train/predict, helpers, fixtures) |
 | `data/region_configs/REGION_CONFIG_RULES.md` | Region config edit rules | region config tasks | region config guardrails |
 
 ## Standard Docs
