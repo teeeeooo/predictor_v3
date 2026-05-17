@@ -47,6 +47,7 @@ ADAPTER_ONLY_TERMS = {
 ADAPTER_MODULES = {
     Path("core/calculator_result_adapter.py"),
     Path("core/calculator_input_adapter.py"),
+    Path("core/calculator_prediction_adapter.py"),
 }
 
 
