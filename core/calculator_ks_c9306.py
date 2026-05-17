@@ -174,33 +174,358 @@ class KSC9306Calculator:
 
         return resolved
 
-    def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
+    def _resolve_ks_cspf_points(self, measured_inputs: dict) -> dict:
+        """KS CSPF용 point resolution.
+
+        ``cspf_test_profile``이 config에 있으면 T1/T3 derived point만 채우는
+        ``_resolve_cspf_profile_points``를 사용한다. 그 외(Korea처럼
+        ``points`` + ``derived_rules`` 기반)이면 ISO와 동일한 measure/default
+        검증과 연쇄 파생 규칙을 KS module 안에서 직접 수행한다.
+        """
+        if "cspf_test_profile" in self.config:
+            return self._resolve_cspf_profile_points(measured_inputs)
+
+        points_config = self.config.get("points", {})
+        derived_rules = self.config.get("derived_rules", {})
+        if not points_config:
+            resolved = {}
+            for key, value in measured_inputs.items():
+                resolved[key] = dict(value) if isinstance(value, dict) else value
+            return resolved
+
+        resolved = {}
+        for point_key, point_type in points_config.items():
+            if point_type != "measure":
+                continue
+            if point_key not in measured_inputs:
+                raise ValueError(
+                    f"필수 측정값 누락: '{point_key}' 포인트 데이터가 없습니다."
+                )
+            point_data = measured_inputs[point_key]
+            if not isinstance(point_data, dict):
+                raise ValueError(
+                    f"Invalid measured point '{point_key}': expected dict with capacity and power."
+                )
+            for required_key in ("capacity", "power"):
+                if required_key not in point_data:
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': "
+                        f"missing required field '{required_key}'."
+                    )
+
+            validated = dict(point_data)
+            for numeric_key in ("capacity", "power"):
+                try:
+                    numeric_value = float(point_data[numeric_key])
+                except (TypeError, ValueError):
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': {numeric_key} must be numeric."
+                    ) from None
+                if numeric_value <= 0:
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': {numeric_key} must be positive."
+                    )
+                validated[numeric_key] = numeric_value
+            resolved[point_key] = validated
+
+        round_values = bool(self.config.get("round_test_values", False))
+        for _ in range(len(points_config)):
+            for point_key, point_type in points_config.items():
+                if point_type != "default" or point_key in resolved:
+                    continue
+                rule = derived_rules.get(point_key)
+                if not rule:
+                    continue
+                source_key = rule.get("source")
+                if source_key not in resolved:
+                    continue
+                source_data = resolved[source_key]
+                cap_factor = rule.get("capacity_factor", 1.0)
+                pow_factor = rule.get("power_factor", 1.0)
+                derived = {
+                    "capacity": source_data["capacity"] * cap_factor,
+                    "power": source_data["power"] * pow_factor,
+                }
+                if round_values:
+                    derived["capacity"] = self._round_test_value(derived["capacity"])
+                    derived["power"] = self._round_test_value(derived["power"])
+                resolved[point_key] = derived
+
+        unresolved = [
+            k for k, t in points_config.items()
+            if t == "default" and k not in resolved
+        ]
+        if unresolved:
+            raise ValueError(
+                f"해결되지 않은 default 포인트: {unresolved}. "
+                "순환 참조 또는 source 누락을 확인하세요."
+            )
+
+        return resolved
+
+    def _interpolate_ks_cspf(self, tj: float, resolved_points: dict) -> dict:
+        """KS CSPF용 부하 조건별 온도 보간.
+
+        ISO16358Calculator.interpolate와 동일한 방식으로 ``{temp}_{load_type}``
+        포맷의 resolved point를 load_type 별로 묶고, tj 위치에 대해 선형
+        보간/외삽한 capacity/power를 돌려준다.
+        """
+        grouped = {}
+        for point_key, data in resolved_points.items():
+            parts = point_key.split("_")
+            if len(parts) != 2:
+                continue
+            try:
+                temp = float(parts[0])
+                load_type = parts[1]
+            except ValueError:
+                continue
+            grouped.setdefault(load_type, []).append(
+                (temp, data["capacity"], data["power"])
+            )
+
+        interpolated = {}
+        for load_type, points in grouped.items():
+            points.sort(key=lambda x: x[0])
+            if len(points) == 1:
+                interpolated[load_type] = {
+                    "capacity": points[0][1],
+                    "power": points[0][2],
+                }
+                continue
+
+            if tj <= points[0][0]:
+                t1, c1, p1 = points[0]
+                t2, c2, p2 = points[1]
+            elif tj >= points[-1][0]:
+                t1, c1, p1 = points[-2]
+                t2, c2, p2 = points[-1]
+            else:
+                t1 = c1 = p1 = t2 = c2 = p2 = None
+                for i in range(len(points) - 1):
+                    ta, ca, pa = points[i]
+                    tb, cb, pb = points[i + 1]
+                    if ta <= tj <= tb:
+                        t1, c1, p1, t2, c2, p2 = ta, ca, pa, tb, cb, pb
+                        break
+                if t1 is None:
+                    continue
+
+            c_tj = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
+            p_tj = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
+            interpolated[load_type] = {"capacity": c_tj, "power": p_tj}
+
+        return interpolated
+
+    def _calculate_ks_c9306_cspf(
+        self,
+        measured_inputs: dict,
+        declared_capacity: float = None,
+    ) -> dict:
+        """KS C 9306 CSPF standalone 계산 본문.
+
+        ISO16358Calculator.calculate_cspf의 `points` + `derived_rules` 분기
+        흐름을 KS module 안에서 직접 수행한다. measured input 정수화,
+        point resolution, declared_capacity 기반 building load,
+        bin loop, 최저단 cycling / 사이단 KS intersection / 최고단 saturated
+        regime, 누적 cstl/csec를 모두 KS 코드 경로에서 실행한다.
+        """
         measured_inputs = self._prepare_measured_inputs(measured_inputs)
         if declared_capacity is not None and self.config.get("round_test_values", False):
             try:
                 declared_capacity = self._round_test_value(declared_capacity)
             except (InvalidOperation, ValueError, TypeError):
                 pass
-        measured_inputs = self._resolve_cspf_profile_points(measured_inputs)
+
+        resolved_points = self._resolve_ks_cspf_points(measured_inputs)
+
+        building_load_source = self.config.get("building_load_source")
+        reference_point = self.config.get("reference_point", "35_full")
+
+        if building_load_source == "declared":
+            if declared_capacity is None or declared_capacity <= 0:
+                raise ValueError(
+                    "building_load_source가 'declared'인 지역은 "
+                    "declared_capacity(표기 정격 능력)를 입력해야 합니다."
+                )
+            L_c_ref = declared_capacity
+        else:
+            if reference_point not in resolved_points:
+                raise ValueError(
+                    f"Reference point '{reference_point}' not found in resolved points. "
+                    f"Check config['reference_point'] or input data."
+                )
+            L_c_ref = resolved_points[reference_point]["capacity"]
+
+        t_100_load = float(self.config.get("t_100_load"))
+        t_0_load = float(self.config.get("t_0_load"))
+        delta_t = t_100_load - t_0_load
+        if delta_t == 0:
+            raise ValueError(
+                "t_100_load and t_0_load cannot be equal (division by zero)."
+            )
+
+        cd = float(self.config.get("Cd", self.Cd))
+        power_interp_method = self.config.get("power_interpolation_method")
+
+        cstl = 0.0
+        csec = 0.0
+        bin_details = []
+
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
+            tj = float(bin_data.get("tj", 0))
+            nj = float(bin_data.get("nj", 0))
+
+            if nj <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0,
+                })
+                continue
+
+            Lc = L_c_ref * (tj - t_0_load) / delta_t
+            if Lc <= 0:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0,
+                })
+                continue
+
+            interp_tj = self._interpolate_ks_cspf(tj, resolved_points)
+            if "full" not in interp_tj:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0,
+                })
+                continue
+
+            loads = [
+                (data["capacity"], data["power"], load_type)
+                for load_type, data in interp_tj.items()
+            ]
+            loads.sort(key=lambda x: x[0])
+            if not loads:
+                bin_details.append({
+                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
+                    "capacity": 0.0, "power": 0.0, "eer": None,
+                    "cstl_bin": 0.0, "csec_bin": 0.0,
+                })
+                continue
+
+            lowest_cap, lowest_pow, _ = loads[0]
+            highest_cap, highest_pow, _ = loads[-1]
+
+            cooling_output = Lc
+            if Lc <= lowest_cap:
+                if lowest_cap <= 0:
+                    P_tj = 0.0
+                else:
+                    X = Lc / lowest_cap
+                    PLF = max(1e-6, 1.0 - cd * (1.0 - X))
+                    P_tj = (X * lowest_pow) / PLF if PLF > 0 else 0.0
+            elif Lc > highest_cap:
+                cooling_output = highest_cap
+                P_tj = highest_pow
+            else:
+                P_tj = 0.0
+                for i in range(len(loads) - 1):
+                    c1, p1, _ = loads[i]
+                    c2, p2, _ = loads[i + 1]
+                    if c1 < Lc <= c2:
+                        lower_type = loads[i][2]
+                        upper_type = loads[i + 1][2]
+                        ks_power = None
+                        if power_interp_method == "ks_intersection":
+                            ks_power = self._ks_cspf_intersection_power(
+                                tj,
+                                L_c_ref,
+                                resolved_points,
+                                lower_type,
+                                upper_type,
+                                t_100_load,
+                                t_0_load,
+                            )
+                        if ks_power is not None:
+                            P_tj = ks_power
+                        elif c2 == c1:
+                            P_tj = p1
+                        else:
+                            P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
+                        break
+
+            cstl += cooling_output * nj
+            csec += P_tj * nj
+
+            eer = None
+            if P_tj > 0:
+                eer = cooling_output / P_tj
+
+            bin_details.append({
+                "bin_no": idx,
+                "tj": tj,
+                "nj": nj,
+                "lc": Lc,
+                "capacity": cooling_output,
+                "power": P_tj,
+                "eer": eer,
+                "cstl_bin": cooling_output * nj,
+                "csec_bin": P_tj * nj,
+            })
+
+        if csec <= 0:
+            return {
+                "cspf": 0.0,
+                "annual_cooling_kwh": 0.0,
+                "annual_power_kwh": 0.0,
+                "bin_details": bin_details,
+            }
+
+        return {
+            "cspf": round(cstl / csec, 3),
+            "annual_cooling_kwh": round(cstl / 1000.0, 3),
+            "annual_power_kwh": round(csec / 1000.0, 3),
+            "bin_details": bin_details,
+        }
+
+    def _calculate_cspf_via_iso_delegate(
+        self,
+        measured_inputs: dict,
+        declared_capacity: float = None,
+    ) -> dict:
+        """ISO common engine으로의 기존 fallback 경로.
+
+        새 KS standalone body를 main path로 사용하지만, 안전망/비교 용도로
+        ISO16358Calculator.calculate_cspf 호출 경로를 별도 private helper로
+        보존한다. 외부에서 직접 호출하지 않는다.
+        """
+        prepared = self._prepare_measured_inputs(measured_inputs)
+        if declared_capacity is not None and self.config.get("round_test_values", False):
+            try:
+                declared_capacity = self._round_test_value(declared_capacity)
+            except (InvalidOperation, ValueError, TypeError):
+                pass
+        prepared = self._resolve_cspf_profile_points(prepared)
 
         if self._iso_calculator_ref is not None:
             return self._iso_calculator_ref.calculate_cspf(
-                measured_inputs, declared_capacity=declared_capacity
+                prepared, declared_capacity=declared_capacity
             )
 
-        # Lazy import to avoid circular dependency with ``core.calculator_iso16358``.
         from core.calculator_iso16358 import ISO16358Calculator
 
-        if self._config_path is not None:
-            iso_view = ISO16358Calculator(self._config_path)
-        else:
+        if self._config_path is None:
             raise ValueError(
-                "KSC9306Calculator.calculate_cspf requires either an attached ISO "
-                "calculator (from_iso_calculator) or a config path (from_config_path)."
+                "KSC9306Calculator._calculate_cspf_via_iso_delegate requires either an "
+                "attached ISO calculator (from_iso_calculator) or a config path (from_config_path)."
             )
-        return iso_view.calculate_cspf(
-            measured_inputs, declared_capacity=declared_capacity
-        )
+        iso_view = ISO16358Calculator(self._config_path)
+        return iso_view.calculate_cspf(prepared, declared_capacity=declared_capacity)
+
+    def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
+        return self._calculate_ks_c9306_cspf(measured_inputs, declared_capacity)
 
     # ------------------------------------------------------------------
     # KS C 9306 CSPF helpers
