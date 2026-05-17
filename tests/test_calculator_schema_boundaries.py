@@ -21,9 +21,15 @@ BANNED_IMPORT_NAMES = {
 }
 BANNED_REGION_RUNTIME_KEYS = {
     "candidate",
+    "candidate_id",
     "prediction",
+    "predicted_points",
     "model_version",
     "raw_result",
+    "calculator_input",
+    "calculator_result",
+    "ranking",
+    "ranking_features",
 }
 ADAPTER_ONLY_TERMS = {
     "PredictedPointsEnvelope",
@@ -33,6 +39,10 @@ ADAPTER_ONLY_TERMS = {
     "raw_result",
     "model_version",
     "prediction",
+    "predicted_points",
+    "calculator_input",
+    "calculator_result",
+    "ranking_features",
 }
 ADAPTER_MODULES = {
     Path("core/calculator_result_adapter.py"),
