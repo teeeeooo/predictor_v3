@@ -1,9 +1,8 @@
-# 081 ISO16358-2 HSPF Official Exact Golden Verification
+# 083 ISO16358-2 HSPF Official Exact Golden Verification
 
 ## Scope
 - Source commit: `a5f439b` (`test: add ISO16358 HSPF official exact diagnostic`)
-- User requested report path: `result_reports/active/081_iso16358-2-hspf-official-exact-golden-verification.md`
-- Note: report number `081` already exists in `result_reports/summaries/081_summary-calculator-ui-v1-audit-2-3.md`; this active report uses the exact path requested by the user.
+- User requested report path: `result_reports/active/083_iso16358-2-hspf-official-exact-golden-verification.md`
 - Core formulas, expected values, UI paths, EN14825/AHRI paths, adapters, and ML/inverse-search were not modified.
 
 ## Task 1 Result
