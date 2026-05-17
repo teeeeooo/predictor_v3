@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_ks_c9306 import KSC9306Calculator
 
 
 FIXTURE_PATH = (
@@ -165,8 +166,8 @@ def test_iso_t1_default_cspf_diagnostic_variants(tmp_path):
         assert result["csec_wh"] > 0
 
 
-def test_korea_cspf_regression_unchanged_by_diagnostics():
-    calculator = ISO16358Calculator("data/region_configs/korea.json")
+def test_korea_cspf_regression_matches_ks_c9306_calculator():
+    calculator = KSC9306Calculator.from_config_path("data/region_configs/korea.json")
     result = calculator.calculate_cspf(
         {
             "35_full": {"capacity": 6035.8, "power": 1641.4},

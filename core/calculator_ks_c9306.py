@@ -490,40 +490,6 @@ class KSC9306Calculator:
             "bin_details": bin_details,
         }
 
-    def _calculate_cspf_via_iso_delegate(
-        self,
-        measured_inputs: dict,
-        declared_capacity: float = None,
-    ) -> dict:
-        """ISO common engine으로의 기존 fallback 경로.
-
-        새 KS standalone body를 main path로 사용하지만, 안전망/비교 용도로
-        ISO16358Calculator.calculate_cspf 호출 경로를 별도 private helper로
-        보존한다. 외부에서 직접 호출하지 않는다.
-        """
-        prepared = self._prepare_measured_inputs(measured_inputs)
-        if declared_capacity is not None and self.config.get("round_test_values", False):
-            try:
-                declared_capacity = self._round_test_value(declared_capacity)
-            except (InvalidOperation, ValueError, TypeError):
-                pass
-        prepared = self._resolve_cspf_profile_points(prepared)
-
-        if self._iso_calculator_ref is not None:
-            return self._iso_calculator_ref.calculate_cspf(
-                prepared, declared_capacity=declared_capacity
-            )
-
-        from core.calculator_iso16358 import ISO16358Calculator
-
-        if self._config_path is None:
-            raise ValueError(
-                "KSC9306Calculator._calculate_cspf_via_iso_delegate requires either an "
-                "attached ISO calculator (from_iso_calculator) or a config path (from_config_path)."
-            )
-        iso_view = ISO16358Calculator(self._config_path)
-        return iso_view.calculate_cspf(prepared, declared_capacity=declared_capacity)
-
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
         return self._calculate_ks_c9306_cspf(measured_inputs, declared_capacity)
 
