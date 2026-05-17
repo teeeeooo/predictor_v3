@@ -34,7 +34,10 @@ ADAPTER_ONLY_TERMS = {
     "model_version",
     "prediction",
 }
-ADAPTER_MODULE = Path("core/calculator_result_adapter.py")
+ADAPTER_MODULES = {
+    Path("core/calculator_result_adapter.py"),
+    Path("core/calculator_input_adapter.py"),
+}
 
 
 def _iter_import_violations(path):
@@ -89,7 +92,7 @@ def test_region_configs_do_not_contain_runtime_or_ml_result_keys():
 def test_envelope_runtime_terms_stay_outside_core_calculators_except_adapter():
     violations = []
     for path in CALCULATOR_FILES:
-        if path == ADAPTER_MODULE:
+        if path in ADAPTER_MODULES:
             continue
         source = path.read_text(encoding="utf-8")
         for term in ADAPTER_ONLY_TERMS:
