@@ -633,7 +633,11 @@ class ISO16358Calculator:
     # ------------------------------------------------------------------
 
     def _ks_calculator(self) -> "KSC9306Calculator":
-        return KSC9306Calculator.from_iso_calculator(self)
+        return KSC9306Calculator(
+            self.config,
+            bin_hours=self.bin_hours,
+            default_cd=self.Cd,
+        )
 
     def _has_ks_c9306_hspf_input(self, measured_inputs: dict) -> bool:
         return self._ks_calculator()._has_ks_c9306_hspf_input(measured_inputs)

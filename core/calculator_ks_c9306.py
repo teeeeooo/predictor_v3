@@ -14,8 +14,7 @@ class KSC9306Calculator:
 
     Behavior-preserving extraction: 이 클래스는 기존
     ``ISO16358Calculator``의 ``_ks_hspf_*`` / ``_calculate_ks_c9306_hspf``
-    로직을 그대로 옮긴 결과이며 계산식은 변경하지 않는다. Step 2 legacy
-    rename 전까지 ``from_iso_calculator`` compatibility factory는 유지한다.
+    로직을 그대로 옮긴 결과이며 계산식은 변경하지 않는다.
     """
 
     def __init__(self, config: dict, bin_hours=None, default_cd: float = 0.25):
@@ -23,7 +22,6 @@ class KSC9306Calculator:
         self.bin_hours = bin_hours if bin_hours is not None else config.get("bin_hours", [])
         self.Cd = default_cd
         self._config_path = None
-        self._iso_calculator_ref = None
 
     @classmethod
     def from_config_path(cls, config_path: str) -> "KSC9306Calculator":
@@ -38,16 +36,6 @@ class KSC9306Calculator:
             default_cd=config.get("Cd", 0.25),
         )
         instance._config_path = config_path
-        return instance
-
-    @classmethod
-    def from_iso_calculator(cls, iso_calculator) -> "KSC9306Calculator":
-        instance = cls.__new__(cls)
-        instance.config = iso_calculator.config
-        instance.bin_hours = iso_calculator.bin_hours
-        instance.Cd = iso_calculator.Cd
-        instance._config_path = None
-        instance._iso_calculator_ref = iso_calculator
         return instance
 
     # ------------------------------------------------------------------

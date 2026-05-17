@@ -867,3 +867,14 @@
 #### Decision
 - Step 2b는 behavior-preserving legacy rename으로 제한했다. 새 ISO implementation, ISO profile 등록, UI dispatcher 전환은 Step 3~5로 유지한다.
 - Moved legacy diagnostic test의 fixture path는 `tests/fixtures/`를 계속 보도록 보정했다.
+
+### Follow-up — ISO separation Step 2c KS factory dead-code removal
+
+#### Result
+- `KSC9306Calculator.from_iso_calculator(...)`와 `_iso_calculator_ref` 필드를 제거했다.
+- Legacy ISO wrapper의 `_ks_calculator()`는 `KSC9306Calculator(self.config, bin_hours=self.bin_hours, default_cd=self.Cd)` 직접 생성으로 전환했다.
+- `from_iso_calculator` / `_iso_calculator_ref` grep 결과 0건을 확인했다.
+
+#### Decision
+- KS calculator는 더 이상 ISO calculator object reference를 보유하지 않는다.
+- Legacy ISO wrapper는 기존 호출 경로 보존용으로만 KS calculator를 즉시 생성한다.
