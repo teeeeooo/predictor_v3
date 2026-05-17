@@ -17,8 +17,9 @@
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
-2. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
-3. ML / inverse-search 복귀는 calculator series 안정 + UI 재연결 이후 진행한다.
+2. `app_calculator.py` / `ui/calc_window.py`의 resolver-backed UI 전환 범위를 audit한다.
+3. Calculator result envelope / ML adapter boundary를 설계한 뒤 ML / inverse-search 작업으로 복귀한다.
+4. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
 Z. historical case3 workbook full-dump 확보 후 AS/NZS workbook oracle compatibility 확장 (별도 phase)
 
 `work/iso-hspf-refactor-ui-followup` 브랜치는 merge하지 않고 reference/spike로만 둔다.

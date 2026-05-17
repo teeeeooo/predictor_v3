@@ -26,11 +26,10 @@
   - 기존 `core/calculator_iso16358.py`의 현 내용은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
 - **Region config 저장소**: `data/region_configs/`는 ISO 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - **Next work order**:
-  1. 현 boundary를 유지하면서 ML / inverse-search 작업으로 복귀한다.
-  2. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
-  5. `core/calculator_ks_c9306.py` standalone 잔여 정리 (이미 standalone이 된 부분 외 잔여 의존 제거).
-  6. AS/NZS workbook oracle current snapshot은 `core/calculator_asnzs_hspf_excel.py` compatibility calculator로 분리하고, historical case3 exact-match는 Z-phase로 보류.
-  7. profile resolver / Calculator UI 연결은 위 calculator series가 안정화된 뒤 별도 작업.
+  1. `app_calculator.py` / `ui/calc_window.py`의 resolver-backed UI 경로를 audit한다.
+  2. Audit 결과에 따라 유지할 direct config scan과 resolver로 옮길 calculator construction 경로를 분리한다.
+  3. Calculator result envelope / ML adapter boundary를 설계한 뒤 ML / inverse-search 작업으로 복귀한다.
+  4. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
 - **tests 정책 (이번 reset에 한정)**: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator contract 기준으로 이전하고, diagnostic / workbook-mixed 테스트는 삭제 또는 legacy/archive 디렉터리로 격리한다. 새 calculator skeleton 단계에서 해당 분류 audit을 선행한다.
 - **037~043 사이클의 미세 cleanup은 종료**: KS measured input prep 분리(037), CSPF point resolution 분리(038), standalone body 구현(039), audit(040), legacy delegate 제거(041), ISO ks_intersection 분기 제거 audit(042) 및 구현(043) 같은 작업은 이번 reset 이후 더 이상 다음 작업으로 제안하지 않는다.
 - **Reference branch**: `work/iso-hspf-refactor-ui-followup`은 merge 대상이 아니라 reference/spike로만 둔다. diff cherry-pick 또는 merge는 수행하지 않는다.

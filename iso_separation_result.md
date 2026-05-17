@@ -10,6 +10,7 @@
 - Update docs/data when needed: docs were updated for the ISO/KS/ASNZS boundary, current workbook snapshot, work plan, architecture notes, and project brief. No `data/region_configs/*.json` change was needed.
 - Clean unnecessary tests under `tests`: diagnostic/mixed legacy tests were moved to `tests/_legacy/`; active tests were retargeted to the new calculators where appropriate. No further tracked test deletion was made because remaining legacy-target tests preserve case3/golden diagnostics or active baseline evidence.
 - Write Markdown result: this file plus `result_reports/active/044` through `053`.
+  Follow-up lifecycle summary moved reports 044~053 to `result_reports/archive/` and summarized the calculator/ISO separation arc in `result_reports/summaries/054_summary-calculator-ui-iso-separation.md`.
 
 ## Completed Work
 
@@ -32,16 +33,17 @@
 
 ## Reports
 
-- `result_reports/active/044_iso-separation-step1-ks-hspf-test-routing.md`
-- `result_reports/active/045_iso-separation-step2a-prerename-audit.md`
-- `result_reports/active/046_iso-separation-step2b-legacy-rename.md`
-- `result_reports/active/047_iso-separation-step2c-ks-factory-cleanup.md`
-- `result_reports/active/048_iso-separation-step3a-new-iso-cspf.md`
-- `result_reports/active/049_iso-separation-step3b-new-iso-hspf.md`
-- `result_reports/active/050_iso-separation-step4-asnzs-workbook-snapshot.md`
-- `result_reports/active/051_iso-separation-step5-profile-dispatcher-ui.md`
-- `result_reports/active/052_iso-separation-completion-audit.md`
-- `result_reports/active/053_iso-remaining-work-completion.md`
+- `result_reports/archive/044_iso-separation-step1-ks-hspf-test-routing.md`
+- `result_reports/archive/045_iso-separation-step2a-prerename-audit.md`
+- `result_reports/archive/046_iso-separation-step2b-legacy-rename.md`
+- `result_reports/archive/047_iso-separation-step2c-ks-factory-cleanup.md`
+- `result_reports/archive/048_iso-separation-step3a-new-iso-cspf.md`
+- `result_reports/archive/049_iso-separation-step3b-new-iso-hspf.md`
+- `result_reports/archive/050_iso-separation-step4-asnzs-workbook-snapshot.md`
+- `result_reports/archive/051_iso-separation-step5-profile-dispatcher-ui.md`
+- `result_reports/archive/052_iso-separation-completion-audit.md`
+- `result_reports/archive/053_iso-remaining-work-completion.md`
+- Summary: `result_reports/summaries/054_summary-calculator-ui-iso-separation.md`
 
 ## Remaining Work
 

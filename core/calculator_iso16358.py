@@ -1,8 +1,4 @@
-"""ISO 16358 CSPF/HSPF common standard calculator.
-
-Step 3a implements the ISO 16358-1 CSPF path only. HSPF remains a Step 3b
-contract and intentionally raises ``NotImplementedError`` here.
-"""
+"""ISO 16358 CSPF/HSPF common standard calculator."""
 
 import json
 import os
