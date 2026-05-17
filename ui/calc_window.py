@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, QSettings
 # 코어 계산기 임포트
 from core.calculator_en14825 import EN14825Calculator
 from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculator_profiles import list_calculator_profiles
 
 
 # [6] 숫자 파싱 공통 함수
@@ -141,7 +142,7 @@ class CalculatorWindow(QWidget):
 
         self.combo_region_ahri = QComboBox()
         self.combo_region_ahri.currentIndexChanged.connect(self.on_region_changed_ahri)
-        layout.addWidget(QLabel("규격 설정 (JSON):"))
+        layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_ahri)
 
         scroll = QScrollArea()
@@ -230,7 +231,37 @@ class CalculatorWindow(QWidget):
         layout.addWidget(scroll)
 
     def scan_configs(self):
-        """설정 파일 스캔 및 규격(Standard)에 맞는 콤보박스에 필터링하여 추가"""
+        """설정 파일과 profile registry를 규격(Standard)에 맞는 콤보박스에 추가"""
+        self._populate_ahri_profiles()
+        self._populate_en_configs()
+
+    def _populate_ahri_profiles(self):
+        """AHRI UI는 enabled calculator profile만 선택지로 노출합니다."""
+        if not hasattr(self, 'combo_region_ahri'):
+            return
+
+        was_blocked = self.combo_region_ahri.blockSignals(True)
+        try:
+            self.combo_region_ahri.clear()
+            for profile in list_calculator_profiles():
+                if profile.standard == "AHRI_210_240" and profile.metric == "SEER2":
+                    label = f"{profile.standard} / {profile.region.upper()} / {profile.metric}"
+                    self.combo_region_ahri.addItem(label, profile.profile_id)
+        finally:
+            self.combo_region_ahri.blockSignals(was_blocked)
+
+        if self.combo_region_ahri.count() > 0:
+            self.on_region_changed_ahri(self.combo_region_ahri.currentIndex())
+
+    def _populate_en_configs(self):
+        """EN 탭은 EN profile 등록 전까지 기존 JSON 스캔 경로를 유지합니다."""
+        if hasattr(self, 'combo_region_en'):
+            was_blocked = self.combo_region_en.blockSignals(True)
+            try:
+                self.combo_region_en.clear()
+            finally:
+                self.combo_region_en.blockSignals(was_blocked)
+
         if not os.path.exists(self.config_dir): 
             return
             
@@ -244,10 +275,7 @@ class CalculatorWindow(QWidget):
                     standard = data.get("standard", "").lower()
                     
                     # standard 문자열에 포함된 키워드로 탭 분류
-                    if "ahri" in standard:
-                        if hasattr(self, 'combo_region_ahri'):
-                            self.combo_region_ahri.addItem(f)
-                    elif "en" in standard or "14825" in standard:
+                    if "en" in standard or "14825" in standard:
                         if hasattr(self, 'combo_region_en'):
                             self.combo_region_en.addItem(f)
             except Exception as e:
@@ -262,8 +290,14 @@ class CalculatorWindow(QWidget):
         pass
 
     def on_region_changed_ahri(self, index):
+        profile_id = None
+        if hasattr(self, 'combo_region_ahri') and index >= 0:
+            profile_id = self.combo_region_ahri.itemData(index)
+        if not profile_id:
+            profile_id = "ahri_usa_seer2"
+
         try:
-            self.ahri_calc = create_calculator_for_profile(profile_id="ahri_usa_seer2")
+            self.ahri_calc = create_calculator_for_profile(profile_id=profile_id)
         except:
             self.ahri_calc = None
 
