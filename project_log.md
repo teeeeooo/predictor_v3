@@ -925,3 +925,21 @@
 #### Decision
 - AS/NZS compatibility profile은 manifest에는 존재하지만 disabled 상태를 유지한다.
 - UI는 아직 기존 CSPF 화면 구조를 유지하며, profile/dispatcher 경로로만 calculator 생성 책임을 이동했다.
+
+### Follow-up — ISO remaining work completion
+
+#### Result
+- `core/calculator_iso16358.py`의 active HSPF branch routing을 Formula 44/45/47/48/49/50 helper path로 연결했다.
+- Frost extended path는 canonical `2_ext` 후보와 `-7_ext` fallback으로 선택될 수 있도록 정리했다.
+- 기존 mixed ISO 구현을 `core/_legacy/calculator_iso16358_legacy.py`로 archive하고 남은 diagnostic import를 archived namespace로 retarget했다.
+- `core/calculator_asnzs_hspf_excel.py`에 current workbook CSPF snapshot path(`calculate_cspf`)를 추가했다.
+- Historical case3 workbook diagnostic expected는 active ISO failure가 아니라 pre-separation workbook oracle diagnostic으로 명시하고 xfail로 격리했다.
+- `iso_separation_result.md`, `iso_remaining_work_completion.md`, project brief, work plan, refactor plan, architecture, design doc을 갱신했다.
+
+#### Verification
+- Targeted ISO/ASNZS checks: `81 passed, 21 xfailed`.
+- Full suite: `288 passed, 23 xfailed`.
+
+#### Decision
+- AS/NZS completion 범위는 current local Energy Rating workbook compatibility로 한정한다. Public web evidence만으로 official AS/NZS production formula parity를 주장하지 않는다.
+- Historical AS/NZS case3 full-dump exact parity는 matching workbook/full dump 확보 전까지 Z-phase로 유지한다.

@@ -1257,12 +1257,8 @@ class ISO16358Calculator:
         )
 
     def _iso_hspf_has_frost_extended_candidate(self, resolved: dict) -> bool:
-        return (
-            "-7_ext" in resolved
-            and (
-                self._iso_hspf_has_extended_candidate(resolved)
-                or "2_ext_f" in resolved
-            )
+        return self._iso_hspf_has_extended_candidate(resolved) or (
+            "-7_ext" in resolved and "2_ext_f" in resolved
         )
 
     def _iso_hspf_common_extended_frost_curve(
@@ -1270,7 +1266,7 @@ class ISO16358Calculator:
         tj: float,
         resolved: dict
     ) -> dict:
-        ext_m7 = resolved["-7_ext"]
+        ext_m7 = self._iso_hspf_extended_minus7_default(resolved)
         ext_2 = resolved.get("2_ext_f", resolved.get("2_ext"))
         return {
             "capacity": ext_m7["capacity"]
@@ -1349,10 +1345,14 @@ class ISO16358Calculator:
     def _iso_hspf_calculate_common_branch_power(
         self,
         branch: str,
+        tj: float,
         bl_h: float,
         snapshot: dict,
         active_stages: list,
-        cd: float
+        cd: float,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
     ) -> dict:
         if branch == "cycling":
             lowest_stage = "min" if "min" in active_stages else "half"
@@ -1377,10 +1377,9 @@ class ISO16358Calculator:
             }
 
         if branch in ("min_half_formula44", "min_half_formula48"):
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["min"], snapshot["half"]
+            p_j = self._iso_hspf_min_half_power_by_formula_44_48(
+                tj, bl_h, resolved, frost, load_line
             )
-            p_j = interpolated["P_j"]
             return {
                 "case": "min_half_interpolation_frost"
                 if branch == "min_half_formula48"
@@ -1391,15 +1390,18 @@ class ISO16358Calculator:
                 "auxiliary_heat_rate": 0.0,
                 "trace": {
                     "branch": branch,
-                    "X": interpolated["X"],
                 },
             }
 
         if branch in ("half_full_formula45", "half_full_formula49"):
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["half"], snapshot["full"]
+            formula_result = self._iso_hspf_half_full_power_by_formula_45_49(
+                tj, bl_h, resolved, frost, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_hf"]
+            trace = {
+                key: value for key, value in formula_result.items()
+                if key != "P_hf"
+            }
             return {
                 "case": "formula49_half_full_frost"
                 if branch == "half_full_formula49"
@@ -1408,41 +1410,43 @@ class ISO16358Calculator:
                 "pi_j": bl_h,
                 "heat_pump_energy_rate": p_j,
                 "auxiliary_heat_rate": 0.0,
-                "trace": {
-                    "branch": branch,
-                    "X": interpolated["X"],
-                },
+                "trace": trace,
             }
 
         if branch == "full_extended_formula47":
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["full"], snapshot["ext"]
+            formula_result = self._iso_hspf_formula47_full_extended_non_frost_power(
+                tj, bl_h, resolved, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_fe"]
+            trace = {
+                key: value for key, value in formula_result.items()
+                if key != "P_fe"
+            }
             return {
                 "case": "formula47_full_extended",
                 "P_j": p_j,
                 "pi_j": bl_h,
                 "heat_pump_energy_rate": p_j,
                 "auxiliary_heat_rate": 0.0,
-                "trace": {
-                    "branch": branch,
-                    "X": interpolated["X"],
-                },
+                "trace": trace,
             }
 
         if branch == "full_extended_formula50":
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["full"], snapshot["ext"]
+            formula_result = self._iso_hspf_formula50_full_extended_frost_power(
+                tj, bl_h, resolved, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_fe"]
             trace = {
                 "branch": "formula50_full_extended_frost",
+                "P_fe": p_j,
                 "pi_ext_f": snapshot["ext"]["capacity"],
                 "p_ext_f": snapshot["ext"]["power"],
-                "X": interpolated["X"],
                 "backup_heat": 0.0,
             }
+            trace.update({
+                key: value for key, value in formula_result.items()
+                if key != "P_fe"
+            })
             return {
                 "case": "formula50_full_extended_frost",
                 "P_j": p_j,
@@ -1501,10 +1505,14 @@ class ISO16358Calculator:
         )
         branch_result = self._iso_hspf_calculate_common_branch_power(
             branch,
+            tj,
             bl_h,
             snapshot,
             active_stages,
             cd,
+            resolved,
+            frost,
+            load_line_info["line"],
         )
 
         heat_pump_energy = branch_result["heat_pump_energy_rate"] * nj

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from core.calculator_iso16358_legacy import ISO16358Calculator
+from core._legacy.calculator_iso16358_legacy import ISO16358Calculator
 
 # Import helpers from existing test file
 from tests.test_iso16358_hspf_golden import (

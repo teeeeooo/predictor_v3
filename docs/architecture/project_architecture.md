@@ -162,9 +162,9 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
   - `data/region_configs/korea.json`을 사용할 수 있으나, 해당 config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 한다. ISO16358 common path와 KS region config 해석을 섞지 않는다.
   - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
 - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용.
-  - ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator이다.
+  - ISO common HSPF/CSPF expected와 분리된 explicit opt-in compatibility calculator이다.
   - AS/NZS workbook oracle convention을 ISO common path에 섞지 않으며, 자체 compatibility config로 opt-in 한다.
-  - Current workbook snapshot exact-match는 `ASNZS_EXCEL_COMPAT` fixture namespace에서만 다룬다. Historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
+  - Current workbook HSPF/CSPF snapshot exact-match는 `ASNZS_EXCEL_COMPAT` fixture namespace에서만 다룬다. Historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
   - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
 
 AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculator는 `data/region_configs/usa.json`(SEER2/cooling)과 `data/region_configs/usa_hspf2.json`(HSPF2/heating)을 사용할 수 있으며, 이 JSON들은 ISO common path가 아니라 AHRI calculator가 해석한다.
@@ -175,13 +175,13 @@ resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고,
 
 위 boundary는 목표 구조이며, 2026-05-17 series reset 작업에서 기존 ISO 구현은 legacy/reference로 격하되고 새 파일들이 이 책임 경계에 맞춰 재작성되고 있다.
 
-- 기존 혼재 구현은 `core/calculator_iso16358_legacy.py`로 격하했다.
+- 기존 혼재 구현은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
 - 새 `core/calculator_iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
 - `core/calculator_ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
-- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
+- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook HSPF/CSPF snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
 - `data/region_configs/`는 ISO 전용이 아닌 다중 calculator 공유 정적 standard/region config 저장소이며, 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - tests 정책: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator 기준으로 이전하고, diagnostic/workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리한다. (자세한 실행 순서는 `docs/WORK_PLAN.md`와 `docs/REFACTOR_PLAN.md` 참조.)
-- profile / dispatcher / UI 연결은 새 calculator series가 안정화된 뒤 재개한다.
+- profile / dispatcher / UI 연결은 새 calculator series boundary를 유지한 상태에서만 확장한다.
 
 ### External calculator compatibility profiles
 

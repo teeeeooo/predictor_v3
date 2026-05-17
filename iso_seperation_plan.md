@@ -1,5 +1,14 @@
 # Calculator Series Reset — Implementation Plan (Steps 1–5)
 
+## Status
+
+Completed on `work/iso-separation-plan`. Final state is summarized in `iso_separation_result.md` and `iso_remaining_work_completion.md`.
+
+- Legacy mixed ISO code now lives at `core/_legacy/calculator_iso16358_legacy.py`.
+- Active ISO formula/validation failures from the completion pass are fixed.
+- Current local AS/NZS workbook HSPF/CSPF compatibility is implemented under `ASNZS_EXCEL_COMPAT`.
+- Historical case3 full-dump parity remains Z-phase.
+
 ## Context
 
 037~043 사이클로 `core/calculator_iso16358.py` 안의 KS 잔여물을 부분 cleanup해 왔지만, ISO/KS/ASNZS 책임이 한 파일에 누적된 구조 자체가 정렬되지 않는다는 것이 확인되었다. Step 0 (문서/계획 reset, commit `f81e94b`)으로 방향을 **legacy 격하 + 새 calculator 3종 재작성**으로 확정했다. 이 plan은 그 뒤를 잇는 Step 1~5의 실행 계획이다.

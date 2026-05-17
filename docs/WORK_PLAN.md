@@ -11,13 +11,13 @@
 - 기존 ISO 파일 내부 부분 cleanup 누적은 중단 (037~043 같은 미세 cleanup 사이클은 종료)
 - 새 ISO 16358 calculator는 CSPF/HSPF common standard logic만 담당한다.
 - KS C 9306 / AS/NZS workbook oracle 책임은 각각 별도 calculator 파일로 분리한다.
-- legacy behavior 보존 테스트는 새 calculator contract 기준으로 삭제 / 이전 / 격리한다.
+- legacy behavior 보존 테스트는 `core/_legacy/`와 `tests/_legacy/` 또는 explicit xfail diagnostic으로 격리한다.
 - production ISO common path와 AS/NZS Excel compatibility path 분리 유지
-- AS/NZS historical case3 full-dump exact matching은 Z-phase. 현재 repo의 `reference_files/iso16358_test_sheet.xlsx` snapshot exact-match는 AS/NZS compatibility calculator/fixture에서만 관리
+- AS/NZS historical case3 full-dump exact matching은 Z-phase. 현재 repo의 `reference_files/iso16358_test_sheet.xlsx` HSPF/CSPF snapshot exact-match는 AS/NZS compatibility calculator/fixture에서만 관리
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
-2. 남은 ISO HSPF 16-failure baseline은 별도 pure ISO / workbook oracle routing 작업으로 분리한다.
+2. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
 3. ML / inverse-search 복귀는 calculator series 안정 + UI 재연결 이후 진행한다.
 Z. historical case3 workbook full-dump 확보 후 AS/NZS workbook oracle compatibility 확장 (별도 phase)
 

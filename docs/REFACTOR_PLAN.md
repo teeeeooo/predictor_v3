@@ -22,14 +22,12 @@
 - **목표 boundary**:
   - `core/calculator_iso16358.py` (새 파일) — ISO 16358 CSPF/HSPF common standard logic 전용. KS / ASNZS / workbook oracle / legacy diagnostic helper 미포함. Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
   - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). `data/region_configs/korea.json`을 직접 해석. ISO calculator가 KS config를 대신 해석하지 않는다.
-  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. Current workbook snapshot exact-match는 이 모듈/fixture에서만 다루며, historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
-  - 기존 `core/calculator_iso16358.py`의 현 내용은 `core/calculator_iso16358_legacy.py`로 격하했다.
+  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. Current workbook HSPF/CSPF snapshot exact-match는 이 모듈/fixture에서만 다루며, historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
+  - 기존 `core/calculator_iso16358.py`의 현 내용은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
 - **Region config 저장소**: `data/region_configs/`는 ISO 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - **Next work order**:
-  1. 기존 `core/calculator_iso16358.py`의 legacy/reference 격하 audit (rename target 경로, import 영향, profile/dispatcher/UI/test의 직접 참조 grep).
-  2. legacy 격하 실행 (rename + import 정정 + `python3 -B -m py_compile` + baseline tests 기준 회귀 없음 확인).
-  3. 새 `core/calculator_iso16358.py` skeleton 작성 (책임/public API 시그니처만 표시한 빈 모듈).
-  4. 새 ISO 16358 CSPF/HSPF 최소 공식 구현 (regional profile JSON 직접 해석).
+  1. 현 boundary를 유지하면서 ML / inverse-search 작업으로 복귀한다.
+  2. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
   5. `core/calculator_ks_c9306.py` standalone 잔여 정리 (이미 standalone이 된 부분 외 잔여 의존 제거).
   6. AS/NZS workbook oracle current snapshot은 `core/calculator_asnzs_hspf_excel.py` compatibility calculator로 분리하고, historical case3 exact-match는 Z-phase로 보류.
   7. profile resolver / Calculator UI 연결은 위 calculator series가 안정화된 뒤 별도 작업.
