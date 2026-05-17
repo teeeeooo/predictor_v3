@@ -279,24 +279,6 @@ class ISO16358Calculator:
 
         return interpolated
 
-    def _ks_intersection_power(
-        self,
-        tj: float,
-        L_c_ref: float,
-        resolved_points: dict,
-        lower_type: str,
-        upper_type: str
-    ) -> float:
-        return self._ks_calculator()._ks_cspf_intersection_power(
-            tj,
-            L_c_ref,
-            resolved_points,
-            lower_type,
-            upper_type,
-            self.t_100_load,
-            self.t_0_load,
-        )
-
     def _iso_boundary_temperature(
         self,
         ref_capacity: float,
@@ -2085,9 +2067,7 @@ class ISO16358Calculator:
                 # 3. Intermediate interpolation regime
                 # Use interpolation method
                 P_tj = None
-                if self.power_interpolation_method == "ks_intersection":
-                    P_tj = self._ks_intersection_power(tj, L_c_ref, resolved, lowest_type, highest_type)
-                elif self.power_interpolation_method == "iso_boundary_eer":
+                if self.power_interpolation_method == "iso_boundary_eer":
                     try:
                         profile_cfg = self.config.get("cspf_test_profile", {})
                         if profile_cfg.get("climate_profile") == "T3":
@@ -2262,14 +2242,7 @@ class ISO16358Calculator:
                     if c1 < Lc <= c2:
                         lower_type = loads[i][2]
                         upper_type = loads[i+1][2]
-                        ks_power = None
-                        if self.power_interpolation_method == "ks_intersection":
-                            ks_power = self._ks_intersection_power(
-                                tj, L_c_ref, resolved_points, lower_type, upper_type
-                            )
-                        if ks_power is not None:
-                            P_tj = ks_power
-                        elif self.power_interpolation_method == "iso_boundary_eer":
+                        if self.power_interpolation_method == "iso_boundary_eer":
                             iso_power = self._iso_boundary_eer_power(
                                 tj, Lc, resolved_points, lower_type, upper_type
                             )
