@@ -6,7 +6,7 @@
 ## Scope
 
 - Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`.
-- Excluded: `docs/archive/**`, `result_reports/archive/**`, `result_reports/summaries/**`, `result_reports/active/**`.
+- Excluded: `docs/archive/**`, `reference_files/*.md`, `result_reports/archive/**`, `result_reports/summaries/**`, `result_reports/active/**`.
 - Result reports는 lifecycle artifact이므로 `result_reports/summaries/`에서 별도 요약한다.
 
 ## Maintenance Rule
@@ -94,11 +94,11 @@
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
-| `iso_seperation_plan.md` | ISO separation implementation plan | ISO separation work | design records, ISO notes, AS/NZS protocol |
-| `iso_separation_result.md` | ISO separation result record | ISO separation plan, completion docs | reports, plan |
-| `iso_remaining_work_completion.md` | ISO remaining work completion result | ISO remaining work completion | `iso_separation_result.md` |
-| `ui_resolver_audit_result.md` | UI resolver audit result | app calculator / UI resolver tasks | `ui/calc_window.py`, `core/calculator_dispatcher.py`, `core/calculator_profiles.py` |
-| `audit_result_next_actions_completion.md` | Audit-result next actions completion report | `audit_result.md` follow-up tasks | result report 056, `project_log.md` |
+| none | Root result docs have been moved to `reference_files/` as reference snapshots. | n/a | n/a |
+
+## Reference Snapshots
+
+`reference_files/*.md` contains user/audit/result snapshots and is excluded from the active owner inventory. If a reference snapshot becomes an active owner document again, move it out of `reference_files/` and add it to the relevant section above.
 
 ## Watchlist
 
