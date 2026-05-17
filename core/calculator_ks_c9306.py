@@ -99,6 +99,81 @@ class KSC9306Calculator:
 
         return prepared
 
+    def _resolve_cspf_profile_points(self, measured: dict) -> dict:
+        """KS CSPF용 cspf_test_profile 기반 derived point 생성.
+
+        ISO16358Calculator의 동명 helper와 동일한 T1 / T3 derived point
+        규칙을 KS module 내부에 복제한다. ``cspf_test_profile``이 config에
+        없으면 derived point를 만들지 않고 입력의 shallow copy만 돌려준다
+        (Korea처럼 ``points`` + ``derived_rules`` 기반 region은 ISO delegate
+        쪽 ``resolve_points()``가 이어서 처리한다).
+
+        이미 존재하는 key는 overwrite하지 않으며, 입력 dict는 mutate하지
+        않는다. point_data dict도 새 dict로 얕게 복사해 ISO delegate가
+        in-place 수정을 해도 호출자 dict에 영향이 없도록 한다.
+        """
+        resolved = {}
+        for point_key, point_data in measured.items():
+            if isinstance(point_data, dict):
+                resolved[point_key] = dict(point_data)
+            else:
+                resolved[point_key] = point_data
+
+        profile_cfg = self.config.get("cspf_test_profile", {})
+        climate = profile_cfg.get("climate_profile")
+        selection = profile_cfg.get("test_selection")
+
+        def _set_point(key, cap, pwr):
+            if key not in resolved:
+                resolved[key] = {"capacity": cap, "power": pwr}
+
+        if climate == "T1":
+            _set_point(
+                "29_full",
+                resolved["35_full"]["capacity"] * 1.077,
+                resolved["35_full"]["power"] * 0.914,
+            )
+            _set_point(
+                "29_half",
+                resolved["35_half"]["capacity"] * 1.077,
+                resolved["35_half"]["power"] * 0.914,
+            )
+            if selection == "with_optional_test":
+                _set_point(
+                    "29_min",
+                    resolved["35_min"]["capacity"] * 1.077,
+                    resolved["35_min"]["power"] * 0.914,
+                )
+        elif climate == "T3":
+            _set_point(
+                "46_half",
+                resolved["35_half"]["capacity"] * 0.859,
+                resolved["35_half"]["power"] * 1.25,
+            )
+            _set_point(
+                "29_full",
+                resolved["35_full"]["capacity"] * 1.077,
+                resolved["35_full"]["power"] * 0.914,
+            )
+            _set_point(
+                "29_half",
+                resolved["35_half"]["capacity"] * 1.077,
+                resolved["35_half"]["power"] * 0.914,
+            )
+            if selection == "with_optional_test":
+                _set_point(
+                    "46_min",
+                    resolved["35_min"]["capacity"] * 0.859,
+                    resolved["35_min"]["power"] * 1.25,
+                )
+                _set_point(
+                    "29_min",
+                    resolved["35_min"]["capacity"] * 1.077,
+                    resolved["35_min"]["power"] * 0.914,
+                )
+
+        return resolved
+
     def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
         measured_inputs = self._prepare_measured_inputs(measured_inputs)
         if declared_capacity is not None and self.config.get("round_test_values", False):
@@ -106,6 +181,7 @@ class KSC9306Calculator:
                 declared_capacity = self._round_test_value(declared_capacity)
             except (InvalidOperation, ValueError, TypeError):
                 pass
+        measured_inputs = self._resolve_cspf_profile_points(measured_inputs)
 
         if self._iso_calculator_ref is not None:
             return self._iso_calculator_ref.calculate_cspf(
