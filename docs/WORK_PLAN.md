@@ -20,11 +20,13 @@
 - AHRI SEER2 input/result envelope 첫 slice는 `core/calculator_input_adapter.py` / `core/calculator_result_adapter.py`로 구현 완료. 단위 변환은 의도적으로 envelope 밖.
 - Calculator core / region config 가드는 banned-key 및 adapter-owned term 가드 (`tests/test_calculator_schema_boundaries.py`)로 강화 완료.
 - ISO16358-2 HSPF official exact 16-case verification은 active diagnostic으로 추가했다. 현재 계산기 actual은 5개 case match, 11개 case mismatch이며 mismatch case는 strict xfail로 보존한다.
+- ISO16358-2 HSPF official exact fixture는 official data (input / description / expected)만 남기도록 정리했고, current-implementation status (match/mismatch xfail list)는 `tests/test_iso16358_hspf_official_exact_golden.py`의 `XFAIL_CASE_IDS` constant로 분리했다.
+- AHRI / EN14825 horizontal table-input UI와 ML W ↔ calculator-native unit boundary는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md`에 설계 완료. 첫 구현 slice는 AHRI SEER2 table input 한 곳으로 제한한다.
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch를 먼저 분석한다. UI redesign, calculator table-input UI 구현, 또는 추가 table UI slice는 이 mismatch 분석 뒤로 둔다.
-3. 그 뒤 Calculator UI v1 follow-up을 별도 UI 작업으로 다룬다. 현재 `ui/calc_window.py`에는 launch smoke, AHRI/EN profile selector guard, AHRI AC calculate button/result-display smoke, EN SCOP result smoke, HSPF2 form layout guard, HSPF2 validation guard가 있다. 다음 후보는 calculator table-input UI design audit / AHRI·EN table UI slice / envelope chain smoke다.
+3. 그 뒤 Calculator UI v1 follow-up을 별도 UI 작업으로 다룬다. 현재 `ui/calc_window.py`에는 launch smoke, AHRI/EN profile selector guard, AHRI AC calculate button/result-display smoke, EN SCOP result smoke, HSPF2 form layout guard, HSPF2 validation guard가 있다. AHRI / EN14825 horizontal table-input UI 설계는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` 기준으로 AHRI SEER2 → AHRI HSPF2 → EN14825 SCOP → EN14825 SEER 순서로 slice를 분리한다. 그 뒤 unit adapter slice (W ↔ profile-native)를 별도로 둔다.
 4. ML / inverse-search 복귀는 envelope adapter chain의 첫 AHRI SEER2 slice 상태를 유지한 뒤 별도 작업으로 다룬다.
 5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 

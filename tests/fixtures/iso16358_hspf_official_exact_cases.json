@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "User-provided ISO16358-2 HSPF official exact 16-case expected values. Expected values must not be edited to match current calculator actuals.",
+  "description": "User-provided ISO16358-2 HSPF official exact 16-case expected values. Expected values must not be edited to match current calculator actuals. Current-implementation status fields (match/mismatch) must not live here; per-case xfail status lives in the test module so that the fixture stays a pure official-data source.",
   "units": {
     "capacity": "W",
     "power": "W",
@@ -69,113 +69,97 @@
       "case_id": 1,
       "description": "7_min no, extended mode no, -7_full/-7_half/-7_ext default",
       "points": [],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527},
-      "current_status": "match"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527}
     },
     {
       "case_id": 2,
       "description": "7_min yes, extended mode no, -7_full/-7_half/-7_ext default",
       "points": ["7_min"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1061.4, "HSPF": 4.603},
-      "current_status": "match"
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.4, "HSPF": 4.603}
     },
     {
       "case_id": 3,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default",
       "points": ["2_ext"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
     },
     {
       "case_id": 4,
       "description": "7_min yes, extended mode yes, -7_full/-7_half/-7_ext default",
       "points": ["7_min", "2_ext"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604}
     },
     {
       "case_id": 5,
       "description": "7_min no, extended mode no, -7_full/-7_half default, -7_ext measured",
       "points": ["-7_ext"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527},
-      "current_status": "match"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.3, "HSPF": 4.527}
     },
     {
       "case_id": 6,
       "description": "7_min no, extended mode no, -7_half/-7_ext default, -7_full measured",
       "points": ["-7_full"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535},
-      "current_status": "match"
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535}
     },
     {
       "case_id": 7,
       "description": "7_min no, extended mode no, -7_full/-7_ext default, -7_half measured",
       "points": ["-7_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1080.7, "HSPF": 4.520},
-      "current_status": "match"
+      "expected": {"HSTL": 4885.4, "HSEC": 1080.7, "HSPF": 4.520}
     },
     {
       "case_id": 8,
       "description": "7_min no, extended mode no, -7_full/-7_half/-7_ext measured",
       "points": ["-7_full", "-7_half", "-7_ext"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535}
     },
     {
       "case_id": 9,
       "description": "7_min yes, extended mode yes, -7_half/-7_ext default, -7_full measured",
       "points": ["7_min", "2_ext", "-7_full"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1058.0, "HSPF": 4.617},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1058.0, "HSPF": 4.617}
     },
     {
       "case_id": 10,
       "description": "7_min yes, extended mode yes, -7_full/-7_ext default, -7_half measured",
       "points": ["7_min", "2_ext", "-7_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1064.4, "HSPF": 4.590},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1064.4, "HSPF": 4.590}
     },
     {
       "case_id": 11,
       "description": "7_min yes, extended mode yes, -7_ext default, -7_full/-7_half measured",
       "points": ["7_min", "2_ext", "-7_full", "-7_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1061.1, "HSPF": 4.604}
     },
     {
       "case_id": 12,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f measured",
       "points": ["2_ext", "2_full"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
     },
     {
       "case_id": 13,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
       "points": ["2_ext", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
     },
     {
       "case_id": 14,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
       "points": ["2_ext", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
     },
     {
       "case_id": 15,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f, 2_half_f measured",
       "points": ["2_ext", "2_full", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
     },
     {
       "case_id": 16,
       "description": "7_min yes, extended mode yes, -7_full/-7_half/-7_ext, 2_full_f, 2_half_f measured",
       "points": ["7_min", "2_ext", "-7_full", "-7_half", "-7_ext", "2_full", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1066.3, "HSPF": 4.582},
-      "current_status": "mismatch"
+      "expected": {"HSTL": 4885.4, "HSEC": 1066.3, "HSPF": 4.582}
     }
   ],
   "notes": [

@@ -8,6 +8,13 @@ from core.calculator_iso16358 import ISO16358Calculator
 
 FIXTURE_PATH = Path("tests/fixtures/iso16358_hspf_official_exact_cases.json")
 
+# Per-case xfail status reflects the *current calculator implementation*, not the
+# official-exact reference. Fixture JSON intentionally holds only official data
+# (input, description, expected HSTL/HSEC/HSPF) so it stays a clean source of
+# truth. When a case starts matching after a calculator change, remove its id
+# from this set; do not edit expected values in the fixture.
+XFAIL_CASE_IDS = frozenset({3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16})
+
 
 def load_official_exact_fixture():
     return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
@@ -69,7 +76,7 @@ def official_exact_case_params():
     params = []
     for case in load_official_exact_fixture()["cases"]:
         marks = []
-        if case["current_status"] == "mismatch":
+        if case["case_id"] in XFAIL_CASE_IDS:
             marks.append(
                 pytest.mark.xfail(
                     reason=(
