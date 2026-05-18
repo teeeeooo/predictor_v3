@@ -372,11 +372,116 @@ def test_ahri_hspf2_table_as_point_dict_matches_calculator_input_shape():
         window.close()
 
 
+def _fill_en_seer_table(window, points_w):
+    """Helper: write ``{point: (capacity_w, power_w)}`` into the EN SEER table."""
+    columns = window.en_seer_model.column_labels
+    for point, (capacity_w, power_w) in points_w.items():
+        col = columns.index(point)
+        window.en_seer_model.set_cell(0, col, str(capacity_w))
+        window.en_seer_model.set_cell(1, col, str(power_w))
+
+
+def _fill_en_scop_table(window, climate_key, points_w):
+    """Helper: write per-climate SCOP table values (in watts)."""
+    climate = window.en_scop_climates[climate_key]
+    columns = climate["model"].column_labels
+    for point, (capacity_w, power_w) in points_w.items():
+        col = columns.index(point)
+        climate["model"].set_cell(0, col, str(capacity_w))
+        climate["model"].set_cell(1, col, str(power_w))
+
+
+def test_en_seer_input_uses_horizontal_table_layout():
+    """EN SEER 입력은 horizontal QTableView + model로 노출되고, 단위는 W이다."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        assert window.en_seer_model is not None
+        assert window.en_seer_view is not None
+        assert isinstance(window.en_seer_view, SpreadsheetTableView)
+        assert window.en_seer_model.column_labels == ["A", "B", "C", "D"]
+        assert window.en_seer_model.row_labels == ["능력 [W]", "전력 [W]"]
+    finally:
+        window.close()
+
+
+def test_en_scop_input_uses_multi_climate_table_layout_with_average_default():
+    """EN SCOP 입력은 climate별 checkbox + table이고, Average가 기본 checked."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        assert set(window.en_scop_climates.keys()) == {
+            "average",
+            "warmer",
+            "colder",
+        }
+        for climate_key, climate in window.en_scop_climates.items():
+            assert climate["model"].column_labels == [
+                "A",
+                "B",
+                "C",
+                "D",
+                "TOL",
+                "Tbiv",
+            ]
+            assert climate["model"].row_labels == ["능력 [W]", "전력 [W]"]
+        assert window.en_scop_climates["average"]["checkbox"].isChecked() is True
+        assert window.en_scop_climates["warmer"]["checkbox"].isChecked() is False
+        assert window.en_scop_climates["colder"]["checkbox"].isChecked() is False
+    finally:
+        window.close()
+
+
+def test_en_scop_climate_default_temperatures_are_prefilled():
+    """각 climate card의 Tbiv / TOL 기본값이 task 명시 값으로 prefill된다."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        expected = {
+            "average": (-10.0, -11.0),
+            "warmer": (2.0, -11.0),
+            "colder": (-15.0, -22.0),
+        }
+        for climate_key, (tbiv, tol) in expected.items():
+            climate = window.en_scop_climates[climate_key]
+            assert float(climate["tbiv_w"].text()) == tbiv
+            assert float(climate["tol_w"].text()) == tol
+    finally:
+        window.close()
+
+
+def test_en_seer_profile_shows_seer_table_and_hides_scop_section():
+    """SEER profile 선택 시 SEER table은 visible, SCOP card section은 hidden."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        profile_ids = [
+            window.combo_region_en.itemData(index)
+            for index in range(window.combo_region_en.count())
+        ]
+        seer_index = profile_ids.index("en14825_seer")
+        window.combo_region_en.setCurrentIndex(seer_index)
+        window.on_region_changed_en(seer_index)
+        assert window.en_seer_group.isHidden() is False
+        assert window.en_scop_group.isHidden() is True
+    finally:
+        window.close()
+
+
 def test_en_calculate_button_displays_seer_result_text_for_seer_profile():
     """EN tab의 SEER profile 선택 시 SEER 결과 텍스트가 표시된다.
 
-    sample 값은 tests/test_en14825_golden.py::test_en14825_golden_seer
-    에서 그대로 가져온다 (수치 비교는 골든 테스트가 보장).
+    UI 입력은 W 단위. EN core 호출 직전 W → kW 변환되어 calculate_seer를
+    1회 호출한다. 수치 비교는 골든 테스트가 보장하므로 여기는 표시
+    문자열만 확인한다.
     """
     app = _qapp()
     window = CalculatorWindow()
@@ -393,17 +498,18 @@ def test_en_calculate_button_displays_seer_result_text_for_seer_profile():
         window.combo_region_en.setCurrentIndex(seer_index)
         window.on_region_changed_en(seer_index)
 
-        seer_points = {
-            "A": (3.6233, 0.847),
-            "B": (2.4691, 0.389),
-            "C": (1.5150, 0.137),
-            "D": (1.1277, 0.062),
-        }
-        for pt, (cap, pwr) in seer_points.items():
-            window.input_widgets_en[f"{pt}_capacity"].setText(str(cap))
-            window.input_widgets_en[f"{pt}_power"].setText(str(pwr))
+        # Golden sample (kW) × 1000 = W.
+        _fill_en_seer_table(
+            window,
+            {
+                "A": (3623.3, 847.0),
+                "B": (2469.1, 389.0),
+                "C": (1515.0, 137.0),
+                "D": (1127.7, 62.0),
+            },
+        )
 
-        window.input_widgets_en["p_design_c"].setText("3.5")
+        window.input_widgets_en["p_design_c_w"].setText("3500")
         window.input_widgets_en["p_to_w"].setText("6.6")
         window.input_widgets_en["p_sb_w"].setText("1.2")
         window.input_widgets_en["p_ck_w"].setText("0")
@@ -418,11 +524,7 @@ def test_en_calculate_button_displays_seer_result_text_for_seer_profile():
 
 
 def test_en_calculate_button_displays_scop_result_text():
-    """EN tab의 SCOP 입력을 채운 뒤 계산 버튼을 누르면 SCOP 결과 텍스트가 표시된다.
-
-    Sample 값은 tests/test_en14825_golden.py의 average 케이스를 기준으로 사용한다.
-    Standby power는 W 단위로 입력된다는 UI 계약을 함께 점검한다.
-    """
+    """SCOP 입력을 채워 average climate만 계산하면 Average SCOP 결과가 나온다."""
     app = _qapp()
     window = CalculatorWindow()
 
@@ -430,22 +532,18 @@ def test_en_calculate_button_displays_scop_result_text():
         assert app is QApplication.instance()
         window.tabs.setCurrentWidget(window.tab_en)
 
-        sample_points = {
-            "A": (2.1598, 0.6062),
-            "B": (1.3293, 0.2542),
-            "C": (0.9083, 0.1540),
-            "D": (0.9299, 0.1231),
-            "TOL": (2.3698, 0.8067),
-            "Tbiv": (2.3669, 0.7820),
+        sample_points_w = {
+            "A": (2159.8, 606.2),
+            "B": (1329.3, 254.2),
+            "C": (908.3, 154.0),
+            "D": (929.9, 123.1),
+            "TOL": (2369.8, 806.7),
+            "Tbiv": (2366.9, 782.0),
         }
-        for pt, (cap, pwr) in sample_points.items():
-            window.input_widgets_en[f"{pt}_capacity"].setText(str(cap))
-            window.input_widgets_en[f"{pt}_power"].setText(str(pwr))
+        _fill_en_scop_table(window, "average", sample_points_w)
+        window.en_scop_climates["average"]["p_design_h_w"].setText("2400")
+        # Tbiv / TOL는 prefill 값을 그대로 사용.
 
-        window.input_widgets_en["p_design_h"].setText("2.4")
-        # combo_climate_en defaults to first item ("average")
-        window.input_widgets_en["TOL_temp_c"].setText("-11")
-        window.input_widgets_en["Tbiv_temp_c"].setText("-10")
         window.input_widgets_en["p_to_w"].setText("6.6")
         window.input_widgets_en["p_sb_w"].setText("1.2")
         window.input_widgets_en["p_ck_w"].setText("0")
@@ -453,8 +551,78 @@ def test_en_calculate_button_displays_scop_result_text():
 
         window.button_calculate.click()
 
-        assert "EN14825 SCOP" in window.result_label.text()
-        assert "결과:" in window.result_label.text()
+        text = window.result_label.text()
+        assert "EN14825 SCOP" in text
+        assert "Average SCOP" in text
+    finally:
+        window.close()
+
+
+def test_en_calculate_button_displays_multi_climate_scop_result_text():
+    """Average + Warmer를 모두 선택하면 두 climate 결과가 한 줄에 표시된다."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        window.tabs.setCurrentWidget(window.tab_en)
+
+        sample_points_w = {
+            "A": (2159.8, 606.2),
+            "B": (1329.3, 254.2),
+            "C": (908.3, 154.0),
+            "D": (929.9, 123.1),
+            "TOL": (2369.8, 806.7),
+            "Tbiv": (2366.9, 782.0),
+        }
+        for climate_key in ("average", "warmer"):
+            window.en_scop_climates[climate_key]["checkbox"].setChecked(True)
+            _fill_en_scop_table(window, climate_key, sample_points_w)
+            window.en_scop_climates[climate_key]["p_design_h_w"].setText("2400")
+
+        # Disable colder explicitly.
+        window.en_scop_climates["colder"]["checkbox"].setChecked(False)
+
+        window.input_widgets_en["p_to_w"].setText("6.6")
+        window.input_widgets_en["p_sb_w"].setText("1.2")
+        window.input_widgets_en["p_ck_w"].setText("0")
+        window.input_widgets_en["p_off_w"].setText("1.2")
+
+        window.button_calculate.click()
+
+        text = window.result_label.text()
+        assert "Average SCOP" in text
+        assert "Warmer SCOP" in text
+    finally:
+        window.close()
+
+
+def test_en_seer_w_input_is_converted_to_kw_before_core_call():
+    """W 입력은 EN core 호출 직전에 1/1000 배되어 kW로 전달된다.
+
+    _read_en_table_points_kw helper가 capacity/power를 kW로 변환하는지
+    직접 확인한다. EN core나 region config는 수정하지 않으므로 helper
+    수준 smoke만 본다.
+    """
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        _fill_en_seer_table(
+            window,
+            {
+                "A": (3623.3, 847.0),
+                "B": (2469.1, 389.0),
+                "C": (1515.0, 137.0),
+                "D": (1127.7, 62.0),
+            },
+        )
+        points_kw = window._read_en_table_points_kw(
+            window.en_seer_model, "ABCD"
+        )
+        assert points_kw["A"] == pytest.approx((3.6233, 0.847))
+        assert points_kw["D"] == pytest.approx((1.1277, 0.062))
     finally:
         window.close()
 

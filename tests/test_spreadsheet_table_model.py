@@ -13,10 +13,16 @@ from ui.spreadsheet_table import (  # noqa: E402
     AHRI_HSPF2_ROW_LABELS,
     AHRI_SEER2_COLUMNS,
     AHRI_SEER2_ROW_LABELS,
+    EN14825_SCOP_COLUMNS,
+    EN14825_SCOP_ROW_LABELS,
+    EN14825_SEER_COLUMNS,
+    EN14825_SEER_ROW_LABELS,
     SpreadsheetTableModel,
     format_tsv,
     make_ahri_hspf2_table_model,
     make_ahri_seer2_table_model,
+    make_en14825_scop_table_model,
+    make_en14825_seer_table_model,
     parse_tsv,
     points_from_grid,
 )
@@ -367,5 +373,95 @@ def test_ahri_hspf2_as_point_dict_rejects_missing_value():
     model.set_cell(0, 0, "12500")
     model.set_cell(1, 0, "980")
     # Leave H22 capacity empty; point_id index 4 → column 4.
+    with pytest.raises(ValueError, match="non-numeric capacity or power"):
+        model.as_point_dict()
+
+
+# ---------- EN14825 SEER factory ----------
+
+
+def test_en14825_seer_columns_and_rows_match_design_doc():
+    assert EN14825_SEER_COLUMNS == ("A", "B", "C", "D")
+    assert EN14825_SEER_ROW_LABELS == ("능력 [W]", "전력 [W]")
+
+
+def test_en14825_seer_factory_uses_locked_column_and_row_labels():
+    model = make_en14825_seer_table_model()
+
+    assert model.column_labels == list(EN14825_SEER_COLUMNS)
+    assert model.row_labels == list(EN14825_SEER_ROW_LABELS)
+    assert model.rowCount() == 2
+    assert model.columnCount() == 4
+
+
+def test_en14825_seer_as_point_dict_returns_w_values():
+    """UI 입력은 W이므로 as_point_dict()도 W/W를 그대로 돌려준다.
+
+    W → kW 변환은 calc_window가 core 호출 직전에 수행한다.
+    """
+    model = make_en14825_seer_table_model()
+    sample = {
+        "A": (3623.3, 847.0),
+        "B": (2469.1, 389.0),
+        "C": (1515.0, 137.0),
+        "D": (1127.7, 62.0),
+    }
+    for col_idx, point_id in enumerate(EN14825_SEER_COLUMNS):
+        capacity_w, power_w = sample[point_id]
+        model.set_cell(0, col_idx, str(capacity_w))
+        model.set_cell(1, col_idx, str(power_w))
+
+    points = model.as_point_dict(capacity_row=0, power_row=1)
+    assert points == {
+        point_id: (float(c), float(p))
+        for point_id, (c, p) in sample.items()
+    }
+
+
+# ---------- EN14825 SCOP factory ----------
+
+
+def test_en14825_scop_columns_and_rows_match_design_doc():
+    assert EN14825_SCOP_COLUMNS == ("A", "B", "C", "D", "TOL", "Tbiv")
+    assert EN14825_SCOP_ROW_LABELS == ("능력 [W]", "전력 [W]")
+
+
+def test_en14825_scop_factory_uses_locked_column_and_row_labels():
+    model = make_en14825_scop_table_model()
+
+    assert model.column_labels == list(EN14825_SCOP_COLUMNS)
+    assert model.row_labels == list(EN14825_SCOP_ROW_LABELS)
+    assert model.rowCount() == 2
+    assert model.columnCount() == 6
+
+
+def test_en14825_scop_as_point_dict_returns_w_values():
+    model = make_en14825_scop_table_model()
+    sample = {
+        "A": (2159.8, 606.2),
+        "B": (1329.3, 254.2),
+        "C": (908.3, 154.0),
+        "D": (929.9, 123.1),
+        "TOL": (2369.8, 806.7),
+        "Tbiv": (2366.9, 782.0),
+    }
+    for col_idx, point_id in enumerate(EN14825_SCOP_COLUMNS):
+        capacity_w, power_w = sample[point_id]
+        model.set_cell(0, col_idx, str(capacity_w))
+        model.set_cell(1, col_idx, str(power_w))
+
+    points = model.as_point_dict(capacity_row=0, power_row=1)
+    assert points == {
+        point_id: (float(c), float(p))
+        for point_id, (c, p) in sample.items()
+    }
+
+
+def test_en14825_scop_as_point_dict_rejects_missing_tbiv():
+    model = make_en14825_scop_table_model()
+    # Fill all columns except TBiv (last column).
+    for col_idx in range(len(EN14825_SCOP_COLUMNS) - 1):
+        model.set_cell(0, col_idx, "1000")
+        model.set_cell(1, col_idx, "200")
     with pytest.raises(ValueError, match="non-numeric capacity or power"):
         model.as_point_dict()

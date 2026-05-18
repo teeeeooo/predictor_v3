@@ -555,3 +555,62 @@ def make_ahri_hspf2_table_model(parent=None):
         column_labels=list(AHRI_HSPF2_COLUMNS),
         parent=parent,
     )
+
+
+EN14825_SEER_COLUMNS: Tuple[str, ...] = ("A", "B", "C", "D")
+EN14825_SEER_ROW_LABELS: Tuple[str, ...] = ("능력 [W]", "전력 [W]")
+
+
+def make_en14825_seer_table_model(parent=None):
+    """Build a :class:`SpreadsheetTableModel` shaped for EN14825 SEER input.
+
+    Columns: ``A, B, C, D``. Rows: ``능력 [W]`` (capacity row, index 0)
+    and ``전력 [W]`` (power row, index 1).
+
+    UI input is in watts. The EN14825 calculator core itself expects kW,
+    so callers must convert ``model.as_point_dict()`` values (W) to kW
+    before invoking ``calculate_seer()``.
+
+    Raises:
+        ImportError: when PyQt5 is not installed.
+    """
+    if SpreadsheetTableModel is None:  # pragma: no cover - PyQt5-less env
+        raise ImportError(
+            "make_en14825_seer_table_model requires PyQt5; "
+            "SpreadsheetTableModel is unavailable in this environment."
+        )
+    return SpreadsheetTableModel(
+        row_labels=list(EN14825_SEER_ROW_LABELS),
+        column_labels=list(EN14825_SEER_COLUMNS),
+        parent=parent,
+    )
+
+
+EN14825_SCOP_COLUMNS: Tuple[str, ...] = ("A", "B", "C", "D", "TOL", "Tbiv")
+EN14825_SCOP_ROW_LABELS: Tuple[str, ...] = ("능력 [W]", "전력 [W]")
+
+
+def make_en14825_scop_table_model(parent=None):
+    """Build a :class:`SpreadsheetTableModel` shaped for EN14825 SCOP input.
+
+    Columns: ``A, B, C, D, TOL, Tbiv``. Rows: ``능력 [W]`` (capacity
+    row, index 0) and ``전력 [W]`` (power row, index 1).
+
+    UI input is in watts. The EN14825 calculator core expects kW; the
+    UI layer is responsible for the W → kW conversion before calling
+    ``calculate_scop()``. One SCOP table is used per selected climate
+    (average / warmer / colder).
+
+    Raises:
+        ImportError: when PyQt5 is not installed.
+    """
+    if SpreadsheetTableModel is None:  # pragma: no cover - PyQt5-less env
+        raise ImportError(
+            "make_en14825_scop_table_model requires PyQt5; "
+            "SpreadsheetTableModel is unavailable in this environment."
+        )
+    return SpreadsheetTableModel(
+        row_labels=list(EN14825_SCOP_ROW_LABELS),
+        column_labels=list(EN14825_SCOP_COLUMNS),
+        parent=parent,
+    )

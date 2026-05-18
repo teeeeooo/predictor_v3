@@ -27,18 +27,19 @@
 - 전역 PyQt spreadsheet-like table UI는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 공통 component는 `ui/spreadsheet_table.py` (QAbstractTableModel 기반 model, QTableView 기반 `SpreadsheetTableView`, TSV copy/paste, clear, undo, invalid numeric, point-dict 변환)와 `tests/test_spreadsheet_table_model.py` / `tests/test_spreadsheet_table_view.py` smoke harness로 시작했다.
 - AHRI SEER2 입력은 horizontal spreadsheet table (`SpreadsheetTableView` + `make_ahri_seer2_table_model()`)로 전환했다. 5 cooling point (A_Full/B_Full/B_Low/E_Int/F_Low) × 2 row (능력 [Btu/h] / 전력 [W]). `calculate_ahri()`와 HSPF2 v3 A2 derivation 모두 동일 table에서 값을 읽는다. Cd_low/Cd_full만 기존 compact form.
 - AHRI HSPF2 v3 입력도 horizontal spreadsheet table (`SpreadsheetTableView` + `make_ahri_hspf2_table_model()`)로 전환했다. 7 heating point (H01/H11/H12/H1N/H22/H2Int/H32) × 2 row (능력 [Btu/h] / 전력 [W]). `_build_hspf2_v3_input()`는 A2를 SEER2 table에서, H01~H32을 HSPF2 table에서 읽는다. t_off/t_on/defrost_t_test_minutes/defrost_t_max_minutes만 기존 compact form (`input_widgets_hspf2`)으로 유지.
+- EN14825 SEER / SCOP 입력도 horizontal spreadsheet table (`SpreadsheetTableView` + `make_en14825_seer_table_model()` / `make_en14825_scop_table_model()`)로 전환했다. UI 입력 단위는 W로 통일하고, `calculate_en()`이 EN core (`calculate_seer` / `calculate_scop`) 호출 직전 W → kW (1/1000) 변환을 수행한다. `core/calculator_en14825.py`와 `data/region_configs/en14825_scop.json`은 kW/core 기준을 그대로 유지한다. SCOP는 Average / Warmer / Colder checkbox로 다중 선택 가능하고, 선택된 climate별 table/card (각 climate은 자체 A/B/C/D/TOL/Tbiv table + p_design_h_w + Tbiv/TOL temp prefill) 를 가진다. 기본 prefill은 Average=Tbiv -10, TOL -11 / Warmer=Tbiv 2, TOL -11 / Colder=Tbiv -15, TOL -22. 공통 standby form (`p_to_w`/`p_sb_w`/`p_ck_w`/`p_off_w`) 도 W 입력으로 통일하고 기본값 0.0 prefill.
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
-   1. EN14825 horizontal table-input slice — `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` Slice C (SCOP, columns A/B/C/D/TOL/Tbiv) → Slice D (SEER, columns A/B/C/D). 보조 form (`p_design_h`, `climate`, `TOL_temp_c`, `Tbiv_temp_c`, standby powers)은 별도 compact form으로 유지.
-   2. Invalid-cell visual delegate slice — numeric invalid 상태를 table delegate에서 시각 표시한다.
-   3. Tab/Enter navigation 보강 — spreadsheet contract §10의 Tab/Shift+Tab/Enter/Shift+Enter 이동을 view/controller에 추가한다.
+   1. Invalid-cell visual delegate slice — numeric invalid 상태를 table delegate에서 시각 표시한다.
+   2. Tab/Enter navigation 보강 — spreadsheet contract §10의 Tab/Shift+Tab/Enter/Shift+Enter 이동을 view/controller에 추가한다.
+   3. 필요 시 ISO16358 table contract alignment audit — 기존 ISO16358 CSPF/HSPF table UI가 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` contract와 어긋난 곳을 점검한다.
 4. 위 slice 이후 unit adapter를 ISO / KS / EN profile으로 확장하고, 그 뒤 ML / inverse-search 복귀를 별도 작업으로 다룬다.
 5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 
-`ui/spreadsheet_table.py` 공통 model/view component, `core/calculator_unit_adapter.py` (AHRI SEER2 ml_prediction → Btu/h 변환), envelope chain end-to-end smoke (`tests/test_calculator_envelope_chain.py`), AHRI SEER2 horizontal table-input UI slice, AHRI HSPF2 horizontal table-input UI slice는 모두 완료 상태이므로 next action으로 나열하지 않는다. 위 1~5는 그 위에 쌓이는 작업이다.
+`ui/spreadsheet_table.py` 공통 model/view component, `core/calculator_unit_adapter.py` (AHRI SEER2 ml_prediction → Btu/h 변환), envelope chain end-to-end smoke (`tests/test_calculator_envelope_chain.py`), AHRI SEER2 / AHRI HSPF2 / EN14825 SEER / EN14825 SCOP (multi-climate) horizontal table-input UI slice는 모두 완료 상태이므로 next action으로 나열하지 않는다. 위 1~5는 그 위에 쌓이는 작업이다.
 
 `work/iso-hspf-refactor-ui-followup` 브랜치는 merge하지 않고 reference/spike로만 둔다.
 

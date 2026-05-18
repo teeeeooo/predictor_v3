@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
                              QLabel, QGroupBox, QFormLayout, QLineEdit,
                              QMessageBox, QScrollArea, QFrame, QTabWidget,
                              QRadioButton, QButtonGroup, QPushButton,
-                             QHeaderView, QAbstractItemView)
+                             QHeaderView, QAbstractItemView, QCheckBox)
 from PyQt5.QtCore import Qt, QSettings
 
 # 코어 계산기 임포트
@@ -19,8 +19,19 @@ from ui.spreadsheet_table import (
     coerce_numeric,
     make_ahri_hspf2_table_model,
     make_ahri_seer2_table_model,
+    make_en14825_scop_table_model,
+    make_en14825_seer_table_model,
     SpreadsheetTableView,
 )
+
+
+# SCOP climate별 UI default prefill (UI-only; calculator core / region
+# config 값과는 분리되어 있다).
+EN14825_SCOP_CLIMATE_DEFAULTS = {
+    "average": {"label": "Average", "tbiv_c": -10.0, "tol_c": -11.0},
+    "warmer": {"label": "Warmer", "tbiv_c": 2.0, "tol_c": -11.0},
+    "colder": {"label": "Colder", "tbiv_c": -15.0, "tol_c": -22.0},
+}
 
 
 # [6] 숫자 파싱 공통 함수
@@ -125,7 +136,13 @@ class CalculatorWindow(QWidget):
         layout.addWidget(self.iso_cspf_widget)
 
     def init_en_tab(self):
-        """EN 탭: 단위 kW 적용 (EN 14825 SEER + SCOP)"""
+        """EN 탭: horizontal spreadsheet table input (UI 입력 단위는 W).
+
+        SEER profile: 단일 A/B/C/D table.
+        SCOP profile: Average / Warmer / Colder climate별 table + 보조 form.
+        EN core (`calculate_seer` / `calculate_scop`)는 kW 입력을 기대하므로,
+        ``calculate_en()``이 호출 직전 W → kW 변환을 수행한다.
+        """
         layout = QVBoxLayout(self.tab_en)
 
         self.combo_region_en = QComboBox()
@@ -133,67 +150,115 @@ class CalculatorWindow(QWidget):
         layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_en)
 
-        group = QGroupBox("A/B/C/D/TOL/Tbiv 테스트 포인트 (kW)")
-        form = QFormLayout()
-        points = ["A", "B", "C", "D", "TOL", "Tbiv"]
-        for pt in points:
-            cap_w = QLineEdit()
-            pow_w = QLineEdit()
-            self.input_widgets_en[f"{pt}_capacity"] = cap_w
-            self.input_widgets_en[f"{pt}_power"] = pow_w
+        # --- SEER section (single table) ---
+        self.en_seer_group = QGroupBox("SEER 테스트 포인트 (UI 입력 단위 W)")
+        seer_layout = QVBoxLayout()
+        self.en_seer_model = make_en14825_seer_table_model(self)
+        self.en_seer_view = SpreadsheetTableView()
+        self.en_seer_view.setModel(self.en_seer_model)
+        self.en_seer_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.en_seer_view.setEditTriggers(
+            QAbstractItemView.DoubleClicked
+            | QAbstractItemView.SelectedClicked
+            | QAbstractItemView.EditKeyPressed
+            | QAbstractItemView.AnyKeyPressed
+        )
+        self.en_seer_view.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
+        self.en_seer_view.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents
+        )
+        self.en_seer_view.setMinimumHeight(110)
+        seer_layout.addWidget(self.en_seer_view)
 
-            # [2] 단위 명시
-            form.addRow(f"{pt} 조건 능력 (kW):", cap_w)
-            form.addRow(f"{pt} 조건 소비전력 (kW):", pow_w)
+        seer_form = QFormLayout()
+        self.input_widgets_en["p_design_c_w"] = QLineEdit()
+        seer_form.addRow(
+            "p_design_c (W, SEER):", self.input_widgets_en["p_design_c_w"]
+        )
+        self.bind_error_reset(self.input_widgets_en["p_design_c_w"])
+        seer_layout.addLayout(seer_form)
+        self.en_seer_group.setLayout(seer_layout)
+        layout.addWidget(self.en_seer_group)
 
-            self.bind_error_reset(cap_w)
-            self.bind_error_reset(pow_w)
+        # --- SCOP section (multi-climate cards) ---
+        self.en_scop_group = QGroupBox("SCOP 기후별 테스트 포인트 (UI 입력 단위 W)")
+        scop_layout = QVBoxLayout()
+        self.en_scop_climates = {}
+        for climate_key, defaults in EN14825_SCOP_CLIMATE_DEFAULTS.items():
+            card = QGroupBox(f"{defaults['label']} climate")
+            card.setCheckable(True)
+            card.setChecked(climate_key == "average")
 
-        group.setLayout(form)
-        layout.addWidget(group)
+            card_layout = QVBoxLayout()
+            model = make_en14825_scop_table_model(self)
+            view = SpreadsheetTableView()
+            view.setModel(model)
+            view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+            view.setEditTriggers(
+                QAbstractItemView.DoubleClicked
+                | QAbstractItemView.SelectedClicked
+                | QAbstractItemView.EditKeyPressed
+                | QAbstractItemView.AnyKeyPressed
+            )
+            view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            view.verticalHeader().setSectionResizeMode(
+                QHeaderView.ResizeToContents
+            )
+            view.setMinimumHeight(110)
+            card_layout.addWidget(view)
 
-        # SEER/SCOP 계산 파라미터 (metric에 따라 일부만 사용)
-        param_group = QGroupBox("SEER/SCOP 계산 파라미터")
-        param_form = QFormLayout()
+            card_form = QFormLayout()
+            p_design_h_w = QLineEdit()
+            tbiv_widget = QLineEdit()
+            tol_widget = QLineEdit()
+            tbiv_widget.setText(str(defaults["tbiv_c"]))
+            tol_widget.setText(str(defaults["tol_c"]))
+            card_form.addRow("p_design_h (W, SCOP):", p_design_h_w)
+            card_form.addRow("Tbiv 온도 (°C):", tbiv_widget)
+            card_form.addRow("TOL 온도 (°C):", tol_widget)
+            self.bind_error_reset(p_design_h_w)
+            self.bind_error_reset(tbiv_widget)
+            self.bind_error_reset(tol_widget)
+            card_layout.addLayout(card_form)
+            card.setLayout(card_layout)
+            scop_layout.addWidget(card)
 
-        self.input_widgets_en["p_design_c"] = QLineEdit()
-        self.input_widgets_en["p_design_h"] = QLineEdit()
-        self.combo_climate_en = QComboBox()
-        self.combo_climate_en.addItem("Average", "average")
-        self.combo_climate_en.addItem("Warmer", "warmer")
-        self.combo_climate_en.addItem("Colder", "colder")
-        self.input_widgets_en["TOL_temp_c"] = QLineEdit()
-        self.input_widgets_en["Tbiv_temp_c"] = QLineEdit()
-        self.input_widgets_en["p_to_w"] = QLineEdit()
-        self.input_widgets_en["p_sb_w"] = QLineEdit()
-        self.input_widgets_en["p_ck_w"] = QLineEdit()
-        self.input_widgets_en["p_off_w"] = QLineEdit()
+            self.en_scop_climates[climate_key] = {
+                "label": defaults["label"],
+                "checkbox": card,
+                "model": model,
+                "view": view,
+                "p_design_h_w": p_design_h_w,
+                "tbiv_w": tbiv_widget,
+                "tol_w": tol_widget,
+            }
 
-        param_form.addRow("p_design_c (kW, SEER):", self.input_widgets_en["p_design_c"])
-        param_form.addRow("p_design_h (kW, SCOP):", self.input_widgets_en["p_design_h"])
-        param_form.addRow("기후 (climate, SCOP):", self.combo_climate_en)
-        param_form.addRow("TOL 온도 (°C, SCOP):", self.input_widgets_en["TOL_temp_c"])
-        param_form.addRow("Tbiv 온도 (°C, SCOP):", self.input_widgets_en["Tbiv_temp_c"])
-        param_form.addRow("p_to (W):", self.input_widgets_en["p_to_w"])
-        param_form.addRow("p_sb (W):", self.input_widgets_en["p_sb_w"])
-        param_form.addRow("p_ck (W):", self.input_widgets_en["p_ck_w"])
-        param_form.addRow("p_off (W):", self.input_widgets_en["p_off_w"])
+        self.en_scop_group.setLayout(scop_layout)
+        layout.addWidget(self.en_scop_group)
 
-        for key in (
-            "p_design_c",
-            "p_design_h",
-            "TOL_temp_c",
-            "Tbiv_temp_c",
-            "p_to_w",
-            "p_sb_w",
-            "p_ck_w",
-            "p_off_w",
+        # --- Common standby form (W input) ---
+        standby_group = QGroupBox("Standby / 대기 전력 (UI 입력 단위 W)")
+        standby_form = QFormLayout()
+        for key, label in (
+            ("p_to_w", "p_to (W):"),
+            ("p_sb_w", "p_sb (W):"),
+            ("p_ck_w", "p_ck (W):"),
+            ("p_off_w", "p_off (W):"),
         ):
-            self.bind_error_reset(self.input_widgets_en[key])
-
-        param_group.setLayout(param_form)
-        layout.addWidget(param_group)
+            widget = QLineEdit()
+            widget.setText("0.0")
+            self.input_widgets_en[key] = widget
+            self.bind_error_reset(widget)
+            standby_form.addRow(label, widget)
+        standby_group.setLayout(standby_form)
+        layout.addWidget(standby_group)
         layout.addStretch()
+
+        # Profile-driven visibility is set by on_region_changed_en.
+        self.en_seer_group.setVisible(False)
+        self.en_scop_group.setVisible(True)
 
     def init_ahri_tab(self):
         """AHRI 탭: 그룹화 및 시스템 타입 분리"""
@@ -389,6 +454,11 @@ class CalculatorWindow(QWidget):
         except:
             self.en_calc = None
             self.en_profile = None
+
+        metric = self.en_profile.metric if self.en_profile else "SCOP"
+        if hasattr(self, "en_seer_group") and hasattr(self, "en_scop_group"):
+            self.en_seer_group.setVisible(metric == "SEER")
+            self.en_scop_group.setVisible(metric == "SCOP")
 
     def on_region_changed_ahri(self, index):
         profile_id = None
@@ -623,72 +693,130 @@ class CalculatorWindow(QWidget):
         # 2점식 ISO/ISEER 탭은 실시간 계산이므로 수동 계산 버튼 동작 안 함.
         pass
 
+    def _read_en_table_points_kw(self, model, columns_label, climate_label=None):
+        """EN14825 table에서 W 값을 읽어 kW (capacity, power) dict로 변환한다.
+
+        UI 입력 단위는 W. EN core는 kW를 기대하므로 호출 직전 1/1000을
+        곱한다. 빈 cell / 비숫자 / 0 이하는 InputValidationError로 어느
+        climate / point / row가 문제인지 명확히 한글 메시지로 알린다.
+        """
+        prefix = (
+            f"EN14825 {climate_label} climate"
+            if climate_label
+            else "EN14825 SEER"
+        )
+        columns = model.column_labels
+        out = {}
+        for col_idx, point_id in enumerate(columns):
+            cap_raw = model.get_cell(0, col_idx)
+            pow_raw = model.get_cell(1, col_idx)
+            capacity_w = coerce_numeric(cap_raw)
+            power_w = coerce_numeric(pow_raw)
+            if capacity_w is None:
+                raise InputValidationError(
+                    f"{prefix} {point_id} 능력 (W) 값을 입력해주세요."
+                )
+            if capacity_w <= 0:
+                raise InputValidationError(
+                    f"{prefix} {point_id} 능력 (W)은 0보다 큰 값이어야 합니다."
+                )
+            if power_w is None:
+                raise InputValidationError(
+                    f"{prefix} {point_id} 전력 (W) 값을 입력해주세요."
+                )
+            if power_w <= 0:
+                raise InputValidationError(
+                    f"{prefix} {point_id} 전력 (W)은 0보다 큰 값이어야 합니다."
+                )
+            out[point_id] = (capacity_w / 1000.0, power_w / 1000.0)
+        return out
+
+    def _selected_scop_climates(self):
+        """checkbox checked인 climate key 목록 (원본 순서 유지)."""
+        return [
+            climate_key
+            for climate_key, climate in self.en_scop_climates.items()
+            if climate["checkbox"].isChecked()
+        ]
+
     def calculate_en(self):
-        """EN 14825 계산 (선택된 profile metric에 따라 SEER 또는 SCOP 분기)."""
+        """EN 14825 계산 (선택된 profile metric에 따라 SEER 또는 SCOP 분기).
+
+        UI 입력 단위는 W이고, EN core (`calculate_seer` / `calculate_scop`)
+        호출 직전에 W → kW 변환을 수행한다. SCOP는 선택된 climate 별로
+        `calculate_scop(..., climate=climate_key)`를 반복 호출하고 결과를
+        라벨에 모두 표시한다.
+        """
         if not self.en_calc:
             raise Exception("EN 계산기 설정 파일이 로드되지 않았습니다.")
 
         metric = self.en_profile.metric if self.en_profile else "SCOP"
 
-        # Standby powers는 UI에서 W로 입력받아 calculator API의 kW로 변환합니다.
+        # Standby powers는 UI에서 W로 입력받아 EN core의 kW로 변환한다.
         p_to_w = self._get_float_val(self.input_widgets_en["p_to_w"], "p_to", allow_zero=True)
         p_sb_w = self._get_float_val(self.input_widgets_en["p_sb_w"], "p_sb", allow_zero=True)
         p_ck_w = self._get_float_val(self.input_widgets_en["p_ck_w"], "p_ck", allow_zero=True)
         p_off_w = self._get_float_val(self.input_widgets_en["p_off_w"], "p_off", allow_zero=True)
 
-        if metric == "SEER":
-            test_points = {}
-            for pt in ("A", "B", "C", "D"):
-                cap = self._get_float_val(
-                    self.input_widgets_en[f"{pt}_capacity"], f"{pt} 능력"
-                )
-                pwr = self._get_float_val(
-                    self.input_widgets_en[f"{pt}_power"], f"{pt} 소비전력"
-                )
-                test_points[pt] = (cap, pwr)
+        p_to_kw = p_to_w / 1000.0
+        p_sb_kw = p_sb_w / 1000.0
+        p_ck_kw = p_ck_w / 1000.0
+        p_off_kw = p_off_w / 1000.0
 
-            p_design_c = self._get_float_val(
-                self.input_widgets_en["p_design_c"], "p_design_c"
+        if metric == "SEER":
+            test_points = self._read_en_table_points_kw(self.en_seer_model, "ABCD")
+            p_design_c_w = self._get_float_val(
+                self.input_widgets_en["p_design_c_w"], "p_design_c (W)"
             )
+            p_design_c_kw = p_design_c_w / 1000.0
 
             result = self.en_calc.calculate_seer(
                 test_points=test_points,
-                p_to=p_to_w / 1000.0,
-                p_sb=p_sb_w / 1000.0,
-                p_ck=p_ck_w / 1000.0,
-                p_off=p_off_w / 1000.0,
-                p_design_c=p_design_c,
+                p_to=p_to_kw,
+                p_sb=p_sb_kw,
+                p_ck=p_ck_kw,
+                p_off=p_off_kw,
+                p_design_c=p_design_c_kw,
             )
             seer = result.get("seer", 0.0)
             return f"EN14825 SEER 결과: {seer}"
 
-        # SCOP path (default for backward compatibility)
-        test_points = {}
-        for pt in ("A", "B", "C", "D", "TOL", "Tbiv"):
-            cap = self._get_float_val(self.input_widgets_en[f"{pt}_capacity"], f"{pt} 능력")
-            pwr = self._get_float_val(self.input_widgets_en[f"{pt}_power"], f"{pt} 소비전력")
-            test_points[pt] = (cap, pwr)
+        # SCOP path: multi-climate.
+        selected = self._selected_scop_climates()
+        if not selected:
+            raise InputValidationError(
+                "SCOP 계산을 위해 최소 1개 climate (Average / Warmer / Colder)를 선택해주세요."
+            )
 
-        p_design_h = self._get_float_val(self.input_widgets_en["p_design_h"], "p_design_h")
-        climate = self.combo_climate_en.currentData() or "average"
-        tol_temp_c = self._get_float_val(
-            self.input_widgets_en["TOL_temp_c"], "TOL 온도", allow_zero=True
-        )
-        tbiv_temp_c = self._get_float_val(
-            self.input_widgets_en["Tbiv_temp_c"], "Tbiv 온도", allow_zero=True
-        )
+        result_parts = []
+        for climate_key in selected:
+            climate = self.en_scop_climates[climate_key]
+            label = climate["label"]
+            test_points = self._read_en_table_points_kw(
+                climate["model"], "ABCDTOLTbiv", climate_label=label
+            )
+            p_design_h_w = self._get_float_val(
+                climate["p_design_h_w"], f"{label} p_design_h (W)"
+            )
+            tol_temp_c = self._get_float_val(
+                climate["tol_w"], f"{label} TOL 온도", allow_zero=True
+            )
+            tbiv_temp_c = self._get_float_val(
+                climate["tbiv_w"], f"{label} Tbiv 온도", allow_zero=True
+            )
 
-        result = self.en_calc.calculate_scop(
-            test_points=test_points,
-            p_to=p_to_w / 1000.0,
-            p_sb=p_sb_w / 1000.0,
-            p_ck=p_ck_w / 1000.0,
-            p_off=p_off_w / 1000.0,
-            p_design_h=p_design_h,
-            climate=climate,
-            tbiv_temp_c=tbiv_temp_c,
-            tol_temp_c=tol_temp_c,
-        )
+            result = self.en_calc.calculate_scop(
+                test_points=test_points,
+                p_to=p_to_kw,
+                p_sb=p_sb_kw,
+                p_ck=p_ck_kw,
+                p_off=p_off_kw,
+                p_design_h=p_design_h_w / 1000.0,
+                climate=climate_key,
+                tbiv_temp_c=tbiv_temp_c,
+                tol_temp_c=tol_temp_c,
+            )
+            scop = result.get("scop", result.get("SCOP", 0.0))
+            result_parts.append(f"{label} SCOP: {scop}")
 
-        scop = result.get("scop", result.get("SCOP", 0.0))
-        return f"EN14825 SCOP ({climate}) 결과: {scop}"
+        return "EN14825 SCOP 결과 — " + " / ".join(result_parts)

@@ -131,25 +131,43 @@ implementation in this slice.
 
 | | A | B | C | D |
 | --- | --- | --- | --- | --- |
-| 능력 [kW] | | | | |
-| 전력 [kW] | | | | |
+| 능력 [W] | | | | |
+| 전력 [W] | | | | |
 
 - columns: `A, B, C, D`
-- rows: `능력 [kW]`, `전력 [kW]`
-- compact auxiliary form: `p_design_c`, climate (cooling), standby
-  powers if any
+- rows: `능력 [W]`, `전력 [W]`
+- compact auxiliary form: `p_design_c_w` (W), standby powers (W)
+- UI 입력 단위는 W로 통일하며, `core/calculator_en14825.py`
+  (`calculate_seer`)는 kW를 그대로 받는다. `ui/calc_window.py`가
+  EN core 호출 직전 W → kW (1/1000) 변환을 수행한다.
 
-### EN14825 SCOP table
+### EN14825 SCOP table (multi-climate)
+
+각 climate (Average / Warmer / Colder)는 개별 SCOP table + 보조
+form (card) 한 벌을 갖는다. SCOP 계산은 사용자가 checkbox로 선택한
+climate 만 순회하며 `calculate_scop(..., climate=climate_key)`를
+반복 호출한다. 최소 1개 climate는 선택되어야 하고, 기본값은
+Average만 checked 이다.
 
 | | A | B | C | D | TOL | Tbiv |
 | --- | --- | --- | --- | --- | --- | --- |
-| 능력 [kW] | | | | | | |
-| 전력 [kW] | | | | | | |
+| 능력 [W] | | | | | | |
+| 전력 [W] | | | | | | |
 
 - columns: `A, B, C, D, TOL, Tbiv`
-- rows: `능력 [kW]`, `전력 [kW]`
-- compact auxiliary form: `p_design_h`, `climate`, `TOL_temp_c`,
-  `Tbiv_temp_c`, `p_to_w`, `p_sb_w`, `p_ck_w`, `p_off_w`
+- rows: `능력 [W]`, `전력 [W]`
+- per-climate compact auxiliary form: `p_design_h_w` (W),
+  `Tbiv_temp_c`, `TOL_temp_c`
+- per-climate default temp prefill (UI-only, 사용자 수정 가능):
+  - Average: `Tbiv_temp_c = -10`, `TOL_temp_c = -11`
+  - Warmer: `Tbiv_temp_c = 2`, `TOL_temp_c = -11`
+  - Colder: `Tbiv_temp_c = -15`, `TOL_temp_c = -22`
+- 공통 standby form (W): `p_to_w`, `p_sb_w`, `p_ck_w`, `p_off_w`
+  (기본 prefill 0.0)
+- UI 입력 단위는 W로 통일하고 `core/calculator_en14825.py`
+  (`calculate_scop`)와 `data/region_configs/en14825_scop.json`은
+  kW/core 기준을 유지한다. UI가 EN core 호출 직전 W → kW 변환을
+  수행하고, region config는 수정하지 않는다.
 
 ### Unit boundary table
 
@@ -159,7 +177,7 @@ implementation in this slice.
 | ISO16358 / KS C 9306 calculator | W | W | Matches canonical, no conversion. |
 | AHRI SEER2 / HSPF2 calculator | Btu/h | W | Capacity converted from W with `W → Btu/h = W × 3.412141633`. |
 | EN14825 SEER / SCOP calculator | kW | kW | Capacity and power converted from W with `W → kW = W / 1000`. |
-| Manual UI input | Profile-native (per table title) | Profile-native | Row label is the unit contract, no per-cell unit chooser. |
+| Manual UI input | Profile-native unit *except EN14825*: AHRI 능력 Btu/h, ISO16358/KS C 9306 W. EN14825 UI 입력은 W로 통일하고 UI 가 core 호출 직전 W → kW 변환을 수행한다 (core/region config는 kW 그대로). | 동일 | Row label is the unit contract, no per-cell unit chooser. |
 | `ml_prediction` envelope input | W | W | Adapter must convert to profile-native before building CalculatorInputEnvelope. |
 
 ## Required Tests (future slices)
