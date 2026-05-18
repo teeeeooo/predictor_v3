@@ -54,6 +54,13 @@ implementation in this slice.
 
 ### Table input UI
 
+- Calculator table surfaces (AHRI / EN14825 / future ISO migrations)
+  **inherit the global Excel-like table behavior** defined in
+  `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. This design doc defines
+  only the calculator-specific table shape (columns, rows, unit
+  labels, profile-bound column sets) and the migration order. It does
+  not redefine navigation / copy / paste / clear / undo / invalid
+  rules — the global contract is the single owner.
 - Every AHRI / EN14825 table follows the global
   `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. The spreadsheet-like UX,
   copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo,

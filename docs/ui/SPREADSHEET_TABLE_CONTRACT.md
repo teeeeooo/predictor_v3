@@ -23,6 +23,29 @@ contract.
   surfaces) only have to describe their own shape on top of this
   baseline.
 
+### 1.1 Excel-like UX is the project baseline
+
+This project's table UX baseline is **Excel-like behavior**. The
+working assumption is that every user already operates a spreadsheet
+(Excel / Google Sheets / Numbers) every day and brings that muscle
+memory to every table-shaped surface in this app.
+
+- The default expectation for any table in `ui/**` is "behaves like a
+  small Excel sheet". When a user clicks, types, copies, pastes, hits
+  Enter, hits Tab, or hits Delete, the response must match what Excel
+  would do.
+- Implementations must not break that muscle memory — non-Excel
+  behaviors (e.g. Enter moving right, Tab moving down, Delete doing
+  nothing, no Ctrl+C export) are contract violations even when the
+  underlying calculator still works.
+- Any existing table whose behavior diverges from this Excel-like
+  baseline is treated as a **contract alignment target**, not as an
+  accepted exception. Divergences are tracked and converted in
+  follow-up slices.
+
+The Required UX baseline below (§3) is the minimum Excel-like surface
+every table must implement.
+
 ## 2. Scope
 
 - Applies to every PyQt5 table-shaped widget in `ui/**`, including
@@ -39,8 +62,27 @@ contract.
 ## 3. Required UX baseline
 
 Every table behaves like a small spreadsheet from the user's point of
-view. The following is the minimum required behavior; individual
-tables may add features as long as they do not break the baseline.
+view. The following is the minimum **Excel-like** behavior every
+table must implement; individual tables may add features as long as
+they do not break the baseline.
+
+### 3.1 Excel-like keyboard baseline (must-have)
+
+| Shortcut | Behavior |
+| --- | --- |
+| `Ctrl+C` | Copy the selected range as TSV (tab between columns, `\n` between rows) to the OS clipboard. |
+| `Ctrl+V` | Paste a TSV payload from the clipboard onto the current selection, anchored at the top-left cell. |
+| `Delete` / `Backspace` | Clear the contents of every editable cell in the current selection. |
+| `Ctrl+Z` | Undo the most recent cell edit / paste / clear group. |
+| `Tab` | Move the active cell **one column to the right**. |
+| `Shift+Tab` | Move the active cell **one column to the left**. |
+| `Enter` / `Return` | Move the active cell **one row down**. |
+| `Shift+Enter` / `Shift+Return` | Move the active cell **one row up**. |
+
+Navigation wrap / clamp behavior is specified in §10. Copy / paste
+contract details are in §7, Delete behavior in §8, undo in §9.
+
+### 3.2 Other Excel-like expectations
 
 - Cell selection: single cell, contiguous range, and Ctrl-click
   multi-select work the same way they do in Excel / Google Sheets.
@@ -58,6 +100,11 @@ tables may add features as long as they do not break the baseline.
   row at the end); `Shift+Tab` reverses it. `Enter` moves the active
   cell one row down (wrapping to the next column at the end);
   `Shift+Enter` reverses it.
+
+Tables that deviate from this baseline (e.g. Enter moving sideways,
+Delete being a no-op, no Ctrl+C handler) are contract alignment
+targets and must be brought into compliance in a follow-up slice.
+They are not grandfathered exceptions.
 - Read-only / auto-computed cells are visually distinguishable from
   user-editable cells. Background-color conventions defined in
   `docs/architecture/project_architecture.md` §3.3 (white / gray /

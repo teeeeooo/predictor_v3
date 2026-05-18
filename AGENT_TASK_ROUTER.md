@@ -502,7 +502,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 contract와 §13 checklist를 먼저 확인한다.
+2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 contract와 §13 checklist를 먼저 확인한다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.

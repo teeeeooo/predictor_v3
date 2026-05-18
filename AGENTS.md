@@ -39,7 +39,7 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 - 계산기 구현은 순수 Python을 유지하고 `numpy` / `pandas`를 사용하지 않는다.
 - `calculate_hspf2_v2()` / `calculate_hspf2()`는 사용자 명시 지시 없이 수정하지 않는다.
 - `model.fit()`에 `.values` 변환을 넣지 않고 Cooling / Heating 독립 모델과 monotone constraints를 유지한다.
-- UI table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고 `blockSignals`는 `try/finally`로 감싼다. table UI를 새로 만들거나 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 spreadsheet-like behavior contract를 함께 확인한다.
+- UI table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고 `blockSignals`는 `try/finally`로 감싼다. table UI를 새로 만들거나 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 spreadsheet-like behavior contract를 함께 확인한다. 모든 table UX는 **Excel-like behavior**를 기본으로 한다 (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위). `QTableWidget` / `setCellWidget` 신규 도입 금지는 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 - 명시적 지시 없이 구조 개선이나 리팩토링을 먼저 수행하지 않는다.
