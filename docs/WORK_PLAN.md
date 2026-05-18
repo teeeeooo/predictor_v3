@@ -19,9 +19,9 @@
 - Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`에 설계 완료했다.
 - AHRI SEER2 input/result envelope 첫 slice는 `core/calculator_input_adapter.py` / `core/calculator_result_adapter.py`로 구현 완료. 단위 변환은 의도적으로 envelope 밖.
 - Calculator core / region config 가드는 banned-key 및 adapter-owned term 가드 (`tests/test_calculator_schema_boundaries.py`)로 강화 완료.
-- ISO16358-2 HSPF official exact 16-case verification은 active diagnostic으로 추가했다. 현재 계산기 actual은 5개 case match, 11개 case mismatch이며 mismatch case는 strict xfail로 보존한다.
+- ISO16358-2 HSPF official exact 16-case verification은 active diagnostic으로 추가했다. 현재 계산기 actual은 5개 case match, 11개 case mismatch이며 mismatch case는 strict xfail로 보존한다. 083 report는 historical diagnostic snapshot이며 "official exact" expected의 성격은 추가 검토 중이다 (자세한 hold 사유는 091 참고).
 - ISO16358-2 HSPF official exact fixture는 official data (input / description / expected)만 남기도록 정리했고, current-implementation status (match/mismatch xfail list)는 `tests/test_iso16358_hspf_official_exact_golden.py`의 `XFAIL_CASE_IDS` constant로 분리했다.
-- ISO16358-2 HSPF mismatch 원인 분석은 사용자가 별도 규격 원문 audit으로 진행하는 외부 작업이며, repo immediate next action에 포함하지 않는다. xfail case 목록은 그대로 유지한다.
+- ISO16358-2 HSPF mismatch는 hold 상태로 두며 repo immediate next action에 포함하지 않는다. 사용자 외부 분석 결과 대기 중이고, repo 계산식/expected/xfail 수정은 보류한다. xfail case 목록은 그대로 유지한다. 부분 점검 결과 bin_hours (2866 h)와 HSTL expected 4885.4 kWh, fixture ↔ external reference script 입력 동일성, repo의 `2_full` / `2_half` → `2_full_f` / `2_half_f` measured 보존 동작은 모두 정상으로 확인됐다. case 12/15/16의 큰 mismatch는 external reference script가 2_full/2_half measured를 frost/non-frost 양쪽에 동일하게 주입한 해석 오류 가능성이 높다 (091 참고).
 - AHRI / EN14825 horizontal table-input UI와 ML W ↔ calculator-native unit boundary는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md`에 설계 완료. 첫 구현 slice는 AHRI SEER2 table input 한 곳으로 제한한다.
 - ML W ↔ AHRI SEER2 Btu/h capacity 변환은 `core/calculator_unit_adapter.py`로 분리했고, PredictedPointsEnvelope → CalculatorInputEnvelope → CalculatorResultEnvelope → RankingCandidateEnvelope end-to-end smoke (`tests/test_calculator_envelope_chain.py`)가 chain 무결성을 보호한다.
 - 전역 PyQt spreadsheet-like table UI는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 공통 component는 `ui/spreadsheet_table.py` (QAbstractTableModel 기반 model, QTableView 기반 `SpreadsheetTableView`, TSV copy/paste, clear, undo, invalid numeric, point-dict 변환)와 `tests/test_spreadsheet_table_model.py` / `tests/test_spreadsheet_table_view.py` smoke harness로 시작했다.
@@ -30,7 +30,7 @@
 
 ## Near-term execution order
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
-2. ISO16358-2 HSPF official exact 16-case mismatch는 사용자가 규격 원문 audit으로 별도 진행하는 외부 작업이므로 repo immediate next action에서 제외한다. mismatch 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
+2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
    1. EN14825 horizontal table-input slice — `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` Slice C (SCOP, columns A/B/C/D/TOL/Tbiv) → Slice D (SEER, columns A/B/C/D). 보조 form (`p_design_h`, `climate`, `TOL_temp_c`, `Tbiv_temp_c`, standby powers)은 별도 compact form으로 유지.
    2. Invalid-cell visual delegate slice — numeric invalid 상태를 table delegate에서 시각 표시한다.

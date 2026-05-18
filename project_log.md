@@ -1,6 +1,56 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-18 — ISO16358-2 HSPF reference diagnostic hold
+
+### Tried
+- 083 diagnostic의 16-case mismatch 원인을 부분 점검함.
+- bin_hours, total bin hours, HSTL expected, fixture 입력, repo의 measured
+  `2_full` / `2_half` → frost reference point `2_full_f` / `2_half_f` 보존
+  동작을 ISO16358-2 규격 원문 해석에 비추어 확인함.
+- 사용자가 비교 기준으로 사용한 external reference script의 입력 처리
+  방식도 함께 확인함.
+
+### Result
+- bin_hours는 ISO16358-2 default bin과 일치하고, total bin hours는 2866 h로
+  확인됨.
+- HSTL expected 4885.4 kWh는 맞는 값으로 확인됨.
+- repo fixture와 external reference script의 입력 fixture는 동일함.
+- repo fixture의 measured `2_full` → `2_full_f`, `2_half` → `2_half_f` 매핑은
+  ISO16358-2 frost reference point 처리상 정상으로 확인됨.
+- repo calculator는 measured `2_full` / `2_half`를 frost reference point인
+  `2_full_f` / `2_half_f`로 보존하고, non-frost `2_full` / `2_half`는 -7~7 line
+  계산값으로 유지한다. 현재 규격 원문 해석상 이 방식이 맞는 것으로 판단됨.
+- external reference script는 measured `2_full`을 `2_full`과 `2_full_f` 모두에
+  동일하게 넣고 `2_half`도 동일하게 처리한 것으로 확인됨.
+
+### Failed-Risk
+- 083 report의 "official exact" 표현이 사실상 single external reference 결과를
+  authority로 취급할 위험이 있어, 후속 작업이 reference script 출력에 맞춰
+  repo 계산식을 임의로 수정하는 방향으로 흘러갈 수 있음.
+
+### Decision
+- ISO16358-2 HSPF 16-case mismatch는 hold 상태로 둔다.
+- `core/calculator_iso16358.py`, `tests/fixtures/iso16358_hspf_official_exact_cases.json`,
+  `tests/test_iso16358_hspf_official_exact_golden.py`, expected 값, xfail
+  목록은 이번 작업에서 수정하지 않는다.
+- case 12/15/16의 큰 mismatch는 repo calculator bug보다 external reference
+  script의 frost/non-frost 동일 주입 해석 오류 가능성이 크다고 본다.
+- 나머지 mismatch case는 사용자가 별도 분석 중이므로 hold한다.
+- 083 report는 historical diagnostic snapshot으로 다루고, 정정/보류 상태는
+  091 신규 report에 명시한다.
+
+### Lesson
+- single external reference script 결과를 "official exact" authority로 굳히지
+  않는다. 비교 기준은 규격 원문 + repo calculator + external script의 입력
+  해석을 모두 evidence로 보고, calculator 변경은 명시적 standard decision이
+  있을 때만 진행한다.
+- frost reference point (`2_full_f` / `2_half_f`)와 non-frost line (`2_full`
+  / `2_half`)을 동일 measured 값으로 채우면 frost/non-frost 분리가 무너진다
+  — reference 비교 도구가 이 분리를 따르는지 먼저 확인해야 한다.
+
+---
+
 ## 2026-05-17 — ISO16358-2 HSPF official exact golden verification
 
 ### Tried
