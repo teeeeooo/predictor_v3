@@ -44,11 +44,15 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 try:
     from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
-    from PyQt5.QtGui import QKeySequence
+    from PyQt5.QtGui import QBrush, QColor, QKeySequence
     from PyQt5.QtWidgets import QApplication, QTableView
     _PYQT_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised only on PyQt5-less envs
     _PYQT_AVAILABLE = False
+
+
+INVALID_CELL_BACKGROUND_RGB: Tuple[int, int, int] = (255, 224, 224)
+INVALID_CELL_TOOLTIP: str = "Invalid numeric value"
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +236,89 @@ if _PYQT_AVAILABLE:
                 self.clear_selection()
                 event.accept()
                 return
+            key = event.key()
+            shift = bool(event.modifiers() & Qt.ShiftModifier)
+            if key == Qt.Key_Tab:
+                self._navigate("left" if shift else "right")
+                event.accept()
+                return
+            if key == Qt.Key_Backtab:
+                # Qt collapses Shift+Tab into Backtab.
+                self._navigate("left")
+                event.accept()
+                return
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                self._navigate("up" if shift else "down")
+                event.accept()
+                return
             super().keyPressEvent(event)
+
+        def next_navigation_index(
+            self,
+            row: int,
+            col: int,
+            direction: str,
+        ) -> Tuple[int, int]:
+            """Return the next (row, col) for ``direction``.
+
+            Clamps to the table boundary: when there is no cell to move
+            into (e.g. Tab from the bottom-right cell), the current
+            (row, col) is returned unchanged. Wrap-around within the
+            grid follows the contract §10 navigation rules.
+
+            Pure helper — no view state is mutated. Used by both the
+            keyPressEvent handlers and the navigation tests.
+            """
+            model = self.model()
+            if model is None:
+                return row, col
+            rows = model.rowCount()
+            cols = model.columnCount()
+            if rows <= 0 or cols <= 0:
+                return row, col
+            if direction == "right":
+                if col + 1 < cols:
+                    return row, col + 1
+                if row + 1 < rows:
+                    return row + 1, 0
+                return row, col
+            if direction == "left":
+                if col - 1 >= 0:
+                    return row, col - 1
+                if row - 1 >= 0:
+                    return row - 1, cols - 1
+                return row, col
+            if direction == "down":
+                if row + 1 < rows:
+                    return row + 1, col
+                if col + 1 < cols:
+                    return 0, col + 1
+                return row, col
+            if direction == "up":
+                if row - 1 >= 0:
+                    return row - 1, col
+                if col - 1 >= 0:
+                    return rows - 1, col - 1
+                return row, col
+            return row, col
+
+        def _navigate(self, direction: str) -> Tuple[int, int]:
+            model = self.model()
+            if model is None:
+                return 0, 0
+            current = self.currentIndex()
+            if current.isValid():
+                row, col = current.row(), current.column()
+            else:
+                row, col = 0, 0
+            new_row, new_col = self.next_navigation_index(row, col, direction)
+            new_index = model.index(new_row, new_col)
+            if new_index.isValid() and self.selectionModel() is not None:
+                from PyQt5.QtCore import QItemSelectionModel
+                self.selectionModel().setCurrentIndex(
+                    new_index, QItemSelectionModel.ClearAndSelect
+                )
+            return new_row, new_col
 
         def _selected_cells(self) -> List[Tuple[int, int]]:
             indexes = self.selectionModel().selectedIndexes() if self.selectionModel() else []
@@ -290,6 +376,14 @@ if _PYQT_AVAILABLE:
                 return None
             if role in (Qt.DisplayRole, Qt.EditRole):
                 return self._cells[index.row()][index.column()]
+            if role == Qt.BackgroundRole:
+                if self.is_cell_invalid(index.row(), index.column()):
+                    return QBrush(QColor(*INVALID_CELL_BACKGROUND_RGB))
+                return None
+            if role == Qt.ToolTipRole:
+                if self.is_cell_invalid(index.row(), index.column()):
+                    return INVALID_CELL_TOOLTIP
+                return None
             return None
 
         def setData(self, index, value, role=Qt.EditRole):

@@ -120,3 +120,61 @@ def test_delete_key_clears_selection_without_clipboard_dependency():
         assert model.to_grid() == [["", "", "3"], ["4", "5", "6"]]
     finally:
         view.close()
+
+
+def test_navigation_helper_moves_right_down_with_wrap():
+    view, model = _make_view()
+    try:
+        # 2x3 grid.
+        assert view.next_navigation_index(0, 0, "right") == (0, 1)
+        assert view.next_navigation_index(0, 2, "right") == (1, 0)  # wrap
+        assert view.next_navigation_index(0, 0, "down") == (1, 0)
+        assert view.next_navigation_index(1, 0, "down") == (0, 1)  # wrap
+        assert view.next_navigation_index(0, 1, "left") == (0, 0)
+        assert view.next_navigation_index(1, 0, "left") == (0, 2)  # wrap
+        assert view.next_navigation_index(1, 0, "up") == (0, 0)
+        assert view.next_navigation_index(0, 1, "up") == (1, 0)  # wrap
+    finally:
+        view.close()
+
+
+def test_navigation_helper_clamps_at_table_corners():
+    view, model = _make_view()
+    try:
+        # Bottom-right corner: Tab/Enter have nowhere to go → stay.
+        last_row = model.rowCount() - 1
+        last_col = model.columnCount() - 1
+        assert view.next_navigation_index(last_row, last_col, "right") == (last_row, last_col)
+        assert view.next_navigation_index(last_row, last_col, "down") == (last_row, last_col)
+        # Top-left corner: Shift+Tab/Shift+Enter have nowhere to go → stay.
+        assert view.next_navigation_index(0, 0, "left") == (0, 0)
+        assert view.next_navigation_index(0, 0, "up") == (0, 0)
+    finally:
+        view.close()
+
+
+def test_tab_and_enter_keys_update_current_index():
+    view, model = _make_view()
+    try:
+        view.show()
+        view.setFocus()
+        selection_model = view.selectionModel()
+        selection_model.setCurrentIndex(model.index(0, 0), QItemSelectionModel.ClearAndSelect)
+
+        QTest.keyClick(view, Qt.Key_Tab)
+        current = view.currentIndex()
+        assert (current.row(), current.column()) == (0, 1)
+
+        QTest.keyClick(view, Qt.Key_Return)
+        current = view.currentIndex()
+        assert (current.row(), current.column()) == (1, 1)
+
+        QTest.keyClick(view, Qt.Key_Backtab, Qt.ShiftModifier)
+        current = view.currentIndex()
+        assert (current.row(), current.column()) == (1, 0)
+
+        QTest.keyClick(view, Qt.Key_Return, Qt.ShiftModifier)
+        current = view.currentIndex()
+        assert (current.row(), current.column()) == (0, 0)
+    finally:
+        view.close()

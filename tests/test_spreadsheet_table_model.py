@@ -269,6 +269,36 @@ def test_invalid_numeric_value_is_flagged():
     assert model.is_cell_invalid(0, 2) is False
 
 
+def test_invalid_cell_exposes_background_and_tooltip_roles():
+    from ui.spreadsheet_table import (
+        INVALID_CELL_BACKGROUND_RGB,
+        INVALID_CELL_TOOLTIP,
+    )
+
+    model = _make_model()
+    model.set_cell(0, 0, "abc")
+    model.set_cell(0, 1, "12.5")
+    model.set_cell(0, 2, "")
+
+    invalid_idx = model.index(0, 0)
+    valid_idx = model.index(0, 1)
+    empty_idx = model.index(0, 2)
+
+    brush = model.data(invalid_idx, Qt.BackgroundRole)
+    assert brush is not None
+    color = brush.color()
+    assert (color.red(), color.green(), color.blue()) == INVALID_CELL_BACKGROUND_RGB
+    assert model.data(invalid_idx, Qt.ToolTipRole) == INVALID_CELL_TOOLTIP
+
+    # Valid numeric cells return no background / tooltip override.
+    assert model.data(valid_idx, Qt.BackgroundRole) is None
+    assert model.data(valid_idx, Qt.ToolTipRole) is None
+
+    # Empty cells are not invalid → no error indicator.
+    assert model.data(empty_idx, Qt.BackgroundRole) is None
+    assert model.data(empty_idx, Qt.ToolTipRole) is None
+
+
 # ---------- model: point dict conversion ----------
 
 

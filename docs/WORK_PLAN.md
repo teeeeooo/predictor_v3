@@ -33,10 +33,10 @@
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
-   1. Invalid-cell visual delegate slice — numeric invalid 상태를 table delegate에서 시각 표시한다.
-   2. Tab/Enter navigation 보강 — spreadsheet contract §10의 Tab/Shift+Tab/Enter/Shift+Enter 이동을 view/controller에 추가한다.
-   3. 필요 시 ISO16358 table contract alignment audit — 기존 ISO16358 CSPF/HSPF table UI가 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` contract와 어긋난 곳을 점검한다.
-4. 위 slice 이후 unit adapter를 ISO / KS / EN profile으로 확장하고, 그 뒤 ML / inverse-search 복귀를 별도 작업으로 다룬다.
+   1. ISO16358 table contract alignment audit — 기존 ISO16358 CSPF/HSPF table UI가 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` contract와 어긋난 곳을 점검한다.
+   2. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
+   3. ML / inverse-search 복귀 준비.
+4. Invalid-cell visual indicator (BackgroundRole + ToolTipRole)와 Tab/Shift+Tab/Enter/Shift+Enter navigation은 `SpreadsheetTableModel` / `SpreadsheetTableView`에 적용 완료. ISO16358-2 HSPF mismatch는 외부 분석 대기 hold 유지.
 5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 
 `ui/spreadsheet_table.py` 공통 model/view component, `core/calculator_unit_adapter.py` (AHRI SEER2 ml_prediction → Btu/h 변환), envelope chain end-to-end smoke (`tests/test_calculator_envelope_chain.py`), AHRI SEER2 / AHRI HSPF2 / EN14825 SEER / EN14825 SCOP (multi-climate) horizontal table-input UI slice는 모두 완료 상태이므로 next action으로 나열하지 않는다. 위 1~5는 그 위에 쌓이는 작업이다.
