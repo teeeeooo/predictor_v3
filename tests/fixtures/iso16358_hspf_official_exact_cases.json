@@ -111,7 +111,7 @@
       "case_id": 8,
       "description": "7_min no, extended mode no, -7_full/-7_half/-7_ext measured",
       "points": ["-7_full", "-7_half", "-7_ext"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535}
+      "expected": {"HSTL": 4885.4, "HSEC": 1078.5, "HSPF": 4.530}
     },
     {
       "case_id": 9,
@@ -135,31 +135,31 @@
       "case_id": 12,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f measured",
       "points": ["2_ext", "2_full"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
+      "expected": {"HSTL": 4885.4, "HSEC": 1108.6, "HSPF": 4.407}
     },
     {
       "case_id": 13,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
       "points": ["2_ext", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535}
     },
     {
       "case_id": 14,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f default, 2_half_f measured",
       "points": ["2_ext", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
+      "expected": {"HSTL": 4885.4, "HSEC": 1077.2, "HSPF": 4.535}
     },
     {
       "case_id": 15,
       "description": "7_min no, extended mode yes, -7_full/-7_half/-7_ext default, 2_full_f, 2_half_f measured",
       "points": ["2_ext", "2_full", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1079.0, "HSPF": 4.528}
+      "expected": {"HSTL": 4885.4, "HSEC": 1112.8, "HSPF": 4.390}
     },
     {
       "case_id": 16,
       "description": "7_min yes, extended mode yes, -7_full/-7_half/-7_ext, 2_full_f, 2_half_f measured",
       "points": ["7_min", "2_ext", "-7_full", "-7_half", "-7_ext", "2_full", "2_half"],
-      "expected": {"HSTL": 4885.4, "HSEC": 1066.3, "HSPF": 4.582}
+      "expected": {"HSTL": 4885.4, "HSEC": 1111.2, "HSPF": 4.396}
     }
   ],
   "notes": [

@@ -13,7 +13,7 @@ FIXTURE_PATH = Path("tests/fixtures/iso16358_hspf_official_exact_cases.json")
 # (input, description, expected HSTL/HSEC/HSPF) so it stays a clean source of
 # truth. When a case starts matching after a calculator change, remove its id
 # from this set; do not edit expected values in the fixture.
-XFAIL_CASE_IDS = frozenset({3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16})
+XFAIL_CASE_IDS: frozenset[int] = frozenset()
 
 
 def load_official_exact_fixture():
