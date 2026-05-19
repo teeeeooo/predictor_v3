@@ -1517,6 +1517,7 @@ class ISO16358Calculator:
             "tj": tj,
             "nj": nj,
             "bl_h": bl_h,
+            "frost": frost,
             "pi_j": branch_result["pi_j"],
             "P_j": branch_result["P_j"],
             "case": branch_result["case"],
@@ -1525,6 +1526,7 @@ class ISO16358Calculator:
             "E_j": heat_pump_energy + auxiliary_energy,
         }
         detail.update(branch_result["trace"])
+        detail["frost"] = frost
         return detail
 
     def calculate_hspf_iso16358_common(
