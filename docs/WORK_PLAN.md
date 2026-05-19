@@ -19,9 +19,8 @@
 - Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`에 설계 완료했다.
 - AHRI SEER2 input/result envelope 첫 slice는 `core/calculator_input_adapter.py` / `core/calculator_result_adapter.py`로 구현 완료. 단위 변환은 의도적으로 envelope 밖.
 - Calculator core / region config 가드는 banned-key 및 adapter-owned term 가드 (`tests/test_calculator_schema_boundaries.py`)로 강화 완료.
-- ISO16358-2 HSPF official exact 16-case verification은 active diagnostic으로 추가했다. 현재 계산기 actual은 5개 case match, 11개 case mismatch이며 mismatch case는 strict xfail로 보존한다. 083 report는 historical diagnostic snapshot이며 "official exact" expected의 성격은 추가 검토 중이다 (자세한 hold 사유는 091 참고).
-- ISO16358-2 HSPF official exact fixture는 official data (input / description / expected)만 남기도록 정리했고, current-implementation status (match/mismatch xfail list)는 `tests/test_iso16358_hspf_official_exact_golden.py`의 `XFAIL_CASE_IDS` constant로 분리했다.
-- ISO16358-2 HSPF mismatch는 hold 상태로 두며 repo immediate next action에 포함하지 않는다. 사용자 외부 분석 결과 대기 중이고, repo 계산식/expected/xfail 수정은 보류한다. xfail case 목록은 그대로 유지한다. 부분 점검 결과 bin_hours (2866 h)와 HSTL expected 4885.4 kWh, fixture ↔ external reference script 입력 동일성, repo의 `2_full` / `2_half` → `2_full_f` / `2_half_f` measured 보존 동작은 모두 정상으로 확인됐다. case 12/15/16의 큰 mismatch는 external reference script가 2_full/2_half measured를 frost/non-frost 양쪽에 동일하게 주입한 해석 오류 가능성이 높다 (091 참고).
+- ISO16358-2 HSPF official exact 16-case golden은 원문 audit + 099 `-7_ext` default factor fix 이후 기준으로 정리되어 16/16 모두 pass한다. `XFAIL_CASE_IDS`는 빈 frozenset이다 (100 참고).
+- ISO16358-2 HSPF official exact fixture는 official data (input / description / expected)만 남기도록 정리되어 있고, current-implementation status는 `tests/test_iso16358_hspf_official_exact_golden.py`의 `XFAIL_CASE_IDS` constant로 분리된다 (현재 비어 있음).
 - AHRI / EN14825 horizontal table-input UI와 ML W ↔ calculator-native unit boundary는 `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md`에 설계 완료. 첫 구현 slice는 AHRI SEER2 table input 한 곳으로 제한한다.
 - ML W ↔ AHRI SEER2 Btu/h capacity 변환은 `core/calculator_unit_adapter.py`로 분리했고, PredictedPointsEnvelope → CalculatorInputEnvelope → CalculatorResultEnvelope → RankingCandidateEnvelope end-to-end smoke (`tests/test_calculator_envelope_chain.py`)가 chain 무결성을 보호한다.
 - 전역 PyQt spreadsheet-like table UI는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 공통 component는 `ui/spreadsheet_table.py` (QAbstractTableModel 기반 model, QTableView 기반 `SpreadsheetTableView`, TSV copy/paste, clear, undo, invalid numeric, point-dict 변환)와 `tests/test_spreadsheet_table_model.py` / `tests/test_spreadsheet_table_view.py` smoke harness로 시작했다.
@@ -33,15 +32,15 @@
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
-   1. official exact expected/golden update — 099에서 자연 pass로 전환된 case 3/4/9/10/11을 `XFAIL_CASE_IDS`에서 제거하고 strict XPASS 실패를 해소. 잔여 mismatch (case 8/12/13/14/15/16) 는 그대로 xfail 유지.
-   2. ISO table Excel-like behavior patch — Ctrl+C copy, Delete/Backspace clear, invalid cell 시각화, Enter/Shift+Enter/Tab/Shift+Tab 방향 정렬 (`ProfileInputGridModel` / `ProfileInputGridView`).
-   3. ISO result/read-only table copy TSV — `TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table` 에 TSV copy 추가.
-   4. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
-   5. ML / inverse-search 복귀 준비.
+   1. ISO table Excel-like behavior patch — Ctrl+C copy, Delete/Backspace clear, invalid cell 시각화, Enter/Shift+Enter/Tab/Shift+Tab 방향 정렬 (`ProfileInputGridModel` / `ProfileInputGridView`).
+   2. ISO result/read-only table copy TSV — `TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table` 에 TSV copy 추가.
+   3. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
+   4. ML / inverse-search 복귀 준비.
    - 096: bin detail의 frost flag를 trace에 명시 노출 완료.
    - 097: Formula 44/45/47/48/49/50 boundary COP 보간을 ISO 원문 표현과 정렬 (rewrite-only, numeric 변화 없음). Formula 50 trace에 cop_ful_f_tg / cop_ext_f_tf endpoint COP 명시 노출.
-   - 098: 남은 11개 mismatch case를 4개 cluster (Cluster A 작은 Δ extended-only, Cluster B 2_half 측정, Cluster C 2_full 측정 큰 Δ, Cluster D -7 multi-measured) 로 분류. Cluster C의 large Δ는 measured 2_full이 frost 곡선과 branch selection을 동시에 흔드는 데서 기인. ISO table UI 작업은 HSPF mismatch 흐름이 끝날 때까지 뒤로 둠.
-   - 099: `_iso_hspf_extended_minus7_default()` 의 -7_ext default factor 적용 대상 정정 (2°C frost → 2°C non-frost → -7°C 2-step). case 3/4/9/10/11이 자연 pass로 전환 (XFAIL_CASE_IDS 미변경, 다음 작업에서 정리).
+   - 098: 남은 11개 mismatch case를 4개 cluster로 분류하고 원문 audit 항목 5개 식별.
+   - 099: `_iso_hspf_extended_minus7_default()` 의 -7_ext default factor 적용 대상 정정 (2°C frost → 2°C non-frost → -7°C 2-step).
+   - 100: ISO16358-2 HSPF official exact fixture expected를 원문 audit + 099 기준으로 갱신하고 `XFAIL_CASE_IDS`를 비워서 16/16 case pass 상태로 정리.
 4. 전역 table contract는 "Excel-like behavior"를 기본으로 한다는 점이 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` / `AGENTS.md` / `AGENT_TASK_ROUTER.md` / calculator design doc에 명시 완료. 094 audit에서 식별된 ISO16358-1 CSPF 입력표 (Copy/Clear/Invalid 시각/Enter 방향) 가 alignment 1번 대상이다. ISO16358-2 HSPF mismatch는 외부 분석 대기 hold 유지.
 5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 

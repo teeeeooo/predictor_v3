@@ -1,6 +1,41 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-19 — ISO16358-2 HSPF -7_ext fix + golden update
+
+### Tried
+- 099에서 `_iso_hspf_extended_minus7_default()`의 -7_ext default factor 적용
+  대상을 정정 (2°C frost → 2°C non-frost ×1.12/×1.06 → -7°C ×0.734/×0.877
+  2-step).
+- 100에서 ISO16358-2 HSPF official exact 16-case fixture expected를 원문
+  audit + 099 기준값으로 갱신하고 `XFAIL_CASE_IDS`를 빈 frozenset으로 정리.
+
+### Result
+- case 3/4/9/10/11이 099 fix만으로 자연 pass.
+- case 8/12/13/14/15/16의 expected를 원문 audit 기준값으로 갱신해 16/16 case
+  모두 pass.
+- frost trace / boundary COP / extended default focused test 그대로 pass.
+- full suite: 425 passed, 4 skipped, 23 xfailed (XPASS strict 실패 0).
+
+### Failed-Risk
+- 091 시점에서는 case 12/15/16 large Δ를 external reference script의 frost/
+  non-frost 동일 주입 해석 오류로 추정했으나, 원문 audit 결과 repo 구현이
+  frost endpoint 정책 / -7 multi-measured / Formula 50 적용 / saturated 모두
+  원문 준수임이 확인됐고, 실제 원인은 -7_ext default factor 적용 대상 오류
+  (099) 였음.
+
+### Decision
+- ISO16358-2 HSPF 16-case mismatch hold 상태는 종료.
+- official exact fixture expected는 원문 audit + 099 fix 기준값을 single
+  source of truth로 둔다.
+- 잔여 follow-up은 ISO table UI / TSV / unit adapter / ML 복귀 순으로 진행.
+
+### Lesson
+- factor 자체의 출처가 맞아도 적용 대상 (frost vs non-frost) 이 어긋나면
+  대표적인 case에서 큰 mismatch가 발생한다. 0.734/0.877 같은 derived factor를
+  볼 때는 derivation 시점의 baseline (여기서는 2°C non-frost) 을 항상 함께
+  점검한다.
+
 ## 2026-05-18 — ISO16358-2 HSPF reference diagnostic hold
 
 ### Tried
