@@ -1017,10 +1017,19 @@ class ISO16358Calculator:
                 "power": float(resolved["-7_ext"]["power"]),
             }
 
-        ext_2_f = resolved["2_ext"]
+        # ISO 16358-2 default for -7_ext when not measured.
+        # 2_ext input is a 2°C frost-condition measurement, but the standard
+        # factors 0.734 (capacity) / 0.877 (power) derive 2°C non-frost →
+        # -7°C values (Table 1).  Convert 2°C frost → 2°C non-frost first,
+        # then apply the -7°C factor.
+        #   * 1.12 / * 1.06: 2°C frost → 2°C non-frost equivalent
+        #   * 0.734 / * 0.877: 2°C non-frost → -7°C (ISO Table 1 derived)
+        ext_2_frost = resolved["2_ext"]
+        ext_2_nonfrost_capacity = float(ext_2_frost["capacity"]) * 1.12
+        ext_2_nonfrost_power = float(ext_2_frost["power"]) * 1.06
         return {
-            "capacity": float(ext_2_f["capacity"]) * 0.734,
-            "power": float(ext_2_f["power"]) * 0.877,
+            "capacity": ext_2_nonfrost_capacity * 0.734,
+            "power": ext_2_nonfrost_power * 0.877,
         }
 
     def _iso_hspf_extended_frost_curve(self, tj: float, resolved: dict) -> dict:
