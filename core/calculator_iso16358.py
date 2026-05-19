@@ -890,11 +890,44 @@ class ISO16358Calculator:
         resolved: dict,
         frost: bool
     ) -> float:
+        # ISO 16358-2 boundary COP at the load-line / capacity-line intersection
+        # temperature `temp` (e.g. tk, tj, tg, th, ta, tf).  Both capacity and
+        # power are taken from the same stage curve and frost branch so the
+        # ratio represents the actual operating COP at that boundary point.
         capacity = self._iso_hspf_capacity_curve(temp, stage, resolved, frost)
         power = self._iso_hspf_power_curve(temp, stage, resolved, frost)
         if power <= 0:
             raise ValueError("ISO 16358-2 HSPF boundary power must be positive.")
         return capacity / power
+
+    def _iso_hspf_boundary_point(
+        self,
+        stage: str,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple,
+    ) -> dict:
+        # Resolve the boundary point where the load line intersects the
+        # selected stage capacity line.  Returns temperature plus the capacity
+        # / power / load / COP at that intersection, all derived from the same
+        # stage curves so callers can use them consistently for Formula
+        # 44/45/47/48/49/50 endpoint interpolation.
+        temp = self._iso_hspf_intersection_temp(stage, resolved, frost, load_line)
+        capacity = self._iso_hspf_capacity_curve(temp, stage, resolved, frost)
+        power = self._iso_hspf_power_curve(temp, stage, resolved, frost)
+        load_slope, load_intercept = load_line
+        load = load_slope * temp + load_intercept
+        if power <= 0:
+            raise ValueError("ISO 16358-2 HSPF boundary power must be positive.")
+        return {
+            "temp": temp,
+            "stage": stage,
+            "frost": frost,
+            "capacity": capacity,
+            "power": power,
+            "load_at_boundary": load,
+            "cop": capacity / power,
+        }
 
     def _iso_hspf_min_half_power_by_formula_44_48(
         self,
@@ -904,6 +937,12 @@ class ISO16358Calculator:
         frost: bool,
         load_line: tuple
     ) -> float:
+        # ISO 16358-2 Formula 44 (non-frost) / Formula 48 (frost):
+        #   COP_mh(tj) = COP_min(tk) + (COP_half(tj') - COP_min(tk))
+        #                              * (tj - tk) / (tj' - tk)
+        # where tk = load/min-capacity intersection, tj' = load/half-capacity
+        # intersection.  The rewrite below uses the half boundary as the base
+        # term, which is algebraically identical to the spec form.
         min_temp = self._iso_hspf_intersection_temp("min", resolved, frost, load_line)
         half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
         denominator = min_temp - half_temp
@@ -925,6 +964,11 @@ class ISO16358Calculator:
         frost: bool,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 45 (non-frost) / Formula 49 (frost):
+        #   COP_hf(tj) = COP_full(ta) + (COP_half(tj') - COP_full(ta))
+        #                              * (tj - ta) / (tj' - ta)
+        # ta = load/full-capacity intersection, tj' = load/half-capacity
+        # intersection.  The rewrite using cop_full as the base is identical.
         half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
         full_temp = self._iso_hspf_intersection_temp("full", resolved, frost, load_line)
         denominator = half_temp - full_temp
@@ -1019,6 +1063,18 @@ class ISO16358Calculator:
         resolved: dict,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 50 (frost full→extended):
+        #   COP_fe,f(tj) = COP_ext,f(tf)
+        #                + (COP_ful,f(tg) - COP_ext,f(tf)) * (tj - tf) / (tg - tf)
+        #   P_fe,f(tj)   = L_h(tj) / COP_fe,f(tj)
+        # tg = intersection of load line with full-stage frost capacity curve.
+        # tf = intersection of load line with extended frost capacity curve.
+        # COP_ful,f(tg) uses the full-stage frost curves at tg.
+        # COP_ext,f(tf) uses the extended frost curve (interpolated between
+        # the -7°C and 2°C extended points) at tf.
+        # The implementation below uses the algebraically equivalent
+        #   cop_full + (cop_ext - cop_full) * (tj - tg) / (tf - tg)
+        # so the numeric output is identical to the spec form.
         tg = self._iso_hspf_intersection_temp("full", resolved, True, load_line)
         tf = self._iso_hspf_extended_frost_intersection_temp(resolved, load_line)
         denominator = tf - tg
@@ -1027,13 +1083,13 @@ class ISO16358Calculator:
                 "ISO 16358-2 HSPF full and extended boundary temperatures are equal."
             )
 
-        cop_full_f_tg = self._iso_hspf_boundary_cop(tg, "full", resolved, True)
+        cop_ful_f_tg = self._iso_hspf_boundary_cop(tg, "full", resolved, True)
         ext_tf = self._iso_hspf_extended_frost_curve(tf, resolved)
         if ext_tf["power"] <= 0:
             raise ValueError("ISO 16358-2 HSPF extended boundary power must be positive.")
         cop_ext_f_tf = ext_tf["capacity"] / ext_tf["power"]
-        cop_fe_f = cop_full_f_tg + (
-            (cop_ext_f_tf - cop_full_f_tg) * (tj - tg) / denominator
+        cop_fe_f = cop_ful_f_tg + (
+            (cop_ext_f_tf - cop_ful_f_tg) * (tj - tg) / denominator
         )
         if cop_fe_f <= 0:
             raise ValueError("ISO 16358-2 HSPF Formula 50 branch COP must be positive.")
@@ -1042,6 +1098,8 @@ class ISO16358Calculator:
             "P_fe": bl_h / cop_fe_f,
             "tg": tg,
             "tf": tf,
+            "cop_ful_f_tg": cop_ful_f_tg,
+            "cop_ext_f_tf": cop_ext_f_tf,
             "cop_fe_f": cop_fe_f,
         }
 
@@ -1052,10 +1110,15 @@ class ISO16358Calculator:
         resolved: dict,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 47 (non-frost full→extended):
+        #   COP_fe(tj) = COP_ext(th)
+        #              + (COP_ful(ta) - COP_ext(th)) * (tj - th) / (ta - th)
+        #   P_fe(tj)   = L_h(tj) / COP_fe(tj)
+        # ta = load/full-capacity intersection, th = load/extended-capacity
+        # intersection.  Both endpoints use the non-frost stage curves.
         full_temp = self._iso_hspf_intersection_temp("full", resolved, False, load_line)
-        # Note: Extended non-frost boundary temperature assumes the use of "ext" stage (e.g. 2_ext/7_ext if defined).
-        # ISO 16358-2 uses the extended capacity intersection. For the non-frost boundary, the common assumption
-        # is using the non-frost curve.
+        # Extended non-frost endpoint: capacity/power read from the "ext"
+        # stage non-frost curve at the load-line intersection temperature.
         ext_temp = self._iso_hspf_intersection_temp("ext", resolved, False, load_line)
 
         denominator = full_temp - ext_temp

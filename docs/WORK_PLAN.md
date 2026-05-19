@@ -33,12 +33,12 @@
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
-   1. ISO16358-2 HSPF Formula 44/45/47/48/49/50 boundary COP alignment (외부 분석 결과 도착 시점에 진행).
-   2. ISO table Excel-like behavior patch — Ctrl+C copy, Delete/Backspace clear, invalid cell 시각화, Enter/Shift+Enter/Tab/Shift+Tab 방향 정렬 (`ProfileInputGridModel` / `ProfileInputGridView`).
-   3. ISO result/read-only table copy TSV — `TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table` 에 TSV copy 추가.
-   4. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
-   5. ML / inverse-search 복귀 준비.
-   - 096에서 ISO16358-2 HSPF common bin detail의 frost flag를 trace에 명시적으로 노출하도록 수정 완료. ISO16358-2 HSPF 전체 mismatch는 여전히 외부 분석 대기 hold 상태.
+   1. ISO table Excel-like behavior patch — Ctrl+C copy, Delete/Backspace clear, invalid cell 시각화, Enter/Shift+Enter/Tab/Shift+Tab 방향 정렬 (`ProfileInputGridModel` / `ProfileInputGridView`).
+   2. ISO result/read-only table copy TSV — `TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table` 에 TSV copy 추가.
+   3. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
+   4. ML / inverse-search 복귀 준비.
+   - 096에서 ISO16358-2 HSPF common bin detail의 frost flag를 trace에 명시적으로 노출하도록 수정 완료.
+   - 097에서 ISO16358-2 HSPF Formula 44/45/47/48/49/50 boundary COP 보간을 ISO 원문 표현과 정렬 (수학적으로 동일한 rewrite이므로 numeric output은 변하지 않음). Formula 50 trace에 cop_ful_f_tg / cop_ext_f_tf endpoint COP를 명시 노출. ISO16358-2 HSPF 전체 mismatch는 여전히 외부 분석 대기 hold 상태이며, audit-reported P_j 차이는 boundary direction이 아닌 더 깊은 원인 (capacity/power curve resolution 또는 extended endpoint default 등) 으로 분리 추적 필요.
 4. 전역 table contract는 "Excel-like behavior"를 기본으로 한다는 점이 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` / `AGENTS.md` / `AGENT_TASK_ROUTER.md` / calculator design doc에 명시 완료. 094 audit에서 식별된 ISO16358-1 CSPF 입력표 (Copy/Clear/Invalid 시각/Enter 방향) 가 alignment 1번 대상이다. ISO16358-2 HSPF mismatch는 외부 분석 대기 hold 유지.
 5. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 Z-phase로 확장한다.
 
