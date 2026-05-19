@@ -139,6 +139,7 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
         "iso_t1_default_2point_cspf",
         "india_iseer_cspf",
         "hong_kong_cspf",
+        "hong_kong_hspf",
         "saso_t3_cspf",
     }
     assert all(profile.enabled for profile in profiles)
@@ -224,6 +225,39 @@ def test_resolve_iso16358_cspf_profiles(profile_id, region, metric, config_path)
     assert profile.mode == "cooling"
     assert profile.calculator_id == "iso16358"
     assert profile.config_path == config_path
+
+
+def test_resolve_hong_kong_hspf_by_profile_id_returns_hong_kong_json():
+    profile = resolve_calculator_profile(profile_id="hong_kong_hspf")
+
+    assert profile.profile_id == "hong_kong_hspf"
+    assert profile.standard == "ISO_16358"
+    assert profile.region == "hong_kong"
+    assert profile.metric == "HSPF"
+    assert profile.mode == "heating"
+    assert profile.calculator_id == "iso16358"
+    assert profile.config_path == "data/region_configs/hong_kong.json"
+
+
+def test_resolve_hong_kong_hspf_by_selector():
+    profile = resolve_calculator_profile(
+        standard="ISO_16358",
+        region="hong_kong",
+        metric="HSPF",
+        mode="heating",
+    )
+
+    assert profile.profile_id == "hong_kong_hspf"
+
+
+def test_hong_kong_cspf_and_hspf_share_config_but_resolve_independently():
+    cspf = resolve_calculator_profile(profile_id="hong_kong_cspf")
+    hspf = resolve_calculator_profile(profile_id="hong_kong_hspf")
+
+    assert cspf.config_path == hspf.config_path
+    assert cspf.calculator_id == hspf.calculator_id == "iso16358"
+    assert (cspf.metric, cspf.mode) == ("CSPF", "cooling")
+    assert (hspf.metric, hspf.mode) == ("HSPF", "heating")
 
 
 def test_asnzs_excel_hspf_compat_profile_is_disabled_until_explicit_exposure():

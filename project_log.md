@@ -1211,3 +1211,19 @@
 #### Decision
 - EN tab은 profile/dispatcher construction까지 resolver-backed로 전환했지만, `calculate_en()`의 실제 UI 계산 출력은 별도 EN UI calculation task로 유지한다.
 - Adapter implementation은 AHRI SEER2 result envelope 첫 slice로 제한한다. `CalculatorInputEnvelope`, ranking, ML / inverse-search caller 구현은 아직 시작하지 않는다.
+
+### Follow-up — Hong Kong HSPF profile registration
+
+#### Result
+- `core/calculator_profiles.py`에 `hong_kong_hspf` profile (`standard=ISO_16358`, `region=hong_kong`, `metric=HSPF`, `mode=heating`, `calculator_id=iso16358`, `config_path=data/region_configs/hong_kong.json`, `enabled=True`)을 추가했다. `hong_kong_cspf`와 동일 config를 공유하되 metric/mode만 분리한다.
+- `tests/test_calculator_profiles.py`에 profile_id resolve, selector resolve, CSPF/HSPF 독립 resolve guard를 추가하고 enabled profile list snapshot에 `hong_kong_hspf`를 포함했다.
+- `tests/test_calculator_dispatcher.py`의 ISO profile parametrize에 `hong_kong_hspf`를 포함하고, dispatcher가 `ISO16358Calculator`를 생성해 `calculate_hspf` smoke (HK golden case 1, hspf≈3.643)을 수행하는 케이스를 추가했다.
+- `core/calculator_dispatcher.py`는 수정하지 않았다 (`calculator_id=iso16358` 경로가 이미 ISO16358Calculator를 생성).
+
+#### Verification
+- Targeted: `tests/test_calculator_profiles.py tests/test_calculator_dispatcher.py tests/test_iso16358_hspf_hong_kong_config.py tests/test_iso16358_hspf_official_exact_golden.py tests/test_calculator_schema_boundaries.py` → 70 passed.
+- Full suite: `430 passed, 4 skipped, 23 xfailed`.
+
+#### Decision
+- Hong Kong HSPF는 core/config/test + profile resolve + dispatcher smoke까지 완료 상태로 둔다. UI surface는 아직 만들지 않으며 ISO HSPF horizontal table input은 별도 task로 유지한다.
+- ML/envelope/unit adapter coverage는 ISO HSPF 미포함 상태를 유지한다 (다음 sequence의 unit adapter 확장 시점에 함께 다룬다).

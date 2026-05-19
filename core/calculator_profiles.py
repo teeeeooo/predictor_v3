@@ -106,6 +106,16 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         enabled=True,
     ),
     CalculatorProfile(
+        profile_id="hong_kong_hspf",
+        standard="ISO_16358",
+        region="hong_kong",
+        metric="HSPF",
+        mode="heating",
+        calculator_id="iso16358",
+        config_path="data/region_configs/hong_kong.json",
+        enabled=True,
+    ),
+    CalculatorProfile(
         profile_id="saso_t3_cspf",
         standard="ISO_16358",
         region="saso",

@@ -76,6 +76,7 @@ def test_dispatcher_returns_en14825_calculator_for_en14825_seer_profile_id():
         "iso_t1_default_2point_cspf",
         "india_iseer_cspf",
         "hong_kong_cspf",
+        "hong_kong_hspf",
         "saso_t3_cspf",
     ],
 )
@@ -83,6 +84,23 @@ def test_dispatcher_returns_iso_calculator_for_iso_profiles(profile_id):
     calculator = create_calculator_for_profile(profile_id=profile_id)
 
     assert isinstance(calculator, ISO16358Calculator)
+
+
+def test_dispatcher_hong_kong_hspf_smoke_calculates_hspf():
+    calculator = create_calculator_for_profile(profile_id="hong_kong_hspf")
+
+    assert isinstance(calculator, ISO16358Calculator)
+    assert hasattr(calculator, "calculate_hspf")
+
+    result = calculator.calculate_hspf(
+        {
+            "rated_heating_capacity": 6300,
+            "7_full": {"capacity": 6300, "power": 1500},
+            "7_half": {"capacity": 3200, "power": 800},
+        }
+    )
+
+    assert result["hspf"] == pytest.approx(3.643, abs=0.001)
 
 
 def test_dispatcher_fail_fast_on_unknown_profile_id():
