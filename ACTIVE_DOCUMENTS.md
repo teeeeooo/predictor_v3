@@ -89,7 +89,8 @@
 | `docs/designs/2026-05-06-iso16358-2-hspf-core-boundary.md` | ISO HSPF core boundary decision | ISO HSPF boundary tasks | none |
 | `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md` | AS/NZS workbook compatibility boundary | AS/NZS tasks, ISO separation plan | none |
 | `docs/designs/2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | ISO HSPF H-8 routing design | ISO HSPF tasks | `docs/iso16358/iso16358_dev_notes.md`, `docs/REFACTOR_PLAN.md` |
-| `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | `iso_separation_result.md` |
+| `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | none |
+| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
 | `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` | Calculator result envelope / ML adapter boundary | ML / inverse-search restart tasks | `docs/architecture/project_architecture.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
 
 ## Root Result Docs
