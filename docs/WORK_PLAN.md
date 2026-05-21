@@ -33,10 +33,10 @@
 1. Step 1~5 완료 상태를 유지하고, 새 ISO / KS / ASNZS boundary를 깨는 후속 변경을 피한다.
 2. ISO16358-2 HSPF official exact 16-case mismatch는 hold 상태이며 repo immediate next action에서 제외한다. 사용자 외부 분석 결과 대기 중이고, repo 계산식 / expected / xfail / fixture 수정은 보류한다. 분석 결과가 들어오면 그때 repo 후속 작업을 다시 정한다.
 3. Repo 다음 순서는 다음 sequence로 둔다:
-   1. ISO result/read-only table copy TSV — `TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table` 에 TSV copy 추가.
-   2. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
-   3. ML / inverse-search 복귀 준비.
+   1. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다.
+   2. ML / inverse-search 복귀 준비.
    - ISO table Excel-like behavior patch (Ctrl+C copy / Delete·Backspace clear / invalid cell BackgroundRole+ToolTip / Enter·Shift+Enter·Tab·Shift+Tab 방향)는 `ProfileInputGridModel` / `ProfileInputGridView`에서 완료했다 (104 참고). Hong Kong / SASO / ISO T1 / India ISEER 모두 같은 모델/뷰를 공유하므로 한 번에 정렬되었다.
+   - ISO result/read-only table copy TSV (`TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table`) 완료 (105 참고). 공통 helper `selected_cells_to_tsv` + `ReadOnlyCopyTableView` subclass로 Ctrl+C TSV copy를 연결했고 read-only이므로 paste / clear / undo는 의도적으로 지원하지 않는다.
    - 096: bin detail의 frost flag를 trace에 명시 노출 완료.
    - 097: Formula 44/45/47/48/49/50 boundary COP 보간을 ISO 원문 표현과 정렬 (rewrite-only, numeric 변화 없음). Formula 50 trace에 cop_ful_f_tg / cop_ext_f_tf endpoint COP 명시 노출.
    - 098: 남은 11개 mismatch case를 4개 cluster로 분류하고 원문 audit 항목 5개 식별.

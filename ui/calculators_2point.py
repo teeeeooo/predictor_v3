@@ -16,6 +16,73 @@ from ui.spreadsheet_table import (
     format_tsv,
 )
 
+
+def selected_cells_to_tsv(model, cells):
+    """Bounding-rectangle TSV for the given cells of any QAbstractTableModel.
+
+    DisplayRole drives the serialization; out-of-range cells render as
+    empty strings. Non-rectangular selections expand to their bounding
+    rectangle (contract §7).
+    """
+    cell_list = [(r, c) for r, c in cells]
+    if not cell_list:
+        return ""
+    rows = [r for r, _ in cell_list]
+    cols = [c for _, c in cell_list]
+    r0, r1 = min(rows), max(rows)
+    c0, c1 = min(cols), max(cols)
+    n_rows = model.rowCount() if model is not None else 0
+    n_cols = model.columnCount() if model is not None else 0
+    grid = []
+    for r in range(r0, r1 + 1):
+        line = []
+        for c in range(c0, c1 + 1):
+            if model is None or r < 0 or r >= n_rows or c < 0 or c >= n_cols:
+                line.append("")
+                continue
+            val = model.data(model.index(r, c), Qt.DisplayRole)
+            line.append("" if val is None else str(val))
+        grid.append(line)
+    return format_tsv(grid)
+
+
+class _ReadOnlyCopyMixin:
+    """Adds Ctrl+C TSV copy to a QTableView. Read-only — no paste/clear/undo."""
+
+    def _selected_cell_set(self):
+        sel = self.selectionModel()
+        cells = set()
+        if sel is not None:
+            for idx in sel.selectedIndexes():
+                if idx.isValid():
+                    cells.add((idx.row(), idx.column()))
+        if not cells:
+            cur = self.currentIndex()
+            if cur.isValid():
+                cells.add((cur.row(), cur.column()))
+        return sorted(cells)
+
+    def copy_selection_tsv(self):
+        return selected_cells_to_tsv(self.model(), self._selected_cell_set())
+
+    def copy_selection_to_clipboard(self):
+        QApplication.clipboard().setText(self.copy_selection_tsv())
+
+
+class ReadOnlyCopyTableView(_ReadOnlyCopyMixin, QTableView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection_to_clipboard()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+
 class TraceTableModel(QAbstractTableModel):
     def __init__(self):
         super().__init__()
@@ -353,8 +420,12 @@ class TwoPointTableModel(QAbstractTableModel):
             self.dataChanged.emit(self.index(start_row, 1), self.index(start_row + len(lines) - 1, self.columnCount()-1))
             self.recalculate_rows(sorted(list(affected_rows)))
 
-class TwoPointTableView(QTableView):
+class TwoPointTableView(_ReadOnlyCopyMixin, QTableView):
     def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection_to_clipboard()
+            event.accept()
+            return
         if event.matches(QKeySequence.Paste):
             model = self.model()
             if model and hasattr(model, 'paste_tsv'):
@@ -513,7 +584,7 @@ class TraceDetailPanel(QWidget):
         self.iso_graph = BinGraphWidget()
         self.layout_iso.addWidget(self.iso_graph)
         
-        self.iso_table_view = QTableView()
+        self.iso_table_view = ReadOnlyCopyTableView()
         self.iso_table_model = TraceTableModel()
         self.iso_table_view.setModel(self.iso_table_model)
         self.iso_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -536,7 +607,7 @@ class TraceDetailPanel(QWidget):
         self.iseer_graph = BinGraphWidget()
         self.layout_iseer.addWidget(self.iseer_graph)
         
-        self.iseer_table_view = QTableView()
+        self.iseer_table_view = ReadOnlyCopyTableView()
         self.iseer_table_model = TraceTableModel()
         self.iseer_table_view.setModel(self.iseer_table_model)
         self.iseer_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -1113,7 +1184,7 @@ class RegionDetailTab(QWidget):
         layout.addWidget(self.graph)
 
         self.table_model = TraceTableModel()
-        self.table = QTableView()
+        self.table = ReadOnlyCopyTableView()
         self.table.setModel(self.table_model)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setMinimumHeight(260)
@@ -1257,7 +1328,7 @@ class IsoCspfSingleWidget(QWidget):
         result_layout = QVBoxLayout(result_panel)
         result_layout.addWidget(QLabel("Region/Profile 결과"))
         self.result_model = RegionResultTableModel()
-        self.result_table = QTableView()
+        self.result_table = ReadOnlyCopyTableView()
         self.result_table.setModel(self.result_model)
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.result_table.verticalHeader().setVisible(False)
