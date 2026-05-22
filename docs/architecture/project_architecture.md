@@ -63,7 +63,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
 ### 3.3 UI Model/View Guardrails
-- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 SPREADSHEET_TABLE_CONTRACT.md를 참조한다.
+- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
 - **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
 - **State Rendering**: 상태별 배경색을 통해 시각적 일관성을 확보한다.

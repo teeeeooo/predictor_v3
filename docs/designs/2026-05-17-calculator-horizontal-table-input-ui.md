@@ -1,16 +1,22 @@
 # Design Gate — Calculator Horizontal Table Input UI + Unit Boundary
 
 > **Scope note.** This design doc is **calculator-specific**. It
-> defines the AHRI / EN14825 table shape (columns, rows, unit
-> labels), the ML W ↔ calculator-native unit boundary, and the
-> migration order from the current vertical `QFormLayout` to a
-> horizontal table. Spreadsheet-like behavior (copy/paste TSV,
-> multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation,
-> numeric validation, paste path isolation, 1-click editor lifecycle,
-> `blockSignals` try/finally) is **not** owned here — it is owned by
-> `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. Every slice below
-> implicitly follows that contract; do not duplicate its rules in this
-> document.
+> inherits the global UI/UX SSOT and defines only the calculator
+> table shape, unit boundary, and migration order.
+>
+> - Global UI/UX root: `docs/ui_ux/00_UI_UX_SYSTEM.md`
+> - Table UX contract: `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`
+> - PyQt implementation adapter: `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`
+>
+> Spreadsheet-like behavior (copy/paste TSV, multi-cell paste, Delete
+> clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste
+> path isolation, 1-click editor lifecycle, `blockSignals` try/finally)
+> is **not** owned here — it is owned by the table UX contract and the
+> PyQt adapter above. Every slice below implicitly follows those
+> documents; do not duplicate their rules in this document. This design
+> doc defines only the calculator-specific table shape (AHRI / EN /
+> ISO columns, rows, unit labels), the unit boundary, and the
+> migration order.
 
 ## Goal
 
@@ -56,17 +62,21 @@ implementation in this slice.
 
 - Calculator table surfaces (AHRI / EN14825 / future ISO migrations)
   **inherit the global Excel-like table behavior** defined in
-  `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. This design doc defines
-  only the calculator-specific table shape (columns, rows, unit
-  labels, profile-bound column sets) and the migration order. It does
-  not redefine navigation / copy / paste / clear / undo / invalid
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and implemented per
+  `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, under the
+  broader UI/UX system in `docs/ui_ux/00_UI_UX_SYSTEM.md`. This design
+  doc defines only the calculator-specific table shape (columns, rows,
+  unit labels, profile-bound column sets) and the migration order. It
+  does not redefine navigation / copy / paste / clear / undo / invalid
   rules — the global contract is the single owner.
 - Every AHRI / EN14825 table follows the global
-  `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`. The spreadsheet-like UX,
-  copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo,
-  Tab/Enter navigation, numeric validation, paste path isolation,
-  1-click editor lifecycle, and `blockSignals` try/finally rules are
-  not restated here; the contract is the single owner.
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and the PyQt
+  adapter `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`. The
+  spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete
+  clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste
+  path isolation, 1-click editor lifecycle, and `blockSignals`
+  try/finally rules are not restated here; those documents are the
+  single owner.
 - The new input surface for AHRI / EN14825 is a `QTableView` driven by
   a `QAbstractTableModel`. Each table is profile-shape-aware (column
   set is fixed by the calculator profile).

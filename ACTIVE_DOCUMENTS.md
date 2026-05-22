@@ -40,7 +40,13 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
-| `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` | Global spreadsheet-like PyQt table contract | UI table tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | every PyQt table surface (calculator, train/predict, helpers, fixtures) |
+| `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, adapters |
+| `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |
+| `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` | Design tokens and layout rules | UI/UX root, layout tasks | UI component implementations |
+| `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` | Global spreadsheet-like table UX contract | UI/UX root, table UI tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, calculator design doc | every table surface (calculator, train/predict, helpers, fixtures) via PyQt/Tkinter adapters |
+| `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` | PyQt table implementation adapter | table UX contract, PyQt table tasks | PyQt table surfaces |
+| `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` | Tkinter table adapter | table UX contract, Tkinter table tasks | Tkinter table surfaces (when applicable) |
+| `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` | Legacy PyQt table contract source (history) | UI/UX `_source/` reference only | none — superseded by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` |
 | `data/region_configs/REGION_CONFIG_RULES.md` | Region config edit rules | region config tasks | region config guardrails |
 
 ## Standard Docs
@@ -90,7 +96,7 @@
 | `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md` | AS/NZS workbook compatibility boundary | AS/NZS tasks, ISO separation plan | none |
 | `docs/designs/2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | ISO HSPF H-8 routing design | ISO HSPF tasks | `docs/iso16358/iso16358_dev_notes.md`, `docs/REFACTOR_PLAN.md` |
 | `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | none |
-| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
+| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
 | `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` | Calculator result envelope / ML adapter boundary | ML / inverse-search restart tasks | `docs/architecture/project_architecture.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
 
 ## Root Result Docs

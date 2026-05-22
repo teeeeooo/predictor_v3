@@ -46,7 +46,9 @@ UI 경계:
 - `QTableWidget`을 새로 쓰지 않고 `QTableView` + `QAbstractTableModel`을 사용한다.
 - `setCellWidget`을 새로 쓰지 않고 `QStyledItemDelegate`를 사용한다.
 - `blockSignals`는 반드시 `try/finally`로 감싼다.
-- table UI를 생성/수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 따른다. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 여기서 단일 owner로 관리한다.
+- UI/UX active SSOT root는 `docs/ui_ux/00_UI_UX_SYSTEM.md`다. Toolkit policy / design tokens / layout은 각각 `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` / `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`를 owner로 한다.
+- table-shaped UI를 생성/수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(table UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 따른다. Tkinter adapter는 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 새 SSOT에서 owner로 관리한다.
+- legacy `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`는 삭제되었고, 동일 본문의 legacy 전문은 `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` 하나만 source/history로 유지한다. active 참조는 `docs/ui_ux/` SSOT 경로를 사용한다.
 - UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
 
 문서 경계:
@@ -488,6 +490,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 5. 앞으로 할 일이 바뀐 경우에만 `docs/REFACTOR_PLAN.md`를 수정한다.
 6. 프로젝트 대표 상태가 바뀐 경우에만 `project_brief.md`를 수정한다.
 7. 단순 docs 문구 수정은 이 섹션으로 확장하지 않고 `단순 docs 문구 수정` 경로를 유지한다.
+8. UI/UX 관련 문서 정리에서는 active SSOT (`docs/ui_ux/00_UI_UX_SYSTEM.md` 이하 `docs/ui_ux/`)와 legacy source 전문 (`docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md`)을 혼동하지 않는다. 새 작업의 owner는 항상 `docs/ui_ux/`이며, `_source/`는 history/reference로만 둔다.
 
 ### 8. UI 수정
 
@@ -496,13 +499,14 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 UI 코드의 필요한 클래스/함수 범위
 
 조건부로 읽을 문서:
-- table UI 생성/수정 시 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`
+- UI/UX 작업 시 active SSOT root `docs/ui_ux/00_UI_UX_SYSTEM.md`
+- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (UX contract) 와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` (PyQt 구현 adapter)
 - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
 - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 contract와 §13 checklist를 먼저 확인한다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
+2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)의 contract / checklist를 먼저 확인한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.
