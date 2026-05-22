@@ -23,7 +23,7 @@ from ui.spreadsheet_table import (
     make_en14825_seer_table_model,
     SpreadsheetTableView,
 )
-from ui.theme import color as theme_color
+from ui.theme import color as theme_color, spacing as theme_spacing
 
 
 # SCOP climate별 UI default prefill (UI-only; calculator core / region
@@ -139,21 +139,52 @@ class CalculatorWindow(QWidget):
     def init_en_tab(self):
         """EN 탭: horizontal spreadsheet table input (UI 입력 단위는 W).
 
-        SEER profile: 단일 A/B/C/D table.
-        SCOP profile: Average / Warmer / Colder climate별 table + 보조 form.
+        Layout order (top → bottom):
+        1. Profile selector
+        2. Standby / 대기 전력 (compact horizontal row, W input)
+        3. SEER section (visible for SEER profile)
+        4. SCOP section (visible for SCOP profile)
+
         EN core (`calculate_seer` / `calculate_scop`)는 kW 입력을 기대하므로,
-        ``calculate_en()``이 호출 직전 W → kW 변환을 수행한다.
+        ``calculate_en()``이 호출 직전 W → kW 변환을 수행한다. Standby /
+        p_design / Tbiv / TOL key 이름과 default 0.0 prefill은 그대로 유지.
         """
         layout = QVBoxLayout(self.tab_en)
+        layout.setSpacing(theme_spacing("space.section"))
 
         self.combo_region_en = QComboBox()
+        self.combo_region_en.setMaximumWidth(320)
         self.combo_region_en.currentIndexChanged.connect(self.on_region_changed_en)
         layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_en)
 
+        # --- Common standby form (W input) — top compact row ---
+        self.en_standby_group = QGroupBox("Standby / 대기 전력 (UI 입력 단위 W)")
+        self.en_standby_group.setObjectName("en_standby_group")
+        standby_row = QHBoxLayout()
+        standby_row.setSpacing(theme_spacing("space.row"))
+        for key, label in (
+            ("p_to_w", "p_to"),
+            ("p_sb_w", "p_sb"),
+            ("p_ck_w", "p_ck"),
+            ("p_off_w", "p_off"),
+        ):
+            widget = QLineEdit()
+            widget.setText("0.0")
+            widget.setMaximumWidth(90)
+            self.input_widgets_en[key] = widget
+            self.bind_error_reset(widget)
+            cell_label = QLabel(f"{label} (W):")
+            standby_row.addWidget(cell_label)
+            standby_row.addWidget(widget)
+        standby_row.addStretch()
+        self.en_standby_group.setLayout(standby_row)
+        layout.addWidget(self.en_standby_group)
+
         # --- SEER section (single table) ---
         self.en_seer_group = QGroupBox("SEER 테스트 포인트 (UI 입력 단위 W)")
         seer_layout = QVBoxLayout()
+        seer_layout.setSpacing(theme_spacing("space.section"))
         self.en_seer_model = make_en14825_seer_table_model(self)
         self.en_seer_view = SpreadsheetTableView()
         self.en_seer_view.setModel(self.en_seer_model)
@@ -173,19 +204,22 @@ class CalculatorWindow(QWidget):
         self.en_seer_view.setMinimumHeight(110)
         seer_layout.addWidget(self.en_seer_view)
 
-        seer_form = QFormLayout()
+        seer_aux_row = QHBoxLayout()
+        seer_aux_row.setSpacing(theme_spacing("space.row"))
         self.input_widgets_en["p_design_c_w"] = QLineEdit()
-        seer_form.addRow(
-            "p_design_c (W, SEER):", self.input_widgets_en["p_design_c_w"]
-        )
+        self.input_widgets_en["p_design_c_w"].setMaximumWidth(120)
         self.bind_error_reset(self.input_widgets_en["p_design_c_w"])
-        seer_layout.addLayout(seer_form)
+        seer_aux_row.addWidget(QLabel("p_design_c (W, SEER):"))
+        seer_aux_row.addWidget(self.input_widgets_en["p_design_c_w"])
+        seer_aux_row.addStretch()
+        seer_layout.addLayout(seer_aux_row)
         self.en_seer_group.setLayout(seer_layout)
         layout.addWidget(self.en_seer_group)
 
         # --- SCOP section (multi-climate cards) ---
         self.en_scop_group = QGroupBox("SCOP 기후별 테스트 포인트 (UI 입력 단위 W)")
         scop_layout = QVBoxLayout()
+        scop_layout.setSpacing(theme_spacing("space.section"))
         self.en_scop_climates = {}
         for climate_key, defaults in EN14825_SCOP_CLIMATE_DEFAULTS.items():
             card = QGroupBox(f"{defaults['label']} climate")
@@ -193,6 +227,7 @@ class CalculatorWindow(QWidget):
             card.setChecked(climate_key == "average")
 
             card_layout = QVBoxLayout()
+            card_layout.setSpacing(theme_spacing("space.row"))
             model = make_en14825_scop_table_model(self)
             view = SpreadsheetTableView()
             view.setModel(model)
@@ -210,19 +245,26 @@ class CalculatorWindow(QWidget):
             view.setMinimumHeight(110)
             card_layout.addWidget(view)
 
-            card_form = QFormLayout()
+            aux_row = QHBoxLayout()
+            aux_row.setSpacing(theme_spacing("space.row"))
             p_design_h_w = QLineEdit()
             tbiv_widget = QLineEdit()
             tol_widget = QLineEdit()
+            for w in (p_design_h_w, tbiv_widget, tol_widget):
+                w.setMaximumWidth(110)
             tbiv_widget.setText(str(defaults["tbiv_c"]))
             tol_widget.setText(str(defaults["tol_c"]))
-            card_form.addRow("p_design_h (W, SCOP):", p_design_h_w)
-            card_form.addRow("Tbiv 온도 (°C):", tbiv_widget)
-            card_form.addRow("TOL 온도 (°C):", tol_widget)
+            aux_row.addWidget(QLabel("p_design_h (W):"))
+            aux_row.addWidget(p_design_h_w)
+            aux_row.addWidget(QLabel("Tbiv (°C):"))
+            aux_row.addWidget(tbiv_widget)
+            aux_row.addWidget(QLabel("TOL (°C):"))
+            aux_row.addWidget(tol_widget)
+            aux_row.addStretch()
             self.bind_error_reset(p_design_h_w)
             self.bind_error_reset(tbiv_widget)
             self.bind_error_reset(tol_widget)
-            card_layout.addLayout(card_form)
+            card_layout.addLayout(aux_row)
             card.setLayout(card_layout)
             scop_layout.addWidget(card)
 
@@ -238,23 +280,6 @@ class CalculatorWindow(QWidget):
 
         self.en_scop_group.setLayout(scop_layout)
         layout.addWidget(self.en_scop_group)
-
-        # --- Common standby form (W input) ---
-        standby_group = QGroupBox("Standby / 대기 전력 (UI 입력 단위 W)")
-        standby_form = QFormLayout()
-        for key, label in (
-            ("p_to_w", "p_to (W):"),
-            ("p_sb_w", "p_sb (W):"),
-            ("p_ck_w", "p_ck (W):"),
-            ("p_off_w", "p_off (W):"),
-        ):
-            widget = QLineEdit()
-            widget.setText("0.0")
-            self.input_widgets_en[key] = widget
-            self.bind_error_reset(widget)
-            standby_form.addRow(label, widget)
-        standby_group.setLayout(standby_form)
-        layout.addWidget(standby_group)
         layout.addStretch()
 
         # Profile-driven visibility is set by on_region_changed_en.

@@ -35,8 +35,8 @@
 3. Repo 다음 순서는 다음 sequence로 둔다:
    1. Calculator UI/UX audit against new SSOT (`docs/ui_ux/`) — **완료** (107 참고).
    2. Calculator UI design token foundation — **완료** (108 참고). `ui/theme.py`가 `02_DESIGN_TOKENS_AND_LAYOUT.md` token name을 보수적으로 캡쳐 (PyQt 없이 import 가능), error border 한 곳에 PoC 적용. 색/레이아웃 변경 없음.
-   3. EN14825 tab layout polish — `02_DESIGN_TOKENS_AND_LAYOUT.md` §5 / §7 기준 standby 위치, single-input width, climate 카드 spacing 정렬. core / unit adapter / auto-calc는 건드리지 않는다. (recommended next action)
-   4. Calculator auto-calculate behavior alignment — ISO tab의 auto-calc와 AHRI/EN의 explicit `계산 실행` 사이 mixed pattern을 정리. 옵션 결정 (전 tab auto-calc 통일 vs explicit 통일) 은 micro-design slice 필요. layout polish / token / unit adapter와 섞지 않는다.
+   3. EN14825 tab layout polish — **완료** (109 참고). standby form을 EN tab 최상단 compact horizontal row로 이동, single-input row width 제한 (p_design_c / p_design_h / Tbiv / TOL), SCOP climate card 보조 form을 horizontal row로 정렬. 108 token foundation의 `theme_spacing("space.section"/"space.row")`를 사용. calculate_en core / W→kW 변환 / input key / default 0.0은 그대로 유지.
+   4. Calculator auto-calculate behavior alignment — ISO tab의 auto-calc와 AHRI/EN의 explicit `계산 실행` 사이 mixed pattern을 정리. 옵션 결정 (전 tab auto-calc 통일 vs explicit 통일) 은 micro-design slice 필요. layout polish / token / unit adapter와 섞지 않는다. (recommended next action)
    5. Hong Kong HSPF UI surface — core/config/test + profile/dispatcher가 이미 준비된 Hong Kong HSPF를 UI에 진입점으로 추가. heating point column set과 auxiliary form은 design 단계 필요. 다른 polish와 섞지 않는다.
    6. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다. UI audit와 완전 분리된 non-UI 작업.
    7. ML / inverse-search 복귀 준비.

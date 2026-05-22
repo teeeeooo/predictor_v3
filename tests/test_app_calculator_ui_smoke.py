@@ -456,6 +456,38 @@ def test_en_scop_climate_default_temperatures_are_prefilled():
         window.close()
 
 
+def test_en_standby_group_is_positioned_above_seer_and_scop_sections():
+    """Standby 입력은 SEER/SCOP main input보다 먼저 보이고, 기존 key/default(0.0)/W 단위를 유지한다."""
+    app = _qapp()
+    window = CalculatorWindow()
+
+    try:
+        assert app is QApplication.instance()
+        parent_layout = window.tab_en.layout()
+        positions = {}
+        for i in range(parent_layout.count()):
+            item = parent_layout.itemAt(i)
+            widget = item.widget()
+            if widget is None:
+                continue
+            if widget is window.en_standby_group:
+                positions["standby"] = i
+            elif widget is window.en_seer_group:
+                positions["seer"] = i
+            elif widget is window.en_scop_group:
+                positions["scop"] = i
+        assert "standby" in positions and "seer" in positions and "scop" in positions
+        assert positions["standby"] < positions["seer"]
+        assert positions["standby"] < positions["scop"]
+
+        for key in ("p_to_w", "p_sb_w", "p_ck_w", "p_off_w"):
+            widget = window.input_widgets_en[key]
+            assert widget is not None
+            assert widget.text() == "0.0"
+    finally:
+        window.close()
+
+
 def test_en_seer_profile_shows_seer_table_and_hides_scop_section():
     """SEER profile 선택 시 SEER table은 visible, SCOP card section은 hidden."""
     app = _qapp()
