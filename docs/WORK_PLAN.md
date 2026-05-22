@@ -40,6 +40,7 @@
    5. Hong Kong HSPF UI surface — core/config/test + profile/dispatcher가 이미 준비된 Hong Kong HSPF를 UI에 진입점으로 추가. heating point column set과 auxiliary form은 design 단계 필요. 다른 polish와 섞지 않는다.
    6. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다. UI audit와 완전 분리된 non-UI 작업.
    7. ML / inverse-search 복귀 준비.
+   8. Train/Predict UI 작은 refactor phase — ML / inverse-search 복귀 phase 진입 시점에 함께 다룬다 (112 audit 참고). 후보: app entrypoint thin 유지 / PredictWindow controller 책임 정리 / ODU cascading helper 분리 검토 / TrainWorker boundary 정리 / inline style token 적용 / ML result key SSOT 정렬 / ref_type · exp_type literal 중복 제거 / base_model · base_view contract 재확인. 본 phase는 Calculator action model slice (β/γ/δ), unit adapter 확장, ML 본 구현과 **섞지 않는다**.
    - ISO table Excel-like behavior patch (Ctrl+C copy / Delete·Backspace clear / invalid cell BackgroundRole+ToolTip / Enter·Shift+Enter·Tab·Shift+Tab 방향)는 `ProfileInputGridModel` / `ProfileInputGridView`에서 완료했다 (104 참고). Hong Kong / SASO / ISO T1 / India ISEER 모두 같은 모델/뷰를 공유하므로 한 번에 정렬되었다.
    - ISO result/read-only table copy TSV (`TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table`) 완료 (105 참고). 공통 helper `selected_cells_to_tsv` + `ReadOnlyCopyTableView` subclass로 Ctrl+C TSV copy를 연결했고 read-only이므로 paste / clear / undo는 의도적으로 지원하지 않는다.
    - 096: bin detail의 frost flag를 trace에 명시 노출 완료.
