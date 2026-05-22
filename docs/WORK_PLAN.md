@@ -38,16 +38,17 @@
    3. EN14825 tab layout polish — **완료** (109 참고). standby form을 EN tab 최상단 compact horizontal row로 이동, single-input row width 제한 (p_design_c / p_design_h / Tbiv / TOL), SCOP climate card 보조 form을 horizontal row로 정렬. 108 token foundation의 `theme_spacing("space.section"/"space.row")`를 사용. calculate_en core / W→kW 변환 / input key / default 0.0은 그대로 유지.
    4. Calculator auto-calculate behavior alignment — micro-design **완료** (110 참고, `docs/designs/2026-05-22-calculator-action-model-alignment.md`). 결정: **Option A — Auto-calc unified**. Slice α (`SpreadsheetTableModel.values_changed` signal) **완료** (111 참고).
    4a. Calculator UI module boundary plan — **완료** (113 참고, `docs/designs/2026-05-22-calculator-ui-module-boundary.md`). `ui/calc_window.py` shell만 유지하고 EN/AHRI tab + 공통 helper (`ui/calculator_errors.py`, `ui/calculator_recompute.py`, `ui/calculator_result_panel.py`)를 별도 module로 분리하는 순서를 확정. 다음 slice는 ε → ζ → η → β → γ → δ. (recommended next action: slice ε — `ui/calculator_errors.py` 추출)
-   4b. Slice ε `ui/calculator_errors.py` 추출 — **완료** (115 참고). `InputValidationError`, `parse_number`, `bind_error_reset`, `apply_error_style`, `clear_error_style`, `get_float_val`을 신규 module로 이동. `calc_window.py`는 import alias 유지, `_get_float_val` 인스턴스 메서드는 새 helper를 호출하는 thin wrapper. 동작 변경 없음. (recommended next action: Slice ζ — EN tab extraction)
-   4c. Slice ζ `ui/calculator_en_tab.py` 추출.
-   4d. Slice η `ui/calculator_ahri_tab.py` 추출.
-   4e. Slice β AHRI/EN auto-recompute wiring (위 module 분리 위에 올린다).
-   4f. Slice γ per-tab result/status surface unification.
-   4g. Slice δ error feedback alignment.
-   5. Hong Kong HSPF UI surface — core/config/test + profile/dispatcher가 이미 준비된 Hong Kong HSPF를 UI에 진입점으로 추가. heating point column set과 auxiliary form은 design 단계 필요. 다른 polish와 섞지 않는다.
-   6. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다. UI audit와 완전 분리된 non-UI 작업.
-   7. ML / inverse-search 복귀 준비.
-   8. Train/Predict UI 작은 refactor phase — ML / inverse-search 복귀 phase 진입 시점에 함께 다룬다 (112 audit 참고). 후보: app entrypoint thin 유지 / PredictWindow controller 책임 정리 / ODU cascading helper 분리 검토 / TrainWorker boundary 정리 / inline style token 적용 / ML result key SSOT 정렬 / ref_type · exp_type literal 중복 제거 / base_model · base_view contract 재확인. 본 phase는 Calculator action model slice (β/γ/δ), unit adapter 확장, ML 본 구현과 **섞지 않는다**.
+   4b. Slice ε `ui/calculator_errors.py` 추출 — **완료** (115 참고). `InputValidationError`, `parse_number`, `bind_error_reset`, `apply_error_style`, `clear_error_style`, `get_float_val`을 신규 module로 이동. `calc_window.py`는 import alias 유지, `_get_float_val` 인스턴스 메서드는 새 helper를 호출하는 thin wrapper. 동작 변경 없음.
+   4z. **Calculator deployment UI feasibility pivot** (116 참고, `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`). PyInstaller packaging 시 PyQt5 + Qt runtime + Qt plugins로 calculator-only 배포물이 100~150MB 수준이 될 가능성 때문에, 아래 4c~4g와 5번 (Hong Kong HSPF UI surface)를 **hold**로 이동. 다음 작업은 Tkinter calculator-only MVP feasibility spike (ISO 16358 tab + Hong Kong region, CSPF + HSPF 한 화면). `app_calculator_tk.py` / `ui_tk/calculator_app.py` skeleton과 packaging measurement guide (`docs/guides/lightweight_calculator_packaging_check.md`) 추가 완료. PyQt calculator UI 자산 (app_calculator.py / ui/calc_window.py 외)은 reference로 유지, 4a 모듈 boundary plan은 폐기하지 않고 Tkinter direction이 fall back되면 그 자리에서 resume.
+   4c. **hold** — Slice ζ `ui/calculator_en_tab.py` 추출 (4z 결과에 따라 resume 여부 결정).
+   4d. **hold** — Slice η `ui/calculator_ahri_tab.py` 추출.
+   4e. **hold** — Slice β AHRI/EN auto-recompute wiring.
+   4f. **hold** — Slice γ per-tab result/status surface unification.
+   4g. **hold** — Slice δ error feedback alignment.
+   5. **hold** — Hong Kong HSPF UI surface (PyQt). Tkinter MVP direction이 결정된 뒤 PyQt resume / Tkinter port / CLI fallback 중 한 경로로 재배치한다. core/config/test + profile/dispatcher 자산은 이미 준비되어 있어 어느 경로에서든 재사용 가능하다.
+   6. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다. UI audit와 완전 분리된 non-UI 작업. **순서는 calculator-only deployment UI feasibility (4z) 결과 이후 재조정**한다 (UI direction과 무관하게 진행 가능하지만 우선순위는 deployment direction 확정 후 재산정).
+   7. ML / inverse-search 복귀 준비. **순서는 4z 결과 이후 재조정**한다.
+   8. Train/Predict UI 작은 refactor phase — ML / inverse-search 복귀 phase 진입 시점에 함께 다룬다 (112 audit 참고). **순서는 4z 결과 이후 재조정**한다. 후보: app entrypoint thin 유지 / PredictWindow controller 책임 정리 / ODU cascading helper 분리 검토 / TrainWorker boundary 정리 / inline style token 적용 / ML result key SSOT 정렬 / ref_type · exp_type literal 중복 제거 / base_model · base_view contract 재확인. 본 phase는 Calculator action model slice (β/γ/δ), unit adapter 확장, ML 본 구현과 **섞지 않는다**.
    - ISO table Excel-like behavior patch (Ctrl+C copy / Delete·Backspace clear / invalid cell BackgroundRole+ToolTip / Enter·Shift+Enter·Tab·Shift+Tab 방향)는 `ProfileInputGridModel` / `ProfileInputGridView`에서 완료했다 (104 참고). Hong Kong / SASO / ISO T1 / India ISEER 모두 같은 모델/뷰를 공유하므로 한 번에 정렬되었다.
    - ISO result/read-only table copy TSV (`TwoPointTableModel` / `RegionResultTableModel` / `TraceTableModel` / `RegionDetailTab.table`) 완료 (105 참고). 공통 helper `selected_cells_to_tsv` + `ReadOnlyCopyTableView` subclass로 Ctrl+C TSV copy를 연결했고 read-only이므로 paste / clear / undo는 의도적으로 지원하지 않는다.
    - 096: bin detail의 frost flag를 trace에 명시 노출 완료.

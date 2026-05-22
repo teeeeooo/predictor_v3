@@ -1247,3 +1247,24 @@
 - AHRI/EN auto-recompute wiring (Slice β)은 module 분리 (ε/ζ/η) 이후에 진행한다. `calc_window.py`에 책임을 더 누적하지 않는다.
 - Train/Predict UI refactor는 ML / inverse-search 복귀 phase로 미룬다. Calculator action-model slice / unit adapter / ML 본 구현과 섞지 않는다.
 - 102~113 active reports는 `result_reports/summaries/114_summary-ui-ux-ssot-calculator-boundary.md`로 요약하고 archive로 이동했다.
+
+### Follow-up — Calculator deployment UI feasibility pivot
+
+#### Result
+- PyInstaller packaging 시 PyQt5 + Qt runtime + Qt plugins 포함으로 calculator-only 배포물이 100~150MB 수준이 될 가능성을 인식하고, calculator-only deployment direction을 PyQt UI 고도화에서 Tkinter MVP feasibility로 일시 전환했다 (실측값은 아직 없음).
+- 신규 design doc `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`로 spike scope, IA (standard tab + region selector + multi-metric sections), MVP profile (`hong_kong_cspf` + `hong_kong_hspf` 한 화면), packaging measurement plan, decision criteria, fallback 경로를 고정했다.
+- 신규 entrypoint `app_calculator_tk.py`와 module `ui_tk/__init__.py` / `ui_tk/calculator_app.py`로 최소 Tkinter prototype skeleton을 추가했다. PyQt5 import 없이 `core.calculator_dispatcher.create_calculator_for_profile`로 Hong Kong CSPF (4.939) / HSPF (3.643) 호출이 통한다.
+- PyInstaller 측정 절차는 `docs/guides/lightweight_calculator_packaging_check.md`에 빌드 명령 / 크기 측정 / Windows 검증 / 비교 기준 형태로 정리했다. 실제 측정은 수행하지 않았으며 모든 size 수치는 `not measured`로 둔다.
+- 기존 PyQt calculator UI (`app_calculator.py`, `ui/calc_window.py`, `ui/calculator_*.py`, `ui/spreadsheet_table.py`, `ui/theme.py`) 및 design doc (`docs/designs/2026-05-22-calculator-ui-module-boundary.md`, `2026-05-22-calculator-action-model-alignment.md`)은 reference로 보존했다. WORK_PLAN의 4c~4g (Slice ζ → η → β → γ → δ)와 5 (Hong Kong HSPF UI surface)는 **hold**로 이동했다.
+
+#### Verification
+- `python3 -B -m py_compile app_calculator_tk.py ui_tk/__init__.py ui_tk/calculator_app.py` → OK.
+- Tkinter widget tree 구축 + Hong Kong CSPF / HSPF dispatcher 호출 smoke (로컬 macOS) → OK, PyQt5 미import 확인.
+- Targeted: `tests/test_calculator_schema_boundaries.py tests/test_calculator_profiles.py tests/test_calculator_dispatcher.py` → 43 passed.
+- 전체 suite: 본 macOS + Python 3.14 + PyQt5 환경에서 4건의 PyQt clipboard / table 행위 테스트가 fatal abort로 crash (`tests/test_iso16358_result_table_copy_tsv.py`, `tests/test_iso16358_table_excel_like_behavior.py`, `tests/test_app_calculator_ui_smoke.py`, `tests/test_spreadsheet_table_view.py`). 본 작업 이전부터 존재하는 환경 의존 crash로, 동일 4개를 제외하면 `533 passed, 1 skipped, 23 xfailed`. CI / 회사 PC 환경에서는 정상 통과 가능.
+
+#### Decision
+- Calculator-only deployment UI direction은 Tkinter MVP feasibility spike로 우선 검증한다. PyQt calculator UI 고도화 (Slice ζ → η → β → γ → δ + Hong Kong HSPF UI surface)는 spike 결과까지 hold.
+- Tkinter MVP는 ISO 16358 standard tab + Hong Kong region + CSPF/HSPF 한 화면으로 최소 범위 유지. profile_id / calculator_id / config_path는 UI에 노출하지 않는다. KS C 9306은 ISO 16358 탭의 region 옵션으로 병합하지 않고 별도 탭 후보로 둔다.
+- Decision criteria 충족 (Windows one-folder dist ≥ 40% 축소 + 수치 일치 + core 변경 없음) 시 Tkinter direction 계속. 미충족 시 CLI → local HTML → PyQt Slice ζ resume 순으로 fallback.
+- 기존 calculator core / profile / dispatcher / region config / unit adapter / fixture / expected는 어느 direction에서도 수정하지 않는다.
