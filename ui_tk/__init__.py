@@ -1,5 +1,8 @@
 """Tkinter calculator-only UI package.
 
-Feasibility spike — NOT a replacement for the PyQt calculator UI in
-``ui/``. See ``docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md``.
+Production-candidate foundation for the lightweight calculator-only
+deployment direction. The PyQt calculator UI in ``ui/`` remains the
+reference implementation; this package does not import from ``ui/``
+and is not imported by ``ui/``. See
+``docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md``.
 """
