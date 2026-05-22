@@ -45,6 +45,28 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 - 명시적 지시 없이 구조 개선이나 리팩토링을 먼저 수행하지 않는다.
 
+## New Code Quality Gate
+
+새 script / module / feature 작성에는 UI / core / tools / scripts / ML 어디서든 다음 원칙이 적용된다. 본 gate는 UI 전용이 아니다.
+
+- `app_*.py` entrypoint는 thin하게 유지한다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하).
+- shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다.
+- 구현 전에 module boundary와 public interface를 먼저 정한다.
+- hard-coded region / profile / metric / result key / default 값은 SSOT, config, constants, resolver, token module로 격리한다.
+- 같은 literal / mapping / formatting이 2곳 이상 반복되면 helper 또는 registry 후보로 본다.
+- `core/`는 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다. UI / CLI / script layer는 `core.calculator_dispatcher`, adapter, resolver 같은 public 진입점만 사용한다.
+- `ui_tk/`는 `PyQt5`나 PyQt `ui` 패키지를 import하지 않는다 (Tkinter shell 독립성 유지).
+- feasibility spike도 예외가 아니다. spike는 runtime smoke / import smoke / core call smoke / shell skeleton까지만 작게 유지하고, shell + input + result + resolver + core call + formatting을 한 파일에 모두 담지 않는다 (116→118 reset이 교훈).
+
+소프트 한계:
+
+- 새 파일이 250 LOC를 넘을 것으로 예상되면 분리 계획을 먼저 보고한다.
+- 새 파일에 class 3개 초과가 예상되면 분리 계획을 먼저 보고한다.
+- 새 함수가 60~80 LOC를 넘을 것으로 예상되면 helper 분리를 검토한다.
+- 한 작업에서 신규 책임 영역이 3개 이상이면 skeleton/interface 작업과 구현 작업을 분리한다.
+
+자동 guard: `python3 -B tools/check_code_structure.py`는 위 boundary 중 일부 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit)를 conservative하게 검사한다. 코드 구조에 영향을 주는 작업의 검증에 포함한다 (전체 강제 실행은 아님).
+
 ## Document Triggers
 
 - ISO16358 / KS C 9306 / Excel COM / region config / docs `*_notes.md` 작업은 `AGENT_TASK_ROUTER.md`의 Shared Guardrails와 해당 route를 따른다.

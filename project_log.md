@@ -1268,3 +1268,23 @@
 - Tkinter MVP는 ISO 16358 standard tab + Hong Kong region + CSPF/HSPF 한 화면으로 최소 범위 유지. profile_id / calculator_id / config_path는 UI에 노출하지 않는다. KS C 9306은 ISO 16358 탭의 region 옵션으로 병합하지 않고 별도 탭 후보로 둔다.
 - Decision criteria 충족 (Windows one-folder dist ≥ 40% 축소 + 수치 일치 + core 변경 없음) 시 Tkinter direction 계속. 미충족 시 CLI → local HTML → PyQt Slice ζ resume 순으로 fallback.
 - 기존 calculator core / profile / dispatcher / region config / unit adapter / fixture / expected는 어느 direction에서도 수정하지 않는다.
+
+### Follow-up — Project-wide new code quality gate
+
+#### Result
+- 116 Tkinter feasibility spike에서 `ui_tk/calculator_app.py`가 345 LOC / class 6개로 한 파일에 shell + tab + section + resolver + result panel + input widget 책임을 누적했고, 118에서 clean module foundation reset으로 `ui_tk/calculator_app.py`를 54 LOC shell로 줄였다. 같은 단일-파일 누적 문제가 UI 외 layer (`core/`, `tools/`, `scripts/`, ML adapter, packaging probe 등)에서도 재발할 수 있다고 판단했다.
+- 재발 방지를 위해 project-wide New Code Quality Gate 원칙을 `AGENTS.md`에 추가하고, `AGENT_TASK_ROUTER.md` Shared Guardrails에 코드 구조 영향 작업에서 guard를 실행하도록 명시했다. `docs/architecture/project_architecture.md` §6에 layer import 방향, thin entrypoint, multi-responsibility 한 파일 금지, hard-coded 값 격리, soft limit, spike 예외 없음 원칙을 아키텍처 관점으로 요약했다.
+- conservative 자동 guard `tools/check_code_structure.py`를 추가했다. AST + pathlib 기반 stdlib only. 4종 check (core/ 와 ui_tk/ 의 banned imports, `app_*.py` thin entrypoint, ui_tk multi-책임 anti-pattern, LOC/class soft limit + 기존 large 파일 allowlist). 결과는 사람이 읽는 텍스트로 출력하고 error 시 non-zero exit.
+- `tests/test_code_structure_guard.py` 에 20 case + CLI subprocess smoke. core/ui_tk 의 banned import / app entrypoint thin / ui_tk multi-책임 detection / soft limit + allowlist + repo 전체 pass / CLI exit 0 모두 검증.
+
+#### Verification
+- `python3 -B tools/check_code_structure.py` → `code structure guard: OK (no findings)`, exit 0.
+- `python3 -B -m pytest tests/test_code_structure_guard.py -q` → 20 passed.
+- `python3 -B -m pytest tests/test_ui_tk_profile_resolver.py tests/test_ui_tk_calculator_foundation.py tests/test_calculator_schema_boundaries.py tests/test_calculator_profiles.py tests/test_calculator_dispatcher.py -q` → 58 passed (이전 cycle 결과 유지).
+- 전체 (위 4 PyQt 환경 의존 crash 파일 제외) → 568 passed, 1 skipped, 23 xfailed. 118 시점 baseline 548 + 신규 20 = 568. 본 작업이 기존 test 회귀 없음.
+
+#### Decision
+- 새 script / module / feature 작성에는 UI / core / tools / scripts / ML 어디서든 New Code Quality Gate를 적용한다.
+- `python3 -B tools/check_code_structure.py`는 코드 구조에 영향을 주는 작업의 검증에 포함하고, 모든 작업의 강제 실행은 아니다. CI / pre-commit hook / GitHub Actions / devcontainer 추가는 본 작업에서 수행하지 않는다.
+- LOC/class soft limit allowlist는 known-large historical 파일에만 적용한다 (`core/_legacy/calculator_iso16358_legacy.py`, `core/calculator_iso16358.py`, `core/calculator_ks_c9306.py`, `core/calculator_ahri_hspf2.py`, `core/calculator_en14825.py`, `core/calculator_asnzs_hspf_excel.py`, `ui/calc_window.py`, `ui/calculators_2point.py`, `ui/spreadsheet_table.py`). 새 파일은 allowlist 대상이 아니다.
+- Spike 작업도 본 gate를 따른다. 116 단일 파일 spike → 118 clean reset 패턴을 재현하지 않는다.

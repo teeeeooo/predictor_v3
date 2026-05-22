@@ -24,6 +24,7 @@ preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 
 - `COLUMNS`는 `core/constants.py`, `MODEL_REGISTRY`는 `core/models.py`를 단일 소스로 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
 - 대형 파일은 먼저 `rg` / `grep -n`으로 대상 위치를 찾고, 필요한 범위만 `sed -n`으로 읽는다.
+- 새 script / module / feature 작성에는 `AGENTS.md`의 New Code Quality Gate를 따른다 (thin entrypoint, layer boundary, hard-coded value 격리, helper 재사용, soft LOC/class limit, spike도 한 파일에 모든 책임 담지 않음). 코드 구조에 영향을 주는 작업은 검증에 `python3 -B tools/check_code_structure.py`를 포함하고, 결과 (`OK (no findings)` 또는 발견된 error/warning)를 최종 보고에 짧게 남긴다.
 
 계산기 경계:
 - 계산기 구현에는 `numpy` / `pandas`를 사용하지 않고 순수 Python을 유지한다.

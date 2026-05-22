@@ -253,3 +253,17 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 - local one-off conditional로 selector/routing 문제를 덮지 않는다.
 - external calculator compatibility convention을 common ISO calculator path에 직접 섞지 않는다.
 - standard/region metadata만으로 external compatibility mode를 자동 선택하지 않는다.
+
+## 6. New module / script boundary
+
+본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `ui_tk/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
+
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculator_dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다.
+- Tkinter shell 독립성: `ui_tk/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
+- Thin entrypoint: `app_*.py` 는 import + 한 두 줄 entrypoint 함수만 둔다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하). 실제 책임은 layer 모듈에 둔다.
+- Multi-responsibility 한 파일 금지: shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다. 새 작업에서 3개 이상 신규 책임 영역이 발생하면 skeleton/interface 작업과 구현 작업을 분리한다.
+- Hard-coded 값 격리: region, profile, metric, result key, default 값은 SSOT (config, constants, resolver, token module) 한 곳에서만 정의한다. 2곳 이상 반복되는 literal/mapping/formatting은 helper/registry 후보로 본다.
+- Soft limit (warning): 새 파일은 250 LOC / class 3개 / 함수 60~80 LOC 이내가 기본. 초과 예상 시 분리 계획을 먼저 보고한다. 기존 known-large / historical 파일은 `tools/check_code_structure.py`의 allowlist로 일시 면제한다.
+- Spike 예외 없음: feasibility spike도 shell + input + result + resolver + core call + formatting을 한 파일에 동시에 담지 않는다 (116 spike → 118 reset 사례 참고).
+
+자동 검사는 `tools/check_code_structure.py`가 conservative한 첫 버전으로 제공한다 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit). 코드 구조에 영향을 주는 작업의 검증에 포함한다.
