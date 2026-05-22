@@ -1227,3 +1227,23 @@
 #### Decision
 - Hong Kong HSPF는 core/config/test + profile resolve + dispatcher smoke까지 완료 상태로 둔다. UI surface는 아직 만들지 않으며 ISO HSPF horizontal table input은 별도 task로 유지한다.
 - ML/envelope/unit adapter coverage는 ISO HSPF 미포함 상태를 유지한다 (다음 sequence의 unit adapter 확장 시점에 함께 다룬다).
+
+### Follow-up — UI/UX SSOT adoption + Calculator UI module boundary
+
+#### Result
+- 새 UI/UX SSOT (`docs/ui_ux/`)를 active SSOT root로 도입했다. legacy `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`는 삭제하고, 전문은 `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md`만 history로 유지한다. `AGENTS.md` / `AGENT_TASK_ROUTER.md` / `ACTIVE_DOCUMENTS.md` / `docs/WORK_PLAN.md` / `docs/architecture/project_architecture.md` 의 active 참조를 새 SSOT 경로로 갱신했다 (106).
+- `ui/theme.py`에 color / font / spacing token foundation을 추가했다. PyQt 없이 import 가능하며, 현재 inline hex를 보수적으로 캡쳐했고 error border PoC 1곳에 token 참조를 적용했다 (108).
+- EN14825 tab의 standby form을 최상단 compact horizontal row로 이동하고 single-input 폭을 제한했다. token spacing을 사용했고 calculate_en / W→kW / key / default 0.0은 그대로 유지했다 (109).
+- Calculator action model을 Option A — 전체 auto-calc 통일로 결정했다 (`docs/designs/2026-05-22-calculator-action-model-alignment.md`, 110). 구현은 slice α (`SpreadsheetTableModel.values_changed`) → β (AHRI/EN auto-recompute wiring) → γ (per-tab result/status panel) → δ (error feedback alignment) 순서. α는 완료했다 (111).
+- Calculator UI module boundary 계획을 확정했다 (`docs/designs/2026-05-22-calculator-ui-module-boundary.md`, 113). `ui/calc_window.py`는 shell만 유지하고 EN/AHRI tab + 공통 helper (`ui/calculator_errors.py`, `ui/calculator_recompute.py`, `ui/calculator_result_panel.py`)를 별도 module로 분리한다. 추출 순서는 ε → ζ → η → β → γ → δ. `docs/architecture/project_architecture.md` §5에 `Calculator UI module boundary` subsection을 추가했다.
+- Train/Predict UI는 audit 결과 monolith 위험은 낮으나 ref/exp literal 중복과 ML result key magic string 같은 작은 drift가 있어, ML / inverse-search 복귀 phase에 작은 refactor phase로 함께 다루기로 결정했다 (112).
+
+#### Verification
+- Full suite: `462 passed, 6 skipped, 23 xfailed` (PyQt5 미설치 환경에서는 UI smoke가 skip; CI / 회사 PC 환경에서 신규 32 token tests + 12 `values_changed` tests + 1 EN layout smoke 모두 통과 가능한 구조).
+- `tests/test_calculator_schema_boundaries.py`: 3 passed.
+
+#### Decision
+- 다음 구현 slice는 ε — `ui/calculator_errors.py` 추출 (`InputValidationError`, `parse_number`, `bind_error_reset`, `clear_error_style`, `apply_error_style`, `get_float_val`).
+- AHRI/EN auto-recompute wiring (Slice β)은 module 분리 (ε/ζ/η) 이후에 진행한다. `calc_window.py`에 책임을 더 누적하지 않는다.
+- Train/Predict UI refactor는 ML / inverse-search 복귀 phase로 미룬다. Calculator action-model slice / unit adapter / ML 본 구현과 섞지 않는다.
+- 102~113 active reports는 `result_reports/summaries/114_summary-ui-ux-ssot-calculator-boundary.md`로 요약하고 archive로 이동했다.

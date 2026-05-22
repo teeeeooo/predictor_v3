@@ -98,6 +98,8 @@
 | `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | none |
 | `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
 | `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` | Calculator result envelope / ML adapter boundary | ML / inverse-search restart tasks | `docs/architecture/project_architecture.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
+| `docs/designs/2026-05-22-calculator-action-model-alignment.md` | Calculator action model decision (Option A — auto-calc unified) | calculator UI auto-recompute / result panel / error feedback slices | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` |
+| `docs/designs/2026-05-22-calculator-ui-module-boundary.md` | Calculator UI module boundary plan | calculator UI refactor slices (ε/ζ/η/β/γ/δ) | `docs/architecture/project_architecture.md`, `docs/designs/2026-05-22-calculator-action-model-alignment.md`, `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` |
 
 ## Root Result Docs
 
