@@ -495,3 +495,124 @@ def test_en14825_scop_as_point_dict_rejects_missing_tbiv():
         model.set_cell(1, col_idx, "200")
     with pytest.raises(ValueError, match="non-numeric capacity or power"):
         model.as_point_dict()
+
+
+# ---------- values_changed signal tests (Slice α) ----------
+
+
+class _SignalCounter:
+    """Lightweight slot that counts how many times a Qt signal fires."""
+
+    def __init__(self):
+        self.count = 0
+
+    def __call__(self, *args, **kwargs):
+        self.count += 1
+
+
+def _attach_values_changed(model):
+    counter = _SignalCounter()
+    model.values_changed.connect(counter)
+    return counter
+
+
+def test_values_changed_emits_once_on_single_cell_edit():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    model.set_cell(0, 0, "100")
+    assert counter.count == 1
+
+
+def test_values_changed_does_not_emit_on_idempotent_set():
+    model = _make_model()
+    model.set_cell(0, 0, "100")
+    counter = _attach_values_changed(model)
+    model.set_cell(0, 0, "100")
+    assert counter.count == 0
+
+
+def test_values_changed_emits_once_on_setdata_edit():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    idx = model.index(0, 0)
+    assert model.setData(idx, "42", Qt.EditRole) is True
+    assert counter.count == 1
+
+
+def test_values_changed_does_not_emit_on_setdata_same_value():
+    model = _make_model()
+    idx = model.index(0, 0)
+    model.setData(idx, "42", Qt.EditRole)
+    counter = _attach_values_changed(model)
+    assert model.setData(idx, "42", Qt.EditRole) is True
+    assert counter.count == 0
+
+
+def test_values_changed_emits_once_per_paste_operation():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    written = model.paste_tsv(0, 0, "1\t2\t3\n4\t5\t6\n")
+    assert written == 6
+    assert counter.count == 1
+
+
+def test_values_changed_does_not_emit_when_paste_is_fully_out_of_bounds():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    written = model.paste_tsv(99, 99, "1\t2\n")
+    assert written == 0
+    assert counter.count == 0
+
+
+def test_values_changed_does_not_emit_when_paste_reproduces_existing_values():
+    model = _make_model()
+    model.paste_tsv(0, 0, "1\t2\t3\n4\t5\t6\n")
+    counter = _attach_values_changed(model)
+    written = model.paste_tsv(0, 0, "1\t2\t3\n4\t5\t6\n")
+    # All target cells already hold the same values; values_changed
+    # must remain silent. Cells_written counts the writes attempted.
+    assert written == 6
+    assert counter.count == 0
+
+
+def test_values_changed_emits_once_per_clear_operation():
+    model = _make_model()
+    model.set_cell(0, 0, "100")
+    model.set_cell(0, 1, "200")
+    counter = _attach_values_changed(model)
+    cleared = model.clear_cells([(0, 0), (0, 1)])
+    assert cleared == 2
+    assert counter.count == 1
+
+
+def test_values_changed_does_not_emit_when_clearing_already_empty_cells():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    cleared = model.clear_cells([(0, 0), (0, 1)])
+    assert cleared == 0
+    assert counter.count == 0
+
+
+def test_values_changed_emits_once_per_undo_group():
+    model = _make_model()
+    model.set_cell(0, 0, "100")
+    counter = _attach_values_changed(model)
+    assert model.undo() is True
+    assert counter.count == 1
+
+
+def test_values_changed_does_not_emit_when_undo_stack_is_empty():
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    assert model.undo() is False
+    assert counter.count == 0
+
+
+def test_values_changed_emits_once_per_paste_with_partial_no_op_rows():
+    """A paste that lands some cells in-bounds and some out-of-bounds emits once."""
+    model = _make_model()
+    counter = _attach_values_changed(model)
+    # Two-row paste anchored at last row; second row falls out of bounds.
+    written = model.paste_tsv(1, 0, "10\t20\n30\t40\n")
+    assert written > 0
+    assert counter.count == 1

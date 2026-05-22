@@ -43,7 +43,7 @@ environments and tests can skip via ``pytest.importorskip``.
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 try:
-    from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+    from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
     from PyQt5.QtGui import QBrush, QColor, QKeySequence
     from PyQt5.QtWidgets import QApplication, QTableView
     _PYQT_AVAILABLE = True
@@ -341,7 +341,22 @@ if _PYQT_AVAILABLE:
         Cell values are stored as strings. Numeric validity is exposed
         through :meth:`is_cell_invalid` so delegates can paint an error
         indicator without blocking further edits (contract §11).
+
+        Signals:
+
+        - ``dataChanged`` (Qt built-in): low-level view refresh signal,
+          emitted whenever the model writes to cells. Used by Qt to
+          repaint affected indexes.
+        - ``values_changed``: high-level signal for subscribers that
+          care about logical value changes (e.g. calculator auto-
+          recompute wiring). Emitted **once per user-level operation**
+          (single edit, paste, clear, undo) and **only when at least
+          one cell value actually changed**. No-op operations (same
+          value, all-out-of-bounds paste, clear of already-empty
+          cells) do not emit.
         """
+
+        values_changed = pyqtSignal()
 
         def __init__(
             self,
@@ -389,11 +404,15 @@ if _PYQT_AVAILABLE:
         def setData(self, index, value, role=Qt.EditRole):
             if role != Qt.EditRole or not index.isValid():
                 return False
+            new_value = "" if value is None else str(value)
+            row, col = index.row(), index.column()
+            if self._cells[row][col] == new_value:
+                # Idempotent set: no snapshot, no signal emit.
+                return True
             self._push_snapshot("edit")
-            self._cells[index.row()][index.column()] = (
-                "" if value is None else str(value)
-            )
+            self._cells[row][col] = new_value
             self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+            self.values_changed.emit()
             return True
 
         def flags(self, index):
@@ -423,10 +442,15 @@ if _PYQT_AVAILABLE:
 
         def set_cell(self, row: int, col: int, value: Any) -> None:
             self._check_bounds(row, col)
+            new_value = "" if value is None else str(value)
+            if self._cells[row][col] == new_value:
+                # Idempotent: skip snapshot and signal.
+                return
             self._push_snapshot("set_cell")
-            self._cells[row][col] = "" if value is None else str(value)
+            self._cells[row][col] = new_value
             idx = self.index(row, col)
             self.dataChanged.emit(idx, idx, [Qt.DisplayRole, Qt.EditRole])
+            self.values_changed.emit()
 
         def get_cell(self, row: int, col: int) -> str:
             self._check_bounds(row, col)
@@ -462,6 +486,7 @@ if _PYQT_AVAILABLE:
                 return 0
             self._push_snapshot("paste")
             cells_written = 0
+            cells_changed = 0
             last_row = top_row
             last_col = top_col
             for r_offset, row in enumerate(grid):
@@ -472,6 +497,8 @@ if _PYQT_AVAILABLE:
                     target_col = top_col + c_offset
                     if target_col < 0 or target_col >= len(self._column_labels):
                         continue
+                    if self._cells[target_row][target_col] != value:
+                        cells_changed += 1
                     self._cells[target_row][target_col] = value
                     cells_written += 1
                     last_row = max(last_row, target_row)
@@ -482,6 +509,11 @@ if _PYQT_AVAILABLE:
                 self.dataChanged.emit(
                     top_idx, bottom_idx, [Qt.DisplayRole, Qt.EditRole]
                 )
+                if cells_changed:
+                    self.values_changed.emit()
+                else:
+                    # Paste reproduced existing values → no logical change.
+                    self._undo_stack.pop()
             else:
                 # No effect → remove the snapshot we just pushed.
                 self._undo_stack.pop()
@@ -507,6 +539,7 @@ if _PYQT_AVAILABLE:
                 self.dataChanged.emit(
                     top_idx, bottom_idx, [Qt.DisplayRole, Qt.EditRole]
                 )
+                self.values_changed.emit()
             else:
                 self._undo_stack.pop()
             return cleared
@@ -520,9 +553,12 @@ if _PYQT_AVAILABLE:
             if not self._undo_stack:
                 return False
             _label, snapshot = self._undo_stack.pop()
+            changed = snapshot != self._cells
             self.beginResetModel()
             self._cells = snapshot
             self.endResetModel()
+            if changed:
+                self.values_changed.emit()
             return True
 
         def reset_undo(self) -> None:
