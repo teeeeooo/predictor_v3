@@ -63,6 +63,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
 ### 3.3 UI Model/View Guardrails
+- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 SPREADSHEET_TABLE_CONTRACT.md를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
 - **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
 - **State Rendering**: 상태별 배경색을 통해 시각적 일관성을 확보한다.
@@ -131,6 +132,8 @@ production region config에는 candidate 값, golden/sample/test 전용 값, ML 
 
 ML output은 calculator input이 아니다. 예측된 capacity/power/Hz 등은 `predicted_points → calculator_input` adapter를 거쳐 계산기에 전달한다. ML result를 region config에 섞거나, calculator가 ML feature schema를 직접 읽게 하지 않는다.
 
+2026-05-17 Design Gate에서 `ML output or HW candidate → PredictedPointsEnvelope → CalculatorInputEnvelope → core calculator call → CalculatorResultEnvelope → RankingCandidateEnvelope` 흐름을 확정했다. 상세 data shape와 migration path는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 따른다.
+
 ### Calculator profile resolver contract
 
 초기 resolver는 nested schema 변환기가 아니라 기존 flat config path를 안전하게 선택하는 manifest/selector 계층이다.
@@ -161,27 +164,28 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
   - AHRI / EN14825처럼 ISO common path와 분리된 special calculator로 취급한다.
   - `data/region_configs/korea.json`을 사용할 수 있으나, 해당 config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 한다. ISO16358 common path와 KS region config 해석을 섞지 않는다.
   - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
-- `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용 후보.
-  - ISO common HSPF expected와 분리된 explicit opt-in compatibility calculator이다.
+- `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용.
+  - ISO common HSPF/CSPF expected와 분리된 explicit opt-in compatibility calculator이다.
   - AS/NZS workbook oracle convention을 ISO common path에 섞지 않으며, 자체 compatibility config로 opt-in 한다.
-  - 현재는 Z-phase 후보이며 이번 단계에서는 구현하지 않는다.
+  - Current workbook HSPF/CSPF snapshot exact-match는 `ASNZS_EXCEL_COMPAT` fixture namespace에서만 다룬다. Historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
   - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
 
 AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculator는 `data/region_configs/usa.json`(SEER2/cooling)과 `data/region_configs/usa_hspf2.json`(HSPF2/heating)을 사용할 수 있으며, 이 JSON들은 ISO common path가 아니라 AHRI calculator가 해석한다.
+EN14825 calculator는 `data/region_configs/en14825_scop.json`(SCOP/heating)을 사용할 수 있으며, resolver에서는 `calculator_id=en14825`로 식별한다.
 
 resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
 
 #### Calculator series reset direction (2026-05-17 결정)
 
-위 boundary는 목표 구조이며, 현재 `core/calculator_iso16358.py`는 그 목표와 일치하지 않는다. 다음 단계에서는 기존 파일을 부분 cleanup으로 살리지 않고 legacy/reference로 격하한 뒤 새 파일들을 명확한 책임으로 재작성한다.
+위 boundary는 목표 구조이며, 2026-05-17 series reset 작업에서 기존 ISO 구현은 legacy/reference로 격하되고 새 파일들이 이 책임 경계에 맞춰 재작성되고 있다.
 
-- 기존 `core/calculator_iso16358.py`는 KS C 9306 / AS/NZS workbook diagnostic / legacy helper가 혼재된 상태이므로 cleanup 누적이 아닌 **legacy/reference 격하** 대상이다.
-- 새 `core/calculator_iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당하도록 다시 작성한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
+- 기존 혼재 구현은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
+- 새 `core/calculator_iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
 - `core/calculator_ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
-- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 Z-phase 또는 별도 compatibility phase에서 작성한다.
+- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook HSPF/CSPF snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
 - `data/region_configs/`는 ISO 전용이 아닌 다중 calculator 공유 정적 standard/region config 저장소이며, 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - tests 정책: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator 기준으로 이전하고, diagnostic/workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리한다. (자세한 실행 순서는 `docs/WORK_PLAN.md`와 `docs/REFACTOR_PLAN.md` 참조.)
-- profile / dispatcher / UI 연결은 새 calculator series가 안정화된 뒤 재개한다.
+- profile / dispatcher / UI 연결은 새 calculator series boundary를 유지한 상태에서만 확장한다.
 
 ### External calculator compatibility profiles
 
@@ -212,11 +216,15 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 
 UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 입력 수집과 표시를 담당하고, calculator selection과 config resolution은 manifest/profile contract를 따른다.
 
+현재 `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP selector는 profile label과 `profile_id` item data를 사용한다. Calculator construction은 `create_calculator_for_profile()` 경로를 따른다.
+
 ### Result schema boundary
 
 Calculator result schema와 ML feature schema는 분리한다. Calculator result는 metric value, units, summary, bin details, diagnostics 같은 평가 결과를 담고, ML feature schema는 학습/예측 입력 컬럼과 target/leakage rule을 담는다.
 
 필요하면 UI 또는 recommendation layer에서 calculator return dict를 normalized result envelope로 감싸되, core calculator public API와 diagnostics key/value는 별도 phase 없이 변경하지 않는다.
+
+Normalized envelope는 adapter/recommendation boundary의 계약이며, core calculator가 UI table schema 또는 `MODEL_REGISTRY`를 읽는 구조로 확장하지 않는다. 기존 calculator return dict는 envelope의 `raw_result` 아래에 보존한다.
 
 ### Forbidden coupling
 

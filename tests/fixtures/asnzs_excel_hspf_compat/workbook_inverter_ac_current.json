@@ -1,0 +1,615 @@
+{
+  "calculator_id": "asnzs_excel_hspf",
+  "case_id": "workbook_inverter_ac_current",
+  "expected": {
+    "hsec_kwh_display": 1145.0,
+    "hsec_wh": 1145363.0,
+    "hspf": 4.342,
+    "hstl_wh": 4972859.0
+  },
+  "reference_type": "ASNZS_EXCEL_COMPAT",
+  "source": {
+    "extracted_with": "openpyxl data_only=True",
+    "kind": "local_workbook_snapshot",
+    "row_range": "21:47",
+    "sheet": "Inverter AC",
+    "workbook_path": "reference_files/iso16358_test_sheet.xlsx",
+    "workbook_sha256": "8149d9da0f20d0ecf8e55d0b5769b9e2d5ff85cd9a96bf722af02e276dba0cc5"
+  },
+  "workbook_rows": [
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.24,
+        "BP": 2.68,
+        "BR": 2.77,
+        "BY": 5.14,
+        "CA": 2.3,
+        "CC": 2.5
+      },
+      "hours": 4.0,
+      "load_w": 3800.0,
+      "row_energy_wh": 6082.0,
+      "row_number": 21,
+      "selected_power_w": 1521.0,
+      "temperature_c": -1.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.22,
+        "BP": 3.0,
+        "BR": 3.0,
+        "BY": 5.1,
+        "CA": 2.58,
+        "CC": 2.69
+      },
+      "hours": 15.0,
+      "load_w": 3589.0,
+      "row_energy_wh": 20013.0,
+      "row_number": 22,
+      "selected_power_w": 1334.0,
+      "temperature_c": 0.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.19,
+        "BP": 3.32,
+        "BR": 3.23,
+        "BY": 5.06,
+        "CA": 2.87,
+        "CC": 2.88
+      },
+      "hours": 33.0,
+      "load_w": 3378.0,
+      "row_energy_wh": 38692.0,
+      "row_number": 23,
+      "selected_power_w": 1172.0,
+      "temperature_c": 1.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.16,
+        "BP": 3.65,
+        "BR": 3.46,
+        "BY": 5.02,
+        "CA": 3.15,
+        "CC": 3.07
+      },
+      "hours": 68.0,
+      "load_w": 3167.0,
+      "row_energy_wh": 68285.0,
+      "row_number": 24,
+      "selected_power_w": 1004.0,
+      "temperature_c": 2.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.14,
+        "BP": 3.97,
+        "BR": 3.69,
+        "BY": 4.97,
+        "CA": 3.44,
+        "CC": 3.26
+      },
+      "hours": 119.0,
+      "load_w": 2956.0,
+      "row_energy_wh": 102256.0,
+      "row_number": 25,
+      "selected_power_w": 859.0,
+      "temperature_c": 3.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.11,
+        "BP": 4.29,
+        "BR": 3.92,
+        "BY": 4.93,
+        "CA": 3.73,
+        "CC": 3.45
+      },
+      "hours": 169.0,
+      "load_w": 2745.0,
+      "row_energy_wh": 124493.0,
+      "row_number": 26,
+      "selected_power_w": 737.0,
+      "temperature_c": 4.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.08,
+        "BP": 4.61,
+        "BR": 4.15,
+        "BY": 4.89,
+        "CA": 4.01,
+        "CC": 3.64
+      },
+      "hours": 200.0,
+      "load_w": 2534.0,
+      "row_energy_wh": 126298.0,
+      "row_number": 27,
+      "selected_power_w": 631.0,
+      "temperature_c": 5.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.06,
+        "BP": 4.93,
+        "BR": 4.38,
+        "BY": 4.84,
+        "CA": 4.3,
+        "CC": 3.84
+      },
+      "hours": 234.0,
+      "load_w": 2322.0,
+      "row_energy_wh": 110277.0,
+      "row_number": 28,
+      "selected_power_w": 471.0,
+      "temperature_c": 6.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.03,
+        "BP": 5.25,
+        "BR": 4.61,
+        "BY": 4.8,
+        "CA": 4.58,
+        "CC": 4.03
+      },
+      "hours": 250.0,
+      "load_w": 2111.0,
+      "row_energy_wh": 104903.0,
+      "row_number": 29,
+      "selected_power_w": 420.0,
+      "temperature_c": 7.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 5.0,
+        "BP": 5.57,
+        "BR": 4.84,
+        "BY": 4.76,
+        "CA": 4.87,
+        "CC": 4.22
+      },
+      "hours": 260.0,
+      "load_w": 1900.0,
+      "row_energy_wh": 98708.0,
+      "row_number": 30,
+      "selected_power_w": 380.0,
+      "temperature_c": 8.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.98,
+        "BP": 5.89,
+        "BR": 5.07,
+        "BY": 4.72,
+        "CA": 5.16,
+        "CC": 4.41
+      },
+      "hours": 265.0,
+      "load_w": 1689.0,
+      "row_energy_wh": 89904.0,
+      "row_number": 31,
+      "selected_power_w": 339.0,
+      "temperature_c": 9.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.95,
+        "BP": 6.21,
+        "BR": 5.3,
+        "BY": 4.67,
+        "CA": 5.44,
+        "CC": 4.6
+      },
+      "hours": 260.0,
+      "load_w": 1478.0,
+      "row_energy_wh": 77594.0,
+      "row_number": 32,
+      "selected_power_w": 298.0,
+      "temperature_c": 10.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.93,
+        "BP": 6.53,
+        "BR": 5.53,
+        "BY": 4.63,
+        "CA": 5.73,
+        "CC": 4.79
+      },
+      "hours": 245.0,
+      "load_w": 1267.0,
+      "row_energy_wh": 63009.0,
+      "row_number": 33,
+      "selected_power_w": 257.0,
+      "temperature_c": 11.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.9,
+        "BP": 6.85,
+        "BR": 5.76,
+        "BY": 4.59,
+        "CA": 6.01,
+        "CC": 4.98
+      },
+      "hours": 215.0,
+      "load_w": 1056.0,
+      "row_energy_wh": 46327.0,
+      "row_number": 34,
+      "selected_power_w": 215.0,
+      "temperature_c": 12.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.87,
+        "BP": 7.17,
+        "BR": 5.99,
+        "BY": 4.54,
+        "CA": 6.3,
+        "CC": 5.17
+      },
+      "hours": 192.0,
+      "load_w": 845.0,
+      "row_energy_wh": 33277.0,
+      "row_number": 35,
+      "selected_power_w": 173.0,
+      "temperature_c": 13.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.85,
+        "BP": 7.49,
+        "BR": 6.22,
+        "BY": 4.5,
+        "CA": 6.59,
+        "CC": 5.36
+      },
+      "hours": 151.0,
+      "load_w": 633.0,
+      "row_energy_wh": 20612.0,
+      "row_number": 36,
+      "selected_power_w": 137.0,
+      "temperature_c": 14.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.82,
+        "BP": 7.81,
+        "BR": 6.45,
+        "BY": 4.46,
+        "CA": 6.87,
+        "CC": 5.55
+      },
+      "hours": 110.0,
+      "load_w": 422.0,
+      "row_energy_wh": 10682.0,
+      "row_number": 37,
+      "selected_power_w": 97.0,
+      "temperature_c": 15.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.79,
+        "BP": 8.13,
+        "BR": 6.68,
+        "BY": 4.41,
+        "CA": 7.16,
+        "CC": 5.75
+      },
+      "hours": 76.0,
+      "load_w": 211.0,
+      "row_energy_wh": 3949.0,
+      "row_number": 38,
+      "selected_power_w": 52.0,
+      "temperature_c": 16.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.77,
+        "BP": 8.46,
+        "BR": 6.91,
+        "BY": 4.37,
+        "CA": 7.45,
+        "CC": 5.94
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 39,
+      "selected_power_w": 0.0,
+      "temperature_c": 17.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.74,
+        "BP": 8.78,
+        "BR": 7.14,
+        "BY": 4.33,
+        "CA": 7.73,
+        "CC": 6.13
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 40,
+      "selected_power_w": 0.0,
+      "temperature_c": 18.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.71,
+        "BP": 9.1,
+        "BR": 7.37,
+        "BY": 4.29,
+        "CA": 8.02,
+        "CC": 6.32
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 41,
+      "selected_power_w": 0.0,
+      "temperature_c": 19.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.69,
+        "BP": 9.42,
+        "BR": 7.6,
+        "BY": 4.24,
+        "CA": 8.3,
+        "CC": 6.51
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 42,
+      "selected_power_w": 0.0,
+      "temperature_c": 20.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.66,
+        "BP": 9.74,
+        "BR": 7.83,
+        "BY": 4.2,
+        "CA": 8.59,
+        "CC": 6.7
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 43,
+      "selected_power_w": 0.0,
+      "temperature_c": 21.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.63,
+        "BP": 10.06,
+        "BR": 8.06,
+        "BY": 4.16,
+        "CA": 8.88,
+        "CC": 6.89
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 44,
+      "selected_power_w": 0.0,
+      "temperature_c": 22.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.61,
+        "BP": 10.38,
+        "BR": 8.29,
+        "BY": 4.11,
+        "CA": 9.16,
+        "CC": 7.08
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 45,
+      "selected_power_w": 0.0,
+      "temperature_c": 23.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.58,
+        "BP": 10.7,
+        "BR": 8.52,
+        "BY": 4.07,
+        "CA": 9.45,
+        "CC": 7.27
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 46,
+      "selected_power_w": 0.0,
+      "temperature_c": 24.0
+    },
+    {
+      "anchors": {
+        "hours": "AZ",
+        "load_w": "BA",
+        "row_energy_wh": "CH",
+        "selected_power_w": "CG"
+      },
+      "helper_cops": {
+        "BN": 4.55,
+        "BP": 11.02,
+        "BR": 8.75,
+        "BY": 4.03,
+        "CA": 9.73,
+        "CC": 7.46
+      },
+      "hours": 0.0,
+      "load_w": 0.0,
+      "row_energy_wh": 0.0,
+      "row_number": 47,
+      "selected_power_w": 0.0,
+      "temperature_c": 25.0
+    }
+  ]
+}

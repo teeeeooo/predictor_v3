@@ -1,6 +1,207 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-19 — ISO16358-2 HSPF -7_ext fix + golden update
+
+### Tried
+- 099에서 `_iso_hspf_extended_minus7_default()`의 -7_ext default factor 적용
+  대상을 정정 (2°C frost → 2°C non-frost ×1.12/×1.06 → -7°C ×0.734/×0.877
+  2-step).
+- 100에서 ISO16358-2 HSPF official exact 16-case fixture expected를 원문
+  audit + 099 기준값으로 갱신하고 `XFAIL_CASE_IDS`를 빈 frozenset으로 정리.
+
+### Result
+- case 3/4/9/10/11이 099 fix만으로 자연 pass.
+- case 8/12/13/14/15/16의 expected를 원문 audit 기준값으로 갱신해 16/16 case
+  모두 pass.
+- frost trace / boundary COP / extended default focused test 그대로 pass.
+- full suite: 425 passed, 4 skipped, 23 xfailed (XPASS strict 실패 0).
+
+### Failed-Risk
+- 091 시점에서는 case 12/15/16 large Δ를 external reference script의 frost/
+  non-frost 동일 주입 해석 오류로 추정했으나, 원문 audit 결과 repo 구현이
+  frost endpoint 정책 / -7 multi-measured / Formula 50 적용 / saturated 모두
+  원문 준수임이 확인됐고, 실제 원인은 -7_ext default factor 적용 대상 오류
+  (099) 였음.
+
+### Decision
+- ISO16358-2 HSPF 16-case mismatch hold 상태는 종료.
+- official exact fixture expected는 원문 audit + 099 fix 기준값을 single
+  source of truth로 둔다.
+- 잔여 follow-up은 ISO table UI / TSV / unit adapter / ML 복귀 순으로 진행.
+
+### Lesson
+- factor 자체의 출처가 맞아도 적용 대상 (frost vs non-frost) 이 어긋나면
+  대표적인 case에서 큰 mismatch가 발생한다. 0.734/0.877 같은 derived factor를
+  볼 때는 derivation 시점의 baseline (여기서는 2°C non-frost) 을 항상 함께
+  점검한다.
+
+## 2026-05-18 — ISO16358-2 HSPF reference diagnostic hold
+
+### Tried
+- 083 diagnostic의 16-case mismatch 원인을 부분 점검함.
+- bin_hours, total bin hours, HSTL expected, fixture 입력, repo의 measured
+  `2_full` / `2_half` → frost reference point `2_full_f` / `2_half_f` 보존
+  동작을 ISO16358-2 규격 원문 해석에 비추어 확인함.
+- 사용자가 비교 기준으로 사용한 external reference script의 입력 처리
+  방식도 함께 확인함.
+
+### Result
+- bin_hours는 ISO16358-2 default bin과 일치하고, total bin hours는 2866 h로
+  확인됨.
+- HSTL expected 4885.4 kWh는 맞는 값으로 확인됨.
+- repo fixture와 external reference script의 입력 fixture는 동일함.
+- repo fixture의 measured `2_full` → `2_full_f`, `2_half` → `2_half_f` 매핑은
+  ISO16358-2 frost reference point 처리상 정상으로 확인됨.
+- repo calculator는 measured `2_full` / `2_half`를 frost reference point인
+  `2_full_f` / `2_half_f`로 보존하고, non-frost `2_full` / `2_half`는 -7~7 line
+  계산값으로 유지한다. 현재 규격 원문 해석상 이 방식이 맞는 것으로 판단됨.
+- external reference script는 measured `2_full`을 `2_full`과 `2_full_f` 모두에
+  동일하게 넣고 `2_half`도 동일하게 처리한 것으로 확인됨.
+
+### Failed-Risk
+- 083 report의 "official exact" 표현이 사실상 single external reference 결과를
+  authority로 취급할 위험이 있어, 후속 작업이 reference script 출력에 맞춰
+  repo 계산식을 임의로 수정하는 방향으로 흘러갈 수 있음.
+
+### Decision
+- ISO16358-2 HSPF 16-case mismatch는 hold 상태로 둔다.
+- `core/calculator_iso16358.py`, `tests/fixtures/iso16358_hspf_official_exact_cases.json`,
+  `tests/test_iso16358_hspf_official_exact_golden.py`, expected 값, xfail
+  목록은 이번 작업에서 수정하지 않는다.
+- case 12/15/16의 큰 mismatch는 repo calculator bug보다 external reference
+  script의 frost/non-frost 동일 주입 해석 오류 가능성이 크다고 본다.
+- 나머지 mismatch case는 사용자가 별도 분석 중이므로 hold한다.
+- 083 report는 historical diagnostic snapshot으로 다루고, 정정/보류 상태는
+  091 신규 report에 명시한다.
+
+### Lesson
+- single external reference script 결과를 "official exact" authority로 굳히지
+  않는다. 비교 기준은 규격 원문 + repo calculator + external script의 입력
+  해석을 모두 evidence로 보고, calculator 변경은 명시적 standard decision이
+  있을 때만 진행한다.
+- frost reference point (`2_full_f` / `2_half_f`)와 non-frost line (`2_full`
+  / `2_half`)을 동일 measured 값으로 채우면 frost/non-frost 분리가 무너진다
+  — reference 비교 도구가 이 분리를 따르는지 먼저 확인해야 한다.
+
+---
+
+## 2026-05-17 — ISO16358-2 HSPF official exact golden verification
+
+### Tried
+- 사용자가 제공한 ISO16358-2 HSPF 공식 원문 exact expected 16개 case를
+  현행 `core/calculator_iso16358.py` public schema에 맞춰 diagnostic golden
+  fixture/test로 추가함.
+- `2_full_f` / `2_half_f` measured 조건은 현행 입력 schema의 `2_full` /
+  `2_half` measured point로 매핑했고, `-7_*` measured/default 조건은 optional
+  input 포함/제외 경로로 검증함.
+- case #13/#14의 중복 설명과 동일 expected는 임의 해석 없이 그대로 보존함.
+
+### Result
+- 현재 계산기 actual 기준 16개 중 5개 case가 expected와 rounded match:
+  case 1, 2, 5, 6, 7.
+- 11개 case는 mismatch:
+  case 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16.
+- 신규 테스트는 mismatch case를 `xfail(strict=True)`로 보존하여 전체 pytest를
+  깨뜨리지 않는 active diagnostic anchor로 동작함.
+
+### Failed-Risk
+- 공식 원문 exact expected 기준의 active passing golden anchor는 아직 확보되지
+  않았음.
+- 큰 delta는 `2_full` / `2_half` measured frost/extended 경로가 포함된 case
+  12, 15, 16에서 집중되고, 나머지는 extended mode 및 `-7_*` measured/default
+  조합에서 소규모 delta가 발생함.
+
+### Decision
+- 이번 작업에서는 expected 값과 `core/calculator_iso16358.py` 계산식을 수정하지
+  않는다.
+- mismatch 분석을 다음 blocking task로 두고, calculator table-input UI design
+  audit / UI redesign / table-input 구현은 mismatch 분석 뒤로 둔다.
+
+### Lesson
+- 공식 원문 exact expected 기준과 현재 계산기 actual 검증 결과는 문서와 report에서
+  명확히 분리해야 한다.
+- 현행 public schema에서 measured `2_full_f` / `2_half_f`는 입력 key
+  `2_full` / `2_half`를 통해 resolver가 `_f` reference point로 보존한다.
+
+---
+
+## 2026-05-17 — Audit 5 next actions completion (074 ~ 080)
+
+### Result
+- audit_5의 6개 next action을 단계별 source/report 분리 커밋으로 완료함.
+  최종 reference report는 `reference_files/audit_5_next_actions_completion.md`.
+- 074: active 문서 (`project_log.md`, `docs/WORK_PLAN.md`,
+  `project_brief.md`) 를 audit_4 completion 상태로 동기화.
+- 075: `CalculatorInputEnvelope` shape을 design doc과 정렬.
+  `{calculator_profile_id, standard, region, mode, metric, measured_inputs,
+  options}` 구조로 잠그고 source vocabulary는
+  `manual_candidate / ml_prediction / fixture` 로 고정. `measured_inputs`는
+  dict, extra key는 fail-fast. `measured_inputs_as_test_points()` helper로
+  calculator public API 보존.
+- 076: `en14825_seer` profile 추가 (SCOP config 재사용). EN tab은 metric-aware
+  로 `calculate_seer` / `calculate_scop` 분기. SCOP 경로 동작은 변경 없음.
+- 077: AHRI HP 모드 + SEER2 + HSPF2 v3 결과가 result label에 함께 출력되는
+  happy-path smoke 추가.
+- 078: `core/calculator_prediction_adapter.py` 신설 — AHRI SEER2 한정
+  `PredictedPointsEnvelope` validator/helper + CalculatorInputEnvelope 변환.
+  단위 변환은 의도적으로 envelope 밖.
+- 079: `core/calculator_ranking_adapter.py` 신설 — CalculatorResultEnvelope →
+  RankingCandidateEnvelope 최소 smoke (score 기본값은 metric value).
+
+### Decision
+- Envelope adapter chain `PredictedPoints → CalculatorInput →
+  CalculatorResult → RankingCandidate`는 모두 adapter-owned이고 calculator
+  public API와 region config 의미는 변경하지 않는다.
+- 단위 변환은 adapter chain 안에 포함하지 않는다. caller가 일관된 단위
+  (AHRI SEER2: Btu/h capacity, W power) 로 미리 정규화해야 한다.
+- 첫 slice는 `ahri_usa_seer2` profile 단일 지원. EN / KS / ISO profile
+  확장은 후속 slice로 분리한다.
+- RankingCandidateEnvelope은 `raw_result` / `diagnostics`를 노출하지 않는다.
+  ranking layer는 envelope fields만 소비한다.
+- EN14825 SEER profile은 SCOP의 region config JSON을 재사용한다 (SEER
+  path가 SCOP 정적 키를 읽지 않음).
+
+### Verification
+- `python3 -B -m pytest -q` → `364 passed, 23 xfailed`.
+- Source commits: `3acc966, 614dfd6, 80ef665, 223192b, f4e9d84, dd283dc`.
+- Report commits: `0759744, 9fe1097, 01b6909, 73180d2, 379f4e3, 754dd94,
+  1704f1d`.
+
+---
+
+## 2026-05-17 — Audit 4 next actions completion (069 ~ 073)
+
+### Result
+- `reference_files/audit_4.md`가 제시한 4개 next action을 단계별 source/report
+  분리 커밋으로 완료함. 최종 reference report는
+  `reference_files/audit_4_next_actions_completion.md`에 작성.
+- 069: HSPF2 UI 중복 row guard. `ui/calc_window.py`에는 실제 중복이 없었고,
+  `tests/test_app_calculator_ui_smoke.py`에 회귀 방지 smoke 2건만 추가.
+- 070: EN14825 UI → `calculate_scop()` 연결. EN tab에 TOL/Tbiv/p_design_h/
+  climate/standby 입력을 추가하고 placeholder `calculate_en()`을 실제 SCOP
+  계산 경로로 교체. standby power는 W → kW 변환을 UI 어댑터에서 수행.
+- 071: `core/calculator_input_adapter.py` 신설 (AHRI SEER2 한정 첫 slice).
+  Tuple/Dict 입력, Btu/h·W 단위만 허용, fail-fast로 8건 테스트.
+- 072: `tests/test_calculator_schema_boundaries.py`의 banned region key 및
+  adapter-owned term 가드 확장. 9개 production region config 모두 통과 확인.
+
+### Decision
+- Calculator boundary는 계속 result adapter + input adapter의 두 축으로 유지.
+  ML caller 도입 전에 schema 정합성 (`source` vocabulary, envelope shape) 을
+  먼저 고정하기로 한다 (다음 audit_5 task 2~3).
+- region config는 정적 standard/region data로 유지하고, 모든 runtime/ML/ranking
+  관련 key는 가드 테스트로 차단.
+
+### Verification
+- `python3 -B -m pytest -q` → `312 passed, 23 xfailed` (PyQt5 사용 가능 환경
+  기준). PyQt5가 없는 sandbox에서는 UI smoke 7개가 skip되어 `305 passed,
+  1 skipped, 23 xfailed`.
+- Source commits: `e35ea2f, b673293, f7c7527, 2a3b680`.
+- Report commits: `afa9e13, 798be75, 30c0d9c, 7819a50, e3f37f6`.
+
+---
+
 ## 2026-05-17 — Calculator series reset direction
 
 ### Decision
@@ -832,3 +1033,197 @@
 - profile resolver (`core/calculator_profiles.py`)는 순수 manifest/selector를 유지하고, calculator 인스턴스 생성은 `core/calculator_dispatcher.py`가 담당한다.
 - ISO common engine 안의 KS-aware 분기 (`ks_intersection`) 와 ISO 측 KS thin wrappers의 완전 제거는 ISO common engine을 KS-unaware로 분리하는 후속 작업이 wiring된 다음 진행한다.
 - 16개 ISO common HSPF / pure ISO track A / case 3 Excel trace pre-existing failures는 본 workstream에서 다루지 않고 유지한다.
+
+### Follow-up — ISO separation Step 1 KS HSPF test routing
+
+#### Result
+- `iso_seperation_plan.md` Step 1 범위에서 KS C 9306 HSPF 테스트가 ISO calculator의 KS delegation을 통하지 않고 `KSC9306Calculator`를 직접 사용하도록 retarget했다.
+- `tests/test_iso16358_hspf_ks_oracle.py`는 KS row 계산을 `KSC9306Calculator`로 수행하고 ISO common row 계산은 `ISO16358Calculator`로 유지해 shared-formula 비교 의도를 보존했다.
+- `tests/test_iso16358_hspf_validation.py`와 `tests/test_iso16358_hspf_golden.py`의 KS 전용 validation/golden/helper 테스트는 `make_ks_phase1_calculator()` 또는 `KSC9306Calculator.from_config_path(...)`로 전환했다.
+- `core/calculator_ks_c9306.py`의 class docstring에서 transitional delegation 표현을 정리했고, Step 2 legacy rename 전까지 `from_iso_calculator` compatibility factory는 유지한다고 명시했다.
+
+#### Decision
+- Step 1에서는 ISO module rename, legacy 이동, UI import 변경, `from_iso_calculator` 제거를 하지 않는다. 해당 작업은 `iso_seperation_plan.md` Step 2 범위로 유지한다.
+- ISO common HSPF golden/diagnostic pre-existing failures는 기대값, tolerance, xfail을 조정하지 않고 baseline으로 유지한다.
+
+### Follow-up — ISO separation Step 2a pre-rename audit
+
+#### Result
+- `core.calculator_iso16358` direct import sites를 다시 grep해 33개 test files와 1개 UI file(`ui/calculators_2point.py`)을 확인했다.
+- Step 2b atomic rename 기준을 고정했다: `core/calculator_iso16358.py`는 `core/calculator_iso16358_legacy.py`로 이동하고, 새 `core/calculator_iso16358.py`는 `NotImplementedError` skeleton으로 둔다.
+- Diagnostic/mixed test는 `tests/_legacy/`로 이동하고, pure ISO / regional ISO / ASNZS negative assertion / KS-ISO oracle tests는 원 위치에서 legacy import로 retarget한 뒤 Step 3~4에서 선택적으로 새 calculator로 되돌린다.
+
+#### Decision
+- Step 2b는 test behavior를 바꾸지 않는 rename/import retarget 작업으로 제한한다.
+- Baseline `269 passed, 16 failed, 13 xfailed`를 Step 2b 검증 기준으로 유지한다.
+
+### Follow-up — ISO separation Step 2b legacy rename
+
+#### Result
+- 기존 `core/calculator_iso16358.py` 구현을 `core/calculator_iso16358_legacy.py`로 이동했다.
+- 새 `core/calculator_iso16358.py`는 Step 3 전용 `NotImplementedError` skeleton으로 생성했고 legacy alias를 두지 않았다.
+- 33개 test file과 `ui/calculators_2point.py`의 legacy caller를 `core.calculator_iso16358_legacy` import로 retarget했다.
+- Diagnostic/mixed tests 4개를 `tests/_legacy/`로 이동하고 `tests/_legacy/__init__.py`를 추가했다.
+
+#### Decision
+- Step 2b는 behavior-preserving legacy rename으로 제한했다. 새 ISO implementation, ISO profile 등록, UI dispatcher 전환은 Step 3~5로 유지한다.
+- Moved legacy diagnostic test의 fixture path는 `tests/fixtures/`를 계속 보도록 보정했다.
+
+### Follow-up — ISO separation Step 2c KS factory dead-code removal
+
+#### Result
+- `KSC9306Calculator.from_iso_calculator(...)`와 `_iso_calculator_ref` 필드를 제거했다.
+- Legacy ISO wrapper의 `_ks_calculator()`는 `KSC9306Calculator(self.config, bin_hours=self.bin_hours, default_cd=self.Cd)` 직접 생성으로 전환했다.
+- `from_iso_calculator` / `_iso_calculator_ref` grep 결과 0건을 확인했다.
+
+#### Decision
+- KS calculator는 더 이상 ISO calculator object reference를 보유하지 않는다.
+- Legacy ISO wrapper는 기존 호출 경로 보존용으로만 KS calculator를 즉시 생성한다.
+
+### Follow-up — ISO separation Step 3a new ISO CSPF implementation
+
+#### Result
+- 새 `core/calculator_iso16358.py`에 ISO 16358-1 CSPF 전용 구현을 추가했다.
+- ISO T1 default, Hong Kong, India ISEER, SASO T3, ASEAN/control CSPF tests를 legacy import에서 새 ISO calculator import로 되돌렸다.
+- 새 ISO 파일에서 KS/ASNZS/workbook/`ks_intersection`/test-value rounding 흔적이 없음을 grep으로 확인했다.
+
+#### Decision
+- Step 3a는 CSPF만 구현한다. `calculate_hspf()`는 Step 3b 전까지 `NotImplementedError`를 유지한다.
+- HSPF tests와 ASNZS negative assertion tests는 아직 legacy target을 유지한다.
+
+### Follow-up — ISO separation Step 3b new ISO HSPF common implementation
+
+#### Result
+- 새 `core/calculator_iso16358.py`에 ISO 16358-2 HSPF common/Phase 1 helper와 `calculate_hspf_iso16358_common()` / `calculate_hspf()` entry를 추가했다.
+- Step 3b 범위의 active HSPF tests 7개를 legacy import에서 새 ISO calculator import로 되돌렸다: smoke, formula micro, compatibility boundary, Hong Kong config, pure ISO Track A, validation ISO common subset, KS oracle의 ISO-side shared formula probe.
+- 새 ISO 파일에서 KS delegation, AS/NZS workbook helper, case3 trace-only entry가 없는 것을 grep으로 확인했다.
+
+#### Decision
+- `tests/test_iso16358_hspf_golden.py`와 `tests/_legacy/test_iso16358_hspf_h8_trace.py`는 converted-workbook/case3 trace 진단 의도가 섞여 있어 legacy target을 유지한다.
+- 기존 ISO HSPF baseline `16 failed, 269 passed, 13 xfailed`는 기대값/tolerance/xfail 조정 없이 유지한다.
+
+### Follow-up — ISO separation Step 4 AS/NZS compatibility snapshot
+
+#### Result
+- AS/NZS Excel compatibility negative assertion tests가 새 `core.calculator_iso16358` 모듈을 검사하도록 전환했다.
+- `reference_files/iso16358_test_sheet.xlsx` current workbook snapshot에서 `Inverter AC` row 21-47과 output anchors (`BB48`, `CH48`, `H12`, `H13`)를 추출해 `tests/fixtures/asnzs_excel_hspf_compat/workbook_inverter_ac_current.json` fixture를 추가했다.
+- `core/calculator_asnzs_hspf_excel.py`에 `ASNZS_EXCEL_COMPAT` workbook row snapshot input path를 추가하고, current workbook exact-match test를 추가했다.
+- `PROJECT_BRIEF.md`, `project_brief.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md`, `docs/architecture/project_architecture.md`, `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md`, `iso_seperation_plan.md`를 current snapshot / historical case3 full-dump 구분에 맞춰 갱신했다.
+
+#### Decision
+- Current workbook snapshot exact-match는 AS/NZS compatibility path에서만 다룬다.
+- Historical case3 packet/full-dump parity는 workbook version mismatch 때문에 계속 Z-phase로 유지한다.
+- ISO common expected/golden/tolerance/xfail은 변경하지 않는다.
+
+### Follow-up — ISO separation Step 5 profile/dispatcher/UI reconnection
+
+#### Result
+- `core/calculator_profiles.py`에 ISO CSPF profiles 4개를 등록했다: `iso_t1_default_2point_cspf`, `india_iseer_cspf`, `hong_kong_cspf`, `saso_t3_cspf`.
+- `asnzs_excel_hspf_compat` profile은 `enabled=False`로 등록해 explicit exposure 전까지 resolver 대상에서 제외했다.
+- `core/calculator_dispatcher.py`가 `calculator_id=iso16358`와 `calculator_id=asnzs_excel_hspf`를 생성할 수 있도록 확장했다.
+- `ui/calculators_2point.py`는 legacy ISO 직접 import/instantiation 대신 dispatcher profile id로 새 ISO calculator를 생성하도록 전환했다.
+
+#### Decision
+- AS/NZS compatibility profile은 manifest에는 존재하지만 disabled 상태를 유지한다.
+- UI는 아직 기존 CSPF 화면 구조를 유지하며, profile/dispatcher 경로로만 calculator 생성 책임을 이동했다.
+
+### Follow-up — ISO remaining work completion
+
+#### Result
+- `core/calculator_iso16358.py`의 active HSPF branch routing을 Formula 44/45/47/48/49/50 helper path로 연결했다.
+- Frost extended path는 canonical `2_ext` 후보와 `-7_ext` fallback으로 선택될 수 있도록 정리했다.
+- 기존 mixed ISO 구현을 `core/_legacy/calculator_iso16358_legacy.py`로 archive하고 남은 diagnostic import를 archived namespace로 retarget했다.
+- `core/calculator_asnzs_hspf_excel.py`에 current workbook CSPF snapshot path(`calculate_cspf`)를 추가했다.
+- Historical case3 workbook diagnostic expected는 active ISO failure가 아니라 pre-separation workbook oracle diagnostic으로 명시하고 xfail로 격리했다.
+- `iso_separation_result.md`, `iso_remaining_work_completion.md`, project brief, work plan, refactor plan, architecture, design doc을 갱신했다.
+
+#### Verification
+- Targeted ISO/ASNZS checks: `81 passed, 21 xfailed`.
+- Full suite: `288 passed, 23 xfailed`.
+
+#### Decision
+- AS/NZS completion 범위는 current local Energy Rating workbook compatibility로 한정한다. Public web evidence만으로 official AS/NZS production formula parity를 주장하지 않는다.
+- Historical AS/NZS case3 full-dump exact parity는 matching workbook/full dump 확보 전까지 Z-phase로 유지한다.
+
+### Follow-up — Active document inventory and report lifecycle summary
+
+#### Result
+- `ACTIVE_DOCUMENTS.md`를 root에 추가해 active 문서 목록, owner 역할, primary inbound/outbound 관계, watchlist를 한 파일에서 관리하도록 했다.
+- `AGENT_TASK_ROUTER.md`, `README.md`, `docs/README.md`에서 여러 문서에 걸친 업데이트 시 `ACTIVE_DOCUMENTS.md`를 먼저 확인하도록 inbound를 추가했다.
+- `result_reports/active/034`~`053`을 `result_reports/summaries/054_summary-calculator-ui-iso-separation.md`로 요약했다.
+- 요약된 active reports 034~053은 번호/파일명을 유지한 채 `result_reports/archive/`로 이동했다.
+
+#### Decision
+- Active 문서 생성/archive 이동 또는 owner/inbound/outbound 변화가 있으면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
+- Report lifecycle은 active 원본을 계속 쌓지 않고 summary와 archive로 닫는다. 이번 cycle 이후 active에는 현재 진행 작업 report만 남기는 구조를 기준으로 한다.
+
+### Follow-up — Audit result next actions
+
+#### Result
+- `audit_result.md`의 “지금 당장 할 수 있는 다음 작업” 4개를 완료했다.
+- ISO separation 후속 상태를 문서/주석에 맞췄다: `core/calculator_iso16358.py` 상단 docstring에서 HSPF 미구현 문구를 제거하고, `iso_separation_result.md`는 archive/summary 이동 상태를 반영했다.
+- Legacy HSPF workbook diagnostic test를 `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py`로 이동하고 active import/docs reference를 정리했다.
+- `ui_resolver_audit_result.md`를 작성해 `app_calculator.py` / `ui/calc_window.py`의 resolver-backed 전환 범위를 정리했다.
+- `ui/calc_window.py`의 AHRI SEER2 생성 경로를 direct `AHRICalculator(path)`에서 `create_calculator_for_profile(profile_id="ahri_usa_seer2")`로 전환했다.
+
+#### Verification
+- Legacy HSPF diagnostic move targeted check: `60 passed, 17 xfailed`.
+- UI resolver targeted checks: `30 passed`.
+- Full suite: `288 passed, 23 xfailed`.
+
+#### Decision
+- EN14825 UI tab은 EN profiles가 등록될 때까지 direct/stub 상태로 유지한다.
+- ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary 설계를 먼저 수행한다.
+
+### Follow-up — audit_2 immediate next actions completion
+
+#### Result
+- `reference_files/audit_2.md`의 “지금 당장 할 수 있는 다음 작업” 5개를 단계별로 처리했다.
+- Root audit/result 문서는 active 운영 문서가 아니라 `reference_files/*.md` reference snapshot으로 분류하고, `ACTIVE_DOCUMENTS.md` scope/root result 기준을 정리했다.
+- Active HSPF validation test는 더 이상 `tests._legacy` helper를 import하지 않고 `tests/helpers/iso16358_hspf_samples.py` shared helper를 사용한다.
+- `app_calculator.py` / `ui/calc_window.py`는 PyQt offscreen launch smoke로 검증했다. 다만 `ui/calc_window.py` 안에서 calculate button/result display 연결은 아직 발견되지 않아 별도 UI follow-up으로 남겼다.
+- AHRI SEER2 UI selector는 JSON filename scan이 아니라 `list_calculator_profiles()` 기반 profile-id item data를 통해 dispatcher를 호출한다.
+- Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`에 기록하고 architecture/work plan/refactor plan/brief/inventory 문서에 링크를 반영했다.
+
+#### Verification
+- Active HSPF helper split targeted check: `60 passed, 17 xfailed`.
+- Calculator UI smoke / profile selector targeted check: `32 passed`.
+- Full completion verification은 최종 report와 result report에 기록한다.
+
+#### Decision
+- ML / inverse-search 복귀 전 첫 구현 slice는 adapter helper 추가로 제한한다.
+- Core calculator public API, diagnostics schema, region config 의미는 adapter 설계/구현 초기에 변경하지 않는다.
+
+### Follow-up — audit_3 immediate next actions completion
+
+#### Result
+- `reference_files/audit_3.md`의 “지금 당장 할 수 있는 다음 작업” 5개를 단계별로 처리했다.
+- `tests/test_app_calculator_ui_smoke.py`는 `pytest.importorskip("PyQt5")`를 사용해 PyQt 없는 환경에서 collection error 대신 UI smoke skip이 가능하도록 보강했다.
+- `ui/calc_window.py`에 공통 계산 버튼과 결과 label을 추가하고, AHRI AC 입력 smoke에서 `calculate_ahri()` return 문자열이 UI에 표시되는 경로를 검증했다.
+- `core/calculator_result_adapter.py`에 `ahri_usa_seer2` 전용 `wrap_calculator_result_envelope()` 첫 slice를 추가했다. 기존 calculator return dict는 `raw_result` 아래 보존한다.
+- `tests/test_calculator_schema_boundaries.py`를 추가해 calculator import boundary, region config runtime key, adapter-owned envelope term 경계를 guard한다.
+- `en14825_scop` profile과 `calculator_id=en14825` dispatcher path를 등록하고, `ui/calc_window.py` EN combo를 profile-id item data 기반 selector로 전환했다.
+
+#### Verification
+- Targeted audit_3 checks: `49 passed`.
+- Full suite: `301 passed, 23 xfailed`.
+
+#### Decision
+- EN tab은 profile/dispatcher construction까지 resolver-backed로 전환했지만, `calculate_en()`의 실제 UI 계산 출력은 별도 EN UI calculation task로 유지한다.
+- Adapter implementation은 AHRI SEER2 result envelope 첫 slice로 제한한다. `CalculatorInputEnvelope`, ranking, ML / inverse-search caller 구현은 아직 시작하지 않는다.
+
+### Follow-up — Hong Kong HSPF profile registration
+
+#### Result
+- `core/calculator_profiles.py`에 `hong_kong_hspf` profile (`standard=ISO_16358`, `region=hong_kong`, `metric=HSPF`, `mode=heating`, `calculator_id=iso16358`, `config_path=data/region_configs/hong_kong.json`, `enabled=True`)을 추가했다. `hong_kong_cspf`와 동일 config를 공유하되 metric/mode만 분리한다.
+- `tests/test_calculator_profiles.py`에 profile_id resolve, selector resolve, CSPF/HSPF 독립 resolve guard를 추가하고 enabled profile list snapshot에 `hong_kong_hspf`를 포함했다.
+- `tests/test_calculator_dispatcher.py`의 ISO profile parametrize에 `hong_kong_hspf`를 포함하고, dispatcher가 `ISO16358Calculator`를 생성해 `calculate_hspf` smoke (HK golden case 1, hspf≈3.643)을 수행하는 케이스를 추가했다.
+- `core/calculator_dispatcher.py`는 수정하지 않았다 (`calculator_id=iso16358` 경로가 이미 ISO16358Calculator를 생성).
+
+#### Verification
+- Targeted: `tests/test_calculator_profiles.py tests/test_calculator_dispatcher.py tests/test_iso16358_hspf_hong_kong_config.py tests/test_iso16358_hspf_official_exact_golden.py tests/test_calculator_schema_boundaries.py` → 70 passed.
+- Full suite: `430 passed, 4 skipped, 23 xfailed`.
+
+#### Decision
+- Hong Kong HSPF는 core/config/test + profile resolve + dispatcher smoke까지 완료 상태로 둔다. UI surface는 아직 만들지 않으며 ISO HSPF horizontal table input은 별도 task로 유지한다.
+- ML/envelope/unit adapter coverage는 ISO HSPF 미포함 상태를 유지한다 (다음 sequence의 unit adapter 확장 시점에 함께 다룬다).

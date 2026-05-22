@@ -42,8 +42,11 @@ def create_calculator_for_profile(
     Supported ``calculator_id`` values:
 
     - ``ks_c9306`` → ``core.calculator_ks_c9306.KSC9306Calculator.from_config_path(profile.config_path)``
+    - ``iso16358`` → ``core.calculator_iso16358.ISO16358Calculator(profile.config_path)``
     - ``ahri_seer2`` → ``core.calculator_ahri_seer2.AHRICalculator(profile.config_path)``
     - ``ahri_hspf2`` → ``core.calculator_ahri_hspf2.AHRIHSPF2Calculator(profile.config_path)``
+    - ``en14825`` → ``core.calculator_en14825.EN14825Calculator(profile.config_path)``
+    - ``asnzs_excel_hspf`` → ``core.calculator_asnzs_hspf_excel.ASNZSExcelHSPFCompatibilityCalculator()``
 
     Any other ``calculator_id`` raises ``ValueError``.
     """
@@ -63,6 +66,11 @@ def create_calculator_for_profile(
 
         return KSC9306Calculator.from_config_path(config_path)
 
+    if calculator_id == "iso16358":
+        from core.calculator_iso16358 import ISO16358Calculator
+
+        return ISO16358Calculator(config_path)
+
     if calculator_id == "ahri_seer2":
         from core.calculator_ahri_seer2 import AHRICalculator
 
@@ -72,6 +80,16 @@ def create_calculator_for_profile(
         from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
 
         return AHRIHSPF2Calculator(config_path)
+
+    if calculator_id == "en14825":
+        from core.calculator_en14825 import EN14825Calculator
+
+        return EN14825Calculator(config_path)
+
+    if calculator_id == "asnzs_excel_hspf":
+        from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
+
+        return ASNZSExcelHSPFCompatibilityCalculator()
 
     raise ValueError(
         f"Unsupported calculator_id for dispatcher: {calculator_id!r} "

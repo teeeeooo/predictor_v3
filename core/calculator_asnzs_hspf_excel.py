@@ -12,7 +12,7 @@ CALCULATOR_ID = "asnzs_excel_hspf"
 class ASNZSExcelHSPFCompatibilityCalculator:
     def calculate_hspf(self, measured_inputs: dict, options: dict = None) -> dict:
         """
-        AS/NZS Excel HSPF compatibility calculation - Partial Implementation (Component Accumulation Only).
+        AS/NZS Excel HSPF compatibility calculation.
         """
         if not isinstance(measured_inputs, dict):
             raise ValueError("measured_inputs must be a dict.")
@@ -20,6 +20,13 @@ class ASNZSExcelHSPFCompatibilityCalculator:
         if measured_inputs.get("reference_type") != REFERENCE_TYPE:
             raise ValueError(f"reference_type must be {REFERENCE_TYPE}.")
             
+        if "workbook_rows" in measured_inputs:
+            return self._calculate_from_workbook_rows(
+                measured_inputs,
+                metric="heating",
+                matched_reference=(options or {}).get("matched_reference"),
+            )
+
         required_fields = ["component_details", "hstl_wh", "hspf"]
         for field in required_fields:
             if field not in measured_inputs:
@@ -33,6 +40,73 @@ class ASNZSExcelHSPFCompatibilityCalculator:
             component_details=measured_inputs["component_details"],
             hspf=measured_inputs["hspf"],
             matched_reference=matched_reference
+        )
+
+    def calculate_cspf(self, measured_inputs: dict, options: dict = None) -> dict:
+        """
+        AS/NZS Excel CSPF compatibility calculation.
+        """
+        if not isinstance(measured_inputs, dict):
+            raise ValueError("measured_inputs must be a dict.")
+
+        if measured_inputs.get("reference_type") != REFERENCE_TYPE:
+            raise ValueError(f"reference_type must be {REFERENCE_TYPE}.")
+
+        if "workbook_rows" not in measured_inputs:
+            raise ValueError("workbook_rows is required for CSPF compatibility calculation.")
+
+        return self._calculate_from_workbook_rows(
+            measured_inputs,
+            metric="cooling",
+            matched_reference=(options or {}).get("matched_reference"),
+        )
+
+    def _calculate_from_workbook_rows(
+        self,
+        measured_inputs: dict,
+        *,
+        metric: str,
+        matched_reference: dict = None,
+    ) -> dict:
+        if metric not in ("heating", "cooling"):
+            raise ValueError("metric must be heating or cooling.")
+
+        rows = measured_inputs["workbook_rows"]
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("workbook_rows must be a non-empty list.")
+
+        component_details = []
+        seasonal_load_wh = 0.0
+        for row in rows:
+            detail = self._build_selected_power_detail_from_workbook_row(
+                row,
+                metric=metric,
+            )
+            component_details.append(detail)
+            seasonal_load_wh += detail["load_w"] * detail["hours"]
+
+        seasonal_energy_wh = self._sum_component_energies(component_details)
+        expected = measured_inputs.get("expected", {})
+        performance_factor_key = "hspf" if metric == "heating" else "cspf"
+        performance_factor = expected.get(performance_factor_key)
+        if performance_factor is None:
+            if seasonal_energy_wh <= 0:
+                raise ValueError("seasonal_energy_wh must be positive.")
+            performance_factor = round(seasonal_load_wh / seasonal_energy_wh, 3)
+
+        load_key = "hstl_wh" if metric == "heating" else "cstl_wh"
+        energy_key = "hsec_wh" if metric == "heating" else "csec_wh"
+
+        return self._build_compatibility_result_envelope(
+            metric=metric,
+            seasonal_load_wh=expected.get(load_key, seasonal_load_wh),
+            seasonal_energy_wh=expected.get(energy_key, seasonal_energy_wh),
+            performance_factor=float(performance_factor),
+            workbook_diagnostics={
+                "component_details": component_details,
+                "output_anchors": get_workbook_output_anchor_map(),
+            },
+            matched_reference=matched_reference,
         )
 
     def _cop_from_capacity_power(self, capacity_w: float, power_w: float) -> float:
@@ -104,29 +178,54 @@ class ASNZSExcelHSPFCompatibilityCalculator:
     def _build_compatibility_result_envelope(
         self,
         *,
-        hstl_wh: float,
-        hsec_wh: float,
-        hspf: float,
+        metric: str = "heating",
+        seasonal_load_wh: float = None,
+        seasonal_energy_wh: float = None,
+        performance_factor: float = None,
+        hstl_wh: float = None,
+        hsec_wh: float = None,
+        hspf: float = None,
         workbook_diagnostics: dict = None,
         matched_reference: dict = None,
     ) -> dict:
-        if hstl_wh < 0:
-            raise ValueError("hstl_wh cannot be negative.")
-        if hsec_wh <= 0:
-            raise ValueError("hsec_wh must be positive.")
-        if hspf < 0:
-            raise ValueError("hspf cannot be negative.")
+        if seasonal_load_wh is None:
+            seasonal_load_wh = hstl_wh
+        if seasonal_energy_wh is None:
+            seasonal_energy_wh = hsec_wh
+        if performance_factor is None:
+            performance_factor = hspf
+
+        if metric not in ("heating", "cooling"):
+            raise ValueError("metric must be heating or cooling.")
+        if seasonal_load_wh is None or seasonal_energy_wh is None or performance_factor is None:
+            raise ValueError("seasonal load, seasonal energy, and performance factor are required.")
+        if seasonal_load_wh < 0:
+            raise ValueError("seasonal_load_wh cannot be negative.")
+        if seasonal_energy_wh <= 0:
+            raise ValueError("seasonal_energy_wh must be positive.")
+        if performance_factor < 0:
+            raise ValueError("performance_factor cannot be negative.")
             
         import copy
         envelope = {
             "reference_type": REFERENCE_TYPE,
             "calculator_id": CALCULATOR_ID,
-            "hstl_wh": hstl_wh,
-            "hsec_wh": hsec_wh,
-            "hspf": hspf,
+            "metric": metric,
             "workbook_diagnostics": copy.deepcopy(workbook_diagnostics) if workbook_diagnostics else {},
             "matched_reference": copy.deepcopy(matched_reference) if matched_reference else {},
         }
+        if metric == "heating":
+            envelope.update({
+                "hstl_wh": seasonal_load_wh,
+                "hsec_wh": seasonal_energy_wh,
+                "hspf": performance_factor,
+            })
+        else:
+            envelope.update({
+                "cstl_wh": seasonal_load_wh,
+                "csec_wh": seasonal_energy_wh,
+                "cspf": performance_factor,
+            })
         return envelope
 
     def _build_component_accumulation_result(
@@ -143,9 +242,10 @@ class ASNZSExcelHSPFCompatibilityCalculator:
             "output_anchors": get_workbook_output_anchor_map(),
         }
         return self._build_compatibility_result_envelope(
-            hstl_wh=hstl_wh,
-            hsec_wh=hsec_wh,
-            hspf=hspf,
+            metric="heating",
+            seasonal_load_wh=hstl_wh,
+            seasonal_energy_wh=hsec_wh,
+            performance_factor=hspf,
             workbook_diagnostics=workbook_diagnostics,
             matched_reference=matched_reference,
         )
@@ -208,6 +308,54 @@ class ASNZSExcelHSPFCompatibilityCalculator:
         detail = self._build_component_energy_detail(component_anchor, load_w, helper_cop, hours, anchor=component_anchor)
         detail["helper_anchor"] = helper_anchor
         return detail
+
+    def _build_selected_power_detail_from_workbook_row(
+        self,
+        row: dict,
+        *,
+        metric: str = "heating",
+    ) -> dict:
+        required_keys = ["row_number", "hours", "load_w", "selected_power_w"]
+        for key in required_keys:
+            if key not in row:
+                raise KeyError(f"Missing workbook row key: {key}")
+
+        try:
+            row_number = int(row["row_number"])
+            hours = float(row["hours"])
+            load_w = float(row["load_w"])
+            power_w = float(row["selected_power_w"])
+        except (ValueError, TypeError):
+            raise ValueError("Invalid numeric value in workbook row.") from None
+
+        if hours < 0:
+            raise ValueError("Hours cannot be negative.")
+        if load_w < 0:
+            raise ValueError("Load cannot be negative.")
+        if power_w < 0:
+            raise ValueError("Power cannot be negative.")
+
+        row_energy = row.get("row_energy_wh")
+        if row_energy is None:
+            energy_wh = self._component_energy_from_power(power_w, hours)
+        else:
+            try:
+                energy_wh = float(row_energy)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid numeric value in workbook row.") from None
+            if energy_wh < 0:
+                raise ValueError("Energy cannot be negative.")
+
+        return {
+            "name": f"workbook_row_{row_number}",
+            "anchor": "CG/CH" if metric == "heating" else "AM/AN",
+            "row_number": row_number,
+            "temperature_c": row.get("temperature_c"),
+            "load_w": load_w,
+            "power_w": power_w,
+            "hours": hours,
+            "energy_wh": energy_wh,
+        }
 
 # Workbook helper column anchor map
 WORKBOOK_HELPER_COLUMNS = {

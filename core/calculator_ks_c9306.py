@@ -9,8 +9,8 @@ class KSC9306Calculator:
     """KS C 9306 전용 special calculator.
 
     ISO 16358 common path와 분리된 KS C 9306 CSPF/HSPF 전용 special
-    calculator이다. 현재는 KS C 9306 HSPF 계산 (`calculate_hspf`) 및 ISO16358
-    common path가 delegation으로 호출하는 KS 전용 helper를 보유한다.
+    calculator이다. KS C 9306 HSPF 계산 (`calculate_hspf`)과 KS 전용
+    helper를 이 모듈의 책임으로 둔다.
 
     Behavior-preserving extraction: 이 클래스는 기존
     ``ISO16358Calculator``의 ``_ks_hspf_*`` / ``_calculate_ks_c9306_hspf``
@@ -22,7 +22,6 @@ class KSC9306Calculator:
         self.bin_hours = bin_hours if bin_hours is not None else config.get("bin_hours", [])
         self.Cd = default_cd
         self._config_path = None
-        self._iso_calculator_ref = None
 
     @classmethod
     def from_config_path(cls, config_path: str) -> "KSC9306Calculator":
@@ -37,16 +36,6 @@ class KSC9306Calculator:
             default_cd=config.get("Cd", 0.25),
         )
         instance._config_path = config_path
-        return instance
-
-    @classmethod
-    def from_iso_calculator(cls, iso_calculator) -> "KSC9306Calculator":
-        instance = cls.__new__(cls)
-        instance.config = iso_calculator.config
-        instance.bin_hours = iso_calculator.bin_hours
-        instance.Cd = iso_calculator.Cd
-        instance._config_path = None
-        instance._iso_calculator_ref = iso_calculator
         return instance
 
     # ------------------------------------------------------------------

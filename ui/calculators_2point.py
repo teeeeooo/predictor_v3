@@ -9,7 +9,79 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QModelIndex, QVariant,
                           pyqtSignal, QTimer, QEvent, QItemSelectionModel)
 from PyQt5.QtGui import QPainter, QPen, QColor, QFont, QKeySequence, QBrush
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculator_dispatcher import create_calculator_for_profile
+from ui.spreadsheet_table import (
+    INVALID_CELL_BACKGROUND_RGB,
+    INVALID_CELL_TOOLTIP,
+    format_tsv,
+)
+
+
+def selected_cells_to_tsv(model, cells):
+    """Bounding-rectangle TSV for the given cells of any QAbstractTableModel.
+
+    DisplayRole drives the serialization; out-of-range cells render as
+    empty strings. Non-rectangular selections expand to their bounding
+    rectangle (contract §7).
+    """
+    cell_list = [(r, c) for r, c in cells]
+    if not cell_list:
+        return ""
+    rows = [r for r, _ in cell_list]
+    cols = [c for _, c in cell_list]
+    r0, r1 = min(rows), max(rows)
+    c0, c1 = min(cols), max(cols)
+    n_rows = model.rowCount() if model is not None else 0
+    n_cols = model.columnCount() if model is not None else 0
+    grid = []
+    for r in range(r0, r1 + 1):
+        line = []
+        for c in range(c0, c1 + 1):
+            if model is None or r < 0 or r >= n_rows or c < 0 or c >= n_cols:
+                line.append("")
+                continue
+            val = model.data(model.index(r, c), Qt.DisplayRole)
+            line.append("" if val is None else str(val))
+        grid.append(line)
+    return format_tsv(grid)
+
+
+class _ReadOnlyCopyMixin:
+    """Adds Ctrl+C TSV copy to a QTableView. Read-only — no paste/clear/undo."""
+
+    def _selected_cell_set(self):
+        sel = self.selectionModel()
+        cells = set()
+        if sel is not None:
+            for idx in sel.selectedIndexes():
+                if idx.isValid():
+                    cells.add((idx.row(), idx.column()))
+        if not cells:
+            cur = self.currentIndex()
+            if cur.isValid():
+                cells.add((cur.row(), cur.column()))
+        return sorted(cells)
+
+    def copy_selection_tsv(self):
+        return selected_cells_to_tsv(self.model(), self._selected_cell_set())
+
+    def copy_selection_to_clipboard(self):
+        QApplication.clipboard().setText(self.copy_selection_tsv())
+
+
+class ReadOnlyCopyTableView(_ReadOnlyCopyMixin, QTableView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection_to_clipboard()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
 
 class TraceTableModel(QAbstractTableModel):
     def __init__(self):
@@ -348,8 +420,12 @@ class TwoPointTableModel(QAbstractTableModel):
             self.dataChanged.emit(self.index(start_row, 1), self.index(start_row + len(lines) - 1, self.columnCount()-1))
             self.recalculate_rows(sorted(list(affected_rows)))
 
-class TwoPointTableView(QTableView):
+class TwoPointTableView(_ReadOnlyCopyMixin, QTableView):
     def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection_to_clipboard()
+            event.accept()
+            return
         if event.matches(QKeySequence.Paste):
             model = self.model()
             if model and hasattr(model, 'paste_tsv'):
@@ -508,7 +584,7 @@ class TraceDetailPanel(QWidget):
         self.iso_graph = BinGraphWidget()
         self.layout_iso.addWidget(self.iso_graph)
         
-        self.iso_table_view = QTableView()
+        self.iso_table_view = ReadOnlyCopyTableView()
         self.iso_table_model = TraceTableModel()
         self.iso_table_view.setModel(self.iso_table_model)
         self.iso_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -531,7 +607,7 @@ class TraceDetailPanel(QWidget):
         self.iseer_graph = BinGraphWidget()
         self.layout_iseer.addWidget(self.iseer_graph)
         
-        self.iseer_table_view = QTableView()
+        self.iseer_table_view = ReadOnlyCopyTableView()
         self.iseer_table_model = TraceTableModel()
         self.iseer_table_view.setModel(self.iseer_table_model)
         self.iseer_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -640,10 +716,24 @@ class ProfileInputGridModel(QAbstractTableModel):
         if role in (Qt.DisplayRole, Qt.EditRole):
             return self._values[row][col]
         if role == Qt.BackgroundRole:
+            if self.is_cell_invalid(row, col):
+                return QBrush(QColor(*INVALID_CELL_BACKGROUND_RGB))
             return QColor("#FFFFFF")
+        if role == Qt.ToolTipRole:
+            if self.is_cell_invalid(row, col):
+                return INVALID_CELL_TOOLTIP
+            return QVariant()
         if role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
         return QVariant()
+
+    def is_cell_invalid(self, row, col):
+        if not (0 <= row < self.rowCount() and 0 <= col < self.columnCount()):
+            return False
+        value = str(self._values[row][col]).strip()
+        if value == "":
+            return False
+        return self._parse_cell(value) is None
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or role != Qt.EditRole:
@@ -729,6 +819,60 @@ class ProfileInputGridModel(QAbstractTableModel):
         self.dataChanged.emit(self.index(min_row, min_col), self.index(max_row, max_col))
         self.values_changed.emit()
 
+    def selected_to_tsv(self, selection):
+        cells = list(selection)
+        if not cells:
+            return ""
+        rows = [r for r, _ in cells]
+        cols = [c for _, c in cells]
+        top, bottom = min(rows), max(rows)
+        left, right = min(cols), max(cols)
+        if top < 0 or bottom >= self.rowCount():
+            return ""
+        if left < 0 or right >= self.columnCount():
+            return ""
+        grid = [
+            self._values[r][left:right + 1]
+            for r in range(top, bottom + 1)
+        ]
+        return format_tsv(grid)
+
+    def clear_cells(self, selection):
+        cells = []
+        seen = set()
+        for row, col in selection:
+            if (row, col) in seen:
+                continue
+            if 0 <= row < self.rowCount() and 0 <= col < self.columnCount():
+                seen.add((row, col))
+                cells.append((row, col))
+        if not cells:
+            return 0
+        undo_entry = []
+        cleared = 0
+        self._bulk_updating = True
+        try:
+            for row, col in cells:
+                old_value = self._values[row][col]
+                if old_value != "":
+                    undo_entry.append((row, col, old_value))
+                    self._values[row][col] = ""
+                    cleared += 1
+        finally:
+            self._bulk_updating = False
+        if cleared:
+            self._undo_stack.append(undo_entry)
+            min_row = min(r for r, _ in cells)
+            max_row = max(r for r, _ in cells)
+            min_col = min(c for _, c in cells)
+            max_col = max(c for _, c in cells)
+            self.dataChanged.emit(
+                self.index(min_row, min_col),
+                self.index(max_row, max_col),
+            )
+            self.values_changed.emit()
+        return cleared
+
     def parsed_points(self, required_keys=None):
         required = set(required_keys or [key for _, key in self._points])
         parsed = {}
@@ -773,11 +917,24 @@ class ProfileInputGridDelegate(QStyledItemDelegate):
         return editor
 
     def eventFilter(self, editor, event):
-        if event.type() == QEvent.KeyPress and event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self.commitData.emit(editor)
-            self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
-            self.view.move_to_next_cell()
-            return True
+        if event.type() == QEvent.KeyPress:
+            key = event.key()
+            shift = bool(event.modifiers() & Qt.ShiftModifier)
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                self.commitData.emit(editor)
+                self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
+                self.view.move_active_cell("up" if shift else "down")
+                return True
+            if key == Qt.Key_Tab:
+                self.commitData.emit(editor)
+                self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
+                self.view.move_active_cell("left" if shift else "right")
+                return True
+            if key == Qt.Key_Backtab:
+                self.commitData.emit(editor)
+                self.closeEditor.emit(editor, QAbstractItemDelegate.NoHint)
+                self.view.move_active_cell("left")
+                return True
         return super().eventFilter(editor, event)
 
 
@@ -827,6 +984,10 @@ class ProfileInputGridView(QTableView):
         self.setFixedHeight(max(height, 90))
 
     def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            self.copy_selection_to_clipboard()
+            event.accept()
+            return
         if event.matches(QKeySequence.Paste):
             model = self.model()
             indexes = self.selectedIndexes()
@@ -842,28 +1003,110 @@ class ProfileInputGridView(QTableView):
             if model and hasattr(model, "undo"):
                 model.undo()
             return
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self.move_to_next_cell()
+        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            self.clear_selection()
+            event.accept()
+            return
+        key = event.key()
+        shift = bool(event.modifiers() & Qt.ShiftModifier)
+        if key in (Qt.Key_Return, Qt.Key_Enter):
+            self.move_active_cell("up" if shift else "down")
+            return
+        if key == Qt.Key_Tab:
+            self.move_active_cell("left" if shift else "right")
+            return
+        if key == Qt.Key_Backtab:
+            self.move_active_cell("left")
             return
         super().keyPressEvent(event)
 
-    def move_to_next_cell(self):
+    def _selected_cells(self):
+        sel_model = self.selectionModel()
+        if sel_model is None:
+            return []
+        return sorted({(idx.row(), idx.column()) for idx in sel_model.selectedIndexes()})
+
+    def copy_selection_tsv(self):
+        model = self.model()
+        if model is None or not hasattr(model, "selected_to_tsv"):
+            return ""
+        cells = self._selected_cells()
+        if not cells:
+            current = self.currentIndex()
+            if current.isValid():
+                cells = [(current.row(), current.column())]
+        return model.selected_to_tsv(cells)
+
+    def copy_selection_to_clipboard(self):
+        text = self.copy_selection_tsv()
+        if text:
+            QApplication.clipboard().setText(text)
+
+    def clear_selection(self):
+        model = self.model()
+        if model is None or not hasattr(model, "clear_cells"):
+            return 0
+        cells = self._selected_cells()
+        if not cells:
+            current = self.currentIndex()
+            if current.isValid():
+                cells = [(current.row(), current.column())]
+        if not cells:
+            return 0
+        return model.clear_cells(cells)
+
+    def next_navigation_index(self, row, col, direction):
+        model = self.model()
+        if model is None:
+            return row, col
+        rows = model.rowCount()
+        cols = model.columnCount()
+        if rows <= 0 or cols <= 0:
+            return row, col
+        if direction == "right":
+            if col + 1 < cols:
+                return row, col + 1
+            if row + 1 < rows:
+                return row + 1, 0
+            return row, col
+        if direction == "left":
+            if col - 1 >= 0:
+                return row, col - 1
+            if row - 1 >= 0:
+                return row - 1, cols - 1
+            return row, col
+        if direction == "down":
+            if row + 1 < rows:
+                return row + 1, col
+            if col + 1 < cols:
+                return 0, col + 1
+            return row, col
+        if direction == "up":
+            if row - 1 >= 0:
+                return row - 1, col
+            if col - 1 >= 0:
+                return rows - 1, col - 1
+            return row, col
+        return row, col
+
+    def move_active_cell(self, direction):
         model = self.model()
         current = self.currentIndex()
         if not model or not current.isValid():
             return
-        row = current.row()
-        col = current.column() + 1
-        if col >= model.columnCount():
-            col = 0
-            row += 1
-        if row >= model.rowCount():
-            row = model.rowCount() - 1
-            col = model.columnCount() - 1
-        next_index = model.index(row, col)
+        new_row, new_col = self.next_navigation_index(
+            current.row(), current.column(), direction
+        )
+        next_index = model.index(new_row, new_col)
         self.setCurrentIndex(next_index)
-        self.selectionModel().select(next_index, QItemSelectionModel.ClearAndSelect)
+        sel_model = self.selectionModel()
+        if sel_model is not None:
+            sel_model.select(next_index, QItemSelectionModel.ClearAndSelect)
         self.edit(next_index)
+
+    def move_to_next_cell(self):
+        # Backwards-compatible alias: contract §10 — Enter moves down.
+        self.move_active_cell("down")
 
 
 class RegionResultTableModel(QAbstractTableModel):
@@ -941,7 +1184,7 @@ class RegionDetailTab(QWidget):
         layout.addWidget(self.graph)
 
         self.table_model = TraceTableModel()
-        self.table = QTableView()
+        self.table = ReadOnlyCopyTableView()
         self.table.setModel(self.table_model)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setMinimumHeight(260)
@@ -1035,7 +1278,6 @@ class IsoCspfSingleWidget(QWidget):
         super().__init__(parent)
         self.config_dir = config_dir
         self.calculators = {}
-        self.saso_path = os.path.join(self.config_dir, "saso.json")
         self.results = {}
         self._updating_profile = False
         self._load_calculators()
@@ -1043,14 +1285,14 @@ class IsoCspfSingleWidget(QWidget):
         self._apply_profile()
 
     def _load_calculators(self):
-        paths = {
-            "iso": "iso_t1_default_2point.json",
-            "india": "india_iseer.json",
-            "hong_kong": "hong_kong.json",
-            "saso": "saso.json",
+        profiles = {
+            "iso": "iso_t1_default_2point_cspf",
+            "india": "india_iseer_cspf",
+            "hong_kong": "hong_kong_cspf",
+            "saso": "saso_t3_cspf",
         }
-        for key, filename in paths.items():
-            self.calculators[key] = ISO16358Calculator(os.path.join(self.config_dir, filename))
+        for key, profile_id in profiles.items():
+            self.calculators[key] = create_calculator_for_profile(profile_id=profile_id)
 
     def _init_ui(self):
         self.setStyleSheet("""
@@ -1086,7 +1328,7 @@ class IsoCspfSingleWidget(QWidget):
         result_layout = QVBoxLayout(result_panel)
         result_layout.addWidget(QLabel("Region/Profile 결과"))
         self.result_model = RegionResultTableModel()
-        self.result_table = QTableView()
+        self.result_table = ReadOnlyCopyTableView()
         self.result_table.setModel(self.result_model)
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.result_table.verticalHeader().setVisible(False)
@@ -1307,7 +1549,7 @@ class IsoCspfSingleWidget(QWidget):
         self._update_detail_tabs()
 
     def _saso_calculator(self, use_min):
-        calculator = ISO16358Calculator(self.saso_path)
+        calculator = create_calculator_for_profile(profile_id="saso_t3_cspf")
         if not use_min:
             calculator.config.setdefault("cspf_test_profile", {})["test_selection"] = "required_only"
         return calculator

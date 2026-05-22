@@ -46,9 +46,11 @@ UI 경계:
 - `QTableWidget`을 새로 쓰지 않고 `QTableView` + `QAbstractTableModel`을 사용한다.
 - `setCellWidget`을 새로 쓰지 않고 `QStyledItemDelegate`를 사용한다.
 - `blockSignals`는 반드시 `try/finally`로 감싼다.
+- table UI를 생성/수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 따른다. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 여기서 단일 owner로 관리한다.
 - UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
 
 문서 경계:
+- 문서 업데이트 범위가 둘 이상이면 먼저 `ACTIVE_DOCUMENTS.md`에서 active document owner와 inbound/outbound 관계를 확인한다.
 - `docs` 폴더 내 `*_notes.md` 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`의 필요한 범위를 확인한다.
 - `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 고위험 작업에서 상세 배경이 필요한 경우에만 제한적으로 확인한다.
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
@@ -234,6 +236,11 @@ Lightweight documentation gate 원칙:
 
 commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 문서의 수명주기를 함께 판단한다.
 1차 판단은 문서 읽기 없이 파일명, diff stat, 변경 성격, 사용자의 명시 요청을 기준으로 수행한다.
+
+0. `ACTIVE_DOCUMENTS.md`
+   - 문서 업데이트 요청, docs lifecycle 작업, 여러 문서에 걸친 변경이면 먼저 active document owner와 inbound/outbound 관계를 확인한다.
+   - 새 active 문서를 만들거나 archive로 이동하면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
+   - 단일 코드 변경만 있고 문서 갱신 요청이 없으면 이 파일을 읽지 않아도 된다.
 
 1. `project_log.md`
    - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
@@ -489,12 +496,13 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 UI 코드의 필요한 클래스/함수 범위
 
 조건부로 읽을 문서:
+- table UI 생성/수정 시 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`
 - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
 - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다.
+2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 contract와 §13 checklist를 먼저 확인한다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.

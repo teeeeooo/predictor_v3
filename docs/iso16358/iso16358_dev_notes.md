@@ -164,7 +164,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 
 | Test type | Purpose | Required cases |
 | --- | --- | --- |
-| HSPF golden | official/sample HSPF fixture가 유지되는지 확인한다. | `tests/test_iso16358_hspf_golden.py` |
+| HSPF golden | official/sample HSPF fixture가 유지되는지 확인한다. | `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` |
 | HSPF validation | required point, load_line schema, fallback 정책을 검증한다. | `tests/test_iso16358_hspf_validation.py` |
 | HSPF smoke | generic/variable path와 aux_cop denominator 처리를 빠르게 확인한다. | `tests/test_iso16358_hspf_smoke.py` |
 | Korea CSPF regression | KS CSPF `6.504`가 유지되는지 확인한다. | one-liner 또는 golden fixture |

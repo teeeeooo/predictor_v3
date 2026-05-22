@@ -1,66 +1,42 @@
-# core/calculator_iso16358.py
+"""ISO 16358 CSPF/HSPF common standard calculator."""
 
 import json
 import os
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
-from core.calculator_ks_c9306 import KSC9306Calculator
 
 class ISO16358Calculator:
-    """
-    ISO 16358 기반 동적 효율(CSPF) 계산 엔진
-    지역별 JSON 설정 파일을 바탕으로 N-Point(2-point, 3-point 등) 모델을 동적으로 처리합니다.
-    """
-    
+    """ISO 16358 common calculator, without KS or AS/NZS responsibilities."""
+
     def __init__(self, config_path: str):
-        """
-        주어진 JSON 설정 파일 경로를 읽어 계산기의 동적 규칙을 초기화합니다.
-        
-        Args:
-            config_path (str): 지역별 설정 파일 경로 (예: "data/region_configs/thailand.json")
-        """
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"설정 파일을 찾을 수 없습니다: {config_path}")
-            
-        with open(config_path, 'r', encoding='utf-8') as f:
+
+        with open(config_path, "r", encoding="utf-8") as f:
             self.config = json.load(f)
-            
-        # 메타데이터(_comment 등) 명시적 제거
+
         self.config.pop("_comment", None)
-            
-        # 설정된 기본 환경 변수 파싱
+
         self.t_100_load = self.config.get("t_100_load", 35.0)
         self.t_0_load = self.config.get("t_0_load", 20.0)
         self.Cd = self.config.get("Cd", 0.25)
         self.building_load_source = self.config.get("building_load_source", "measured")
         self.reference_point = self.config.get("reference_point", "35_full")
+        self.power_interpolation_method = self.config.get(
+            "power_interpolation_method", "capacity_linear"
+        )
+        self.iso_boundary_temperature_rounding = self.config.get(
+            "iso_boundary_temperature_rounding", None
+        )
         self.round_test_values = self.config.get("round_test_values", False)
         self.rounding_method = self.config.get("rounding_method", None)
-        self.power_interpolation_method = self.config.get("power_interpolation_method", "capacity_linear")
-        self.iso_boundary_temperature_rounding = self.config.get("iso_boundary_temperature_rounding", None)
-        self.half_capacity_recommendation = self.config.get("half_capacity_recommendation", {})
-        
-        # 포인트 활성화 및 파생 규칙, 온도 Bin 테이블 파싱
+
         self.points_config = self.config.get("points", {})
         self.derived_rules = self.config.get("derived_rules", {})
         self.bin_hours = self.config.get("bin_hours", [])
 
     def _round_test_value(self, value: float) -> int:
-        """
-        KS C 9306 시험값 정수 반올림용 helper입니다.
-        Python round()의 bankers rounding을 피하기 위해 ROUND_HALF_UP을 사용합니다.
-        """
         return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-
-    def _round_iso_boundary_temperature(self, value: float) -> float:
-        if self.iso_boundary_temperature_rounding is None:
-            return value
-        if self.iso_boundary_temperature_rounding == "excel_round_0":
-            return float(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-        raise ValueError(
-            "Unsupported iso_boundary_temperature_rounding: "
-            f"{self.iso_boundary_temperature_rounding}."
-        )
 
     def _prepare_measured_inputs(self, measured_inputs: dict) -> dict:
         if not self.round_test_values:
@@ -83,6 +59,18 @@ class ISO16358Calculator:
                     prepared[point_key][data_key] = value
 
         return prepared
+
+    def _round_iso_boundary_temperature(self, value: float) -> float:
+        if self.iso_boundary_temperature_rounding is None:
+            return value
+        if self.iso_boundary_temperature_rounding == "excel_round_0":
+            return float(
+                Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+            )
+        raise ValueError(
+            "Unsupported iso_boundary_temperature_rounding: "
+            f"{self.iso_boundary_temperature_rounding}."
+        )
 
     def _has_cspf_test_profile(self) -> bool:
         return "cspf_test_profile" in self.config
@@ -110,172 +98,167 @@ class ISO16358Calculator:
         profile_cfg = self.config.get("cspf_test_profile", {})
         climate = profile_cfg.get("climate_profile")
         selection = profile_cfg.get("test_selection")
-        
-        resolved = {k: v for k, v in measured.items()}
-        
+
+        resolved = {k: dict(v) if isinstance(v, dict) else v for k, v in measured.items()}
+
         def _set_point(key, cap, pwr):
             if key not in resolved:
                 resolved[key] = {"capacity": cap, "power": pwr}
 
         if climate == "T1":
-            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
-            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            _set_point(
+                "29_full",
+                resolved["35_full"]["capacity"] * 1.077,
+                resolved["35_full"]["power"] * 0.914,
+            )
+            _set_point(
+                "29_half",
+                resolved["35_half"]["capacity"] * 1.077,
+                resolved["35_half"]["power"] * 0.914,
+            )
             if selection == "with_optional_test":
-                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
-        
+                _set_point(
+                    "29_min",
+                    resolved["35_min"]["capacity"] * 1.077,
+                    resolved["35_min"]["power"] * 0.914,
+                )
         elif climate == "T3":
-            _set_point("46_half", resolved["35_half"]["capacity"] * 0.859, resolved["35_half"]["power"] * 1.25)
-            _set_point("29_full", resolved["35_full"]["capacity"] * 1.077, resolved["35_full"]["power"] * 0.914)
-            _set_point("29_half", resolved["35_half"]["capacity"] * 1.077, resolved["35_half"]["power"] * 0.914)
+            _set_point(
+                "46_half",
+                resolved["35_half"]["capacity"] * 0.859,
+                resolved["35_half"]["power"] * 1.25,
+            )
+            _set_point(
+                "29_full",
+                resolved["35_full"]["capacity"] * 1.077,
+                resolved["35_full"]["power"] * 0.914,
+            )
+            _set_point(
+                "29_half",
+                resolved["35_half"]["capacity"] * 1.077,
+                resolved["35_half"]["power"] * 0.914,
+            )
             if selection == "with_optional_test":
-                _set_point("46_min", resolved["35_min"]["capacity"] * 0.859, resolved["35_min"]["power"] * 1.25)
-                _set_point("29_min", resolved["35_min"]["capacity"] * 1.077, resolved["35_min"]["power"] * 0.914)
-        
+                _set_point(
+                    "46_min",
+                    resolved["35_min"]["capacity"] * 0.859,
+                    resolved["35_min"]["power"] * 1.25,
+                )
+                _set_point(
+                    "29_min",
+                    resolved["35_min"]["capacity"] * 1.077,
+                    resolved["35_min"]["power"] * 0.914,
+                )
+
         return resolved
 
     def resolve_points(self, measured_inputs: dict) -> dict:
-        """
-        입력된 측정값(measure)과 JSON의 파생 규칙(default)을 해석하여
-        계산에 필요한 모든 포인트의 딕셔너리를 완성합니다.
-        
-        Args:
-            measured_inputs (dict): UI에서 입력받은 측정값
-        Returns:
-            dict: 모든 포인트가 채워진 딕셔너리
-        """
         if self._has_cspf_test_profile():
             return self._resolve_cspf_profile_points(measured_inputs)
 
         resolved = {}
-
-        # 1. "measure" 포인트 우선 처리
         for point_key, point_type in self.points_config.items():
-            if point_type == "measure":
-                if point_key not in measured_inputs:
-                    raise ValueError(f"필수 측정값 누락: '{point_key}' 포인트 데이터가 없습니다.")
+            if point_type != "measure":
+                continue
+            if point_key not in measured_inputs:
+                raise ValueError(f"필수 측정값 누락: '{point_key}' 포인트 데이터가 없습니다.")
 
-                point_data = measured_inputs[point_key]
-                if not isinstance(point_data, dict):
+            point_data = measured_inputs[point_key]
+            if not isinstance(point_data, dict):
+                raise ValueError(
+                    f"Invalid measured point '{point_key}': expected dict with capacity and power."
+                )
+
+            validated_point = dict(point_data)
+            for numeric_key in ("capacity", "power"):
+                if numeric_key not in point_data:
                     raise ValueError(
-                        f"Invalid measured point '{point_key}': expected dict with capacity and power."
+                        f"Invalid measured point '{point_key}': "
+                        f"missing required field '{numeric_key}'."
                     )
+                try:
+                    numeric_value = float(point_data[numeric_key])
+                except (TypeError, ValueError):
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': {numeric_key} must be numeric."
+                    ) from None
+                if numeric_value <= 0:
+                    raise ValueError(
+                        f"Invalid measured point '{point_key}': {numeric_key} must be positive."
+                    )
+                validated_point[numeric_key] = numeric_value
+            resolved[point_key] = validated_point
 
-                for required_key in ("capacity", "power"):
-                    if required_key not in point_data:
-                        raise ValueError(
-                            f"Invalid measured point '{point_key}': "
-                            f"missing required field '{required_key}'."
-                        )
-
-                validated_point = dict(point_data)
-                for numeric_key in ("capacity", "power"):
-                    try:
-                        numeric_value = float(point_data[numeric_key])
-                    except (TypeError, ValueError):
-                        raise ValueError(
-                            f"Invalid measured point '{point_key}': {numeric_key} must be numeric."
-                        ) from None
-
-                    if numeric_value <= 0:
-                        raise ValueError(
-                            f"Invalid measured point '{point_key}': {numeric_key} must be positive."
-                        )
-                    validated_point[numeric_key] = numeric_value
-
-                resolved[point_key] = validated_point
-
-        # 2. "default" 포인트 처리 (연쇄 파생 규칙 대응 루프)
         for _ in range(len(self.points_config)):
             for point_key, point_type in self.points_config.items():
-                if point_type == "default" and point_key not in resolved:
-                    rule = self.derived_rules.get(point_key)
-                    if not rule:
-                        continue
-                    
-                    source_key = rule.get("source")
-                    if source_key in resolved:
-                        source_data = resolved[source_key]
-                        cap_factor = rule.get("capacity_factor", 1.0)
-                        pow_factor = rule.get("power_factor", 1.0)
-                        
-                        resolved[point_key] = {
-                            "capacity": source_data["capacity"] * cap_factor,
-                            "power": source_data["power"] * pow_factor
-                        }
-                        if self.round_test_values:
-                            resolved[point_key]["capacity"] = self._round_test_value(resolved[point_key]["capacity"])
-                            resolved[point_key]["power"] = self._round_test_value(resolved[point_key]["power"])
+                if point_type != "default" or point_key in resolved:
+                    continue
+                rule = self.derived_rules.get(point_key)
+                if not rule:
+                    continue
+                source_key = rule.get("source")
+                if source_key not in resolved:
+                    continue
+                source_data = resolved[source_key]
+                resolved[point_key] = {
+                    "capacity": source_data["capacity"] * rule.get("capacity_factor", 1.0),
+                    "power": source_data["power"] * rule.get("power_factor", 1.0),
+                }
 
-        # 3. 순환 참조 감지 및 에러 처리
         unresolved = [
             k for k, t in self.points_config.items()
             if t == "default" and k not in resolved
         ]
         if unresolved:
-            raise ValueError(f"해결되지 않은 default 포인트: {unresolved}. 순환 참조 또는 source 누락을 확인하세요.")
+            raise ValueError(
+                f"해결되지 않은 default 포인트: {unresolved}. 순환 참조 또는 source 누락을 확인하세요."
+            )
 
         return resolved
 
     def interpolate(self, tj: float, resolved_points: dict) -> dict:
-        """
-        주어진 외기온도(tj)에서의 부하 조건별 능력과 소비전력을 독립적으로 선형 보간/외삽합니다.
-        
-        Args:
-            tj (float): 계산할 Bin 온도
-            resolved_points (dict): resolve_points()에서 완성된 포인트 딕셔너리
-            
-        Returns:
-            dict: 온도 tj에서의 부하 조건별 성능
-        """
         grouped = {}
         for point_key, data in resolved_points.items():
             parts = point_key.split("_")
             if len(parts) != 2:
                 continue
-            
             try:
                 temp = float(parts[0])
                 load_type = parts[1]
             except ValueError:
                 continue
-                
-            if load_type not in grouped:
-                grouped[load_type] = []
-            grouped[load_type].append((temp, data["capacity"], data["power"]))
+            grouped.setdefault(load_type, []).append(
+                (temp, data["capacity"], data["power"])
+            )
 
         interpolated = {}
-
         for load_type, points in grouped.items():
-            points.sort(key=lambda x: x[0])  # 온도 기준 오름차순 정렬
-            
+            points.sort(key=lambda item: item[0])
             if len(points) == 1:
-                interpolated[load_type] = {"capacity": points[0][1], "power": points[0][2]}
+                interpolated[load_type] = {
+                    "capacity": points[0][1],
+                    "power": points[0][2],
+                }
                 continue
 
             if tj <= points[0][0]:
                 t1, c1, p1 = points[0]
                 t2, c2, p2 = points[1]
-                c_tj = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
-                p_tj = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
-                interpolated[load_type] = {"capacity": c_tj, "power": p_tj}
-                continue
-            if tj >= points[-1][0]:
+            elif tj >= points[-1][0]:
                 t1, c1, p1 = points[-2]
                 t2, c2, p2 = points[-1]
-                c_tj = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
-                p_tj = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
-                interpolated[load_type] = {"capacity": c_tj, "power": p_tj}
-                continue
+            else:
+                for i in range(len(points) - 1):
+                    t1, c1, p1 = points[i]
+                    t2, c2, p2 = points[i + 1]
+                    if t1 <= tj <= t2:
+                        break
+                else:
+                    continue
 
-            # 정상 범위 내 선형 보간
-            for i in range(len(points) - 1):
-                t1, c1, p1 = points[i]
-                t2, c2, p2 = points[i+1]
-                if t1 <= tj <= t2:
-                    c_tj = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
-                    p_tj = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
-                    interpolated[load_type] = {"capacity": c_tj, "power": p_tj}
-                    break
+            c_tj = c1 + (c2 - c1) * (tj - t1) / (t2 - t1)
+            p_tj = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
+            interpolated[load_type] = {"capacity": c_tj, "power": p_tj}
 
         return interpolated
 
@@ -283,7 +266,7 @@ class ISO16358Calculator:
         self,
         ref_capacity: float,
         capacity_35: float,
-        capacity_29: float
+        capacity_29: float,
     ) -> float:
         dt = self.t_100_load - self.t_0_load
         denominator = 6 * ref_capacity + (capacity_29 - capacity_35) * dt
@@ -332,7 +315,7 @@ class ISO16358Calculator:
         self,
         resolved_points: dict,
         load_type: str,
-        tj: float
+        tj: float,
     ) -> tuple:
         if tj > 35.0:
             high_temp = 46.0
@@ -383,16 +366,15 @@ class ISO16358Calculator:
     def _iso_boundary_eer_power(
         self,
         tj: float,
-        Lc: float,
+        load: float,
         resolved_points: dict,
         lower_type: str,
-        upper_type: str
+        upper_type: str,
     ) -> float:
         profile_cfg = self.config.get("cspf_test_profile", {})
-        if profile_cfg and profile_cfg.get("climate_profile") == "T3":
+        if profile_cfg.get("climate_profile") == "T3":
             if {lower_type, upper_type} not in ({"min", "half"}, {"half", "full"}):
                 return None
-
             upper_boundary = self._iso_boundary_eer_t3_piecewise(
                 resolved_points, upper_type, tj
             )
@@ -401,86 +383,188 @@ class ISO16358Calculator:
             )
             if upper_boundary is None or lower_boundary is None:
                 return None
-
-            t_upper, eer_upper = upper_boundary
-            t_lower, eer_lower = lower_boundary
-            if t_upper == t_lower:
+            t_upper, upper_eer = upper_boundary
+            t_lower, lower_eer = lower_boundary
+        else:
+            if {lower_type, upper_type} != {"half", "full"}:
                 return None
+            t_upper, upper_eer = self._iso_boundary_eer(resolved_points, upper_type)
+            t_lower, lower_eer = self._iso_boundary_eer(resolved_points, lower_type)
 
-            eer_tj = eer_lower + (eer_upper - eer_lower) / (t_upper - t_lower) * (
-                tj - t_lower
-            )
-            if eer_tj <= 0:
-                return None
-            return Lc / eer_tj
-
-        if {lower_type, upper_type} != {"half", "full"}:
-            return None
-
-        t_upper, eer_upper = self._iso_boundary_eer(resolved_points, upper_type)
-        t_lower, eer_lower = self._iso_boundary_eer(resolved_points, lower_type)
         if t_upper == t_lower:
             return None
-
-        eer_tj = eer_lower + (eer_upper - eer_lower) / (t_upper - t_lower) * (
+        eer_tj = lower_eer + (upper_eer - lower_eer) / (t_upper - t_lower) * (
             tj - t_lower
         )
         if eer_tj <= 0:
             return None
-        return Lc / eer_tj
+        return load / eer_tj
 
-    def recommend_35_half_capacity(self, phi_full_35: float, phi_min_29: float) -> dict:
-        """
-        35°C 중간 운전 능력 목표값 산정을 위한 독립 helper입니다.
-        CSPF 본계산에는 사용하지 않습니다.
-        """
-        if phi_full_35 <= 0 or phi_min_29 <= 0:
-            raise ValueError("phi_full_35 and phi_min_29 must be positive.")
+    def _calculate_cspf_profile(self, measured: dict, load_reference: float) -> dict:
+        resolved = self._resolve_cspf_profile_points(measured)
+        cd = self._get_cspf_profile_cd()
+        delta_t = self.t_100_load - self.t_0_load
+        if delta_t == 0:
+            raise ValueError("t_100_load and t_0_load cannot be equal.")
 
-        config = self.half_capacity_recommendation
-        if not config or not config.get("enabled", False):
-            raise ValueError("half_capacity_recommendation config is required and must be enabled.")
+        cstl = 0.0
+        csec = 0.0
+        bin_details = []
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
+            tj = float(bin_data.get("tj", 0))
+            nj = float(bin_data.get("nj", 0))
+            detail = self._calculate_cspf_bin(idx, tj, nj, load_reference, delta_t, resolved, cd)
+            cstl += detail["cstl_bin"]
+            csec += detail["csec_bin"]
+            bin_details.append(detail)
 
-        min_test_temp = config.get("min_test_temp")
-        full_test_temp = config.get("full_test_temp")
-        factor = config.get("min_capacity_ratio_35_to_29")
-        if min_test_temp is None or full_test_temp is None or factor is None:
-            raise ValueError("half_capacity_recommendation config is incomplete.")
-        if full_test_temp != self.t_100_load:
-            raise ValueError("half_capacity_recommendation full_test_temp must match t_100_load.")
-        if full_test_temp == min_test_temp:
-            raise ValueError("full_test_temp and min_test_temp cannot be equal (division by zero).")
-        if full_test_temp == self.t_0_load:
-            raise ValueError("full_test_temp and t_0_load cannot be equal (division by zero).")
-        if factor == 0:
-            raise ValueError("min_capacity_ratio_35_to_29 cannot be zero (division by zero).")
+        return self._build_cspf_result(cstl, csec, bin_details)
 
-        phi_min_35 = phi_min_29 / factor
-        min_slope = (phi_min_35 - phi_min_29) / (full_test_temp - min_test_temp)
-        min_intercept = phi_min_29 - min_slope * min_test_temp
+    def _calculate_cspf_bin(
+        self,
+        idx: int,
+        tj: float,
+        nj: float,
+        load_reference: float,
+        delta_t: float,
+        resolved_points: dict,
+        cd: float,
+    ) -> dict:
+        if nj <= 0:
+            return self._empty_cspf_bin(idx, tj, nj, 0.0)
 
-        load_slope = phi_full_35 / (full_test_temp - self.t_0_load)
-        load_intercept = -load_slope * self.t_0_load
+        load = load_reference * (tj - self.t_0_load) / delta_t
+        if load <= 0:
+            return self._empty_cspf_bin(idx, tj, nj, load)
 
-        denominator = load_slope - min_slope
-        if denominator == 0:
-            raise ValueError("Cannot calculate T_min because load and minimum capacity are parallel.")
+        interpolated = self.interpolate(tj, resolved_points)
+        loads = [
+            (data["capacity"], data["power"], load_type)
+            for load_type, data in interpolated.items()
+        ]
+        loads.sort(key=lambda item: item[0])
+        if not loads:
+            return self._empty_cspf_bin(idx, tj, nj, load)
 
-        T_min = (min_intercept - load_intercept) / denominator
-        T_mid = (T_min + full_test_temp) / 2.0
-        building_load_at_T_mid = phi_full_35 * (T_mid - self.t_0_load) / (full_test_temp - self.t_0_load)
-        delta = factor - 1.0
-        temp_factor_at_T_mid = 1.0 + delta * (full_test_temp - T_mid) / (full_test_temp - min_test_temp)
-        if temp_factor_at_T_mid == 0:
-            raise ValueError("temp_factor_at_T_mid cannot be zero (division by zero).")
-        recommended_phi_half_35 = building_load_at_T_mid / temp_factor_at_T_mid
+        lowest_cap, lowest_pow, _ = loads[0]
+        highest_cap, highest_pow, _ = loads[-1]
+        cooling_output = load
 
+        if load <= lowest_cap:
+            if lowest_cap <= 0:
+                power = 0.0
+            else:
+                cycling_ratio = load / lowest_cap
+                part_load_factor = max(1e-6, 1.0 - cd * (1.0 - cycling_ratio))
+                power = (cycling_ratio * lowest_pow) / part_load_factor
+        elif load > highest_cap:
+            cooling_output = highest_cap
+            power = highest_pow
+        else:
+            power = None
+            for i in range(len(loads) - 1):
+                c1, p1, lower_type = loads[i]
+                c2, p2, upper_type = loads[i + 1]
+                if c1 < load <= c2:
+                    if self.power_interpolation_method == "iso_boundary_eer":
+                        power = self._iso_boundary_eer_power(
+                            tj, load, resolved_points, lower_type, upper_type
+                        )
+                    if power is not None:
+                        break
+                    if c2 == c1:
+                        power = p1
+                    else:
+                        power = p1 + (p2 - p1) * (load - c1) / (c2 - c1)
+                    break
+            if power is None:
+                power = highest_pow
+
+        eer = cooling_output / power if power > 0 else None
         return {
-            "T_min": T_min,
-            "T_mid": T_mid,
-            "building_load_at_T_mid": building_load_at_T_mid,
-            "recommended_phi_half_35": recommended_phi_half_35
+            "bin_no": idx,
+            "tj": tj,
+            "nj": nj,
+            "lc": load,
+            "capacity": cooling_output,
+            "power": power,
+            "eer": eer,
+            "cstl_bin": cooling_output * nj,
+            "csec_bin": power * nj,
         }
+
+    def _empty_cspf_bin(self, idx: int, tj: float, nj: float, load: float) -> dict:
+        return {
+            "bin_no": idx,
+            "tj": tj,
+            "nj": nj,
+            "lc": load,
+            "capacity": 0.0,
+            "power": 0.0,
+            "eer": None,
+            "cstl_bin": 0.0,
+            "csec_bin": 0.0,
+        }
+
+    def _build_cspf_result(self, cstl: float, csec: float, bin_details: list) -> dict:
+        if csec <= 0:
+            return {
+                "cspf": 0.0,
+                "annual_cooling_kwh": 0.0,
+                "annual_power_kwh": 0.0,
+                "bin_details": bin_details,
+            }
+        return {
+            "cspf": round(cstl / csec, 3),
+            "annual_cooling_kwh": round(cstl / 1000.0, 3),
+            "annual_power_kwh": round(csec / 1000.0, 3),
+            "bin_details": bin_details,
+        }
+
+    def calculate_cspf(
+        self,
+        measured_inputs: dict,
+        declared_capacity: float = None,
+    ) -> dict:
+        if self._has_cspf_test_profile():
+            resolved = self._resolve_cspf_profile_points(measured_inputs)
+            load_reference = resolved[self.reference_point]["capacity"]
+            return self._calculate_cspf_profile(measured_inputs, load_reference)
+
+        resolved_points = self.resolve_points(measured_inputs)
+        if self.building_load_source == "declared":
+            if declared_capacity is None or declared_capacity <= 0:
+                raise ValueError(
+                    "building_load_source가 'declared'인 지역은 "
+                    "declared_capacity(표기 정격 능력)를 입력해야 합니다."
+                )
+            load_reference = declared_capacity
+        else:
+            if self.reference_point not in resolved_points:
+                raise ValueError(
+                    f"Reference point '{self.reference_point}' not found in resolved points. "
+                    f"Check config['reference_point'] or input data."
+                )
+            load_reference = resolved_points[self.reference_point]["capacity"]
+
+        delta_t = self.t_100_load - self.t_0_load
+        if delta_t == 0:
+            raise ValueError("t_100_load and t_0_load cannot be equal.")
+
+        cstl = 0.0
+        csec = 0.0
+        bin_details = []
+        for idx, bin_data in enumerate(self.bin_hours, start=1):
+            tj = float(bin_data.get("tj", 0))
+            nj = float(bin_data.get("nj", 0))
+            detail = self._calculate_cspf_bin(
+                idx, tj, nj, load_reference, delta_t, resolved_points, self.Cd
+            )
+            cstl += detail["cstl_bin"]
+            csec += detail["csec_bin"]
+            bin_details.append(detail)
+
+        return self._build_cspf_result(cstl, csec, bin_details)
 
     def _heating_points(self, measured_inputs: dict) -> list:
         default_temps = {"H1": 7.0, "H2": 2.0, "H3": -7.0}
@@ -623,168 +707,6 @@ class ISO16358Calculator:
         power = p1 + (p2 - p1) * (tj - t1) / (t2 - t1)
         return {"capacity": capacity, "power": power}
 
-    # ------------------------------------------------------------------
-    # KS C 9306 HSPF delegation
-    #
-    # 실제 구현은 ``core/calculator_ks_c9306.py``의 ``KSC9306Calculator``로
-    # 이동했다. 아래 메서드들은 기존 public/private 호출 경로 (tests, UI 등)를
-    # 깨뜨리지 않기 위한 thin wrapper이며, 매 호출마다 ISO 설정을 공유하는
-    # KS calculator를 생성해 동일 동작을 위임한다.
-    # ------------------------------------------------------------------
-
-    def _ks_calculator(self) -> "KSC9306Calculator":
-        return KSC9306Calculator.from_iso_calculator(self)
-
-    def _has_ks_c9306_hspf_input(self, measured_inputs: dict) -> bool:
-        return self._ks_calculator()._has_ks_c9306_hspf_input(measured_inputs)
-
-    def _ks_hspf_input(self, measured_inputs: dict) -> dict:
-        return self._ks_calculator()._ks_hspf_input(measured_inputs)
-
-    def _ks_hspf_config(self) -> dict:
-        return self._ks_calculator()._ks_hspf_config()
-
-    def _ks_hspf_profile_point_path(self, temp_key: str, point_name: str) -> tuple:
-        return self._ks_calculator()._ks_hspf_profile_point_path(temp_key, point_name)
-
-    def _ks_hspf_required_points(self) -> dict:
-        return self._ks_calculator()._ks_hspf_required_points()
-
-    def _validate_ks_hspf_positive_number(self, value, field_path: str) -> None:
-        return self._ks_calculator()._validate_ks_hspf_positive_number(value, field_path)
-
-    def _validate_ks_c9306_hspf_input(self, hspf_input: dict) -> None:
-        return self._ks_calculator()._validate_ks_c9306_hspf_input(hspf_input)
-
-    def _ks_hspf_correction(self, hspf_input: dict, key: str, default: float) -> float:
-        return self._ks_calculator()._ks_hspf_correction(hspf_input, key, default)
-
-    def _ks_hspf_minus7_factor(self, quantity: str, stage: str) -> float:
-        return self._ks_calculator()._ks_hspf_minus7_factor(quantity, stage)
-
-    def _ks_hspf_stage_value(
-        self,
-        hspf_input: dict,
-        quantity: str,
-        stage: str,
-        point: str,
-        required: bool = True
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_stage_value(
-            hspf_input, quantity, stage, point, required=required
-        )
-
-    def _ks_hspf_linear(self, tj: float, t1: float, v1: float, t2: float, v2: float) -> float:
-        return self._ks_calculator()._ks_hspf_linear(tj, t1, v1, t2, v2)
-
-    def _ks_hspf_is_frost_region(self, tj: float) -> bool:
-        return self._ks_calculator()._ks_hspf_is_frost_region(tj)
-
-    def _ks_hspf_capacity_curve(
-        self,
-        tj: float,
-        hspf_input: dict,
-        stage: str,
-        frost: bool = None
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_capacity_curve(tj, hspf_input, stage, frost=frost)
-
-    def _ks_hspf_power_curve(
-        self,
-        tj: float,
-        hspf_input: dict,
-        stage: str,
-        frost: bool = None
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_power_curve(tj, hspf_input, stage, frost=frost)
-
-    def _ks_hspf_stage_curves(self, tj: float, hspf_input: dict) -> dict:
-        return self._ks_calculator()._ks_hspf_stage_curves(tj, hspf_input)
-
-    def _ks_hspf_interpolate_power_for_load(
-        self,
-        load: float,
-        lower_capacity: float,
-        lower_power: float,
-        upper_capacity: float,
-        upper_power: float
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_interpolate_power_for_load(
-            load, lower_capacity, lower_power, upper_capacity, upper_power
-        )
-
-    def _ks_hspf_load_line(self, hspf_input: dict) -> tuple:
-        return self._ks_calculator()._ks_hspf_load_line(hspf_input)
-
-    def _ks_hspf_config_load_line(self, measured_inputs: dict) -> tuple:
-        return self._ks_calculator()._ks_hspf_config_load_line(measured_inputs)
-
-    def _ks_hspf_bin_load(
-        self,
-        bin_data: dict,
-        tj: float,
-        hspf_input: dict,
-        measured_inputs: dict
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_bin_load(
-            bin_data, tj, hspf_input, measured_inputs
-        )
-
-    def _ks_hspf_capacity_line(
-        self,
-        hspf_input: dict,
-        stage: str,
-        frost: bool
-    ) -> tuple:
-        return self._ks_calculator()._ks_hspf_capacity_line(hspf_input, stage, frost)
-
-    def _ks_hspf_intersection_temp(
-        self,
-        hspf_input: dict,
-        stage: str,
-        frost: bool,
-        load_line: tuple
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_intersection_temp(
-            hspf_input, stage, frost, load_line
-        )
-
-    def _ks_hspf_power_by_intersection(
-        self,
-        tj: float,
-        hspf_input: dict,
-        case_name: str,
-        load_line: tuple
-    ) -> float:
-        return self._ks_calculator()._ks_hspf_power_by_intersection(
-            tj, hspf_input, case_name, load_line
-        )
-
-    def _ks_hspf_bin(
-        self,
-        tj: float,
-        load: float,
-        hours: float,
-        hspf_input: dict,
-        aux_cop: float = 1.0
-    ) -> dict:
-        return self._ks_calculator()._ks_hspf_bin(
-            tj, load, hours, hspf_input, aux_cop=aux_cop
-        )
-
-    def _calculate_ks_c9306_hspf(
-        self,
-        measured_inputs: dict,
-        aux_cop: float = 1.0
-    ) -> dict:
-        return self._ks_calculator()._calculate_ks_c9306_hspf(
-            measured_inputs, aux_cop=aux_cop
-        )
-
-    # ------------------------------------------------------------------
-    # /KS C 9306 HSPF delegation
-    # ------------------------------------------------------------------
-
     def _variable_heating_performance(self, tj: float, measured_inputs: dict) -> dict:
         stage_points = self._heating_stage_points(measured_inputs)
         high_minus_7 = self._point_at_temp(stage_points["high"], -7.0, "high")
@@ -910,7 +832,7 @@ class ISO16358Calculator:
         """
         p7 = resolved[f"7_{stage}"]
         pm7 = resolved[f"-7_{stage}"]
-        
+
         if not frost:
             # non-frost: tj <= -7.0 or tj >= 5.5
             return pm7["capacity"] + (p7["capacity"] - pm7["capacity"]) * (tj + 7.0) / 14.0
@@ -925,7 +847,7 @@ class ISO16358Calculator:
         """
         p7 = resolved[f"7_{stage}"]
         pm7 = resolved[f"-7_{stage}"]
-        
+
         if not frost:
             # non-frost: tj <= -7.0 or tj >= 5.5
             return pm7["power"] + (p7["power"] - pm7["power"]) * (tj + 7.0) / 14.0
@@ -968,11 +890,44 @@ class ISO16358Calculator:
         resolved: dict,
         frost: bool
     ) -> float:
+        # ISO 16358-2 boundary COP at the load-line / capacity-line intersection
+        # temperature `temp` (e.g. tk, tj, tg, th, ta, tf).  Both capacity and
+        # power are taken from the same stage curve and frost branch so the
+        # ratio represents the actual operating COP at that boundary point.
         capacity = self._iso_hspf_capacity_curve(temp, stage, resolved, frost)
         power = self._iso_hspf_power_curve(temp, stage, resolved, frost)
         if power <= 0:
             raise ValueError("ISO 16358-2 HSPF boundary power must be positive.")
         return capacity / power
+
+    def _iso_hspf_boundary_point(
+        self,
+        stage: str,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple,
+    ) -> dict:
+        # Resolve the boundary point where the load line intersects the
+        # selected stage capacity line.  Returns temperature plus the capacity
+        # / power / load / COP at that intersection, all derived from the same
+        # stage curves so callers can use them consistently for Formula
+        # 44/45/47/48/49/50 endpoint interpolation.
+        temp = self._iso_hspf_intersection_temp(stage, resolved, frost, load_line)
+        capacity = self._iso_hspf_capacity_curve(temp, stage, resolved, frost)
+        power = self._iso_hspf_power_curve(temp, stage, resolved, frost)
+        load_slope, load_intercept = load_line
+        load = load_slope * temp + load_intercept
+        if power <= 0:
+            raise ValueError("ISO 16358-2 HSPF boundary power must be positive.")
+        return {
+            "temp": temp,
+            "stage": stage,
+            "frost": frost,
+            "capacity": capacity,
+            "power": power,
+            "load_at_boundary": load,
+            "cop": capacity / power,
+        }
 
     def _iso_hspf_min_half_power_by_formula_44_48(
         self,
@@ -982,6 +937,12 @@ class ISO16358Calculator:
         frost: bool,
         load_line: tuple
     ) -> float:
+        # ISO 16358-2 Formula 44 (non-frost) / Formula 48 (frost):
+        #   COP_mh(tj) = COP_min(tk) + (COP_half(tj') - COP_min(tk))
+        #                              * (tj - tk) / (tj' - tk)
+        # where tk = load/min-capacity intersection, tj' = load/half-capacity
+        # intersection.  The rewrite below uses the half boundary as the base
+        # term, which is algebraically identical to the spec form.
         min_temp = self._iso_hspf_intersection_temp("min", resolved, frost, load_line)
         half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
         denominator = min_temp - half_temp
@@ -1003,6 +964,11 @@ class ISO16358Calculator:
         frost: bool,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 45 (non-frost) / Formula 49 (frost):
+        #   COP_hf(tj) = COP_full(ta) + (COP_half(tj') - COP_full(ta))
+        #                              * (tj - ta) / (tj' - ta)
+        # ta = load/full-capacity intersection, tj' = load/half-capacity
+        # intersection.  The rewrite using cop_full as the base is identical.
         half_temp = self._iso_hspf_intersection_temp("half", resolved, frost, load_line)
         full_temp = self._iso_hspf_intersection_temp("full", resolved, frost, load_line)
         denominator = half_temp - full_temp
@@ -1050,11 +1016,20 @@ class ISO16358Calculator:
                 "capacity": float(resolved["-7_ext"]["capacity"]),
                 "power": float(resolved["-7_ext"]["power"]),
             }
-        
-        ext_2_f = resolved["2_ext"]
+
+        # ISO 16358-2 default for -7_ext when not measured.
+        # 2_ext input is a 2°C frost-condition measurement, but the standard
+        # factors 0.734 (capacity) / 0.877 (power) derive 2°C non-frost →
+        # -7°C values (Table 1).  Convert 2°C frost → 2°C non-frost first,
+        # then apply the -7°C factor.
+        #   * 1.12 / * 1.06: 2°C frost → 2°C non-frost equivalent
+        #   * 0.734 / * 0.877: 2°C non-frost → -7°C (ISO Table 1 derived)
+        ext_2_frost = resolved["2_ext"]
+        ext_2_nonfrost_capacity = float(ext_2_frost["capacity"]) * 1.12
+        ext_2_nonfrost_power = float(ext_2_frost["power"]) * 1.06
         return {
-            "capacity": float(ext_2_f["capacity"]) * 0.734,
-            "power": float(ext_2_f["power"]) * 0.877,
+            "capacity": ext_2_nonfrost_capacity * 0.734,
+            "power": ext_2_nonfrost_power * 0.877,
         }
 
     def _iso_hspf_extended_frost_curve(self, tj: float, resolved: dict) -> dict:
@@ -1097,6 +1072,18 @@ class ISO16358Calculator:
         resolved: dict,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 50 (frost full→extended):
+        #   COP_fe,f(tj) = COP_ext,f(tf)
+        #                + (COP_ful,f(tg) - COP_ext,f(tf)) * (tj - tf) / (tg - tf)
+        #   P_fe,f(tj)   = L_h(tj) / COP_fe,f(tj)
+        # tg = intersection of load line with full-stage frost capacity curve.
+        # tf = intersection of load line with extended frost capacity curve.
+        # COP_ful,f(tg) uses the full-stage frost curves at tg.
+        # COP_ext,f(tf) uses the extended frost curve (interpolated between
+        # the -7°C and 2°C extended points) at tf.
+        # The implementation below uses the algebraically equivalent
+        #   cop_full + (cop_ext - cop_full) * (tj - tg) / (tf - tg)
+        # so the numeric output is identical to the spec form.
         tg = self._iso_hspf_intersection_temp("full", resolved, True, load_line)
         tf = self._iso_hspf_extended_frost_intersection_temp(resolved, load_line)
         denominator = tf - tg
@@ -1105,13 +1092,13 @@ class ISO16358Calculator:
                 "ISO 16358-2 HSPF full and extended boundary temperatures are equal."
             )
 
-        cop_full_f_tg = self._iso_hspf_boundary_cop(tg, "full", resolved, True)
+        cop_ful_f_tg = self._iso_hspf_boundary_cop(tg, "full", resolved, True)
         ext_tf = self._iso_hspf_extended_frost_curve(tf, resolved)
         if ext_tf["power"] <= 0:
             raise ValueError("ISO 16358-2 HSPF extended boundary power must be positive.")
         cop_ext_f_tf = ext_tf["capacity"] / ext_tf["power"]
-        cop_fe_f = cop_full_f_tg + (
-            (cop_ext_f_tf - cop_full_f_tg) * (tj - tg) / denominator
+        cop_fe_f = cop_ful_f_tg + (
+            (cop_ext_f_tf - cop_ful_f_tg) * (tj - tg) / denominator
         )
         if cop_fe_f <= 0:
             raise ValueError("ISO 16358-2 HSPF Formula 50 branch COP must be positive.")
@@ -1120,6 +1107,8 @@ class ISO16358Calculator:
             "P_fe": bl_h / cop_fe_f,
             "tg": tg,
             "tf": tf,
+            "cop_ful_f_tg": cop_ful_f_tg,
+            "cop_ext_f_tf": cop_ext_f_tf,
             "cop_fe_f": cop_fe_f,
         }
 
@@ -1130,19 +1119,24 @@ class ISO16358Calculator:
         resolved: dict,
         load_line: tuple
     ) -> dict:
+        # ISO 16358-2 Formula 47 (non-frost full→extended):
+        #   COP_fe(tj) = COP_ext(th)
+        #              + (COP_ful(ta) - COP_ext(th)) * (tj - th) / (ta - th)
+        #   P_fe(tj)   = L_h(tj) / COP_fe(tj)
+        # ta = load/full-capacity intersection, th = load/extended-capacity
+        # intersection.  Both endpoints use the non-frost stage curves.
         full_temp = self._iso_hspf_intersection_temp("full", resolved, False, load_line)
-        # Note: Extended non-frost boundary temperature assumes the use of "ext" stage (e.g. 2_ext/7_ext if defined).
-        # ISO 16358-2 uses the extended capacity intersection. For the non-frost boundary, the common assumption 
-        # is using the non-frost curve.
+        # Extended non-frost endpoint: capacity/power read from the "ext"
+        # stage non-frost curve at the load-line intersection temperature.
         ext_temp = self._iso_hspf_intersection_temp("ext", resolved, False, load_line)
-        
+
         denominator = full_temp - ext_temp
         if denominator == 0:
             raise ValueError("ISO 16358-2 HSPF full and extended boundary temperatures are equal.")
 
         cop_full = self._iso_hspf_boundary_cop(full_temp, "full", resolved, False)
         cop_ext = self._iso_hspf_boundary_cop(ext_temp, "ext", resolved, False)
-        
+
         # COP is linear with temperature between ext_temp and full_temp
         cop_fe = cop_ext + (cop_full - cop_ext) * (tj - ext_temp) / denominator
         if cop_fe <= 0:
@@ -1331,12 +1325,8 @@ class ISO16358Calculator:
         )
 
     def _iso_hspf_has_frost_extended_candidate(self, resolved: dict) -> bool:
-        return (
-            "-7_ext" in resolved
-            and (
-                self._iso_hspf_has_extended_candidate(resolved)
-                or "2_ext_f" in resolved
-            )
+        return self._iso_hspf_has_extended_candidate(resolved) or (
+            "-7_ext" in resolved and "2_ext_f" in resolved
         )
 
     def _iso_hspf_common_extended_frost_curve(
@@ -1344,7 +1334,7 @@ class ISO16358Calculator:
         tj: float,
         resolved: dict
     ) -> dict:
-        ext_m7 = resolved["-7_ext"]
+        ext_m7 = self._iso_hspf_extended_minus7_default(resolved)
         ext_2 = resolved.get("2_ext_f", resolved.get("2_ext"))
         return {
             "capacity": ext_m7["capacity"]
@@ -1423,10 +1413,14 @@ class ISO16358Calculator:
     def _iso_hspf_calculate_common_branch_power(
         self,
         branch: str,
+        tj: float,
         bl_h: float,
         snapshot: dict,
         active_stages: list,
-        cd: float
+        cd: float,
+        resolved: dict,
+        frost: bool,
+        load_line: tuple
     ) -> dict:
         if branch == "cycling":
             lowest_stage = "min" if "min" in active_stages else "half"
@@ -1451,10 +1445,9 @@ class ISO16358Calculator:
             }
 
         if branch in ("min_half_formula44", "min_half_formula48"):
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["min"], snapshot["half"]
+            p_j = self._iso_hspf_min_half_power_by_formula_44_48(
+                tj, bl_h, resolved, frost, load_line
             )
-            p_j = interpolated["P_j"]
             return {
                 "case": "min_half_interpolation_frost"
                 if branch == "min_half_formula48"
@@ -1465,15 +1458,18 @@ class ISO16358Calculator:
                 "auxiliary_heat_rate": 0.0,
                 "trace": {
                     "branch": branch,
-                    "X": interpolated["X"],
                 },
             }
 
         if branch in ("half_full_formula45", "half_full_formula49"):
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["half"], snapshot["full"]
+            formula_result = self._iso_hspf_half_full_power_by_formula_45_49(
+                tj, bl_h, resolved, frost, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_hf"]
+            trace = {
+                key: value for key, value in formula_result.items()
+                if key != "P_hf"
+            }
             return {
                 "case": "formula49_half_full_frost"
                 if branch == "half_full_formula49"
@@ -1482,41 +1478,43 @@ class ISO16358Calculator:
                 "pi_j": bl_h,
                 "heat_pump_energy_rate": p_j,
                 "auxiliary_heat_rate": 0.0,
-                "trace": {
-                    "branch": branch,
-                    "X": interpolated["X"],
-                },
+                "trace": trace,
             }
 
         if branch == "full_extended_formula47":
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["full"], snapshot["ext"]
+            formula_result = self._iso_hspf_formula47_full_extended_non_frost_power(
+                tj, bl_h, resolved, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_fe"]
+            trace = {
+                key: value for key, value in formula_result.items()
+                if key != "P_fe"
+            }
             return {
                 "case": "formula47_full_extended",
                 "P_j": p_j,
                 "pi_j": bl_h,
                 "heat_pump_energy_rate": p_j,
                 "auxiliary_heat_rate": 0.0,
-                "trace": {
-                    "branch": branch,
-                    "X": interpolated["X"],
-                },
+                "trace": trace,
             }
 
         if branch == "full_extended_formula50":
-            interpolated = self._iso_hspf_stage_pair_power_by_x(
-                bl_h, snapshot["full"], snapshot["ext"]
+            formula_result = self._iso_hspf_formula50_full_extended_frost_power(
+                tj, bl_h, resolved, load_line
             )
-            p_j = interpolated["P_j"]
+            p_j = formula_result["P_fe"]
             trace = {
                 "branch": "formula50_full_extended_frost",
+                "P_fe": p_j,
                 "pi_ext_f": snapshot["ext"]["capacity"],
                 "p_ext_f": snapshot["ext"]["power"],
-                "X": interpolated["X"],
                 "backup_heat": 0.0,
             }
+            trace.update({
+                key: value for key, value in formula_result.items()
+                if key != "P_fe"
+            })
             return {
                 "case": "formula50_full_extended_frost",
                 "P_j": p_j,
@@ -1575,10 +1573,14 @@ class ISO16358Calculator:
         )
         branch_result = self._iso_hspf_calculate_common_branch_power(
             branch,
+            tj,
             bl_h,
             snapshot,
             active_stages,
             cd,
+            resolved,
+            frost,
+            load_line_info["line"],
         )
 
         heat_pump_energy = branch_result["heat_pump_energy_rate"] * nj
@@ -1587,6 +1589,7 @@ class ISO16358Calculator:
             "tj": tj,
             "nj": nj,
             "bl_h": bl_h,
+            "frost": frost,
             "pi_j": branch_result["pi_j"],
             "P_j": branch_result["P_j"],
             "case": branch_result["case"],
@@ -1595,250 +1598,8 @@ class ISO16358Calculator:
             "E_j": heat_pump_energy + auxiliary_energy,
         }
         detail.update(branch_result["trace"])
+        detail["frost"] = frost
         return detail
-
-    def _iso_hspf_y_min_y_extd_case3_points(self, measured_inputs: dict) -> dict:
-        """
-        Trace-only point resolver for the GEMS/ZERL Y(Min) Y(Extd) case 3 audit.
-
-        The constants are the extracted workbook "data used" relationships for the
-        case 3 golden sample. This helper is intentionally not called from the
-        common ISO HSPF calculation path.
-        """
-        required = ("7_full", "7_half", "7_min", "2_ext")
-        for key in required:
-            if key not in measured_inputs:
-                raise ValueError(f"Y_MIN_Y_EXTD trace requires '{key}'.")
-
-        h1_full = measured_inputs["7_full"]
-        h1_half = measured_inputs["7_half"]
-        h1_min = measured_inputs["7_min"]
-        h2_ext_f = measured_inputs["2_ext"]
-
-        return {
-            "7_full": dict(h1_full),
-            "7_half": dict(h1_half),
-            "7_min": dict(h1_min),
-            "2_ext_f": dict(h2_ext_f),
-            "2_ext": {
-                "capacity": h2_ext_f["capacity"] * 1.12,
-                "power": h2_ext_f["power"] * 1.06,
-            },
-            "2_full_f": {
-                "capacity": h1_full["capacity"] * (3405.57397959184 / 4300.0),
-                "power": h1_full["power"] * (1159.04986522911 / 1320.0),
-            },
-            "2_full": {
-                "capacity": h1_full["capacity"] * (3765.0 / 4300.0),
-                "power": h1_full["power"] * (1233.0 / 1320.0),
-            },
-            "2_half_f": {
-                "capacity": h1_half["capacity"] * (1773.97959183673 / 2300.0),
-                "power": h1_half["power"] * (395.471698113208 / 450.0),
-            },
-            "2_half": {
-                "capacity": h1_half["capacity"] * (2000.0 / 2300.0),
-                "power": h1_half["power"] * (420.0 / 450.0),
-            },
-            "2_min_f": {
-                "capacity": h1_min["capacity"] * (529.0 / 680.0),
-                "power": h1_min["power"] * (132.0 / 150.0),
-            },
-            "2_min": {
-                "capacity": h1_min["capacity"] * (593.0 / 680.0),
-                "power": h1_min["power"] * (140.0 / 150.0),
-            },
-            "-7_ext": {
-                "capacity": h2_ext_f["capacity"] * (3468.0 / 4200.0),
-                "power": h2_ext_f["power"] * (1568.0 / 1700.0),
-            },
-            "-7_full": {
-                "capacity": h1_full["capacity"] * (2801.28 / 4300.0),
-                "power": h1_full["power"] * (1076.66 / 1320.0),
-            },
-            "-7_half": {
-                "capacity": h1_half["capacity"] * (1459.2 / 2300.0),
-                "power": h1_half["power"] * (367.36 / 450.0),
-            },
-            "-7_min": {
-                "capacity": h1_min["capacity"] * (435.0 / 680.0),
-                "power": h1_min["power"] * (123.0 / 150.0),
-            },
-        }
-
-    def _iso_hspf_y_min_y_extd_ext_curve(
-        self,
-        tj: float,
-        resolved: dict,
-        frost: bool
-    ) -> dict:
-        ext_2 = resolved["2_ext_f"] if frost else resolved["2_ext"]
-        ext_m7 = resolved["-7_ext"]
-        return {
-            "capacity": ext_m7["capacity"]
-            + (ext_2["capacity"] - ext_m7["capacity"]) * (tj + 7.0) / 9.0,
-            "power": ext_m7["power"]
-            + (ext_2["power"] - ext_m7["power"]) * (tj + 7.0) / 9.0,
-        }
-
-    def calculate_hspf_iso16358_y_min_y_extd_trace(
-        self,
-        measured_inputs: dict,
-        rated_heating_capacity: float
-    ) -> dict:
-        """
-        Trace-only GEMS/ZERL CH branch evaluator for ISO16358-2 HSPF case 3.
-
-        This path is isolated from calculate_hspf_iso16358_common() and exists
-        only to audit the Y(Min) Y(Extd) component-sum model against extracted
-        workbook observations.
-        """
-        hspf_cfg = self.config.get("hspf", {})
-        correction_cfg = hspf_cfg.get("correction", {})
-        cd = float(correction_cfg.get("cd", self.Cd))
-        aux_cop = float(correction_cfg.get("aux_cop", 1.0))
-        if aux_cop <= 0:
-            raise ValueError("aux_cop must be positive.")
-
-        load_line_cfg = hspf_cfg.get("load_line", {})
-        zero_load_temp = float(load_line_cfg["zero_load_temp"])
-        full_load_temp = float(load_line_cfg["full_load_temp"])
-        rated_capacity_factor = float(load_line_cfg["rated_capacity_factor"])
-        l_h_ref = rated_heating_capacity * rated_capacity_factor
-        load_line = (
-            -l_h_ref / (zero_load_temp - full_load_temp),
-            l_h_ref * zero_load_temp / (zero_load_temp - full_load_temp),
-        )
-
-        frost_boundaries = hspf_cfg.get("frost_boundaries", {})
-        frost_lower = float(frost_boundaries.get("lower", -7.0))
-        frost_upper = float(frost_boundaries.get("upper", 5.5))
-        bin_hours_key = hspf_cfg.get("bin_hours_key", "hspf_bin_hours")
-
-        resolved = self._iso_hspf_y_min_y_extd_case3_points(measured_inputs)
-        bin_details = []
-        hstl = 0.0
-        ch48 = 0.0
-
-        for bin_data in self.config.get(bin_hours_key, []):
-            tj = float(bin_data.get("tj", 0.0))
-            hours = float(bin_data.get("nj", 0.0))
-            if hours <= 0:
-                continue
-
-            lc = l_h_ref * (zero_load_temp - tj) / (
-                zero_load_temp - full_load_temp
-            )
-            if lc <= 0:
-                continue
-
-            frost = frost_lower < tj < frost_upper
-            phi_min = self._iso_hspf_capacity_curve(tj, "min", resolved, frost)
-            phi_half = self._iso_hspf_capacity_curve(tj, "half", resolved, frost)
-            phi_full = self._iso_hspf_capacity_curve(tj, "full", resolved, frost)
-            ext = self._iso_hspf_y_min_y_extd_ext_curve(tj, resolved, frost)
-            phi_ext = ext["capacity"]
-            p_ext = ext["power"]
-
-            components = {
-                "BM": 0.0,
-                "BO": 0.0,
-                "BQ": 0.0,
-                "BS": 0.0,
-                "BT": 0.0,
-                "BU": 0.0,
-                "BX": 0.0,
-                "BZ": 0.0,
-                "CB": 0.0,
-                "CD": 0.0,
-                "CE": 0.0,
-                "CF": 0.0,
-            }
-            active_components = []
-
-            if frost:
-                if lc <= phi_min:
-                    x = lc / phi_min
-                    fpl = 1.0 - cd * (1.0 - x)
-                    p_min = self._iso_hspf_power_curve(tj, "min", resolved, True)
-                    components["BX"] = x * p_min / fpl
-                    active_components.append("BX")
-                elif lc <= phi_half:
-                    components["BZ"] = self._iso_hspf_pair_power_by_boundary_cop(
-                        tj, lc, "min", "half", resolved, True, load_line
-                    )
-                    active_components.append("BZ")
-                elif lc <= phi_full:
-                    components["CB"] = self._iso_hspf_pair_power_by_boundary_cop(
-                        tj, lc, "half", "full", resolved, True, load_line
-                    )
-                    active_components.append("CB")
-                elif lc <= phi_ext:
-                    formula_resolved = dict(resolved)
-                    formula_resolved["2_ext"] = resolved["2_ext_f"]
-                    formula50 = self._iso_hspf_formula50_full_extended_frost_power(
-                        tj, lc, formula_resolved, load_line
-                    )
-                    components["CD"] = formula50["P_fe"]
-                    active_components.append("CD")
-                else:
-                    components["CE"] = p_ext
-                    components["CF"] = (lc - phi_ext) / aux_cop
-                    active_components.extend(["CE", "CF"])
-            else:
-                if lc <= phi_min:
-                    x = lc / phi_min
-                    fpl = 1.0 - cd * (1.0 - x)
-                    p_min = self._iso_hspf_power_curve(tj, "min", resolved, False)
-                    components["BM"] = x * p_min / fpl
-                    active_components.append("BM")
-                elif lc <= phi_half:
-                    components["BO"] = self._iso_hspf_pair_power_by_boundary_cop(
-                        tj, lc, "min", "half", resolved, False, load_line
-                    )
-                    active_components.append("BO")
-                elif lc <= phi_full:
-                    components["BQ"] = self._iso_hspf_pair_power_by_boundary_cop(
-                        tj, lc, "half", "full", resolved, False, load_line
-                    )
-                    active_components.append("BQ")
-                elif lc <= phi_ext:
-                    components["BS"] = self._iso_hspf_pair_power_by_boundary_cop(
-                        tj, lc, "full", "ext", resolved, False, load_line
-                    )
-                    active_components.append("BS")
-                else:
-                    components["BT"] = p_ext
-                    components["BU"] = (lc - phi_ext) / aux_cop
-                    active_components.extend(["BT", "BU"])
-
-            cg_total_power = sum(components.values())
-            ch_energy = cg_total_power * hours
-            hstl += lc * hours
-            ch48 += ch_energy
-
-            bin_details.append({
-                "tj": tj,
-                "hours": hours,
-                "Lc": lc,
-                "frost": frost,
-                "phi_min": phi_min,
-                "phi_half": phi_half,
-                "phi_full": phi_full,
-                "phi_ext": phi_ext,
-                **components,
-                "CG_total_power": cg_total_power,
-                "CH_energy": ch_energy,
-                "active_components": active_components,
-            })
-
-        hspf = hstl / ch48 if ch48 > 0 else 0.0
-        return {
-            "hspf": hspf,
-            "hstl_wh": hstl,
-            "ch48_wh": ch48,
-            "bin_details": bin_details,
-        }
 
     def calculate_hspf_iso16358_common(
         self,
@@ -1899,11 +1660,11 @@ class ISO16358Calculator:
                 "auxiliary_energy_wh": 0.0,
                 "bin_details": bin_details,
             }
-            
+
         hspf_val = hstl / hsec
         hp_energy_total = sum(d["heat_pump_energy"] for d in bin_details)
         aux_energy_total = sum(d["auxiliary_energy"] for d in bin_details)
-        
+
         return {
             "hspf": round(hspf_val, 3),
             "hstl_wh": hstl,
@@ -1920,24 +1681,24 @@ class ISO16358Calculator:
 
         profile = self.config.get("hspf", {}).get("profile")
         if profile == "iso16358_2_hspf":
-            # Resolve rated_heating_capacity from measured_inputs
             rated_heating_capacity = measured_inputs.get("rated_heating_capacity")
             if rated_heating_capacity is None:
                 load_line_cfg = self.config.get("hspf", {}).get("load_line", {})
                 source = load_line_cfg.get("source")
                 if source == "rated_heating_capacity":
-                    raise ValueError("rated_heating_capacity must be provided explicitly in measured_inputs for ISO 16358-2 HSPF.")
-                else:
-                    raise ValueError(f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF.")
+                    raise ValueError(
+                        "rated_heating_capacity must be provided explicitly in "
+                        "measured_inputs for ISO 16358-2 HSPF."
+                    )
+                raise ValueError(
+                    f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF."
+                )
 
             return self.calculate_hspf_iso16358_common(
                 measured_inputs=measured_inputs,
                 rated_heating_capacity=float(rated_heating_capacity),
-                aux_cop=aux_cop
+                aux_cop=aux_cop,
             )
-
-        if self._has_ks_c9306_hspf_input(measured_inputs):
-            return self._calculate_ks_c9306_hspf(measured_inputs, aux_cop)
 
         hstl = 0.0
         hsec = 0.0
@@ -1978,7 +1739,7 @@ class ISO16358Calculator:
                     "auxiliary_heat": auxiliary["auxiliary_heat"],
                     "auxiliary_energy": auxiliary["auxiliary_energy"],
                     "bin_load": bin_load,
-                    "bin_energy": bin_energy
+                    "bin_energy": bin_energy,
                 }
 
             hstl += detail["bin_load"]
@@ -1986,7 +1747,13 @@ class ISO16358Calculator:
             bin_details.append(detail)
 
         if hsec <= 0:
-            return {"hspf": 0.0, "HSPF": 0.0, "HSTL": hstl, "HSEC": hsec, "bin_details": bin_details}
+            return {
+                "hspf": 0.0,
+                "HSPF": 0.0,
+                "HSTL": hstl,
+                "HSEC": hsec,
+                "bin_details": bin_details,
+            }
 
         hspf = hstl / hsec
         heat_pump_energy = sum(
@@ -2005,285 +1772,5 @@ class ISO16358Calculator:
             "HSEC": hsec,
             "heat_pump_energy": heat_pump_energy,
             "auxiliary_energy": auxiliary_energy,
-            "bin_details": bin_details
-        }
-
-    def _profile_capacity_power_at(self, points: dict, load_type: str, tj: float, high_val: int, low_val: int) -> tuple:
-        p_35 = points[f"{high_val}_{load_type}"]
-        p_29 = points[f"{low_val}_{load_type}"]
-        
-        c = p_35["capacity"] + (p_29["capacity"] - p_35["capacity"]) / (low_val - high_val) * (tj - high_val)
-        p = p_35["power"] + (p_29["power"] - p_35["power"]) / (low_val - high_val) * (tj - high_val)
-        return c, p
-
-    def _calculate_cspf_profile(self, measured: dict, L_c_ref: float) -> dict:
-        resolved = self._resolve_cspf_profile_points(measured)
-        cd = self._get_cspf_profile_cd()
-        
-        cstl, csec = 0.0, 0.0
-        delta_t = self.t_100_load - self.t_0_load
-        bin_details = []
-        
-        for idx, bin_data in enumerate(self.bin_hours, start=1):
-            tj = float(bin_data.get("tj", 0))
-            nj = float(bin_data.get("nj", 0))
-            if nj <= 0:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue
-            
-            Lc = L_c_ref * (tj - self.t_0_load) / delta_t
-            if Lc <= 0:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue
-
-            interp = self.interpolate(tj, resolved)
-            loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp.items()]
-            loads.sort(key=lambda x: x[0])
-            
-            lowest_cap, lowest_pow, lowest_type = loads[0]
-            highest_cap, highest_pow, highest_type = loads[-1]
-            
-            cooling_output = Lc
-            P_tj = 0.0
-            
-            if Lc <= lowest_cap:
-                # 1. Minimum capacity cycling regime
-                X = Lc / lowest_cap
-                PLF = max(1e-6, 1.0 - cd * (1.0 - X))
-                P_tj = (X * lowest_pow) / PLF
-            elif Lc > highest_cap:
-                # 2. Saturated / Full limit regime (BL > Full Cap)
-                cooling_output = highest_cap
-                P_tj = highest_pow
-            else:
-                # 3. Intermediate interpolation regime
-                # Use interpolation method
-                P_tj = None
-                if self.power_interpolation_method == "iso_boundary_eer":
-                    try:
-                        profile_cfg = self.config.get("cspf_test_profile", {})
-                        if profile_cfg.get("climate_profile") == "T3":
-                            for i in range(len(loads) - 1):
-                                c1, _, lower_type = loads[i]
-                                c2, _, upper_type = loads[i + 1]
-                                if c1 < Lc <= c2:
-                                    P_tj = self._iso_boundary_eer_power(
-                                        tj, Lc, resolved, lower_type, upper_type
-                                    )
-                                    break
-                        else:
-                            P_tj = self._iso_boundary_eer_power(
-                                tj, Lc, resolved, lowest_type, highest_type
-                            )
-                    except:
-                        P_tj = None
-                
-                if P_tj is None:
-                    # Piecewise direct capacity-power linear interpolation
-                    for i in range(len(loads) - 1):
-                        c1, p1, _ = loads[i]
-                        c2, p2, _ = loads[i+1]
-                        if c1 < Lc <= c2:
-                            if c2 == c1:
-                                P_tj = p1
-                            else:
-                                P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
-                            break
-                    
-                    if P_tj is None:
-                        P_tj = highest_pow
-            
-            cstl += cooling_output * nj
-            csec += P_tj * nj
-            
-            eer = None
-            if P_tj > 0:
-                eer = cooling_output / P_tj
-                
-            bin_details.append({
-                "bin_no": idx,
-                "tj": tj,
-                "nj": nj,
-                "lc": Lc,
-                "capacity": cooling_output,
-                "power": P_tj,
-                "eer": eer,
-                "cstl_bin": cooling_output * nj,
-                "csec_bin": P_tj * nj
-            })
-            
-        if csec <= 0:
-            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
-            
-        return {"cspf": round(cstl / csec, 3), "annual_cooling_kwh": round(cstl / 1000.0, 3), "annual_power_kwh": round(csec / 1000.0, 3), "bin_details": bin_details}
-
-    def calculate_cspf(self, measured_inputs: dict, declared_capacity: float = None) -> dict:
-        """
-        지역별 설정과 측정값을 융합하여 최종 연간 CSPF 효율 및 전력량을 계산합니다.
-        
-        Args:
-            measured_inputs (dict): UI를 통해 입력받은 실측 포인트 딕셔너리
-            declared_capacity (float, optional): 제조사 선언 표기 정격 능력 (W).
-                building_load_source가 'declared'인 경우 필수 입력.
-            
-        Returns:
-            dict: CSPF 점수, 연간 냉방량(kWh), 연간 소비전력(kWh)
-        """
-        measured_inputs = self._prepare_measured_inputs(measured_inputs)
-        
-        if self._has_cspf_test_profile():
-            resolved = self._resolve_cspf_profile_points(measured_inputs)
-            # Use reference point from config if available, else 35_full
-            ref_key = self.reference_point
-            L_c_ref = resolved[ref_key]["capacity"]
-            return self._calculate_cspf_profile(measured_inputs, L_c_ref)
-            
-        resolved_points = self.resolve_points(measured_inputs)
-        
-        if self.building_load_source == "declared":
-            if declared_capacity is None or declared_capacity <= 0:
-                raise ValueError(
-                    "building_load_source가 'declared'인 지역은 "
-                    "declared_capacity(표기 정격 능력)를 입력해야 합니다."
-                )
-            if self.round_test_values:
-                declared_capacity = self._round_test_value(declared_capacity)
-            L_c_ref = declared_capacity
-        else:
-            ref_key = self.reference_point
-            if ref_key not in resolved_points:
-                raise ValueError(
-                    f"Reference point '{ref_key}' not found in resolved points. "
-                    f"Check config['reference_point'] or input data."
-                )
-            L_c_ref = resolved_points[ref_key]["capacity"]
-        
-        # division by zero 방어
-        delta_t = self.t_100_load - self.t_0_load
-        if delta_t == 0:
-            raise ValueError("t_100_load and t_0_load cannot be equal (division by zero).")
-        
-        cstl = 0.0  
-        csec = 0.0  
-        bin_details = []
-
-        for idx, bin_data in enumerate(self.bin_hours, start=1):
-            tj = float(bin_data.get("tj", 0))
-            nj = float(bin_data.get("nj", 0))
-            if nj <= 0:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": 0.0,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue
-
-            # a. 건물 냉방 부하 계산 (온도별 능력이 아닌, 고정된 L_c_ref 및 방어된 delta_t 사용)
-            Lc = L_c_ref * (tj - self.t_0_load) / delta_t
-
-            if Lc <= 0:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue
-
-            # 해당 온도의 부하 조건별 능력/전력 동적 보간
-            interp_tj = self.interpolate(tj, resolved_points)
-            if "full" not in interp_tj:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue  
-
-            loads = [(data["capacity"], data["power"], load_type) for load_type, data in interp_tj.items()]
-            loads.sort(key=lambda x: x[0])
-            
-            if not loads:
-                bin_details.append({
-                    "bin_no": idx, "tj": tj, "nj": nj, "lc": Lc,
-                    "capacity": 0.0, "power": 0.0, "eer": None,
-                    "cstl_bin": 0.0, "csec_bin": 0.0
-                })
-                continue
-                
-            lowest_cap, lowest_pow, _ = loads[0]
-            highest_cap, highest_pow, _ = loads[-1]
-
-            # d. 부하 구간 판단 및 소비전력(P_tj) 계산
-            cooling_output = Lc
-            if Lc <= lowest_cap:
-                if lowest_cap <= 0:
-                    P_tj = 0.0
-                else:
-                    X = Lc / lowest_cap
-                    # PLF 음수 방어 (1e-6으로 최소값 보장)
-                    PLF = max(1e-6, 1.0 - self.Cd * (1.0 - X))
-                    P_tj = (X * lowest_pow) / PLF if PLF > 0 else 0.0
-            elif Lc > highest_cap:
-                cooling_output = highest_cap
-                P_tj = highest_pow
-            else:
-                P_tj = 0.0
-                for i in range(len(loads) - 1):
-                    c1, p1, _ = loads[i]
-                    c2, p2, _ = loads[i+1]
-                    if c1 < Lc <= c2:
-                        lower_type = loads[i][2]
-                        upper_type = loads[i+1][2]
-                        if self.power_interpolation_method == "iso_boundary_eer":
-                            iso_power = self._iso_boundary_eer_power(
-                                tj, Lc, resolved_points, lower_type, upper_type
-                            )
-                            if iso_power is not None:
-                                P_tj = iso_power
-                            elif c2 == c1:
-                                P_tj = p1
-                            else:
-                                P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
-                        elif c2 == c1:
-                            P_tj = p1
-                        else:
-                            P_tj = p1 + (p2 - p1) * (Lc - c1) / (c2 - c1)
-                        break
-
-            # e. 연간 누적
-            cstl += cooling_output * nj
-            csec += P_tj * nj
-
-            eer = None
-            if P_tj > 0:
-                eer = cooling_output / P_tj
-                
-            bin_details.append({
-                "bin_no": idx,
-                "tj": tj,
-                "nj": nj,
-                "lc": Lc,
-                "capacity": cooling_output,
-                "power": P_tj,
-                "eer": eer,
-                "cstl_bin": cooling_output * nj,
-                "csec_bin": P_tj * nj
-            })
-
-        if csec <= 0:
-            return {"cspf": 0.0, "annual_cooling_kwh": 0.0, "annual_power_kwh": 0.0, "bin_details": bin_details}
-
-        return {
-            "cspf": round(cstl / csec, 3),
-            "annual_cooling_kwh": round(cstl / 1000.0, 3),
-            "annual_power_kwh": round(csec / 1000.0, 3),
-            "bin_details": bin_details
+            "bin_details": bin_details,
         }

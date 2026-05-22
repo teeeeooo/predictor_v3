@@ -103,7 +103,7 @@ def test_hspf_power_at_full_load_equals_full_power(tmp_path):
     assert detail["P_j"] == pytest.approx(FULL_POWER)
     assert detail["E_j"] == pytest.approx(FULL_POWER * detail["nj"])
     assert detail["auxiliary_energy"] == pytest.approx(0.0)
-    assert detail["case"] == "interpolation"
+    assert detail["case"] == "formula49_half_full_frost"
 
 
 def test_hspf_cycling_below_min_uses_plf(tmp_path):
@@ -132,7 +132,7 @@ def test_hspf_cycling_below_min_uses_plf(tmp_path):
     assert detail["auxiliary_energy"] == pytest.approx(0.0)
 
 
-def test_hspf_half_to_full_interpolation_matches_hand_calculation(tmp_path):
+def test_hspf_half_to_full_formula45_matches_hand_calculation(tmp_path):
     load = 1350.0
     calculator = make_iso_micro_calculator(
         tmp_path,
@@ -142,13 +142,9 @@ def test_hspf_half_to_full_interpolation_matches_hand_calculation(tmp_path):
         iso_points(rated_heating_capacity=rated_for_load_at_7c(load))
     )
     detail = single_detail(result)
-    expected_power = HALF_POWER + (
-        (FULL_POWER - HALF_POWER)
-        * (load - HALF_CAPACITY)
-        / (FULL_CAPACITY - HALF_CAPACITY)
-    )
+    expected_power = load / detail["cop_hf"]
 
-    assert detail["case"] == "interpolation"
+    assert detail["case"] == "formula45_half_full"
     assert detail["bl_h"] == pytest.approx(load)
     assert detail["P_j"] == pytest.approx(expected_power)
     assert detail["E_j"] == pytest.approx(expected_power * detail["nj"])
@@ -238,7 +234,7 @@ def test_hspf_tiny_bin_accumulation_matches_hand_calculation(tmp_path):
 
     assert [detail["case"] for detail in result["bin_details"]] == [
         "cycling",
-        "interpolation",
+        "formula49_half_full_frost",
     ]
     assert result["hstl_wh"] == pytest.approx(expected_hstl)
     assert result["hsec_wh"] == pytest.approx(expected_hsec)
