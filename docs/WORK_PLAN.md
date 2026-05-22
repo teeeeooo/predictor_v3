@@ -36,7 +36,14 @@
    1. Calculator UI/UX audit against new SSOT (`docs/ui_ux/`) — **완료** (107 참고).
    2. Calculator UI design token foundation — **완료** (108 참고). `ui/theme.py`가 `02_DESIGN_TOKENS_AND_LAYOUT.md` token name을 보수적으로 캡쳐 (PyQt 없이 import 가능), error border 한 곳에 PoC 적용. 색/레이아웃 변경 없음.
    3. EN14825 tab layout polish — **완료** (109 참고). standby form을 EN tab 최상단 compact horizontal row로 이동, single-input row width 제한 (p_design_c / p_design_h / Tbiv / TOL), SCOP climate card 보조 form을 horizontal row로 정렬. 108 token foundation의 `theme_spacing("space.section"/"space.row")`를 사용. calculate_en core / W→kW 변환 / input key / default 0.0은 그대로 유지.
-   4. Calculator auto-calculate behavior alignment — micro-design **완료** (110 참고, `docs/designs/2026-05-22-calculator-action-model-alignment.md`). 결정: **Option A — Auto-calc unified**. Slice α (`SpreadsheetTableModel.values_changed` signal) **완료** (111 참고). 다음은 slice β (AHRI/EN auto-recompute wiring) → γ (per-tab result panel unification) → δ (error feedback alignment) 순. (recommended next action: slice β)
+   4. Calculator auto-calculate behavior alignment — micro-design **완료** (110 참고, `docs/designs/2026-05-22-calculator-action-model-alignment.md`). 결정: **Option A — Auto-calc unified**. Slice α (`SpreadsheetTableModel.values_changed` signal) **완료** (111 참고).
+   4a. Calculator UI module boundary plan — **완료** (113 참고, `docs/designs/2026-05-22-calculator-ui-module-boundary.md`). `ui/calc_window.py` shell만 유지하고 EN/AHRI tab + 공통 helper (`ui/calculator_errors.py`, `ui/calculator_recompute.py`, `ui/calculator_result_panel.py`)를 별도 module로 분리하는 순서를 확정. 다음 slice는 ε → ζ → η → β → γ → δ. (recommended next action: slice ε — `ui/calculator_errors.py` 추출)
+   4b. Slice ε `ui/calculator_errors.py` 추출 (InputValidationError, bind_error_reset, get_float_val, error styling).
+   4c. Slice ζ `ui/calculator_en_tab.py` 추출.
+   4d. Slice η `ui/calculator_ahri_tab.py` 추출.
+   4e. Slice β AHRI/EN auto-recompute wiring (위 module 분리 위에 올린다).
+   4f. Slice γ per-tab result/status surface unification.
+   4g. Slice δ error feedback alignment.
    5. Hong Kong HSPF UI surface — core/config/test + profile/dispatcher가 이미 준비된 Hong Kong HSPF를 UI에 진입점으로 추가. heating point column set과 auxiliary form은 design 단계 필요. 다른 polish와 섞지 않는다.
    6. unit adapter 확장 — ISO / KS / EN profile을 `core/calculator_unit_adapter.py`에 추가한다. UI audit와 완전 분리된 non-UI 작업.
    7. ML / inverse-search 복귀 준비.
