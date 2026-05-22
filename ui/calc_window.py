@@ -24,6 +24,14 @@ from ui.spreadsheet_table import (
     SpreadsheetTableView,
 )
 from ui.theme import color as theme_color, spacing as theme_spacing
+from ui.calculator_errors import (
+    InputValidationError,
+    apply_error_style,
+    bind_error_reset as _bind_error_reset_widget,
+    clear_error_style,
+    get_float_val,
+    parse_number,
+)
 
 
 # SCOP climate별 UI default prefill (UI-only; calculator core / region
@@ -33,22 +41,6 @@ EN14825_SCOP_CLIMATE_DEFAULTS = {
     "warmer": {"label": "Warmer", "tbiv_c": 2.0, "tol_c": -11.0},
     "colder": {"label": "Colder", "tbiv_c": -15.0, "tol_c": -22.0},
 }
-
-
-# [6] 숫자 파싱 공통 함수
-def parse_number(text: str) -> float:
-    """텍스트에서 콤마를 제거하고 float으로 변환합니다."""
-    clean_text = text.replace(',', '').strip()
-    if not clean_text:
-        raise ValueError("빈 값입니다.")
-    return float(clean_text)
-
-
-class InputValidationError(Exception):
-    """입력 검증 실패 시 에러 위젯 정보를 함께 전달하는 예외"""
-    def __init__(self, message: str, widget=None):
-        super().__init__(message)
-        self.widget = widget
 
 
 class CalculatorWindow(QWidget):
@@ -123,10 +115,10 @@ class CalculatorWindow(QWidget):
         action_layout.addWidget(self.result_label, 1)
         main_layout.addLayout(action_layout)
 
-    # [1] 에러 스타일링 리셋 로직 (공통 헬퍼)
+    # [1] 에러 스타일링 리셋 로직 (thin wrapper around shared helper)
     def bind_error_reset(self, widget: QLineEdit):
         """사용자가 수정을 시작하면 붉은 테두리를 해제합니다."""
-        widget.textChanged.connect(lambda: widget.setStyleSheet(""))
+        _bind_error_reset_widget(widget)
 
     def init_iso_tab(self):
         """ISO/CSPF 탭: 단건 입력 우선 UI"""
@@ -508,21 +500,14 @@ class CalculatorWindow(QWidget):
             self.hspf2_calc = None
 
     def _get_float_val(self, widget: QLineEdit, field_name: str, allow_empty=False, allow_zero=False) -> float:
-        """[9] 입력 유효성 검사 강화"""
-        text = widget.text().strip()
-        if not text:
-            if allow_empty: return None
-            raise InputValidationError(f"'{field_name}' 항목을 입력해주세요.", widget)
-        
-        try:
-            val = parse_number(text)
-        except ValueError:
-            raise InputValidationError(f"'{field_name}' 필드에 올바른 숫자를 입력해주세요.", widget)
-
-        if not allow_zero and val <= 0:
-             raise InputValidationError(f"'{field_name}' 필드는 0보다 큰 값이어야 합니다.", widget)
-
-        return val
+        """[9] 입력 유효성 검사 — :mod:`ui.calculator_errors` 위임."""
+        return get_float_val(
+            {"_": widget},
+            "_",
+            field_name,
+            allow_empty=allow_empty,
+            allow_zero=allow_zero,
+        )
 
     def _read_ahri_seer2_table_points(self):
         """AHRI SEER2 table에서 5-point ``test_points`` dict를 읽는다.
@@ -640,10 +625,7 @@ class CalculatorWindow(QWidget):
         except InputValidationError as e:
             QMessageBox.warning(self, "입력 오류", str(e))
             if e.widget:
-                e.widget.setStyleSheet(
-                    f"border: 2px solid {theme_color('color.danger')}; "
-                    f"background-color: {theme_color('color.bg.cell.invalid')};"
-                )
+                apply_error_style(e.widget)
                 e.widget.setFocus()
                 e.widget.selectAll()
         except Exception as e:
@@ -653,7 +635,7 @@ class CalculatorWindow(QWidget):
         """모든 위젯 스타일 리셋"""
         for widgets in [self.input_widgets_iso, self.input_widgets_en, self.input_widgets_ahri, self.input_widgets_hspf2]:
             for w in widgets.values():
-                w.setStyleSheet("")
+                clear_error_style(w)
 
     def calculate_ahri(self):
         """AHRI SEER2 계산 로직"""

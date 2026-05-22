@@ -38,7 +38,7 @@
    3. EN14825 tab layout polish — **완료** (109 참고). standby form을 EN tab 최상단 compact horizontal row로 이동, single-input row width 제한 (p_design_c / p_design_h / Tbiv / TOL), SCOP climate card 보조 form을 horizontal row로 정렬. 108 token foundation의 `theme_spacing("space.section"/"space.row")`를 사용. calculate_en core / W→kW 변환 / input key / default 0.0은 그대로 유지.
    4. Calculator auto-calculate behavior alignment — micro-design **완료** (110 참고, `docs/designs/2026-05-22-calculator-action-model-alignment.md`). 결정: **Option A — Auto-calc unified**. Slice α (`SpreadsheetTableModel.values_changed` signal) **완료** (111 참고).
    4a. Calculator UI module boundary plan — **완료** (113 참고, `docs/designs/2026-05-22-calculator-ui-module-boundary.md`). `ui/calc_window.py` shell만 유지하고 EN/AHRI tab + 공통 helper (`ui/calculator_errors.py`, `ui/calculator_recompute.py`, `ui/calculator_result_panel.py`)를 별도 module로 분리하는 순서를 확정. 다음 slice는 ε → ζ → η → β → γ → δ. (recommended next action: slice ε — `ui/calculator_errors.py` 추출)
-   4b. Slice ε `ui/calculator_errors.py` 추출 (InputValidationError, bind_error_reset, get_float_val, error styling).
+   4b. Slice ε `ui/calculator_errors.py` 추출 — **완료** (115 참고). `InputValidationError`, `parse_number`, `bind_error_reset`, `apply_error_style`, `clear_error_style`, `get_float_val`을 신규 module로 이동. `calc_window.py`는 import alias 유지, `_get_float_val` 인스턴스 메서드는 새 helper를 호출하는 thin wrapper. 동작 변경 없음. (recommended next action: Slice ζ — EN tab extraction)
    4c. Slice ζ `ui/calculator_en_tab.py` 추출.
    4d. Slice η `ui/calculator_ahri_tab.py` 추출.
    4e. Slice β AHRI/EN auto-recompute wiring (위 module 분리 위에 올린다).
