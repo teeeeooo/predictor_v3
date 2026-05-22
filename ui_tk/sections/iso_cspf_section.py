@@ -14,6 +14,7 @@ from tkinter import ttk
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.input_widgets import NumericEntryRow
 from ui_tk.profile_resolver import resolve_profile_id
+from ui_tk.sections.iso16358_helpers import build_cspf_input, format_cspf_result
 
 
 class IsoCspfSection:
@@ -59,18 +60,13 @@ class IsoCspfSection:
         self._frame.pack(**kwargs)
 
     def _read_inputs(self) -> Tuple[Mapping[str, Mapping[str, float]], float]:
-        measured = {
-            "35_full": {
-                "capacity": self._full_cap.get_value(),
-                "power": self._full_pow.get_value(),
-            },
-            "35_half": {
-                "capacity": self._half_cap.get_value(),
-                "power": self._half_pow.get_value(),
-            },
-        }
-        declared = self._declared.get_value()
-        return measured, declared
+        return build_cspf_input(
+            full_capacity=self._full_cap.get_value(),
+            full_power=self._full_pow.get_value(),
+            half_capacity=self._half_cap.get_value(),
+            half_power=self._half_pow.get_value(),
+            declared_capacity=self._declared.get_value(),
+        )
 
     def _on_calculate(self) -> None:
         try:
@@ -81,9 +77,4 @@ class IsoCspfSection:
         except Exception as exc:
             self._result_callback(f"[CSPF 오류] {type(exc).__name__}: {exc}")
             return
-        self._result_callback(
-            "[CSPF]\n"
-            f"  CSPF = {result.get('cspf')}\n"
-            f"  CSTL = {result.get('cstl_wh', result.get('cstl'))}\n"
-            f"  CSEC = {result.get('csec_wh', result.get('csec'))}"
-        )
+        self._result_callback(format_cspf_result(result))

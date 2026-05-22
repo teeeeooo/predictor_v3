@@ -14,6 +14,7 @@ from tkinter import ttk
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.input_widgets import NumericEntryRow
 from ui_tk.profile_resolver import resolve_profile_id
+from ui_tk.sections.iso16358_helpers import build_hspf_input, format_hspf_result
 
 
 class IsoHspfSection:
@@ -55,17 +56,13 @@ class IsoHspfSection:
         self._frame.pack(**kwargs)
 
     def _read_inputs(self) -> Mapping[str, object]:
-        return {
-            "rated_heating_capacity": self._rated.get_value(),
-            "7_full": {
-                "capacity": self._full_cap.get_value(),
-                "power": self._full_pow.get_value(),
-            },
-            "7_half": {
-                "capacity": self._half_cap.get_value(),
-                "power": self._half_pow.get_value(),
-            },
-        }
+        return build_hspf_input(
+            rated_heating_capacity=self._rated.get_value(),
+            full_capacity=self._full_cap.get_value(),
+            full_power=self._full_pow.get_value(),
+            half_capacity=self._half_cap.get_value(),
+            half_power=self._half_pow.get_value(),
+        )
 
     def _on_calculate(self) -> None:
         try:
@@ -76,9 +73,4 @@ class IsoHspfSection:
         except Exception as exc:
             self._result_callback(f"[HSPF 오류] {type(exc).__name__}: {exc}")
             return
-        self._result_callback(
-            "[HSPF]\n"
-            f"  HSPF = {result.get('hspf')}\n"
-            f"  HSTL_Wh = {result.get('hstl_wh')}\n"
-            f"  HSEC_Wh = {result.get('hsec_wh')}"
-        )
+        self._result_callback(format_hspf_result(result))
