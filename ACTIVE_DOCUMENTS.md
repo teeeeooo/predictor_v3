@@ -50,6 +50,7 @@
 | `data/region_configs/REGION_CONFIG_RULES.md` | Region config edit rules | region config tasks | region config guardrails |
 | `docs/guides/lightweight_calculator_packaging_check.md` | Calculator-only packaging measurement guide | Tkinter feasibility / Windows packaging tasks | PyInstaller size measurement protocol, `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` |
 | `docs/guides/lightweight_calculator_tk_manual_smoke.md` | Tkinter calculator manual smoke checklist | Tkinter MVP validation tasks | manual checklist, expected Hong Kong CSPF/HSPF values, PyQt environment separation |
+| `docs/guides/pyqt_test_support_matrix.md` | PyQt widget test support/skip matrix | PyQt env audit / skip patch tasks, PyQt host validation | known-bad macOS Python 3.14 skip rationale, Python 3.12/3.11 and Windows validation pending |
 
 ## Standard Docs
 

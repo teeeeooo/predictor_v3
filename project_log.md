@@ -1,6 +1,39 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-23 — Xfail cleanup + PyQt/Tkinter environment stabilization
+
+### Decision
+- ISO pure-route Formula 45/49/47/50 xfail 4개는 obsolete experiment로 판정해
+  `tests/test_iso16358_hspf_pure_iso_track_a.py`에서 제거. full suite xfail
+  count는 23 → 19로 정리됨 (124).
+- 남은 19개 xfail의 성격을 명확히 분리: `tests/_legacy` 17개는 legacy
+  workbook-oracle diagnostic/reference (125), AS/NZS case3 2개는 external
+  workbook reference / full component row data prerequisite으로 Z-phase
+  deferred (126). marker / count / expected / fixture / core 코드 변경 없음.
+- macOS 15.7.3 arm64 + Python 3.14.4 + PyQt5 5.15.11 환경에서 일부
+  `QTableView` subclass 생성이 native SIGABRT abort를 일으키는 것을 audit
+  완료 (128). `tests/helpers/pyqt_env.py` + `tests/test_pyqt_environment_guard.py`
+  로 known-bad 환경 사전 skip 가드를 도입해 manual PyQt ignore 없이 full suite
+  실행 가능해졌다 (129). PyQt test는 삭제하지 않고 다른 host에서는 계속 실행.
+- Tkinter ISO section input dict / result formatting을 pure helper
+  (`ui_tk/sections/iso16358_helpers.py`) 로 분리. Hong Kong CSPF 4.939 / HSPF
+  3.643 smoke 유지 (130).
+- `docs/guides/pyqt_test_support_matrix.md`는 중간 안정화 문서로 유지하되,
+  PyQt calculator-only UI를 계속 고도화하는 것은 더 이상 목표가 아니다 (131).
+  다음 방향은 **PyQt calculator-only retirement audit** (read-only inventory)
+  이며, PyQt Predict/Train 앱은 유지 후보로 둔다.
+
+### Lesson
+- xfail은 marker만 보고 일괄 retirement하지 말고, 각각이 (a) production guard,
+  (b) historical diagnostic/reference, (c) external prerequisite 중 어디에
+  속하는지 분리해야 안전하게 정리할 수 있다.
+- 특정 host (macOS + Python 3.14 + PyQt5) 의 native abort는 test 삭제나 xfail
+  변환이 아니라 known-bad 환경 사전 skip 가드로 해결한다 — PyQt를 지원하는
+  다른 host 실행 가능성을 깨지 않는다.
+
+---
+
 ## 2026-05-19 — ISO16358-2 HSPF -7_ext fix + golden update
 
 ### Tried
