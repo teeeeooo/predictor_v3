@@ -48,7 +48,15 @@ def test_case3_packet_does_not_use_fake_component_rows():
     for word in forbidden:
         assert word not in content, f"Forbidden word {word} found in packet fixture"
 
-@pytest.mark.xfail(reason="Case 3 exact matching requires full row data (load, hours); current packet only has observed_power.")
+@pytest.mark.xfail(
+    reason=(
+        "AS/NZS Excel compatibility external-reference prerequisite: "
+        "case3 exact reconstruction needs full component row data "
+        "(load, hours, energy_wh/helper columns); current packet is "
+        "diagnostic-only with observed_power and is separate from the "
+        "ISO common production path until the deferred Z-phase."
+    )
+)
 def test_case3_exact_match_from_component_rows_xfail_until_full_data_exists():
     packet = load_json(PACKET_FIXTURE)
     rows = packet.get("component_rows", [])
