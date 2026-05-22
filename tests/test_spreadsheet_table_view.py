@@ -6,6 +6,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 pytest.importorskip("PyQt5")
 
+from tests.helpers.pyqt_env import macos_python314_pyqt5_known_bad_skip_mark
+
+pytestmark = macos_python314_pyqt5_known_bad_skip_mark()
+
 from PyQt5.QtCore import QItemSelectionModel, Qt  # noqa: E402
 from PyQt5.QtTest import QTest  # noqa: E402
 from PyQt5.QtWidgets import QApplication, QAbstractItemView  # noqa: E402
