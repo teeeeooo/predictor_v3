@@ -23,6 +23,7 @@ from ui.spreadsheet_table import (
     make_en14825_seer_table_model,
     SpreadsheetTableView,
 )
+from ui.theme import color as theme_color
 
 
 # SCOP climate별 UI default prefill (UI-only; calculator core / region
@@ -335,8 +336,9 @@ class CalculatorWindow(QWidget):
         # Group 3: HSPF2 v3 Heating — horizontal spreadsheet-like table
         # for the seven heating test points, plus a compact form for the
         # auxiliary fields (t_off / t_on / defrost minutes). See
-        # docs/ui/SPREADSHEET_TABLE_CONTRACT.md and the calculator
-        # horizontal-table-input design doc.
+        # docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md,
+        # docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md, and the
+        # calculator horizontal-table-input design doc.
         group_hspf2 = QGroupBox("3. HSPF2 v3 난방 테스트 포인트")
         hspf2_layout = QVBoxLayout()
 
@@ -613,7 +615,10 @@ class CalculatorWindow(QWidget):
         except InputValidationError as e:
             QMessageBox.warning(self, "입력 오류", str(e))
             if e.widget:
-                e.widget.setStyleSheet("border: 2px solid #E74C3C; background-color: #FDEDEC;")
+                e.widget.setStyleSheet(
+                    f"border: 2px solid {theme_color('color.danger')}; "
+                    f"background-color: {theme_color('color.bg.cell.invalid')};"
+                )
                 e.widget.setFocus()
                 e.widget.selectAll()
         except Exception as e:
