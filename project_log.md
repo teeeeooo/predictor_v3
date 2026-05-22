@@ -1288,3 +1288,15 @@
 - `python3 -B tools/check_code_structure.py`는 코드 구조에 영향을 주는 작업의 검증에 포함하고, 모든 작업의 강제 실행은 아니다. CI / pre-commit hook / GitHub Actions / devcontainer 추가는 본 작업에서 수행하지 않는다.
 - LOC/class soft limit allowlist는 known-large historical 파일에만 적용한다 (`core/_legacy/calculator_iso16358_legacy.py`, `core/calculator_iso16358.py`, `core/calculator_ks_c9306.py`, `core/calculator_ahri_hspf2.py`, `core/calculator_en14825.py`, `core/calculator_asnzs_hspf_excel.py`, `ui/calc_window.py`, `ui/calculators_2point.py`, `ui/spreadsheet_table.py`). 새 파일은 allowlist 대상이 아니다.
 - Spike 작업도 본 gate를 따른다. 116 단일 파일 spike → 118 clean reset 패턴을 재현하지 않는다.
+
+### Follow-up — Xfail retirement and lifecycle summary
+
+#### Result
+- xfail inventory audit에서 PyQt fatal-abort 4개 파일 제외 full-ish suite 기준 `568 passed, 1 skipped, 23 xfailed`를 재확인했다.
+- xfail 23개는 `tests/_legacy/` active diagnostic/reference 17개, AS/NZS case3 external reference/full row-data prerequisite 2개, ISO pure-route Formula 45/49/47/50 4개로 분류했다.
+- 115~122 active result reports는 `result_reports/summaries/123_summary-calculator-tkinter-quality-xfail.md`로 요약하고 archive 이동 대상으로 정리했다.
+
+#### Decision
+- ISO16358-2 HSPF official exact golden이 16/16 pass 상태이므로 ISO pure-route Formula 45/49/47/50 xfail 4개는 active known mismatch가 아니라 obsolete experiment / retirement candidate로 먼저 재검토한다.
+- `tests/_legacy` 17 xfail은 삭제 후보가 아니라 active diagnostic/reference 성격으로 유지 판단을 분리한다.
+- AS/NZS case3 2 xfail은 full row data 또는 external reference compatibility decision 없이는 marker cleanup과 섞지 않는다.
