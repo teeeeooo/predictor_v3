@@ -1,6 +1,23 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## 2026-05-23 — Project Memory Delta workflow + seed staging
+
+### Decision
+- Result report는 backend-neutral `Project Memory Delta`로 장기 기억 후보를
+  남길 수 있으며, 새 `keywords`는 YAML list로 작성한다. 기존 report 원문은
+  이 형식 도입을 이유로 retroactive 수정하지 않는다.
+- `result_reports/memory/project_memory_seed.md`는 summary 기반 기억 후보를
+  source 추적 가능하게 유지하는 repo-local staging 문서로 두며, 특정 memory
+  backend 전용 저장소나 기존 report 원문 대체물로 사용하지 않는다.
+
+### Lesson
+- 세부 report delta를 `project_log.md`에 반복 복사하지 않고, milestone급
+  process-rule 변화만 log에 남기며 summary-level seed entry로 장기 기억을
+  연결한다.
+
+---
+
 ## 2026-05-23 — Xfail cleanup + PyQt/Tkinter environment stabilization
 
 ### Decision

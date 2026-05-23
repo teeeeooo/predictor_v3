@@ -16,6 +16,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/114_summary-ui-ux-ssot-calculator-boundary.md` (covered reports `102-113`)
 - `result_reports/summaries/123_summary-calculator-tkinter-quality-xfail.md` (covered reports `115-122`)
 - `result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md` (covered reports `124-131`)
+- `result_reports/summaries/140_summary-project-memory-delta-workflow.md` (covered reports `133-139`)
 
 ## Scope and Non-goals
 
@@ -368,11 +369,22 @@ entries:
       - validation
     assertionStatus: observed
     source: result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md (covered reports 124-131; Remaining Work and Next Suggested Actions)
+
+  - type: procedure
+    topic: predictor_v3 Project Memory Delta staging workflow
+    content: predictor_v3 result reports record durable memory candidates in a backend-neutral Project Memory Delta format, serialize new keywords as YAML lists, and stage consolidated summary-level memory in result_reports/memory/project_memory_seed.md with source traceability rather than retroactively rewriting original reports.
+    keywords:
+      - predictor_v3
+      - project memory delta
+      - memory seed
+      - backend-neutral
+    assertionStatus: verified
+    source: result_reports/summaries/140_summary-project-memory-delta-workflow.md (covered reports 133-139; Key Decisions and Project Memory Seed Sync Judgment)
 ```
 
 ## Known Gaps
 
-- This seed covers summary-compressed knowledge through reports `131`; active reports introduced after the listed summaries are outside this seed.
+- This seed covers summary-compressed knowledge through reports `139`; active reports introduced after the listed summaries are outside this seed.
 - The seed does not reconstruct fine-grained evidence from individual archived reports.
 - Open questions remain unresolved until an explicitly scoped implementation, verification, or policy task addresses them.
 
