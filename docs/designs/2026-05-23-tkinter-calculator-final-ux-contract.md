@@ -199,21 +199,19 @@ the Tkinter calculator never introduces one.
 Ordered. Each slice ships independently with its own report.
 
 1. **Tkinter table/grid input foundation**
-   - Create a reusable Tkinter grid widget (`ui_tk/spreadsheet_grid.py` or
-     similar) that satisfies the *Required* table contract above.
-   - Replace `NumericEntryRow` in `iso_cspf_section.py` and
-     `iso_hspf_section.py` with the new grid for Hong Kong inputs.
-   - Keep the calculate button temporarily so the grid can be verified
-     before auto-calc is wired.
-   - Verification: Hong Kong CSPF/HSPF smoke values remain 4.939 / 3.643.
+   - Added the reusable pure model `ui_tk/table_grid_model.py` and Tkinter
+     Entry-grid adapter `ui_tk/table_grid.py` for schema, numeric validation,
+     and a high-level `values_changed` callback.
+   - This foundation remains alongside `NumericEntryRow`; ISO section
+     replacement and calculator wiring are deferred to slice 3.
+   - Verification: model/adapter tests plus existing Tkinter foundation smoke;
+     no calculator behavior is changed in this slice.
 
 2. **Tkinter auto-calc debounce/helper foundation**
-   - Add a small `DebouncedRecompute` helper (Tkinter `after`-based) that
-     subscribes to the grid's `values_changed` callback.
-   - Remove the temporary calculate button from ISO sections.
-   - Wire the debounced helper to `core.calculator_dispatcher`.
-   - Verification: edit a cell → wait ≤ 300 ms → result panel updates
-     without a button click.
+   - Add a small `DebouncedRecompute` helper (Tkinter `after`-based) that can
+     subscribe to the grid's `values_changed` callback.
+   - Keep section wiring and calculate-button removal for slice 3.
+   - Verification: pure/helper callback timing and cancellation behavior.
 
 3. **ISO Hong Kong CSPF/HSPF table + auto-calc vertical slice**
    - Combine slices 1 and 2 into a single coherent Hong Kong screen.
@@ -286,6 +284,9 @@ UX vertical slice (slice 3) is verified.**
 
 - **Feasibility MVP**: completed (118, 130).
 - **Final UX contract**: defined in this doc.
-- **Next action**: Implementation slice 1 — Tkinter table/grid input
-  foundation.
+- **Table/grid foundation**: completed in
+  `ui_tk/table_grid_model.py` and `ui_tk/table_grid.py`; not yet wired to
+  ISO sections.
+- **Next action**: Implementation slice 2 — Tkinter auto-calc
+  debounce/helper foundation.
 - **PyQt retirement**: held pending slice 3 verification.
