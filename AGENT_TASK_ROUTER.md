@@ -68,6 +68,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
 - `result_reports/summaries/` — 누적 report를 묶은 요약 report
 - `result_reports/archive/` — summary 생성 후 보관되는 원본 report
+- `result_reports/memory/` — `Project Memory Delta` 기반 seed/index/staging 문서. Memento, Mem0, PostgreSQL, Redis, local index 등 특정 backend에 종속되지 않는 repo-local 영역
 - `summaries/`와 `archive/` 폴더는 실제 summary/archive 또는 lifecycle maintenance 작업에서 필요할 때 생성한다.
 
 파일명:
@@ -160,6 +161,9 @@ Project Memory Delta:
 - `content`에는 대명사, `이번 작업`, `위에서`, `이전` 같은 자기참조 표현을 피하고, 6개월 뒤 다른 agent가 읽어도 프로젝트, 대상, 결정 또는 절차를 특정할 수 있게 작성한다.
 - 가설은 `decision`으로 기록하지 않는다. 해결되지 않은 가설은 `open_question`으로 기록하거나, 관찰에 근거한 추론은 `fact`와 `assertionStatus: inferred` 조합으로 기록한다.
 - `source`는 기억의 근거가 되는 report section, 변경 문서 경로, commit, 검증 결과 등 추적 가능한 출처를 적는다.
+- `result_reports/memory/` 문서는 기존 report 원문의 대체물이 아니며, 각 seed/index 항목은 source report 또는 summary를 추적 가능한 출처로 유지한다.
+- memory seed/index는 기존 report 원문을 retroactive 수정하지 않고 별도 문서로 생성한다.
+- memory seed/index 작성은 lifecycle summary/archive와 섞지 않고 별도 문서 작업으로 수행한다.
 
 Commit / Push:
 - report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
