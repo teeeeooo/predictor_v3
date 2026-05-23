@@ -9,21 +9,21 @@
 
 | 작업 유형 | `rg` pattern |
 | --- | --- |
-| Work Contract / Execution Discipline | `rg -n "^### 0. Work Contract / Execution Discipline"` |
-| Shared Guardrails | `rg -n "^### Shared Guardrails"` |
-| Project Memory Recall Gate | `rg -n "^### Project Memory Recall Gate"` |
-| Result Report Workflow | `rg -n "^### Result Report Workflow"` |
-| Documentation Sync & Lifecycle Gate | `rg -n "^#### Documentation Sync & Lifecycle Gate"` |
-| Commit / Git 정리 | `rg -n "^### 1. Commit / Git 정리"` |
-| Logic 수정 / 계산 엔진 수정 | `rg -n "^### 2. Logic 수정 / 계산 엔진 수정"` |
-| Coding work / architecture-sensitive changes | `rg -n "^### 3. Coding work / architecture-sensitive changes"` |
-| Smoke / Golden / Validation test 추가 | `rg -n "^### 4. Smoke / Golden / Validation test 추가"` |
-| 단순 docs 문구 수정 | `rg -n "^### 5. 단순 docs 문구 수정"` |
-| Agent rule / router 수정 | `rg -n "^### 6. Agent rule / router 수정"` |
-| Notes 내용 정리 / 문서 리팩토링 | `rg -n "^### 7. Notes 내용 정리 / 문서 리팩토링"` |
-| UI 수정 | `rg -n "^### 8. UI 수정"` |
-| ML/Predictor 수정 | `rg -n "^### 9. ML/Predictor 수정"` |
-| Packaging / 배포 빌드 | `rg -n "^### 10. Packaging / 배포 빌드"` |
+| Work Contract / Execution Discipline | `rg -n "^### 0. Work Contract / Execution Discipline" AGENT_TASK_ROUTER.md` |
+| Shared Guardrails | `rg -n "^### Shared Guardrails" AGENT_TASK_ROUTER.md` |
+| Project Memory Recall Gate | `rg -n "^### Project Memory Recall Gate" AGENT_TASK_ROUTER.md` |
+| Result Report Workflow | `rg -n "^### Result Report Workflow" AGENT_TASK_ROUTER.md` |
+| Documentation Sync & Lifecycle Gate | `rg -n "^#### Documentation Sync & Lifecycle Gate" AGENT_TASK_ROUTER.md` |
+| Commit / Git 정리 | `rg -n "^### 1. Commit / Git 정리" AGENT_TASK_ROUTER.md` |
+| Logic 수정 / 계산 엔진 수정 | `rg -n "^### 2. Logic 수정 / 계산 엔진 수정" AGENT_TASK_ROUTER.md` |
+| Coding work / architecture-sensitive changes | `rg -n "^### 3. Coding work / architecture-sensitive changes" AGENT_TASK_ROUTER.md` |
+| Smoke / Golden / Validation test 추가 | `rg -n "^### 4. Smoke / Golden / Validation test 추가" AGENT_TASK_ROUTER.md` |
+| 단순 docs 문구 수정 | `rg -n "^### 5. 단순 docs 문구 수정" AGENT_TASK_ROUTER.md` |
+| Agent rule / router 수정 | `rg -n "^### 6. Agent rule / router 수정" AGENT_TASK_ROUTER.md` |
+| Notes 내용 정리 / 문서 리팩토링 | `rg -n "^### 7. Notes 내용 정리 / 문서 리팩토링" AGENT_TASK_ROUTER.md` |
+| UI 수정 | `rg -n "^### 8. UI 수정" AGENT_TASK_ROUTER.md` |
+| ML/Predictor 수정 | `rg -n "^### 9. ML/Predictor 수정" AGENT_TASK_ROUTER.md` |
+| Packaging / 배포 빌드 | `rg -n "^### 10. Packaging / 배포 빌드" AGENT_TASK_ROUTER.md` |
 
 ### 0. Work Contract / Execution Discipline
 
@@ -155,7 +155,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
   - 중단/blocked로 파일 변경이 없으면 `modified: none`을 사용한다.
   - pre-existing unrelated dirty/staged/untracked 파일이나 작업 범위 밖 파일은 포함하지 않는다.
   - 파일 이동·rename·archive 등으로 경로가 많을 때는 그룹 요약을 사용할 수 있다.
-    - 예: `modified: 3 docs updated, 7 reports moved active→archive; details in report`
+    - 예: `modified: 3 docs updated, 7 reports moved active→archive; 상세 경로는 report에 기록`
     - 예: `modified: project_log.md, result_reports/memory/project_memory_seed.md, result_reports/summaries/140_summary-*.md, result_reports/archive/{133..139}_*.md (moved from active)`
     - 그룹 요약을 쓰는 경우 상세 경로 목록은 report의 Changed Files / Archive Candidates / Verification에 남긴다.
 - 문제가 있거나 blocked이면 위 세 종류 줄 형식에 더해 원인만 짧게 출력할 수 있다.
