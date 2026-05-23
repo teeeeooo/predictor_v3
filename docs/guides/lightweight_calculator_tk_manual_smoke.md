@@ -130,14 +130,15 @@ without changing inputs unless the step says so.
    visible at the same time in the same screen. `profile_id`,
    `calculator_id`, and `config_path` are not displayed anywhere in
    the UI.
-5. **CSPF default values** — In the CSPF section:
-   - `정격 능력 [W]` = `3500`
-   - `35_full 능력 [W]` = `3600`
-   - `35_full 전력 [W]` = `900`
-   - `35_half 능력 [W]` = `1700`
-   - `35_half 전력 [W]` = `380`
-6. **CSPF calculation** — Click the `CSPF 계산` button without
-   changing inputs. The result panel below should contain a block:
+5. **CSPF table default values** — In the CSPF table grids:
+   - `정격` / `능력 [W]` = `3500`
+   - `35_full` / `능력 [W]` = `3600`
+   - `35_full` / `전력 [W]` = `900`
+   - `35_half` / `능력 [W]` = `1700`
+   - `35_half` / `전력 [W]` = `380`
+   - No `CSPF 계산` button is shown.
+6. **CSPF auto-calc** — Without changing inputs, wait briefly for
+   auto-calc. The result panel below should contain a block:
    ```
    [CSPF]
      CSPF = 4.939
@@ -145,14 +146,15 @@ without changing inputs unless the step says so.
      CSEC = …
    ```
    The numerical CSPF value must read **`4.939`**.
-7. **HSPF default values** — In the HSPF section:
-   - `정격 난방 능력 [W]` = `6300`
-   - `7_full 능력 [W]` = `6300`
-   - `7_full 전력 [W]` = `1500`
-   - `7_half 능력 [W]` = `3200`
-   - `7_half 전력 [W]` = `800`
-8. **HSPF calculation** — Click the `HSPF 계산` button. The result
-   panel should append a second block:
+7. **HSPF table default values** — In the HSPF table grids:
+   - `정격 난방` / `능력 [W]` = `6300`
+   - `7_full` / `능력 [W]` = `6300`
+   - `7_full` / `전력 [W]` = `1500`
+   - `7_half` / `능력 [W]` = `3200`
+   - `7_half` / `전력 [W]` = `800`
+   - No `HSPF 계산` button is shown.
+8. **HSPF auto-calc** — After the initial auto-calc, the result
+   panel should contain a second block:
    ```
    [HSPF]
      HSPF = 3.643
@@ -160,9 +162,10 @@ without changing inputs unless the step says so.
      HSEC_Wh = …
    ```
    The numerical HSPF value must read **`3.643`**.
-9. **Result text accumulates** — After steps 6 and 8 both blocks are
-   visible in the result panel with a blank line between them; the
-   second click does not overwrite the first.
+9. **Latest result composition** — After steps 6 and 8 both latest
+   blocks are visible in the result panel with a blank line between
+   them. Edit one valid cell and wait briefly: its metric block
+   updates without adding duplicate result history.
 10. **Copy result** — Click `결과 복사`. Open a text editor (or any
     text input) outside the app and paste with Cmd+V. The pasted
     text should contain both the `[CSPF]` and `[HSPF]` blocks.
@@ -171,8 +174,8 @@ without changing inputs unless the step says so.
 12. **Region re-selection does not corrupt the tab** — Click the
     region combobox. Re-select `Hong Kong` (currently the only
     option). The CSPF and HSPF sections re-render without
-    duplication, the result panel remains as it was after step 11
-    (empty), and a fresh CSPF calculation still produces `4.939`.
+    duplication and auto-calc repopulates the result panel with
+    CSPF `4.939` and HSPF `3.643`.
 13. **PyQt5 stays unloaded** — Optional verification. With the app
     still running, open a second terminal at the repo root and run:
     ```bash
@@ -214,11 +217,11 @@ Copy this block into the run notes / report; mark each step
 - Single ISO 16358 tab: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
-- CSPF default values present: OK/NG
-- CSPF calculation = 4.939: OK/NG
-- HSPF default values present: OK/NG
-- HSPF calculation = 3.643: OK/NG
-- Result text accumulates (no overwrite): OK/NG
+- CSPF table defaults / no calculate button: OK/NG
+- CSPF auto-calc = 4.939: OK/NG
+- HSPF table defaults / no calculate button: OK/NG
+- HSPF auto-calc = 3.643: OK/NG
+- Latest result composition (no duplicate history): OK/NG
 - Copy result (Cmd+V paste shows both blocks): OK/NG
 - Clear result empties the panel: OK/NG
 - Region re-selection re-renders cleanly: OK/NG

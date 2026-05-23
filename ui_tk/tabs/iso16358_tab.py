@@ -56,6 +56,8 @@ class Iso16358Tab(ttk.Frame):
         self.result_panel.pack(
             side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4
         )
+        self.sections = {}
+        self._metric_results: dict[str, str] = {}
 
         self._render_region(initial_label)
 
@@ -65,12 +67,27 @@ class Iso16358Tab(ttk.Frame):
     def _render_region(self, region_label: str) -> None:
         for child in self._sections_holder.winfo_children():
             child.destroy()
+        self.sections = {}
+        self._metric_results = {}
+        self.result_panel.clear()
 
         for metric in supported_metrics_for(region_label):
             factory = _SECTION_FACTORIES.get(metric)
             if factory is None:
                 continue
             section = factory(
-                self._sections_holder, region_label, self.result_panel.append
+                self._sections_holder,
+                region_label,
+                lambda text, metric=metric: self._set_metric_result(metric, text),
             )
             section.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
+            self.sections[metric] = section
+
+    def _set_metric_result(self, metric: str, text: str) -> None:
+        self._metric_results[metric] = text
+        ordered_results = [
+            self._metric_results[key]
+            for key in supported_metrics_for(self._region_combo.get())
+            if key in self._metric_results
+        ]
+        self.result_panel.set_text("\n\n".join(ordered_results))

@@ -1,7 +1,6 @@
-"""ISO 16358-1 CSPF input section (Tkinter MVP).
+"""ISO 16358-1 CSPF table input section for the Tkinter calculator.
 
-Inputs and defaults mirror the 116 prototype so the Hong Kong CSPF =
-4.939 smoke result is preserved.
+Defaults mirror the feasibility MVP so Hong Kong CSPF = 4.939 is preserved.
 """
 
 from __future__ import annotations
@@ -12,17 +11,15 @@ import tkinter as tk
 from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
-from ui_tk.input_widgets import NumericEntryRow
+from ui_tk.auto_calc import DebouncedAutoCalc
 from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.sections.iso16358_helpers import build_cspf_input, format_cspf_result
+from ui_tk.table_grid import TableGrid
+from ui_tk.table_grid_model import GridColumn, GridRow
 
 
 class IsoCspfSection:
-    """Hong Kong CSPF — 35_full / 35_half capacity + power + declared.
-
-    Matches the ``"measure"`` points declared in
-    ``data/region_configs/hong_kong.json``.
-    """
+    """Hong Kong CSPF table input with debounced automatic calculation."""
 
     def __init__(
         self,
@@ -34,43 +31,58 @@ class IsoCspfSection:
         self._result_callback = result_callback
         self._frame = ttk.LabelFrame(parent, text=f"CSPF ({region_label})")
 
-        self._declared = NumericEntryRow(self._frame, "정격 능력 [W]")
-        self._declared.set_value("3500")
-        self._declared.grid(row=0, column=0, columnspan=2, sticky="w", padx=4, pady=2)
-
-        self._full_cap = NumericEntryRow(self._frame, "35_full 능력 [W]")
-        self._full_cap.set_value("3600")
-        self._full_cap.grid(row=1, column=0, sticky="w", padx=4, pady=2)
-        self._full_pow = NumericEntryRow(self._frame, "35_full 전력 [W]")
-        self._full_pow.set_value("900")
-        self._full_pow.grid(row=1, column=1, sticky="w", padx=4, pady=2)
-
-        self._half_cap = NumericEntryRow(self._frame, "35_half 능력 [W]")
-        self._half_cap.set_value("1700")
-        self._half_cap.grid(row=2, column=0, sticky="w", padx=4, pady=2)
-        self._half_pow = NumericEntryRow(self._frame, "35_half 전력 [W]")
-        self._half_pow.set_value("380")
-        self._half_pow.grid(row=2, column=1, sticky="w", padx=4, pady=2)
-
-        ttk.Button(self._frame, text="CSPF 계산", command=self._on_calculate).grid(
-            row=3, column=0, sticky="w", padx=4, pady=4
+        self.declared_grid = TableGrid(
+            self._frame,
+            rows=(GridRow("declared", "정격"),),
+            columns=(GridColumn("capacity_w", "능력 [W]"),),
         )
+        self.declared_grid.grid(row=0, column=0, sticky="w", padx=4, pady=2)
+        self.points_grid = TableGrid(
+            self._frame,
+            rows=(GridRow("35_full", "35_full"), GridRow("35_half", "35_half")),
+            columns=(
+                GridColumn("capacity_w", "능력 [W]"),
+                GridColumn("power_w", "전력 [W]"),
+            ),
+        )
+        self.points_grid.grid(row=1, column=0, sticky="w", padx=4, pady=2)
+
+        self.declared_grid.set_cell("declared", "capacity_w", "3500")
+        self.points_grid.set_cells(
+            {
+                ("35_full", "capacity_w"): "3600",
+                ("35_full", "power_w"): "900",
+                ("35_half", "capacity_w"): "1700",
+                ("35_half", "power_w"): "380",
+            }
+        )
+        self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
+        self.declared_grid.set_values_changed_callback(self._auto_calc.schedule)
+        self.points_grid.set_values_changed_callback(self._auto_calc.schedule)
+        self._frame.bind("<Destroy>", self._on_destroy, add="+")
+        self._auto_calc.schedule()
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)
 
     def _read_inputs(self) -> Tuple[Mapping[str, Mapping[str, float]], float]:
+        declared = self.declared_grid.get_numeric_table()
+        points = self.points_grid.get_numeric_table()
         return build_cspf_input(
-            full_capacity=self._full_cap.get_value(),
-            full_power=self._full_pow.get_value(),
-            half_capacity=self._half_cap.get_value(),
-            half_power=self._half_pow.get_value(),
-            declared_capacity=self._declared.get_value(),
+            full_capacity=points["35_full"]["capacity_w"],
+            full_power=points["35_full"]["power_w"],
+            half_capacity=points["35_half"]["capacity_w"],
+            half_power=points["35_half"]["power_w"],
+            declared_capacity=declared["declared"]["capacity_w"],
         )
 
-    def _on_calculate(self) -> None:
+    def recalculate_now(self) -> None:
         try:
             measured, declared = self._read_inputs()
+        except ValueError:
+            self._result_callback("[CSPF 입력 오류] 숫자 입력을 확인하세요.")
+            return
+        try:
             profile_id = resolve_profile_id(self._region_label, "CSPF")
             calc = create_calculator_for_profile(profile_id=profile_id)
             result = calc.calculate_cspf(measured, declared_capacity=declared)
@@ -78,3 +90,7 @@ class IsoCspfSection:
             self._result_callback(f"[CSPF 오류] {type(exc).__name__}: {exc}")
             return
         self._result_callback(format_cspf_result(result))
+
+    def _on_destroy(self, event: tk.Event) -> None:
+        if event.widget is self._frame:
+            self._auto_calc.dispose()

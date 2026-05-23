@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Callable
+from typing import Callable, Mapping
 
 from ui_tk.table_grid_model import GridColumn, GridRow, TableGridModel
 
@@ -54,7 +54,7 @@ class TableGrid(ttk.Frame):
             )
             for column_number, column in enumerate(self.model.columns, start=1):
                 address = (row.key, column.key)
-                variable = tk.StringVar(value=self.model.get_cell(*address))
+                variable = tk.StringVar(master=self, value=self.model.get_cell(*address))
                 variable.trace_add(
                     "write",
                     lambda *_args, address=address: self._handle_value_change(address),
@@ -99,6 +99,14 @@ class TableGrid(ttk.Frame):
             return False
         self._variables[(row_key, column_key)].set(value)
         return True
+
+    def set_cells(self, values: Mapping[tuple[str, str], str]) -> bool:
+        """Update multiple Entry-backed cells and report whether any changed."""
+        changed = False
+        for (row_key, column_key), value in values.items():
+            if self.set_cell(row_key, column_key, value):
+                changed = True
+        return changed
 
     def get_text_table(self) -> dict[str, dict[str, str]]:
         """Return all entered text in row/column form."""

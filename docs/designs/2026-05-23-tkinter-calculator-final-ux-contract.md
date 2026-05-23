@@ -208,17 +208,22 @@ Ordered. Each slice ships independently with its own report.
      no calculator behavior is changed in this slice.
 
 2. **Tkinter auto-calc debounce/helper foundation**
-   - Add a small `DebouncedRecompute` helper (Tkinter `after`-based) that can
-     subscribe to the grid's `values_changed` callback.
-   - Keep section wiring and calculate-button removal for slice 3.
-   - Verification: pure/helper callback timing and cancellation behavior.
+   - Completed as part of slice 3 in `ui_tk/auto_calc.py` with the small
+     Tkinter `after`-based `DebouncedAutoCalc` helper.
+   - It subscribes to grid `values_changed` callbacks without owning
+     calculator or result-formatting logic.
+   - Verification: callback scheduling, flush, cancellation, and disposal
+     tests.
 
 3. **ISO Hong Kong CSPF/HSPF table + auto-calc vertical slice**
-   - Combine slices 1 and 2 into a single coherent Hong Kong screen.
-   - Add per-section result panels with status banners.
-   - Ensure numeric validation, exception handling, and inline status meet
-     the contract.
-   - Verification: manual smoke checklist (macOS) + full pytest baseline.
+   - Completed in task 162: `IsoCspfSection` and `IsoHspfSection` now use
+     `TableGrid` inputs and contain no per-section calculate buttons.
+   - Both metrics calculate automatically after valid changes; initial Hong
+     Kong defaults show CSPF `4.939` and HSPF `3.643`.
+   - The shared result panel displays the latest result for each metric
+     instead of appending duplicate auto-calc history.
+   - Verification: automated vertical-slice tests + full pytest baseline;
+     manual smoke remains slice 4.
 
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
@@ -253,15 +258,16 @@ Ordered. Each slice ships independently with its own report.
 
 ## Retirement Dependency
 
-**PyQt calculator-only source retirement is on hold until the Tkinter final
-UX vertical slice (slice 3) is verified.**
+**PyQt calculator-only source retirement remains on hold after the Tkinter
+vertical slice, pending Windows packaging size measurement or an explicit
+usability decision.**
 
 - The PyQt calculator (`app_calculator.py`, `ui/calc_window.py`, and related
   modules) remains the **reference UX and reference source** until the Tkinter
   implementation demonstrates equivalent user-visible behavior.
 - Reports 154~156 identified the retirement candidates and ordered the slices.
-  This doc does not override those decisions; it adds a **prerequisite gate**:
-  slice 3 must be green before S3 (source retirement) is authorized.
+  Task 162 satisfies the Hong Kong vertical-slice prerequisite but does not
+  authorize S3 (source retirement).
 - If slice 3 fails or slice 5 shows insufficient size benefit, the Tkinter
   direction falls back and the PyQt calculator UI workstream resumes from
   the held slices (ε → ζ → η → β → γ → δ) as originally planned.
@@ -275,8 +281,8 @@ UX vertical slice (slice 3) is verified.**
   already exist; they remain unchanged.
 - **Smoke**: manual macOS checklist for the full app; automated import/smoke
   for `app_calculator_tk.py`.
-- **Baseline**: full pytest suite must not regress. Current baseline:
-  `566 passed, 32 skipped, 19 xfailed`.
+- **Baseline**: full pytest suite must not regress. Pre-slice-3 baseline:
+  `622 passed, 32 skipped, 19 xfailed`.
 - **Structure guard**: `python3 -B tools/check_code_structure.py` must stay
   green for every slice.
 
@@ -285,8 +291,11 @@ UX vertical slice (slice 3) is verified.**
 - **Feasibility MVP**: completed (118, 130).
 - **Final UX contract**: defined in this doc.
 - **Table/grid foundation**: completed in
-  `ui_tk/table_grid_model.py` and `ui_tk/table_grid.py`; not yet wired to
-  ISO sections.
-- **Next action**: Implementation slice 2 — Tkinter auto-calc
-  debounce/helper foundation.
-- **PyQt retirement**: held pending slice 3 verification.
+  `ui_tk/table_grid_model.py` and `ui_tk/table_grid.py`; wired to the Hong
+  Kong ISO CSPF/HSPF vertical slice in task 162.
+- **Auto-calc vertical slice**: completed in task 162 using
+  `ui_tk/auto_calc.py`, with button-free CSPF/HSPF inputs and latest-result
+  composition.
+- **Next action**: Implementation slice 4 — macOS manual UX smoke.
+- **PyQt retirement**: held pending Windows packaging size measurement or an
+  explicit usability decision.
