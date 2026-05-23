@@ -1,6 +1,6 @@
 # predictor_v3 Agent Rules
 
-이 문서는 매 작업 시작 시 확인하는 **lite entrypoint**다.
+이 문서는 매 작업 시작 시 확인하는 **lite entrypoint**다 (~95 lines).
 세부 절차와 guardrail은 작업 유형에 맞는 `AGENT_TASK_ROUTER.md` 섹션이 owner다.
 상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 
