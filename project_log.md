@@ -21,6 +21,19 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-05-24 — Tkinter calculator matrix UI direction + project-wide surface rules
+
+### Decision
+- PyQt calculator-only source retirement는 계속 hold한다. direct calculator tests는 retire했지만 shared PyQt utility와 guarded widget support는 별도 판단 전까지 retained/hold 자산이다 (154~156).
+- Tkinter calculator final UX는 table/grid + auto-calc이며, Hong Kong CSPF/HSPF는 matrix input과 summary result surface까지 도달했다. core/profile/dispatcher 경로와 기본 smoke 값은 유지한다 (157, 161~163).
+- `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md`와 `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`는 Calculator, Predict/Train, 후속 ML/inverse-search UI의 project-wide visual/surface-shaping SSOT다 (158~160, 164).
+- 163 visible surface는 추가 refinement가 필요하다는 사용자 확인에 따라, lifecycle 이후에는 manual smoke보다 Tkinter matrix/result visual surface refinement implementation을 먼저 수행한다. Graph/detail과 큰 graph dependency는 별도 후속 단계로 유지한다.
+
+### Lesson
+- Table behavior contract만으로 반복 데이터의 화면 shape를 결정할 수 없다. 반복 입력은 matrix rule이, primary result는 summary surface rule이 필요하며 visible UX 검증은 구조 구현 이후 별도로 이어져야 한다.
+
+---
+
 ## 2026-05-23 — Project Memory Delta workflow + seed staging
 
 ### Decision

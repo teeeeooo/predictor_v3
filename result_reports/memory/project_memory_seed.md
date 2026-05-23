@@ -17,6 +17,8 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/123_summary-calculator-tkinter-quality-xfail.md` (covered reports `115-122`)
 - `result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md` (covered reports `124-131`)
 - `result_reports/summaries/140_summary-project-memory-delta-workflow.md` (covered reports `133-139`)
+- `result_reports/summaries/153_summary-agent-workflow-memory-token-log-lifecycle.md` (covered reports `141-152`)
+- `result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md` (covered reports `154-164`)
 
 ## Scope and Non-goals
 
@@ -404,6 +406,32 @@ entries:
       - project-memory-delta
     assertionStatus: verified
     source: result_reports/summaries/153_summary-agent-workflow-memory-token-log-lifecycle.md (covered reports 141-152; Key Decisions)
+
+  - type: decision
+    topic: project-wide visual and input-result surface SSOT
+    content: predictor_v3 adopts docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md and docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md as project-wide UI/UX owners; repeated structured inputs use headered matrix tables and primary results use summary surfaces, while graph/detail surfaces remain a lightweight later phase.
+    keywords:
+      - predictor_v3
+      - UI/UX SSOT
+      - visual design
+      - input matrix
+      - result surface
+      - graph detail
+    assertionStatus: verified
+    source: result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md (covered reports 158-164; Key Decisions and UI/UX SSOT Changes)
+
+  - type: decision
+    topic: Tkinter calculator matrix UI and PyQt retirement gate
+    content: Tkinter ISO Hong Kong CSPF and HSPF use matrix input, auto-calc, and summary result surfaces while retaining existing calculation routes and smoke values; PyQt calculator-only source retirement remains held pending Tkinter UX and Windows packaging judgment, with shared PyQt utilities retained on hold.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - Hong Kong
+      - auto-calc
+      - PyQt calculator retirement
+      - packaging
+    assertionStatus: verified
+    source: result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md (covered reports 154-164; Tkinter Calculator Status and PyQt Calculator Retirement Status)
 ```
 
 ## Known Gaps

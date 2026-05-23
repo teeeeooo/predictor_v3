@@ -101,6 +101,16 @@
      - **PyQt calculator-only source retirement**는 계속 보류한다.
      - **Large graph dependency** (`matplotlib` 등)는 Windows packaging size 판단 전까지 도입하지 않는다.
 
+   4j. **PyQt retirement / Tkinter UI matrix-rules lifecycle summary** (165 참고). `result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md`로 154~164 active report를 압축하고 covered reports를 archive로 이동했다. 163 화면은 matrix input/summary surface의 first implementation이지만 사용자 확인 결과 visible refinement가 더 필요하며, 164는 rule adoption-only이므로 실행 화면을 변경하지 않았다. 다음 recommended action 순서:
+     1. **Tkinter matrix/result visual surface refinement implementation**.
+     2. **macOS Tkinter manual UX smoke** — refinement 이후.
+     3. **Lightweight graph/detail surface design** — 필요 시.
+     4. **Windows PyInstaller size measurement** — Windows host available 시.
+     5. **Tkinter standard/region expansion** — 필요 시.
+     6. **PyQt calculator source retirement 재검토** — Tkinter UX/packaging 판단 이후.
+     - **PyQt calculator-only source retirement**는 계속 보류한다.
+     - **Large graph dependency** (`matplotlib` 등)는 Windows packaging size 판단 전까지 도입하지 않는다.
+
    4v. **Xfail retirement audit / ISO pure-route obsolete xfail retirement / legacy diagnostic owner cleanup / AS/NZS case3 compatibility decision** (122~126 참고). PyQt fatal-abort 4개 파일 제외 full-ish baseline은 **568 passed, 1 skipped, 23 xfailed**에서 ISO pure-route Formula 45/49/47/50 obsolete experiment xfail 4개 제거 후 **568 passed, 1 skipped, 19 xfailed**로 정리되었다. `tests/test_iso16358_hspf_pure_iso_track_a.py`에는 fixture identity / workbook-reference guard / cycling / Formula 44·48 min-half / saturated auxiliary smoke만 남겼다. `tests/_legacy` 17개 xfail은 marker/count를 유지하면서 legacy workbook-oracle diagnostic/reference owner와 production official-exact path 분리를 reason/README로 명확히 했다. AS/NZS case3 2개 xfail은 marker/count를 유지하며 external workbook reference/full component row data prerequisite로 정책 결정했다. exact reconstruction / full row extraction은 Z-phase AS/NZS Excel compatibility work까지 deferred로 유지한다. 다음 recommended action은 (1) Python 3.12 venv 또는 Windows host에서 PyQt smoke 재검증, (2) Windows host 확보 시 PyInstaller size measurement, (3) Tkinter next metric/standard extension design 필요 시.
 
    4x. **macOS Tkinter manual smoke checklist** (120 참고). `docs/guides/lightweight_calculator_tk_manual_smoke.md` 신규 작성. 14 항목 manual checklist + OK/NG 기록 형식 + 기대값 (Hong Kong CSPF 4.939 / HSPF 3.643) + PyQt5 미import 확인 + macOS PyQt fatal-abort 분리 + 다음 단계 (Windows host 확보 시 packaging guide로 진행, 아니면 pending 유지). Tkinter MVP는 코드 변경 없이 동일 (118 reset 결과 유지). 다음 recommended action은 (1) Windows host 확보 후 PyInstaller size 실측 (Slice T6) 또는 (2) legacy/unused script cleanup audit 또는 (3) ISO section pure helper 분리. Windows 사용 불가 동안 (1)은 pending이므로 (2) 또는 (3) 중 사용자 우선순위에 따라 선택. 본 작업은 docs only.
