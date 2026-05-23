@@ -140,6 +140,17 @@ Project Memory Delta:
 - `Project Memory Delta`는 report에서 장기 기억 후보만 기록하는 backend-neutral 섹션이다. Memento, Mem0, PostgreSQL, Redis, local index 등 특정 저장소나 구현에 종속된 형식으로 정의하지 않는다.
 - Full report는 기본적으로 `Project Memory Delta` 섹션을 포함한다. 장기 기억 후보가 없으면 `- none`으로 명시한다.
 - 항목 하나의 최소 필드는 `type`, `topic`, `content`, `keywords`, `assertionStatus`, `source`다.
+- `keywords`는 comma-separated string이 아니라 YAML list로 작성한다.
+
+  ```yaml
+  keywords:
+    - predictor_v3
+    - result report
+    - project memory delta
+    - backend-neutral
+  ```
+
+- 기존 report에서 `keywords`를 문자열로 기록한 사례는 이 형식 보강을 이유로 retroactive 수정하지 않는다.
 - 선택 필드는 `importance`, `caseId`, `supersedes`, `resolutionStatus`다.
 - 허용 `type`은 `fact`, `decision`, `error`, `preference`, `procedure`, `relation`, `episode`, `open_question`으로 제한한다.
 - 허용 `assertionStatus`는 `observed`, `inferred`, `verified`, `rejected`로 제한한다.
