@@ -374,6 +374,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
     - archive split은 exact move 원칙을 따르고, 요약/재작성하지 않는다.
     - 일반 작업 중 historical archive를 읽지 않는다.
     - 과거 로그 확인이 필요한 경우 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 찾고 필요한 segment/range만 읽는다.
+    - `docs/archive/project_log/YYYY-MM/` segment의 `partNN`은 original log order를 보존한다. `project_log.md`는 reverse chronological order이므로 segment filename의 date range는 descending일 수 있다. 과거 로그 확인은 filename 추측보다 heading search를 우선한다.
 
 2. `docs/WORK_PLAN.md`
    - 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목이 실제로 바뀐 경우에만 읽고 수정한다.
