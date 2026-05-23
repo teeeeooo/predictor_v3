@@ -3,6 +3,28 @@
 작업자는 먼저 작업 유형을 분류한 뒤, 해당 유형에 필요한 문서만 읽는다.
 불필요한 긴 문서를 습관적으로 읽지 않는다.
 
+### Quick Route Index
+
+이 index는 navigation helper일 뿐, 기존 규칙의 우선순위나 의미를 바꾸지 않는다. 해당 섹션을 `rg`로 빠르게 찾을 때 사용한다.
+
+| 작업 유형 | `rg` pattern |
+| --- | --- |
+| Work Contract / Execution Discipline | `rg -n "^### 0. Work Contract / Execution Discipline"` |
+| Shared Guardrails | `rg -n "^### Shared Guardrails"` |
+| Project Memory Recall Gate | `rg -n "^### Project Memory Recall Gate"` |
+| Result Report Workflow | `rg -n "^### Result Report Workflow"` |
+| Documentation Sync & Lifecycle Gate | `rg -n "^#### Documentation Sync & Lifecycle Gate"` |
+| Commit / Git 정리 | `rg -n "^### 1. Commit / Git 정리"` |
+| Logic 수정 / 계산 엔진 수정 | `rg -n "^### 2. Logic 수정 / 계산 엔진 수정"` |
+| Coding work / architecture-sensitive changes | `rg -n "^### 3. Coding work / architecture-sensitive changes"` |
+| Smoke / Golden / Validation test 추가 | `rg -n "^### 4. Smoke / Golden / Validation test 추가"` |
+| 단순 docs 문구 수정 | `rg -n "^### 5. 단순 docs 문구 수정"` |
+| Agent rule / router 수정 | `rg -n "^### 6. Agent rule / router 수정"` |
+| Notes 내용 정리 / 문서 리팩토링 | `rg -n "^### 7. Notes 내용 정리 / 문서 리팩토링"` |
+| UI 수정 | `rg -n "^### 8. UI 수정"` |
+| ML/Predictor 수정 | `rg -n "^### 9. ML/Predictor 수정"` |
+| Packaging / 배포 빌드 | `rg -n "^### 10. Packaging / 배포 빌드"` |
+
 ### 0. Work Contract / Execution Discipline
 
 모든 작업은 수정 전에 Goal / Scope / Non-goals / Verification을 짧게 확정한다.
@@ -23,7 +45,7 @@ preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 
 - `core/predictor.py`에 `optuna`, `sklearn`, `shap`, `matplotlib`를 import하지 않는다.
 - `COLUMNS`는 `core/constants.py`, `MODEL_REGISTRY`는 `core/models.py`를 단일 소스로 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
-- 대형 파일은 먼저 `rg` / `grep -n`으로 대상 위치를 찾고, 필요한 범위만 `sed -n`으로 읽는다.
+- 대형 파일이나 directory를 읽기 전에 `wc -l <file>` 또는 `du -sh <dir>`로 규모를 먼저 확인하고, `rg` / `grep -n`으로 대상 위치를 찾은 뒤 필요한 범위만 `sed -n`으로 읽는다.
 - 새 script / module / feature 작성에는 `AGENTS.md`의 New Code Quality Gate를 따른다 (thin entrypoint, layer boundary, hard-coded value 격리, helper 재사용, soft LOC/class limit, spike도 한 파일에 모든 책임 담지 않음). 코드 구조에 영향을 주는 작업은 검증에 `python3 -B tools/check_code_structure.py`를 포함하고, 결과 (`OK (no findings)` 또는 발견된 error/warning)를 최종 보고에 짧게 남긴다.
 
 계산기 경계:
@@ -73,9 +95,10 @@ UI 경계:
 
 확인 방법:
 - memory seed 전문을 무조건 읽지 않는다.
-- 먼저 `rg -n`으로 현재 작업의 topic 또는 keyword를 `result_reports/memory/project_memory_seed.md`에서 검색한다.
+- 먼저 `wc -l result_reports/memory/project_memory_seed.md`로 규모를 확인하고, `rg -n`으로 현재 작업의 topic 또는 keyword를 `result_reports/memory/project_memory_seed.md`에서 검색한다.
 - 일치하는 entry 주변만 `sed -n` 등으로 제한 확인한다.
 - active owner doc와 seed 관련 entry만으로 판단 근거가 부족할 때만 필요한 source summary/report 범위로 내려간다.
+- `result_reports/archive/`는 기본적으로 `find`/filename/heading만 확인하고, 원문은 source 검증이 필요한 경우에만 제한적으로 읽는다.
 
 우선순위:
 1. current prompt의 Goal / Scope / Non-goals / Verification
@@ -131,6 +154,10 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
   - report-only 작업이면 report 파일만 포함한다.
   - 중단/blocked로 파일 변경이 없으면 `modified: none`을 사용한다.
   - pre-existing unrelated dirty/staged/untracked 파일이나 작업 범위 밖 파일은 포함하지 않는다.
+  - 파일 이동·rename·archive 등으로 경로가 많을 때는 그룹 요약을 사용할 수 있다.
+    - 예: `modified: 3 docs updated, 7 reports moved active→archive; details in report`
+    - 예: `modified: project_log.md, result_reports/memory/project_memory_seed.md, result_reports/summaries/140_summary-*.md, result_reports/archive/{133..139}_*.md (moved from active)`
+    - 그룹 요약을 쓰는 경우 상세 경로 목록은 report의 Changed Files / Archive Candidates / Verification에 남긴다.
 - 문제가 있거나 blocked이면 위 세 종류 줄 형식에 더해 원인만 짧게 출력할 수 있다.
 - `modified:` 줄은 사람이 한눈에 보기 위한 보조 정보이며, report 파일 내부의 `Changed Files` 섹션은 그대로 유지한다.
 
@@ -265,7 +292,7 @@ Lifecycle check:
 
 조건부로 읽을 문서:
 - Documentation Sync & Lifecycle Gate의 1차 판단 후 필요가 확정된 문서만 읽는다.
-- `project_log.md` 최근 2~3개 로그는 아래 경우에만 읽는다.
+- `project_log.md` 최근 2~3개 로그는 아래 경우에만 읽는다. 읽을 때는 `rg -n "^## " project_log.md | tail -n 5` 등으로 최신 heading 위치를 먼저 확인하고 필요한 범위만 읽는다.
   - 계산 공식/분기/수학적 계약 변경
   - input schema 또는 config contract 변경
   - region config 의미 변경
@@ -318,7 +345,8 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 갱신 여부를 diff 크기만으로 판단하지 않는다.
    - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
    - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
-   - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
+    - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
+      - 구체 명령 예시: `rg -n "^## " project_log.md | tail -n 5`로 최신 heading 위치를 확인한 뒤 `read` offset로 제한 범위만 읽는다.
    - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
    - 오래된 로그 전체를 훑거나 대규모 재작성하지 않는다.
    - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
