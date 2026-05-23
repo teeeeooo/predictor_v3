@@ -1,6 +1,15 @@
 # Project Log
 이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
 
+## Project Log Policy
+
+- `project_log.md`는 milestone급 decision, failure, lesson, process-rule change만 기록한다.
+- task별 상세 결과, 검증 상세, 체크리스트, 파일 변경 목록은 result report에 기록한다.
+- granular memory candidate는 `Project Memory Delta`와 `result_reports/memory/project_memory_seed.md`에서 관리한다.
+- report 본문이나 seed entry 전문을 `project_log.md`에 반복 복사하지 않는다.
+- 기존 과거 로그는 보존하며, policy 추가 작업에서 기존 날짜별 항목을 재작성, 축약, 삭제하지 않는다.
+- 새 로그를 추가하기 전 최근 2~3개 로그와 merge 가능한지 먼저 확인하고, 유사한 내용이면 중복 section을 만들지 않는다.
+
 ## 2026-05-23 — Project Memory Delta workflow + seed staging
 
 ### Decision
