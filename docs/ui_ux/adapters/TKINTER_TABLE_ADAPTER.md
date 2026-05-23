@@ -15,6 +15,11 @@ apps. See `../01_TOOLKIT_SELECTION_POLICY.md`. This adapter exists
 because existing Tkinter apps must keep meeting the common UX
 baseline without being forced into a toolkit migration.
 
+Before choosing an Entry grid or Treeview for `predictor_v3`, determine the
+input/result surface shape under
+`../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`. This adapter implements a
+selected shape; it does not decide whether repeated data should be a matrix.
+
 ## 1. Where this adapter applies
 
 - Existing Tkinter projects that already ship and need maintenance.
@@ -176,4 +181,6 @@ project, not SPOT-specific quirks:
 - `../01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice policy.
 - `../02_DESIGN_TOKENS_AND_LAYOUT.md` — tokens and layout.
 - `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
+- `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — project-wide
+  matrix/result surface-shaping rule applied before widget selection.
 - `PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 equivalent for new apps.

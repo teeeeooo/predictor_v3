@@ -6,6 +6,9 @@
 > document covers **manual GUI verification on macOS** for the
 > Tkinter calculator-only MVP. PyInstaller packaging and Windows
 > size measurement are out of scope here — see the packaging guide.
+> The input-matrix and summary-result checks below exercise the first
+> concrete application of
+> `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 
 ## Purpose
 
@@ -32,6 +35,8 @@ Tkinter direction has a verified behaviour baseline.
   `docs/guides/lightweight_calculator_packaging_check.md`).
 - Windows-specific verification.
 - Automated GUI / screenshot / pixel-perfect tests.
+- Graph/detail surface verification; that is a later lightweight design phase,
+  not part of this summary-surface smoke.
 - New helper scripts under `tools/` or `scripts/`.
 - Touching the PyQt calculator UI (`app_calculator.py`,
   `ui/calc_window.py`, etc.).

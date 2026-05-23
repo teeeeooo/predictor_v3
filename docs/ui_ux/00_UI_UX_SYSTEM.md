@@ -13,6 +13,9 @@
   roles, see `04_VISUAL_DESIGN_ARCHITECTURE.md`.
 - For table-shaped UI behavior, see
   `03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
+- For shaping repeated inputs and user-facing results into matrix/summary
+  surfaces in `predictor_v3`, see
+  `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 - For framework-specific table rules, see the documents under
   `adapters/`.
 
@@ -169,6 +172,8 @@ inside the project, not by editing this file.
   table behavior.
 - `04_VISUAL_DESIGN_ARCHITECTURE.md` — `predictor_v3` project-wide
   visual philosophy and semantic color-role direction.
+- `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — `predictor_v3`
+  project-wide repeated-input matrix and result-summary surface rules.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 implementation
   rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter adapter rules for

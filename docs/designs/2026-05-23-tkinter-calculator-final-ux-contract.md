@@ -13,6 +13,7 @@
 > - `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`
 > - `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`
 > - `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md`
+> - `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`
 > - `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`
 >
 > It does not redefine calculator core, profile dispatcher, region config,
@@ -234,6 +235,9 @@ Ordered. Each slice ships independently with its own report.
      unbounded float output is user-visible.
    - Auto-calc, copy/clear, and the existing calculator/profile route remain
      unchanged.
+   - Task 163 is the first concrete application of
+     `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; that rule is
+     project-wide and is not limited to this ISO Hong Kong screen.
 
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from

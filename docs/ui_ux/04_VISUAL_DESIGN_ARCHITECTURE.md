@@ -30,6 +30,8 @@ toolkit, token/layout, or spreadsheet behavior contracts.
 - Works with `00_UI_UX_SYSTEM.md` for global UX principles,
   `02_DESIGN_TOKENS_AND_LAYOUT.md` for token/layout naming, and
   `03_SPREADSHEET_TABLE_UX_CONTRACT.md` for table interaction behavior.
+- `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` concretizes this
+  architecture's table-first/result-surface direction for repeated data.
 
 ## Design Philosophy
 
@@ -157,6 +159,9 @@ any current color values.
   the neutral-first chrome around them.
 - Existing result/status highlighting remains in scope for inventory and
   semantic mapping; it is not removed by adoption of this architecture.
+- Repeated input and primary output surfaces follow
+  `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`: matrix input where data is
+  comparable, summary result first, graph/detail as a secondary phase.
 
 ## Toolkit Adaptation Principles
 

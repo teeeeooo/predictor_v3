@@ -19,6 +19,11 @@ A "table-shaped" surface means a 2D grid the user can read across
 columns and down rows. Single-column lists and form layouts are
 **not** covered here.
 
+This document owns behavior after a table-shaped surface has been selected.
+For the `predictor_v3` rule that shapes repeated input/result data into a
+matrix table or summary result surface in the first place, see
+`05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
+
 ## 1. Baseline: behaves like a small Excel sheet
 
 Users come to every table with spreadsheet muscle memory (Excel,
@@ -179,6 +184,8 @@ Specifically:
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice policy.
 - `02_DESIGN_TOKENS_AND_LAYOUT.md` — tokens and layout.
+- `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — `predictor_v3`
+  matrix/result surface-shaping rules; separate from this behavior contract.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 implementation
   rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter adapter rules for

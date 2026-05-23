@@ -1,0 +1,222 @@
+# 05. Input Matrix and Result Surface Rules
+
+## Purpose
+
+This document is the `predictor_v3` project-wide owner for shaping repeated
+structured input and user-facing result output into coherent surfaces.
+
+Repeated measurements, comparisons, or conditions are not rendered as
+scattered label-entry forms. They are normalized into matrix tables with
+visible row and column headers. Results are not presented as raw text dumps;
+they are presented as summary result surfaces.
+
+## Scope
+
+- Applies across calculator, Predictor, Trainer, and future ML/inverse-search
+  desktop UI, whether implemented in PyQt or Tkinter.
+- Governs input/result **surface shape** and the decision to use a matrix or
+  summary card/table.
+- Does not prescribe toolkit widget APIs, visual token values, calculation
+  schemas, ML schemas, or result computation.
+
+## Relationship to Existing UI/UX SSOT
+
+- `00_UI_UX_SYSTEM.md` owns common UI/UX principles and terminology.
+- `02_DESIGN_TOKENS_AND_LAYOUT.md` owns token/layout naming and density.
+- `03_SPREADSHEET_TABLE_UX_CONTRACT.md` owns interaction behavior after a
+  surface is table-shaped: edit, selection, copy/paste, clear, undo,
+  navigation, and validation behavior.
+- `04_VISUAL_DESIGN_ARCHITECTURE.md` owns neutral-first, semantic-color,
+  table-first, and result/status visual philosophy.
+- This document owns how repeated input/result data is shaped into matrix and
+  summary surfaces before toolkit implementation begins.
+- Adapter documents own toolkit implementation once this surface shape has
+  been selected.
+
+## Input Matrix Surface Rule
+
+- Repeated measurement values, condition values, and comparison values must
+  not be dispersed as unrelated label-entry controls.
+- When a surface has at least two condition/stage/sample/case instances and at
+  least two repeated measured variables, a matrix table is the default input
+  representation.
+- The table must show both row and column headers so users can scan and
+  compare values without reconstructing relationships from nearby labels.
+- A logical matrix must be shown as one structured surface. Splitting it into
+  multiple mini-grids or scattered forms is a failed shape unless distinct
+  data ownership genuinely makes one matrix misleading.
+- Matrix schema belongs in the UI layer. The core calculator, ML core, profile
+  resolver, and dispatcher must not depend on UI matrix row/column schema.
+
+## Matrix Inference Rule
+
+The UI derives a matrix candidate whenever the same field family repeats
+across comparable items.
+
+- Repeated condition/stage/sample/case labels are one axis candidate:
+  - `정격`, `35 Full`, `35 Half`
+  - `정격 난방`, `7 Full`, `7 Half`
+  - `Baseline`, `Candidate`
+  - `Train`, `Validation`, `Test`
+  - `Case 1`, `Case 2`, `Case 3`
+- Repeated measured-variable labels are the other axis candidate:
+  - `능력 [W]`, `전력 [W]`
+  - `Predicted`, `Actual`, `Error`
+  - `Min`, `Max`
+  - `Input`, `Output`
+- The thing users naturally compare across should form an explicit axis.
+- Prefer the higher-comparison axis as columns when it keeps comparison
+  compact and readable.
+- Orientation may change for screen width, row count, or entry-flow reasons.
+  A deliberate departure from the preferred orientation must be recorded in
+  the design record or result report.
+
+## Axis Selection Heuristics
+
+1. Identify repeated domain instances: points, cases, candidates, datasets,
+   scenarios, or stages.
+2. Identify repeated variables: measurements, metrics, limits, predicted
+   values, observed values, or differences.
+3. Choose axes that let a user answer the principal comparison question with
+   one horizontal or vertical scan.
+4. Put units in headers, not repeated inside cell values.
+5. Use user-facing labels rather than schema keys or internal IDs.
+6. Keep a small 2-by-2, 2-by-3, or 3-by-3 matrix intact rather than replacing
+   it with form layout merely because each individual cell is simple.
+
+## Singleton and Reference Values
+
+- A singleton reference or rated value should be folded into the same matrix
+  as a reference row or reference column whenever its relationship to the
+  repeated values remains accurate.
+- A singleton may be shown as a separate compact field only when folding it
+  into the matrix would distort meaning, validation, unit, or interaction.
+- A separated singleton must remain visually associated with its matrix and
+  must not cause the repeated values themselves to fragment into mini-forms.
+
+## Static / Disabled / Not-applicable Cells
+
+- A cell that is logically present but not applicable may appear inside the
+  matrix as disabled, static, or blank content.
+- Such cells must be visibly distinct from editable and calculated cells.
+- A not-applicable cell is not a reason to split one logical matrix into
+  multiple mini-grids.
+- Whether a static cell participates in copy/export is owned by the table
+  behavior contract and the relevant toolkit adapter.
+
+## Result Summary Surface Rule
+
+- Primary user-visible results are summary surfaces, not raw text dumps,
+  serialized dictionaries, diagnostic streams, or uncontrolled float output.
+- A summary surface is either a compact metric/value table or a small result
+  card set with a visible primary metric, key supporting values, units, and
+  concise status.
+- Numeric result display follows the common numeric display policy: meaningful
+  precision, consistent units, and no raw long-float noise.
+- Missing optional result values display a user-facing absence marker such as
+  `-` or `N/A`; the literal string `None` is not a valid user-visible result.
+- A validation error or calculation error appears as concise status near the
+  summary surface; raw tracebacks are never user-visible.
+- Copy/export may include a compact textual rendering of the summary, but a
+  text representation is not the default visual surface.
+
+## Detail and Graph Surface Rule
+
+- Graphs, bin-level details, traces, and diagnostics supplement the summary
+  surface; they do not replace it.
+- A default workflow first presents inputs and summary result values. Detail
+  or graph surfaces appear only when needed for review or diagnosis.
+- Existing PyQt graph/detail UI is retained as reference UX. This document
+  does not require porting it verbatim to Tkinter.
+- A Tkinter calculator graph, if justified, is designed later as a lightweight
+  chart/detail surface with explicit acceptance criteria.
+- Large dependencies such as `matplotlib` must not be introduced for a
+  Tkinter graph before Windows packaging size evidence is available.
+
+## Acceptance Criteria
+
+- Repeated 2-by-2, 2-by-3, and 3-by-3 input shapes are rendered as matrix
+  tables by default.
+- Both row headers and column headers are visible.
+- Cells occupy one bordered or otherwise clearly structured surface.
+- A card containing scattered `label + entry` form controls that merely
+  imitate a table fails this rule.
+- Header, row label, editable cell, and static/not-applicable cell meanings
+  are visually distinguishable.
+- Results are shown as a metric/value table or compact summary card surface.
+- User-visible result surfaces must not expose `None`, a raw dictionary, raw
+  long floats, or a traceback.
+- A graph/detail surface must not displace the default summary result.
+
+## Anti-patterns
+
+- Repeating `Label`/`Entry` pairs for comparable points when a matrix is
+  inferable.
+- Rendering rated/reference values in a separate mini-grid solely because one
+  intersecting cell is not applicable.
+- Presenting a large read-only raw text box as the primary result UI.
+- Encoding UI matrix orientation into core calculator, ML, profile, or
+  dispatcher contracts.
+- Copying an inspiration-source or historical PyQt layout pixel-for-pixel
+  instead of implementing the active project-wide rule.
+
+## Toolkit Adaptation Notes
+
+- PyQt applications implement eligible tables through the active PyQt table
+  adapter and its model/view/delegate constraints.
+- Tkinter applications implement eligible tables through the active Tkinter
+  table adapter and may use an Entry-grid surface or read-only Treeview as
+  appropriate after the matrix shape is established.
+- PyQt and Tkinter may render cards, focus, static cells, and status
+  differently; the input/result meaning and comparison affordance remain the
+  same.
+- Visual styling must follow `04_VISUAL_DESIGN_ARCHITECTURE.md`; this
+  document does not fix token values or mandate a widget class.
+
+## Examples
+
+### ISO CSPF / HSPF
+
+- CSPF condition axis: `정격`, `35 Full`, `35 Half`.
+- HSPF condition axis: `정격 난방`, `7 Full`, `7 Half`.
+- Measured-variable axis: `능력 [W]`, `전력 [W]`.
+- Rated/reference power is not applicable and stays in the same matrix as a
+  static `-` cell.
+
+### Predictor
+
+- A comparison surface may use columns `Predicted`, `Actual`, `Error`, or
+  `Baseline`, `Candidate`.
+- Rows may be target metrics, products, or operating points; repeated
+  comparisons are not shown as individual result labels.
+
+### Trainer
+
+- Dataset axis: `Train`, `Validation`, `Test`.
+- Metric axis: `Loss`, `Score`, `Count`, or another relevant training metric.
+- The trainer chooses orientation for scanability while keeping all
+  comparable values within one matrix.
+
+### Result Summary
+
+| Metric | Supporting values |
+| --- | --- |
+| `CSPF` | `CSTL [kWh]`, `CSEC [kWh]` |
+| `HSPF` | `HSTL [kWh]`, `HSEC [kWh]` |
+
+The primary metric and key supporting values appear as a compact table/card
+surface. Diagnostics and graphs remain secondary detail surfaces.
+
+## Adoption Order
+
+1. Treat the task-163 ISO Hong Kong CSPF/HSPF correction as the first
+   concrete application of this project-wide rule.
+2. Apply this rule before designing any new repeated-input or repeated-result
+   Calculator, Predictor, Trainer, or ML/inverse-search surface.
+3. Run the Tkinter manual UX smoke for the existing Hong Kong application.
+4. Refine Tkinter matrix/result spacing or semantic styling only if manual
+   smoke exposes a need.
+5. Design a lightweight graph/detail surface only if summary-plus-input
+   workflow requires additional review capability.
+6. Defer large graph dependencies and PyQt calculator retirement until the
+   applicable packaging and usability decisions are made.
