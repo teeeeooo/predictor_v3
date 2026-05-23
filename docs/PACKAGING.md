@@ -2,7 +2,7 @@
 
 ## Purpose
 - `predictor_v3`의 로컬/배포 패키징 원칙을 관리한다.
-- `docs/archive/AGENTS_FULL.md`에 남아 있던 packaging 상세 규칙의 owner 문서다.
+- 기존 packaging 상세 규칙은 `AGENT_TASK_ROUTER.md` §10 Packaging / 배포 빌드와 `project_log.md`에서 관리한다.
 - 실제 패키징 실행 기록이나 실패 로그는 `project_log.md`에 남긴다.
 
 ## Current status

@@ -77,7 +77,7 @@ UI 경계:
 문서 경계:
 - 문서 업데이트 범위가 둘 이상이면 먼저 `ACTIVE_DOCUMENTS.md`에서 active document owner와 inbound/outbound 관계를 확인한다.
 - `docs` 폴더 내 `*_notes.md` 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`의 필요한 범위를 확인한다.
-- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 고위험 작업에서 상세 배경이 필요한 경우에만 제한적으로 확인한다.
+- 상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 
@@ -326,7 +326,6 @@ Lifecycle check:
 
 읽지 말 것:
 - `PROJECT_CHARTER.md`
-- `docs/archive/AGENTS_FULL.md`
 - 규격별 notes 문서 전체
 
 Lightweight documentation gate 원칙:
@@ -433,7 +432,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
 
 읽지 말 것:
-- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 문서 전체
 - 대형 파일 전체
 - 일반 계산 로직 수정, UI 작업, AHRI/EN/KS 작업에서는 `docs/iso16358/excel_com_runner_packet_protocol.md`
@@ -530,7 +528,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 없는 문서 전체
 - `project_log.md`
 - `PROJECT_CHARTER.md`
-- `docs/archive/AGENTS_FULL.md`
 - 코드 파일
 - 테스트 파일
 
@@ -562,7 +559,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - `AGENT_TASK_ROUTER.md`의 관련 섹션만
 
 읽지 말 것:
-- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 notes/dev_notes 전체
 - 코드 파일
 - 테스트 파일
@@ -667,12 +663,10 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 조건부로 읽을 문서:
 - 기존 packaging 실패나 결정이 언급되면 `project_log.md`에서 관련 키워드만 검색한다.
 - 실제 entrypoint, import, resource 경로 확인이 필요하면 관련 앱 entrypoint와 packaging 대상 파일의 필요한 범위만 확인한다.
-- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 `docs/PACKAGING.md`로 부족한 historical detail이 필요한 경우에만 제한적으로 확인한다.
 
 읽지 말 것:
 - 관련 없는 규격 notes/dev_notes 전체
 - 계산기, ML, UI 코드 전체
-- `docs/archive/AGENTS_FULL.md` 전체
 
 절차:
 1. 대상 platform, output 형태, packaging 목적, 검증 방식을 먼저 확인한다.

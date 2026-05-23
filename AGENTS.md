@@ -2,7 +2,7 @@
 
 이 문서는 매 작업 시작 시 확인하는 **lite entrypoint**다.
 세부 절차와 guardrail은 작업 유형에 맞는 `AGENT_TASK_ROUTER.md` 섹션이 owner다.
-상세 배경은 사용자가 명시하거나 고위험 맥락이 필요할 때만 `docs/archive/AGENTS_FULL.md`에서 제한적으로 확인한다.
+상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 
 ## Work Contract
 
