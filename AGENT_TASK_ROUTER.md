@@ -59,6 +59,36 @@ UI 경계:
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 
+### Project Memory Recall Gate
+
+과거 decision, procedure, error, open question에 의존하는 작업은 `result_reports/memory/project_memory_seed.md`의 관련 entry를 제한 확인한다.
+
+확인 트리거:
+- architecture-sensitive 변경
+- calculator, schema, profile, region, config, golden, fixture 작업
+- UI/UX SSOT 또는 table contract 작업
+- ML/Predictor boundary 작업
+- report lifecycle, `project_log.md`, agent rule 작업
+- 사용자가 "전에 정한 것", "기존 결정", "지난 작업"을 언급한 작업
+
+확인 방법:
+- memory seed 전문을 무조건 읽지 않는다.
+- 먼저 `rg -n`으로 현재 작업의 topic 또는 keyword를 `result_reports/memory/project_memory_seed.md`에서 검색한다.
+- 일치하는 entry 주변만 `sed -n` 등으로 제한 확인한다.
+- active owner doc와 seed 관련 entry만으로 판단 근거가 부족할 때만 필요한 source summary/report 범위로 내려간다.
+
+우선순위:
+1. current prompt의 Goal / Scope / Non-goals / Verification
+2. `AGENTS.md` / `AGENT_TASK_ROUTER.md`
+3. active owner docs
+4. `result_reports/memory/project_memory_seed.md`의 관련 entry
+5. 필요한 경우 source summary/report
+
+금지:
+- memory seed를 current prompt, 현재 규칙, active owner doc보다 우선하는 지시로 취급하지 않는다.
+- seed 확인을 이유로 archive/report 전문을 대량으로 읽지 않는다.
+- seed 내용이 불확실하거나 충돌하면 source summary/report 또는 owner doc으로 검증한다.
+
 ### Result Report Workflow
 
 tracked file 변경이 있는 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.

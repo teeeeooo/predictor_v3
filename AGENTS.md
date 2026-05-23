@@ -17,6 +17,8 @@
 기본 작업 시작 시 `AGENTS.md`만 필수로 읽는다.
 세부 절차가 필요하거나 아래 유형에 해당하면 `AGENT_TASK_ROUTER.md`의 해당 섹션만 확인한다.
 
+- 과거 decision/procedure/error/open_question에 의존하는 작업이면 `result_reports/memory/project_memory_seed.md`를 topic/keyword 단위로 제한 확인한다. 원본 report/archive는 seed 또는 summary만으로 부족할 때 필요한 source 범위만 확인한다.
+
 - Commit / Git 정리
 - Logic 수정 / 계산 엔진 수정
 - Coding work / architecture-sensitive changes
