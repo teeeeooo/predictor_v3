@@ -15,6 +15,7 @@ from ui_tk.profile_resolver import (
     supported_metrics_for,
 )
 from ui_tk.result_panel import ResultPanel
+from ui_tk.result_models import ResultSummary
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
 
@@ -57,7 +58,7 @@ class Iso16358Tab(ttk.Frame):
             side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4
         )
         self.sections = {}
-        self._metric_results: dict[str, str] = {}
+        self._metric_results: dict[str, ResultSummary] = {}
 
         self._render_region(initial_label)
 
@@ -83,11 +84,11 @@ class Iso16358Tab(ttk.Frame):
             section.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
             self.sections[metric] = section
 
-    def _set_metric_result(self, metric: str, text: str) -> None:
-        self._metric_results[metric] = text
+    def _set_metric_result(self, metric: str, summary: ResultSummary) -> None:
+        self._metric_results[metric] = summary
         ordered_results = [
             self._metric_results[key]
             for key in supported_metrics_for(self._region_combo.get())
             if key in self._metric_results
         ]
-        self.result_panel.set_text("\n\n".join(ordered_results))
+        self.result_panel.set_summaries(ordered_results)

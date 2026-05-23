@@ -130,38 +130,36 @@ without changing inputs unless the step says so.
    visible at the same time in the same screen. `profile_id`,
    `calculator_id`, and `config_path` are not displayed anywhere in
    the UI.
-5. **CSPF table default values** — In the CSPF table grids:
+5. **CSPF table default values** — In the single CSPF input table:
    - `정격` / `능력 [W]` = `3500`
-   - `35_full` / `능력 [W]` = `3600`
-   - `35_full` / `전력 [W]` = `900`
-   - `35_half` / `능력 [W]` = `1700`
-   - `35_half` / `전력 [W]` = `380`
+   - `35 Full` / `능력 [W]` = `3600`
+   - `35 Full` / `전력 [W]` = `900`
+   - `35 Half` / `능력 [W]` = `1700`
+   - `35 Half` / `전력 [W]` = `380`
+   - `정격` / `전력 [W]` is shown as non-editable `-`.
    - No `CSPF 계산` button is shown.
 6. **CSPF auto-calc** — Without changing inputs, wait briefly for
-   auto-calc. The result panel below should contain a block:
+   auto-calc. A summary result card should show:
    ```
-   [CSPF]
-     CSPF = 4.939
-     CSTL = …
-     CSEC = …
+   CSPF | CSTL [kWh] | CSEC [kWh]
+   4.939 | 1769.6 | 358.3
    ```
-   The numerical CSPF value must read **`4.939`**.
-7. **HSPF table default values** — In the HSPF table grids:
+   No `None` value is visible.
+7. **HSPF table default values** — In the single HSPF input table:
    - `정격 난방` / `능력 [W]` = `6300`
-   - `7_full` / `능력 [W]` = `6300`
-   - `7_full` / `전력 [W]` = `1500`
-   - `7_half` / `능력 [W]` = `3200`
-   - `7_half` / `전력 [W]` = `800`
+   - `7 Full` / `능력 [W]` = `6300`
+   - `7 Full` / `전력 [W]` = `1500`
+   - `7 Half` / `능력 [W]` = `3200`
+   - `7 Half` / `전력 [W]` = `800`
+   - `정격 난방` / `전력 [W]` is shown as non-editable `-`.
    - No `HSPF 계산` button is shown.
 8. **HSPF auto-calc** — After the initial auto-calc, the result
-   panel should contain a second block:
+   panel should contain a second summary card:
    ```
-   [HSPF]
-     HSPF = 3.643
-     HSTL_Wh = …
-     HSEC_Wh = …
+   HSPF | HSTL [kWh] | HSEC [kWh]
+   3.643 | 273.2 | 75.0
    ```
-   The numerical HSPF value must read **`3.643`**.
+   No long raw floating-point value is visible.
 9. **Latest result composition** — After steps 6 and 8 both latest
    blocks are visible in the result panel with a blank line between
    them. Edit one valid cell and wait briefly: its metric block
@@ -194,6 +192,8 @@ without changing inputs unless the step says so.
 | --- | --- |
 | Hong Kong CSPF (defaults) | **4.939** |
 | Hong Kong HSPF (defaults) | **3.643** |
+| CSPF summary seasonal values | CSTL `1769.6 kWh`, CSEC `358.3 kWh` |
+| HSPF summary seasonal values | HSTL `273.2 kWh`, HSEC `75.0 kWh` |
 | Top-level tabs | exactly 1 (`ISO 16358`) |
 | Hong Kong metric sections | CSPF and HSPF, same screen |
 | `profile_id` exposed in UI | NO |
@@ -217,10 +217,10 @@ Copy this block into the run notes / report; mark each step
 - Single ISO 16358 tab: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
-- CSPF table defaults / no calculate button: OK/NG
-- CSPF auto-calc = 4.939: OK/NG
-- HSPF table defaults / no calculate button: OK/NG
-- HSPF auto-calc = 3.643: OK/NG
+- CSPF single table defaults / static power cell / no calculate button: OK/NG
+- CSPF summary card = 4.939 / 1769.6 / 358.3: OK/NG
+- HSPF single table defaults / static power cell / no calculate button: OK/NG
+- HSPF summary card = 3.643 / 273.2 / 75.0: OK/NG
 - Latest result composition (no duplicate history): OK/NG
 - Copy result (Cmd+V paste shows both blocks): OK/NG
 - Clear result empties the panel: OK/NG

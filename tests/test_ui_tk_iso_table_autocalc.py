@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.table_grid import TableGrid
+from ui_tk.metric_input_table import MetricInputTable
 
 
 class FakeAfterOwner:
@@ -45,6 +45,17 @@ def _result_text(tab) -> str:
     import tkinter as tk
 
     return tab.result_panel._text.get("1.0", tk.END).strip()
+
+
+def _label_texts(widget) -> list[str]:
+    labels = []
+    stack = [widget]
+    while stack:
+        current = stack.pop()
+        stack.extend(current.winfo_children())
+        if current.winfo_class() == "TLabel":
+            labels.append(current.cget("text"))
+    return labels
 
 
 def _make_tab(root):
@@ -95,26 +106,28 @@ def test_iso_tab_import_does_not_pull_in_pyqt5():
 
 
 def test_iso_hong_kong_sections_use_grids_without_calculate_buttons(tk_root):
-    import tkinter as tk
-    from tkinter import ttk
-
     tab = _make_tab(tk_root)
 
     assert set(tab.sections) == {"CSPF", "HSPF"}
-    assert isinstance(tab.sections["CSPF"].declared_grid, TableGrid)
-    assert isinstance(tab.sections["CSPF"].points_grid, TableGrid)
-    assert isinstance(tab.sections["HSPF"].rated_grid, TableGrid)
-    assert isinstance(tab.sections["HSPF"].points_grid, TableGrid)
+    assert isinstance(tab.sections["CSPF"].input_table, MetricInputTable)
+    assert isinstance(tab.sections["HSPF"].input_table, MetricInputTable)
 
     buttons = []
+    labels = []
     stack = list(tab._sections_holder.winfo_children())
     while stack:
         widget = stack.pop()
         stack.extend(widget.winfo_children())
-        if isinstance(widget, ttk.Button):
+        if widget.winfo_class() == "TButton":
             buttons.append(widget.cget("text"))
+        if widget.winfo_class() == "TLabel":
+            labels.append(widget.cget("text"))
     assert "CSPF 계산" not in buttons
     assert "HSPF 계산" not in buttons
+    for label in ("정격", "35 Full", "35 Half", "정격 난방", "7 Full", "7 Half"):
+        assert label in labels
+    assert labels.count("능력 [W]") == 2
+    assert labels.count("전력 [W]") == 2
 
 
 def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
@@ -122,13 +135,29 @@ def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
     _flush_defaults(tab)
 
     text = _result_text(tab)
-    assert "CSPF = 4.939" in text
-    assert "HSPF = 3.643" in text
+    assert "4.939 | 1769.6 | 358.3" in text
+    assert "3.643 | 273.2 | 75.0" in text
+    assert "None" not in text
+    assert "74991.00727784102" not in text
     assert text.count("[CSPF]") == 1
     assert text.count("[HSPF]") == 1
+    result_labels = _label_texts(tab.result_panel._summary_holder)
+    for label in (
+        "CSPF",
+        "CSTL [kWh]",
+        "CSEC [kWh]",
+        "HSPF",
+        "HSTL [kWh]",
+        "HSEC [kWh]",
+    ):
+        assert label in result_labels
 
     tab.sections["CSPF"].recalculate_now()
     assert _result_text(tab).count("[CSPF]") == 1
+
+    tab.result_panel.clear()
+    assert _result_text(tab) == ""
+    assert not tab.result_panel._summary_holder.winfo_children()
 
 
 def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
@@ -136,16 +165,16 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
     _flush_defaults(tab)
     cspf = tab.sections["CSPF"]
 
-    assert cspf.points_grid.set_cell("35_full", "power_w", "1000") is True
+    assert cspf.input_table.set_value("full_power", "1000") is True
     cspf._auto_calc.flush_now()
     updated = _result_text(tab)
-    assert "CSPF = 4.939" not in updated
-    assert "HSPF = 3.643" in updated
+    assert "4.939 | 1769.6 | 358.3" not in updated
+    assert "3.643 | 273.2 | 75.0" in updated
 
-    assert cspf.points_grid.set_cell("35_full", "power_w", "bad") is True
+    assert cspf.input_table.set_value("full_power", "bad") is True
     cspf._auto_calc.flush_now()
     invalid = _result_text(tab)
-    assert "[CSPF 입력 오류] 숫자 입력을 확인하세요." in invalid
+    assert "입력 오류: 숫자 입력을 확인하세요." in invalid
     assert "Traceback" not in invalid
 
 
@@ -154,7 +183,7 @@ def test_same_value_does_not_schedule_recalculation(tk_root):
     cspf = tab.sections["CSPF"]
     cspf._auto_calc.cancel()
     calls = []
-    cspf.points_grid.set_values_changed_callback(lambda: calls.append("changed"))
+    cspf.input_table.set_values_changed_callback(lambda: calls.append("changed"))
 
-    assert cspf.points_grid.set_cell("35_full", "capacity_w", "3600") is False
+    assert cspf.input_table.set_value("full_capacity", "3600") is False
     assert calls == []

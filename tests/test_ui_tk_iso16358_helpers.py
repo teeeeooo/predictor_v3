@@ -65,40 +65,45 @@ def test_format_cspf_result_contains_existing_result_lines():
     text = format_cspf_result(
         {
             "cspf": 4.939,
-            "cstl_wh": 123.4,
-            "csec_wh": 25.0,
+            "annual_cooling_kwh": 1769.595,
+            "annual_power_kwh": 358.266,
         }
     )
 
     assert "[CSPF]" in text
-    assert "CSPF = 4.939" in text
-    assert "CSTL = 123.4" in text
-    assert "CSEC = 25.0" in text
+    assert "CSPF | CSTL [kWh] | CSEC [kWh]" in text
+    assert "4.939 | 1769.6 | 358.3" in text
+    assert "None" not in text
 
 
-def test_format_cspf_result_keeps_legacy_non_wh_fallback():
+def test_format_cspf_result_converts_wh_aliases_to_kwh():
     text = format_cspf_result(
         {
             "cspf": 4.939,
-            "cstl": 123.4,
-            "csec": 25.0,
+            "cstl_wh": 123400.0,
+            "csec_wh": 25000.0,
         }
     )
 
-    assert "CSTL = 123.4" in text
-    assert "CSEC = 25.0" in text
+    assert "4.939 | 123.4 | 25.0" in text
 
 
 def test_format_hspf_result_contains_existing_result_lines():
     text = format_hspf_result(
         {
             "hspf": 3.643,
-            "hstl_wh": 456.7,
-            "hsec_wh": 125.4,
+            "hstl_wh": 273190.23529411765,
+            "hsec_wh": 74991.00727784102,
         }
     )
 
     assert "[HSPF]" in text
-    assert "HSPF = 3.643" in text
-    assert "HSTL_Wh = 456.7" in text
-    assert "HSEC_Wh = 125.4" in text
+    assert "HSPF | HSTL [kWh] | HSEC [kWh]" in text
+    assert "3.643 | 273.2 | 75.0" in text
+    assert "273190.23529411765" not in text
+
+
+def test_format_result_missing_values_render_dash_not_none():
+    assert "None" not in format_cspf_result({"cspf": 4.939})
+    assert "4.939 | - | -" in format_cspf_result({"cspf": 4.939})
+    assert "None" not in format_hspf_result({"hspf": 3.643})

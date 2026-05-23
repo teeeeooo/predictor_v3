@@ -225,6 +225,16 @@ Ordered. Each slice ships independently with its own report.
    - Verification: automated vertical-slice tests + full pytest baseline;
      manual smoke remains slice 4.
 
+3a. **ISO Hong Kong input/output visible correction**
+   - Completed in task 163: each metric is shown as one compact input table
+     (`능력 [W]` / `전력 [W]` rows across rating/full/half columns) rather
+     than separated input grids.
+   - Results render as summary cards with CSPF/HSPF to three decimals and
+     seasonal load/energy in `kWh` to one decimal; no raw `None` or
+     unbounded float output is user-visible.
+   - Auto-calc, copy/clear, and the existing calculator/profile route remain
+     unchanged.
+
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
      `docs/guides/lightweight_calculator_tk_manual_smoke.md` against the
@@ -296,6 +306,9 @@ usability decision.**
 - **Auto-calc vertical slice**: completed in task 162 using
   `ui_tk/auto_calc.py`, with button-free CSPF/HSPF inputs and latest-result
   composition.
+- **Input/output visible correction**: completed in task 163 using compact
+  metric input tables and summary result cards with consistent `kWh`
+  formatting.
 - **Next action**: Implementation slice 4 — macOS manual UX smoke.
 - **PyQt retirement**: held pending Windows packaging size measurement or an
   explicit usability decision.

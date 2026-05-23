@@ -8,6 +8,11 @@ from __future__ import annotations
 
 from typing import Mapping, Tuple
 
+from ui_tk.sections.result_formatting import (
+    summarize_cspf_result,
+    summarize_hspf_result,
+)
+
 
 def build_cspf_input(
     *,
@@ -52,18 +57,10 @@ def build_hspf_input(
 
 
 def format_cspf_result(result: Mapping[str, object]) -> str:
-    return (
-        "[CSPF]\n"
-        f"  CSPF = {result.get('cspf')}\n"
-        f"  CSTL = {result.get('cstl_wh', result.get('cstl'))}\n"
-        f"  CSEC = {result.get('csec_wh', result.get('csec'))}"
-    )
+    """Retained text formatter for clipboard/compatibility consumers."""
+    return summarize_cspf_result(result).as_text()
 
 
 def format_hspf_result(result: Mapping[str, object]) -> str:
-    return (
-        "[HSPF]\n"
-        f"  HSPF = {result.get('hspf')}\n"
-        f"  HSTL_Wh = {result.get('hstl_wh')}\n"
-        f"  HSEC_Wh = {result.get('hsec_wh')}"
-    )
+    """Retained text formatter for clipboard/compatibility consumers."""
+    return summarize_hspf_result(result).as_text()
