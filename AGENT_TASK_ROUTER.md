@@ -220,7 +220,13 @@ Project Memory Delta:
 - `source`는 기억의 근거가 되는 report section, 변경 문서 경로, commit, 검증 결과 등 추적 가능한 출처를 적는다.
 - `result_reports/memory/` 문서는 기존 report 원문의 대체물이 아니며, 각 seed/index 항목은 source report 또는 summary를 추적 가능한 출처로 유지한다.
 - memory seed/index는 기존 report 원문을 retroactive 수정하지 않고 별도 문서로 생성한다.
-- memory seed/index 작성은 lifecycle summary/archive와 섞지 않고 별도 문서 작업으로 수행한다.
+- memory seed/index 작성은 일반 source/code/doc 작업과 섞지 않는다.
+- summary lifecycle 작업 또는 명시적 memory maintenance 작업에서는 `Project Memory Seed Sync Judgment`를 작성한다.
+  - `update needed`로 판단되면 같은 lifecycle task 안에서 `project_memory_seed.md`에 1~2개 summary-level entry만 추가한다.
+  - 개별 report delta를 모두 복사하지 않는다.
+  - source는 새 summary 파일과 covered report 범위를 사용한다.
+  - `keywords`는 YAML list 형식을 유지한다.
+  - `not needed`로 판단되면 seed를 수정하지 않는다.
 
 Commit / Push:
 - report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
@@ -255,7 +261,7 @@ Lifecycle check:
 - routine check 단계에서는 `result_reports/active/*.md` 본문을 읽지 않는다.
 - 이미 summary가 있는 경우에도 routine check에서 summary 본문 전체를 읽지 않는다.
 - Trigger가 충족되어 실제 summary/project_log/archive maintenance 단계로 들어갈 때만 필요한 report 또는 summary의 관련 섹션을 선별적으로 읽는다.
-- 필요한 경우 `Covered Reports`, `Archive Candidates`, `Project Log Sync Judgment` 같은 관련 heading만 제한적으로 확인한다.
+- 필요한 경우 `Covered Reports`, `Archive Candidates`, `Project Log Sync Judgment`, `Project Memory Seed Sync Judgment` 같은 관련 heading만 제한적으로 확인한다.
 - Trigger 조건:
   - `result_reports/active/`에 report가 약 8~12개 쌓인 경우
   - 하나의 workstream/arc가 명확히 끝난 경우
@@ -267,6 +273,9 @@ Lifecycle check:
 - summary가 없으면 `result_reports/summaries/`에 summary report를 생성한다.
 - summary가 이미 있으면 중복 summary를 만들지 말고 기존 summary를 기준으로 남은 lifecycle 작업만 수행한다.
 - summary 생성 또는 기존 summary 확인 후 `project_log.md` 갱신 필요 여부를 판단한다.
+- 같은 시점에 `Project Memory Seed Sync Judgment`를 작성한다.
+  - 새 summary에서 durable decision, procedure, error, open_question 후보가 있으면 `update needed`로 판단하고 `project_memory_seed.md`에 1~2개 summary-level entry를 추가한다.
+  - `not needed`이면 seed를 수정하지 않는다.
 - 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
 - report 본문을 `project_log.md`에 복사하지 않는다.
 - summary에 포함된 covered active reports는 `result_reports/archive/`로 이동한다.
