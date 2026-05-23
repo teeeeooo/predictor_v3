@@ -5,9 +5,10 @@
 
 ## Scope
 
-- Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`.
+- Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`, `result_reports/memory/*.md`.
 - Excluded: `docs/archive/**`, `reference_files/*.md`, `result_reports/archive/**`, `result_reports/summaries/**`, `result_reports/active/**`.
-- Result reports는 lifecycle artifact이므로 `result_reports/summaries/`에서 별도 요약한다.
+- `result_reports/active/**`, `result_reports/summaries/**`, `result_reports/archive/**`는 lifecycle artifact이므로 active owner inventory에서 제외한다.
+- `result_reports/memory/*.md`는 lifecycle artifact의 예외로, backend-neutral active memory staging 문서로 관리한다.
 
 ## Maintenance Rule
 
@@ -110,6 +111,12 @@
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
 | none | Root result docs have been moved to `reference_files/` as reference snapshots. | n/a | n/a |
+
+## Memory Staging Docs
+
+| Document | Role | Primary inbound | Primary outbound |
+| --- | --- | --- | --- |
+| `result_reports/memory/project_memory_seed.md` | Backend-neutral `Project Memory Delta` seed/staging document; preserves traceable source summaries/reports rather than replacing original report text | `AGENT_TASK_ROUTER.md`, `result_reports/summaries/*.md`, `Project Memory Delta` workflow | future local index, memory backend import, agent session recall |
 
 ## Reference Snapshots
 
