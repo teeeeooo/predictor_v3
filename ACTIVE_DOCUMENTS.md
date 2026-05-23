@@ -118,6 +118,15 @@
 | --- | --- | --- | --- |
 | `result_reports/memory/project_memory_seed.md` | Backend-neutral `Project Memory Delta` seed/staging document; preserves traceable source summaries/reports rather than replacing original report text | `AGENT_TASK_ROUTER.md`, `result_reports/summaries/*.md`, `Project Memory Delta` workflow | future local index, memory backend import, agent session recall |
 
+## Historical Archive Docs
+
+| Document | Role | Primary inbound | Primary outbound |
+| --- | --- | --- | --- |
+| `docs/archive/project_log/YYYY-MM/*.md` | Capped segment archive of exact moved historical `project_log.md` dated entries; not an active operational log | `project_log.md` archive split tasks | none — historical read-only |
+
+- Active operational log는 `project_log.md`이고, historical body는 `docs/archive/project_log/YYYY-MM/*.md` capped segment archive이다.
+- Archive 문서는 기본 read 대상이 아니며, 필요 시 `rg -n "^## YYYY-MM-DD"` heading 검색 후 해당 segment 파일의 필요한 범위만 확인한다.
+
 ## Reference Snapshots
 
 `reference_files/*.md` contains user/audit/result snapshots and is excluded from the active owner inventory. If a reference snapshot becomes an active owner document again, move it out of `reference_files/` and add it to the relevant section above.

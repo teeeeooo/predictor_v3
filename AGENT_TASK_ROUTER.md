@@ -357,19 +357,23 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 새 active 문서를 만들거나 archive로 이동하면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
    - 단일 코드 변경만 있고 문서 갱신 요청이 없으면 이 파일을 읽지 않아도 된다.
 
-1. `project_log.md`
-   - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
-   - 이미 끝난 작업의 상세 기록은 `project_log.md`에 보존한다.
-   - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
-   - 갱신 여부를 diff 크기만으로 판단하지 않는다.
-   - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
-   - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
-    - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
-      - 구체 명령 예시: `rg -n "^## " project_log.md | tail -n 5`로 최신 heading 위치를 확인한 뒤 `read` offset로 제한 범위만 읽는다.
-   - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
-   - 오래된 로그 전체를 훑거나 대규모 재작성하지 않는다.
-   - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
-   - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
+ 1. `project_log.md`
+    - active `project_log.md`는 policy, archive index, 최신 milestone entries만 유지한다.
+    - 과거 dated entries는 `docs/archive/project_log/YYYY-MM/*.md` capped segment archive에 보존한다.
+    - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
+    - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
+    - 갱신 여부를 diff 크기만으로 판단하지 않는다.
+    - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
+    - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
+     - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
+       - 구체 명령 예시: `rg -n "^## " project_log.md | tail -n 5`로 최신 heading 위치를 확인한 뒤 `read` offset로 제한 범위만 읽는다.
+    - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
+    - 오래된 로그 전체를 훑거나 대규모 재작성하지 않는다.
+    - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
+    - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
+    - archive split은 exact move 원칙을 따르고, 요약/재작성하지 않는다.
+    - 일반 작업 중 historical archive를 읽지 않는다.
+    - 과거 로그 확인이 필요한 경우 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 찾고 필요한 segment/range만 읽는다.
 
 2. `docs/WORK_PLAN.md`
    - 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목이 실제로 바뀐 경우에만 읽고 수정한다.
