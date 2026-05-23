@@ -111,11 +111,13 @@ Report mode:
 - Full report mode는 logic/code 수정, architecture-sensitive 변경, calculator/golden/fixture/config 변경, test 추가/수정, schema/contract/public API 영향 작업에 사용한다.
 - Compact report mode는 단순 docs 문구 수정, router wording 정리, link/path 표현 수정, report lifecycle maintenance, 코드 영향 없는 audit/report-only 작업에 사용할 수 있다.
 - Compact report 최소 섹션은 Goal, Scope, Changed Files, Verification, Known Risks, Commit / Push로 한다.
+- Compact report는 장기 기억으로 남길 decision, procedure, error, open question이 있을 때만 `Project Memory Delta` 섹션을 포함한다.
 - Compact report를 쓰더라도 scope compliance와 금지 파일 미수정 여부는 Verification 또는 Known Risks 안에서 짧게 확인한다.
 - No-report / terminal-only mode는 파일 수정 없는 상태 확인, `git status`, `git log`, `git diff --name-only`, push 여부 확인, “커밋해도 돼?”, “push 됐는지 확인해줘” 같은 단순 확인에 사용할 수 있다.
 - 사용자가 명시적으로 “확인만”, “수정하지 말고 보고만”을 요청했고 결과를 장기 산출물로 남길 필요가 없거나, 단순 질문/원인 분석만 하고 repo 파일을 수정하지 않은 경우에도 No-report / terminal-only mode를 사용할 수 있다.
 - No-report / terminal-only mode 출력은 terminal/final response에 `status: clean`, `latest commit: ...`, `push: confirmed`, `files changed: none`처럼 짧게 남긴다.
 - No-report / terminal-only mode에서는 Markdown report를 만들지 않고 report commit/push도 하지 않는다.
+- No-report / terminal-only mode에서는 `Project Memory Delta`를 만들지 않는다.
 - No-report / terminal-only mode는 파일 수정이 없어야만 사용한다. 파일을 수정했다면 단순 작업이라도 최소 Compact report를 작성한다.
 - 계산 로직, golden, fixture, config, schema/contract/public API, architecture-sensitive 변경에는 No-report / terminal-only mode를 사용하지 않는다.
 - No-report / terminal-only mode는 lifecycle maintenance 수행 권한을 의미하지 않으며, 이 mode에서는 summary/archive/`project_log.md` maintenance를 자동 수행하지 않는다. 필요하면 `lifecycle maintenance pending` 정도만 짧게 보고한다.
@@ -132,6 +134,19 @@ Full report 기본 섹션:
 - Next Suggested Action
 - Scope Compliance
 - Commit / Push
+- Project Memory Delta
+
+Project Memory Delta:
+- `Project Memory Delta`는 report에서 장기 기억 후보만 기록하는 backend-neutral 섹션이다. Memento, Mem0, PostgreSQL, Redis, local index 등 특정 저장소나 구현에 종속된 형식으로 정의하지 않는다.
+- Full report는 기본적으로 `Project Memory Delta` 섹션을 포함한다. 장기 기억 후보가 없으면 `- none`으로 명시한다.
+- 항목 하나의 최소 필드는 `type`, `topic`, `content`, `keywords`, `assertionStatus`, `source`다.
+- 선택 필드는 `importance`, `caseId`, `supersedes`, `resolutionStatus`다.
+- 허용 `type`은 `fact`, `decision`, `error`, `preference`, `procedure`, `relation`, `episode`, `open_question`으로 제한한다.
+- 허용 `assertionStatus`는 `observed`, `inferred`, `verified`, `rejected`로 제한한다.
+- 한 항목에는 한 개의 기억만 기록한다.
+- `content`에는 대명사, `이번 작업`, `위에서`, `이전` 같은 자기참조 표현을 피하고, 6개월 뒤 다른 agent가 읽어도 프로젝트, 대상, 결정 또는 절차를 특정할 수 있게 작성한다.
+- 가설은 `decision`으로 기록하지 않는다. 해결되지 않은 가설은 `open_question`으로 기록하거나, 관찰에 근거한 추론은 `fact`와 `assertionStatus: inferred` 조합으로 기록한다.
+- `source`는 기억의 근거가 되는 report section, 변경 문서 경로, commit, 검증 결과 등 추적 가능한 출처를 적는다.
 
 Commit / Push:
 - report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
@@ -152,6 +167,10 @@ Commit / Push:
 - 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
 - 단순 문구 수정, 단순 report 정리, 의사결정 없는 작업 묶음이면 `project_log.md` 갱신을 생략할 수 있다.
 - `project_log.md`에는 report 전문을 복사하지 않는다.
+- 기존 report 원문은 `Project Memory Delta` 도입을 이유로 retroactive 수정하지 않는다.
+- 기존 report에 대한 backfill이 필요하면 별도 migration/backfill report로 수행한다.
+- summary/archive 단계에서는 가능한 경우 report 전문보다 `Project Memory Delta` 섹션을 우선 읽는다.
+- `project_log.md`에는 milestone급 decision, failure, lesson, process rule 변화만 남기고 `Project Memory Delta` 세부 항목을 반복 복사하지 않는다.
 - summary에 포함된 원본 active reports는 `result_reports/archive/` 이동 후보로 보고한다.
 - archive 이동은 사용자 승인 후 별도 작업으로 수행하며, 이동 시 report 번호나 파일명은 바꾸지 않는다.
 
