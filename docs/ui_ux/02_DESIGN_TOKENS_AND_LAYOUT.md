@@ -10,6 +10,10 @@
   a project commits a palette, the names are the contract.
 - Toolkit-specific implementation (QPalette, ttk.Style, etc.) lives
   in the adapter documents.
+- For `predictor_v3` semantic visual-role organization and
+  neutral-first visual philosophy, see
+  `04_VISUAL_DESIGN_ARCHITECTURE.md`; this document continues to own
+  token and layout naming.
 
 ## 1. Color tokens
 
@@ -183,5 +187,7 @@ Rules:
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
+- `04_VISUAL_DESIGN_ARCHITECTURE.md` — `predictor_v3` semantic
+  visual roles and visual design direction.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 table rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter table adapter rules.

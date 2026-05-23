@@ -9,6 +9,8 @@
   vs Tkinter implementation details do **not** belong here.
 - For toolkit choice, see `01_TOOLKIT_SELECTION_POLICY.md`.
 - For visual tokens and layout, see `02_DESIGN_TOKENS_AND_LAYOUT.md`.
+- For `predictor_v3` project-wide visual philosophy and semantic visual
+  roles, see `04_VISUAL_DESIGN_ARCHITECTURE.md`.
 - For table-shaped UI behavior, see
   `03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
 - For framework-specific table rules, see the documents under
@@ -165,6 +167,8 @@ inside the project, not by editing this file.
   layout rules.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common spreadsheet-like
   table behavior.
+- `04_VISUAL_DESIGN_ARCHITECTURE.md` — `predictor_v3` project-wide
+  visual philosophy and semantic color-role direction.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 implementation
   rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter adapter rules for

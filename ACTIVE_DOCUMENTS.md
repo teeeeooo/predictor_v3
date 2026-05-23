@@ -45,6 +45,7 @@
 | `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |
 | `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` | Design tokens and layout rules | UI/UX root, layout tasks | UI component implementations |
 | `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` | Global spreadsheet-like table UX contract | UI/UX root, table UI tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, calculator design doc | every table surface (calculator, train/predict, helpers, fixtures) via PyQt/Tkinter adapters |
+| `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md` | predictor_v3 project-wide visual architecture SSOT | UI/UX root, visual design tasks, Tkinter final UX contract | PyQt Predict/Train and Tkinter Calculator semantic visual-role adoption |
 | `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` | PyQt table implementation adapter | table UX contract, PyQt table tasks | PyQt table surfaces |
 | `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` | Tkinter table adapter | table UX contract, Tkinter table tasks | Tkinter table surfaces (when applicable) |
 | `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` | Legacy PyQt table contract source (history) | UI/UX `_source/` reference only | none — superseded by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` |

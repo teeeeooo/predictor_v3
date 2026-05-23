@@ -12,6 +12,7 @@
 > - `docs/ui_ux/00_UI_UX_SYSTEM.md`
 > - `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`
 > - `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`
+> - `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md`
 > - `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`
 >
 > It does not redefine calculator core, profile dispatcher, region config,
