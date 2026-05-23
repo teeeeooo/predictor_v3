@@ -30,6 +30,13 @@
 - `result_reports/memory/project_memory_seed.md`는 summary 기반 기억 후보를
   source 추적 가능하게 유지하는 repo-local staging 문서로 두며, 특정 memory
   backend 전용 저장소나 기존 report 원문 대체물로 사용하지 않는다.
+- agent workflow token leakage를 줄이기 위해 `wc -l`/`du -sh` pre-check, `rg`
+  heading navigation, Quick Route Index, group summary `modified:` 규칙을
+  `AGENT_TASK_ROUTER.md`에 추가했다.
+- `project_log.md`를 active milestone log + `docs/archive/project_log/YYYY-MM/`
+  capped segment archive로 분리하고, exact move 원칙으로 보존했다.
+- `docs/archive/AGENTS_FULL.md`를 active workflow 문서에서 완전히 제거하고,
+  상세 배경 확인은 active owner docs와 `ACTIVE_DOCUMENTS.md`로 유도했다.
 
 ### Lesson
 - 세부 report delta를 `project_log.md`에 반복 복사하지 않고, milestone급

@@ -380,6 +380,30 @@ entries:
       - backend-neutral
     assertionStatus: verified
     source: result_reports/summaries/140_summary-project-memory-delta-workflow.md (covered reports 133-139; Key Decisions and Project Memory Seed Sync Judgment)
+
+  - type: procedure
+    topic: predictor_v3 agent workflow token leakage hardening and project_log archive lifecycle
+    content: predictor_v3 agent workflow implements token-leakage prevention via wc -l/du -sh pre-checks, rg-based heading navigation, Quick Route Index, group summary modified lines, and capped-segment project_log archive under docs/archive/project_log/YYYY-MM/. AGENTS_FULL stale references were removed from all active workflow documents.
+    keywords:
+      - predictor_v3
+      - token-leakage
+      - workflow-hardening
+      - project-log-archive
+      - quick-route-index
+    assertionStatus: verified
+    source: result_reports/summaries/153_summary-agent-workflow-memory-token-log-lifecycle.md (covered reports 141-152; Key Decisions)
+
+  - type: procedure
+    topic: predictor_v3 memory seed sync and maintenance policy
+    content: predictor_v3 memory seed updates require an explicit Project Memory Seed Sync Judgment during summary lifecycle or memory maintenance tasks, limited to 1-2 summary-level entries per update. Seed maintenance uses importance levels, stale/superseded/resolutionStatus marking instead of deletion, supersedes references, and 50-entry audit / 75-entry mandatory maintenance thresholds.
+    keywords:
+      - predictor_v3
+      - memory-seed
+      - sync-judgment
+      - maintenance-policy
+      - project-memory-delta
+    assertionStatus: verified
+    source: result_reports/summaries/153_summary-agent-workflow-memory-token-log-lifecycle.md (covered reports 141-152; Key Decisions)
 ```
 
 ## Known Gaps
