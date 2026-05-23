@@ -87,7 +87,9 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 
 터미널 출력:
 - task별 한 줄 요약만 출력한다.
-- 표준 출력 형식은 다음 세 종류 줄로 구성한다.
+- 상세 결과, 체크리스트, 검증 상세, 변경 설명은 Markdown report에만 작성하고 터미널 최종 출력에는 반복하지 않는다.
+- prompt에 `[결과 보고 형식]` 또는 `[코드/문서 체크리스트]`가 포함되어 있어도, tracked file 변경으로 report를 작성하는 작업에서는 해당 상세 내용은 Markdown report 내부 작성 기준이며 터미널 최종 출력 기준이 아니다.
+- 성공 시 터미널 최종 출력은 다음 세 종류 줄만 사용한다.
   - `task N: OK/NG - short summary`
   - `modified: path/to/file1, path/to/file2`
   - `report: result_reports/active/NNN_name.md`
@@ -98,7 +100,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
   - report-only 작업이면 report 파일만 포함한다.
   - 중단/blocked로 파일 변경이 없으면 `modified: none`을 사용한다.
   - pre-existing unrelated dirty/staged/untracked 파일이나 작업 범위 밖 파일은 포함하지 않는다.
-- 문제가 있거나 blocked이면 원인을 짧게 출력한다.
+- 문제가 있거나 blocked이면 위 세 종류 줄 형식에 더해 원인만 짧게 출력할 수 있다.
 - `modified:` 줄은 사람이 한눈에 보기 위한 보조 정보이며, report 파일 내부의 `Changed Files` 섹션은 그대로 유지한다.
 
 Report mode:
