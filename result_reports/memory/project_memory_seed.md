@@ -384,12 +384,17 @@ entries:
 
 ## Known Gaps
 
-- This seed covers summary-compressed knowledge through reports `139`; active reports introduced after the listed summaries are outside this seed.
+- This seed covers summary-compressed knowledge through the listed summaries; active reports introduced after the listed summaries are outside this seed.
 - The seed does not reconstruct fine-grained evidence from individual archived reports.
 - Open questions remain unresolved until an explicitly scoped implementation, verification, or policy task addresses them.
 
 ## Next Maintenance Rule
 
-- Add or supersede seed entries through a separate authorized memory document task, citing source reports or summaries in every changed entry.
-- Do not retroactively modify individual reports to match this seed.
-- Keep seed/index staging separate from summary/archive lifecycle operations and from any future backend import step.
+- seed는 summary lifecycle의 `Project Memory Seed Sync Judgment` 또는 명시적 memory maintenance task에서만 갱신한다.
+- 일반 source/code/doc 작업 중에는 seed를 수정하지 않는다.
+- 새 summary-level durable rule, error, open_question이 있으면 1~2개 entry만 추가한다.
+- 기존 entry가 대체되면 `supersedes` 또는 `resolutionStatus`를 사용한다.
+- 오래되었거나 덜 쓰이는 entry는 즉시 삭제하지 않고 `stale` / `superseded` / `retired` 후보로 표시한다.
+- seed entry가 50개를 넘으면 memory maintenance audit 후보로 보고하고, 75개를 넘으면 반드시 유지보수를 수행한다.
+- Do not retroactively modify individual reports or summaries to match this seed.
+- Keep seed/index staging separate from any future backend import step.

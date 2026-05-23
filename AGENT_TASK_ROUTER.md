@@ -228,6 +228,17 @@ Project Memory Delta:
   - `keywords`는 YAML list 형식을 유지한다.
   - `not needed`로 판단되면 seed를 수정하지 않는다.
 
+#### Memory Seed Maintenance Policy
+
+- 일반 source/code/doc 작업 중에는 `project_memory_seed.md` entry의 `importance`, `supersedes`, `resolutionStatus`를 임의 조정하지 않는다.
+- summary lifecycle 또는 명시적 memory maintenance 작업에서만 seed entry의 importance / supersession / resolutionStatus를 조정할 수 있다.
+- `importance`는 선택 필드이며, 사용할 경우 낮음(low) / 보통(normal) / 높음(high) / 핵심(critical)으로 일관되게 작성한다.
+- 오래되었거나 더 이상 active하지 않은 entry는 바로 삭제하지 않고 `resolutionStatus: stale`, `superseded`, `resolved`, `rejected` 등으로 표시한다.
+- 새 decision이 기존 entry를 대체하면 `supersedes`를 사용하고, 대체된 entry의 `resolutionStatus`를 함께 갱신한다.
+- 자주 재사용되거나 현재 작업 안전성에 직접 영향을 주는 entry는 summary lifecycle 또는 memory maintenance에서 `importance`를 올릴 수 있다.
+- seed entry가 50개를 넘으면 memory maintenance audit 후보로 보고한다. 75개를 넘으면 반드시 maintenance를 수행한다.
+- seed 유지보수는 entry 대량 재작성이나 대량 삭제가 아니라 최소 갱신 원칙을 따른다.
+
 Commit / Push:
 - report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
 - 코드/문서 변경이 있는 작업은 source/docs 변경 커밋과 report 커밋을 가능하면 분리한다.
