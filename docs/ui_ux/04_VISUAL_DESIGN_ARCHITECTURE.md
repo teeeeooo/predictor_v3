@@ -65,8 +65,13 @@ retained and rationalized by semantic role.
 Existing PyQt header color, condition-based cell color, and result/status
 color rules are not discarded. They remain valid engineering information and
 must be organized over time as semantic token or semantic role bindings.
-Concrete palette values and mappings are deferred to a follow-up inventory
-and token-foundation task.
+Concrete mappings from existing application styles into these roles remain
+deferred to a follow-up inventory and adapter/adoption task.
+
+The toolkit-neutral code foundation for these semantic roles is
+`ui_common/visual_tokens.py`. It provides plain Python lookup values for
+future adapters; existing PyQt and Tkinter UI are not migrated by its
+introduction.
 
 Candidate roles include:
 
@@ -200,7 +205,8 @@ any current color values.
 1. Inventory existing PyQt visual/color/token usage in Predictor, Trainer,
    and remaining Calculator references without changing code.
 2. Establish a toolkit visual token foundation that maps common semantic
-   vocabulary to PyQt and Tkinter adaptation points.
+   vocabulary to PyQt and Tkinter adaptation points. **Foundation complete:**
+   `ui_common/visual_tokens.py`; application wiring is deferred.
 3. Build the Tkinter table/grid input foundation under the existing final UX
    contract.
 4. Build the Tkinter auto-calc debounce/helper foundation.
