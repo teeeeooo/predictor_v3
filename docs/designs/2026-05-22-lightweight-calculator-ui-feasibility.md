@@ -362,3 +362,8 @@ After this design doc lands:
   in the same screen (not per-region tabs, not nested tabs, not KS C
   9306 merged into ISO).
 - Packaging numbers: **not measured** in this doc.
+- **Note:** This doc defined the feasibility MVP, not the final UX. The MVP
+  intentionally used `Entry` rows + calculate buttons to validate core reuse
+  and packaging size. The final calculator-only UX contract (table/grid input
+  + auto-calc) now lives in
+  `docs/designs/2026-05-23-tkinter-calculator-final-ux-contract.md`.
