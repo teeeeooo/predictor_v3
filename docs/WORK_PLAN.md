@@ -155,11 +155,20 @@
      - **Excel-like behavior 구현**, **Canvas graph/detail 구현**, **packaging**, **PyQt retirement**는 task 171 구현 범위가 아니다.
 
    4g-d. **Tkinter Excel-like table behavior controller** (172 참고). ISO Hong Kong CSPF/HSPF rated/trial `MetricInputTable`에 별도 `ExcelLikeTableController`를 attach하여 rectangular selection, TSV copy/paste, Delete/Backspace clear, grouped undo, Tab/Enter navigation, click-then-type replacement를 제공한다. Table은 metadata와 notify-once batch mutation만 제공하고 interaction logic을 소유하지 않는다. Numeric TSV paste는 partial auto-calc 결과를 피하기 위해 atomic validation 후 적용하며, visual state 값은 `ui_tk/layout_constants.py` owner boundary를 유지한다. 기본 smoke `4.939`/`3.643`과 invalid status-only surface는 유지한다. 다음 recommended action 순서:
-     1. **Tkinter Canvas graph/detail surface design** — lightweight Canvas 방향으로 설계; `matplotlib`은 packaging size 판단 전 도입하지 않는다.
-     2. **Tkinter standard/region expansion plan** — ISO/ISEER 2점식, SASO T3, EN 14825, AHRI 210/240 순서를 판단.
-     3. **Windows PyInstaller size measurement** — Windows host available 시.
-     4. **PyQt calculator source retirement 재검토** — Tkinter UX, 기능 migration, packaging 판단 이후.
-     - **Canvas graph/detail 구현**, **standard/region 확장**, **packaging**, **PyQt retirement**는 task 172 구현 범위가 아니다.
+      1. **macOS Tkinter manual UX smoke** — controller attach 이후.
+      2. **Tkinter Canvas graph/detail surface design** — lightweight Canvas 방향으로 설계; `matplotlib`은 packaging size 판단 전 도입하지 않는다.
+      3. **Tkinter standard/region expansion plan** — ISO/ISEER 2점식, SASO T3, EN 14825, AHRI 210/240 순서를 판단.
+      4. **Windows PyInstaller size measurement** — Windows host available 시.
+      5. **PyQt calculator source retirement 재검토** — Tkinter UX, 기능 migration, packaging 판단 이후.
+      - **Canvas graph/detail 구현**, **standard/region 확장**, **packaging**, **PyQt retirement**는 task 172 구현 범위가 아니다.
+
+   4g-e. **Tkinter Excel-like table UX smoke fix** (173 참고). Task 172 controller attach 이후 macOS 수동 smoke에서 click selection 시 typing caret 즉시 노출, arrow key 이동 부재, keypad Enter 미동작, selection 취소 후 active 표시 잔존, macOS Command shortcut 미동작 등 Excel-like 동작 차이가 확인되었다. `ExcelLikeTableController`에 insertontime 기반 caret 제어, arrow key navigation, KP_Enter binding, Esc/blank click/outside focus selection clear, Command/Control 대소문자 방어를 추가했다. 기존 Tab/Enter 이동 후 첫 입력 replace 동작은 유지하고 regression test로 보호한다. 다음 recommended action 순서:
+      1. **macOS Tkinter manual UX smoke** — controller patch 이후 다시 실행.
+      2. **Tkinter Canvas graph/detail surface design** — lightweight Canvas 방향으로 설계; `matplotlib`은 packaging size 판단 전 도입하지 않는다.
+      3. **Tkinter standard/region expansion plan** — ISO/ISEER 2점식, SASO T3, EN 14825, AHRI 210/240 순서를 판단.
+      4. **Windows PyInstaller size measurement** — Windows host available 시.
+      5. **PyQt calculator source retirement 재검토** — Tkinter UX, 기능 migration, packaging 판단 이후.
+      - **Canvas graph/detail 구현**, **standard/region 확장**, **packaging**, **PyQt retirement**는 task 173 구현 범위가 아니다.
 
    4v. **Xfail retirement audit / ISO pure-route obsolete xfail retirement / legacy diagnostic owner cleanup / AS/NZS case3 compatibility decision** (122~126 참고). PyQt fatal-abort 4개 파일 제외 full-ish baseline은 **568 passed, 1 skipped, 23 xfailed**에서 ISO pure-route Formula 45/49/47/50 obsolete experiment xfail 4개 제거 후 **568 passed, 1 skipped, 19 xfailed**로 정리되었다. `tests/test_iso16358_hspf_pure_iso_track_a.py`에는 fixture identity / workbook-reference guard / cycling / Formula 44·48 min-half / saturated auxiliary smoke만 남겼다. `tests/_legacy` 17개 xfail은 marker/count를 유지하면서 legacy workbook-oracle diagnostic/reference owner와 production official-exact path 분리를 reason/README로 명확히 했다. AS/NZS case3 2개 xfail은 marker/count를 유지하며 external workbook reference/full component row data prerequisite로 정책 결정했다. exact reconstruction / full row extraction은 Z-phase AS/NZS Excel compatibility work까지 deferred로 유지한다. 다음 recommended action은 (1) Python 3.12 venv 또는 Windows host에서 PyQt smoke 재검증, (2) Windows host 확보 시 PyInstaller size measurement, (3) Tkinter next metric/standard extension design 필요 시.
 

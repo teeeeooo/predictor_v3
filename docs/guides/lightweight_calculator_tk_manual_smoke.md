@@ -196,8 +196,21 @@ without changing inputs unless the step says so.
    - Press Delete or Backspace on a range, then undo once; all cleared cells
      restore together.
    - Use Tab / Shift+Tab and Enter / Shift+Enter to move through cells.
-   - Click a populated cell and type a digit; the prior value is replaced
-     rather than appended.
+   - **Click a populated cell: the cell highlights but no typing caret is
+     visible** (Excel-like selection mode, not immediate edit mode).
+   - **While in selection mode, press Left/Right/Up/Down arrow keys to move
+     the active cell** without leaving the table boundary.
+   - **Press keypad Enter (KP_Enter) to move down like Return.**
+   - **Press Esc, click a blank area inside the table frame (header, row
+     header, or empty space), or click another table/card cell; the previous
+     table's active highlight disappears and editable cells return to their
+     default background.**
+   - **macOS: Command+C, Command+V, and Command+Z work the same as
+     Ctrl+C/V/Z.**
+   - **After moving with Tab/Enter/arrow, type a digit; the prior value is
+     replaced rather than appended.**
+   - **Once typing has started in a cell, subsequent keystrokes append
+     naturally.**
 10. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
    only the CSPF result surface updates; it does not add duplicate result
    history or replace the HSPF result surface.
@@ -266,7 +279,13 @@ Copy this block into the run notes / report; mark each step
 - Rectangular select / TSV copy and numeric paste: OK/NG
 - Invalid TSV paste leaves all cells unchanged: OK/NG
 - Delete/Backspace grouped clear and single undo restore: OK/NG
-- Tab/Enter navigation and click-then-type replacement: OK/NG
+- Tab/Enter navigation: OK/NG
+- Click selection hides caret until first key: OK/NG
+- Arrow key moves active cell in selection mode: OK/NG
+- Keypad Enter navigates like Return: OK/NG
+- Esc/blank click/other table click clears selection visual: OK/NG
+- macOS Command+C/V/Z shortcut works: OK/NG
+- Tab/Enter/arrow then type replaces existing value: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG

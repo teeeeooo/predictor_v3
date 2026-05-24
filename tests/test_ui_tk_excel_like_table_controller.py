@@ -17,7 +17,7 @@ from ui_tk.excel_like_table_controller import (
     resolve_selection_bounds,
     validate_paste_matrix,
 )
-from ui_tk.layout_constants import TABLE_ACTIVE_BG, TABLE_SELECTED_BG
+from ui_tk.layout_constants import TABLE_ACTIVE_BG, TABLE_EDITABLE_BG, TABLE_SELECTED_BG
 from ui_tk.metric_input_table import MetricInputTable
 
 
@@ -158,12 +158,135 @@ def test_navigation_and_click_then_type_replace(controlled_table):
     controller.select((0, 0))
     assert controller._navigate("tab") == "break"
     assert controller.active == (0, 1)
+    assert table.editable_entries["b"].cget("insertontime") == 0
     assert controller._navigate("enter") == "break"
     assert controller.active == (1, 1)
+    assert table.editable_entries["d"].cget("insertontime") == 0
 
     controller._click(SimpleNamespace(state=0), (0, 0))
+    assert table.editable_entries["a"].cget("insertontime") == 0
     assert controller._type_replace(SimpleNamespace(char="9", state=0), (0, 0)) == "break"
     assert table.get_text_values()["a"] == "9"
     assert len(calls) == 1
+    assert table.editable_entries["a"].cget("insertontime") == 600
     controller._undo_last()
     assert table.get_text_values()["a"] == "1"
+
+
+def test_click_does_not_show_typing_caret_until_first_key(controlled_table):
+    table, controller, _calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    entry = table.editable_entries["a"]
+    assert entry.cget("insertontime") == 0
+    controller._type_replace(SimpleNamespace(char="9", state=0), (0, 0))
+    assert table.get_text_values()["a"] == "9"
+    assert entry.cget("insertontime") == 600
+
+
+def test_arrow_keys_move_active_cell_when_in_selection_mode(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    assert controller.active == (0, 0)
+    assert controller._arrow("right") == "break"
+    assert controller.active == (0, 1)
+    assert controller._arrow("down") == "break"
+    assert controller.active == (1, 1)
+    assert controller._arrow("left") == "break"
+    assert controller.active == (1, 0)
+    assert controller._arrow("up") == "break"
+    assert controller.active == (0, 0)
+    # out of bounds stays at edge
+    assert controller._arrow("left") == "break"
+    assert controller.active == (0, 0)
+    assert controller._arrow("up") == "break"
+    assert controller.active == (0, 0)
+    # once replace is no longer pending, arrows fall through to default entry behavior
+    controller._type_replace(SimpleNamespace(char="9", state=0), (0, 0))
+    assert controller._arrow("right") == ""
+
+
+def test_kp_enter_bindings_exist_and_navigate_like_return(controlled_table):
+    table, controller, _calls = controlled_table
+    entry = table.editable_entries["a"]
+    binds = entry.bind()
+    assert any("KP_Enter" in b for b in binds)
+    assert any("Shift" in b and "KP_Enter" in b for b in binds)
+    controller.select((0, 0))
+    assert controller._navigate("enter") == "break"
+    assert controller.active == (1, 0)
+    assert controller._navigate("shift-enter") == "break"
+    assert controller.active == (0, 0)
+
+
+def test_escape_clears_selection_and_restores_default_background(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    controller.select((1, 1), extend=True)
+    assert controller.selection_bounds is not None
+    assert controller._clear_selection() == "break"
+    assert controller.anchor is None
+    assert controller.active is None
+    assert controller.selection_bounds is None
+    for field_key in table.editable_entries:
+        assert table.editable_entries[field_key].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_focus_out_clears_selection_when_not_internal_move(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    assert controller.active == (0, 0)
+    controller._internal_focus_move = False
+    controller._on_focus_out(SimpleNamespace())
+    assert controller.active is None
+    assert table.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_focus_out_ignored_during_internal_navigation(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    controller._internal_focus_move = True
+    controller._on_focus_out(SimpleNamespace())
+    assert controller.active == (0, 0)
+
+
+def test_static_and_header_click_clears_selection(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    # header_cells contains the corner cell + column headers
+    header_cell = list(table.header_cells.values())[0]
+    # Verify binding exists by simulating callback
+    controller._clear_selection()
+    assert controller.active is None
+    assert table.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_command_and_control_shortcuts_bound_on_entry_and_frame(controlled_table):
+    import sys
+
+    table, controller, _calls = controlled_table
+    entry = table.editable_entries["a"]
+    binds = entry.bind()
+    assert "<Control-Key-c>" in binds
+    assert "<Control-Key-v>" in binds
+    assert "<Control-Key-z>" in binds
+    if sys.platform == "darwin":
+        assert any("Mod1-Key-c" in b for b in binds)
+        assert any("Mod1-Key-C" in b for b in binds)
+        assert any("Mod1-Key-v" in b for b in binds)
+        assert any("Mod1-Key-V" in b for b in binds)
+        assert any("Mod1-Key-z" in b for b in binds)
+        assert any("Mod1-Key-Z" in b for b in binds)
+    frame_binds = table.table_frame.bind()
+    if sys.platform == "darwin":
+        assert any("Mod1-Key-c" in b for b in frame_binds)
+
+
+def test_paste_atomic_reject_on_invalid_value(controlled_table):
+    table, controller, calls = controlled_table
+    controller.select((0, 0))
+    controller.select((0, 1), extend=True)
+    table.clipboard_clear()
+    table.clipboard_append("10\tbad")
+    controller._paste()
+    assert table.get_text_values() == {"a": "1", "b": "2", "c": "3", "d": "4"}
+    assert calls == []

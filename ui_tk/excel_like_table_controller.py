@@ -82,7 +82,7 @@ def resolve_next_cell(
         step = 1 if direction == "enter" else -1
     else:
         raise ValueError(f"Unknown navigation direction: {direction!r}")
-    return ordered[(ordered.index(current) + step) % len(ordered)]
+    return ordered[(ordered.index(current) + step) % len(editable)]
 
 
 class ExcelLikeTableController:
@@ -105,6 +105,7 @@ class ExcelLikeTableController:
         self._undo: list[dict[str, str]] = []
         self._replace_pending = False
         self._widget_positions: dict[object, GridAddress] = {}
+        self._internal_focus_move = False
         self._register()
         table.interaction_controller = self
 
@@ -122,10 +123,16 @@ class ExcelLikeTableController:
             entry.bind("<B1-Motion>", self._drag)
             entry.bind("<Control-c>", self._copy)
             entry.bind("<Command-c>", self._copy)
+            entry.bind("<Control-C>", self._copy)
+            entry.bind("<Command-C>", self._copy)
             entry.bind("<Control-v>", self._paste)
             entry.bind("<Command-v>", self._paste)
+            entry.bind("<Control-V>", self._paste)
+            entry.bind("<Command-V>", self._paste)
             entry.bind("<Control-z>", self._undo_last)
             entry.bind("<Command-z>", self._undo_last)
+            entry.bind("<Control-Z>", self._undo_last)
+            entry.bind("<Command-Z>", self._undo_last)
             entry.bind("<Delete>", self._clear)
             entry.bind("<BackSpace>", self._clear)
             entry.bind("<Tab>", lambda event: self._navigate("tab"))
@@ -133,7 +140,44 @@ class ExcelLikeTableController:
             entry.bind("<ISO_Left_Tab>", lambda event: self._navigate("shift-tab"))
             entry.bind("<Return>", lambda event: self._navigate("enter"))
             entry.bind("<Shift-Return>", lambda event: self._navigate("shift-enter"))
-            entry.bind("<KeyPress>", lambda event, p=position: self._type_replace(event, p), add="+")
+            entry.bind("<KP_Enter>", lambda event: self._navigate("enter"))
+            entry.bind("<Shift-KP_Enter>", lambda event: self._navigate("shift-enter"))
+            entry.bind("<Left>", lambda event: self._arrow("left"))
+            entry.bind("<Right>", lambda event: self._arrow("right"))
+            entry.bind("<Up>", lambda event: self._arrow("up"))
+            entry.bind("<Down>", lambda event: self._arrow("down"))
+            entry.bind("<Escape>", lambda event: self._clear_selection())
+            entry.bind("<FocusOut>", self._on_focus_out)
+            entry.bind(
+                "<KeyPress>",
+                lambda event, p=position: self._type_replace(event, p),
+                add="+",
+            )
+
+        # Shortcuts on table frame so they work when focus is on the table frame
+        for seq, handler in (
+            ("<Command-c>", self._copy),
+            ("<Command-C>", self._copy),
+            ("<Command-v>", self._paste),
+            ("<Command-V>", self._paste),
+            ("<Command-z>", self._undo_last),
+            ("<Command-Z>", self._undo_last),
+            ("<Control-c>", self._copy),
+            ("<Control-C>", self._copy),
+            ("<Control-v>", self._paste),
+            ("<Control-V>", self._paste),
+            ("<Control-z>", self._undo_last),
+            ("<Control-Z>", self._undo_last),
+        ):
+            self.table.table_frame.bind(seq, handler)
+
+        # Click on non-editable parts clears selection for this table
+        for widget in (
+            *self.table.header_cells.values(),
+            *self.table.row_header_cells.values(),
+            *self.table.static_cell_frames.values(),
+        ):
+            widget.bind("<Button-1>", lambda event: self._clear_selection())
 
     @property
     def selection_bounds(self) -> SelectionBounds | None:
@@ -172,8 +216,16 @@ class ExcelLikeTableController:
                 color = TABLE_ACTIVE_BG
             self.table.editable_entries[field_key].configure(background=color)
 
-    def _click(self, event, position: GridAddress) -> None:
+    def _click(self, event, position: GridAddress) -> str:
         self.select(position, extend=bool(event.state & 0x0001))
+        field_key = self.table.field_key_for_address(self._by_position[position])
+        entry = self.table.editable_entries[field_key]
+        self._internal_focus_move = True
+        entry.focus_set()
+        entry.configure(insertontime=0)
+        entry.selection_clear()
+        entry.icursor(0)
+        return "break"
 
     def _drag(self, event) -> str:
         widget = self.table.winfo_containing(event.x_root, event.y_root)
@@ -187,8 +239,10 @@ class ExcelLikeTableController:
             return ()
         top, bottom, left, right = self.selection_bounds
         return tuple(
-            tuple(self.table.text_at_address(self._by_position[(row, column)])
-                  for column in range(left, right + 1))
+            tuple(
+                self.table.text_at_address(self._by_position[(row, column)])
+                for column in range(left, right + 1)
+            )
             for row in range(top, bottom + 1)
         )
 
@@ -216,7 +270,9 @@ class ExcelLikeTableController:
         return "break"
 
     def _clear(self, _event=None) -> str:
-        self._apply({self._by_position[position]: "" for position in self.selected_positions()})
+        self._apply(
+            {self._by_position[position]: "" for position in self.selected_positions()}
+        )
         return "break"
 
     def _apply(self, values: dict[tuple[str, str], str]) -> None:
@@ -233,10 +289,41 @@ class ExcelLikeTableController:
     def _navigate(self, direction: str) -> str:
         current = self.active or self._editable_positions[0]
         target = resolve_next_cell(current, self._editable_positions, direction)
+        self._internal_focus_move = True
         self.select(target)
         address = self._by_position[target]
         field_key = self.table.field_key_for_address(address)
-        self.table.editable_entries[field_key].focus_set()
+        entry = self.table.editable_entries[field_key]
+        entry.focus_set()
+        entry.configure(insertontime=0)
+        entry.selection_clear()
+        entry.icursor(0)
+        return "break"
+
+    def _arrow(self, direction: str) -> str:
+        if not self._replace_pending or self.active is None:
+            return ""
+        row, col = self.active
+        if direction == "left":
+            target = (row, col - 1)
+        elif direction == "right":
+            target = (row, col + 1)
+        elif direction == "up":
+            target = (row - 1, col)
+        elif direction == "down":
+            target = (row + 1, col)
+        else:
+            return ""
+        if target not in self._editable_positions:
+            return "break"
+        self._internal_focus_move = True
+        self.select(target)
+        field_key = self.table.field_key_for_address(self._by_position[target])
+        entry = self.table.editable_entries[field_key]
+        entry.focus_set()
+        entry.configure(insertontime=0)
+        entry.selection_clear()
+        entry.icursor(0)
         return "break"
 
     def _type_replace(self, event, position: GridAddress) -> str | None:
@@ -246,5 +333,26 @@ class ExcelLikeTableController:
             return None
         self._apply({self._by_position[position]: event.char})
         field_key = self.table.field_key_for_address(self._by_position[position])
-        self.table.editable_entries[field_key].icursor("end")
+        entry = self.table.editable_entries[field_key]
+        entry.icursor("end")
+        entry.configure(insertontime=600)
         return "break"
+
+    def _clear_selection(self, event=None) -> str:
+        self.anchor = None
+        self.active = None
+        self._replace_pending = False
+        self._paint_selection()
+        return "break"
+
+    def _on_focus_out(self, event) -> None:
+        if self._internal_focus_move:
+            self._internal_focus_move = False
+            return
+        try:
+            exists = self.table.winfo_exists()
+        except Exception:
+            return
+        if not exists:
+            return
+        self._clear_selection()
