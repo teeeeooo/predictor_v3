@@ -88,6 +88,8 @@ def resolve_next_cell(
 class ExcelLikeTableController:
     """Attach spreadsheet-like selection and edits to a ``MetricInputTable``."""
 
+    _active_controller: ExcelLikeTableController | None = None
+
     def __init__(self, table) -> None:
         self.table = table
         self._by_position = {
@@ -106,6 +108,7 @@ class ExcelLikeTableController:
         self._replace_pending = False
         self._widget_positions: dict[object, GridAddress] = {}
         self._internal_focus_move = False
+        self._after_idle_id: str | None = None
         self._register()
         table.interaction_controller = self
 
@@ -146,7 +149,7 @@ class ExcelLikeTableController:
             entry.bind("<Right>", lambda event: self._arrow("right"))
             entry.bind("<Up>", lambda event: self._arrow("up"))
             entry.bind("<Down>", lambda event: self._arrow("down"))
-            entry.bind("<Escape>", lambda event: self._clear_selection())
+            entry.bind("<Escape>", self._clear_selection)
             entry.bind("<FocusOut>", self._on_focus_out)
             entry.bind(
                 "<KeyPress>",
@@ -171,13 +174,38 @@ class ExcelLikeTableController:
         ):
             self.table.table_frame.bind(seq, handler)
 
-        # Click on non-editable parts clears selection for this table
+        # Click on non-editable parts clears selection for this table.
+        # Recursively bind so Labels inside header/static frames also clear.
         for widget in (
             *self.table.header_cells.values(),
             *self.table.row_header_cells.values(),
             *self.table.static_cell_frames.values(),
         ):
-            widget.bind("<Button-1>", lambda event: self._clear_selection())
+            self._bind_clear_recursive(widget)
+
+        # Direct clicks on the table frame itself (gaps between cells) also clear.
+        self.table.table_frame.bind("<Button-1>", self._on_table_frame_click)
+
+    def _bind_clear_recursive(self, widget) -> None:
+        widget.bind("<Button-1>", self._clear_selection)
+        for child in widget.winfo_children():
+            self._bind_clear_recursive(child)
+
+    def _on_table_frame_click(self, event) -> str:
+        # Only clear when the click lands directly on the table frame widget,
+        # not on a child cell/header/entry (those have their own handlers).
+        if event.widget is self.table.table_frame:
+            self._clear_selection()
+            return "break"
+        return ""
+
+    def _mark_internal_focus_move(self) -> None:
+        self._internal_focus_move = True
+        self._after_idle_id = self.table.after_idle(self._reset_internal_focus_move)
+
+    def _reset_internal_focus_move(self) -> None:
+        self._internal_focus_move = False
+        self._after_idle_id = None
 
     @property
     def selection_bounds(self) -> SelectionBounds | None:
@@ -188,6 +216,14 @@ class ExcelLikeTableController:
     def select(self, position: GridAddress, *, extend: bool = False) -> None:
         if position not in self._editable_positions:
             return
+        prev = self.__class__._active_controller
+        if prev is not None and prev is not self:
+            try:
+                if prev.table.winfo_exists():
+                    prev._clear_selection()
+            except Exception:
+                pass
+        self.__class__._active_controller = self
         if not extend or self.anchor is None:
             self.anchor = position
         self.active = position
@@ -220,7 +256,7 @@ class ExcelLikeTableController:
         self.select(position, extend=bool(event.state & 0x0001))
         field_key = self.table.field_key_for_address(self._by_position[position])
         entry = self.table.editable_entries[field_key]
-        self._internal_focus_move = True
+        self._mark_internal_focus_move()
         entry.focus_set()
         entry.configure(insertontime=0)
         entry.selection_clear()
@@ -289,7 +325,7 @@ class ExcelLikeTableController:
     def _navigate(self, direction: str) -> str:
         current = self.active or self._editable_positions[0]
         target = resolve_next_cell(current, self._editable_positions, direction)
-        self._internal_focus_move = True
+        self._mark_internal_focus_move()
         self.select(target)
         address = self._by_position[target]
         field_key = self.table.field_key_for_address(address)
@@ -316,7 +352,7 @@ class ExcelLikeTableController:
             return ""
         if target not in self._editable_positions:
             return "break"
-        self._internal_focus_move = True
+        self._mark_internal_focus_move()
         self.select(target)
         field_key = self.table.field_key_for_address(self._by_position[target])
         entry = self.table.editable_entries[field_key]
@@ -339,6 +375,8 @@ class ExcelLikeTableController:
         return "break"
 
     def _clear_selection(self, event=None) -> str:
+        if self.__class__._active_controller is self:
+            self.__class__._active_controller = None
         self.anchor = None
         self.active = None
         self._replace_pending = False
@@ -347,7 +385,6 @@ class ExcelLikeTableController:
 
     def _on_focus_out(self, event) -> None:
         if self._internal_focus_move:
-            self._internal_focus_move = False
             return
         try:
             exists = self.table.winfo_exists()

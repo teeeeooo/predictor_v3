@@ -73,6 +73,42 @@ def controlled_table(tk_root):
     return table, controller, calls
 
 
+@pytest.fixture
+def two_controlled_tables(tk_root):
+    table1 = MetricInputTable(
+        tk_root,
+        columns=(("left", "Left"), ("right", "Right")),
+        rows=(("top", "Top"), ("bottom", "Bottom")),
+        editable_cells={
+            ("top", "left"): "a",
+            ("top", "right"): "b",
+            ("bottom", "left"): "c",
+            ("bottom", "right"): "d",
+        },
+    )
+    table1.pack()
+    table1.set_values({"a": "1", "b": "2", "c": "3", "d": "4"})
+    controller1 = ExcelLikeTableController(table1)
+
+    table2 = MetricInputTable(
+        tk_root,
+        columns=(("x", "X"), ("y", "Y")),
+        rows=(("u", "U"), ("v", "V")),
+        editable_cells={
+            ("u", "x"): "e",
+            ("u", "y"): "f",
+            ("v", "x"): "g",
+            ("v", "y"): "h",
+        },
+    )
+    table2.pack()
+    table2.set_values({"e": "5", "f": "6", "g": "7", "h": "8"})
+    controller2 = ExcelLikeTableController(table2)
+
+    tk_root.update_idletasks()
+    return table1, controller1, table2, controller2
+
+
 def test_clipboard_helpers_parse_encode_clip_and_validate_atomically():
     matrix = parse_clipboard_matrix("1\t2\r\n3\t4\n")
     assert matrix == (("1", "2"), ("3", "4"))
@@ -249,15 +285,87 @@ def test_focus_out_ignored_during_internal_navigation(controlled_table):
     assert controller.active == (0, 0)
 
 
-def test_static_and_header_click_clears_selection(controlled_table):
+def test_table_frame_click_on_blank_area_clears_selection(controlled_table):
     table, controller, _calls = controlled_table
     controller.select((0, 0))
-    # header_cells contains the corner cell + column headers
+    # Binding exists on table_frame
+    assert "<Button-1>" in table.table_frame.bind()
+    # Simulate a click directly on the table_frame widget (blank gap area)
+    event = SimpleNamespace(widget=table.table_frame)
+    assert controller._on_table_frame_click(event) == "break"
+    assert controller.active is None
+    assert table.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_header_label_click_clears_selection_via_recursive_binding(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    # Pick the first header cell (corner or column header)
     header_cell = list(table.header_cells.values())[0]
-    # Verify binding exists by simulating callback
+    # Find the Label inside it
+    labels = [c for c in header_cell.winfo_children() if c.winfo_class() == "Label"]
+    assert labels, "header cell must contain a Label"
+    label = labels[0]
+    # The recursive binding should exist on the Label
+    assert "<Button-1>" in label.bind()
+    # Simulate the bound callback path
     controller._clear_selection()
     assert controller.active is None
     assert table.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_click_on_other_table_clears_previous_selection(two_controlled_tables):
+    t1, c1, t2, c2 = two_controlled_tables
+    c1.select((0, 0))
+    assert c1.active == (0, 0)
+    assert t1.editable_entries["a"].cget("background") == TABLE_ACTIVE_BG
+    # Click on a cell in the second table
+    c2._click(SimpleNamespace(state=0), (0, 0))
+    # Previous controller should have been cleared
+    assert c1.active is None
+    assert t1.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+    # New controller should be active
+    assert c2.active == (0, 0)
+    assert t2.editable_entries["e"].cget("background") == TABLE_ACTIVE_BG
+
+
+def test_internal_focus_move_resets_via_after_idle(controlled_table, tk_root):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    controller._navigate("tab")
+    assert controller._internal_focus_move is True
+    # Process after_idle callbacks
+    tk_root.update_idletasks()
+    assert controller._internal_focus_move is False
+
+
+def test_external_focus_out_after_internal_move_clears(controlled_table, tk_root):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    controller._navigate("tab")
+    tk_root.update_idletasks()
+    assert controller._internal_focus_move is False
+    controller._on_focus_out(SimpleNamespace())
+    assert controller.active is None
+    assert table.editable_entries["b"].cget("background") == TABLE_EDITABLE_BG
+
+
+def test_focus_out_during_internal_move_is_suppressed_then_clears_after_idle(
+    controlled_table, tk_root
+):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+    controller._navigate("tab")
+    assert controller._internal_focus_move is True
+    # Simulate focus-out arriving before after_idle resets the flag
+    controller._on_focus_out(SimpleNamespace())
+    assert controller.active == (0, 1)  # Should NOT be cleared yet
+    tk_root.update_idletasks()
+    assert controller._internal_focus_move is False
+    # Now simulate an external focus-out
+    controller._on_focus_out(SimpleNamespace())
+    assert controller.active is None
+    assert table.editable_entries["b"].cget("background") == TABLE_EDITABLE_BG
 
 
 def test_command_and_control_shortcuts_bound_on_entry_and_frame(controlled_table):

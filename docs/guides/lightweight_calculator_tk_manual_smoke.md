@@ -201,10 +201,13 @@ without changing inputs unless the step says so.
    - **While in selection mode, press Left/Right/Up/Down arrow keys to move
      the active cell** without leaving the table boundary.
    - **Press keypad Enter (KP_Enter) to move down like Return.**
-   - **Press Esc, click a blank area inside the table frame (header, row
-     header, or empty space), or click another table/card cell; the previous
-     table's active highlight disappears and editable cells return to their
-     default background.**
+   - **Press Esc; the active highlight disappears immediately.**
+   - **Click a blank area inside the table frame (header, row header,
+     static cell, or empty space between cells); the active highlight
+     disappears. The clickable blank area should be the entire table surface,
+     not just a 1-pixel gap.**
+   - **Click another table/card cell; the previous table's active highlight
+     disappears and editable cells return to their default background.**
    - **macOS: Command+C, Command+V, and Command+Z work the same as
      Ctrl+C/V/Z.**
    - **After moving with Tab/Enter/arrow, type a digit; the prior value is
@@ -283,7 +286,9 @@ Copy this block into the run notes / report; mark each step
 - Click selection hides caret until first key: OK/NG
 - Arrow key moves active cell in selection mode: OK/NG
 - Keypad Enter navigates like Return: OK/NG
-- Esc/blank click/other table click clears selection visual: OK/NG
+- Esc clears selection visual: OK/NG
+- Blank area (header/row header/static/gap) click clears selection: OK/NG
+- Other table/card cell click clears previous selection: OK/NG
 - macOS Command+C/V/Z shortcut works: OK/NG
 - Tab/Enter/arrow then type replaces existing value: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
