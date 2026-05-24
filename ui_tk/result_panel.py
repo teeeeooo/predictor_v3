@@ -8,14 +8,24 @@ from typing import Iterable
 
 from ui_tk.result_models import ResultSummary
 
+_GRID_LINE = "#c4ccd4"
+_TITLE_BACKGROUND = "#f1f3f5"
+_HEADER_BACKGROUND = "#e8edf2"
+_VALUE_BACKGROUND = "#ffffff"
+_STATUS_FOREGROUND = "#52606d"
+
 
 class ResultPanel:
-    """Latest summary cards plus clipboard copy / clear."""
+    """Latest compact summary tables plus clipboard copy / clear."""
 
     def __init__(self, parent: tk.Widget, *, title: str = "결과") -> None:
         self._frame = ttk.LabelFrame(parent, text=title)
         self._summary_holder = ttk.Frame(self._frame)
         self._summary_holder.pack(side=tk.TOP, fill=tk.X, padx=6, pady=6)
+        self.summary_tables: dict[str, tk.Frame] = {}
+        self.summary_header_cells: dict[str, tuple[tk.Frame, ...]] = {}
+        self.summary_value_cells: dict[str, tuple[tk.Frame, ...]] = {}
+        self.summary_status_labels: dict[str, tk.Label] = {}
         self._text = tk.Text(self._frame, height=10, width=60, wrap="word")
         self._text.configure(state=tk.DISABLED)
         ttk.Button(self._frame, text="결과 복사", command=self.copy).pack(
@@ -47,35 +57,107 @@ class ResultPanel:
         """Render latest metric summaries as compact cards and copy text."""
         summaries = tuple(summaries)
         self._hide_text_mode()
-        for child in self._summary_holder.winfo_children():
-            child.destroy()
+        self._clear_summary_tables()
         for row, summary in enumerate(summaries):
-            card = ttk.LabelFrame(self._summary_holder, text=summary.title)
-            card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
-            self._summary_holder.columnconfigure(0, weight=1)
-            if summary.fields:
-                for column, (label, value) in enumerate(summary.fields):
-                    ttk.Label(card, text=label).grid(
-                        row=0, column=column, sticky="w", padx=10, pady=(6, 2)
-                    )
-                    ttk.Label(card, text=value).grid(
-                        row=1, column=column, sticky="w", padx=10, pady=(2, 6)
-                    )
-            ttk.Label(card, text=summary.status).grid(
-                row=2 if summary.fields else 0,
-                column=0,
-                columnspan=max(len(summary.fields), 1),
-                sticky="w",
-                padx=10,
-                pady=(2, 6),
-            )
+            self._render_summary_table(row, summary)
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
     def clear(self) -> None:
-        for child in self._summary_holder.winfo_children():
-            child.destroy()
+        self._clear_summary_tables()
         self._hide_text_mode()
         self._set_copy_text("")
+
+    def _make_summary_cell(
+        self, card: tk.Frame, *, row: int, column: int, background: str
+    ) -> tk.Frame:
+        cell = tk.Frame(card, background=background, borderwidth=0)
+        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        card.columnconfigure(column, weight=1)
+        return cell
+
+    def _render_summary_table(self, row: int, summary: ResultSummary) -> None:
+        card = tk.Frame(
+            self._summary_holder,
+            name=f"{summary.title.lower()}_summary",
+            background=_GRID_LINE,
+            borderwidth=1,
+            relief=tk.SOLID,
+        )
+        card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        card.surface_role = "summary_table"
+        self.summary_tables[summary.title] = card
+        self._summary_holder.columnconfigure(0, weight=1)
+        title_label = tk.Label(
+            card,
+            text=summary.title,
+            anchor="w",
+            background=_TITLE_BACKGROUND,
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        title_label.grid(
+            row=0,
+            column=0,
+            columnspan=max(len(summary.fields), 1),
+            sticky="ew",
+            padx=(0, 1),
+            pady=(0, 1),
+        )
+        title_label.surface_role = "summary_title"
+        if summary.fields:
+            self._render_result_values(card, summary)
+        status = tk.Label(
+            card,
+            text=summary.status,
+            anchor="w",
+            background=_VALUE_BACKGROUND,
+            foreground=_STATUS_FOREGROUND,
+            padx=10,
+            pady=5,
+        )
+        status.grid(
+            row=3 if summary.fields else 1,
+            column=0,
+            columnspan=max(len(summary.fields), 1),
+            sticky="ew",
+            padx=(0, 1),
+            pady=(0, 1),
+        )
+        status.surface_role = "summary_status"
+        self.summary_status_labels[summary.title] = status
+
+    def _render_result_values(self, card: tk.Frame, summary: ResultSummary) -> None:
+        headers = []
+        values = []
+        for column, (label, value) in enumerate(summary.fields):
+            header = self._make_summary_cell(
+                card, row=1, column=column, background=_HEADER_BACKGROUND
+            )
+            header.surface_role = "summary_header_cell"
+            tk.Label(
+                header,
+                text=label,
+                background=_HEADER_BACKGROUND,
+                font=("TkDefaultFont", 10, "bold"),
+            ).pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+            value_cell = self._make_summary_cell(
+                card, row=2, column=column, background=_VALUE_BACKGROUND
+            )
+            value_cell.surface_role = "summary_value_cell"
+            tk.Label(
+                value_cell, text=value, background=_VALUE_BACKGROUND
+            ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+            headers.append(header)
+            values.append(value_cell)
+        self.summary_header_cells[summary.title] = tuple(headers)
+        self.summary_value_cells[summary.title] = tuple(values)
+
+    def _clear_summary_tables(self) -> None:
+        for child in self._summary_holder.winfo_children():
+            child.destroy()
+        self.summary_tables.clear()
+        self.summary_header_cells.clear()
+        self.summary_value_cells.clear()
+        self.summary_status_labels.clear()
 
     def _set_copy_text(self, text: str) -> None:
         self._text.configure(state=tk.NORMAL)
@@ -84,8 +166,7 @@ class ResultPanel:
         self._text.configure(state=tk.DISABLED)
 
     def _show_text_mode(self) -> None:
-        for child in self._summary_holder.winfo_children():
-            child.destroy()
+        self._clear_summary_tables()
         if not self._text.winfo_manager():
             self._text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
 

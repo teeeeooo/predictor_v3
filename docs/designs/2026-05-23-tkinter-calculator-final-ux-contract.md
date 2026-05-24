@@ -239,6 +239,15 @@ Ordered. Each slice ships independently with its own report.
      `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; that rule is
      project-wide and is not limited to this ISO Hong Kong screen.
 
+3b. **ISO Hong Kong matrix/result visual surface refinement**
+   - Completed in task 166: the task-163 logical matrix and summary content
+     now render as bordered matrix cells and compact bordered result tables,
+     with distinct header, editable, static, value, and status surfaces.
+   - This is the visible-widget application of
+     `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; calculator
+     routes, auto-calc, copy/clear behavior, and default results are unchanged.
+   - Full visual-token wiring and graph/detail surfaces remain deferred.
+
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
      `docs/guides/lightweight_calculator_tk_manual_smoke.md` against the
@@ -313,6 +322,9 @@ usability decision.**
 - **Input/output visible correction**: completed in task 163 using compact
   metric input tables and summary result cards with consistent `kWh`
   formatting.
+- **Matrix/result visual surface refinement**: completed in task 166 using
+  bordered matrix cells and compact summary result tables under
+  `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 - **Next action**: Implementation slice 4 — macOS manual UX smoke.
 - **PyQt retirement**: held pending Windows packaging size measurement or an
   explicit usability decision.

@@ -53,9 +53,21 @@ def _label_texts(widget) -> list[str]:
     while stack:
         current = stack.pop()
         stack.extend(current.winfo_children())
-        if current.winfo_class() == "TLabel":
+        if current.winfo_class() in {"Label", "TLabel"}:
             labels.append(current.cget("text"))
     return labels
+
+
+def _surface_roles(widget) -> list[str]:
+    roles = []
+    stack = [widget]
+    while stack:
+        current = stack.pop()
+        stack.extend(current.winfo_children())
+        role = getattr(current, "surface_role", None)
+        if role is not None:
+            roles.append(role)
+    return roles
 
 
 def _make_tab(root):
@@ -120,7 +132,7 @@ def test_iso_hong_kong_sections_use_grids_without_calculate_buttons(tk_root):
         stack.extend(widget.winfo_children())
         if widget.winfo_class() == "TButton":
             buttons.append(widget.cget("text"))
-        if widget.winfo_class() == "TLabel":
+        if widget.winfo_class() in {"Label", "TLabel"}:
             labels.append(widget.cget("text"))
     assert "CSPF 계산" not in buttons
     assert "HSPF 계산" not in buttons
@@ -128,6 +140,26 @@ def test_iso_hong_kong_sections_use_grids_without_calculate_buttons(tk_root):
         assert label in labels
     assert labels.count("능력 [W]") == 2
     assert labels.count("전력 [W]") == 2
+
+
+def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
+    tab = _make_tab(tk_root)
+
+    for metric in ("CSPF", "HSPF"):
+        table = tab.sections[metric].input_table
+        roles = _surface_roles(table)
+
+        assert table.table_frame.surface_role == "table_frame"
+        assert len(table.header_cells) == 3
+        assert len(table.row_header_cells) == 2
+        assert len(table.editable_cell_frames) == 5
+        assert len(table.static_cell_frames) == 1
+        assert roles.count("header_cell") == 4  # includes the corner cell
+        assert roles.count("row_header_cell") == 2
+        assert roles.count("editable_cell") == 5
+        assert roles.count("static_cell") == 1
+        static_cell = next(iter(table.static_cell_frames.values()))
+        assert "-" in _label_texts(static_cell)
 
 
 def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
@@ -139,6 +171,7 @@ def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
     assert "3.643 | 273.2 | 75.0" in text
     assert "None" not in text
     assert "74991.00727784102" not in text
+    assert "{" not in text
     assert text.count("[CSPF]") == 1
     assert text.count("[HSPF]") == 1
     result_labels = _label_texts(tab.result_panel._summary_holder)
@@ -151,9 +184,15 @@ def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
         "HSEC [kWh]",
     ):
         assert label in result_labels
+    for metric in ("CSPF", "HSPF"):
+        assert tab.result_panel.summary_tables[metric].surface_role == "summary_table"
+        assert len(tab.result_panel.summary_header_cells[metric]) == 3
+        assert len(tab.result_panel.summary_value_cells[metric]) == 3
+        assert tab.result_panel.summary_status_labels[metric].surface_role == "summary_status"
 
     tab.sections["CSPF"].recalculate_now()
     assert _result_text(tab).count("[CSPF]") == 1
+    assert set(tab.result_panel.summary_tables) == {"CSPF", "HSPF"}
 
     tab.result_panel.clear()
     assert _result_text(tab) == ""
@@ -176,6 +215,9 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
     invalid = _result_text(tab)
     assert "입력 오류: 숫자 입력을 확인하세요." in invalid
     assert "Traceback" not in invalid
+    assert tab.result_panel.summary_status_labels["CSPF"].cget("text") == (
+        "입력 오류: 숫자 입력을 확인하세요."
+    )
 
 
 def test_same_value_does_not_schedule_recalculation(tk_root):

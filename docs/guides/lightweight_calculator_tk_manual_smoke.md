@@ -8,7 +8,8 @@
 > size measurement are out of scope here — see the packaging guide.
 > The input-matrix and summary-result checks below exercise the first
 > concrete application of
-> `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
+> `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, including the
+> task-166 bordered matrix/result visible-surface refinement.
 
 ## Purpose
 
@@ -136,6 +137,10 @@ without changing inputs unless the step says so.
    `calculator_id`, and `config_path` are not displayed anywhere in
    the UI.
 5. **CSPF table default values** — In the single CSPF input table:
+   - The row/column headers and all cells appear inside one bordered matrix,
+     not as separated label/entry controls.
+   - Header cells, editable white cells, and the static cell are visibly
+     distinct, with compact contiguous grid lines between cells.
    - `정격` / `능력 [W]` = `3500`
    - `35 Full` / `능력 [W]` = `3600`
    - `35 Full` / `전력 [W]` = `900`
@@ -144,13 +149,16 @@ without changing inputs unless the step says so.
    - `정격` / `전력 [W]` is shown as non-editable `-`.
    - No `CSPF 계산` button is shown.
 6. **CSPF auto-calc** — Without changing inputs, wait briefly for
-   auto-calc. A summary result card should show:
+   auto-calc. A compact bordered result table should show a distinct header
+   row, value row, and small status line:
    ```
    CSPF | CSTL [kWh] | CSEC [kWh]
    4.939 | 1769.6 | 358.3
    ```
    No `None` value is visible.
 7. **HSPF table default values** — In the single HSPF input table:
+   - The row/column headers and all cells appear inside one bordered matrix
+     with the same editable/static distinction as CSPF.
    - `정격 난방` / `능력 [W]` = `6300`
    - `7 Full` / `능력 [W]` = `6300`
    - `7 Full` / `전력 [W]` = `1500`
@@ -159,7 +167,7 @@ without changing inputs unless the step says so.
    - `정격 난방` / `전력 [W]` is shown as non-editable `-`.
    - No `HSPF 계산` button is shown.
 8. **HSPF auto-calc** — After the initial auto-calc, the result
-   panel should contain a second summary card:
+   panel should contain a second compact bordered result table:
    ```
    HSPF | HSTL [kWh] | HSEC [kWh]
    3.643 | 273.2 | 75.0
@@ -222,10 +230,10 @@ Copy this block into the run notes / report; mark each step
 - Single ISO 16358 tab: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
-- CSPF single table defaults / static power cell / no calculate button: OK/NG
-- CSPF summary card = 4.939 / 1769.6 / 358.3: OK/NG
-- HSPF single table defaults / static power cell / no calculate button: OK/NG
-- HSPF summary card = 3.643 / 273.2 / 75.0: OK/NG
+- CSPF bordered matrix / distinct static cell / defaults / no calculate button: OK/NG
+- CSPF compact result table = 4.939 / 1769.6 / 358.3: OK/NG
+- HSPF bordered matrix / distinct static cell / defaults / no calculate button: OK/NG
+- HSPF compact result table = 3.643 / 273.2 / 75.0: OK/NG
 - Latest result composition (no duplicate history): OK/NG
 - Copy result (Cmd+V paste shows both blocks): OK/NG
 - Clear result empties the panel: OK/NG

@@ -1,4 +1,4 @@
-"""Compact Tkinter input table with explicit editable-cell mapping.
+"""Bordered Tkinter input matrix with explicit editable-cell mapping.
 
 This widget owns presentation and text parsing only. It does not import
 calculator core, profile routing, or visual-token styling.
@@ -18,9 +18,16 @@ __all__ = ["MetricInputTable"]
 ValuesChangedCallback = Callable[[], None]
 CellAddress = tuple[str, str]
 
+_GRID_LINE = "#c4ccd4"
+_HEADER_BACKGROUND = "#e8edf2"
+_EDITABLE_BACKGROUND = "#ffffff"
+_STATIC_BACKGROUND = "#f1f3f5"
+_HEADER_FOREGROUND = "#26333f"
+_STATIC_FOREGROUND = "#66737f"
+
 
 class MetricInputTable(ttk.Frame):
-    """A compact metric card table containing editable and static cells."""
+    """A bordered matrix table containing editable and static cells."""
 
     def __init__(
         self,
@@ -41,55 +48,134 @@ class MetricInputTable(ttk.Frame):
             field_key: "" for field_key in self._editable_cells.values()
         }
         self._variables: dict[str, tk.StringVar] = {}
-        self._entries: dict[str, ttk.Entry] = {}
+        self._entries: dict[str, tk.Entry] = {}
+        self.table_frame: tk.Frame
+        self.header_cells: dict[str, tk.Frame] = {}
+        self.row_header_cells: dict[str, tk.Frame] = {}
+        self.editable_cell_frames: dict[str, tk.Frame] = {}
+        self.static_cell_frames: dict[CellAddress, tk.Frame] = {}
         self._field_order = tuple(self._editable_cells.values())
         if len(set(self._field_order)) != len(self._field_order):
             raise ValueError("metric input field keys must be unique")
         self._build_table()
 
     def _build_table(self) -> None:
-        ttk.Label(self, text="").grid(row=0, column=0, padx=6, pady=4)
+        self.table_frame = tk.Frame(
+            self,
+            name="matrix_surface",
+            background=_GRID_LINE,
+            borderwidth=1,
+            relief=tk.SOLID,
+        )
+        self.table_frame.grid(row=0, column=0, sticky="w")
+        self.table_frame.surface_role = "table_frame"
+        self._add_header_cell(column=0, key=None, label="")
         for column_number, (_key, label) in enumerate(self._columns, start=1):
-            ttk.Label(self, text=label).grid(
-                row=0, column=column_number, sticky="ew", padx=6, pady=4
-            )
+            self._add_header_cell(column=column_number, key=_key, label=label)
         for row_number, (row_key, label) in enumerate(self._rows, start=1):
-            ttk.Label(self, text=label).grid(
-                row=row_number, column=0, sticky="w", padx=6, pady=4
-            )
+            self._add_row_header(row=row_number, key=row_key, label=label)
             for column_number, (column_key, _label) in enumerate(
                 self._columns, start=1
             ):
                 address = (row_key, column_key)
                 field_key = self._editable_cells.get(address)
                 if field_key is None:
-                    ttk.Label(self, text="-").grid(
-                        row=row_number,
-                        column=column_number,
-                        sticky="ew",
-                        padx=6,
-                        pady=4,
+                    self._add_static_cell(
+                        row=row_number, column=column_number, address=address
                     )
                     continue
-                variable = tk.StringVar(master=self)
-                variable.trace_add(
-                    "write",
-                    lambda *_args, field_key=field_key: self._handle_change(field_key),
-                )
-                entry = ttk.Entry(self, textvariable=variable, width=14)
-                entry.grid(
+                self._add_editable_cell(
                     row=row_number,
                     column=column_number,
-                    sticky="ew",
-                    padx=6,
-                    pady=4,
+                    address=address,
+                    field_key=field_key,
                 )
-                entry.bind(
-                    "<Return>",
-                    lambda _event, field_key=field_key: self._focus_next(field_key),
-                )
-                self._variables[field_key] = variable
-                self._entries[field_key] = entry
+
+    def _add_header_cell(self, *, column: int, key: str | None, label: str) -> None:
+        cell = self._make_cell_frame(
+            row=0, column=column, role="header_cell", background=_HEADER_BACKGROUND
+        )
+        if key is not None:
+            cell.surface_key = key
+            self.header_cells[key] = cell
+        tk.Label(
+            cell,
+            text=label,
+            background=_HEADER_BACKGROUND,
+            foreground=_HEADER_FOREGROUND,
+            font=("TkDefaultFont", 10, "bold"),
+        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+
+    def _add_row_header(self, *, row: int, key: str, label: str) -> None:
+        cell = self._make_cell_frame(
+            row=row, column=0, role="row_header_cell", background=_HEADER_BACKGROUND
+        )
+        cell.surface_key = key
+        self.row_header_cells[key] = cell
+        tk.Label(
+            cell,
+            text=label,
+            anchor="w",
+            background=_HEADER_BACKGROUND,
+            foreground=_HEADER_FOREGROUND,
+            font=("TkDefaultFont", 10, "bold"),
+        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+
+    def _add_static_cell(
+        self, *, row: int, column: int, address: CellAddress
+    ) -> None:
+        cell = self._make_cell_frame(
+            row=row, column=column, role="static_cell", background=_STATIC_BACKGROUND
+        )
+        cell.surface_address = address
+        self.static_cell_frames[address] = cell
+        tk.Label(
+            cell,
+            text="-",
+            background=_STATIC_BACKGROUND,
+            foreground=_STATIC_FOREGROUND,
+        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=7)
+
+    def _add_editable_cell(
+        self, *, row: int, column: int, address: CellAddress, field_key: str
+    ) -> None:
+        cell = self._make_cell_frame(
+            row=row, column=column, role="editable_cell", background=_EDITABLE_BACKGROUND
+        )
+        cell.surface_address = address
+        self.editable_cell_frames[field_key] = cell
+        variable = tk.StringVar(master=self)
+        variable.trace_add(
+            "write",
+            lambda *_args, field_key=field_key: self._handle_change(field_key),
+        )
+        entry = tk.Entry(
+            cell,
+            textvariable=variable,
+            width=14,
+            relief=tk.FLAT,
+            borderwidth=0,
+            highlightthickness=0,
+            justify=tk.RIGHT,
+            background=_EDITABLE_BACKGROUND,
+        )
+        entry.pack(fill=tk.BOTH, expand=True, padx=10, pady=7)
+        entry.surface_role = "editable_entry"
+        entry.bind(
+            "<Return>",
+            lambda _event, field_key=field_key: self._focus_next(field_key),
+        )
+        self._variables[field_key] = variable
+        self._entries[field_key] = entry
+
+    def _make_cell_frame(
+        self, *, row: int, column: int, role: str, background: str
+    ) -> tk.Frame:
+        cell = tk.Frame(self.table_frame, background=background, borderwidth=0)
+        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        cell.surface_role = role
+        self.table_frame.columnconfigure(column, weight=1)
+        return cell
 
     def _handle_change(self, field_key: str) -> None:
         value = self._variables[field_key].get()
