@@ -3,7 +3,7 @@
 ## Role and scope
 
 - This document is the **Tkinter-specific adapter** for table-shaped
-  UI in existing Tkinter applications (e.g. SPOT).
+  UI in existing Tkinter applications.
 - It assumes the toolkit-agnostic baseline in
   `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` and the common UX
   principles in `../00_UI_UX_SYSTEM.md`.
@@ -46,6 +46,19 @@ adapter accepts two patterns, picked per surface:
 Pick one per surface. Do not mix Entry grid and Treeview into one
 hybrid widget for the same table.
 
+### Responsive Entry-grid construction
+
+- Wrap editable entries in cell frames and expose row, column, role, and
+  editable-widget metadata so a later interaction controller can register
+  against the existing table surface.
+- Use character/font-based requested cell sizes for initial readability, then
+  use parent `fill`/`expand` or grid `weight` plus `sticky="ew"` so related
+  matrix/result surfaces stretch together.
+- Do not use a fixed pixel table width as the alignment mechanism. Related
+  rated, trial, and result surfaces share a responsive parent width policy.
+- Typography and row padding are density choices: readable table fonts should
+  be paired with compact cell padding rather than inflated fixed row heights.
+
 ## 3. UX baseline still applies
 
 Tkinter is the implementation, not an excuse to drop UX baseline.
@@ -61,7 +74,9 @@ Tkinter is the implementation, not an excuse to drop UX baseline.
 ## 4. Implementing the baseline on an Entry grid
 
 Because Tkinter does not provide spreadsheet primitives, the
-Entry-grid surface must wire each behavior explicitly:
+Entry-grid surface must wire each behavior explicitly. A table builder may
+create the cell registry and rendering surface first; a separate interaction
+controller may later `register()` those cells and own the behaviors below:
 
 - **Selection**: maintain a selection model in app code (anchor
   cell, active cell, selected rectangle). Apply a distinct
@@ -126,7 +141,7 @@ editing pieces.
 
 ## 7. Dialog patterns
 
-- Sub-dialogs follow the project's existing helper (e.g. SPOT's
+- Sub-dialogs follow the project's existing helper (for example a
   `center_dialog` and `withdraw → deiconify` pattern). Use:
   - `transient(parent)` so the dialog tracks the parent window.
   - `grab_set()` for modal dialogs so input is captured.
@@ -137,10 +152,10 @@ editing pieces.
   the platform's expected side), with the cancel / dismiss control
   to its left.
 
-## 8. Generalized SPOT lessons
+## 8. Reusable Tkinter reference lessons
 
 These are the Tkinter-side lessons worth carrying to every Tkinter
-project, not SPOT-specific quirks:
+project when reviewing existing implementation evidence:
 
 - A single fixed input must not stretch full width to fill a row.
   Constrain its width and let the remaining space stay empty.
@@ -154,7 +169,8 @@ project, not SPOT-specific quirks:
   inside a scrollable table or panel.
 - Long labels wrap to two lines or use an ellipsis; do not stretch
   the column.
-- Every table column declares a sensible `min` / `max` width.
+- Every table column declares sensible readable sizing and stretch behavior;
+  do not freeze a responsive surface to a single pixel width.
 - Numeric values use the project's compact numeric formatter.
 - Progress dialogs paint before the calculation starts; failure
   paths close them; completion paths give explicit feedback.

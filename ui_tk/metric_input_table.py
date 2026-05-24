@@ -10,7 +10,17 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Mapping
 
-from ui_tk.layout_constants import MATRIX_DATA_COLUMN_WIDTH, MATRIX_ROW_HEADER_WIDTH
+from ui_tk.layout_constants import (
+    TABLE_BODY_FONT,
+    TABLE_CELL_PADX,
+    TABLE_CELL_PADY,
+    TABLE_DATA_COLUMN_CHARS,
+    TABLE_DATA_COLUMN_WEIGHT,
+    TABLE_HEADER_FONT,
+    TABLE_HEADER_PADY,
+    TABLE_ROW_HEADER_CHARS,
+    TABLE_ROW_HEADER_WEIGHT,
+)
 from ui_tk.table_grid_model import parse_numeric_cell
 
 __all__ = ["MetricInputTable"]
@@ -37,41 +47,38 @@ class MetricInputTable(ttk.Frame):
         columns: tuple[tuple[str, str], ...],
         rows: tuple[tuple[str, str], ...],
         editable_cells: Mapping[CellAddress, str],
-        row_header_width: int = MATRIX_ROW_HEADER_WIDTH,
-        data_column_width: int = MATRIX_DATA_COLUMN_WIDTH,
-        total_columns_hint: int | None = None,
+        row_header_chars: int = TABLE_ROW_HEADER_CHARS,
+        data_column_chars: int = TABLE_DATA_COLUMN_CHARS,
         values_changed_callback: ValuesChangedCallback | None = None,
         **kwargs: object,
     ) -> None:
         super().__init__(master, **kwargs)
-        self._columns = columns
-        self._rows = rows
-        self._editable_cells = dict(editable_cells)
-        self.row_header_width = row_header_width
-        self.data_column_width = data_column_width
-        self.total_columns_hint = total_columns_hint or len(columns)
-        if self.total_columns_hint < len(columns):
-            raise ValueError("total_columns_hint must cover all visible data columns")
-        self.content_width = (
-            self.row_header_width + self.data_column_width * self.total_columns_hint
-        )
+        self.columns = columns
+        self.rows = rows
+        self.editable_cells = dict(editable_cells)
+        self.row_header_chars = row_header_chars
+        self.data_column_chars = data_column_chars
+        self.layout_policy = "responsive"
         self._values_changed_callback = values_changed_callback
         self._values: dict[str, str] = {
-            field_key: "" for field_key in self._editable_cells.values()
+            field_key: "" for field_key in self.editable_cells.values()
         }
         self._variables: dict[str, tk.StringVar] = {}
         self._entries: dict[str, tk.Entry] = {}
+        self.editable_entries = self._entries
         self.table_frame: tk.Frame
         self.header_cells: dict[str, tk.Frame] = {}
         self.row_header_cells: dict[str, tk.Frame] = {}
         self.editable_cell_frames: dict[str, tk.Frame] = {}
         self.static_cell_frames: dict[CellAddress, tk.Frame] = {}
-        self._field_order = tuple(self._editable_cells.values())
-        if len(set(self._field_order)) != len(self._field_order):
+        self.cell_frames: dict[CellAddress, tk.Frame] = {}
+        if len(set(self.editable_cells.values())) != len(self.editable_cells):
             raise ValueError("metric input field keys must be unique")
+        self.field_order: tuple[str, ...] = ()
         self._build_table()
 
     def _build_table(self) -> None:
+        self.columnconfigure(0, weight=1)
         self.table_frame = tk.Frame(
             self,
             name="matrix_surface",
@@ -79,20 +86,20 @@ class MetricInputTable(ttk.Frame):
             borderwidth=1,
             relief=tk.SOLID,
         )
-        self.table_frame.grid(row=0, column=0, sticky="w")
+        self.table_frame.grid(row=0, column=0, sticky="ew")
         self.table_frame.surface_role = "table_frame"
-        self.table_frame.content_width = self.content_width
-        self._configure_column_widths()
+        self.table_frame.layout_policy = self.layout_policy
+        self._configure_column_weights()
         self._add_header_cell(column=0, key=None, label="")
-        for column_number, (_key, label) in enumerate(self._columns, start=1):
+        for column_number, (_key, label) in enumerate(self.columns, start=1):
             self._add_header_cell(column=column_number, key=_key, label=label)
-        for row_number, (row_key, label) in enumerate(self._rows, start=1):
+        for row_number, (row_key, label) in enumerate(self.rows, start=1):
             self._add_row_header(row=row_number, key=row_key, label=label)
             for column_number, (column_key, _label) in enumerate(
-                self._columns, start=1
+                self.columns, start=1
             ):
                 address = (row_key, column_key)
-                field_key = self._editable_cells.get(address)
+                field_key = self.editable_cells.get(address)
                 if field_key is None:
                     self._add_static_cell(
                         row=row_number, column=column_number, address=address
@@ -105,19 +112,10 @@ class MetricInputTable(ttk.Frame):
                     field_key=field_key,
                 )
 
-    def _configure_column_widths(self) -> None:
-        self.table_frame.columnconfigure(0, minsize=self.row_header_width, weight=0)
-        visible_columns = len(self._columns)
-        slot_width = self.data_column_width * self.total_columns_hint // visible_columns
-        remainder = (
-            self.data_column_width * self.total_columns_hint
-            - slot_width * visible_columns
-        )
-        for column in range(1, visible_columns + 1):
-            extra = 1 if column <= remainder else 0
-            self.table_frame.columnconfigure(
-                column, minsize=slot_width + extra, weight=0
-            )
+    def _configure_column_weights(self) -> None:
+        self.table_frame.columnconfigure(0, weight=TABLE_ROW_HEADER_WEIGHT)
+        for column in range(1, len(self.columns) + 1):
+            self.table_frame.columnconfigure(column, weight=TABLE_DATA_COLUMN_WEIGHT)
 
     def _add_header_cell(self, *, column: int, key: str | None, label: str) -> None:
         cell = self._make_cell_frame(
@@ -129,10 +127,11 @@ class MetricInputTable(ttk.Frame):
         tk.Label(
             cell,
             text=label,
+            width=self.row_header_chars if key is None else self.data_column_chars,
             background=_HEADER_BACKGROUND,
             foreground=_HEADER_FOREGROUND,
-            font=("TkDefaultFont", 10, "bold"),
-        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+            font=TABLE_HEADER_FONT,
+        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
 
     def _add_row_header(self, *, row: int, key: str, label: str) -> None:
         cell = self._make_cell_frame(
@@ -143,11 +142,12 @@ class MetricInputTable(ttk.Frame):
         tk.Label(
             cell,
             text=label,
+            width=self.row_header_chars,
             anchor="w",
             background=_HEADER_BACKGROUND,
             foreground=_HEADER_FOREGROUND,
-            font=("TkDefaultFont", 10, "bold"),
-        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+            font=TABLE_HEADER_FONT,
+        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
 
     def _add_static_cell(
         self, *, row: int, column: int, address: CellAddress
@@ -156,13 +156,16 @@ class MetricInputTable(ttk.Frame):
             row=row, column=column, role="static_cell", background=_STATIC_BACKGROUND
         )
         cell.surface_address = address
+        self.cell_frames[address] = cell
         self.static_cell_frames[address] = cell
         tk.Label(
             cell,
             text="-",
+            width=self.data_column_chars,
             background=_STATIC_BACKGROUND,
             foreground=_STATIC_FOREGROUND,
-        ).pack(fill=tk.BOTH, expand=True, padx=10, pady=7)
+            font=TABLE_BODY_FONT,
+        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
 
     def _add_editable_cell(
         self, *, row: int, column: int, address: CellAddress, field_key: str
@@ -171,6 +174,7 @@ class MetricInputTable(ttk.Frame):
             row=row, column=column, role="editable_cell", background=_EDITABLE_BACKGROUND
         )
         cell.surface_address = address
+        self.cell_frames[address] = cell
         self.editable_cell_frames[field_key] = cell
         variable = tk.StringVar(master=self)
         variable.trace_add(
@@ -180,14 +184,15 @@ class MetricInputTable(ttk.Frame):
         entry = tk.Entry(
             cell,
             textvariable=variable,
-            width=14,
+            width=self.data_column_chars,
             relief=tk.FLAT,
             borderwidth=0,
             highlightthickness=0,
             justify=tk.CENTER,
             background=_EDITABLE_BACKGROUND,
+            font=TABLE_BODY_FONT,
         )
-        entry.pack(fill=tk.BOTH, expand=True, padx=10, pady=7)
+        entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
         entry.surface_role = "editable_entry"
         entry.bind(
             "<Return>",
@@ -195,6 +200,7 @@ class MetricInputTable(ttk.Frame):
         )
         self._variables[field_key] = variable
         self._entries[field_key] = entry
+        self.field_order += (field_key,)
 
     def _make_cell_frame(
         self, *, row: int, column: int, role: str, background: str
@@ -213,8 +219,8 @@ class MetricInputTable(ttk.Frame):
             self._values_changed_callback()
 
     def _focus_next(self, field_key: str) -> str:
-        index = self._field_order.index(field_key)
-        following = self._field_order[(index + 1) % len(self._field_order)]
+        index = self.field_order.index(field_key)
+        following = self.field_order[(index + 1) % len(self.field_order)]
         self._entries[following].focus_set()
         return "break"
 

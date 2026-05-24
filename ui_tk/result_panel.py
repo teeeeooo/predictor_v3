@@ -6,7 +6,13 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Iterable
 
-from ui_tk.layout_constants import ISO_SECTION_CONTENT_WIDTH
+from ui_tk.layout_constants import (
+    TABLE_BODY_FONT,
+    TABLE_CELL_PADX,
+    TABLE_CELL_PADY,
+    TABLE_HEADER_FONT,
+    TABLE_HEADER_PADY,
+)
 from ui_tk.result_models import ResultSummary
 
 _GRID_LINE = "#c4ccd4"
@@ -24,9 +30,8 @@ class ResultPanel:
         parent: tk.Widget,
         *,
         title: str = "결과",
-        content_width: int = ISO_SECTION_CONTENT_WIDTH,
     ) -> None:
-        self.content_width = content_width
+        self.layout_policy = "responsive"
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
@@ -91,7 +96,7 @@ class ResultPanel:
             relief=tk.SOLID,
         )
         card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
-        card.content_width = self.content_width
+        card.layout_policy = self.layout_policy
         self.summary_tables[summary.title] = card
         self._summary_holder.columnconfigure(0, weight=1)
         if not summary.fields:
@@ -105,7 +110,7 @@ class ResultPanel:
             text=summary.title,
             anchor="w",
             background=_TITLE_BACKGROUND,
-            font=("TkDefaultFont", 10, "bold"),
+            font=TABLE_HEADER_FONT,
         )
         title_label.grid(
             row=0,
@@ -123,15 +128,16 @@ class ResultPanel:
         self, card: tk.Frame, summary: ResultSummary, *, row: int
     ) -> None:
         if not summary.fields:
-            card.columnconfigure(0, minsize=self.content_width, weight=0)
+            card.columnconfigure(0, weight=1)
         status = tk.Label(
             card,
             text=summary.status,
             anchor="w",
             background=_VALUE_BACKGROUND,
             foreground=_STATUS_FOREGROUND,
-            padx=10,
-            pady=5,
+            font=TABLE_BODY_FONT,
+            padx=TABLE_CELL_PADX,
+            pady=TABLE_CELL_PADY,
         )
         status.grid(
             row=row,
@@ -147,13 +153,8 @@ class ResultPanel:
     def _render_result_values(self, card: tk.Frame, summary: ResultSummary) -> None:
         headers = []
         values = []
-        base_width, remainder = divmod(self.content_width, len(summary.fields))
         for column, (label, value) in enumerate(summary.fields):
-            card.columnconfigure(
-                column,
-                minsize=base_width + (1 if column < remainder else 0),
-                weight=0,
-            )
+            card.columnconfigure(column, weight=1)
             header = self._make_summary_cell(
                 card, row=1, column=column, background=_HEADER_BACKGROUND
             )
@@ -162,15 +163,20 @@ class ResultPanel:
                 header,
                 text=label,
                 background=_HEADER_BACKGROUND,
-                font=("TkDefaultFont", 10, "bold"),
-            ).pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+                font=TABLE_HEADER_FONT,
+            ).pack(
+                fill=tk.BOTH,
+                expand=True,
+                padx=TABLE_CELL_PADX,
+                pady=TABLE_HEADER_PADY,
+            )
             value_cell = self._make_summary_cell(
                 card, row=2, column=column, background=_VALUE_BACKGROUND
             )
             value_cell.surface_role = "summary_value_cell"
             tk.Label(
-                value_cell, text=value, background=_VALUE_BACKGROUND
-            ).pack(fill=tk.BOTH, expand=True, padx=10, pady=6)
+                value_cell, text=value, background=_VALUE_BACKGROUND, font=TABLE_BODY_FONT
+            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
             headers.append(header)
             values.append(value_cell)
         self.summary_header_cells[summary.title] = tuple(headers)

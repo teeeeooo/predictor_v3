@@ -266,6 +266,16 @@ Ordered. Each slice ships independently with its own report.
    - Graph/detail remains a later lightweight Canvas-oriented design phase;
      `matplotlib` is not introduced before packaging-size judgment.
 
+3e. **Responsive table architecture alignment**
+   - Completed in task 170: the task-169 fixed-width mechanism is superseded
+     by character/font-based requested sizing and parent-driven responsive
+     stretch for rated, trial-input, and result surfaces.
+   - `MetricInputTable` exposes cell/row/column/editable metadata for a later
+     interaction controller; task 170 does not implement selection, TSV
+     clipboard actions, undo, or drag.
+   - Summary/status behavior, numeric formatting, auto-calc, and calculator
+     routes remain unchanged.
+
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
      `docs/guides/lightweight_calculator_tk_manual_smoke.md` against the
@@ -349,6 +359,9 @@ usability decision.**
 - **Table/card width alignment refinement**: completed in task 169 with one
   section content-width and spacing policy for rated, trial, and result
   surfaces.
-- **Next action**: Tkinter Excel-like table behavior design/implementation.
+- **Responsive table architecture alignment**: completed in task 170; fixed
+  pixel widths are replaced by character/font-based responsive stretching and
+  interaction-ready cell metadata.
+- **Next action**: Tkinter Excel-like table behavior controller.
 - **PyQt retirement**: held pending Windows packaging size measurement or an
   explicit usability decision.

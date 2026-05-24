@@ -14,8 +14,6 @@ from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.auto_calc import DebouncedAutoCalc
 from ui_tk.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
-    ISO_SECTION_CONTENT_WIDTH,
-    ISO_SECTION_DATA_COLUMNS,
     ISO_SECTION_PADX,
 )
 from ui_tk.metric_input_table import MetricInputTable
@@ -43,12 +41,11 @@ class IsoCspfSection:
             columns=(("capacity", "능력 [W]"),),
             rows=(("rated", "정격 표기치"),),
             editable_cells={("rated", "capacity"): "declared_capacity"},
-            total_columns_hint=ISO_SECTION_DATA_COLUMNS,
         )
         self.rated_table.grid(
             row=0,
             column=0,
-            sticky="w",
+            sticky="ew",
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, 6),
         )
@@ -68,22 +65,19 @@ class IsoCspfSection:
                 ("capacity", "half"): "half_capacity",
                 ("power", "half"): "half_power",
             },
-            total_columns_hint=ISO_SECTION_DATA_COLUMNS,
         )
         self.input_table.grid(
             row=2,
             column=0,
-            sticky="w",
+            sticky="ew",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.result_panel = ResultPanel(
-            self._frame, title="CSPF 결과", content_width=ISO_SECTION_CONTENT_WIDTH
-        )
+        self.result_panel = ResultPanel(self._frame, title="CSPF 결과")
         self.result_panel.grid(
             row=3,
             column=0,
-            sticky="w",
+            sticky="ew",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )

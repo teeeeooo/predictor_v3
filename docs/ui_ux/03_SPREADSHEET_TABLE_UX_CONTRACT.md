@@ -24,6 +24,21 @@ For the `predictor_v3` rule that shapes repeated input/result data into a
 matrix table or summary result surface in the first place, see
 `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 
+## Surface architecture requirements
+
+- A table is a reusable surface with row/column metadata and cell-role
+  metadata; interaction code attaches to that surface rather than rebuilding
+  cells ad hoc.
+- Table and associated result surfaces use their parent layout responsively:
+  related tables expand together and preserve alignment when the available
+  content area changes.
+- Toolkit adapters may choose character/font-based initial sizing and local
+  density rules, but must not solve alignment by fixing a table to one pixel
+  width that prevents resize behavior.
+- Selection, clipboard, clear, undo, and navigation may be implemented by a
+  separate interaction controller, provided the final table still satisfies
+  the baseline behavior below.
+
 ## 1. Baseline: behaves like a small Excel sheet
 
 Users come to every table with spreadsheet muscle memory (Excel,

@@ -10,7 +10,8 @@
 > concrete application of
 > `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, including the
 > task-166 bordered matrix/result visible-surface refinement and task-168
-> ISO Hong Kong layout correction, followed by task-169 width alignment.
+> ISO Hong Kong layout correction, followed by task-169 alignment and
+> task-170 responsive table architecture refinement.
 
 ## Purpose
 
@@ -150,6 +151,10 @@ without changing inputs unless the step says so.
    - Cells appear as compact bordered matrices and numeric values are centered.
    - The `정격 표기치`, trial-input, and CSPF result tables have the same
      left edge and visual width with regular vertical spacing.
+   - Resize the window wider: all three surfaces expand together while
+     preserving their common left edge and width alignment.
+   - Numeric/header text is comfortably readable and row padding remains
+     compact rather than oversized.
    - No `CSPF 계산` button is shown.
 6. **CSPF auto-calc** — Without changing inputs, wait briefly for
    auto-calc. A compact bordered result table should show a distinct header
@@ -171,6 +176,7 @@ without changing inputs unless the step says so.
    - Numeric values are centered in the bordered cells.
    - The `정격 표기치`, trial-input, and HSPF result tables have the same
      left edge and visual width with the same spacing rhythm as CSPF.
+   - After resizing, these three surfaces expand together and remain aligned.
    - No `HSPF 계산` button is shown.
 8. **HSPF auto-calc** — After the initial auto-calc, the result
    surface directly below HSPF input should contain a compact bordered table:
@@ -238,9 +244,11 @@ Copy this block into the run notes / report; mark each step
 - CSPF + HSPF sections together: OK/NG
 - CSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
 - CSPF rated / trial / result left edge, width, and spacing alignment: OK/NG
+- CSPF responsive resize / readable font / compact row density: OK/NG
 - CSPF compact result table = 4.939 / 1769.6 / 358.3: OK/NG
 - HSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
 - HSPF rated / trial / result left edge, width, and spacing alignment: OK/NG
+- HSPF responsive resize / readable font / compact row density: OK/NG
 - HSPF compact result table = 3.643 / 273.2 / 75.0: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
