@@ -185,21 +185,34 @@ without changing inputs unless the step says so.
    3.643 | 273.2 | 75.0
    ```
    No long raw floating-point value is visible.
-9. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
+9. **Excel-like input interactions** — In a CSPF or HSPF trial-input table:
+   - Click one cell, then Shift-click or drag to select a rectangular range.
+   - Copy the selected range and paste it into a plain-text editor; the
+     contents are TSV in the visible row/column order.
+   - Paste a rectangular numeric TSV block into the selected anchor and
+     verify all affected cells update together.
+   - Paste a block containing a non-number and verify none of its cells are
+     applied.
+   - Press Delete or Backspace on a range, then undo once; all cleared cells
+     restore together.
+   - Use Tab / Shift+Tab and Enter / Shift+Enter to move through cells.
+   - Click a populated cell and type a digit; the prior value is replaced
+     rather than appended.
+10. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
    only the CSPF result surface updates; it does not add duplicate result
    history or replace the HSPF result surface.
-10. **Invalid input surface** — Type a non-number in one CSPF trial cell.
+11. **Invalid input surface** — Type a non-number in one CSPF trial cell.
     The CSPF result changes to a clear input-error status line only. No gray
     header/value block, `None`, raw dictionary, long float, or traceback is
     displayed. Restore the default value and verify the normal summary returns.
-11. **No bottom result actions** — There is no shared bottom result region and
+12. **No bottom result actions** — There is no shared bottom result region and
     no visible `결과 복사` or `결과 지우기` button.
-12. **Region re-selection does not corrupt the tab** — Click the
+13. **Region re-selection does not corrupt the tab** — Click the
     region combobox. Re-select `Hong Kong` (currently the only
     option). The CSPF and HSPF sections re-render without
     duplication and auto-calc repopulates the result panel with
     CSPF `4.939` and HSPF `3.643`.
-13. **PyQt5 stays unloaded** — Optional verification. With the app
+14. **PyQt5 stays unloaded** — Optional verification. With the app
     still running, open a second terminal at the repo root and run:
     ```bash
     python3 -B -c "import ui_tk.calculator_app, sys; \
@@ -208,7 +221,7 @@ without changing inputs unless the step says so.
     The printed list must be empty (`[]`). This mirrors the
     `tests/test_ui_tk_calculator_foundation.py::test_pyqt5_not_
     imported_via_ui_tk_calculator_app` assertion.
-14. **Clean shutdown** — Close the window via the macOS window close
+15. **Clean shutdown** — Close the window via the macOS window close
     button. The Python process exits with no error.
 
 ## Expected values
@@ -250,6 +263,10 @@ Copy this block into the run notes / report; mark each step
 - HSPF rated / trial / result left edge, width, and spacing alignment: OK/NG
 - HSPF responsive resize / readable font / compact row density: OK/NG
 - HSPF compact result table = 3.643 / 273.2 / 75.0: OK/NG
+- Rectangular select / TSV copy and numeric paste: OK/NG
+- Invalid TSV paste leaves all cells unchanged: OK/NG
+- Delete/Backspace grouped clear and single undo restore: OK/NG
+- Tab/Enter navigation and click-then-type replacement: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG

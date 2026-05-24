@@ -7,6 +7,7 @@ import sys
 import pytest
 
 from ui_tk.auto_calc import DebouncedAutoCalc
+from ui_tk.excel_like_table_controller import ExcelLikeTableController
 import ui_tk.layout_constants as layout_constants
 from ui_tk.layout_constants import (
     ISO_SECTION_PADX,
@@ -135,6 +136,11 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert isinstance(hspf.input_table, MetricInputTable)
     assert isinstance(cspf.rated_table, MetricInputTable)
     assert isinstance(hspf.rated_table, MetricInputTable)
+    for section in (cspf, hspf):
+        assert isinstance(section.rated_controller, ExcelLikeTableController)
+        assert isinstance(section.input_controller, ExcelLikeTableController)
+        assert section.rated_table.interaction_controller is section.rated_controller
+        assert section.input_table.interaction_controller is section.input_controller
 
     buttons = []
     labels = []

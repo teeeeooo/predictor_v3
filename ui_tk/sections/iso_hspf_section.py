@@ -12,6 +12,7 @@ from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.auto_calc import DebouncedAutoCalc
+from ui_tk.excel_like_table_controller import ExcelLikeTableController
 from ui_tk.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
@@ -90,6 +91,8 @@ class IsoHspfSection:
                 "half_power": "800",
             }
         )
+        self.rated_controller = ExcelLikeTableController(self.rated_table)
+        self.input_controller = ExcelLikeTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.rated_table.set_values_changed_callback(self._auto_calc.schedule)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)

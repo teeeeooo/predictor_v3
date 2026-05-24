@@ -103,6 +103,21 @@ Treeview surfaces inherit the read-only side of this baseline
 (selection, Ctrl+C as TSV, distinct cell states) but skip the
 editing pieces.
 
+### Predictor_v3 Tkinter calculator binding
+
+The ISO Hong Kong Tkinter calculator attaches a separate
+`ExcelLikeTableController` to each rated and trial `MetricInputTable`.
+The table surface exposes metadata plus grouped mutation hooks; the
+controller owns rectangular selection, TSV clipboard actions, grouped
+clear/undo, navigation, and type-to-replace without creating cells.
+
+For this numeric auto-calculation surface, a paste is validated as one
+action before applying any values. If any pasted numeric cell is invalid,
+no cell is changed and no recalculation is scheduled. Inline invalid edits
+remain visible through the existing result-status path. This atomic paste
+policy is the calculator binding for avoiding partially updated automatic
+results.
+
 ## 5. Cell states
 
 - **Editable**: default Entry foreground / background.

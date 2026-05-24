@@ -65,6 +65,8 @@ class MetricInputTable(ttk.Frame):
         self._variables: dict[str, tk.StringVar] = {}
         self._entries: dict[str, tk.Entry] = {}
         self.editable_entries = self._entries
+        self._batch_depth = 0
+        self._batch_changed = False
         self.table_frame: tk.Frame
         self.header_cells: dict[str, tk.Frame] = {}
         self.row_header_cells: dict[str, tk.Frame] = {}
@@ -74,6 +76,7 @@ class MetricInputTable(ttk.Frame):
         if len(set(self.editable_cells.values())) != len(self.editable_cells):
             raise ValueError("metric input field keys must be unique")
         self.field_order: tuple[str, ...] = ()
+        self.editable_addresses: tuple[CellAddress, ...] = ()
         self._build_table()
 
     def _build_table(self) -> None:
@@ -200,6 +203,7 @@ class MetricInputTable(ttk.Frame):
         self._variables[field_key] = variable
         self._entries[field_key] = entry
         self.field_order += (field_key,)
+        self.editable_addresses += (address,)
 
     def _make_cell_frame(
         self, *, row: int, column: int, role: str, background: str
@@ -214,6 +218,9 @@ class MetricInputTable(ttk.Frame):
         if value == self._values[field_key]:
             return
         self._values[field_key] = value
+        if self._batch_depth:
+            self._batch_changed = True
+            return
         if self._values_changed_callback is not None:
             self._values_changed_callback()
 
@@ -244,6 +251,39 @@ class MetricInputTable(ttk.Frame):
             if self.set_value(field_key, value):
                 changed = True
         return changed
+
+    def set_values_batch(self, values: Mapping[str, str]) -> bool:
+        """Set several editable values and notify at most once."""
+        outermost = self._batch_depth == 0
+        if outermost:
+            self._batch_changed = False
+        self._batch_depth += 1
+        try:
+            changed = self.set_values(values)
+        finally:
+            self._batch_depth -= 1
+        if outermost and self._batch_changed:
+            self._batch_changed = False
+            if self._values_changed_callback is not None:
+                self._values_changed_callback()
+        return changed
+
+    def field_key_for_address(self, address: CellAddress) -> str | None:
+        return self.editable_cells.get(address)
+
+    def text_at_address(self, address: CellAddress) -> str:
+        field_key = self.field_key_for_address(address)
+        if field_key is None:
+            return "-"
+        return self._values[field_key]
+
+    def set_address_values_batch(self, values: Mapping[CellAddress, str]) -> bool:
+        editable_values = {
+            field_key: value
+            for address, value in values.items()
+            if (field_key := self.field_key_for_address(address)) is not None
+        }
+        return self.set_values_batch(editable_values)
 
     def get_numeric_values(self) -> dict[str, float]:
         """Return numeric values for editable cells or raise on invalid input."""
