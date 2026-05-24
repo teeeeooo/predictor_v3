@@ -19,6 +19,8 @@ Checks:
    (``core/``, ``ui/``, ``ui_tk/``, ``scripts/``). Known-large
    historical files are allowlisted (see ``LOC_ALLOWLIST`` /
    ``CLASS_ALLOWLIST``).
+6. ``ui_tk/`` visual values are defined in configured owner modules,
+   not redeclared as raw colors or local visual constants in components.
 
 The script reads Python source files only — no PyQt / Tkinter
 imports, no Excel / numpy / pandas. External dependency: none.
@@ -31,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 from pathlib import Path
 from typing import Iterable, List, Sequence, Set, Tuple
@@ -83,6 +86,21 @@ APP_ENTRYPOINT_MAX_FUNCS = 3
 
 # Roots that get LOC / class-count soft-limit reporting.
 PRODUCTION_ROOTS: Tuple[str, ...] = ("core", "ui", "ui_tk", "scripts")
+
+# Tkinter visual values belong to explicit owner modules. This is a path-based
+# boundary so other toolkit adapters or projects can configure the same check.
+UI_VISUAL_SCAN_ROOTS: Tuple[str, ...] = ("ui_tk",)
+UI_VISUAL_OWNER_PATHS: Set[str] = {
+    "ui_tk/layout_constants.py",
+    "ui_common/visual_tokens.py",
+}
+UI_VISUAL_ALLOWLIST_PATHS: Set[str] = set()
+RAW_HEX_COLOR_PATTERN = re.compile(
+    r"^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?(?:[0-9A-Fa-f]{2})?$"
+)
+LOCAL_VISUAL_CONSTANT_PATTERN = re.compile(
+    r"(?:_BG|_FG|_COLOR|_FONT|_PAD[A-Z_]*|_WIDTH|_HEIGHT)$"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -288,6 +306,62 @@ def check_ui_tk_shell_anti_pattern(source: str, relpath: str) -> List[Finding]:
     return []
 
 
+def check_ui_visual_value_ownership(
+    source: str,
+    relpath: str,
+    *,
+    scan_roots: Sequence[str],
+    owner_paths: Set[str],
+    allowlist_paths: Set[str],
+) -> List[Finding]:
+    """Require component visual values to be consumed from an owner module."""
+    if not any(relpath.startswith(f"{root}/") for root in scan_roots):
+        return []
+    if relpath in owner_paths or relpath in allowlist_paths:
+        return []
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []  # banned-imports check already reports syntax errors
+
+    findings: List[Finding] = []
+    if any(
+        isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and RAW_HEX_COLOR_PATTERN.fullmatch(node.value)
+        for node in ast.walk(tree)
+    ):
+        findings.append(
+            Finding(
+                "error",
+                relpath,
+                "UI visual values must be defined in an owner module: "
+                "raw hex color literal found",
+            )
+        )
+
+    for node in tree.body:
+        targets: Sequence[ast.expr] = ()
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = (node.target,)
+        for target in targets:
+            if (
+                isinstance(target, ast.Name)
+                and LOCAL_VISUAL_CONSTANT_PATTERN.search(target.id)
+            ):
+                findings.append(
+                    Finding(
+                        "error",
+                        relpath,
+                        "UI visual values must be defined in an owner module: "
+                        f"local visual constant '{target.id}' found",
+                    )
+                )
+    return findings
+
+
 def check_soft_limits(
     source: str,
     relpath: str,
@@ -371,7 +445,7 @@ def run_checks(repo_root: Path) -> List[Finding]:
             check_banned_imports(source, relpath, "core", BANNED_IMPORTS["core"])
         )
 
-    # 2. ui_tk/ banned imports + shell anti-pattern
+    # 2. ui_tk/ banned imports + shell anti-pattern + visual-value ownership
     for path in _iter_py_files(repo_root, "ui_tk"):
         relpath = _relpath(path, repo_root)
         source = path.read_text(encoding="utf-8")
@@ -379,6 +453,15 @@ def run_checks(repo_root: Path) -> List[Finding]:
             check_banned_imports(source, relpath, "ui_tk", BANNED_IMPORTS["ui_tk"])
         )
         findings.extend(check_ui_tk_shell_anti_pattern(source, relpath))
+        findings.extend(
+            check_ui_visual_value_ownership(
+                source,
+                relpath,
+                scan_roots=UI_VISUAL_SCAN_ROOTS,
+                owner_paths=UI_VISUAL_OWNER_PATHS,
+                allowlist_paths=UI_VISUAL_ALLOWLIST_PATHS,
+            )
+        )
 
     # 3. app_*.py thin entrypoint
     for path in _iter_app_entrypoints(repo_root):
@@ -436,7 +519,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         description=(
             "Project-wide structural guard for predictor_v3. "
             "Checks layer import boundaries, thin app entrypoints, "
-            "and soft LOC / class-count limits for new code."
+            "UI visual-value ownership, and soft LOC / class-count limits "
+            "for new code."
         )
     )
     parser.add_argument(

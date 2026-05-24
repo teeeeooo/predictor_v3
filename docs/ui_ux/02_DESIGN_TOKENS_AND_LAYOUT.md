@@ -176,21 +176,37 @@ Rules:
 - Error messages on a field use `color.danger` foreground; do not
   rely on color alone.
 
-## 9. What this document does not include
+## 9. Visual value ownership and portable adoption
+
+- Each adopting project provides a concrete token owner file. Widget
+  and component modules consume those values instead of introducing raw
+  colors, local spacing tokens, or fixed-pixel table width rules.
+- A project may bind this common semantic contract through a
+  toolkit-local owner while adoption is incremental; a complete theme
+  migration is not required before component ownership is enforced.
+- The portable architecture kit includes the owner file, component
+  skeleton, toolkit adapter, and a configured ownership guard together
+  with these common documents. See
+  `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`.
+
+## 10. What this document does not include
 
 - Final hex codes. Each project owns its palette and binds these
-  tokens to concrete values in its own theme module.
+  tokens to concrete values in its own theme or toolkit binding owner
+  module.
 - Toolkit-specific implementation. PyQt5 stylesheet and ttk.Style
   details live in the adapter documents under `adapters/`.
 - Code examples. This document is the token / layout contract; the
   adapter documents are where toolkit-specific snippets go, if any.
 
-## 10. Related documents
+## 11. Related documents
 
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
 - `04_VISUAL_DESIGN_ARCHITECTURE.md` — `predictor_v3` semantic
   visual roles and visual design direction.
+- `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` — portable adoption kit and
+  visual-value ownership boundary.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 table rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter table adapter rules.

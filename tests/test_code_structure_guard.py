@@ -178,6 +178,53 @@ def test_ui_tk_anti_pattern_ignores_non_ui_tk_path():
 
 
 # ---------------------------------------------------------------------------
+# UI visual-value ownership boundary
+# ---------------------------------------------------------------------------
+
+
+def _visual_findings(source: str, relpath: str):
+    return guard.check_ui_visual_value_ownership(
+        source,
+        relpath,
+        scan_roots=guard.UI_VISUAL_SCAN_ROOTS,
+        owner_paths=guard.UI_VISUAL_OWNER_PATHS,
+        allowlist_paths=guard.UI_VISUAL_ALLOWLIST_PATHS,
+    )
+
+
+def test_ui_visual_owner_rejects_raw_hex_in_component():
+    findings = _visual_findings(
+        'def render_background():\n    return "#e8edf2"\n',
+        "ui_tk/result_panel.py",
+    )
+    assert any("raw hex color literal" in finding.message for finding in findings)
+
+
+def test_ui_visual_owner_rejects_local_visual_constant_in_component():
+    findings = _visual_findings(
+        "RESULT_HEADER_BG = theme_value('result.header')\n",
+        "ui_tk/result_panel.py",
+    )
+    assert any("local visual constant" in finding.message for finding in findings)
+
+
+def test_ui_visual_owner_allows_tokens_in_owner_file():
+    findings = _visual_findings(
+        'RESULT_HEADER_BG = "#e8edf2"\nTABLE_CELL_PADX = 8\n',
+        "ui_tk/layout_constants.py",
+    )
+    assert findings == []
+
+
+def test_ui_visual_owner_does_not_scan_core_calculation_constants():
+    findings = _visual_findings(
+        'HEATING_COLOR = "#e8edf2"\nCAPACITY_WIDTH = 100\n',
+        "core/calculator_iso16358.py",
+    )
+    assert findings == []
+
+
+# ---------------------------------------------------------------------------
 # Soft limit + allowlist
 # ---------------------------------------------------------------------------
 

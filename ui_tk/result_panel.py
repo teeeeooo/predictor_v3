@@ -7,19 +7,18 @@ from tkinter import ttk
 from typing import Iterable
 
 from ui_tk.layout_constants import (
+    RESULT_HEADER_BG,
+    RESULT_STATUS_FG,
+    RESULT_TITLE_BG,
+    RESULT_VALUE_BG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
+    TABLE_GRID_COLOR,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
 )
 from ui_tk.result_models import ResultSummary
-
-_GRID_LINE = "#c4ccd4"
-_TITLE_BACKGROUND = "#f1f3f5"
-_HEADER_BACKGROUND = "#e8edf2"
-_VALUE_BACKGROUND = "#ffffff"
-_STATUS_FOREGROUND = "#52606d"
 
 
 class ResultPanel:
@@ -91,7 +90,7 @@ class ResultPanel:
         card = tk.Frame(
             self._summary_holder,
             name=f"{summary.title.lower()}_summary",
-            background=_GRID_LINE,
+            background=TABLE_GRID_COLOR,
             borderwidth=1,
             relief=tk.SOLID,
         )
@@ -109,7 +108,7 @@ class ResultPanel:
             card,
             text=summary.title,
             anchor="w",
-            background=_TITLE_BACKGROUND,
+            background=RESULT_TITLE_BG,
             font=TABLE_HEADER_FONT,
         )
         title_label.grid(
@@ -133,8 +132,8 @@ class ResultPanel:
             card,
             text=summary.status,
             anchor="w",
-            background=_VALUE_BACKGROUND,
-            foreground=_STATUS_FOREGROUND,
+            background=RESULT_VALUE_BG,
+            foreground=RESULT_STATUS_FG,
             font=TABLE_BODY_FONT,
             padx=TABLE_CELL_PADX,
             pady=TABLE_CELL_PADY,
@@ -156,13 +155,13 @@ class ResultPanel:
         for column, (label, value) in enumerate(summary.fields):
             card.columnconfigure(column, weight=1)
             header = self._make_summary_cell(
-                card, row=1, column=column, background=_HEADER_BACKGROUND
+                card, row=1, column=column, background=RESULT_HEADER_BG
             )
             header.surface_role = "summary_header_cell"
             tk.Label(
                 header,
                 text=label,
-                background=_HEADER_BACKGROUND,
+                background=RESULT_HEADER_BG,
                 font=TABLE_HEADER_FONT,
             ).pack(
                 fill=tk.BOTH,
@@ -171,11 +170,11 @@ class ResultPanel:
                 pady=TABLE_HEADER_PADY,
             )
             value_cell = self._make_summary_cell(
-                card, row=2, column=column, background=_VALUE_BACKGROUND
+                card, row=2, column=column, background=RESULT_VALUE_BG
             )
             value_cell.surface_role = "summary_value_cell"
             tk.Label(
-                value_cell, text=value, background=_VALUE_BACKGROUND, font=TABLE_BODY_FONT
+                value_cell, text=value, background=RESULT_VALUE_BG, font=TABLE_BODY_FONT
             ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
             headers.append(header)
             values.append(value_cell)

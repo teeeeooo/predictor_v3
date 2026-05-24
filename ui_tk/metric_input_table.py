@@ -1,7 +1,7 @@
 """Bordered Tkinter input matrix with explicit editable-cell mapping.
 
 This widget owns presentation and text parsing only. It does not import
-calculator core, profile routing, or visual-token styling.
+calculator core or profile routing; visual values come from its Tkinter owner.
 """
 
 from __future__ import annotations
@@ -16,10 +16,16 @@ from ui_tk.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_DATA_COLUMN_CHARS,
     TABLE_DATA_COLUMN_WEIGHT,
+    TABLE_EDITABLE_BG,
+    TABLE_GRID_COLOR,
+    TABLE_HEADER_BG,
+    TABLE_HEADER_FG,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
     TABLE_ROW_HEADER_CHARS,
     TABLE_ROW_HEADER_WEIGHT,
+    TABLE_STATIC_BG,
+    TABLE_STATIC_FG,
 )
 from ui_tk.table_grid_model import parse_numeric_cell
 
@@ -28,13 +34,6 @@ __all__ = ["MetricInputTable"]
 
 ValuesChangedCallback = Callable[[], None]
 CellAddress = tuple[str, str]
-
-_GRID_LINE = "#c4ccd4"
-_HEADER_BACKGROUND = "#e8edf2"
-_EDITABLE_BACKGROUND = "#ffffff"
-_STATIC_BACKGROUND = "#f1f3f5"
-_HEADER_FOREGROUND = "#26333f"
-_STATIC_FOREGROUND = "#66737f"
 
 
 class MetricInputTable(ttk.Frame):
@@ -82,7 +81,7 @@ class MetricInputTable(ttk.Frame):
         self.table_frame = tk.Frame(
             self,
             name="matrix_surface",
-            background=_GRID_LINE,
+            background=TABLE_GRID_COLOR,
             borderwidth=1,
             relief=tk.SOLID,
         )
@@ -119,7 +118,7 @@ class MetricInputTable(ttk.Frame):
 
     def _add_header_cell(self, *, column: int, key: str | None, label: str) -> None:
         cell = self._make_cell_frame(
-            row=0, column=column, role="header_cell", background=_HEADER_BACKGROUND
+            row=0, column=column, role="header_cell", background=TABLE_HEADER_BG
         )
         if key is not None:
             cell.surface_key = key
@@ -128,14 +127,14 @@ class MetricInputTable(ttk.Frame):
             cell,
             text=label,
             width=self.row_header_chars if key is None else self.data_column_chars,
-            background=_HEADER_BACKGROUND,
-            foreground=_HEADER_FOREGROUND,
+            background=TABLE_HEADER_BG,
+            foreground=TABLE_HEADER_FG,
             font=TABLE_HEADER_FONT,
         ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
 
     def _add_row_header(self, *, row: int, key: str, label: str) -> None:
         cell = self._make_cell_frame(
-            row=row, column=0, role="row_header_cell", background=_HEADER_BACKGROUND
+            row=row, column=0, role="row_header_cell", background=TABLE_HEADER_BG
         )
         cell.surface_key = key
         self.row_header_cells[key] = cell
@@ -144,8 +143,8 @@ class MetricInputTable(ttk.Frame):
             text=label,
             width=self.row_header_chars,
             anchor="w",
-            background=_HEADER_BACKGROUND,
-            foreground=_HEADER_FOREGROUND,
+            background=TABLE_HEADER_BG,
+            foreground=TABLE_HEADER_FG,
             font=TABLE_HEADER_FONT,
         ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
 
@@ -153,7 +152,7 @@ class MetricInputTable(ttk.Frame):
         self, *, row: int, column: int, address: CellAddress
     ) -> None:
         cell = self._make_cell_frame(
-            row=row, column=column, role="static_cell", background=_STATIC_BACKGROUND
+            row=row, column=column, role="static_cell", background=TABLE_STATIC_BG
         )
         cell.surface_address = address
         self.cell_frames[address] = cell
@@ -162,8 +161,8 @@ class MetricInputTable(ttk.Frame):
             cell,
             text="-",
             width=self.data_column_chars,
-            background=_STATIC_BACKGROUND,
-            foreground=_STATIC_FOREGROUND,
+            background=TABLE_STATIC_BG,
+            foreground=TABLE_STATIC_FG,
             font=TABLE_BODY_FONT,
         ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
 
@@ -171,7 +170,7 @@ class MetricInputTable(ttk.Frame):
         self, *, row: int, column: int, address: CellAddress, field_key: str
     ) -> None:
         cell = self._make_cell_frame(
-            row=row, column=column, role="editable_cell", background=_EDITABLE_BACKGROUND
+            row=row, column=column, role="editable_cell", background=TABLE_EDITABLE_BG
         )
         cell.surface_address = address
         self.cell_frames[address] = cell
@@ -189,7 +188,7 @@ class MetricInputTable(ttk.Frame):
             borderwidth=0,
             highlightthickness=0,
             justify=tk.CENTER,
-            background=_EDITABLE_BACKGROUND,
+            background=TABLE_EDITABLE_BG,
             font=TABLE_BODY_FONT,
         )
         entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)

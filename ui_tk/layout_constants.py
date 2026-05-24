@@ -1,5 +1,16 @@
 """Responsive layout defaults for lightweight Tkinter calculator surfaces."""
 
+TABLE_GRID_COLOR = "#c4ccd4"
+TABLE_HEADER_BG = "#e8edf2"
+TABLE_EDITABLE_BG = "#ffffff"
+TABLE_STATIC_BG = "#f1f3f5"
+TABLE_HEADER_FG = "#26333f"
+TABLE_STATIC_FG = "#66737f"
+RESULT_TITLE_BG = "#f1f3f5"
+RESULT_HEADER_BG = "#e8edf2"
+RESULT_VALUE_BG = "#ffffff"
+RESULT_STATUS_FG = "#52606d"
+
 TABLE_FONT_SIZE = 11
 TABLE_BODY_FONT = ("TkDefaultFont", TABLE_FONT_SIZE)
 TABLE_HEADER_FONT = ("TkDefaultFont", TABLE_FONT_SIZE, "bold")

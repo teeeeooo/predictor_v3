@@ -41,12 +41,13 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
-| `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, visual architecture, input matrix/result surface rules, adapters |
+| `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, visual architecture, input matrix/result surface rules, portable adoption guide, adapters |
 | `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |
 | `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` | Design tokens and layout rules | UI/UX root, layout tasks | UI component implementations |
 | `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` | Global spreadsheet-like table UX contract | UI/UX root, table UI tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, calculator design doc | every table surface (calculator, train/predict, helpers, fixtures) via PyQt/Tkinter adapters |
 | `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md` | predictor_v3 project-wide visual architecture SSOT | UI/UX root, visual design tasks, Tkinter final UX contract | PyQt Predict/Train and Tkinter Calculator semantic visual-role adoption |
 | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` | predictor_v3 project-wide repeated-input matrix and result-summary surface rules | UI/UX root, visual architecture, table UI and result-surface tasks | Calculator, Predict/Train, ML/inverse-search UI surface shaping before toolkit adapters |
+| `docs/ui_ux/06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` | Portable UI/UX architecture adoption kit owner | UI/UX root, design tokens/layout, toolkit adapters, cross-project adoption tasks | project binding docs, token owners, reusable components, ownership guard configuration |
 | `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` | PyQt table implementation adapter | table UX contract, PyQt table tasks | PyQt table surfaces |
 | `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` | Tkinter table adapter | table UX contract, Tkinter table tasks | Tkinter table surfaces (when applicable) |
 | `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` | Legacy PyQt table contract source (history) | UI/UX `_source/` reference only | none — superseded by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` |
