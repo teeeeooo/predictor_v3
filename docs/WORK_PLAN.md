@@ -112,13 +112,15 @@
      - **Large graph dependency** (`matplotlib` 등)는 Windows packaging size 판단 전까지 도입하지 않는다.
 
    4i. **Tkinter matrix/result visual surface refinement implementation** (166 참고). ISO Hong Kong CSPF/HSPF 입력은 header/editable/static cell을 구분하는 bordered matrix surface로, 결과는 header/value/status를 구분하는 compact bordered summary table로 렌더링한다. `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`를 visible widget layer에 적용했으며 auto-calc, copy/clear, core/profile/dispatcher, 기본 smoke `4.939`/`3.643`은 유지한다. 다음 recommended action 순서:
-     1. **macOS Tkinter manual UX smoke**.
-     2. **추가 spacing/style adapter refinement** — 필요 시.
-     3. **Lightweight graph/detail surface design** — 필요 시.
-     4. **Windows PyInstaller size measurement** — Windows host available 시.
-     5. **Tkinter standard/region expansion** — 필요 시.
-     6. **PyQt calculator source retirement 재검토** — Tkinter UX/packaging 판단 이후.
+     1. **Tkinter ISO HK layout correction** — 정격 표기치 분리, CSPF 입력→CSPF 결과→HSPF 입력→HSPF 결과 순서, 하단 결과 복사/지우기 제거, 숫자 가운데 정렬, 입력 오류 시 회색 block 문제 수정.
+     2. **Tkinter Excel-like table behavior** — selection, TSV copy/paste, Delete/clear, undo, Tab/Enter navigation.
+     3. **Tkinter graph/detail surface design** — PyQt reference를 lightweight 방식으로 재설계; 큰 dependency는 packaging 판단 전 보류.
+     4. **Tkinter standard/region expansion plan** — ISO/ISEER 2점식, SASO T3, EN 14825, AHRI 210/240 순서를 판단.
+     5. **Windows PyInstaller size measurement** — Windows host available 시.
+     6. **PyQt calculator source retirement 재검토** — Tkinter UX, 기능 migration, packaging 판단 이후.
      - **Visual token full wiring**과 **large graph dependency** (`matplotlib` 등)는 본 refinement 범위가 아니다.
+
+   4h. **PyQt calculator reference feature migration contract** (167 참고). `result_reports/archive/154_pyqt-calculator-retirement-audit.md`와 `result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md`의 기존 분류를 `docs/designs/2026-05-24-pyqt-calculator-reference-feature-migration-contract.md`에 migration requirement로 재정렬한다. `app_calculator.py`는 thin entrypoint이며 `ui/calc_window.py` / `ui/calculators_2point.py`의 ISO/ISEER·SASO·EN·AHRI, table behavior, summary/detail/graph, validation, batch surface가 reference 기능군임을 기록한다. 새 parity audit나 retirement 승인이 아니며 Predict/Train과 shared PyQt utility는 hold/retention 범위로 분리한다. 다음 recommended action 순서는 4i의 갱신된 1~6 순서를 따른다.
 
    4v. **Xfail retirement audit / ISO pure-route obsolete xfail retirement / legacy diagnostic owner cleanup / AS/NZS case3 compatibility decision** (122~126 참고). PyQt fatal-abort 4개 파일 제외 full-ish baseline은 **568 passed, 1 skipped, 23 xfailed**에서 ISO pure-route Formula 45/49/47/50 obsolete experiment xfail 4개 제거 후 **568 passed, 1 skipped, 19 xfailed**로 정리되었다. `tests/test_iso16358_hspf_pure_iso_track_a.py`에는 fixture identity / workbook-reference guard / cycling / Formula 44·48 min-half / saturated auxiliary smoke만 남겼다. `tests/_legacy` 17개 xfail은 marker/count를 유지하면서 legacy workbook-oracle diagnostic/reference owner와 production official-exact path 분리를 reason/README로 명확히 했다. AS/NZS case3 2개 xfail은 marker/count를 유지하며 external workbook reference/full component row data prerequisite로 정책 결정했다. exact reconstruction / full row extraction은 Z-phase AS/NZS Excel compatibility work까지 deferred로 유지한다. 다음 recommended action은 (1) Python 3.12 venv 또는 Windows host에서 PyQt smoke 재검증, (2) Windows host 확보 시 PyInstaller size measurement, (3) Tkinter next metric/standard extension design 필요 시.
 

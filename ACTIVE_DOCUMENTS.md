@@ -108,6 +108,7 @@
 | `docs/designs/2026-05-22-calculator-ui-module-boundary.md` | Calculator UI module boundary plan | calculator UI refactor slices (ε/ζ/η/β/γ/δ) | `docs/architecture/project_architecture.md`, `docs/designs/2026-05-22-calculator-action-model-alignment.md`, `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` |
 | `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` | Calculator-only lightweight UI feasibility decision | calculator deployment UI direction, Tkinter MVP tasks | packaging guide, Tkinter MVP scope, PyQt hold/fallback criteria |
 | `docs/designs/2026-05-23-tkinter-calculator-final-ux-contract.md` | Tkinter calculator final UX contract (matrix input, auto-calc, summary result) | Tkinter calculator UI tasks, input/result surface rule | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, manual smoke guide, `docs/WORK_PLAN.md` |
+| `docs/designs/2026-05-24-pyqt-calculator-reference-feature-migration-contract.md` | PyQt calculator reference-to-Tkinter migration requirement contract | calculator migration/retirement-gate tasks, reports 154/165 | Tkinter implementation slices, `docs/WORK_PLAN.md`, later retirement reconsideration |
 
 ## Root Result Docs
 
