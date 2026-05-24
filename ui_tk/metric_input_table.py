@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Mapping
 
+from ui_tk.layout_constants import MATRIX_DATA_COLUMN_WIDTH, MATRIX_ROW_HEADER_WIDTH
 from ui_tk.table_grid_model import parse_numeric_cell
 
 __all__ = ["MetricInputTable"]
@@ -36,6 +37,9 @@ class MetricInputTable(ttk.Frame):
         columns: tuple[tuple[str, str], ...],
         rows: tuple[tuple[str, str], ...],
         editable_cells: Mapping[CellAddress, str],
+        row_header_width: int = MATRIX_ROW_HEADER_WIDTH,
+        data_column_width: int = MATRIX_DATA_COLUMN_WIDTH,
+        total_columns_hint: int | None = None,
         values_changed_callback: ValuesChangedCallback | None = None,
         **kwargs: object,
     ) -> None:
@@ -43,6 +47,14 @@ class MetricInputTable(ttk.Frame):
         self._columns = columns
         self._rows = rows
         self._editable_cells = dict(editable_cells)
+        self.row_header_width = row_header_width
+        self.data_column_width = data_column_width
+        self.total_columns_hint = total_columns_hint or len(columns)
+        if self.total_columns_hint < len(columns):
+            raise ValueError("total_columns_hint must cover all visible data columns")
+        self.content_width = (
+            self.row_header_width + self.data_column_width * self.total_columns_hint
+        )
         self._values_changed_callback = values_changed_callback
         self._values: dict[str, str] = {
             field_key: "" for field_key in self._editable_cells.values()
@@ -69,6 +81,8 @@ class MetricInputTable(ttk.Frame):
         )
         self.table_frame.grid(row=0, column=0, sticky="w")
         self.table_frame.surface_role = "table_frame"
+        self.table_frame.content_width = self.content_width
+        self._configure_column_widths()
         self._add_header_cell(column=0, key=None, label="")
         for column_number, (_key, label) in enumerate(self._columns, start=1):
             self._add_header_cell(column=column_number, key=_key, label=label)
@@ -90,6 +104,20 @@ class MetricInputTable(ttk.Frame):
                     address=address,
                     field_key=field_key,
                 )
+
+    def _configure_column_widths(self) -> None:
+        self.table_frame.columnconfigure(0, minsize=self.row_header_width, weight=0)
+        visible_columns = len(self._columns)
+        slot_width = self.data_column_width * self.total_columns_hint // visible_columns
+        remainder = (
+            self.data_column_width * self.total_columns_hint
+            - slot_width * visible_columns
+        )
+        for column in range(1, visible_columns + 1):
+            extra = 1 if column <= remainder else 0
+            self.table_frame.columnconfigure(
+                column, minsize=slot_width + extra, weight=0
+            )
 
     def _add_header_cell(self, *, column: int, key: str | None, label: str) -> None:
         cell = self._make_cell_frame(
@@ -174,7 +202,6 @@ class MetricInputTable(ttk.Frame):
         cell = tk.Frame(self.table_frame, background=background, borderwidth=0)
         cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
         cell.surface_role = role
-        self.table_frame.columnconfigure(column, weight=1)
         return cell
 
     def _handle_change(self, field_key: str) -> None:

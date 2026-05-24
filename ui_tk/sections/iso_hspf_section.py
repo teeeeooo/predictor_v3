@@ -12,6 +12,12 @@ from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.auto_calc import DebouncedAutoCalc
+from ui_tk.layout_constants import (
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_CONTENT_WIDTH,
+    ISO_SECTION_DATA_COLUMNS,
+    ISO_SECTION_PADX,
+)
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.result_models import result_status
@@ -37,10 +43,17 @@ class IsoHspfSection:
             columns=(("capacity", "능력 [W]"),),
             rows=(("rated", "정격 표기치"),),
             editable_cells={("rated", "capacity"): "rated_heating_capacity"},
+            total_columns_hint=ISO_SECTION_DATA_COLUMNS,
         )
-        self.rated_table.grid(row=0, column=0, sticky="w", padx=10, pady=(8, 6))
+        self.rated_table.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(ISO_SECTION_BLOCK_GAP, 6),
+        )
         ttk.Label(self._frame, text="시험 입력").grid(
-            row=1, column=0, sticky="w", padx=10, pady=(0, 4)
+            row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 4)
         )
         self.input_table = MetricInputTable(
             self._frame,
@@ -55,10 +68,25 @@ class IsoHspfSection:
                 ("capacity", "half"): "half_capacity",
                 ("power", "half"): "half_power",
             },
+            total_columns_hint=ISO_SECTION_DATA_COLUMNS,
         )
-        self.input_table.grid(row=2, column=0, sticky="w", padx=10, pady=(0, 8))
-        self.result_panel = ResultPanel(self._frame, title="HSPF 결과")
-        self.result_panel.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 8))
+        self.input_table.grid(
+            row=2,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.result_panel = ResultPanel(
+            self._frame, title="HSPF 결과", content_width=ISO_SECTION_CONTENT_WIDTH
+        )
+        self.result_panel.grid(
+            row=3,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
         self.rated_table.set_values({"rated_heating_capacity": "6300"})
         self.input_table.set_values(
             {

@@ -7,6 +7,13 @@ import sys
 import pytest
 
 from ui_tk.auto_calc import DebouncedAutoCalc
+from ui_tk.layout_constants import (
+    ISO_SECTION_CONTENT_WIDTH,
+    ISO_SECTION_DATA_COLUMNS,
+    ISO_SECTION_PADX,
+    MATRIX_DATA_COLUMN_WIDTH,
+    MATRIX_ROW_HEADER_WIDTH,
+)
 from ui_tk.metric_input_table import MetricInputTable
 
 
@@ -155,9 +162,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert "정격 표기치" not in _label_texts(cspf.input_table)
     assert "정격 표기치" not in _label_texts(hspf.input_table)
     assert cspf._frame.cget("text") == "CSPF 입력 (Hong Kong)"
-    assert cspf.result_panel._frame.cget("text") == "CSPF 결과"
+    assert cspf.result_panel.title_label.cget("text") == "CSPF 결과"
     assert hspf._frame.cget("text") == "HSPF 입력 (Hong Kong)"
-    assert hspf.result_panel._frame.cget("text") == "HSPF 결과"
+    assert hspf.result_panel.title_label.cget("text") == "HSPF 결과"
 
     rendered_sections = tab._sections_holder.winfo_children()
     assert rendered_sections == [cspf._frame, hspf._frame]
@@ -167,6 +174,10 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
             section.input_table.grid_info()["row"]
             < section.result_panel._frame.grid_info()["row"]
         )
+        assert section.rated_table.grid_info()["padx"] == ISO_SECTION_PADX
+        assert section.input_table.grid_info()["padx"] == ISO_SECTION_PADX
+        assert section.result_panel._frame.grid_info()["padx"] == ISO_SECTION_PADX
+        assert section.result_panel._frame.grid_info()["sticky"] == "w"
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
@@ -178,6 +189,11 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
         roles = _surface_roles(table)
 
         assert table.table_frame.surface_role == "table_frame"
+        assert table.row_header_width == MATRIX_ROW_HEADER_WIDTH
+        assert table.data_column_width == MATRIX_DATA_COLUMN_WIDTH
+        assert table.total_columns_hint == ISO_SECTION_DATA_COLUMNS
+        assert table.content_width == ISO_SECTION_CONTENT_WIDTH
+        assert table.table_frame.content_width == ISO_SECTION_CONTENT_WIDTH
         assert len(table.header_cells) == 2
         assert len(table.row_header_cells) == 2
         assert len(table.editable_cell_frames) == 4
@@ -189,6 +205,11 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
 
         rated = section.rated_table
         rated_roles = _surface_roles(rated)
+        assert rated.row_header_width == table.row_header_width
+        assert rated.data_column_width == table.data_column_width
+        assert rated.total_columns_hint == table.total_columns_hint
+        assert rated.content_width == table.content_width
+        assert rated.table_frame.content_width == table.table_frame.content_width
         assert len(rated.header_cells) == 1
         assert len(rated.row_header_cells) == 1
         assert len(rated.editable_cell_frames) == 1
@@ -224,6 +245,9 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
         for label in labels:
             assert label in result_labels
         assert panel.summary_tables[metric].surface_role == "summary_table"
+        assert panel.content_width == ISO_SECTION_CONTENT_WIDTH
+        assert panel.summary_tables[metric].content_width == panel.content_width
+        assert panel.content_width == tab.sections[metric].input_table.content_width
         assert len(panel.summary_header_cells[metric]) == 3
         assert len(panel.summary_value_cells[metric]) == 3
         assert panel.summary_status_labels[metric].surface_role == "summary_status"
@@ -258,6 +282,7 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
     assert "74991.00727784102" not in invalid
     panel = cspf.result_panel
     assert panel.summary_tables["CSPF"].surface_role == "status_surface"
+    assert panel.summary_tables["CSPF"].content_width == panel.content_width
     assert "summary_title" not in _surface_roles(panel._summary_holder)
     assert "summary_header_cell" not in _surface_roles(panel._summary_holder)
     assert "summary_value_cell" not in _surface_roles(panel._summary_holder)

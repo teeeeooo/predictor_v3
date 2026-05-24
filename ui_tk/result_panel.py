@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Iterable
 
+from ui_tk.layout_constants import ISO_SECTION_CONTENT_WIDTH
 from ui_tk.result_models import ResultSummary
 
 _GRID_LINE = "#c4ccd4"
@@ -18,10 +19,19 @@ _STATUS_FOREGROUND = "#52606d"
 class ResultPanel:
     """Latest compact summary tables with retained text compatibility APIs."""
 
-    def __init__(self, parent: tk.Widget, *, title: str = "결과") -> None:
-        self._frame = ttk.LabelFrame(parent, text=title)
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        title: str = "결과",
+        content_width: int = ISO_SECTION_CONTENT_WIDTH,
+    ) -> None:
+        self.content_width = content_width
+        self._frame = ttk.Frame(parent)
+        self.title_label = ttk.Label(self._frame, text=title)
+        self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
         self._summary_holder = ttk.Frame(self._frame)
-        self._summary_holder.pack(side=tk.TOP, fill=tk.X, padx=6, pady=6)
+        self._summary_holder.pack(side=tk.TOP, fill=tk.X)
         self.summary_tables: dict[str, tk.Frame] = {}
         self.summary_header_cells: dict[str, tuple[tk.Frame, ...]] = {}
         self.summary_value_cells: dict[str, tuple[tk.Frame, ...]] = {}
@@ -81,6 +91,7 @@ class ResultPanel:
             relief=tk.SOLID,
         )
         card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        card.content_width = self.content_width
         self.summary_tables[summary.title] = card
         self._summary_holder.columnconfigure(0, weight=1)
         if not summary.fields:
@@ -111,6 +122,8 @@ class ResultPanel:
     def _render_status(
         self, card: tk.Frame, summary: ResultSummary, *, row: int
     ) -> None:
+        if not summary.fields:
+            card.columnconfigure(0, minsize=self.content_width, weight=0)
         status = tk.Label(
             card,
             text=summary.status,
@@ -134,7 +147,13 @@ class ResultPanel:
     def _render_result_values(self, card: tk.Frame, summary: ResultSummary) -> None:
         headers = []
         values = []
+        base_width, remainder = divmod(self.content_width, len(summary.fields))
         for column, (label, value) in enumerate(summary.fields):
+            card.columnconfigure(
+                column,
+                minsize=base_width + (1 if column < remainder else 0),
+                weight=0,
+            )
             header = self._make_summary_cell(
                 card, row=1, column=column, background=_HEADER_BACKGROUND
             )

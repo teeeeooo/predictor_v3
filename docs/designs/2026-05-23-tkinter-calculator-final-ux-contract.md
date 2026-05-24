@@ -257,6 +257,15 @@ Ordered. Each slice ships independently with its own report.
      invalid input renders as a status-only surface.
    - Core/profile/dispatcher routes and default results remain unchanged.
 
+3d. **ISO Hong Kong table/card width alignment refinement**
+   - Completed in task 169: rated, trial-input, and compact result surfaces
+     share a local Tkinter content-width and padding contract within each
+     CSPF/HSPF section.
+   - This aligns their left edge and visual width without changing auto-calc,
+     result formatting, invalid status behavior, or calculator routes.
+   - Graph/detail remains a later lightweight Canvas-oriented design phase;
+     `matplotlib` is not introduced before packaging-size judgment.
+
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
      `docs/guides/lightweight_calculator_tk_manual_smoke.md` against the
@@ -337,6 +346,9 @@ usability decision.**
 - **ISO Hong Kong layout correction**: completed in task 168 with separated
   `정격 표기치`, section-local results, centered numeric cells, and
   status-only invalid feedback.
+- **Table/card width alignment refinement**: completed in task 169 with one
+  section content-width and spacing policy for rated, trial, and result
+  surfaces.
 - **Next action**: Tkinter Excel-like table behavior design/implementation.
 - **PyQt retirement**: held pending Windows packaging size measurement or an
   explicit usability decision.
