@@ -41,10 +41,10 @@ def tk_root():
         root.destroy()
 
 
-def _result_text(tab) -> str:
+def _result_text(tab, metric: str) -> str:
     import tkinter as tk
 
-    return tab.result_panel._text.get("1.0", tk.END).strip()
+    return tab.sections[metric].result_panel._text.get("1.0", tk.END).strip()
 
 
 def _label_texts(widget) -> list[str]:
@@ -117,12 +117,16 @@ def test_iso_tab_import_does_not_pull_in_pyqt5():
     assert not any(name.startswith("PyQt5") for name in sys.modules)
 
 
-def test_iso_hong_kong_sections_use_grids_without_calculate_buttons(tk_root):
+def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_root):
     tab = _make_tab(tk_root)
 
     assert set(tab.sections) == {"CSPF", "HSPF"}
-    assert isinstance(tab.sections["CSPF"].input_table, MetricInputTable)
-    assert isinstance(tab.sections["HSPF"].input_table, MetricInputTable)
+    cspf = tab.sections["CSPF"]
+    hspf = tab.sections["HSPF"]
+    assert isinstance(cspf.input_table, MetricInputTable)
+    assert isinstance(hspf.input_table, MetricInputTable)
+    assert isinstance(cspf.rated_table, MetricInputTable)
+    assert isinstance(hspf.rated_table, MetricInputTable)
 
     buttons = []
     labels = []
@@ -136,67 +140,102 @@ def test_iso_hong_kong_sections_use_grids_without_calculate_buttons(tk_root):
             labels.append(widget.cget("text"))
     assert "CSPF 계산" not in buttons
     assert "HSPF 계산" not in buttons
-    for label in ("정격", "35 Full", "35 Half", "정격 난방", "7 Full", "7 Half"):
+    assert "결과 복사" not in buttons
+    assert "결과 지우기" not in buttons
+    for label in ("정격 표기치", "35 Full", "35 Half", "7 Full", "7 Half"):
         assert label in labels
-    assert labels.count("능력 [W]") == 2
+    assert "정격" not in labels
+    assert "정격 난방" not in labels
+    assert labels.count("능력 [W]") == 4
     assert labels.count("전력 [W]") == 2
+    assert "전력 [W]" not in _label_texts(cspf.rated_table)
+    assert "전력 [W]" not in _label_texts(hspf.rated_table)
+    assert set(_label_texts(cspf.input_table)) >= {"35 Full", "35 Half"}
+    assert set(_label_texts(hspf.input_table)) >= {"7 Full", "7 Half"}
+    assert "정격 표기치" not in _label_texts(cspf.input_table)
+    assert "정격 표기치" not in _label_texts(hspf.input_table)
+    assert cspf._frame.cget("text") == "CSPF 입력 (Hong Kong)"
+    assert cspf.result_panel._frame.cget("text") == "CSPF 결과"
+    assert hspf._frame.cget("text") == "HSPF 입력 (Hong Kong)"
+    assert hspf.result_panel._frame.cget("text") == "HSPF 결과"
+
+    rendered_sections = tab._sections_holder.winfo_children()
+    assert rendered_sections == [cspf._frame, hspf._frame]
+    for section in (cspf, hspf):
+        assert section.rated_table.grid_info()["row"] < section.input_table.grid_info()["row"]
+        assert (
+            section.input_table.grid_info()["row"]
+            < section.result_panel._frame.grid_info()["row"]
+        )
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
     tab = _make_tab(tk_root)
 
     for metric in ("CSPF", "HSPF"):
-        table = tab.sections[metric].input_table
+        section = tab.sections[metric]
+        table = section.input_table
         roles = _surface_roles(table)
 
         assert table.table_frame.surface_role == "table_frame"
-        assert len(table.header_cells) == 3
+        assert len(table.header_cells) == 2
         assert len(table.row_header_cells) == 2
-        assert len(table.editable_cell_frames) == 5
-        assert len(table.static_cell_frames) == 1
-        assert roles.count("header_cell") == 4  # includes the corner cell
+        assert len(table.editable_cell_frames) == 4
+        assert not table.static_cell_frames
+        assert roles.count("header_cell") == 3  # includes the corner cell
         assert roles.count("row_header_cell") == 2
-        assert roles.count("editable_cell") == 5
-        assert roles.count("static_cell") == 1
-        static_cell = next(iter(table.static_cell_frames.values()))
-        assert "-" in _label_texts(static_cell)
+        assert roles.count("editable_cell") == 4
+        assert "static_cell" not in roles
+
+        rated = section.rated_table
+        rated_roles = _surface_roles(rated)
+        assert len(rated.header_cells) == 1
+        assert len(rated.row_header_cells) == 1
+        assert len(rated.editable_cell_frames) == 1
+        assert not rated.static_cell_frames
+        assert rated_roles.count("header_cell") == 2
+        assert rated_roles.count("row_header_cell") == 1
+        assert rated_roles.count("editable_cell") == 1
+        assert "전력 [W]" not in _label_texts(rated)
+        for entry in (*table._entries.values(), *rated._entries.values()):
+            assert entry.cget("justify") == "center"
 
 
-def test_default_autocalc_results_are_combined_without_append_growth(tk_root):
+def test_default_autocalc_results_are_section_local_without_append_growth(tk_root):
     tab = _make_tab(tk_root)
     _flush_defaults(tab)
 
-    text = _result_text(tab)
-    assert "4.939 | 1769.6 | 358.3" in text
-    assert "3.643 | 273.2 | 75.0" in text
-    assert "None" not in text
-    assert "74991.00727784102" not in text
-    assert "{" not in text
-    assert text.count("[CSPF]") == 1
-    assert text.count("[HSPF]") == 1
-    result_labels = _label_texts(tab.result_panel._summary_holder)
-    for label in (
-        "CSPF",
-        "CSTL [kWh]",
-        "CSEC [kWh]",
-        "HSPF",
-        "HSTL [kWh]",
-        "HSEC [kWh]",
+    cspf_text = _result_text(tab, "CSPF")
+    hspf_text = _result_text(tab, "HSPF")
+    assert "4.939 | 1769.6 | 358.3" in cspf_text
+    assert "[HSPF]" not in cspf_text
+    assert "3.643 | 273.2 | 75.0" in hspf_text
+    assert "[CSPF]" not in hspf_text
+    for text in (cspf_text, hspf_text):
+        assert "None" not in text
+        assert "74991.00727784102" not in text
+        assert "{" not in text
+    for metric, labels in (
+        ("CSPF", ("CSPF", "CSTL [kWh]", "CSEC [kWh]")),
+        ("HSPF", ("HSPF", "HSTL [kWh]", "HSEC [kWh]")),
     ):
-        assert label in result_labels
-    for metric in ("CSPF", "HSPF"):
-        assert tab.result_panel.summary_tables[metric].surface_role == "summary_table"
-        assert len(tab.result_panel.summary_header_cells[metric]) == 3
-        assert len(tab.result_panel.summary_value_cells[metric]) == 3
-        assert tab.result_panel.summary_status_labels[metric].surface_role == "summary_status"
+        panel = tab.sections[metric].result_panel
+        result_labels = _label_texts(panel._summary_holder)
+        for label in labels:
+            assert label in result_labels
+        assert panel.summary_tables[metric].surface_role == "summary_table"
+        assert len(panel.summary_header_cells[metric]) == 3
+        assert len(panel.summary_value_cells[metric]) == 3
+        assert panel.summary_status_labels[metric].surface_role == "summary_status"
 
     tab.sections["CSPF"].recalculate_now()
-    assert _result_text(tab).count("[CSPF]") == 1
-    assert set(tab.result_panel.summary_tables) == {"CSPF", "HSPF"}
+    assert _result_text(tab, "CSPF").count("[CSPF]") == 1
+    assert _result_text(tab, "HSPF").count("[HSPF]") == 1
 
-    tab.result_panel.clear()
-    assert _result_text(tab) == ""
-    assert not tab.result_panel._summary_holder.winfo_children()
+    tab.sections["CSPF"].result_panel.clear()
+    assert _result_text(tab, "CSPF") == ""
+    assert not tab.sections["CSPF"].result_panel._summary_holder.winfo_children()
+    assert _result_text(tab, "HSPF").count("[HSPF]") == 1
 
 
 def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
@@ -206,16 +245,25 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
 
     assert cspf.input_table.set_value("full_power", "1000") is True
     cspf._auto_calc.flush_now()
-    updated = _result_text(tab)
+    updated = _result_text(tab, "CSPF")
     assert "4.939 | 1769.6 | 358.3" not in updated
-    assert "3.643 | 273.2 | 75.0" in updated
+    assert "3.643 | 273.2 | 75.0" in _result_text(tab, "HSPF")
 
     assert cspf.input_table.set_value("full_power", "bad") is True
     cspf._auto_calc.flush_now()
-    invalid = _result_text(tab)
+    invalid = _result_text(tab, "CSPF")
     assert "입력 오류: 숫자 입력을 확인하세요." in invalid
     assert "Traceback" not in invalid
-    assert tab.result_panel.summary_status_labels["CSPF"].cget("text") == (
+    assert "None" not in invalid
+    assert "74991.00727784102" not in invalid
+    panel = cspf.result_panel
+    assert panel.summary_tables["CSPF"].surface_role == "status_surface"
+    assert "summary_title" not in _surface_roles(panel._summary_holder)
+    assert "summary_header_cell" not in _surface_roles(panel._summary_holder)
+    assert "summary_value_cell" not in _surface_roles(panel._summary_holder)
+    assert "CSPF" not in panel.summary_header_cells
+    assert "CSPF" not in panel.summary_value_cells
+    assert panel.summary_status_labels["CSPF"].cget("text") == (
         "입력 오류: 숫자 입력을 확인하세요."
     )
 

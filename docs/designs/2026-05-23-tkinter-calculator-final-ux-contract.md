@@ -248,6 +248,15 @@ Ordered. Each slice ships independently with its own report.
      routes, auto-calc, copy/clear behavior, and default results are unchanged.
    - Full visual-token wiring and graph/detail surfaces remain deferred.
 
+3c. **ISO Hong Kong layout correction**
+   - Completed in task 168: each metric separates the capacity-only
+     `정격 표기치` surface from its two-column trial-input matrix and renders
+     its compact result table directly below its own input section.
+   - The visible order is CSPF input/result followed by HSPF input/result;
+     numeric editors are centered, bottom copy/clear buttons are absent, and
+     invalid input renders as a status-only surface.
+   - Core/profile/dispatcher routes and default results remain unchanged.
+
 4. **macOS manual UX smoke**
    - Run the 14-item manual smoke checklist from
      `docs/guides/lightweight_calculator_tk_manual_smoke.md` against the
@@ -325,6 +334,9 @@ usability decision.**
 - **Matrix/result visual surface refinement**: completed in task 166 using
   bordered matrix cells and compact summary result tables under
   `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
-- **Next action**: Implementation slice 4 — macOS manual UX smoke.
+- **ISO Hong Kong layout correction**: completed in task 168 with separated
+  `정격 표기치`, section-local results, centered numeric cells, and
+  status-only invalid feedback.
+- **Next action**: Tkinter Excel-like table behavior design/implementation.
 - **PyQt retirement**: held pending Windows packaging size measurement or an
   explicit usability decision.

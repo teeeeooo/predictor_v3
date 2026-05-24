@@ -1,8 +1,8 @@
 """ISO 16358 standard tab — region selector + metric sections.
 
 Composition only. Region/metric → profile_id is delegated to
-``ui_tk.profile_resolver``; result display is delegated to a
-``ResultPanel`` owned by the tab.
+``ui_tk.profile_resolver``; each metric section owns the result shown
+immediately below its inputs.
 """
 
 from __future__ import annotations
@@ -14,8 +14,6 @@ from ui_tk.profile_resolver import (
     region_labels,
     supported_metrics_for,
 )
-from ui_tk.result_panel import ResultPanel
-from ui_tk.result_models import ResultSummary
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
 
@@ -53,12 +51,10 @@ class Iso16358Tab(ttk.Frame):
         self._sections_holder = ttk.Frame(self)
         self._sections_holder.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
 
-        self.result_panel = ResultPanel(self)
-        self.result_panel.pack(
-            side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4
-        )
         self.sections = {}
-        self._metric_results: dict[str, ResultSummary] = {}
+        # Compatibility alias for callers that only check panel availability.
+        # The actual visible panels are owned and rendered by each section.
+        self.result_panel = None
 
         self._render_region(initial_label)
 
@@ -69,26 +65,14 @@ class Iso16358Tab(ttk.Frame):
         for child in self._sections_holder.winfo_children():
             child.destroy()
         self.sections = {}
-        self._metric_results = {}
-        self.result_panel.clear()
+        self.result_panel = None
 
         for metric in supported_metrics_for(region_label):
             factory = _SECTION_FACTORIES.get(metric)
             if factory is None:
                 continue
-            section = factory(
-                self._sections_holder,
-                region_label,
-                lambda text, metric=metric: self._set_metric_result(metric, text),
-            )
+            section = factory(self._sections_holder, region_label)
             section.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
             self.sections[metric] = section
-
-    def _set_metric_result(self, metric: str, summary: ResultSummary) -> None:
-        self._metric_results[metric] = summary
-        ordered_results = [
-            self._metric_results[key]
-            for key in supported_metrics_for(self._region_combo.get())
-            if key in self._metric_results
-        ]
-        self.result_panel.set_summaries(ordered_results)
+            if self.result_panel is None:
+                self.result_panel = section.result_panel

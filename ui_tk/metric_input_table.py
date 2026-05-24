@@ -156,7 +156,7 @@ class MetricInputTable(ttk.Frame):
             relief=tk.FLAT,
             borderwidth=0,
             highlightthickness=0,
-            justify=tk.RIGHT,
+            justify=tk.CENTER,
             background=_EDITABLE_BACKGROUND,
         )
         entry.pack(fill=tk.BOTH, expand=True, padx=10, pady=7)

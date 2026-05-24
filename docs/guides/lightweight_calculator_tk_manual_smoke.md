@@ -9,13 +9,14 @@
 > The input-matrix and summary-result checks below exercise the first
 > concrete application of
 > `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, including the
-> task-166 bordered matrix/result visible-surface refinement.
+> task-166 bordered matrix/result visible-surface refinement and task-168
+> ISO Hong Kong layout correction.
 
 ## Purpose
 
 Confirm that the Tkinter calculator-only MVP launches, reaches the
 ISO 16358 / Hong Kong screen, produces the expected CSPF / HSPF
-smoke values, and supports the basic result-panel actions on macOS
+smoke values, and renders corrected section-local result surfaces on macOS
 **before** spending Windows-host time on a PyInstaller measurement
 run. The checklist captures a small, repeatable manual pass so the
 Tkinter direction has a verified behaviour baseline.
@@ -132,21 +133,21 @@ without changing inputs unless the step says so.
    labeled with `Hong Kong` is visible at the top. The combobox is
    read-only (cannot be edited by typing).
 4. **CSPF + HSPF sections together** — Below the region row, both
-   `CSPF (Hong Kong)` and `HSPF (Hong Kong)` `LabelFrame` sections are
-   visible at the same time in the same screen. `profile_id`,
+   `CSPF 입력 (Hong Kong)` and `HSPF 입력 (Hong Kong)` sections are visible
+   at the same time. Within the page the visible order is `CSPF 입력` →
+   `CSPF 결과` → `HSPF 입력` → `HSPF 결과`. `profile_id`,
    `calculator_id`, and `config_path` are not displayed anywhere in
    the UI.
-5. **CSPF table default values** — In the single CSPF input table:
-   - The row/column headers and all cells appear inside one bordered matrix,
-     not as separated label/entry controls.
-   - Header cells, editable white cells, and the static cell are visibly
-     distinct, with compact contiguous grid lines between cells.
-   - `정격` / `능력 [W]` = `3500`
+5. **CSPF table default values** — In the CSPF input section:
+   - A separate compact `정격 표기치` surface contains `능력 [W]` = `3500`
+     only; it contains no `전력 [W]` row or cell.
+   - The trial-input matrix has only `35 Full` and `35 Half` columns, with
+     `능력 [W]` and `전력 [W]` rows.
    - `35 Full` / `능력 [W]` = `3600`
    - `35 Full` / `전력 [W]` = `900`
    - `35 Half` / `능력 [W]` = `1700`
    - `35 Half` / `전력 [W]` = `380`
-   - `정격` / `전력 [W]` is shown as non-editable `-`.
+   - Cells appear as compact bordered matrices and numeric values are centered.
    - No `CSPF 계산` button is shown.
 6. **CSPF auto-calc** — Without changing inputs, wait briefly for
    auto-calc. A compact bordered result table should show a distinct header
@@ -156,32 +157,33 @@ without changing inputs unless the step says so.
    4.939 | 1769.6 | 358.3
    ```
    No `None` value is visible.
-7. **HSPF table default values** — In the single HSPF input table:
-   - The row/column headers and all cells appear inside one bordered matrix
-     with the same editable/static distinction as CSPF.
-   - `정격 난방` / `능력 [W]` = `6300`
+7. **HSPF table default values** — In the HSPF input section:
+   - A separate compact `정격 표기치` surface contains `능력 [W]` = `6300`
+     only; it contains no `전력 [W]` row or cell.
+   - The trial-input matrix has only `7 Full` and `7 Half` columns, with
+     `능력 [W]` and `전력 [W]` rows.
    - `7 Full` / `능력 [W]` = `6300`
    - `7 Full` / `전력 [W]` = `1500`
    - `7 Half` / `능력 [W]` = `3200`
    - `7 Half` / `전력 [W]` = `800`
-   - `정격 난방` / `전력 [W]` is shown as non-editable `-`.
+   - Numeric values are centered in the bordered cells.
    - No `HSPF 계산` button is shown.
 8. **HSPF auto-calc** — After the initial auto-calc, the result
-   panel should contain a second compact bordered result table:
+   surface directly below HSPF input should contain a compact bordered table:
    ```
    HSPF | HSTL [kWh] | HSEC [kWh]
    3.643 | 273.2 | 75.0
    ```
    No long raw floating-point value is visible.
-9. **Latest result composition** — After steps 6 and 8 both latest
-   blocks are visible in the result panel with a blank line between
-   them. Edit one valid cell and wait briefly: its metric block
-   updates without adding duplicate result history.
-10. **Copy result** — Click `결과 복사`. Open a text editor (or any
-    text input) outside the app and paste with Cmd+V. The pasted
-    text should contain both the `[CSPF]` and `[HSPF]` blocks.
-11. **Clear result** — Click `결과 지우기`. The result panel is now
-    empty. The window remains responsive.
+9. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
+   only the CSPF result surface updates; it does not add duplicate result
+   history or replace the HSPF result surface.
+10. **Invalid input surface** — Type a non-number in one CSPF trial cell.
+    The CSPF result changes to a clear input-error status line only. No gray
+    header/value block, `None`, raw dictionary, long float, or traceback is
+    displayed. Restore the default value and verify the normal summary returns.
+11. **No bottom result actions** — There is no shared bottom result region and
+    no visible `결과 복사` or `결과 지우기` button.
 12. **Region re-selection does not corrupt the tab** — Click the
     region combobox. Re-select `Hong Kong` (currently the only
     option). The CSPF and HSPF sections re-render without
@@ -212,7 +214,7 @@ without changing inputs unless the step says so.
 | `profile_id` exposed in UI | NO |
 | PyQt5 loaded into `sys.modules` | NO |
 | Window title | `Calculator (Tkinter)` |
-| Result panel buttons | `결과 복사`, `결과 지우기` |
+| Result panel buttons | none |
 
 These are the same values exercised by the automated tests
 `test_hong_kong_cspf_smoke_via_resolver` and
@@ -230,13 +232,13 @@ Copy this block into the run notes / report; mark each step
 - Single ISO 16358 tab: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
-- CSPF bordered matrix / distinct static cell / defaults / no calculate button: OK/NG
+- CSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
 - CSPF compact result table = 4.939 / 1769.6 / 358.3: OK/NG
-- HSPF bordered matrix / distinct static cell / defaults / no calculate button: OK/NG
+- HSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
 - HSPF compact result table = 3.643 / 273.2 / 75.0: OK/NG
-- Latest result composition (no duplicate history): OK/NG
-- Copy result (Cmd+V paste shows both blocks): OK/NG
-- Clear result empties the panel: OK/NG
+- Latest section-local result update (no duplicate history): OK/NG
+- Invalid input renders status only without gray block/raw output: OK/NG
+- No bottom copy/clear result buttons: OK/NG
 - Region re-selection re-renders cleanly: OK/NG
 - PyQt5 not imported: OK/NG
 - Clean shutdown: OK/NG

@@ -16,7 +16,7 @@ _STATUS_FOREGROUND = "#52606d"
 
 
 class ResultPanel:
-    """Latest compact summary tables plus clipboard copy / clear."""
+    """Latest compact summary tables with retained text compatibility APIs."""
 
     def __init__(self, parent: tk.Widget, *, title: str = "결과") -> None:
         self._frame = ttk.LabelFrame(parent, text=title)
@@ -28,15 +28,12 @@ class ResultPanel:
         self.summary_status_labels: dict[str, tk.Label] = {}
         self._text = tk.Text(self._frame, height=10, width=60, wrap="word")
         self._text.configure(state=tk.DISABLED)
-        ttk.Button(self._frame, text="결과 복사", command=self.copy).pack(
-            side=tk.LEFT, padx=4, pady=4
-        )
-        ttk.Button(self._frame, text="결과 지우기", command=self.clear).pack(
-            side=tk.LEFT, padx=4, pady=4
-        )
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)
+
+    def grid(self, **kwargs) -> None:
+        self._frame.grid(**kwargs)
 
     def append(self, text: str) -> None:
         self._show_text_mode()
@@ -84,9 +81,14 @@ class ResultPanel:
             relief=tk.SOLID,
         )
         card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
-        card.surface_role = "summary_table"
         self.summary_tables[summary.title] = card
         self._summary_holder.columnconfigure(0, weight=1)
+        if not summary.fields:
+            card.surface_role = "status_surface"
+            self._render_status(card, summary, row=0)
+            return
+
+        card.surface_role = "summary_table"
         title_label = tk.Label(
             card,
             text=summary.title,
@@ -103,8 +105,12 @@ class ResultPanel:
             pady=(0, 1),
         )
         title_label.surface_role = "summary_title"
-        if summary.fields:
-            self._render_result_values(card, summary)
+        self._render_result_values(card, summary)
+        self._render_status(card, summary, row=3)
+
+    def _render_status(
+        self, card: tk.Frame, summary: ResultSummary, *, row: int
+    ) -> None:
         status = tk.Label(
             card,
             text=summary.status,
@@ -115,7 +121,7 @@ class ResultPanel:
             pady=5,
         )
         status.grid(
-            row=3 if summary.fields else 1,
+            row=row,
             column=0,
             columnspan=max(len(summary.fields), 1),
             sticky="ew",
