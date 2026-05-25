@@ -64,10 +64,9 @@ hybrid widget for the same table.
 Tkinter is the implementation, not an excuse to drop UX baseline.
 
 - The Excel-like baseline in
-  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` (selection, type-to-
-  replace, Ctrl+C / Ctrl+V TSV, Delete clear, Ctrl+Z undo, Tab /
-  Enter navigation, distinct cell states, invalid display) applies
-  here too.
+  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` (including its selection/edit
+  state machine, Ctrl+C / Ctrl+V TSV, clear, undo, navigation, distinct cell
+  states, and invalid display) applies here too.
 - These behaviors are not free in Tkinter. You must implement them
   yourself; see §4.
 
@@ -81,23 +80,28 @@ controller may later `register()` those cells and own the behaviors below:
 - **Selection**: maintain a selection model in app code (anchor
   cell, active cell, selected rectangle). Apply a distinct
   background to selected cells with `widget.configure(bg=...)`.
-- **Type-to-replace**: on the first keystroke into the active cell,
-  clear the existing value before inserting the character.
+- **Selection mode**: keep the caret hidden. On the first printable key into
+  the active cell, clear the existing value before inserting that character.
+- **Edit mode**: keep the caret visible and retain the existing value when
+  entering through a same-cell second click, double click, or `F2`; text
+  input then performs ordinary partial editing.
 - **Ctrl + C**: serialize the selected rectangle to TSV and put it
   on the clipboard via `clipboard_clear` + `clipboard_append`.
 - **Ctrl + V**: read the clipboard, parse TSV, and apply it to the
   selection anchored at the top-left, following the same size rules
   as the common contract (single-cell repeat, multi-cell no
   auto-repeat, out-of-bounds drop).
-- **Delete / Backspace**: clear every editable cell in the
-  selection in one undo group; skip disabled / read-only cells.
+- **Delete / Backspace**: in selection mode, clear every editable cell in the
+  selection in one undo group and skip disabled / read-only cells; in edit
+  mode, edit the text at the caret.
 - **Ctrl + Z**: maintain an undo stack of cell mutations. Each user
   action (edit, paste, clear) is one undo group.
-- **Tab / Shift+Tab / Enter / Shift+Enter / Arrow**: bind
-  navigation explicitly so the focus moves between cells and not
-  out of the table. Override the default Tk focus traversal where
-  needed.
-- **Esc**: cancel an in-progress edit and restore the prior value.
+- **Tab / Shift+Tab / Enter / Shift+Enter**: commit an active edit, when
+  present, and move to the contract-defined destination cell.
+- **Arrow**: in selection mode, move the active cell; in edit mode, allow
+  caret movement within the value.
+- **Esc**: in edit mode, cancel the edit and restore the prior value while
+  keeping the cell selected; in selection mode, clear selection.
 
 Treeview surfaces inherit the read-only side of this baseline
 (selection, Ctrl+C as TSV, distinct cell states) but skip the
@@ -115,8 +119,9 @@ For this numeric auto-calculation surface, a paste is validated as one
 action before applying any values. If any pasted numeric cell is invalid,
 no cell is changed and no recalculation is scheduled. Inline invalid edits
 remain visible through the existing result-status path. This atomic paste
-policy is the calculator binding for avoiding partially updated automatic
-results.
+policy is a **paste-specific deviation** from the common baseline, retained
+for the current `predictor_v3` binding to avoid partially updated automatic
+results; it does not change the selection/edit state machine.
 
 ## 5. Cell states
 

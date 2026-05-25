@@ -42,6 +42,13 @@ delegate-based validation. They are not acceptable trade-offs.
 
 ## 2. Editor lifecycle (1-click open)
 
+- Editable PyQt tables follow the selection/edit state machine in
+  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md`. Implement selection mode through
+  the view selection model and implement edit-mode entry, caret editing,
+  commit, and cancel through the editor delegate lifecycle.
+- `QTableView` / delegate implementations must preserve the distinction:
+  selection-mode key actions operate on cells, while edit-mode key actions
+  operate inside the active editor until commit or cancel.
 - A dropdown cell opens on a **single click**, not on double-click.
   Inside the delegate's `createEditor` (or `editorEvent`), schedule
   the popup with `QTimer.singleShot(0, editor.showPopup)`.

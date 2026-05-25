@@ -49,7 +49,7 @@ this baseline are contract violations, not exceptions.
 ## 2. Selection
 
 - **Single click** on a cell selects exactly that cell and makes it
-  the active cell.
+  the active cell in selection mode.
 - **Click and drag** selects a contiguous rectangular range.
 - **Shift + click** extends the current selection to a contiguous
   range anchored at the previously active cell.
@@ -59,20 +59,44 @@ this baseline are contract violations, not exceptions.
   selection.
 - A click on a header selects the row or column where supported.
 
-## 3. Editing entry
+## 3. Selection and edit state machine
 
-- With a cell selected, **typing immediately replaces** the existing
-  value and enters edit mode. The first keystroke is the first
-  character of the new value.
-- **Double click**, **F2**, or an explicit "edit" affordance enters
-  edit mode without clearing the existing value, placing the cursor
-  inside the current value. Whether to support this in addition to
-  type-to-replace is a per-project choice; type-to-replace is
-  required.
-- **Esc** during editing cancels the edit and restores the prior
-  value.
-- **Enter** during editing commits the value and moves the active
-  cell (see §6).
+Every editable table implements these two interaction modes:
+
+- **Selection mode**: one cell or range is active, with no text caret inside
+  the cell. Commands act on cells or the selection. A printable key starts a
+  whole-cell replacement: the old cell value is replaced and that key is the
+  first character of the new value.
+- **Edit mode**: one cell has an active text-editing position and a visible
+  caret. The value present when edit mode begins is retained until the user
+  edits it. Printable keys insert or append at the caret rather than
+  replacing the whole cell.
+
+For an editable cell, the required transitions are:
+
+| Current state | User event | Required behavior | Next state |
+| --- | --- | --- | --- |
+| No selection | Cell click | Select the clicked cell as active; do not show a caret. | Selection mode |
+| Selection mode | Printable key | Replace the whole active-cell value; the key becomes the first new character. | Edit mode |
+| Selection mode | Same active-cell click | Retain the current value and place a caret for partial editing. | Edit mode |
+| Selection mode | Double click on active cell | Retain the current value and place a caret for partial editing. | Edit mode |
+| Selection mode | `F2` | Retain the current value and place a caret for partial editing. | Edit mode |
+| Selection mode | Arrow key | Move the active cell in that direction without editing a value. | Selection mode |
+| Selection mode | `Tab` / `Enter` (and shifted variants) | Move the active cell according to §6 without editing a value. | Selection mode |
+| Selection mode | `Delete` / `Backspace` | Clear editable cells in the selection as one undoable cell operation. | Selection mode |
+| Selection mode | `Esc` | Clear the active selection and its selection visual. | No selection |
+| Edit mode | Printable key | Insert or append at the caret, preserving text not replaced by the edit. | Edit mode |
+| Edit mode | Arrow key | Move the caret within the editable value; do not move the active cell. | Edit mode |
+| Edit mode | `Delete` / `Backspace` | Delete text relative to the caret; do not clear the selection as a cell operation. | Edit mode |
+| Edit mode | `Enter` / `Tab` (and shifted variants) | Commit the edited value, then move the active cell according to §6. | Selection mode |
+| Edit mode | `Esc` | Cancel uncommitted editing, restore the value from before edit mode, and keep the cell selected. | Selection mode |
+| Edit mode | Focus leaves the table | Commit the edited value before table focus is released. | No longer editing; external focus applies |
+
+Same-cell second click, double click, and `F2` are required edit-entry
+paths, not optional enhancements. They enter edit mode without clearing the
+existing value. A project may add explicit edit affordances, but they do not
+replace these baseline paths.
+
 - The editor for a cell is determined by the column. Numeric, text,
   and drop-down cells each use the appropriate editor.
 
@@ -99,8 +123,10 @@ this baseline are contract violations, not exceptions.
 
 ## 5. Clear (Delete / Backspace)
 
-- **Delete** and **Backspace** clear the contents of every editable
-  cell in the current selection.
+- In **selection mode**, **Delete** and **Backspace** clear the contents of
+  every editable cell in the current selection.
+- In **edit mode**, **Delete** and **Backspace** edit text relative to the
+  caret and do not invoke selection clear.
 - Read-only / auto / disabled cells in the selection are skipped.
 - Clearing produces a single undo group covering all affected cells.
 - After clearing, the active cell remains selected; the selection is
@@ -116,13 +142,14 @@ this baseline are contract violations, not exceptions.
   bottom of a column, it wraps to the first row of the next column.
 - **Shift + Enter** / **Shift + Return** moves one row up with
   reverse wrap-around.
-- **Arrow keys** move one cell at a time in the corresponding
-  direction; they do not wrap by default.
-- **Esc** clears any in-progress edit and removes focus from the
-  cell editor, returning focus to the cell.
-- Focus leaves the table only on **Esc** at the cell level or
-  explicit Tab-out via a keyboard shortcut handled at the window
-  level.
+- In **selection mode**, **Arrow keys** move one cell at a time in the
+  corresponding direction; they do not wrap by default.
+- In **edit mode**, **Arrow keys** move the caret inside the value rather than
+  moving to another cell.
+- In **edit mode**, **Esc** cancels the in-progress edit and returns to a
+  selected cell. In **selection mode**, **Esc** removes the selection.
+- When focus leaves the table during edit mode, the pending value is committed
+  before external focus takes over.
 
 ## 7. Undo
 
@@ -186,8 +213,8 @@ Specifically:
 
 ## 11. What this document does not cover
 
-- Specific widget classes (`QTableView`, `tk.Entry`, etc.) — see the
-  adapter documents.
+- Specific widget classes or event-binding mechanisms — see the adapter
+  documents.
 - Per-project column shape, units, or column order — see the
   project's design doc.
 - Cross-table interactions (linked tables, drag-and-drop between

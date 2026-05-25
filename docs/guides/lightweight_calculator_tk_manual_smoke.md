@@ -214,6 +214,20 @@ without changing inputs unless the step says so.
      replaced rather than appended.**
    - **Once typing has started in a cell, subsequent keystrokes append
      naturally.**
+   - **After the first click selects a populated cell, type a digit and
+     confirm the whole existing cell value is replaced.**
+   - **Click the same already-selected cell again and confirm it enters edit
+     mode without clearing the existing value.**
+   - **Double-click a populated cell and press F2 on a selected populated
+     cell; each path enters edit mode without clearing the existing value.**
+   - **In edit mode, a visible caret appears and Arrow/Delete/Backspace edit
+     text within the existing value rather than navigating or clearing the
+     whole cell.**
+   - **In selection mode, Arrow moves the active cell and
+     Delete/Backspace clears the selected editable cell(s), with no caret.**
+   - **In edit mode, press Esc and confirm the in-progress text edit is
+     cancelled while the cell remains selected; in selection mode, press Esc
+     and confirm the selection visual clears.**
 10. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
    only the CSPF result surface updates; it does not add duplicate result
    history or replace the HSPF result surface.
@@ -291,6 +305,13 @@ Copy this block into the run notes / report; mark each step
 - Other table/card cell click clears previous selection: OK/NG
 - macOS Command+C/V/Z shortcut works: OK/NG
 - Tab/Enter/arrow then type replaces existing value: OK/NG
+- First click then printable key replaces whole cell: OK/NG
+- Same selected cell second click enters edit mode without clearing value: OK/NG
+- Double click enters edit mode without clearing value: OK/NG
+- F2 enters edit mode without clearing value: OK/NG
+- Edit mode shows caret and Arrow/Delete/Backspace edits text: OK/NG
+- Selection mode Arrow moves cell and Delete/Backspace clears cell: OK/NG
+- Edit mode Esc cancels edit; selection mode Esc clears selection: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG
