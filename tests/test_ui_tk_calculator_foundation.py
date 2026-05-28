@@ -27,6 +27,7 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MAX_WIDTH_RATIO,
     APP_WINDOW_MIN_HEIGHT_RATIO,
     APP_WINDOW_MIN_WIDTH_RATIO,
+    APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
 )
@@ -82,6 +83,7 @@ def test_initial_window_geometry_caps_to_screen_with_minimum_size():
         screen_width - int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO),
         int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO),
     )
+    preferred_width = min(max_width, int(screen_width * APP_WINDOW_PREFERRED_WIDTH_RATIO))
     max_height = min(
         screen_height - int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO),
         int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO),
@@ -92,7 +94,21 @@ def test_initial_window_geometry_caps_to_screen_with_minimum_size():
         f"{(screen_height - normal_height) // 2}"
     )
     assert initial_window_geometry(2200, 1800, screen_width, screen_height) == (
-        f"{max_width}x{max_height}+{(screen_width - max_width) // 2}+"
+        f"{preferred_width}x{max_height}+{(screen_width - preferred_width) // 2}+"
+        f"{(screen_height - max_height) // 2}"
+    )
+
+    content_height = max_height - 1
+    assert initial_window_geometry(
+        100, 100, screen_width, screen_height, (normal_width, content_height)
+    ) == (
+        f"{normal_width}x{content_height}+{(screen_width - normal_width) // 2}+"
+        f"{(screen_height - content_height) // 2}"
+    )
+    assert initial_window_geometry(
+        100, 100, screen_width, screen_height, (max_width * 2, max_height * 2)
+    ) == (
+        f"{preferred_width}x{max_height}+{(screen_width - preferred_width) // 2}+"
         f"{(screen_height - max_height) // 2}"
     )
 
@@ -156,6 +172,9 @@ def test_calculator_tk_app_builds_widget_tree():
         # Region selector defaults to "Hong Kong" and the tab exposes a
         # result panel that downstream sections push text into.
         assert app.iso_tab.result_panel is not None
+        preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
+        assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
+        assert preferred_height >= app.iso_tab._sections_holder.winfo_reqheight()
         assert app.iso_tab._scrollbar.winfo_manager() == "pack"
         assert app.iso_tab._canvas.cget("yscrollcommand")
         assert app.iso_tab._contains_widget(app.iso_tab._region_combo)

@@ -30,6 +30,7 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
     APP_WINDOW_MIN_VISIBLE_WIDTH,
     APP_WINDOW_MIN_WIDTH_RATIO,
+    APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
 )
@@ -51,7 +52,11 @@ def initial_window_geometry(
     requested_height: int,
     screen_width: int,
     screen_height: int,
+    preferred_content_size: tuple[int, int] | None = None,
 ) -> str:
+    if preferred_content_size is not None:
+        requested_width = max(requested_width, preferred_content_size[0])
+        requested_height = max(requested_height, preferred_content_size[1])
     margin_x = int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO)
     margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
     min_width = min(
@@ -66,11 +71,15 @@ def initial_window_geometry(
         APP_WINDOW_MIN_VISIBLE_WIDTH,
         min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO)),
     )
+    preferred_width = max(
+        min_width,
+        min(max_width, int(screen_width * APP_WINDOW_PREFERRED_WIDTH_RATIO)),
+    )
     max_height = max(
         APP_WINDOW_MIN_VISIBLE_HEIGHT,
         min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO)),
     )
-    width = min(max(min_width, requested_width), max_width)
+    width = min(max(min_width, requested_width), preferred_width)
     height = min(max(min_height, requested_height), max_height)
     return centered_geometry(width, height, screen_width, screen_height)
 
@@ -82,14 +91,20 @@ def resolve_min_window_size(screen_width: int, screen_height: int) -> tuple[int,
     )
 
 
-def center_window(root: tk.Tk) -> None:
+def center_window(
+    root: tk.Tk, preferred_content_size: tuple[int, int] | None = None
+) -> None:
     root.update_idletasks()
     width = max(root.winfo_reqwidth(), root.winfo_width())
     height = max(root.winfo_reqheight(), root.winfo_height())
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     root.minsize(*resolve_min_window_size(screen_width, screen_height))
-    root.geometry(initial_window_geometry(width, height, screen_width, screen_height))
+    root.geometry(
+        initial_window_geometry(
+            width, height, screen_width, screen_height, preferred_content_size
+        )
+    )
 
 
 class CalculatorTkApp:
@@ -109,7 +124,8 @@ class CalculatorTkApp:
 
         self.iso_tab = Iso16358Tab(notebook)
         notebook.add(self.iso_tab, text="ISO 16358")
-        center_window(self.root)
+        self.root.update_idletasks()
+        center_window(self.root, self.iso_tab.preferred_initial_size())
 
     def run(self) -> None:
         self.root.mainloop()

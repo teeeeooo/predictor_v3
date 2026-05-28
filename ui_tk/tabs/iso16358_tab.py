@@ -16,6 +16,10 @@ from ui_tk.profile_resolver import (
 )
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
+from ui_tk.layout_constants import (
+    APP_WINDOW_MIN_VISIBLE_HEIGHT,
+    APP_WINDOW_MIN_VISIBLE_WIDTH,
+)
 
 
 _SECTION_FACTORIES = {
@@ -94,6 +98,17 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_content_configured(self, _event=None) -> None:
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+
+    def preferred_initial_size(self) -> tuple[int, int]:
+        width = max(
+            (child.winfo_reqwidth() for child in self._content.winfo_children()),
+            default=APP_WINDOW_MIN_VISIBLE_WIDTH,
+        )
+        height = sum(child.winfo_reqheight() for child in self._content.winfo_children())
+        return (
+            width + self._scrollbar.winfo_reqwidth(),
+            max(APP_WINDOW_MIN_VISIBLE_HEIGHT, height),
+        )
 
     def _on_canvas_configured(self, event) -> None:
         self._canvas.itemconfigure(self._content_window, width=event.width)
