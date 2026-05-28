@@ -36,10 +36,11 @@ def mousewheel_units(event) -> int:
 
 
 class Iso16358Tab(ttk.Frame):
-    """ISO 16358 tab — top-level region selector + metric section stack.
+    """ISO 16358 tab with region selector and metric sub-tabs.
 
-    For the MVP only Hong Kong is wired. Selecting Hong Kong renders
-    both CSPF and HSPF sections in the same screen.
+    The top-level selector chooses a supported region such as Hong Kong.
+    Each region renders its supported metric sections in sub-tabs, and
+    each metric section owns its input and result surfaces.
     """
 
     def __init__(self, parent: tk.Widget) -> None:

@@ -46,9 +46,27 @@ class ScrollableFrame(tk.Frame):
         self._content.bind("<Configure>", self._on_content_configured)
         self._canvas.bind("<Configure>", self._on_canvas_configured)
         self.bind("<Configure>", self._sync_content_width)
-        self.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
-        self.bind_all("<Button-4>", self._on_mousewheel, add="+")
-        self.bind_all("<Button-5>", self._on_mousewheel, add="+")
+        self._mousewheel_toplevel = self.winfo_toplevel()
+        self._mousewheel_bindings = (
+            (
+                "<MouseWheel>",
+                self._mousewheel_toplevel.bind(
+                    "<MouseWheel>", self._on_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Button-4>",
+                self._mousewheel_toplevel.bind(
+                    "<Button-4>", self._on_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Button-5>",
+                self._mousewheel_toplevel.bind(
+                    "<Button-5>", self._on_mousewheel, add="+"
+                ),
+            ),
+        )
         self.bind("<Destroy>", self._unbind_mousewheel, add="+")
 
     @property
@@ -109,9 +127,11 @@ class ScrollableFrame(tk.Frame):
             self._content.configure(width=width)
 
     def _unbind_mousewheel(self, _event=None) -> None:
-        self.unbind_all("<MouseWheel>")
-        self.unbind_all("<Button-4>")
-        self.unbind_all("<Button-5>")
+        if _event is not None and getattr(_event, "widget", None) is not self:
+            return
+        for sequence, funcid in self._mousewheel_bindings:
+            self._mousewheel_toplevel.unbind(sequence, funcid)
+        self._mousewheel_bindings = ()
 
     def _contains_widget(self, widget) -> bool:
         while widget is not None:

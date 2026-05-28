@@ -261,6 +261,37 @@ def test_scrollable_frame_vertical_overflow_delta_matches_bbox():
         root.destroy()
 
 
+def test_scrollable_frame_destroy_keeps_sibling_mousewheel_binding():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.scrollable_frame import ScrollableFrame
+
+        first = ScrollableFrame(root)
+        first.pack(fill="both", expand=True)
+        second = ScrollableFrame(root)
+        second.pack(fill="both", expand=True)
+        target = tk.Label(second.content, text="target")
+        target.pack()
+        root.update_idletasks()
+
+        calls = []
+        second.canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
+        target.event_generate("<Button-5>")
+        root.update()
+        assert calls == [(1, "units")]
+
+        first.destroy()
+        root.update()
+        target.event_generate("<Button-5>")
+        root.update()
+        assert calls == [(1, "units"), (1, "units")]
+    finally:
+        root.destroy()
+
 
 def test_overflow_correction_grows_window_once():
     tk = pytest.importorskip("tkinter")
