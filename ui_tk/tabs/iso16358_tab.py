@@ -11,11 +11,15 @@ import tkinter as tk
 from tkinter import ttk
 
 from ui_tk.profile_resolver import (
+    MODE_HONG_KONG,
+    MODE_ISO_ISEER_2POINT,
+    calculation_mode_labels,
     region_labels,
     supported_metrics_for,
 )
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
+from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from ui_tk.layout_constants import (
     APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
@@ -36,11 +40,10 @@ def mousewheel_units(event) -> int:
 
 
 class Iso16358Tab(ttk.Frame):
-    """ISO 16358 tab with region selector and metric sub-tabs.
+    """ISO 16358 tab with calculation mode and metric/profile sections.
 
-    The top-level selector chooses a supported region such as Hong Kong.
-    Each region renders its supported metric sections in sub-tabs, and
-    each metric section owns its input and result surfaces.
+    Hong Kong mode keeps the region selector and metric sub-tabs. ISO /
+    ISEER 2-point mode renders a separate profile comparison section.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -50,7 +53,24 @@ class Iso16358Tab(ttk.Frame):
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
 
-        region_row = ttk.Frame(self._content)
+        mode_row = ttk.Frame(self._content)
+        mode_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
+        ttk.Label(mode_row, text="계산 모드").pack(side=tk.LEFT, padx=(0, 4))
+        self._mode_combo = ttk.Combobox(
+            mode_row,
+            values=list(calculation_mode_labels()),
+            state="readonly",
+            width=24,
+        )
+        self._mode_combo.set(MODE_HONG_KONG)
+        self._mode_combo.pack(side=tk.LEFT)
+        self._mode_combo.bind("<<ComboboxSelected>>", self._on_mode_changed)
+
+        self._hong_kong_frame = ttk.Frame(self._content)
+        self._two_point_frame = ttk.Frame(self._content)
+        self._two_point_section = None
+
+        region_row = ttk.Frame(self._hong_kong_frame)
         region_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
         ttk.Label(region_row, text="지역").pack(side=tk.LEFT, padx=(0, 4))
         self._region_combo = ttk.Combobox(
@@ -64,7 +84,7 @@ class Iso16358Tab(ttk.Frame):
         self._region_combo.pack(side=tk.LEFT)
         self._region_combo.bind("<<ComboboxSelected>>", self._on_region_changed)
 
-        self._metric_notebook = ttk.Notebook(self._content)
+        self._metric_notebook = ttk.Notebook(self._hong_kong_frame)
         self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         self.sections = {}
@@ -72,7 +92,7 @@ class Iso16358Tab(ttk.Frame):
         # The actual visible panels are owned and rendered by each section.
         self.result_panel = None
 
-        self._render_region(initial_label)
+        self._render_mode(MODE_HONG_KONG)
 
     # -- ScrollableFrame compatibility aliases --------------------------------
 
@@ -103,18 +123,19 @@ class Iso16358Tab(ttk.Frame):
         self.update_idletasks()
 
         # Measure every metric tab so hidden tabs are not undersized.
-        original_tab = self._metric_notebook.select()
         max_tab_width = 0
         max_tab_height = 0
-        for tab_id in self._metric_notebook.tabs():
-            self._metric_notebook.select(tab_id)
-            self.update_idletasks()
-            widget = self._metric_notebook.nametowidget(tab_id)
-            max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
-            max_tab_height = max(max_tab_height, widget.winfo_reqheight())
-        if original_tab:
-            self._metric_notebook.select(original_tab)
-            self.update_idletasks()
+        if self._current_mode() == MODE_HONG_KONG:
+            original_tab = self._metric_notebook.select()
+            for tab_id in self._metric_notebook.tabs():
+                self._metric_notebook.select(tab_id)
+                self.update_idletasks()
+                widget = self._metric_notebook.nametowidget(tab_id)
+                max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
+                max_tab_height = max(max_tab_height, widget.winfo_reqheight())
+            if original_tab:
+                self._metric_notebook.select(original_tab)
+                self.update_idletasks()
 
         # Base content size on the natural size of the outer frame,
         # but ensure the largest metric tab is accounted for.
@@ -123,7 +144,7 @@ class Iso16358Tab(ttk.Frame):
             max_tab_width,
         )
         content_height = self._content.winfo_reqheight()
-        if self._metric_notebook.tabs():
+        if self._current_mode() == MODE_HONG_KONG and self._metric_notebook.tabs():
             current_tab_widget = self._metric_notebook.nametowidget(
                 self._metric_notebook.select()
             )
@@ -140,6 +161,41 @@ class Iso16358Tab(ttk.Frame):
             int(content_height * (1 + margin)),
         )
 
+    # -- Calculation mode handling -------------------------------------------
+
+    def _current_mode(self) -> str:
+        return self._mode_combo.get() or MODE_HONG_KONG
+
+    def _on_mode_changed(self, _event=None) -> None:
+        self._render_mode(self._current_mode())
+
+    def _render_mode(self, mode_label: str) -> None:
+        self._cancel_hong_kong_pending()
+        self._hong_kong_frame.pack_forget()
+        self._two_point_frame.pack_forget()
+        if self._two_point_section is not None:
+            self._two_point_section.cancel_pending()
+
+        if mode_label == MODE_ISO_ISEER_2POINT:
+            self.sections = {}
+            if self._two_point_section is None:
+                self._two_point_section = IsoIseer2PointSection(self._two_point_frame)
+                self._two_point_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+            self.result_panel = self._two_point_section.result_panel
+            self._two_point_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            return
+
+        if mode_label != MODE_HONG_KONG:
+            self._mode_combo.set(MODE_HONG_KONG)
+        self._render_region(self._region_combo.get())
+        self._hong_kong_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def _cancel_hong_kong_pending(self) -> None:
+        for section in self.sections.values():
+            auto_calc = getattr(section, "_auto_calc", None)
+            if auto_calc is not None:
+                auto_calc.cancel()
+
     # -- Region handling ------------------------------------------------------
 
     def _on_region_changed(self, _event=None) -> None:
@@ -147,7 +203,9 @@ class Iso16358Tab(ttk.Frame):
 
     def _render_region(self, region_label: str) -> None:
         for tab_id in self._metric_notebook.tabs():
+            widget = self._metric_notebook.nametowidget(tab_id)
             self._metric_notebook.forget(tab_id)
+            widget.destroy()
         self.sections = {}
         self.result_panel = None
 

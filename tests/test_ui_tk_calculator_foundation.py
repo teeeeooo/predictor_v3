@@ -10,6 +10,8 @@ These tests confirm that:
 """
 
 import sys
+import subprocess
+import textwrap
 
 import pytest
 
@@ -148,55 +150,67 @@ def test_calculator_tk_app_builds_widget_tree():
     """Build the full Tk widget tree on a withdrawn root. Skip if Tk
     cannot initialize (headless environment without a usable Tcl/Tk).
     """
-    tk = pytest.importorskip("tkinter")
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:
-        pytest.skip(f"Tk not available: {exc}")
-    try:
-        root.withdraw()
+    # macOS Tk can hang when a full app root is constructed after prior
+    # same-process Tk roots; keep this app-shell smoke isolated.
+    script = r"""
+import sys
+import tkinter as tk
 
-        from ui_tk.calculator_app import CalculatorTkApp
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+try:
+    root = tk.Tk()
+except tk.TclError:
+    raise SystemExit(77)
 
-        app = CalculatorTkApp(root=root)
-        root.update_idletasks()
-        root.update()
+try:
+    root.withdraw()
 
-        assert isinstance(app.iso_tab, Iso16358Tab)
-        assert root.winfo_x() >= 0
-        assert root.winfo_y() >= 0
-        assert root.winfo_height() <= root.winfo_screenheight()
-        # Region selector defaults to "Hong Kong" and the tab exposes a
-        # result panel that downstream sections push text into.
-        assert app.iso_tab.result_panel is not None
-        # After initial construction default results are already rendered.
-        assert app.iso_tab.result_panel._text.get("1.0", "end-1c").strip() != ""
-        preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
-        assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
-        assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
-        # preferred_initial_size should be content-based, not screen-ratio-based.
-        # On a large screen it should be smaller than the old ratio minimum.
-        assert preferred_width < 800
-        assert preferred_height < 600
-        # After overflow correction, if content fits the scrollbar should be hidden.
-        delta = app.iso_tab.vertical_overflow_delta()
-        if delta <= 0:
-            assert not app.iso_tab._scrollbar_visible
-        assert app.iso_tab._canvas.cget("yscrollcommand")
-        assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
+    from ui_tk.calculator_app import CalculatorTkApp
+    from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
-        calls = []
-        app.iso_tab._canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
-        inside_event = type("Event", (), {"widget": app.iso_tab._region_combo, "delta": -1})()
-        outside = tk.Label(root)
-        outside_event = type("Event", (), {"widget": outside, "delta": -1})()
-        assert app.iso_tab._on_mousewheel(inside_event) == "break"
-        assert calls == [(1, "units")]
-        assert app.iso_tab._on_mousewheel(outside_event) == ""
-        assert calls == [(1, "units")]
-    finally:
-        root.destroy()
+    app = CalculatorTkApp(root=root)
+    root.update_idletasks()
+    root.update()
+
+    assert isinstance(app.iso_tab, Iso16358Tab)
+    assert root.winfo_x() >= 0
+    assert root.winfo_y() >= 0
+    assert root.winfo_height() <= root.winfo_screenheight()
+    assert app.iso_tab.result_panel is not None
+    assert app.iso_tab.result_panel._text.get("1.0", "end-1c").strip() != ""
+    preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
+    assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
+    assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
+    assert preferred_width < 800
+    assert preferred_height < 600
+    delta = app.iso_tab.vertical_overflow_delta()
+    if delta <= 0:
+        assert not app.iso_tab._scrollbar_visible
+    assert app.iso_tab._canvas.cget("yscrollcommand")
+    assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
+
+    calls = []
+    app.iso_tab._canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
+    inside_event = type(
+        "Event", (), {"widget": app.iso_tab._region_combo, "delta": -1}
+    )()
+    outside = tk.Label(root)
+    outside_event = type("Event", (), {"widget": outside, "delta": -1})()
+    assert app.iso_tab._on_mousewheel(inside_event) == "break"
+    assert calls == [(1, "units")]
+    assert app.iso_tab._on_mousewheel(outside_event) == ""
+    assert calls == [(1, "units")]
+finally:
+    root.destroy()
+"""
+    completed = subprocess.run(
+        [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if completed.returncode == 77:
+        pytest.skip("Tk not available")
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 def test_scrollable_frame_hides_scrollbar_when_content_fits():

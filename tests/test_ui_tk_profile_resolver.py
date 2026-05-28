@@ -1,8 +1,8 @@
 """Pure-Python tests for ``ui_tk.profile_resolver``.
 
 The resolver must be importable without Tkinter or PyQt. These tests
-guard the (region label, metric) → ``profile_id`` boundary that keeps
-``profile_id`` / ``calculator_id`` / ``config_path`` out of the UI.
+guard the UI label → ``profile_id`` boundary that keeps ``profile_id`` /
+``calculator_id`` / ``config_path`` out of the UI.
 """
 
 import importlib
@@ -15,6 +15,13 @@ from ui_tk import profile_resolver
 
 def test_region_labels_contains_hong_kong():
     assert "Hong Kong" in profile_resolver.region_labels()
+
+
+def test_calculation_mode_labels_keep_hong_kong_default_and_2point_mode():
+    assert profile_resolver.calculation_mode_labels() == (
+        "Hong Kong",
+        "ISO / ISEER 2-point",
+    )
 
 
 def test_supported_metrics_for_hong_kong_label():
@@ -54,6 +61,29 @@ def test_resolve_profile_id_unsupported_raises():
 def test_resolve_profile_id_unsupported_metric_raises():
     with pytest.raises(ValueError):
         profile_resolver.resolve_profile_id("Hong Kong", "SEER")
+
+
+def test_two_point_profile_labels_are_user_visible():
+    assert profile_resolver.two_point_profile_labels() == (
+        "ISO 16358-1",
+        "India ISEER",
+    )
+
+
+def test_resolve_two_point_profile_ids_from_display_labels():
+    assert (
+        profile_resolver.resolve_two_point_profile_id("ISO 16358-1")
+        == "iso_t1_default_2point_cspf"
+    )
+    assert (
+        profile_resolver.resolve_two_point_profile_id("India ISEER")
+        == "india_iseer_cspf"
+    )
+
+
+def test_resolve_two_point_profile_id_unsupported_raises():
+    with pytest.raises(ValueError):
+        profile_resolver.resolve_two_point_profile_id("SASO T3")
 
 
 def test_resolver_module_does_not_require_tkinter_or_pyqt():

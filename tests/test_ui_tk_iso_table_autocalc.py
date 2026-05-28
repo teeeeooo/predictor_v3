@@ -56,6 +56,12 @@ def _result_text(tab, metric: str) -> str:
     return tab.sections[metric].result_panel._text.get("1.0", tk.END).strip()
 
 
+def _two_point_text(tab) -> str:
+    import tkinter as tk
+
+    return tab._two_point_section.result_panel._text.get("1.0", tk.END).strip()
+
+
 def _label_texts(widget) -> list[str]:
     labels = []
     stack = [widget]
@@ -92,12 +98,115 @@ def _flush_defaults(tab) -> None:
     tab.sections["HSPF"]._auto_calc.flush_now()
 
 
+def _select_mode(tab, mode_label: str) -> None:
+    tab._mode_combo.set(mode_label)
+    tab._on_mode_changed()
+    tab.update_idletasks()
+
+
 def test_iso_tab_renders_default_results_immediately(tk_root):
     tab = _make_tab(tk_root)
     for metric in ("CSPF", "HSPF"):
         text = tab.sections[metric].result_panel._text.get("1.0", "end-1c").strip()
         assert text != ""
         assert metric in text
+
+
+def test_iso_tab_defaults_to_hong_kong_mode_with_metric_subtabs(tk_root):
+    tab = _make_tab(tk_root)
+
+    assert tab._mode_combo.get() == "Hong Kong"
+    assert tab._region_combo.get() == "Hong Kong"
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+    assert [tab._metric_notebook.tab(t, "text") for t in tab._metric_notebook.tabs()] == [
+        "CSPF",
+        "HSPF",
+    ]
+
+
+def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
+    tab = _make_tab(tk_root)
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    section = tab._two_point_section
+
+    assert section is not None
+    assert tab.sections == {}
+    assert section.input_table.columns == (("full", "35 Full"), ("half", "35 Half"))
+    assert section.input_table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
+    assert section.input_table.get_text_values() == {
+        "full_capacity": "3600",
+        "full_power": "900",
+        "half_capacity": "1700",
+        "half_power": "380",
+    }
+    assert isinstance(section.input_controller, ExcelLikeTableController)
+
+    panel = section.result_panel
+    assert set(panel.summary_tables) == {"ISO 16358-1", "India ISEER"}
+    for title in ("ISO 16358-1", "India ISEER"):
+        assert panel.summary_tables[title].surface_role == "summary_table"
+        labels = _label_texts(panel.summary_tables[title])
+        for label in ("EER Full", "EER Half", "CSPF/ISEER", "CSTL [kWh]", "CSEC [kWh]"):
+            assert label in labels
+
+    text = _two_point_text(tab)
+    assert "ISO 16358-1" in text
+    assert "India ISEER" in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
+def test_iso_iseer_2point_input_change_updates_both_summaries(tk_root):
+    tab = _make_tab(tk_root)
+    _select_mode(tab, "ISO / ISEER 2-point")
+    section = tab._two_point_section
+    before = _two_point_text(tab)
+
+    assert section.input_table.set_value("full_power", "1000") is True
+    section._auto_calc.flush_now()
+    after = _two_point_text(tab)
+
+    assert after != before
+    assert set(section.result_panel.summary_tables) == {"ISO 16358-1", "India ISEER"}
+    assert "ISO 16358-1" in after
+    assert "India ISEER" in after
+
+
+def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
+    tab = _make_tab(tk_root)
+    _select_mode(tab, "ISO / ISEER 2-point")
+    section = tab._two_point_section
+
+    assert section.input_table.set_value("full_power", "bad") is True
+    section._auto_calc.flush_now()
+    text = _two_point_text(tab)
+
+    assert "입력 오류: 숫자 입력을 확인하세요." in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+    panel = section.result_panel
+    assert panel.summary_tables["ISO / ISEER"].surface_role == "status_surface"
+    assert panel.summary_status_labels["ISO / ISEER"].cget("text") == (
+        "입력 오류: 숫자 입력을 확인하세요."
+    )
+
+
+def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
+    tab = _make_tab(tk_root)
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    assert tab.sections == {}
+
+    _select_mode(tab, "Hong Kong")
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+    assert [tab._metric_notebook.tab(t, "text") for t in tab._metric_notebook.tabs()] == [
+        "CSPF",
+        "HSPF",
+    ]
+    assert tab.result_panel is tab.sections["CSPF"].result_panel
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):
