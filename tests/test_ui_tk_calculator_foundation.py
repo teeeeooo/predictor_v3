@@ -15,7 +15,7 @@ import pytest
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
-from ui_tk.calculator_app import centered_geometry
+from ui_tk.calculator_app import centered_geometry, initial_window_geometry
 
 
 def test_pyqt5_not_imported_via_ui_tk_calculator_app():
@@ -61,6 +61,12 @@ def test_centered_geometry_clamps_to_visible_screen_origin():
     assert centered_geometry(0, 0, 1000, 800) == "1x1+499+399"
 
 
+def test_initial_window_geometry_caps_to_screen_with_minimum_size():
+    assert initial_window_geometry(900, 700, 1600, 1000) == "900x700+350+150"
+    assert initial_window_geometry(2200, 1800, 1600, 1000) == "1520x880+40+60"
+    assert initial_window_geometry(100, 100, 1000, 700) == "720x580+140+60"
+
+
 def test_calculator_tk_app_builds_widget_tree():
     """Build the full Tk widget tree on a withdrawn root. Skip if Tk
     cannot initialize (headless environment without a usable Tcl/Tk).
@@ -83,8 +89,11 @@ def test_calculator_tk_app_builds_widget_tree():
         assert isinstance(app.iso_tab, Iso16358Tab)
         assert root.winfo_x() >= 0
         assert root.winfo_y() >= 0
+        assert root.winfo_height() <= root.winfo_screenheight()
         # Region selector defaults to "Hong Kong" and the tab exposes a
         # result panel that downstream sections push text into.
         assert app.iso_tab.result_panel is not None
+        assert app.iso_tab._scrollbar.winfo_manager() == "pack"
+        assert app.iso_tab._canvas.cget("yscrollcommand")
     finally:
         root.destroy()

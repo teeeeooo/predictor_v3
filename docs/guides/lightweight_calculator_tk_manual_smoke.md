@@ -128,6 +128,8 @@ without changing inputs unless the step says so.
    appears with the title `Calculator (Tkinter)`.
    Confirm the window appears near the screen center, or at least fully
    inside the visible screen with the title bar reachable.
+   Confirm the initial window height fits inside the screen and lower
+   CSPF/HSPF tables are either visible or reachable by vertical scroll.
 2. **Single standard tab** — The window shows exactly one tab
    labeled `ISO 16358`. No other top-level tabs (`EN 14825`, `AHRI
    210/240`, `KS C 9306`) appear yet — they are out of scope for the
@@ -235,6 +237,9 @@ without changing inputs unless the step says so.
      and confirm the selection visual clears.**
    - **In edit mode, move focus outside the table and confirm the edited
      value commits before the selection visual clears.**
+   - **Use mouse wheel or trackpad scroll to reach lower CSPF/HSPF tables
+     when the content is taller than the window. Confirm table edit, copy,
+     paste, Tab/Enter, and Arrow behavior still works after scrolling.**
 10. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
    only the CSPF result surface updates; it does not add duplicate result
    history or replace the HSPF result surface.
@@ -291,6 +296,7 @@ Copy this block into the run notes / report; mark each step
 - App launch: OK/NG
 - Single ISO 16358 tab: OK/NG
 - Initial window appears centered or fully inside visible screen: OK/NG
+- Lower CSPF/HSPF tables visible or reachable by vertical scroll: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
 - CSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
@@ -324,6 +330,7 @@ Copy this block into the run notes / report; mark each step
 - Selection mode Arrow moves cell and Delete/Backspace clears cell: OK/NG
 - Edit mode Esc cancels edit; selection mode Esc clears selection: OK/NG
 - Edit mode focus-out commits value: OK/NG
+- Mouse wheel / trackpad vertical scroll works without breaking table behavior: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG

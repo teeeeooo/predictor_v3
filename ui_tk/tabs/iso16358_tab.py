@@ -34,7 +34,26 @@ class Iso16358Tab(ttk.Frame):
     def __init__(self, parent: tk.Widget) -> None:
         super().__init__(parent)
 
-        region_row = ttk.Frame(self)
+        self._canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
+        self._scrollbar = ttk.Scrollbar(
+            self, orient=tk.VERTICAL, command=self._canvas.yview
+        )
+        self._canvas.configure(yscrollcommand=self._scrollbar.set)
+        self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self._canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self._content = ttk.Frame(self._canvas)
+        self._content_window = self._canvas.create_window(
+            (0, 0), window=self._content, anchor="nw"
+        )
+        self._content.bind("<Configure>", self._on_content_configured)
+        self._canvas.bind("<Configure>", self._on_canvas_configured)
+        self.bind("<Configure>", self._sync_content_width)
+        self.winfo_toplevel().bind("<Configure>", self._sync_content_width, add="+")
+        self._canvas.bind("<Enter>", self._bind_mousewheel)
+        self._canvas.bind("<Leave>", self._unbind_mousewheel)
+
+        region_row = ttk.Frame(self._content)
         region_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
         ttk.Label(region_row, text="지역").pack(side=tk.LEFT, padx=(0, 4))
         self._region_combo = ttk.Combobox(
@@ -48,8 +67,8 @@ class Iso16358Tab(ttk.Frame):
         self._region_combo.pack(side=tk.LEFT)
         self._region_combo.bind("<<ComboboxSelected>>", self._on_region_changed)
 
-        self._sections_holder = ttk.Frame(self)
-        self._sections_holder.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
+        self._sections_holder = ttk.Frame(self._content)
+        self._sections_holder.pack(side=tk.TOP, fill=tk.X, expand=True, padx=4, pady=4)
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -57,6 +76,42 @@ class Iso16358Tab(ttk.Frame):
         self.result_panel = None
 
         self._render_region(initial_label)
+
+    def _on_content_configured(self, _event=None) -> None:
+        self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+
+    def _on_canvas_configured(self, event) -> None:
+        self._canvas.itemconfigure(self._content_window, width=event.width)
+
+    def _sync_content_width(self, _event=None) -> None:
+        width = self._canvas.winfo_width()
+        if _event is not None and getattr(_event, "width", 0) > width:
+            width = _event.width - self._scrollbar.winfo_reqwidth()
+        width = max(1, width)
+        self._canvas.itemconfigure(self._content_window, width=width)
+        if int(self._content.cget("width") or 0) != width:
+            self._content.configure(width=width)
+
+    def _bind_mousewheel(self, _event=None) -> None:
+        self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self._canvas.bind_all("<Button-4>", self._on_mousewheel)
+        self._canvas.bind_all("<Button-5>", self._on_mousewheel)
+
+    def _unbind_mousewheel(self, _event=None) -> None:
+        self._canvas.unbind_all("<MouseWheel>")
+        self._canvas.unbind_all("<Button-4>")
+        self._canvas.unbind_all("<Button-5>")
+
+    def _on_mousewheel(self, event) -> str:
+        if getattr(event, "num", None) == 4:
+            units = -1
+        elif getattr(event, "num", None) == 5:
+            units = 1
+        else:
+            units = -1 * int(event.delta / 120) if event.delta else 0
+        if units:
+            self._canvas.yview_scroll(units, "units")
+        return "break"
 
     def _on_region_changed(self, _event=None) -> None:
         self._render_region(self._region_combo.get())
@@ -72,7 +127,7 @@ class Iso16358Tab(ttk.Frame):
             if factory is None:
                 continue
             section = factory(self._sections_holder, region_label)
-            section.pack(side=tk.TOP, fill=tk.X, padx=4, pady=4)
+            section.pack(side=tk.TOP, fill=tk.X, expand=True, padx=4, pady=4)
             self.sections[metric] = section
             if self.result_panel is None:
                 self.result_panel = section.result_panel
