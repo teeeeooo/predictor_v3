@@ -167,7 +167,23 @@ Rules:
   project's compact numeric formatter (see `00_UI_UX_SYSTEM.md`
   §8).
 
-## 8. Empty state and helper text
+## 8. Window Geometry And Screen Caps
+
+- Window initial size, minimum size, maximum size, screen margins,
+  visible caps, and preferred visible ratios are layout policy values.
+  They must not be owned as raw numbers inside component or app shell
+  modules.
+- Toolkit implementations place these values in a named layout owner.
+  For Tkinter, use `ui_tk/layout_constants.py` or an equivalent
+  toolkit-local layout owner, then import the named constants/ratios
+  into shell modules such as `ui_tk/calculator_app.py`.
+- Prefer helpers based on content-requested size and screen/content
+  ratios over fixed pixel dimensions. The shell may calculate geometry,
+  but the policy values used by that calculation come from the owner.
+- If a fallback value is unavoidable, it is still a named constant in
+  the owner file, not an inline literal in the component.
+
+## 9. Empty state and helper text
 
 - Empty tables and empty result panels must show a short empty-state
   message that tells the user what to do next.
@@ -176,11 +192,12 @@ Rules:
 - Error messages on a field use `color.danger` foreground; do not
   rely on color alone.
 
-## 9. Visual value ownership and portable adoption
+## 10. Visual value ownership and portable adoption
 
 - Each adopting project provides a concrete token owner file. Widget
   and component modules consume those values instead of introducing raw
-  colors, local spacing tokens, or fixed-pixel table width rules.
+  colors, local spacing tokens, fixed-pixel table width rules, or
+  window geometry literals.
 - A project may bind this common semantic contract through a
   toolkit-local owner while adoption is incremental; a complete theme
   migration is not required before component ownership is enforced.
@@ -189,7 +206,7 @@ Rules:
   with these common documents. See
   `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`.
 
-## 10. What this document does not include
+## 11. What this document does not include
 
 - Final hex codes. Each project owns its palette and binds these
   tokens to concrete values in its own theme or toolkit binding owner
@@ -199,7 +216,7 @@ Rules:
 - Code examples. This document is the token / layout contract; the
   adapter documents are where toolkit-specific snippets go, if any.
 
-## 11. Related documents
+## 12. Related documents
 
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice.

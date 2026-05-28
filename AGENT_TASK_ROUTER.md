@@ -248,6 +248,52 @@ Commit / Push:
 - push 결과를 report와 terminal summary에 남긴다.
 - 사용자 명시 요청 없이는 report commit/push 과정에서 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
 
+#### UI Smoke-loop Mode
+
+대상:
+- macOS/Windows 수동 UI smoke 직후 발견된 Tkinter/PyQt UI micro-fix
+- 같은 UI surface에서 사용자가 연속 확인 중인 표시, focus, scroll, selection, shortcut 같은 작은 회귀 수정
+
+원칙:
+- 사용자가 smoke-loop mode를 명시하거나, "수동 smoke에서 바로 확인된 작은 UI fix를 빠르게 반복"하라고 지시한 경우에만 적용한다.
+- source/test만 수정한다.
+- `docs/WORK_PLAN.md`, `project_log.md`, `result_reports/memory/project_memory_seed.md`를 수정하지 않는다.
+- `result_reports/active/` report를 작성하지 않는다.
+- full pytest를 실행하지 않는다. 관련 focused test, import/py_compile, targeted smoke guard만 실행한다.
+- commit/push는 수행한다. smoke-loop commit message는 작은 UI fix 범위를 명확히 적는다.
+- 사용자가 "이제 OK", "manual smoke pass", "checkpoint 정리"처럼 안정화 확인을 준 뒤 stable checkpoint mode에서 manual smoke guide, WORK_PLAN, result report를 짧게 정리한다.
+
+금지:
+- core/calculator/golden/fixture/config/schema/ML/Predictor 작업에는 적용하지 않는다.
+- 계산 결과, public API, diagnostics schema, region config, ML feature schema 변경에는 적용하지 않는다.
+- 필요한 focused 검증을 생략하는 근거로 사용하지 않는다.
+
+Stable checkpoint mode:
+- 여러 smoke-loop commit을 묶어 manual smoke guide, `docs/WORK_PLAN.md`, result report를 짧게 정리할 수 있다.
+- checkpoint report는 불필요한 diff 전문이나 긴 터미널 출력 복사를 피하고, 바뀐 동작, 검증, 남은 수동 확인만 기록한다.
+
+#### Diff / Read Budget
+
+목적:
+- 큰 파일과 긴 diff를 무작정 출력해 토큰을 낭비하지 않고, 필요한 근거만 확인한다.
+
+기본 순서:
+1. `git diff --name-only`
+2. `git diff --stat`
+3. `rg -n "<function_or_keyword>" <target files>`
+4. `sed -n '<small range>' <file>`
+5. 필요한 경우에만 `git diff -- <file>` 또는 특정 hunk 주변을 좁게 확인한다.
+
+pytest / command output:
+- 실패 전까지는 focused test 중심으로 실행한다.
+- 실패 시에만 상세 traceback, 관련 log, 긴 pytest summary를 확인한다.
+- full pytest가 필요한 core/calculator/ML/schema/golden 경계 작업에서는 금지하지 않고, 필요성을 명시한 뒤 실행한다.
+
+Tk 디버그:
+- 임시 Tk script는 long-running 가능성이 있으므로 짧은 timeout/빠른 종료를 전제로 한다.
+- 출력은 핵심 width/height/focus/scroll 값 1~2개만 남긴다.
+- 반복 실험 전에는 어떤 widget/event 값을 확인할지 먼저 좁힌다.
+
 운영:
 - Summary grouping / archive cycle은 원본 report의 번호 체계가 아니라 summary report로 관리한다.
 - summary는 strict phase가 아니라 workstream/arc 기준으로 묶는다.
