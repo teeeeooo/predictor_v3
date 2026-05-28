@@ -17,6 +17,7 @@ from ui_tk.profile_resolver import (
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
 from ui_tk.layout_constants import (
+    APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
     APP_WINDOW_MIN_VISIBLE_WIDTH,
 )
@@ -100,14 +101,44 @@ class Iso16358Tab(ttk.Frame):
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
     def preferred_initial_size(self) -> tuple[int, int]:
-        width = max(
-            (child.winfo_reqwidth() for child in self._content.winfo_children()),
-            default=APP_WINDOW_MIN_VISIBLE_WIDTH,
+        self.update_idletasks()
+
+        # Measure every metric tab so hidden tabs are not undersized.
+        original_tab = self._metric_notebook.select()
+        max_tab_width = 0
+        max_tab_height = 0
+        for tab_id in self._metric_notebook.tabs():
+            self._metric_notebook.select(tab_id)
+            self.update_idletasks()
+            widget = self._metric_notebook.nametowidget(tab_id)
+            max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
+            max_tab_height = max(max_tab_height, widget.winfo_reqheight())
+        if original_tab:
+            self._metric_notebook.select(original_tab)
+            self.update_idletasks()
+
+        # Base content size on the natural size of the outer frame,
+        # but ensure the largest metric tab is accounted for.
+        content_width = max(
+            self._content.winfo_reqwidth(),
+            max_tab_width,
         )
-        height = sum(child.winfo_reqheight() for child in self._content.winfo_children())
+        content_height = self._content.winfo_reqheight()
+        if self._metric_notebook.tabs():
+            current_tab_widget = self._metric_notebook.nametowidget(
+                self._metric_notebook.select()
+            )
+            content_height = (
+                content_height
+                - current_tab_widget.winfo_reqheight()
+                + max_tab_height
+            )
+
+        # Apply content-based safety margin.
+        margin = APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
         return (
-            width + self._scrollbar.winfo_reqwidth(),
-            max(APP_WINDOW_MIN_VISIBLE_HEIGHT, height),
+            int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
+            int(content_height * (1 + margin)),
         )
 
     def _on_canvas_configured(self, event) -> None:

@@ -57,22 +57,10 @@ def initial_window_geometry(
         requested_height = max(requested_height, preferred_content_size[1])
     margin_x = int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO)
     margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
-    min_width = APP_WINDOW_MIN_VISIBLE_WIDTH
-    min_height = APP_WINDOW_MIN_VISIBLE_HEIGHT
-    max_width = max(
-        APP_WINDOW_MIN_VISIBLE_WIDTH,
-        min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO)),
-    )
-    preferred_width = max(
-        min_width,
-        min(max_width, int(screen_width * APP_WINDOW_PREFERRED_WIDTH_RATIO)),
-    )
-    max_height = max(
-        APP_WINDOW_MIN_VISIBLE_HEIGHT,
-        min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO)),
-    )
-    width = min(max(min_width, requested_width), preferred_width)
-    height = min(max(min_height, requested_height), max_height)
+    max_width = min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO))
+    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
+    width = min(requested_width, max_width)
+    height = min(requested_height, max_height)
     return centered_geometry(width, height, screen_width, screen_height)
 
 

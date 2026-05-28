@@ -179,6 +179,11 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
         tab._metric_notebook.nametowidget(t) for t in tab._metric_notebook.tabs()
     ]
     assert rendered_sections == [cspf._frame, hspf._frame]
+
+    # preferred_initial_size should use the largest metric tab, not sum them.
+    pref_w, pref_h = tab.preferred_initial_size()
+    # With two metric tabs, height should reflect the larger tab, not both stacked.
+    assert pref_h < cspf._frame.winfo_reqheight() + hspf._frame.winfo_reqheight() + 50
     for section in (cspf, hspf):
         assert section.rated_table.grid_info()["row"] < section.input_table.grid_info()["row"]
         assert (

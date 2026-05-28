@@ -21,6 +21,7 @@ from ui_tk.calculator_app import (
     resolve_min_window_size,
 )
 from ui_tk.layout_constants import (
+    APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
     APP_WINDOW_FALLBACK_MIN_HEIGHT,
     APP_WINDOW_FALLBACK_MIN_WIDTH,
     APP_WINDOW_MAX_HEIGHT_RATIO,
@@ -77,44 +78,49 @@ def test_centered_geometry_clamps_to_visible_screen_origin():
     assert centered_geometry(0, 0, 1000, 800) == "1x1+499+399"
 
 
-def test_initial_window_geometry_caps_to_screen_with_minimum_size():
+def test_initial_window_geometry_uses_content_size_with_screen_cap():
     screen_width, screen_height = 1600, 1000
     max_width = min(
         screen_width - int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO),
         int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO),
     )
-    preferred_width = min(max_width, int(screen_width * APP_WINDOW_PREFERRED_WIDTH_RATIO))
     max_height = min(
         screen_height - int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO),
         int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO),
     )
-    normal_width, normal_height = 900, 700
+
+    # Normal requested size passes through.
     assert initial_window_geometry(900, 700, screen_width, screen_height) == (
-        f"{normal_width}x{normal_height}+{(screen_width - normal_width) // 2}+"
-        f"{(screen_height - normal_height) // 2}"
+        "900x700+350+150"
     )
+
+    # Oversized requested is capped to screen.
     assert initial_window_geometry(2200, 1800, screen_width, screen_height) == (
-        f"{preferred_width}x{max_height}+{(screen_width - preferred_width) // 2}+"
+        f"{max_width}x{max_height}+{(screen_width - max_width) // 2}+"
         f"{(screen_height - max_height) // 2}"
     )
 
-    content_height = max_height - 1
+    # Preferred content size is respected.
+    content_width, content_height = 850, 650
     assert initial_window_geometry(
-        100, 100, screen_width, screen_height, (normal_width, content_height)
+        100, 100, screen_width, screen_height, (content_width, content_height)
     ) == (
-        f"{normal_width}x{content_height}+{(screen_width - normal_width) // 2}+"
+        f"{content_width}x{content_height}+{(screen_width - content_width) // 2}+"
         f"{(screen_height - content_height) // 2}"
     )
+
+    # Preferred content size exceeding screen cap is capped.
     assert initial_window_geometry(
         100, 100, screen_width, screen_height, (max_width * 2, max_height * 2)
     ) == (
-        f"{preferred_width}x{max_height}+{(screen_width - preferred_width) // 2}+"
+        f"{max_width}x{max_height}+{(screen_width - max_width) // 2}+"
         f"{(screen_height - max_height) // 2}"
     )
 
+    # Small requested size is not forced to a ratio minimum.
     small_screen_width, small_screen_height = 1000, 700
-    assert initial_window_geometry(100, 100, small_screen_width, small_screen_height) == (
-        "100x100+450+300"
+    assert initial_window_geometry(300, 250, small_screen_width, small_screen_height) == (
+        "300x250+350+225"
     )
     assert resolve_min_window_size(small_screen_width, small_screen_height) == (
         APP_WINDOW_FALLBACK_MIN_WIDTH,
@@ -167,6 +173,10 @@ def test_calculator_tk_app_builds_widget_tree():
         assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
         assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
         assert app.iso_tab._scrollbar.winfo_manager() == "pack"
+        # preferred_initial_size should be content-based, not screen-ratio-based.
+        # On a large screen it should be smaller than the old ratio minimum.
+        assert preferred_width < 800
+        assert preferred_height < 600
         assert app.iso_tab._canvas.cget("yscrollcommand")
         assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
 
