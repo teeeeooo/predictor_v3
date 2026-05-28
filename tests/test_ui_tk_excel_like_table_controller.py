@@ -219,6 +219,118 @@ def test_click_does_not_show_typing_caret_until_first_key(controlled_table):
     assert entry.cget("insertontime") == 600
 
 
+def test_same_cell_second_click_enters_edit_mode_without_clearing_value(
+    controlled_table,
+):
+    table, controller, _calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    entry = table.editable_entries["a"]
+    assert entry.cget("insertontime") == 0
+
+    controller._click(SimpleNamespace(state=0), (0, 0))
+
+    assert table.get_text_values()["a"] == "1"
+    assert entry.cget("insertontime") == 600
+    entry.insert("end", "9")
+    assert table.get_text_values()["a"] == "19"
+
+
+def test_double_click_and_f2_enter_edit_mode_without_clearing_value(controlled_table):
+    table, controller, _calls = controlled_table
+
+    controller._double_click(SimpleNamespace(state=0), (0, 0))
+    entry = table.editable_entries["a"]
+    assert table.get_text_values()["a"] == "1"
+    assert entry.cget("insertontime") == 600
+
+    controller._navigate("tab")
+    controller._edit_f2()
+    entry = table.editable_entries["b"]
+    assert table.get_text_values()["b"] == "2"
+    assert entry.cget("insertontime") == 600
+
+
+def test_edit_mode_arrow_and_delete_backspace_use_native_entry_behavior(
+    controlled_table,
+):
+    table, controller, _calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    entry = table.editable_entries["a"]
+    entry.icursor(1)
+
+    assert controller._arrow("right") == ""
+    assert controller.active == (0, 0)
+    assert controller._clear() == ""
+    assert table.get_text_values()["a"] == "1"
+
+    entry.delete(0)
+    assert table.get_text_values()["a"] == ""
+
+
+def test_selection_mode_delete_and_backspace_clear_selected_cells(controlled_table):
+    table, controller, _calls = controlled_table
+    controller.select((0, 0))
+
+    assert controller._clear() == "break"
+    assert table.get_text_values()["a"] == ""
+    assert controller.active == (0, 0)
+
+    controller._undo_last()
+    assert table.get_text_values()["a"] == "1"
+    controller.select((0, 0))
+    controller.select((0, 1), extend=True)
+    assert controller._clear(SimpleNamespace(keysym="BackSpace")) == "break"
+    assert table.get_text_values()["a"] == ""
+    assert table.get_text_values()["b"] == ""
+
+
+def test_edit_mode_enter_tab_commit_navigate_and_group_undo(controlled_table):
+    table, controller, _calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    table.editable_entries["a"].insert("end", "9")
+
+    assert controller._navigate("tab") == "break"
+
+    assert table.get_text_values()["a"] == "19"
+    assert controller.active == (0, 1)
+    assert table.editable_entries["b"].cget("insertontime") == 0
+    controller._undo_last()
+    assert table.get_text_values()["a"] == "1"
+
+
+def test_edit_mode_escape_restores_snapshot_and_keeps_cell_selected(controlled_table):
+    table, controller, calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    table.editable_entries["a"].insert("end", "9")
+
+    assert controller._clear_selection() == "break"
+
+    assert table.get_text_values()["a"] == "1"
+    assert controller.active == (0, 0)
+    assert table.editable_entries["a"].cget("insertontime") == 0
+    controller._undo_last()
+    assert table.get_text_values()["a"] == "1"
+    assert calls
+
+
+def test_edit_mode_focus_out_commits_before_selection_clear(controlled_table):
+    table, controller, _calls = controlled_table
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    table.editable_entries["a"].insert("end", "9")
+
+    controller._internal_focus_move = False
+    controller._on_focus_out(SimpleNamespace())
+
+    assert table.get_text_values()["a"] == "19"
+    assert controller.active is None
+    controller._undo_last()
+    assert table.get_text_values()["a"] == "1"
+
+
 def test_arrow_keys_move_active_cell_when_in_selection_mode(controlled_table):
     table, controller, _calls = controlled_table
     controller.select((0, 0))
