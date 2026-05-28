@@ -21,6 +21,38 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-05-28 — Tkinter calculator UX implementation arc + metric sub-tab amendment
+
+### Decision
+- Tkinter calculator ISO Hong Kong CSPF/HSPF visible UX가 matrix input, auto-calc,
+  summary result surface를 거쳐 Excel-like controller 및 state machine까지
+  구현되었다 (166~177). core/profile/dispatcher 경로와 기본 smoke 값은 유지한다.
+- `MetricInputTable`은 metadata/mutation API만 제공하고 interaction logic은
+  별도 `ExcelLikeTableController`가 소유하는 구조로 정착했다 (172).
+- Selection mode / Edit mode, type-to-replace, same-cell second click / double
+  click / F2 edit mode, Esc/focus/cross-table commit semantics가
+  `03_SPREADSHEET_TABLE_UX_CONTRACT.md`와 Tkinter adapter에 반영됨 (175~177).
+- UI smoke-loop mode와 diff/read budget 규칙이 `AGENT_TASK_ROUTER.md`에 추가되어
+  token-heavy micro-fix churn을 줄임 (179a).
+- Window geometry policy 값은 toolkit-local layout owner (`ui_tk/layout_constants.py`)
+  에 두고 app shell module에는 직접 넣지 않는 원칙을 확정함 (179a).
+- macOS 수동 smoke에서 CSPF/HSPF same-view vertical stack이 창 높이/스크롤/geometry
+  문제를 반복 일으킴. 이에 final UX contract를 amendment하여 content density가 높은
+  경우 standard tab 낸부 metric sub-tab 또는 equivalent segmented metric navigation을
+  허용하고, ISO Hong Kong CSPF/HSPF는 metric 분리를 권장하는 amendment로 변경 (179e).
+- EN 14825 SEER/SCOP, AHRI 210/240 SEER2/HSPF2도 같은 metric-navigation 원칙 적용.
+- PyQt calculator-only source retirement와 graph/detail surface는 여전히 hold/deferred.
+
+### Lesson
+- Table behavior contract와 visible surface refinement를 분리해 구현하면,
+  interaction foundation을 먼저 안정화한 뒤 visible layout을 반복 smoke로
+  정제할 수 있다.
+- Same-view vertical stack은 content density가 높을 때 창 geometry/scroll 문제를
+  반복하므로, design gate에서 metric-level navigation을 early rejection하지 말고
+  content density를 기준으로 조걶적으로 허용하는 편이 유연하다.
+
+---
+
 ## 2026-05-24 — Tkinter calculator matrix UI direction + project-wide surface rules
 
 ### Decision

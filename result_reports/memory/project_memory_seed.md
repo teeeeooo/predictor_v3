@@ -431,7 +431,36 @@ entries:
       - PyQt calculator retirement
       - packaging
     assertionStatus: verified
-    source: result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md (covered reports 154-164; Tkinter Calculator Status and PyQt Calculator Retirement Status)
+    source: result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md (covered reports 158-164; Tkinter Calculator Status and PyQt Calculator Retirement Status)
+
+  - type: decision
+    topic: Excel-like table state machine and Tkinter controller UX
+    content: Spreadsheet-like table interaction follows a toolkit-agnostic state machine with Selection mode and Edit mode. Type-to-replace, same-cell second click, double click, and F2 enter Edit mode. Esc or focus loss commits the edit and returns to Selection mode. Cross-table click commits the current edit before selecting the new cell. MetricInputTable provides address lookup and notify-once batch mutation APIs; ExcelLikeTableController owns interaction state and bindings.
+    keywords:
+      - predictor_v3
+      - Excel-like table
+      - selection mode
+      - edit mode
+      - state machine
+      - Tkinter controller
+      - cross-table commit
+    assertionStatus: verified
+    source: result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md (covered reports 166-179e; Key Decisions and Completed Work)
+
+  - type: decision
+    topic: Tkinter calculator metric sub-tab amendment
+    content: Top-level standard tabs and region selectors remain. Per-region tabs and standard-tab replacement remain rejected. When content density makes a single vertical view impractical, metric sub-tabs or equivalent segmented metric navigation inside a standard tab are permitted. ISO Hong Kong CSPF/HSPF defaults to same-view but metric separation is recommended. EN 14825 SEER/SCOP and AHRI 210/240 SEER2/HSPF2 follow the same principle.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - metric sub-tab
+      - design amendment
+      - content density
+      - ISO Hong Kong
+      - CSPF
+      - HSPF
+    assertionStatus: verified
+    source: result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md (covered reports 166-179e; Key Decisions)
 ```
 
 ## Known Gaps
