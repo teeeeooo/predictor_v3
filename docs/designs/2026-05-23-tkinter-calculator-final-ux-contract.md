@@ -90,16 +90,23 @@ The IA is unchanged from the feasibility doc; the final UX only changes the
 - Top level: **standard tabs** (ISO 16358, EN 14825, AHRI 210/240, KS C 9306,
   …).
 - Inside a standard tab: **region selector** (`ttk.Combobox`).
-- Region selection drives which **metric sections** are visible together.
-  - ISO 16358 / **Hong Kong** → CSPF section + HSPF section in the same
-    view.
-  - EN 14825 → SEER section + SCOP section together.
-  - AHRI 210/240 → SEER2 section + HSPF2 section together.
+- Region selection drives which **metric sections** are visible.
+  - By default, related metrics appear in the same vertical workflow:
+    - ISO 16358 / **Hong Kong** → CSPF section + HSPF section.
+    - EN 14825 → SEER section + SCOP section.
+    - AHRI 210/240 → SEER2 section + HSPF2 section.
+  - When content density makes a single view impractical (e.g., repeated
+    manual-smoke clipping or excessive vertical scroll), a standard tab may
+    use **metric sub-tabs** or equivalent segmented metric navigation.
+    Metric sub-tabs do not replace standard tabs or introduce per-region
+    tabs.
 - Internal resolution: `(region, metric_section)` → `profile_id` via
   `ui_tk/profile_resolver.py`.
 
-Rejected alternatives remain rejected (no per-region tabs, no nested tabs, no
-KS C 9306 merged into ISO).
+Rejected alternatives remain rejected (no per-region tabs, no standard-tab
+replacement, no KS C 9306 merged into ISO). Metric sub-tabs or equivalent
+segmented metric navigation inside a standard tab are permitted when content
+density is high.
 
 ## Table/Grid Input Contract
 

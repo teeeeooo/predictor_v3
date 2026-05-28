@@ -16,8 +16,9 @@ they are presented as summary result surfaces.
   desktop UI, whether implemented in PyQt or Tkinter.
 - Governs input/result **surface shape** and the decision to use a matrix or
   summary card/table.
-- Does not prescribe toolkit widget APIs, visual token values, calculation
-  schemas, ML schemas, or result computation.
+- Does not prescribe metric navigation (e.g., sub-tabs or segmented controls),
+  toolkit widget APIs, visual token values, calculation schemas, ML schemas,
+  or result computation.
 
 ## Relationship to Existing UI/UX SSOT
 
