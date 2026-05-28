@@ -49,17 +49,18 @@ Correct the Tkinter ISO tab selector hierarchy after manual smoke of 187-b.
 
 Full pytest was not run by request.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Confirm the app opens directly on `ISO / ISEER 2-point`.
-- Confirm switching to `Hong Kong` shows only CSPF/HSPF metric sub-tabs, without the duplicate region selector.
-- Confirm switching back to `ISO / ISEER 2-point` keeps 2-point summaries and input editing stable.
+- App opens directly on `ISO / ISEER 2-point` — OK.
+- Switching to `Hong Kong` shows only CSPF/HSPF metric sub-tabs, without the duplicate region selector — OK.
+- Switching back to `ISO / ISEER 2-point` keeps 2-point summaries and input editing stable — OK.
+- Table UX, scroll, and resize remain stable across profile switches — OK.
 
 ## Commit / Push
 
 - source/test commit: `fa657b1f5b0593951d358a25aa90650f058e1d35`
-- report/WORK_PLAN commit: pending
-- push: pending
+- report/WORK_PLAN commit: `4e20da7b561be6f3ac1f7000d0831ad0beda30d4`
+- push: completed
 
 ## Project Memory Delta
 
