@@ -86,8 +86,8 @@ class Iso16358Tab(ttk.Frame):
         self._region_combo.pack(side=tk.LEFT)
         self._region_combo.bind("<<ComboboxSelected>>", self._on_region_changed)
 
-        self._sections_holder = ttk.Frame(self._content)
-        self._sections_holder.pack(side=tk.TOP, fill=tk.X, expand=True, padx=4, pady=4)
+        self._metric_notebook = ttk.Notebook(self._content)
+        self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -146,8 +146,8 @@ class Iso16358Tab(ttk.Frame):
         self._render_region(self._region_combo.get())
 
     def _render_region(self, region_label: str) -> None:
-        for child in self._sections_holder.winfo_children():
-            child.destroy()
+        for tab_id in self._metric_notebook.tabs():
+            self._metric_notebook.forget(tab_id)
         self.sections = {}
         self.result_panel = None
 
@@ -155,8 +155,8 @@ class Iso16358Tab(ttk.Frame):
             factory = _SECTION_FACTORIES.get(metric)
             if factory is None:
                 continue
-            section = factory(self._sections_holder, region_label)
-            section.pack(side=tk.TOP, fill=tk.X, expand=True, padx=4, pady=4)
+            section = factory(self._metric_notebook, region_label)
+            self._metric_notebook.add(section._frame, text=metric)
             self.sections[metric] = section
             if self.result_panel is None:
                 self.result_panel = section.result_panel

@@ -144,7 +144,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
 
     buttons = []
     labels = []
-    stack = list(tab._sections_holder.winfo_children())
+    stack = []
+    for metric in ("CSPF", "HSPF"):
+        stack.append(tab.sections[metric]._frame)
     while stack:
         widget = stack.pop()
         stack.extend(widget.winfo_children())
@@ -173,7 +175,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert hspf._frame.cget("text") == "HSPF 입력 (Hong Kong)"
     assert hspf.result_panel.title_label.cget("text") == "HSPF 결과"
 
-    rendered_sections = tab._sections_holder.winfo_children()
+    rendered_sections = [
+        tab._metric_notebook.nametowidget(t) for t in tab._metric_notebook.tabs()
+    ]
     assert rendered_sections == [cspf._frame, hspf._frame]
     for section in (cspf, hspf):
         assert section.rated_table.grid_info()["row"] < section.input_table.grid_info()["row"]
@@ -263,6 +267,8 @@ def test_metric_surfaces_expand_together_with_window_width(tk_root):
     tk_root.update_idletasks()
 
     def widths(section, metric):
+        tab._metric_notebook.select(section._frame)
+        tk_root.update_idletasks()
         return (
             section.rated_table.table_frame.winfo_width(),
             section.input_table.table_frame.winfo_width(),
@@ -270,6 +276,8 @@ def test_metric_surfaces_expand_together_with_window_width(tk_root):
         )
 
     def left_offsets(section, metric):
+        tab._metric_notebook.select(section._frame)
+        tk_root.update_idletasks()
         return tuple(
             widget.winfo_rootx() - section._frame.winfo_rootx()
             for widget in (

@@ -174,7 +174,7 @@ def test_calculator_tk_app_builds_widget_tree():
         assert app.iso_tab.result_panel is not None
         preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
         assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
-        assert preferred_height >= app.iso_tab._sections_holder.winfo_reqheight()
+        assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
         assert app.iso_tab._scrollbar.winfo_manager() == "pack"
         assert app.iso_tab._canvas.cget("yscrollcommand")
         assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
