@@ -15,7 +15,7 @@ import pytest
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
-from ui_tk.calculator_app import (
+from ui_tk.window_geometry import (
     apply_overflow_correction,
     centered_geometry,
     initial_window_geometry,
