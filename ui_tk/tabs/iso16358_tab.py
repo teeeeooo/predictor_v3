@@ -57,8 +57,9 @@ class Iso16358Tab(ttk.Frame):
             self, orient=tk.VERTICAL, command=self._canvas.yview
         )
         self._canvas.configure(yscrollcommand=self._scrollbar.set)
-        self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self._canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self._scrollbar_visible = False
+        self._update_scrollbar_visibility()
 
         self._content = ttk.Frame(self._canvas)
         self._content_window = self._canvas.create_window(
@@ -97,8 +98,36 @@ class Iso16358Tab(ttk.Frame):
 
         self._render_region(initial_label)
 
+    def _update_scrollbar_visibility(self, _event=None) -> None:
+        """Show scrollbar only when content exceeds canvas viewport."""
+        bbox = self._canvas.bbox("all")
+        if bbox is None:
+            content_height = 0
+        else:
+            content_height = bbox[3] - bbox[1]
+        canvas_height = self._canvas.winfo_height()
+        needed = content_height > canvas_height
+        if needed and not self._scrollbar_visible:
+            self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            self._scrollbar_visible = True
+            self._sync_content_width()
+        elif not needed and self._scrollbar_visible:
+            self._scrollbar.pack_forget()
+            self._scrollbar_visible = False
+            self._sync_content_width()
+
+    def vertical_overflow_delta(self) -> int:
+        """Return measured vertical overflow in pixels, or 0 if none."""
+        bbox = self._canvas.bbox("all")
+        if bbox is None:
+            return 0
+        content_height = bbox[3] - bbox[1]
+        canvas_height = self._canvas.winfo_height()
+        return max(0, content_height - canvas_height)
+
     def _on_content_configured(self, _event=None) -> None:
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+        self._update_scrollbar_visibility()
 
     def preferred_initial_size(self) -> tuple[int, int]:
         self.update_idletasks()

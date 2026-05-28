@@ -93,6 +93,28 @@ def center_window(
     )
 
 
+def apply_overflow_correction(root: tk.Tk, tab: Iso16358Tab) -> None:
+    """One-shot correction: if the tab has vertical overflow and screen
+    cap allows, grow the window by the measured delta so the scrollbar
+    can be hidden without cutting content.
+    """
+    root.update_idletasks()
+    delta = tab.vertical_overflow_delta()
+    if delta <= 0:
+        return
+    geom = root.geometry()
+    size_part = geom.split("+")[0]
+    pos_part = "+".join(geom.split("+")[1:])
+    w, h = (int(v) for v in size_part.split("x"))
+    screen_height = root.winfo_screenheight()
+    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
+    new_h = min(h + delta, max_height)
+    if new_h > h:
+        root.geometry(f"{w}x{new_h}+{pos_part}")
+        root.update_idletasks()
+
+
 class CalculatorTkApp:
     """Top-level Tkinter calculator app shell.
 
@@ -112,6 +134,7 @@ class CalculatorTkApp:
         notebook.add(self.iso_tab, text="ISO 16358")
         self.root.update_idletasks()
         center_window(self.root, self.iso_tab.preferred_initial_size())
+        apply_overflow_correction(self.root, self.iso_tab)
 
     def run(self) -> None:
         self.root.mainloop()

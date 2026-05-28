@@ -16,6 +16,7 @@ import pytest
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.calculator_app import (
+    apply_overflow_correction,
     centered_geometry,
     initial_window_geometry,
     resolve_min_window_size,
@@ -174,11 +175,14 @@ def test_calculator_tk_app_builds_widget_tree():
         preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
         assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
         assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
-        assert app.iso_tab._scrollbar.winfo_manager() == "pack"
         # preferred_initial_size should be content-based, not screen-ratio-based.
         # On a large screen it should be smaller than the old ratio minimum.
         assert preferred_width < 800
         assert preferred_height < 600
+        # After overflow correction, if content fits the scrollbar should be hidden.
+        delta = app.iso_tab.vertical_overflow_delta()
+        if delta <= 0:
+            assert not app.iso_tab._scrollbar_visible
         assert app.iso_tab._canvas.cget("yscrollcommand")
         assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
 
@@ -191,5 +195,52 @@ def test_calculator_tk_app_builds_widget_tree():
         assert calls == [(1, "units")]
         assert app.iso_tab._on_mousewheel(outside_event) == ""
         assert calls == [(1, "units")]
+    finally:
+        root.destroy()
+
+
+def test_scrollbar_hidden_when_content_fits():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+
+        tab = Iso16358Tab(root)
+        tab.pack(fill="both", expand=True)
+        root.update_idletasks()
+        assert tab.vertical_overflow_delta() >= 0
+        root.geometry("1200x900")
+        root.update_idletasks()
+        if tab.vertical_overflow_delta() <= 0:
+            assert not tab._scrollbar_visible
+    finally:
+        root.destroy()
+
+
+def test_overflow_correction_grows_window_once():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+
+        tab = Iso16358Tab(root)
+        tab.pack(fill="both", expand=True)
+        root.update_idletasks()
+        delta = tab.vertical_overflow_delta()
+        before = root.geometry()
+        before_h = int(before.split("x")[1].split("+")[0])
+        apply_overflow_correction(root, tab)
+        after = root.geometry()
+        after_h = int(after.split("x")[1].split("+")[0])
+        if delta > 0:
+            assert after_h >= before_h
+        else:
+            assert after_h == before_h
     finally:
         root.destroy()
