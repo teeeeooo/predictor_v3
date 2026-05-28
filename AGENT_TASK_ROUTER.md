@@ -112,6 +112,39 @@ UI 경계:
 - seed 확인을 이유로 archive/report 전문을 대량으로 읽지 않는다.
 - seed 내용이 불확실하거나 충돌하면 source summary/report 또는 owner doc으로 검증한다.
 
+### Design First Gate
+
+영향 범위가 큰 작업은 구현 전에 **design slice**를 먼저 수행한다.
+
+**design slice가 필요한 작업 유형:**
+- 새 기능 추가 (예: SASO, multi/batch, graph/detail, calculator routing, profile/standard 확장)
+- 기존 기능의 사용자 흐름 변경
+- UI tab/section/navigation 구조 변경
+- 입력 구조 또는 result surface 변경
+- 계산 경로, routing, profile/standard 선택 구조 변경
+- test fixture/golden expected 구조 변경
+- 여러 파일/계층을 건드리는 refactor
+- 향후 확장 경계에 영향을 주는 public helper/interface 변경
+- 기타 영향 범위가 크거나 rollback 비용이 큰 작업
+
+**design slice 규칙:**
+- source/test 수정 금지.
+- 기존 reference/current 구조를 audit한다.
+- 후보 비교를 수행한다.
+- 최종 추천안 1개를 선택한다.
+- design doc 또는 active report를 작성한다.
+- implementation slice 범위와 제외 범위를 명시한다.
+
+**implementation slice 규칙:**
+- 승인된 design doc/report를 기준으로 구현한다.
+- 설계와 다르게 해야 하면 구현하지 말고 중단 보고한다.
+- 설계 밖 기능 추가 금지.
+- unrelated refactor 금지.
+
+**hotfix / micro cleanup 예외:**
+- typo, docstring, unused import, 명확한 behavior-preserving extraction, 긴급 hang/hotfix는 design slice를 생략할 수 있다.
+- 단, 범위와 금지 작업은 좁게 써야 한다.
+
 ### Result Report Workflow
 
 tracked file 변경이 있는 agent 작업은 상세 결과를 터미널에 길게 출력하지 않고 Markdown report로 저장한다.
