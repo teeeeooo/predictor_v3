@@ -663,8 +663,9 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 조건부로 읽을 문서:
 - UI/UX 작업 시 active SSOT root `docs/ui_ux/00_UI_UX_SYSTEM.md`
 - table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (UX contract) 와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` (PyQt 구현 adapter)
-- UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
-- UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
+  - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
+  - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
+  - GUI app shell / initial window geometry / scroll container / resize handling / scrollbar visibility 작업이면 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8 (Window Geometry And Screen Caps)를 먼저 확인한다.
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
@@ -672,6 +673,11 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.
+6. window geometry / scroll container / resize handling / scrollbar visibility 작업 전에는 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8의 다음 gate를 확인한다.
+   - root/app-level rendered requested size 우선
+   - component-specific preferred size는 보조 수단
+   - initial geometry, resize minsize, screen cap, scrollbar visibility 분리
+   - Configure event handler에서 geometry mutation / pack-forget / width sync loop 금지
 
 금지:
 - `QTableWidget` 신규 도입

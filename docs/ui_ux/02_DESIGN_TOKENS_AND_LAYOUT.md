@@ -183,6 +183,48 @@ Rules:
 - If a fallback value is unavoidable, it is still a named constant in
   the owner file, not an inline literal in the component.
 
+### 8.1 Initial geometry order of operations
+
+1. Render the initial UI state first so every visible widget, panel,
+   selector, tab header, and result surface is realized. This includes
+   default inputs, auto-calculated summaries, and any content that
+   affects natural size.
+2. Measure the **root / app-level rendered requested size** after the
+   initial paint is stable.
+3. Apply a content-based safety margin (named constant in the layout
+   owner, not a hard-coded pixel number).
+4. Apply the **screen cap** last, clamping to visible screen bounds so
+   the window is never placed outside the display.
+5. Derive the centered position from the final clamped size.
+
+### 8.2 Separation of concerns
+
+- **Initial geometry** is the first window size shown at startup.
+  It should reflect the rendered content size, not a fixed pixel value
+  or a screen-ratio minimum.
+- **Resize minimum** is the smallest size a user is allowed to shrink
+  the window to. It may differ from the initial geometry and must not
+  force the initial window to be larger than the computed content size.
+- **Screen cap** is the maximum safe window size for the current
+  display. It is applied after content sizing, not as an initial floor.
+- **Scrollbar visibility** is a fallback affordance. It should be shown
+  only when the content genuinely exceeds the available viewport.
+  Scrollbar visibility changes must not trigger geometry mutation,
+  pack/forget loops, or content width sync cascades.
+
+### 8.3 Event-loop safety
+
+- Geometry mutation, scrollbar pack/forget, and content width
+  synchronization must never call each other synchronously inside the
+  same `<Configure>` handler path. If one of them must react to a
+  resize event, queue the dependent work on the event loop or let the
+  next natural paint cycle apply it.
+- A component-specific `preferred_initial_size()` helper may be used
+  only when the root requested size does not reflect the actual
+  content (for example, because a scroll container or virtualized
+  surface hides the true content height). In that case the helper
+  measures the natural size of the visible content directly.
+
 ## 9. Empty state and helper text
 
 - Empty tables and empty result panels must show a short empty-state
