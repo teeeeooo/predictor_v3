@@ -15,7 +15,22 @@ import pytest
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
-from ui_tk.calculator_app import centered_geometry, initial_window_geometry
+from ui_tk.calculator_app import (
+    centered_geometry,
+    initial_window_geometry,
+    resolve_min_window_size,
+)
+from ui_tk.layout_constants import (
+    APP_WINDOW_FALLBACK_MIN_HEIGHT,
+    APP_WINDOW_FALLBACK_MIN_WIDTH,
+    APP_WINDOW_MAX_HEIGHT_RATIO,
+    APP_WINDOW_MAX_WIDTH_RATIO,
+    APP_WINDOW_MIN_HEIGHT_RATIO,
+    APP_WINDOW_MIN_WIDTH_RATIO,
+    APP_WINDOW_SCREEN_MARGIN_X_RATIO,
+    APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
+)
+from ui_tk.tabs.iso16358_tab import mousewheel_units
 
 
 def test_pyqt5_not_imported_via_ui_tk_calculator_app():
@@ -62,9 +77,57 @@ def test_centered_geometry_clamps_to_visible_screen_origin():
 
 
 def test_initial_window_geometry_caps_to_screen_with_minimum_size():
-    assert initial_window_geometry(900, 700, 1600, 1000) == "900x700+350+150"
-    assert initial_window_geometry(2200, 1800, 1600, 1000) == "1520x880+40+60"
-    assert initial_window_geometry(100, 100, 1000, 700) == "720x580+140+60"
+    screen_width, screen_height = 1600, 1000
+    max_width = min(
+        screen_width - int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO),
+        int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO),
+    )
+    max_height = min(
+        screen_height - int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO),
+        int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO),
+    )
+    normal_width, normal_height = 900, 700
+    assert initial_window_geometry(900, 700, screen_width, screen_height) == (
+        f"{normal_width}x{normal_height}+{(screen_width - normal_width) // 2}+"
+        f"{(screen_height - normal_height) // 2}"
+    )
+    assert initial_window_geometry(2200, 1800, screen_width, screen_height) == (
+        f"{max_width}x{max_height}+{(screen_width - max_width) // 2}+"
+        f"{(screen_height - max_height) // 2}"
+    )
+
+    small_screen_width, small_screen_height = 1000, 700
+    min_width = max(
+        APP_WINDOW_FALLBACK_MIN_WIDTH,
+        int(small_screen_width * APP_WINDOW_MIN_WIDTH_RATIO),
+    )
+    min_height = max(
+        APP_WINDOW_FALLBACK_MIN_HEIGHT,
+        int(small_screen_height * APP_WINDOW_MIN_HEIGHT_RATIO),
+    )
+    assert initial_window_geometry(100, 100, small_screen_width, small_screen_height) == (
+        f"{min_width}x{min_height}+{(small_screen_width - min_width) // 2}+"
+        f"{(small_screen_height - min_height) // 2}"
+    )
+    assert resolve_min_window_size(small_screen_width, small_screen_height) == (
+        APP_WINDOW_FALLBACK_MIN_WIDTH,
+        APP_WINDOW_FALLBACK_MIN_HEIGHT,
+    )
+
+
+def test_mousewheel_units_handle_platform_deltas():
+    class Event:
+        def __init__(self, *, delta=0, num=None):
+            self.delta = delta
+            self.num = num
+
+    assert mousewheel_units(Event(delta=1)) == -1
+    assert mousewheel_units(Event(delta=-1)) == 1
+    assert mousewheel_units(Event(delta=120)) == -1
+    assert mousewheel_units(Event(delta=-120)) == 1
+    assert mousewheel_units(Event(num=4)) == -1
+    assert mousewheel_units(Event(num=5)) == 1
+    assert mousewheel_units(Event()) == 0
 
 
 def test_calculator_tk_app_builds_widget_tree():
@@ -95,5 +158,16 @@ def test_calculator_tk_app_builds_widget_tree():
         assert app.iso_tab.result_panel is not None
         assert app.iso_tab._scrollbar.winfo_manager() == "pack"
         assert app.iso_tab._canvas.cget("yscrollcommand")
+        assert app.iso_tab._contains_widget(app.iso_tab._region_combo)
+
+        calls = []
+        app.iso_tab._canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
+        inside_event = type("Event", (), {"widget": app.iso_tab._region_combo, "delta": -1})()
+        outside = tk.Label(root)
+        outside_event = type("Event", (), {"widget": outside, "delta": -1})()
+        assert app.iso_tab._on_mousewheel(inside_event) == "break"
+        assert calls == [(1, "units")]
+        assert app.iso_tab._on_mousewheel(outside_event) == ""
+        assert calls == [(1, "units")]
     finally:
         root.destroy()

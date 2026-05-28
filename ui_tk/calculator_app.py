@@ -21,16 +21,28 @@ from typing import Optional
 import tkinter as tk
 from tkinter import ttk
 
+from ui_tk.layout_constants import (
+    APP_WINDOW_FALLBACK_MIN_HEIGHT,
+    APP_WINDOW_FALLBACK_MIN_WIDTH,
+    APP_WINDOW_MAX_HEIGHT_RATIO,
+    APP_WINDOW_MAX_WIDTH_RATIO,
+    APP_WINDOW_MIN_HEIGHT_RATIO,
+    APP_WINDOW_MIN_VISIBLE_HEIGHT,
+    APP_WINDOW_MIN_VISIBLE_WIDTH,
+    APP_WINDOW_MIN_WIDTH_RATIO,
+    APP_WINDOW_SCREEN_MARGIN_X_RATIO,
+    APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
+)
 from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
 
 def centered_geometry(
     width: int, height: int, screen_width: int, screen_height: int
 ) -> str:
-    width = max(1, width)
-    height = max(1, height)
-    x = max(0, (screen_width - width) // 2)
-    y = max(0, (screen_height - height) // 2)
+    width = max(APP_WINDOW_MIN_VISIBLE_WIDTH, width)
+    height = max(APP_WINDOW_MIN_VISIBLE_HEIGHT, height)
+    x = max(APP_WINDOW_MIN_VISIBLE_WIDTH - 1, (screen_width - width) // 2)
+    y = max(APP_WINDOW_MIN_VISIBLE_HEIGHT - 1, (screen_height - height) // 2)
     return f"{width}x{height}+{x}+{y}"
 
 
@@ -40,11 +52,34 @@ def initial_window_geometry(
     screen_width: int,
     screen_height: int,
 ) -> str:
-    max_width = max(1, screen_width - 80)
-    max_height = max(1, screen_height - 120)
-    width = min(max(720, requested_width), max_width)
-    height = min(max(640, requested_height), max_height)
+    margin_x = int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO)
+    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    min_width = min(
+        max(APP_WINDOW_FALLBACK_MIN_WIDTH, int(screen_width * APP_WINDOW_MIN_WIDTH_RATIO)),
+        screen_width,
+    )
+    min_height = min(
+        max(APP_WINDOW_FALLBACK_MIN_HEIGHT, int(screen_height * APP_WINDOW_MIN_HEIGHT_RATIO)),
+        screen_height,
+    )
+    max_width = max(
+        APP_WINDOW_MIN_VISIBLE_WIDTH,
+        min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO)),
+    )
+    max_height = max(
+        APP_WINDOW_MIN_VISIBLE_HEIGHT,
+        min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO)),
+    )
+    width = min(max(min_width, requested_width), max_width)
+    height = min(max(min_height, requested_height), max_height)
     return centered_geometry(width, height, screen_width, screen_height)
+
+
+def resolve_min_window_size(screen_width: int, screen_height: int) -> tuple[int, int]:
+    return (
+        min(APP_WINDOW_FALLBACK_MIN_WIDTH, screen_width),
+        min(APP_WINDOW_FALLBACK_MIN_HEIGHT, screen_height),
+    )
 
 
 def center_window(root: tk.Tk) -> None:
@@ -53,7 +88,7 @@ def center_window(root: tk.Tk) -> None:
     height = max(root.winfo_reqheight(), root.winfo_height())
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
-    root.minsize(min(720, screen_width), min(480, screen_height))
+    root.minsize(*resolve_min_window_size(screen_width, screen_height))
     root.geometry(initial_window_geometry(width, height, screen_width, screen_height))
 
 

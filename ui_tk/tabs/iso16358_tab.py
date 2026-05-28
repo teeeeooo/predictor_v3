@@ -24,6 +24,19 @@ _SECTION_FACTORIES = {
 }
 
 
+def mousewheel_units(event) -> int:
+    if getattr(event, "num", None) == 4:
+        return -1
+    if getattr(event, "num", None) == 5:
+        return 1
+    delta = getattr(event, "delta", 0)
+    if delta > 0:
+        return -1
+    if delta < 0:
+        return 1
+    return 0
+
+
 class Iso16358Tab(ttk.Frame):
     """ISO 16358 tab — top-level region selector + metric section stack.
 
@@ -50,8 +63,10 @@ class Iso16358Tab(ttk.Frame):
         self._canvas.bind("<Configure>", self._on_canvas_configured)
         self.bind("<Configure>", self._sync_content_width)
         self.winfo_toplevel().bind("<Configure>", self._sync_content_width, add="+")
-        self._canvas.bind("<Enter>", self._bind_mousewheel)
-        self._canvas.bind("<Leave>", self._unbind_mousewheel)
+        self.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
+        self.bind_all("<Button-4>", self._on_mousewheel, add="+")
+        self.bind_all("<Button-5>", self._on_mousewheel, add="+")
+        self.bind("<Destroy>", self._unbind_mousewheel, add="+")
 
         region_row = ttk.Frame(self._content)
         region_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
@@ -92,23 +107,22 @@ class Iso16358Tab(ttk.Frame):
         if int(self._content.cget("width") or 0) != width:
             self._content.configure(width=width)
 
-    def _bind_mousewheel(self, _event=None) -> None:
-        self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self._canvas.bind_all("<Button-4>", self._on_mousewheel)
-        self._canvas.bind_all("<Button-5>", self._on_mousewheel)
-
     def _unbind_mousewheel(self, _event=None) -> None:
-        self._canvas.unbind_all("<MouseWheel>")
-        self._canvas.unbind_all("<Button-4>")
-        self._canvas.unbind_all("<Button-5>")
+        self.unbind_all("<MouseWheel>")
+        self.unbind_all("<Button-4>")
+        self.unbind_all("<Button-5>")
+
+    def _contains_widget(self, widget) -> bool:
+        while widget is not None:
+            if widget is self:
+                return True
+            widget = getattr(widget, "master", None)
+        return False
 
     def _on_mousewheel(self, event) -> str:
-        if getattr(event, "num", None) == 4:
-            units = -1
-        elif getattr(event, "num", None) == 5:
-            units = 1
-        else:
-            units = -1 * int(event.delta / 120) if event.delta else 0
+        if not self._contains_widget(getattr(event, "widget", None)):
+            return ""
+        units = mousewheel_units(event)
         if units:
             self._canvas.yview_scroll(units, "units")
         return "break"
