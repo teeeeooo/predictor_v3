@@ -199,25 +199,67 @@ def test_calculator_tk_app_builds_widget_tree():
         root.destroy()
 
 
-def test_scrollbar_hidden_when_content_fits():
+def test_scrollable_frame_hides_scrollbar_when_content_fits():
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from ui_tk.scrollable_frame import ScrollableFrame
 
-        tab = Iso16358Tab(root)
-        tab.pack(fill="both", expand=True)
+        sf = ScrollableFrame(root)
+        sf.pack(fill="both", expand=True)
+        root.geometry("800x600")
         root.update_idletasks()
-        assert tab.vertical_overflow_delta() >= 0
-        root.geometry("1200x900")
-        root.update_idletasks()
-        if tab.vertical_overflow_delta() <= 0:
-            assert not tab._scrollbar_visible
+        assert sf.vertical_overflow_delta() == 0
+        assert not sf.scrollbar_visible
     finally:
         root.destroy()
+
+
+def test_scrollable_frame_shows_scrollbar_when_content_overflows():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.scrollable_frame import ScrollableFrame
+
+        sf = ScrollableFrame(root)
+        sf.pack(fill="both", expand=True)
+        tk.Label(sf.content, text="tall", height=50).pack()
+        root.geometry("300x200")
+        root.update_idletasks()
+        assert sf.vertical_overflow_delta() > 0
+        assert sf.scrollbar_visible
+    finally:
+        root.destroy()
+
+
+def test_scrollable_frame_vertical_overflow_delta_matches_bbox():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.scrollable_frame import ScrollableFrame
+
+        sf = ScrollableFrame(root)
+        sf.pack(fill="both", expand=True)
+        root.geometry("400x300")
+        root.update_idletasks()
+        delta = sf.vertical_overflow_delta()
+        assert delta >= 0
+        bbox = sf.canvas.bbox("all")
+        if bbox is not None:
+            expected = max(0, (bbox[3] - bbox[1]) - sf.canvas.winfo_height())
+            assert delta == expected
+    finally:
+        root.destroy()
+
 
 
 def test_overflow_correction_grows_window_once():

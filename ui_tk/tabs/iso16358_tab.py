@@ -21,6 +21,7 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
     APP_WINDOW_MIN_VISIBLE_WIDTH,
 )
+from ui_tk.scrollable_frame import ScrollableFrame
 
 
 _SECTION_FACTORIES = {
@@ -30,16 +31,8 @@ _SECTION_FACTORIES = {
 
 
 def mousewheel_units(event) -> int:
-    if getattr(event, "num", None) == 4:
-        return -1
-    if getattr(event, "num", None) == 5:
-        return 1
-    delta = getattr(event, "delta", 0)
-    if delta > 0:
-        return -1
-    if delta < 0:
-        return 1
-    return 0
+    from ui_tk.scrollable_frame import mousewheel_units as _impl
+    return _impl(event)
 
 
 class Iso16358Tab(ttk.Frame):
@@ -52,26 +45,9 @@ class Iso16358Tab(ttk.Frame):
     def __init__(self, parent: tk.Widget) -> None:
         super().__init__(parent)
 
-        self._canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
-        self._scrollbar = ttk.Scrollbar(
-            self, orient=tk.VERTICAL, command=self._canvas.yview
-        )
-        self._canvas.configure(yscrollcommand=self._scrollbar.set)
-        self._canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self._scrollbar_visible = False
-        self._update_scrollbar_visibility()
-
-        self._content = ttk.Frame(self._canvas)
-        self._content_window = self._canvas.create_window(
-            (0, 0), window=self._content, anchor="nw"
-        )
-        self._content.bind("<Configure>", self._on_content_configured)
-        self._canvas.bind("<Configure>", self._on_canvas_configured)
-        self.bind("<Configure>", self._sync_content_width)
-        self.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
-        self.bind_all("<Button-4>", self._on_mousewheel, add="+")
-        self.bind_all("<Button-5>", self._on_mousewheel, add="+")
-        self.bind("<Destroy>", self._unbind_mousewheel, add="+")
+        self._scrollable = ScrollableFrame(self)
+        self._scrollable.pack(fill=tk.BOTH, expand=True)
+        self._content = self._scrollable.content
 
         region_row = ttk.Frame(self._content)
         region_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
@@ -97,34 +73,30 @@ class Iso16358Tab(ttk.Frame):
 
         self._render_region(initial_label)
 
-    def _update_scrollbar_visibility(self, _event=None) -> None:
-        """Show scrollbar only when content exceeds canvas viewport."""
-        bbox = self._canvas.bbox("all")
-        if bbox is None:
-            content_height = 0
-        else:
-            content_height = bbox[3] - bbox[1]
-        canvas_height = self._canvas.winfo_height()
-        needed = content_height > canvas_height
-        if needed and not self._scrollbar_visible:
-            self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-            self._scrollbar_visible = True
-        elif not needed and self._scrollbar_visible:
-            self._scrollbar.pack_forget()
-            self._scrollbar_visible = False
+    # -- ScrollableFrame compatibility aliases --------------------------------
+
+    @property
+    def _canvas(self) -> tk.Canvas:
+        return self._scrollable.canvas
+
+    @property
+    def _scrollbar(self) -> ttk.Scrollbar:
+        return self._scrollable.scrollbar
+
+    @property
+    def _scrollbar_visible(self) -> bool:
+        return self._scrollable.scrollbar_visible
+
+    def _contains_widget(self, widget) -> bool:
+        return self._scrollable._contains_widget(widget)
+
+    def _on_mousewheel(self, event) -> str:
+        return self._scrollable._on_mousewheel(event)
+
+    # -- Metric size helpers --------------------------------------------------
 
     def vertical_overflow_delta(self) -> int:
-        """Return measured vertical overflow in pixels, or 0 if none."""
-        bbox = self._canvas.bbox("all")
-        if bbox is None:
-            return 0
-        content_height = bbox[3] - bbox[1]
-        canvas_height = self._canvas.winfo_height()
-        return max(0, content_height - canvas_height)
-
-    def _on_content_configured(self, _event=None) -> None:
-        self._canvas.configure(scrollregion=self._canvas.bbox("all"))
-        self._update_scrollbar_visibility()
+        return self._scrollable.vertical_overflow_delta()
 
     def preferred_initial_size(self) -> tuple[int, int]:
         self.update_idletasks()
@@ -167,37 +139,7 @@ class Iso16358Tab(ttk.Frame):
             int(content_height * (1 + margin)),
         )
 
-    def _on_canvas_configured(self, event) -> None:
-        self._canvas.itemconfigure(self._content_window, width=event.width)
-
-    def _sync_content_width(self, _event=None) -> None:
-        width = self._canvas.winfo_width()
-        if _event is not None and getattr(_event, "width", 0) > width:
-            width = _event.width - self._scrollbar.winfo_reqwidth()
-        width = max(1, width)
-        self._canvas.itemconfigure(self._content_window, width=width)
-        if int(self._content.cget("width") or 0) != width:
-            self._content.configure(width=width)
-
-    def _unbind_mousewheel(self, _event=None) -> None:
-        self.unbind_all("<MouseWheel>")
-        self.unbind_all("<Button-4>")
-        self.unbind_all("<Button-5>")
-
-    def _contains_widget(self, widget) -> bool:
-        while widget is not None:
-            if widget is self:
-                return True
-            widget = getattr(widget, "master", None)
-        return False
-
-    def _on_mousewheel(self, event) -> str:
-        if not self._contains_widget(getattr(event, "widget", None)):
-            return ""
-        units = mousewheel_units(event)
-        if units:
-            self._canvas.yview_scroll(units, "units")
-        return "break"
+    # -- Region handling ------------------------------------------------------
 
     def _on_region_changed(self, _event=None) -> None:
         self._render_region(self._region_combo.get())

@@ -7,6 +7,7 @@ thin and the geometry policy lives in a dedicated module.
 from __future__ import annotations
 
 import tkinter as tk
+from typing import Protocol
 
 from ui_tk.layout_constants import (
     APP_WINDOW_FALLBACK_MIN_HEIGHT,
@@ -15,10 +16,14 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MAX_WIDTH_RATIO,
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
     APP_WINDOW_MIN_VISIBLE_WIDTH,
-    APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
 )
+
+
+class SupportsVerticalOverflowDelta(Protocol):
+    """Protocol for objects that expose vertical_overflow_delta."""
+    def vertical_overflow_delta(self) -> int: ...
 
 
 def centered_geometry(
@@ -79,12 +84,7 @@ def center_window(
     )
 
 
-class _HasVerticalOverflowDelta:
-    """Duck-typed interface for objects that expose vertical_overflow_delta."""
-    def vertical_overflow_delta(self) -> int: ...
-
-
-def apply_overflow_correction(root: tk.Tk, tab) -> None:
+def apply_overflow_correction(root: tk.Tk, tab: SupportsVerticalOverflowDelta) -> None:
     """One-shot init-only correction: if the tab has vertical overflow and screen
     cap allows, grow the window by the measured delta so the scrollbar
     can be hidden without cutting content.  This is called once during
