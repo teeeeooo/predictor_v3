@@ -25,8 +25,8 @@ from ui_tk.layout_constants import (
     APP_WINDOW_FALLBACK_MIN_WIDTH,
     APP_WINDOW_MAX_HEIGHT_RATIO,
     APP_WINDOW_MAX_WIDTH_RATIO,
-    APP_WINDOW_MIN_HEIGHT_RATIO,
-    APP_WINDOW_MIN_WIDTH_RATIO,
+    APP_WINDOW_MIN_VISIBLE_HEIGHT,
+    APP_WINDOW_MIN_VISIBLE_WIDTH,
     APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
@@ -113,17 +113,8 @@ def test_initial_window_geometry_caps_to_screen_with_minimum_size():
     )
 
     small_screen_width, small_screen_height = 1000, 700
-    min_width = max(
-        APP_WINDOW_FALLBACK_MIN_WIDTH,
-        int(small_screen_width * APP_WINDOW_MIN_WIDTH_RATIO),
-    )
-    min_height = max(
-        APP_WINDOW_FALLBACK_MIN_HEIGHT,
-        int(small_screen_height * APP_WINDOW_MIN_HEIGHT_RATIO),
-    )
     assert initial_window_geometry(100, 100, small_screen_width, small_screen_height) == (
-        f"{min_width}x{min_height}+{(small_screen_width - min_width) // 2}+"
-        f"{(small_screen_height - min_height) // 2}"
+        "100x100+450+300"
     )
     assert resolve_min_window_size(small_screen_width, small_screen_height) == (
         APP_WINDOW_FALLBACK_MIN_WIDTH,

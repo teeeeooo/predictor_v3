@@ -26,10 +26,8 @@ from ui_tk.layout_constants import (
     APP_WINDOW_FALLBACK_MIN_WIDTH,
     APP_WINDOW_MAX_HEIGHT_RATIO,
     APP_WINDOW_MAX_WIDTH_RATIO,
-    APP_WINDOW_MIN_HEIGHT_RATIO,
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
     APP_WINDOW_MIN_VISIBLE_WIDTH,
-    APP_WINDOW_MIN_WIDTH_RATIO,
     APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
@@ -59,14 +57,8 @@ def initial_window_geometry(
         requested_height = max(requested_height, preferred_content_size[1])
     margin_x = int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO)
     margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
-    min_width = min(
-        max(APP_WINDOW_FALLBACK_MIN_WIDTH, int(screen_width * APP_WINDOW_MIN_WIDTH_RATIO)),
-        screen_width,
-    )
-    min_height = min(
-        max(APP_WINDOW_FALLBACK_MIN_HEIGHT, int(screen_height * APP_WINDOW_MIN_HEIGHT_RATIO)),
-        screen_height,
-    )
+    min_width = APP_WINDOW_MIN_VISIBLE_WIDTH
+    min_height = APP_WINDOW_MIN_VISIBLE_HEIGHT
     max_width = max(
         APP_WINDOW_MIN_VISIBLE_WIDTH,
         min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO)),
@@ -99,11 +91,17 @@ def center_window(
     height = max(root.winfo_reqheight(), root.winfo_height())
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
-    root.minsize(*resolve_min_window_size(screen_width, screen_height))
-    root.geometry(
-        initial_window_geometry(
-            width, height, screen_width, screen_height, preferred_content_size
-        )
+    geom = initial_window_geometry(
+        width, height, screen_width, screen_height, preferred_content_size
+    )
+    root.geometry(geom)
+    # Ensure minsize does not force the initial window larger than the
+    # computed geometry on platforms that enforce minsize on display.
+    size_part = geom.split("+")[0]
+    init_w, init_h = (int(v) for v in size_part.split("x"))
+    root.minsize(
+        min(APP_WINDOW_FALLBACK_MIN_WIDTH, init_w),
+        min(APP_WINDOW_FALLBACK_MIN_HEIGHT, init_h),
     )
 
 
