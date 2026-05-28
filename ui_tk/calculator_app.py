@@ -94,9 +94,10 @@ def center_window(
 
 
 def apply_overflow_correction(root: tk.Tk, tab: Iso16358Tab) -> None:
-    """One-shot correction: if the tab has vertical overflow and screen
+    """One-shot init-only correction: if the tab has vertical overflow and screen
     cap allows, grow the window by the measured delta so the scrollbar
-    can be hidden without cutting content.
+    can be hidden without cutting content.  This is called once during
+    CalculatorTkApp construction; it must not be bound to resize events.
     """
     root.update_idletasks()
     delta = tab.vertical_overflow_delta()

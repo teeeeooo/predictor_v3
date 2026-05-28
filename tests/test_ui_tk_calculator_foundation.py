@@ -244,3 +244,25 @@ def test_overflow_correction_grows_window_once():
             assert after_h == before_h
     finally:
         root.destroy()
+
+
+def test_resize_geometry_changes_do_not_hang():
+    """Regression guard: rapid root geometry changes must return promptly."""
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.calculator_app import CalculatorTkApp
+
+        app = CalculatorTkApp(root=root)
+        root.update_idletasks()
+        for geom in ("600x500", "800x650", "1000x750", "700x550"):
+            root.geometry(geom)
+            root.update_idletasks()
+            # If we reach here without hanging, the test passes.
+            assert root.winfo_width() > 0
+            assert root.winfo_height() > 0
+    finally:
+        root.destroy()

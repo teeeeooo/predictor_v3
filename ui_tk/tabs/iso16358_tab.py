@@ -68,7 +68,6 @@ class Iso16358Tab(ttk.Frame):
         self._content.bind("<Configure>", self._on_content_configured)
         self._canvas.bind("<Configure>", self._on_canvas_configured)
         self.bind("<Configure>", self._sync_content_width)
-        self.winfo_toplevel().bind("<Configure>", self._sync_content_width, add="+")
         self.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
         self.bind_all("<Button-4>", self._on_mousewheel, add="+")
         self.bind_all("<Button-5>", self._on_mousewheel, add="+")
@@ -110,11 +109,9 @@ class Iso16358Tab(ttk.Frame):
         if needed and not self._scrollbar_visible:
             self._scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             self._scrollbar_visible = True
-            self._sync_content_width()
         elif not needed and self._scrollbar_visible:
             self._scrollbar.pack_forget()
             self._scrollbar_visible = False
-            self._sync_content_width()
 
     def vertical_overflow_delta(self) -> int:
         """Return measured vertical overflow in pixels, or 0 if none."""
