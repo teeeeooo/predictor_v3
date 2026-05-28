@@ -169,6 +169,8 @@ def test_calculator_tk_app_builds_widget_tree():
         # Region selector defaults to "Hong Kong" and the tab exposes a
         # result panel that downstream sections push text into.
         assert app.iso_tab.result_panel is not None
+        # After initial construction default results are already rendered.
+        assert app.iso_tab.result_panel._text.get("1.0", "end-1c").strip() != ""
         preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
         assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
         assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()

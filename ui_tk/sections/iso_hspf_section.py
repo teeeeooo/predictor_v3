@@ -97,7 +97,7 @@ class IsoHspfSection:
         self.rated_table.set_values_changed_callback(self._auto_calc.schedule)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
-        self._auto_calc.schedule()
+        self._auto_calc.flush_now()
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)

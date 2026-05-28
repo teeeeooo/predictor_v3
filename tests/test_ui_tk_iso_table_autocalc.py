@@ -92,6 +92,26 @@ def _flush_defaults(tab) -> None:
     tab.sections["HSPF"]._auto_calc.flush_now()
 
 
+def test_iso_tab_renders_default_results_immediately(tk_root):
+    tab = _make_tab(tk_root)
+    for metric in ("CSPF", "HSPF"):
+        text = tab.sections[metric].result_panel._text.get("1.0", "end-1c").strip()
+        assert text != ""
+        assert metric in text
+
+
+def test_preferred_initial_size_reflects_rendered_result(tk_root):
+    tab = _make_tab(tk_root)
+    rendered_w, rendered_h = tab.preferred_initial_size()
+    # Clear results to get the empty-result baseline.
+    for metric in ("CSPF", "HSPF"):
+        tab.sections[metric].result_panel.clear()
+    tab.update_idletasks()
+    empty_w, empty_h = tab.preferred_initial_size()
+    # Height should not shrink when results are rendered (regression guard).
+    assert rendered_h >= empty_h
+
+
 def test_debounce_reschedules_flushes_and_disposes():
     owner = FakeAfterOwner()
     calls = []
