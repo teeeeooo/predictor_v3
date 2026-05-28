@@ -121,7 +121,7 @@ Run the 186 PyQt reference parity audit.
 ## Commit / Push
 
 - Related source commits: `e0ca860`, `6878732`, `411b975`.
-- Report/docs catch-up commit: recorded in final terminal summary.
+- Report/docs catch-up commit: '998db9b' (Report/docs catch-up commit: recorded in final terminal summary)
 - Push target: `origin/work/ui-ux-ssot-adoption`.
 
 ## Project Memory Delta
