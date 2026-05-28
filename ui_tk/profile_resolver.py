@@ -37,8 +37,8 @@ _TWO_POINT_PROFILE_BY_LABEL: Mapping[str, str] = {
 
 
 def calculation_mode_labels() -> Tuple[str, ...]:
-    """Return user-visible ISO tab calculation modes."""
-    return (MODE_HONG_KONG, MODE_ISO_ISEER_2POINT)
+    """Return user-visible ISO profile selector labels."""
+    return (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG)
 
 
 def region_labels() -> Tuple[str, ...]:

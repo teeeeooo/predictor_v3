@@ -40,10 +40,10 @@ def mousewheel_units(event) -> int:
 
 
 class Iso16358Tab(ttk.Frame):
-    """ISO 16358 tab with calculation mode and metric/profile sections.
+    """ISO 16358 tab with profile selector and metric/profile sections.
 
-    Hong Kong mode keeps the region selector and metric sub-tabs. ISO /
-    ISEER 2-point mode renders a separate profile comparison section.
+    ISO / ISEER 2-point is the default profile. Hong Kong keeps the
+    CSPF/HSPF metric sub-tabs without exposing a duplicate region selector.
     """
 
     def __init__(self, parent: tk.Widget) -> None:
@@ -55,14 +55,14 @@ class Iso16358Tab(ttk.Frame):
 
         mode_row = ttk.Frame(self._content)
         mode_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
-        ttk.Label(mode_row, text="계산 모드").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(mode_row, text="ISO 프로파일").pack(side=tk.LEFT, padx=(0, 4))
         self._mode_combo = ttk.Combobox(
             mode_row,
             values=list(calculation_mode_labels()),
             state="readonly",
             width=24,
         )
-        self._mode_combo.set(MODE_HONG_KONG)
+        self._mode_combo.set(MODE_ISO_ISEER_2POINT)
         self._mode_combo.pack(side=tk.LEFT)
         self._mode_combo.bind("<<ComboboxSelected>>", self._on_mode_changed)
 
@@ -70,11 +70,11 @@ class Iso16358Tab(ttk.Frame):
         self._two_point_frame = ttk.Frame(self._content)
         self._two_point_section = None
 
-        region_row = ttk.Frame(self._hong_kong_frame)
-        region_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
-        ttk.Label(region_row, text="지역").pack(side=tk.LEFT, padx=(0, 4))
+        self._region_row = ttk.Frame(self._hong_kong_frame)
+        self._region_label = ttk.Label(self._region_row, text="지역")
+        self._region_label.pack(side=tk.LEFT, padx=(0, 4))
         self._region_combo = ttk.Combobox(
-            region_row,
+            self._region_row,
             values=list(region_labels()),
             state="readonly",
             width=20,
@@ -92,7 +92,7 @@ class Iso16358Tab(ttk.Frame):
         # The actual visible panels are owned and rendered by each section.
         self.result_panel = None
 
-        self._render_mode(MODE_HONG_KONG)
+        self._render_mode(MODE_ISO_ISEER_2POINT)
 
     # -- ScrollableFrame compatibility aliases --------------------------------
 
@@ -164,7 +164,7 @@ class Iso16358Tab(ttk.Frame):
     # -- Calculation mode handling -------------------------------------------
 
     def _current_mode(self) -> str:
-        return self._mode_combo.get() or MODE_HONG_KONG
+        return self._mode_combo.get() or MODE_ISO_ISEER_2POINT
 
     def _on_mode_changed(self, _event=None) -> None:
         self._render_mode(self._current_mode())
@@ -175,6 +175,9 @@ class Iso16358Tab(ttk.Frame):
         self._two_point_frame.pack_forget()
         if self._two_point_section is not None:
             self._two_point_section.cancel_pending()
+        if mode_label not in (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG):
+            mode_label = MODE_ISO_ISEER_2POINT
+            self._mode_combo.set(mode_label)
 
         if mode_label == MODE_ISO_ISEER_2POINT:
             self.sections = {}
@@ -185,8 +188,6 @@ class Iso16358Tab(ttk.Frame):
             self._two_point_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             return
 
-        if mode_label != MODE_HONG_KONG:
-            self._mode_combo.set(MODE_HONG_KONG)
         self._render_region(self._region_combo.get())
         self._hong_kong_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 

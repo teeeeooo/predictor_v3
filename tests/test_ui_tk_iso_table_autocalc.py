@@ -104,30 +104,26 @@ def _select_mode(tab, mode_label: str) -> None:
     tab.update_idletasks()
 
 
-def test_iso_tab_renders_default_results_immediately(tk_root):
-    tab = _make_tab(tk_root)
-    for metric in ("CSPF", "HSPF"):
-        text = tab.sections[metric].result_panel._text.get("1.0", "end-1c").strip()
-        assert text != ""
-        assert metric in text
+def _make_hong_kong_tab(root):
+    tab = _make_tab(root)
+    _select_mode(tab, "Hong Kong")
+    return tab
 
 
-def test_iso_tab_defaults_to_hong_kong_mode_with_metric_subtabs(tk_root):
+def test_iso_tab_defaults_to_2point_profile_with_results(tk_root):
     tab = _make_tab(tk_root)
 
-    assert tab._mode_combo.get() == "Hong Kong"
-    assert tab._region_combo.get() == "Hong Kong"
-    assert set(tab.sections) == {"CSPF", "HSPF"}
-    assert [tab._metric_notebook.tab(t, "text") for t in tab._metric_notebook.tabs()] == [
-        "CSPF",
-        "HSPF",
-    ]
+    assert tab._mode_combo.get() == "ISO / ISEER 2-point"
+    assert tab.sections == {}
+    assert tab._two_point_section is not None
+    assert set(tab._two_point_section.result_panel.summary_tables) == {
+        "ISO 16358-1",
+        "India ISEER",
+    }
 
 
 def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
     tab = _make_tab(tk_root)
-
-    _select_mode(tab, "ISO / ISEER 2-point")
     section = tab._two_point_section
 
     assert section is not None
@@ -197,20 +193,26 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
 def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
     tab = _make_tab(tk_root)
 
-    _select_mode(tab, "ISO / ISEER 2-point")
-    assert tab.sections == {}
-
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
     assert [tab._metric_notebook.tab(t, "text") for t in tab._metric_notebook.tabs()] == [
         "CSPF",
         "HSPF",
     ]
+    assert tab._region_row.winfo_manager() == ""
+    assert tab._region_label.winfo_manager() == "pack"
+    assert tab._region_combo.winfo_manager() == "pack"
     assert tab.result_panel is tab.sections["CSPF"].result_panel
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    assert tab.sections == {}
+
+    _select_mode(tab, "Hong Kong")
+    assert set(tab.sections) == {"CSPF", "HSPF"}
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
     rendered_w, rendered_h = tab.preferred_initial_size()
     # Clear results to get the empty-result baseline.
     for metric in ("CSPF", "HSPF"):
@@ -256,7 +258,7 @@ def test_iso_tab_import_does_not_pull_in_pyqt5():
 
 
 def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
 
     assert set(tab.sections) == {"CSPF", "HSPF"}
     cspf = tab.sections["CSPF"]
@@ -328,7 +330,7 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
 
     for metric in ("CSPF", "HSPF"):
         section = tab.sections[metric]
@@ -396,7 +398,7 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
 
 def test_metric_surfaces_expand_together_with_window_width(tk_root):
     tk_root.geometry("650x900")
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
     _flush_defaults(tab)
     tk_root.update_idletasks()
 
@@ -441,7 +443,7 @@ def test_metric_surfaces_expand_together_with_window_width(tk_root):
 
 
 def test_default_autocalc_results_are_section_local_without_append_growth(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
     _flush_defaults(tab)
 
     cspf_text = _result_text(tab, "CSPF")
@@ -480,7 +482,7 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
 
 
 def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
     _flush_defaults(tab)
     cspf = tab.sections["CSPF"]
 
@@ -511,7 +513,7 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
 
 
 def test_same_value_does_not_schedule_recalculation(tk_root):
-    tab = _make_tab(tk_root)
+    tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
     cspf._auto_calc.cancel()
     calls = []

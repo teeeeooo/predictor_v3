@@ -17,10 +17,10 @@ def test_region_labels_contains_hong_kong():
     assert "Hong Kong" in profile_resolver.region_labels()
 
 
-def test_calculation_mode_labels_keep_hong_kong_default_and_2point_mode():
+def test_calculation_mode_labels_keep_2point_default_then_hong_kong_profile():
     assert profile_resolver.calculation_mode_labels() == (
-        "Hong Kong",
         "ISO / ISEER 2-point",
+        "Hong Kong",
     )
 
 
