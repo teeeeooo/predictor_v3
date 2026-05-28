@@ -24,6 +24,23 @@ from tkinter import ttk
 from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
 
+def centered_geometry(width: int, height: int, screen_width: int, screen_height: int) -> str:
+    width = max(1, width)
+    height = max(1, height)
+    x = max(0, (screen_width - width) // 2)
+    y = max(0, (screen_height - height) // 2)
+    return f"{width}x{height}+{x}+{y}"
+
+
+def center_window(root: tk.Tk) -> None:
+    root.update_idletasks()
+    width = max(root.winfo_reqwidth(), root.winfo_width())
+    height = max(root.winfo_reqheight(), root.winfo_height())
+    root.geometry(
+        centered_geometry(width, height, root.winfo_screenwidth(), root.winfo_screenheight())
+    )
+
+
 class CalculatorTkApp:
     """Top-level Tkinter calculator app shell.
 
@@ -41,6 +58,7 @@ class CalculatorTkApp:
 
         self.iso_tab = Iso16358Tab(notebook)
         notebook.add(self.iso_tab, text="ISO 16358")
+        center_window(self.root)
 
     def run(self) -> None:
         self.root.mainloop()

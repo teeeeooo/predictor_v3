@@ -118,7 +118,7 @@ class ExcelLikeTableController:
                 ("<Up>", "up"), ("<Down>", "down"),
             ):
                 entry.bind(seq, lambda event, d=direction: self._arrow(d))
-            entry.bind("<Escape>", self._clear_selection)
+            entry.bind("<Escape>", self._escape)
             entry.bind("<FocusOut>", self._on_focus_out)
             entry.bind("<KeyPress>", lambda event, p=position: self._type_replace(event, p), add="+")
         for seq, handler in (
@@ -136,16 +136,15 @@ class ExcelLikeTableController:
             *self.table.static_cell_frames.values(),
         ):
             self._bind_clear_recursive(widget)
-
         self.table.table_frame.bind("<Button-1>", self._on_table_frame_click)
     def _bind_clear_recursive(self, widget) -> None:
-        widget.bind("<Button-1>", self._clear_selection)
+        widget.bind("<Button-1>", self._clear_external_selection)
         for child in widget.winfo_children():
             self._bind_clear_recursive(child)
     def _on_table_frame_click(self, event) -> str:
         if event.widget is not self.table.table_frame:
             return ""
-        self._clear_selection()
+        self._clear_external_selection()
         return "break"
     def _mark_internal_focus_move(self) -> None:
         self._internal_focus_move = True
@@ -166,7 +165,7 @@ class ExcelLikeTableController:
         if prev is not None and prev is not self:
             try:
                 if prev.table.winfo_exists():
-                    prev._clear_selection()
+                    prev._clear_external_selection()
             except Exception:
                 pass
         self.__class__._active_controller = self
@@ -295,7 +294,6 @@ class ExcelLikeTableController:
         if self.selection_bounds is None:
             return "break"
         from tkinter import TclError
-
         try:
             matrix = parse_clipboard_matrix(self.table.clipboard_get())
             validate_paste_matrix(matrix)
@@ -374,9 +372,6 @@ class ExcelLikeTableController:
         entry.configure(insertontime=600)
         return "break"
     def _clear_selection(self, event=None) -> str:
-        if self._mode == "edit":
-            self._cancel_edit()
-            return "break"
         if self.__class__._active_controller is self:
             self.__class__._active_controller = None
         self.anchor = None
@@ -386,6 +381,14 @@ class ExcelLikeTableController:
         self._edit_snapshot = None
         self._paint_selection()
         return "break"
+    def _clear_external_selection(self, event=None) -> str:
+        self._commit_edit()
+        return self._clear_selection()
+    def _escape(self, event=None) -> str:
+        if self._mode == "edit":
+            self._cancel_edit()
+            return "break"
+        return self._clear_selection()
     def _on_focus_out(self, event) -> None:
         if self._internal_focus_move:
             return
@@ -394,5 +397,4 @@ class ExcelLikeTableController:
                 return
         except Exception:
             return
-        self._commit_edit()
-        self._clear_selection()
+        self._clear_external_selection()

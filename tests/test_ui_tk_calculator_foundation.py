@@ -15,6 +15,7 @@ import pytest
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
+from ui_tk.calculator_app import centered_geometry
 
 
 def test_pyqt5_not_imported_via_ui_tk_calculator_app():
@@ -54,6 +55,12 @@ def test_hong_kong_hspf_smoke_via_resolver():
     assert result["hspf"] == pytest.approx(3.643, abs=0.001)
 
 
+def test_centered_geometry_clamps_to_visible_screen_origin():
+    assert centered_geometry(800, 600, 1600, 1000) == "800x600+400+200"
+    assert centered_geometry(1600, 1200, 1000, 800) == "1600x1200+0+0"
+    assert centered_geometry(0, 0, 1000, 800) == "1x1+499+399"
+
+
 def test_calculator_tk_app_builds_widget_tree():
     """Build the full Tk widget tree on a withdrawn root. Skip if Tk
     cannot initialize (headless environment without a usable Tcl/Tk).
@@ -74,6 +81,8 @@ def test_calculator_tk_app_builds_widget_tree():
         root.update()
 
         assert isinstance(app.iso_tab, Iso16358Tab)
+        assert root.winfo_x() >= 0
+        assert root.winfo_y() >= 0
         # Region selector defaults to "Hong Kong" and the tab exposes a
         # result panel that downstream sections push text into.
         assert app.iso_tab.result_panel is not None

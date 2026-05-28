@@ -126,6 +126,8 @@ without changing inputs unless the step says so.
 
 1. **App launch** — Run the launch command. Confirm the Tk window
    appears with the title `Calculator (Tkinter)`.
+   Confirm the window appears near the screen center, or at least fully
+   inside the visible screen with the title bar reachable.
 2. **Single standard tab** — The window shows exactly one tab
    labeled `ISO 16358`. No other top-level tabs (`EN 14825`, `AHRI
    210/240`, `KS C 9306`) appear yet — they are out of scope for the
@@ -208,6 +210,8 @@ without changing inputs unless the step says so.
      not just a 1-pixel gap.**
    - **Click another table/card cell; the previous table's active highlight
      disappears and editable cells return to their default background.**
+   - **While in edit mode, change a value and click another table/card cell;
+     the changed value commits instead of restoring the pre-edit value.**
    - **macOS: Command+C, Command+V, and Command+Z work the same as
      Ctrl+C/V/Z.**
    - **After moving with Tab/Enter/arrow, type a digit; the prior value is
@@ -229,6 +233,8 @@ without changing inputs unless the step says so.
    - **In edit mode, press Esc and confirm the in-progress text edit is
      cancelled while the cell remains selected; in selection mode, press Esc
      and confirm the selection visual clears.**
+   - **In edit mode, move focus outside the table and confirm the edited
+     value commits before the selection visual clears.**
 10. **Latest result composition** — Edit one valid CSPF cell and wait briefly:
    only the CSPF result surface updates; it does not add duplicate result
    history or replace the HSPF result surface.
@@ -284,6 +290,7 @@ Copy this block into the run notes / report; mark each step
 ```
 - App launch: OK/NG
 - Single ISO 16358 tab: OK/NG
+- Initial window appears centered or fully inside visible screen: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
 - CSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
@@ -304,6 +311,7 @@ Copy this block into the run notes / report; mark each step
 - Esc clears selection visual: OK/NG
 - Blank area (header/row header/static/gap) click clears selection: OK/NG
 - Other table/card cell click clears previous selection: OK/NG
+- Edit mode then other table/card cell click commits value: OK/NG
 - macOS Command+C/V/Z shortcut works: OK/NG
 - Tab/Enter/arrow then type replaces existing value: OK/NG
 - First click then printable key replaces whole cell: OK/NG
@@ -315,6 +323,7 @@ Copy this block into the run notes / report; mark each step
 - Edit mode Enter/Tab/KP_Enter commits before navigation: OK/NG
 - Selection mode Arrow moves cell and Delete/Backspace clears cell: OK/NG
 - Edit mode Esc cancels edit; selection mode Esc clears selection: OK/NG
+- Edit mode focus-out commits value: OK/NG
 - Latest section-local result update (no duplicate history): OK/NG
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG

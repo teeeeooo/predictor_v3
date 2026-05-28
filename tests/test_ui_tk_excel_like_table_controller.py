@@ -306,7 +306,7 @@ def test_edit_mode_escape_restores_snapshot_and_keeps_cell_selected(controlled_t
     controller._click(SimpleNamespace(state=0), (0, 0))
     table.editable_entries["a"].insert("end", "9")
 
-    assert controller._clear_selection() == "break"
+    assert controller._escape() == "break"
 
     assert table.get_text_values()["a"] == "1"
     assert controller.active == (0, 0)
@@ -329,6 +329,22 @@ def test_edit_mode_focus_out_commits_before_selection_clear(controlled_table):
     assert controller.active is None
     controller._undo_last()
     assert table.get_text_values()["a"] == "1"
+
+
+def test_cross_table_click_commits_previous_edit_before_clear(two_controlled_tables):
+    t1, c1, t2, c2 = two_controlled_tables
+    c1._click(SimpleNamespace(state=0), (0, 0))
+    c1._click(SimpleNamespace(state=0), (0, 0))
+    t1.editable_entries["a"].insert("end", "9")
+
+    c2._click(SimpleNamespace(state=0), (0, 0))
+
+    assert t1.get_text_values()["a"] == "19"
+    assert c1.active is None
+    assert t1.editable_entries["a"].cget("background") == TABLE_EDITABLE_BG
+    assert c2.active == (0, 0)
+    c1._undo_last()
+    assert t1.get_text_values()["a"] == "1"
 
 
 def test_arrow_keys_move_active_cell_when_in_selection_mode(controlled_table):
