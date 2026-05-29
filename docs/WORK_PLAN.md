@@ -23,17 +23,12 @@
   - ISO/ISEER 2-point results use a section-local read-only comparison table.
   - Profile switching uses rendered preferred-size exact-fit, one measured-overflow correction, and scroll reset.
   - `SASO T3` profile/section is implemented with required-only 3-point vs optional-min 4-point comparison.
-- Current gap: 190-b needs manual smoke before choosing the next Design First Gate slice.
+  - 190-b SASO T3 manual smoke completed with no issues found.
+- Current gap: choose the next Design First Gate slice.
 
 ## Next Actions
 
-1. Manual smoke for **190-b SASO T3 implementation slice**:
-   - Confirm `SASO T3` appears under the ISO profile selector.
-   - Confirm required-only 3-point result with optional 35 Min off.
-   - Confirm 3-point and 4-point rows with optional 35 Min on.
-   - Confirm invalid required/optional inputs show safe status without stale success values.
-   - Confirm `ISO / ISEER 2-point` and `Hong Kong` still switch and render normally.
-2. Choose the next Design First Gate slice after SASO T3 smoke:
+1. Choose the next Design First Gate slice:
    - SASO follow-up polish if needed.
    - multi/batch design.
    - detail/trace/graph design.

@@ -45,14 +45,25 @@
 - `git diff --name-only`
 - `git diff --stat`
 
-## Manual Check Needed
+## Manual Check Result
 
-- App opens with `ISO / ISEER 2-point` default.
-- `SASO T3` selector renders the SASO section.
-- Optional 35 Min off shows required-only 3-point result only.
-- Optional 35 Min on shows both 3-point and 4-point rows.
-- Invalid optional 35 Min shows safe 4-point status without stale success values.
-- Switching `ISO / ISEER 2-point` / `Hong Kong` / `SASO T3` keeps existing modes intact.
+User manual smoke completed with no issues found:
+
+- App still opens with `ISO / ISEER 2-point` as the default profile.
+- Existing ISO/ISEER 2-point comparison table remains normal.
+- Existing Hong Kong CSPF/HSPF mode remains normal.
+- `SASO T3` shows `46 Full`, `35 Full`, `35 Half`, and `35 Min` inputs.
+- Optional 35 Min toggle is visible.
+- Toggle off shows required-only 3-point result.
+- Toggle on with valid 35 Min shows 3-point and 4-point rows together.
+- Invalid optional 35 Min and invalid required inputs show safe status without traceback, raw dict, or `None`.
+- Repeated ISO / Hong Kong / SASO switching has no window size, scroll, resize hang issue.
+
+Commit / push completed:
+
+- Source/test implementation commit: `003c4ec`
+- Docs/report commit: `82efafa`
+- Push: completed
 
 ## Excluded Scope
 
@@ -67,4 +78,4 @@
 
 ## Next Action
 
-Manual smoke for 190-b, then choose the next Design First Gate slice.
+Choose the next Design First Gate slice.
