@@ -143,6 +143,8 @@ class ScrollableFrame(tk.Frame):
     def _on_mousewheel(self, event) -> str:
         if not self._contains_widget(getattr(event, "widget", None)):
             return ""
+        if self.vertical_overflow_delta() <= 0:
+            return "break"
         units = mousewheel_units(event)
         if units:
             self._canvas.yview_scroll(units, "units")

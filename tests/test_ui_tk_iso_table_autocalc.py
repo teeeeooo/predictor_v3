@@ -237,6 +237,32 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
     assert set(tab.sections) == {"CSPF", "HSPF"}
 
 
+def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
+    tk_root.geometry("650x300")
+    tab = _make_tab(tk_root)
+    tk_root.update_idletasks()
+
+    _select_mode(tab, "Hong Kong")
+    tk_root.update_idletasks()
+    assert tab.vertical_overflow_delta() == 0
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+    assert tab.sections["CSPF"].result_panel.summary_tables["CSPF"].surface_role == (
+        "summary_table"
+    )
+    assert tab.sections["HSPF"].result_panel.summary_tables["HSPF"].surface_role == (
+        "summary_table"
+    )
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    tk_root.update_idletasks()
+    assert tab.sections == {}
+    assert tab.vertical_overflow_delta() == 0
+    assert tab._two_point_section.result_table.row_labels == (
+        "ISO 16358-1",
+        "India ISEER",
+    )
+
+
 def test_preferred_initial_size_reflects_rendered_result(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     rendered_w, rendered_h = tab.preferred_initial_size()

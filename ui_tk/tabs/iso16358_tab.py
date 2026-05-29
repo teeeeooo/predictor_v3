@@ -26,6 +26,7 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MIN_VISIBLE_WIDTH,
 )
 from ui_tk.scrollable_frame import ScrollableFrame
+from ui_tk.window_geometry import fit_window_to_preferred_content
 
 
 _SECTION_FACTORIES = {
@@ -168,6 +169,12 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_mode_changed(self, _event=None) -> None:
         self._render_mode(self._current_mode())
+        self.after_idle(self._fit_toplevel_to_current_content)
+
+    def _fit_toplevel_to_current_content(self) -> None:
+        fit_window_to_preferred_content(
+            self.winfo_toplevel(), self.preferred_initial_size()
+        )
 
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()

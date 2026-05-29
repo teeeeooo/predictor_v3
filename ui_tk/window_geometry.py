@@ -105,3 +105,24 @@ def apply_overflow_correction(root: tk.Tk, tab: SupportsVerticalOverflowDelta) -
     if new_h > h:
         root.geometry(f"{w}x{new_h}+{pos_part}")
         root.update_idletasks()
+
+
+def fit_window_to_preferred_content(
+    root: tk.Tk, preferred_content_size: tuple[int, int]
+) -> None:
+    """One-shot content fit for explicit profile/content switches.
+
+    This is intentionally event-driven by callers, not bound to
+    ``<Configure>``. It reuses the initial geometry screen-cap policy
+    with the preferred content size as the requested baseline.
+    """
+    root.update_idletasks()
+    geom = initial_window_geometry(
+        preferred_content_size[0],
+        preferred_content_size[1],
+        root.winfo_screenwidth(),
+        root.winfo_screenheight(),
+    )
+    if root.geometry() != geom:
+        root.geometry(geom)
+        root.update_idletasks()

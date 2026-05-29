@@ -20,6 +20,7 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.window_geometry import (
     apply_overflow_correction,
     centered_geometry,
+    fit_window_to_preferred_content,
     initial_window_geometry,
     resolve_min_window_size,
 )
@@ -29,8 +30,6 @@ from ui_tk.layout_constants import (
     APP_WINDOW_FALLBACK_MIN_WIDTH,
     APP_WINDOW_MAX_HEIGHT_RATIO,
     APP_WINDOW_MAX_WIDTH_RATIO,
-    APP_WINDOW_MIN_VISIBLE_HEIGHT,
-    APP_WINDOW_MIN_VISIBLE_WIDTH,
     APP_WINDOW_PREFERRED_WIDTH_RATIO,
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
@@ -196,9 +195,15 @@ try:
     outside = tk.Label(root)
     outside_event = type("Event", (), {"widget": outside, "delta": -1})()
     assert app.iso_tab._on_mousewheel(inside_event) == "break"
-    assert calls == [(1, "units")]
+    if delta > 0:
+        assert calls == [(1, "units")]
+    else:
+        assert calls == []
     assert app.iso_tab._on_mousewheel(outside_event) == ""
-    assert calls == [(1, "units")]
+    if delta > 0:
+        assert calls == [(1, "units")]
+    else:
+        assert calls == []
 finally:
     root.destroy()
 """
@@ -228,6 +233,15 @@ def test_scrollable_frame_hides_scrollbar_when_content_fits():
         root.update_idletasks()
         assert sf.vertical_overflow_delta() == 0
         assert not sf.scrollbar_visible
+
+        calls = []
+        sf.canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
+        internal = tk.Label(sf.content, text="internal")
+        internal.pack()
+        root.update_idletasks()
+        event = type("Event", (), {"widget": internal, "delta": -1})()
+        assert sf._on_mousewheel(event) == "break"
+        assert calls == []
     finally:
         root.destroy()
 
@@ -248,6 +262,12 @@ def test_scrollable_frame_shows_scrollbar_when_content_overflows():
         root.update_idletasks()
         assert sf.vertical_overflow_delta() > 0
         assert sf.scrollbar_visible
+
+        calls = []
+        sf.canvas.yview_scroll = lambda units, mode: calls.append((units, mode))
+        event = type("Event", (), {"widget": sf.content, "delta": -1})()
+        assert sf._on_mousewheel(event) == "break"
+        assert calls == [(1, "units")]
     finally:
         root.destroy()
 
@@ -288,8 +308,9 @@ def test_scrollable_frame_destroy_keeps_sibling_mousewheel_binding():
         first.pack(fill="both", expand=True)
         second = ScrollableFrame(root)
         second.pack(fill="both", expand=True)
-        target = tk.Label(second.content, text="target")
+        target = tk.Label(second.content, text="target", height=50)
         target.pack()
+        root.geometry("300x200")
         root.update_idletasks()
 
         calls = []
@@ -329,6 +350,30 @@ def test_overflow_correction_grows_window_once():
             assert after_h >= before_h
         else:
             assert after_h == before_h
+    finally:
+        root.destroy()
+
+
+def test_fit_window_to_preferred_content_applies_one_shot_geometry():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        root.geometry("300x250")
+        root.update_idletasks()
+        fit_window_to_preferred_content(root, (640, 480))
+        root.update_idletasks()
+        assert root.geometry() == initial_window_geometry(
+            640, 480, root.winfo_screenwidth(), root.winfo_screenheight()
+        )
+
+        fit_window_to_preferred_content(root, (320, 260))
+        root.update_idletasks()
+        assert root.geometry() == initial_window_geometry(
+            320, 260, root.winfo_screenwidth(), root.winfo_screenheight()
+        )
     finally:
         root.destroy()
 
