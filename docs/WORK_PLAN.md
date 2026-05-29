@@ -23,19 +23,15 @@
   - `SASO T3` dedicated section with required-only 3-point vs optional-min 4-point comparison.
   - 190-b SASO T3 manual smoke completed with no issues found.
   - 192-b detail/trace/graph design slice completed.
-  - 192-c section-local result snapshot + detail table foundation implemented.
-- Next: manual smoke for 192-c detail expand/collapse and profile switching.
+- Next: 192-c section-local detail table MVP.
 
 ## Next Actions
 
-1. **192-c manual smoke**
-   - Check ISO/ISEER and SASO detail expand/collapse on the real Tk shell.
-   - Check profile switching while detail is expanded.
-   - Confirm no geometry hang or stale detail rows after invalid input.
-2. **Next Design First Gate selection**
-   - Candidate: bin-details reference trace design.
-   - Candidate: graph design.
-   - Candidate: multi/batch design.
+1. **192-c section-local detail table MVP**
+   - Add a collapsible detail pane to `IsoIseer2PointSection` and `IsoSasoT3Section`.
+   - Content: per-point capacity, power, EER/COP, plus annual energy summary from retained section-local `measured`/`result` snapshots (no core change).
+   - Default collapsed; user expands; one-shot window fit via existing `_fit_toplevel_to_current_content`.
+   - Graph, bin-details reference trace, and internal formula trace remain deferred per `docs/designs/2026-05-30-tkinter-detail-trace-graph-result-surface-design.md`.
 
 ## Active Constraints
 
@@ -51,7 +47,7 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Graph and trace surfaces remain deferred (bin-details reference trace/graph after 192-c smoke; internal formula trace after core data contract).
+- Graph and trace surfaces are deferred (bin-details reference trace/graph after detail MVP; internal formula trace after core data contract).
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
 - AS/NZS Excel compatibility Z-phase remains deferred.
@@ -67,8 +63,6 @@
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
 - `result_reports/active/190b_saso-t3-tkinter-implementation.md`
   - Tracks the current SASO T3 implementation slice until manual smoke/lifecycle cleanup.
-- `result_reports/active/192c_section-local-result-snapshot-detail-table-foundation.md`
-  - Tracks section-local result snapshot/detail table foundation until manual smoke.
 
 ## Historical Notes / References
 
