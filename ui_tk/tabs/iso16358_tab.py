@@ -27,8 +27,8 @@ from ui_tk.layout_constants import (
 )
 from ui_tk.scrollable_frame import ScrollableFrame
 from ui_tk.window_geometry import (
+    fit_window_to_preferred_content,
     grow_window_by_vertical_delta,
-    grow_window_to_preferred_content,
 )
 
 
@@ -177,7 +177,7 @@ class Iso16358Tab(ttk.Frame):
     def _fit_toplevel_to_current_content(self) -> None:
         root = self.winfo_toplevel()
         self.update_idletasks()
-        grow_window_to_preferred_content(root, self.preferred_initial_size())
+        fit_window_to_preferred_content(root, self.preferred_initial_size())
         self.update_idletasks()
         grow_window_by_vertical_delta(root, self.vertical_overflow_delta())
         self.update_idletasks()

@@ -241,8 +241,7 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     tk_root.geometry("650x300")
     tab = _make_tab(tk_root)
     tk_root.update_idletasks()
-    initial_width = tk_root.winfo_width()
-    initial_height = tk_root.winfo_height()
+    _iso_preferred_width, iso_preferred_height = tab.preferred_initial_size()
     reset_calls = []
     reset_scroll_position = tab._scrollable.reset_scroll_position
 
@@ -255,8 +254,8 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     _select_mode(tab, "Hong Kong")
     tk_root.update_idletasks()
     assert tab.vertical_overflow_delta() == 0
-    assert tk_root.winfo_width() >= initial_width
-    assert tk_root.winfo_height() >= initial_height
+    hong_kong_height = tk_root.winfo_height()
+    assert hong_kong_height >= iso_preferred_height
     assert tab._canvas.yview()[0] == 0.0
     assert reset_calls == ["reset"]
     assert set(tab.sections) == {"CSPF", "HSPF"}
@@ -270,8 +269,7 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     _select_mode(tab, "ISO / ISEER 2-point")
     tk_root.update_idletasks()
     assert tab.sections == {}
-    assert tk_root.winfo_width() >= initial_width
-    assert tk_root.winfo_height() >= initial_height
+    assert tk_root.winfo_height() <= hong_kong_height
     assert tab.vertical_overflow_delta() == 0
     assert tab._canvas.yview()[0] == 0.0
     assert reset_calls == ["reset", "reset"]

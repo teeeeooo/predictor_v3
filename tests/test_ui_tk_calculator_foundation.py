@@ -20,8 +20,8 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.window_geometry import (
     apply_overflow_correction,
     centered_geometry,
+    fit_window_to_preferred_content,
     grow_window_by_vertical_delta,
-    grow_window_to_preferred_content,
     initial_window_geometry,
     resolve_min_window_size,
 )
@@ -355,7 +355,7 @@ def test_overflow_correction_grows_window_once():
         root.destroy()
 
 
-def test_grow_window_to_preferred_content_is_grow_only():
+def test_fit_window_to_preferred_content_applies_exact_fit():
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
@@ -364,20 +364,23 @@ def test_grow_window_to_preferred_content_is_grow_only():
     try:
         root.geometry("300x250")
         root.update_idletasks()
-        grow_window_to_preferred_content(root, (640, 480))
+        fit_window_to_preferred_content(root, (640, 480))
         root.update_idletasks()
         assert root.geometry() == initial_window_geometry(
-            300,
-            250,
+            640,
+            480,
             root.winfo_screenwidth(),
             root.winfo_screenheight(),
-            (640, 480),
         )
 
-        before = root.geometry()
-        grow_window_to_preferred_content(root, (320, 260))
+        fit_window_to_preferred_content(root, (320, 260))
         root.update_idletasks()
-        assert root.geometry() == before
+        assert root.geometry() == initial_window_geometry(
+            320,
+            260,
+            root.winfo_screenwidth(),
+            root.winfo_screenheight(),
+        )
     finally:
         root.destroy()
 

@@ -112,26 +112,23 @@ def _geometry_size(geometry: str) -> tuple[int, int]:
     return tuple(int(v) for v in size_part.split("x"))
 
 
-def grow_window_to_preferred_content(
+def fit_window_to_preferred_content(
     root: tk.Tk, preferred_content_size: tuple[int, int]
 ) -> None:
-    """One-shot grow-only content fit for explicit profile/content switches.
+    """One-shot exact content fit for explicit profile/content switches.
 
     This is intentionally event-driven by callers, not bound to
     ``<Configure>``. It reuses the initial geometry screen-cap policy
-    while preserving the current window size as the minimum baseline.
+    and lets the current profile's preferred size grow or shrink the window.
     """
     root.update_idletasks()
-    current_w, current_h = _geometry_size(root.geometry())
     geom = initial_window_geometry(
-        current_w,
-        current_h,
+        preferred_content_size[0],
+        preferred_content_size[1],
         root.winfo_screenwidth(),
         root.winfo_screenheight(),
-        preferred_content_size,
     )
-    new_w, new_h = _geometry_size(geom)
-    if new_w > current_w or new_h > current_h:
+    if root.geometry() != geom:
         root.geometry(geom)
         root.update_idletasks()
 
