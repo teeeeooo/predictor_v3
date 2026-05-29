@@ -293,6 +293,7 @@ Commit / Push:
 - `docs/WORK_PLAN.md`, `project_log.md`, `result_reports/memory/project_memory_seed.md`를 수정하지 않는다.
 - `result_reports/active/` report를 작성하지 않는다.
 - full pytest를 실행하지 않는다. 관련 focused test, import/py_compile, targeted smoke guard만 실행한다.
+- policy docs는 이미 확인한 세션 context를 재사용하고, 필요해도 짧은 section 1개와 target functions 확인을 기본으로 한다.
 - commit/push는 수행한다. smoke-loop commit message는 작은 UI fix 범위를 명확히 적는다.
 - 사용자가 "이제 OK", "manual smoke pass", "checkpoint 정리"처럼 안정화 확인을 준 뒤 stable checkpoint mode에서 manual smoke guide, WORK_PLAN, result report를 짧게 정리한다.
 
@@ -309,6 +310,10 @@ Stable checkpoint mode:
 
 목적:
 - 큰 파일과 긴 diff를 무작정 출력해 토큰을 낭비하지 않고, 필요한 근거만 확인한다.
+- 같은 세션에서 이미 확인한 policy/router/design/owner doc section은 사용자 요청 또는 작업 유형이 바뀌지 않는 한 다시 열지 않는다.
+- 사용자가 "확인"을 요청해도 긴 section을 compliance 증명 목적으로 재출력하지 않는다.
+- 정확한 문구가 불확실하거나 충돌할 때만 `rg -n`으로 heading/keyword를 찾고 필요한 10~30줄만 확인한다.
+- policy read에도 이 Diff / Read Budget을 적용한다.
 
 기본 순서:
 1. `git diff --name-only`

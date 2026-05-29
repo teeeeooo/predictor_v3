@@ -34,11 +34,11 @@ Replace the 189-d grow-only profile switch behavior with default exact-fit sizin
 
 Full pytest was intentionally not run.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Confirm Hong Kong -> ISO/ISEER 2-point shrinks back to the ISO default fit without awkward bottom blank space.
-- Confirm ISO/ISEER 2-point -> Hong Kong still fits without clipping.
-- Confirm scroll position resets to top after profile switches.
+- User confirmed the profile switch exact-fit behavior works as intended.
+- Window geometry polish for this slice is closed; move on to the next work item.
+- Further geometry tuning should be treated as a known limitation unless a new blocking issue appears.
 
 ## Known Risks
 
@@ -53,8 +53,8 @@ Full pytest was intentionally not run.
 ## Commit / Push
 
 - Source/test commit: `bcdb12a fix: exact fit iso profile switch window`
-- Docs/report commit: pending at report write time
-- Push: pending at report write time
+- Docs/report commit: `e516e30 report: profile switch exact fit hotfix`
+- Push: completed to `origin/work/ui-ux-ssot-adoption`
 
 ## Project Memory Delta
 
