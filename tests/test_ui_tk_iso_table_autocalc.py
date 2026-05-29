@@ -67,6 +67,17 @@ def _two_point_tree_values(tab) -> list[tuple[str, ...]]:
     return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
 
 
+def _saso_text(tab) -> str:
+    import tkinter as tk
+
+    return tab._saso_t3_section.result_table._text.get("1.0", tk.END).strip()
+
+
+def _saso_tree_values(tab) -> list[tuple[str, ...]]:
+    tree = tab._saso_t3_section.result_table.table
+    return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
+
+
 def _label_texts(widget) -> list[str]:
     labels = []
     stack = [widget]
@@ -112,6 +123,12 @@ def _select_mode(tab, mode_label: str) -> None:
 def _make_hong_kong_tab(root):
     tab = _make_tab(root)
     _select_mode(tab, "Hong Kong")
+    return tab
+
+
+def _make_saso_tab(root):
+    tab = _make_tab(root)
+    _select_mode(tab, "SASO T3")
     return tab
 
 
@@ -216,8 +233,139 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
 
 
+def test_saso_t3_profile_renders_default_result(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    assert section is not None
+    assert tab.sections == {}
+    assert tab.result_panel is section.result_table
+    assert section.input_table.columns == (
+        ("full_46", "46 Full"),
+        ("full_35", "35 Full"),
+        ("half_35", "35 Half"),
+        ("min_35", "35 Min"),
+    )
+    assert section.input_table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
+    assert isinstance(section.input_controller, ExcelLikeTableController)
+    assert section.optional_min_toggle.cget("text") == "35 Min optional test 사용"
+    assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "disabled"
+    assert section.input_table.editable_entries["min_35_power"].cget("state") == "disabled"
+
+    table = section.result_table
+    assert table.surface_role == "saso_t3_result_surface"
+    assert table.table.surface_role == "saso_t3_comparison_table"
+    assert table.column_labels == (
+        "Scenario",
+        "EER 46 Full",
+        "EER 35 Full",
+        "EER 35 Half",
+        "EER 35 Min",
+        "CSPF",
+        "CSTL [kWh]",
+        "CSEC [kWh]",
+    )
+    rows = _saso_tree_values(tab)
+    assert len(rows) == 1
+    assert rows[0][0] == "Required only (3-point)"
+    assert rows[0][4] == "-"
+    assert table.row_labels == ("Required only (3-point)",)
+
+    text = _saso_text(tab)
+    for label in table.column_labels:
+        assert label in text
+    assert "Required only (3-point)" in text
+    assert "With 35 Min (4-point)" not in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
+def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    section._auto_calc.flush_now()
+    before_rows = _saso_tree_values(tab)
+
+    assert len(before_rows) == 2
+    assert [row[0] for row in before_rows] == [
+        "Required only (3-point)",
+        "With 35 Min (4-point)",
+    ]
+    assert before_rows[0][4] == "-"
+    assert before_rows[1][4] != "-"
+
+    assert section.input_table.set_value("min_35_capacity", "1500") is True
+    section._auto_calc.flush_now()
+    after_rows = _saso_tree_values(tab)
+
+    assert after_rows[0] == before_rows[0]
+    assert after_rows[1] != before_rows[1]
+    assert len(after_rows) == 2
+    assert _saso_text(tab).count("Required only (3-point)") == 1
+    assert _saso_text(tab).count("With 35 Min (4-point)") == 1
+
+
+def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    assert section.input_table.set_value("min_35_power", "bad") is True
+    section._auto_calc.flush_now()
+
+    rows = _saso_tree_values(tab)
+    text = _saso_text(tab)
+    assert len(rows) == 2
+    assert rows[0][0] == "Required only (3-point)"
+    assert rows[0][4] == "-"
+    assert rows[1] == (
+        "With 35 Min (4-point)",
+        "-",
+        "-",
+        "-",
+        "입력 오류",
+        "-",
+        "-",
+        "-",
+    )
+    assert "4-point 입력 오류" in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
+def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    assert section.input_table.set_value("full_46_power", "bad") is True
+    section._auto_calc.flush_now()
+    text = _saso_text(tab)
+
+    assert "입력 오류: 필수 시험점 숫자 입력을 확인하세요." in text
+    assert _saso_tree_values(tab) == []
+    assert section.result_table.row_labels == ()
+    assert section.result_table.status_label.surface_role == "saso_t3_result_status"
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
 def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
     tab = _make_tab(tk_root)
+
+    _select_mode(tab, "SASO T3")
+    assert tab.sections == {}
+    assert tab._saso_t3_section is not None
+    assert tab._saso_t3_frame.winfo_manager() == "pack"
+    assert tab._hong_kong_frame.winfo_manager() == ""
+    assert tab._two_point_frame.winfo_manager() == ""
+    assert tab._region_row.winfo_manager() == ""
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
@@ -232,6 +380,10 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
 
     _select_mode(tab, "ISO / ISEER 2-point")
     assert tab.sections == {}
+
+    _select_mode(tab, "SASO T3")
+    assert tab.sections == {}
+    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
@@ -277,6 +429,14 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
         "ISO 16358-1",
         "India ISEER",
     )
+
+    _select_mode(tab, "SASO T3")
+    tk_root.update_idletasks()
+    assert tab.sections == {}
+    assert tab.vertical_overflow_delta() == 0
+    assert tab._canvas.yview()[0] == 0.0
+    assert reset_calls == ["reset", "reset", "reset"]
+    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):

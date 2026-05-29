@@ -13,6 +13,7 @@ from tkinter import ttk
 from ui_tk.profile_resolver import (
     MODE_HONG_KONG,
     MODE_ISO_ISEER_2POINT,
+    MODE_SASO_T3,
     calculation_mode_labels,
     region_labels,
     supported_metrics_for,
@@ -20,6 +21,7 @@ from ui_tk.profile_resolver import (
 from ui_tk.sections.iso_cspf_section import IsoCspfSection
 from ui_tk.sections.iso_hspf_section import IsoHspfSection
 from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
+from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
 from ui_tk.layout_constants import (
     APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
     APP_WINDOW_MIN_VISIBLE_HEIGHT,
@@ -72,7 +74,9 @@ class Iso16358Tab(ttk.Frame):
 
         self._hong_kong_frame = ttk.Frame(self._content)
         self._two_point_frame = ttk.Frame(self._content)
+        self._saso_t3_frame = ttk.Frame(self._content)
         self._two_point_section = None
+        self._saso_t3_section = None
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -187,9 +191,12 @@ class Iso16358Tab(ttk.Frame):
         self._cancel_hong_kong_pending()
         self._hong_kong_frame.pack_forget()
         self._two_point_frame.pack_forget()
+        self._saso_t3_frame.pack_forget()
         if self._two_point_section is not None:
             self._two_point_section.cancel_pending()
-        if mode_label not in (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG):
+        if self._saso_t3_section is not None:
+            self._saso_t3_section.cancel_pending()
+        if mode_label not in (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG, MODE_SASO_T3):
             mode_label = MODE_ISO_ISEER_2POINT
             self._mode_combo.set(mode_label)
 
@@ -200,6 +207,15 @@ class Iso16358Tab(ttk.Frame):
                 self._two_point_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._two_point_section.result_panel
             self._two_point_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            return
+
+        if mode_label == MODE_SASO_T3:
+            self.sections = {}
+            if self._saso_t3_section is None:
+                self._saso_t3_section = IsoSasoT3Section(self._saso_t3_frame)
+                self._saso_t3_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+            self.result_panel = self._saso_t3_section.result_panel
+            self._saso_t3_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             return
 
         self._render_region(self._region_combo.get())

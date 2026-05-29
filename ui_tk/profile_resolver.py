@@ -15,6 +15,7 @@ from typing import Mapping, Tuple
 
 MODE_HONG_KONG = "Hong Kong"
 MODE_ISO_ISEER_2POINT = "ISO / ISEER 2-point"
+MODE_SASO_T3 = "SASO T3"
 
 
 REGION_BY_LABEL: Mapping[str, str] = {
@@ -35,10 +36,14 @@ _TWO_POINT_PROFILE_BY_LABEL: Mapping[str, str] = {
     "India ISEER": "india_iseer_cspf",
 }
 
+_PROFILE_BY_CALCULATION_MODE_LABEL: Mapping[str, str] = {
+    MODE_SASO_T3: "saso_t3_cspf",
+}
+
 
 def calculation_mode_labels() -> Tuple[str, ...]:
     """Return user-visible ISO profile selector labels."""
-    return (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG)
+    return (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG, MODE_SASO_T3)
 
 
 def region_labels() -> Tuple[str, ...]:
@@ -87,4 +92,12 @@ def resolve_two_point_profile_id(profile_label: str) -> str:
     profile = _TWO_POINT_PROFILE_BY_LABEL.get(profile_label)
     if profile is None:
         raise ValueError(f"Unsupported ISO/ISEER 2-point profile: {profile_label!r}")
+    return profile
+
+
+def resolve_calculation_mode_profile_id(mode_label: str) -> str:
+    """Map a single-profile calculation mode label to an internal profile_id."""
+    profile = _PROFILE_BY_CALCULATION_MODE_LABEL.get(mode_label)
+    if profile is None:
+        raise ValueError(f"Unsupported single-profile calculation mode: {mode_label!r}")
     return profile

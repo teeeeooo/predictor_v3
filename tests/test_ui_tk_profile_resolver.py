@@ -17,10 +17,11 @@ def test_region_labels_contains_hong_kong():
     assert "Hong Kong" in profile_resolver.region_labels()
 
 
-def test_calculation_mode_labels_keep_2point_default_then_hong_kong_profile():
+def test_calculation_mode_labels_keep_2point_default_then_hong_kong_then_saso_profile():
     assert profile_resolver.calculation_mode_labels() == (
         "ISO / ISEER 2-point",
         "Hong Kong",
+        "SASO T3",
     )
 
 
@@ -84,6 +85,20 @@ def test_resolve_two_point_profile_ids_from_display_labels():
 def test_resolve_two_point_profile_id_unsupported_raises():
     with pytest.raises(ValueError):
         profile_resolver.resolve_two_point_profile_id("SASO T3")
+
+
+def test_resolve_saso_t3_mode_to_internal_profile_id():
+    assert (
+        profile_resolver.resolve_calculation_mode_profile_id("SASO T3")
+        == "saso_t3_cspf"
+    )
+
+
+def test_resolve_calculation_mode_profile_id_rejects_non_single_modes():
+    with pytest.raises(ValueError):
+        profile_resolver.resolve_calculation_mode_profile_id("ISO / ISEER 2-point")
+    with pytest.raises(ValueError):
+        profile_resolver.resolve_calculation_mode_profile_id("Hong Kong")
 
 
 def test_resolver_module_does_not_require_tkinter_or_pyqt():
