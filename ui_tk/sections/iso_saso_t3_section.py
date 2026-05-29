@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Mapping
+from typing import Mapping
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,14 +13,7 @@ from ui_tk.excel_like_table_controller import ExcelLikeTableController
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
-from ui_tk.sections.detail_result_table import DetailResultTable
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
-from ui_tk.sections.result_snapshot import (
-    ResultSnapshot,
-    bin_details_snapshot,
-    cspf_summary,
-    point_snapshot,
-)
 from ui_tk.table_grid_model import parse_numeric_cell
 
 _POINTS: tuple[tuple[str, str, str], ...] = (
@@ -45,14 +38,7 @@ _DEFAULT_VALUES: Mapping[str, str] = {
 class IsoSasoT3Section:
     """SASO T3 input, optional 35 Min toggle, and scenario comparison."""
 
-    def __init__(
-        self,
-        parent: tk.Widget,
-        *,
-        on_detail_visibility_changed: Callable[[], None] | None = None,
-    ) -> None:
-        self._on_detail_visibility_changed = on_detail_visibility_changed
-        self.result_snapshots: tuple[ResultSnapshot, ...] = ()
+    def __init__(self, parent: tk.Widget) -> None:
         self._frame = ttk.LabelFrame(parent, text="SASO T3 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -97,19 +83,6 @@ class IsoSasoT3Section:
             row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self._detail_visible = tk.BooleanVar(master=self._frame, value=False)
-        self.detail_toggle = ttk.Checkbutton(
-            self._frame,
-            text="상세 결과",
-            variable=self._detail_visible,
-            command=self._on_detail_toggled,
-        )
-        self.detail_toggle.surface_role = "saso_t3_detail_toggle"
-        self.detail_toggle.grid(
-            row=4, column=0, sticky="w", padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
-        )
-        self.detail_table = DetailResultTable(self._frame)
 
         self.input_table.set_values(_DEFAULT_VALUES)
         self.input_controller = ExcelLikeTableController(self.input_table)
@@ -128,47 +101,28 @@ class IsoSasoT3Section:
     def recalculate_now(self) -> None:
         required_measured, required_error = self._read_required_inputs()
         if required_error is not None:
-            self.result_snapshots = ()
             self.result_table.set_status(required_error)
-            self.detail_table.set_status(required_error)
             return
 
-        required_row, required_snapshot, required_error = self._calculate_required_row(
-            required_measured
-        )
+        required_row, required_error = self._calculate_required_row(required_measured)
         if required_error is not None:
-            self.result_snapshots = ()
             self.result_table.set_status(required_error)
-            self.detail_table.set_status(required_error)
             return
 
         rows = [required_row]
-        snapshots = [required_snapshot]
         status = "자동 계산 완료"
         if self.optional_min_enabled.get():
             optional_measured, optional_error = self._read_optional_inputs(required_measured)
             if optional_error is None:
-                optional_row, optional_snapshot, optional_error = self._calculate_optional_row(
+                optional_row, optional_error = self._calculate_optional_row(
                     optional_measured
                 )
             if optional_error is not None:
                 rows.append(_optional_error_row(optional_error))
-                snapshots.append(
-                    ResultSnapshot(
-                        label="With 35 Min (4-point)",
-                        points=[],
-                        summary={},
-                        bin_details=None,
-                        status="입력 오류: 35 Min 숫자 입력을 확인하세요.",
-                    )
-                )
                 status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
             else:
                 rows.append(optional_row)
-                snapshots.append(optional_snapshot)
-        self.result_snapshots = tuple(snapshot for snapshot in snapshots if snapshot)
         self.result_table.set_rows(tuple(rows), status=status)
-        self.detail_table.set_snapshots(self.result_snapshots)
 
     def _read_required_inputs(
         self,
@@ -201,7 +155,7 @@ class IsoSasoT3Section:
 
     def _calculate_required_row(
         self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], ResultSnapshot | None, str | None]:
+    ) -> tuple[tuple[str, ...], str | None]:
         try:
             calc = create_calculator_for_profile(
                 profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
@@ -210,15 +164,13 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "Required only (3-point)", measured, result, include_min=False
-            ), _saso_result_snapshot(
-                "Required only (3-point)", measured, result, include_min=False
             ), None
         except Exception:
-            return (), None, "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
+            return (), "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
 
     def _calculate_optional_row(
         self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], ResultSnapshot | None, str | None]:
+    ) -> tuple[tuple[str, ...], str | None]:
         try:
             calc = create_calculator_for_profile(
                 profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
@@ -227,11 +179,9 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "With 35 Min (4-point)", measured, result, include_min=True
-            ), _saso_result_snapshot(
-                "With 35 Min (4-point)", measured, result, include_min=True
             ), None
         except Exception:
-            return (), None, "계산 오류"
+            return (), "계산 오류"
 
     def _on_optional_min_toggled(self) -> None:
         self._sync_optional_min_state()
@@ -241,20 +191,6 @@ class IsoSasoT3Section:
         state = tk.NORMAL if self.optional_min_enabled.get() else tk.DISABLED
         for field_key in ("min_35_capacity", "min_35_power"):
             self.input_table.editable_entries[field_key].configure(state=state)
-
-    def _on_detail_toggled(self) -> None:
-        if self._detail_visible.get():
-            self.detail_table.grid(
-                row=5,
-                column=0,
-                sticky="ew",
-                padx=ISO_SECTION_PADX,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-        else:
-            self.detail_table.grid_remove()
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -284,29 +220,6 @@ def _saso_result_row(
         _metric_value(result, "cspf"),
         _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
         _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
-    )
-
-
-def _saso_result_snapshot(
-    label: str,
-    measured: Mapping[str, Mapping[str, float]],
-    result: Mapping[str, object],
-    *,
-    include_min: bool,
-) -> ResultSnapshot:
-    points = [
-        point_snapshot("46 Full", measured, "46_full"),
-        point_snapshot("35 Full", measured, "35_full"),
-        point_snapshot("35 Half", measured, "35_half"),
-    ]
-    if include_min:
-        points.append(point_snapshot("35 Min", measured, "35_min"))
-    return ResultSnapshot(
-        label=label,
-        points=points,
-        summary=cspf_summary(result),
-        bin_details=bin_details_snapshot(result),
-        status=None,
     )
 
 

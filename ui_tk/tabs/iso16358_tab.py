@@ -187,9 +187,6 @@ class Iso16358Tab(ttk.Frame):
         self.update_idletasks()
         self._scrollable.reset_scroll_position()
 
-    def _on_detail_visibility_changed(self) -> None:
-        self.after_idle(self._fit_toplevel_to_current_content)
-
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()
         self._hong_kong_frame.pack_forget()
@@ -206,10 +203,7 @@ class Iso16358Tab(ttk.Frame):
         if mode_label == MODE_ISO_ISEER_2POINT:
             self.sections = {}
             if self._two_point_section is None:
-                self._two_point_section = IsoIseer2PointSection(
-                    self._two_point_frame,
-                    on_detail_visibility_changed=self._on_detail_visibility_changed,
-                )
+                self._two_point_section = IsoIseer2PointSection(self._two_point_frame)
                 self._two_point_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._two_point_section.result_panel
             self._two_point_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -218,10 +212,7 @@ class Iso16358Tab(ttk.Frame):
         if mode_label == MODE_SASO_T3:
             self.sections = {}
             if self._saso_t3_section is None:
-                self._saso_t3_section = IsoSasoT3Section(
-                    self._saso_t3_frame,
-                    on_detail_visibility_changed=self._on_detail_visibility_changed,
-                )
+                self._saso_t3_section = IsoSasoT3Section(self._saso_t3_frame)
                 self._saso_t3_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._saso_t3_section.result_panel
             self._saso_t3_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
