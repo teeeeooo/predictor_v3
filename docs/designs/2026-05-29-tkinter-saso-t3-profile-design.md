@@ -16,7 +16,7 @@ Relevant evidence:
 - `data/region_configs/saso.json` is a SASO / ISO 16358-1 T3 cooling profile with `reference_point="46_full"`, `t_100_load=46.0`, and default `cspf_test_profile.test_selection="with_optional_test"`.
 - `ui/calculators_2point.py` `IsoCspfSingleWidget` exposes `PROFILE_SASO_T3 = "SASO T3"`.
 - PyQt required inputs are `46 Full`, `35 Full`, `35 Half`; optional input adds `35 Min` via a `35°C Minimum 사용` checkbox.
-- PyQt result is a single row, not a two-profile comparison: `Region/Profile`, `EER 46-Full`, `EER 35-Full`, `EER 35-Half`, `EER 35-Min`, `CSPF`, `CSTL [kWh]`, `CSEC [kWh]`.
+- PyQt result is a single SASO row for the currently selected optional-min mode: `Region/Profile`, `EER 46-Full`, `EER 35-Full`, `EER 35-Half`, `EER 35-Min`, `CSPF`, `CSTL [kWh]`, `CSEC [kWh]`. The Tkinter design intentionally amends this into a 3-point vs 4-point scenario comparison.
 - When optional min is off, PyQt creates the calculator and overrides `calculator.config["cspf_test_profile"]["test_selection"] = "required_only"`.
 - PyQt detail/graph/trace exists through `RegionDetailTab`, but that is separate from the primary result and stays out of scope.
 
@@ -51,19 +51,43 @@ Add `SASO T3` as a third `ISO 프로파일` selector option:
 
 ## Result Display Proposal
 
-Use a SASO section-local single-result summary, not the 2-point comparison table.
+Use a SASO section-local comparison result surface. The comparison is not ISO-vs-India; it is `required_only` 3-point vs optional-min 4-point SASO.
 
-Suggested fields:
+Input policy:
 
+- Required input points: `46 Full`, `35 Full`, `35 Half`
+- Optional input point: `35 Min`
+
+Toggle policy:
+
+- Toggle off: `35 Min` input is disabled or ignored, and only the required-only 3-point result is shown.
+- Toggle on + valid `35 Min`: required-only 3-point and with-optional-min 4-point results are shown together.
+- Toggle on + invalid/incomplete `35 Min`: required-only 3-point result may remain visible; 4-point result must show a safe status/error without tracebacks, raw dicts, `None`, or stale success values.
+
+Comparison rows:
+
+- `Required only (3-point)`
+- `With 35 Min (4-point)`
+
+Comparison columns:
+
+- `Scenario`
 - `EER 46 Full`
 - `EER 35 Full`
 - `EER 35 Half`
-- `EER 35 Min` only when optional min is enabled, or displayed as `-`
+- `EER 35 Min`
 - `CSPF`
 - `CSTL [kWh]`
 - `CSEC [kWh]`
 
-`ResultPanel` can be reused for a single `ResultSummary` if the field count remains readable. If width becomes poor, add a SASO-only read-only table surface in the implementation slice rather than changing shared `ResultPanel`.
+The 3-point row displays `EER 35 Min` as `-`. Whether the 4-point row is hidden or shown as a disabled/status row when the toggle is off is a small 190-b implementation choice, but the UI must not confuse users about which scenario was calculated.
+
+Calculation policy:
+
+- 3-point result: create `saso_t3_cspf`, override the instance config `cspf_test_profile.test_selection = "required_only"`, and pass only `46 Full`, `35 Full`, `35 Half`.
+- 4-point result: create `saso_t3_cspf`, use optional/min-enabled selection, and pass `46 Full`, `35 Full`, `35 Half`, `35 Min`.
+- Do not modify the production config file.
+- Do not add a shared `ResultPanel` comparison mode or generic result framework.
 
 ## Candidate Comparison
 
@@ -73,13 +97,13 @@ Pros:
 
 - Matches the distinct SASO input shape.
 - Keeps ISO/ISEER 2-point and Hong Kong sections unchanged.
-- Small implementation slice: resolver label, one section, focused tests.
+- Small implementation slice: resolver label, one section, section-local scenario comparison table, focused tests.
 - Low rollback cost.
 
 Cons:
 
 - Some formatting/calculation helper duplication with 2-point section may appear.
-- Optional min toggle needs careful stale-value/status handling.
+- Optional min toggle needs careful stale-value/status handling for the 4-point row.
 
 Impact:
 
@@ -98,7 +122,7 @@ Pros:
 
 Cons:
 
-- Conflates two-profile comparison with single SASO profile.
+- Conflates ISO/India profile comparison with SASO 3-point/4-point scenario comparison.
 - Increases risk to the working ISO/ISEER 2-point default.
 - Optional `35 Min` makes the section more conditional and harder to reason about.
 
@@ -138,8 +162,9 @@ Choose Candidate A: add `SASO T3` to the profile selector with a dedicated SASO 
 Reasoning:
 
 - SASO has a distinct input shape and optional min toggle.
-- The primary result is a single profile row/summary, not a comparison across profiles.
+- The primary result is a SASO scenario comparison, not a shared ISO/ISEER profile comparison.
 - A dedicated section keeps the next implementation small and minimizes risk to Hong Kong and ISO/ISEER 2-point.
+- A section-local comparison table avoids changing shared `ResultPanel` or extracting a common framework.
 
 ## Implementation Slice Scope
 
@@ -151,8 +176,11 @@ Include:
 - Add `IsoSasoT3Section` or similarly named section.
 - Use `MetricInputTable` + `ExcelLikeTableController`.
 - Add optional `35 Min` toggle.
+- Add a section-local SASO result comparison table, for example `iso_saso_t3_result_table.py` if needed.
 - Call `create_calculator_for_profile(profile_id="saso_t3_cspf")`.
-- If optional min is off, set `cspf_test_profile.test_selection` to `required_only` on the calculator instance.
+- Always calculate the required-only 3-point result from required inputs.
+- When optional min is enabled and valid, also calculate the 4-point optional-min result.
+- If optional min is off, hide or clearly disable/status the 4-point row.
 - Render safe status for incomplete/invalid input.
 - Preserve profile-switch exact-fit and preferred size behavior.
 
@@ -161,8 +189,12 @@ Include:
 - Resolver includes `SASO T3` in calculation mode labels.
 - SASO mode renders required input columns and optional-min toggle.
 - Optional min toggle adds/removes or enables/disables `35 Min` input.
-- Default SASO calculation renders safe summary without raw dicts, tracebacks, `None`, or long floats.
-- Invalid input clears stale success values and shows safe status.
+- Toggle off renders the 3-point required-only result.
+- Toggle on + valid `35 Min` renders both `Required only (3-point)` and `With 35 Min (4-point)` rows.
+- 3-point row does not use the `35 Min` value.
+- 4-point row uses the `35 Min` value.
+- Toggle on + invalid `35 Min` keeps the 3-point result valid if possible and shows safe status/error for the 4-point scenario.
+- No stale success values, raw dicts, tracebacks, `None`, or long unformatted floats.
 - Switching among ISO/ISEER 2-point, Hong Kong, and SASO preserves existing modes.
 - Focused app smoke keeps PyQt unimported and profile-switch exact-fit stable.
 
@@ -179,6 +211,6 @@ Include:
 
 ## Risks / Open Questions
 
-- `ResultPanel` may be too wide if all SASO fields are shown in one compact row; implementation can keep it simple first and only introduce a SASO-local result table if needed.
+- The SASO comparison table is section-local by design; avoid changing shared `ResultPanel`.
 - Optional `35 Min` UX should avoid stale hidden values.
 - Future tabs/profiles can reuse the profile-switch exact-fit hook, but each tab/profile must own accurate preferred size calculation. Hidden tabs, graph/detail, and dynamic result surfaces need preferred-size ownership in their own design slices.
