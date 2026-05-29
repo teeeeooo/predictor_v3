@@ -23,15 +23,15 @@
   - `SASO T3` dedicated section with required-only 3-point vs optional-min 4-point comparison.
   - 190-b SASO T3 manual smoke completed with no issues found.
   - 192-b detail/trace/graph design slice completed.
-- Next: 192-c section-local detail table MVP.
+  - 192-c input-point detail foundation was reverted; it did not match the intended PyQt parity target.
+- Next: PyQt `bin_details` trace/detail/graph parity audit.
 
 ## Next Actions
 
-1. **192-c section-local detail table MVP**
-   - Add a collapsible detail pane to `IsoIseer2PointSection` and `IsoSasoT3Section`.
-   - Content: per-point capacity, power, EER/COP, plus annual energy summary from retained section-local `measured`/`result` snapshots (no core change).
-   - Default collapsed; user expands; one-shot window fit via existing `_fit_toplevel_to_current_content`.
-   - Graph, bin-details reference trace, and internal formula trace remain deferred per `docs/designs/2026-05-30-tkinter-detail-trace-graph-result-surface-design.md`.
+1. **PyQt bin_details trace/detail/graph parity audit**
+   - Re-audit PyQt reference `TraceTableModel`, `TraceDetailPanel`, and `BinGraphWidget` behavior from the `bin_details` data path.
+   - Decide the Tkinter parity target before adding any new result surface.
+   - Keep core/config/golden/profile registry unchanged unless a later design slice explicitly expands scope.
 
 ## Active Constraints
 
@@ -47,7 +47,7 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Graph and trace surfaces are deferred (bin-details reference trace/graph after detail MVP; internal formula trace after core data contract).
+- Graph and trace surfaces are deferred until the PyQt `bin_details` parity target is audited again; internal formula trace still needs a separate core data contract.
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
 - AS/NZS Excel compatibility Z-phase remains deferred.
