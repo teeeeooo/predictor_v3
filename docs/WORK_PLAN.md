@@ -24,14 +24,19 @@
   - 190-b SASO T3 manual smoke completed with no issues found.
   - 192-b detail/trace/graph design slice completed.
   - 192-c input-point detail foundation was reverted; it did not match the intended PyQt parity target.
-- Next: PyQt `bin_details` trace/detail/graph parity audit.
+  - 192-d ISO/ISEER `bin_details` trace table parity implemented.
+- Next: manual smoke for ISO/ISEER bin trace expand/collapse and profile selector switching.
 
 ## Next Actions
 
-1. **PyQt bin_details trace/detail/graph parity audit**
-   - Re-audit PyQt reference `TraceTableModel`, `TraceDetailPanel`, and `BinGraphWidget` behavior from the `bin_details` data path.
-   - Decide the Tkinter parity target before adding any new result surface.
-   - Keep core/config/golden/profile registry unchanged unless a later design slice explicitly expands scope.
+1. **192-d manual smoke**
+   - Check ISO/ISEER Bin trace expand/collapse in the real Tk shell.
+   - Switch trace selector between `ISO 16358-1` and `India ISEER`.
+   - Confirm profile switching remains safe while the trace pane is expanded.
+2. **Next Design First Gate selection**
+   - Candidate: bin graph parity.
+   - Candidate: SASO bin trace parity.
+   - Candidate: multi/batch design.
 
 ## Active Constraints
 
@@ -47,7 +52,7 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Graph and trace surfaces are deferred until the PyQt `bin_details` parity target is audited again; internal formula trace still needs a separate core data contract.
+- Graph and SASO trace remain deferred; internal formula trace still needs a separate core data contract.
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
 - AS/NZS Excel compatibility Z-phase remains deferred.
@@ -63,6 +68,8 @@
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
 - `result_reports/active/190b_saso-t3-tkinter-implementation.md`
   - Tracks the current SASO T3 implementation slice until manual smoke/lifecycle cleanup.
+- `result_reports/active/192d_iso-iseer-bin-details-trace-table-parity.md`
+  - Tracks ISO/ISEER `bin_details` trace table parity until manual smoke.
 
 ## Historical Notes / References
 
