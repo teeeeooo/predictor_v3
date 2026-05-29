@@ -67,6 +67,14 @@ def _two_point_tree_values(tab) -> list[tuple[str, ...]]:
     return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
 
 
+def _bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
+    return tab._two_point_section.trace_table.table_rows()
+
+
+def _joined_rows(rows: tuple[tuple[str, ...], ...]) -> str:
+    return "\n".join("\t".join(row) for row in rows)
+
+
 def _saso_text(tab) -> str:
     import tkinter as tk
 
@@ -176,6 +184,8 @@ def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
     assert len(rows) == 2
     assert {row[0] for row in rows} == {"ISO 16358-1", "India ISEER"}
     assert all(len(row) == len(table.column_labels) for row in rows)
+    assert not section.trace_table.is_visible()
+    assert section.trace_profile_combo.get() == "ISO 16358-1"
 
     text = _two_point_text(tab)
     for label in table.column_labels:
@@ -231,6 +241,92 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     section._auto_calc.flush_now()
     assert len(_two_point_tree_values(tab)) == 2
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
+
+
+def test_iso_iseer_bin_trace_expands_with_bin_details(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+    fit_calls = []
+    section._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+
+    assert section is not None
+    assert not section.trace_table.is_visible()
+    assert set(section._trace_results) == {"ISO 16358-1", "India ISEER"}
+    assert all(section._trace_results[label] for label in section._trace_results)
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert section.trace_table.is_visible()
+    assert fit_calls == ["fit"]
+    assert section.trace_table.column_labels == (
+        "Bin No",
+        "Temp [°C]",
+        "Hours",
+        "Load [W]",
+        "Capacity [W]",
+        "Power [W]",
+        "EER",
+        "CSTL [Wh]",
+        "CSEC [Wh]",
+    )
+    rows = _bin_trace_rows(tab)
+    assert rows
+    assert all(len(row) == len(section.trace_table.column_labels) for row in rows)
+    assert rows[0][0]
+    assert rows[0][1]
+    rendered = _joined_rows(rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert not section.trace_table.is_visible()
+    assert fit_calls == ["fit", "fit"]
+
+
+def test_iso_iseer_bin_trace_profile_selector_updates_rows(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    iso_rows = _bin_trace_rows(tab)
+    assert iso_rows
+
+    section.trace_profile_combo.set("India ISEER")
+    section._on_trace_profile_changed()
+    iseer_rows = _bin_trace_rows(tab)
+
+    assert section.trace_profile_combo.get() == "India ISEER"
+    assert iseer_rows
+    assert iseer_rows != iso_rows
+    rendered = _joined_rows(iseer_rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+
+def test_iso_iseer_bin_trace_invalid_input_clears_stale_rows(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert _bin_trace_rows(tab)
+
+    assert section.input_table.set_value("full_power", "bad") is True
+    section._auto_calc.flush_now()
+
+    assert section._trace_results == {}
+    assert _bin_trace_rows(tab) == ()
+    text = section.trace_table.as_text()
+    assert "입력 오류: 숫자 입력을 확인하세요." in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
 
 
 def test_saso_t3_profile_renders_default_result(tk_root):
@@ -387,6 +483,28 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
+
+
+def test_profile_switch_with_expanded_bin_trace_is_lifecycle_safe(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert section.trace_table.is_visible()
+    assert _bin_trace_rows(tab)
+
+    _select_mode(tab, "Hong Kong")
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+
+    _select_mode(tab, "SASO T3")
+    assert tab._saso_t3_section is not None
+    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    assert tab._two_point_section is section
+    assert section.trace_table.is_visible()
+    assert _bin_trace_rows(tab)
 
 
 def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):

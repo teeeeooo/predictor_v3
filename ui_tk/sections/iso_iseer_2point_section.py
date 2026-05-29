@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Callable, Mapping
 
 import tkinter as tk
 from tkinter import ttk
@@ -19,6 +19,7 @@ from ui_tk.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )
+from ui_tk.sections.bin_trace_table import BinTraceTable
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
@@ -27,7 +28,15 @@ from ui_tk.sections.iso_iseer_2point_result_table import (
 class IsoIseer2PointSection:
     """ISO 16358-1 and India ISEER 2-point input with auto-calc."""
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        on_trace_visibility_changed: Callable[[], None] | None = None,
+    ) -> None:
+        self._on_trace_visibility_changed = on_trace_visibility_changed
+        self._trace_results: dict[str, list[dict]] = {}
+        self._trace_status: str | None = "Trace data not available"
         self._frame = ttk.LabelFrame(parent, text="ISO / ISEER 2-point 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -70,6 +79,34 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
+        self._trace_controls = ttk.Frame(self._frame)
+        self._trace_controls.grid(
+            row=3,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.trace_toggle = ttk.Checkbutton(
+            self._trace_controls,
+            text="Bin trace",
+            variable=self._trace_visible,
+            command=self._on_trace_toggled,
+        )
+        self.trace_toggle.surface_role = "two_point_bin_trace_toggle"
+        self.trace_toggle.pack(side=tk.LEFT)
+        self.trace_profile_combo = ttk.Combobox(
+            self._trace_controls,
+            values=list(two_point_profile_labels()),
+            state="readonly",
+        )
+        self.trace_profile_combo.set(two_point_profile_labels()[0])
+        self.trace_profile_combo.pack(side=tk.LEFT, padx=(6, 0))
+        self.trace_profile_combo.bind(
+            "<<ComboboxSelected>>", self._on_trace_profile_changed
+        )
+        self.trace_table = BinTraceTable(self._frame)
         self.input_table.set_values(
             {
                 "full_capacity": "3600",
@@ -107,10 +144,12 @@ class IsoIseer2PointSection:
         try:
             measured = self._read_inputs()
         except ValueError:
+            self._clear_trace("입력 오류: 숫자 입력을 확인하세요.")
             self.result_table.set_status("입력 오류: 숫자 입력을 확인하세요.")
             return
 
         rows = []
+        trace_results = {}
         errors = []
         for profile_label in two_point_profile_labels():
             try:
@@ -118,12 +157,49 @@ class IsoIseer2PointSection:
                 calc = create_calculator_for_profile(profile_id=profile_id)
                 result = calc.calculate_cspf(measured)
                 rows.append(_two_point_result_row(profile_label, measured, result))
+                trace_results[profile_label] = _bin_details(result)
             except Exception as exc:
                 errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
         if errors:
+            self._clear_trace("계산 오류")
             self.result_table.set_status("오류: " + " / ".join(errors))
             return
+        self._trace_results = trace_results
+        self._trace_status = None
+        if self.trace_profile_combo.get() not in self._trace_results:
+            self.trace_profile_combo.set(two_point_profile_labels()[0])
+        self._update_trace_table()
         self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
+
+    def _on_trace_toggled(self) -> None:
+        if self._trace_visible.get():
+            self._update_trace_table()
+            self.trace_table.grid(
+                row=4,
+                column=0,
+                sticky="ew",
+                padx=ISO_SECTION_PADX,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+        else:
+            self.trace_table.grid_remove()
+        if self._on_trace_visibility_changed is not None:
+            self._on_trace_visibility_changed()
+
+    def _on_trace_profile_changed(self, _event=None) -> None:
+        self._update_trace_table()
+
+    def _update_trace_table(self) -> None:
+        if self._trace_status is not None:
+            self.trace_table.set_status(self._trace_status)
+            return
+        selected = self.trace_profile_combo.get() or two_point_profile_labels()[0]
+        self.trace_table.set_data(self._trace_results.get(selected, ()))
+
+    def _clear_trace(self, status: str) -> None:
+        self._trace_results = {}
+        self._trace_status = status
+        self._update_trace_table()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -143,6 +219,13 @@ def _two_point_result_row(
         _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
         _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
     )
+
+
+def _bin_details(result: Mapping[str, object]) -> list[dict]:
+    raw = result.get("bin_details")
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, Mapping)]
 
 
 def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:
