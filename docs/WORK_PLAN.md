@@ -16,23 +16,21 @@
 
 ## Current Focus
 
-- Tkinter calculator ISO profile expansion is the active UI track.
+- Tkinter calculator ISO profile expansion arc is complete.
 - Completed in the current arc:
-  - `ISO / ISEER 2-point` is the default ISO profile.
-  - `Hong Kong` remains available with CSPF/HSPF metric sub-tabs and existing result behavior.
-  - ISO/ISEER 2-point results use a section-local read-only comparison table.
-  - Profile switching uses rendered preferred-size exact-fit, one measured-overflow correction, and scroll reset.
-  - `SASO T3` profile/section is implemented with required-only 3-point vs optional-min 4-point comparison.
+  - `ISO / ISEER 2-point` default profile with section-local comparison table.
+  - `Hong Kong` CSPF/HSPF metric sub-tabs unchanged.
+  - `SASO T3` dedicated section with required-only 3-point vs optional-min 4-point comparison.
   - 190-b SASO T3 manual smoke completed with no issues found.
-- Current gap: choose the next Design First Gate slice.
+- Next: 192-b detail/trace/graph design slice.
 
 ## Next Actions
 
-1. Choose the next Design First Gate slice:
-   - SASO follow-up polish if needed.
-   - multi/batch design.
-   - detail/trace/graph design.
-   - EN/AHRI Tkinter expansion design.
+1. **192-b detail/trace/graph design slice**
+   - Design richer result surfaces (detail table, trace, and/or graph) for existing ISO/ISEER 2-point and SASO T3 single-calculation sections.
+   - Decide surface placement, preferred-size ownership for dynamic surfaces, and trace/detail data contract without core changes.
+   - Review `docs/ui_ux/00_UI_UX_SYSTEM.md`, `03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and `01_TOOLKIT_SELECTION_POLICY.md` for placement and tooling constraints.
+   - Keep core/config/golden/fixture changes out of this design slice.
 
 ## Active Constraints
 
@@ -47,7 +45,7 @@
 
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
-- Graph/detail/trace surfaces are deferred.
+- SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
 - AS/NZS Excel compatibility Z-phase remains deferred.
