@@ -107,22 +107,48 @@ def apply_overflow_correction(root: tk.Tk, tab: SupportsVerticalOverflowDelta) -
         root.update_idletasks()
 
 
-def fit_window_to_preferred_content(
+def _geometry_size(geometry: str) -> tuple[int, int]:
+    size_part = geometry.split("+")[0]
+    return tuple(int(v) for v in size_part.split("x"))
+
+
+def grow_window_to_preferred_content(
     root: tk.Tk, preferred_content_size: tuple[int, int]
 ) -> None:
-    """One-shot content fit for explicit profile/content switches.
+    """One-shot grow-only content fit for explicit profile/content switches.
 
     This is intentionally event-driven by callers, not bound to
     ``<Configure>``. It reuses the initial geometry screen-cap policy
-    with the preferred content size as the requested baseline.
+    while preserving the current window size as the minimum baseline.
     """
     root.update_idletasks()
+    current_w, current_h = _geometry_size(root.geometry())
     geom = initial_window_geometry(
-        preferred_content_size[0],
-        preferred_content_size[1],
+        current_w,
+        current_h,
         root.winfo_screenwidth(),
         root.winfo_screenheight(),
+        preferred_content_size,
     )
-    if root.geometry() != geom:
+    new_w, new_h = _geometry_size(geom)
+    if new_w > current_w or new_h > current_h:
         root.geometry(geom)
+        root.update_idletasks()
+
+
+def grow_window_by_vertical_delta(root: tk.Tk, delta: int) -> None:
+    """Grow window height by a measured overflow delta once, capped to screen."""
+    if delta <= 0:
+        return
+    root.update_idletasks()
+    geom = root.geometry()
+    size_part = geom.split("+")[0]
+    pos_part = "+".join(geom.split("+")[1:])
+    w, h = (int(v) for v in size_part.split("x"))
+    screen_height = root.winfo_screenheight()
+    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
+    new_h = min(h + delta, max_height)
+    if new_h > h:
+        root.geometry(f"{w}x{new_h}+{pos_part}")
         root.update_idletasks()

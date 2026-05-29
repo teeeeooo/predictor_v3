@@ -20,7 +20,8 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.window_geometry import (
     apply_overflow_correction,
     centered_geometry,
-    fit_window_to_preferred_content,
+    grow_window_by_vertical_delta,
+    grow_window_to_preferred_content,
     initial_window_geometry,
     resolve_min_window_size,
 )
@@ -354,7 +355,7 @@ def test_overflow_correction_grows_window_once():
         root.destroy()
 
 
-def test_fit_window_to_preferred_content_applies_one_shot_geometry():
+def test_grow_window_to_preferred_content_is_grow_only():
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
@@ -363,17 +364,43 @@ def test_fit_window_to_preferred_content_applies_one_shot_geometry():
     try:
         root.geometry("300x250")
         root.update_idletasks()
-        fit_window_to_preferred_content(root, (640, 480))
+        grow_window_to_preferred_content(root, (640, 480))
         root.update_idletasks()
         assert root.geometry() == initial_window_geometry(
-            640, 480, root.winfo_screenwidth(), root.winfo_screenheight()
+            300,
+            250,
+            root.winfo_screenwidth(),
+            root.winfo_screenheight(),
+            (640, 480),
         )
 
-        fit_window_to_preferred_content(root, (320, 260))
+        before = root.geometry()
+        grow_window_to_preferred_content(root, (320, 260))
         root.update_idletasks()
-        assert root.geometry() == initial_window_geometry(
-            320, 260, root.winfo_screenwidth(), root.winfo_screenheight()
-        )
+        assert root.geometry() == before
+    finally:
+        root.destroy()
+
+
+def test_grow_window_by_vertical_delta_keeps_width_and_grows_height():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        root.geometry("500x300")
+        root.update_idletasks()
+        before = root.geometry()
+        before_w = int(before.split("x")[0])
+        before_h = int(before.split("x")[1].split("+")[0])
+        grow_window_by_vertical_delta(root, 80)
+        root.update_idletasks()
+        after = root.geometry()
+        after_w = int(after.split("x")[0])
+        after_h = int(after.split("x")[1].split("+")[0])
+        assert after_w == before_w
+        assert after_h >= before_h
     finally:
         root.destroy()
 

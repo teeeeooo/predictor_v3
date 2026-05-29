@@ -94,6 +94,10 @@ class ScrollableFrame(tk.Frame):
         canvas_height = self._canvas.winfo_height()
         return max(0, content_height - canvas_height)
 
+    def reset_scroll_position(self) -> None:
+        """Move the viewport back to the top of the content."""
+        self._canvas.yview_moveto(0)
+
     def _update_scrollbar_visibility(self, _event=None) -> None:
         """Show scrollbar only when content exceeds canvas viewport."""
         bbox = self._canvas.bbox("all")
