@@ -21,6 +21,30 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-05-30 — Tkinter ISO profile expansion and UI stabilization
+
+### Tried
+- Tkinter ISO tab expansion was split into design, implementation, manual smoke, and lifecycle slices. The arc covered ISO / ISEER 2-point adoption, Hong Kong coexistence, result comparison, profile-switch geometry, Design First Gate usage, and SASO T3 design.
+
+### Result
+- `ISO / ISEER 2-point` is the default ISO profile and renders a section-local comparison table for `ISO 16358-1` and `India ISEER`.
+- `Hong Kong` keeps CSPF/HSPF metric sub-tabs and existing result behavior.
+- Profile switching uses rendered preferred-size exact-fit with one measured-overflow correction and scroll reset.
+- SASO T3 is designed as a dedicated section with required-only 3-point vs optional-min 4-point comparison, but is not implemented yet.
+
+### Failed / Risk
+- Grow-only profile-switch fit avoided shrink but left awkward blank space when returning from Hong Kong to ISO/ISEER 2-point, so it was replaced by default exact-fit.
+- Future dynamic surfaces such as graph/detail need their own preferred-size owner before geometry can be considered stable for those modes.
+
+### Decision
+- Keep specialized result comparison surfaces section-local. Do not change `ResultPanel` or extract a generic comparison framework until repeated needs justify it.
+- Use Design First Gate for larger profile/result additions; keep hotfixes small and evidence-driven.
+
+### Lesson
+- Profile-specific UI polish needs manual smoke after focused tests because measured content height, scroll state, and preferred-size policy can look correct in isolation but awkward during profile switching.
+
+---
+
 ## 2026-05-28 — Tkinter calculator UX implementation arc + metric sub-tab amendment
 
 ### Decision

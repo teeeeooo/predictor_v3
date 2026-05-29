@@ -461,6 +461,34 @@ entries:
       - HSPF
     assertionStatus: verified
     source: result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md (covered reports 166-179e; Key Decisions)
+
+  - type: decision
+    topic: Tkinter ISO profile expansion and result comparison
+    content: The Tkinter ISO tab now uses an ISO profile selector with ISO / ISEER 2-point as the default and Hong Kong as the existing CSPF/HSPF profile. ISO / ISEER 2-point results are displayed in a section-local read-only comparison table for ISO 16358-1 and India ISEER. Hong Kong keeps the existing ResultPanel path. Profile-switch geometry exact-fits the current rendered preferred size, applies one measured-overflow correction if needed, and resets scroll to top.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - ISO profile
+      - ISO / ISEER 2-point
+      - Hong Kong
+      - result comparison
+      - window geometry
+    assertionStatus: verified
+    source: result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md (covered reports 184-190a2; Main Decisions and Implementation Outcomes)
+
+  - type: decision
+    topic: SASO T3 Tkinter design direction
+    content: SASO T3 is designed as a future dedicated Tkinter ISO section using the existing saso_t3_cspf profile/config path. Required inputs are 46 Full, 35 Full, and 35 Half; optional input is 35 Min. The intended result surface compares Required only (3-point) and With 35 Min (4-point) scenarios. This is a design decision only; SASO T3 implementation remains pending.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - SASO T3
+      - Design First Gate
+      - required-only
+      - optional min
+      - result comparison
+    assertionStatus: verified
+    source: result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md (covered reports 190a and 190a2; SASO T3 Design Decision)
 ```
 
 ## Known Gaps
