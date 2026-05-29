@@ -64,7 +64,7 @@ Tkinter ISO profile expansion arc is complete:
 ## Deferred Candidates
 
 - **SASO follow-up polish**: No concrete issue after 190-b smoke. Hold.
-- **Multi/batch**: High UI churn and result-structure risk. Needs its own design slice later.
+- **Multi/batch**: Input repetition UI, result persistence, and window lifecycle remain, but the UI can be a separate Toplevel window isolating it from the ISO tab geometry. Needs its own design slice later.
 - **EN/AHRI expansion**: High core/config footprint. Deferred until the current ISO arc stabilizes.
 
 ## Next Action
