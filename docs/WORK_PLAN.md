@@ -22,20 +22,18 @@
   - `Hong Kong` remains available with CSPF/HSPF metric sub-tabs and existing result behavior.
   - ISO/ISEER 2-point results use a section-local read-only comparison table.
   - Profile switching uses rendered preferred-size exact-fit, one measured-overflow correction, and scroll reset.
-  - SASO T3 behavior is designed but not implemented.
-- Current implementation gap: `SASO T3` Tkinter profile/section.
+  - `SASO T3` profile/section is implemented with required-only 3-point vs optional-min 4-point comparison.
+- Current gap: 190-b needs manual smoke before choosing the next Design First Gate slice.
 
 ## Next Actions
 
-1. **190-b SASO T3 implementation slice**
-   - Add a dedicated `SASO T3` Tkinter section under the ISO profile selector.
-   - Use existing `saso_t3_cspf` profile/config path; do not modify core/config/golden files.
-   - Required inputs: `46 Full`, `35 Full`, `35 Half`.
-   - Optional input: `35 Min`.
-   - Result display: section-local comparison surface for `Required only (3-point)` vs `With 35 Min (4-point)`.
-   - Keep `ISO / ISEER 2-point` and `Hong Kong` behavior unchanged.
-2. Manual smoke after 190-b implementation.
-3. Choose the next Design First Gate slice after SASO T3 smoke:
+1. Manual smoke for **190-b SASO T3 implementation slice**:
+   - Confirm `SASO T3` appears under the ISO profile selector.
+   - Confirm required-only 3-point result with optional 35 Min off.
+   - Confirm 3-point and 4-point rows with optional 35 Min on.
+   - Confirm invalid required/optional inputs show safe status without stale success values.
+   - Confirm `ISO / ISEER 2-point` and `Hong Kong` still switch and render normally.
+2. Choose the next Design First Gate slice after SASO T3 smoke:
    - SASO follow-up polish if needed.
    - multi/batch design.
    - detail/trace/graph design.
@@ -45,7 +43,7 @@
 
 - Use Design First Gate for larger UI/profile/result work; hotfix and micro cleanup stay scoped exceptions.
 - Apply Diff / Read Budget: reuse already-confirmed policy/design context, inspect targeted functions/sections only, and avoid long compliance reprints.
-- For the SASO UI implementation slice, avoid core calculator, profile registry, region config, golden, and fixture changes unless a separate design slice approves them.
+- For SASO follow-ups, avoid core calculator, profile registry, region config, golden, and fixture changes unless a separate design slice approves them.
 - Do not run full pytest unless explicitly requested; use focused smoke and relevant tests.
 - Keep comparison result surfaces section-local until repeated reuse proves a shared framework is necessary.
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
@@ -68,6 +66,8 @@
   - Covers Tkinter calculator UX implementation, Excel-like table behavior, metric sub-tabs, and smoke-loop lessons through reports 166~179e.
 - `result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md`
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
+- `result_reports/active/190b_saso-t3-tkinter-implementation.md`
+  - Tracks the current SASO T3 implementation slice until manual smoke/lifecycle cleanup.
 
 ## Historical Notes / References
 
