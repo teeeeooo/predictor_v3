@@ -20,8 +20,8 @@ Tkinter ISO profile expansion arc is complete:
 
 ### B. Multi/batch design
 - **Value**: Medium-high (repeated input + grouped results).
-- **Risk**: Medium. Input repetition UI, result persistence, and memory/performance surface remain, but the UI can be a separate Toplevel window rather than embedding inside the existing ISO tab. This isolates it from the current ISO tab geometry and section structure.
-- **Design First**: Required. Result structure, input-loop UI, and window lifecycle still need design.
+- **Risk**: Medium. The UI can be a separate Toplevel window rather than embedding inside the existing ISO tab, which isolates it from the current ISO tab geometry and section structure. Input repetition UI, result persistence, and window lifecycle still need their own design.
+- **Design First**: Required. Result structure, input-loop UI, result persistence, and window lifecycle still need design.
 - **Core/config/golden impact**: Low-medium; UI surface churn is isolated to the new window.
 - **Verdict**: Deferred. Needs dedicated design slice later.
 
@@ -64,7 +64,7 @@ Tkinter ISO profile expansion arc is complete:
 ## Deferred Candidates
 
 - **SASO follow-up polish**: No concrete issue after 190-b smoke. Hold.
-- **Multi/batch**: Input repetition UI, result persistence, and window lifecycle remain, but the UI can be a separate Toplevel window isolating it from the ISO tab geometry. Needs its own design slice later.
+- **Multi/batch**: Can be isolated in a separate Toplevel window, away from the ISO tab geometry/section structure. Input repetition UI, result persistence, and window lifecycle need a dedicated design slice later.
 - **EN/AHRI expansion**: High core/config footprint. Deferred until the current ISO arc stabilizes.
 
 ## Next Action
