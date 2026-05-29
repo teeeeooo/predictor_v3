@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Callable, Mapping
 
 import tkinter as tk
 from tkinter import ttk
@@ -19,15 +19,29 @@ from ui_tk.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )
+from ui_tk.sections.detail_result_table import DetailResultTable
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
+)
+from ui_tk.sections.result_snapshot import (
+    ResultSnapshot,
+    bin_details_snapshot,
+    cspf_summary,
+    point_snapshot,
 )
 
 
 class IsoIseer2PointSection:
     """ISO 16358-1 and India ISEER 2-point input with auto-calc."""
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        on_detail_visibility_changed: Callable[[], None] | None = None,
+    ) -> None:
+        self._on_detail_visibility_changed = on_detail_visibility_changed
+        self.result_snapshots: tuple[ResultSnapshot, ...] = ()
         self._frame = ttk.LabelFrame(parent, text="ISO / ISEER 2-point 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -70,6 +84,22 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._detail_visible = tk.BooleanVar(master=self._frame, value=False)
+        self.detail_toggle = ttk.Checkbutton(
+            self._frame,
+            text="상세 결과",
+            variable=self._detail_visible,
+            command=self._on_detail_toggled,
+        )
+        self.detail_toggle.surface_role = "two_point_detail_toggle"
+        self.detail_toggle.grid(
+            row=3,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.detail_table = DetailResultTable(self._frame)
         self.input_table.set_values(
             {
                 "full_capacity": "3600",
@@ -107,10 +137,13 @@ class IsoIseer2PointSection:
         try:
             measured = self._read_inputs()
         except ValueError:
+            self.result_snapshots = ()
             self.result_table.set_status("입력 오류: 숫자 입력을 확인하세요.")
+            self.detail_table.set_status("입력 오류: 숫자 입력을 확인하세요.")
             return
 
         rows = []
+        snapshots = []
         errors = []
         for profile_label in two_point_profile_labels():
             try:
@@ -118,12 +151,31 @@ class IsoIseer2PointSection:
                 calc = create_calculator_for_profile(profile_id=profile_id)
                 result = calc.calculate_cspf(measured)
                 rows.append(_two_point_result_row(profile_label, measured, result))
+                snapshots.append(_two_point_result_snapshot(profile_label, measured, result))
             except Exception as exc:
                 errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
         if errors:
+            self.result_snapshots = ()
             self.result_table.set_status("오류: " + " / ".join(errors))
+            self.detail_table.set_status("계산 오류")
             return
+        self.result_snapshots = tuple(snapshots)
         self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
+        self.detail_table.set_snapshots(self.result_snapshots)
+
+    def _on_detail_toggled(self) -> None:
+        if self._detail_visible.get():
+            self.detail_table.grid(
+                row=4,
+                column=0,
+                sticky="ew",
+                padx=ISO_SECTION_PADX,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+        else:
+            self.detail_table.grid_remove()
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -142,6 +194,23 @@ def _two_point_result_row(
         _metric_value(result, "cspf"),
         _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
         _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
+    )
+
+
+def _two_point_result_snapshot(
+    label: str,
+    measured: Mapping[str, Mapping[str, float]],
+    result: Mapping[str, object],
+) -> ResultSnapshot:
+    return ResultSnapshot(
+        label=label,
+        points=[
+            point_snapshot("35 Full", measured, "35_full"),
+            point_snapshot("35 Half", measured, "35_half"),
+        ],
+        summary=cspf_summary(result),
+        bin_details=bin_details_snapshot(result),
+        status=None,
     )
 
 

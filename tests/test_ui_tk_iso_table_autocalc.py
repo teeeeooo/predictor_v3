@@ -78,6 +78,14 @@ def _saso_tree_values(tab) -> list[tuple[str, ...]]:
     return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
 
 
+def _detail_rows(detail_table) -> tuple[tuple[str, ...], ...]:
+    return detail_table.table_rows()
+
+
+def _joined_rows(rows: tuple[tuple[str, ...], ...]) -> str:
+    return "\n".join("\t".join(row) for row in rows)
+
+
 def _label_texts(widget) -> list[str]:
     labels = []
     stack = [widget]
@@ -233,6 +241,71 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
 
 
+def test_iso_iseer_detail_table_expands_with_snapshot_rows(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+    fit_calls = []
+    tab._fit_toplevel_to_current_content = lambda: fit_calls.append("fit")
+
+    assert section is not None
+    assert not section.detail_table.is_visible()
+    assert [snapshot.label for snapshot in section.result_snapshots] == [
+        "ISO 16358-1",
+        "India ISEER",
+    ]
+    assert all(snapshot.bin_details is not None for snapshot in section.result_snapshots)
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert section.detail_table.is_visible()
+    assert fit_calls == ["fit"]
+    rows = _detail_rows(section.detail_table)
+    assert len(rows) == 4
+    assert [row[0] for row in rows].count("ISO 16358-1") == 2
+    assert [row[0] for row in rows].count("India ISEER") == 2
+    assert [row[1] for row in rows] == [
+        "35 Full",
+        "35 Half",
+        "35 Full",
+        "35 Half",
+    ]
+    assert rows[0][2:5] == ("3600", "900", "4.00")
+    assert all(row[5] != "-" and row[6] != "-" and row[7] != "-" for row in rows)
+    rendered = _joined_rows(rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert not section.detail_table.is_visible()
+    assert fit_calls == ["fit", "fit"]
+
+
+def test_iso_iseer_detail_invalid_input_clears_stale_snapshot_rows(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+    assert _detail_rows(section.detail_table)
+
+    assert section.input_table.set_value("full_power", "bad") is True
+    section._auto_calc.flush_now()
+
+    assert section.result_snapshots == ()
+    assert _detail_rows(section.detail_table) == ()
+    text = section.detail_table.as_text()
+    assert "입력 오류: 숫자 입력을 확인하세요." in text
+    assert "ISO 16358-1" not in text
+    assert "India ISEER" not in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
 def test_saso_t3_profile_renders_default_result(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
@@ -279,6 +352,40 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
+
+
+def test_saso_t3_detail_table_combines_required_and_optional_snapshots(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    assert section is not None
+    assert not section.detail_table.is_visible()
+    assert [snapshot.label for snapshot in section.result_snapshots] == [
+        "Required only (3-point)"
+    ]
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+    rows = _detail_rows(section.detail_table)
+    assert len(rows) == 3
+    assert {row[0] for row in rows} == {"Required only (3-point)"}
+    assert [row[1] for row in rows] == ["46 Full", "35 Full", "35 Half"]
+    assert "35 Min" not in {row[1] for row in rows}
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    section._auto_calc.flush_now()
+
+    rows = _detail_rows(section.detail_table)
+    assert len(rows) == 7
+    assert [row[0] for row in rows].count("Required only (3-point)") == 3
+    assert [row[0] for row in rows].count("With 35 Min (4-point)") == 4
+    assert "35 Min" in [row[1] for row in rows]
+    assert all(row[5] != "-" and row[6] != "-" and row[7] != "-" for row in rows)
+    rendered = _joined_rows(rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
 
 
 def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):
@@ -339,6 +446,41 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     assert "None" not in text
 
 
+def test_saso_t3_detail_optional_invalid_keeps_required_and_safe_status(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    assert section.input_table.set_value("min_35_power", "bad") is True
+    section._auto_calc.flush_now()
+
+    rows = _detail_rows(section.detail_table)
+    assert len(rows) == 4
+    assert [row[0] for row in rows].count("Required only (3-point)") == 3
+    optional_rows = [row for row in rows if row[0] == "With 35 Min (4-point)"]
+    assert optional_rows == [
+        (
+            "With 35 Min (4-point)",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "입력 오류: 35 Min 숫자 입력을 확인하세요.",
+        )
+    ]
+    rendered = _joined_rows(rows)
+    assert "Required only (3-point)" in rendered
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+
 def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
@@ -351,6 +493,28 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     assert _saso_tree_values(tab) == []
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "saso_t3_result_status"
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
+def test_saso_t3_detail_required_invalid_clears_all_snapshot_rows(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+    assert _detail_rows(section.detail_table)
+
+    assert section.input_table.set_value("full_46_power", "bad") is True
+    section._auto_calc.flush_now()
+
+    assert section.result_snapshots == ()
+    assert _detail_rows(section.detail_table) == ()
+    text = section.detail_table.as_text()
+    assert "입력 오류: 필수 시험점 숫자 입력을 확인하세요." in text
+    assert "Required only (3-point)" not in text
+    assert "With 35 Min (4-point)" not in text
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
@@ -387,6 +551,28 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
+
+
+def test_profile_switch_with_expanded_detail_is_lifecycle_safe(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+    assert section.detail_table.is_visible()
+
+    _select_mode(tab, "Hong Kong")
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+
+    _select_mode(tab, "SASO T3")
+    assert tab._saso_t3_section is not None
+    assert not tab._saso_t3_section.detail_table.is_visible()
+    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    assert tab._two_point_section is section
+    assert section.detail_table.is_visible()
+    assert len(_detail_rows(section.detail_table)) == 4
 
 
 def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
