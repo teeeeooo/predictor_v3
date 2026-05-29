@@ -25,18 +25,19 @@
   - 192-b detail/trace/graph design slice completed.
   - 192-c input-point detail foundation was reverted; it did not match the intended PyQt parity target.
   - 192-d ISO/ISEER `bin_details` trace table parity implemented.
-- Next: manual smoke for ISO/ISEER bin trace expand/collapse and profile selector switching.
+  - 192-d manual smoke completed with no issues found.
+- Next: SASO T3 `bin_details` trace table implementation.
 
 ## Next Actions
 
-1. **192-d manual smoke**
-   - Check ISO/ISEER Bin trace expand/collapse in the real Tk shell.
-   - Switch trace selector between `ISO 16358-1` and `India ISEER`.
-   - Confirm profile switching remains safe while the trace pane is expanded.
-2. **Next Design First Gate selection**
-   - Candidate: bin graph parity.
-   - Candidate: SASO bin trace parity.
-   - Candidate: multi/batch design.
+1. **SASO T3 bin_details trace table implementation**
+   - Add SASO trace one slice at a time, following the 192-d ISO/ISEER pattern.
+2. **Manual smoke**
+   - Check SASO trace expand/collapse, optional 35 Min states, and profile switching.
+3. **Table CSV export foundation**
+   - Add export for table-shaped result/trace surfaces after trace behavior settles.
+4. **Bin graph parity**
+   - Graph implementation remains a later slice; graph export follows graph parity.
 
 ## Active Constraints
 
@@ -52,7 +53,9 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Graph and SASO trace remain deferred; internal formula trace still needs a separate core data contract.
+- Hong Kong CSPF/HSPF trace needs a separate result-shape/data availability audit.
+- Graph export follows graph parity and may use SPOT-style HTML export.
+- Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
 - AS/NZS Excel compatibility Z-phase remains deferred.

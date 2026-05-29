@@ -90,12 +90,18 @@ Focused tests cover:
 - `git diff --check`: clean.
 - Process check after verification: no lingering pytest process; only the check command itself matched.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Real Tk shell smoke for ISO/ISEER Bin trace expand/collapse.
-- Switch trace selector between ISO and India ISEER.
-- Profile switch smoke while trace pane is expanded.
-- Visual check that table scrolling is usable on the target display.
+User manual smoke completed with no issues found:
+
+- App default profile remains `ISO / ISEER 2-point`.
+- ISO/ISEER 2-point comparison table remains normal.
+- Bin trace starts collapsed.
+- Expanding Bin trace shows the PyQt-reference bin-level table.
+- `ISO 16358-1` / `India ISEER` trace selection works.
+- Invalid input does not leave stale success trace rows.
+- Hong Kong / SASO switching keeps existing behavior normal.
+- Repeated expand/collapse has no window size, scroll, or resize hang issue.
 
 ## Excluded Scope
 
@@ -109,14 +115,16 @@ Focused tests cover:
 
 ## Next Action
 
-Run 192-d manual smoke, then choose the next Design First Gate slice from:
+Choose the next follow-up slice from:
 
-- bin graph parity
 - SASO bin trace parity
+- table CSV export foundation
+- bin graph parity
 - multi/batch design
 
 ## Commit / Push
 
 - Source/test implementation commit: `f935571 192-d: add ISO ISEER bin trace parity`
-- Docs/report commit: this report commit.
-- Push: pending at report finalization.
+- Docs/report commit: `623cde4 192-d: document ISO ISEER bin trace parity`
+- Manual smoke closeout commit: pending at closeout creation.
+- Push: completed for implementation/docs; closeout push pending at closeout creation.
