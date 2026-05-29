@@ -59,7 +59,12 @@ def _result_text(tab, metric: str) -> str:
 def _two_point_text(tab) -> str:
     import tkinter as tk
 
-    return tab._two_point_section.result_panel._text.get("1.0", tk.END).strip()
+    return tab._two_point_section.result_table._text.get("1.0", tk.END).strip()
+
+
+def _two_point_tree_values(tab) -> list[tuple[str, ...]]:
+    tree = tab._two_point_section.result_table.table
+    return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
 
 
 def _label_texts(widget) -> list[str]:
@@ -116,7 +121,7 @@ def test_iso_tab_defaults_to_2point_profile_with_results(tk_root):
     assert tab._mode_combo.get() == "ISO / ISEER 2-point"
     assert tab.sections == {}
     assert tab._two_point_section is not None
-    assert set(tab._two_point_section.result_panel.summary_tables) == {
+    assert set(tab._two_point_section.result_table.row_labels) == {
         "ISO 16358-1",
         "India ISEER",
     }
@@ -138,15 +143,26 @@ def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
     }
     assert isinstance(section.input_controller, ExcelLikeTableController)
 
-    panel = section.result_panel
-    assert set(panel.summary_tables) == {"ISO 16358-1", "India ISEER"}
-    for title in ("ISO 16358-1", "India ISEER"):
-        assert panel.summary_tables[title].surface_role == "summary_table"
-        labels = _label_texts(panel.summary_tables[title])
-        for label in ("EER Full", "EER Half", "CSPF/ISEER", "CSTL [kWh]", "CSEC [kWh]"):
-            assert label in labels
+    table = section.result_table
+    assert table.surface_role == "two_point_result_surface"
+    assert table.table.surface_role == "two_point_comparison_table"
+    assert table.column_labels == (
+        "Region/Profile",
+        "EER Full",
+        "EER Half",
+        "CSPF/ISEER",
+        "CSTL [kWh]",
+        "CSEC [kWh]",
+    )
+    assert table.row_labels == ("ISO 16358-1", "India ISEER")
+    rows = _two_point_tree_values(tab)
+    assert len(rows) == 2
+    assert {row[0] for row in rows} == {"ISO 16358-1", "India ISEER"}
+    assert all(len(row) == len(table.column_labels) for row in rows)
 
     text = _two_point_text(tab)
+    for label in table.column_labels:
+        assert label in text
     assert "ISO 16358-1" in text
     assert "India ISEER" in text
     assert "Traceback" not in text
@@ -159,15 +175,21 @@ def test_iso_iseer_2point_input_change_updates_both_summaries(tk_root):
     _select_mode(tab, "ISO / ISEER 2-point")
     section = tab._two_point_section
     before = _two_point_text(tab)
+    before_rows = _two_point_tree_values(tab)
 
     assert section.input_table.set_value("full_power", "1000") is True
     section._auto_calc.flush_now()
     after = _two_point_text(tab)
+    after_rows = _two_point_tree_values(tab)
 
     assert after != before
-    assert set(section.result_panel.summary_tables) == {"ISO 16358-1", "India ISEER"}
+    assert after_rows != before_rows
+    assert len(after_rows) == 2
+    assert {row[0] for row in after_rows} == {"ISO 16358-1", "India ISEER"}
     assert "ISO 16358-1" in after
     assert "India ISEER" in after
+    assert after.count("ISO 16358-1") == 1
+    assert after.count("India ISEER") == 1
 
 
 def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
@@ -183,11 +205,15 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
-    panel = section.result_panel
-    assert panel.summary_tables["ISO / ISEER"].surface_role == "status_surface"
-    assert panel.summary_status_labels["ISO / ISEER"].cget("text") == (
-        "입력 오류: 숫자 입력을 확인하세요."
-    )
+    assert _two_point_tree_values(tab) == []
+    assert section.result_table.row_labels == ()
+    assert section.result_table.status_label.surface_role == "two_point_result_status"
+    assert section.result_table.status_label.cget("text") == "입력 오류: 숫자 입력을 확인하세요."
+
+    assert section.input_table.set_value("full_power", "900") is True
+    section._auto_calc.flush_now()
+    assert len(_two_point_tree_values(tab)) == 2
+    assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
 
 
 def test_mode_switch_restores_hong_kong_metric_sections(tk_root):

@@ -19,8 +19,9 @@ from ui_tk.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )
-from ui_tk.result_models import ResultSummary, result_status
-from ui_tk.result_panel import ResultPanel
+from ui_tk.sections.iso_iseer_2point_result_table import (
+    IsoIseer2PointResultTable,
+)
 
 
 class IsoIseer2PointSection:
@@ -58,8 +59,11 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.result_panel = ResultPanel(self._frame, title="ISO / ISEER 결과")
-        self.result_panel.grid(
+        self.result_table = IsoIseer2PointResultTable(
+            self._frame, title="ISO / ISEER 결과"
+        )
+        self.result_panel = self.result_table
+        self.result_table.grid(
             row=2,
             column=0,
             sticky="ew",
@@ -103,53 +107,41 @@ class IsoIseer2PointSection:
         try:
             measured = self._read_inputs()
         except ValueError:
-            self.result_panel.set_summaries(
-                (result_status("ISO / ISEER", "입력 오류: 숫자 입력을 확인하세요."),)
-            )
+            self.result_table.set_status("입력 오류: 숫자 입력을 확인하세요.")
             return
 
-        summaries = []
+        rows = []
+        errors = []
         for profile_label in two_point_profile_labels():
             try:
                 profile_id = resolve_two_point_profile_id(profile_label)
                 calc = create_calculator_for_profile(profile_id=profile_id)
                 result = calc.calculate_cspf(measured)
-                summaries.append(
-                    _summarize_two_point_result(profile_label, measured, result)
-                )
+                rows.append(_two_point_result_row(profile_label, measured, result))
             except Exception as exc:
-                summaries.append(
-                    result_status(profile_label, f"오류: {type(exc).__name__}: {exc}")
-                )
-        self.result_panel.set_summaries(tuple(summaries))
+                errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
+        if errors:
+            self.result_table.set_status("오류: " + " / ".join(errors))
+            return
+        self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
 
 
-def _summarize_two_point_result(
+def _two_point_result_row(
     title: str,
     measured: Mapping[str, Mapping[str, float]],
     result: Mapping[str, object],
-) -> ResultSummary:
-    metric_label = "ISEER" if title == "India ISEER" else "CSPF"
-    return ResultSummary(
-        title=title,
-        fields=(
-            ("EER Full", _eer_value(measured, "35_full")),
-            ("EER Half", _eer_value(measured, "35_half")),
-            ("CSPF/ISEER", _metric_value(result, "cspf")),
-            (
-                "CSTL [kWh]",
-                _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
-            ),
-            (
-                "CSEC [kWh]",
-                _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
-            ),
-        ),
-        status=f"{metric_label} 계산 완료",
+) -> tuple[str, ...]:
+    return (
+        title,
+        _eer_value(measured, "35_full"),
+        _eer_value(measured, "35_half"),
+        _metric_value(result, "cspf"),
+        _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
+        _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
     )
 
 
