@@ -145,7 +145,7 @@ def test_ui_tk_anti_pattern_trips_on_multi_responsibility_file():
         "\n"
         "class CalculatorTkApp:\n    pass\n\n"
         "class Iso16358Tab:\n    pass\n\n"
-        "class IsoCspfSection:\n    pass\n\n"
+        "class HongKongCspfSection:\n    pass\n\n"
         "class ResultPanel:\n    pass\n\n"
         "def resolve_profile_id(region, metric):\n    return ''\n"
     )
@@ -160,7 +160,7 @@ def test_ui_tk_anti_pattern_ignores_dedicated_module():
     source = (
         "from ui_tk.profile_resolver import resolve_profile_id, REGION_BY_LABEL\n"
         "from ui_tk.result_panel import ResultPanel\n"
-        "from ui_tk.sections.iso_cspf_section import IsoCspfSection\n\n"
+        "from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection\n\n"
         "class Iso16358Tab:\n    pass\n"
     )
     findings = guard.check_ui_tk_shell_anti_pattern(source, "ui_tk/tabs/iso16358_tab.py")
@@ -171,7 +171,7 @@ def test_ui_tk_anti_pattern_ignores_non_ui_tk_path():
     source = (
         "class CalculatorTkApp:\n    pass\n\n"
         "class Iso16358Tab:\n    pass\n\n"
-        "class IsoCspfSection:\n    pass\n"
+        "class HongKongCspfSection:\n    pass\n"
     )
     findings = guard.check_ui_tk_shell_anti_pattern(source, "ui/other.py")
     assert findings == []

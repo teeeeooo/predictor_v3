@@ -18,8 +18,8 @@ from ui_tk.profile_resolver import (
     region_labels,
     supported_metrics_for,
 )
-from ui_tk.sections.iso_cspf_section import IsoCspfSection
-from ui_tk.sections.iso_hspf_section import IsoHspfSection
+from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection
+from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
 from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
 from ui_tk.layout_constants import (
@@ -35,8 +35,8 @@ from ui_tk.window_geometry import (
 
 
 _SECTION_FACTORIES = {
-    "CSPF": IsoCspfSection,
-    "HSPF": IsoHspfSection,
+    "CSPF": HongKongCspfSection,
+    "HSPF": HongKongHspfSection,
 }
 
 
