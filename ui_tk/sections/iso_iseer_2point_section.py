@@ -19,8 +19,7 @@ from ui_tk.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )
-from ui_tk import table_csv_export
-from ui_tk.sections.bin_trace_table import BinTraceTable
+from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
@@ -35,9 +34,10 @@ class IsoIseer2PointSection:
         *,
         on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
-        self._on_trace_visibility_changed = on_trace_visibility_changed
+        self._on_detail_visibility_changed = on_trace_visibility_changed
         self._trace_results: dict[str, list[dict]] = {}
-        self._trace_status: str | None = "Trace data not available"
+        self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
+        self._trace_status: str | None = "상세 데이터 없음"
         self._frame = ttk.LabelFrame(parent, text="ISO / ISEER 2-point 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -80,63 +80,28 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self._export_controls = ttk.Frame(self._frame)
-        self._export_controls.grid(
+        self.detail_toggle = ttk.Button(
+            self._frame,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "two_point_detail_toggle"
+        self.detail_toggle.grid(
             row=3,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.result_copy_button = ttk.Button(
-            self._export_controls,
-            text="결과 복사",
-            command=self._copy_result_table,
+        self._detail_visible = False
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=tuple(two_point_profile_labels()),
+            default_source=two_point_profile_labels()[0],
+            csv_filename="iso_iseer_bin_detail.csv",
         )
-        self.result_copy_button.surface_role = "two_point_result_copy"
-        self.result_copy_button.pack(side=tk.LEFT)
-        self.trace_copy_button = ttk.Button(
-            self._export_controls,
-            text="Trace 복사",
-            command=self._copy_trace_table,
-        )
-        self.trace_copy_button.surface_role = "two_point_trace_copy"
-        self.trace_copy_button.pack(side=tk.LEFT, padx=(6, 0))
-        self.trace_csv_button = ttk.Button(
-            self._export_controls,
-            text="Trace CSV 내보내기",
-            command=self._export_trace_csv,
-        )
-        self.trace_csv_button.surface_role = "two_point_trace_csv_export"
-        self.trace_csv_button.pack(side=tk.LEFT, padx=(6, 0))
-        self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
-        self._trace_controls = ttk.Frame(self._frame)
-        self._trace_controls.grid(
-            row=4,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
-        )
-        self.trace_toggle = ttk.Checkbutton(
-            self._trace_controls,
-            text="Bin trace",
-            variable=self._trace_visible,
-            command=self._on_trace_toggled,
-        )
-        self.trace_toggle.surface_role = "two_point_bin_trace_toggle"
-        self.trace_toggle.pack(side=tk.LEFT)
-        self.trace_profile_combo = ttk.Combobox(
-            self._trace_controls,
-            values=list(two_point_profile_labels()),
-            state="readonly",
-        )
-        self.trace_profile_combo.set(two_point_profile_labels()[0])
-        self.trace_profile_combo.pack(side=tk.LEFT, padx=(6, 0))
-        self.trace_profile_combo.bind(
-            "<<ComboboxSelected>>", self._on_trace_profile_changed
-        )
-        self.trace_table = BinTraceTable(self._frame)
+        self.trace_table = self.detail_panel.table
+        self.trace_profile_combo = self.detail_panel.source_combo
         self.input_table.set_values(
             {
                 "full_capacity": "3600",
@@ -180,14 +145,17 @@ class IsoIseer2PointSection:
 
         rows = []
         trace_results = {}
+        detail_summaries = {}
         errors = []
         for profile_label in two_point_profile_labels():
             try:
                 profile_id = resolve_two_point_profile_id(profile_label)
                 calc = create_calculator_for_profile(profile_id=profile_id)
                 result = calc.calculate_cspf(measured)
-                rows.append(_two_point_result_row(profile_label, measured, result))
+                row = _two_point_result_row(profile_label, measured, result)
+                rows.append(row)
                 trace_results[profile_label] = _bin_details(result)
+                detail_summaries[profile_label] = _summary_from_row(row)
             except Exception as exc:
                 errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
         if errors:
@@ -195,55 +163,56 @@ class IsoIseer2PointSection:
             self.result_table.set_status("오류: " + " / ".join(errors))
             return
         self._trace_results = trace_results
+        self._detail_summaries = detail_summaries
         self._trace_status = None
-        if self.trace_profile_combo.get() not in self._trace_results:
+        if self.detail_panel.selected_source() not in self._trace_results:
             self.trace_profile_combo.set(two_point_profile_labels()[0])
-        self._update_trace_table()
+        self._update_detail_panel()
         self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
 
-    def _on_trace_toggled(self) -> None:
-        if self._trace_visible.get():
-            self._update_trace_table()
-            self.trace_table.grid(
-                row=5,
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self._update_detail_panel()
+            self.detail_panel.grid(
+                row=4,
                 column=0,
                 sticky="ew",
-                padx=ISO_SECTION_PADX,
+                padx=0,
                 pady=(0, ISO_SECTION_BLOCK_GAP),
             )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
         else:
-            self.trace_table.grid_remove()
-        if self._on_trace_visibility_changed is not None:
-            self._on_trace_visibility_changed()
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
-    def _on_trace_profile_changed(self, _event=None) -> None:
-        self._update_trace_table()
-
-    def _update_trace_table(self) -> None:
+    def _update_detail_panel(self) -> None:
         if self._trace_status is not None:
-            self.trace_table.set_status(self._trace_status)
+            self.detail_panel.set_status(self._trace_status)
             return
-        selected = self.trace_profile_combo.get() or two_point_profile_labels()[0]
-        self.trace_table.set_data(self._trace_results.get(selected, ()))
+        sources = {
+            label: BinDetailSource(
+                rows=tuple(rows),
+                summary=self._detail_summaries.get(label, ()),
+            )
+            for label, rows in self._trace_results.items()
+        }
+        self.detail_panel.set_sources(
+            sources,
+            source_order=tuple(two_point_profile_labels()),
+            panel_status="상세 데이터 없음",
+        )
 
     def _clear_trace(self, status: str) -> None:
         self._trace_results = {}
+        self._detail_summaries = {}
         self._trace_status = status
-        self._update_trace_table()
+        self._update_detail_panel()
 
     def _copy_result_table(self) -> bool:
         return self.result_table.copy_table()
-
-    def _copy_trace_table(self) -> bool:
-        self._update_trace_table()
-        return self.trace_table.copy_table()
-
-    def _export_trace_csv(self) -> bool:
-        self._update_trace_table()
-        headers, rows = self.trace_table.table_export_data()
-        return table_csv_export.export_table_to_csv(
-            self._frame, "iso_iseer_bin_trace.csv", headers, rows
-        )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -270,6 +239,14 @@ def _bin_details(result: Mapping[str, object]) -> list[dict]:
     if not isinstance(raw, list):
         return []
     return [dict(item) for item in raw if isinstance(item, Mapping)]
+
+
+def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
+    return (
+        ("CSPF/ISEER", row[3]),
+        ("CSTL [kWh]", row[4]),
+        ("CSEC [kWh]", row[5]),
+    )
 
 
 def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:

@@ -13,8 +13,7 @@ from ui_tk.excel_like_table_controller import ExcelLikeTableController
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
-from ui_tk import table_csv_export
-from ui_tk.sections.bin_trace_table import BinTraceTable
+from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from ui_tk.table_grid_model import parse_numeric_cell
 
@@ -49,9 +48,11 @@ class IsoSasoT3Section:
         *,
         on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
-        self._on_trace_visibility_changed = on_trace_visibility_changed
+        self._on_detail_visibility_changed = on_trace_visibility_changed
         self._trace_results: dict[str, list[dict]] = {}
-        self._trace_status: str | None = "Trace data not available"
+        self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
+        self._detail_statuses: dict[str, str] = {}
+        self._trace_status: str | None = "상세 데이터 없음"
         self._frame = ttk.LabelFrame(parent, text="SASO T3 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -96,63 +97,28 @@ class IsoSasoT3Section:
             row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self._export_controls = ttk.Frame(self._frame)
-        self._export_controls.grid(
+        self.detail_toggle = ttk.Button(
+            self._frame,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "saso_t3_detail_toggle"
+        self.detail_toggle.grid(
             row=4,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.result_copy_button = ttk.Button(
-            self._export_controls,
-            text="결과 복사",
-            command=self._copy_result_table,
+        self._detail_visible = False
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
+            default_source=_REQUIRED_TRACE_LABEL,
+            csv_filename="saso_t3_bin_detail.csv",
         )
-        self.result_copy_button.surface_role = "saso_t3_result_copy"
-        self.result_copy_button.pack(side=tk.LEFT)
-        self.trace_copy_button = ttk.Button(
-            self._export_controls,
-            text="Trace 복사",
-            command=self._copy_trace_table,
-        )
-        self.trace_copy_button.surface_role = "saso_t3_trace_copy"
-        self.trace_copy_button.pack(side=tk.LEFT, padx=(6, 0))
-        self.trace_csv_button = ttk.Button(
-            self._export_controls,
-            text="Trace CSV 내보내기",
-            command=self._export_trace_csv,
-        )
-        self.trace_csv_button.surface_role = "saso_t3_trace_csv_export"
-        self.trace_csv_button.pack(side=tk.LEFT, padx=(6, 0))
-        self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
-        self._trace_controls = ttk.Frame(self._frame)
-        self._trace_controls.grid(
-            row=5,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
-        )
-        self.trace_toggle = ttk.Checkbutton(
-            self._trace_controls,
-            text="Bin trace",
-            variable=self._trace_visible,
-            command=self._on_trace_toggled,
-        )
-        self.trace_toggle.surface_role = "saso_t3_bin_trace_toggle"
-        self.trace_toggle.pack(side=tk.LEFT)
-        self.trace_profile_combo = ttk.Combobox(
-            self._trace_controls,
-            values=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
-            state="readonly",
-        )
-        self.trace_profile_combo.set(_REQUIRED_TRACE_LABEL)
-        self.trace_profile_combo.pack(side=tk.LEFT, padx=(6, 0))
-        self.trace_profile_combo.bind(
-            "<<ComboboxSelected>>", self._on_trace_profile_changed
-        )
-        self.trace_table = BinTraceTable(self._frame)
+        self.trace_table = self.detail_panel.table
+        self.trace_profile_combo = self.detail_panel.source_combo
 
         self.input_table.set_values(_DEFAULT_VALUES)
         self.input_controller = ExcelLikeTableController(self.input_table)
@@ -185,6 +151,8 @@ class IsoSasoT3Section:
 
         rows = [required_row]
         trace_results = {_REQUIRED_TRACE_LABEL: required_trace}
+        detail_summaries = {_REQUIRED_TRACE_LABEL: _summary_from_row(required_row)}
+        detail_statuses: dict[str, str] = {}
         status = "자동 계산 완료"
         if self.optional_min_enabled.get():
             optional_measured, optional_error = self._read_optional_inputs(required_measured)
@@ -197,13 +165,23 @@ class IsoSasoT3Section:
                 optional_trace = []
             if optional_error is not None:
                 rows.append(_optional_error_row(optional_error))
+                detail_statuses[_OPTIONAL_TRACE_LABEL] = (
+                    "상세 데이터 없음: 35 Min 숫자 입력을 확인하세요."
+                )
                 status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
             else:
                 rows.append(optional_row)
                 trace_results[_OPTIONAL_TRACE_LABEL] = optional_trace
+                detail_summaries[_OPTIONAL_TRACE_LABEL] = _summary_from_row(optional_row)
+        else:
+            detail_statuses[_OPTIONAL_TRACE_LABEL] = (
+                "상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
+            )
         self._trace_results = trace_results
+        self._detail_summaries = detail_summaries
+        self._detail_statuses = detail_statuses
         self._trace_status = None
-        self._update_trace_table()
+        self._update_detail_panel()
         self.result_table.set_rows(tuple(rows), status=status)
 
     def _read_required_inputs(
@@ -278,58 +256,58 @@ class IsoSasoT3Section:
     def _sync_optional_trace_state(self) -> None:
         if not self.optional_min_enabled.get():
             self._trace_results.pop(_OPTIONAL_TRACE_LABEL, None)
-            self._update_trace_table()
+            self._detail_summaries.pop(_OPTIONAL_TRACE_LABEL, None)
+            self._detail_statuses[_OPTIONAL_TRACE_LABEL] = (
+                "상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
+            )
+            self._update_detail_panel()
 
-    def _on_trace_toggled(self) -> None:
-        if self._trace_visible.get():
-            self._update_trace_table()
-            self.trace_table.grid(
-                row=6,
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self._update_detail_panel()
+            self.detail_panel.grid(
+                row=5,
                 column=0,
                 sticky="ew",
-                padx=ISO_SECTION_PADX,
+                padx=0,
                 pady=(0, ISO_SECTION_BLOCK_GAP),
             )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
         else:
-            self.trace_table.grid_remove()
-        if self._on_trace_visibility_changed is not None:
-            self._on_trace_visibility_changed()
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
-    def _on_trace_profile_changed(self, _event=None) -> None:
-        self._update_trace_table()
-
-    def _update_trace_table(self) -> None:
+    def _update_detail_panel(self) -> None:
         if self._trace_status is not None:
-            self.trace_table.set_status(self._trace_status)
+            self.detail_panel.set_status(self._trace_status)
             return
-        selected = self.trace_profile_combo.get() or _REQUIRED_TRACE_LABEL
-        trace_rows = self._trace_results.get(selected)
-        if trace_rows:
-            self.trace_table.set_data(trace_rows)
-            return
-        if selected == _OPTIONAL_TRACE_LABEL:
-            self.trace_table.set_status("Trace data not available for With 35 Min (4-point)")
-            return
-        self.trace_table.set_status("Trace data not available")
+        sources = {}
+        for label in (_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL):
+            if label in self._trace_results:
+                sources[label] = BinDetailSource(
+                    rows=tuple(self._trace_results[label]),
+                    summary=self._detail_summaries.get(label, ()),
+                )
+            elif label in self._detail_statuses:
+                sources[label] = BinDetailSource(status=self._detail_statuses[label])
+        self.detail_panel.set_sources(
+            sources,
+            source_order=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
+            panel_status="상세 데이터 없음",
+        )
 
     def _clear_trace(self, status: str) -> None:
         self._trace_results = {}
+        self._detail_summaries = {}
+        self._detail_statuses = {}
         self._trace_status = status
-        self._update_trace_table()
+        self._update_detail_panel()
 
     def _copy_result_table(self) -> bool:
         return self.result_table.copy_table()
-
-    def _copy_trace_table(self) -> bool:
-        self._update_trace_table()
-        return self.trace_table.copy_table()
-
-    def _export_trace_csv(self) -> bool:
-        self._update_trace_table()
-        headers, rows = self.trace_table.table_export_data()
-        return table_csv_export.export_table_to_csv(
-            self._frame, "saso_t3_bin_trace.csv", headers, rows
-        )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -371,6 +349,14 @@ def _bin_details(result: Mapping[str, object]) -> list[dict]:
     if not isinstance(raw, list):
         return []
     return [dict(item) for item in raw if isinstance(item, Mapping)]
+
+
+def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
+    return (
+        ("CSPF", row[5]),
+        ("CSTL [kWh]", row[6]),
+        ("CSEC [kWh]", row[7]),
+    )
 
 
 def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:

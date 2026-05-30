@@ -108,6 +108,21 @@ def _label_texts(widget) -> list[str]:
     return labels
 
 
+def _widget_texts(widget) -> list[str]:
+    texts = []
+    stack = [widget]
+    while stack:
+        current = stack.pop()
+        stack.extend(current.winfo_children())
+        try:
+            text = current.cget("text")
+        except Exception:
+            continue
+        if text:
+            texts.append(text)
+    return texts
+
+
 def _surface_roles(widget) -> list[str]:
     roles = []
     stack = [widget]
@@ -234,8 +249,12 @@ def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
     assert len(rows) == 2
     assert {row[0] for row in rows} == {"ISO 16358-1", "India ISEER"}
     assert all(len(row) == len(table.column_labels) for row in rows)
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
     assert section.trace_profile_combo.get() == "ISO 16358-1"
+    assert section.detail_toggle.cget("text") == "상세 보기 ↓"
+    assert "Bin trace" not in _widget_texts(section._frame)
+    assert "Trace 복사" not in _widget_texts(section._frame)
+    assert "Trace CSV 내보내기" not in _widget_texts(section._frame)
 
     text = _two_point_text(tab)
     for label in table.column_labels:
@@ -293,22 +312,27 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
 
 
-def test_iso_iseer_bin_trace_expands_with_bin_details(tk_root):
+def test_iso_iseer_detail_panel_opens_with_bin_details(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
     fit_calls = []
-    section._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+    section._on_detail_visibility_changed = lambda: fit_calls.append("fit")
 
     assert section is not None
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
     assert set(section._trace_results) == {"ISO 16358-1", "India ISEER"}
     assert all(section._trace_results[label] for label in section._trace_results)
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert section.trace_table.is_visible()
+    assert section.detail_panel.is_visible()
+    assert section.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
+    assert section.detail_panel.graph.canvas.winfo_exists()
+    assert section.detail_panel.graph_combo.get() == "Bin Hours"
+    assert section.detail_panel.copy_button.cget("text") == "상세 복사"
+    assert section.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert section.trace_table.column_labels == (
         "Bin No",
         "Temp [°C]",
@@ -330,24 +354,25 @@ def test_iso_iseer_bin_trace_expands_with_bin_details(tk_root):
     assert "{" not in rendered
     assert "None" not in rendered
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
+    assert section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert fit_calls == ["fit", "fit"]
 
 
-def test_iso_iseer_bin_trace_profile_selector_updates_rows(tk_root):
+def test_iso_iseer_detail_source_selector_updates_rows(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     iso_rows = _bin_trace_rows(tab)
     assert iso_rows
 
     section.trace_profile_combo.set("India ISEER")
-    section._on_trace_profile_changed()
+    section.detail_panel._on_source_changed()
     iseer_rows = _bin_trace_rows(tab)
 
     assert section.trace_profile_combo.get() == "India ISEER"
@@ -359,11 +384,11 @@ def test_iso_iseer_bin_trace_profile_selector_updates_rows(tk_root):
     assert "None" not in rendered
 
 
-def test_iso_iseer_bin_trace_invalid_input_clears_stale_rows(tk_root):
+def test_iso_iseer_detail_invalid_input_clears_stale_rows(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     assert _bin_trace_rows(tab)
 
@@ -388,7 +413,7 @@ def test_iso_iseer_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert len(result_rows) == 2
     assert {row[0] for row in result_rows} == {"ISO 16358-1", "India ISEER"}
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     trace_headers, trace_rows = section.trace_table.table_export_data()
     assert trace_headers == section.trace_table.column_labels
@@ -396,11 +421,11 @@ def test_iso_iseer_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert trace_rows
 
 
-def test_iso_iseer_copy_buttons_use_header_included_tsv(tk_root):
+def test_iso_iseer_detail_copy_button_uses_header_included_tsv(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
 
-    assert section.result_copy_button.invoke() == 1
+    assert section.result_table.copy_table() is True
     result_clipboard = tk_root.clipboard_get()
     assert result_clipboard.splitlines()[0] == "\t".join(
         section.result_table.column_labels
@@ -408,8 +433,9 @@ def test_iso_iseer_copy_buttons_use_header_included_tsv(tk_root):
     assert "ISO 16358-1" in result_clipboard
     assert "India ISEER" in result_clipboard
 
+    section.detail_toggle.invoke()
     section.trace_profile_combo.set("India ISEER")
-    assert section.trace_copy_button.invoke() == 1
+    assert section.detail_panel.copy_button.invoke() == 1
     trace_clipboard = tk_root.clipboard_get()
     assert trace_clipboard.splitlines()[0] == "\t".join(
         section.trace_table.column_labels
@@ -419,7 +445,7 @@ def test_iso_iseer_copy_buttons_use_header_included_tsv(tk_root):
     assert "None" not in trace_clipboard
 
 
-def test_iso_iseer_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root):
+def test_iso_iseer_detail_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
     calls = []
@@ -430,9 +456,11 @@ def test_iso_iseer_trace_csv_export_button_still_calls_helper(monkeypatch, tk_ro
 
     monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
 
+    assert not hasattr(section, "result_csv_button")
+    section.detail_toggle.invoke()
     section.trace_profile_combo.set("India ISEER")
-    assert section.trace_csv_button.invoke() == 1
-    assert calls[-1][1] == "iso_iseer_bin_trace.csv"
+    assert section.detail_panel.csv_button.invoke() == 1
+    assert calls[-1][1] == "iso_iseer_bin_detail.csv"
     assert calls[-1][2] == section.trace_table.column_labels
     assert calls[-1][3] == section.trace_table.rows
 
@@ -441,7 +469,7 @@ def test_iso_iseer_trace_csv_export_button_still_calls_helper(monkeypatch, tk_ro
         "export_table_to_csv",
         lambda *_args, **_kwargs: False,
     )
-    assert section.trace_csv_button.invoke() == 0
+    assert section.detail_panel.csv_button.invoke() == 0
 
 
 def test_read_only_table_keyboard_copy_and_select_all_are_safe(tk_root):
@@ -473,8 +501,12 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert section.optional_min_toggle.cget("text") == "35 Min optional test 사용"
     assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "disabled"
     assert section.input_table.editable_entries["min_35_power"].cget("state") == "disabled"
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
     assert section.trace_profile_combo.get() == "Required only (3-point)"
+    assert section.detail_toggle.cget("text") == "상세 보기 ↓"
+    assert "Bin trace" not in _widget_texts(section._frame)
+    assert "Trace 복사" not in _widget_texts(section._frame)
+    assert "Trace CSV 내보내기" not in _widget_texts(section._frame)
 
     table = section.result_table
     assert table.surface_role == "saso_t3_result_surface"
@@ -505,22 +537,27 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert "None" not in text
 
 
-def test_saso_t3_bin_trace_expands_with_required_bin_details(tk_root):
+def test_saso_t3_detail_panel_opens_with_required_bin_details(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
     fit_calls = []
-    section._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+    section._on_detail_visibility_changed = lambda: fit_calls.append("fit")
 
     assert section is not None
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
     assert set(section._trace_results) == {"Required only (3-point)"}
     assert section._trace_results["Required only (3-point)"]
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert section.trace_table.is_visible()
+    assert section.detail_panel.is_visible()
+    assert section.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
+    assert section.detail_panel.graph.canvas.winfo_exists()
+    assert section.detail_panel.graph_combo.get() == "Bin Hours"
+    assert section.detail_panel.copy_button.cget("text") == "상세 복사"
+    assert section.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert section.trace_table.column_labels == (
         "Bin No",
         "Temp [°C]",
@@ -540,32 +577,33 @@ def test_saso_t3_bin_trace_expands_with_required_bin_details(tk_root):
     assert "{" not in rendered
     assert "None" not in rendered
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert not section.trace_table.is_visible()
+    assert not section.detail_panel.is_visible()
+    assert section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert fit_calls == ["fit", "fit"]
 
 
-def test_saso_t3_bin_trace_optional_selector_uses_4point_bin_details(tk_root):
+def test_saso_t3_detail_optional_selector_uses_4point_bin_details(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     required_rows = _saso_bin_trace_rows(tab)
     assert required_rows
 
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    section._on_trace_profile_changed()
+    section.detail_panel._on_source_changed()
     assert _saso_bin_trace_rows(tab) == ()
-    assert "Trace data not available" in section.trace_table.as_text()
+    assert "상세 데이터 없음" in section.trace_table.as_text()
 
     section.optional_min_enabled.set(True)
     section._on_optional_min_toggled()
     section._auto_calc.flush_now()
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    section._on_trace_profile_changed()
+    section.detail_panel._on_source_changed()
     optional_rows = _saso_bin_trace_rows(tab)
 
     assert set(section._trace_results) == {
@@ -589,7 +627,7 @@ def test_saso_t3_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert len(result_rows) == 1
     assert result_rows[0][0] == "Required only (3-point)"
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     trace_headers, trace_rows = section.trace_table.table_export_data()
     assert trace_headers == section.trace_table.column_labels
@@ -597,29 +635,30 @@ def test_saso_t3_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert trace_rows
 
 
-def test_saso_t3_copy_buttons_use_header_included_tsv(tk_root):
+def test_saso_t3_detail_copy_button_uses_header_included_tsv(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
-    assert section.result_copy_button.invoke() == 1
+    assert section.result_table.copy_table() is True
     result_clipboard = tk_root.clipboard_get()
     assert result_clipboard.splitlines()[0] == "\t".join(
         section.result_table.column_labels
     )
     assert "Required only (3-point)" in result_clipboard
 
+    section.detail_toggle.invoke()
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.trace_copy_button.invoke() == 1
+    assert section.detail_panel.copy_button.invoke() == 1
     unavailable_clipboard = tk_root.clipboard_get()
     assert unavailable_clipboard == (
-        "Status\nTrace data not available for With 35 Min (4-point)"
+        "Status\n상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
     )
 
     section.optional_min_enabled.set(True)
     section._on_optional_min_toggled()
     section._auto_calc.flush_now()
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.trace_copy_button.invoke() == 1
+    assert section.detail_panel.copy_button.invoke() == 1
     trace_clipboard = tk_root.clipboard_get()
     assert trace_clipboard.splitlines()[0] == "\t".join(
         section.trace_table.column_labels
@@ -629,7 +668,7 @@ def test_saso_t3_copy_buttons_use_header_included_tsv(tk_root):
     assert "None" not in trace_clipboard
 
 
-def test_saso_t3_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root):
+def test_saso_t3_detail_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
     calls = []
@@ -640,17 +679,19 @@ def test_saso_t3_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root
 
     monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
 
+    assert not hasattr(section, "result_csv_button")
+    section.detail_toggle.invoke()
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.trace_csv_button.invoke() == 1
-    assert calls[-1][1] == "saso_t3_bin_trace.csv"
+    assert section.detail_panel.csv_button.invoke() == 1
+    assert calls[-1][1] == "saso_t3_bin_detail.csv"
     assert calls[-1][2] == ("Status",)
-    assert "Trace data not available" in calls[-1][3][0][0]
+    assert "상세 데이터 없음" in calls[-1][3][0][0]
 
     section.optional_min_enabled.set(True)
     section._on_optional_min_toggled()
     section._auto_calc.flush_now()
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.trace_csv_button.invoke() == 1
+    assert section.detail_panel.csv_button.invoke() == 1
     assert calls[-1][2] == section.trace_table.column_labels
     assert calls[-1][3] == section.trace_table.rows
 
@@ -659,7 +700,7 @@ def test_saso_t3_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root
         "export_table_to_csv",
         lambda *_args, **_kwargs: False,
     )
-    assert section.trace_csv_button.invoke() == 0
+    assert section.detail_panel.csv_button.invoke() == 0
 
 
 def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):
@@ -694,7 +735,7 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     required_trace_before = _saso_bin_trace_rows(tab)
     assert required_trace_before
@@ -725,19 +766,19 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     assert "None" not in text
     assert section._trace_results["Required only (3-point)"]
     section.trace_profile_combo.set("Required only (3-point)")
-    section._on_trace_profile_changed()
+    section.detail_panel._on_source_changed()
     assert _saso_bin_trace_rows(tab)
     section.trace_profile_combo.set("With 35 Min (4-point)")
-    section._on_trace_profile_changed()
+    section.detail_panel._on_source_changed()
     assert _saso_bin_trace_rows(tab) == ()
-    assert "Trace data not available" in section.trace_table.as_text()
+    assert "상세 데이터 없음" in section.trace_table.as_text()
 
 
 def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
     assert _saso_bin_trace_rows(tab)
 
@@ -790,13 +831,13 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
     assert set(tab.sections) == {"CSPF", "HSPF"}
 
 
-def test_profile_switch_with_expanded_bin_trace_is_lifecycle_safe(tk_root):
+def test_profile_switch_with_open_detail_panel_is_lifecycle_safe(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
 
-    section.trace_toggle.invoke()
+    section.detail_toggle.invoke()
     tk_root.update_idletasks()
-    assert section.trace_table.is_visible()
+    assert section.detail_panel.is_visible()
     assert _bin_trace_rows(tab)
 
     _select_mode(tab, "Hong Kong")
@@ -806,19 +847,19 @@ def test_profile_switch_with_expanded_bin_trace_is_lifecycle_safe(tk_root):
     assert tab._saso_t3_section is not None
     saso_section = tab._saso_t3_section
     assert saso_section.result_table.row_labels == ("Required only (3-point)",)
-    saso_section.trace_toggle.invoke()
+    saso_section.detail_toggle.invoke()
     tk_root.update_idletasks()
-    assert saso_section.trace_table.is_visible()
+    assert saso_section.detail_panel.is_visible()
     assert _saso_bin_trace_rows(tab)
 
     _select_mode(tab, "ISO / ISEER 2-point")
     assert tab._two_point_section is section
-    assert section.trace_table.is_visible()
+    assert section.detail_panel.is_visible()
     assert _bin_trace_rows(tab)
 
     _select_mode(tab, "SASO T3")
     assert tab._saso_t3_section is saso_section
-    assert saso_section.trace_table.is_visible()
+    assert saso_section.detail_panel.is_visible()
     assert _saso_bin_trace_rows(tab)
 
 
@@ -1142,22 +1183,31 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
     assert _result_text(tab, "HSPF").count("[HSPF]") == 1
 
 
-def test_hong_kong_cspf_bin_trace_expands_with_bin_details(tk_root):
+def test_hong_kong_cspf_detail_panel_opens_with_bin_details(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
     hspf = tab.sections["HSPF"]
     fit_calls = []
-    cspf._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+    cspf._on_detail_visibility_changed = lambda: fit_calls.append("fit")
 
     assert not hasattr(hspf, "trace_table")
-    assert not cspf.trace_table.is_visible()
+    assert not cspf.detail_panel.is_visible()
     assert cspf._trace_rows
+    assert cspf.detail_toggle.cget("text") == "상세 보기 ↓"
+    assert "Bin trace" not in _widget_texts(cspf._frame)
+    assert "Trace 복사" not in _widget_texts(cspf._frame)
+    assert "Trace CSV 내보내기" not in _widget_texts(cspf._frame)
 
-    cspf.trace_toggle.invoke()
+    cspf.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert cspf.trace_table.is_visible()
+    assert cspf.detail_panel.is_visible()
+    assert cspf.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
+    assert cspf.detail_panel.graph.canvas.winfo_exists()
+    assert cspf.detail_panel.graph_combo.get() == "Bin Hours"
+    assert cspf.detail_panel.copy_button.cget("text") == "상세 복사"
+    assert cspf.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert cspf.trace_table.column_labels == (
         "Bin No",
         "Temp [°C]",
@@ -1177,10 +1227,11 @@ def test_hong_kong_cspf_bin_trace_expands_with_bin_details(tk_root):
     assert "{" not in rendered
     assert "None" not in rendered
 
-    cspf.trace_toggle.invoke()
+    cspf.detail_toggle.invoke()
     tk_root.update_idletasks()
 
-    assert not cspf.trace_table.is_visible()
+    assert not cspf.detail_panel.is_visible()
+    assert cspf.detail_toggle.cget("text") == "상세 보기 ↓"
     assert fit_calls == ["fit", "fit"]
 
 
@@ -1188,7 +1239,7 @@ def test_hong_kong_cspf_bin_trace_invalid_input_clears_stale_rows(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
 
-    cspf.trace_toggle.invoke()
+    cspf.detail_toggle.invoke()
     tk_root.update_idletasks()
     assert _hong_kong_cspf_bin_trace_rows(tab)
 
@@ -1204,7 +1255,7 @@ def test_hong_kong_cspf_bin_trace_invalid_input_clears_stale_rows(tk_root):
     assert "None" not in text
 
 
-def test_hong_kong_cspf_trace_csv_export_button_calls_helper(monkeypatch, tk_root):
+def test_hong_kong_cspf_detail_csv_export_button_calls_helper(monkeypatch, tk_root):
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
     calls = []
@@ -1215,8 +1266,9 @@ def test_hong_kong_cspf_trace_csv_export_button_calls_helper(monkeypatch, tk_roo
 
     monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
 
-    assert cspf.trace_csv_button.invoke() == 1
-    assert calls[-1][1] == "hong_kong_cspf_bin_trace.csv"
+    cspf.detail_toggle.invoke()
+    assert cspf.detail_panel.csv_button.invoke() == 1
+    assert calls[-1][1] == "hong_kong_cspf_bin_detail.csv"
     assert calls[-1][2] == cspf.trace_table.column_labels
     assert calls[-1][3] == cspf.trace_table.rows
 
@@ -1225,14 +1277,15 @@ def test_hong_kong_cspf_trace_csv_export_button_calls_helper(monkeypatch, tk_roo
         "export_table_to_csv",
         lambda *_args, **_kwargs: False,
     )
-    assert cspf.trace_csv_button.invoke() == 0
+    assert cspf.detail_panel.csv_button.invoke() == 0
 
 
-def test_hong_kong_cspf_trace_copy_button_uses_header_included_tsv(tk_root):
+def test_hong_kong_cspf_detail_copy_button_uses_header_included_tsv(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
 
-    assert cspf.trace_copy_button.invoke() == 1
+    cspf.detail_toggle.invoke()
+    assert cspf.detail_panel.copy_button.invoke() == 1
     clipboard = tk_root.clipboard_get()
 
     assert clipboard.splitlines()[0] == "\t".join(cspf.trace_table.column_labels)
@@ -1241,13 +1294,13 @@ def test_hong_kong_cspf_trace_copy_button_uses_header_included_tsv(tk_root):
     assert "None" not in clipboard
 
 
-def test_profile_switch_with_expanded_hong_kong_cspf_trace_is_lifecycle_safe(tk_root):
+def test_profile_switch_with_open_hong_kong_cspf_detail_is_lifecycle_safe(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
 
-    cspf.trace_toggle.invoke()
+    cspf.detail_toggle.invoke()
     tk_root.update_idletasks()
-    assert cspf.trace_table.is_visible()
+    assert cspf.detail_panel.is_visible()
     assert _hong_kong_cspf_bin_trace_rows(tab)
 
     _select_mode(tab, "ISO / ISEER 2-point")
@@ -1259,7 +1312,7 @@ def test_profile_switch_with_expanded_hong_kong_cspf_trace_is_lifecycle_safe(tk_
     _select_mode(tab, "Hong Kong")
     new_cspf = tab.sections["CSPF"]
     assert new_cspf is not cspf
-    assert not new_cspf.trace_table.is_visible()
+    assert not new_cspf.detail_panel.is_visible()
     assert new_cspf._trace_rows
 
 

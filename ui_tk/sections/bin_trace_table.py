@@ -46,7 +46,7 @@ _MAX_VISIBLE_ROWS = 10
 class BinTraceTable:
     """Section-local, read-only table for calculator ``bin_details`` rows."""
 
-    def __init__(self, parent: tk.Widget, *, title: str = "Bin trace") -> None:
+    def __init__(self, parent: tk.Widget, *, title: str = "상세 표") -> None:
         self.layout_policy = "responsive"
         self.surface_role = "bin_trace_surface"
         self.column_labels = BIN_TRACE_COLUMNS
@@ -119,7 +119,7 @@ class BinTraceTable:
         for row in rows:
             self.table.insert("", tk.END, values=row)
         if not rows:
-            self.set_status("Trace data not available")
+            self.set_status("상세 데이터 없음")
 
     def set_status(self, status: str) -> None:
         self._clear_tree()
@@ -135,7 +135,7 @@ class BinTraceTable:
     def table_export_data(self) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
         if self.rows:
             return self.column_labels, self.rows
-        status = self.status_label.cget("text") or "Trace data not available"
+        status = self.status_label.cget("text") or "상세 데이터 없음"
         return ("Status",), ((status,),)
 
     def copy_table(self) -> bool:
