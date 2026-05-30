@@ -59,8 +59,8 @@ Close out 193-a manual smoke and document the minimum result surface/export boun
 
 ## Commit / Push
 
-- Docs/report commit: pending at report creation.
-- Push: pending at report creation.
+- Docs/report commit: `bb47869 193-b: document result export boundary`
+- Push: completed for docs/report commit.
 
 ## Project Memory Delta
 

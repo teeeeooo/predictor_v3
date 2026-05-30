@@ -29,17 +29,19 @@
   - 193-a SASO T3 `bin_details` trace table implemented; Hong Kong CSPF/HSPF trace availability audited.
   - 193-a manual smoke completed with no issues found.
   - 193-b result surface/export boundary note added.
-- Next: 193-c table CSV export foundation.
+  - 193-c table CSV export foundation implemented for ISO/ISEER and SASO table-shaped result/trace surfaces.
+- Next: 193-c manual smoke, then choose the next trace/graph follow-up slice.
 
 ## Next Actions
 
-1. **193-c table CSV export foundation**
-   - Add export for table-shaped result/trace surfaces after trace behavior settles.
-   - Use thin table hooks and a small export helper; do not add a shared section framework.
+1. **193-c manual smoke**
+   - Check ISO/ISEER and SASO result/trace CSV export dialogs, saved CSV contents, and cancel path.
 2. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
 3. **Hong Kong CSPF trace implementation**
    - Use the 193-a audit result; keep HSPF separate.
+4. **Hong Kong HSPF heating trace schema design**
+   - Define heating-specific trace columns before any HSPF trace implementation.
 
 ## Active Constraints
 
@@ -51,6 +53,7 @@
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
 - Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
+- CSV export is currently limited to ISO/ISEER and SASO table-shaped result/trace surfaces.
 
 ## Deferred / Hold
 
@@ -82,6 +85,8 @@
   - Tracks SASO T3 `bin_details` trace implementation, Hong Kong trace availability audit, and completed manual smoke.
 - `result_reports/active/193b_result-surface-export-boundary.md`
   - Tracks the docs-only result surface/export boundary note before 193-c CSV export foundation.
+- `result_reports/active/193c_table-csv-export-foundation.md`
+  - Tracks table CSV export foundation until manual smoke.
 
 ## Historical Notes / References
 
