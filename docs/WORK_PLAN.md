@@ -33,11 +33,12 @@
   - 193-c table CSV export foundation implemented for ISO/ISEER and SASO table-shaped result/trace surfaces.
   - 193-c manual smoke completed with no issues found.
   - 193-d selected Hong Kong CSPF trace implementation as the next slice.
-- Next: Hong Kong CSPF trace implementation.
+  - 194-a Hong Kong CSPF/HSPF section naming cleanup completed.
+- Next: 194-b Hong Kong CSPF bin trace implementation.
 
 ## Next Actions
 
-1. **Hong Kong CSPF trace implementation**
+1. **194-b Hong Kong CSPF bin trace implementation**
    - Use the 193-a audit result; keep HSPF separate.
    - Reuse the existing `BinTraceTable` pattern where the CSPF `bin_details` schema matches.
 2. **Bin graph parity**
@@ -91,6 +92,8 @@
   - Tracks table CSV export foundation and completed manual smoke.
 - `result_reports/active/193d_csv-export-closeout-next-slice.md`
   - Tracks CSV export closeout, report commit/push recording principle, and next slice selection.
+- `result_reports/active/194a_hong-kong-section-naming-cleanup.md`
+  - Tracks Hong Kong section owner rename before CSPF trace implementation.
 
 ## Historical Notes / References
 
