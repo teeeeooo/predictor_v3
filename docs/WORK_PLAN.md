@@ -36,18 +36,21 @@
   - 194-a Hong Kong CSPF/HSPF section naming cleanup completed.
   - 194-b Hong Kong CSPF bin trace implementation completed.
   - 194-c Excel-like table contract recovery audit/design completed.
-- Next: 194-d table copy UX recovery foundation.
+  - 194-d table copy UX recovery foundation implemented for read-only result/trace tables.
+- Next: 194-d manual smoke, then 194-e ResultPanel summary export/copy alignment.
 
 ## Next Actions
 
-1. **194-d table copy UX recovery foundation**
-   - Add header-included TSV copy helper, read-only result/trace copy buttons, and Ctrl/Cmd+C alignment without changing CSV export.
-2. **194-b manual smoke**
-   - Check Hong Kong CSPF trace expand/collapse, stale clear, CSV export, cancel path, and profile switching.
-3. **Bin graph parity**
-   - Graph implementation remains a later slice; graph export follows graph parity.
+1. **194-d manual smoke**
+   - Check read-only result/trace copy buttons, Ctrl/Cmd+C, Ctrl/Cmd+A safe behavior, trace CSV preservation, and result CSV absence.
+2. **194-e ResultPanel summary export/copy alignment**
+   - Add Hong Kong summary TSV/CSV-compatible data hook without replacing the current label-card rendering.
+3. **194-f MetricInputTable full-table copy enhancement**
+   - Preserve existing edit/paste/drag behavior while adding header-included whole-table copy.
 4. **Hong Kong HSPF heating trace schema design**
    - Define heating-specific trace columns before any HSPF trace implementation.
+5. **Bin graph parity**
+   - Graph implementation remains a later slice; graph export follows graph parity.
 
 ## Active Constraints
 
@@ -59,8 +62,9 @@
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
 - Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
 - Excel-like table contract recovery owner: `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md`.
+- Read-only result/trace table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while trace tables keep TSV copy plus CSV export.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
-- CSV export is currently limited to ISO/ISEER and SASO table-shaped result/trace surfaces.
+- CSV export is currently limited to trace table surfaces and table-shaped export hooks already approved for the Tkinter calculator.
 
 ## Deferred / Hold
 
@@ -68,7 +72,7 @@
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Bin graph parity is deferred; graph export follows graph parity and may use SPOT-style HTML export.
-- ResultPanel summary export/copy alignment is deferred after table copy UX recovery.
+- ResultPanel summary export/copy alignment is next after 194-d manual smoke.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
 - Hong Kong CSPF trace manual smoke is pending.
 - Hong Kong HSPF needs a separate heating trace schema decision.
@@ -104,6 +108,8 @@
   - Tracks Hong Kong CSPF bin trace implementation until manual smoke.
 - `result_reports/active/194c_excel-like-table-contract-recovery.md`
   - Tracks Excel-like table contract recovery audit/design and next copy UX slice.
+- `result_reports/active/194d_table-copy-ux-recovery-foundation.md`
+  - Tracks read-only result/trace table header-included TSV copy recovery until manual smoke.
 
 ## Historical Notes / References
 
