@@ -37,20 +37,23 @@
   - 194-b Hong Kong CSPF bin trace implementation completed.
   - 194-c Excel-like table contract recovery audit/design completed.
   - 194-d table copy UX recovery foundation implemented for read-only result/trace tables.
-- Next: 194-d manual smoke, then 194-e ResultPanel summary export/copy alignment.
+  - 194-e PyQt-style detail panel IA recovery implemented for ISO/ISEER, SASO T3, and Hong Kong CSPF.
+- Next: 194-e manual smoke, then choose multi-monitor geometry audit/hotfix or graph/detail follow-up.
 
 ## Next Actions
 
-1. **194-d manual smoke**
-   - Check read-only result/trace copy buttons, Ctrl/Cmd+C, Ctrl/Cmd+A safe behavior, trace CSV preservation, and result CSV absence.
-2. **194-e ResultPanel summary export/copy alignment**
-   - Add Hong Kong summary TSV/CSV-compatible data hook without replacing the current label-card rendering.
-3. **194-f MetricInputTable full-table copy enhancement**
+1. **194-e manual smoke**
+   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector, Canvas graph, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
+2. **Multi-monitor geometry audit/hotfix**
+   - Investigate screen clipping separately without changing detail/result semantics.
+3. **Graph polish/export after graph parity**
+   - Refine graph parity first; graph export may use SPOT-style HTML export later.
+4. **ResultPanel summary export/copy alignment**
+   - Add Hong Kong summary TSV/CSV-compatible data hook if the label-card path still needs copy/export parity.
+5. **194-f MetricInputTable full-table copy enhancement**
    - Preserve existing edit/paste/drag behavior while adding header-included whole-table copy.
-4. **Hong Kong HSPF heating trace schema design**
+6. **Hong Kong HSPF heating trace schema design**
    - Define heating-specific trace columns before any HSPF trace implementation.
-5. **Bin graph parity**
-   - Graph implementation remains a later slice; graph export follows graph parity.
 
 ## Active Constraints
 
@@ -62,19 +65,20 @@
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
 - Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
 - Excel-like table contract recovery owner: `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md`.
-- Read-only result/trace table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while trace tables keep TSV copy plus CSV export.
+- Read-only result/detail table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while detail/bin tables keep TSV copy plus CSV export.
+- Main result surfaces should expose `상세 보기 ↓ / 상세 닫기 ↑` rather than user-visible `Trace` controls.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
-- CSV export is currently limited to trace table surfaces and table-shaped export hooks already approved for the Tkinter calculator.
+- CSV export is currently limited to detail/bin table surfaces and table-shaped export hooks already approved for the Tkinter calculator.
 
 ## Deferred / Hold
 
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Bin graph parity is deferred; graph export follows graph parity and may use SPOT-style HTML export.
-- ResultPanel summary export/copy alignment is next after 194-d manual smoke.
+- Bin graph polish/export is deferred until after detail panel manual smoke; graph export follows graph parity and may use SPOT-style HTML export.
+- ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
-- Hong Kong CSPF trace manual smoke is pending.
+- Multi-monitor geometry clipping is a separate audit/hotfix candidate.
 - Hong Kong HSPF needs a separate heating trace schema decision.
 - Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
@@ -110,6 +114,8 @@
   - Tracks Excel-like table contract recovery audit/design and next copy UX slice.
 - `result_reports/active/194d_table-copy-ux-recovery-foundation.md`
   - Tracks read-only result/trace table header-included TSV copy recovery until manual smoke.
+- `result_reports/active/194e_pyqt-style-detail-panel-ia-recovery.md`
+  - Tracks PyQt-style detail panel IA recovery until manual smoke.
 
 ## Historical Notes / References
 
