@@ -19,6 +19,9 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/140_summary-project-memory-delta-workflow.md` (covered reports `133-139`)
 - `result_reports/summaries/153_summary-agent-workflow-memory-token-log-lifecycle.md` (covered reports `141-152`)
 - `result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md` (covered reports `154-164`)
+- `result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md` (covered reports `166-179e`)
+- `result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md` (covered reports `184-190a2`)
+- `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md` (covered reports `190b-194e` plus `194f` hotfix)
 
 ## Scope and Non-goals
 
@@ -489,6 +492,47 @@ entries:
       - result comparison
     assertionStatus: verified
     source: result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md (covered reports 190a and 190a2; SASO T3 Design Decision)
+
+  - type: decision
+    topic: Tkinter ISO detail panel IA and table copy/export policy
+    content: Tkinter ISO result detail parity follows the PyQt reference IA. Main result surfaces expose a detail toggle, while source selector, summary strip, Canvas graph, detail table, detail TSV copy, and detail CSV export live inside the detail panel. Result comparison tables provide header-included TSV copy only; detail/bin tables provide header-included TSV copy plus CSV export.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - PyQt reference IA
+      - detail panel
+      - TSV copy
+      - CSV export
+      - BinTraceTable
+    assertionStatus: verified
+    source: result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md (Important Decisions)
+
+  - type: decision
+    topic: Tkinter ISO detail graph axis mapping
+    content: Tkinter ISO detail panel graphs use outdoor temperature bin tj as the x-axis, displayed as Outdoor Temp [°C], with row index fallback only when tj is unavailable. The selected graph series is the y-axis; Bin Hours [h] remains a y-series backed by nj.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - detail graph
+      - graph axis
+      - tj
+      - outdoor temperature
+      - bin hours
+    assertionStatus: verified
+    source: result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md (Completed Work and Important Decisions)
+
+  - type: open_question
+    topic: Tkinter calculator multi-monitor geometry clipping
+    content: Dual-monitor geometry clipping remains unresolved after the detail panel/copy/graph arc and should be handled as a separate audit or hotfix without changing result/detail semantics.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - multi-monitor
+      - geometry
+      - clipping
+      - hotfix
+    assertionStatus: open
+    source: result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md (Known Remaining Issues)
 ```
 
 ## Known Gaps

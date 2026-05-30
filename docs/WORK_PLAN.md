@@ -17,43 +17,29 @@
 
 ## Current Focus
 
-- Tkinter calculator ISO profile expansion arc is complete.
-- Completed in the current arc:
-  - `ISO / ISEER 2-point` default profile with section-local comparison table.
-  - `Hong Kong` CSPF/HSPF metric sub-tabs unchanged.
-  - `SASO T3` dedicated section with required-only 3-point vs optional-min 4-point comparison.
-  - 190-b SASO T3 manual smoke completed with no issues found.
-  - 192-b detail/trace/graph design slice completed.
-  - 192-c input-point detail foundation was reverted; it did not match the intended PyQt parity target.
-  - 192-d ISO/ISEER `bin_details` trace table parity implemented.
-  - 192-d manual smoke completed with no issues found.
-  - 193-a SASO T3 `bin_details` trace table implemented; Hong Kong CSPF/HSPF trace availability audited.
-  - 193-a manual smoke completed with no issues found.
-  - 193-b result surface/export boundary note added.
-  - 193-c table CSV export foundation implemented for ISO/ISEER and SASO table-shaped result/trace surfaces.
-  - 193-c manual smoke completed with no issues found.
-  - 193-d selected Hong Kong CSPF trace implementation as the next slice.
-  - 194-a Hong Kong CSPF/HSPF section naming cleanup completed.
-  - 194-b Hong Kong CSPF bin trace implementation completed.
-  - 194-c Excel-like table contract recovery audit/design completed.
-  - 194-d table copy UX recovery foundation implemented for read-only result/trace tables.
-  - 194-e PyQt-style detail panel IA recovery implemented for ISO/ISEER, SASO T3, and Hong Kong CSPF.
-- Next: 194-e manual smoke, then choose multi-monitor geometry audit/hotfix or graph/detail follow-up.
+- Tkinter ISO profile/detail/copy/graph arc is summarized in `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`.
+- Implemented state:
+  - ISO/ISEER and SASO T3 comparison result tables.
+  - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
+  - Header-included TSV copy for result/detail tables.
+  - Detail/bin table CSV export.
+  - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis and selected-series y-axis.
+- Next: manual smoke for the 194-f graph-axis/detail panel hotfix, then multi-monitor geometry audit/hotfix.
 
 ## Next Actions
 
-1. **194-e manual smoke**
-   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector, Canvas graph, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
+1. **194-f manual smoke**
+   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector label, graph axis labels, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
 2. **Multi-monitor geometry audit/hotfix**
    - Investigate screen clipping separately without changing detail/result semantics.
-3. **Graph polish/export after graph parity**
+3. **Hong Kong HSPF heating trace schema/implementation**
+   - Define heating-specific detail columns before any HSPF detail implementation.
+4. **Graph polish/export after graph parity**
    - Refine graph parity first; graph export may use SPOT-style HTML export later.
-4. **ResultPanel summary export/copy alignment**
+5. **ResultPanel summary export/copy alignment**
    - Add Hong Kong summary TSV/CSV-compatible data hook if the label-card path still needs copy/export parity.
-5. **194-f MetricInputTable full-table copy enhancement**
+6. **MetricInputTable full-table copy enhancement**
    - Preserve existing edit/paste/drag behavior while adding header-included whole-table copy.
-6. **Hong Kong HSPF heating trace schema design**
-   - Define heating-specific trace columns before any HSPF trace implementation.
 
 ## Active Constraints
 
@@ -67,6 +53,7 @@
 - Excel-like table contract recovery owner: `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md`.
 - Read-only result/detail table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while detail/bin tables keep TSV copy plus CSV export.
 - Main result surfaces should expose `상세 보기 ↓ / 상세 닫기 ↑` rather than user-visible `Trace` controls.
+- Detail graph x-axis is outdoor temperature `tj` shown as `Outdoor Temp [°C]`; `Bin Hours [h]` is a selectable y-series backed by `nj`.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
 - CSV export is currently limited to detail/bin table surfaces and table-shaped export hooks already approved for the Tkinter calculator.
 
@@ -94,28 +81,8 @@
   - Covers Tkinter calculator UX implementation, Excel-like table behavior, metric sub-tabs, and smoke-loop lessons through reports 166~179e.
 - `result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md`
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
-- `result_reports/active/190b_saso-t3-tkinter-implementation.md`
-  - Tracks the current SASO T3 implementation slice until manual smoke/lifecycle cleanup.
-- `result_reports/active/192d_iso-iseer-bin-details-trace-table-parity.md`
-  - Tracks ISO/ISEER `bin_details` trace table parity and completed manual smoke closeout.
-- `result_reports/active/193a_saso-trace-and-hk-trace-availability.md`
-  - Tracks SASO T3 `bin_details` trace implementation, Hong Kong trace availability audit, and completed manual smoke.
-- `result_reports/active/193b_result-surface-export-boundary.md`
-  - Tracks the docs-only result surface/export boundary note before 193-c CSV export foundation.
-- `result_reports/active/193c_table-csv-export-foundation.md`
-  - Tracks table CSV export foundation and completed manual smoke.
-- `result_reports/active/193d_csv-export-closeout-next-slice.md`
-  - Tracks CSV export closeout, report commit/push recording principle, and next slice selection.
-- `result_reports/active/194a_hong-kong-section-naming-cleanup.md`
-  - Tracks Hong Kong section owner rename before CSPF trace implementation.
-- `result_reports/active/194b_hong-kong-cspf-bin-trace.md`
-  - Tracks Hong Kong CSPF bin trace implementation until manual smoke.
-- `result_reports/active/194c_excel-like-table-contract-recovery.md`
-  - Tracks Excel-like table contract recovery audit/design and next copy UX slice.
-- `result_reports/active/194d_table-copy-ux-recovery-foundation.md`
-  - Tracks read-only result/trace table header-included TSV copy recovery until manual smoke.
-- `result_reports/active/194e_pyqt-style-detail-panel-ia-recovery.md`
-  - Tracks PyQt-style detail panel IA recovery until manual smoke.
+- `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`
+  - Covers active reports 190-b through 194-e plus the 194-f graph axis label hotfix.
 
 ## Historical Notes / References
 

@@ -21,6 +21,30 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-05-30 — Tkinter detail panel, copy, and graph parity recovery
+
+### Decision
+- Tkinter ISO result detail parity now follows the PyQt reference IA: main result
+  surfaces expose `상세 보기 ↓ / 상세 닫기 ↑`, while source selection, summary,
+  graph, detail table, detail TSV copy, and detail CSV export live inside the
+  detail panel.
+- Result comparison tables are TSV-copy surfaces, not CSV export targets.
+  Detail/bin tables keep TSV copy plus CSV export.
+- Detail graph x-axis is outdoor temperature bin `tj` (`Outdoor Temp [°C]`);
+  `Bin Hours [h]` is a selectable y-series backed by `nj`.
+
+### Lesson
+- Implementing small trace/export/copy slices without preserving the PyQt
+  reference IA caused main-screen control drift. Future UI parity work should
+  treat the reference IA as the first acceptance gate, then layer helper actions
+  inside that structure.
+
+### Open
+- Dual-monitor geometry clipping remains a separate audit/hotfix.
+- Hong Kong HSPF heating detail needs a separate schema decision.
+
+---
+
 ## 2026-05-30 — Tkinter ISO profile expansion and UI stabilization
 
 ### Tried
