@@ -19,6 +19,7 @@ from ui_tk.layout_constants import (
 )
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk import table_csv_export
+from ui_tk import table_clipboard
 
 
 class FakeAfterOwner:
@@ -177,6 +178,16 @@ def test_table_csv_export_cancel_is_noop(monkeypatch):
     )
 
     assert table_csv_export.export_table_to_csv(None, "cancel.csv", ("A",), (("B",),)) is False
+
+
+def test_table_copy_helper_encodes_headers_and_rows():
+    assert table_clipboard.encode_table_tsv(
+        ("Name", "Value"), (("CSPF", "4.939"), ("Status", "OK"))
+    ) == "Name\tValue\nCSPF\t4.939\nStatus\tOK"
+
+
+def test_table_copy_helper_encodes_header_for_empty_rows():
+    assert table_clipboard.encode_table_tsv(("Name", "Value"), ()) == "Name\tValue"
 
 
 def test_iso_tab_defaults_to_2point_profile_with_results(tk_root):
@@ -385,7 +396,30 @@ def test_iso_iseer_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert trace_rows
 
 
-def test_iso_iseer_csv_export_buttons_call_helper(monkeypatch, tk_root):
+def test_iso_iseer_copy_buttons_use_header_included_tsv(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    assert section.result_copy_button.invoke() == 1
+    result_clipboard = tk_root.clipboard_get()
+    assert result_clipboard.splitlines()[0] == "\t".join(
+        section.result_table.column_labels
+    )
+    assert "ISO 16358-1" in result_clipboard
+    assert "India ISEER" in result_clipboard
+
+    section.trace_profile_combo.set("India ISEER")
+    assert section.trace_copy_button.invoke() == 1
+    trace_clipboard = tk_root.clipboard_get()
+    assert trace_clipboard.splitlines()[0] == "\t".join(
+        section.trace_table.column_labels
+    )
+    assert "Traceback" not in trace_clipboard
+    assert "{" not in trace_clipboard
+    assert "None" not in trace_clipboard
+
+
+def test_iso_iseer_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
     calls = []
@@ -395,11 +429,6 @@ def test_iso_iseer_csv_export_buttons_call_helper(monkeypatch, tk_root):
         return True
 
     monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
-
-    assert section.result_csv_button.invoke() == 1
-    assert calls[-1][1] == "iso_iseer_result.csv"
-    assert calls[-1][2] == section.result_table.column_labels
-    assert calls[-1][3] == section.result_table.rows
 
     section.trace_profile_combo.set("India ISEER")
     assert section.trace_csv_button.invoke() == 1
@@ -412,7 +441,18 @@ def test_iso_iseer_csv_export_buttons_call_helper(monkeypatch, tk_root):
         "export_table_to_csv",
         lambda *_args, **_kwargs: False,
     )
-    assert section.result_csv_button.invoke() == 0
+    assert section.trace_csv_button.invoke() == 0
+
+
+def test_read_only_table_keyboard_copy_and_select_all_are_safe(tk_root):
+    tab = _make_tab(tk_root)
+    table = tab._two_point_section.result_table
+
+    assert table.select_all() == "break"
+    assert table.copy() == "break"
+
+    clipboard = tk_root.clipboard_get()
+    assert clipboard.splitlines()[0] == "\t".join(table.column_labels)
 
 
 def test_saso_t3_profile_renders_default_result(tk_root):
@@ -557,7 +597,39 @@ def test_saso_t3_table_export_data_hooks_cover_result_and_trace(tk_root):
     assert trace_rows
 
 
-def test_saso_t3_csv_export_buttons_call_helper(monkeypatch, tk_root):
+def test_saso_t3_copy_buttons_use_header_included_tsv(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    assert section.result_copy_button.invoke() == 1
+    result_clipboard = tk_root.clipboard_get()
+    assert result_clipboard.splitlines()[0] == "\t".join(
+        section.result_table.column_labels
+    )
+    assert "Required only (3-point)" in result_clipboard
+
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    assert section.trace_copy_button.invoke() == 1
+    unavailable_clipboard = tk_root.clipboard_get()
+    assert unavailable_clipboard == (
+        "Status\nTrace data not available for With 35 Min (4-point)"
+    )
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    section._auto_calc.flush_now()
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    assert section.trace_copy_button.invoke() == 1
+    trace_clipboard = tk_root.clipboard_get()
+    assert trace_clipboard.splitlines()[0] == "\t".join(
+        section.trace_table.column_labels
+    )
+    assert "Traceback" not in trace_clipboard
+    assert "{" not in trace_clipboard
+    assert "None" not in trace_clipboard
+
+
+def test_saso_t3_trace_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
     calls = []
@@ -567,11 +639,6 @@ def test_saso_t3_csv_export_buttons_call_helper(monkeypatch, tk_root):
         return True
 
     monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
-
-    assert section.result_csv_button.invoke() == 1
-    assert calls[-1][1] == "saso_t3_result.csv"
-    assert calls[-1][2] == section.result_table.column_labels
-    assert calls[-1][3] == section.result_table.rows
 
     section.trace_profile_combo.set("With 35 Min (4-point)")
     assert section.trace_csv_button.invoke() == 1
@@ -1159,6 +1226,19 @@ def test_hong_kong_cspf_trace_csv_export_button_calls_helper(monkeypatch, tk_roo
         lambda *_args, **_kwargs: False,
     )
     assert cspf.trace_csv_button.invoke() == 0
+
+
+def test_hong_kong_cspf_trace_copy_button_uses_header_included_tsv(tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+
+    assert cspf.trace_copy_button.invoke() == 1
+    clipboard = tk_root.clipboard_get()
+
+    assert clipboard.splitlines()[0] == "\t".join(cspf.trace_table.column_labels)
+    assert "Traceback" not in clipboard
+    assert "{" not in clipboard
+    assert "None" not in clipboard
 
 
 def test_profile_switch_with_expanded_hong_kong_cspf_trace_is_lifecycle_safe(tk_root):

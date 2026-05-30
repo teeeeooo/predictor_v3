@@ -114,6 +114,13 @@ class HongKongCspfSection:
         )
         self.trace_csv_button.surface_role = "hong_kong_cspf_trace_csv_export"
         self.trace_csv_button.pack(side=tk.LEFT, padx=(6, 0))
+        self.trace_copy_button = ttk.Button(
+            self._trace_controls,
+            text="Trace 복사",
+            command=self._copy_trace_table,
+        )
+        self.trace_copy_button.surface_role = "hong_kong_cspf_trace_copy"
+        self.trace_copy_button.pack(side=tk.LEFT, padx=(6, 0))
         self.trace_table = BinTraceTable(self._frame)
         self.rated_table.set_values({"declared_capacity": "3500"})
         self.input_table.set_values(
@@ -202,6 +209,10 @@ class HongKongCspfSection:
         return table_csv_export.export_table_to_csv(
             self._frame, "hong_kong_cspf_bin_trace.csv", headers, rows
         )
+
+    def _copy_trace_table(self) -> bool:
+        self._update_trace_table()
+        return self.trace_table.copy_table()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

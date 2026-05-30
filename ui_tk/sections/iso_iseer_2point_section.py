@@ -88,13 +88,20 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.result_csv_button = ttk.Button(
+        self.result_copy_button = ttk.Button(
             self._export_controls,
-            text="결과 CSV 내보내기",
-            command=self._export_result_csv,
+            text="결과 복사",
+            command=self._copy_result_table,
         )
-        self.result_csv_button.surface_role = "two_point_result_csv_export"
-        self.result_csv_button.pack(side=tk.LEFT)
+        self.result_copy_button.surface_role = "two_point_result_copy"
+        self.result_copy_button.pack(side=tk.LEFT)
+        self.trace_copy_button = ttk.Button(
+            self._export_controls,
+            text="Trace 복사",
+            command=self._copy_trace_table,
+        )
+        self.trace_copy_button.surface_role = "two_point_trace_copy"
+        self.trace_copy_button.pack(side=tk.LEFT, padx=(6, 0))
         self.trace_csv_button = ttk.Button(
             self._export_controls,
             text="Trace CSV 내보내기",
@@ -224,11 +231,12 @@ class IsoIseer2PointSection:
         self._trace_status = status
         self._update_trace_table()
 
-    def _export_result_csv(self) -> bool:
-        headers, rows = self.result_table.table_export_data()
-        return table_csv_export.export_table_to_csv(
-            self._frame, "iso_iseer_result.csv", headers, rows
-        )
+    def _copy_result_table(self) -> bool:
+        return self.result_table.copy_table()
+
+    def _copy_trace_table(self) -> bool:
+        self._update_trace_table()
+        return self.trace_table.copy_table()
 
     def _export_trace_csv(self) -> bool:
         self._update_trace_table()

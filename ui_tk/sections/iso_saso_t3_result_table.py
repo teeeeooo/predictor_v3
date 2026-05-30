@@ -5,6 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from ui_tk.table_clipboard import copy_table_to_clipboard
 from ui_tk.layout_constants import (
     RESULT_STATUS_FG,
     TABLE_BODY_FONT,
@@ -60,6 +61,8 @@ class IsoSasoT3ResultTable:
         self.table.column("Scenario", anchor=tk.W, width=180, minwidth=150)
         self.table.bind("<Control-c>", self.copy)
         self.table.bind("<Command-c>", self.copy)
+        self.table.bind("<Control-a>", self.select_all)
+        self.table.bind("<Command-a>", self.select_all)
 
         self.status_label = tk.Label(
             self._frame,
@@ -117,11 +120,16 @@ class IsoSasoT3ResultTable:
         status = self.status_label.cget("text") or "No result rows"
         return ("Status",), ((status,),)
 
+    def copy_table(self) -> bool:
+        headers, rows = self.table_export_data()
+        return copy_table_to_clipboard(self.table, headers, rows)
+
     def copy(self, _event: tk.Event | None = None) -> str:
-        contents = self.as_text()
-        if contents:
-            self.table.clipboard_clear()
-            self.table.clipboard_append(contents)
+        self.copy_table()
+        return "break"
+
+    def select_all(self, _event: tk.Event | None = None) -> str:
+        self.table.selection_set(self.table.get_children())
         return "break"
 
     def _show_table(self) -> None:
