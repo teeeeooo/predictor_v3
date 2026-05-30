@@ -23,11 +23,11 @@ class BinDetailSource:
 
 
 _GRAPH_SERIES: tuple[tuple[str, str], ...] = (
-    ("Bin Hours", "nj"),
+    ("Bin Hours [h]", "nj"),
     ("Load [W]", "lc"),
     ("Capacity [W]", "capacity"),
     ("Power [W]", "power"),
-    ("EER", "eer"),
+    ("EER [W/W]", "eer"),
     ("CSTL [Wh]", "cstl_bin"),
     ("CSEC [Wh]", "csec_bin"),
 )
@@ -95,7 +95,8 @@ class BinDetailPanel:
             padx=ISO_SECTION_PADX,
             pady=(0, 4),
         )
-        ttk.Label(self._graph_row, text="Graph").pack(side=tk.LEFT, padx=(0, 6))
+        self.graph_label = ttk.Label(self._graph_row, text="그래프 항목")
+        self.graph_label.pack(side=tk.LEFT, padx=(0, 6))
         self.graph_combo = ttk.Combobox(
             self._graph_row,
             values=[label for label, _key in _GRAPH_SERIES],
@@ -263,14 +264,19 @@ class BinDetailGraph:
         canvas.delete("all")
         width = max(canvas.winfo_width(), 240)
         height = max(canvas.winfo_height(), 160)
-        margin_left = 46
-        margin_right = 18
+        margin_left = 54
+        margin_right = 24
         margin_top = 18
-        margin_bottom = 32
+        margin_bottom = 42
         plot_width = max(width - margin_left - margin_right, 1)
         plot_height = max(height - margin_top - margin_bottom, 1)
 
-        points = self._plot_points(plot_width, plot_height, margin_left, margin_top)
+        points, x_axis_label, x_min, x_max = self._plot_points(
+            plot_width,
+            plot_height,
+            margin_left,
+            margin_top,
+        )
         if not points:
             canvas.create_text(
                 width / 2,
@@ -295,6 +301,26 @@ class BinDetailGraph:
             margin_top + plot_height,
             fill=axis_color,
         )
+        baseline_y = margin_top + plot_height
+        canvas.create_text(
+            margin_left + plot_width / 2,
+            height - 10,
+            text=x_axis_label,
+            fill="gray25",
+        )
+        if x_min is not None and x_max is not None:
+            canvas.create_text(
+                margin_left,
+                baseline_y + 14,
+                text=_tick_text(x_min),
+                fill="gray35",
+            )
+            canvas.create_text(
+                margin_left + plot_width,
+                baseline_y + 14,
+                text=_tick_text(x_max),
+                fill="gray35",
+            )
         canvas.create_line(*_flatten(points), fill="blue", width=2, smooth=False)
         for x, y in points:
             canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="blue", outline="")
@@ -312,16 +338,18 @@ class BinDetailGraph:
         plot_height: int,
         margin_left: int,
         margin_top: int,
-    ) -> list[tuple[float, float]]:
+    ) -> tuple[list[tuple[float, float]], str, float | None, float | None]:
         rows = [row for row in self._rows if _number(row.get(self._series_key)) is not None]
         if not rows:
-            return []
+            return [], "Outdoor Temp [°C]", None, None
         x_values = [_number(row.get("tj")) for row in rows]
+        x_axis_label = "Outdoor Temp [°C]"
         if any(value is None for value in x_values):
             x_values = [float(index) for index, _row in enumerate(rows)]
+            x_axis_label = "Bin index"
         y_values = [_number(row.get(self._series_key)) for row in rows]
         if not y_values or any(value is None for value in y_values):
-            return []
+            return [], x_axis_label, None, None
         min_x = min(x_values)
         max_x = max(x_values)
         min_y = min(y_values)
@@ -335,13 +363,13 @@ class BinDetailGraph:
             x = margin_left + ((x_value - min_x) / (max_x - min_x)) * plot_width
             y = margin_top + plot_height - ((y_value - min_y) / (max_y - min_y)) * plot_height
             points.append((x, y))
-        return points
+        return points, x_axis_label, min_x, max_x
 
     def _series_label(self) -> str:
         for label, key in _GRAPH_SERIES:
             if key == self._series_key:
                 return label
-        return "Bin Hours"
+        return "Bin Hours [h]"
 
 
 def _number(value: object) -> float | None:
@@ -357,3 +385,9 @@ def _number(value: object) -> float | None:
 
 def _flatten(points: Sequence[tuple[float, float]]) -> tuple[float, ...]:
     return tuple(coordinate for point in points for coordinate in point)
+
+
+def _tick_text(value: float) -> str:
+    if value.is_integer():
+        return str(int(value))
+    return f"{value:.1f}"

@@ -135,6 +135,14 @@ def _surface_roles(widget) -> list[str]:
     return roles
 
 
+def _canvas_texts(canvas) -> set[str]:
+    return {
+        canvas.itemcget(item_id, "text")
+        for item_id in canvas.find_all()
+        if canvas.type(item_id) == "text"
+    }
+
+
 def _make_tab(root):
     from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
@@ -330,7 +338,11 @@ def test_iso_iseer_detail_panel_opens_with_bin_details(tk_root):
     assert section.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
     assert section.detail_panel.graph.canvas.winfo_exists()
-    assert section.detail_panel.graph_combo.get() == "Bin Hours"
+    assert section.detail_panel.graph_label.cget("text") == "그래프 항목"
+    assert section.detail_panel.graph_combo.get() == "Bin Hours [h]"
+    assert "EER [W/W]" in section.detail_panel.graph_combo.cget("values")
+    tk_root.update_idletasks()
+    assert "Outdoor Temp [°C]" in _canvas_texts(section.detail_panel.graph.canvas)
     assert section.detail_panel.copy_button.cget("text") == "상세 복사"
     assert section.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert section.trace_table.column_labels == (
@@ -555,7 +567,11 @@ def test_saso_t3_detail_panel_opens_with_required_bin_details(tk_root):
     assert section.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
     assert section.detail_panel.graph.canvas.winfo_exists()
-    assert section.detail_panel.graph_combo.get() == "Bin Hours"
+    assert section.detail_panel.graph_label.cget("text") == "그래프 항목"
+    assert section.detail_panel.graph_combo.get() == "Bin Hours [h]"
+    assert "EER [W/W]" in section.detail_panel.graph_combo.cget("values")
+    tk_root.update_idletasks()
+    assert "Outdoor Temp [°C]" in _canvas_texts(section.detail_panel.graph.canvas)
     assert section.detail_panel.copy_button.cget("text") == "상세 복사"
     assert section.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert section.trace_table.column_labels == (
@@ -1205,7 +1221,11 @@ def test_hong_kong_cspf_detail_panel_opens_with_bin_details(tk_root):
     assert cspf.detail_toggle.cget("text") == "상세 닫기 ↑"
     assert fit_calls == ["fit"]
     assert cspf.detail_panel.graph.canvas.winfo_exists()
-    assert cspf.detail_panel.graph_combo.get() == "Bin Hours"
+    assert cspf.detail_panel.graph_label.cget("text") == "그래프 항목"
+    assert cspf.detail_panel.graph_combo.get() == "Bin Hours [h]"
+    assert "EER [W/W]" in cspf.detail_panel.graph_combo.cget("values")
+    tk_root.update_idletasks()
+    assert "Outdoor Temp [°C]" in _canvas_texts(cspf.detail_panel.graph.canvas)
     assert cspf.detail_panel.copy_button.cget("text") == "상세 복사"
     assert cspf.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert cspf.trace_table.column_labels == (
