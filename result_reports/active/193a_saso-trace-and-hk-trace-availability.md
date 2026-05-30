@@ -37,7 +37,7 @@ Reuse the 192-d `BinTraceTable` pattern for a narrow SASO T3 trace table slice a
 - task 7: OK - focused tests now cover SASO default collapsed trace, expand/collapse, column parity, required trace rows, optional selector safe status, optional valid trace rows, invalid optional safe status, invalid required stale clear, and profile switch lifecycle.
 - task 8: OK - focused verification completed; no lingering pytest process found.
 - task 9: OK - this report and WORK_PLAN checkpoint were added compactly.
-- task 10: pending at report creation - commit and push will be recorded after commit/push completes.
+- task 10: OK - source/test and docs/report commits were pushed.
 
 ## Changed Files
 
@@ -58,9 +58,15 @@ Reuse the 192-d `BinTraceTable` pattern for a narrow SASO T3 trace table slice a
 - Process check after final focused: no lingering pytest process; only the check command and `rg` matched.
 - `git diff --check`: clean.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Manual smoke is still needed for SASO trace expand/collapse, required/optional selector behavior, invalid optional status, invalid required clear, and profile switching.
+- User manual smoke completed with no issues found:
+  - SASO trace expand/collapse works normally.
+  - Required/optional selector behavior is normal.
+  - invalid optional status is safe.
+  - invalid required input clears stale trace rows.
+  - profile switching is normal.
+  - no resize/scroll hang was observed.
 
 ## Known Risks
 
@@ -85,8 +91,8 @@ Reuse the 192-d `BinTraceTable` pattern for a narrow SASO T3 trace table slice a
 ## Commit / Push
 
 - Source/test implementation commit: `ad5ce67 193-a: add SASO bin trace table`
-- Docs/report commit: pending at report creation.
-- Push: pending at report creation.
+- Docs/report commit: `f1fc355 193-a: document SASO and HK trace audit`
+- Push: completed for source/test and docs/report commits.
 
 ## Project Memory Delta
 

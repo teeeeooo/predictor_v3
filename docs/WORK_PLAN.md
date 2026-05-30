@@ -27,18 +27,19 @@
   - 192-d ISO/ISEER `bin_details` trace table parity implemented.
   - 192-d manual smoke completed with no issues found.
   - 193-a SASO T3 `bin_details` trace table implemented; Hong Kong CSPF/HSPF trace availability audited.
-- Next: 193-a manual smoke, then choose the next trace/export follow-up slice.
+  - 193-a manual smoke completed with no issues found.
+  - 193-b result surface/export boundary note added.
+- Next: 193-c table CSV export foundation.
 
 ## Next Actions
 
-1. **193-a manual smoke**
-   - Check SASO trace expand/collapse, optional 35 Min states, and profile switching.
-2. **Table CSV export foundation**
+1. **193-c table CSV export foundation**
    - Add export for table-shaped result/trace surfaces after trace behavior settles.
-3. **Bin graph parity**
+   - Use thin table hooks and a small export helper; do not add a shared section framework.
+2. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
-4. **Hong Kong trace implementation**
-   - Split CSPF and HSPF based on the 193-a availability audit.
+3. **Hong Kong CSPF trace implementation**
+   - Use the 193-a audit result; keep HSPF separate.
 
 ## Active Constraints
 
@@ -48,14 +49,17 @@
 - Do not run full pytest unless explicitly requested; use focused smoke and relevant tests.
 - Keep comparison result surfaces section-local until repeated reuse proves a shared framework is necessary.
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
+- Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
+- Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
 
 ## Deferred / Hold
 
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Hong Kong CSPF/HSPF trace availability audit completed in 193-a; CSPF can likely use `BinTraceTable`, while HSPF needs a heating trace schema decision.
-- Graph export follows graph parity and may use SPOT-style HTML export.
+- Bin graph parity is deferred; graph export follows graph parity and may use SPOT-style HTML export.
+- Hong Kong CSPF trace implementation is deferred and should follow the 193-a audit result.
+- Hong Kong HSPF needs a separate heating trace schema decision.
 - Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
 - EN/AHRI Tkinter expansion is deferred.
@@ -75,7 +79,9 @@
 - `result_reports/active/192d_iso-iseer-bin-details-trace-table-parity.md`
   - Tracks ISO/ISEER `bin_details` trace table parity and completed manual smoke closeout.
 - `result_reports/active/193a_saso-trace-and-hk-trace-availability.md`
-  - Tracks SASO T3 `bin_details` trace implementation and Hong Kong trace availability audit until manual smoke.
+  - Tracks SASO T3 `bin_details` trace implementation, Hong Kong trace availability audit, and completed manual smoke.
+- `result_reports/active/193b_result-surface-export-boundary.md`
+  - Tracks the docs-only result surface/export boundary note before 193-c CSV export foundation.
 
 ## Historical Notes / References
 
