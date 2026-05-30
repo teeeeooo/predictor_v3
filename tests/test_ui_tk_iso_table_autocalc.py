@@ -86,6 +86,10 @@ def _saso_tree_values(tab) -> list[tuple[str, ...]]:
     return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
 
 
+def _saso_bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
+    return tab._saso_t3_section.trace_table.table_rows()
+
+
 def _label_texts(widget) -> list[str]:
     labels = []
     stack = [widget]
@@ -347,6 +351,8 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert section.optional_min_toggle.cget("text") == "35 Min optional test 사용"
     assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "disabled"
     assert section.input_table.editable_entries["min_35_power"].cget("state") == "disabled"
+    assert not section.trace_table.is_visible()
+    assert section.trace_profile_combo.get() == "Required only (3-point)"
 
     table = section.result_table
     assert table.surface_role == "saso_t3_result_surface"
@@ -375,6 +381,81 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
+
+
+def test_saso_t3_bin_trace_expands_with_required_bin_details(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+    fit_calls = []
+    section._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+
+    assert section is not None
+    assert not section.trace_table.is_visible()
+    assert set(section._trace_results) == {"Required only (3-point)"}
+    assert section._trace_results["Required only (3-point)"]
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert section.trace_table.is_visible()
+    assert fit_calls == ["fit"]
+    assert section.trace_table.column_labels == (
+        "Bin No",
+        "Temp [°C]",
+        "Hours",
+        "Load [W]",
+        "Capacity [W]",
+        "Power [W]",
+        "EER",
+        "CSTL [Wh]",
+        "CSEC [Wh]",
+    )
+    rows = _saso_bin_trace_rows(tab)
+    assert rows
+    assert all(len(row) == len(section.trace_table.column_labels) for row in rows)
+    rendered = _joined_rows(rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert not section.trace_table.is_visible()
+    assert fit_calls == ["fit", "fit"]
+
+
+def test_saso_t3_bin_trace_optional_selector_uses_4point_bin_details(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    required_rows = _saso_bin_trace_rows(tab)
+    assert required_rows
+
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    section._on_trace_profile_changed()
+    assert _saso_bin_trace_rows(tab) == ()
+    assert "Trace data not available" in section.trace_table.as_text()
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    section._auto_calc.flush_now()
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    section._on_trace_profile_changed()
+    optional_rows = _saso_bin_trace_rows(tab)
+
+    assert set(section._trace_results) == {
+        "Required only (3-point)",
+        "With 35 Min (4-point)",
+    }
+    assert optional_rows
+    assert optional_rows != required_rows
+    rendered = _joined_rows(optional_rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
 
 
 def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):
@@ -409,6 +490,11 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    required_trace_before = _saso_bin_trace_rows(tab)
+    assert required_trace_before
+
     section.optional_min_enabled.set(True)
     section._on_optional_min_toggled()
     assert section.input_table.set_value("min_35_power", "bad") is True
@@ -433,11 +519,23 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
+    assert section._trace_results["Required only (3-point)"]
+    section.trace_profile_combo.set("Required only (3-point)")
+    section._on_trace_profile_changed()
+    assert _saso_bin_trace_rows(tab)
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    section._on_trace_profile_changed()
+    assert _saso_bin_trace_rows(tab) == ()
+    assert "Trace data not available" in section.trace_table.as_text()
 
 
 def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert _saso_bin_trace_rows(tab)
 
     assert section.input_table.set_value("full_46_power", "bad") is True
     section._auto_calc.flush_now()
@@ -450,6 +548,9 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
+    assert section._trace_results == {}
+    assert _saso_bin_trace_rows(tab) == ()
+    assert "입력 오류: 필수 시험점 숫자 입력을 확인하세요." in section.trace_table.as_text()
 
 
 def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
@@ -499,12 +600,22 @@ def test_profile_switch_with_expanded_bin_trace_is_lifecycle_safe(tk_root):
 
     _select_mode(tab, "SASO T3")
     assert tab._saso_t3_section is not None
-    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
+    saso_section = tab._saso_t3_section
+    assert saso_section.result_table.row_labels == ("Required only (3-point)",)
+    saso_section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert saso_section.trace_table.is_visible()
+    assert _saso_bin_trace_rows(tab)
 
     _select_mode(tab, "ISO / ISEER 2-point")
     assert tab._two_point_section is section
     assert section.trace_table.is_visible()
     assert _bin_trace_rows(tab)
+
+    _select_mode(tab, "SASO T3")
+    assert tab._saso_t3_section is saso_section
+    assert saso_section.trace_table.is_visible()
+    assert _saso_bin_trace_rows(tab)
 
 
 def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):

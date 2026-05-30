@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Callable, Mapping
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,8 +13,12 @@ from ui_tk.excel_like_table_controller import ExcelLikeTableController
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
+from ui_tk.sections.bin_trace_table import BinTraceTable
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from ui_tk.table_grid_model import parse_numeric_cell
+
+_REQUIRED_TRACE_LABEL = "Required only (3-point)"
+_OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
 
 _POINTS: tuple[tuple[str, str, str], ...] = (
     ("46_full", "full_46", "46 Full"),
@@ -38,7 +42,15 @@ _DEFAULT_VALUES: Mapping[str, str] = {
 class IsoSasoT3Section:
     """SASO T3 input, optional 35 Min toggle, and scenario comparison."""
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        on_trace_visibility_changed: Callable[[], None] | None = None,
+    ) -> None:
+        self._on_trace_visibility_changed = on_trace_visibility_changed
+        self._trace_results: dict[str, list[dict]] = {}
+        self._trace_status: str | None = "Trace data not available"
         self._frame = ttk.LabelFrame(parent, text="SASO T3 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -83,6 +95,34 @@ class IsoSasoT3Section:
             row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
+        self._trace_controls = ttk.Frame(self._frame)
+        self._trace_controls.grid(
+            row=4,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.trace_toggle = ttk.Checkbutton(
+            self._trace_controls,
+            text="Bin trace",
+            variable=self._trace_visible,
+            command=self._on_trace_toggled,
+        )
+        self.trace_toggle.surface_role = "saso_t3_bin_trace_toggle"
+        self.trace_toggle.pack(side=tk.LEFT)
+        self.trace_profile_combo = ttk.Combobox(
+            self._trace_controls,
+            values=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
+            state="readonly",
+        )
+        self.trace_profile_combo.set(_REQUIRED_TRACE_LABEL)
+        self.trace_profile_combo.pack(side=tk.LEFT, padx=(6, 0))
+        self.trace_profile_combo.bind(
+            "<<ComboboxSelected>>", self._on_trace_profile_changed
+        )
+        self.trace_table = BinTraceTable(self._frame)
 
         self.input_table.set_values(_DEFAULT_VALUES)
         self.input_controller = ExcelLikeTableController(self.input_table)
@@ -101,27 +141,39 @@ class IsoSasoT3Section:
     def recalculate_now(self) -> None:
         required_measured, required_error = self._read_required_inputs()
         if required_error is not None:
+            self._clear_trace(required_error)
             self.result_table.set_status(required_error)
             return
 
-        required_row, required_error = self._calculate_required_row(required_measured)
+        required_row, required_trace, required_error = self._calculate_required_row(
+            required_measured
+        )
         if required_error is not None:
+            self._clear_trace(required_error)
             self.result_table.set_status(required_error)
             return
 
         rows = [required_row]
+        trace_results = {_REQUIRED_TRACE_LABEL: required_trace}
         status = "자동 계산 완료"
         if self.optional_min_enabled.get():
             optional_measured, optional_error = self._read_optional_inputs(required_measured)
             if optional_error is None:
-                optional_row, optional_error = self._calculate_optional_row(
+                optional_row, optional_trace, optional_error = self._calculate_optional_row(
                     optional_measured
                 )
+            else:
+                optional_row = ()
+                optional_trace = []
             if optional_error is not None:
                 rows.append(_optional_error_row(optional_error))
                 status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
             else:
                 rows.append(optional_row)
+                trace_results[_OPTIONAL_TRACE_LABEL] = optional_trace
+        self._trace_results = trace_results
+        self._trace_status = None
+        self._update_trace_table()
         self.result_table.set_rows(tuple(rows), status=status)
 
     def _read_required_inputs(
@@ -155,7 +207,7 @@ class IsoSasoT3Section:
 
     def _calculate_required_row(
         self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], str | None]:
+    ) -> tuple[tuple[str, ...], list[dict], str | None]:
         try:
             calc = create_calculator_for_profile(
                 profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
@@ -164,13 +216,13 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "Required only (3-point)", measured, result, include_min=False
-            ), None
+            ), _bin_details(result), None
         except Exception:
-            return (), "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
+            return (), [], "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
 
     def _calculate_optional_row(
         self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], str | None]:
+    ) -> tuple[tuple[str, ...], list[dict], str | None]:
         try:
             calc = create_calculator_for_profile(
                 profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
@@ -179,18 +231,61 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "With 35 Min (4-point)", measured, result, include_min=True
-            ), None
+            ), _bin_details(result), None
         except Exception:
-            return (), "계산 오류"
+            return (), [], "계산 오류"
 
     def _on_optional_min_toggled(self) -> None:
         self._sync_optional_min_state()
+        self._sync_optional_trace_state()
         self._auto_calc.schedule()
 
     def _sync_optional_min_state(self) -> None:
         state = tk.NORMAL if self.optional_min_enabled.get() else tk.DISABLED
         for field_key in ("min_35_capacity", "min_35_power"):
             self.input_table.editable_entries[field_key].configure(state=state)
+
+    def _sync_optional_trace_state(self) -> None:
+        if not self.optional_min_enabled.get():
+            self._trace_results.pop(_OPTIONAL_TRACE_LABEL, None)
+            self._update_trace_table()
+
+    def _on_trace_toggled(self) -> None:
+        if self._trace_visible.get():
+            self._update_trace_table()
+            self.trace_table.grid(
+                row=5,
+                column=0,
+                sticky="ew",
+                padx=ISO_SECTION_PADX,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+        else:
+            self.trace_table.grid_remove()
+        if self._on_trace_visibility_changed is not None:
+            self._on_trace_visibility_changed()
+
+    def _on_trace_profile_changed(self, _event=None) -> None:
+        self._update_trace_table()
+
+    def _update_trace_table(self) -> None:
+        if self._trace_status is not None:
+            self.trace_table.set_status(self._trace_status)
+            return
+        selected = self.trace_profile_combo.get() or _REQUIRED_TRACE_LABEL
+        trace_rows = self._trace_results.get(selected)
+        if trace_rows:
+            self.trace_table.set_data(trace_rows)
+            return
+        if selected == _OPTIONAL_TRACE_LABEL:
+            self.trace_table.set_status("Trace data not available for With 35 Min (4-point)")
+            return
+        self.trace_table.set_status("Trace data not available")
+
+    def _clear_trace(self, status: str) -> None:
+        self._trace_results = {}
+        self._trace_status = status
+        self._update_trace_table()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
@@ -225,6 +320,13 @@ def _saso_result_row(
 
 def _optional_error_row(message: str) -> tuple[str, ...]:
     return ("With 35 Min (4-point)", "-", "-", "-", message, "-", "-", "-")
+
+
+def _bin_details(result: Mapping[str, object]) -> list[dict]:
+    raw = result.get("bin_details")
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, Mapping)]
 
 
 def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:

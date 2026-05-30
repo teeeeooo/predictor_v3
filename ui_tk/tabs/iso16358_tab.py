@@ -218,7 +218,10 @@ class Iso16358Tab(ttk.Frame):
         if mode_label == MODE_SASO_T3:
             self.sections = {}
             if self._saso_t3_section is None:
-                self._saso_t3_section = IsoSasoT3Section(self._saso_t3_frame)
+                self._saso_t3_section = IsoSasoT3Section(
+                    self._saso_t3_frame,
+                    on_trace_visibility_changed=self._on_trace_visibility_changed,
+                )
                 self._saso_t3_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._saso_t3_section.result_panel
             self._saso_t3_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
