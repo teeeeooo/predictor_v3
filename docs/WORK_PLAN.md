@@ -34,13 +34,13 @@
   - 193-c manual smoke completed with no issues found.
   - 193-d selected Hong Kong CSPF trace implementation as the next slice.
   - 194-a Hong Kong CSPF/HSPF section naming cleanup completed.
-- Next: 194-b Hong Kong CSPF bin trace implementation.
+  - 194-b Hong Kong CSPF bin trace implementation completed.
+- Next: 194-b manual smoke, then choose the next trace/graph follow-up slice.
 
 ## Next Actions
 
-1. **194-b Hong Kong CSPF bin trace implementation**
-   - Use the 193-a audit result; keep HSPF separate.
-   - Reuse the existing `BinTraceTable` pattern where the CSPF `bin_details` schema matches.
+1. **194-b manual smoke**
+   - Check Hong Kong CSPF trace expand/collapse, stale clear, CSV export, cancel path, and profile switching.
 2. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
 3. **Hong Kong HSPF heating trace schema design**
@@ -64,7 +64,7 @@
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Bin graph parity is deferred; graph export follows graph parity and may use SPOT-style HTML export.
-- Hong Kong CSPF trace implementation is deferred and should follow the 193-a audit result.
+- Hong Kong CSPF trace manual smoke is pending.
 - Hong Kong HSPF needs a separate heating trace schema decision.
 - Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
@@ -94,6 +94,8 @@
   - Tracks CSV export closeout, report commit/push recording principle, and next slice selection.
 - `result_reports/active/194a_hong-kong-section-naming-cleanup.md`
   - Tracks Hong Kong section owner rename before CSPF trace implementation.
+- `result_reports/active/194b_hong-kong-cspf-bin-trace.md`
+  - Tracks Hong Kong CSPF bin trace implementation until manual smoke.
 
 ## Historical Notes / References
 
