@@ -126,5 +126,5 @@ Choose the next follow-up slice from:
 
 - Source/test implementation commit: `f935571 192-d: add ISO ISEER bin trace parity`
 - Docs/report commit: `623cde4 192-d: document ISO ISEER bin trace parity`
-- Manual smoke closeout commit: pending at closeout creation.
-- Push: completed for implementation/docs; closeout push pending at closeout creation.
+- Manual smoke closeout commit: `45da308 192-d: close out bin trace manual smoke`
+- Push: completed for implementation/docs and manual smoke closeout.

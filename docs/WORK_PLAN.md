@@ -26,18 +26,19 @@
   - 192-c input-point detail foundation was reverted; it did not match the intended PyQt parity target.
   - 192-d ISO/ISEER `bin_details` trace table parity implemented.
   - 192-d manual smoke completed with no issues found.
-- Next: SASO T3 `bin_details` trace table implementation.
+  - 193-a SASO T3 `bin_details` trace table implemented; Hong Kong CSPF/HSPF trace availability audited.
+- Next: 193-a manual smoke, then choose the next trace/export follow-up slice.
 
 ## Next Actions
 
-1. **SASO T3 bin_details trace table implementation**
-   - Add SASO trace one slice at a time, following the 192-d ISO/ISEER pattern.
-2. **Manual smoke**
+1. **193-a manual smoke**
    - Check SASO trace expand/collapse, optional 35 Min states, and profile switching.
-3. **Table CSV export foundation**
+2. **Table CSV export foundation**
    - Add export for table-shaped result/trace surfaces after trace behavior settles.
-4. **Bin graph parity**
+3. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
+4. **Hong Kong trace implementation**
+   - Split CSPF and HSPF based on the 193-a availability audit.
 
 ## Active Constraints
 
@@ -53,7 +54,7 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Hong Kong CSPF/HSPF trace needs a separate result-shape/data availability audit.
+- Hong Kong CSPF/HSPF trace availability audit completed in 193-a; CSPF can likely use `BinTraceTable`, while HSPF needs a heating trace schema decision.
 - Graph export follows graph parity and may use SPOT-style HTML export.
 - Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
@@ -72,7 +73,9 @@
 - `result_reports/active/190b_saso-t3-tkinter-implementation.md`
   - Tracks the current SASO T3 implementation slice until manual smoke/lifecycle cleanup.
 - `result_reports/active/192d_iso-iseer-bin-details-trace-table-parity.md`
-  - Tracks ISO/ISEER `bin_details` trace table parity until manual smoke.
+  - Tracks ISO/ISEER `bin_details` trace table parity and completed manual smoke closeout.
+- `result_reports/active/193a_saso-trace-and-hk-trace-availability.md`
+  - Tracks SASO T3 `bin_details` trace implementation and Hong Kong trace availability audit until manual smoke.
 
 ## Historical Notes / References
 
