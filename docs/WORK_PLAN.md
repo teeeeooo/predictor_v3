@@ -35,15 +35,18 @@
   - 193-d selected Hong Kong CSPF trace implementation as the next slice.
   - 194-a Hong Kong CSPF/HSPF section naming cleanup completed.
   - 194-b Hong Kong CSPF bin trace implementation completed.
-- Next: 194-b manual smoke, then choose the next trace/graph follow-up slice.
+  - 194-c Excel-like table contract recovery audit/design completed.
+- Next: 194-d table copy UX recovery foundation.
 
 ## Next Actions
 
-1. **194-b manual smoke**
+1. **194-d table copy UX recovery foundation**
+   - Add header-included TSV copy helper, read-only result/trace copy buttons, and Ctrl/Cmd+C alignment without changing CSV export.
+2. **194-b manual smoke**
    - Check Hong Kong CSPF trace expand/collapse, stale clear, CSV export, cancel path, and profile switching.
-2. **Bin graph parity**
+3. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
-3. **Hong Kong HSPF heating trace schema design**
+4. **Hong Kong HSPF heating trace schema design**
    - Define heating-specific trace columns before any HSPF trace implementation.
 
 ## Active Constraints
@@ -55,6 +58,7 @@
 - Keep comparison result surfaces section-local until repeated reuse proves a shared framework is necessary.
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
 - Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
+- Excel-like table contract recovery owner: `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md`.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
 - CSV export is currently limited to ISO/ISEER and SASO table-shaped result/trace surfaces.
 
@@ -64,6 +68,8 @@
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Bin graph parity is deferred; graph export follows graph parity and may use SPOT-style HTML export.
+- ResultPanel summary export/copy alignment is deferred after table copy UX recovery.
+- MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
 - Hong Kong CSPF trace manual smoke is pending.
 - Hong Kong HSPF needs a separate heating trace schema decision.
 - Internal formula trace still needs a separate core/data contract.
@@ -96,6 +102,8 @@
   - Tracks Hong Kong section owner rename before CSPF trace implementation.
 - `result_reports/active/194b_hong-kong-cspf-bin-trace.md`
   - Tracks Hong Kong CSPF bin trace implementation until manual smoke.
+- `result_reports/active/194c_excel-like-table-contract-recovery.md`
+  - Tracks Excel-like table contract recovery audit/design and next copy UX slice.
 
 ## Historical Notes / References
 
