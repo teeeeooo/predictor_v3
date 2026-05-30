@@ -19,6 +19,7 @@ from ui_tk.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )
+from ui_tk import table_csv_export
 from ui_tk.sections.bin_trace_table import BinTraceTable
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
@@ -79,10 +80,32 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._export_controls = ttk.Frame(self._frame)
+        self._export_controls.grid(
+            row=3,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.result_csv_button = ttk.Button(
+            self._export_controls,
+            text="결과 CSV 내보내기",
+            command=self._export_result_csv,
+        )
+        self.result_csv_button.surface_role = "two_point_result_csv_export"
+        self.result_csv_button.pack(side=tk.LEFT)
+        self.trace_csv_button = ttk.Button(
+            self._export_controls,
+            text="Trace CSV 내보내기",
+            command=self._export_trace_csv,
+        )
+        self.trace_csv_button.surface_role = "two_point_trace_csv_export"
+        self.trace_csv_button.pack(side=tk.LEFT, padx=(6, 0))
         self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
         self._trace_controls = ttk.Frame(self._frame)
         self._trace_controls.grid(
-            row=3,
+            row=4,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
@@ -175,7 +198,7 @@ class IsoIseer2PointSection:
         if self._trace_visible.get():
             self._update_trace_table()
             self.trace_table.grid(
-                row=4,
+                row=5,
                 column=0,
                 sticky="ew",
                 padx=ISO_SECTION_PADX,
@@ -200,6 +223,19 @@ class IsoIseer2PointSection:
         self._trace_results = {}
         self._trace_status = status
         self._update_trace_table()
+
+    def _export_result_csv(self) -> bool:
+        headers, rows = self.result_table.table_export_data()
+        return table_csv_export.export_table_to_csv(
+            self._frame, "iso_iseer_result.csv", headers, rows
+        )
+
+    def _export_trace_csv(self) -> bool:
+        self._update_trace_table()
+        headers, rows = self.trace_table.table_export_data()
+        return table_csv_export.export_table_to_csv(
+            self._frame, "iso_iseer_bin_trace.csv", headers, rows
+        )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

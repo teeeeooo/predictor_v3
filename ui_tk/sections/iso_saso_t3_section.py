@@ -13,6 +13,7 @@ from ui_tk.excel_like_table_controller import ExcelLikeTableController
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
+from ui_tk import table_csv_export
 from ui_tk.sections.bin_trace_table import BinTraceTable
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from ui_tk.table_grid_model import parse_numeric_cell
@@ -95,10 +96,32 @@ class IsoSasoT3Section:
             row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._export_controls = ttk.Frame(self._frame)
+        self._export_controls.grid(
+            row=4,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.result_csv_button = ttk.Button(
+            self._export_controls,
+            text="결과 CSV 내보내기",
+            command=self._export_result_csv,
+        )
+        self.result_csv_button.surface_role = "saso_t3_result_csv_export"
+        self.result_csv_button.pack(side=tk.LEFT)
+        self.trace_csv_button = ttk.Button(
+            self._export_controls,
+            text="Trace CSV 내보내기",
+            command=self._export_trace_csv,
+        )
+        self.trace_csv_button.surface_role = "saso_t3_trace_csv_export"
+        self.trace_csv_button.pack(side=tk.LEFT, padx=(6, 0))
         self._trace_visible = tk.BooleanVar(master=self._frame, value=False)
         self._trace_controls = ttk.Frame(self._frame)
         self._trace_controls.grid(
-            row=4,
+            row=5,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
@@ -254,7 +277,7 @@ class IsoSasoT3Section:
         if self._trace_visible.get():
             self._update_trace_table()
             self.trace_table.grid(
-                row=5,
+                row=6,
                 column=0,
                 sticky="ew",
                 padx=ISO_SECTION_PADX,
@@ -286,6 +309,19 @@ class IsoSasoT3Section:
         self._trace_results = {}
         self._trace_status = status
         self._update_trace_table()
+
+    def _export_result_csv(self) -> bool:
+        headers, rows = self.result_table.table_export_data()
+        return table_csv_export.export_table_to_csv(
+            self._frame, "saso_t3_result.csv", headers, rows
+        )
+
+    def _export_trace_csv(self) -> bool:
+        self._update_trace_table()
+        headers, rows = self.trace_table.table_export_data()
+        return table_csv_export.export_table_to_csv(
+            self._frame, "saso_t3_bin_trace.csv", headers, rows
+        )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

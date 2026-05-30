@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import sys
 
 import pytest
@@ -17,6 +18,7 @@ from ui_tk.layout_constants import (
     TABLE_ROW_HEADER_CHARS,
 )
 from ui_tk.metric_input_table import MetricInputTable
+from ui_tk import table_csv_export
 
 
 class FakeAfterOwner:
@@ -142,6 +144,35 @@ def _make_saso_tab(root):
     tab = _make_tab(root)
     _select_mode(tab, "SASO T3")
     return tab
+
+
+def test_table_csv_export_writes_headers_and_rows(tmp_path):
+    path = tmp_path / "result.csv"
+
+    table_csv_export.write_csv(path, ("이름", "Value"), (("냉방", "4.939"),))
+
+    assert path.read_bytes().startswith(b"\xef\xbb\xbf")
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        assert list(csv.reader(handle)) == [["이름", "Value"], ["냉방", "4.939"]]
+
+
+def test_table_csv_export_writes_header_for_empty_rows(tmp_path):
+    path = tmp_path / "empty.csv"
+
+    table_csv_export.write_csv(path, ("A", "B"), ())
+
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        assert list(csv.reader(handle)) == [["A", "B"]]
+
+
+def test_table_csv_export_cancel_is_noop(monkeypatch):
+    monkeypatch.setattr(
+        table_csv_export.filedialog,
+        "asksaveasfilename",
+        lambda **_kwargs: "",
+    )
+
+    assert table_csv_export.export_table_to_csv(None, "cancel.csv", ("A",), (("B",),)) is False
 
 
 def test_iso_tab_defaults_to_2point_profile_with_results(tk_root):
@@ -333,6 +364,53 @@ def test_iso_iseer_bin_trace_invalid_input_clears_stale_rows(tk_root):
     assert "None" not in text
 
 
+def test_iso_iseer_table_export_data_hooks_cover_result_and_trace(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    result_headers, result_rows = section.result_table.table_export_data()
+    assert result_headers == section.result_table.column_labels
+    assert len(result_rows) == 2
+    assert {row[0] for row in result_rows} == {"ISO 16358-1", "India ISEER"}
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    trace_headers, trace_rows = section.trace_table.table_export_data()
+    assert trace_headers == section.trace_table.column_labels
+    assert trace_rows == _bin_trace_rows(tab)
+    assert trace_rows
+
+
+def test_iso_iseer_csv_export_buttons_call_helper(monkeypatch, tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+    calls = []
+
+    def fake_export(parent, default_filename, headers, rows):
+        calls.append((parent, default_filename, headers, rows))
+        return True
+
+    monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
+
+    assert section.result_csv_button.invoke() == 1
+    assert calls[-1][1] == "iso_iseer_result.csv"
+    assert calls[-1][2] == section.result_table.column_labels
+    assert calls[-1][3] == section.result_table.rows
+
+    section.trace_profile_combo.set("India ISEER")
+    assert section.trace_csv_button.invoke() == 1
+    assert calls[-1][1] == "iso_iseer_bin_trace.csv"
+    assert calls[-1][2] == section.trace_table.column_labels
+    assert calls[-1][3] == section.trace_table.rows
+
+    monkeypatch.setattr(
+        table_csv_export,
+        "export_table_to_csv",
+        lambda *_args, **_kwargs: False,
+    )
+    assert section.result_csv_button.invoke() == 0
+
+
 def test_saso_t3_profile_renders_default_result(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
@@ -456,6 +534,61 @@ def test_saso_t3_bin_trace_optional_selector_uses_4point_bin_details(tk_root):
     assert "Traceback" not in rendered
     assert "{" not in rendered
     assert "None" not in rendered
+
+
+def test_saso_t3_table_export_data_hooks_cover_result_and_trace(tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+
+    result_headers, result_rows = section.result_table.table_export_data()
+    assert result_headers == section.result_table.column_labels
+    assert len(result_rows) == 1
+    assert result_rows[0][0] == "Required only (3-point)"
+
+    section.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    trace_headers, trace_rows = section.trace_table.table_export_data()
+    assert trace_headers == section.trace_table.column_labels
+    assert trace_rows == _saso_bin_trace_rows(tab)
+    assert trace_rows
+
+
+def test_saso_t3_csv_export_buttons_call_helper(monkeypatch, tk_root):
+    tab = _make_saso_tab(tk_root)
+    section = tab._saso_t3_section
+    calls = []
+
+    def fake_export(parent, default_filename, headers, rows):
+        calls.append((parent, default_filename, headers, rows))
+        return True
+
+    monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
+
+    assert section.result_csv_button.invoke() == 1
+    assert calls[-1][1] == "saso_t3_result.csv"
+    assert calls[-1][2] == section.result_table.column_labels
+    assert calls[-1][3] == section.result_table.rows
+
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    assert section.trace_csv_button.invoke() == 1
+    assert calls[-1][1] == "saso_t3_bin_trace.csv"
+    assert calls[-1][2] == ("Status",)
+    assert "Trace data not available" in calls[-1][3][0][0]
+
+    section.optional_min_enabled.set(True)
+    section._on_optional_min_toggled()
+    section._auto_calc.flush_now()
+    section.trace_profile_combo.set("With 35 Min (4-point)")
+    assert section.trace_csv_button.invoke() == 1
+    assert calls[-1][2] == section.trace_table.column_labels
+    assert calls[-1][3] == section.trace_table.rows
+
+    monkeypatch.setattr(
+        table_csv_export,
+        "export_table_to_csv",
+        lambda *_args, **_kwargs: False,
+    )
+    assert section.trace_csv_button.invoke() == 0
 
 
 def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):

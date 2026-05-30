@@ -129,6 +129,12 @@ class BinTraceTable:
     def table_rows(self) -> tuple[tuple[str, ...], ...]:
         return self.rows
 
+    def table_export_data(self) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
+        if self.rows:
+            return self.column_labels, self.rows
+        status = self.status_label.cget("text") or "Trace data not available"
+        return ("Status",), ((status,),)
+
     def as_text(self) -> str:
         if not self.rows:
             return self.status_label.cget("text")

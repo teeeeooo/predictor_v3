@@ -111,6 +111,12 @@ class IsoSasoT3ResultTable:
             lines.append(status)
         return "\n".join(lines)
 
+    def table_export_data(self) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
+        if self.rows:
+            return self.column_labels, self.rows
+        status = self.status_label.cget("text") or "No result rows"
+        return ("Status",), ((status,),)
+
     def copy(self, _event: tk.Event | None = None) -> str:
         contents = self.as_text()
         if contents:
