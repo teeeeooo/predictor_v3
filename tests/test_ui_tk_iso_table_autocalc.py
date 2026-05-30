@@ -92,6 +92,10 @@ def _saso_bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
     return tab._saso_t3_section.trace_table.table_rows()
 
 
+def _hong_kong_cspf_bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
+    return tab.sections["CSPF"].trace_table.table_rows()
+
+
 def _label_texts(widget) -> list[str]:
     labels = []
     stack = [widget]
@@ -1069,6 +1073,114 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
     assert _result_text(tab, "CSPF") == ""
     assert not tab.sections["CSPF"].result_panel._summary_holder.winfo_children()
     assert _result_text(tab, "HSPF").count("[HSPF]") == 1
+
+
+def test_hong_kong_cspf_bin_trace_expands_with_bin_details(tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+    hspf = tab.sections["HSPF"]
+    fit_calls = []
+    cspf._on_trace_visibility_changed = lambda: fit_calls.append("fit")
+
+    assert not hasattr(hspf, "trace_table")
+    assert not cspf.trace_table.is_visible()
+    assert cspf._trace_rows
+
+    cspf.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert cspf.trace_table.is_visible()
+    assert fit_calls == ["fit"]
+    assert cspf.trace_table.column_labels == (
+        "Bin No",
+        "Temp [°C]",
+        "Hours",
+        "Load [W]",
+        "Capacity [W]",
+        "Power [W]",
+        "EER",
+        "CSTL [Wh]",
+        "CSEC [Wh]",
+    )
+    rows = _hong_kong_cspf_bin_trace_rows(tab)
+    assert rows
+    assert all(len(row) == len(cspf.trace_table.column_labels) for row in rows)
+    rendered = _joined_rows(rows)
+    assert "Traceback" not in rendered
+    assert "{" not in rendered
+    assert "None" not in rendered
+
+    cspf.trace_toggle.invoke()
+    tk_root.update_idletasks()
+
+    assert not cspf.trace_table.is_visible()
+    assert fit_calls == ["fit", "fit"]
+
+
+def test_hong_kong_cspf_bin_trace_invalid_input_clears_stale_rows(tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+
+    cspf.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert _hong_kong_cspf_bin_trace_rows(tab)
+
+    assert cspf.input_table.set_value("full_power", "bad") is True
+    cspf._auto_calc.flush_now()
+
+    assert cspf._trace_rows == []
+    assert _hong_kong_cspf_bin_trace_rows(tab) == ()
+    text = cspf.trace_table.as_text()
+    assert "입력 오류: 숫자 입력을 확인하세요." in text
+    assert "Traceback" not in text
+    assert "{" not in text
+    assert "None" not in text
+
+
+def test_hong_kong_cspf_trace_csv_export_button_calls_helper(monkeypatch, tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+    calls = []
+
+    def fake_export(parent, default_filename, headers, rows):
+        calls.append((parent, default_filename, headers, rows))
+        return True
+
+    monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
+
+    assert cspf.trace_csv_button.invoke() == 1
+    assert calls[-1][1] == "hong_kong_cspf_bin_trace.csv"
+    assert calls[-1][2] == cspf.trace_table.column_labels
+    assert calls[-1][3] == cspf.trace_table.rows
+
+    monkeypatch.setattr(
+        table_csv_export,
+        "export_table_to_csv",
+        lambda *_args, **_kwargs: False,
+    )
+    assert cspf.trace_csv_button.invoke() == 0
+
+
+def test_profile_switch_with_expanded_hong_kong_cspf_trace_is_lifecycle_safe(tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+
+    cspf.trace_toggle.invoke()
+    tk_root.update_idletasks()
+    assert cspf.trace_table.is_visible()
+    assert _hong_kong_cspf_bin_trace_rows(tab)
+
+    _select_mode(tab, "ISO / ISEER 2-point")
+    assert tab._two_point_section is not None
+
+    _select_mode(tab, "SASO T3")
+    assert tab._saso_t3_section is not None
+
+    _select_mode(tab, "Hong Kong")
+    new_cspf = tab.sections["CSPF"]
+    assert new_cspf is not cspf
+    assert not new_cspf.trace_table.is_visible()
+    assert new_cspf._trace_rows
 
 
 def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):

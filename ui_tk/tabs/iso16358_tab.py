@@ -253,7 +253,14 @@ class Iso16358Tab(ttk.Frame):
             factory = _SECTION_FACTORIES.get(metric)
             if factory is None:
                 continue
-            section = factory(self._metric_notebook, region_label)
+            if factory is HongKongCspfSection:
+                section = factory(
+                    self._metric_notebook,
+                    region_label,
+                    on_trace_visibility_changed=self._on_trace_visibility_changed,
+                )
+            else:
+                section = factory(self._metric_notebook, region_label)
             self._metric_notebook.add(section._frame, text=metric)
             self.sections[metric] = section
             if self.result_panel is None:
