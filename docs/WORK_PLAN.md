@@ -13,6 +13,7 @@
 - After a summary/archive lifecycle closes an arc, replace covered detailed checkpoints with summary references.
 - Do not append full report content, long terminal output, or repeated next-action history here.
 - Add only compact checkpoints that change current focus, next execution order, active constraints, or hold status.
+- Active reports should not record the docs/report commit hash that includes the same report, and should not leave `pending at report creation` commit/push wording; commit/push results belong in the final chat report.
 
 ## Current Focus
 
@@ -30,17 +31,18 @@
   - 193-a manual smoke completed with no issues found.
   - 193-b result surface/export boundary note added.
   - 193-c table CSV export foundation implemented for ISO/ISEER and SASO table-shaped result/trace surfaces.
-- Next: 193-c manual smoke, then choose the next trace/graph follow-up slice.
+  - 193-c manual smoke completed with no issues found.
+  - 193-d selected Hong Kong CSPF trace implementation as the next slice.
+- Next: Hong Kong CSPF trace implementation.
 
 ## Next Actions
 
-1. **193-c manual smoke**
-   - Check ISO/ISEER and SASO result/trace CSV export dialogs, saved CSV contents, and cancel path.
+1. **Hong Kong CSPF trace implementation**
+   - Use the 193-a audit result; keep HSPF separate.
+   - Reuse the existing `BinTraceTable` pattern where the CSPF `bin_details` schema matches.
 2. **Bin graph parity**
    - Graph implementation remains a later slice; graph export follows graph parity.
-3. **Hong Kong CSPF trace implementation**
-   - Use the 193-a audit result; keep HSPF separate.
-4. **Hong Kong HSPF heating trace schema design**
+3. **Hong Kong HSPF heating trace schema design**
    - Define heating-specific trace columns before any HSPF trace implementation.
 
 ## Active Constraints
@@ -86,7 +88,9 @@
 - `result_reports/active/193b_result-surface-export-boundary.md`
   - Tracks the docs-only result surface/export boundary note before 193-c CSV export foundation.
 - `result_reports/active/193c_table-csv-export-foundation.md`
-  - Tracks table CSV export foundation until manual smoke.
+  - Tracks table CSV export foundation and completed manual smoke.
+- `result_reports/active/193d_csv-export-closeout-next-slice.md`
+  - Tracks CSV export closeout, report commit/push recording principle, and next slice selection.
 
 ## Historical Notes / References
 

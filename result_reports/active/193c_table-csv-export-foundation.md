@@ -48,14 +48,16 @@ Add CSV export foundation for Tkinter table-shaped ISO/ISEER and SASO result/tra
 - Process check after final focused: no lingering pytest process; only the check command and concurrent structure guard matched.
 - `git diff --check`: clean.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Confirm the four CSV export buttons open save dialogs and write expected CSV files:
-  - ISO/ISEER result.
-  - ISO/ISEER trace.
-  - SASO result.
-  - SASO trace.
-- Confirm dialog cancel is silent.
+- User manual smoke completed with no issues found:
+  - ISO / ISEER result comparison CSV export saves normally.
+  - ISO / ISEER bin trace CSV export saves the currently selected trace.
+  - SASO result comparison CSV export saves normally.
+  - SASO bin trace CSV export follows required/optional selection state.
+  - Korean/special characters open correctly in Excel.
+  - File dialog cancel returns without error.
+  - Existing trace expand/collapse, profile switch, resize, and scroll behavior remains normal.
 
 ## Known Risks
 
@@ -90,11 +92,9 @@ Add CSV export foundation for Tkinter table-shaped ISO/ISEER and SASO result/tra
 - No forbidden files were modified.
 - No Hong Kong export, graph export, or shared section framework was introduced.
 
-## Commit / Push
+## Implementation Commit
 
 - Source/test implementation commit: `ec86048 193-c: add table CSV export foundation`
-- Docs/report commit: pending at report creation.
-- Push: pending at report creation.
 
 ## Project Memory Delta
 
