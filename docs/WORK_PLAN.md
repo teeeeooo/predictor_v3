@@ -23,19 +23,19 @@
   - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
   - Header-included TSV copy for result/detail tables.
   - Detail/bin table CSV export.
-  - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis and selected-series y-axis.
-- Next: manual smoke for the 194-f graph-axis/detail panel hotfix, then multi-monitor geometry audit/hotfix.
+  - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
+- Next: manual smoke for the 196-a graph min/max scale label hotfix, then multi-monitor geometry audit/hotfix.
 
 ## Next Actions
 
-1. **194-f manual smoke**
-   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector label, graph axis labels, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
+1. **196-a manual smoke**
+   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector label, graph axis/min-max labels, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
 2. **Multi-monitor geometry audit/hotfix**
    - Investigate screen clipping separately without changing detail/result semantics.
 3. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
-4. **Graph polish/export after graph parity**
-   - Refine graph parity first; graph export may use SPOT-style HTML export later.
+4. **Graph export/HTML export after graph parity stable**
+   - Keep export deferred until graph readability/parity is stable.
 5. **ResultPanel summary export/copy alignment**
    - Add Hong Kong summary TSV/CSV-compatible data hook if the label-card path still needs copy/export parity.
 6. **MetricInputTable full-table copy enhancement**
@@ -62,7 +62,7 @@
 - PyQt calculator source retirement remains on hold.
 - Windows PyInstaller size measurement remains pending until a Windows host is available.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
-- Bin graph polish/export is deferred until after detail panel manual smoke; graph export follows graph parity and may use SPOT-style HTML export.
+- Graph export/HTML export is deferred until after graph parity is stable.
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
 - Multi-monitor geometry clipping is a separate audit/hotfix candidate.
