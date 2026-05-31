@@ -143,6 +143,39 @@ def _canvas_texts(canvas) -> set[str]:
     }
 
 
+def _assert_canvas_has_scale_label(canvas, series_label: str) -> None:
+    texts = _canvas_texts(canvas)
+    assert any(
+        text.startswith(f"{series_label} (min ") and ", max " in text
+        for text in texts
+    )
+
+
+def test_bin_detail_graph_returns_y_scale_for_selected_series():
+    from ui_tk.sections.bin_detail_panel import BinDetailGraph
+
+    graph = BinDetailGraph.__new__(BinDetailGraph)
+    graph._rows = (
+        {"tj": 20.0, "eer": 3.25},
+        {"tj": 25.0, "eer": 4.5},
+        {"tj": 30.0, "eer": 4.0},
+    )
+    graph._series_key = "eer"
+
+    points, x_axis_label, x_min, x_max, y_min, y_max = graph._plot_points(
+        plot_width=100,
+        plot_height=80,
+        margin_left=10,
+        margin_top=5,
+    )
+
+    assert len(points) == 3
+    assert x_axis_label == "Outdoor Temp [°C]"
+    assert (x_min, x_max) == (20.0, 30.0)
+    assert (y_min, y_max) == (3.25, 4.5)
+    assert graph._series_scale_label(y_min, y_max) == "EER [W/W] (min 3.25, max 4.50)"
+
+
 def _make_tab(root):
     from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
@@ -343,6 +376,7 @@ def test_iso_iseer_detail_panel_opens_with_bin_details(tk_root):
     assert "EER [W/W]" in section.detail_panel.graph_combo.cget("values")
     tk_root.update_idletasks()
     assert "Outdoor Temp [°C]" in _canvas_texts(section.detail_panel.graph.canvas)
+    _assert_canvas_has_scale_label(section.detail_panel.graph.canvas, "Bin Hours [h]")
     assert section.detail_panel.copy_button.cget("text") == "상세 복사"
     assert section.detail_panel.csv_button.cget("text") == "상세 CSV 내보내기"
     assert section.trace_table.column_labels == (
@@ -372,6 +406,22 @@ def test_iso_iseer_detail_panel_opens_with_bin_details(tk_root):
     assert not section.detail_panel.is_visible()
     assert section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert fit_calls == ["fit", "fit"]
+
+
+def test_iso_iseer_detail_graph_scale_label_updates_with_selected_series(tk_root):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+
+    section.detail_toggle.invoke()
+    tk_root.update_idletasks()
+
+    section.detail_panel.graph_combo.set("EER [W/W]")
+    section.detail_panel._on_graph_changed()
+    tk_root.update_idletasks()
+
+    texts = _canvas_texts(section.detail_panel.graph.canvas)
+    assert "Outdoor Temp [°C]" in texts
+    _assert_canvas_has_scale_label(section.detail_panel.graph.canvas, "EER [W/W]")
 
 
 def test_iso_iseer_detail_source_selector_updates_rows(tk_root):

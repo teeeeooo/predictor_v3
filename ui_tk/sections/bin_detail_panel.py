@@ -264,14 +264,14 @@ class BinDetailGraph:
         canvas.delete("all")
         width = max(canvas.winfo_width(), 240)
         height = max(canvas.winfo_height(), 160)
-        margin_left = 54
+        margin_left = 70
         margin_right = 24
-        margin_top = 18
+        margin_top = 24
         margin_bottom = 42
         plot_width = max(width - margin_left - margin_right, 1)
         plot_height = max(height - margin_top - margin_bottom, 1)
 
-        points, x_axis_label, x_min, x_max = self._plot_points(
+        points, x_axis_label, x_min, x_max, y_min, y_max = self._plot_points(
             plot_width,
             plot_height,
             margin_left,
@@ -321,14 +321,29 @@ class BinDetailGraph:
                 text=_tick_text(x_max),
                 fill="gray35",
             )
+        if y_min is not None and y_max is not None:
+            canvas.create_text(
+                margin_left - 6,
+                margin_top,
+                anchor="e",
+                text=_scale_value_text(self._series_key, y_max),
+                fill="gray35",
+            )
+            canvas.create_text(
+                margin_left - 6,
+                baseline_y,
+                anchor="e",
+                text=_scale_value_text(self._series_key, y_min),
+                fill="gray35",
+            )
         canvas.create_line(*_flatten(points), fill="blue", width=2, smooth=False)
         for x, y in points:
             canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="blue", outline="")
         canvas.create_text(
             margin_left,
-            margin_top - 8,
+            margin_top - 12,
             anchor="w",
-            text=self._series_label(),
+            text=self._series_scale_label(y_min, y_max),
             fill="gray25",
         )
 
@@ -338,10 +353,17 @@ class BinDetailGraph:
         plot_height: int,
         margin_left: int,
         margin_top: int,
-    ) -> tuple[list[tuple[float, float]], str, float | None, float | None]:
+    ) -> tuple[
+        list[tuple[float, float]],
+        str,
+        float | None,
+        float | None,
+        float | None,
+        float | None,
+    ]:
         rows = [row for row in self._rows if _number(row.get(self._series_key)) is not None]
         if not rows:
-            return [], "Outdoor Temp [°C]", None, None
+            return [], "Outdoor Temp [°C]", None, None, None, None
         x_values = [_number(row.get("tj")) for row in rows]
         x_axis_label = "Outdoor Temp [°C]"
         if any(value is None for value in x_values):
@@ -349,27 +371,41 @@ class BinDetailGraph:
             x_axis_label = "Bin index"
         y_values = [_number(row.get(self._series_key)) for row in rows]
         if not y_values or any(value is None for value in y_values):
-            return [], x_axis_label, None, None
+            return [], x_axis_label, None, None, None, None
         min_x = min(x_values)
         max_x = max(x_values)
         min_y = min(y_values)
         max_y = max(y_values)
+        scale_min_y = min_y
+        scale_max_y = max_y
         if max_x == min_x:
             max_x = min_x + 1
-        if max_y == min_y:
-            max_y = min_y + 1
+        if scale_max_y == scale_min_y:
+            scale_max_y = scale_min_y + 1
         points = []
         for x_value, y_value in zip(x_values, y_values):
             x = margin_left + ((x_value - min_x) / (max_x - min_x)) * plot_width
-            y = margin_top + plot_height - ((y_value - min_y) / (max_y - min_y)) * plot_height
+            y = (
+                margin_top
+                + plot_height
+                - ((y_value - scale_min_y) / (scale_max_y - scale_min_y)) * plot_height
+            )
             points.append((x, y))
-        return points, x_axis_label, min_x, max_x
+        return points, x_axis_label, min_x, max_x, min_y, max_y
 
     def _series_label(self) -> str:
         for label, key in _GRAPH_SERIES:
             if key == self._series_key:
                 return label
         return "Bin Hours [h]"
+
+    def _series_scale_label(self, min_y: float | None, max_y: float | None) -> str:
+        label = self._series_label()
+        if min_y is None or max_y is None:
+            return label
+        min_text = _scale_value_text(self._series_key, min_y)
+        max_text = _scale_value_text(self._series_key, max_y)
+        return f"{label} (min {min_text}, max {max_text})"
 
 
 def _number(value: object) -> float | None:
@@ -388,6 +424,14 @@ def _flatten(points: Sequence[tuple[float, float]]) -> tuple[float, ...]:
 
 
 def _tick_text(value: float) -> str:
+    if value.is_integer():
+        return str(int(value))
+    return f"{value:.1f}"
+
+
+def _scale_value_text(series_key: str, value: float) -> str:
+    if series_key == "eer":
+        return f"{value:.2f}"
     if value.is_integer():
         return str(int(value))
     return f"{value:.1f}"
