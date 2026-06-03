@@ -30,12 +30,13 @@
   - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
   - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
   - 197-b multi-monitor geometry role-split passed Windows manual smoke.
-- Next: 198-a manual smoke.
+  - 198-a first-launch ISO fit and SASO 4-point default passed Windows manual smoke.
+- Next: 198-b manual smoke.
 
 ## Next Actions
 
-1. **198-a manual smoke**
-   - Verify first-launch ISO height, SASO 4-point default/result/detail behavior, and existing geometry location preservation.
+1. **198-b manual smoke**
+   - Verify detail open vertical clamp prevents lower-edge clipping while preserving current x/monitor location.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**

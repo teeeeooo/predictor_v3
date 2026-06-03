@@ -70,18 +70,14 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces cannot perform Windows GUI smoke.
-- User should verify:
-  - First launch ISO profile height is not excessive and lower edge is visible.
-  - Profile switch back to ISO has a similar size to first launch.
-  - Monitor 2 detail open/close and profile changes still preserve location.
-  - SASO opens with 4-point as default.
-  - SASO result table shows both 4-point and 3-point rows.
-  - SASO detail defaults to 4-point and can switch to 3-point.
-  - 35 Min edits update 4-point result/detail.
-  - Existing ISO/ISEER and Hong Kong CSPF behavior remains intact.
+- User completed Windows local GUI smoke for 198-a.
+- 197-b multi-monitor geometry behavior remained fixed: monitor 2 detail open/close and profile changes preserved location.
+- First-launch ISO one-shot fit was confirmed: initial height was not excessive and lower edge was visible.
+- SASO T3 4-point default was confirmed: result table showed 4-point and 3-point rows, and detail source selection exposed both.
+- Router verification output guard was accepted.
+- New follow-up: opening detail can grow the window downward enough to clip the lower edge; owner is 198-b vertical-only clamp.
 
 ## Project Memory Delta
 
