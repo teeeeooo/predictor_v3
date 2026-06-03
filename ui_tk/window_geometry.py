@@ -156,10 +156,31 @@ def clamp_geometry_to_visible_bounds(
     return format_window_geometry(width, height, min(max(0, x), max_x), min(max(0, y), max_y))
 
 
+def clamp_geometry_vertically_to_visible_bounds(
+    geometry: str, screen_height: int
+) -> str:
+    width, height, x, y = parse_window_geometry(geometry)
+    if height >= screen_height:
+        new_y = 0
+    else:
+        new_y = min(max(0, y), screen_height - height)
+    return format_window_geometry(width, height, x, new_y)
+
+
 def clamp_window_to_visible_bounds(root: tk.Tk) -> None:
     geom = clamp_geometry_to_visible_bounds(
         root.geometry(),
         root.winfo_screenwidth(),
+        root.winfo_screenheight(),
+    )
+    if root.geometry() != geom:
+        root.geometry(geom)
+        root.update_idletasks()
+
+
+def clamp_window_vertically_to_visible_bounds(root: tk.Tk) -> None:
+    geom = clamp_geometry_vertically_to_visible_bounds(
+        root.geometry(),
         root.winfo_screenheight(),
     )
     if root.geometry() != geom:

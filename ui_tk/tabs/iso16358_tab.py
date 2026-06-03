@@ -29,6 +29,7 @@ from ui_tk.layout_constants import (
 )
 from ui_tk.scrollable_frame import ScrollableFrame
 from ui_tk.window_geometry import (
+    clamp_window_vertically_to_visible_bounds,
     fit_window_to_preferred_content,
     grow_window_by_vertical_delta,
 )
@@ -184,6 +185,8 @@ class Iso16358Tab(ttk.Frame):
         fit_window_to_preferred_content(root, self.preferred_initial_size())
         self.update_idletasks()
         grow_window_by_vertical_delta(root, self.vertical_overflow_delta())
+        self.update_idletasks()
+        clamp_window_vertically_to_visible_bounds(root)
         self.update_idletasks()
         self._scrollable.reset_scroll_position()
 

@@ -20,6 +20,7 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.window_geometry import (
     apply_overflow_correction,
     capped_window_size,
+    clamp_geometry_vertically_to_visible_bounds,
     clamp_geometry_to_visible_bounds,
     centered_geometry,
     fit_window_to_preferred_content,
@@ -163,6 +164,24 @@ def test_clamp_geometry_to_visible_bounds_preserves_visible_geometry():
     assert clamp_geometry_to_visible_bounds("800x600-200-100", 1600, 1000) == (
         "800x600+0+0"
     )
+
+
+def test_vertical_clamp_preserves_x_and_adjusts_y_only():
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x600+1800+100", 1000
+    ) == "800x600+1800+100"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x600+1800+500", 1000
+    ) == "800x600+1800+400"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x600-400+500", 1000
+    ) == "800x600-400+400"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x600+2200-100", 1000
+    ) == "800x600+2200+0"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x1200+2200+300", 1000
+    ) == "800x1200+2200+0"
 
 
 def test_preferred_content_fit_geometry_preserves_current_location():
@@ -465,6 +484,35 @@ def test_fit_window_to_preferred_content_preserves_current_location():
             root.winfo_screenheight(),
         )
         assert root.geometry() == f"{expected_w}x{expected_h}-400+85"
+    finally:
+        root.destroy()
+
+
+def test_iso_fit_path_applies_vertical_only_clamp(monkeypatch):
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.tabs import iso16358_tab
+        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+
+        calls = []
+
+        def record_clamp(root_arg):
+            calls.append(root_arg)
+
+        monkeypatch.setattr(
+            iso16358_tab, "clamp_window_vertically_to_visible_bounds", record_clamp
+        )
+        tab = Iso16358Tab(root)
+        tab.pack(fill="both", expand=True)
+        root.update_idletasks()
+
+        tab._fit_toplevel_to_current_content()
+
+        assert calls == [root]
     finally:
         root.destroy()
 
