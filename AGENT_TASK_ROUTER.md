@@ -315,7 +315,11 @@ Stable checkpoint mode:
 - 정확한 문구가 불확실하거나 충돌할 때만 `rg -n`으로 heading/keyword를 찾고 필요한 10~30줄만 확인한다.
 - policy read에도 이 Diff / Read Budget을 적용한다.
 - `rg`는 넓은 일반 키워드보다 함수명/파일명/고유 label처럼 match 폭이 좁은 query를 우선 사용한다.
+- 여러 키워드를 한 번에 넓게 검색하지 않는다. 먼저 exact phrase 1~2개로 좁게 찾고, 없을 때만 broad keyword search로 확장한다.
+- docs-wide search는 `docs/WORK_PLAN.md`와 active report부터 시작한다. pending/owner 문구가 확인된 경우에만 design/guides/ui_ux 등으로 확장한다.
+- 넓은 문서 탐색은 `rg -l`로 후보 파일 목록을 먼저 얻고, 필요한 파일에만 `rg -n`/`sed`를 적용한다.
 - `sed`는 기본 30~80줄 이내의 작은 범위로 시작하고, 필요한 경우에만 다음 인접 범위를 추가로 확인한다.
+- 병렬 `sed`/file read는 합산 출력 범위를 작게 유지하고, 여러 파일을 묶을 때는 총 150줄 이내를 목표로 한다.
 - tool output budget은 작게 시작하고, 잘린 출력이 실제로 필요한 경우에만 늘린다.
 
 기본 순서:
