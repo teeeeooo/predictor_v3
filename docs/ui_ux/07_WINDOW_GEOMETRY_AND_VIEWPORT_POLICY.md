@@ -1,4 +1,4 @@
-# 05. Window Geometry And Viewport Policy
+# 07. Window Geometry And Viewport Policy
 
 ## Purpose
 

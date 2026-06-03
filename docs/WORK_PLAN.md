@@ -35,6 +35,7 @@
   - 198-c auto-fit max height 80% cap was acceptable; remaining bottom clipping split to 198-d.
   - 198-d bottom-margin vertical clamp passed Windows manual smoke; top-safe y positioning split to 199-a.
   - 199-a window geometry top-safe policy passed Windows manual smoke.
+  - 199-c UI/UX document numbering cleanup resolved the window geometry policy duplicate `05_` prefix.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
 - Next: UI technology pivot design gate.
 

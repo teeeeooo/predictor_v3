@@ -9,8 +9,6 @@
   vs Tkinter implementation details do **not** belong here.
 - For toolkit choice, see `01_TOOLKIT_SELECTION_POLICY.md`.
 - For visual tokens and layout, see `02_DESIGN_TOKENS_AND_LAYOUT.md`.
-- For window placement, auto-fit, viewport, scroll, and multi-monitor
-  behavior, see `05_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
 - For `predictor_v3` project-wide visual philosophy and semantic visual
   roles, see `04_VISUAL_DESIGN_ARCHITECTURE.md`.
 - For table-shaped UI behavior, see
@@ -21,6 +19,8 @@
 - For carrying this architecture into another project together with
   token/component ownership and a minimal guard, see
   `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`.
+- For window placement, auto-fit, viewport, scroll, and multi-monitor
+  behavior, see `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
 - For framework-specific table rules, see the documents under
   `adapters/`.
 

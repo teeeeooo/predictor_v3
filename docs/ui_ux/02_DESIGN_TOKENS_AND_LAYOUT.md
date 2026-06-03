@@ -175,7 +175,7 @@ Rules:
   modules.
 - Toolkit-neutral placement, auto-fit, multi-monitor, viewport, and
   scroll behavior policy is owned by
-  `05_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
+  `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
 - Toolkit implementations place these values in a named layout owner.
   For Tkinter, use `ui_tk/layout_constants.py` or an equivalent
   toolkit-local layout owner, then import the named constants/ratios

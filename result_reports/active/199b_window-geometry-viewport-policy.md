@@ -8,7 +8,7 @@
 
 ## Scope
 
-- `docs/ui_ux/05_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`
+- `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`
   - New owner document for window placement, automatic fit, viewport caps, scrolling, multi-monitor/DPI/taskbar handling, saved geometry restore, WPF implementation guidance, and acceptance checklist.
 - `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`
   - Adds a short owner reference from layout tokens/screen caps to the new viewport policy.
