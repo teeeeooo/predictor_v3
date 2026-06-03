@@ -58,15 +58,13 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces cannot perform Windows multi-monitor GUI smoke.
-- User should verify:
-  - First launch stays within visible bounds and lower edge is not clipped.
-  - Moving the app to monitor 2 and opening/closing detail keeps the app on monitor 2.
-  - Profile changes preserve current monitor/location.
-  - ISO/ISEER, SASO T3, and Hong Kong CSPF detail open/close still work.
-  - Result/detail table, graph, CSV/export/copy behavior is unchanged.
+- User completed Windows local GUI smoke for 197-b.
+- Simple window movement between monitors still did not cause clipping.
+- Detail open/close on monitor 2 no longer moved the app back to monitor 1.
+- Profile changes preserved the current monitor/location.
+- 197-b is closed for the multi-monitor location-preserving geometry behavior.
 
 ## Project Memory Delta
 

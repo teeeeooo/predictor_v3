@@ -29,13 +29,13 @@
   - Simple window movement between monitors did not reproduce screen clipping.
   - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
   - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
-- Next: 197-b multi-monitor geometry manual smoke.
+  - 197-b multi-monitor geometry role-split passed Windows manual smoke.
+- Next: 198-a manual smoke.
 
 ## Next Actions
 
-1. **197-b multi-monitor geometry manual smoke**
-   - Verify first launch stays within visible bounds.
-   - Verify detail open/close and profile changes preserve the current monitor/location.
+1. **198-a manual smoke**
+   - Verify first-launch ISO height, SASO 4-point default/result/detail behavior, and existing geometry location preservation.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**
