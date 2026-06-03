@@ -59,15 +59,15 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces cannot perform Windows GUI smoke.
-- User should verify:
-  - large detail surfaces open near a safe top position;
-  - x/current monitor location remains preserved, including monitor 2;
-  - 80% auto-fit height cap remains in effect;
-  - content beyond visible height remains reachable through scrolling;
-  - ISO/ISEER, SASO, Hong Kong CSPF detail open/close and export/copy/graph behavior remain unchanged.
+- User completed Windows local GUI smoke for 199-a.
+- First launch size was normal.
+- Detail open no longer clipped at the lower edge.
+- Monitor 2 detail open/close preserved location.
+- Profile changes preserved location.
+- Manual window resizing remained available.
+- ISO/SASO/Hong Kong detail, CSV/copy, and graph behavior remained intact.
 
 ## Project Memory Delta
 

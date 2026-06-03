@@ -173,6 +173,9 @@ Rules:
   visible caps, and preferred visible ratios are layout policy values.
   They must not be owned as raw numbers inside component or app shell
   modules.
+- Toolkit-neutral placement, auto-fit, multi-monitor, viewport, and
+  scroll behavior policy is owned by
+  `05_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
 - Toolkit implementations place these values in a named layout owner.
   For Tkinter, use `ui_tk/layout_constants.py` or an equivalent
   toolkit-local layout owner, then import the named constants/ratios

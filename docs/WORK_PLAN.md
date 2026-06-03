@@ -34,13 +34,14 @@
   - 198-b detail-open vertical clamp behaved as intended, with remaining long-content height issue split to 198-c.
   - 198-c auto-fit max height 80% cap was acceptable; remaining bottom clipping split to 198-d.
   - 198-d bottom-margin vertical clamp passed Windows manual smoke; top-safe y positioning split to 199-a.
+  - 199-a window geometry top-safe policy passed Windows manual smoke.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: 199-a manual smoke.
+- Next: UI technology pivot design gate.
 
 ## Next Actions
 
-1. **199-a manual smoke**
-   - Verify top-safe y policy for large detail surfaces while preserving x/current monitor location.
+1. **UI technology pivot design gate**
+   - Decide C# WPF calculator shell / reusable grid direction before implementation.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**
