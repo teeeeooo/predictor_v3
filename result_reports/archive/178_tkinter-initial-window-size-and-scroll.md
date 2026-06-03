@@ -20,13 +20,13 @@ Fix the Tkinter calculator startup display so the initial window stays inside th
 
 ## Verification
 
-- `python3 -B tools/check_code_structure.py`  
+- `python3 -B tools/check_code_structure.py`
   Result: passed, `code structure guard: OK (no findings)`.
-- `python3 -B -m py_compile ui_tk/calculator_app.py ui_tk/tabs/iso16358_tab.py`  
+- `python3 -B -m py_compile ui_tk/calculator_app.py ui_tk/tabs/iso16358_tab.py`
   Result: passed.
-- `python3 -B -m pytest tests/test_ui_tk_calculator_foundation.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`  
+- `python3 -B -m pytest tests/test_ui_tk_calculator_foundation.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`
   Result: passed, `43 passed in 1.63s`.
-- `git diff --check`  
+- `git diff --check`
   Result: passed.
 
 ## Task Results

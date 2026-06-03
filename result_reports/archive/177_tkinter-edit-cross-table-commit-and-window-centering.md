@@ -23,17 +23,17 @@ Fix two macOS manual smoke findings after task 176: edit-mode values must commit
 
 ## Verification
 
-- `python3 -B tools/check_code_structure.py`  
+- `python3 -B tools/check_code_structure.py`
   Result: passed, `code structure guard: OK (no findings)`.
-- `python3 -B -m py_compile ui_tk/excel_like_table_controller.py ui_tk/calculator_app.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py`  
+- `python3 -B -m py_compile ui_tk/excel_like_table_controller.py ui_tk/calculator_app.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py`
   Result: passed.
-- `python3 -B -m pytest tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`  
+- `python3 -B -m pytest tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`
   Result: passed, `37 passed in 1.48s`.
-- `python3 -B -m pytest tests/test_ui_tk_calculator_foundation.py -q -rxXs`  
+- `python3 -B -m pytest tests/test_ui_tk_calculator_foundation.py -q -rxXs`
   Result: passed, `5 passed in 0.40s`.
-- `python3 -B -m pytest -q -rxXs`  
+- `python3 -B -m pytest -q -rxXs`
   Result: passed, `665 passed, 32 skipped, 19 xfailed in 3.24s`.
-- `git diff --check`  
+- `git diff --check`
   Result: passed.
 
 ## Task Results

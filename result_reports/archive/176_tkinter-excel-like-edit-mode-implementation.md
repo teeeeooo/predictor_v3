@@ -19,15 +19,15 @@ Implement the Tkinter `ExcelLikeTableController` selection/edit state machine fr
 
 ## Verification
 
-- `python3 -B tools/check_code_structure.py`  
+- `python3 -B tools/check_code_structure.py`
   Result: passed, `code structure guard: OK (no findings)`.
-- `python3 -B -m py_compile ui_tk/excel_like_table_controller.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py`  
+- `python3 -B -m py_compile ui_tk/excel_like_table_controller.py tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py`
   Result: passed.
-- `python3 -B -m pytest tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`  
+- `python3 -B -m pytest tests/test_ui_tk_excel_like_table_controller.py tests/test_ui_tk_iso_table_autocalc.py -q -rxXs`
   Result: passed, `36 passed in 1.64s`.
-- `python3 -B -m pytest -q -rxXs`  
+- `python3 -B -m pytest -q -rxXs`
   Result: passed, `663 passed, 32 skipped, 19 xfailed in 3.19s`.
-- `git diff --check`  
+- `git diff --check`
   Result: passed.
 
 ## Task Results
