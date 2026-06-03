@@ -120,7 +120,7 @@ class ExcelLikeTableController:
                 entry.bind(seq, lambda event, d=direction: self._arrow(d))
             entry.bind("<Escape>", self._escape)
             entry.bind("<FocusOut>", self._on_focus_out)
-            entry.bind("<KeyPress>", lambda event, p=position: self._type_replace(event, p), add="+")
+            entry.bind("<KeyPress>", lambda event, p=position: self._type_replace(event, p))
         for seq, handler in (
             ("<Command-c>", self._copy), ("<Command-C>", self._copy),
             ("<Command-v>", self._paste), ("<Command-V>", self._paste),

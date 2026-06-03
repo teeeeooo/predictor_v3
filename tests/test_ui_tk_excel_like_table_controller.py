@@ -73,6 +73,14 @@ def controlled_table(tk_root):
     return table, controller, calls
 
 
+def _type_text(tk_root, entry, text: str) -> None:
+    entry.focus_force()
+    tk_root.update()
+    for char in text:
+        entry.event_generate(f"<KeyPress-{char}>")
+        tk_root.update()
+
+
 @pytest.fixture
 def two_controlled_tables(tk_root):
     table1 = MetricInputTable(
@@ -200,13 +208,32 @@ def test_navigation_and_click_then_type_replace(controlled_table):
     assert table.editable_entries["d"].cget("insertontime") == 0
 
     controller._click(SimpleNamespace(state=0), (0, 0))
+    table.set_values_batch({"a": "200"})
+    calls.clear()
     assert table.editable_entries["a"].cget("insertontime") == 0
-    assert controller._type_replace(SimpleNamespace(char="9", state=0), (0, 0)) == "break"
-    assert table.get_text_values()["a"] == "9"
+    assert controller._type_replace(SimpleNamespace(char="1", state=0), (0, 0)) == "break"
+    table.editable_entries["a"].insert("end", "00")
+    assert table.get_text_values()["a"] == "100"
     assert len(calls) == 1
     assert table.editable_entries["a"].cget("insertontime") == 600
     controller._undo_last()
-    assert table.get_text_values()["a"] == "1"
+    assert table.get_text_values()["a"] == "200"
+
+
+def test_single_click_then_real_key_events_replace_existing_value(
+    controlled_table, tk_root
+):
+    table, controller, calls = controlled_table
+    table.set_values_batch({"a": "200"})
+    calls.clear()
+
+    controller._click(SimpleNamespace(state=0), (0, 0))
+    _type_text(tk_root, table.editable_entries["a"], "100")
+
+    assert table.get_text_values()["a"] == "100"
+    assert calls
+    controller._undo_last()
+    assert table.get_text_values()["a"] == "200"
 
 
 def test_click_does_not_show_typing_caret_until_first_key(controlled_table):
