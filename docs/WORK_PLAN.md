@@ -32,13 +32,14 @@
   - 197-b multi-monitor geometry role-split passed Windows manual smoke.
   - 198-a first-launch ISO fit and SASO 4-point default passed Windows manual smoke.
   - 198-b detail-open vertical clamp behaved as intended, with remaining long-content height issue split to 198-c.
+  - 198-c auto-fit max height 80% cap was acceptable; remaining bottom clipping split to 198-d.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: 198-c manual smoke.
+- Next: 198-d manual smoke.
 
 ## Next Actions
 
-1. **198-c manual smoke**
-   - Verify auto-fit height cap keeps detail windows within a usable vertical size while preserving manual resize behavior.
+1. **198-d manual smoke**
+   - Verify detail-open vertical clamp uses bottom safety margin while preserving x/current monitor location.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**

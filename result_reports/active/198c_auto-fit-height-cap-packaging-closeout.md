@@ -60,15 +60,12 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces cannot perform Windows GUI smoke.
-- User should verify:
-  - detail-open auto-fit height is capped to a usable vertical size;
-  - content beyond the cap remains reachable by scrolling;
-  - manual window resize larger than the auto-fit cap still works;
-  - current monitor/x location preservation remains intact;
-  - ISO/ISEER, SASO, Hong Kong CSPF detail open/close and export/copy/graph behavior remain unchanged.
+- User completed Windows local GUI smoke for 198-c.
+- Auto-fit max height 80% cap was acceptable and remains in place.
+- Windows `calculator_tk` packaged size remains approximately 11 MB and acceptable.
+- Remaining issue: detail open can still clip at the bottom because vertical clamp lacks a bottom safety margin; owner is 198-d.
 
 ## Project Memory Delta
 
