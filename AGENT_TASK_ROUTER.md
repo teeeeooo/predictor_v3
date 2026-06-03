@@ -326,6 +326,11 @@ pytest / command output:
 - 실패 전까지는 focused test 중심으로 실행한다.
 - 실패 시에만 상세 traceback, 관련 log, 긴 pytest summary를 확인한다.
 - full pytest가 필요한 core/calculator/ML/schema/golden 경계 작업에서는 금지하지 않고, 필요성을 명시한 뒤 실행한다.
+- Codespaces/headless에서 Tk/GUI tests가 display 없음으로 대량 skip되는 패턴이 이미 확인된 경우 quick smoke에는 `-rxXs`를 기본 사용하지 않는다.
+- final focused도 기본은 `-q`로 실행하고, `-rxXs`는 실패/예상외 skip/xfail/xpass 조사 또는 사용자가 명시한 경우에만 fallback으로 사용한다.
+- quick smoke는 가능한 pure helper test + 최소 GUI smoke로 구성하고, 같은 Tk display unavailable skip 사유를 terminal output에 반복 출력하지 않는다.
+- 검증을 먼저 끝내고 report를 마지막에 작성한다. report 작성 후에는 `git diff --check`, `git status --short`, `git diff --name-only`, `git diff --stat` 중심으로 재확인한다.
+- 검증 결과를 report에 반영하려고 같은 pytest 명령을 반복 실행하지 않는다.
 
 Tk 디버그:
 - 임시 Tk script는 long-running 가능성이 있으므로 짧은 timeout/빠른 종료를 전제로 한다.
