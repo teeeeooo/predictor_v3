@@ -225,8 +225,8 @@ class ExcelLikeTableController:
     def _show_selection_caret_state(self, position: GridAddress) -> None:
         entry = self._entry_at(position)
         entry.configure(insertontime=0)
-        entry.selection_clear()
-        entry.icursor(0)
+        entry.selection_range(0, "end")
+        entry.icursor("end")
     def _enter_edit_mode(self, position: GridAddress, *, caret: str = "end") -> None:
         if position not in self._editable_positions:
             return
@@ -331,9 +331,7 @@ class ExcelLikeTableController:
         self.select(target)
         entry = self._entry_at(target)
         entry.focus_set()
-        entry.configure(insertontime=0)
-        entry.selection_clear()
-        entry.icursor(0)
+        self._show_selection_caret_state(target)
         return "break"
     def _arrow(self, direction: str) -> str:
         if self._mode == "edit":
@@ -352,9 +350,7 @@ class ExcelLikeTableController:
         self.select(target)
         entry = self._entry_at(target)
         entry.focus_set()
-        entry.configure(insertontime=0)
-        entry.selection_clear()
-        entry.icursor(0)
+        self._show_selection_caret_state(target)
         return "break"
     def _type_replace(self, event, position: GridAddress) -> str | None:
         if self._mode == "edit":
