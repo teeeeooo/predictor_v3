@@ -29,6 +29,7 @@
   - 196-a through 199-c completed and archived under summary 200.
   - 201-b resolved the 201-a archived-doc whitespace blocker; merge readiness checks now pass.
   - 202 merged `work/ui-ux-ssot-adoption` into `main`.
+  - 203 added a lightweight architecture triage rule to the task router before the C# WPF spike branch.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
 - Next: C# WPF spike branch creation.

@@ -52,6 +52,10 @@
 - `docs/WORK_PLAN.md` now records the main merge completion.
 - Next action: C# WPF spike branch creation.
 
+## Post-merge Follow-up
+
+- Added a lightweight architecture triage rule to `AGENT_TASK_ROUTER.md` so coding tasks can decide whether the existing Design First Gate is needed without forcing a full design slice for every small change.
+
 ## Push
 
 - Push result is reported in the final terminal response.

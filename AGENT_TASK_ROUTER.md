@@ -11,6 +11,7 @@
 | --- | --- |
 | Work Contract / Execution Discipline | `rg -n "^### 0. Work Contract / Execution Discipline" AGENT_TASK_ROUTER.md` |
 | Shared Guardrails | `rg -n "^### Shared Guardrails" AGENT_TASK_ROUTER.md` |
+| Architecture Triage for Coding Tasks | `rg -n "^### Architecture Triage for Coding Tasks" AGENT_TASK_ROUTER.md` |
 | Project Memory Recall Gate | `rg -n "^### Project Memory Recall Gate" AGENT_TASK_ROUTER.md` |
 | Result Report Workflow | `rg -n "^### Result Report Workflow" AGENT_TASK_ROUTER.md` |
 | Documentation Sync & Lifecycle Gate | `rg -n "^#### Documentation Sync & Lifecycle Gate" AGENT_TASK_ROUTER.md` |
@@ -80,6 +81,20 @@ UI 경계:
 - 상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
+
+### Architecture Triage for Coding Tasks
+
+모든 coding task에 full design slice를 강제하지 않는다. 구현 전 짧게 다음을 판단한다.
+
+- 새 책임이나 새 user-facing/internal surface를 추가하는가?
+- 같은 기능이 여러 standard/profile/section에 반복될 가능성이 있는가?
+- 기존 owner/helper/adapter를 우회하거나 새 boundary를 만드는가?
+
+세 질문이 모두 No이면 현재 scope 안에서 바로 진행할 수 있다.
+하나라도 Yes이면 owner, module boundary, adapter/helper 필요성을 먼저 확인한다.
+영향 범위가 크거나 rollback 비용이 크면 기존 Design First Gate에 따라 design slice로 분리한다.
+
+docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micro cleanup은 full preflight를 생략할 수 있다.
 
 ### Project Memory Recall Gate
 
