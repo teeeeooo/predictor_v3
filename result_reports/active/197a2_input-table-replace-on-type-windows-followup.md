@@ -57,11 +57,12 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces has no Windows GUI smoke path.
-- User should verify on Windows that single-click typing replaces existing input table values.
-- User should also confirm double-click/F2 edit, paste, drag selection, copy, undo, navigation, and auto-calc behavior remain intact.
+- Codespaces automated verification and Windows manual GUI verification were performed separately.
+- User completed Windows local GUI smoke for 197-a2.
+- Single-click typing in an editable input table cell now replaces the existing value instead of prepending/appending.
+- 197-a2 is closed for the input table replace-on-type behavior.
 
 ## Follow-up Geometry Issues
 

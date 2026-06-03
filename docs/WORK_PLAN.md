@@ -28,24 +28,19 @@
   - 196-a graph min/max scale labels confirmed on Windows dual-monitor setup.
   - Simple window movement between monitors did not reproduce screen clipping.
   - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
-- Next: 197-a2 MetricInputTable single-click replace-on-type Windows follow-up manual smoke, then multi-monitor geometry audit/hotfix.
+  - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
+- Next: 197-b multi-monitor geometry audit/hotfix.
 
 ## Next Actions
 
-1. **197-a2 MetricInputTable single-click replace-on-type manual smoke**
-   - User should verify on Windows that single-click editable-cell typing replaces the selected value instead of prepending/appending.
-2. **Multi-monitor geometry audit/hotfix**
-   - Investigate separately without changing detail/result semantics:
+1. **197-b multi-monitor geometry audit/hotfix**
+   - Investigate without changing detail/result semantics:
      - Detail view opened after moving the app to monitor 2 can recenter on monitor 1.
      - Initial app placement can appear below screen center enough to clip the window.
-3. **Hong Kong HSPF heating trace schema/implementation**
+2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
-4. **Graph export/HTML export after graph parity stable**
+3. **Graph export/HTML export after graph parity stable**
    - Keep export deferred until graph readability/parity is stable.
-5. **ResultPanel summary export/copy alignment**
-   - Add Hong Kong summary TSV/CSV-compatible data hook if the label-card path still needs copy/export parity.
-6. **MetricInputTable full-table copy enhancement**
-   - Preserve existing edit/paste/drag behavior while adding header-included whole-table copy.
 
 ## Active Constraints
 
