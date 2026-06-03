@@ -19,10 +19,15 @@ from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.window_geometry import (
     apply_overflow_correction,
+    capped_window_size,
+    clamp_geometry_to_visible_bounds,
     centered_geometry,
     fit_window_to_preferred_content,
+    format_window_geometry,
     grow_window_by_vertical_delta,
     initial_window_geometry,
+    parse_window_geometry,
+    preferred_content_fit_geometry,
     resolve_min_window_size,
 )
 from ui_tk.layout_constants import (
@@ -129,6 +134,50 @@ def test_initial_window_geometry_uses_content_size_with_screen_cap():
         APP_WINDOW_FALLBACK_MIN_WIDTH,
         APP_WINDOW_FALLBACK_MIN_HEIGHT,
     )
+
+
+def test_geometry_parser_handles_negative_coordinates():
+    assert parse_window_geometry("640x480+10+20") == (640, 480, 10, 20)
+    assert parse_window_geometry("640x480-10+20") == (640, 480, -10, 20)
+    assert parse_window_geometry("640x480+10-20") == (640, 480, 10, -20)
+    assert parse_window_geometry("640x480-10-20") == (640, 480, -10, -20)
+    assert format_window_geometry(640, 480, -10, -20) == "640x480-10-20"
+
+
+def test_capped_window_size_matches_initial_geometry_policy():
+    screen_width, screen_height = 1600, 1000
+    width, height = capped_window_size(2200, 1800, screen_width, screen_height)
+    geometry_width, geometry_height, _x, _y = parse_window_geometry(
+        initial_window_geometry(2200, 1800, screen_width, screen_height)
+    )
+    assert (width, height) == (geometry_width, geometry_height)
+
+
+def test_clamp_geometry_to_visible_bounds_preserves_visible_geometry():
+    assert clamp_geometry_to_visible_bounds("800x600+100+50", 1600, 1000) == (
+        "800x600+100+50"
+    )
+    assert clamp_geometry_to_visible_bounds("800x600+900+500", 1600, 1000) == (
+        "800x600+800+400"
+    )
+    assert clamp_geometry_to_visible_bounds("800x600-200-100", 1600, 1000) == (
+        "800x600+0+0"
+    )
+
+
+def test_preferred_content_fit_geometry_preserves_current_location():
+    screen_width, screen_height = 1600, 1000
+    assert preferred_content_fit_geometry(
+        "300x250+1800+120", (640, 480), screen_width, screen_height
+    ) == "640x480+1800+120"
+    assert preferred_content_fit_geometry(
+        "300x250-400+85", (320, 260), screen_width, screen_height
+    ) == "320x260-400+85"
+
+    capped_w, capped_h = capped_window_size(2400, 1800, screen_width, screen_height)
+    assert preferred_content_fit_geometry(
+        "300x250+2200-40", (2400, 1800), screen_width, screen_height
+    ) == f"{capped_w}x{capped_h}+2200-40"
 
 
 def test_mousewheel_units_handle_platform_deltas():
@@ -355,32 +404,36 @@ def test_overflow_correction_grows_window_once():
         root.destroy()
 
 
-def test_fit_window_to_preferred_content_applies_exact_fit():
+def test_fit_window_to_preferred_content_preserves_current_location():
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        root.geometry("300x250")
+        root.geometry("300x250+1800+120")
         root.update_idletasks()
         fit_window_to_preferred_content(root, (640, 480))
         root.update_idletasks()
-        assert root.geometry() == initial_window_geometry(
+        expected_w, expected_h = capped_window_size(
             640,
             480,
             root.winfo_screenwidth(),
             root.winfo_screenheight(),
         )
+        assert root.geometry() == f"{expected_w}x{expected_h}+1800+120"
 
+        root.geometry("300x250-400+85")
+        root.update_idletasks()
         fit_window_to_preferred_content(root, (320, 260))
         root.update_idletasks()
-        assert root.geometry() == initial_window_geometry(
+        expected_w, expected_h = capped_window_size(
             320,
             260,
             root.winfo_screenwidth(),
             root.winfo_screenheight(),
         )
+        assert root.geometry() == f"{expected_w}x{expected_h}-400+85"
     finally:
         root.destroy()
 
@@ -395,13 +448,11 @@ def test_grow_window_by_vertical_delta_keeps_width_and_grows_height():
         root.geometry("500x300")
         root.update_idletasks()
         before = root.geometry()
-        before_w = int(before.split("x")[0])
-        before_h = int(before.split("x")[1].split("+")[0])
+        before_w, before_h, _x, _y = parse_window_geometry(before)
         grow_window_by_vertical_delta(root, 80)
         root.update_idletasks()
         after = root.geometry()
-        after_w = int(after.split("x")[0])
-        after_h = int(after.split("x")[1].split("+")[0])
+        after_w, after_h, _x, _y = parse_window_geometry(after)
         assert after_w == before_w
         assert after_h >= before_h
     finally:

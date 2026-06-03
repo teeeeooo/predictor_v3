@@ -25,6 +25,7 @@ from ui_tk.tabs.iso16358_tab import Iso16358Tab
 from ui_tk.window_geometry import (
     apply_overflow_correction,
     center_window,
+    clamp_window_to_visible_bounds,
 )
 
 
@@ -48,6 +49,7 @@ class CalculatorTkApp:
         self.root.update_idletasks()
         center_window(self.root, self.iso_tab.preferred_initial_size())
         apply_overflow_correction(self.root, self.iso_tab)
+        clamp_window_to_visible_bounds(self.root)
 
     def run(self) -> None:
         self.root.mainloop()
