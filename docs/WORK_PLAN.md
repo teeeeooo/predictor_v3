@@ -24,15 +24,16 @@
   - Header-included TSV copy for result/detail tables.
   - Detail/bin table CSV export.
   - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
-- Manual smoke completed:
+- User manual smoke result:
   - 196-a graph min/max scale labels confirmed on Windows dual-monitor setup.
   - Simple window movement between monitors did not reproduce screen clipping.
-- Next: 197-a MetricInputTable single-click replace-on-type hotfix, then multi-monitor geometry audit/hotfix.
+  - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
+- Next: 197-a2 MetricInputTable single-click replace-on-type Windows follow-up manual smoke, then multi-monitor geometry audit/hotfix.
 
 ## Next Actions
 
-1. **197-a MetricInputTable single-click replace-on-type hotfix**
-   - Ensure typing after a single editable-cell click replaces the selected value instead of appending.
+1. **197-a2 MetricInputTable single-click replace-on-type manual smoke**
+   - User should verify on Windows that single-click editable-cell typing replaces the selected value instead of prepending/appending.
 2. **Multi-monitor geometry audit/hotfix**
    - Investigate separately without changing detail/result semantics:
      - Detail view opened after moving the app to monitor 2 can recenter on monitor 1.

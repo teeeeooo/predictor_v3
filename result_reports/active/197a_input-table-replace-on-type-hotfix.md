@@ -38,8 +38,15 @@
 
 ## Manual Check Result
 
-- 196-a graph min/max scale label manual smoke completed on Windows dual-monitor setup.
+- User manual smoke confirmed the 196-a graph min/max scale label on Windows dual-monitor setup.
 - Simple window movement between monitors did not reproduce clipping.
+
+## Windows Manual Check Failed
+
+- User manual check found the 197-a input replace-on-type fix did not hold on Windows.
+- Single-click typing still prepends/appends to the existing value instead of replacing it.
+- Example failure path: `200` -> single-click -> type `100` -> `100200`-style result.
+- Follow-up owner: `197-a2 input table replace-on-type Windows follow-up`.
 
 ## Follow-up Geometry Issues
 
@@ -58,7 +65,7 @@
 
 ## Known Risks
 
-- Tk GUI tests skip in headless Codespaces when no display is available; manual GUI verification is still needed on Windows for the input typing behavior.
+- Tk GUI tests skip in headless Codespaces when no display is available; the 197-a input typing behavior failed Windows manual verification.
 - Geometry issues remain intentionally unfixed.
 
 ## Project Memory Delta
