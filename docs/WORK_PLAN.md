@@ -28,14 +28,15 @@
 - User manual smoke result:
   - 196-a through 199-c completed and archived under summary 200.
   - 201-b resolved the 201-a archived-doc whitespace blocker; merge readiness checks now pass.
+  - 202 merged `work/ui-ux-ssot-adoption` into `main`.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: main merge execution.
+- Next: C# WPF spike branch creation.
 
 ## Next Actions
 
-1. **Main merge execution**
-   - Merge `work/ui-ux-ssot-adoption` to `main` after user approval.
+1. **C# WPF spike branch creation**
+   - Create a new branch from updated `main` before any C# WPF spike work.
 2. **UI technology pivot design gate**
    - Decide C# WPF calculator shell / reusable grid direction before implementation.
 3. **Hong Kong HSPF heating trace schema/implementation**
