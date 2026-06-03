@@ -27,17 +27,20 @@
   - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
 - User manual smoke result:
   - 196-a through 199-c completed and archived under summary 200.
+  - 201-a merge readiness audit found no functional/manual-check blocker, but `git diff --check origin/main...HEAD` has archived-doc whitespace findings that must be resolved before main merge.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: UI technology pivot design gate.
+- Next: resolve merge blockers.
 
 ## Next Actions
 
-1. **UI technology pivot design gate**
+1. **Resolve merge blockers**
+   - Fix archived-doc whitespace findings from `git diff --check origin/main...HEAD`, then rerun merge readiness before main merge.
+2. **UI technology pivot design gate**
    - Decide C# WPF calculator shell / reusable grid direction before implementation.
-2. **Hong Kong HSPF heating trace schema/implementation**
+3. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
-3. **Graph export/HTML export after graph parity stable**
+4. **Graph export/HTML export after graph parity stable**
    - Keep export deferred until graph readability/parity is stable.
 
 ## Active Constraints
