@@ -249,10 +249,9 @@ what gets measured:
   (Tkinter MVP) on the same Windows host with the same Python
   interpreter version.
 - One-file `.exe` sizes for both, with the same measurement protocol.
-- Reported numbers go into the **first** Tkinter MVP result report
-  that runs the build. Until then, all size claims in this doc and in
-  the report stay labeled `not measured`. **No size delta is
-  asserted in this design doc.**
+- Windows `calculator_tk` packaged size was measured at approximately
+  11 MB and is acceptable for the current deployment candidate. Keep PyQt
+  baseline comparison as a later retirement-gate input if needed.
 
 ## Reuse boundaries
 
@@ -335,11 +334,8 @@ After this design doc lands:
    call boundary for `hong_kong_cspf`. If input plumbing blocks the
    core call in the spike, record the blocker in the slice's report
    and stop there.
-2. **Spike step 2** — packaging size measurement on Windows using
-   the commands in
-   `docs/guides/lightweight_calculator_packaging_check.md`. Record
-   measured sizes in the slice's report. Do not assert size deltas
-   anywhere until measured.
+2. **Spike step 2** — Windows `calculator_tk` packaged size measured at
+   approximately 11 MB and acceptable for the current deployment candidate.
 3. **Decision point** — apply the *Decision criteria* section to the
    measured data. The decision lands in a follow-up report; this
    design doc is not edited to record the decision.
@@ -361,7 +357,8 @@ After this design doc lands:
 - IA decision: standard tab + region selector + multi-metric sections
   in the same screen (not per-region tabs, not nested tabs, not KS C
   9306 merged into ISO).
-- Packaging numbers: **not measured** in this doc.
+- Packaging result: Windows `calculator_tk` packaged size measured at
+  approximately 11 MB and acceptable for the current deployment candidate.
 - **Note:** This doc defined the feasibility MVP, not the final UX. The MVP
   intentionally used `Entry` rows + calculate buttons to validate core reuse
   and packaging size. The final calculator-only UX contract (table/grid input

@@ -5,6 +5,10 @@
 > This guide documents the **measurement procedure**. It does NOT
 > claim measured sizes. Any number that has not been observed locally
 > stays labeled `not measured`.
+>
+> Current project note: Windows `calculator_tk` packaged size has been
+> observed at approximately 11 MB and is acceptable for the current
+> deployment candidate; see the active 198-c report for the closeout.
 
 ## Purpose
 

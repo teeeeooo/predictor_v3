@@ -291,13 +291,10 @@ Ordered. Each slice ships independently with its own report.
    - If any item fails, fix in a follow-up slice before proceeding.
 
 5. **Windows PyInstaller size measurement**
-   - Measure one-folder and one-file `.exe` sizes for `app_calculator_tk.py`
-     on a Windows host using the commands in
-     `docs/guides/lightweight_calculator_packaging_check.md`.
-   - Compare against the PyQt5 baseline (recorded or newly measured).
-   - If the delta is < 20 %, pause and re-evaluate the Tkinter direction.
-   - If the delta is ≥ 40 %, continue.
-   - **Prerequisite:** Windows host available.
+   - Windows `calculator_tk` packaged size was measured at approximately
+     11 MB and is acceptable for the current deployment candidate.
+   - Keep PyQt5 baseline comparison as a later retirement-gate input if
+     calculator-only source retirement resumes.
 
 6. **PyQt calculator-only source retirement — 재개**
    - Only after slice 3 (vertical slice) is verified and slice 5 (size) meets

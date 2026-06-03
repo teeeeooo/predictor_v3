@@ -366,16 +366,11 @@ calculator UI workstream is on hold (see WORK_PLAN 4c–4g and the
 
 Once every checklist item is `OK` on macOS:
 
-1. If a Windows host is available — proceed to
-   `docs/guides/lightweight_calculator_packaging_check.md` and
-   record measured PyInstaller dist sizes for both
-   `app_calculator.py` (PyQt baseline) and `app_calculator_tk.py`
-   (Tkinter spike). The macOS smoke output gives you a behavioural
-   baseline to compare against the Windows build's runtime output.
-2. If no Windows host is available — Windows PyInstaller size
-   measurement stays **pending**. Keep the macOS smoke result handy;
-   the next eligible work items are listed in `docs/WORK_PLAN.md`
-   item 4z.
+1. Windows `calculator_tk` packaged size has been measured at
+   approximately 11 MB and is acceptable for the current deployment
+   candidate.
+2. Keep the PyQt baseline comparison as a later retirement-gate input if
+   calculator-only source retirement resumes.
 
 Do not retroactively edit the design doc
 (`docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`)

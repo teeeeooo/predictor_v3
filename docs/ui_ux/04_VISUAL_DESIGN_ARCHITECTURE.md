@@ -218,5 +218,6 @@ any current color values.
 5. Deliver the ISO Hong Kong CSPF/HSPF table plus auto-calc vertical slice.
 
 PyQt calculator-only source retirement remains held until the Tkinter final
-UX vertical slice verification gate is cleared. Windows PyInstaller size
-measurement remains pending until a Windows host is available.
+UX vertical slice verification gate is cleared. Windows `calculator_tk`
+packaged size is approximately 11 MB and acceptable for the current deployment
+candidate; keep PyQt baseline comparison as a later retirement-gate input.

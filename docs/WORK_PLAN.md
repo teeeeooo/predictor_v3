@@ -31,12 +31,14 @@
   - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
   - 197-b multi-monitor geometry role-split passed Windows manual smoke.
   - 198-a first-launch ISO fit and SASO 4-point default passed Windows manual smoke.
-- Next: 198-b manual smoke.
+  - 198-b detail-open vertical clamp behaved as intended, with remaining long-content height issue split to 198-c.
+  - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
+- Next: 198-c manual smoke.
 
 ## Next Actions
 
-1. **198-b manual smoke**
-   - Verify detail open vertical clamp prevents lower-edge clipping while preserving current x/monitor location.
+1. **198-c manual smoke**
+   - Verify auto-fit height cap keeps detail windows within a usable vertical size while preserving manual resize behavior.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**
@@ -61,7 +63,7 @@
 ## Deferred / Hold
 
 - PyQt calculator source retirement remains on hold.
-- Windows PyInstaller size measurement remains pending until a Windows host is available.
+- Windows calculator_tk packaged size is approximately 11 MB and acceptable for the current deployment candidate.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Graph export/HTML export is deferred until after graph parity is stable.
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.

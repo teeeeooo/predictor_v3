@@ -57,16 +57,11 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Codespaces cannot perform Windows GUI smoke.
-- User should verify:
-  - detail open no longer clips the lower edge;
-  - any correction moves only vertically as needed;
-  - monitor 2 detail open/close still stays on monitor 2;
-  - profile changes preserve current monitor/location;
-  - ISO/ISEER, SASO, and Hong Kong CSPF detail open/close still work;
-  - result/detail table, graph, CSV/export/copy, and SASO 4-point default behavior remain unchanged.
+- User completed Windows local GUI smoke for 198-b.
+- Vertical clamp moved the window upward as intended and preserved monitor/location behavior.
+- Remaining issue: long detail content can still make auto-fit height excessive; owner is 198-c auto-fit max-height cap.
 
 ## Project Memory Delta
 
