@@ -29,14 +29,13 @@
   - Simple window movement between monitors did not reproduce screen clipping.
   - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
   - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
-- Next: 197-b multi-monitor geometry audit/hotfix.
+- Next: 197-b multi-monitor geometry manual smoke.
 
 ## Next Actions
 
-1. **197-b multi-monitor geometry audit/hotfix**
-   - Investigate without changing detail/result semantics:
-     - Detail view opened after moving the app to monitor 2 can recenter on monitor 1.
-     - Initial app placement can appear below screen center enough to clip the window.
+1. **197-b multi-monitor geometry manual smoke**
+   - Verify first launch stays within visible bounds.
+   - Verify detail open/close and profile changes preserve the current monitor/location.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**
