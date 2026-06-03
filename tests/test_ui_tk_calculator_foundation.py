@@ -152,6 +152,8 @@ def test_capped_window_size_matches_initial_geometry_policy():
         initial_window_geometry(2200, 1800, screen_width, screen_height)
     )
     assert (width, height) == (geometry_width, geometry_height)
+    assert height == int(screen_height * 0.80)
+    assert APP_WINDOW_MAX_HEIGHT_RATIO == 0.80
 
 
 def test_clamp_geometry_to_visible_bounds_preserves_visible_geometry():
