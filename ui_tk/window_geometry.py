@@ -160,10 +160,12 @@ def clamp_geometry_vertically_to_visible_bounds(
     geometry: str, screen_height: int
 ) -> str:
     width, height, x, y = parse_window_geometry(geometry)
-    if height >= screen_height:
+    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    visible_bottom = screen_height - margin_y
+    if height >= visible_bottom:
         new_y = 0
     else:
-        new_y = min(max(0, y), screen_height - height)
+        new_y = min(max(0, y), visible_bottom - height)
     return format_window_geometry(width, height, x, new_y)
 
 
