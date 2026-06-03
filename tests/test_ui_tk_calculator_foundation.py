@@ -170,7 +170,8 @@ def test_clamp_geometry_to_visible_bounds_preserves_visible_geometry():
 
 def test_vertical_clamp_preserves_x_and_adjusts_y_only():
     screen_height = 1000
-    visible_bottom = screen_height - int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+    visible_bottom = screen_height - margin_y
     assert clamp_geometry_vertically_to_visible_bounds(
         "800x600+1800+100", screen_height
     ) == "800x600+1800+100"
@@ -183,6 +184,12 @@ def test_vertical_clamp_preserves_x_and_adjusts_y_only():
     assert clamp_geometry_vertically_to_visible_bounds(
         "800x600+2200-100", screen_height
     ) == "800x600+2200+0"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x760+2200+120", screen_height
+    ) == f"800x760+2200+{margin_y}"
+    assert clamp_geometry_vertically_to_visible_bounds(
+        "800x900-400+120", screen_height
+    ) == f"800x900-400+{visible_bottom - 900}"
     assert clamp_geometry_vertically_to_visible_bounds(
         "800x1200+2200+300", screen_height
     ) == "800x1200+2200+0"

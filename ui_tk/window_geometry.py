@@ -46,6 +46,21 @@ def format_window_geometry(width: int, height: int, x: int, y: int) -> str:
     return f"{width}x{height}{x:+d}{y:+d}"
 
 
+def _screen_margin_y(screen_height: int) -> int:
+    return int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
+
+
+def _max_auto_fit_height(screen_height: int) -> int:
+    return min(
+        screen_height - _screen_margin_y(screen_height),
+        int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO),
+    )
+
+
+def _visible_bottom_y(screen_height: int) -> int:
+    return screen_height - _screen_margin_y(screen_height)
+
+
 def capped_window_size(
     requested_width: int,
     requested_height: int,
@@ -57,9 +72,8 @@ def capped_window_size(
         requested_width = max(requested_width, preferred_content_size[0])
         requested_height = max(requested_height, preferred_content_size[1])
     margin_x = int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO)
-    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
     max_width = min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO))
-    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
+    max_height = _max_auto_fit_height(screen_height)
     return (
         min(requested_width, max_width),
         min(requested_height, max_height),
@@ -134,9 +148,7 @@ def apply_overflow_correction(root: tk.Tk, tab: SupportsVerticalOverflowDelta) -
     geom = root.geometry()
     w, h, x, y = parse_window_geometry(geom)
     screen_height = root.winfo_screenheight()
-    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
-    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
-    new_h = min(h + delta, max_height)
+    new_h = min(h + delta, _max_auto_fit_height(screen_height))
     if new_h > h:
         root.geometry(format_window_geometry(w, new_h, x, y))
         root.update_idletasks()
@@ -159,17 +171,22 @@ def clamp_geometry_to_visible_bounds(
 def clamp_geometry_vertically_to_visible_bounds(
     geometry: str, screen_height: int
 ) -> str:
+    """Clamp y only for profile/detail fit; preserve x for multi-monitor use."""
     width, height, x, y = parse_window_geometry(geometry)
-    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
-    visible_bottom = screen_height - margin_y
+    margin_y = _screen_margin_y(screen_height)
+    visible_bottom = _visible_bottom_y(screen_height)
+    large_height_threshold = int(screen_height * 0.75)
     if height >= visible_bottom:
         new_y = 0
+    elif height >= large_height_threshold:
+        new_y = min(margin_y, visible_bottom - height)
     else:
         new_y = min(max(0, y), visible_bottom - height)
     return format_window_geometry(width, height, x, new_y)
 
 
 def clamp_window_to_visible_bounds(root: tk.Tk) -> None:
+    """Initial-launch full visible clamp; may adjust x and y."""
     geom = clamp_geometry_to_visible_bounds(
         root.geometry(),
         root.winfo_screenwidth(),
@@ -235,9 +252,7 @@ def grow_window_by_vertical_delta(root: tk.Tk, delta: int) -> None:
     geom = root.geometry()
     w, h, x, y = parse_window_geometry(geom)
     screen_height = root.winfo_screenheight()
-    margin_y = int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO)
-    max_height = min(screen_height - margin_y, int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO))
-    new_h = min(h + delta, max_height)
+    new_h = min(h + delta, _max_auto_fit_height(screen_height))
     if new_h > h:
         root.geometry(format_window_geometry(w, new_h, x, y))
         root.update_idletasks()
