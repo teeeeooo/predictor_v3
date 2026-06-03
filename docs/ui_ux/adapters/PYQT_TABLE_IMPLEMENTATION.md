@@ -18,6 +18,10 @@ This adapter applies to every PyQt5 table-shaped widget in a project
 that has selected PyQt5 under `../01_TOOLKIT_SELECTION_POLICY.md`,
 including helpers, fixtures, and test harnesses.
 
+For `predictor_v3`, select the input/result surface shape first under
+`../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; this adapter governs the
+PyQt implementation of any resulting table surface.
+
 ## 1. Required widget pattern
 
 - **View**: `QTableView`. `QTableWidget` is **forbidden** for any
@@ -38,6 +42,13 @@ delegate-based validation. They are not acceptable trade-offs.
 
 ## 2. Editor lifecycle (1-click open)
 
+- Editable PyQt tables follow the selection/edit state machine in
+  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md`. Implement selection mode through
+  the view selection model and implement edit-mode entry, caret editing,
+  commit, and cancel through the editor delegate lifecycle.
+- `QTableView` / delegate implementations must preserve the distinction:
+  selection-mode key actions operate on cells, while edit-mode key actions
+  operate inside the active editor until commit or cancel.
 - A dropdown cell opens on a **single click**, not on double-click.
   Inside the delegate's `createEditor` (or `editorEvent`), schedule
   the popup with `QTimer.singleShot(0, editor.showPopup)`.
@@ -193,6 +204,8 @@ distinguishable in the diff even when they share helpers.
 - `../01_TOOLKIT_SELECTION_POLICY.md` — when to choose PyQt5.
 - `../02_DESIGN_TOKENS_AND_LAYOUT.md` — tokens and layout.
 - `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
+- `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — project-wide
+  matrix/result surface-shaping rule applied before PyQt implementation.
 - `TKINTER_TABLE_ADAPTER.md` — Tkinter equivalent for existing apps.
 - `../_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` —
   historical PyQt-only source that this adapter was derived from.

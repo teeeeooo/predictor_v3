@@ -118,7 +118,14 @@ def test_packet_mapper_does_not_fabricate_missing_load_or_hours():
         assert "hours" not in row
         assert "load_w" not in row
 
-@pytest.mark.xfail(reason="Case 3 component row reconstruction requires load/helper/hour fields; current subset is diagnostic only.")
+@pytest.mark.xfail(
+    reason=(
+        "AS/NZS Excel compatibility external-reference prerequisite: "
+        "component rows need full load/hour/energy_wh/helper fields for "
+        "exact reconstruction; current packet subset is diagnostic-only "
+        "and remains deferred to the Z-phase AS/NZS compatibility work."
+    )
+)
 def test_packet_rows_to_component_details_xfail_until_load_hours_available():
     packet = load_case3_packet_fixture()
     extracted = extract_component_details_from_packet_rows(packet)

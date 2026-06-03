@@ -23,6 +23,15 @@ from ui.spreadsheet_table import (
     make_en14825_seer_table_model,
     SpreadsheetTableView,
 )
+from ui.theme import color as theme_color, spacing as theme_spacing
+from ui.calculator_errors import (
+    InputValidationError,
+    apply_error_style,
+    bind_error_reset as _bind_error_reset_widget,
+    clear_error_style,
+    get_float_val,
+    parse_number,
+)
 
 
 # SCOP climate별 UI default prefill (UI-only; calculator core / region
@@ -32,22 +41,6 @@ EN14825_SCOP_CLIMATE_DEFAULTS = {
     "warmer": {"label": "Warmer", "tbiv_c": 2.0, "tol_c": -11.0},
     "colder": {"label": "Colder", "tbiv_c": -15.0, "tol_c": -22.0},
 }
-
-
-# [6] 숫자 파싱 공통 함수
-def parse_number(text: str) -> float:
-    """텍스트에서 콤마를 제거하고 float으로 변환합니다."""
-    clean_text = text.replace(',', '').strip()
-    if not clean_text:
-        raise ValueError("빈 값입니다.")
-    return float(clean_text)
-
-
-class InputValidationError(Exception):
-    """입력 검증 실패 시 에러 위젯 정보를 함께 전달하는 예외"""
-    def __init__(self, message: str, widget=None):
-        super().__init__(message)
-        self.widget = widget
 
 
 class CalculatorWindow(QWidget):
@@ -122,10 +115,10 @@ class CalculatorWindow(QWidget):
         action_layout.addWidget(self.result_label, 1)
         main_layout.addLayout(action_layout)
 
-    # [1] 에러 스타일링 리셋 로직 (공통 헬퍼)
+    # [1] 에러 스타일링 리셋 로직 (thin wrapper around shared helper)
     def bind_error_reset(self, widget: QLineEdit):
         """사용자가 수정을 시작하면 붉은 테두리를 해제합니다."""
-        widget.textChanged.connect(lambda: widget.setStyleSheet(""))
+        _bind_error_reset_widget(widget)
 
     def init_iso_tab(self):
         """ISO/CSPF 탭: 단건 입력 우선 UI"""
@@ -138,21 +131,52 @@ class CalculatorWindow(QWidget):
     def init_en_tab(self):
         """EN 탭: horizontal spreadsheet table input (UI 입력 단위는 W).
 
-        SEER profile: 단일 A/B/C/D table.
-        SCOP profile: Average / Warmer / Colder climate별 table + 보조 form.
+        Layout order (top → bottom):
+        1. Profile selector
+        2. Standby / 대기 전력 (compact horizontal row, W input)
+        3. SEER section (visible for SEER profile)
+        4. SCOP section (visible for SCOP profile)
+
         EN core (`calculate_seer` / `calculate_scop`)는 kW 입력을 기대하므로,
-        ``calculate_en()``이 호출 직전 W → kW 변환을 수행한다.
+        ``calculate_en()``이 호출 직전 W → kW 변환을 수행한다. Standby /
+        p_design / Tbiv / TOL key 이름과 default 0.0 prefill은 그대로 유지.
         """
         layout = QVBoxLayout(self.tab_en)
+        layout.setSpacing(theme_spacing("space.section"))
 
         self.combo_region_en = QComboBox()
+        self.combo_region_en.setMaximumWidth(320)
         self.combo_region_en.currentIndexChanged.connect(self.on_region_changed_en)
         layout.addWidget(QLabel("규격 프로파일:"))
         layout.addWidget(self.combo_region_en)
 
+        # --- Common standby form (W input) — top compact row ---
+        self.en_standby_group = QGroupBox("Standby / 대기 전력 (UI 입력 단위 W)")
+        self.en_standby_group.setObjectName("en_standby_group")
+        standby_row = QHBoxLayout()
+        standby_row.setSpacing(theme_spacing("space.row"))
+        for key, label in (
+            ("p_to_w", "p_to"),
+            ("p_sb_w", "p_sb"),
+            ("p_ck_w", "p_ck"),
+            ("p_off_w", "p_off"),
+        ):
+            widget = QLineEdit()
+            widget.setText("0.0")
+            widget.setMaximumWidth(90)
+            self.input_widgets_en[key] = widget
+            self.bind_error_reset(widget)
+            cell_label = QLabel(f"{label} (W):")
+            standby_row.addWidget(cell_label)
+            standby_row.addWidget(widget)
+        standby_row.addStretch()
+        self.en_standby_group.setLayout(standby_row)
+        layout.addWidget(self.en_standby_group)
+
         # --- SEER section (single table) ---
         self.en_seer_group = QGroupBox("SEER 테스트 포인트 (UI 입력 단위 W)")
         seer_layout = QVBoxLayout()
+        seer_layout.setSpacing(theme_spacing("space.section"))
         self.en_seer_model = make_en14825_seer_table_model(self)
         self.en_seer_view = SpreadsheetTableView()
         self.en_seer_view.setModel(self.en_seer_model)
@@ -172,19 +196,22 @@ class CalculatorWindow(QWidget):
         self.en_seer_view.setMinimumHeight(110)
         seer_layout.addWidget(self.en_seer_view)
 
-        seer_form = QFormLayout()
+        seer_aux_row = QHBoxLayout()
+        seer_aux_row.setSpacing(theme_spacing("space.row"))
         self.input_widgets_en["p_design_c_w"] = QLineEdit()
-        seer_form.addRow(
-            "p_design_c (W, SEER):", self.input_widgets_en["p_design_c_w"]
-        )
+        self.input_widgets_en["p_design_c_w"].setMaximumWidth(120)
         self.bind_error_reset(self.input_widgets_en["p_design_c_w"])
-        seer_layout.addLayout(seer_form)
+        seer_aux_row.addWidget(QLabel("p_design_c (W, SEER):"))
+        seer_aux_row.addWidget(self.input_widgets_en["p_design_c_w"])
+        seer_aux_row.addStretch()
+        seer_layout.addLayout(seer_aux_row)
         self.en_seer_group.setLayout(seer_layout)
         layout.addWidget(self.en_seer_group)
 
         # --- SCOP section (multi-climate cards) ---
         self.en_scop_group = QGroupBox("SCOP 기후별 테스트 포인트 (UI 입력 단위 W)")
         scop_layout = QVBoxLayout()
+        scop_layout.setSpacing(theme_spacing("space.section"))
         self.en_scop_climates = {}
         for climate_key, defaults in EN14825_SCOP_CLIMATE_DEFAULTS.items():
             card = QGroupBox(f"{defaults['label']} climate")
@@ -192,6 +219,7 @@ class CalculatorWindow(QWidget):
             card.setChecked(climate_key == "average")
 
             card_layout = QVBoxLayout()
+            card_layout.setSpacing(theme_spacing("space.row"))
             model = make_en14825_scop_table_model(self)
             view = SpreadsheetTableView()
             view.setModel(model)
@@ -209,19 +237,26 @@ class CalculatorWindow(QWidget):
             view.setMinimumHeight(110)
             card_layout.addWidget(view)
 
-            card_form = QFormLayout()
+            aux_row = QHBoxLayout()
+            aux_row.setSpacing(theme_spacing("space.row"))
             p_design_h_w = QLineEdit()
             tbiv_widget = QLineEdit()
             tol_widget = QLineEdit()
+            for w in (p_design_h_w, tbiv_widget, tol_widget):
+                w.setMaximumWidth(110)
             tbiv_widget.setText(str(defaults["tbiv_c"]))
             tol_widget.setText(str(defaults["tol_c"]))
-            card_form.addRow("p_design_h (W, SCOP):", p_design_h_w)
-            card_form.addRow("Tbiv 온도 (°C):", tbiv_widget)
-            card_form.addRow("TOL 온도 (°C):", tol_widget)
+            aux_row.addWidget(QLabel("p_design_h (W):"))
+            aux_row.addWidget(p_design_h_w)
+            aux_row.addWidget(QLabel("Tbiv (°C):"))
+            aux_row.addWidget(tbiv_widget)
+            aux_row.addWidget(QLabel("TOL (°C):"))
+            aux_row.addWidget(tol_widget)
+            aux_row.addStretch()
             self.bind_error_reset(p_design_h_w)
             self.bind_error_reset(tbiv_widget)
             self.bind_error_reset(tol_widget)
-            card_layout.addLayout(card_form)
+            card_layout.addLayout(aux_row)
             card.setLayout(card_layout)
             scop_layout.addWidget(card)
 
@@ -237,23 +272,6 @@ class CalculatorWindow(QWidget):
 
         self.en_scop_group.setLayout(scop_layout)
         layout.addWidget(self.en_scop_group)
-
-        # --- Common standby form (W input) ---
-        standby_group = QGroupBox("Standby / 대기 전력 (UI 입력 단위 W)")
-        standby_form = QFormLayout()
-        for key, label in (
-            ("p_to_w", "p_to (W):"),
-            ("p_sb_w", "p_sb (W):"),
-            ("p_ck_w", "p_ck (W):"),
-            ("p_off_w", "p_off (W):"),
-        ):
-            widget = QLineEdit()
-            widget.setText("0.0")
-            self.input_widgets_en[key] = widget
-            self.bind_error_reset(widget)
-            standby_form.addRow(label, widget)
-        standby_group.setLayout(standby_form)
-        layout.addWidget(standby_group)
         layout.addStretch()
 
         # Profile-driven visibility is set by on_region_changed_en.
@@ -335,8 +353,9 @@ class CalculatorWindow(QWidget):
         # Group 3: HSPF2 v3 Heating — horizontal spreadsheet-like table
         # for the seven heating test points, plus a compact form for the
         # auxiliary fields (t_off / t_on / defrost minutes). See
-        # docs/ui/SPREADSHEET_TABLE_CONTRACT.md and the calculator
-        # horizontal-table-input design doc.
+        # docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md,
+        # docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md, and the
+        # calculator horizontal-table-input design doc.
         group_hspf2 = QGroupBox("3. HSPF2 v3 난방 테스트 포인트")
         hspf2_layout = QVBoxLayout()
 
@@ -481,21 +500,14 @@ class CalculatorWindow(QWidget):
             self.hspf2_calc = None
 
     def _get_float_val(self, widget: QLineEdit, field_name: str, allow_empty=False, allow_zero=False) -> float:
-        """[9] 입력 유효성 검사 강화"""
-        text = widget.text().strip()
-        if not text:
-            if allow_empty: return None
-            raise InputValidationError(f"'{field_name}' 항목을 입력해주세요.", widget)
-        
-        try:
-            val = parse_number(text)
-        except ValueError:
-            raise InputValidationError(f"'{field_name}' 필드에 올바른 숫자를 입력해주세요.", widget)
-
-        if not allow_zero and val <= 0:
-             raise InputValidationError(f"'{field_name}' 필드는 0보다 큰 값이어야 합니다.", widget)
-
-        return val
+        """[9] 입력 유효성 검사 — :mod:`ui.calculator_errors` 위임."""
+        return get_float_val(
+            {"_": widget},
+            "_",
+            field_name,
+            allow_empty=allow_empty,
+            allow_zero=allow_zero,
+        )
 
     def _read_ahri_seer2_table_points(self):
         """AHRI SEER2 table에서 5-point ``test_points`` dict를 읽는다.
@@ -613,7 +625,7 @@ class CalculatorWindow(QWidget):
         except InputValidationError as e:
             QMessageBox.warning(self, "입력 오류", str(e))
             if e.widget:
-                e.widget.setStyleSheet("border: 2px solid #E74C3C; background-color: #FDEDEC;")
+                apply_error_style(e.widget)
                 e.widget.setFocus()
                 e.widget.selectAll()
         except Exception as e:
@@ -623,7 +635,7 @@ class CalculatorWindow(QWidget):
         """모든 위젯 스타일 리셋"""
         for widgets in [self.input_widgets_iso, self.input_widgets_en, self.input_widgets_ahri, self.input_widgets_hspf2]:
             for w in widgets.values():
-                w.setStyleSheet("")
+                clear_error_style(w)
 
     def calculate_ahri(self):
         """AHRI SEER2 계산 로직"""

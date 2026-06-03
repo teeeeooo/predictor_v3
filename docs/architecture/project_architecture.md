@@ -63,7 +63,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
 ### 3.3 UI Model/View Guardrails
-- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 한다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 SPREADSHEET_TABLE_CONTRACT.md를 참조한다.
+- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
 - **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
 - **State Rendering**: 상태별 배경색을 통해 시각적 일관성을 확보한다.
@@ -218,6 +218,23 @@ UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 
 
 현재 `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP selector는 profile label과 `profile_id` item data를 사용한다. Calculator construction은 `create_calculator_for_profile()` 경로를 따른다.
 
+### Calculator UI module boundary
+
+`ui/calc_window.py`의 `CalculatorWindow`는 shell / entry 역할만 유지한다. 다음 책임은 별도 module로 분리해 누적을 막는다 (구체 분리 순서와 슬라이스는 `docs/designs/2026-05-22-calculator-ui-module-boundary.md` 참고).
+
+- ISO tab UI / auto-calc / result panel은 이미 `ui/calculators_2point.py::IsoCspfSingleWidget`이 owner. `calc_window`는 instance를 부착만 한다.
+- EN14825 tab의 UI construction, table read, W→kW 변환, calculate helper, result text formatting은 `ui/calculator_en_tab.py` (또는 동등 module)로 분리한다.
+- AHRI 210/240 tab의 UI construction, SEER2/HSPF2 input read, calculate helper, HSPF2 v3 derivation, result text formatting은 `ui/calculator_ahri_tab.py`로 분리한다.
+- 공통 result/status panel은 `ui/calculator_result_panel.py` (Slice γ 예정), debounce/recompute helper는 `ui/calculator_recompute.py` (Slice β 예정), validation error styling/message routing은 `ui/calculator_errors.py` (Slice δ 예정)로 분리한다.
+
+원칙:
+
+- `calc_window.py`에 EN/AHRI 계산 UI 책임을 계속 누적하지 않는다.
+- tab module은 자기 widget tree와 read/format helper만 소유한다. core calculator construction (`create_calculator_for_profile`)과 profile manifest는 그대로 둔다.
+- core calculator 공식, validation, region config schema, profile dispatcher는 UI module refactor에 맞춰 바꾸지 않는다.
+- tab module의 public interface는 `(parent, theme tokens)` 입력과 `set_calculator(...)`, `read_inputs()` / `calculate()` / `set_result_text()`, table model의 `values_changed` signal 노출 정도로 좁게 유지한다.
+- `InputValidationError`와 `_get_float_val` 같은 공용 helper는 별도 `ui/calculator_errors.py` 또는 `ui/_calc_input_helpers.py`로 이동 가능하며, tab module은 그 helper를 import한다.
+
 ### Result schema boundary
 
 Calculator result schema와 ML feature schema는 분리한다. Calculator result는 metric value, units, summary, bin details, diagnostics 같은 평가 결과를 담고, ML feature schema는 학습/예측 입력 컬럼과 target/leakage rule을 담는다.
@@ -236,3 +253,17 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 - local one-off conditional로 selector/routing 문제를 덮지 않는다.
 - external calculator compatibility convention을 common ISO calculator path에 직접 섞지 않는다.
 - standard/region metadata만으로 external compatibility mode를 자동 선택하지 않는다.
+
+## 6. New module / script boundary
+
+본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `ui_tk/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
+
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculator_dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다.
+- Tkinter shell 독립성: `ui_tk/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
+- Thin entrypoint: `app_*.py` 는 import + 한 두 줄 entrypoint 함수만 둔다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하). 실제 책임은 layer 모듈에 둔다.
+- Multi-responsibility 한 파일 금지: shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다. 새 작업에서 3개 이상 신규 책임 영역이 발생하면 skeleton/interface 작업과 구현 작업을 분리한다.
+- Hard-coded 값 격리: region, profile, metric, result key, default 값은 SSOT (config, constants, resolver, token module) 한 곳에서만 정의한다. 2곳 이상 반복되는 literal/mapping/formatting은 helper/registry 후보로 본다.
+- Soft limit (warning): 새 파일은 250 LOC / class 3개 / 함수 60~80 LOC 이내가 기본. 초과 예상 시 분리 계획을 먼저 보고한다. 기존 known-large / historical 파일은 `tools/check_code_structure.py`의 allowlist로 일시 면제한다.
+- Spike 예외 없음: feasibility spike도 shell + input + result + resolver + core call + formatting을 한 파일에 동시에 담지 않는다 (116 spike → 118 reset 사례 참고).
+
+자동 검사는 `tools/check_code_structure.py`가 conservative한 첫 버전으로 제공한다 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit). 코드 구조에 영향을 주는 작업의 검증에 포함한다.

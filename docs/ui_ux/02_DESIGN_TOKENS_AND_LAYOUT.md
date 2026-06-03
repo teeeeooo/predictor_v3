@@ -10,6 +10,13 @@
   a project commits a palette, the names are the contract.
 - Toolkit-specific implementation (QPalette, ttk.Style, etc.) lives
   in the adapter documents.
+- For `predictor_v3` semantic visual-role organization and
+  neutral-first visual philosophy, see
+  `04_VISUAL_DESIGN_ARCHITECTURE.md`; this document continues to own
+  token and layout naming.
+- `ui_common/visual_tokens.py` is the toolkit-neutral semantic token
+  code foundation for later adapters; it does not replace existing
+  theme modules or apply styles to current UI.
 
 ## 1. Color tokens
 
@@ -160,7 +167,68 @@ Rules:
   project's compact numeric formatter (see `00_UI_UX_SYSTEM.md`
   §8).
 
-## 8. Empty state and helper text
+## 8. Window Geometry And Screen Caps
+
+- Window initial size, minimum size, maximum size, screen margins,
+  visible caps, and preferred visible ratios are layout policy values.
+  They must not be owned as raw numbers inside component or app shell
+  modules.
+- Toolkit-neutral placement, auto-fit, multi-monitor, viewport, and
+  scroll behavior policy is owned by
+  `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
+- Toolkit implementations place these values in a named layout owner.
+  For Tkinter, use `ui_tk/layout_constants.py` or an equivalent
+  toolkit-local layout owner, then import the named constants/ratios
+  into shell modules such as `ui_tk/calculator_app.py`.
+- Prefer helpers based on content-requested size and screen/content
+  ratios over fixed pixel dimensions. The shell may calculate geometry,
+  but the policy values used by that calculation come from the owner.
+- If a fallback value is unavoidable, it is still a named constant in
+  the owner file, not an inline literal in the component.
+
+### 8.1 Initial geometry order of operations
+
+1. Render the initial UI state first so every visible widget, panel,
+   selector, tab header, and result surface is realized. This includes
+   default inputs, auto-calculated summaries, and any content that
+   affects natural size.
+2. Measure the **root / app-level rendered requested size** after the
+   initial paint is stable.
+3. Apply a content-based safety margin (named constant in the layout
+   owner, not a hard-coded pixel number).
+4. Apply the **screen cap** last, clamping to visible screen bounds so
+   the window is never placed outside the display.
+5. Derive the centered position from the final clamped size.
+
+### 8.2 Separation of concerns
+
+- **Initial geometry** is the first window size shown at startup.
+  It should reflect the rendered content size, not a fixed pixel value
+  or a screen-ratio minimum.
+- **Resize minimum** is the smallest size a user is allowed to shrink
+  the window to. It may differ from the initial geometry and must not
+  force the initial window to be larger than the computed content size.
+- **Screen cap** is the maximum safe window size for the current
+  display. It is applied after content sizing, not as an initial floor.
+- **Scrollbar visibility** is a fallback affordance. It should be shown
+  only when the content genuinely exceeds the available viewport.
+  Scrollbar visibility changes must not trigger geometry mutation,
+  pack/forget loops, or content width sync cascades.
+
+### 8.3 Event-loop safety
+
+- Geometry mutation, scrollbar pack/forget, and content width
+  synchronization must never call each other synchronously inside the
+  same `<Configure>` handler path. If one of them must react to a
+  resize event, queue the dependent work on the event loop or let the
+  next natural paint cycle apply it.
+- A component-specific `preferred_initial_size()` helper may be used
+  only when the root requested size does not reflect the actual
+  content (for example, because a scroll container or virtualized
+  surface hides the true content height). In that case the helper
+  measures the natural size of the visible content directly.
+
+## 9. Empty state and helper text
 
 - Empty tables and empty result panels must show a short empty-state
   message that tells the user what to do next.
@@ -169,19 +237,38 @@ Rules:
 - Error messages on a field use `color.danger` foreground; do not
   rely on color alone.
 
-## 9. What this document does not include
+## 10. Visual value ownership and portable adoption
+
+- Each adopting project provides a concrete token owner file. Widget
+  and component modules consume those values instead of introducing raw
+  colors, local spacing tokens, fixed-pixel table width rules, or
+  window geometry literals.
+- A project may bind this common semantic contract through a
+  toolkit-local owner while adoption is incremental; a complete theme
+  migration is not required before component ownership is enforced.
+- The portable architecture kit includes the owner file, component
+  skeleton, toolkit adapter, and a configured ownership guard together
+  with these common documents. See
+  `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`.
+
+## 11. What this document does not include
 
 - Final hex codes. Each project owns its palette and binds these
-  tokens to concrete values in its own theme module.
+  tokens to concrete values in its own theme or toolkit binding owner
+  module.
 - Toolkit-specific implementation. PyQt5 stylesheet and ttk.Style
   details live in the adapter documents under `adapters/`.
 - Code examples. This document is the token / layout contract; the
   adapter documents are where toolkit-specific snippets go, if any.
 
-## 10. Related documents
+## 12. Related documents
 
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `01_TOOLKIT_SELECTION_POLICY.md` — toolkit choice.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
+- `04_VISUAL_DESIGN_ARCHITECTURE.md` — `predictor_v3` semantic
+  visual roles and visual design direction.
+- `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` — portable adoption kit and
+  visual-value ownership boundary.
 - `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 table rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter table adapter rules.

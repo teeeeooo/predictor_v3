@@ -13,11 +13,15 @@ ISO_COMMON_HSPF_TOLERANCE = 0.001
 ISO_COMMON_ENERGY_TOLERANCE_KWH = 0.5
 CASE3_EXCEL_COM_HSEC_WH = 1126120.47
 CASE3_COMMON_HSEC_WH = 1134087.840521695
+LEGACY_WORKBOOK_ORACLE_OWNER = (
+    "legacy workbook-oracle diagnostic/reference; not production "
+    "ISO16358-2 HSPF official-exact path; decommission requires a "
+    "separate design decision"
+)
 LEGACY_WORKBOOK_DIAGNOSTIC_XFAIL = pytest.mark.xfail(
     reason=(
-        "Archived legacy workbook diagnostics use pre-separation workbook "
-        "oracle expectations; active ISO HSPF formula routes are covered by "
-        "pure ISO formula/validation tests."
+        f"{LEGACY_WORKBOOK_ORACLE_OWNER}: archived case3 diagnostics preserve "
+        "historical workbook/AS-NZS oracle investigation context."
     ),
     strict=True,
 )
@@ -204,19 +208,20 @@ def iso_hspf_xfail_reason(case):
     case_id = case["case_id"]
     if case_id == 1:
         return (
-            "ISO16358-2 HSPF case 1 known discrepancy: ISO 16358 mode workbook "
-            "oracle may apply undocumented branch-specific intermediate "
-            "rounding; current Python common routing does not yet fully "
-            "reproduce this workbook-specific boundary behavior"
+            f"{LEGACY_WORKBOOK_ORACLE_OWNER}: seven-case workbook matrix case "
+            "1 preserves a historical workbook-oracle rounding/boundary "
+            "diagnostic."
         )
     if case_id == 3:
         return (
-            "ISO16358-2 HSPF case 3: ISO 16358 mode workbook oracle aligns "
-            "with fixture CHSE 1126/HSPF 4.338, while common path remains high "
-            "at about CHSE 1134/HSPF 4.308; investigate Formula 49 frost "
-            "half-full or optional branch selection in workbook oracle"
+            f"{LEGACY_WORKBOOK_ORACLE_OWNER}: seven-case workbook matrix case "
+            "3 preserves the historical CHSE 1126/HSPF 4.338 workbook-oracle "
+            "reference and related Formula 49/optional-branch investigation."
         )
-    return "ISO16358-2 common HSPF v1: workbook-golden optional/frost/boundary routing not fully implemented"
+    return (
+        f"{LEGACY_WORKBOOK_ORACLE_OWNER}: seven-case workbook matrix preserves "
+        "historical optional/frost/boundary routing diagnostics."
+    )
 
 
 def iso_hspf_golden_cases():

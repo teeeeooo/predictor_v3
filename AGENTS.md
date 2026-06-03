@@ -1,8 +1,8 @@
 # predictor_v3 Agent Rules
 
-이 문서는 매 작업 시작 시 확인하는 **lite entrypoint**다.
+이 문서는 매 작업 시작 시 확인하는 **lite entrypoint**다 (~95 lines).
 세부 절차와 guardrail은 작업 유형에 맞는 `AGENT_TASK_ROUTER.md` 섹션이 owner다.
-상세 배경은 사용자가 명시하거나 고위험 맥락이 필요할 때만 `docs/archive/AGENTS_FULL.md`에서 제한적으로 확인한다.
+상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 
 ## Work Contract
 
@@ -16,6 +16,8 @@
 
 기본 작업 시작 시 `AGENTS.md`만 필수로 읽는다.
 세부 절차가 필요하거나 아래 유형에 해당하면 `AGENT_TASK_ROUTER.md`의 해당 섹션만 확인한다.
+
+- 과거 decision/procedure/error/open_question에 의존하는 작업이면 `result_reports/memory/project_memory_seed.md`를 topic/keyword 단위로 제한 확인한다. 원본 report/archive는 seed 또는 summary만으로 부족할 때 필요한 source 범위만 확인한다.
 
 - Commit / Git 정리
 - Logic 수정 / 계산 엔진 수정
@@ -39,10 +41,33 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 - 계산기 구현은 순수 Python을 유지하고 `numpy` / `pandas`를 사용하지 않는다.
 - `calculate_hspf2_v2()` / `calculate_hspf2()`는 사용자 명시 지시 없이 수정하지 않는다.
 - `model.fit()`에 `.values` 변환을 넣지 않고 Cooling / Heating 독립 모델과 monotone constraints를 유지한다.
-- UI table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고 `blockSignals`는 `try/finally`로 감싼다. table UI를 새로 만들거나 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 spreadsheet-like behavior contract를 함께 확인한다. 모든 table UX는 **Excel-like behavior**를 기본으로 한다 (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위). `QTableWidget` / `setCellWidget` 신규 도입 금지는 유지한다.
+- UI / UX active SSOT root는 `docs/ui_ux/00_UI_UX_SYSTEM.md`다. Toolkit 선택은 `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md`, design tokens / layout은 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`를 따른다.
+- UI table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고 `blockSignals`는 `try/finally`로 감싼다. table-shaped UI를 새로 만들거나 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(table UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 따른다. 모든 table UX는 **Excel-like behavior**를 기본으로 한다 (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위). `QTableWidget` / `setCellWidget` 신규 도입 금지는 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 - 명시적 지시 없이 구조 개선이나 리팩토링을 먼저 수행하지 않는다.
+
+## New Code Quality Gate
+
+새 script / module / feature 작성에는 UI / core / tools / scripts / ML 어디서든 다음 원칙이 적용된다. 본 gate는 UI 전용이 아니다.
+
+- `app_*.py` entrypoint는 thin하게 유지한다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하).
+- shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다.
+- 구현 전에 module boundary와 public interface를 먼저 정한다.
+- hard-coded region / profile / metric / result key / default 값은 SSOT, config, constants, resolver, token module로 격리한다.
+- 같은 literal / mapping / formatting이 2곳 이상 반복되면 helper 또는 registry 후보로 본다.
+- `core/`는 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다. UI / CLI / script layer는 `core.calculator_dispatcher`, adapter, resolver 같은 public 진입점만 사용한다.
+- `ui_tk/`는 `PyQt5`나 PyQt `ui` 패키지를 import하지 않는다 (Tkinter shell 독립성 유지).
+- feasibility spike도 예외가 아니다. spike는 runtime smoke / import smoke / core call smoke / shell skeleton까지만 작게 유지하고, shell + input + result + resolver + core call + formatting을 한 파일에 모두 담지 않는다 (116→118 reset이 교훈).
+
+소프트 한계:
+
+- 새 파일이 250 LOC를 넘을 것으로 예상되면 분리 계획을 먼저 보고한다.
+- 새 파일에 class 3개 초과가 예상되면 분리 계획을 먼저 보고한다.
+- 새 함수가 60~80 LOC를 넘을 것으로 예상되면 helper 분리를 검토한다.
+- 한 작업에서 신규 책임 영역이 3개 이상이면 skeleton/interface 작업과 구현 작업을 분리한다.
+
+자동 guard: `python3 -B tools/check_code_structure.py`는 위 boundary 중 일부 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit)를 conservative하게 검사한다. 코드 구조에 영향을 주는 작업의 검증에 포함한다 (전체 강제 실행은 아님).
 
 ## Document Triggers
 

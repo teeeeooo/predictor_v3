@@ -3,6 +3,28 @@
 작업자는 먼저 작업 유형을 분류한 뒤, 해당 유형에 필요한 문서만 읽는다.
 불필요한 긴 문서를 습관적으로 읽지 않는다.
 
+### Quick Route Index
+
+이 index는 navigation helper일 뿐, 기존 규칙의 우선순위나 의미를 바꾸지 않는다. 해당 섹션을 `rg`로 빠르게 찾을 때 사용한다.
+
+| 작업 유형 | `rg` pattern |
+| --- | --- |
+| Work Contract / Execution Discipline | `rg -n "^### 0. Work Contract / Execution Discipline" AGENT_TASK_ROUTER.md` |
+| Shared Guardrails | `rg -n "^### Shared Guardrails" AGENT_TASK_ROUTER.md` |
+| Project Memory Recall Gate | `rg -n "^### Project Memory Recall Gate" AGENT_TASK_ROUTER.md` |
+| Result Report Workflow | `rg -n "^### Result Report Workflow" AGENT_TASK_ROUTER.md` |
+| Documentation Sync & Lifecycle Gate | `rg -n "^#### Documentation Sync & Lifecycle Gate" AGENT_TASK_ROUTER.md` |
+| Commit / Git 정리 | `rg -n "^### 1. Commit / Git 정리" AGENT_TASK_ROUTER.md` |
+| Logic 수정 / 계산 엔진 수정 | `rg -n "^### 2. Logic 수정 / 계산 엔진 수정" AGENT_TASK_ROUTER.md` |
+| Coding work / architecture-sensitive changes | `rg -n "^### 3. Coding work / architecture-sensitive changes" AGENT_TASK_ROUTER.md` |
+| Smoke / Golden / Validation test 추가 | `rg -n "^### 4. Smoke / Golden / Validation test 추가" AGENT_TASK_ROUTER.md` |
+| 단순 docs 문구 수정 | `rg -n "^### 5. 단순 docs 문구 수정" AGENT_TASK_ROUTER.md` |
+| Agent rule / router 수정 | `rg -n "^### 6. Agent rule / router 수정" AGENT_TASK_ROUTER.md` |
+| Notes 내용 정리 / 문서 리팩토링 | `rg -n "^### 7. Notes 내용 정리 / 문서 리팩토링" AGENT_TASK_ROUTER.md` |
+| UI 수정 | `rg -n "^### 8. UI 수정" AGENT_TASK_ROUTER.md` |
+| ML/Predictor 수정 | `rg -n "^### 9. ML/Predictor 수정" AGENT_TASK_ROUTER.md` |
+| Packaging / 배포 빌드 | `rg -n "^### 10. Packaging / 배포 빌드" AGENT_TASK_ROUTER.md` |
+
 ### 0. Work Contract / Execution Discipline
 
 모든 작업은 수정 전에 Goal / Scope / Non-goals / Verification을 짧게 확정한다.
@@ -23,7 +45,8 @@ preferred verifier를 실행할 수 없거나 생략한 경우 대체 확인은 
 - `core/predictor.py`에 `optuna`, `sklearn`, `shap`, `matplotlib`를 import하지 않는다.
 - `COLUMNS`는 `core/constants.py`, `MODEL_REGISTRY`는 `core/models.py`를 단일 소스로 유지한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
-- 대형 파일은 먼저 `rg` / `grep -n`으로 대상 위치를 찾고, 필요한 범위만 `sed -n`으로 읽는다.
+- 대형 파일이나 directory를 읽기 전에 `wc -l <file>` 또는 `du -sh <dir>`로 규모를 먼저 확인하고, `rg` / `grep -n`으로 대상 위치를 찾은 뒤 필요한 범위만 `sed -n`으로 읽는다.
+- 새 script / module / feature 작성에는 `AGENTS.md`의 New Code Quality Gate를 따른다 (thin entrypoint, layer boundary, hard-coded value 격리, helper 재사용, soft LOC/class limit, spike도 한 파일에 모든 책임 담지 않음). 코드 구조에 영향을 주는 작업은 검증에 `python3 -B tools/check_code_structure.py`를 포함하고, 결과 (`OK (no findings)` 또는 발견된 error/warning)를 최종 보고에 짧게 남긴다.
 
 계산기 경계:
 - 계산기 구현에는 `numpy` / `pandas`를 사용하지 않고 순수 Python을 유지한다.
@@ -46,15 +69,81 @@ UI 경계:
 - `QTableWidget`을 새로 쓰지 않고 `QTableView` + `QAbstractTableModel`을 사용한다.
 - `setCellWidget`을 새로 쓰지 않고 `QStyledItemDelegate`를 사용한다.
 - `blockSignals`는 반드시 `try/finally`로 감싼다.
-- table UI를 생성/수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`를 단일 owner로 따른다. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 여기서 단일 owner로 관리한다.
+- UI/UX active SSOT root는 `docs/ui_ux/00_UI_UX_SYSTEM.md`다. Toolkit policy / design tokens / layout은 각각 `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` / `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`를 owner로 한다.
+- table-shaped UI를 생성/수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(table UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 따른다. Tkinter adapter는 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 새 SSOT에서 owner로 관리한다.
+- legacy `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`는 삭제되었고, 동일 본문의 legacy 전문은 `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` 하나만 source/history로 유지한다. active 참조는 `docs/ui_ux/` SSOT 경로를 사용한다.
 - UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
 
 문서 경계:
 - 문서 업데이트 범위가 둘 이상이면 먼저 `ACTIVE_DOCUMENTS.md`에서 active document owner와 inbound/outbound 관계를 확인한다.
 - `docs` 폴더 내 `*_notes.md` 수정 또는 생성 전 `docs/DOCS_GUIDELINES.md`, `docs/STANDARD_DOC_TEMPLATE.md`의 필요한 범위를 확인한다.
-- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 고위험 작업에서 상세 배경이 필요한 경우에만 제한적으로 확인한다.
+- 상세 배경은 작업 유형에 맞는 active owner docs와 `ACTIVE_DOCUMENTS.md`를 필요한 범위만 확인한다.
 - 구조 개선 및 리팩토링 예정 사항은 `docs/REFACTOR_PLAN.md`를 참조하되, 명시적 지시 없이 먼저 리팩토링하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
+
+### Project Memory Recall Gate
+
+과거 decision, procedure, error, open question에 의존하는 작업은 `result_reports/memory/project_memory_seed.md`의 관련 entry를 제한 확인한다.
+
+확인 트리거:
+- architecture-sensitive 변경
+- calculator, schema, profile, region, config, golden, fixture 작업
+- UI/UX SSOT 또는 table contract 작업
+- ML/Predictor boundary 작업
+- report lifecycle, `project_log.md`, agent rule 작업
+- 사용자가 "전에 정한 것", "기존 결정", "지난 작업"을 언급한 작업
+
+확인 방법:
+- memory seed 전문을 무조건 읽지 않는다.
+- 먼저 `wc -l result_reports/memory/project_memory_seed.md`로 규모를 확인하고, `rg -n`으로 현재 작업의 topic 또는 keyword를 `result_reports/memory/project_memory_seed.md`에서 검색한다.
+- 일치하는 entry 주변만 `sed -n` 등으로 제한 확인한다.
+- active owner doc와 seed 관련 entry만으로 판단 근거가 부족할 때만 필요한 source summary/report 범위로 내려간다.
+- `result_reports/archive/`는 기본적으로 `find`/filename/heading만 확인하고, 원문은 source 검증이 필요한 경우에만 제한적으로 읽는다.
+
+우선순위:
+1. current prompt의 Goal / Scope / Non-goals / Verification
+2. `AGENTS.md` / `AGENT_TASK_ROUTER.md`
+3. active owner docs
+4. `result_reports/memory/project_memory_seed.md`의 관련 entry
+5. 필요한 경우 source summary/report
+
+금지:
+- memory seed를 current prompt, 현재 규칙, active owner doc보다 우선하는 지시로 취급하지 않는다.
+- seed 확인을 이유로 archive/report 전문을 대량으로 읽지 않는다.
+- seed 내용이 불확실하거나 충돌하면 source summary/report 또는 owner doc으로 검증한다.
+
+### Design First Gate
+
+영향 범위가 큰 작업은 구현 전에 **design slice**를 먼저 수행한다.
+
+**design slice가 필요한 작업 유형:**
+- 새 기능 추가 (예: SASO, multi/batch, graph/detail, calculator routing, profile/standard 확장)
+- 기존 기능의 사용자 흐름 변경
+- UI tab/section/navigation 구조 변경
+- 입력 구조 또는 result surface 변경
+- 계산 경로, routing, profile/standard 선택 구조 변경
+- test fixture/golden expected 구조 변경
+- 여러 파일/계층을 건드리는 refactor
+- 향후 확장 경계에 영향을 주는 public helper/interface 변경
+- 기타 영향 범위가 크거나 rollback 비용이 큰 작업
+
+**design slice 규칙:**
+- source/test 수정 금지.
+- 기존 reference/current 구조를 audit한다.
+- 후보 비교를 수행한다.
+- 최종 추천안 1개를 선택한다.
+- design doc 또는 active report를 작성한다.
+- implementation slice 범위와 제외 범위를 명시한다.
+
+**implementation slice 규칙:**
+- 승인된 design doc/report를 기준으로 구현한다.
+- 설계와 다르게 해야 하면 구현하지 말고 중단 보고한다.
+- 설계 밖 기능 추가 금지.
+- unrelated refactor 금지.
+
+**hotfix / micro cleanup 예외:**
+- typo, docstring, unused import, 명확한 behavior-preserving extraction, 긴급 hang/hotfix는 design slice를 생략할 수 있다.
+- 단, 범위와 금지 작업은 좁게 써야 한다.
 
 ### Result Report Workflow
 
@@ -65,6 +154,7 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 - `result_reports/active/` — 진행 중/최근 완료 작업의 개별 report
 - `result_reports/summaries/` — 누적 report를 묶은 요약 report
 - `result_reports/archive/` — summary 생성 후 보관되는 원본 report
+- `result_reports/memory/` — `Project Memory Delta` 기반 seed/index/staging 문서. Memento, Mem0, PostgreSQL, Redis, local index 등 특정 backend에 종속되지 않는 repo-local 영역
 - `summaries/`와 `archive/` 폴더는 실제 summary/archive 또는 lifecycle maintenance 작업에서 필요할 때 생성한다.
 
 파일명:
@@ -84,7 +174,9 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
 
 터미널 출력:
 - task별 한 줄 요약만 출력한다.
-- 표준 출력 형식은 다음 세 종류 줄로 구성한다.
+- 상세 결과, 체크리스트, 검증 상세, 변경 설명은 Markdown report에만 작성하고 터미널 최종 출력에는 반복하지 않는다.
+- prompt에 `[결과 보고 형식]` 또는 `[코드/문서 체크리스트]`가 포함되어 있어도, tracked file 변경으로 report를 작성하는 작업에서는 해당 상세 내용은 Markdown report 내부 작성 기준이며 터미널 최종 출력 기준이 아니다.
+- 성공 시 터미널 최종 출력은 다음 세 종류 줄만 사용한다.
   - `task N: OK/NG - short summary`
   - `modified: path/to/file1, path/to/file2`
   - `report: result_reports/active/NNN_name.md`
@@ -95,7 +187,11 @@ report 파일은 사용자가 GitHub에서 다운로드해 외부 LLM에 전달�
   - report-only 작업이면 report 파일만 포함한다.
   - 중단/blocked로 파일 변경이 없으면 `modified: none`을 사용한다.
   - pre-existing unrelated dirty/staged/untracked 파일이나 작업 범위 밖 파일은 포함하지 않는다.
-- 문제가 있거나 blocked이면 원인을 짧게 출력한다.
+  - 파일 이동·rename·archive 등으로 경로가 많을 때는 그룹 요약을 사용할 수 있다.
+    - 예: `modified: 3 docs updated, 7 reports moved active→archive; 상세 경로는 report에 기록`
+    - 예: `modified: project_log.md, result_reports/memory/project_memory_seed.md, result_reports/summaries/140_summary-*.md, result_reports/archive/{133..139}_*.md (moved from active)`
+    - 그룹 요약을 쓰는 경우 상세 경로 목록은 report의 Changed Files / Archive Candidates / Verification에 남긴다.
+- 문제가 있거나 blocked이면 위 세 종류 줄 형식에 더해 원인만 짧게 출력할 수 있다.
 - `modified:` 줄은 사람이 한눈에 보기 위한 보조 정보이며, report 파일 내부의 `Changed Files` 섹션은 그대로 유지한다.
 
 Report mode:
@@ -108,11 +204,13 @@ Report mode:
 - Full report mode는 logic/code 수정, architecture-sensitive 변경, calculator/golden/fixture/config 변경, test 추가/수정, schema/contract/public API 영향 작업에 사용한다.
 - Compact report mode는 단순 docs 문구 수정, router wording 정리, link/path 표현 수정, report lifecycle maintenance, 코드 영향 없는 audit/report-only 작업에 사용할 수 있다.
 - Compact report 최소 섹션은 Goal, Scope, Changed Files, Verification, Known Risks, Commit / Push로 한다.
+- Compact report는 장기 기억으로 남길 decision, procedure, error, open question이 있을 때만 `Project Memory Delta` 섹션을 포함한다.
 - Compact report를 쓰더라도 scope compliance와 금지 파일 미수정 여부는 Verification 또는 Known Risks 안에서 짧게 확인한다.
 - No-report / terminal-only mode는 파일 수정 없는 상태 확인, `git status`, `git log`, `git diff --name-only`, push 여부 확인, “커밋해도 돼?”, “push 됐는지 확인해줘” 같은 단순 확인에 사용할 수 있다.
 - 사용자가 명시적으로 “확인만”, “수정하지 말고 보고만”을 요청했고 결과를 장기 산출물로 남길 필요가 없거나, 단순 질문/원인 분석만 하고 repo 파일을 수정하지 않은 경우에도 No-report / terminal-only mode를 사용할 수 있다.
 - No-report / terminal-only mode 출력은 terminal/final response에 `status: clean`, `latest commit: ...`, `push: confirmed`, `files changed: none`처럼 짧게 남긴다.
 - No-report / terminal-only mode에서는 Markdown report를 만들지 않고 report commit/push도 하지 않는다.
+- No-report / terminal-only mode에서는 `Project Memory Delta`를 만들지 않는다.
 - No-report / terminal-only mode는 파일 수정이 없어야만 사용한다. 파일을 수정했다면 단순 작업이라도 최소 Compact report를 작성한다.
 - 계산 로직, golden, fixture, config, schema/contract/public API, architecture-sensitive 변경에는 No-report / terminal-only mode를 사용하지 않는다.
 - No-report / terminal-only mode는 lifecycle maintenance 수행 권한을 의미하지 않으며, 이 mode에서는 summary/archive/`project_log.md` maintenance를 자동 수행하지 않는다. 필요하면 `lifecycle maintenance pending` 정도만 짧게 보고한다.
@@ -129,6 +227,50 @@ Full report 기본 섹션:
 - Next Suggested Action
 - Scope Compliance
 - Commit / Push
+- Project Memory Delta
+
+Project Memory Delta:
+- `Project Memory Delta`는 report에서 장기 기억 후보만 기록하는 backend-neutral 섹션이다. Memento, Mem0, PostgreSQL, Redis, local index 등 특정 저장소나 구현에 종속된 형식으로 정의하지 않는다.
+- Full report는 기본적으로 `Project Memory Delta` 섹션을 포함한다. 장기 기억 후보가 없으면 `- none`으로 명시한다.
+- 항목 하나의 최소 필드는 `type`, `topic`, `content`, `keywords`, `assertionStatus`, `source`다.
+- `keywords`는 comma-separated string이 아니라 YAML list로 작성한다.
+
+  ```yaml
+  keywords:
+    - predictor_v3
+    - result report
+    - project memory delta
+    - backend-neutral
+  ```
+
+- 기존 report에서 `keywords`를 문자열로 기록한 사례는 이 형식 보강을 이유로 retroactive 수정하지 않는다.
+- 선택 필드는 `importance`, `caseId`, `supersedes`, `resolutionStatus`다.
+- 허용 `type`은 `fact`, `decision`, `error`, `preference`, `procedure`, `relation`, `episode`, `open_question`으로 제한한다.
+- 허용 `assertionStatus`는 `observed`, `inferred`, `verified`, `rejected`로 제한한다.
+- 한 항목에는 한 개의 기억만 기록한다.
+- `content`에는 대명사, `이번 작업`, `위에서`, `이전` 같은 자기참조 표현을 피하고, 6개월 뒤 다른 agent가 읽어도 프로젝트, 대상, 결정 또는 절차를 특정할 수 있게 작성한다.
+- 가설은 `decision`으로 기록하지 않는다. 해결되지 않은 가설은 `open_question`으로 기록하거나, 관찰에 근거한 추론은 `fact`와 `assertionStatus: inferred` 조합으로 기록한다.
+- `source`는 기억의 근거가 되는 report section, 변경 문서 경로, commit, 검증 결과 등 추적 가능한 출처를 적는다.
+- `result_reports/memory/` 문서는 기존 report 원문의 대체물이 아니며, 각 seed/index 항목은 source report 또는 summary를 추적 가능한 출처로 유지한다.
+- memory seed/index는 기존 report 원문을 retroactive 수정하지 않고 별도 문서로 생성한다.
+- memory seed/index 작성은 일반 source/code/doc 작업과 섞지 않는다.
+- summary lifecycle 작업 또는 명시적 memory maintenance 작업에서는 `Project Memory Seed Sync Judgment`를 작성한다.
+  - `update needed`로 판단되면 같은 lifecycle task 안에서 `project_memory_seed.md`에 1~2개 summary-level entry만 추가한다.
+  - 개별 report delta를 모두 복사하지 않는다.
+  - source는 새 summary 파일과 covered report 범위를 사용한다.
+  - `keywords`는 YAML list 형식을 유지한다.
+  - `not needed`로 판단되면 seed를 수정하지 않는다.
+
+#### Memory Seed Maintenance Policy
+
+- 일반 source/code/doc 작업 중에는 `project_memory_seed.md` entry의 `importance`, `supersedes`, `resolutionStatus`를 임의 조정하지 않는다.
+- summary lifecycle 또는 명시적 memory maintenance 작업에서만 seed entry의 importance / supersession / resolutionStatus를 조정할 수 있다.
+- `importance`는 선택 필드이며, 사용할 경우 낮음(low) / 보통(normal) / 높음(high) / 핵심(critical)으로 일관되게 작성한다.
+- 오래되었거나 더 이상 active하지 않은 entry는 바로 삭제하지 않고 `resolutionStatus: stale`, `superseded`, `resolved`, `rejected` 등으로 표시한다.
+- 새 decision이 기존 entry를 대체하면 `supersedes`를 사용하고, 대체된 entry의 `resolutionStatus`를 함께 갱신한다.
+- 자주 재사용되거나 현재 작업 안전성에 직접 영향을 주는 entry는 summary lifecycle 또는 memory maintenance에서 `importance`를 올릴 수 있다.
+- seed entry가 50개를 넘으면 memory maintenance audit 후보로 보고한다. 75개를 넘으면 반드시 maintenance를 수행한다.
+- seed 유지보수는 entry 대량 재작성이나 대량 삭제가 아니라 최소 갱신 원칙을 따른다.
 
 Commit / Push:
 - report 파일은 작업 산출물이므로 항상 stage/commit/push한다.
@@ -138,6 +280,71 @@ Commit / Push:
 - report에는 관련 source commit hash 또는 `source change 없음`을 명시한다.
 - push 결과를 report와 terminal summary에 남긴다.
 - 사용자 명시 요청 없이는 report commit/push 과정에서 `git pull`, `git merge`, `git rebase`를 수행하지 않는다.
+
+#### UI Smoke-loop Mode
+
+대상:
+- macOS/Windows 수동 UI smoke 직후 발견된 Tkinter/PyQt UI micro-fix
+- 같은 UI surface에서 사용자가 연속 확인 중인 표시, focus, scroll, selection, shortcut 같은 작은 회귀 수정
+
+원칙:
+- 사용자가 smoke-loop mode를 명시하거나, "수동 smoke에서 바로 확인된 작은 UI fix를 빠르게 반복"하라고 지시한 경우에만 적용한다.
+- source/test만 수정한다.
+- `docs/WORK_PLAN.md`, `project_log.md`, `result_reports/memory/project_memory_seed.md`를 수정하지 않는다.
+- `result_reports/active/` report를 작성하지 않는다.
+- full pytest를 실행하지 않는다. 관련 focused test, import/py_compile, targeted smoke guard만 실행한다.
+- policy docs는 이미 확인한 세션 context를 재사용하고, 필요해도 짧은 section 1개와 target functions 확인을 기본으로 한다.
+- commit/push는 수행한다. smoke-loop commit message는 작은 UI fix 범위를 명확히 적는다.
+- 사용자가 "이제 OK", "manual smoke pass", "checkpoint 정리"처럼 안정화 확인을 준 뒤 stable checkpoint mode에서 manual smoke guide, WORK_PLAN, result report를 짧게 정리한다.
+
+금지:
+- core/calculator/golden/fixture/config/schema/ML/Predictor 작업에는 적용하지 않는다.
+- 계산 결과, public API, diagnostics schema, region config, ML feature schema 변경에는 적용하지 않는다.
+- 필요한 focused 검증을 생략하는 근거로 사용하지 않는다.
+
+Stable checkpoint mode:
+- 여러 smoke-loop commit을 묶어 manual smoke guide, `docs/WORK_PLAN.md`, result report를 짧게 정리할 수 있다.
+- checkpoint report는 불필요한 diff 전문이나 긴 터미널 출력 복사를 피하고, 바뀐 동작, 검증, 남은 수동 확인만 기록한다.
+
+#### Diff / Read Budget
+
+목적:
+- 큰 파일과 긴 diff를 무작정 출력해 토큰을 낭비하지 않고, 필요한 근거만 확인한다.
+- 같은 세션에서 이미 확인한 policy/router/design/owner doc section은 사용자 요청 또는 작업 유형이 바뀌지 않는 한 다시 열지 않는다.
+- 사용자가 "확인"을 요청해도 긴 section을 compliance 증명 목적으로 재출력하지 않는다.
+- 정확한 문구가 불확실하거나 충돌할 때만 `rg -n`으로 heading/keyword를 찾고 필요한 10~30줄만 확인한다.
+- policy read에도 이 Diff / Read Budget을 적용한다.
+- `rg`는 넓은 일반 키워드보다 함수명/파일명/고유 label처럼 match 폭이 좁은 query를 우선 사용한다.
+- 여러 키워드를 한 번에 넓게 검색하지 않는다. 먼저 exact phrase 1~2개로 좁게 찾고, 없을 때만 broad keyword search로 확장한다.
+- docs-wide search는 `docs/WORK_PLAN.md`와 active report부터 시작한다. pending/owner 문구가 확인된 경우에만 design/guides/ui_ux 등으로 확장한다.
+- 넓은 문서 탐색은 `rg -l`로 후보 파일 목록을 먼저 얻고, 필요한 파일에만 `rg -n`/`sed`를 적용한다.
+- `sed`는 기본 30~80줄 이내의 작은 범위로 시작하고, 필요한 경우에만 다음 인접 범위를 추가로 확인한다.
+- 병렬 `sed`/file read는 합산 출력 범위를 작게 유지하고, 여러 파일을 묶을 때는 총 150줄 이내를 목표로 한다.
+- tool output budget은 작게 시작하고, 잘린 출력이 실제로 필요한 경우에만 늘린다.
+
+기본 순서:
+1. `git diff --name-only`
+2. `git diff --stat`
+3. `git status --short`로 untracked 신규 파일 여부 확인
+4. `rg -n "<function_or_keyword>" <target files>`
+5. `sed -n '<small range>' <file>`
+6. 필요한 경우에만 `git diff -- <file>` 또는 특정 hunk 주변을 좁게 확인한다.
+- 신규 untracked report/docs 파일은 존재 확인과 stat 중심으로 다루고, full diff 전문 출력은 피한다.
+
+pytest / command output:
+- 실패 전까지는 focused test 중심으로 실행한다.
+- 실패 시에만 상세 traceback, 관련 log, 긴 pytest summary를 확인한다.
+- full pytest가 필요한 core/calculator/ML/schema/golden 경계 작업에서는 금지하지 않고, 필요성을 명시한 뒤 실행한다.
+- Codespaces/headless에서 Tk/GUI tests가 display 없음으로 대량 skip되는 패턴이 이미 확인된 경우 quick smoke에는 `-rxXs`를 기본 사용하지 않는다.
+- final focused도 기본은 `-q`로 실행하고, `-rxXs`는 실패/예상외 skip/xfail/xpass 조사 또는 사용자가 명시한 경우에만 fallback으로 사용한다.
+- quick smoke는 가능한 pure helper test + 최소 GUI smoke로 구성하고, 같은 Tk display unavailable skip 사유를 terminal output에 반복 출력하지 않는다.
+- 검증을 먼저 끝내고 report를 마지막에 작성한다. report 작성 후에는 `git diff --check`, `git status --short`, `git diff --name-only`, `git diff --stat` 중심으로 재확인한다.
+- 검증 결과를 report에 반영하려고 같은 pytest 명령을 반복 실행하지 않는다.
+
+Tk 디버그:
+- 임시 Tk script는 long-running 가능성이 있으므로 짧은 timeout/빠른 종료를 전제로 한다.
+- 출력은 핵심 width/height/focus/scroll 값 1~2개만 남긴다.
+- 반복 실험 전에는 어떤 widget/event 값을 확인할지 먼저 좁힌다.
 
 운영:
 - Summary grouping / archive cycle은 원본 report의 번호 체계가 아니라 summary report로 관리한다.
@@ -149,6 +356,10 @@ Commit / Push:
 - 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
 - 단순 문구 수정, 단순 report 정리, 의사결정 없는 작업 묶음이면 `project_log.md` 갱신을 생략할 수 있다.
 - `project_log.md`에는 report 전문을 복사하지 않는다.
+- 기존 report 원문은 `Project Memory Delta` 도입을 이유로 retroactive 수정하지 않는다.
+- 기존 report에 대한 backfill이 필요하면 별도 migration/backfill report로 수행한다.
+- summary/archive 단계에서는 가능한 경우 report 전문보다 `Project Memory Delta` 섹션을 우선 읽는다.
+- `project_log.md`에는 milestone급 decision, failure, lesson, process rule 변화만 남기고 `Project Memory Delta` 세부 항목을 반복 복사하지 않는다.
 - summary에 포함된 원본 active reports는 `result_reports/archive/` 이동 후보로 보고한다.
 - archive 이동은 사용자 승인 후 별도 작업으로 수행하며, 이동 시 report 번호나 파일명은 바꾸지 않는다.
 
@@ -159,7 +370,7 @@ Lifecycle check:
 - routine check 단계에서는 `result_reports/active/*.md` 본문을 읽지 않는다.
 - 이미 summary가 있는 경우에도 routine check에서 summary 본문 전체를 읽지 않는다.
 - Trigger가 충족되어 실제 summary/project_log/archive maintenance 단계로 들어갈 때만 필요한 report 또는 summary의 관련 섹션을 선별적으로 읽는다.
-- 필요한 경우 `Covered Reports`, `Archive Candidates`, `Project Log Sync Judgment` 같은 관련 heading만 제한적으로 확인한다.
+- 필요한 경우 `Covered Reports`, `Archive Candidates`, `Project Log Sync Judgment`, `Project Memory Seed Sync Judgment` 같은 관련 heading만 제한적으로 확인한다.
 - Trigger 조건:
   - `result_reports/active/`에 report가 약 8~12개 쌓인 경우
   - 하나의 workstream/arc가 명확히 끝난 경우
@@ -171,6 +382,9 @@ Lifecycle check:
 - summary가 없으면 `result_reports/summaries/`에 summary report를 생성한다.
 - summary가 이미 있으면 중복 summary를 만들지 말고 기존 summary를 기준으로 남은 lifecycle 작업만 수행한다.
 - summary 생성 또는 기존 summary 확인 후 `project_log.md` 갱신 필요 여부를 판단한다.
+- 같은 시점에 `Project Memory Seed Sync Judgment`를 작성한다.
+  - 새 summary에서 durable decision, procedure, error, open_question 후보가 있으면 `update needed`로 판단하고 `project_memory_seed.md`에 1~2개 summary-level entry를 추가한다.
+  - `not needed`이면 seed를 수정하지 않는다.
 - 확정된 decision, failure, lesson, architecture/process rule 변화가 있으면 `project_log.md`에 짧게 반영한다.
 - report 본문을 `project_log.md`에 복사하지 않는다.
 - summary에 포함된 covered active reports는 `result_reports/archive/`로 이동한다.
@@ -196,7 +410,7 @@ Lifecycle check:
 
 조건부로 읽을 문서:
 - Documentation Sync & Lifecycle Gate의 1차 판단 후 필요가 확정된 문서만 읽는다.
-- `project_log.md` 최근 2~3개 로그는 아래 경우에만 읽는다.
+- `project_log.md` 최근 2~3개 로그는 아래 경우에만 읽는다. 읽을 때는 `rg -n "^## " project_log.md | tail -n 5` 등으로 최신 heading 위치를 먼저 확인하고 필요한 범위만 읽는다.
   - 계산 공식/분기/수학적 계약 변경
   - input schema 또는 config contract 변경
   - region config 의미 변경
@@ -210,7 +424,6 @@ Lifecycle check:
 
 읽지 말 것:
 - `PROJECT_CHARTER.md`
-- `docs/archive/AGENTS_FULL.md`
 - 규격별 notes 문서 전체
 
 Lightweight documentation gate 원칙:
@@ -242,18 +455,24 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
    - 새 active 문서를 만들거나 archive로 이동하면 `ACTIVE_DOCUMENTS.md`를 함께 갱신한다.
    - 단일 코드 변경만 있고 문서 갱신 요청이 없으면 이 파일을 읽지 않아도 된다.
 
-1. `project_log.md`
-   - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
-   - 이미 끝난 작업의 상세 기록은 `project_log.md`에 보존한다.
-   - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
-   - 갱신 여부를 diff 크기만으로 판단하지 않는다.
-   - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
-   - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
-   - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
-   - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
-   - 오래된 로그 전체를 훑거나 대규모 재작성하지 않는다.
-   - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
-   - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
+ 1. `project_log.md`
+    - active `project_log.md`는 policy, archive index, 최신 milestone entries만 유지한다.
+    - 과거 dated entries는 `docs/archive/project_log/YYYY-MM/*.md` capped segment archive에 보존한다.
+    - 로그가 필요한 경우에만 새 작업 결과, 실패, 결정, 교훈을 append한다.
+    - `project_log.md`는 append 중심 문서이므로 과거 로그를 임의 삭제하지 않는다.
+    - 갱신 여부를 diff 크기만으로 판단하지 않는다.
+    - 작은 코드 변경이라도 계산 공식/분기/수학적 계약, input schema 또는 config contract, region config 의미, architecture/resolver/adapter/registry/manifest boundary, 중요한 guard-test decision을 고정하면 로그 대상이다.
+    - 단순 오타, 포맷팅, 주석 문구 조정, 기계적 테스트 유지보수처럼 의사결정이 없는 변경은 로그를 생략할 수 있다.
+     - 갱신이 필요하면 새 로그를 바로 append하기 전에 최근 로그 2~3개만 확인한다.
+       - 구체 명령 예시: `rg -n "^## " project_log.md | tail -n 5`로 최신 heading 위치를 확인한 뒤 `read` offset로 제한 범위만 읽는다.
+    - 같은 phase, 같은 architecture decision, 같은 작업 묶음이면 새 섹션을 만들지 말고 해당 최근 로그에 짧게 merge/update한다.
+    - 오래된 로그 전체를 훑거나 대규모 재작성하지 않는다.
+    - 기존 failure, decision, lesson 기록은 삭제하지 않는다.
+    - 독립 phase 또는 의미가 분리되는 후속 작업이면 새 로그를 append한다.
+    - archive split은 exact move 원칙을 따르고, 요약/재작성하지 않는다.
+    - 일반 작업 중 historical archive를 읽지 않는다.
+    - 과거 로그 확인이 필요한 경우 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 찾고 필요한 segment/range만 읽는다.
+    - `docs/archive/project_log/YYYY-MM/` segment의 `partNN`은 original log order를 보존한다. `project_log.md`는 reverse chronological order이므로 segment filename의 date range는 descending일 수 있다. 과거 로그 확인은 filename 추측보다 heading search를 우선한다.
 
 2. `docs/WORK_PLAN.md`
    - 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목이 실제로 바뀐 경우에만 읽고 수정한다.
@@ -316,7 +535,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - ISO16358-2 HSPF Excel reference 추출/해석/runner input-output 작업에서 사용자가 Excel COM, pywin32 runner, 회사 PC Excel, AS/NZS Energy Rating SEER calculator, original workbook reference, chat_packet, full_dump, case 3~8 Excel 기준값 추출을 언급하면 `docs/iso16358/excel_com_runner_packet_protocol.md`의 필요한 heading만 확인한다.
 
 읽지 말 것:
-- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 문서 전체
 - 대형 파일 전체
 - 일반 계산 로직 수정, UI 작업, AHRI/EN/KS 작업에서는 `docs/iso16358/excel_com_runner_packet_protocol.md`
@@ -413,7 +631,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 없는 문서 전체
 - `project_log.md`
 - `PROJECT_CHARTER.md`
-- `docs/archive/AGENTS_FULL.md`
 - 코드 파일
 - 테스트 파일
 
@@ -445,7 +662,6 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - `AGENT_TASK_ROUTER.md`의 관련 섹션만
 
 읽지 말 것:
-- `docs/archive/AGENTS_FULL.md` unless explicitly requested
 - 관련 없는 규격 notes/dev_notes 전체
 - 코드 파일
 - 테스트 파일
@@ -488,6 +704,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 5. 앞으로 할 일이 바뀐 경우에만 `docs/REFACTOR_PLAN.md`를 수정한다.
 6. 프로젝트 대표 상태가 바뀐 경우에만 `project_brief.md`를 수정한다.
 7. 단순 docs 문구 수정은 이 섹션으로 확장하지 않고 `단순 docs 문구 수정` 경로를 유지한다.
+8. UI/UX 관련 문서 정리에서는 active SSOT (`docs/ui_ux/00_UI_UX_SYSTEM.md` 이하 `docs/ui_ux/`)와 legacy source 전문 (`docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md`)을 혼동하지 않는다. 새 작업의 owner는 항상 `docs/ui_ux/`이며, `_source/`는 history/reference로만 둔다.
 
 ### 8. UI 수정
 
@@ -496,16 +713,23 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 - 관련 UI 코드의 필요한 클래스/함수 범위
 
 조건부로 읽을 문서:
-- table UI 생성/수정 시 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`
-- UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
-- UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
+- UI/UX 작업 시 active SSOT root `docs/ui_ux/00_UI_UX_SYSTEM.md`
+- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (UX contract) 와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` (PyQt 구현 adapter)
+  - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
+  - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
+  - GUI app shell / initial window geometry / scroll container / resize handling / scrollbar visibility 작업이면 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8 (Window Geometry And Screen Caps)를 먼저 확인한다.
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`의 contract와 §13 checklist를 먼저 확인한다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
+2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)의 contract / checklist를 먼저 확인한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.
+6. window geometry / scroll container / resize handling / scrollbar visibility 작업 전에는 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8의 다음 gate를 확인한다.
+   - root/app-level rendered requested size 우선
+   - component-specific preferred size는 보조 수단
+   - initial geometry, resize minsize, screen cap, scrollbar visibility 분리
+   - Configure event handler에서 geometry mutation / pack-forget / width sync loop 금지
 
 금지:
 - `QTableWidget` 신규 도입
@@ -548,12 +772,10 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 조건부로 읽을 문서:
 - 기존 packaging 실패나 결정이 언급되면 `project_log.md`에서 관련 키워드만 검색한다.
 - 실제 entrypoint, import, resource 경로 확인이 필요하면 관련 앱 entrypoint와 packaging 대상 파일의 필요한 범위만 확인한다.
-- `docs/archive/AGENTS_FULL.md`는 사용자가 명시적으로 요청하거나 `docs/PACKAGING.md`로 부족한 historical detail이 필요한 경우에만 제한적으로 확인한다.
 
 읽지 말 것:
 - 관련 없는 규격 notes/dev_notes 전체
 - 계산기, ML, UI 코드 전체
-- `docs/archive/AGENTS_FULL.md` 전체
 
 절차:
 1. 대상 platform, output 형태, packaging 목적, 검증 방식을 먼저 확인한다.

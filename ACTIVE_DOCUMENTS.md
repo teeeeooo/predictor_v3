@@ -5,9 +5,10 @@
 
 ## Scope
 
-- Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`.
+- Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`, `result_reports/memory/*.md`.
 - Excluded: `docs/archive/**`, `reference_files/*.md`, `result_reports/archive/**`, `result_reports/summaries/**`, `result_reports/active/**`.
-- Result reports는 lifecycle artifact이므로 `result_reports/summaries/`에서 별도 요약한다.
+- `result_reports/active/**`, `result_reports/summaries/**`, `result_reports/archive/**`는 lifecycle artifact이므로 active owner inventory에서 제외한다.
+- `result_reports/memory/*.md`는 lifecycle artifact의 예외로, backend-neutral active memory staging 문서로 관리한다.
 
 ## Maintenance Rule
 
@@ -40,8 +41,20 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
-| `docs/ui/SPREADSHEET_TABLE_CONTRACT.md` | Global spreadsheet-like PyQt table contract | UI table tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | every PyQt table surface (calculator, train/predict, helpers, fixtures) |
+| `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, visual architecture, input matrix/result surface rules, portable adoption guide, adapters |
+| `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |
+| `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` | Design tokens and layout rules | UI/UX root, layout tasks | UI component implementations |
+| `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` | Global spreadsheet-like table UX contract | UI/UX root, table UI tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, calculator design doc | every table surface (calculator, train/predict, helpers, fixtures) via PyQt/Tkinter adapters |
+| `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md` | predictor_v3 project-wide visual architecture SSOT | UI/UX root, visual design tasks, Tkinter final UX contract | PyQt Predict/Train and Tkinter Calculator semantic visual-role adoption |
+| `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` | predictor_v3 project-wide repeated-input matrix and result-summary surface rules | UI/UX root, visual architecture, table UI and result-surface tasks | Calculator, Predict/Train, ML/inverse-search UI surface shaping before toolkit adapters |
+| `docs/ui_ux/06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` | Portable UI/UX architecture adoption kit owner | UI/UX root, design tokens/layout, toolkit adapters, cross-project adoption tasks | project binding docs, token owners, reusable components, ownership guard configuration |
+| `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` | PyQt table implementation adapter | table UX contract, PyQt table tasks | PyQt table surfaces |
+| `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` | Tkinter table adapter | table UX contract, Tkinter table tasks | Tkinter table surfaces (when applicable) |
+| `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` | Legacy PyQt table contract source (history) | UI/UX `_source/` reference only | none — superseded by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` |
 | `data/region_configs/REGION_CONFIG_RULES.md` | Region config edit rules | region config tasks | region config guardrails |
+| `docs/guides/lightweight_calculator_packaging_check.md` | Calculator-only packaging measurement guide | Tkinter feasibility / Windows packaging tasks | PyInstaller size measurement protocol, `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` |
+| `docs/guides/lightweight_calculator_tk_manual_smoke.md` | Tkinter calculator manual smoke checklist | Tkinter MVP validation tasks | manual checklist, expected Hong Kong CSPF/HSPF values, PyQt environment separation |
+| `docs/guides/pyqt_test_support_matrix.md` | PyQt widget test support/skip matrix | PyQt env audit / skip patch tasks, PyQt host validation | known-bad macOS Python 3.14 skip rationale, Python 3.12/3.11 and Windows validation pending |
 
 ## Standard Docs
 
@@ -90,14 +103,34 @@
 | `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md` | AS/NZS workbook compatibility boundary | AS/NZS tasks, ISO separation plan | none |
 | `docs/designs/2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | ISO HSPF H-8 routing design | ISO HSPF tasks | `docs/iso16358/iso16358_dev_notes.md`, `docs/REFACTOR_PLAN.md` |
 | `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | none |
-| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
+| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
 | `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` | Calculator result envelope / ML adapter boundary | ML / inverse-search restart tasks | `docs/architecture/project_architecture.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
+| `docs/designs/2026-05-22-calculator-action-model-alignment.md` | Calculator action model decision (Option A — auto-calc unified) | calculator UI auto-recompute / result panel / error feedback slices | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` |
+| `docs/designs/2026-05-22-calculator-ui-module-boundary.md` | Calculator UI module boundary plan | calculator UI refactor slices (ε/ζ/η/β/γ/δ) | `docs/architecture/project_architecture.md`, `docs/designs/2026-05-22-calculator-action-model-alignment.md`, `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` |
+| `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` | Calculator-only lightweight UI feasibility decision | calculator deployment UI direction, Tkinter MVP tasks | packaging guide, Tkinter MVP scope, PyQt hold/fallback criteria |
+| `docs/designs/2026-05-23-tkinter-calculator-final-ux-contract.md` | Tkinter calculator final UX contract (matrix input, auto-calc, summary result) | Tkinter calculator UI tasks, input/result surface rule | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, manual smoke guide, `docs/WORK_PLAN.md` |
+| `docs/designs/2026-05-24-pyqt-calculator-reference-feature-migration-contract.md` | PyQt calculator reference-to-Tkinter migration requirement contract | calculator migration/retirement-gate tasks, reports 154/165 | Tkinter implementation slices, `docs/WORK_PLAN.md`, later retirement reconsideration |
 
 ## Root Result Docs
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
 | none | Root result docs have been moved to `reference_files/` as reference snapshots. | n/a | n/a |
+
+## Memory Staging Docs
+
+| Document | Role | Primary inbound | Primary outbound |
+| --- | --- | --- | --- |
+| `result_reports/memory/project_memory_seed.md` | Backend-neutral `Project Memory Delta` seed/staging document; preserves traceable source summaries/reports rather than replacing original report text | `AGENT_TASK_ROUTER.md`, `result_reports/summaries/*.md`, `Project Memory Delta` workflow | future local index, memory backend import, agent session recall |
+
+## Historical Archive Docs
+
+| Document | Role | Primary inbound | Primary outbound |
+| --- | --- | --- | --- |
+| `docs/archive/project_log/YYYY-MM/*.md` | Capped segment archive of exact moved historical `project_log.md` dated entries; not an active operational log | `project_log.md` archive split tasks | none — historical read-only |
+
+- Active operational log는 `project_log.md`이고, historical body는 `docs/archive/project_log/YYYY-MM/*.md` capped segment archive이다.
+- Archive 문서는 기본 read 대상이 아니며, 필요 시 `rg -n "^## YYYY-MM-DD"` heading 검색 후 해당 segment 파일의 필요한 범위만 확인한다.
 
 ## Reference Snapshots
 
