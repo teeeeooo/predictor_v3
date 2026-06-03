@@ -33,13 +33,14 @@
   - 198-a first-launch ISO fit and SASO 4-point default passed Windows manual smoke.
   - 198-b detail-open vertical clamp behaved as intended, with remaining long-content height issue split to 198-c.
   - 198-c auto-fit max height 80% cap was acceptable; remaining bottom clipping split to 198-d.
+  - 198-d bottom-margin vertical clamp passed Windows manual smoke; top-safe y positioning split to 199-a.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: 198-d manual smoke.
+- Next: 199-a manual smoke.
 
 ## Next Actions
 
-1. **198-d manual smoke**
-   - Verify detail-open vertical clamp uses bottom safety margin while preserving x/current monitor location.
+1. **199-a manual smoke**
+   - Verify top-safe y policy for large detail surfaces while preserving x/current monitor location.
 2. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 3. **Graph export/HTML export after graph parity stable**
