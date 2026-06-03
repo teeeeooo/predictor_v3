@@ -523,7 +523,7 @@ entries:
 
   - type: open_question
     topic: Tkinter calculator multi-monitor geometry clipping
-    content: Dual-monitor geometry clipping remains unresolved after the detail panel/copy/graph arc and should be handled as a separate audit or hotfix without changing result/detail semantics.
+    content: Superseded by the 196-a through 199-c window geometry/viewport arc. Multi-monitor detail open/profile switch clipping was handled without changing result/detail semantics; see the 200 summary entry.
     keywords:
       - predictor_v3
       - Tkinter calculator
@@ -531,8 +531,24 @@ entries:
       - geometry
       - clipping
       - hotfix
-    assertionStatus: open
-    source: result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md (Known Remaining Issues)
+    assertionStatus: resolved
+    source: result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md (Known Remaining Issues), superseded by result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md
+
+  - type: decision
+    topic: Tkinter window geometry and viewport policy before UI pivot
+    content: The 196-a through 199-c arc closed MetricInputTable single-click replace-on-type, multi-monitor detail/profile geometry, first-launch/detail auto-fit, 80% automatic height cap, top-safe y positioning, and viewport policy documentation. The reusable policy owner is docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md. Automatic fit caps visible height but must not block manual resize; profile/detail fit preserves current x/current monitor and avoids primary recenter. Windows calculator_tk packaged size of approximately 11 MB is acceptable for the current lightweight calculator candidate. Next decision is the UI technology pivot design gate.
+    keywords:
+      - predictor_v3
+      - Tkinter calculator
+      - window geometry
+      - viewport policy
+      - multi-monitor
+      - replace-on-type
+      - auto-fit
+      - top-safe
+      - UI technology pivot
+    assertionStatus: verified
+    source: result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md
 ```
 
 ## Known Gaps

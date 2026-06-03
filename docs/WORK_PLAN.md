@@ -18,6 +18,7 @@
 ## Current Focus
 
 - Tkinter ISO profile/detail/copy/graph arc is summarized in `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`.
+- Window geometry, viewport policy, input replace-on-type, and UI pivot prep arc is summarized in `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`.
 - Implemented state:
   - ISO/ISEER and SASO T3 comparison result tables.
   - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
@@ -25,17 +26,8 @@
   - Detail/bin table CSV export.
   - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
 - User manual smoke result:
-  - 196-a graph min/max scale labels confirmed on Windows dual-monitor setup.
-  - Simple window movement between monitors did not reproduce screen clipping.
-  - 197-a MetricInputTable single-click replace-on-type fix failed on Windows: typing still prepended/appended to the existing value.
-  - 197-a2 MetricInputTable single-click replace-on-type follow-up passed Windows manual smoke.
-  - 197-b multi-monitor geometry role-split passed Windows manual smoke.
-  - 198-a first-launch ISO fit and SASO 4-point default passed Windows manual smoke.
-  - 198-b detail-open vertical clamp behaved as intended, with remaining long-content height issue split to 198-c.
-  - 198-c auto-fit max height 80% cap was acceptable; remaining bottom clipping split to 198-d.
-  - 198-d bottom-margin vertical clamp passed Windows manual smoke; top-safe y positioning split to 199-a.
-  - 199-a window geometry top-safe policy passed Windows manual smoke.
-  - 199-c UI/UX document numbering cleanup resolved the window geometry policy duplicate `05_` prefix.
+  - 196-a through 199-c completed and archived under summary 200.
+  - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
 - Next: UI technology pivot design gate.
 
@@ -72,7 +64,6 @@
 - Graph export/HTML export is deferred until after graph parity is stable.
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
-- Multi-monitor geometry clipping is a separate audit/hotfix candidate.
 - Hong Kong HSPF needs a separate heating trace schema decision.
 - Internal formula trace still needs a separate core/data contract.
 - Multi/batch calculator result structure is deferred.
@@ -90,6 +81,8 @@
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
 - `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`
   - Covers active reports 190-b through 194-e plus the 194-f graph axis label hotfix.
+- `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`
+  - Covers active reports 196-a through 199-c: graph label closeout, input replace-on-type, multi-monitor geometry, launch/detail auto-fit, viewport policy documentation, and UI/UX doc numbering cleanup.
 
 ## Historical Notes / References
 
