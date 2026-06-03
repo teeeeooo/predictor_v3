@@ -314,13 +314,18 @@ Stable checkpoint mode:
 - 사용자가 "확인"을 요청해도 긴 section을 compliance 증명 목적으로 재출력하지 않는다.
 - 정확한 문구가 불확실하거나 충돌할 때만 `rg -n`으로 heading/keyword를 찾고 필요한 10~30줄만 확인한다.
 - policy read에도 이 Diff / Read Budget을 적용한다.
+- `rg`는 넓은 일반 키워드보다 함수명/파일명/고유 label처럼 match 폭이 좁은 query를 우선 사용한다.
+- `sed`는 기본 30~80줄 이내의 작은 범위로 시작하고, 필요한 경우에만 다음 인접 범위를 추가로 확인한다.
+- tool output budget은 작게 시작하고, 잘린 출력이 실제로 필요한 경우에만 늘린다.
 
 기본 순서:
 1. `git diff --name-only`
 2. `git diff --stat`
-3. `rg -n "<function_or_keyword>" <target files>`
-4. `sed -n '<small range>' <file>`
-5. 필요한 경우에만 `git diff -- <file>` 또는 특정 hunk 주변을 좁게 확인한다.
+3. `git status --short`로 untracked 신규 파일 여부 확인
+4. `rg -n "<function_or_keyword>" <target files>`
+5. `sed -n '<small range>' <file>`
+6. 필요한 경우에만 `git diff -- <file>` 또는 특정 hunk 주변을 좁게 확인한다.
+- 신규 untracked report/docs 파일은 존재 확인과 stat 중심으로 다루고, full diff 전문 출력은 피한다.
 
 pytest / command output:
 - 실패 전까지는 focused test 중심으로 실행한다.
