@@ -79,16 +79,12 @@ class IsoSasoT3Section:
             row=1, column=0, sticky="ew", padx=ISO_SECTION_PADX, pady=(0, 6),
         )
 
-        self.optional_min_enabled = tk.BooleanVar(master=self._frame, value=False)
+        self.optional_min_enabled = tk.BooleanVar(master=self._frame, value=True)
         self.optional_min_toggle = ttk.Checkbutton(
             self._frame,
-            text="35 Min optional test 사용",
+            text="",
             variable=self.optional_min_enabled,
             command=self._on_optional_min_toggled,
-        )
-        self.optional_min_toggle.grid(
-            row=2, column=0, sticky="w", padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
         self.result_table = IsoSasoT3ResultTable(self._frame)
@@ -114,7 +110,7 @@ class IsoSasoT3Section:
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
-            default_source=_REQUIRED_TRACE_LABEL,
+            default_source=_OPTIONAL_TRACE_LABEL,
             csv_filename="saso_t3_bin_detail.csv",
         )
         self.trace_table = self.detail_panel.table
@@ -149,34 +145,28 @@ class IsoSasoT3Section:
             self.result_table.set_status(required_error)
             return
 
-        rows = [required_row]
         trace_results = {_REQUIRED_TRACE_LABEL: required_trace}
         detail_summaries = {_REQUIRED_TRACE_LABEL: _summary_from_row(required_row)}
         detail_statuses: dict[str, str] = {}
         status = "자동 계산 완료"
-        if self.optional_min_enabled.get():
-            optional_measured, optional_error = self._read_optional_inputs(required_measured)
-            if optional_error is None:
-                optional_row, optional_trace, optional_error = self._calculate_optional_row(
-                    optional_measured
-                )
-            else:
-                optional_row = ()
-                optional_trace = []
-            if optional_error is not None:
-                rows.append(_optional_error_row(optional_error))
-                detail_statuses[_OPTIONAL_TRACE_LABEL] = (
-                    "상세 데이터 없음: 35 Min 숫자 입력을 확인하세요."
-                )
-                status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
-            else:
-                rows.append(optional_row)
-                trace_results[_OPTIONAL_TRACE_LABEL] = optional_trace
-                detail_summaries[_OPTIONAL_TRACE_LABEL] = _summary_from_row(optional_row)
-        else:
-            detail_statuses[_OPTIONAL_TRACE_LABEL] = (
-                "상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
+        optional_measured, optional_error = self._read_optional_inputs(required_measured)
+        if optional_error is None:
+            optional_row, optional_trace, optional_error = self._calculate_optional_row(
+                optional_measured
             )
+        else:
+            optional_row = ()
+            optional_trace = []
+        if optional_error is not None:
+            rows = [_optional_error_row(optional_error), required_row]
+            detail_statuses[_OPTIONAL_TRACE_LABEL] = (
+                "상세 데이터 없음: 35 Min 숫자 입력을 확인하세요."
+            )
+            status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
+        else:
+            rows = [optional_row, required_row]
+            trace_results[_OPTIONAL_TRACE_LABEL] = optional_trace
+            detail_summaries[_OPTIONAL_TRACE_LABEL] = _summary_from_row(optional_row)
         self._trace_results = trace_results
         self._detail_summaries = detail_summaries
         self._detail_statuses = detail_statuses
@@ -249,18 +239,12 @@ class IsoSasoT3Section:
         self._auto_calc.schedule()
 
     def _sync_optional_min_state(self) -> None:
-        state = tk.NORMAL if self.optional_min_enabled.get() else tk.DISABLED
         for field_key in ("min_35_capacity", "min_35_power"):
-            self.input_table.editable_entries[field_key].configure(state=state)
+            self.input_table.editable_entries[field_key].configure(state=tk.NORMAL)
 
     def _sync_optional_trace_state(self) -> None:
-        if not self.optional_min_enabled.get():
-            self._trace_results.pop(_OPTIONAL_TRACE_LABEL, None)
-            self._detail_summaries.pop(_OPTIONAL_TRACE_LABEL, None)
-            self._detail_statuses[_OPTIONAL_TRACE_LABEL] = (
-                "상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
-            )
-            self._update_detail_panel()
+        self.optional_min_enabled.set(True)
+        self._sync_optional_min_state()
 
     def _toggle_detail(self) -> None:
         self._detail_visible = not self._detail_visible
@@ -285,7 +269,7 @@ class IsoSasoT3Section:
             self.detail_panel.set_status(self._trace_status)
             return
         sources = {}
-        for label in (_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL):
+        for label in (_OPTIONAL_TRACE_LABEL, _REQUIRED_TRACE_LABEL):
             if label in self._trace_results:
                 sources[label] = BinDetailSource(
                     rows=tuple(self._trace_results[label]),
@@ -295,7 +279,7 @@ class IsoSasoT3Section:
                 sources[label] = BinDetailSource(status=self._detail_statuses[label])
         self.detail_panel.set_sources(
             sources,
-            source_order=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
+            source_order=(_OPTIONAL_TRACE_LABEL, _REQUIRED_TRACE_LABEL),
             panel_status="상세 데이터 없음",
         )
 

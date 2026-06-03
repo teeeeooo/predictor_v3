@@ -187,6 +187,9 @@ class Iso16358Tab(ttk.Frame):
         self.update_idletasks()
         self._scrollable.reset_scroll_position()
 
+    def fit_toplevel_to_current_content_once(self) -> None:
+        self._fit_toplevel_to_current_content()
+
     def _on_trace_visibility_changed(self) -> None:
         self.after_idle(self._fit_toplevel_to_current_content)
 

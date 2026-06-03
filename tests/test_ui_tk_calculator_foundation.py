@@ -268,6 +268,37 @@ finally:
     assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
+def test_calculator_launch_schedules_one_shot_content_fit(monkeypatch):
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from ui_tk.calculator_app import CalculatorTkApp
+        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+
+        calls = []
+        original = Iso16358Tab.fit_toplevel_to_current_content_once
+
+        def record_once(self):
+            calls.append(self)
+            original(self)
+
+        monkeypatch.setattr(
+            Iso16358Tab, "fit_toplevel_to_current_content_once", record_once
+        )
+        app = CalculatorTkApp(root=root)
+
+        assert calls == []
+        root.update()
+        assert calls == [app.iso_tab]
+        root.update()
+        assert calls == [app.iso_tab]
+    finally:
+        root.destroy()
+
+
 def test_scrollable_frame_hides_scrollbar_when_content_fits():
     tk = pytest.importorskip("tkinter")
     try:

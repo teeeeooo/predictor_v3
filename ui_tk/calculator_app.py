@@ -50,6 +50,7 @@ class CalculatorTkApp:
         center_window(self.root, self.iso_tab.preferred_initial_size())
         apply_overflow_correction(self.root, self.iso_tab)
         clamp_window_to_visible_bounds(self.root)
+        self.root.after_idle(self.iso_tab.fit_toplevel_to_current_content_once)
 
     def run(self) -> None:
         self.root.mainloop()

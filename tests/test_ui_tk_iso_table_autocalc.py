@@ -560,11 +560,13 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     )
     assert section.input_table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
     assert isinstance(section.input_controller, ExcelLikeTableController)
-    assert section.optional_min_toggle.cget("text") == "35 Min optional test 사용"
-    assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "disabled"
-    assert section.input_table.editable_entries["min_35_power"].cget("state") == "disabled"
+    assert section.optional_min_enabled.get() is True
+    assert section.optional_min_toggle.winfo_manager() == ""
+    assert "35 Min optional test 사용" not in _widget_texts(section._frame)
+    assert section.input_table.editable_entries["min_35_capacity"].cget("state") == "normal"
+    assert section.input_table.editable_entries["min_35_power"].cget("state") == "normal"
     assert not section.detail_panel.is_visible()
-    assert section.trace_profile_combo.get() == "Required only (3-point)"
+    assert section.trace_profile_combo.get() == "With 35 Min (4-point)"
     assert section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert "Bin trace" not in _widget_texts(section._frame)
     assert "Trace 복사" not in _widget_texts(section._frame)
@@ -584,16 +586,23 @@ def test_saso_t3_profile_renders_default_result(tk_root):
         "CSEC [kWh]",
     )
     rows = _saso_tree_values(tab)
-    assert len(rows) == 1
-    assert rows[0][0] == "Required only (3-point)"
-    assert rows[0][4] == "-"
-    assert table.row_labels == ("Required only (3-point)",)
+    assert len(rows) == 2
+    assert [row[0] for row in rows] == [
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    ]
+    assert rows[0][4] != "-"
+    assert rows[1][4] == "-"
+    assert table.row_labels == (
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    )
 
     text = _saso_text(tab)
     for label in table.column_labels:
         assert label in text
     assert "Required only (3-point)" in text
-    assert "With 35 Min (4-point)" not in text
+    assert "With 35 Min (4-point)" in text
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
@@ -607,8 +616,12 @@ def test_saso_t3_detail_panel_opens_with_required_bin_details(tk_root):
 
     assert section is not None
     assert not section.detail_panel.is_visible()
-    assert set(section._trace_results) == {"Required only (3-point)"}
+    assert set(section._trace_results) == {
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    }
     assert section._trace_results["Required only (3-point)"]
+    assert section._trace_results["With 35 Min (4-point)"]
 
     section.detail_toggle.invoke()
     tk_root.update_idletasks()
@@ -657,26 +670,18 @@ def test_saso_t3_detail_optional_selector_uses_4point_bin_details(tk_root):
 
     section.detail_toggle.invoke()
     tk_root.update_idletasks()
+    optional_rows = _saso_bin_trace_rows(tab)
+    assert optional_rows
+
+    section.trace_profile_combo.set("Required only (3-point)")
+    section.detail_panel._on_source_changed()
     required_rows = _saso_bin_trace_rows(tab)
     assert required_rows
 
-    section.trace_profile_combo.set("With 35 Min (4-point)")
-    section.detail_panel._on_source_changed()
-    assert _saso_bin_trace_rows(tab) == ()
-    assert "상세 데이터 없음" in section.trace_table.as_text()
-
-    section.optional_min_enabled.set(True)
-    section._on_optional_min_toggled()
-    section._auto_calc.flush_now()
-    section.trace_profile_combo.set("With 35 Min (4-point)")
-    section.detail_panel._on_source_changed()
-    optional_rows = _saso_bin_trace_rows(tab)
-
     assert set(section._trace_results) == {
-        "Required only (3-point)",
         "With 35 Min (4-point)",
+        "Required only (3-point)",
     }
-    assert optional_rows
     assert optional_rows != required_rows
     rendered = _joined_rows(optional_rows)
     assert "Traceback" not in rendered
@@ -690,8 +695,11 @@ def test_saso_t3_table_export_data_hooks_cover_result_and_trace(tk_root):
 
     result_headers, result_rows = section.result_table.table_export_data()
     assert result_headers == section.result_table.column_labels
-    assert len(result_rows) == 1
-    assert result_rows[0][0] == "Required only (3-point)"
+    assert len(result_rows) == 2
+    assert [row[0] for row in result_rows] == [
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    ]
 
     section.detail_toggle.invoke()
     tk_root.update_idletasks()
@@ -711,18 +719,9 @@ def test_saso_t3_detail_copy_button_uses_header_included_tsv(tk_root):
         section.result_table.column_labels
     )
     assert "Required only (3-point)" in result_clipboard
+    assert "With 35 Min (4-point)" in result_clipboard
 
     section.detail_toggle.invoke()
-    section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.detail_panel.copy_button.invoke() == 1
-    unavailable_clipboard = tk_root.clipboard_get()
-    assert unavailable_clipboard == (
-        "Status\n상세 데이터 없음: 35 Min optional test가 꺼져 있습니다."
-    )
-
-    section.optional_min_enabled.set(True)
-    section._on_optional_min_toggled()
-    section._auto_calc.flush_now()
     section.trace_profile_combo.set("With 35 Min (4-point)")
     assert section.detail_panel.copy_button.invoke() == 1
     trace_clipboard = tk_root.clipboard_get()
@@ -750,14 +749,6 @@ def test_saso_t3_detail_csv_export_button_still_calls_helper(monkeypatch, tk_roo
     section.trace_profile_combo.set("With 35 Min (4-point)")
     assert section.detail_panel.csv_button.invoke() == 1
     assert calls[-1][1] == "saso_t3_bin_detail.csv"
-    assert calls[-1][2] == ("Status",)
-    assert "상세 데이터 없음" in calls[-1][3][0][0]
-
-    section.optional_min_enabled.set(True)
-    section._on_optional_min_toggled()
-    section._auto_calc.flush_now()
-    section.trace_profile_combo.set("With 35 Min (4-point)")
-    assert section.detail_panel.csv_button.invoke() == 1
     assert calls[-1][2] == section.trace_table.column_labels
     assert calls[-1][3] == section.trace_table.rows
 
@@ -773,25 +764,22 @@ def test_saso_t3_optional_min_valid_compares_3point_and_4point(tk_root):
     tab = _make_saso_tab(tk_root)
     section = tab._saso_t3_section
 
-    section.optional_min_enabled.set(True)
-    section._on_optional_min_toggled()
-    section._auto_calc.flush_now()
     before_rows = _saso_tree_values(tab)
 
     assert len(before_rows) == 2
     assert [row[0] for row in before_rows] == [
-        "Required only (3-point)",
         "With 35 Min (4-point)",
+        "Required only (3-point)",
     ]
-    assert before_rows[0][4] == "-"
-    assert before_rows[1][4] != "-"
+    assert before_rows[0][4] != "-"
+    assert before_rows[1][4] == "-"
 
     assert section.input_table.set_value("min_35_capacity", "1500") is True
     section._auto_calc.flush_now()
     after_rows = _saso_tree_values(tab)
 
-    assert after_rows[0] == before_rows[0]
-    assert after_rows[1] != before_rows[1]
+    assert after_rows[0] != before_rows[0]
+    assert after_rows[1] == before_rows[1]
     assert len(after_rows) == 2
     assert _saso_text(tab).count("Required only (3-point)") == 1
     assert _saso_text(tab).count("With 35 Min (4-point)") == 1
@@ -806,17 +794,15 @@ def test_saso_t3_optional_min_invalid_keeps_3point_and_safe_4point_status(tk_roo
     required_trace_before = _saso_bin_trace_rows(tab)
     assert required_trace_before
 
-    section.optional_min_enabled.set(True)
-    section._on_optional_min_toggled()
     assert section.input_table.set_value("min_35_power", "bad") is True
     section._auto_calc.flush_now()
 
     rows = _saso_tree_values(tab)
     text = _saso_text(tab)
     assert len(rows) == 2
-    assert rows[0][0] == "Required only (3-point)"
-    assert rows[0][4] == "-"
-    assert rows[1] == (
+    assert rows[1][0] == "Required only (3-point)"
+    assert rows[1][4] == "-"
+    assert rows[0] == (
         "With 35 Min (4-point)",
         "-",
         "-",
@@ -891,7 +877,10 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
 
     _select_mode(tab, "SASO T3")
     assert tab.sections == {}
-    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
+    assert tab._saso_t3_section.result_table.row_labels == (
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    )
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
@@ -912,7 +901,10 @@ def test_profile_switch_with_open_detail_panel_is_lifecycle_safe(tk_root):
     _select_mode(tab, "SASO T3")
     assert tab._saso_t3_section is not None
     saso_section = tab._saso_t3_section
-    assert saso_section.result_table.row_labels == ("Required only (3-point)",)
+    assert saso_section.result_table.row_labels == (
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    )
     saso_section.detail_toggle.invoke()
     tk_root.update_idletasks()
     assert saso_section.detail_panel.is_visible()
@@ -976,7 +968,10 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     assert tab.vertical_overflow_delta() == 0
     assert tab._canvas.yview()[0] == 0.0
     assert reset_calls == ["reset", "reset", "reset"]
-    assert tab._saso_t3_section.result_table.row_labels == ("Required only (3-point)",)
+    assert tab._saso_t3_section.result_table.row_labels == (
+        "With 35 Min (4-point)",
+        "Required only (3-point)",
+    )
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):
