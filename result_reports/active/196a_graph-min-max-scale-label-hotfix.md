@@ -47,11 +47,12 @@
 - `git diff --check`
   - Passed.
 
-## Manual Check Needed
+## Manual Check Result
 
-- Smartphone + Codespaces environment cannot run manual GUI smoke.
-- Tk Canvas GUI assertions skip without a display; headless min/max calculation and label formatting coverage passed.
-- Next action: `196-a manual smoke`.
+- Manual smoke completed on a Windows dual-monitor environment.
+- Graph min/max scale labels were confirmed after moving the app window.
+- Simple window movement between monitors did not reproduce screen clipping.
+- New geometry follow-up was found outside this graph hotfix scope: opening detail view after moving the app to monitor 2 can recenter on monitor 1, and first launch can appear below screen center enough to clip the window.
 
 ## Known Risks
 
@@ -65,11 +66,6 @@
 - Detail table/copy/CSV unchanged.
 - Geometry/window code unchanged.
 - No summary/archive/project log/memory lifecycle work performed.
-
-## Commit / Push
-
-- Source/test and docs/report commits are intended to be separated.
-- Push target: `origin work/ui-ux-ssot-adoption`.
 
 ## Project Memory Delta
 

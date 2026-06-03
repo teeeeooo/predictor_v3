@@ -24,14 +24,19 @@
   - Header-included TSV copy for result/detail tables.
   - Detail/bin table CSV export.
   - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
-- Next: manual smoke for the 196-a graph min/max scale label hotfix, then multi-monitor geometry audit/hotfix.
+- Manual smoke completed:
+  - 196-a graph min/max scale labels confirmed on Windows dual-monitor setup.
+  - Simple window movement between monitors did not reproduce screen clipping.
+- Next: 197-a MetricInputTable single-click replace-on-type hotfix, then multi-monitor geometry audit/hotfix.
 
 ## Next Actions
 
-1. **196-a manual smoke**
-   - Check `상세 보기 ↓ / 상세 닫기 ↑`, source selector, summary, graph selector label, graph axis/min-max labels, detail copy, detail CSV export, and absence of main-screen `Trace` wording.
+1. **197-a MetricInputTable single-click replace-on-type hotfix**
+   - Ensure typing after a single editable-cell click replaces the selected value instead of appending.
 2. **Multi-monitor geometry audit/hotfix**
-   - Investigate screen clipping separately without changing detail/result semantics.
+   - Investigate separately without changing detail/result semantics:
+     - Detail view opened after moving the app to monitor 2 can recenter on monitor 1.
+     - Initial app placement can appear below screen center enough to clip the window.
 3. **Hong Kong HSPF heating trace schema/implementation**
    - Define heating-specific detail columns before any HSPF detail implementation.
 4. **Graph export/HTML export after graph parity stable**
