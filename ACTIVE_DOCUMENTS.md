@@ -15,7 +15,8 @@
 1. 새 active 문서를 추가하거나 archive로 이동하면 이 파일을 갱신한다.
 2. 문서의 owner 역할, primary inbound, primary outbound가 바뀌면 이 파일을 갱신한다.
 3. 문서 업데이트 작업을 요청받으면 `AGENT_TASK_ROUTER.md`의 Documentation Sync gate에서 이 파일을 먼저 확인한다.
-4. 대규모 report lifecycle 정리는 이 파일이 아니라 `result_reports/summaries/`와 `project_log.md`에 기록한다.
+4. `docs/designs/*.md` 추가, lifecycle status 변경, owner-doc mapping 변경은 `docs/designs/README.md`를 갱신한다.
+5. 대규모 report lifecycle 정리는 이 파일이 아니라 `result_reports/summaries/`와 `project_log.md`에 기록한다.
 
 ## Entrypoints
 
@@ -98,24 +99,7 @@
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
-| `docs/designs/TEMPLATE_DESIGN_GATE.md` | Design Gate template | Design Gate tasks | none |
-| `docs/designs/2026-05-06-iso16358-2-hspf-core-boundary.md` | ISO HSPF core boundary decision | ISO HSPF boundary tasks | none |
-| `docs/designs/2026-05-08-asnzs-hspf-excel-compat-boundary.md` | AS/NZS workbook compatibility boundary | AS/NZS tasks, ISO separation plan | none |
-| `docs/designs/2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | ISO HSPF H-8 routing design | ISO HSPF tasks | `docs/iso16358/iso16358_dev_notes.md`, `docs/REFACTOR_PLAN.md` |
-| `docs/designs/2026-05-17-iso-remaining-work-completion.md` | ISO remaining work completion boundary | ISO separation completion | none |
-| `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` | Calculator horizontal table input UI and unit boundary | calculator UI table tasks, ML / inverse-search restart tasks | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` |
-| `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` | Calculator result envelope / ML adapter boundary | ML / inverse-search restart tasks | `docs/architecture/project_architecture.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
-| `docs/designs/2026-05-22-calculator-action-model-alignment.md` | Calculator action model decision (Option A — auto-calc unified) | calculator UI auto-recompute / result panel / error feedback slices | `docs/ui_ux/00_UI_UX_SYSTEM.md`, `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` |
-| `docs/designs/2026-05-22-calculator-ui-module-boundary.md` | Calculator UI module boundary plan | calculator UI refactor slices (ε/ζ/η/β/γ/δ) | `docs/architecture/project_architecture.md`, `docs/designs/2026-05-22-calculator-action-model-alignment.md`, `docs/designs/2026-05-17-calculator-horizontal-table-input-ui.md` |
-| `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` | Calculator-only lightweight UI feasibility decision | calculator deployment UI direction, Tkinter MVP tasks | packaging guide, Tkinter MVP scope, PyQt hold/fallback criteria |
-| `docs/designs/2026-05-23-tkinter-calculator-final-ux-contract.md` | Tkinter calculator final UX contract (matrix input, auto-calc, summary result) | Tkinter calculator UI tasks, input/result surface rule | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, manual smoke guide, `docs/WORK_PLAN.md` |
-| `docs/designs/2026-05-24-pyqt-calculator-reference-feature-migration-contract.md` | PyQt calculator reference-to-Tkinter migration requirement contract | calculator migration/retirement-gate tasks, reports 154/165 | Tkinter implementation slices, `docs/WORK_PLAN.md`, later retirement reconsideration |
-| `docs/designs/2026-05-29-tkinter-iso-iseer-2point-result-visual-refinement.md` | Tkinter ISO/ISEER result visual decision record | ISO/ISEER result display reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, current Tkinter result table implementation |
-| `docs/designs/2026-05-29-tkinter-iso-iseer-2point-single-design.md` | Tkinter ISO/ISEER 2-point single-mode decision record | ISO/ISEER profile/mode reference tasks | `docs/WORK_PLAN.md`, implemented Tkinter ISO/ISEER section |
-| `docs/designs/2026-05-29-tkinter-saso-t3-profile-design.md` | Tkinter SASO T3 profile decision record | SASO T3 follow-up reference tasks | implemented Tkinter SASO section, `docs/WORK_PLAN.md` |
-| `docs/designs/2026-05-30-tkinter-detail-trace-graph-result-surface-design.md` | Tkinter detail/trace/graph result decision record | detail/bin/graph follow-up reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, detail/bin implementation slices |
-| `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md` | Tkinter table contract recovery decision record | table UX recovery reference tasks | `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` |
-| `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md` | Tkinter result/export boundary decision record | result/export follow-up reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, table export implementation slices |
+| `docs/designs/README.md` | Design record index and lifecycle owner | design-gate/reference tasks, `AGENT_TASK_ROUTER.md` update trigger | individual `docs/designs/*.md` records, owner-doc mapping |
 
 ## Root Result Docs
 

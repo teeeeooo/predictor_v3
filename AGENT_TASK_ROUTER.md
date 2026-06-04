@@ -722,6 +722,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 6. 프로젝트 대표 상태가 바뀐 경우에만 `project_brief.md`를 수정한다.
 7. 단순 docs 문구 수정은 이 섹션으로 확장하지 않고 `단순 docs 문구 수정` 경로를 유지한다.
 8. UI/UX 관련 문서 정리에서는 active SSOT (`docs/ui_ux/00_UI_UX_SYSTEM.md` 이하 `docs/ui_ux/`)와 legacy source 전문 (`docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md`)을 혼동하지 않는다. 새 작업의 owner는 항상 `docs/ui_ux/`이며, `_source/`는 history/reference로만 둔다.
+9. 새 `docs/designs/*.md` 추가, design record lifecycle/status 변경, owner-doc mapping 변경, 또는 design record가 active rule owner처럼 참조되는 drift를 발견하면 `docs/designs/README.md` 업데이트 필요성을 판단한다. 일반 coding task마다 design index를 읽거나 갱신하지 않는다.
 
 ### 8. UI 수정
 
