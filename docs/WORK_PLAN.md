@@ -34,12 +34,12 @@
   - 206 adds the first Hong Kong CSPF row-per-case batch slice for `calculator_tk`; Windows/manual GUI smoke remains before treating batch UX as stable.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: run `BatchCaseTable` keep/replace preflight, then correct Hong Kong CSPF batch table UX before common detail/bin schema foundation.
+- Next: correct Hong Kong CSPF batch table UX using the BatchCaseTable keep/replace preflight decision before common detail/bin schema foundation.
 
 ## Next Actions
 
-1. **BatchCaseTable keep/replace preflight**
-   - Decide whether to adapt the existing lightweight batch surface or replace it with a reusable Tk table adapter aligned with the Excel-like contract.
+1. **Hong Kong CSPF batch table UX correction**
+   - Replace the current lightweight batch surface with a reusable Tk batch table adapter/controller aligned with the Excel-like contract.
    - Batch result is not internal formula trace.
    - Initial batch columns: `Case`, `Declared`, `35 Full Cap`, `35 Full Power`, `35 Half Cap`, `35 Half Power`, `CSPF`, `CSEC`, `Status`.
 2. **Common detail/bin result schema design**
