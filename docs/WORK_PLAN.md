@@ -31,16 +31,17 @@
   - 202 merged `work/ui-ux-ssot-adoption` into `main`.
   - 203 added a lightweight architecture triage rule to the task router before the C# WPF spike branch.
   - 204 closes the C# WPF spike as an experiment only; no C# WPF code is merged to `main`.
+  - 206 adds the first Hong Kong CSPF row-per-case batch slice for `calculator_tk`; Windows/manual GUI smoke remains before treating batch UX as stable.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: return to `calculator_tk` with simple batch calculation first, then common detail/bin schema foundation.
+- Next: smoke/polish the Hong Kong CSPF batch slice, then proceed to common detail/bin schema foundation.
 
 ## Next Actions
 
-1. **calculator_tk simple batch mode**
-   - Add a lightweight batch calculation surface for one-row-per-case results.
+1. **calculator_tk Hong Kong CSPF batch smoke/polish**
+   - Validate the lightweight batch calculation surface for one-row-per-case results.
    - Batch result is not internal formula trace.
-   - Initial batch columns: `Case`, `Declared`, `35 Full Cap`, `35 Full Power`, `35 Half Cap`, `35 Half Power`, `CSPF`, `CSEC`.
+   - Initial batch columns: `Case`, `Declared`, `35 Full Cap`, `35 Full Power`, `35 Half Cap`, `35 Half Power`, `CSPF`, `CSEC`, `Status`.
 2. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
