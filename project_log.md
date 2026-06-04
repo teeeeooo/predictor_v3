@@ -21,6 +21,17 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-04 — Scoped first-search harness rule
+
+### Tried
+- Reviewed recent task overhead from broad initial searches across tests and legacy files.
+
+### Result
+- Added an AGENTS.md rule to keep first searches within specified/allowed files when the task scope is file-bounded.
+
+### Decision
+- Expand to legacy/archive/tests-wide searches only when the initial bounded search hits a blocker.
+
 ## 2026-06-04 — WPF spike closeout and UI contract guardrail
 
 ### Tried
