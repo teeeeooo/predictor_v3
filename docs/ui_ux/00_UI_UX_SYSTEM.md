@@ -62,6 +62,18 @@ inside the project, not by editing this file.
   numbered title) when more than two steps exist.
 - Cancel must always be possible from a long-running operation; the
   app must not freeze without a way out.
+- Before replacing or porting an existing screen, inspect the current
+  section order, default visible state, and primary user flow. The
+  replacement starts by preserving that flow unless a design gate
+  explicitly approves a change.
+- Judge UI work by the default screen that an end user sees, not by a
+  developer demo or component showcase. Mock/demo rows and demo-only
+  controls must not appear in the default user workflow.
+- Distinguish immediate-calculation screens from explicit-run screens.
+  Calculator input screens may calculate as users edit; Predictor/Trainer
+  batch or model workflows may require a Run/Train/Predict action.
+- A toolkit adapter is an implementation mechanism. It does not grant
+  permission to change the product UX, section order, or task flow.
 
 ## 4. Button and action rules
 
@@ -167,6 +179,10 @@ inside the project, not by editing this file.
 - Full-width single inputs that exist only to fill space.
 - Re-using a single component for both clickable and non-clickable
   variants without an obvious visual distinction.
+- Replacing an existing workflow with a toolkit demo layout without
+  documenting the user-flow change first.
+- Showing mock/demo rows or component smoke controls in the default
+  user-facing screen.
 
 ## 11. Related documents
 

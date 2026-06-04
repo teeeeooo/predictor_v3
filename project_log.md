@@ -21,6 +21,31 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-04 — WPF spike closeout and UI contract guardrail
+
+### Tried
+- A `spike/wpf-calculator-shell` branch tested a C# WPF calculator shell,
+  reusable grid, and local Python worker bridge.
+
+### Result
+- WPF showed some table UX potential, but it added .NET runtime/SDK,
+  GUI exe + worker exe, region config packaging, and worker resolver concerns.
+
+### Failed / Risk
+- The spike drifted toward component-demo UI instead of preserving the
+  existing calculator_tk section order and immediate-calculation flow.
+
+### Decision
+- Do not merge C# WPF code to `main`. Return to `calculator_tk` and strengthen
+  UI/UX contract guardrails before the next batch/detail-schema work.
+
+### Lesson
+- The root issue was not language choice alone; the UX contract must be
+  enforced against the default user-facing screen, not only against reusable
+  component behavior.
+
+---
+
 ## 2026-05-30 — Tkinter detail panel, copy, and graph parity recovery
 
 ### Decision

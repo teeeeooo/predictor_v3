@@ -20,6 +20,12 @@ input/result surface shape under
 `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`. This adapter implements a
 selected shape; it does not decide whether repeated data should be a matrix.
 
+For existing `calculator_tk` screens, preserve the current section order and
+primary user flow before changing widgets. Hong Kong calculator sections are
+immediate-calculation screens by default; adding a Calculate button or batch
+Run action is a product-flow change and must be scoped as such. Predictor and
+Trainer batch/model workflows may use explicit Run/Predict/Train actions.
+
 ## 1. Where this adapter applies
 
 - Existing Tkinter projects that already ship and need maintenance.
@@ -210,6 +216,10 @@ project when reviewing existing implementation evidence:
   that initialized the COM apartment for the Excel object.
 - Communicating "read-only" with background color alone when the
   background is close to the editable background.
+- Exposing mock rows, component smoke controls, or demo-only dropdowns in the
+  default user-facing calculator screen.
+- Using the adapter as permission to replace an immediate-calc calculator
+  workflow with a button-run demo layout.
 
 ## 10. Related documents
 

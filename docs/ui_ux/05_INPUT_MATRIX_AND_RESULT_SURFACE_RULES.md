@@ -33,6 +33,9 @@ they are presented as summary result surfaces.
   summary surfaces before toolkit implementation begins.
 - Adapter documents own toolkit implementation once this surface shape has
   been selected.
+- Existing-screen replacements must first map the current section order,
+  default visible state, and primary user flow. A different flow is a design
+  change, not an adapter detail.
 
 ## Input Matrix Surface Rule
 
@@ -120,6 +123,10 @@ across comparable items.
   summary surface; raw tracebacks are never user-visible.
 - Copy/export may include a compact textual rendering of the summary, but a
   text representation is not the default visual surface.
+- Single-case calculator screens may update the summary immediately as input
+  changes. Batch, Predictor, and Trainer surfaces may use explicit Run,
+  Predict, or Train actions because they represent larger jobs or multiple
+  cases.
 
 ## Detail and Graph Surface Rule
 
@@ -133,6 +140,11 @@ across comparable items.
   chart/detail surface with explicit acceptance criteria.
 - Large dependencies such as `matplotlib` must not be introduced for a
   Tkinter graph before Windows packaging size evidence is available.
+- Batch calculator results are result tables, not internal formula trace.
+  They should use one row per case with user-facing input/output columns.
+- Detail/bin schemas should be designed as profile-neutral foundations where
+  practical so CSPF, HSPF, EN14825, AHRI, and KS adapters can share column
+  meaning instead of creating incompatible per-profile trace shapes.
 
 ## Acceptance Criteria
 

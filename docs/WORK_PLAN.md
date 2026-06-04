@@ -30,20 +30,26 @@
   - 201-b resolved the 201-a archived-doc whitespace blocker; merge readiness checks now pass.
   - 202 merged `work/ui-ux-ssot-adoption` into `main`.
   - 203 added a lightweight architecture triage rule to the task router before the C# WPF spike branch.
+  - 204 closes the C# WPF spike as an experiment only; no C# WPF code is merged to `main`.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: C# WPF spike branch creation.
+- Next: return to `calculator_tk` with simple batch calculation first, then common detail/bin schema foundation.
 
 ## Next Actions
 
-1. **C# WPF spike branch creation**
-   - Create a new branch from updated `main` before any C# WPF spike work.
-2. **UI technology pivot design gate**
-   - Decide C# WPF calculator shell / reusable grid direction before implementation.
-3. **Hong Kong HSPF heating trace schema/implementation**
-   - Define heating-specific detail columns before any HSPF detail implementation.
-4. **Graph export/HTML export after graph parity stable**
-   - Keep export deferred until graph readability/parity is stable.
+1. **calculator_tk simple batch mode**
+   - Add a lightweight batch calculation surface for one-row-per-case results.
+   - Batch result is not internal formula trace.
+   - Initial batch columns: `Case`, `Declared`, `35 Full Cap`, `35 Full Power`, `35 Half Cap`, `35 Half Power`, `CSPF`, `CSEC`.
+2. **Common detail/bin result schema design**
+   - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
+   - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
+3. **Existing CSPF detail/bin adapter cleanup**
+   - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
+4. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+   - Extend detail/bin adapters profile by profile after the shared schema is accepted.
+5. **Graph/export alignment on common detail/bin schema**
+   - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints
 
@@ -69,10 +75,8 @@
 - Graph export/HTML export is deferred until after graph parity is stable.
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
-- Hong Kong HSPF needs a separate heating trace schema decision.
-- Internal formula trace still needs a separate core/data contract.
-- Multi/batch calculator result structure is deferred.
-- EN/AHRI Tkinter expansion is deferred.
+- Internal formula trace is outside the current project execution scope and remains long-hold unless a separate core/data contract is approved.
+- Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions, not discarded items.
 - AS/NZS Excel compatibility Z-phase remains deferred.
 - Historical ISO/KS/ASNZS workbook compatibility details stay outside this execution board.
 

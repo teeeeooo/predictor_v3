@@ -38,6 +38,12 @@ matrix table or summary result surface in the first place, see
 - Selection, clipboard, clear, undo, and navigation may be implemented by a
   separate interaction controller, provided the final table still satisfies
   the baseline behavior below.
+- Reusable table components are not product screens. A new adapter or
+  toolkit port must prove the table inside the existing section order and
+  user workflow, not only in a standalone grid demo.
+- Demo rows, mock cascading options, and component smoke controls belong in
+  test/demo surfaces only. They must not be visible in the default
+  calculator, Predictor, or Trainer workflow.
 
 ## 1. Baseline: behaves like a small Excel sheet
 
@@ -220,6 +226,9 @@ Specifically:
 - Cross-table interactions (linked tables, drag-and-drop between
   tables) — those are project-specific extensions on top of this
   baseline.
+- Permission to change the surrounding product workflow. Toolkit adapters
+  implement this contract inside an approved screen flow; they do not decide
+  whether the screen is immediate-calc, button-run, single-case, or batch.
 
 ## 12. Related documents
 
