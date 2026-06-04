@@ -1109,7 +1109,12 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root):
     assert first_dialog is not None
     assert first_dialog.window.winfo_exists()
     assert first_dialog.section.table.model.spec.profile_key == "hong_kong_cspf"
+    assert len(first_dialog.section.table.model.rows) == 5
+    assert first_dialog.section.table.model.spec.status_keys == ()
     assert set(tab.sections) == {"CSPF", "HSPF"}
+    dialog_buttons = _widget_texts(first_dialog.window)
+    assert "Run Batch" not in dialog_buttons
+    assert "Clear Results" not in dialog_buttons
 
     cspf.batch_button.invoke()
     tk_root.update_idletasks()

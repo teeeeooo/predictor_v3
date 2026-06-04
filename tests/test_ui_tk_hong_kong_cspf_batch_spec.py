@@ -8,7 +8,6 @@ from ui_tk.sections.hong_kong_cspf_batch_spec import (
     FULL_POWER,
     HALF_CAPACITY,
     HALF_POWER,
-    STATUS,
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,
 )
@@ -40,10 +39,9 @@ def test_hong_kong_cspf_batch_row_matches_single_case_core_path():
 
     assert batch_result.values[CSPF] == fields["CSPF"] == "4.939"
     assert batch_result.values[CSEC] == fields["CSEC [kWh]"]
-    assert batch_result.values[STATUS] == "OK"
 
 
-def test_hong_kong_cspf_batch_row_reports_invalid_input_as_status():
+def test_hong_kong_cspf_batch_row_keeps_invalid_input_results_blank():
     row = _default_row()
     row[FULL_POWER] = "not-a-number"
     handler = HongKongCspfBatchHandler("Hong Kong")
@@ -52,7 +50,16 @@ def test_hong_kong_cspf_batch_row_reports_invalid_input_as_status():
 
     assert batch_result.values[CSPF] == ""
     assert batch_result.values[CSEC] == ""
-    assert batch_result.values[STATUS].startswith("Error: 35 Full Power")
+
+
+def test_hong_kong_cspf_batch_blank_and_partial_rows_leave_results_blank():
+    handler = HongKongCspfBatchHandler("Hong Kong")
+
+    blank_result = handler.calculate_row({})
+    partial_result = handler.calculate_row({DECLARED: "3500", FULL_POWER: "900"})
+
+    assert blank_result.values == {CSPF: "", CSEC: ""}
+    assert partial_result.values == {CSPF: "", CSEC: ""}
 
 
 def test_hong_kong_cspf_batch_spec_has_expected_columns():
@@ -65,4 +72,10 @@ def test_hong_kong_cspf_batch_spec_has_expected_columns():
         HALF_POWER,
     )
     assert HONG_KONG_CSPF_BATCH_SPEC.result_keys == (CSPF, CSEC)
-    assert HONG_KONG_CSPF_BATCH_SPEC.status_keys == (STATUS,)
+    assert HONG_KONG_CSPF_BATCH_SPEC.status_keys == ()
+
+
+def test_hong_kong_cspf_batch_spec_defaults_to_five_rows():
+    assert len(HONG_KONG_CSPF_BATCH_SPEC.default_rows) == 5
+    assert HONG_KONG_CSPF_BATCH_SPEC.default_rows[0]["case"] == "Case 1"
+    assert HONG_KONG_CSPF_BATCH_SPEC.default_rows[4]["case"] == "Case 5"

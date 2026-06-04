@@ -27,6 +27,7 @@ HALF_POWER = "half_power"
 CSPF = "cspf"
 CSEC = "csec"
 STATUS = "status"
+_REQUIRED_INPUT_KEYS = (DECLARED, FULL_CAPACITY, FULL_POWER, HALF_CAPACITY, HALF_POWER)
 
 
 HONG_KONG_CSPF_BATCH_SPEC = BatchProfileSpec(
@@ -41,7 +42,6 @@ HONG_KONG_CSPF_BATCH_SPEC = BatchProfileSpec(
         BatchColumnSpec(HALF_POWER, "35 Half Power", BatchColumnRole.INPUT, width_chars=13),
         BatchColumnSpec(CSPF, "CSPF", BatchColumnRole.RESULT, width_chars=9),
         BatchColumnSpec(CSEC, "CSEC", BatchColumnRole.RESULT, width_chars=10),
-        BatchColumnSpec(STATUS, "Status", BatchColumnRole.STATUS, width_chars=18),
     ),
     default_rows=(
         {
@@ -52,6 +52,10 @@ HONG_KONG_CSPF_BATCH_SPEC = BatchProfileSpec(
             HALF_CAPACITY: "1700",
             HALF_POWER: "380",
         },
+        {CASE: "Case 2"},
+        {CASE: "Case 3"},
+        {CASE: "Case 4"},
+        {CASE: "Case 5"},
     ),
 )
 
@@ -69,6 +73,8 @@ class HongKongCspfBatchHandler:
         self._region_label = region_label
 
     def calculate_row(self, row: Mapping[str, str]) -> BatchCalculationResult:
+        if not _has_complete_required_inputs(row):
+            return _blank_result()
         try:
             measured, declared = build_cspf_input(
                 full_capacity=_required_number(row, FULL_CAPACITY, "35 Full Cap"),
@@ -85,15 +91,11 @@ class HongKongCspfBatchHandler:
                 values={
                     CSPF: fields.get("CSPF", "-"),
                     CSEC: fields.get("CSEC [kWh]", "-"),
-                    STATUS: "OK",
                 },
                 state=BatchRowState.OK,
             )
-        except Exception as exc:
-            return BatchCalculationResult(
-                values={CSPF: "", CSEC: "", STATUS: f"Error: {exc}"},
-                state=BatchRowState.ERROR,
-            )
+        except Exception:
+            return _blank_result(BatchRowState.ERROR)
 
 
 def _required_number(row: Mapping[str, str], key: str, label: str) -> float:
@@ -101,3 +103,11 @@ def _required_number(row: Mapping[str, str], key: str, label: str) -> float:
         return parse_numeric_cell(str(row.get(key, "")))
     except ValueError as exc:
         raise ValueError(f"{label}: {exc}") from exc
+
+
+def _has_complete_required_inputs(row: Mapping[str, str]) -> bool:
+    return all(str(row.get(key, "")).strip() for key in _REQUIRED_INPUT_KEYS)
+
+
+def _blank_result(state: BatchRowState = BatchRowState.PENDING) -> BatchCalculationResult:
+    return BatchCalculationResult(values={CSPF: "", CSEC: ""}, state=state)
