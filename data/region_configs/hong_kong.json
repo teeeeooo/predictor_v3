@@ -65,11 +65,13 @@
       "upper": 5.5
     },
     "load_line": {
-      "source": "rated_heating_capacity",
+      "source": "measured_point_capacity",
+      "point_key": "7_full",
+      "field": "capacity",
       "zero_load_temp": 17.0,
       "full_load_temp": 0.0,
       "rated_capacity_factor": 0.82,
-      "_note": "ISO 16358-2 Section 6.2: ratio of heating capacity at 0C to standard heating capacity at 7C is 0.82"
+      "_note": "Hong Kong HSPF uses measured 7 Full capacity as the standard heating capacity; ISO 16358-2 Section 6.2 applies the 0C ratio of 0.82."
     }
   },
   "hspf_bin_hours": [

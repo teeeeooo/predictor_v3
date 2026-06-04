@@ -1029,11 +1029,11 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert isinstance(cspf.input_table, MetricInputTable)
     assert isinstance(hspf.input_table, MetricInputTable)
     assert isinstance(cspf.rated_table, MetricInputTable)
-    assert isinstance(hspf.rated_table, MetricInputTable)
+    assert not hasattr(hspf, "rated_table")
+    assert isinstance(cspf.rated_controller, ExcelLikeTableController)
+    assert cspf.rated_table.interaction_controller is cspf.rated_controller
     for section in (cspf, hspf):
-        assert isinstance(section.rated_controller, ExcelLikeTableController)
         assert isinstance(section.input_controller, ExcelLikeTableController)
-        assert section.rated_table.interaction_controller is section.rated_controller
         assert section.input_table.interaction_controller is section.input_controller
 
     buttons = []
@@ -1056,10 +1056,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
         assert label in labels
     assert "정격" not in labels
     assert "정격 난방" not in labels
-    assert labels.count("능력 [W]") == 4
+    assert labels.count("능력 [W]") == 3
     assert labels.count("전력 [W]") == 2
     assert "전력 [W]" not in _label_texts(cspf.rated_table)
-    assert "전력 [W]" not in _label_texts(hspf.rated_table)
     assert set(_label_texts(cspf.input_table)) >= {"35 Full", "35 Half"}
     assert set(_label_texts(hspf.input_table)) >= {"7 Full", "7 Half"}
     assert "정격 표기치" not in _label_texts(cspf.input_table)
@@ -1078,18 +1077,18 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     pref_w, pref_h = tab.preferred_initial_size()
     # With two metric tabs, height should reflect the larger tab, not both stacked.
     assert pref_h < cspf._frame.winfo_reqheight() + hspf._frame.winfo_reqheight() + 50
+    assert cspf.rated_table.grid_info()["row"] < cspf.input_table.grid_info()["row"]
     for section in (cspf, hspf):
-        assert section.rated_table.grid_info()["row"] < section.input_table.grid_info()["row"]
         assert (
             section.input_table.grid_info()["row"]
             < section.result_panel._frame.grid_info()["row"]
         )
-        assert section.rated_table.grid_info()["padx"] == ISO_SECTION_PADX
         assert section.input_table.grid_info()["padx"] == ISO_SECTION_PADX
         assert section.result_panel._frame.grid_info()["padx"] == ISO_SECTION_PADX
-        assert section.rated_table.grid_info()["sticky"] == "ew"
         assert section.input_table.grid_info()["sticky"] == "ew"
         assert section.result_panel._frame.grid_info()["sticky"] == "ew"
+    assert cspf.rated_table.grid_info()["padx"] == ISO_SECTION_PADX
+    assert cspf.rated_table.grid_info()["sticky"] == "ew"
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
@@ -1133,24 +1132,28 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
         assert roles.count("editable_cell") == 4
         assert "static_cell" not in roles
 
-        rated = section.rated_table
-        rated_roles = _surface_roles(rated)
-        assert rated.layout_policy == table.layout_policy
-        assert rated.row_header_chars == table.row_header_chars
-        assert rated.data_column_chars == table.data_column_chars
-        assert set(rated.cell_frames) == {("rated", "capacity")}
-        assert tuple(rated.editable_entries) == rated.field_order
-        assert len(rated.header_cells) == 1
-        assert len(rated.row_header_cells) == 1
-        assert len(rated.editable_cell_frames) == 1
-        assert not rated.static_cell_frames
-        assert rated_roles.count("header_cell") == 2
-        assert rated_roles.count("row_header_cell") == 1
-        assert rated_roles.count("editable_cell") == 1
-        assert "전력 [W]" not in _label_texts(rated)
         from tkinter import font as tk_font
 
-        for entry in (*table.editable_entries.values(), *rated.editable_entries.values()):
+        entries = list(table.editable_entries.values())
+        if metric == "CSPF":
+            rated = section.rated_table
+            rated_roles = _surface_roles(rated)
+            assert rated.layout_policy == table.layout_policy
+            assert rated.row_header_chars == table.row_header_chars
+            assert rated.data_column_chars == table.data_column_chars
+            assert set(rated.cell_frames) == {("rated", "capacity")}
+            assert tuple(rated.editable_entries) == rated.field_order
+            assert len(rated.header_cells) == 1
+            assert len(rated.row_header_cells) == 1
+            assert len(rated.editable_cell_frames) == 1
+            assert not rated.static_cell_frames
+            assert rated_roles.count("header_cell") == 2
+            assert rated_roles.count("row_header_cell") == 1
+            assert rated_roles.count("editable_cell") == 1
+            assert "전력 [W]" not in _label_texts(rated)
+            entries.extend(rated.editable_entries.values())
+
+        for entry in entries:
             assert entry.cget("justify") == "center"
             assert tk_font.Font(root=tk_root, font=entry.cget("font")).cget("size") >= (
                 TABLE_FONT_SIZE
@@ -1168,23 +1171,18 @@ def test_metric_surfaces_expand_together_with_window_width(tk_root):
     def widths(section, metric):
         tab._metric_notebook.select(section._frame)
         tk_root.update_idletasks()
-        return (
-            section.rated_table.table_frame.winfo_width(),
-            section.input_table.table_frame.winfo_width(),
-            section.result_panel.summary_tables[metric].winfo_width(),
-        )
+        widgets = [section.input_table.table_frame, section.result_panel.summary_tables[metric]]
+        if hasattr(section, "rated_table"):
+            widgets.insert(0, section.rated_table.table_frame)
+        return tuple(widget.winfo_width() for widget in widgets)
 
     def left_offsets(section, metric):
         tab._metric_notebook.select(section._frame)
         tk_root.update_idletasks()
-        return tuple(
-            widget.winfo_rootx() - section._frame.winfo_rootx()
-            for widget in (
-                section.rated_table.table_frame,
-                section.input_table.table_frame,
-                section.result_panel.summary_tables[metric],
-            )
-        )
+        widgets = [section.input_table.table_frame, section.result_panel.summary_tables[metric]]
+        if hasattr(section, "rated_table"):
+            widgets.insert(0, section.rated_table.table_frame)
+        return tuple(widget.winfo_rootx() - section._frame.winfo_rootx() for widget in widgets)
 
     initial = {metric: widths(tab.sections[metric], metric) for metric in ("CSPF", "HSPF")}
     initial_offsets = {

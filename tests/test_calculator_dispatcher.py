@@ -94,7 +94,6 @@ def test_dispatcher_hong_kong_hspf_smoke_calculates_hspf():
 
     result = calculator.calculate_hspf(
         {
-            "rated_heating_capacity": 6300,
             "7_full": {"capacity": 6300, "power": 1500},
             "7_half": {"capacity": 3200, "power": 800},
         }

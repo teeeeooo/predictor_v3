@@ -47,7 +47,6 @@ def test_build_cspf_input_matches_section_contract():
 
 def test_build_hspf_input_matches_section_contract():
     measured = build_hspf_input(
-        rated_heating_capacity=6300,
         full_capacity=6300,
         full_power=1500,
         half_capacity=3200,
@@ -55,10 +54,21 @@ def test_build_hspf_input_matches_section_contract():
     )
 
     assert measured == {
-        "rated_heating_capacity": 6300,
         "7_full": {"capacity": 6300, "power": 1500},
         "7_half": {"capacity": 3200, "power": 800},
     }
+
+
+def test_build_hspf_input_can_include_optional_rated_capacity():
+    measured = build_hspf_input(
+        full_capacity=6300,
+        full_power=1500,
+        half_capacity=3200,
+        half_power=800,
+        rated_heating_capacity=6300,
+    )
+
+    assert measured["rated_heating_capacity"] == 6300
 
 
 def test_format_cspf_result_contains_existing_result_lines():

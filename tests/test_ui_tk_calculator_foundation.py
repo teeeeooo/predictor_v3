@@ -73,7 +73,6 @@ def test_hong_kong_hspf_smoke_via_resolver():
     calc = create_calculator_for_profile(profile_id=profile_id)
     result = calc.calculate_hspf(
         {
-            "rated_heating_capacity": 6300,
             "7_full": {"capacity": 6300, "power": 1500},
             "7_half": {"capacity": 3200, "power": 800},
         }

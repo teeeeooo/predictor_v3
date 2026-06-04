@@ -37,21 +37,12 @@ class HongKongHspfSection:
         self._frame = ttk.LabelFrame(parent, text=f"HSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
-        self.rated_table = MetricInputTable(
-            self._frame,
-            columns=(("capacity", "능력 [W]"),),
-            rows=(("rated", "정격 표기치"),),
-            editable_cells={("rated", "capacity"): "rated_heating_capacity"},
-        )
-        self.rated_table.grid(
+        ttk.Label(self._frame, text="시험 입력").grid(
             row=0,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
-            pady=(ISO_SECTION_BLOCK_GAP, 6),
-        )
-        ttk.Label(self._frame, text="시험 입력").grid(
-            row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 4)
+            pady=(ISO_SECTION_BLOCK_GAP, 4),
         )
         self.input_table = MetricInputTable(
             self._frame,
@@ -68,7 +59,7 @@ class HongKongHspfSection:
             },
         )
         self.input_table.grid(
-            row=2,
+            row=1,
             column=0,
             sticky="ew",
             padx=ISO_SECTION_PADX,
@@ -76,13 +67,12 @@ class HongKongHspfSection:
         )
         self.result_panel = ResultPanel(self._frame, title="HSPF 결과")
         self.result_panel.grid(
-            row=3,
+            row=2,
             column=0,
             sticky="ew",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.rated_table.set_values({"rated_heating_capacity": "6300"})
         self.input_table.set_values(
             {
                 "full_capacity": "6300",
@@ -91,10 +81,8 @@ class HongKongHspfSection:
                 "half_power": "800",
             }
         )
-        self.rated_controller = ExcelLikeTableController(self.rated_table)
         self.input_controller = ExcelLikeTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
-        self.rated_table.set_values_changed_callback(self._auto_calc.schedule)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self._auto_calc.flush_now()
@@ -104,9 +92,7 @@ class HongKongHspfSection:
 
     def _read_inputs(self) -> Mapping[str, object]:
         values = self.input_table.get_numeric_values()
-        rated_values = self.rated_table.get_numeric_values()
         return build_hspf_input(
-            rated_heating_capacity=rated_values["rated_heating_capacity"],
             full_capacity=values["full_capacity"],
             full_power=values["full_power"],
             half_capacity=values["half_capacity"],

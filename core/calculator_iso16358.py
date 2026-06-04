@@ -1274,14 +1274,10 @@ class ISO16358Calculator:
     def _iso_hspf_common_load_line(
         self,
         hspf_cfg: dict,
-        rated_heating_capacity: float
+        rated_heating_capacity: float | None,
+        resolved: dict | None = None
     ) -> dict:
         load_line_cfg = hspf_cfg.get("load_line", {})
-        if load_line_cfg.get("source") != "rated_heating_capacity":
-            source = load_line_cfg.get("source")
-            raise ValueError(
-                f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF."
-            )
         required_fields = (
             "zero_load_temp",
             "full_load_temp",
@@ -1305,12 +1301,52 @@ class ISO16358Calculator:
                 "Invalid ISO 16358-2 HSPF load_line: rated_capacity_factor must be positive."
             )
 
-        l_h_ref = rated_heating_capacity * rated_capacity_factor
+        source = load_line_cfg.get("source")
+        if source == "rated_heating_capacity":
+            if rated_heating_capacity is None:
+                raise ValueError(
+                    "rated_heating_capacity must be provided explicitly in "
+                    "measured_inputs for ISO 16358-2 HSPF."
+                )
+            reference_capacity = float(rated_heating_capacity)
+            if reference_capacity <= 0:
+                raise ValueError("rated_heating_capacity must be positive.")
+        elif source == "measured_point_capacity":
+            if resolved is None:
+                raise ValueError(
+                    "Invalid ISO 16358-2 HSPF load_line: resolved measured points are required."
+                )
+            point_key = load_line_cfg.get("point_key")
+            field = load_line_cfg.get("field", "capacity")
+            if not point_key or not field:
+                raise ValueError(
+                    "Invalid ISO 16358-2 HSPF load_line: point_key and field are required "
+                    "for measured_point_capacity."
+                )
+            try:
+                reference_capacity = float(resolved[point_key][field])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(
+                    "Invalid ISO 16358-2 HSPF load_line: measured_point_capacity "
+                    f"requires measured point '{point_key}' field '{field}'."
+                ) from exc
+            if reference_capacity <= 0:
+                raise ValueError(
+                    "Invalid ISO 16358-2 HSPF load_line: measured_point_capacity "
+                    f"for point '{point_key}' field '{field}' must be positive."
+                )
+        else:
+            raise ValueError(
+                f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF."
+            )
+
+        l_h_ref = reference_capacity * rated_capacity_factor
         denominator = zero_load_temp - full_load_temp
         return {
             "zero_load_temp": zero_load_temp,
             "full_load_temp": full_load_temp,
             "rated_capacity_factor": rated_capacity_factor,
+            "source": source,
             "l_h_ref": l_h_ref,
             "line": (
                 -l_h_ref / denominator,
@@ -1604,15 +1640,12 @@ class ISO16358Calculator:
     def calculate_hspf_iso16358_common(
         self,
         measured_inputs: dict,
-        rated_heating_capacity: float,
+        rated_heating_capacity: float | None = None,
         aux_cop: float = 1.0
     ) -> dict:
         """
         ISO 16358-2 HSPF common engine.
         """
-        if rated_heating_capacity <= 0:
-            raise ValueError("rated_heating_capacity must be positive.")
-
         hspf_cfg = self.config.get("hspf", {})
         correction_cfg = hspf_cfg.get("correction", {})
         if aux_cop == 1.0:
@@ -1626,7 +1659,7 @@ class ISO16358Calculator:
             points, hspf_cfg
         )
         load_line_info = self._iso_hspf_common_load_line(
-            hspf_cfg, rated_heating_capacity
+            hspf_cfg, rated_heating_capacity, resolved
         )
         frost_boundaries = hspf_cfg.get("frost_boundaries", {})
 
@@ -1682,21 +1715,12 @@ class ISO16358Calculator:
         profile = self.config.get("hspf", {}).get("profile")
         if profile == "iso16358_2_hspf":
             rated_heating_capacity = measured_inputs.get("rated_heating_capacity")
-            if rated_heating_capacity is None:
-                load_line_cfg = self.config.get("hspf", {}).get("load_line", {})
-                source = load_line_cfg.get("source")
-                if source == "rated_heating_capacity":
-                    raise ValueError(
-                        "rated_heating_capacity must be provided explicitly in "
-                        "measured_inputs for ISO 16358-2 HSPF."
-                    )
-                raise ValueError(
-                    f"Unsupported or missing load_line source '{source}' for ISO 16358-2 HSPF."
-                )
+            if rated_heating_capacity is not None:
+                rated_heating_capacity = float(rated_heating_capacity)
 
             return self.calculate_hspf_iso16358_common(
                 measured_inputs=measured_inputs,
-                rated_heating_capacity=float(rated_heating_capacity),
+                rated_heating_capacity=rated_heating_capacity,
                 aux_cop=aux_cop,
             )
 

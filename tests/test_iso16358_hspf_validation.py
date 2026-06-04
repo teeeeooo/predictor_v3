@@ -398,6 +398,32 @@ def test_iso_common_hspf_load_line_source_must_be_allowed(tmp_path):
         calculator.calculate_hspf(iso_common_points())
 
 
+def test_iso_common_hspf_measured_point_load_line_requires_point_key(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {"load_line": {"source": "measured_point_capacity"}},
+    )
+
+    with pytest.raises(ValueError, match="point_key and field are required"):
+        calculator.calculate_hspf(iso_common_points())
+
+
+def test_iso_common_hspf_measured_point_load_line_requires_existing_point(tmp_path):
+    calculator = make_iso_common_calculator(
+        tmp_path,
+        {
+            "load_line": {
+                "source": "measured_point_capacity",
+                "point_key": "missing_point",
+                "field": "capacity",
+            }
+        },
+    )
+
+    with pytest.raises(ValueError, match="missing_point"):
+        calculator.calculate_hspf(iso_common_points())
+
+
 def test_iso_common_hspf_load_line_required_fields(tmp_path):
     calculator = make_iso_common_calculator(tmp_path)
     calculator.config["hspf"]["load_line"].pop("zero_load_temp")
