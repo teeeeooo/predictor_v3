@@ -19,6 +19,13 @@ A "table-shaped" surface means a 2D grid the user can read across
 columns and down rows. Single-column lists and form layouts are
 **not** covered here.
 
+Table-shaped is a trigger, not a pass condition. A compliant table surface
+must also implement the interaction baseline in this document: selection,
+copy/paste, clear, undo, navigation, edit/replace behavior, and read-only
+cell roles where applicable. A grid of labels and entries that only looks
+like a table remains non-compliant until those behaviors are present or the
+gap is explicitly reported.
+
 This document owns behavior after a table-shaped surface has been selected.
 For the `predictor_v3` rule that shapes repeated input/result data into a
 matrix table or summary result surface in the first place, see

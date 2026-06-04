@@ -142,6 +142,15 @@ across comparable items.
   Tkinter graph before Windows packaging size evidence is available.
 - Batch calculator results are result tables, not internal formula trace.
   They should use one row per case with user-facing input/output columns.
+- Table interaction and validation policy are separate. `03_SPREADSHEET_TABLE_UX_CONTRACT.md`
+  owns interaction behavior; this document owns row/cell validation policy
+  expected by each surface type.
+- Calculator batch surfaces may keep blank/partial/invalid rows result-blank
+  and calculate valid rows independently. Prefer row-local status and avoid
+  repeating long error text in every result cell.
+- ML predict/train batch surfaces must not fail silently. Invalid rows/cells
+  need pre-run validation summary, visible cell/row status, or both before
+  model execution proceeds.
 - Detail/bin schemas should be designed as profile-neutral foundations where
   practical so CSPF, HSPF, EN14825, AHRI, and KS adapters can share column
   meaning instead of creating incompatible per-profile trace shapes.
@@ -154,6 +163,9 @@ across comparable items.
 - Cells occupy one bordered or otherwise clearly structured surface.
 - A card containing scattered `label + entry` form controls that merely
   imitate a table fails this rule.
+- A bordered `Entry`/`Label` grid is not enough by itself; if the selected
+  surface is table-shaped, it must also satisfy the table interaction
+  contract and relevant toolkit adapter.
 - Header, row label, editable cell, and static/not-applicable cell meanings
   are visually distinguishable.
 - Results are shown as a metric/value table or compact summary card surface.

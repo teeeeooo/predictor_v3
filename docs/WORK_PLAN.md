@@ -60,8 +60,8 @@
 - Do not run full pytest unless explicitly requested; use focused smoke and relevant tests.
 - Keep comparison result surfaces section-local until repeated reuse proves a shared framework is necessary.
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
-- Result surface/export boundary owner: `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md`.
-- Excel-like table contract recovery owner: `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md`.
+- Result surface/export rules are owned by `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md` is decision evidence.
+- Excel-like interaction rules are owned by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`; `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md` is decision evidence.
 - Read-only result/detail table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while detail/bin tables keep TSV copy plus CSV export.
 - Main result surfaces should expose `상세 보기 ↓ / 상세 닫기 ↑` rather than user-visible `Trace` controls.
 - Detail graph x-axis is outdoor temperature `tj` shown as `Outdoor Temp [°C]`; `Bin Hours [h]` is a selectable y-series backed by `nj`.
@@ -100,4 +100,4 @@
 - Milestone decisions and lessons are in `project_log.md`.
 - Compact recall facts are in `result_reports/memory/project_memory_seed.md`.
 - UI/UX active SSOT starts at `docs/ui_ux/00_UI_UX_SYSTEM.md`.
-- Current SASO T3 design owner: `docs/designs/2026-05-29-tkinter-saso-t3-profile-design.md`.
+- Current SASO T3 design reference: `docs/designs/2026-05-29-tkinter-saso-t3-profile-design.md`.

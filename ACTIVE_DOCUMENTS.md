@@ -110,6 +110,12 @@
 | `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md` | Calculator-only lightweight UI feasibility decision | calculator deployment UI direction, Tkinter MVP tasks | packaging guide, Tkinter MVP scope, PyQt hold/fallback criteria |
 | `docs/designs/2026-05-23-tkinter-calculator-final-ux-contract.md` | Tkinter calculator final UX contract (matrix input, auto-calc, summary result) | Tkinter calculator UI tasks, input/result surface rule | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, manual smoke guide, `docs/WORK_PLAN.md` |
 | `docs/designs/2026-05-24-pyqt-calculator-reference-feature-migration-contract.md` | PyQt calculator reference-to-Tkinter migration requirement contract | calculator migration/retirement-gate tasks, reports 154/165 | Tkinter implementation slices, `docs/WORK_PLAN.md`, later retirement reconsideration |
+| `docs/designs/2026-05-29-tkinter-iso-iseer-2point-result-visual-refinement.md` | Tkinter ISO/ISEER result visual decision record | ISO/ISEER result display reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, current Tkinter result table implementation |
+| `docs/designs/2026-05-29-tkinter-iso-iseer-2point-single-design.md` | Tkinter ISO/ISEER 2-point single-mode decision record | ISO/ISEER profile/mode reference tasks | `docs/WORK_PLAN.md`, implemented Tkinter ISO/ISEER section |
+| `docs/designs/2026-05-29-tkinter-saso-t3-profile-design.md` | Tkinter SASO T3 profile decision record | SASO T3 follow-up reference tasks | implemented Tkinter SASO section, `docs/WORK_PLAN.md` |
+| `docs/designs/2026-05-30-tkinter-detail-trace-graph-result-surface-design.md` | Tkinter detail/trace/graph result decision record | detail/bin/graph follow-up reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, detail/bin implementation slices |
+| `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md` | Tkinter table contract recovery decision record | table UX recovery reference tasks | `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` |
+| `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md` | Tkinter result/export boundary decision record | result/export follow-up reference tasks | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, table export implementation slices |
 
 ## Root Result Docs
 

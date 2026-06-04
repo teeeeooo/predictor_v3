@@ -731,14 +731,16 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 조건부로 읽을 문서:
 - UI/UX 작업 시 active SSOT root `docs/ui_ux/00_UI_UX_SYSTEM.md`
-- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (UX contract) 와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` (PyQt 구현 adapter)
+- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (toolkit-neutral interaction contract) 와 해당 toolkit adapter (`docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` 또는 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`)
+  - table-shaped UI는 표처럼 보이는 grid만으로 충족되지 않는다. Excel-like interaction contract와 toolkit adapter checklist를 만족하거나 gap을 NG로 보고한다.
+  - validation/error policy는 surface별로 다르므로 `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`의 관련 heading을 확인한다.
   - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
   - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
   - GUI app shell / initial window geometry / scroll container / resize handling / scrollbar visibility 작업이면 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8 (Window Geometry And Screen Caps)를 먼저 확인한다.
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. table UI는 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지한다. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)의 contract / checklist를 먼저 확인한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
+2. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`와 해당 toolkit adapter의 contract / checklist를 먼저 확인한다. PyQt table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고, Tkinter table은 `TKINTER_TABLE_ADAPTER.md` 기준을 따른다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.

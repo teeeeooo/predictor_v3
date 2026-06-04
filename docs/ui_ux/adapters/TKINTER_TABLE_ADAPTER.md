@@ -76,6 +76,19 @@ Tkinter is the implementation, not an excuse to drop UX baseline.
 - These behaviors are not free in Tkinter. You must implement them
   yourself; see §4.
 
+New Tkinter table surfaces must pass this checklist before being treated as
+complete:
+
+- Reuse `MetricInputTable` + `ExcelLikeTableController` when the shape fits.
+- If that shape does not fit, introduce or reuse an equivalent common Tk
+  adapter that exposes cell metadata and implements the same Excel-like
+  interaction contract.
+- Do not treat a standalone `Entry`/`Label` grid as a compliant table UX.
+- Verify TSV copy/paste, Delete/Backspace clear, undo, Tab/Enter navigation,
+  replace-on-type, and read-only result/status roles where applicable.
+- If any behavior is intentionally not implemented in the slice, report it
+  as a gap/NG item rather than describing the surface as table-complete.
+
 ## 4. Implementing the baseline on an Entry grid
 
 Because Tkinter does not provide spreadsheet primitives, the
