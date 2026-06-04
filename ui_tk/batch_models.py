@@ -76,6 +76,11 @@ class BatchTableModel:
         self.rows.append(row)
         return len(self.rows) - 1
 
+    def remove_row(self, row_index: int) -> None:
+        if len(self.rows) <= 1:
+            return
+        del self.rows[row_index]
+
     def row_values(self, row_index: int) -> dict[str, str]:
         return dict(self.rows[row_index])
 

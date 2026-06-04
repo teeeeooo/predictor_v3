@@ -64,3 +64,17 @@ def test_table_model_clear_results_preserves_inputs():
     assert model.row_values(0)["input"] == "10"
     assert model.row_values(0)["result"] == ""
     assert model.row_values(0)["status"] == ""
+
+
+def test_table_model_remove_row_keeps_one_row_minimum():
+    model = BatchTableModel(_spec())
+    model.add_row({"case": "Case 2", "input": "20"})
+
+    model.remove_row(1)
+
+    assert len(model.rows) == 1
+    assert model.row_values(0)["case"] == "Case 1"
+
+    model.remove_row(0)
+
+    assert len(model.rows) == 1

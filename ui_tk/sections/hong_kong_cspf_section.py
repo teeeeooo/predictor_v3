@@ -23,6 +23,7 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.result_models import result_status
 from ui_tk.result_panel import ResultPanel
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from ui_tk.sections.hong_kong_cspf_batch_section import HongKongCspfBatchDialog
 from ui_tk.sections.iso16358_helpers import build_cspf_input
 from ui_tk.sections.result_formatting import summarize_cspf_result
 
@@ -42,6 +43,7 @@ class HongKongCspfSection:
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
+        self._batch_dialog: HongKongCspfBatchDialog | None = None
         self._frame = ttk.LabelFrame(parent, text=f"CSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
@@ -90,19 +92,28 @@ class HongKongCspfSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.detail_toggle = ttk.Button(
-            self._frame,
-            text="상세 보기 ↓",
-            command=self._toggle_detail,
-        )
-        self.detail_toggle.surface_role = "hong_kong_cspf_detail_toggle"
-        self.detail_toggle.grid(
+        self.action_row = ttk.Frame(self._frame)
+        self.action_row.grid(
             row=4,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.batch_button = ttk.Button(
+            self.action_row,
+            text="Multi 입력",
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "hong_kong_cspf_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "hong_kong_cspf_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self._detail_visible = False
         self.detail_panel = BinDetailPanel(
             self._frame,
@@ -131,6 +142,19 @@ class HongKongCspfSection:
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)
+
+    def _open_batch_dialog(self) -> None:
+        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
+            self._batch_dialog.focus()
+            return
+        self._batch_dialog = HongKongCspfBatchDialog(
+            self._frame.winfo_toplevel(),
+            self._region_label,
+            on_close=self._clear_batch_dialog,
+        )
+
+    def _clear_batch_dialog(self) -> None:
+        self._batch_dialog = None
 
     def _read_inputs(self) -> Tuple[Mapping[str, Mapping[str, float]], float]:
         values = self.input_table.get_numeric_values()
@@ -210,6 +234,9 @@ class HongKongCspfSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            if self._batch_dialog is not None:
+                self._batch_dialog.close()
+                self._batch_dialog = None
 
 
 def _bin_details(result: Mapping[str, object]) -> list[dict]:

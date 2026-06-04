@@ -19,7 +19,6 @@ from ui_tk.profile_resolver import (
     supported_metrics_for,
 )
 from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection
-from ui_tk.sections.hong_kong_cspf_batch_section import HongKongCspfBatchSection
 from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
 from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
@@ -272,10 +271,3 @@ class Iso16358Tab(ttk.Frame):
             self.sections[metric] = section
             if self.result_panel is None:
                 self.result_panel = section.result_panel
-            if factory is HongKongCspfSection:
-                batch_section = HongKongCspfBatchSection(
-                    self._metric_notebook,
-                    region_label,
-                )
-                self._metric_notebook.add(batch_section._frame, text="CSPF Batch")
-                self.sections["CSPF Batch"] = batch_section

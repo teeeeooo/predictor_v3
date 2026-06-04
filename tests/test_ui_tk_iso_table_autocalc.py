@@ -1052,6 +1052,7 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert "HSPF 계산" not in buttons
     assert "결과 복사" not in buttons
     assert "결과 지우기" not in buttons
+    assert "Multi 입력" in buttons
     for label in ("정격 표기치", "35 Full", "35 Half", "7 Full", "7 Half"):
         assert label in labels
     assert "정격" not in labels
@@ -1089,6 +1090,36 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
         assert section.result_panel._frame.grid_info()["sticky"] == "ew"
     assert cspf.rated_table.grid_info()["padx"] == ISO_SECTION_PADX
     assert cspf.rated_table.grid_info()["sticky"] == "ew"
+
+
+def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root):
+    tab = _make_hong_kong_tab(tk_root)
+    cspf = tab.sections["CSPF"]
+
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+    assert [tab._metric_notebook.tab(tab_id, "text") for tab_id in tab._metric_notebook.tabs()] == [
+        "CSPF",
+        "HSPF",
+    ]
+
+    cspf.batch_button.invoke()
+    tk_root.update_idletasks()
+    first_dialog = cspf._batch_dialog
+
+    assert first_dialog is not None
+    assert first_dialog.window.winfo_exists()
+    assert first_dialog.section.table.model.spec.profile_key == "hong_kong_cspf"
+    assert set(tab.sections) == {"CSPF", "HSPF"}
+
+    cspf.batch_button.invoke()
+    tk_root.update_idletasks()
+
+    assert cspf._batch_dialog is first_dialog
+
+    first_dialog.close()
+    tk_root.update_idletasks()
+
+    assert cspf._batch_dialog is None
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):

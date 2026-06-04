@@ -11,7 +11,16 @@ from ui_tk.batch_models import (
     BatchProfileSpec,
     BatchTableModel,
 )
-from ui_tk.layout_constants import TABLE_CELL_PADX, TABLE_CELL_PADY
+from ui_tk.layout_constants import (
+    TABLE_BODY_FONT,
+    TABLE_CELL_PADX,
+    TABLE_CELL_PADY,
+    TABLE_EDITABLE_BG,
+    TABLE_GRID_COLOR,
+    TABLE_HEADER_BG,
+    TABLE_HEADER_FONT,
+    TABLE_STATIC_BG,
+)
 
 
 class BatchCaseTable(ttk.Frame):
@@ -26,6 +35,10 @@ class BatchCaseTable(ttk.Frame):
 
     def add_row(self, values: Mapping[str, str] | None = None) -> None:
         self.model.add_row(values)
+        self._rebuild_rows()
+
+    def remove_last_row(self) -> None:
+        self.model.remove_row(len(self.model.rows) - 1)
         self._rebuild_rows()
 
     def input_rows(self) -> list[dict[str, str]]:
@@ -44,20 +57,32 @@ class BatchCaseTable(ttk.Frame):
 
     def _build_table(self) -> None:
         self.columnconfigure(0, weight=1)
-        self._table = ttk.Frame(self)
+        self._table = tk.Frame(
+            self,
+            background=TABLE_GRID_COLOR,
+            borderwidth=1,
+            relief=tk.SOLID,
+        )
         self._table.grid(row=0, column=0, sticky="ew")
         self._build_headers()
         self._rebuild_rows()
 
     def _build_headers(self) -> None:
         for column_index, column in enumerate(self.model.spec.columns):
-            label = ttk.Label(self._table, text=column.label)
+            label = tk.Label(
+                self._table,
+                text=column.label,
+                background=TABLE_HEADER_BG,
+                anchor="center",
+                font=TABLE_HEADER_FONT,
+            )
             label.grid(
                 row=0,
                 column=column_index,
                 sticky="ew",
-                padx=TABLE_CELL_PADX,
-                pady=TABLE_CELL_PADY,
+                padx=(0, 1),
+                pady=(0, 1),
+                ipady=TABLE_CELL_PADY,
             )
             self._table.columnconfigure(column_index, weight=1)
 
@@ -77,10 +102,15 @@ class BatchCaseTable(ttk.Frame):
             variable = tk.StringVar(master=self, value=row.get(column.key, ""))
             variables[column.key] = variable
             if column.role is BatchColumnRole.INPUT:
-                widget = ttk.Entry(
+                widget = tk.Entry(
                     self._table,
                     textvariable=variable,
                     width=column.width_chars,
+                    relief=tk.FLAT,
+                    borderwidth=0,
+                    background=TABLE_EDITABLE_BG,
+                    font=TABLE_BODY_FONT,
+                    justify="center",
                 )
                 variable.trace_add(
                     "write",
@@ -96,19 +126,22 @@ class BatchCaseTable(ttk.Frame):
                     lambda event, row=row_index, col=column_index: self._paste(event, row, col),
                 )
             else:
-                widget = ttk.Label(
+                widget = tk.Label(
                     self._table,
                     textvariable=variable,
                     width=column.width_chars,
-                    relief=tk.SUNKEN,
                     anchor="center",
+                    background=TABLE_STATIC_BG,
+                    font=TABLE_BODY_FONT,
                 )
             widget.grid(
                 row=row_index + 1,
                 column=column_index,
                 sticky="ew",
-                padx=TABLE_CELL_PADX,
-                pady=TABLE_CELL_PADY,
+                padx=(0, 1),
+                pady=(0, 1),
+                ipadx=TABLE_CELL_PADX,
+                ipady=TABLE_CELL_PADY,
             )
             widgets[column.key] = widget
         self._variables.append(variables)
