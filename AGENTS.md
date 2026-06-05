@@ -7,6 +7,8 @@
 ## Work Contract
 
 - 작업 전 Goal / Scope / Non-goals / Verification을 짧게 확정한다.
+- 작업 전 read budget을 짧게 정한다: target files/headings/ranges 먼저,
+  broad read는 blocker가 있을 때만 확장한다.
 - 사용자가 지정한 파일/함수/문장 범위를 넘지 않는다.
 - 작업 범위가 파일 단위로 지정된 경우, 첫 검색은 지정/허용 파일로 제한하고 legacy/archive/tests 전체 검색은 blocker가 있을 때만 확장한다.
 - 불확실한 규격, fixture, case, region 해석은 임의 결정하지 않는다.
@@ -43,7 +45,7 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 - `calculate_hspf2_v2()` / `calculate_hspf2()`는 사용자 명시 지시 없이 수정하지 않는다.
 - `model.fit()`에 `.values` 변환을 넣지 않고 Cooling / Heating 독립 모델과 monotone constraints를 유지한다.
 - UI / UX active SSOT root는 `docs/ui_ux/00_UI_UX_SYSTEM.md`다. Toolkit 선택은 `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md`, design tokens / layout은 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`를 따른다.
-- UI table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고 `blockSignals`는 `try/finally`로 감싼다. table-shaped UI를 새로 만들거나 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(table UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 따른다. 모든 table UX는 **Excel-like behavior**를 기본으로 한다 (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위). `QTableWidget` / `setCellWidget` 신규 도입 금지는 유지한다.
+- table-shaped UI를 새로 만들거나 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`와 해당 toolkit adapter를 따른다. 모든 table UX는 toolkit-neutral Excel-like parity checklist를 완료 기준으로 한다.
 - 함수명, JSON key, public API, diagnostics schema는 사용자 승인 없이 변경하지 않는다.
 - region config, HW candidate input, ML feature schema, calculator result schema를 섞지 않는다.
 - 명시적 지시 없이 구조 개선이나 리팩토링을 먼저 수행하지 않는다.

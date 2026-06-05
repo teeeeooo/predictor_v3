@@ -21,6 +21,30 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Agent workflow owner split
+
+### Tried
+- Audited `AGENTS.md`, `AGENT_TASK_ROUTER.md`, and `ACTIVE_DOCUMENTS.md`
+  after repeated read-budget drift and table-rule harness corrections.
+
+### Result
+- Split detailed agent workflows out of `AGENT_TASK_ROUTER.md` into
+  `docs/agent_workflows/` owner docs for result reports, diff/read budget,
+  project log and memory, smoke-loop mode, and documentation lifecycle.
+- Kept `AGENT_TASK_ROUTER.md` as a routing gate map instead of a long workflow
+  manual.
+
+### Decision
+- `AGENTS.md` remains the lite entrypoint.
+- `AGENT_TASK_ROUTER.md` should route to owner docs and keep only short gates.
+
+### Lesson
+- Adding more rules to the router made "read only needed ranges" harder to
+  follow. Long procedure bodies need separate owners so the router can stay
+  operationally cheap to inspect.
+
+---
+
 ## 2026-06-04 — Scoped first-search harness rule
 
 ### Tried

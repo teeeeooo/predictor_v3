@@ -23,12 +23,22 @@
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
 | `AGENTS.md` | Lite agent entrypoint | user/session start, `README.md` | `AGENT_TASK_ROUTER.md`, docs guardrails |
-| `AGENT_TASK_ROUTER.md` | Task routing and workflow owner | `AGENTS.md`, agent workflow | task-specific docs, result report workflow |
+| `AGENT_TASK_ROUTER.md` | Task routing index and gate map | `AGENTS.md`, agent workflow | task-specific docs, agent workflow owner docs |
 | `README.md` | Repository public entrypoint | repo root | `project_brief.md`, `project_log.md`, `ACTIVE_DOCUMENTS.md`, docs map |
 | `ACTIVE_DOCUMENTS.md` | Active document inventory | `README.md`, `AGENT_TASK_ROUTER.md` | all active docs by owner relationship |
 | `project_brief.md` | Current state handoff | `README.md`, new sessions | `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md`, `project_log.md` |
 | `project_log.md` | Decision/history log | task reports, lifecycle summaries | project docs, historical decisions |
 | `PROJECT_CHARTER.md` | Long-term project charter | planning tasks | `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
+
+## Agent Workflow Docs
+
+| Document | Role | Primary inbound | Primary outbound |
+| --- | --- | --- | --- |
+| `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` | Result report creation, numbering, terminal output, and commit/push workflow owner | `AGENT_TASK_ROUTER.md`, report-backed tasks | `result_reports/active/`, `result_reports/summaries/`, `result_reports/archive/`, `result_reports/memory/` |
+| `docs/agent_workflows/DIFF_READ_BUDGET.md` | Read-budget and diff-inspection discipline owner | `AGENT_TASK_ROUTER.md`, large docs/diff/code inspection tasks | targeted source/docs ranges, terminal output discipline |
+| `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` | Project log update judgment and memory seed workflow owner | `AGENT_TASK_ROUTER.md`, lifecycle/memory/log tasks | `project_log.md`, `result_reports/memory/project_memory_seed.md`, project log archive |
+| `docs/agent_workflows/SMOKE_LOOP_MODE.md` | Manual UI smoke-loop micro-fix workflow owner | `AGENT_TASK_ROUTER.md`, user smoke-loop instructions | focused UI fixes, stable checkpoint follow-up |
+| `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md` | Documentation sync and active-doc lifecycle workflow owner | `AGENT_TASK_ROUTER.md`, docs/lifecycle/commit tasks | `ACTIVE_DOCUMENTS.md`, work plan/refactor/brief/log sync judgments |
 
 ## Core Project Docs
 
