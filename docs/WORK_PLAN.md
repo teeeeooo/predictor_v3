@@ -41,27 +41,25 @@
   - 225 adds an extra profile-switch settle cycle for Hong Kong return sizing without reintroducing direct metric tab-change refit.
   - 226 concludes content-hugging sizing needs final visible-content measurement and one geometry apply, not more settle-cycle patches.
   - 227 reframes the remaining Hong Kong lower blank space and flicker as a missing toolkit-neutral content-hugging shell/form owner, with SPOT used only as concrete UX evidence.
-- Next: Tkinter content-hugging shell first slice.
+  - 228 adds the first Tkinter content-hugging shell owner and routes `Iso16358Tab` profile/detail refit through one shell geometry apply.
+- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
 
 ## Next Actions
 
-1. **Tkinter content-hugging shell first slice**
-   - Introduce a Tkinter shell/form owner for final visible-content measurement, min/max clamp, screen-bounds-safe placement, and one geometry apply where possible; keep `window_refit.py` as the scheduling owner and `window_geometry.py` as geometry primitives.
-   - Use Hong Kong calculator profile-switch/detail flows as the first validation target while reducing direct sizing responsibility inside `Iso16358Tab`.
-2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
+1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-4. **Migrate calculator main table to common foundation**
+3. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-5. **Common detail/bin result schema design**
+4. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-6. **Existing CSPF detail/bin adapter cleanup**
+5. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+6. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-8. **Graph/export alignment on common detail/bin schema**
+7. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints

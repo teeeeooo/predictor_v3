@@ -498,7 +498,7 @@ def test_fit_window_to_preferred_content_preserves_current_location():
         root.destroy()
 
 
-def test_iso_fit_path_applies_vertical_only_clamp(monkeypatch):
+def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
@@ -510,19 +510,25 @@ def test_iso_fit_path_applies_vertical_only_clamp(monkeypatch):
 
         calls = []
 
-        def record_clamp(root_arg):
-            calls.append(root_arg)
+        class FakeShell:
+            def __init__(self, root_arg):
+                self.root_arg = root_arg
 
-        monkeypatch.setattr(
-            iso16358_tab, "clamp_window_vertically_to_visible_bounds", record_clamp
-        )
+            def fit_visible_content(self, preferred_content_size, *, vertical_overflow_delta=0):
+                calls.append((self.root_arg, preferred_content_size, vertical_overflow_delta))
+
+        monkeypatch.setattr(iso16358_tab, "TkContentHuggingShell", FakeShell)
         tab = Iso16358Tab(root)
         tab.pack(fill="both", expand=True)
         root.update_idletasks()
 
         tab._fit_toplevel_to_current_content()
 
-        assert calls == [root]
+        assert len(calls) == 1
+        root_arg, preferred_content_size, vertical_overflow_delta = calls[0]
+        assert root_arg is root
+        assert preferred_content_size == tab.preferred_initial_size()
+        assert vertical_overflow_delta == tab.vertical_overflow_delta()
     finally:
         root.destroy()
 
