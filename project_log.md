@@ -21,6 +21,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Content-hugging window sizing direction
+
+### Decision
+- More settle-cycle patches are not the right long-term fix for Hong Kong
+  lower blank space and profile-switch flicker.
+- The next slice should measure the final visible content state and apply
+  window geometry once, while keeping hidden content out of height decisions.
+
+### Lesson
+- Repeated post-render fitting can stabilize stale requested sizes, but it also
+  makes flicker visible and does not guarantee content-hugging height.
+
+---
+
 ## 2026-06-05 — Common dynamic refit owner decision
 
 ### Decision

@@ -39,24 +39,27 @@
   - 223 confirms the refit responsibility should move to a common dynamic content refit owner before reintroducing nested tab-change refit.
   - 224 adds the first common dynamic content refit owner slice and moves the current `Iso16358Tab` profile/detail/region scheduler path onto it.
   - 225 adds an extra profile-switch settle cycle for Hong Kong return sizing without reintroducing direct metric tab-change refit.
-- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
+  - 226 concludes content-hugging sizing needs final visible-content measurement and one geometry apply, not more settle-cycle patches.
+- Next: content-hugging window sizing implementation first slice.
 
 ## Next Actions
 
-1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
+1. **Content-hugging window sizing implementation first slice**
+   - Coalesce profile-switch/detail refit into final visible-content measurement plus one geometry apply; keep hidden content for width protection only and avoid direct metric tab-change refit until Windows smoke confirms stability.
+2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-3. **Migrate calculator main table to common foundation**
+4. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-4. **Common detail/bin result schema design**
+5. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-5. **Existing CSPF detail/bin adapter cleanup**
+6. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-6. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-7. **Graph/export alignment on common detail/bin schema**
+8. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints
