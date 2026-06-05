@@ -40,12 +40,14 @@
   - 224 adds the first common dynamic content refit owner slice and moves the current `Iso16358Tab` profile/detail/region scheduler path onto it.
   - 225 adds an extra profile-switch settle cycle for Hong Kong return sizing without reintroducing direct metric tab-change refit.
   - 226 concludes content-hugging sizing needs final visible-content measurement and one geometry apply, not more settle-cycle patches.
-- Next: content-hugging window sizing implementation first slice.
+  - 227 reframes the remaining Hong Kong lower blank space and flicker as a missing toolkit-neutral content-hugging shell/form owner, with SPOT used only as concrete UX evidence.
+- Next: Tkinter content-hugging shell first slice.
 
 ## Next Actions
 
-1. **Content-hugging window sizing implementation first slice**
-   - Coalesce profile-switch/detail refit into final visible-content measurement plus one geometry apply; keep hidden content for width protection only and avoid direct metric tab-change refit until Windows smoke confirms stability.
+1. **Tkinter content-hugging shell first slice**
+   - Introduce a Tkinter shell/form owner for final visible-content measurement, min/max clamp, screen-bounds-safe placement, and one geometry apply where possible; keep `window_refit.py` as the scheduling owner and `window_geometry.py` as geometry primitives.
+   - Use Hong Kong calculator profile-switch/detail flows as the first validation target while reducing direct sizing responsibility inside `Iso16358Tab`.
 2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
 3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**

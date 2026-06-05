@@ -21,6 +21,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Content-hugging shell/form contract direction
+
+### Decision
+- Content-hugging sizing should be handled as a toolkit-neutral shell/form
+  contract, not as per-screen local sizing patches.
+- SPOT is evidence that build, measure requested content, clamp, center, and
+  apply geometry once is feasible; it is not a source of truth or dependency.
+
+### Lesson
+- Refit scheduling alone cannot guarantee content-hugging UX when shell/form
+  ownership is missing.
+
+---
+
 ## 2026-06-05 — Content-hugging window sizing direction
 
 ### Decision
