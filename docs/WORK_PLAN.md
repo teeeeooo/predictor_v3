@@ -96,8 +96,10 @@
   - Covers portable geometry, ISO/ISEER 2-point adoption, profile switch polish, Design First Gate use, and SASO T3 design through reports 184~190a2.
 - `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`
   - Covers active reports 190-b through 194-e plus the 194-f graph axis label hotfix.
-- `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`
+  - `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`
   - Covers active reports 196-a through 199-c: graph label closeout, input replace-on-type, multi-monitor geometry, launch/detail auto-fit, viewport policy documentation, and UI/UX doc numbering cleanup.
+- `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md`
+  - Covers reports 202 through 221-b: main merge closeout, WPF spike closeout, calculator_tk batch/table foundation arc, selected-range fill paste, window refit policy, and 221-b local refit attempt. Report 221-c stays active as direct next-decision evidence.
 
 ## Historical Notes / References
 

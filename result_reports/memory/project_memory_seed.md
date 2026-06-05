@@ -22,6 +22,8 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md` (covered reports `166-179e`)
 - `result_reports/summaries/191_summary-tkinter-iso-profile-expansion-arc.md` (covered reports `184-190a2`)
 - `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md` (covered reports `190b-194e` plus `194f` hotfix)
+- `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md` (covered reports `196-a-199-c`)
+- `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md` (covered reports `202-221b`, with `221c` kept active as next-decision evidence)
 
 ## Scope and Non-goals
 
@@ -549,6 +551,54 @@ entries:
       - UI technology pivot
     assertionStatus: verified
     source: result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md
+
+  - type: decision
+    topic: common Tk table foundation for table-shaped UI
+    content: Tkinter table-shaped UI should use the predictor_v3 common Tk table foundation before adding independent controllers. The foundation first slice owns reusable interaction helpers, cell roles, surface protocol, and Tk controller behavior; calculator main table migration remains pending.
+    keywords:
+      - predictor_v3
+      - Tkinter
+      - common table foundation
+      - table-shaped UI
+      - Excel-like
+    assertionStatus: verified
+    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md
+
+  - type: decision
+    topic: SPOT table UX evidence boundary
+    content: SPOT is concrete desired-UX evidence for table interaction feel, not a source of truth, dependency, vendor target, or copy target. The toolkit-neutral table source of truth remains docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md.
+    keywords:
+      - predictor_v3
+      - SPOT
+      - table UX
+      - evidence
+      - source of truth
+    assertionStatus: verified
+    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md
+
+  - type: decision
+    topic: selected-range fill paste table contract
+    content: Selected-range fill paste is part of the common table UX target; a 1 x N clipboard pasted into an M x N editable selection repeats the clipboard row for each selected row, and a 1 x 1 clipboard can fill the selected editable range while read-only/result cells remain protected.
+    keywords:
+      - predictor_v3
+      - selected-range fill paste
+      - table UX
+      - read-only result cells
+      - Excel-like
+    assertionStatus: verified
+    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md
+
+  - type: open_question
+    topic: common dynamic content refit owner
+    content: Dynamic and nested content refit is a toolkit-neutral owner-boundary problem. Hong Kong direct metric tab-change refit caused a Windows resize loop and was disabled in 221C; Hong Kong lower blank space remains unresolved until a common dynamic content refit owner preflight decides the shared scheduler, suppress guard, and reentrant protection boundary.
+    keywords:
+      - predictor_v3
+      - dynamic content refit
+      - nested notebook
+      - Hong Kong
+      - window geometry
+    assertionStatus: observed
+    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md; result_reports/active/221c_dynamic-content-refit-loop-stabilization.md
 ```
 
 ## Known Gaps

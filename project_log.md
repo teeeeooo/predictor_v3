@@ -21,6 +21,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Table/window refit report lifecycle cleanup
+
+### Result
+- Summarized and archived completed reports from the post-main table/window
+  refit arc through 221-b.
+- Kept 221-c active because it is the direct evidence for the common dynamic
+  content refit owner preflight.
+
+### Decision
+- Active reports should now focus on the current blocker and next decision:
+  common dynamic content refit owner preflight.
+
+---
+
 ## 2026-06-05 — Nested notebook window refit policy
 
 ### Tried
