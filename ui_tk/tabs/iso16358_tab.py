@@ -28,6 +28,7 @@ from ui_tk.layout_constants import (
     APP_WINDOW_MIN_VISIBLE_WIDTH,
 )
 from ui_tk.scrollable_frame import ScrollableFrame
+from ui_tk.window_refit import DynamicContentRefitScheduler
 from ui_tk.window_geometry import (
     clamp_window_vertically_to_visible_bounds,
     fit_window_to_preferred_content,
@@ -78,8 +79,10 @@ class Iso16358Tab(ttk.Frame):
         self._saso_t3_frame = ttk.Frame(self._content)
         self._two_point_section = None
         self._saso_t3_section = None
-        self._suppress_metric_tab_refit = False
-        self._pending_refit_id = None
+        self._refit_scheduler = DynamicContentRefitScheduler(
+            self,
+            self._fit_toplevel_to_current_content,
+        )
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -141,8 +144,7 @@ class Iso16358Tab(ttk.Frame):
         current_tab_height = 0
         if self._current_mode() == MODE_HONG_KONG:
             original_tab = self._metric_notebook.select()
-            self._suppress_metric_tab_refit = True
-            try:
+            with self._refit_scheduler.suppress_requests():
                 for tab_id in self._metric_notebook.tabs():
                     self._metric_notebook.select(tab_id)
                     self.update_idletasks()
@@ -154,8 +156,6 @@ class Iso16358Tab(ttk.Frame):
                 if original_tab:
                     self._metric_notebook.select(original_tab)
                     self.update_idletasks()
-            finally:
-                self._suppress_metric_tab_refit = False
 
         # Base content size on the natural size of the outer frame.
         content_width = max(
@@ -192,19 +192,7 @@ class Iso16358Tab(ttk.Frame):
         self._schedule_toplevel_refit()
 
     def _schedule_toplevel_refit(self) -> None:
-        if self._pending_refit_id is not None:
-            return
-        self._pending_refit_id = self.after_idle(self._schedule_settled_refit)
-
-    def _schedule_settled_refit(self) -> None:
-        self.update_idletasks()
-        self._pending_refit_id = self.after_idle(self._run_scheduled_refit)
-
-    def _run_scheduled_refit(self) -> None:
-        try:
-            self._fit_toplevel_to_current_content()
-        finally:
-            self._pending_refit_id = None
+        self._refit_scheduler.request_refit()
 
     def _fit_toplevel_to_current_content(self) -> None:
         root = self.winfo_toplevel()

@@ -37,15 +37,15 @@
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
   - 220 resolved selected-range fill paste; 221B added local nested-notebook refit scheduling, and 221C stabilized the resulting Hong Kong resize loop by disabling direct metric tab-change refit.
   - 223 confirms the refit responsibility should move to a common dynamic content refit owner before reintroducing nested tab-change refit.
-- Next: common dynamic content refit owner first slice.
+  - 224 adds the first common dynamic content refit owner slice and moves the current `Iso16358Tab` profile/detail/region scheduler path onto it.
+- Next: Windows smoke closeout for common dynamic refit owner and Hong Kong metric notebook sizing.
 
 ## Next Actions
 
-1. **Common dynamic content refit owner first slice**
-   - Add a small common owner for coalesced refit scheduling, running/pending guard, settled refit, suppress guard, and trigger registration; then move the current `Iso16358Tab` profile/detail/region scheduler path onto it.
-2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table and Hong Kong metric notebook sizing**
+1. **Windows smoke closeout for common dynamic refit owner and Hong Kong metric notebook sizing**
+   - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
+2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-   - Verify Hong Kong CSPF/HSPF metric tab switching, profile switch back to Hong Kong, and detail open/close refit behavior.
 3. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
 4. **Common detail/bin result schema design**

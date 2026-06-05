@@ -998,7 +998,7 @@ def test_iso_refit_scheduler_uses_settled_after_idle(tk_root, monkeypatch):
 
     callbacks.pop(0)()
     assert fit_calls == ["fit"]
-    assert tab._pending_refit_id is None
+    assert tab._refit_scheduler.is_pending is False
 
 
 def test_metric_tab_change_refit_is_disabled_until_common_owner(tk_root, monkeypatch):
@@ -1016,9 +1016,8 @@ def test_metric_tab_measurement_suppresses_refit(tk_root, monkeypatch):
     calls = []
     monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
 
-    tab._suppress_metric_tab_refit = True
-    tab._on_metric_tab_changed()
-    tab._suppress_metric_tab_refit = False
+    with tab._refit_scheduler.suppress_requests():
+        tab._on_metric_tab_changed()
     tab._on_metric_tab_changed()
 
     assert calls == []
@@ -1046,7 +1045,7 @@ def test_refit_scheduler_blocks_reentrant_requests_during_fit(tk_root, monkeypat
 
     assert fit_calls == ["fit"]
     assert callbacks == []
-    assert tab._pending_refit_id is None
+    assert tab._refit_scheduler.is_pending is False
 
 
 def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
