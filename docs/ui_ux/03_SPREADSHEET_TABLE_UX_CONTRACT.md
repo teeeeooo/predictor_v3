@@ -39,6 +39,11 @@ This document is the source of truth for table UX completion across
 toolkits. Toolkit adapters describe how to implement the contract; they are
 not alternate rule sources.
 
+Concrete implementations and external examples may be used as evidence for
+the desired interaction feel. They do not replace this toolkit-neutral
+contract, and they do not become owner docs. The same interaction target
+applies to Tkinter, PySide, WPF, Web, and any future table-shaped surface.
+
 Before a new table-shaped UI or table adapter is treated as complete:
 
 - Reuse the existing reference table implementation for the toolkit when the

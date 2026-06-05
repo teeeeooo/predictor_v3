@@ -34,22 +34,30 @@
   - 206 adds the first Hong Kong CSPF row-per-case batch slice for `calculator_tk`; Windows/manual GUI smoke remains before treating batch UX as stable.
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
-- Next: close out Windows GUI smoke for the Hong Kong CSPF batch table UX before common detail/bin schema foundation.
+  - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
+- Next: common Tk table foundation preflight before additional batch/detail table work.
 
 ## Next Actions
 
-1. **Hong Kong CSPF batch table UX Windows smoke closeout**
-   - Verify the corrected reusable Tk batch table adapter/controller against the Excel-like interaction contract on Windows.
-   - Batch result is not internal formula trace.
-   - Initial batch columns: `Case`, `Declared`, `35 Full Cap`, `35 Full Power`, `35 Half Cap`, `35 Half Power`, `CSPF`, `CSEC`.
-2. **Common detail/bin result schema design**
+1. **Common Tk table foundation preflight**
+   - Use the toolkit-neutral table contract as the completion gate and SPOT only as concrete behavior evidence for desired Tkinter table feel.
+   - Decide the reusable Tk table foundation boundary before another independent table controller is added.
+2. **Common Tk table foundation first slice**
+   - Build the smallest shared Tk table surface/controller that can satisfy paste, undo, navigation, read-only result copy, and layout sizing parity.
+3. **Migrate Hong Kong CSPF batch table to common foundation**
+   - Keep batch result as a simple 1-row-per-case calculator surface, not internal formula trace.
+4. **Migrate calculator main table to common foundation**
+   - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
+5. **Windows smoke closeout for common table foundation**
+   - Verify the shared foundation against the Excel-like interaction contract on Windows before profile expansion.
+6. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-3. **Existing CSPF detail/bin adapter cleanup**
+7. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-4. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+8. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-5. **Graph/export alignment on common detail/bin schema**
+9. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints

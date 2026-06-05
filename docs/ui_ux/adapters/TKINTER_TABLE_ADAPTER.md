@@ -97,6 +97,19 @@ complete:
 - If any behavior is intentionally not implemented in the slice, report it
   as a gap/NG item rather than describing the surface as table-complete.
 
+Concrete Tkinter implementations outside this repository may be consulted as
+behavior evidence and implementation inspiration. For example, SPOT's
+`InitialValuesTable` demonstrates the kind of table interaction users expect:
+spreadsheet-style paste, undo, navigation, and replace-on-type. SPOT is not a
+source of truth, owner doc, dependency, vendor target, or copy target for
+`predictor_v3`.
+
+`predictor_v3` should build its own common Tk table foundation. New Tkinter
+table-shaped UI should use that foundation once it exists; until then, a new
+standalone controller must explain why the existing table foundation cannot be
+used and must list controller-level parity tests in the result report. Avoid
+creating independent Entry/Label-grid controllers for each feature.
+
 ## 4. Implementing the baseline on an Entry grid
 
 Because Tkinter does not provide spreadsheet primitives, the
