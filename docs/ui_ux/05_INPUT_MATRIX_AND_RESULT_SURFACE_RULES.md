@@ -145,9 +145,16 @@ across comparable items.
 - Table interaction and validation policy are separate. `03_SPREADSHEET_TABLE_UX_CONTRACT.md`
   owns interaction behavior; this document owns row/cell validation policy
   expected by each surface type.
-- Calculator batch surfaces may keep blank/partial/invalid rows result-blank
-  and calculate valid rows independently. Prefer row-local status and avoid
-  repeating long error text in every result cell.
+- The table parity checklist is intentionally not repeated here. If a
+  surface is table-shaped, use `03_SPREADSHEET_TABLE_UX_CONTRACT.md` for
+  interaction pass/fail validation and this document for validation/error
+  policy.
+- Calculator auto-calc batch surfaces may keep blank, partial, or invalid
+  rows result-blank while calculating valid rows independently. This avoids
+  repeated error text while the user is still typing.
+- Calculator batch surfaces may use a compact dialog-level summary when it
+  helps review, but should not turn incomplete input into noisy per-cell
+  errors.
 - ML predict/train batch surfaces must not fail silently. Invalid rows/cells
   need pre-run validation summary, visible cell/row status, or both before
   model execution proceeds.

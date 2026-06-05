@@ -10,6 +10,8 @@
 - Framework-specific rules live in:
   - `adapters/PYQT_TABLE_IMPLEMENTATION.md`
   - `adapters/TKINTER_TABLE_ADAPTER.md`
+  - future toolkit adapters such as PySide or WPF, when those toolkits
+    are approved for a table surface
 - The historical reference at
   `_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` was a PyQt-only
   contract from a prior project. It is **source / history only**;
@@ -30,6 +32,44 @@ This document owns behavior after a table-shaped surface has been selected.
 For the `predictor_v3` rule that shapes repeated input/result data into a
 matrix table or summary result surface in the first place, see
 `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
+
+## Completion gate
+
+This document is the source of truth for table UX completion across
+toolkits. Toolkit adapters describe how to implement the contract; they are
+not alternate rule sources.
+
+Before a new table-shaped UI or table adapter is treated as complete:
+
+- Reuse the existing reference table implementation for the toolkit when the
+  shape fits.
+- If the reference implementation cannot be reused, record the reason and
+  the controller-level parity test plan in the result report.
+- Record the table parity checklist below as pass/fail evidence in the
+  report validation section.
+- If a toolkit-specific adapter does not yet exist, use this document
+  directly as the acceptance contract and record any adapter gap.
+- Windows or platform smoke is a final platform check. If a core interaction
+  bug is first discovered there, record it as a validation gap and add an
+  automated helper/controller-level guard in the next correction slice.
+
+Toolkit-neutral parity checklist:
+
+- multi-cell rectangular selection
+- copy as TSV
+- paste from TSV
+- single-column multi-row paste
+- Delete/Backspace clear
+- grouped undo for rectangular paste/clear/edit operations
+- Tab/Enter navigation and shifted variants
+- arrow-key navigation in selection mode
+- click/type replace-on-type
+- read-only result cell copy
+- read-only result mutation prevention
+- row identity uses row headers by default, not calculation input columns
+- layout sizing acceptance: a table/dialog must not unnecessarily enlarge
+  the parent/main window, and the default viewport must show the core
+  rows/columns without excessive blank space
 
 ## Surface architecture requirements
 

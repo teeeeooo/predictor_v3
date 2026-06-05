@@ -71,7 +71,7 @@ UI 경계:
 - `setCellWidget`을 새로 쓰지 않고 `QStyledItemDelegate`를 사용한다.
 - `blockSignals`는 반드시 `try/finally`로 감싼다.
 - UI/UX active SSOT root는 `docs/ui_ux/00_UI_UX_SYSTEM.md`다. Toolkit policy / design tokens / layout은 각각 `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` / `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`를 owner로 한다.
-- table-shaped UI를 생성/수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(table UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 따른다. Tkinter adapter는 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`. copy/paste TSV, multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste 경로 분리, QTimer.singleShot 1-click 규칙은 새 SSOT에서 owner로 관리한다.
+- table-shaped UI를 생성/수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`를 toolkit-neutral table UX owner로 따른다. 해당 toolkit adapter (`docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`, 또는 future adapter)는 구현 방법만 소유한다. adapter가 없으면 03 contract를 직접 acceptance로 사용하고 gap을 report에 남긴다. validation/error policy는 `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`에서 확인한다.
 - legacy `docs/ui/SPREADSHEET_TABLE_CONTRACT.md`는 삭제되었고, 동일 본문의 legacy 전문은 `docs/ui_ux/_source/SPREADSHEET_TABLE_CONTRACT_legacy_pyqt.md` 하나만 source/history로 유지한다. active 참조는 `docs/ui_ux/` SSOT 경로를 사용한다.
 - UI 작업만으로 계산 로직, ML 코드, JSON schema/key를 변경하지 않는다.
 
@@ -732,8 +732,11 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 조건부로 읽을 문서:
 - UI/UX 작업 시 active SSOT root `docs/ui_ux/00_UI_UX_SYSTEM.md`
-- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (toolkit-neutral interaction contract) 와 해당 toolkit adapter (`docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md` 또는 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`)
+- table UI 생성/수정 시 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` (toolkit-neutral interaction contract) 와 해당 toolkit adapter (`docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`, `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`, 또는 future adapter)
   - table-shaped UI는 표처럼 보이는 grid만으로 충족되지 않는다. Excel-like interaction contract와 toolkit adapter checklist를 만족하거나 gap을 NG로 보고한다.
+  - 새 table-shaped UI는 03의 parity checklist를 report validation에 pass/fail로 기록한다.
+  - 기존 reference implementation을 재사용하지 않으면 재사용 불가 사유와 controller/helper-level parity test 계획을 report에 남긴다.
+  - Windows/manual smoke에서 core interaction bug가 처음 발견되면 validation gap으로 기록하고 후속 자동 guard 후보로 남긴다.
   - validation/error policy는 surface별로 다르므로 `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`의 관련 heading을 확인한다.
   - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
   - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
@@ -741,7 +744,7 @@ commit 전에 diff를 보고 문서 갱신 필요 여부뿐 아니라, 기존 �
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
-2. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`와 해당 toolkit adapter의 contract / checklist를 먼저 확인한다. PyQt table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고, Tkinter table은 `TKINTER_TABLE_ADAPTER.md` 기준을 따른다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 **Excel-like baseline** (Ctrl+C TSV copy / Ctrl+V TSV paste / Delete·Backspace clear / Ctrl+Z undo / Tab→오른쪽 / Shift+Tab→왼쪽 / Enter→아래 / Shift+Enter→위)을 기본으로 한다 — 기존 table이 이 동작과 다르면 contract alignment 대상이다.
+2. 새 table을 만들거나 기존 table을 수정할 때는 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`와 해당 toolkit adapter의 contract / checklist를 먼저 확인한다. PyQt table은 `QTableView` + `QAbstractTableModel` + `QStyledItemDelegate` 패턴을 유지하고, Tkinter table은 `TKINTER_TABLE_ADAPTER.md` 기준을 따른다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. table UX는 03의 **Excel-like parity checklist**를 완료 기준으로 하며, 기존 table이 이 동작과 다르면 contract alignment 대상이다.
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.

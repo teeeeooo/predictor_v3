@@ -7,6 +7,9 @@
 - It assumes the toolkit-agnostic baseline in
   `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` and the common UX
   principles in `../00_UI_UX_SYSTEM.md`.
+- It is an implementation adapter, not the source of truth for table UX
+  rules. The completion gate and parity checklist live in
+  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
 - It does **not** describe PyQt5 behavior. For PyQt5, see
   `PYQT_TABLE_IMPLEMENTATION.md`.
 
@@ -83,9 +86,14 @@ complete:
 - If that shape does not fit, introduce or reuse an equivalent common Tk
   adapter that exposes cell metadata and implements the same Excel-like
   interaction contract.
+- When a new adapter/controller is introduced, the result report must state
+  why the reference implementation could not be reused and list the
+  controller-level parity tests that cover the common checklist.
 - Do not treat a standalone `Entry`/`Label` grid as a compliant table UX.
-- Verify TSV copy/paste, Delete/Backspace clear, undo, Tab/Enter navigation,
-  replace-on-type, and read-only result/status roles where applicable.
+- Verify the full toolkit-neutral parity checklist from
+  `../03_SPREADSHEET_TABLE_UX_CONTRACT.md`, including rectangular selection,
+  single-column multi-row paste, grouped undo, arrow navigation, row-header
+  identity, read-only result copy/mutation prevention, and layout sizing.
 - If any behavior is intentionally not implemented in the slice, report it
   as a gap/NG item rather than describing the surface as table-complete.
 
@@ -233,6 +241,9 @@ project when reviewing existing implementation evidence:
   default user-facing calculator screen.
 - Using the adapter as permission to replace an immediate-calc calculator
   workflow with a button-run demo layout.
+- Treating Windows/manual smoke as the first place to discover core table
+  interaction behavior. Platform smoke is a final check; discovered core
+  interaction gaps must be converted into helper/controller-level guards.
 
 ## 10. Related documents
 
