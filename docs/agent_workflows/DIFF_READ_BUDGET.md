@@ -30,6 +30,19 @@ a blocker is stated. "Might be useful" is not a blocker.
 6. `sed -n '<small range>' <file>`
 7. Only if still needed: `git diff -- <file>` or a narrow hunk/range.
 
+## Smoke Follow-up Order
+
+For manual-smoke follow-up or narrow bug follow-up work, keep the first pass to
+the reported issue path:
+
+1. issue symptom / acceptance gap;
+2. likely owner file or owner function;
+3. focused test or fake-surface guard for that owner;
+4. impacted boundary tests only after the owner path is understood.
+
+Do not re-read broad history, full reports, or `docs/WORK_PLAN.md` unless the
+owner path is ambiguous or the task changes direction.
+
 ## Search Rules
 
 - Use exact phrases, function names, filenames, or stable labels before broad

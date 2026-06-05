@@ -20,7 +20,11 @@ user asks for quick small fixes based on immediate manual UI smoke results.
   `result_reports/memory/project_memory_seed.md`.
 - Do not create `result_reports/active/` reports.
 - Do not run full pytest.
-- Run focused tests, import checks, py_compile, or targeted smoke guards.
+- Run validation in tiers:
+  - first: focused owner tests for the changed surface/controller/helper;
+  - second: impacted boundary tests if the owner touches shared behavior;
+  - final: import checks, py_compile, or targeted smoke guards required by the
+    prompt.
 - Reuse already confirmed policy context; if policy docs are needed, read only
   one short relevant section.
 - Commit/push with a small, specific UI fix message.
