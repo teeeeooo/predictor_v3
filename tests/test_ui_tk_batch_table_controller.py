@@ -165,6 +165,25 @@ def test_batch_table_single_cell_paste_fills_editable_selection_only():
     }
 
 
+def test_batch_table_selected_range_fill_paste_repeats_clipboard_row():
+    roles = (
+        BatchColumnRole.INPUT,
+        BatchColumnRole.INPUT,
+        BatchColumnRole.RESULT,
+    )
+
+    targets = editable_paste_targets((("10", "20", "SHOULD_SKIP"),), (0, 2, 0, 2), roles)
+
+    assert targets == {
+        (0, 0): "10",
+        (0, 1): "20",
+        (1, 0): "10",
+        (1, 1): "20",
+        (2, 0): "10",
+        (2, 1): "20",
+    }
+
+
 def test_batch_table_clear_targets_skip_read_only_result_columns():
     roles = (
         BatchColumnRole.INPUT,
@@ -255,4 +274,31 @@ def test_batch_table_controller_multi_column_paste_skips_result_column():
     assert table.rows == [
         {"a": "10", "b": "20", "result": "4.939"},
         {"a": "30", "b": "40", "result": ""},
+    ]
+
+
+def test_batch_table_controller_selected_range_fill_paste_repeats_clipboard_row():
+    table = _FakeBatchTable()
+    table.ensure_row_count(4)
+    controller = BatchTableController(table)
+    table.clipboard = "1\t2\tSHOULD_SKIP"
+
+    controller.select((0, 0))
+    controller.select((3, 2), extend=True)
+    controller._paste()
+
+    assert table.rows == [
+        {"a": "1", "b": "2", "result": "4.939"},
+        {"a": "1", "b": "2", "result": ""},
+        {"a": "1", "b": "2", "result": ""},
+        {"a": "1", "b": "2", "result": ""},
+    ]
+
+    controller._undo_last()
+
+    assert table.rows == [
+        {"a": "3500", "b": "900", "result": "4.939"},
+        {"a": "", "b": "", "result": ""},
+        {"a": "", "b": "", "result": ""},
+        {"a": "", "b": "", "result": ""},
     ]

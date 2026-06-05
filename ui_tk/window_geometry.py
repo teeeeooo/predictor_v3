@@ -129,9 +129,12 @@ def center_window(
     # Ensure minsize does not force the initial window larger than the
     # computed geometry on platforms that enforce minsize on display.
     init_w, init_h, _x, _y = parse_window_geometry(geom)
+    min_height = min(APP_WINDOW_FALLBACK_MIN_HEIGHT, init_h)
+    if preferred_content_size is not None:
+        min_height = min(min_height, preferred_content_size[1])
     root.minsize(
         min(APP_WINDOW_FALLBACK_MIN_WIDTH, init_w),
-        min(APP_WINDOW_FALLBACK_MIN_HEIGHT, init_h),
+        min_height,
     )
 
 

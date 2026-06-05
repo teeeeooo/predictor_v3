@@ -172,8 +172,13 @@ replace these baseline paths.
   of the selection and writes outward; cells past the table
   boundaries are silently dropped.
 - Paste smaller than the selection: a **single-cell** source is
-  repeated to fill the selection (Excel behavior); a multi-cell
-  source is **not** auto-repeated.
+  repeated to fill the selection (Excel behavior). A one-row source
+  whose column count matches the selected range width is repeated down
+  each selected row. Other multi-cell sources are **not** auto-repeated.
+- Selected-range fill paste applies across toolkits: if the clipboard is
+  `1 x N` and the selection is `M x N`, the clipboard row fills each selected
+  row. Read-only/result cells inside the selection are skipped as mutation
+  targets.
 - Paste of a non-TSV payload is rejected without modifying any cell.
 - Pasted values go through the same per-column validator as inline
   edits. Invalid pasted cells are marked but do not abort the paste;

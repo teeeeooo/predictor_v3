@@ -114,11 +114,23 @@ def editable_paste_targets(
     top, bottom, left, right = bounds
     if not matrix:
         return {}
+    selection_rows = bottom - top + 1
+    selection_columns = right - left + 1
     if len(matrix) == 1 and len(matrix[0]) == 1:
         raw_targets = (
             ((row, column), matrix[0][0])
             for row in range(top, bottom + 1)
             for column in range(left, right + 1)
+        )
+    elif (
+        selection_rows > 1
+        and len(matrix) == 1
+        and len(matrix[0]) == selection_columns
+    ):
+        raw_targets = (
+            ((row, left + column_offset), value)
+            for row in range(top, bottom + 1)
+            for column_offset, value in enumerate(matrix[0])
         )
     else:
         raw_targets = (

@@ -129,8 +129,12 @@ controller may later `register()` those cells and own the behaviors below:
   on the clipboard via `clipboard_clear` + `clipboard_append`.
 - **Ctrl + V**: read the clipboard, parse TSV, and apply it to the
   selection anchored at the top-left, following the same size rules
-  as the common contract (single-cell repeat, multi-cell no
-  auto-repeat, out-of-bounds drop).
+  as the common contract (single-cell repeat, selected-range one-row
+  fill paste, non-repeatable multi-cell top-left paste,
+  out-of-bounds drop).
+- The common Tk table foundation must verify selected-range fill paste at
+  helper/controller level. OS keyboard smoke is a final platform check; core
+  paste semantics must be covered by fake-surface/controller tests first.
 - **Delete / Backspace**: in selection mode, clear every editable cell in the
   selection in one undo group and skip disabled / read-only cells; in edit
   mode, edit the text at the caret.

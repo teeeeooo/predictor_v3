@@ -143,6 +143,49 @@ def test_controller_paste_expands_rows_skips_result_and_undo_restores_original_r
     assert surface.rows == [{"a": "3500", "b": "900", "result": "4.939"}]
 
 
+def test_controller_selected_range_fill_paste_repeats_clipboard_row():
+    surface = _FakeSurface()
+    controller = TkTableController(surface)
+    surface.ensure_row_count(4)
+    surface.clipboard = "1\t2\tSHOULD_SKIP"
+
+    controller.select((0, 0))
+    controller.select((3, 2), extend=True)
+    controller._paste()
+
+    assert surface.rows == [
+        {"a": "1", "b": "2", "result": "4.939"},
+        {"a": "1", "b": "2", "result": ""},
+        {"a": "1", "b": "2", "result": ""},
+        {"a": "1", "b": "2", "result": ""},
+    ]
+
+    controller._undo_last()
+
+    assert surface.rows == [
+        {"a": "3500", "b": "900", "result": "4.939"},
+        {"a": "", "b": "", "result": ""},
+        {"a": "", "b": "", "result": ""},
+        {"a": "", "b": "", "result": ""},
+    ]
+
+
+def test_controller_selected_range_single_cell_paste_fills_editable_cells_only():
+    surface = _FakeSurface()
+    controller = TkTableController(surface)
+    surface.ensure_row_count(2)
+    surface.clipboard = "x"
+
+    controller.select((0, 0))
+    controller.select((1, 2), extend=True)
+    controller._paste()
+
+    assert surface.rows == [
+        {"a": "x", "b": "x", "result": "4.939"},
+        {"a": "x", "b": "x", "result": ""},
+    ]
+
+
 def test_controller_clear_and_undo_are_grouped_and_active_cell_independent():
     surface = _FakeSurface()
     controller = TkTableController(surface)

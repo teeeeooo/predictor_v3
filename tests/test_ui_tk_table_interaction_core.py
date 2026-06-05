@@ -65,6 +65,43 @@ def test_mxn_paste_and_clear_filter_to_editable_roles():
     }
 
 
+def test_selected_range_one_row_clipboard_fills_each_selected_row():
+    roles = (CellRole.EDITABLE, CellRole.EDITABLE, CellRole.RESULT)
+
+    assert editable_paste_targets((("1", "2", "3"),), (0, 3, 0, 2), roles) == {
+        (0, 0): "1",
+        (0, 1): "2",
+        (1, 0): "1",
+        (1, 1): "2",
+        (2, 0): "1",
+        (2, 1): "2",
+        (3, 0): "1",
+        (3, 1): "2",
+    }
+
+
+def test_selected_range_single_cell_clipboard_fills_every_editable_cell():
+    roles = (CellRole.EDITABLE, CellRole.RESULT, CellRole.EDITABLE)
+
+    assert editable_paste_targets((("x",),), (1, 2, 0, 2), roles) == {
+        (1, 0): "x",
+        (1, 2): "x",
+        (2, 0): "x",
+        (2, 2): "x",
+    }
+
+
+def test_non_repeatable_multi_cell_clipboard_keeps_top_left_paste_policy():
+    roles = (CellRole.EDITABLE, CellRole.EDITABLE, CellRole.EDITABLE)
+
+    assert editable_paste_targets((("1", "2"), ("3", "4")), (0, 3, 0, 2), roles) == {
+        (0, 0): "1",
+        (0, 1): "2",
+        (1, 0): "3",
+        (1, 1): "4",
+    }
+
+
 def test_selection_copy_and_navigation_helpers():
     roles = (CellRole.EDITABLE, CellRole.RESULT, CellRole.DISABLED)
 

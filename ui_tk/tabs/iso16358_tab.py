@@ -131,9 +131,12 @@ class Iso16358Tab(ttk.Frame):
     def preferred_initial_size(self) -> tuple[int, int]:
         self.update_idletasks()
 
-        # Measure every metric tab so hidden tabs are not undersized.
+        # Measure every metric tab for width so hidden tabs are not clipped.
+        # Height follows the current tab; otherwise CSPF can inherit blank
+        # space from taller hidden HSPF/detail content.
         max_tab_width = 0
         max_tab_height = 0
+        current_tab_height = 0
         if self._current_mode() == MODE_HONG_KONG:
             original_tab = self._metric_notebook.select()
             for tab_id in self._metric_notebook.tabs():
@@ -142,25 +145,26 @@ class Iso16358Tab(ttk.Frame):
                 widget = self._metric_notebook.nametowidget(tab_id)
                 max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
                 max_tab_height = max(max_tab_height, widget.winfo_reqheight())
+                if tab_id == original_tab:
+                    current_tab_height = widget.winfo_reqheight()
             if original_tab:
                 self._metric_notebook.select(original_tab)
                 self.update_idletasks()
 
-        # Base content size on the natural size of the outer frame,
-        # but ensure the largest metric tab is accounted for.
+        # Base content size on the natural size of the outer frame.
         content_width = max(
             self._content.winfo_reqwidth(),
             max_tab_width,
         )
         content_height = self._content.winfo_reqheight()
         if self._current_mode() == MODE_HONG_KONG and self._metric_notebook.tabs():
-            current_tab_widget = self._metric_notebook.nametowidget(
-                self._metric_notebook.select()
-            )
+            notebook_height = self._metric_notebook.winfo_reqheight()
+            notebook_chrome_height = max(0, notebook_height - max_tab_height)
             content_height = (
                 content_height
-                - current_tab_widget.winfo_reqheight()
-                + max_tab_height
+                - notebook_height
+                + notebook_chrome_height
+                + current_tab_height
             )
 
         # Keep width breathing room, but cap vertical margin so exact-fit
