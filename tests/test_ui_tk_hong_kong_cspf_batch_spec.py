@@ -64,7 +64,6 @@ def test_hong_kong_cspf_batch_blank_and_partial_rows_leave_results_blank():
 
 def test_hong_kong_cspf_batch_spec_has_expected_columns():
     assert HONG_KONG_CSPF_BATCH_SPEC.input_keys == (
-        "case",
         DECLARED,
         FULL_CAPACITY,
         FULL_POWER,
@@ -77,5 +76,5 @@ def test_hong_kong_cspf_batch_spec_has_expected_columns():
 
 def test_hong_kong_cspf_batch_spec_defaults_to_five_rows():
     assert len(HONG_KONG_CSPF_BATCH_SPEC.default_rows) == 5
-    assert HONG_KONG_CSPF_BATCH_SPEC.default_rows[0]["case"] == "Case 1"
-    assert HONG_KONG_CSPF_BATCH_SPEC.default_rows[4]["case"] == "Case 5"
+    assert "case" not in HONG_KONG_CSPF_BATCH_SPEC.default_rows[0]
+    assert HONG_KONG_CSPF_BATCH_SPEC.default_rows[1] == {}

@@ -163,11 +163,13 @@ class Iso16358Tab(ttk.Frame):
                 + max_tab_height
             )
 
-        # Apply content-based safety margin.
+        # Keep width breathing room, but cap vertical margin so exact-fit
+        # windows do not leave a large blank band below calculator content.
         margin = APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
+        vertical_margin = min(int(content_height * margin), 18)
         return (
             int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
-            int(content_height * (1 + margin)),
+            content_height + vertical_margin,
         )
 
     # -- Calculation mode handling -------------------------------------------

@@ -26,6 +26,7 @@ from ui_tk.layout_constants import (
 )
 
 ValuesChangedCallback = Callable[[], None]
+ROW_HEADER_WIDTH_CHARS = 4
 
 
 class BatchCaseTable(ttk.Frame):
@@ -59,6 +60,9 @@ class BatchCaseTable(ttk.Frame):
 
     def column_roles(self) -> tuple[BatchColumnRole, ...]:
         return tuple(column.role for column in self.model.spec.columns)
+
+    def row_header_texts(self) -> tuple[str, ...]:
+        return tuple(str(index + 1) for index in range(len(self.model.rows)))
 
     def cell_frame(self, position: GridAddress) -> tk.Frame:
         return self._cell_frames[position]
@@ -185,10 +189,22 @@ class BatchCaseTable(ttk.Frame):
             self.interaction_controller.refresh()
 
     def _build_headers(self) -> None:
+        self.table_frame.columnconfigure(0, weight=0)
+        corner = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
+        corner.grid(row=0, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        corner.surface_role = "corner_header_cell"
+        tk.Label(
+            corner,
+            text="#",
+            width=ROW_HEADER_WIDTH_CHARS,
+            background=TABLE_HEADER_BG,
+            font=TABLE_HEADER_FONT,
+        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
         for column_index, column in enumerate(self.model.spec.columns):
-            self.table_frame.columnconfigure(column_index, weight=1)
+            grid_column = column_index + 1
+            self.table_frame.columnconfigure(grid_column, weight=1)
             cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-            cell.grid(row=0, column=column_index, sticky="nsew", padx=(0, 1), pady=(0, 1))
+            cell.grid(row=0, column=grid_column, sticky="nsew", padx=(0, 1), pady=(0, 1))
             cell.surface_role = "header_cell"
             tk.Label(
                 cell,
@@ -200,6 +216,7 @@ class BatchCaseTable(ttk.Frame):
 
     def _build_row(self, row_index: int, row: Mapping[str, str]) -> None:
         variables: dict[str, tk.StringVar] = {}
+        self._build_row_header(row_index)
         for column_index, column in enumerate(self.model.spec.columns):
             position = (row_index, column_index)
             variable = tk.StringVar(master=self, value=row.get(column.key, ""))
@@ -209,7 +226,7 @@ class BatchCaseTable(ttk.Frame):
             cell = tk.Frame(self.table_frame, background=background, takefocus=1)
             cell.grid(
                 row=row_index + 1,
-                column=column_index,
+                column=column_index + 1,
                 sticky="nsew",
                 padx=(0, 1),
                 pady=(0, 1),
@@ -232,6 +249,19 @@ class BatchCaseTable(ttk.Frame):
             self._cell_frames[position] = cell
             self._cell_widgets[position] = widget
         self._variables.append(variables)
+
+    def _build_row_header(self, row_index: int) -> None:
+        cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
+        cell.grid(row=row_index + 1, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        cell.surface_role = "row_header_cell"
+        tk.Label(
+            cell,
+            text=str(row_index + 1),
+            width=ROW_HEADER_WIDTH_CHARS,
+            anchor="center",
+            background=TABLE_HEADER_BG,
+            font=TABLE_HEADER_FONT,
+        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
 
     def _make_entry(
         self,

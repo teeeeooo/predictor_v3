@@ -104,6 +104,11 @@ pre-existing unrelated dirty files.
 - Prefer separate source/docs and report commits when practical.
 - Audit/report-only work may commit only the report.
 - Record commit hash and push status in the report.
+- When the user requested commit/push for a report-backed task, check the
+  active report count before final output. If `result_reports/active/` has
+  more than 10 reports, do not run lifecycle maintenance automatically; add a
+  short terminal note that summary/archive maintenance is pending and should
+  be handled as a separate follow-up.
 - Do not run `git pull`, `git merge`, or `git rebase` unless the user asks.
 
 ## Project Memory Delta

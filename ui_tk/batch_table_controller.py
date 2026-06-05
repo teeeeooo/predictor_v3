@@ -12,6 +12,7 @@ from ui_tk.batch_table import (
     editable_clear_targets,
     editable_paste_targets,
     positions_in_bounds,
+    resolve_adjacent_position,
     resolve_next_position,
     selection_bounds,
 )
@@ -99,6 +100,10 @@ class BatchTableController:
             ("<Shift-Return>", lambda _event: self._navigate("shift-enter")),
             ("<KP_Enter>", lambda _event: self._navigate("enter")),
             ("<Shift-KP_Enter>", lambda _event: self._navigate("shift-enter")),
+            ("<Left>", lambda _event: self._arrow("left")),
+            ("<Right>", lambda _event: self._arrow("right")),
+            ("<Up>", lambda _event: self._arrow("up")),
+            ("<Down>", lambda _event: self._arrow("down")),
             ("<F2>", self._edit_f2),
             ("<Escape>", self._escape),
         )
@@ -157,6 +162,19 @@ class BatchTableController:
         self._commit_edit()
         current = self.active or (0, 0)
         target = resolve_next_position(
+            current, self.table.row_count(), self.table.column_count(), direction
+        )
+        self.select(target)
+        self.table.focus_widget(target).focus_set()
+        if self._is_editable(target):
+            self._show_selection_caret(target)
+        return "break"
+
+    def _arrow(self, direction: str) -> str:
+        if self._mode == "edit":
+            return ""
+        current = self.active or (0, 0)
+        target = resolve_adjacent_position(
             current, self.table.row_count(), self.table.column_count(), direction
         )
         self.select(target)

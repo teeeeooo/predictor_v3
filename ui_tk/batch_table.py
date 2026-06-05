@@ -103,5 +103,27 @@ def resolve_next_position(
     raise ValueError(f"Unknown navigation direction: {direction!r}")
 
 
+def resolve_adjacent_position(
+    current: GridAddress,
+    row_count: int,
+    column_count: int,
+    direction: str,
+) -> GridAddress:
+    row, column = current
+    offsets = {
+        "left": (0, -1),
+        "right": (0, 1),
+        "up": (-1, 0),
+        "down": (1, 0),
+    }
+    if direction not in offsets:
+        raise ValueError(f"Unknown arrow direction: {direction!r}")
+    row_delta, column_delta = offsets[direction]
+    return (
+        min(max(0, row + row_delta), row_count - 1),
+        min(max(0, column + column_delta), column_count - 1),
+    )
+
+
 def selection_bounds(anchor: GridAddress, active: GridAddress) -> SelectionBounds:
     return resolve_selection_bounds(anchor, active)

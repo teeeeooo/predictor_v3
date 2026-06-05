@@ -34,7 +34,6 @@ HONG_KONG_CSPF_BATCH_SPEC = BatchProfileSpec(
     profile_key="hong_kong_cspf",
     title="Hong Kong CSPF Batch",
     columns=(
-        BatchColumnSpec(CASE, "Case", BatchColumnRole.INPUT, width_chars=10),
         BatchColumnSpec(DECLARED, "Declared", BatchColumnRole.INPUT, width_chars=12),
         BatchColumnSpec(FULL_CAPACITY, "35 Full Cap", BatchColumnRole.INPUT, width_chars=12),
         BatchColumnSpec(FULL_POWER, "35 Full Power", BatchColumnRole.INPUT, width_chars=13),
@@ -45,17 +44,16 @@ HONG_KONG_CSPF_BATCH_SPEC = BatchProfileSpec(
     ),
     default_rows=(
         {
-            CASE: "Case 1",
             DECLARED: "3500",
             FULL_CAPACITY: "3600",
             FULL_POWER: "900",
             HALF_CAPACITY: "1700",
             HALF_POWER: "380",
         },
-        {CASE: "Case 2"},
-        {CASE: "Case 3"},
-        {CASE: "Case 4"},
-        {CASE: "Case 5"},
+        {},
+        {},
+        {},
+        {},
     ),
 )
 

@@ -3,6 +3,7 @@ from ui_tk.batch_table import (
     editable_clear_targets,
     editable_paste_targets,
     positions_in_bounds,
+    resolve_adjacent_position,
     resolve_next_position,
 )
 from ui_tk.batch_table_controller import BatchTableController
@@ -33,10 +34,12 @@ class _FakeWidget:
 
 class _FakeBatchTable:
     def __init__(self):
-        self.roles = (BatchColumnRole.INPUT, BatchColumnRole.RESULT)
-        self.rows = [{"input": "3500", "result": "4.939"}]
-        self.frames = {(0, 0): _FakeWidget(), (0, 1): _FakeWidget()}
-        self.widgets = {(0, 0): _FakeWidget(), (0, 1): _FakeWidget()}
+        self.roles = (BatchColumnRole.INPUT, BatchColumnRole.INPUT, BatchColumnRole.RESULT)
+        self.rows = [{"a": "3500", "b": "900", "result": "4.939"}]
+        self.clipboard = ""
+        self.frames = {}
+        self.widgets = {}
+        self._ensure_widgets()
 
     def row_count(self):
         return len(self.rows)
@@ -49,19 +52,21 @@ class _FakeBatchTable:
 
     def ensure_row_count(self, count):
         while len(self.rows) < count:
-            self.rows.append({"input": "", "result": ""})
+            self.rows.append({"a": "", "b": "", "result": ""})
+        self._ensure_widgets()
 
     def text_at_position(self, position):
-        key = "input" if position[1] == 0 else "result"
+        key = ("a", "b", "result")[position[1]]
         return self.rows[position[0]][key]
 
     def set_positions_batch(self, values):
         changed = False
         for (row, column), value in values.items():
-            if column != 0:
+            if column not in (0, 1):
                 continue
-            if self.rows[row]["input"] != value:
-                self.rows[row]["input"] = value
+            key = ("a", "b")[column]
+            if self.rows[row][key] != value:
+                self.rows[row][key] = value
                 changed = True
         return changed
 
@@ -70,6 +75,7 @@ class _FakeBatchTable:
 
     def set_text_rows(self, rows):
         self.rows = [dict(row) for row in rows]
+        self._ensure_widgets()
 
     def cell_frame(self, position):
         return self.frames[position]
@@ -85,6 +91,21 @@ class _FakeBatchTable:
 
     def winfo_containing(self, *_args):
         return None
+
+    def clipboard_clear(self):
+        self.clipboard = ""
+
+    def clipboard_append(self, text):
+        self.clipboard = text
+
+    def clipboard_get(self):
+        return self.clipboard
+
+    def _ensure_widgets(self):
+        for row in range(len(self.rows)):
+            for column in range(len(self.roles)):
+                self.frames.setdefault((row, column), _FakeWidget())
+                self.widgets.setdefault((row, column), _FakeWidget())
 
 
 def test_batch_table_paste_targets_skip_read_only_result_columns():
@@ -161,16 +182,66 @@ def test_batch_table_navigation_moves_across_all_visible_cells():
     assert resolve_next_position((1, 2), 2, 3, "enter") == (0, 2)
 
 
+def test_batch_table_arrow_navigation_clamps_to_adjacent_visible_cell():
+    assert resolve_adjacent_position((1, 1), 3, 3, "left") == (1, 0)
+    assert resolve_adjacent_position((1, 1), 3, 3, "right") == (1, 2)
+    assert resolve_adjacent_position((1, 1), 3, 3, "up") == (0, 1)
+    assert resolve_adjacent_position((1, 1), 3, 3, "down") == (2, 1)
+    assert resolve_adjacent_position((0, 0), 3, 3, "left") == (0, 0)
+
+
 def test_batch_table_controller_undo_restores_grouped_clear_without_mutating_result():
+    table = _FakeBatchTable()
+    controller = BatchTableController(table)
+
+    controller.select((0, 0))
+    controller.select((0, 2), extend=True)
+    controller._clear()
+
+    assert table.rows == [{"a": "", "b": "", "result": "4.939"}]
+
+    controller._undo_last()
+
+    assert table.rows == [{"a": "3500", "b": "900", "result": "4.939"}]
+
+
+def test_batch_table_controller_undo_is_global_not_active_cell_local():
     table = _FakeBatchTable()
     controller = BatchTableController(table)
 
     controller.select((0, 0))
     controller.select((0, 1), extend=True)
     controller._clear()
-
-    assert table.rows == [{"input": "", "result": "4.939"}]
-
+    controller.select((0, 2))
     controller._undo_last()
 
-    assert table.rows == [{"input": "3500", "result": "4.939"}]
+    assert table.rows == [{"a": "3500", "b": "900", "result": "4.939"}]
+
+
+def test_batch_table_controller_single_column_paste_fills_multiple_rows():
+    table = _FakeBatchTable()
+    controller = BatchTableController(table)
+    table.clipboard = "10\n20\n30"
+
+    controller.select((0, 0))
+    controller._paste()
+
+    assert table.rows == [
+        {"a": "10", "b": "900", "result": "4.939"},
+        {"a": "20", "b": "", "result": ""},
+        {"a": "30", "b": "", "result": ""},
+    ]
+
+
+def test_batch_table_controller_multi_column_paste_skips_result_column():
+    table = _FakeBatchTable()
+    controller = BatchTableController(table)
+    table.clipboard = "10\t20\tSHOULD_NOT_SET\n30\t40\tSHOULD_NOT_SET"
+
+    controller.select((0, 0))
+    controller._paste()
+
+    assert table.rows == [
+        {"a": "10", "b": "20", "result": "4.939"},
+        {"a": "30", "b": "40", "result": ""},
+    ]
