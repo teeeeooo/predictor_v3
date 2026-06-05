@@ -86,3 +86,34 @@ def test_refit_scheduler_allows_new_request_after_fit_completes():
     owner.callbacks.pop(0)()
 
     assert calls == ["fit", "fit"]
+
+
+def test_refit_scheduler_supports_extra_settle_cycles():
+    owner = FakeRefitOwner()
+    calls = []
+    scheduler = DynamicContentRefitScheduler(owner, lambda: calls.append("fit"))
+
+    assert scheduler.request_refit(settle_cycles=2) is True
+    owner.callbacks.pop(0)()
+    assert calls == []
+    owner.callbacks.pop(0)()
+    assert calls == []
+    owner.callbacks.pop(0)()
+
+    assert calls == ["fit"]
+
+
+def test_refit_scheduler_pending_request_can_extend_settle_cycles():
+    owner = FakeRefitOwner()
+    calls = []
+    scheduler = DynamicContentRefitScheduler(owner, lambda: calls.append("fit"))
+
+    assert scheduler.request_refit() is True
+    assert scheduler.request_refit(settle_cycles=2) is False
+    owner.callbacks.pop(0)()
+    assert calls == []
+    owner.callbacks.pop(0)()
+    assert calls == []
+    owner.callbacks.pop(0)()
+
+    assert calls == ["fit"]

@@ -1051,13 +1051,17 @@ def test_refit_scheduler_blocks_reentrant_requests_during_fit(tk_root, monkeypat
 def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
     tab = _make_tab(tk_root)
     calls = []
-    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
+    monkeypatch.setattr(
+        tab,
+        "_schedule_toplevel_refit",
+        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
+    )
 
     tab._on_trace_visibility_changed()
     tab._mode_combo.set("Hong Kong")
     tab._on_mode_changed()
 
-    assert calls == ["fit", "fit"]
+    assert calls == [1, 2]
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):

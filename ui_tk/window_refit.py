@@ -31,6 +31,7 @@ class DynamicContentRefitScheduler:
         self._pending = False
         self._running = False
         self._suppress_count = 0
+        self._settle_remaining = 0
 
     @property
     def is_pending(self) -> bool:
@@ -44,7 +45,7 @@ class DynamicContentRefitScheduler:
     def is_suppressed(self) -> bool:
         return self._suppress_count > 0
 
-    def request_refit(self) -> bool:
+    def request_refit(self, *, settle_cycles: int = 1) -> bool:
         """Request one settled refit.
 
         Returns ``True`` when a new callback was scheduled. Requests made while
@@ -52,8 +53,11 @@ class DynamicContentRefitScheduler:
         recursive geometry loops.
         """
         if self.is_suppressed or self._pending or self._running:
+            if self._pending:
+                self._settle_remaining = max(self._settle_remaining, settle_cycles)
             return False
         self._pending = True
+        self._settle_remaining = max(1, settle_cycles)
         self._owner.after_idle(self._schedule_settled_refit)
         return True
 
@@ -70,6 +74,10 @@ class DynamicContentRefitScheduler:
         if not self._pending:
             return
         self._owner.update_idletasks()
+        if self._settle_remaining > 1:
+            self._settle_remaining -= 1
+            self._owner.after_idle(self._schedule_settled_refit)
+            return
         self._owner.after_idle(self._run_refit)
 
     def _run_refit(self) -> None:
@@ -81,3 +89,4 @@ class DynamicContentRefitScheduler:
         finally:
             self._running = False
             self._pending = False
+            self._settle_remaining = 0

@@ -188,11 +188,14 @@ class Iso16358Tab(ttk.Frame):
         return self._mode_combo.get() or MODE_ISO_ISEER_2POINT
 
     def _on_mode_changed(self, _event=None) -> None:
-        self._render_mode(self._current_mode())
-        self._schedule_toplevel_refit()
+        mode_label = self._current_mode()
+        self._render_mode(mode_label)
+        self._schedule_toplevel_refit(
+            settle_cycles=2 if mode_label == MODE_HONG_KONG else 1
+        )
 
-    def _schedule_toplevel_refit(self) -> None:
-        self._refit_scheduler.request_refit()
+    def _schedule_toplevel_refit(self, *, settle_cycles: int = 1) -> None:
+        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
 
     def _fit_toplevel_to_current_content(self) -> None:
         root = self.winfo_toplevel()

@@ -38,11 +38,12 @@
   - 220 resolved selected-range fill paste; 221B added local nested-notebook refit scheduling, and 221C stabilized the resulting Hong Kong resize loop by disabling direct metric tab-change refit.
   - 223 confirms the refit responsibility should move to a common dynamic content refit owner before reintroducing nested tab-change refit.
   - 224 adds the first common dynamic content refit owner slice and moves the current `Iso16358Tab` profile/detail/region scheduler path onto it.
-- Next: Windows smoke closeout for common dynamic refit owner and Hong Kong metric notebook sizing.
+  - 225 adds an extra profile-switch settle cycle for Hong Kong return sizing without reintroducing direct metric tab-change refit.
+- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
 
 ## Next Actions
 
-1. **Windows smoke closeout for common dynamic refit owner and Hong Kong metric notebook sizing**
+1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
 2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
