@@ -77,6 +77,30 @@ manage viewports.
 - Reset the detail/content scroll position in a predictable way after
   opening or switching content.
 
+### Nested Notebook / Dynamic Sub-tab Refit
+
+- Nested notebooks, dynamic sub-tabs, detail toggles, and scrollable
+  content can settle later than a single static section. A single fit
+  immediately after render may not be enough.
+- Hidden tab width may be measured to avoid horizontal jump, but
+  automatic fit height should use the currently visible tab or sub-tab
+  unless a product decision explicitly wants the tallest hidden content
+  to reserve vertical space.
+- Profile switches, nested tab switches, and detail open/close should
+  use the same refit scheduling policy.
+- If the first post-render fit is not stable enough, schedule a settled
+  refit on a later event-loop turn. Toolkit APIs such as a double
+  `after_idle` are implementation examples, not the policy itself.
+- Nested tab change events are refit triggers.
+- If a toolkit implementation temporarily selects hidden tabs for
+  measurement, suppress tab-change refit callbacks during that
+  measurement.
+- Geometry measurement and geometry mutation must not run in the same
+  synchronous configure path in a way that creates an event loop.
+- Preferred-size or refit scheduling behavior should be covered by a
+  focused helper/fake-trigger test when possible, so Windows smoke is
+  not the first place the scheduling bug appears.
+
 ### Saved Geometry Restore
 
 - Restore saved size and position only if the target monitor/work area
@@ -145,5 +169,9 @@ manage viewports.
 - Manual resize larger or smaller remains available.
 - Saved geometry outside the current monitor set recovers to a safe
   default.
+- Nested notebook profile/tab/detail changes trigger a refit after the
+  visible sub-tab has settled.
+- Hidden tab measurement does not reserve unnecessary visible height and
+  does not recursively trigger geometry mutation.
 - Tables, copy/export, graph/detail content, and calculation behavior
   do not change as a side effect of geometry policy.

@@ -21,6 +21,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Nested notebook window refit policy
+
+### Tried
+- 220 Windows smoke checked the common-foundation batch table and main
+  calculator sizing.
+
+### Result
+- Selected-range fill paste was resolved, but the Hong Kong metric notebook
+  still left lower blank space until a detail toggle forced a later refit.
+
+### Decision
+- Nested notebook / dynamic sub-tab refit rules belong in
+  `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`.
+- Hong Kong implementation correction is split into a follow-up instead of
+  mixing policy and code.
+
+### Lesson
+- Single-section fit rules are not enough for nested notebook surfaces.
+- A detail-toggle recovery is a signal that layout settling needs a scheduled
+  refit after the visible sub-tab stabilizes.
+
+---
+
 ## 2026-06-05 — Table UX target and common Tk foundation direction
 
 ### Decision
