@@ -97,10 +97,6 @@ class Iso16358Tab(ttk.Frame):
 
         self._metric_notebook = ttk.Notebook(self._hong_kong_frame)
         self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
-        self._metric_notebook.bind(
-            "<<NotebookTabChanged>>",
-            self._on_metric_tab_changed,
-        )
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -201,13 +197,14 @@ class Iso16358Tab(ttk.Frame):
         self._pending_refit_id = self.after_idle(self._schedule_settled_refit)
 
     def _schedule_settled_refit(self) -> None:
-        self._pending_refit_id = None
         self.update_idletasks()
         self._pending_refit_id = self.after_idle(self._run_scheduled_refit)
 
     def _run_scheduled_refit(self) -> None:
-        self._pending_refit_id = None
-        self._fit_toplevel_to_current_content()
+        try:
+            self._fit_toplevel_to_current_content()
+        finally:
+            self._pending_refit_id = None
 
     def _fit_toplevel_to_current_content(self) -> None:
         root = self.winfo_toplevel()
@@ -227,9 +224,9 @@ class Iso16358Tab(ttk.Frame):
         self._schedule_toplevel_refit()
 
     def _on_metric_tab_changed(self, _event=None) -> None:
-        if self._suppress_metric_tab_refit:
-            return
-        self._schedule_toplevel_refit()
+        # Disabled until nested/dynamic refit scheduling has a common owner.
+        # Binding this directly can create a select -> refit -> measure loop.
+        return
 
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()
