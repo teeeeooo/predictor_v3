@@ -36,12 +36,13 @@
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
   - 220 resolved selected-range fill paste; 221B added local nested-notebook refit scheduling, and 221C stabilized the resulting Hong Kong resize loop by disabling direct metric tab-change refit.
-- Next: common dynamic content refit owner preflight before reintroducing nested tab-change refit.
+  - 223 confirms the refit responsibility should move to a common dynamic content refit owner before reintroducing nested tab-change refit.
+- Next: common dynamic content refit owner first slice.
 
 ## Next Actions
 
-1. **Common dynamic content refit owner preflight**
-   - Decide the shared owner for profile switch, nested tab switch, detail toggle, scrollable content settle, suppress guards, and reentrant refit protection before reintroducing metric tab-change refit.
+1. **Common dynamic content refit owner first slice**
+   - Add a small common owner for coalesced refit scheduling, running/pending guard, settled refit, suppress guard, and trigger registration; then move the current `Iso16358Tab` profile/detail/region scheduler path onto it.
 2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table and Hong Kong metric notebook sizing**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
    - Verify Hong Kong CSPF/HSPF metric tab switching, profile switch back to Hong Kong, and detail open/close refit behavior.

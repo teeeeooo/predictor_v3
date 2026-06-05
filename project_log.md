@@ -21,6 +21,21 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-05 — Common dynamic refit owner decision
+
+### Decision
+- Dynamic content refit scheduling should move out of individual tabs into a
+  common owner before nested tab-change refit is reintroduced.
+- `ui_tk/window_geometry.py` should remain the geometry calculation/application
+  helper; the new owner should coordinate triggers, suppress guards, and
+  reentrant scheduling.
+
+### Lesson
+- Local tab-level scheduling mixed measurement, trigger binding, and mutation
+  closely enough to create a Windows resize loop.
+
+---
+
 ## 2026-06-05 — Table/window refit report lifecycle cleanup
 
 ### Result
