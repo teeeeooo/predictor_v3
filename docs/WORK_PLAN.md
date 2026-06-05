@@ -35,26 +35,22 @@
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
-- Next: common Tk table foundation first slice before additional batch/detail table work.
+- Next: Windows GUI smoke closeout for the common-foundation batch table before additional batch/detail table work.
 
 ## Next Actions
 
-1. **Common Tk table foundation first slice**
-   - Build the smallest shared Tk table surface/controller that can satisfy paste, undo, navigation, read-only result copy, and layout sizing parity.
-2. **Migrate Hong Kong CSPF batch table to common foundation**
-   - Keep batch result as a simple 1-row-per-case calculator surface, not internal formula trace.
-3. **Migrate calculator main table to common foundation**
+1. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+   - Verify paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
+2. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-4. **Windows smoke closeout for common table foundation**
-   - Verify the shared foundation against the Excel-like interaction contract on Windows before profile expansion.
-5. **Common detail/bin result schema design**
+3. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-6. **Existing CSPF detail/bin adapter cleanup**
+4. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+5. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-8. **Graph/export alignment on common detail/bin schema**
+6. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints

@@ -11,7 +11,8 @@ from ui_tk.batch_models import (
     BatchProfileSpec,
     BatchTableModel,
 )
-from ui_tk.batch_table_controller import BatchTableController, GridAddress
+from ui_tk.batch_table import GridAddress, batch_roles_to_cell_roles
+from ui_tk.batch_table_controller import BatchTableController
 from ui_tk.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
@@ -60,6 +61,9 @@ class BatchCaseTable(ttk.Frame):
 
     def column_roles(self) -> tuple[BatchColumnRole, ...]:
         return tuple(column.role for column in self.model.spec.columns)
+
+    def cell_roles(self):
+        return batch_roles_to_cell_roles(self.column_roles())
 
     def row_header_texts(self) -> tuple[str, ...]:
         return tuple(str(index + 1) for index in range(len(self.model.rows)))
@@ -152,16 +156,50 @@ class BatchCaseTable(ttk.Frame):
     def get_text_rows(self) -> list[dict[str, str]]:
         return [dict(row) for row in self.model.rows]
 
+    def snapshot(self) -> list[dict[str, str]]:
+        return self.get_text_rows()
+
+    def restore_snapshot(self, snapshot: object) -> None:
+        if not isinstance(snapshot, list):
+            return
+        normalized = self._normalize_rows(snapshot)
+        if len(normalized) != len(self.model.rows):
+            self.model.rows = normalized
+            self._rebuild_table()
+            self._notify_changed()
+            return
+        outermost = self._batch_depth == 0
+        if outermost:
+            self._batch_changed = False
+        self._batch_depth += 1
+        changed = False
+        try:
+            for row_index, row in enumerate(normalized):
+                for key, value in row.items():
+                    if self.model.rows[row_index].get(key, "") == value:
+                        continue
+                    self.model.rows[row_index][key] = value
+                    self._variables[row_index][key].set(value)
+                    changed = True
+        finally:
+            self._batch_depth -= 1
+        if outermost and (changed or self._batch_changed):
+            self._batch_changed = False
+            self._notify_changed()
+
     def set_text_rows(self, rows: Iterable[Mapping[str, str]]) -> None:
+        self.model.rows = self._normalize_rows(rows)
+        self._rebuild_table()
+        self._notify_changed()
+
+    def _normalize_rows(self, rows: Iterable[Mapping[str, str]]) -> list[dict[str, str]]:
         normalized = []
         known = {column.key for column in self.model.spec.columns}
         for values in rows:
             row = {column.key: "" for column in self.model.spec.columns}
             row.update({key: str(value) for key, value in values.items() if key in known})
             normalized.append(row)
-        self.model.rows = normalized or [{column.key: "" for column in self.model.spec.columns}]
-        self._rebuild_table()
-        self._notify_changed()
+        return normalized or [{column.key: "" for column in self.model.spec.columns}]
 
     def _build_table(self) -> None:
         self.columnconfigure(0, weight=1)

@@ -1,5 +1,6 @@
 from ui_tk.batch_models import BatchColumnRole
 from ui_tk.batch_table import (
+    batch_roles_to_cell_roles,
     editable_clear_targets,
     editable_paste_targets,
     positions_in_bounds,
@@ -50,6 +51,9 @@ class _FakeBatchTable:
     def column_roles(self):
         return self.roles
 
+    def cell_roles(self):
+        return batch_roles_to_cell_roles(self.roles)
+
     def ensure_row_count(self, count):
         while len(self.rows) < count:
             self.rows.append({"a": "", "b": "", "result": ""})
@@ -72,6 +76,13 @@ class _FakeBatchTable:
 
     def get_text_rows(self):
         return [dict(row) for row in self.rows]
+
+    def snapshot(self):
+        return self.get_text_rows()
+
+    def restore_snapshot(self, snapshot):
+        self.rows = [dict(row) for row in snapshot]
+        self._ensure_widgets()
 
     def set_text_rows(self, rows):
         self.rows = [dict(row) for row in rows]
