@@ -974,6 +974,66 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     )
 
 
+def test_iso_refit_scheduler_uses_settled_after_idle(tk_root, monkeypatch):
+    tab = _make_tab(tk_root)
+    callbacks = []
+    fit_calls = []
+
+    def fake_after_idle(callback):
+        callbacks.append(callback)
+        return f"idle-{len(callbacks)}"
+
+    monkeypatch.setattr(tab, "after_idle", fake_after_idle)
+    monkeypatch.setattr(tab, "_fit_toplevel_to_current_content", lambda: fit_calls.append("fit"))
+
+    tab._schedule_toplevel_refit()
+    tab._schedule_toplevel_refit()
+
+    assert len(callbacks) == 1
+    callbacks.pop(0)()
+    assert fit_calls == []
+    assert len(callbacks) == 1
+
+    callbacks.pop(0)()
+    assert fit_calls == ["fit"]
+    assert tab._pending_refit_id is None
+
+
+def test_metric_tab_change_uses_refit_scheduler(tk_root, monkeypatch):
+    tab = _make_hong_kong_tab(tk_root)
+    calls = []
+    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
+
+    tab._on_metric_tab_changed()
+
+    assert calls == ["fit"]
+
+
+def test_metric_tab_measurement_suppresses_refit(tk_root, monkeypatch):
+    tab = _make_hong_kong_tab(tk_root)
+    calls = []
+    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
+
+    tab._suppress_metric_tab_refit = True
+    tab._on_metric_tab_changed()
+    tab._suppress_metric_tab_refit = False
+    tab._on_metric_tab_changed()
+
+    assert calls == ["fit"]
+
+
+def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
+    tab = _make_tab(tk_root)
+    calls = []
+    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
+
+    tab._on_trace_visibility_changed()
+    tab._mode_combo.set("Hong Kong")
+    tab._on_mode_changed()
+
+    assert calls == ["fit", "fit"]
+
+
 def test_preferred_initial_size_reflects_rendered_result(tk_root):
     tab = _make_hong_kong_tab(tk_root)
     rendered_w, rendered_h = tab.preferred_initial_size()
@@ -1074,9 +1134,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     ]
     assert rendered_sections == [cspf._frame, hspf._frame]
 
-    # preferred_initial_size should use the largest metric tab, not sum them.
+    # preferred_initial_size should not sum hidden metric tabs.
     pref_w, pref_h = tab.preferred_initial_size()
-    # With two metric tabs, height should reflect the larger tab, not both stacked.
+    # With two metric tabs, height should reflect one visible tab, not both stacked.
     assert pref_h < cspf._frame.winfo_reqheight() + hspf._frame.winfo_reqheight() + 50
     assert cspf.rated_table.grid_info()["row"] < cspf.input_table.grid_info()["row"]
     for section in (cspf, hspf):

@@ -78,6 +78,8 @@ class Iso16358Tab(ttk.Frame):
         self._saso_t3_frame = ttk.Frame(self._content)
         self._two_point_section = None
         self._saso_t3_section = None
+        self._suppress_metric_tab_refit = False
+        self._pending_refit_id = None
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -95,6 +97,10 @@ class Iso16358Tab(ttk.Frame):
 
         self._metric_notebook = ttk.Notebook(self._hong_kong_frame)
         self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._metric_notebook.bind(
+            "<<NotebookTabChanged>>",
+            self._on_metric_tab_changed,
+        )
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -139,17 +145,21 @@ class Iso16358Tab(ttk.Frame):
         current_tab_height = 0
         if self._current_mode() == MODE_HONG_KONG:
             original_tab = self._metric_notebook.select()
-            for tab_id in self._metric_notebook.tabs():
-                self._metric_notebook.select(tab_id)
-                self.update_idletasks()
-                widget = self._metric_notebook.nametowidget(tab_id)
-                max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
-                max_tab_height = max(max_tab_height, widget.winfo_reqheight())
-                if tab_id == original_tab:
-                    current_tab_height = widget.winfo_reqheight()
-            if original_tab:
-                self._metric_notebook.select(original_tab)
-                self.update_idletasks()
+            self._suppress_metric_tab_refit = True
+            try:
+                for tab_id in self._metric_notebook.tabs():
+                    self._metric_notebook.select(tab_id)
+                    self.update_idletasks()
+                    widget = self._metric_notebook.nametowidget(tab_id)
+                    max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
+                    max_tab_height = max(max_tab_height, widget.winfo_reqheight())
+                    if tab_id == original_tab:
+                        current_tab_height = widget.winfo_reqheight()
+                if original_tab:
+                    self._metric_notebook.select(original_tab)
+                    self.update_idletasks()
+            finally:
+                self._suppress_metric_tab_refit = False
 
         # Base content size on the natural size of the outer frame.
         content_width = max(
@@ -183,7 +193,21 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_mode_changed(self, _event=None) -> None:
         self._render_mode(self._current_mode())
-        self.after_idle(self._fit_toplevel_to_current_content)
+        self._schedule_toplevel_refit()
+
+    def _schedule_toplevel_refit(self) -> None:
+        if self._pending_refit_id is not None:
+            return
+        self._pending_refit_id = self.after_idle(self._schedule_settled_refit)
+
+    def _schedule_settled_refit(self) -> None:
+        self._pending_refit_id = None
+        self.update_idletasks()
+        self._pending_refit_id = self.after_idle(self._run_scheduled_refit)
+
+    def _run_scheduled_refit(self) -> None:
+        self._pending_refit_id = None
+        self._fit_toplevel_to_current_content()
 
     def _fit_toplevel_to_current_content(self) -> None:
         root = self.winfo_toplevel()
@@ -200,7 +224,12 @@ class Iso16358Tab(ttk.Frame):
         self._fit_toplevel_to_current_content()
 
     def _on_trace_visibility_changed(self) -> None:
-        self.after_idle(self._fit_toplevel_to_current_content)
+        self._schedule_toplevel_refit()
+
+    def _on_metric_tab_changed(self, _event=None) -> None:
+        if self._suppress_metric_tab_refit:
+            return
+        self._schedule_toplevel_refit()
 
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()
@@ -252,6 +281,7 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_region_changed(self, _event=None) -> None:
         self._render_region(self._region_combo.get())
+        self._schedule_toplevel_refit()
 
     def _render_region(self, region_label: str) -> None:
         for tab_id in self._metric_notebook.tabs():
