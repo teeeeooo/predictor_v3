@@ -104,6 +104,12 @@ pre-existing unrelated dirty files.
 - Prefer separate source/docs and report commits when practical.
 - Audit/report-only work may commit only the report.
 - Record commit hash and push status in the report.
+- If recording the report commit hash would require editing the same report,
+  do not create a self-referential hash/update loop. Record the source/docs
+  commit when useful, and put the final pushed commit hash and push result in
+  the terminal/final response.
+- Do not leave `pending` commit/push wording in a completed report when no
+  follow-up report update is planned.
 - For a user-requested commit/push-only follow-up after validation already ran
   and no files changed since, do not repeat validation. Use one compact
   commit/push command sequence and one short final line with hash, push status,
