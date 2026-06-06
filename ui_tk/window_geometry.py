@@ -107,6 +107,32 @@ def initial_window_geometry(
     return centered_geometry(width, height, screen_width, screen_height)
 
 
+def parent_centered_content_geometry(
+    parent_geometry: str,
+    requested_content_size: tuple[int, int],
+    screen_width: int,
+    screen_height: int,
+    min_size: tuple[int, int] = (1, 1),
+) -> str:
+    """Return a content-sized dialog geometry centered on its parent window."""
+    parent_width, parent_height, parent_x, parent_y = parse_window_geometry(parent_geometry)
+    requested_width = max(requested_content_size[0], min_size[0])
+    requested_height = max(requested_content_size[1], min_size[1])
+    width, height = capped_window_size(
+        requested_width,
+        requested_height,
+        screen_width,
+        screen_height,
+    )
+    x = parent_x + (parent_width - width) // 2
+    y = parent_y + (parent_height - height) // 2
+    return clamp_geometry_to_visible_bounds(
+        format_window_geometry(width, height, x, y),
+        screen_width,
+        screen_height,
+    )
+
+
 def resolve_min_window_size(screen_width: int, screen_height: int) -> tuple[int, int]:
     return (
         min(APP_WINDOW_FALLBACK_MIN_WIDTH, screen_width),

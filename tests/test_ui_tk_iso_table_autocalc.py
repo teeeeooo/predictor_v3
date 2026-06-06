@@ -1269,7 +1269,22 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert cspf.rated_table.grid_info()["sticky"] == "ew"
 
 
-def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root):
+def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
+    from ui_tk.sections import hong_kong_cspf_batch_section as batch_dialog_module
+
+    geometry_calls = []
+    original_geometry = batch_dialog_module.parent_centered_content_geometry
+
+    def spy_parent_centered_content_geometry(*args, **kwargs):
+        geometry_calls.append((args, kwargs))
+        return original_geometry(*args, **kwargs)
+
+    monkeypatch.setattr(
+        batch_dialog_module,
+        "parent_centered_content_geometry",
+        spy_parent_centered_content_geometry,
+    )
+
     tab = _make_hong_kong_tab(tk_root)
     cspf = tab.sections["CSPF"]
 
@@ -1285,6 +1300,8 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root):
 
     assert first_dialog is not None
     assert first_dialog.window.winfo_exists()
+    assert geometry_calls
+    assert first_dialog.window.state() == "normal"
     assert first_dialog.section.table.model.spec.profile_key == "hong_kong_cspf"
     assert len(first_dialog.section.table.model.rows) == 5
     assert first_dialog.section.table.model.spec.status_keys == ()

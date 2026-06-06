@@ -27,6 +27,7 @@ from ui_tk.window_geometry import (
     format_window_geometry,
     grow_window_by_vertical_delta,
     initial_window_geometry,
+    parent_centered_content_geometry,
     parse_window_geometry,
     preferred_content_fit_geometry,
     resolve_min_window_size,
@@ -134,6 +135,43 @@ def test_initial_window_geometry_uses_content_size_with_screen_cap():
         APP_WINDOW_FALLBACK_MIN_WIDTH,
         APP_WINDOW_FALLBACK_MIN_HEIGHT,
     )
+
+
+def test_parent_centered_content_geometry_uses_content_and_min_size():
+    assert parent_centered_content_geometry(
+        "800x600+100+100",
+        requested_content_size=(640, 280),
+        screen_width=1600,
+        screen_height=1000,
+        min_size=(920, 320),
+    ) == "920x320+40+240"
+
+    assert parent_centered_content_geometry(
+        "900x700+100+50",
+        requested_content_size=(700, 500),
+        screen_width=1600,
+        screen_height=1000,
+        min_size=(500, 300),
+    ) == "700x500+200+150"
+
+
+def test_parent_centered_content_geometry_caps_to_screen():
+    screen_width, screen_height = 1600, 1000
+    max_width = min(
+        screen_width - int(screen_width * APP_WINDOW_SCREEN_MARGIN_X_RATIO),
+        int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO),
+    )
+    max_height = min(
+        screen_height - int(screen_height * APP_WINDOW_SCREEN_MARGIN_Y_RATIO),
+        int(screen_height * APP_WINDOW_MAX_HEIGHT_RATIO),
+    )
+    assert parent_centered_content_geometry(
+        "800x600+100+100",
+        requested_content_size=(3000, 2000),
+        screen_width=screen_width,
+        screen_height=screen_height,
+        min_size=(920, 320),
+    ) == f"{max_width}x{max_height}+0+0"
 
 
 def test_geometry_parser_handles_negative_coordinates():

@@ -14,6 +14,10 @@ from ui_tk.sections.hong_kong_cspf_batch_spec import (
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,
 )
+from ui_tk.window_geometry import parent_centered_content_geometry
+
+
+_BATCH_DIALOG_MIN_SIZE = (920, 320)
 
 
 class HongKongCspfBatchSection:
@@ -86,14 +90,30 @@ class HongKongCspfBatchDialog:
     ) -> None:
         self._on_close = on_close
         self.window = tk.Toplevel(parent)
+        self.window.withdraw()
         self.window.title(f"CSPF Batch ({region_label})")
-        self.window.geometry("1120x420")
-        self.window.minsize(920, 360)
         self.window.columnconfigure(0, weight=1)
         self.window.rowconfigure(0, weight=1)
         self.section = HongKongCspfBatchSection(self.window, region_label)
         self.section.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self._apply_initial_geometry(parent)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.deiconify()
+        self.window.lift()
+
+    def _apply_initial_geometry(self, parent: tk.Widget) -> None:
+        parent_toplevel = parent.winfo_toplevel()
+        parent_toplevel.update_idletasks()
+        self.window.update_idletasks()
+        self.window.minsize(*_BATCH_DIALOG_MIN_SIZE)
+        geometry = parent_centered_content_geometry(
+            parent_toplevel.geometry(),
+            (self.window.winfo_reqwidth(), self.window.winfo_reqheight()),
+            self.window.winfo_screenwidth(),
+            self.window.winfo_screenheight(),
+            _BATCH_DIALOG_MIN_SIZE,
+        )
+        self.window.geometry(geometry)
 
     def close(self) -> None:
         self.section.dispose()
