@@ -84,9 +84,11 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 
 ## Design Gate
 
-공통 구조와 특화 구조의 경계를 건드릴 가능성이 있으면 구현 전에 `grill-me` skill로 Design Gate를 통과한다.
+공통 구조와 특화 구조의 경계를 건드릴 가능성이 있으면 구현 전에 Design Gate를 통과한다.
 global standard logic은 canonical core에 먼저 정의하고, country/region-specific behavior는 handler, adapter, config override, profile branch로 분리한다.
-Design Gate Summary가 없거나 사용자가 명시적으로 생략을 승인하지 않은 상태에서는 구현을 시작하지 않는다.
+사용자 prompt가 Goal / Scope / Non-goals / owner boundary / required tests를 이미 충분히 고정하고 추가 설계 분기가 없으면,
+짧은 `prompt-supplied boundary is sufficient` 판단으로 Design Gate를 만족할 수 있다.
+불확실한 owner, public contract, schema, standard/global-vs-specific boundary가 남아 있으면 `grill-me` skill 또는 별도 design/report slice로 Design Gate를 통과한다.
 
 ## Output
 

@@ -101,6 +101,11 @@ rollback 비용이 크면 기존 Design First Gate에 따라 design slice로 분
 세부 Model / Controller / Shell / View / Policy 기준은
 `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`를 따른다.
 
+사용자 prompt가 이미 Goal / Scope / Non-goals / owner boundary / required
+tests를 충분히 고정하고, public contract나 schema 변경 분기가 없으면
+별도 grilling 없이 `prompt-supplied boundary is sufficient` 판단을 남기고
+구현할 수 있다. 이 경우 문서 읽기는 해당 owner heading/range로 제한한다.
+
 docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micro cleanup은 full preflight를 생략할 수 있다.
 
 ### Project Memory Recall Gate
@@ -186,6 +191,9 @@ docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micr
 - `rg` heading/keyword search 후 작은 `sed` range를 기본으로 한다.
 - 한 파일 100줄 초과 read, broad `head`/`tail`, broad docs-wide search는 owner
   문서의 blocker rule을 따른다.
+- prompt가 이미 충분한 owner/boundary/test plan을 제공하면 해당 prompt를
+  design evidence로 취급하고, owner docs는 충돌 여부를 확인하는 필요한
+  heading/range만 읽는다.
 
 ### 1. Commit / Git 정리
 
@@ -434,6 +442,9 @@ docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micr
 3. signal blocking은 `try/finally`로 복구를 보장한다.
 4. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 5. 영향 범위에 맞는 UI smoke 또는 관련 import/pytest 검증을 수행한다.
+   - 수정 후 재실행은 실제로 바뀐 helper/controller/provider 경로 기준으로
+     제한한다. 이미 통과한 broad focused test는 새 변경이 그 경로를 다시
+     건드렸을 때만 반복 실행한다.
 6. window geometry / scroll container / resize handling / scrollbar visibility 작업 전에는 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8의 다음 gate를 확인한다.
    - root/app-level rendered requested size 우선
    - component-specific preferred size는 보조 수단
