@@ -44,6 +44,7 @@ class HongKongCspfSection:
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
         self._batch_dialog: HongKongCspfBatchDialog | None = None
+        self._batch_snapshot: list[dict[str, str]] | None = None
         self._frame = ttk.LabelFrame(parent, text=f"CSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
@@ -150,10 +151,13 @@ class HongKongCspfSection:
         self._batch_dialog = HongKongCspfBatchDialog(
             self._frame.winfo_toplevel(),
             self._region_label,
+            initial_snapshot=self._batch_snapshot,
             on_close=self._clear_batch_dialog,
         )
 
-    def _clear_batch_dialog(self) -> None:
+    def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
+        if snapshot is not None:
+            self._batch_snapshot = snapshot
         self._batch_dialog = None
 
     def _read_inputs(self) -> Tuple[Mapping[str, Mapping[str, float]], float]:

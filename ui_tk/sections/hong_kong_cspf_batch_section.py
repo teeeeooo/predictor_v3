@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 import tkinter as tk
 from tkinter import ttk
 
@@ -25,7 +26,13 @@ class HongKongCspfBatchSection:
 
     result_panel = None
 
-    def __init__(self, parent: tk.Widget, region_label: str) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        region_label: str,
+        *,
+        initial_snapshot: object | None = None,
+    ) -> None:
         self._frame = ttk.LabelFrame(parent, text=f"CSPF Batch ({region_label})")
         self._frame.columnconfigure(0, weight=1)
         self._frame.rowconfigure(0, weight=1)
@@ -48,6 +55,8 @@ class HongKongCspfBatchSection:
             delay_ms=150,
         )
         self.table.set_values_changed_callback(self._auto_calc.schedule)
+        if initial_snapshot is not None:
+            self.table.restore_snapshot(initial_snapshot)
         action_row = ttk.Frame(self._frame)
         action_row.grid(
             row=1,
@@ -86,7 +95,8 @@ class HongKongCspfBatchDialog:
         parent: tk.Widget,
         region_label: str,
         *,
-        on_close: Callable[[], None] | None = None,
+        initial_snapshot: object | None = None,
+        on_close: Callable[[list[dict[str, str]]], None] | None = None,
     ) -> None:
         self._on_close = on_close
         self.window = tk.Toplevel(parent)
@@ -94,7 +104,11 @@ class HongKongCspfBatchDialog:
         self.window.title(f"CSPF Batch ({region_label})")
         self.window.columnconfigure(0, weight=1)
         self.window.rowconfigure(0, weight=1)
-        self.section = HongKongCspfBatchSection(self.window, region_label)
+        self.section = HongKongCspfBatchSection(
+            self.window,
+            region_label,
+            initial_snapshot=initial_snapshot,
+        )
         self.section.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self._apply_initial_geometry(parent)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
@@ -116,11 +130,18 @@ class HongKongCspfBatchDialog:
         self.window.geometry(geometry)
 
     def close(self) -> None:
+        snapshot = self.snapshot()
         self.section.dispose()
         if self.window.winfo_exists():
             self.window.destroy()
         if self._on_close is not None:
-            self._on_close()
+            self._on_close(snapshot)
+
+    def snapshot(self) -> list[dict[str, str]]:
+        raw_snapshot: Any = self.section.table.snapshot()
+        if not isinstance(raw_snapshot, list):
+            return []
+        return [dict(row) for row in raw_snapshot if isinstance(row, dict)]
 
     def focus(self) -> None:
         if self.window.winfo_exists():

@@ -1320,6 +1320,34 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
         "5",
         "6",
     )
+    first_dialog.section.table.set_text_rows(
+        [
+            {
+                "declared": "3500",
+                "full_capacity": "3600",
+                "full_power": "900",
+                "half_capacity": "1700",
+                "half_power": "380",
+            },
+            {
+                "declared": "4200",
+                "full_capacity": "4300",
+                "full_power": "1000",
+                "half_capacity": "2100",
+                "half_power": "470",
+            },
+            {},
+            {},
+            {},
+            {
+                "declared": "5000",
+                "full_capacity": "5100",
+                "full_power": "1300",
+                "half_capacity": "2400",
+                "half_power": "620",
+            },
+        ]
+    )
 
     cspf.batch_button.invoke()
     tk_root.update_idletasks()
@@ -1330,6 +1358,20 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     tk_root.update_idletasks()
 
     assert cspf._batch_dialog is None
+
+    cspf.batch_button.invoke()
+    tk_root.update_idletasks()
+    reopened_dialog = cspf._batch_dialog
+
+    assert reopened_dialog is not None
+    assert reopened_dialog is not first_dialog
+    assert len(reopened_dialog.section.table.model.rows) == 6
+    assert reopened_dialog.section.table.model.rows[0]["declared"] == "3500"
+    assert reopened_dialog.section.table.model.rows[1]["full_power"] == "1000"
+    assert reopened_dialog.section.table.model.rows[5]["half_power"] == "620"
+
+    reopened_dialog.close()
+    tk_root.update_idletasks()
 
 
 def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
