@@ -41,13 +41,14 @@
   - 232 extracts visible content measurement policy from `Iso16358Tab` into a Tk measurement adapter/provider consumed by the shell template.
   - 233A compares mapped-surface sizing flows and concludes the next code slice needs a shared measurement snapshot / mapped-surface lifecycle, not another local settle-cycle patch.
   - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot. Windows smoke confirms the Hong Kong lower blank space is resolved and the refit loop is still gone, but profile/detail flicker remains user-visible.
-- Next: 233C profile switch / reselect / detail toggle lifecycle orchestration unification.
+  - 233C unifies profile switch, profile reselect, and detail toggle around the same visible-surface lifecycle refit request path and avoids unnecessary re-render on same-profile reselect.
+- Next: Windows smoke closeout for 233C flicker reduction and sizing behavior.
 
 ## Next Actions
 
-1. **233C - profile switch / reselect / detail toggle lifecycle orchestration unification**
-   - Reduce flicker by unifying render -> mount -> settle -> snapshot measure -> fit across profile switch, reselect, and detail toggle.
-   - Keep the 233B snapshot contract; avoid Hong Kong-only hotfixes.
+1. **Windows smoke closeout for 233C lifecycle orchestration**
+   - Confirm Hong Kong lower blank space stays resolved, no refit loop returns, and profile switch / reselect / detail toggle flicker is meaningfully reduced.
+   - Also check CSPF/HSPF metric tab switching, selected-range fill paste, and batch dialog unchanged state.
 2. **233D or 233C follow-up - batch dialog sizing/UX under the same window shell policy**
    - Treat batch dialog size, position, viewport, and blank space as part of the window shell lifecycle arc.
    - Do not mix this with batch copy/export behavior.

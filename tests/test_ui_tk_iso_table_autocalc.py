@@ -1053,7 +1053,7 @@ def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
     calls = []
     monkeypatch.setattr(
         tab,
-        "_schedule_toplevel_refit",
+        "_request_visible_lifecycle_refit",
         lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
     )
 
@@ -1062,6 +1062,44 @@ def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
     tab._on_mode_changed()
 
     assert calls == [1, 2]
+
+
+def test_profile_reselect_uses_lifecycle_refit_without_rerender(tk_root, monkeypatch):
+    tab = _make_hong_kong_tab(tk_root)
+    calls = []
+    render_calls = []
+    original_render_region = tab._render_region
+
+    def record_render_region(region_label):
+        render_calls.append(region_label)
+        original_render_region(region_label)
+
+    monkeypatch.setattr(tab, "_render_region", record_render_region)
+    monkeypatch.setattr(
+        tab,
+        "_request_visible_lifecycle_refit",
+        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
+    )
+
+    tab._mode_combo.set("Hong Kong")
+    tab._on_mode_changed()
+
+    assert calls == [1]
+    assert render_calls == []
+
+
+def test_region_change_uses_lifecycle_refit_path(tk_root, monkeypatch):
+    tab = _make_hong_kong_tab(tk_root)
+    calls = []
+    monkeypatch.setattr(
+        tab,
+        "_request_visible_lifecycle_refit",
+        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
+    )
+
+    tab._on_region_changed()
+
+    assert calls == [1]
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):

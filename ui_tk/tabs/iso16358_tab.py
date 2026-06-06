@@ -110,6 +110,7 @@ class Iso16358Tab(ttk.Frame):
         # Compatibility alias for callers that only check panel availability.
         # The actual visible panels are owned and rendered by each section.
         self.result_panel = None
+        self._rendered_mode_label: str | None = None
 
         self._render_mode(MODE_ISO_ISEER_2POINT)
 
@@ -148,13 +149,20 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_mode_changed(self, _event=None) -> None:
         mode_label = self._current_mode()
-        self._render_mode(mode_label)
-        self._schedule_toplevel_refit(
-            settle_cycles=2 if mode_label == MODE_HONG_KONG else 1
+        same_mode = mode_label == self._rendered_mode_label
+        if not same_mode:
+            self._render_mode(mode_label)
+        self._request_visible_lifecycle_refit(
+            settle_cycles=2 if mode_label == MODE_HONG_KONG and not same_mode else 1
         )
 
-    def _schedule_toplevel_refit(self, *, settle_cycles: int = 1) -> None:
+    def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
+        """Run visible-surface settle -> snapshot measure -> shell fit later."""
+
         self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+
+    def _schedule_toplevel_refit(self, *, settle_cycles: int = 1) -> None:
+        self._request_visible_lifecycle_refit(settle_cycles=settle_cycles)
 
     def _fit_toplevel_to_current_content(self) -> None:
         self.update_idletasks()
@@ -165,7 +173,7 @@ class Iso16358Tab(ttk.Frame):
         self._fit_toplevel_to_current_content()
 
     def _on_trace_visibility_changed(self) -> None:
-        self._schedule_toplevel_refit()
+        self._request_visible_lifecycle_refit()
 
     def _on_metric_tab_changed(self, _event=None) -> None:
         # Disabled until nested/dynamic refit scheduling has a common owner.
@@ -195,6 +203,7 @@ class Iso16358Tab(ttk.Frame):
                 self._two_point_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._two_point_section.result_panel
             self._two_point_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            self._rendered_mode_label = mode_label
             return
 
         if mode_label == MODE_SASO_T3:
@@ -207,10 +216,12 @@ class Iso16358Tab(ttk.Frame):
                 self._saso_t3_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._saso_t3_section.result_panel
             self._saso_t3_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            self._rendered_mode_label = mode_label
             return
 
         self._render_region(self._region_combo.get())
         self._hong_kong_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self._rendered_mode_label = mode_label
 
     def _cancel_hong_kong_pending(self) -> None:
         for section in self.sections.values():
@@ -222,7 +233,7 @@ class Iso16358Tab(ttk.Frame):
 
     def _on_region_changed(self, _event=None) -> None:
         self._render_region(self._region_combo.get())
-        self._schedule_toplevel_refit()
+        self._request_visible_lifecycle_refit()
 
     def _render_region(self, region_label: str) -> None:
         for tab_id in self._metric_notebook.tabs():
