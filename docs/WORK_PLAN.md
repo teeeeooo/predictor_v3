@@ -43,37 +43,34 @@
   - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot. Windows smoke confirms the Hong Kong lower blank space is resolved and the refit loop is still gone, but profile/detail flicker remains user-visible.
   - 233C unifies profile switch, profile reselect, and detail toggle around the same visible-surface lifecycle refit request path and avoids unnecessary re-render on same-profile reselect.
   - 233C-2 reuses the already-rendered Hong Kong metric surface when returning from another profile with the same region, avoiding redundant metric notebook/section destroy-create work.
-- Next: Windows smoke closeout for 233C-2 flicker reduction and sizing behavior.
+  - 233C closeout documents hidden-first window/dialog first-show and stable-container dynamic surface lifecycle policy. Hong Kong lower blank space/refit loop are resolved; remaining soft flicker is accepted for this arc unless later smoke identifies a specific mutation owner.
+- Next: 233D batch dialog sizing/UX under the same window shell policy.
 
 ## Next Actions
 
-1. **Windows smoke closeout for 233C-2 lifecycle/reuse slice**
-   - Confirm Hong Kong lower blank space stays resolved, no refit loop returns, and profile switch / reselect / detail toggle flicker is meaningfully reduced.
-   - Also check CSPF/HSPF metric tab switching, selected-range fill paste, and batch dialog unchanged state.
-   - If soft flicker remains after reuse, avoid another broad lifecycle refactor unless Windows evidence shows a specific remaining visible mutation owner.
-2. **233D or 233C follow-up - batch dialog sizing/UX under the same window shell policy**
+1. **233D - batch dialog sizing/UX under the same window shell policy**
    - Treat batch dialog size, position, viewport, and blank space as part of the window shell lifecycle arc.
    - Do not mix this with batch copy/export behavior.
-3. **Windows smoke - main and batch window sizing**
-   - Confirm Hong Kong lower blank space stays resolved, flicker is reduced, and batch dialog sizing/position/blank space are acceptable.
-4. **234A - batch two-row matrix layout preflight**
+2. **Windows smoke - main and batch window sizing**
+   - Confirm Hong Kong lower blank space stays resolved, no refit loop returns, residual soft flicker is acceptable, and batch dialog sizing/position/blank space are acceptable.
+3. **234A - batch two-row matrix layout preflight**
    - Prefer one case = two physical rows: capacity/performance input row plus power input row.
    - Result columns are profile output metrics, not a mandatory Status column. Hong Kong CSPF outputs remain CSPF and CSEC.
    - Define physical-row to logical-case mapping, two-row add/remove, paste, copy, and export contracts.
-5. **234B - common two-row batch table foundation**
+4. **234B - common two-row batch table foundation**
    - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
    - Migrate the current Hong Kong CSPF batch to the shared layout if the preflight accepts it.
-6. **234C - batch table copy-all + CSV export parity**
+5. **234C - batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-7. **Result/detail/export common contract check**
+6. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
-8. **Main table migration candidate check**
+7. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-9. **ui_tk folder cleanup**
+8. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-10. **HSPF detail/bin extension**
-11. **EN14825 / AHRI 210/240 / KS profile expansion**
+9. **HSPF detail/bin extension**
+10. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

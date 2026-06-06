@@ -55,12 +55,23 @@
 - HSPF/EN/AHRI/KS expansion should wait until result/detail/export contracts,
   two-row batch foundation, main table migration candidates, and ui_tk cleanup
   direction are checked.
+- 233C/233C-2 reduced visible mutation by unifying lifecycle refit requests and
+  reusing the valid Hong Kong metric surface. The remaining soft flicker is
+  accepted for this arc because further reduction would require hidden-first
+  first-show or stable-container lifecycle work beyond a micro-slice.
+- Future window/dialog/profile/page surfaces should apply hidden-first
+  first-show or stable-container lifecycle rules from
+  `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`; the task router now
+  points UI window/dialog/profile/page work at that policy.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
   patches and decide the owner boundary first.
 - Passing one geometry bug does not close the shell arc if lifecycle flicker or
   batch dialog sizing still share the same root owner.
+- Hidden-first preparation before first show is different from repeatedly
+  hiding and showing an already-visible shell; new surfaces should be designed
+  with the former instead of patched with the latter.
 
 ---
 

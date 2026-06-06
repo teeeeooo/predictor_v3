@@ -18,8 +18,8 @@ adoption guide; it does not replace any owner document.
   result-surface shaping rules.
 - `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`: how to bind the common rules into a
   concrete project.
-- `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`: portable window/viewport and
-  dynamic refit policy.
+- `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`: portable window/dialog geometry,
+  viewport, hidden-first first-show lifecycle, and dynamic surface refit policy.
 - `adapters/`: interface-framework-specific implementation adapters.
 - `_source/`: historical or evidence source material, not active contracts.
 

@@ -98,6 +98,32 @@ manage viewports.
   focused helper/fake-trigger test when possible, so Windows smoke is
   not the first place the scheduling bug appears.
 
+### Hidden-first Window / Dialog Lifecycle
+
+- New windows, dialogs, Toplevels, and comparable shell surfaces should use a
+  hidden-first lifecycle where the implementation builds content, lets layout
+  settle, takes a visible-content snapshot measurement, applies geometry and
+  placement, and only then shows the shell.
+- Avoid making users see content build -> measure -> resize for a first show.
+- This is different from repeatedly hiding and showing an already-visible
+  window. Repeated withdraw/deiconify, fixed-size fallbacks, or excessive
+  synchronous update calls are local hacks and should not be the first response
+  to flicker.
+- Content-hugging is appropriate for first show and dialog open, but repeated
+  content-hugging during visible profile/page transitions can create visible
+  flicker if content mutation and geometry mutation are not coalesced.
+
+### Stable-container Profile / Page Switch
+
+- Dynamic profile, page, or screen switches inside an already-visible shell
+  should prefer stable containers and cached/reusable pages over repeated
+  destroy/create when the content identity is still valid.
+- If a page must be rebuilt, group visible mutation so the user sees one
+  settled transition rather than intermediate empty, oversized, or partially
+  measured states.
+- Treat concrete project/screen examples as evidence only; these lifecycle
+  rules apply to interface shells regardless of toolkit.
+
 ### Saved Geometry Restore
 
 - Restore saved size and position only if the target monitor/work area
@@ -173,5 +199,9 @@ manage viewports.
   visible sub-tab has settled.
 - Hidden tab measurement does not reserve unnecessary visible height and
   does not recursively trigger geometry mutation.
+- New dialogs/windows use hidden-first build/settle/measure/apply/show
+  lifecycle where the framework allows it.
+- Dynamic profile/page switches prefer stable containers or cached valid
+  surfaces over repeated visible destroy/create.
 - Tables, copy/export, graph/detail content, and calculation behavior
   do not change as a side effect of geometry policy.

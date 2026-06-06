@@ -435,6 +435,8 @@ docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micr
   - UI가 calculator input/output, profile selector, schema boundary를 바꾸면 `docs/architecture/project_architecture.md`의 관련 heading
   - UI 변경이 계산기 profile/config 동작을 바꾸면 관련 규격 notes/dev_notes의 필요한 heading
   - GUI app shell / initial window geometry / scroll container / resize handling / scrollbar visibility 작업이면 `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` §8 (Window Geometry And Screen Caps)를 먼저 확인한다.
+  - window, dialog, Toplevel, dynamic profile/page surface, viewport, or content-hugging behavior를 생성/수정하면 `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`를 확인한다.
+  - 새 window/dialog 또는 dynamic profile/page surface는 hidden-first 또는 stable-container lifecycle을 먼저 판단하고, visible content build/measure/resize를 ad hoc으로 노출하지 않는다.
 
 절차:
 1. 기존 model/view/delegate 구조를 먼저 확인한다.
@@ -450,6 +452,7 @@ docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micr
    - component-specific preferred size는 보조 수단
    - initial geometry, resize minsize, screen cap, scrollbar visibility 분리
    - Configure event handler에서 geometry mutation / pack-forget / width sync loop 금지
+7. window/dialog/profile/page lifecycle 작업 전에는 `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`의 hidden-first / stable-container / dynamic refit 기준을 확인한다.
 
 금지:
 - `QTableWidget` 신규 도입
