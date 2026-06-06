@@ -39,24 +39,29 @@
   - 221C through 228 and 230A through 230D are summarized under summary 231.
   - 229 remains active as direct implementation-state evidence for the next measurement-adapter code slice.
   - 232 extracts visible content measurement policy from `Iso16358Tab` into a Tk measurement adapter/provider consumed by the shell template.
-- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
+  - 233A compares mapped-surface sizing flows and concludes the next code slice needs a shared measurement snapshot / mapped-surface lifecycle, not another local settle-cycle patch.
+- Next: mapped-surface measurement snapshot lifecycle first slice.
 
 ## Next Actions
 
-1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
+1. **Mapped-surface measurement snapshot lifecycle first slice**
+   - Make profile switch, profile reselect, and detail toggle use a common render/mount/settle/snapshot-measure/fit lifecycle.
+   - Read preferred size and overflow delta from the same settled snapshot; avoid adding stale overflow to shrink/profile-switch fits.
+   - Keep Hong Kong as the first validation target without adding Hong Kong-only branches.
+2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-3. **Migrate calculator main table to common foundation**
+4. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-4. **Common detail/bin result schema design**
+5. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-5. **Existing CSPF detail/bin adapter cleanup**
+6. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-6. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-7. **Graph/export alignment on common detail/bin schema**
+8. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints

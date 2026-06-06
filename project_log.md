@@ -37,6 +37,9 @@
 - 231 summarizes and archives the completed architecture/UI-UX boundary and
   window-refit arc, leaving 229 active as direct evidence for the next visible
   content measurement adapter extraction.
+- 233A finds that measurement-owner extraction alone is not enough; profile
+  switch needs a mapped-surface lifecycle that measures preferred size and
+  overflow from one settled snapshot.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
