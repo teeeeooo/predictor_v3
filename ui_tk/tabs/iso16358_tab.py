@@ -22,12 +22,8 @@ from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection
 from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
 from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
-from ui_tk.layout_constants import (
-    APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
-    APP_WINDOW_MIN_VISIBLE_HEIGHT,
-    APP_WINDOW_MIN_VISIBLE_WIDTH,
-)
 from ui_tk.scrollable_frame import ScrollableFrame
+from ui_tk.window_measurement import TkVisibleContentMeasurement
 from ui_tk.window_refit import DynamicContentRefitScheduler
 from ui_tk.window_shell import TkContentHuggingShell
 
@@ -79,12 +75,6 @@ class Iso16358Tab(ttk.Frame):
             self,
             self._fit_toplevel_to_current_content,
         )
-        self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
-        self._content_form = self._content_shell.register_content(
-            preferred_size_provider=self.preferred_initial_size,
-            overflow_provider=self.vertical_overflow_delta,
-            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
-        )
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -102,6 +92,20 @@ class Iso16358Tab(ttk.Frame):
 
         self._metric_notebook = ttk.Notebook(self._hong_kong_frame)
         self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._measurement = TkVisibleContentMeasurement(
+            content=self._content,
+            scrollbar=self._scrollbar,
+            overflow_source=self._scrollable,
+            nested_notebook=self._metric_notebook,
+            nested_notebook_active=lambda: self._current_mode() == MODE_HONG_KONG,
+            suppress_measurement=self._refit_scheduler.suppress_requests,
+        )
+        self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
+        self._content_form = self._content_shell.register_content(
+            preferred_size_provider=self._measurement.preferred_size,
+            overflow_provider=self._measurement.vertical_overflow_delta,
+            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
+        )
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -133,56 +137,10 @@ class Iso16358Tab(ttk.Frame):
     # -- Metric size helpers --------------------------------------------------
 
     def vertical_overflow_delta(self) -> int:
-        return self._scrollable.vertical_overflow_delta()
+        return self._measurement.vertical_overflow_delta()
 
     def preferred_initial_size(self) -> tuple[int, int]:
-        self.update_idletasks()
-
-        # Measure every metric tab for width so hidden tabs are not clipped.
-        # Height follows the current tab; otherwise CSPF can inherit blank
-        # space from taller hidden HSPF/detail content.
-        max_tab_width = 0
-        max_tab_height = 0
-        current_tab_height = 0
-        if self._current_mode() == MODE_HONG_KONG:
-            original_tab = self._metric_notebook.select()
-            with self._refit_scheduler.suppress_requests():
-                for tab_id in self._metric_notebook.tabs():
-                    self._metric_notebook.select(tab_id)
-                    self.update_idletasks()
-                    widget = self._metric_notebook.nametowidget(tab_id)
-                    max_tab_width = max(max_tab_width, widget.winfo_reqwidth())
-                    max_tab_height = max(max_tab_height, widget.winfo_reqheight())
-                    if tab_id == original_tab:
-                        current_tab_height = widget.winfo_reqheight()
-                if original_tab:
-                    self._metric_notebook.select(original_tab)
-                    self.update_idletasks()
-
-        # Base content size on the natural size of the outer frame.
-        content_width = max(
-            self._content.winfo_reqwidth(),
-            max_tab_width,
-        )
-        content_height = self._content.winfo_reqheight()
-        if self._current_mode() == MODE_HONG_KONG and self._metric_notebook.tabs():
-            notebook_height = self._metric_notebook.winfo_reqheight()
-            notebook_chrome_height = max(0, notebook_height - max_tab_height)
-            content_height = (
-                content_height
-                - notebook_height
-                + notebook_chrome_height
-                + current_tab_height
-            )
-
-        # Keep width breathing room, but cap vertical margin so exact-fit
-        # windows do not leave a large blank band below calculator content.
-        margin = APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
-        vertical_margin = min(int(content_height * margin), 18)
-        return (
-            int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
-            content_height + vertical_margin,
-        )
+        return self._measurement.preferred_size()
 
     # -- Calculation mode handling -------------------------------------------
 

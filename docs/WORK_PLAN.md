@@ -38,27 +38,25 @@
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
   - 221C through 228 and 230A through 230D are summarized under summary 231.
   - 229 remains active as direct implementation-state evidence for the next measurement-adapter code slice.
-- Next: extract Tk visible content measurement adapter.
+  - 232 extracts visible content measurement policy from `Iso16358Tab` into a Tk measurement adapter/provider consumed by the shell template.
+- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
 
 ## Next Actions
 
-1. **Extract Tk visible content measurement adapter**
-   - Move `Iso16358Tab`-specific hidden-tab width/current-visible-height measurement into an adapter/provider boundary consumed by the shell template.
-   - Keep `window_shell.py` toolkit shell/template owner, `window_refit.py` scheduler owner, and `window_geometry.py` primitive owner.
-2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
+1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-4. **Migrate calculator main table to common foundation**
+3. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-5. **Common detail/bin result schema design**
+4. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-6. **Existing CSPF detail/bin adapter cleanup**
+5. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+6. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-8. **Graph/export alignment on common detail/bin schema**
+7. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints

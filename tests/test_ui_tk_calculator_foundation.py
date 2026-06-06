@@ -556,14 +556,14 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
         root_arg, content, preferred_size_provider, overflow_provider, after_fit = registered[0]
         assert root_arg is root
         assert content is None
-        assert preferred_size_provider == tab.preferred_initial_size
-        assert overflow_provider == tab.vertical_overflow_delta
+        assert preferred_size_provider == tab._measurement.preferred_size
+        assert overflow_provider == tab._measurement.vertical_overflow_delta
         assert after_fit is not None
         assert len(calls) == 1
         root_arg, preferred_content_size, vertical_overflow_delta = calls[0]
         assert root_arg is root
-        assert preferred_content_size == tab.preferred_initial_size()
-        assert vertical_overflow_delta == tab.vertical_overflow_delta()
+        assert preferred_content_size == tab._measurement.preferred_size()
+        assert vertical_overflow_delta == tab._measurement.vertical_overflow_delta()
     finally:
         root.destroy()
 
