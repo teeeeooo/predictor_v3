@@ -71,6 +71,13 @@
   now documented in `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`
   and the UI workflow gate: close is not reset, and reset/clear must be an
   explicit user action.
+- 233F added batch viewport containment, but Windows smoke found mouse-wheel
+  parity missing over table/cell/entry content. The failure is not only missing
+  wheel validation; the UI workflow now requires checking existing normal
+  surfaces as source-of-truth evidence before creating new helpers/adapters.
+- UI soft LOC limits are now treated as preflight triggers, not hard failures:
+  helper/adapter extraction follows owner-boundary and reuse/parity judgment,
+  not line-count compliance alone.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
@@ -83,6 +90,10 @@
 - Stateful input shell lifecycle and user input state lifecycle must be
   separated; destroying a widget shell must not silently discard structured
   user input.
+- A new UI helper that looks structurally similar is not sufficient; it must
+  match existing user-visible behavior such as wheel routing, selection,
+  paste/copy, export, and viewport containment when a working surface already
+  exists.
 - When a route keeps accumulating detailed checklist text, move the workflow to
   an owner document and leave only the owner-routing gate in the router.
 

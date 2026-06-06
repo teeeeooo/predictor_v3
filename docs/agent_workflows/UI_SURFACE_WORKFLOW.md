@@ -42,9 +42,13 @@ Before editing UI surface code:
 
 - check the target owner file size (`wc -l`) when adding a new UI
   responsibility or helper-like behavior;
-- if the owner file is near a soft limit or the new responsibility is likely
-  to add a distinct helper/adapter concern, decide helper extraction before
-  implementation;
+- treat soft LOC limits, including 400 LOC warnings, as preflight triggers,
+  not automatic hard failures or automatic extraction requirements;
+- if the owner file is near or over a soft limit, first decide whether the new
+  responsibility is a distinct helper/adapter concern, likely to repeat, or
+  likely to mix owner boundaries;
+- extract helpers/adapters when responsibility boundaries are clear; do not
+  split code only to satisfy a line-count number;
 - for structure-impacting UI work, `python3 -B tools/check_code_structure.py`
   can be used as a preflight guard, not only as a commit-time validator.
 
@@ -54,6 +58,13 @@ When creating or changing a table-shaped UI:
 
 - confirm `03_SPREADSHEET_TABLE_UX_CONTRACT.md` parity checklist;
 - confirm the matching toolkit adapter or record an adapter gap;
+- if an existing surface already implements the same or similar user-visible
+  behavior, check it as source-of-truth evidence before implementing a new
+  helper/adapter;
+- table scroll, wheel routing, paste/copy, selection, export, and viewport
+  containment require user-behavior parity, not only structural similarity;
+- prefer the existing owner/helper/adapter when it fits; if not reused, record
+  the incompatibility or reuse-blocking reason before implementation;
 - do not treat an Entry/Label grid as a table surface by appearance alone;
 - record pass/fail evidence for table parity in the report validation;
 - if a reference implementation is not reused, record why and add a
