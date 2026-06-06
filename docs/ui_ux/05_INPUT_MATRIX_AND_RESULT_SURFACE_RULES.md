@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This document is the `predictor_v3` project-wide owner for shaping repeated
-structured input and user-facing result output into coherent surfaces.
+This document is the portable owner for shaping repeated structured input and
+user-facing result output into coherent surfaces.
 
 Repeated measurements, comparisons, or conditions are not rendered as
 scattered label-entry forms. They are normalized into matrix tables with
@@ -12,12 +12,13 @@ they are presented as summary result surfaces.
 
 ## Scope
 
-- Applies across calculator, Predictor, Trainer, and future ML/inverse-search
-  desktop UI, whether implemented in PyQt or Tkinter.
+- Applies across single-case calculation screens, prediction workflows,
+  training/model-operation workflows, batch workflows, and future structured
+  input/result surfaces.
 - Governs input/result **surface shape** and the decision to use a matrix or
   summary card/table.
 - Does not prescribe metric navigation (e.g., sub-tabs or segmented controls),
-  toolkit widget APIs, visual token values, calculation schemas, ML schemas,
+  interface widget APIs, visual token values, domain schemas, model schemas,
   or result computation.
 
 ## Relationship to Existing UI/UX SSOT
@@ -30,8 +31,8 @@ they are presented as summary result surfaces.
 - `04_VISUAL_DESIGN_ARCHITECTURE.md` owns neutral-first, semantic-color,
   table-first, and result/status visual philosophy.
 - This document owns how repeated input/result data is shaped into matrix and
-  summary surfaces before toolkit implementation begins.
-- Adapter documents own toolkit implementation once this surface shape has
+  summary surfaces before interface-framework implementation begins.
+- Adapter documents own framework-specific implementation once this surface shape has
   been selected.
 - Existing-screen replacements must first map the current section order,
   default visible state, and primary user flow. A different flow is a design
@@ -106,7 +107,7 @@ across comparable items.
 - A not-applicable cell is not a reason to split one logical matrix into
   multiple mini-grids.
 - Whether a static cell participates in copy/export is owned by the table
-  behavior contract and the relevant toolkit adapter.
+  behavior contract and the relevant interface adapter.
 
 ## Result Summary Surface Rule
 
@@ -123,9 +124,9 @@ across comparable items.
   summary surface; raw tracebacks are never user-visible.
 - Copy/export may include a compact textual rendering of the summary, but a
   text representation is not the default visual surface.
-- Single-case calculator screens may update the summary immediately as input
-  changes. Batch, Predictor, and Trainer surfaces may use explicit Run,
-  Predict, or Train actions because they represent larger jobs or multiple
+- Single-case calculation screens may update the summary immediately as input
+  changes. Batch, prediction, training, or other model-operation surfaces may
+  use explicit run actions because they represent larger jobs or multiple
   cases.
 
 ## Detail and Graph Surface Rule
@@ -134,13 +135,12 @@ across comparable items.
   surface; they do not replace it.
 - A default workflow first presents inputs and summary result values. Detail
   or graph surfaces appear only when needed for review or diagnosis.
-- Existing PyQt graph/detail UI is retained as reference UX. This document
-  does not require porting it verbatim to Tkinter.
-- A Tkinter calculator graph, if justified, is designed later as a lightweight
-  chart/detail surface with explicit acceptance criteria.
-- Large dependencies such as `matplotlib` must not be introduced for a
-  Tkinter graph before Windows packaging size evidence is available.
-- Batch calculator results are result tables, not internal formula trace.
+- Existing graph/detail implementations may be retained as reference UX. This
+  document does not require porting any implementation verbatim across
+  interface frameworks.
+- A new lightweight graph/detail surface should be designed with explicit
+  acceptance criteria before adding large dependencies.
+- Batch calculation results are result tables, not internal formula trace.
   They should use one row per case with user-facing input/output columns.
 - Table interaction and validation policy are separate. `03_SPREADSHEET_TABLE_UX_CONTRACT.md`
   owns interaction behavior; this document owns row/cell validation policy
@@ -149,18 +149,18 @@ across comparable items.
   surface is table-shaped, use `03_SPREADSHEET_TABLE_UX_CONTRACT.md` for
   interaction pass/fail validation and this document for validation/error
   policy.
-- Calculator auto-calc batch surfaces may keep blank, partial, or invalid
-  rows result-blank while calculating valid rows independently. This avoids
-  repeated error text while the user is still typing.
-- Calculator batch surfaces may use a compact dialog-level summary when it
+- Auto-calculation batch surfaces may keep blank, partial, or invalid rows
+  result-blank while calculating valid rows independently. This avoids repeated
+  error text while the user is still typing.
+- Calculation batch surfaces may use a compact dialog-level summary when it
   helps review, but should not turn incomplete input into noisy per-cell
   errors.
-- ML predict/train batch surfaces must not fail silently. Invalid rows/cells
+- Prediction/training batch surfaces must not fail silently. Invalid rows/cells
   need pre-run validation summary, visible cell/row status, or both before
   model execution proceeds.
-- Detail/bin schemas should be designed as profile-neutral foundations where
-  practical so CSPF, HSPF, EN14825, AHRI, and KS adapters can share column
-  meaning instead of creating incompatible per-profile trace shapes.
+- Detail/bin schemas should be designed as domain-variant-neutral foundations
+  where practical so adapters can share column meaning instead of creating
+  incompatible per-variant trace shapes.
 
 ## Acceptance Criteria
 
@@ -172,7 +172,7 @@ across comparable items.
   imitate a table fails this rule.
 - A bordered `Entry`/`Label` grid is not enough by itself; if the selected
   surface is table-shaped, it must also satisfy the table interaction
-  contract and relevant toolkit adapter.
+  contract and relevant interface adapter.
 - Header, row label, editable cell, and static/not-applicable cell meanings
   are visually distinguishable.
 - Results are shown as a metric/value table or compact summary card surface.
@@ -187,25 +187,23 @@ across comparable items.
 - Rendering rated/reference values in a separate mini-grid solely because one
   intersecting cell is not applicable.
 - Presenting a large read-only raw text box as the primary result UI.
-- Encoding UI matrix orientation into core calculator, ML, profile, or
-  dispatcher contracts.
-- Copying an inspiration-source or historical PyQt layout pixel-for-pixel
-  instead of implementing the active project-wide rule.
+- Encoding UI matrix orientation into domain core, model-operation core,
+  variant resolver, or dispatcher contracts.
+- Copying an inspiration-source or historical layout pixel-for-pixel instead
+  of implementing the active portable rule.
 
-## Toolkit Adaptation Notes
+## Interface Framework Adaptation Notes
 
-- PyQt applications implement eligible tables through the active PyQt table
-  adapter and its model/view/delegate constraints.
-- Tkinter applications implement eligible tables through the active Tkinter
-  table adapter and may use an Entry-grid surface or read-only Treeview as
-  appropriate after the matrix shape is established.
-- PyQt and Tkinter may render cards, focus, static cells, and status
-  differently; the input/result meaning and comparison affordance remain the
-  same.
+- Eligible table surfaces implement the active table UX contract through the
+  selected interface-framework adapter.
+- Concrete widgets may differ by framework; the input/result meaning and
+  comparison affordance remain the same.
 - Visual styling must follow `04_VISUAL_DESIGN_ARCHITECTURE.md`; this
   document does not fix token values or mandate a widget class.
 
 ## Examples
+
+Example names are evidence, not scope boundaries.
 
 ### ISO CSPF / HSPF
 
@@ -239,16 +237,17 @@ across comparable items.
 The primary metric and key supporting values appear as a compact table/card
 surface. Diagnostics and graphs remain secondary detail surfaces.
 
-## Adoption Order
+## Portable Adoption Order
 
-1. Treat the task-163 ISO Hong Kong CSPF/HSPF correction as the first
-   concrete application of this project-wide rule.
-2. Apply this rule before designing any new repeated-input or repeated-result
-   Calculator, Predictor, Trainer, or ML/inverse-search surface.
-3. Run the Tkinter manual UX smoke for the existing Hong Kong application.
-4. Refine Tkinter matrix/result spacing or semantic styling only if manual
-   smoke exposes a need.
-5. Design a lightweight graph/detail surface only if summary-plus-input
-   workflow requires additional review capability.
-6. Defer large graph dependencies and PyQt calculator retirement until the
-   applicable packaging and usability decisions are made.
+1. Apply this rule before designing any new repeated-input or repeated-result
+   surface.
+2. Choose the matrix/result surface shape before selecting a concrete widget
+   implementation.
+3. Verify one representative surface in the selected interface framework.
+4. Refine spacing or semantic styling only if manual smoke exposes a need.
+5. Design graph/detail surfaces only if summary-plus-input workflow requires
+   additional review capability.
+
+Current-codebase examples such as named standards, current GUI implementations,
+packaging measurements, or source retirement decisions belong in the adopting
+project's work plan or result reports.

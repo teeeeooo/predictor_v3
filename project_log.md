@@ -32,6 +32,8 @@
   as examples/evidence, not scope boundaries.
 - 230C applies the same audit lens to portable UI/UX docs before rewriting
   them, with adapter documents kept toolkit-specific by design.
+- 230D applies the first UI/UX neutralization slice and adds a folder README so
+  portable principles, adapters, and historical sources are easier to tell apart.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local

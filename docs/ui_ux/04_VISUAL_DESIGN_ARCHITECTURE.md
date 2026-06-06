@@ -2,17 +2,17 @@
 
 ## Purpose
 
-This document is the project-wide visual design architecture SSOT for
-`predictor_v3`. It translates a Figma-inspired visual direction into rules
-for a desktop engineering application without replacing the common UI/UX,
-toolkit, token/layout, or spreadsheet behavior contracts.
+This document is the portable visual design architecture owner for
+engineering and data-work applications. It translates visual inspiration into
+interface rules without replacing the common UI/UX, interface selection,
+token/layout, or spreadsheet behavior contracts.
 
 ## Source Inspiration
 
 - `docs/ui_ux/_source/DESIGN_figma_inspiration.md` is inspiration source
   material, not an active contract or direct SSOT.
-- The active `predictor_v3` visual SSOT is this document:
-  `docs/ui_ux/04_VISUAL_DESIGN_ARCHITECTURE.md`.
+- The active portable visual architecture owner is this document:
+  `04_VISUAL_DESIGN_ARCHITECTURE.md`.
 - The source contributes a neutral-first interface, restrained geometry,
   clear focus treatment, typography hierarchy, and regular spacing rhythm.
   Those ideas are translated for analysis and calculation screens rather than
@@ -23,10 +23,10 @@ toolkit, token/layout, or spreadsheet behavior contracts.
 
 ## Scope
 
-- Applies across `predictor_v3` desktop UI, including long-term Predict and
-  Train PyQt surfaces and the Tkinter calculator direction.
+- Applies across engineering/data application surfaces that need compact,
+  structured, task-focused visual design.
 - Governs visual philosophy and semantic visual roles. It does not choose a
-  toolkit or prescribe widget implementation.
+  GUI framework or prescribe widget implementation.
 - Works with `00_UI_UX_SYSTEM.md` for global UX principles,
   `02_DESIGN_TOKENS_AND_LAYOUT.md` for token/layout naming, and
   `03_SPREADSHEET_TABLE_UX_CONTRACT.md` for table interaction behavior.
@@ -43,8 +43,8 @@ toolkit, token/layout, or spreadsheet behavior contracts.
   users inspect or edit structured numeric data.
 - Prefer compact, purposeful screens with clear hierarchy over ornamental
   web-style presentation.
-- Share one visual philosophy across toolkits; implement it through each
-  toolkit's supported adapter and styling mechanisms.
+- Share one visual philosophy across interface frameworks; implement it
+  through each framework's supported adapter and styling mechanisms.
 
 This is not a black-and-white-only mandate. Existing meaningful color in
 headers, condition-based cells, validation, results, and status surfaces is
@@ -64,16 +64,15 @@ retained and rationalized by semantic role.
 
 ## Semantic Color Roles
 
-Existing PyQt header color, condition-based cell color, and result/status
-color rules are not discarded. They remain valid engineering information and
-must be organized over time as semantic token or semantic role bindings.
-Concrete mappings from existing application styles into these roles remain
-deferred to a follow-up inventory and adapter/adoption task.
+Existing header color, condition-based cell color, and result/status color
+rules are not discarded when they carry engineering meaning. They should be
+organized over time as semantic token or semantic role bindings. Concrete
+mappings from existing application styles into these roles belong in the
+adopting project or interface adapter.
 
-The toolkit-neutral code foundation for these semantic roles is
-`ui_common/visual_tokens.py`. It provides plain Python lookup values for
-future adapters; existing PyQt and Tkinter UI are not migrated by its
-introduction.
+An adopting codebase may provide a framework-neutral token foundation and
+framework-specific bindings. Introducing such a foundation does not by itself
+migrate existing application screens.
 
 Candidate roles include:
 
@@ -101,8 +100,8 @@ any current color values.
 
 ## Table-first Interaction
 
-- Table/grid surfaces are a core interaction primitive across
-  `predictor_v3`, not a calculator-only presentation choice.
+- Table/grid surfaces are a core interaction primitive for structured data
+  workflows, not a single-screen presentation choice.
 - Data-dense input, predicted/observed value inspection, and result review
   should preserve strong row/column readability and meaningful cell states.
 - Behavior remains owned by `03_SPREADSHEET_TABLE_UX_CONTRACT.md`; this
@@ -128,8 +127,8 @@ any current color values.
 ## Spacing, Density, and Geometry
 
 - Treat an 8 px rhythm as the preferred conceptual spacing baseline, mapped
-  through project tokens and toolkit layout behavior rather than scattered
-  literal values.
+  through project tokens and interface-framework layout behavior rather than
+  scattered literal values.
 - Table-dense workflows remain compact enough to expose needed data without
   sacrificing click targets, legibility, or keyboard use.
 - Use rounded containers and pill-like actionable controls selectively to
@@ -140,14 +139,14 @@ any current color values.
 ## Focus, Selection, and Validation
 
 - Keyboard focus is always visible. A dashed or otherwise clear focus
-  indicator is preferred where the toolkit renders it reliably and
+  indicator is preferred where the interface framework renders it reliably and
   accessibly.
 - Table focus, selection, and validation are distinct meanings:
   `table.focus`, `table.selected`, and `table.invalid` must not collapse into
   one appearance.
 - Validation color must not prevent editing and must not be the only signal
   of invalid content.
-- Toolkit-native accessibility and high-contrast behavior override purely
+- Framework-native accessibility and high-contrast behavior override purely
   stylistic attempts to reproduce the source design.
 
 ## Result and Status Surfaces
@@ -163,61 +162,58 @@ any current color values.
   `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`: matrix input where data is
   comparable, summary result first, graph/detail as a secondary phase.
 
-## Toolkit Adaptation Principles
+## Interface Framework Adaptation Principles
 
-- PyQt and Tkinter share this visual philosophy, semantic role vocabulary,
-  and table-first direction.
+- Approved interface frameworks share this visual philosophy, semantic role
+  vocabulary, and table-first direction.
 - Concrete widgets, style APIs, focus rendering, state binding, and token
-  adapters may differ between toolkits.
+  adapters may differ between frameworks.
 - `01_TOOLKIT_SELECTION_POLICY.md` remains the owner of toolkit choice, and
-  toolkit adapter documents remain the owners of implementation constraints.
-- No application mixes PyQt and Tkinter widgets to achieve visual alignment.
+  adapter documents remain the owners of implementation constraints.
+- No application mixes incompatible interface frameworks only to achieve
+  visual alignment.
 
-## PyQt Application Notes
+## Adoption / Evidence Notes
 
-- Predict and Train PyQt applications are part of the long-term adoption
-  scope; this architecture is not limited to calculator UI.
-- Existing PyQt engineering color rules, including header styling,
-  condition-based cell states, and result/status emphasis, are retained until
-  an inventory maps them to semantic roles.
-- Table-shaped PyQt work continues to follow
-  `adapters/PYQT_TABLE_IMPLEMENTATION.md` and the common spreadsheet
-  behavior contract.
+- Example names are evidence, not scope boundaries.
+- Concrete project, product, and framework names may appear in adoption notes
+  or evidence sections to explain why a rule exists. They do not limit this
+  document's portable visual principles.
+- Existing engineering color rules, including header styling, condition-based
+  cell states, and result/status emphasis, should be retained until an
+  inventory maps them to semantic roles.
+- Table-shaped work continues to follow `03_SPREADSHEET_TABLE_UX_CONTRACT.md`
+  and the relevant adapter document.
 
-## Tkinter Application Notes
+### Current-Codebase Adoption Notes
 
-- The Tkinter calculator final UX follows this project-wide visual
-  architecture in addition to its existing behavior and adapter contracts.
-- Tkinter may approximate focus, rounded geometry, or state surfaces using
-  its supported styling/widget mechanisms; equivalence of meaning matters
-  more than pixel-identical rendering.
-- This architecture does not expand the current calculator implementation
-  scope or authorize its next vertical slice.
+- Current PyQt and Tkinter examples are evidence for adoption pressure, not
+  portable scope boundaries.
+- Existing application behavior, source retirement status, and vertical-slice
+  sequencing remain project-binding decisions outside this portable principle
+  document.
 
 ## Non-goals
 
 - Reproducing a Figma marketing site or adopting its palette literally.
 - Requiring black-and-white-only interfaces or removing meaningful
   engineering state colors.
-- Fixing hex/RGB values, font families, radii, spacing literals, or toolkit
-  style code in this document.
-- Changing current PyQt or Tkinter implementation, calculator behavior,
-  table behavior, tests, or source retirement status.
-- Replacing token/layout, table behavior, or toolkit adapter owners.
+- Fixing hex/RGB values, font families, radii, spacing literals, or
+  framework-specific style code in this document.
+- Changing current implementation behavior, table behavior, tests, or source
+  retirement status.
+- Replacing token/layout, table behavior, or interface adapter owners.
 
-## Adoption Order
+## Portable Adoption Order
 
-1. Inventory existing PyQt visual/color/token usage in Predictor, Trainer,
-   and remaining Calculator references without changing code.
-2. Establish a toolkit visual token foundation that maps common semantic
-   vocabulary to PyQt and Tkinter adaptation points. **Foundation complete:**
-   `ui_common/visual_tokens.py`; application wiring is deferred.
-3. Build the Tkinter table/grid input foundation under the existing final UX
-   contract.
-4. Build the Tkinter auto-calc debounce/helper foundation.
-5. Deliver the ISO Hong Kong CSPF/HSPF table plus auto-calc vertical slice.
+1. Inventory existing visual/color/token usage without changing code.
+2. Establish a semantic token foundation or binding layer that maps common
+   role vocabulary to framework adaptation points.
+3. Build or adopt table/grid input components under the existing UX contract.
+4. Build supporting interaction helpers only where the product workflow needs
+   them.
+5. Deliver one representative vertical slice before expanding visual adoption.
 
-PyQt calculator-only source retirement remains held until the Tkinter final
-UX vertical slice verification gate is cleared. Windows `calculator_tk`
-packaged size is approximately 11 MB and acceptable for the current deployment
-candidate; keep PyQt baseline comparison as a later retirement-gate input.
+Current-project rollout details, packaging measurements, source retirement
+decisions, and named feature slices belong in that project's work plan or
+result reports, not in this portable principle body.

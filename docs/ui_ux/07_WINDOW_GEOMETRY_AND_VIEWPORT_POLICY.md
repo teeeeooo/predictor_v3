@@ -2,21 +2,18 @@
 
 ## Purpose
 
-This document defines the toolkit-agnostic UX contract for window
+This document defines the interface-framework-agnostic UX contract for window
 placement, automatic sizing, viewport limits, scrolling, and
 multi-monitor behavior.
 
-It records the lessons from the Tkinter calculator geometry work as a
-general UI policy, not as a Tkinter implementation guide.
+Observed implementation lessons may be recorded as evidence, but concrete
+framework names are not scope boundaries.
 
 ## Scope
 
-This policy applies to:
-
-- the current Tkinter calculator;
-- future C# WPF shells;
-- PySide/PyQt reference UI surfaces;
-- Web UI by analogy, as browser viewport and scroll behavior policy.
+This policy applies to GUI, web, and external interface shells that manage
+window or viewport placement, automatic sizing, scrolling, and dynamic content
+refit.
 
 `02_DESIGN_TOKENS_AND_LAYOUT.md` owns layout tokens and ratios.
 This document owns how those values are used to place windows and
@@ -92,7 +89,7 @@ manage viewports.
   refit on a later event-loop turn. Toolkit APIs such as a double
   `after_idle` are implementation examples, not the policy itself.
 - Nested tab change events are refit triggers.
-- If a toolkit implementation temporarily selects hidden tabs for
+- If an interface implementation temporarily selects hidden tabs for
   measurement, suppress tab-change refit callbacks during that
   measurement.
 - Geometry measurement and geometry mutation must not run in the same
@@ -113,7 +110,7 @@ manage viewports.
 ## Multi-monitor, DPI, And Taskbar
 
 - Determine the monitor/work area from the current window handle or
-  window position when the toolkit supports it.
+  window position when the interface framework supports it.
 - Preserve negative x and x values greater than the primary display
   width when they belong to another monitor.
 - Account for taskbars, scaling, title bars, and window borders when
@@ -138,11 +135,14 @@ manage viewports.
 - Users may enlarge the window when they want more content visible.
 - Minimum size should protect usability, not force oversized launch.
 
-## WPF Implementation Guide
+## Adapter / Implementation Notes
 
-- Do not rely only on `WindowStartupLocation="CenterScreen"`.
-- Do not keep `SizeToContent` enabled while dynamic detail surfaces are
-  opened and closed.
+- Framework-specific names in this section are examples/evidence, not scope
+  boundaries.
+- In WPF-style shells, do not rely only on
+  `WindowStartupLocation="CenterScreen"`.
+- In WPF-style shells, do not keep `SizeToContent` enabled while dynamic detail
+  surfaces are opened and closed.
 - Determine the current monitor/work area from the current window
   handle before fitting.
 - Apply max auto-height only during automatic fit calculations.

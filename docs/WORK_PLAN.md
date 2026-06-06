@@ -46,13 +46,13 @@
   - 230A promotes the repeated window sizing lesson into project-wide Clean Architecture / MVC responsibility-boundary policy.
   - 230B neutralizes that architecture policy wording so concrete project/interface names remain examples rather than scope boundaries.
   - 230C audits `docs/ui_ux/` for portable-document neutralization candidates before applying any UI/UX doc rewrites.
-- Next: UI/UX portable-document neutralization first slice.
+  - 230D neutralizes the first portable UI/UX document slice and adds `docs/ui_ux/README.md` as the folder navigation/adoption index.
+- Next: result report lifecycle cleanup.
 
 ## Next Actions
 
-1. **UI/UX portable-document neutralization first slice**
-   - Neutralize `04_VISUAL_DESIGN_ARCHITECTURE.md`, `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, and the scope/example wording in `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`; keep adapter documents toolkit-specific.
-   - Sync `ACTIVE_DOCUMENTS.md` role wording only where the neutralized owner role changes.
+1. **Result report lifecycle cleanup**
+   - Active reports now exceed the lifecycle follow-up threshold; summarize/archive the table/window-refit, architecture-boundary, and UI/UX neutralization arc while keeping unresolved implementation blockers active.
 2. **Extract Tk visible content measurement adapter**
    - Move `Iso16358Tab`-specific hidden-tab width/current-visible-height measurement into an adapter/provider boundary consumed by the shell template.
    - Keep `window_shell.py` toolkit shell/template owner, `window_refit.py` scheduler owner, and `window_geometry.py` primitive owner.
