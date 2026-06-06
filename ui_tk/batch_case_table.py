@@ -13,6 +13,7 @@ from ui_tk.batch_models import (
 )
 from ui_tk.batch_table import GridAddress, batch_roles_to_cell_roles
 from ui_tk.batch_table_controller import BatchTableController
+from ui_tk.batch_table_viewport import BatchTableViewport
 from ui_tk.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
@@ -92,6 +93,7 @@ class BatchCaseTable(ttk.Frame):
     def add_row(self, values: Mapping[str, str] | None = None) -> None:
         self.model.add_row(values)
         self._rebuild_table()
+        self.scroll_to_bottom()
         self._notify_changed()
 
     def ensure_row_count(self, count: int) -> None:
@@ -203,16 +205,21 @@ class BatchCaseTable(ttk.Frame):
 
     def _build_table(self) -> None:
         self.columnconfigure(0, weight=1)
-        self.table_frame = tk.Frame(
+        self.rowconfigure(0, weight=1)
+        self.viewport_frame = BatchTableViewport(
             self,
-            name="batch_table_surface",
-            background=TABLE_GRID_COLOR,
-            borderwidth=1,
-            relief=tk.SOLID,
+            content_name="batch_table_surface",
+            content_background=TABLE_GRID_COLOR,
         )
-        self.table_frame.grid(row=0, column=0, sticky="ew")
+        self.viewport_frame.grid(row=0, column=0, sticky="nsew")
+        self.table_frame = self.viewport_frame.content
         self.table_frame.surface_role = "table_frame"
+        self.table_frame.layout_policy = "vertical_scroll_containment"
         self._rebuild_table()
+
+    @property
+    def scrollbar_visible(self) -> bool:
+        return self.viewport_frame.scrollbar_visible
 
     def _rebuild_table(self) -> None:
         for child in self.table_frame.winfo_children():
@@ -225,6 +232,7 @@ class BatchCaseTable(ttk.Frame):
             self._build_row(row_index, row)
         if self.interaction_controller is not None:
             self.interaction_controller.refresh()
+        self.viewport_frame.sync(self._visible_rows_height())
 
     def _build_headers(self) -> None:
         self.table_frame.columnconfigure(0, weight=0)
@@ -328,6 +336,17 @@ class BatchCaseTable(ttk.Frame):
         entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
         entry.surface_role = "editable_entry"
         return entry
+
+    def _visible_rows_height(self) -> int:
+        visible_rows = max(1, len(self.model.spec.default_rows))
+        bbox = self.table_frame.grid_bbox(0, 0, self.column_count(), visible_rows)
+        if bbox:
+            return max(1, bbox[3])
+        return max(1, self.table_frame.winfo_reqheight())
+
+    def scroll_to_bottom(self) -> None:
+        self.viewport_frame.sync(self._visible_rows_height())
+        self.viewport_frame.scroll_to_bottom()
 
     def _handle_input_change(self, row_index: int, key: str, value: str) -> None:
         if self.model.rows[row_index].get(key, "") == value:

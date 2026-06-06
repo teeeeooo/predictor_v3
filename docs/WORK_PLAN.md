@@ -47,34 +47,33 @@
   - 233D applies hidden-first, content-measured first-show sizing to the Hong Kong CSPF batch dialog while keeping batch table/calculation behavior unchanged.
   - 233E preserves Hong Kong CSPF batch dialog row/input state across close/reopen within the current section session by storing a table snapshot in the parent CSPF section.
   - 233E closeout records the stateful input dialog lifecycle rule in 05 and the UI workflow gate: close/reopen is not reset/clear.
+  - 233F contains the Hong Kong CSPF batch table in an internal vertical viewport so added rows remain reachable without growing the dialog.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-- Next: 233F batch table viewport/scroll containment.
+- Next: Windows smoke - main and batch window sizing.
 
 ## Next Actions
 
-1. **233F - batch table viewport/scroll containment**
-   - Keep Add Row from pushing rows below the visible dialog area.
-   - Do not mix this with batch copy/export behavior or two-row matrix layout.
-2. **Windows smoke - main and batch window sizing**
+1. **Windows smoke - main and batch window sizing**
    - Confirm Hong Kong lower blank space stays resolved, no refit loop returns, residual soft flicker is acceptable, and batch dialog sizing/position/blank space are acceptable.
-3. **234A - batch two-row matrix layout preflight**
+   - Confirm batch Add Row stays contained in the internal viewport and close/reopen state persists.
+2. **234A - batch two-row matrix layout preflight**
    - Prefer one case = two physical rows: capacity/performance input row plus power input row.
    - Result columns are profile output metrics, not a mandatory Status column. Hong Kong CSPF outputs remain CSPF and CSEC.
    - Define physical-row to logical-case mapping, two-row add/remove, paste, copy, and export contracts.
-4. **234B - common two-row batch table foundation**
+3. **234B - common two-row batch table foundation**
    - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
    - Migrate the current Hong Kong CSPF batch to the shared layout if the preflight accepts it.
-5. **234C - batch table copy-all + CSV export parity**
+4. **234C - batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-6. **Result/detail/export common contract check**
+5. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
-7. **Main table migration candidate check**
+6. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-8. **ui_tk folder cleanup**
+7. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-9. **HSPF detail/bin extension**
-10. **EN14825 / AHRI 210/240 / KS profile expansion**
+8. **HSPF detail/bin extension**
+9. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

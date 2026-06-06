@@ -1304,6 +1304,13 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert first_dialog.window.state() == "normal"
     assert first_dialog.section.table.model.spec.profile_key == "hong_kong_cspf"
     assert len(first_dialog.section.table.model.rows) == 5
+    assert first_dialog.section.table.viewport_frame.surface_role == "batch_table_viewport"
+    assert first_dialog.section.table.viewport_frame.layout_policy == (
+        "vertical_scroll_containment"
+    )
+    assert first_dialog.section.table.table_frame.layout_policy == (
+        "vertical_scroll_containment"
+    )
     assert first_dialog.section.table.model.spec.status_keys == ()
     assert "case" not in first_dialog.section.table.model.spec.input_keys
     assert first_dialog.section.table.row_header_texts() == ("1", "2", "3", "4", "5")
@@ -1312,6 +1319,8 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert "Run Batch" not in dialog_buttons
     assert "Clear Results" not in dialog_buttons
     first_dialog.section.table.add_row()
+    tk_root.update_idletasks()
+    assert first_dialog.section.table.scrollbar_visible
     assert first_dialog.section.table.row_header_texts() == (
         "1",
         "2",
@@ -1369,6 +1378,7 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert reopened_dialog.section.table.model.rows[0]["declared"] == "3500"
     assert reopened_dialog.section.table.model.rows[1]["full_power"] == "1000"
     assert reopened_dialog.section.table.model.rows[5]["half_power"] == "620"
+    assert reopened_dialog.section.table.scrollbar_visible
 
     reopened_dialog.close()
     tk_root.update_idletasks()
