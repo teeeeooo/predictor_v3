@@ -42,13 +42,15 @@
   - 233A compares mapped-surface sizing flows and concludes the next code slice needs a shared measurement snapshot / mapped-surface lifecycle, not another local settle-cycle patch.
   - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot. Windows smoke confirms the Hong Kong lower blank space is resolved and the refit loop is still gone, but profile/detail flicker remains user-visible.
   - 233C unifies profile switch, profile reselect, and detail toggle around the same visible-surface lifecycle refit request path and avoids unnecessary re-render on same-profile reselect.
-- Next: Windows smoke closeout for 233C flicker reduction and sizing behavior.
+  - 233C-2 reuses the already-rendered Hong Kong metric surface when returning from another profile with the same region, avoiding redundant metric notebook/section destroy-create work.
+- Next: Windows smoke closeout for 233C-2 flicker reduction and sizing behavior.
 
 ## Next Actions
 
-1. **Windows smoke closeout for 233C lifecycle orchestration**
+1. **Windows smoke closeout for 233C-2 lifecycle/reuse slice**
    - Confirm Hong Kong lower blank space stays resolved, no refit loop returns, and profile switch / reselect / detail toggle flicker is meaningfully reduced.
    - Also check CSPF/HSPF metric tab switching, selected-range fill paste, and batch dialog unchanged state.
+   - If soft flicker remains after reuse, avoid another broad lifecycle refactor unless Windows evidence shows a specific remaining visible mutation owner.
 2. **233D or 233C follow-up - batch dialog sizing/UX under the same window shell policy**
    - Treat batch dialog size, position, viewport, and blank space as part of the window shell lifecycle arc.
    - Do not mix this with batch copy/export behavior.

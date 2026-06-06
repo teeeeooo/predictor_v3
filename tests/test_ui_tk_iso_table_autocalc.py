@@ -1088,6 +1088,38 @@ def test_profile_reselect_uses_lifecycle_refit_without_rerender(tk_root, monkeyp
     assert render_calls == []
 
 
+def test_profile_switch_back_to_hong_kong_reuses_same_region_surface(
+    tk_root, monkeypatch
+):
+    tab = _make_hong_kong_tab(tk_root)
+    cached_sections = tab.sections
+    cached_result_panel = tab.result_panel
+    calls = []
+    render_calls = []
+    original_render_region = tab._render_region
+
+    def record_render_region(region_label):
+        render_calls.append(region_label)
+        original_render_region(region_label)
+
+    monkeypatch.setattr(tab, "_render_region", record_render_region)
+    monkeypatch.setattr(
+        tab,
+        "_request_visible_lifecycle_refit",
+        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
+    )
+
+    tab._mode_combo.set("ISO/ISEER 2-point")
+    tab._on_mode_changed()
+    tab._mode_combo.set("Hong Kong")
+    tab._on_mode_changed()
+
+    assert render_calls == []
+    assert calls == [1, 2]
+    assert tab.sections is cached_sections
+    assert tab.result_panel is cached_result_panel
+
+
 def test_region_change_uses_lifecycle_refit_path(tk_root, monkeypatch):
     tab = _make_hong_kong_tab(tk_root)
     calls = []
@@ -1100,6 +1132,23 @@ def test_region_change_uses_lifecycle_refit_path(tk_root, monkeypatch):
     tab._on_region_changed()
 
     assert calls == [1]
+
+
+def test_region_change_rerenders_hong_kong_surface(tk_root, monkeypatch):
+    tab = _make_hong_kong_tab(tk_root)
+    calls = []
+    original_render_region = tab._render_region
+
+    def record_render_region(region_label):
+        calls.append(region_label)
+        original_render_region(region_label)
+
+    monkeypatch.setattr(tab, "_render_region", record_render_region)
+
+    tab._on_region_changed()
+
+    assert calls == ["Hong Kong"]
+    assert tab._can_reuse_hong_kong_region("Hong Kong") is True
 
 
 def test_preferred_initial_size_reflects_rendered_result(tk_root):

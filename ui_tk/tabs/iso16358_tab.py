@@ -111,6 +111,9 @@ class Iso16358Tab(ttk.Frame):
         # The actual visible panels are owned and rendered by each section.
         self.result_panel = None
         self._rendered_mode_label: str | None = None
+        self._rendered_hong_kong_region_label: str | None = None
+        self._hong_kong_sections = {}
+        self._hong_kong_result_panel = None
 
         self._render_mode(MODE_ISO_ISEER_2POINT)
 
@@ -219,12 +222,17 @@ class Iso16358Tab(ttk.Frame):
             self._rendered_mode_label = mode_label
             return
 
-        self._render_region(self._region_combo.get())
+        region_label = self._region_combo.get()
+        if self._can_reuse_hong_kong_region(region_label):
+            self.sections = self._hong_kong_sections
+            self.result_panel = self._hong_kong_result_panel
+        else:
+            self._render_region(region_label)
         self._hong_kong_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self._rendered_mode_label = mode_label
 
     def _cancel_hong_kong_pending(self) -> None:
-        for section in self.sections.values():
+        for section in self._hong_kong_sections.values():
             auto_calc = getattr(section, "_auto_calc", None)
             if auto_calc is not None:
                 auto_calc.cancel()
@@ -235,6 +243,13 @@ class Iso16358Tab(ttk.Frame):
         self._render_region(self._region_combo.get())
         self._request_visible_lifecycle_refit()
 
+    def _can_reuse_hong_kong_region(self, region_label: str) -> bool:
+        return (
+            self._rendered_hong_kong_region_label == region_label
+            and bool(self._hong_kong_sections)
+            and bool(self._metric_notebook.tabs())
+        )
+
     def _render_region(self, region_label: str) -> None:
         for tab_id in self._metric_notebook.tabs():
             widget = self._metric_notebook.nametowidget(tab_id)
@@ -242,6 +257,8 @@ class Iso16358Tab(ttk.Frame):
             widget.destroy()
         self.sections = {}
         self.result_panel = None
+        self._hong_kong_sections = {}
+        self._hong_kong_result_panel = None
 
         for metric in supported_metrics_for(region_label):
             factory = _SECTION_FACTORIES.get(metric)
@@ -259,3 +276,6 @@ class Iso16358Tab(ttk.Frame):
             self.sections[metric] = section
             if self.result_panel is None:
                 self.result_panel = section.result_panel
+        self._hong_kong_sections = self.sections
+        self._hong_kong_result_panel = self.result_panel
+        self._rendered_hong_kong_region_label = region_label
