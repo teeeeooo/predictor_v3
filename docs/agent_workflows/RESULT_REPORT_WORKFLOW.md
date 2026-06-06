@@ -104,6 +104,10 @@ pre-existing unrelated dirty files.
 - Prefer separate source/docs and report commits when practical.
 - Audit/report-only work may commit only the report.
 - Record commit hash and push status in the report.
+- For a user-requested commit/push-only follow-up after validation already ran
+  and no files changed since, do not repeat validation. Use one compact
+  commit/push command sequence and one short final line with hash, push status,
+  and clean/dirty status.
 - When the user requested commit/push for a report-backed task, check the
   active report count before final output. If `result_reports/active/` has
   more than 10 reports, do not run lifecycle maintenance automatically; add a
