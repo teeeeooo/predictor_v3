@@ -5,7 +5,16 @@ from __future__ import annotations
 import pytest
 
 from ui_tk.window_geometry import capped_window_size
+from dataclasses import dataclass
+
 from ui_tk.window_shell import TkContentHuggingShell, visible_content_fit_geometry
+
+
+@dataclass(frozen=True)
+class FakeSnapshot:
+    preferred_size: tuple[int, int]
+    vertical_overflow_delta: int = 0
+    include_overflow_in_fit: bool = False
 
 
 class FakeRoot:
@@ -127,6 +136,41 @@ def test_shell_registers_provider_based_content_form():
     assert after_fit_results == [result]
 
 
+def test_shell_uses_snapshot_provider_for_one_measurement_object():
+    root = FakeRoot()
+    shell = TkContentHuggingShell(root)
+    calls = []
+
+    def snapshot_provider() -> FakeSnapshot:
+        calls.append("snapshot")
+        return FakeSnapshot((640, 420), vertical_overflow_delta=80)
+
+    form = shell.register_content(snapshot_provider=snapshot_provider)
+
+    result = form.fit()
+
+    assert calls == ["snapshot"]
+    assert result.target_geometry == "640x420+100+80"
+    assert root.geometry_calls == ["640x420+100+80"]
+
+
+def test_shell_snapshot_can_include_overflow_when_policy_allows_it():
+    root = FakeRoot()
+    shell = TkContentHuggingShell(root)
+    form = shell.register_content(
+        snapshot_provider=lambda: FakeSnapshot(
+            (640, 420),
+            vertical_overflow_delta=80,
+            include_overflow_in_fit=True,
+        )
+    )
+
+    result = form.fit()
+
+    assert result.target_geometry == "640x500+100+80"
+    assert root.geometry_calls == ["640x500+100+80"]
+
+
 def test_shell_registers_widget_content_default_measurement():
     class FakeContent:
         def __init__(self) -> None:
@@ -155,5 +199,8 @@ def test_shell_registers_widget_content_default_measurement():
 def test_shell_requires_content_or_measurement_provider():
     shell = TkContentHuggingShell(FakeRoot())
 
-    with pytest.raises(ValueError, match="content or preferred_size_provider"):
+    with pytest.raises(
+        ValueError,
+        match="content, snapshot_provider, or preferred_size_provider",
+    ):
         shell.register_content()

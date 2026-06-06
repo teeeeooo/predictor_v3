@@ -102,8 +102,7 @@ class Iso16358Tab(ttk.Frame):
         )
         self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
         self._content_form = self._content_shell.register_content(
-            preferred_size_provider=self._measurement.preferred_size,
-            overflow_provider=self._measurement.vertical_overflow_delta,
+            snapshot_provider=self._measurement.snapshot,
             after_fit=lambda _result: self._scrollable.reset_scroll_position(),
         )
 

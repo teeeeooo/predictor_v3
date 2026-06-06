@@ -519,6 +519,7 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
                 self,
                 *,
                 content=None,
+                snapshot_provider=None,
                 preferred_size_provider=None,
                 overflow_provider=None,
                 after_fit=None,
@@ -527,6 +528,7 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
                     (
                         self.root_arg,
                         content,
+                        snapshot_provider,
                         preferred_size_provider,
                         overflow_provider,
                         after_fit,
@@ -535,8 +537,9 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
 
                 class FakeForm:
                     def fit(form_self):
-                        preferred_content_size = preferred_size_provider()
-                        vertical_overflow_delta = overflow_provider()
+                        snapshot = snapshot_provider()
+                        preferred_content_size = snapshot.preferred_size
+                        vertical_overflow_delta = snapshot.vertical_overflow_delta
                         calls.append(
                             (self.root_arg, preferred_content_size, vertical_overflow_delta)
                         )
@@ -553,17 +556,26 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
         tab._fit_toplevel_to_current_content()
 
         assert len(registered) == 1
-        root_arg, content, preferred_size_provider, overflow_provider, after_fit = registered[0]
+        (
+            root_arg,
+            content,
+            snapshot_provider,
+            preferred_size_provider,
+            overflow_provider,
+            after_fit,
+        ) = registered[0]
         assert root_arg is root
         assert content is None
-        assert preferred_size_provider == tab._measurement.preferred_size
-        assert overflow_provider == tab._measurement.vertical_overflow_delta
+        assert snapshot_provider == tab._measurement.snapshot
+        assert preferred_size_provider is None
+        assert overflow_provider is None
         assert after_fit is not None
         assert len(calls) == 1
         root_arg, preferred_content_size, vertical_overflow_delta = calls[0]
         assert root_arg is root
-        assert preferred_content_size == tab._measurement.preferred_size()
-        assert vertical_overflow_delta == tab._measurement.vertical_overflow_delta()
+        snapshot = tab._measurement.snapshot()
+        assert preferred_content_size == snapshot.preferred_size
+        assert vertical_overflow_delta == snapshot.vertical_overflow_delta
     finally:
         root.destroy()
 

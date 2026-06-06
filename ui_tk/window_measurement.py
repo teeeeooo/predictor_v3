@@ -9,8 +9,8 @@ stays in ``ui_tk.window_shell``; event-loop scheduling stays in
 from __future__ import annotations
 
 from contextlib import nullcontext
-from dataclasses import dataclass
-from typing import Any, Callable, ContextManager
+from dataclasses import dataclass, field
+from typing import Any, Callable, ContextManager, Mapping
 
 from ui_tk.layout_constants import APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
 
@@ -26,6 +26,16 @@ class NestedNotebookMeasurement:
     max_tab_height: int = 0
     current_tab_height: int = 0
     notebook_height: int = 0
+
+
+@dataclass(frozen=True)
+class VisibleContentSnapshot:
+    """One settled measurement snapshot for content-hugging fit."""
+
+    preferred_size: tuple[int, int]
+    vertical_overflow_delta: int = 0
+    include_overflow_in_fit: bool = False
+    diagnostics: Mapping[str, int] = field(default_factory=dict)
 
 
 class TkVisibleContentMeasurement:
@@ -55,6 +65,16 @@ class TkVisibleContentMeasurement:
     def preferred_size(self) -> tuple[int, int]:
         """Return preferred size for the current visible content state."""
 
+        return self.snapshot().preferred_size
+
+    def vertical_overflow_delta(self) -> int:
+        """Return positive vertical overflow from the scroll container."""
+
+        return self.snapshot().vertical_overflow_delta
+
+    def snapshot(self) -> VisibleContentSnapshot:
+        """Return preferred size and overflow from one measurement turn."""
+
         self._content.update_idletasks()
         nested = self._measure_nested_notebook()
 
@@ -72,15 +92,26 @@ class TkVisibleContentMeasurement:
 
         margin = self._horizontal_margin_ratio
         vertical_margin = min(int(content_height * margin), self._vertical_margin_cap)
-        return (
+        preferred_size = (
             int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
             content_height + vertical_margin,
         )
-
-    def vertical_overflow_delta(self) -> int:
-        """Return positive vertical overflow from the scroll container."""
-
-        return self._overflow_source.vertical_overflow_delta()
+        overflow_delta = self._overflow_source.vertical_overflow_delta()
+        diagnostics = {
+            "content_reqwidth": self._content.winfo_reqwidth(),
+            "content_reqheight": self._content.winfo_reqheight(),
+            "nested_max_tab_width": nested.max_tab_width,
+            "nested_max_tab_height": nested.max_tab_height,
+            "nested_current_tab_height": nested.current_tab_height,
+            "nested_notebook_height": nested.notebook_height,
+            "vertical_overflow_delta": overflow_delta,
+        }
+        return VisibleContentSnapshot(
+            preferred_size=preferred_size,
+            vertical_overflow_delta=overflow_delta,
+            include_overflow_in_fit=False,
+            diagnostics=diagnostics,
+        )
 
     def _measure_nested_notebook(self) -> NestedNotebookMeasurement:
         notebook = self._nested_notebook

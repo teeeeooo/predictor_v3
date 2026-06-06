@@ -83,6 +83,22 @@ def test_visible_measurement_uses_simple_content_size_without_nested_notebook():
     assert measurement.preferred_size() == (540, 315)
 
 
+def test_visible_measurement_snapshot_returns_size_overflow_and_diagnostics():
+    measurement = TkVisibleContentMeasurement(
+        content=FakeContent(500, 300),
+        scrollbar=FakeScrollbar(15),
+        overflow_source=FakeOverflowSource(42),
+    )
+
+    snapshot = measurement.snapshot()
+
+    assert snapshot.preferred_size == (540, 315)
+    assert snapshot.vertical_overflow_delta == 42
+    assert snapshot.include_overflow_in_fit is False
+    assert snapshot.diagnostics["content_reqheight"] == 300
+    assert snapshot.diagnostics["vertical_overflow_delta"] == 42
+
+
 def test_nested_notebook_uses_hidden_tabs_for_width_but_visible_tab_for_height():
     content = FakeContent(400, 500)
     notebook = FakeNotebook(
@@ -112,7 +128,13 @@ def test_nested_notebook_uses_hidden_tabs_for_width_but_visible_tab_for_height()
         suppress_measurement=suppress_measurement,
     )
 
-    assert measurement.preferred_size() == (561, 418)
+    snapshot = measurement.snapshot()
+
+    assert snapshot.preferred_size == (561, 418)
+    assert snapshot.vertical_overflow_delta == 0
+    assert snapshot.include_overflow_in_fit is False
+    assert snapshot.diagnostics["nested_max_tab_width"] == 520
+    assert snapshot.diagnostics["nested_current_tab_height"] == 180
     assert notebook.selected_history == ["current", "hidden", "current"]
     assert suppress_events == ["enter", "exit"]
 
@@ -141,3 +163,14 @@ def test_visible_measurement_delegates_vertical_overflow_delta():
     )
 
     assert measurement.vertical_overflow_delta() == 42
+
+
+def test_compatibility_methods_read_from_snapshots():
+    measurement = TkVisibleContentMeasurement(
+        content=FakeContent(500, 300),
+        scrollbar=FakeScrollbar(15),
+        overflow_source=FakeOverflowSource(42),
+    )
+
+    assert measurement.preferred_size() == measurement.snapshot().preferred_size
+    assert measurement.vertical_overflow_delta() == measurement.snapshot().vertical_overflow_delta
