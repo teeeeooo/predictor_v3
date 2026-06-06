@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from ui_tk.window_geometry import capped_window_size
 from ui_tk.window_shell import TkContentHuggingShell, visible_content_fit_geometry
 
@@ -18,6 +20,7 @@ class FakeRoot:
         self._screen_width = screen_width
         self._screen_height = screen_height
         self.geometry_calls: list[str] = []
+        self.minsize_calls: list[tuple[int, int]] = []
         self.update_calls = 0
 
     def geometry(self, value: str | None = None) -> str:
@@ -35,6 +38,9 @@ class FakeRoot:
 
     def winfo_screenheight(self) -> int:
         return self._screen_height
+
+    def minsize(self, width: int, height: int) -> None:
+        self.minsize_calls.append((width, height))
 
 
 def test_visible_content_fit_geometry_uses_preferred_visible_size():
@@ -85,6 +91,7 @@ def test_tk_content_hugging_shell_applies_geometry_once():
 
     assert result.applied is True
     assert result.target_geometry == "640x500+100+80"
+    assert root.minsize_calls == [(640, 500)]
     assert root.geometry_calls == ["640x500+100+80"]
     assert root.update_calls == 2
 
@@ -97,5 +104,56 @@ def test_tk_content_hugging_shell_skips_noop_geometry_apply():
 
     assert result.applied is False
     assert result.target_geometry == "640x500+100+80"
+    assert root.minsize_calls == [(640, 500)]
     assert root.geometry_calls == []
     assert root.update_calls == 1
+
+
+def test_shell_registers_provider_based_content_form():
+    root = FakeRoot()
+    shell = TkContentHuggingShell(root)
+    after_fit_results = []
+    form = shell.register_content(
+        preferred_size_provider=lambda: (640, 420),
+        overflow_provider=lambda: 80,
+        after_fit=after_fit_results.append,
+    )
+
+    result = form.fit()
+
+    assert result.target_geometry == "640x500+100+80"
+    assert root.minsize_calls == [(640, 500)]
+    assert root.geometry_calls == ["640x500+100+80"]
+    assert after_fit_results == [result]
+
+
+def test_shell_registers_widget_content_default_measurement():
+    class FakeContent:
+        def __init__(self) -> None:
+            self.update_calls = 0
+
+        def update_idletasks(self) -> None:
+            self.update_calls += 1
+
+        def winfo_reqwidth(self) -> int:
+            return 620
+
+        def winfo_reqheight(self) -> int:
+            return 410
+
+    root = FakeRoot()
+    content = FakeContent()
+    form = TkContentHuggingShell(root).register_content(content=content)
+
+    result = form.fit()
+
+    assert result.target_geometry == "620x410+100+80"
+    assert root.geometry_calls == ["620x410+100+80"]
+    assert content.update_calls == 1
+
+
+def test_shell_requires_content_or_measurement_provider():
+    shell = TkContentHuggingShell(FakeRoot())
+
+    with pytest.raises(ValueError, match="content or preferred_size_provider"):
+        shell.register_content()

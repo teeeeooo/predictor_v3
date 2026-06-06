@@ -10,9 +10,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import tkinter as tk
+from typing import Callable
 
 from ui_tk.window_geometry import (
     clamp_geometry_vertically_to_visible_bounds,
+    parse_window_geometry,
     preferred_content_fit_geometry,
 )
 
@@ -23,6 +25,11 @@ class ContentFitResult:
 
     target_geometry: str
     applied: bool
+
+
+PreferredSizeProvider = Callable[[], tuple[int, int]]
+OverflowProvider = Callable[[], int]
+AfterFitHook = Callable[[ContentFitResult], None]
 
 
 def visible_content_fit_geometry(
@@ -55,11 +62,72 @@ def visible_content_fit_geometry(
     return clamp_geometry_vertically_to_visible_bounds(geometry, screen_height)
 
 
+class TkContentHuggingForm:
+    """Reusable content-hugging binding for one Tk screen/dialog surface."""
+
+    def __init__(
+        self,
+        shell: "TkContentHuggingShell",
+        *,
+        preferred_size_provider: PreferredSizeProvider,
+        overflow_provider: OverflowProvider | None = None,
+        after_fit: AfterFitHook | None = None,
+    ) -> None:
+        self._shell = shell
+        self._preferred_size_provider = preferred_size_provider
+        self._overflow_provider = overflow_provider
+        self._after_fit = after_fit
+
+    def fit(self) -> ContentFitResult:
+        """Measure visible content through providers and fit the shell."""
+
+        result = self._shell.fit_visible_content(
+            self._preferred_size_provider(),
+            vertical_overflow_delta=(
+                self._overflow_provider() if self._overflow_provider is not None else 0
+            ),
+        )
+        if self._after_fit is not None:
+            self._after_fit(result)
+        return result
+
+
 class TkContentHuggingShell:
-    """Apply content-hugging geometry for a Tk toplevel."""
+    """Content-hugging shell/form template for a Tk toplevel."""
 
     def __init__(self, root: tk.Tk | tk.Toplevel) -> None:
         self._root = root
+
+    def register_content(
+        self,
+        *,
+        content: tk.Widget | None = None,
+        preferred_size_provider: PreferredSizeProvider | None = None,
+        overflow_provider: OverflowProvider | None = None,
+        after_fit: AfterFitHook | None = None,
+    ) -> TkContentHuggingForm:
+        """Register a reusable content surface with measurement providers.
+
+        ``preferred_size_provider`` is preferred for nested/profile surfaces
+        whose visible-height policy differs from raw widget requested size.
+        Plain screens/dialogs may pass ``content`` and use the default widget
+        requested-size measurement.
+        """
+
+        if preferred_size_provider is None:
+            if content is None:
+                raise ValueError("content or preferred_size_provider is required")
+
+            def preferred_size_provider() -> tuple[int, int]:
+                content.update_idletasks()
+                return (content.winfo_reqwidth(), content.winfo_reqheight())
+
+        return TkContentHuggingForm(
+            self,
+            preferred_size_provider=preferred_size_provider,
+            overflow_provider=overflow_provider,
+            after_fit=after_fit,
+        )
 
     def fit_visible_content(
         self,
@@ -78,6 +146,8 @@ class TkContentHuggingShell:
             screen_height=root.winfo_screenheight(),
             vertical_overflow_delta=vertical_overflow_delta,
         )
+        target_width, target_height, _x, _y = parse_window_geometry(target_geometry)
+        root.minsize(target_width, target_height)
         if root.geometry() == target_geometry:
             return ContentFitResult(target_geometry=target_geometry, applied=False)
 

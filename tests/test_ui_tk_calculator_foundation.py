@@ -509,13 +509,41 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
         from ui_tk.tabs.iso16358_tab import Iso16358Tab
 
         calls = []
+        registered = []
 
         class FakeShell:
             def __init__(self, root_arg):
                 self.root_arg = root_arg
 
-            def fit_visible_content(self, preferred_content_size, *, vertical_overflow_delta=0):
-                calls.append((self.root_arg, preferred_content_size, vertical_overflow_delta))
+            def register_content(
+                self,
+                *,
+                content=None,
+                preferred_size_provider=None,
+                overflow_provider=None,
+                after_fit=None,
+            ):
+                registered.append(
+                    (
+                        self.root_arg,
+                        content,
+                        preferred_size_provider,
+                        overflow_provider,
+                        after_fit,
+                    )
+                )
+
+                class FakeForm:
+                    def fit(form_self):
+                        preferred_content_size = preferred_size_provider()
+                        vertical_overflow_delta = overflow_provider()
+                        calls.append(
+                            (self.root_arg, preferred_content_size, vertical_overflow_delta)
+                        )
+                        if after_fit is not None:
+                            after_fit(None)
+
+                return FakeForm()
 
         monkeypatch.setattr(iso16358_tab, "TkContentHuggingShell", FakeShell)
         tab = Iso16358Tab(root)
@@ -524,6 +552,13 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
 
         tab._fit_toplevel_to_current_content()
 
+        assert len(registered) == 1
+        root_arg, content, preferred_size_provider, overflow_provider, after_fit = registered[0]
+        assert root_arg is root
+        assert content is None
+        assert preferred_size_provider == tab.preferred_initial_size
+        assert overflow_provider == tab.vertical_overflow_delta
+        assert after_fit is not None
         assert len(calls) == 1
         root_arg, preferred_content_size, vertical_overflow_delta = calls[0]
         assert root_arg is root

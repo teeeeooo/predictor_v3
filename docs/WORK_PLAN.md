@@ -42,6 +42,7 @@
   - 226 concludes content-hugging sizing needs final visible-content measurement and one geometry apply, not more settle-cycle patches.
   - 227 reframes the remaining Hong Kong lower blank space and flicker as a missing toolkit-neutral content-hugging shell/form owner, with SPOT used only as concrete UX evidence.
   - 228 adds the first Tkinter content-hugging shell owner and routes `Iso16358Tab` profile/detail refit through one shell geometry apply.
+  - 229 promotes the Tk content-hugging shell from a geometry helper to a reusable form template with content/provider registration and after-fit hooks.
 - Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
 
 ## Next Actions

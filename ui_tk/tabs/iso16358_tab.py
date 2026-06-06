@@ -79,6 +79,12 @@ class Iso16358Tab(ttk.Frame):
             self,
             self._fit_toplevel_to_current_content,
         )
+        self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
+        self._content_form = self._content_shell.register_content(
+            preferred_size_provider=self.preferred_initial_size,
+            overflow_provider=self.vertical_overflow_delta,
+            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
+        )
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -194,14 +200,9 @@ class Iso16358Tab(ttk.Frame):
         self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
 
     def _fit_toplevel_to_current_content(self) -> None:
-        root = self.winfo_toplevel()
         self.update_idletasks()
-        TkContentHuggingShell(root).fit_visible_content(
-            self.preferred_initial_size(),
-            vertical_overflow_delta=self.vertical_overflow_delta(),
-        )
+        self._content_form.fit()
         self.update_idletasks()
-        self._scrollable.reset_scroll_position()
 
     def fit_toplevel_to_current_content_once(self) -> None:
         self._fit_toplevel_to_current_content()
