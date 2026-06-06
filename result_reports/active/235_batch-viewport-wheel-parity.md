@@ -105,7 +105,9 @@ entry, read-only label, header, or row header.
 
 ## Commit / Push
 
-- Commit: `a2e2351`
+- Implementation/report commit before hash-record update: `9fc6c05`
+- Final pushed commit: recorded in terminal output because updating this report
+  changes the commit hash.
 - Push: pending
 
 ## Project Memory Delta
