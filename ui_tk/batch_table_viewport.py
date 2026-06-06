@@ -5,6 +5,8 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from ui_tk.scrollable_frame import mousewheel_units
+
 
 class BatchTableViewport(ttk.Frame):
     """Canvas-backed vertical containment for a batch table grid."""
@@ -47,6 +49,28 @@ class BatchTableViewport(ttk.Frame):
         )
         self.content.bind("<Configure>", self._on_content_configured)
         self.canvas.bind("<Configure>", self._on_canvas_configured)
+        self._mousewheel_toplevel = self.winfo_toplevel()
+        self._mousewheel_bindings = (
+            (
+                "<MouseWheel>",
+                self._mousewheel_toplevel.bind(
+                    "<MouseWheel>", self._on_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Button-4>",
+                self._mousewheel_toplevel.bind(
+                    "<Button-4>", self._on_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Button-5>",
+                self._mousewheel_toplevel.bind(
+                    "<Button-5>", self._on_mousewheel, add="+"
+                ),
+            ),
+        )
+        self.bind("<Destroy>", self._unbind_mousewheel, add="+")
 
     @property
     def scrollbar_visible(self) -> bool:
@@ -63,6 +87,14 @@ class BatchTableViewport(ttk.Frame):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         self.canvas.yview_moveto(1.0)
         self._sync_scrollbar_visibility()
+
+    def vertical_overflow_delta(self) -> int:
+        bbox = self.canvas.bbox("all")
+        if bbox is None:
+            return 0
+        content_height = bbox[3] - bbox[1]
+        viewport_height = self.canvas.winfo_height()
+        return max(0, content_height - viewport_height)
 
     def _on_content_configured(self, _event: tk.Event | None = None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -84,3 +116,27 @@ class BatchTableViewport(ttk.Frame):
         elif not needed and self._scrollbar_visible:
             self.scrollbar.pack_forget()
             self._scrollbar_visible = False
+
+    def _unbind_mousewheel(self, _event: tk.Event | None = None) -> None:
+        if _event is not None and getattr(_event, "widget", None) is not self:
+            return
+        for sequence, funcid in self._mousewheel_bindings:
+            self._mousewheel_toplevel.unbind(sequence, funcid)
+        self._mousewheel_bindings = ()
+
+    def _contains_widget(self, widget: tk.Misc | None) -> bool:
+        while widget is not None:
+            if widget is self:
+                return True
+            widget = getattr(widget, "master", None)
+        return False
+
+    def _on_mousewheel(self, event: tk.Event) -> str:
+        if not self._contains_widget(getattr(event, "widget", None)):
+            return ""
+        if self.vertical_overflow_delta() <= 0:
+            return "break"
+        units = mousewheel_units(event)
+        if units:
+            self.canvas.yview_scroll(units, "units")
+        return "break"
