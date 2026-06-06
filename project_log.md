@@ -56,6 +56,10 @@
   cases separately from physical rows, expose per-cell role/applicability for
   controller semantics, keep result columns metric-only, and implement
   model/spec mapping before Tk UI migration.
+- 238 implements the headless matrix mapping foundation with no merged or
+  fake-merged cells: Case/result values appear only on the first physical row,
+  second-row positions are real blank read-only cells, and mutation targets are
+  editable input cells only.
 - HSPF/EN/AHRI/KS expansion should wait until result/detail/export contracts,
   two-row batch foundation, main table migration candidates, and ui_tk cleanup
   direction are checked.
