@@ -44,6 +44,7 @@
   - 233C unifies profile switch, profile reselect, and detail toggle around the same visible-surface lifecycle refit request path and avoids unnecessary re-render on same-profile reselect.
   - 233C-2 reuses the already-rendered Hong Kong metric surface when returning from another profile with the same region, avoiding redundant metric notebook/section destroy-create work.
   - 233C closeout documents hidden-first window/dialog first-show and stable-container dynamic surface lifecycle policy. Hong Kong lower blank space/refit loop are resolved; remaining soft flicker is accepted for this arc unless later smoke identifies a specific mutation owner.
+  - UI surface workflow details moved from `AGENT_TASK_ROUTER.md` into `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`; router now stays closer to owner routing and short hard gates.
 - Next: 233D batch dialog sizing/UX under the same window shell policy.
 
 ## Next Actions

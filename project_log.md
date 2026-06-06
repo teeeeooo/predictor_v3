@@ -63,6 +63,9 @@
   first-show or stable-container lifecycle rules from
   `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`; the task router now
   points UI window/dialog/profile/page work at that policy.
+- UI surface details were moved out of `AGENT_TASK_ROUTER.md` into
+  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md` so router remains a route map
+  and repeated UI table/window checklist growth has a dedicated workflow owner.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
@@ -72,6 +75,8 @@
 - Hidden-first preparation before first show is different from repeatedly
   hiding and showing an already-visible shell; new surfaces should be designed
   with the former instead of patched with the latter.
+- When a route keeps accumulating detailed checklist text, move the workflow to
+  an owner document and leave only the owner-routing gate in the router.
 
 ---
 
