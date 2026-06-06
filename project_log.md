@@ -52,6 +52,10 @@
   Status is not a default output column; result columns are profile metrics
   such as Hong Kong CSPF/CSEC, with blank/error state handled outside the core
   output columns.
+- 237 accepts the two-row matrix direction with constraints: model logical
+  cases separately from physical rows, expose per-cell role/applicability for
+  controller semantics, keep result columns metric-only, and implement
+  model/spec mapping before Tk UI migration.
 - HSPF/EN/AHRI/KS expansion should wait until result/detail/export contracts,
   two-row batch foundation, main table migration candidates, and ui_tk cleanup
   direction are checked.

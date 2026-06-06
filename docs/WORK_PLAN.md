@@ -40,28 +40,30 @@
   - 229, 231, 232, 233A through 233F guard, 234, and 235 are summarized under summary 236.
   - 236 closes the window/dialog/table/batch viewport arc: lower blank space and refit loop are resolved, remaining soft flicker is accepted, batch dialog sizing/state/viewport wheel behavior are accepted, and report workflow self-reference handling is documented.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-- Next: Batch two-row matrix layout preflight.
+- Next: Batch two-row matrix model/spec and mapping helpers.
 
 ## Next Actions
 
-1. **234A - batch two-row matrix layout preflight**
-   - Prefer one case = two physical rows: capacity/performance input row plus power input row.
-   - Result columns are profile output metrics, not a mandatory Status column. Hong Kong CSPF outputs remain CSPF and CSEC.
-   - Define physical-row to logical-case mapping, two-row add/remove, paste, copy, and export contracts.
-2. **234B - common two-row batch table foundation**
+1. **Batch two-row matrix model/spec and mapping helpers**
+   - Define logical case, two physical row types, measurement point columns, result metric columns, cell applicability, and row/point-to-input-key mapping.
+   - Keep this slice headless/model-first; do not migrate Hong Kong CSPF UI yet.
+2. **Per-cell role surface/controller compatibility**
+   - Extend or adapt the table surface contract so selection/copy/paste/clear can respect per-cell editable, read-only result, and not-applicable states.
+3. **Tk two-row matrix table skeleton**
    - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
-   - Migrate the current Hong Kong CSPF batch to the shared layout if the preflight accepts it.
-3. **234C - batch table copy-all + CSV export parity**
+4. **Hong Kong CSPF matrix migration**
+   - Migrate the current Hong Kong CSPF batch only after the model/spec and controller compatibility slices are guarded.
+5. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-4. **Result/detail/export common contract check**
+6. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
-5. **Main table migration candidate check**
+7. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-6. **ui_tk folder cleanup**
+8. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-7. **HSPF detail/bin extension**
-8. **EN14825 / AHRI 210/240 / KS profile expansion**
+9. **HSPF detail/bin extension**
+10. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
