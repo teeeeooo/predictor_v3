@@ -70,6 +70,11 @@ When UI changes affect input matrices, result summaries, detail/bin surfaces,
 status/error handling, copy, or export:
 
 - confirm `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`;
+- for stateful input dialogs or batch surfaces, confirm close/reopen state
+  ownership; closing the shell must not reset rows/values unless an explicit
+  reset/clear action exists;
+- keep dialog shell lifecycle, table/input snapshot behavior, and
+  parent/controller state ownership separate;
 - keep domain result schemas separate from UI table/export schemas;
 - prefer existing copy/export helpers and report gaps before adding new export
   paths.

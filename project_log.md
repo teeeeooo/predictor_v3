@@ -66,6 +66,11 @@
 - UI, calculator, ML/Predictor, and packaging workflow details were moved out
   of `AGENT_TASK_ROUTER.md` into `docs/agent_workflows/*`, bringing the router
   down to a compact route/gate map while preserving owner-specific detail.
+- 233E fixed batch dialog close/reopen state loss by keeping session-local
+  input snapshots outside the dialog shell. Stateful input dialog lifecycle is
+  now documented in `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`
+  and the UI workflow gate: close is not reset, and reset/clear must be an
+  explicit user action.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
@@ -75,6 +80,9 @@
 - Hidden-first preparation before first show is different from repeatedly
   hiding and showing an already-visible shell; new surfaces should be designed
   with the former instead of patched with the latter.
+- Stateful input shell lifecycle and user input state lifecycle must be
+  separated; destroying a widget shell must not silently discard structured
+  user input.
 - When a route keeps accumulating detailed checklist text, move the workflow to
   an owner document and leave only the owner-routing gate in the router.
 

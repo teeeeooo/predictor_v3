@@ -112,6 +112,9 @@ manage viewports.
 - Content-hugging is appropriate for first show and dialog open, but repeated
   content-hugging during visible profile/page transitions can create visible
   flicker if content mutation and geometry mutation are not coalesced.
+- Close/reopen behavior for stateful input surfaces follows
+  `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; this document owns shell
+  geometry/lifecycle, not user input state lifetime.
 
 ### Stable-container Profile / Page Switch
 

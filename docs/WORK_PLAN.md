@@ -46,6 +46,7 @@
   - 233C closeout documents hidden-first window/dialog first-show and stable-container dynamic surface lifecycle policy. Hong Kong lower blank space/refit loop are resolved; remaining soft flicker is accepted for this arc unless later smoke identifies a specific mutation owner.
   - 233D applies hidden-first, content-measured first-show sizing to the Hong Kong CSPF batch dialog while keeping batch table/calculation behavior unchanged.
   - 233E preserves Hong Kong CSPF batch dialog row/input state across close/reopen within the current section session by storing a table snapshot in the parent CSPF section.
+  - 233E closeout records the stateful input dialog lifecycle rule in 05 and the UI workflow gate: close/reopen is not reset/clear.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
 - Next: 233F batch table viewport/scroll containment.
 

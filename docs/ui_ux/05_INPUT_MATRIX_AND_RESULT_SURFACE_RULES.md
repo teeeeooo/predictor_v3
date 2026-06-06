@@ -162,6 +162,25 @@ across comparable items.
   where practical so adapters can share column meaning instead of creating
   incompatible per-variant trace shapes.
 
+## Stateful Input Surface Lifecycle
+
+- Closing a stateful input dialog, window, or surface is not an implicit
+  reset or clear action.
+- Widget, shell, or Toplevel lifecycle must be separated from user input state
+  lifecycle.
+- If a stateful input dialog uses destroy-on-close, a parent section,
+  controller, or explicit state owner must keep a session-local snapshot and
+  restore it on reopen.
+- Reset/Clear must be an explicit user action. Close/reopen must not erase
+  user-entered rows, values, or comparable structured input as a side effect.
+- The dialog shell owns show/close lifecycle. The table or input surface owns
+  snapshot/restore behavior. The parent/controller-level state owner decides
+  the session-local state lifetime.
+- This applies to batch tables, repeated input matrices, structured input
+  dialogs, and future profile-specific input surfaces.
+- Persistence after app restart is a separate product decision and is not the
+  default requirement of this lifecycle rule.
+
 ## Acceptance Criteria
 
 - Repeated 2-by-2, 2-by-3, and 3-by-3 input shapes are rendered as matrix
@@ -179,6 +198,8 @@ across comparable items.
 - User-visible result surfaces must not expose `None`, a raw dictionary, raw
   long floats, or a traceback.
 - A graph/detail surface must not displace the default summary result.
+- Closing and reopening a stateful input dialog does not reset rows or values
+  unless the user has invoked an explicit reset/clear action.
 
 ## Anti-patterns
 
@@ -191,6 +212,8 @@ across comparable items.
   variant resolver, or dispatcher contracts.
 - Copying an inspiration-source or historical layout pixel-for-pixel instead
   of implementing the active portable rule.
+- Treating a shell close/destroy as permission to discard user-entered
+  structured input state.
 
 ## Interface Framework Adaptation Notes
 
