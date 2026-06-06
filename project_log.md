@@ -40,10 +40,27 @@
 - 233A finds that measurement-owner extraction alone is not enough; profile
   switch needs a mapped-surface lifecycle that measures preferred size and
   overflow from one settled snapshot.
+- 233B Windows smoke confirms the Hong Kong lower blank space is resolved and
+  the refit loop remains gone; flicker is still visible enough that the next
+  window task is lifecycle orchestration unification, not more blank-space
+  debugging.
+- Batch dialog sizing belongs under the window shell lifecycle arc, while batch
+  copy/export belongs under the table/export arc. Batch export should reuse the
+  existing clipboard/CSV helper direction; xlsx export stays deferred.
+- Future batch layout should first evaluate a unified case-level two-row matrix
+  shape instead of maintaining flat row-per-case and matrix layouts in parallel.
+  Status is not a default output column; result columns are profile metrics
+  such as Hong Kong CSPF/CSEC, with blank/error state handled outside the core
+  output columns.
+- HSPF/EN/AHRI/KS expansion should wait until result/detail/export contracts,
+  two-row batch foundation, main table migration candidates, and ui_tk cleanup
+  direction are checked.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
   patches and decide the owner boundary first.
+- Passing one geometry bug does not close the shell arc if lifecycle flicker or
+  batch dialog sizing still share the same root owner.
 
 ---
 

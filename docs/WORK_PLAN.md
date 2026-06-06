@@ -40,27 +40,37 @@
   - 229 remains active as direct implementation-state evidence for the next measurement-adapter code slice.
   - 232 extracts visible content measurement policy from `Iso16358Tab` into a Tk measurement adapter/provider consumed by the shell template.
   - 233A compares mapped-surface sizing flows and concludes the next code slice needs a shared measurement snapshot / mapped-surface lifecycle, not another local settle-cycle patch.
-  - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot; profile-switch lifecycle unification remains a follow-up if Windows smoke still shows lower blank space.
-- Next: Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior.
+  - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot. Windows smoke confirms the Hong Kong lower blank space is resolved and the refit loop is still gone, but profile/detail flicker remains user-visible.
+- Next: 233C profile switch / reselect / detail toggle lifecycle orchestration unification.
 
 ## Next Actions
 
-1. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
-   - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-   - If lower blank space remains, split 233C for mapped-surface lifecycle orchestration: render -> mount -> settle -> snapshot measure -> fit.
-2. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
-   - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-3. **Migrate calculator main table to common foundation**
-   - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-4. **Common detail/bin result schema design**
-   - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
-   - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-5. **Existing CSPF detail/bin adapter cleanup**
-   - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-6. **HSPF / EN14825 / AHRI / KS detail/bin extension**
-   - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-7. **Graph/export alignment on common detail/bin schema**
-   - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
+1. **233C - profile switch / reselect / detail toggle lifecycle orchestration unification**
+   - Reduce flicker by unifying render -> mount -> settle -> snapshot measure -> fit across profile switch, reselect, and detail toggle.
+   - Keep the 233B snapshot contract; avoid Hong Kong-only hotfixes.
+2. **233D or 233C follow-up - batch dialog sizing/UX under the same window shell policy**
+   - Treat batch dialog size, position, viewport, and blank space as part of the window shell lifecycle arc.
+   - Do not mix this with batch copy/export behavior.
+3. **Windows smoke - main and batch window sizing**
+   - Confirm Hong Kong lower blank space stays resolved, flicker is reduced, and batch dialog sizing/position/blank space are acceptable.
+4. **234A - batch two-row matrix layout preflight**
+   - Prefer one case = two physical rows: capacity/performance input row plus power input row.
+   - Result columns are profile output metrics, not a mandatory Status column. Hong Kong CSPF outputs remain CSPF and CSEC.
+   - Define physical-row to logical-case mapping, two-row add/remove, paste, copy, and export contracts.
+5. **234B - common two-row batch table foundation**
+   - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
+   - Migrate the current Hong Kong CSPF batch to the shared layout if the preflight accepts it.
+6. **234C - batch table copy-all + CSV export parity**
+   - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
+   - Do not add xlsx export in the current arc.
+7. **Result/detail/export common contract check**
+   - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
+8. **Main table migration candidate check**
+   - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
+9. **ui_tk folder cleanup**
+   - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
+10. **HSPF detail/bin extension**
+11. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
@@ -76,7 +86,8 @@
 - Main result surfaces should expose `상세 보기 ↓ / 상세 닫기 ↑` rather than user-visible `Trace` controls.
 - Detail graph x-axis is outdoor temperature `tj` shown as `Outdoor Temp [°C]`; `Bin Hours [h]` is a selectable y-series backed by `nj`.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
-- CSV export is currently limited to detail/bin table surfaces and table-shaped export hooks already approved for the Tkinter calculator.
+- CSV export is currently limited to detail/bin table surfaces and table-shaped export hooks already approved for the Tkinter calculator; batch export parity should prefer CSV helper reuse over xlsx export.
+- Batch table layout preflight should prioritize a unified two-row matrix layout for future profile expansion. Status is not a default output column; output columns should be actual profile result metrics, while blank/error state stays in row state, styling, or a compact status label.
 
 ## Deferred / Hold
 
@@ -87,7 +98,8 @@
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
 - Internal formula trace is outside the current project execution scope and remains long-hold unless a separate core/data contract is approved.
-- Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions, not discarded items.
+- xlsx export is deferred; CSV parity is the current export target.
+- Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions, but profile expansion should wait until result/detail/export common contracts, two-row batch foundation, main table migration candidate review, and ui_tk cleanup direction are checked.
 - AS/NZS Excel compatibility Z-phase remains deferred.
 - Historical ISO/KS/ASNZS workbook compatibility details stay outside this execution board.
 
