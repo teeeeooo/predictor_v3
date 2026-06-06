@@ -39,28 +39,27 @@
   - 221C through 228 and 230A through 230D are summarized under summary 231.
   - 229, 231, 232, 233A through 233F guard, 234, and 235 are summarized under summary 236.
   - 236 closes the window/dialog/table/batch viewport arc: lower blank space and refit loop are resolved, remaining soft flicker is accepted, batch dialog sizing/state/viewport wheel behavior are accepted, and report workflow self-reference handling is documented.
+  - 239 adds the per-cell role controller compatibility path for the batch two-row matrix foundation while preserving existing row-per-case column-role fallback behavior.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-- Next: Per-cell role surface/controller compatibility.
+- Next: Tk two-row matrix table skeleton.
 
 ## Next Actions
 
-1. **Per-cell role surface/controller compatibility**
-   - Extend or adapt the table surface contract so selection/copy/paste/clear can respect per-cell editable, read-only result, and not-applicable states.
-2. **Tk two-row matrix table skeleton**
+1. **Tk two-row matrix table skeleton**
    - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
-3. **Hong Kong CSPF matrix migration**
+2. **Hong Kong CSPF matrix migration**
    - Migrate the current Hong Kong CSPF batch only after the model/spec and controller compatibility slices are guarded.
-4. **Batch table copy-all + CSV export parity**
+3. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-5. **Result/detail/export common contract check**
+4. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
-6. **Main table migration candidate check**
+5. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-7. **ui_tk folder cleanup**
+6. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-8. **HSPF detail/bin extension**
-9. **EN14825 / AHRI 210/240 / KS profile expansion**
+7. **HSPF detail/bin extension**
+8. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

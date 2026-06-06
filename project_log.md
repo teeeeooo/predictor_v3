@@ -60,6 +60,10 @@
   fake-merged cells: Case/result values appear only on the first physical row,
   second-row positions are real blank read-only cells, and mutation targets are
   editable input cells only.
+- 239 extends the common Tk table controller with optional per-cell
+  `cell_role(position)` resolution while preserving the existing
+  `cell_roles()[column]` fallback, so future matrix surfaces can guard
+  paste/clear/copy by physical cell without forking the controller.
 - HSPF/EN/AHRI/KS expansion should wait until result/detail/export contracts,
   two-row batch foundation, main table migration candidates, and ui_tk cleanup
   direction are checked.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from ui_tk.table.roles import CellRole, is_copyable, is_mutable, is_selectable
@@ -10,6 +10,7 @@ from ui_tk.table.roles import CellRole, is_copyable, is_mutable, is_selectable
 CellAddress = tuple[int, int]
 SelectionBounds = tuple[int, int, int, int]
 ClipboardMatrix = tuple[tuple[str, ...], ...]
+CellRoleResolver = Callable[[CellAddress], CellRole]
 
 _CONTROL_MASK = 0x0004
 _ALT_MASK = 0x0008
@@ -89,20 +90,43 @@ def copyable_positions(
     column_count: int,
     roles: Sequence[CellRole],
 ) -> tuple[CellAddress, ...]:
+    return copyable_positions_by_role(
+        bounds,
+        row_count,
+        column_count,
+        lambda position: roles[position[1]],
+    )
+
+
+def copyable_positions_by_role(
+    bounds: SelectionBounds,
+    row_count: int,
+    column_count: int,
+    role_at: CellRoleResolver,
+) -> tuple[CellAddress, ...]:
     return tuple(
         position
         for position in positions_in_bounds(bounds, row_count, column_count)
-        if is_copyable(roles[position[1]])
+        if _is_copyable_position(position, role_at)
     )
 
 
 def editable_clear_targets(
     positions: Iterable[CellAddress], roles: Sequence[CellRole]
 ) -> dict[CellAddress, str]:
+    return editable_clear_targets_by_role(
+        positions,
+        lambda position: roles[position[1]],
+    )
+
+
+def editable_clear_targets_by_role(
+    positions: Iterable[CellAddress], role_at: CellRoleResolver
+) -> dict[CellAddress, str]:
     return {
         position: ""
         for position in positions
-        if 0 <= position[1] < len(roles) and is_mutable(roles[position[1]])
+        if _is_mutable_position(position, role_at)
     }
 
 
@@ -110,6 +134,18 @@ def editable_paste_targets(
     matrix: ClipboardMatrix,
     bounds: SelectionBounds,
     roles: Sequence[CellRole],
+) -> dict[CellAddress, str]:
+    return editable_paste_targets_by_role(
+        matrix,
+        bounds,
+        lambda position: roles[position[1]],
+    )
+
+
+def editable_paste_targets_by_role(
+    matrix: ClipboardMatrix,
+    bounds: SelectionBounds,
+    role_at: CellRoleResolver,
 ) -> dict[CellAddress, str]:
     top, bottom, left, right = bounds
     if not matrix:
@@ -141,8 +177,22 @@ def editable_paste_targets(
     return {
         position: value
         for position, value in raw_targets
-        if 0 <= position[1] < len(roles) and is_mutable(roles[position[1]])
+        if _is_mutable_position(position, role_at)
     }
+
+
+def _is_copyable_position(position: CellAddress, role_at: CellRoleResolver) -> bool:
+    try:
+        return is_copyable(role_at(position))
+    except IndexError:
+        return False
+
+
+def _is_mutable_position(position: CellAddress, role_at: CellRoleResolver) -> bool:
+    try:
+        return is_mutable(role_at(position))
+    except IndexError:
+        return False
 
 
 def resolve_next_position(

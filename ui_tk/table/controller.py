@@ -9,9 +9,9 @@ from ui_tk.table.interaction_core import (
     CellAddress,
     SelectionBounds,
     UndoStack,
-    copyable_positions,
-    editable_clear_targets,
-    editable_paste_targets,
+    copyable_positions_by_role,
+    editable_clear_targets_by_role,
+    editable_paste_targets_by_role,
     encode_selection_to_clipboard,
     is_replace_printable,
     parse_clipboard_matrix,
@@ -149,8 +149,8 @@ class TkTableController:
             matrix = parse_clipboard_matrix(self.table.clipboard_get())
         except TclError:
             return "break"
-        targets = editable_paste_targets(
-            matrix, self.selection_bounds, self.table.cell_roles()
+        targets = editable_paste_targets_by_role(
+            matrix, self.selection_bounds, self._cell_role
         )
         if targets:
             before = self.table.snapshot()
@@ -163,7 +163,7 @@ class TkTableController:
         if self._mode == "edit":
             return ""
         self._apply(
-            editable_clear_targets(self.selected_positions(), self.table.cell_roles())
+            editable_clear_targets_by_role(self.selected_positions(), self._cell_role)
         )
         return "break"
 
@@ -279,11 +279,11 @@ class TkTableController:
         if bounds is None:
             return ()
         positions = set(
-            copyable_positions(
+            copyable_positions_by_role(
                 bounds,
                 self.table.row_count(),
                 self.table.column_count(),
-                self.table.cell_roles(),
+                self._cell_role,
             )
         )
         top, bottom, left, right = bounds
@@ -335,4 +335,10 @@ class TkTableController:
         return 0 <= row < self.table.row_count() and 0 <= column < self.table.column_count()
 
     def _is_editable(self, position: CellAddress) -> bool:
-        return is_mutable(self.table.cell_roles()[position[1]])
+        return is_mutable(self._cell_role(position))
+
+    def _cell_role(self, position: CellAddress):
+        resolver = getattr(self.table, "cell_role", None)
+        if resolver is not None:
+            return resolver(position)
+        return self.table.cell_roles()[position[1]]
