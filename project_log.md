@@ -63,9 +63,9 @@
   first-show or stable-container lifecycle rules from
   `docs/ui_ux/07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`; the task router now
   points UI window/dialog/profile/page work at that policy.
-- UI surface details were moved out of `AGENT_TASK_ROUTER.md` into
-  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md` so router remains a route map
-  and repeated UI table/window checklist growth has a dedicated workflow owner.
+- UI, calculator, ML/Predictor, and packaging workflow details were moved out
+  of `AGENT_TASK_ROUTER.md` into `docs/agent_workflows/*`, bringing the router
+  down to a compact route/gate map while preserving owner-specific detail.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local

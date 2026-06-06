@@ -40,6 +40,9 @@
 | `docs/agent_workflows/SMOKE_LOOP_MODE.md` | Manual UI smoke-loop micro-fix workflow owner | `AGENT_TASK_ROUTER.md`, user smoke-loop instructions | focused UI fixes, stable checkpoint follow-up |
 | `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md` | Documentation sync and active-doc lifecycle workflow owner | `AGENT_TASK_ROUTER.md`, docs/lifecycle/commit tasks | `ACTIVE_DOCUMENTS.md`, work plan/refactor/brief/log sync judgments |
 | `docs/agent_workflows/UI_SURFACE_WORKFLOW.md` | UI surface workflow owner for table, window/dialog, dynamic profile/page, and result/export surface gates | `AGENT_TASK_ROUTER.md`, UI tasks | `docs/ui_ux/`, toolkit adapters, focused UI validation |
+| `docs/agent_workflows/CALCULATOR_WORKFLOW.md` | Calculator, region, golden, smoke/validation, and Excel COM workflow owner | `AGENT_TASK_ROUTER.md`, calculator tasks | calculator core, region configs, standard notes, Excel COM protocol |
+| `docs/agent_workflows/ML_PREDICTOR_WORKFLOW.md` | ML/Predictor workflow owner | `AGENT_TASK_ROUTER.md`, ML/Predictor tasks | ML code, feature schema, knowledge docs, model constraints |
+| `docs/agent_workflows/PACKAGING_WORKFLOW.md` | Packaging and deployment-build workflow owner | `AGENT_TASK_ROUTER.md`, packaging tasks | `docs/PACKAGING.md`, packaging commands/artifacts, deployment verification |
 
 ## Core Project Docs
 
