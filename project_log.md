@@ -71,10 +71,13 @@
   now documented in `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`
   and the UI workflow gate: close is not reset, and reset/clear must be an
   explicit user action.
-- 233F added batch viewport containment, but Windows smoke found mouse-wheel
-  parity missing over table/cell/entry content. The failure is not only missing
-  wheel validation; the UI workflow now requires checking existing normal
-  surfaces as source-of-truth evidence before creating new helpers/adapters.
+- 233F added batch viewport containment. 235 fixed the mouse-wheel parity gap by
+  reusing the main scroll source-of-truth pattern, and Windows smoke accepted
+  batch dialog wheel scrolling over canvas, cell/frame, entry, label, header,
+  and row-header targets as OK.
+- 236 summarizes and archives the completed 229/232/233/234/235
+  window/dialog/table/batch viewport arc; the active report folder is cleared
+  for the next batch two-row matrix layout preflight.
 - UI soft LOC limits are now treated as preflight triggers, not hard failures:
   helper/adapter extraction follows owner-boundary and reuse/parity judgment,
   not line-count compliance alone.

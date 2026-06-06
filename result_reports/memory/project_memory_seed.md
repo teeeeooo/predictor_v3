@@ -25,6 +25,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md` (covered reports `196-a-199-c`)
 - `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md` (covered reports `202-221b`, with `221c` kept active as next-decision evidence)
 - `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md` (covered reports `221c-228` and `230a-230d`, with `229` kept active as next-code-slice evidence)
+- `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md` (covered reports `229`, `231`, `232`, `233A-233F guard`, `234`, and `235`)
 
 ## Scope and Non-goals
 
@@ -625,14 +626,28 @@ entries:
 
   - type: open_question
     topic: Tk visible content measurement adapter extraction
-    content: Hong Kong CSPF lower blank space remains unresolved after the common refit owner and Tk content-hugging shell template. The likely next code slice is extracting Iso16358Tab-specific hidden-tab width/current-visible-height measurement into a visible content measurement adapter/provider consumed by window_shell.py.
+    content: Superseded by the 232-235 window/dialog/batch viewport arc. The visible measurement adapter was extracted, the measurement snapshot and mapped-surface lifecycle slices resolved the Hong Kong lower blank space/refit loop, and batch dialog sizing/state/viewport wheel behavior were accepted for the current arc.
     keywords:
       - Tkinter
       - visible content measurement
       - window_shell
       - Hong Kong lower blank space
-    assertionStatus: observed
-    source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md; result_reports/active/229_tk-content-hugging-shell-template.md
+    assertionStatus: superseded
+    resolutionStatus: resolved
+    supersededBy: result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
+    source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md; result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
+
+  - type: decision
+    topic: batch two-row matrix layout preflight boundary
+    content: After the 229/232/233/234/235 window-dialog-table-batch viewport arc, the next batch work is a design/preflight for a unified two-row matrix layout: one logical case maps to capacity/performance and power physical rows, result columns are profile output metrics such as Hong Kong CSPF/CSEC, and status/error state stays outside default result metric columns. Batch export/copy-all and xlsx export remain out of scope for the preflight.
+    keywords:
+      - batch table
+      - two-row matrix
+      - Hong Kong CSPF
+      - result metrics
+      - export deferred
+    assertionStatus: verified
+    source: result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
 ```
 
 ## Known Gaps

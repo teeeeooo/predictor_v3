@@ -19,6 +19,7 @@
 - Tkinter ISO profile/detail/copy/graph arc is summarized in `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`.
 - Window geometry, viewport policy, input replace-on-type, and UI pivot prep arc is summarized in `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`.
 - Architecture/UI-UX boundary and window refit arc is summarized in `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md`.
+- Window/dialog/table/batch viewport closeout arc is summarized in `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md`.
 - Implemented state:
   - ISO/ISEER and SASO T3 comparison result tables.
   - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
@@ -36,20 +37,10 @@
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
   - 221C through 228 and 230A through 230D are summarized under summary 231.
-  - 229 remains active as direct implementation-state evidence for the next measurement-adapter code slice.
-  - 232 extracts visible content measurement policy from `Iso16358Tab` into a Tk measurement adapter/provider consumed by the shell template.
-  - 233A compares mapped-surface sizing flows and concludes the next code slice needs a shared measurement snapshot / mapped-surface lifecycle, not another local settle-cycle patch.
-  - 233B adds a visible measurement snapshot contract so preferred size and overflow delta are read from one snapshot. Windows smoke confirms the Hong Kong lower blank space is resolved and the refit loop is still gone, but profile/detail flicker remains user-visible.
-  - 233C unifies profile switch, profile reselect, and detail toggle around the same visible-surface lifecycle refit request path and avoids unnecessary re-render on same-profile reselect.
-  - 233C-2 reuses the already-rendered Hong Kong metric surface when returning from another profile with the same region, avoiding redundant metric notebook/section destroy-create work.
-  - 233C closeout documents hidden-first window/dialog first-show and stable-container dynamic surface lifecycle policy. Hong Kong lower blank space/refit loop are resolved; remaining soft flicker is accepted for this arc unless later smoke identifies a specific mutation owner.
-  - 233D applies hidden-first, content-measured first-show sizing to the Hong Kong CSPF batch dialog while keeping batch table/calculation behavior unchanged.
-  - 233E preserves Hong Kong CSPF batch dialog row/input state across close/reopen within the current section session by storing a table snapshot in the parent CSPF section.
-  - 233E closeout records the stateful input dialog lifecycle rule in 05 and the UI workflow gate: close/reopen is not reset/clear.
-  - 233F contains the Hong Kong CSPF batch table in an internal vertical viewport so added rows remain reachable without growing the dialog.
-  - 235 completes 233F-fix: batch viewport wheel routing now reuses the main scroll source-of-truth pattern, and Windows smoke is accepted as OK for this arc.
+  - 229, 231, 232, 233A through 233F guard, 234, and 235 are summarized under summary 236.
+  - 236 closes the window/dialog/table/batch viewport arc: lower blank space and refit loop are resolved, remaining soft flicker is accepted, batch dialog sizing/state/viewport wheel behavior are accepted, and report workflow self-reference handling is documented.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-- Next: 234A batch two-row matrix layout preflight.
+- Next: Batch two-row matrix layout preflight.
 
 ## Next Actions
 
@@ -118,7 +109,9 @@
 - `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md`
   - Covers reports 202 through 221-b: main merge closeout, WPF spike closeout, calculator_tk batch/table foundation arc, selected-range fill paste, window refit policy, and 221-b local refit attempt. Report 221-c stays active as direct next-decision evidence.
 - `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md`
-  - Covers reports 221-c through 228 plus 230-a through 230-d: dynamic refit stabilization, common refit owner, content-hugging shell/template, Clean Architecture boundary policy, and portable UI/UX document neutralization. Report 229 stays active as direct next-code-slice evidence.
+  - Covers reports 221-c through 228 plus 230-a through 230-d: dynamic refit stabilization, common refit owner, content-hugging shell/template, Clean Architecture boundary policy, and portable UI/UX document neutralization. Report 229 was kept active at that time and is now covered by summary 236.
+- `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md`
+  - Covers reports 229, 231, 232, 233A through 233F guard, 234, and 235: visible measurement adapter, mapped-surface lifecycle, hidden-first window/dialog policy, batch dialog sizing/state/viewport wheel parity, router workflow slimming, and report self-reference workflow correction. No active reports are intentionally kept after this cleanup.
 
 ## Historical Notes / References
 
