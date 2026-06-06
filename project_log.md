@@ -30,6 +30,8 @@
   are now owned by `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
 - 230B refined the owner wording so concrete project/interface names are treated
   as examples/evidence, not scope boundaries.
+- 230C applies the same audit lens to portable UI/UX docs before rewriting
+  them, with adapter documents kept toolkit-specific by design.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
