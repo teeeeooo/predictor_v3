@@ -24,6 +24,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md` (covered reports `190b-194e` plus `194f` hotfix)
 - `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md` (covered reports `196-a-199-c`)
 - `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md` (covered reports `202-221b`, with `221c` kept active as next-decision evidence)
+- `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md` (covered reports `221c-228` and `230a-230d`, with `229` kept active as next-code-slice evidence)
 
 ## Scope and Non-goals
 
@@ -590,15 +591,48 @@ entries:
 
   - type: open_question
     topic: common dynamic content refit owner
-    content: Dynamic and nested content refit is a toolkit-neutral owner-boundary problem. Hong Kong direct metric tab-change refit caused a Windows resize loop and was disabled in 221C; Hong Kong lower blank space remains unresolved until a common dynamic content refit owner preflight decides the shared scheduler, suppress guard, and reentrant protection boundary.
+    content: Dynamic and nested content refit is a toolkit-neutral owner-boundary problem. Hong Kong direct metric tab-change refit caused a Windows resize loop and was disabled in 221C. The common dynamic content refit owner first slice now exists; the unresolved follow-up moved to visible content measurement/provider extraction.
     keywords:
       - predictor_v3
       - dynamic content refit
       - nested notebook
       - Hong Kong
       - window geometry
+    assertionStatus: superseded
+    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md; result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md
+
+  - type: decision
+    topic: codebase-wide Clean Architecture boundary owner
+    content: Model, Controller or Service, Shell or Adapter, View, and Policy responsibility boundaries are owned by docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md. Concrete project, interface, or integration names are examples/evidence rather than scope boundaries.
+    keywords:
+      - clean architecture
+      - MVC boundary
+      - owner boundary
+      - responsibility boundary
+    assertionStatus: verified
+    source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md
+
+  - type: decision
+    topic: portable UI UX rule set
+    content: docs/ui_ux is a portable UI/UX rule set. 00_UI_UX_SYSTEM.md remains the root SSOT, 01 through 07 are portable principle/policy owners, adapters are interface-framework-specific, and _source files are historical/evidence sources. Concrete names are evidence or adoption notes, not principle scope boundaries.
+    keywords:
+      - UI UX
+      - portable docs
+      - examples evidence
+      - adapter documents
+    assertionStatus: verified
+    source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md
+
+  - type: open_question
+    topic: Tk visible content measurement adapter extraction
+    content: Hong Kong CSPF lower blank space remains unresolved after the common refit owner and Tk content-hugging shell template. The likely next code slice is extracting Iso16358Tab-specific hidden-tab width/current-visible-height measurement into a visible content measurement adapter/provider consumed by window_shell.py.
+    keywords:
+      - Tkinter
+      - visible content measurement
+      - window_shell
+      - Hong Kong lower blank space
     assertionStatus: observed
-    source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md; result_reports/active/221c_dynamic-content-refit-loop-stabilization.md
+    source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md; result_reports/active/229_tk-content-hugging-shell-template.md
 ```
 
 ## Known Gaps

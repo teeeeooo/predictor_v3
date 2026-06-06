@@ -34,6 +34,9 @@
   them, with adapter documents kept toolkit-specific by design.
 - 230D applies the first UI/UX neutralization slice and adds a folder README so
   portable principles, adapters, and historical sources are easier to tell apart.
+- 231 summarizes and archives the completed architecture/UI-UX boundary and
+  window-refit arc, leaving 229 active as direct evidence for the next visible
+  content measurement adapter extraction.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local

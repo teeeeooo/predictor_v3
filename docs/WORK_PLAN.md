@@ -19,6 +19,7 @@
 
 - Tkinter ISO profile/detail/copy/graph arc is summarized in `result_reports/summaries/195_summary-tkinter-detail-panel-copy-graph-arc.md`.
 - Window geometry, viewport policy, input replace-on-type, and UI pivot prep arc is summarized in `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`.
+- Architecture/UI-UX boundary and window refit arc is summarized in `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md`.
 - Implemented state:
   - ISO/ISEER and SASO T3 comparison result tables.
   - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
@@ -35,41 +36,29 @@
   - MetricInputTable replace-on-type, multi-monitor geometry, first-launch/detail auto-fit, 80% height cap, top-safe y policy, and UI/UX window geometry policy numbering are closed for this arc.
   - Windows calculator_tk packaged size was measured at approximately 11 MB and is acceptable for the current deployment candidate.
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
-  - 220 resolved selected-range fill paste; 221B added local nested-notebook refit scheduling, and 221C stabilized the resulting Hong Kong resize loop by disabling direct metric tab-change refit.
-  - 223 confirms the refit responsibility should move to a common dynamic content refit owner before reintroducing nested tab-change refit.
-  - 224 adds the first common dynamic content refit owner slice and moves the current `Iso16358Tab` profile/detail/region scheduler path onto it.
-  - 225 adds an extra profile-switch settle cycle for Hong Kong return sizing without reintroducing direct metric tab-change refit.
-  - 226 concludes content-hugging sizing needs final visible-content measurement and one geometry apply, not more settle-cycle patches.
-  - 227 reframes the remaining Hong Kong lower blank space and flicker as a missing toolkit-neutral content-hugging shell/form owner, with SPOT used only as concrete UX evidence.
-  - 228 adds the first Tkinter content-hugging shell owner and routes `Iso16358Tab` profile/detail refit through one shell geometry apply.
-  - 229 promotes the Tk content-hugging shell from a geometry helper to a reusable form template with content/provider registration and after-fit hooks.
-  - 230A promotes the repeated window sizing lesson into project-wide Clean Architecture / MVC responsibility-boundary policy.
-  - 230B neutralizes that architecture policy wording so concrete project/interface names remain examples rather than scope boundaries.
-  - 230C audits `docs/ui_ux/` for portable-document neutralization candidates before applying any UI/UX doc rewrites.
-  - 230D neutralizes the first portable UI/UX document slice and adds `docs/ui_ux/README.md` as the folder navigation/adoption index.
-- Next: result report lifecycle cleanup.
+  - 221C through 228 and 230A through 230D are summarized under summary 231.
+  - 229 remains active as direct implementation-state evidence for the next measurement-adapter code slice.
+- Next: extract Tk visible content measurement adapter.
 
 ## Next Actions
 
-1. **Result report lifecycle cleanup**
-   - Active reports now exceed the lifecycle follow-up threshold; summarize/archive the table/window-refit, architecture-boundary, and UI/UX neutralization arc while keeping unresolved implementation blockers active.
-2. **Extract Tk visible content measurement adapter**
+1. **Extract Tk visible content measurement adapter**
    - Move `Iso16358Tab`-specific hidden-tab width/current-visible-height measurement into an adapter/provider boundary consumed by the shell template.
    - Keep `window_shell.py` toolkit shell/template owner, `window_refit.py` scheduler owner, and `window_geometry.py` primitive owner.
-3. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
+2. **Windows smoke closeout for Hong Kong profile-switch sizing and common dynamic refit owner behavior**
    - Verify no Hong Kong profile resize loop, CSPF lower blank space behavior, profile switch back to Hong Kong, CSPF/HSPF metric tab switching, detail open/close, and batch dialog sizing.
-4. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
+3. **Windows smoke closeout for common-foundation Hong Kong CSPF batch table**
    - Verify selected-range fill paste, grouped undo, repeated Ctrl+Z without focus movement, arrow navigation, result-cell copy/mutation prevention, row headers, and main/dialog sizing.
-5. **Migrate calculator main table to common foundation**
+4. **Migrate calculator main table to common foundation**
    - Preserve current single-case immediate calculation behavior while reducing duplicate table controllers.
-6. **Common detail/bin result schema design**
+5. **Common detail/bin result schema design**
    - Define a profile-neutral detail/bin schema foundation before extending detail surfaces.
    - The foundation must support CSPF, HSPF, EN14825, AHRI, and KS follow-ups rather than staying Hong Kong-only.
-7. **Existing CSPF detail/bin adapter cleanup**
+6. **Existing CSPF detail/bin adapter cleanup**
    - Align the current Hong Kong CSPF detail/bin adapter to the common schema without changing calculator formulas.
-8. **HSPF / EN14825 / AHRI / KS detail/bin extension**
+7. **HSPF / EN14825 / AHRI / KS detail/bin extension**
    - Extend detail/bin adapters profile by profile after the shared schema is accepted.
-9. **Graph/export alignment on common detail/bin schema**
+8. **Graph/export alignment on common detail/bin schema**
    - Keep graph/export work tied to the shared detail/bin schema instead of adding one-off trace/export surfaces.
 
 ## Active Constraints
@@ -115,6 +104,8 @@
   - Covers active reports 196-a through 199-c: graph label closeout, input replace-on-type, multi-monitor geometry, launch/detail auto-fit, viewport policy documentation, and UI/UX doc numbering cleanup.
 - `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md`
   - Covers reports 202 through 221-b: main merge closeout, WPF spike closeout, calculator_tk batch/table foundation arc, selected-range fill paste, window refit policy, and 221-b local refit attempt. Report 221-c stays active as direct next-decision evidence.
+- `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md`
+  - Covers reports 221-c through 228 plus 230-a through 230-d: dynamic refit stabilization, common refit owner, content-hugging shell/template, Clean Architecture boundary policy, and portable UI/UX document neutralization. Report 229 stays active as direct next-code-slice evidence.
 
 ## Historical Notes / References
 
