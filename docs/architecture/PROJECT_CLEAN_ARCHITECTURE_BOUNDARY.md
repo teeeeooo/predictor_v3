@@ -2,20 +2,22 @@
 
 ## Purpose
 
-This document is the project-wide owner for Clean Architecture / MVC boundary
-rules in `predictor_v3`.
+This document is the codebase-wide owner for Clean Architecture / MVC boundary
+rules in the active project.
 
 It prevents responsibility mixing across:
 
-- UI shells and views;
-- calculator engines and profile handlers;
-- ML train/predict paths;
+- interface shells and views;
+- domain engines and variant handlers;
+- model training / inference paths;
 - batch surfaces;
 - file I/O and packaging scripts;
-- Excel / DRM / external system adapters;
-- future Web, PySide/PyQt, WPF, or other shells.
+- spreadsheet automation, protected-file environments, and external system
+  adapters;
+- future GUI, web, or external interface shells.
 
-This is not a Tkinter-only rule and not a calculator-screen design note.
+This is not a single-screen, single-interface-framework, or single-domain
+design note.
 
 ## Dependency Direction
 
@@ -27,11 +29,11 @@ Shell / Adapter / View
 -> Model / Domain
 ```
 
-Model / Domain code must not depend on UI toolkits, file systems, DB/API
-clients, Excel, web frameworks, or platform-specific shell behavior.
+Model / Domain code must not depend on interface frameworks, file systems,
+database/API clients, document automation, or platform-specific shell behavior.
 
-External-system and toolkit differences are absorbed at Shell / Adapter /
-Infrastructure boundaries.
+External-system and interface-framework differences are absorbed at Shell /
+Adapter / Infrastructure boundaries.
 
 ## Responsibility Definitions
 
@@ -43,15 +45,15 @@ Owns:
 - domain state;
 - domain input validation;
 - result data;
-- pure profile / region / standard rules.
+- pure domain variant / standard rules.
 
 Does not own:
 
-- UI toolkit behavior;
+- interface framework behavior;
 - file I/O;
-- DB/API calls;
-- Excel or DRM integration;
-- web framework integration.
+- database/API calls;
+- document automation or protected-file integration;
+- application framework integration.
 
 Model / Domain code should be testable without UI or external systems.
 
@@ -70,16 +72,17 @@ Does not own:
 - calculation formulas;
 - domain decision rules;
 - long widget-manipulation sequences;
-- toolkit-specific measurement or rendering policy.
+- interface-framework-specific measurement or rendering policy.
 
 ### Shell / Adapter / Infrastructure
 
 Owns:
 
-- Tkinter / PySide / WPF / Web binding;
-- Excel / xlwings / DRM / file system / DB / API integration;
+- GUI / web / external interface binding;
+- spreadsheet automation, protected-file environment, file system, database,
+  network API, or external document integration;
 - external format import/export;
-- toolkit-specific measurement;
+- interface-specific measurement;
 - platform-specific error handling.
 
 These concerns should be isolated behind interfaces, protocols, adapters, or
@@ -111,12 +114,12 @@ Owns repeated rules such as:
 - UI/UX contract;
 - table contract;
 - window geometry / viewport policy;
-- calculator profile / region rules;
+- domain variant / region / standard rules;
 - import/export shape rules.
 
-If a rule can repeat across screens, profiles, standards, or toolkits, it should
-move out of a local View/helper and into an owner document, adapter, service, or
-contract module.
+If a rule can repeat across screens, domain variants, standards, or interface
+frameworks, it should move out of a local View/helper and into an owner
+document, adapter, service, or contract module.
 
 ## Boundary Smells / Stop Conditions
 
@@ -126,28 +129,29 @@ appear:
 - one class/file owns View + Controller + Adapter + Policy at the same time;
 - a View performs calculation orchestration, file I/O, schema conversion, or
   measurement policy directly;
-- a Model imports UI toolkit, file path loading, Excel, DB/API, or web framework
-  concerns;
+- a Model imports interface framework, file path loading, document automation,
+  database/API, or application framework concerns;
 - a Controller contains calculation formulas or domain decision rules;
-- toolkit-specific Shell / Adapter logic leaks into core/domain;
+- interface-specific Shell / Adapter logic leaks into core/domain;
 - the same measurement, mapping, formatting, or routing rule appears in
   multiple screens;
-- a local hotfix is likely to repeat for another profile, standard, toolkit, or
-  shell;
+- a local hotfix is likely to repeat for another domain variant, standard,
+  interface framework, or shell;
 - result reports repeatedly show the same smoke bug class.
 
 When a stop condition appears, create a small owner-boundary preflight or
 report slice before implementation unless the user explicitly approves a scoped
 hotfix.
 
-## Window Sizing Lesson
+## Observed Example / Evidence
 
-The Tkinter/Hong Kong lower blank space and flicker issue is an example, not
-the source of truth.
+Example names are evidence, not scope boundaries. A concrete dynamic GUI
+surface sizing issue was observed in a calculator screen, but the policy above
+is the source of truth.
 
 The problem grew because one View accumulated widget composition, hidden-tab
 measurement, refit scheduling, geometry application, scroll cleanup, and
-profile-specific trigger handling. Splitting the responsibilities clarified the
+domain-variant trigger handling. Splitting the responsibilities clarified the
 boundary:
 
 - shell/template owns reusable content-hugging form behavior;
@@ -156,7 +160,10 @@ boundary:
 - measurement adapter/provider owns visible-content measurement;
 - View consumes those owners and forwards triggers.
 
-The same lesson applies to future PySide, WPF, Web, batch, and ML UI surfaces.
+Concrete examples from the current history include Tkinter, Hong Kong profile
+switching, and content-hugging window behavior. Those names remain examples
+only; the same lesson applies to future GUI, web, batch, and model-operation
+surfaces.
 
 ## How To Apply
 
@@ -165,8 +172,8 @@ Before implementation, run a short boundary triage:
 - Which layer owns the new responsibility: Model, Controller, Shell/Adapter,
   View, or Policy?
 - Does the change make one class/file own multiple responsibilities?
-- Is the rule likely to repeat across profiles, standards, screens, or
-  toolkits?
+- Is the rule likely to repeat across domain variants, standards, screens, or
+  interface frameworks?
 - Can this be tested without UI or external systems?
 
 Small behavior-preserving hotfixes do not require a large preflight when they

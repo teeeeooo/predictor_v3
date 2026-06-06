@@ -95,8 +95,9 @@ UI 경계:
 - 기존 owner/helper/adapter를 우회하거나 새 boundary를 만드는가?
 
 위 질문이 모두 No이면 현재 scope 안에서 바로 진행할 수 있다.
-하나라도 Yes이면 owner, module boundary, adapter/helper 필요성을 먼저 확인한다.
-영향 범위가 크거나 rollback 비용이 크면 기존 Design First Gate에 따라 design slice로 분리한다.
+하나라도 Yes이면 바로 구현하지 말고 owner boundary decision을 먼저 남긴다.
+필요하면 implementation 전에 design/report slice로 분리한다. 영향 범위가 크거나
+rollback 비용이 크면 기존 Design First Gate에 따라 design slice로 분리한다.
 세부 Model / Controller / Shell / View / Policy 기준은
 `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`를 따른다.
 

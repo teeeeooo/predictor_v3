@@ -44,6 +44,7 @@
   - 228 adds the first Tkinter content-hugging shell owner and routes `Iso16358Tab` profile/detail refit through one shell geometry apply.
   - 229 promotes the Tk content-hugging shell from a geometry helper to a reusable form template with content/provider registration and after-fit hooks.
   - 230A promotes the repeated window sizing lesson into project-wide Clean Architecture / MVC responsibility-boundary policy.
+  - 230B neutralizes that architecture policy wording so concrete project/interface names remain examples rather than scope boundaries.
 - Next: extract Tk visible content measurement adapter.
 
 ## Next Actions

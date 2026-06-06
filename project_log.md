@@ -28,6 +28,8 @@
   boundary lesson, not only a UI geometry issue.
 - Model / Controller(or Service) / Shell(or Adapter) / View / Policy boundaries
   are now owned by `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
+- 230B refined the owner wording so concrete project/interface names are treated
+  as examples/evidence, not scope boundaries.
 
 ### Lesson
 - Repeated smoke failures of the same class are a signal to stop adding local
