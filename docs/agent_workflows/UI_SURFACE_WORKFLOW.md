@@ -36,6 +36,18 @@ UI arcs.
   - `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`
   - future adapters when present
 
+## Preflight Structure Guard
+
+Before editing UI surface code:
+
+- check the target owner file size (`wc -l`) when adding a new UI
+  responsibility or helper-like behavior;
+- if the owner file is near a soft limit or the new responsibility is likely
+  to add a distinct helper/adapter concern, decide helper extraction before
+  implementation;
+- for structure-impacting UI work, `python3 -B tools/check_code_structure.py`
+  can be used as a preflight guard, not only as a commit-time validator.
+
 ## Table Surface Gate
 
 When creating or changing a table-shaped UI:
