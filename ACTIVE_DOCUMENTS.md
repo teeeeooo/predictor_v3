@@ -52,6 +52,7 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
+| `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` | Project-wide Clean Architecture / MVC boundary owner | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture-sensitive tasks | Model/Controller/Shell/View/Policy responsibility triage across UI, calculator, ML, batch, file I/O, adapters |
 | `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, visual architecture, input matrix/result surface rules, portable adoption guide, adapters |
 | `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |
 | `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md` | Design tokens and layout rules | UI/UX root, layout tasks | UI component implementations |

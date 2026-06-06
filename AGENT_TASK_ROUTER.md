@@ -86,13 +86,19 @@ UI 경계:
 
 모든 coding task에 full design slice를 강제하지 않는다. 구현 전 짧게 다음을 판단한다.
 
+- 이번 작업이 Model / Controller(or Service) / Shell(or Adapter) / View / Policy 중 새 책임을 추가하는가?
+- 한 파일/class가 둘 이상의 책임을 새로 겸하게 되는가?
+- View나 script에 domain calculation, file I/O, schema policy, toolkit-specific measurement가 섞이는가?
+- local hotfix가 반복 가능한 policy/adapter/helper 후보인가?
 - 새 책임이나 새 user-facing/internal surface를 추가하는가?
 - 같은 기능이 여러 standard/profile/section에 반복될 가능성이 있는가?
 - 기존 owner/helper/adapter를 우회하거나 새 boundary를 만드는가?
 
-세 질문이 모두 No이면 현재 scope 안에서 바로 진행할 수 있다.
+위 질문이 모두 No이면 현재 scope 안에서 바로 진행할 수 있다.
 하나라도 Yes이면 owner, module boundary, adapter/helper 필요성을 먼저 확인한다.
 영향 범위가 크거나 rollback 비용이 크면 기존 Design First Gate에 따라 design slice로 분리한다.
+세부 Model / Controller / Shell / View / Policy 기준은
+`docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`를 따른다.
 
 docs-only, whitespace-only, report lifecycle, 명확한 behavior-preserving micro cleanup은 full preflight를 생략할 수 있다.
 

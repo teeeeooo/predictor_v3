@@ -56,6 +56,9 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 
 - `app_*.py` entrypoint는 thin하게 유지한다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하).
 - shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다.
+- Model / Controller(or Service) / Shell(or Adapter) / View / Policy 책임 경계는
+  `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`를 따른다. 반복 가능한 rule이나
+  local hotfix가 여러 profile/toolkit/surface로 번질 수 있으면 owner boundary를 먼저 정한다.
 - 구현 전에 module boundary와 public interface를 먼저 정한다.
 - hard-coded region / profile / metric / result key / default 값은 SSOT, config, constants, resolver, token module로 격리한다.
 - 같은 literal / mapping / formatting이 2곳 이상 반복되면 helper 또는 registry 후보로 본다.
