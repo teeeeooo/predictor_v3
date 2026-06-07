@@ -63,6 +63,34 @@
 - Excel row-level exact reconstruction support
 - large package split
 
+### 6. Code quality guardrail backlog
+
+Static-analysis candidates to be introduced incrementally, warning-first, after
+real cleanup/controller work reveals need. Owned by `tools/code_checker/` for
+semantic checks and `tools/check_code_structure.py` for structural checks.
+
+**Warning-first candidates** (introduce one at a time; hard-fail only after noise
+is understood):
+
+- broad `except` / `pass` / silent fallback smell warning
+- re-export / compatibility wrapper inventory (e.g. `batch_table.py`,
+  `ui_tk/table/__init__.py`)
+- complexity / max-depth / long-function warning beyond current LOC soft limit
+- import cycle detector
+- fan-in / fan-out summary
+
+**Later candidates** (after warning-first candidates are stable):
+
+- strict type checker adoption (mypy / pyright)
+- mock boundary audit for headless-vs-GUI tests
+
+**Policy**:
+- Do not implement all gates at once.
+- Choose owner per check type: `tools/code_checker/` for semantic map-based
+  checks, `tools/check_code_structure.py` for structural AST checks.
+- Revisit this backlog after ui_tk cleanup and controller switch slices are
+  complete.
+
 ## Not refactor tasks
 - HSPF xfail 해소
 - golden fixture 보강

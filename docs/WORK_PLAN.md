@@ -109,6 +109,7 @@
 - Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions, but profile expansion should wait until result/detail/export common contracts, two-row batch foundation, main table migration candidate review, and ui_tk cleanup direction are checked.
 - AS/NZS Excel compatibility Z-phase remains deferred.
 - Historical ISO/KS/ASNZS workbook compatibility details stay outside this execution board.
+- Code quality guardrail backlog is tracked in `docs/REFACTOR_PLAN.md`; revisit after ui_tk cleanup / controller switch slices expose real checker needs.
 
 ## Recent Summaries
 

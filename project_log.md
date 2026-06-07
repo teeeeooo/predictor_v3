@@ -899,3 +899,21 @@
   유지보수에 유리하다.
 
 ---
+
+## 2026-06-07 — Code quality guardrail backlog milestone registration
+
+### Tried
+- 270~274 흐름에서 확인된 code_checker/문서 하네스로 방어 가능한 영역과
+  아직 미비한 guardrail 후보를 정리.
+- 미비 항목을 REFACTOR_PLAN.md backlog로 등록하고 WORK_PLAN.md에
+  잊지 않기 위한 reminder/checkpoint를 추가.
+
+### Decision
+- REFACTOR_PLAN.md가 상세 guardrail backlog를 소유한다.
+- WORK_PLAN.md가 실행 보드로서 짧은 checkpoint를 유지한다.
+- guardrail은 incremental, warning-first로 도입하며 당장 hard gate로 만들지 않는다.
+- owner: semantic check는 `tools/code_checker/`, structural check는
+  `tools/check_code_structure.py`.
+- revisit 시점: ui_tk cleanup과 controller switch 완료 후.
+
+---
