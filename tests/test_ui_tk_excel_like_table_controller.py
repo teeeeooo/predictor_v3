@@ -226,9 +226,7 @@ def test_valid_paste_clears_previous_invalid_state(controlled_table):
     table, controller, calls = controlled_table
     # First make field "b" invalid.
     table.set_values_batch({"b": "bad"})
-    table.get_numeric_values()
-    # This should raise and mark "b" invalid.
-    # But we need to actually trigger it.
+    # Trigger validation; it should raise and mark "b" invalid.
     try:
         table.get_numeric_values()
     except ValueError:
@@ -264,12 +262,15 @@ def test_invalid_field_background_shown_in_paint(controlled_table):
     except ValueError:
         pass
 
-    # Paint should reflect invalid background for field "b".
-    controller.select((0, 1), extend=False)
+    # Clear selection so invalid/valid base backgrounds are visible
+    # without active/selected overlays.
+    controller._clear_selection()
+
+    # Non-selected invalid cell "b" should show invalid background.
     bg = table.editable_entries["b"].cget("background")
     assert bg == TABLE_INVALID_BG
 
-    # Valid field "a" should still have editable background.
+    # Non-selected valid cell "a" should show editable background.
     bg_a = table.editable_entries["a"].cget("background")
     assert bg_a == TABLE_EDITABLE_BG
 
