@@ -20,12 +20,18 @@
 - Window geometry, viewport policy, input replace-on-type, and UI pivot prep arc is summarized in `result_reports/summaries/200_summary-window-geometry-viewport-ui-pivot-prep-arc.md`.
 - Architecture/UI-UX boundary and window refit arc is summarized in `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md`.
 - Window/dialog/table/batch viewport closeout arc is summarized in `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md`.
+- Batch two-row matrix and reference parity arc (237-248) is summarized in `result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md`.
 - Implemented state:
   - ISO/ISEER and SASO T3 comparison result tables.
   - ISO/ISEER, SASO T3, and Hong Kong CSPF PyQt-style detail panels.
   - Header-included TSV copy for result/detail tables.
   - Detail/bin table CSV export.
   - Lightweight Canvas graph with `Outdoor Temp [°C]` x-axis, selected-series y-axis, and selected-series min/max scale text.
+  - Batch two-row matrix: `BatchMatrixSpec` + `BatchMatrixTable` + `TkTableController` + `HongKongCspfMatrixController` adapter.
+  - Hong Kong CSPF batch migrated to two-row matrix; row-per-case fallback preserved.
+  - MxN paste repeat-fill fixed in `interaction_core` common helper.
+  - Same-shape in-place restore preserves widget continuity (reference parity with `BatchCaseTable`).
+  - Copy-all and CSV export parity using existing `table_clipboard` / `table_csv_export` helpers.
 - User manual smoke result:
   - 196-a through 199-c completed and archived under summary 200.
   - 201-b resolved the 201-a archived-doc whitespace blocker; merge readiness checks now pass.
@@ -38,12 +44,9 @@
   - 216 Windows smoke kept table interaction/layout gaps as input to the next table foundation arc.
   - 221C through 228 and 230A through 230D are summarized under summary 231.
   - 229, 231, 232, 233A through 233F guard, 234, and 235 are summarized under summary 236.
-  - 236 closes the window/dialog/table/batch viewport arc: lower blank space and refit loop are resolved, remaining soft flicker is accepted, batch dialog sizing/state/viewport wheel behavior are accepted, and report workflow self-reference handling is documented.
-  - 239 adds the per-cell role controller compatibility path for the batch two-row matrix foundation while preserving existing row-per-case column-role fallback behavior.
-  - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-  - 240 completes the Tk two-row matrix table skeleton: `BatchMatrixTable` surface, `BatchMatrixSpec` mapping, per-cell `cell_role(position)`, and existing `TkTableController` reuse are verified.
-  - 242 migrates Hong Kong CSPF batch to the two-row matrix surface: `HongKongCspfMatrixController` adapter bridges `BatchMatrixTable` with existing `HongKongCspfBatchHandler`; row-per-case code preserved as fallback.
-- Next: Batch table copy-all + CSV export parity.
+  - 236 closes the window/dialog/table/batch viewport arc.
+  - 237-248 are summarized under summary 249.
+- Next: Result/detail/export common contract check.
 
 ## Next Actions
 

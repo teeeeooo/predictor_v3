@@ -21,6 +21,14 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — Batch two-row matrix and reference parity arc summary lifecycle cleanup
+
+### Decision
+- Reports 237-248 are summarized under `result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md` and moved to archive.
+- No active reports remain for this arc.
+- Next technical action is result/detail/export common contract check.
+- `project_memory_seed.md` updated with two new durable entries and one superseded entry.
+
 ## 2026-06-07 — Main notebook legacy vs batch dialog lifecycle audit
 
 ### Decision

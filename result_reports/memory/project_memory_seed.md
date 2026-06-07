@@ -26,6 +26,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/221_summary-post-main-table-window-refit-arc.md` (covered reports `202-221b`, with `221c` kept active as next-decision evidence)
 - `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md` (covered reports `221c-228` and `230a-230d`, with `229` kept active as next-code-slice evidence)
 - `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md` (covered reports `229`, `231`, `232`, `233A-233F guard`, `234`, and `235`)
+- `result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md` (covered reports `237-248`)
 
 ## Scope and Non-goals
 
@@ -646,8 +647,36 @@ entries:
       - Hong Kong CSPF
       - result metrics
       - export deferred
-    assertionStatus: verified
+    assertionStatus: superseded
     source: result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
+    supersededBy: result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md
+
+  - type: decision
+    topic: batch two-row matrix path completed and Hong Kong CSPF migration stabilized
+    content: The batch two-row matrix foundation is complete through reports 237-248. Key results: two-row matrix layout accepted (blank read-only cells, no merge, no repeated Case); BatchMatrixSpec + per-cell cell_role(position) + TkTableController is the standard integration path; Hong Kong CSPF batch dialog migrated to BatchMatrixTable via HongKongCspfMatrixController adapter; row-per-case code preserved as fallback; MxN paste repeat-fill fixed in common helper; same-shape restore preserves widget continuity; copy/export parity uses existing table_clipboard and table_csv_export helpers.
+    keywords:
+      - batch table
+      - two-row matrix
+      - Hong Kong CSPF
+      - BatchMatrixSpec
+      - BatchMatrixTable
+      - TkTableController
+      - reference parity
+    assertionStatus: verified
+    source: result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md
+
+  - type: decision
+    topic: main notebook legacy vs batch newer stable path and BatchMatrixTable LOC containment
+    content: The main notebook/tab path (Iso16358Tab) is a partially corrected legacy path with nested notebook, profile switch, and dynamic refit scheduler. The batch dialog/table path is a newer stable path with hidden-first sizing, internal viewport, and common table foundation. Apparent duplication between BatchCaseTable and BatchMatrixTable is shape-specific construction, not generic boilerplate; a base class would be premature with only two concrete shapes. BatchMatrixTable is at 422 LOC; the next responsibility addition must trigger helper extraction, not file growth.
+    keywords:
+      - main notebook
+      - batch dialog
+      - lifecycle
+      - BatchMatrixTable
+      - LOC containment
+      - helper extraction
+    assertionStatus: verified
+    source: result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md
 ```
 
 ## Known Gaps
