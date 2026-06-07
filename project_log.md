@@ -575,3 +575,40 @@
   detail surface를 안전하게 확장할 수 있다.
 
 ---
+
+## 2026-06-07 — Hong Kong HSPF single-case detail/bin panel wiring
+
+### Tried
+- 253/254에서 준비한 configurable schema-driven `BinDetailPanel` shell과
+  `HEATING_HSPF_BIN_DETAIL_SCHEMA`를 사용해 Hong Kong HSPF section에 detail
+  toggle + panel을 추가.
+- core가 이미 반환하는 `result["bin_details"]`를 `BinDetailSource(rows=...)`로
+  변환해 detail table/graph/summary에 연결.
+- invalid input / calculation error 시 stale detail rows를 `_clear_trace()`로
+  제거.
+
+### Result
+- Hong Kong HSPF section에 detail toggle + `BinDetailPanel` 추가 완료.
+- Heating detail table은 10개 컬럼(Bin No, Temp, Hours, Load, Delivered, Power,
+  Case, Heat Pump, Auxiliary, Total)을 표시.
+- Heating graph combo는 7개 series(Bin Hours, Load, Delivered, Power, Heat Pump,
+  Auxiliary, Total)를 제공.
+- Detail summary는 HSPF / HSTL [kWh] / HSEC [kWh]를 표시.
+- 상세 복사/CSV보내기는 기존 `table_clipboard` / `table_csv_export` helper를
+  그대로 사용.
+- 기존 CSPF/SASO/ISO detail regression은 변화 없음.
+- core calculator, golden, fixture, batch matrix, ResultPanel 변경 없음.
+
+### Decision
+- Hong Kong HSPF single-case detail surface는 `HEATING_HSPF_BIN_DETAIL_SCHEMA`
+  주입으로 동일 `BinDetailPanel` shell을 재사용한다.
+- heating detail wiring pattern은 cooling detail wiring과 구조적으로 동일하며,
+  차이는 schema와 section-specific summary formatter뿐이다.
+
+### Lesson
+- schema-driven shell이 준비된 상태에서 profile-specific detail wiring은
+  section-level helper + schema 주입만으로 완성할 수 있다.
+- shell 수정 없이 section wiring만으로 새 profile detail surface를 추가하는
+  것이 clean architecture boundary를 지키는 방법이다.
+
+---

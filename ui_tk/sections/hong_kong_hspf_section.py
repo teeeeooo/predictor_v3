@@ -21,6 +21,8 @@ from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.result_models import result_status
 from ui_tk.result_panel import ResultPanel
+from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from ui_tk.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 from ui_tk.sections.iso16358_helpers import build_hspf_input
 from ui_tk.sections.result_formatting import summarize_hspf_result
 
@@ -34,6 +36,10 @@ class HongKongHspfSection:
         region_label: str,
     ) -> None:
         self._region_label = region_label
+        self._trace_rows: list[dict] = []
+        self._detail_summary: tuple[tuple[str, str], ...] = ()
+        self._trace_status: str | None = "상세 데이터 없음"
+        self._detail_visible = False
         self._frame = ttk.LabelFrame(parent, text=f"HSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
@@ -73,6 +79,29 @@ class HongKongHspfSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.action_row = ttk.Frame(self._frame)
+        self.action_row.grid(
+            row=3,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "hong_kong_hspf_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT)
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("Hong Kong HSPF",),
+            default_source="Hong Kong HSPF",
+            csv_filename="hong_kong_hspf_bin_detail.csv",
+            show_source_selector=False,
+            schema=HEATING_HSPF_BIN_DETAIL_SCHEMA,
+        )
         self.input_table.set_values(
             {
                 "full_capacity": "6300",
@@ -103,6 +132,7 @@ class HongKongHspfSection:
         try:
             measured = self._read_inputs()
         except ValueError:
+            self._clear_trace("입력 오류: 숫자 입력을 확인하세요.")
             self.result_panel.set_summaries(
                 (result_status("HSPF", "입력 오류: 숫자 입력을 확인하세요."),)
             )
@@ -112,12 +142,85 @@ class HongKongHspfSection:
             calc = create_calculator_for_profile(profile_id=profile_id)
             result = calc.calculate_hspf(measured)
         except Exception as exc:
+            self._clear_trace("계산 오류")
             self.result_panel.set_summaries(
                 (result_status("HSPF", f"오류: {type(exc).__name__}: {exc}"),)
             )
             return
+        self._trace_rows = _hspf_bin_details(result)
+        self._detail_summary = _hspf_summary_from_result(result)
+        self._trace_status = None
+        self._update_detail_panel()
         self.result_panel.set_summaries((summarize_hspf_result(result),))
+
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self._update_detail_panel()
+            self.detail_panel.grid(
+                row=4,
+                column=0,
+                sticky="ew",
+                padx=0,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
+        else:
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+
+    def _update_detail_panel(self) -> None:
+        if self._trace_status is not None:
+            self.detail_panel.set_status(self._trace_status)
+            return
+        self.detail_panel.set_sources(
+            {
+                "Hong Kong HSPF": BinDetailSource(
+                    rows=tuple(self._trace_rows),
+                    summary=self._detail_summary,
+                )
+            },
+            source_order=("Hong Kong HSPF",),
+            panel_status="상세 데이터 없음",
+        )
+
+    def _clear_trace(self, status: str) -> None:
+        self._trace_rows = []
+        self._detail_summary = ()
+        self._trace_status = status
+        self._update_detail_panel()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+
+
+def _hspf_bin_details(result: Mapping[str, object]) -> list[dict]:
+    raw = result.get("bin_details")
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, Mapping)]
+
+
+def _hspf_summary_from_result(result: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
+    hspf = result.get("hspf")
+    hspf_text = "-" if hspf is None else f"{float(hspf):.3f}"
+    hstl = result.get("hstl_wh", result.get("hstl"))
+    hstl_text = "-"
+    if hstl is not None:
+        try:
+            hstl_text = f"{float(hstl) / 1000.0:.1f}"
+        except (TypeError, ValueError):
+            hstl_text = str(hstl)
+    hsec = result.get("hsec_wh", result.get("hsec"))
+    hsec_text = "-"
+    if hsec is not None:
+        try:
+            hsec_text = f"{float(hsec) / 1000.0:.1f}"
+        except (TypeError, ValueError):
+            hsec_text = str(hsec)
+    return (
+        ("HSPF", hspf_text),
+        ("HSTL [kWh]", hstl_text),
+        ("HSEC [kWh]", hsec_text),
+    )

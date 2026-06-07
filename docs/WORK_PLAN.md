@@ -49,13 +49,15 @@
   - 251: result/detail/export common contract audit completed.
   - 252: Hong Kong HSPF detail/bin trace schema preflight completed.
   - 253: configurable bin-detail schema extraction (foundation for HSPF detail).
-- Next: HSPF detail/bin extension.
+  - 254: cleanup legacy cooling constants after schema extraction.
+  - 255: Hong Kong HSPF single-case detail/bin panel wiring completed.
+- Next: Main table migration candidate check.
 
 ## Next Actions
 
-1. **HSPF detail/bin extension**
-   - Add Hong Kong HSPF single-case detail/bin panel wiring using extracted configurable schema.
-2. **Main table migration candidate check**
+1. **Main table migration candidate check**
+   - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
+2. **ui_tk folder cleanup**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
 3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
