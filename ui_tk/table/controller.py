@@ -216,7 +216,6 @@ class TkTableController:
         if self.table.set_positions_batch({position: event.char}):
             self._mode = "edit"
             self._replace_pending = False
-            self.table.focus_widget(position).focus_set()
             widget = self.table.focus_widget(position)
             widget.icursor("end")
         return "break"

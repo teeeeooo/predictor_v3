@@ -236,3 +236,33 @@ class TestCspfHspfScheduleParity:
         assert len(cspf_calls) == len(hspf_calls), (
             f"CSPF schedule calls: {len(cspf_calls)}, HSPF schedule calls: {len(hspf_calls)}"
         )
+
+
+class TestTypeReplaceDoesNotCallFocusSet:
+    """Regression: _type_replace must not redundantly call focus_set."""
+
+    def test_type_replace_does_not_call_focus_set(self, cspf_section, tk_root) -> None:
+        ctrl = cspf_section.input_controller
+        ctrl.select((0, 0))
+        tk_root.update_idletasks()
+
+        widget = ctrl.table.focus_widget((0, 0))
+        focus_calls = []
+        original_focus_set = widget.focus_set
+
+        def mock_focus_set(*_args, **_kwargs):
+            focus_calls.append(None)
+            original_focus_set()
+
+        widget.focus_set = mock_focus_set
+
+        event = type("Event", (), {"keysym": "5", "char": "5", "state": 0})()
+        ctrl._type_replace(event, (0, 0))
+        tk_root.update_idletasks()
+
+        assert len(focus_calls) == 0, (
+            f"Expected 0 focus_set calls during _type_replace, got {len(focus_calls)}"
+        )
+        # Confirm behavior is intact despite no focus_set
+        assert ctrl.table.text_at_position((0, 0)) == "5"
+        assert ctrl._mode == "edit"

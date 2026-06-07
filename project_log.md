@@ -1132,3 +1132,21 @@
 - controller switch expansion은 flicker fix 확인 후 진행.
 
 ---
+
+## 2026-06-07 — Remove redundant focus_set from TkTableController._type_replace
+
+### Tried
+- `TkTableController._type_replace()`의 redundant `focus_set()` 호출 제거.
+- regression test 추가: `_type_replace` 중 `focus_set` 호출 0회 확인.
+
+### Result
+- production code 수정 1줄 (focus_set() 제거).
+- 9 diagnostic tests passed, 15 parity tests passed, 5 pilot tests passed.
+- Xvfb 환경에서 전체 통과.
+
+### Decision
+- flicker fix 적용 완료.
+- 다음 gate: Windows manual smoke로 flicker 사라짐 확인.
+- Windows smoke 통과 후 controller switch expansion 고려.
+
+---
