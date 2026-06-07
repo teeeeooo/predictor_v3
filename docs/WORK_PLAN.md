@@ -46,18 +46,20 @@
   - 229, 231, 232, 233A through 233F guard, 234, and 235 are summarized under summary 236.
   - 236 closes the window/dialog/table/batch viewport arc.
   - 237-248 are summarized under summary 249.
-- Next: Result/detail/export common contract check.
+  - 251: result/detail/export common contract audit completed.
+  - 252: Hong Kong HSPF detail/bin trace schema preflight completed.
+  - 253: configurable bin-detail schema extraction (foundation for HSPF detail).
+- Next: HSPF detail/bin extension.
 
 ## Next Actions
 
-1. **Result/detail/export common contract check**
-   - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
+1. **HSPF detail/bin extension**
+   - Add Hong Kong HSPF single-case detail/bin panel wiring using extracted configurable schema.
 2. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
 3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-4. **HSPF detail/bin extension**
-5. **EN14825 / AHRI 210/240 / KS profile expansion**
+4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

@@ -155,6 +155,15 @@ def test_bin_detail_graph_returns_y_scale_for_selected_series():
     from ui_tk.sections.bin_detail_panel import BinDetailGraph
 
     graph = BinDetailGraph.__new__(BinDetailGraph)
+    graph._graph_series = (
+        ("Bin Hours [h]", "nj"),
+        ("Load [W]", "lc"),
+        ("Capacity [W]", "capacity"),
+        ("Power [W]", "power"),
+        ("EER [W/W]", "eer"),
+        ("CSTL [Wh]", "cstl_bin"),
+        ("CSEC [Wh]", "csec_bin"),
+    )
     graph._rows = (
         {"tj": 20.0, "eer": 3.25},
         {"tj": 25.0, "eer": 4.5},

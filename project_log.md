@@ -545,3 +545,33 @@
   점검한다.
 
 ---
+
+## 2026-06-07 — Configurable bin-detail schema extraction
+
+### Tried
+- 252 preflight에서 확인한 Hong Kong HSPF `bin_details`를 기존 CSPF detail panel
+  shell로 표시하기 위한 foundation extraction.
+- cooling-only hardcode를 복제하지 않고, `BinDetailSchema` dataclass로
+  column/key/graph series를 주입 가능하게 분리.
+- `BinTraceTable`, `BinDetailPanel`, `BinDetailGraph`에 schema parameter를
+  추가하고 기본값으로 cooling schema를 유지.
+
+### Result
+- 기존 CSPF/SASO/ISEER detail panel 동작은 변화 없음 (regression 1 passed,
+  16 skipped in headless).
+- heating schema (`HEATING_HSPF_BIN_DETAIL_SCHEMA`)를 정의하고 sample HSPF bin
+  row가 expected table row로 변환되는 것을 확인.
+- `table_export_data()` / copy / CSV export contract는 그대로 유지.
+- core calculator, golden, fixture, ResultPanel, batch matrix는 변경 없음.
+
+### Decision
+- UI shell과 domain-specific schema는 `BinDetailSchema`로 분리한다.
+- profile-specific detail surface는 schema 주입으로 동일한 shell을 재사용한다.
+- heating-specific duplicate class는 schema 주입으로 대체 가능하다.
+
+### Lesson
+- hardcoded domain schema를 직접 복제하는 대신, 작은 dataclass 하나로
+  table+graph+export contract를 parameterize하면 동일 shell로 multi-profile
+  detail surface를 안전하게 확장할 수 있다.
+
+---

@@ -11,6 +11,10 @@ from tkinter import ttk
 from ui_tk import table_csv_export
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.sections.bin_trace_table import BinTraceTable
+from ui_tk.sections.bin_detail_schema import (
+    BinDetailSchema,
+    COOLING_BIN_DETAIL_SCHEMA,
+)
 
 
 @dataclass(frozen=True)
@@ -44,10 +48,12 @@ class BinDetailPanel:
         default_source: str,
         csv_filename: str,
         show_source_selector: bool = True,
+        schema: BinDetailSchema = COOLING_BIN_DETAIL_SCHEMA,
     ) -> None:
         self._source_order = tuple(source_labels)
         self._default_source = default_source
         self._csv_filename = csv_filename
+        self._schema = schema
         self._sources: dict[str, BinDetailSource] = {}
         self._panel_status = "상세 데이터 없음"
 
@@ -99,15 +105,15 @@ class BinDetailPanel:
         self.graph_label.pack(side=tk.LEFT, padx=(0, 6))
         self.graph_combo = ttk.Combobox(
             self._graph_row,
-            values=[label for label, _key in _GRAPH_SERIES],
+            values=[label for label, _key in self._schema.graph_series],
             state="readonly",
             width=18,
         )
-        self.graph_combo.set(_GRAPH_SERIES[0][0])
+        self.graph_combo.set(self._schema.graph_series[0][0])
         self.graph_combo.pack(side=tk.LEFT)
         self.graph_combo.bind("<<ComboboxSelected>>", self._on_graph_changed)
 
-        self.graph = BinDetailGraph(self._frame)
+        self.graph = BinDetailGraph(self._frame, graph_series=self._schema.graph_series)
         self.graph.grid(
             row=3,
             column=0,
@@ -116,7 +122,7 @@ class BinDetailPanel:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
-        self.table = BinTraceTable(self._frame, title="상세 표")
+        self.table = BinTraceTable(self._frame, title=self._schema.table_title, schema=self._schema)
         self.table.grid(
             row=4,
             column=0,
@@ -226,18 +232,24 @@ class BinDetailPanel:
 
     def _selected_graph_key(self) -> str:
         selected = self.graph_combo.get()
-        for label, key in _GRAPH_SERIES:
+        for label, key in self._schema.graph_series:
             if label == selected:
                 return key
-        return _GRAPH_SERIES[0][1]
+        return self._schema.graph_series[0][1]
 
 
 class BinDetailGraph:
-    """Small dependency-free Canvas line graph for cooling bin details."""
+    """Small dependency-free Canvas line graph for bin details."""
 
-    def __init__(self, parent: tk.Widget) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        graph_series: tuple[tuple[str, str], ...] = COOLING_BIN_DETAIL_SCHEMA.graph_series,
+    ) -> None:
         self._rows: tuple[Mapping[str, object], ...] = ()
-        self._series_key = _GRAPH_SERIES[0][1]
+        self._graph_series = graph_series
+        self._series_key = graph_series[0][1]
         self.canvas = tk.Canvas(
             parent,
             height=190,
@@ -394,10 +406,10 @@ class BinDetailGraph:
         return points, x_axis_label, min_x, max_x, min_y, max_y
 
     def _series_label(self) -> str:
-        for label, key in _GRAPH_SERIES:
+        for label, key in self._graph_series:
             if key == self._series_key:
                 return label
-        return "Bin Hours [h]"
+        return self._graph_series[0][0]
 
     def _series_scale_label(self, min_y: float | None, max_y: float | None) -> str:
         label = self._series_label()

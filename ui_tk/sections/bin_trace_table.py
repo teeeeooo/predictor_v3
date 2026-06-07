@@ -15,6 +15,10 @@ from ui_tk.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_DATA_COLUMN_CHARS,
 )
+from ui_tk.sections.bin_detail_schema import (
+    BinDetailSchema,
+    COOLING_BIN_DETAIL_SCHEMA,
+)
 
 BIN_TRACE_COLUMNS = (
     "Bin No",
@@ -46,10 +50,17 @@ _MAX_VISIBLE_ROWS = 10
 class BinTraceTable:
     """Section-local, read-only table for calculator ``bin_details`` rows."""
 
-    def __init__(self, parent: tk.Widget, *, title: str = "상세 표") -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        title: str = "상세 표",
+        schema: BinDetailSchema = COOLING_BIN_DETAIL_SCHEMA,
+    ) -> None:
         self.layout_policy = "responsive"
         self.surface_role = "bin_trace_surface"
-        self.column_labels = BIN_TRACE_COLUMNS
+        self.schema = schema
+        self.column_labels = schema.column_labels
         self.rows: tuple[tuple[str, ...], ...] = ()
 
         self._frame = ttk.Frame(parent)
@@ -108,7 +119,7 @@ class BinTraceTable:
         return bool(self._frame.winfo_manager())
 
     def set_data(self, bin_details: Iterable[Mapping[str, object]] | None) -> None:
-        rows = tuple(_trace_row(item) for item in (bin_details or ()))
+        rows = tuple(_trace_row(item, self.schema.column_keys) for item in (bin_details or ()))
         self._clear_tree()
         self.rows = rows
         if self.status_label.winfo_manager():
@@ -162,8 +173,8 @@ class BinTraceTable:
             self.table.delete(item_id)
 
 
-def _trace_row(item: Mapping[str, object]) -> tuple[str, ...]:
-    return tuple(_format_value(item.get(key)) for key in _COLUMN_KEYS)
+def _trace_row(item: Mapping[str, object], column_keys: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(_format_value(item.get(key)) for key in column_keys)
 
 
 def _format_value(value: object) -> str:

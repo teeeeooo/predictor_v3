@@ -1,0 +1,109 @@
+"""Bin detail schema definitions for configurable trace tables and graphs.
+
+Schemas separate UI shell responsibility (display/copy/export) from
+domain-specific column/key/series definitions. No calculator core imports.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class BinDetailSchema:
+    """Immutable schema for a bin-detail trace table and its graph series."""
+
+    column_labels: tuple[str, ...]
+    column_keys: tuple[str, ...]
+    graph_series: tuple[tuple[str, str], ...]
+    table_title: str = "상세 표"
+
+    def __post_init__(self) -> None:
+        if len(self.column_labels) != len(self.column_keys):
+            raise ValueError(
+                f"column_labels ({len(self.column_labels)}) and column_keys "
+                f"({len(self.column_keys)}) must have the same length"
+            )
+        if not self.column_labels:
+            raise ValueError("column_labels must not be empty")
+        if not self.graph_series:
+            raise ValueError("graph_series must not be empty")
+
+
+# ---------------------------------------------------------------------------
+# Cooling default schema (preserves existing CSPF/SASO/ISEER behavior)
+# ---------------------------------------------------------------------------
+COOLING_BIN_DETAIL_SCHEMA = BinDetailSchema(
+    column_labels=(
+        "Bin No",
+        "Temp [°C]",
+        "Hours",
+        "Load [W]",
+        "Capacity [W]",
+        "Power [W]",
+        "EER",
+        "CSTL [Wh]",
+        "CSEC [Wh]",
+    ),
+    column_keys=(
+        "bin_no",
+        "tj",
+        "nj",
+        "lc",
+        "capacity",
+        "power",
+        "eer",
+        "cstl_bin",
+        "csec_bin",
+    ),
+    graph_series=(
+        ("Bin Hours [h]", "nj"),
+        ("Load [W]", "lc"),
+        ("Capacity [W]", "capacity"),
+        ("Power [W]", "power"),
+        ("EER [W/W]", "eer"),
+        ("CSTL [Wh]", "cstl_bin"),
+        ("CSEC [Wh]", "csec_bin"),
+    ),
+    table_title="상세 표",
+)
+
+# ---------------------------------------------------------------------------
+# Heating schema candidate for HSPF detail/bin trace (not wired yet)
+# ---------------------------------------------------------------------------
+HEATING_HSPF_BIN_DETAIL_SCHEMA = BinDetailSchema(
+    column_labels=(
+        "Bin No",
+        "Temp [°C]",
+        "Hours",
+        "Load [W]",
+        "Delivered [W]",
+        "Power [W]",
+        "Case",
+        "Heat Pump [Wh]",
+        "Auxiliary [Wh]",
+        "Total [Wh]",
+    ),
+    column_keys=(
+        "bin_no",
+        "tj",
+        "nj",
+        "bl_h",
+        "pi_j",
+        "P_j",
+        "case",
+        "heat_pump_energy",
+        "auxiliary_energy",
+        "E_j",
+    ),
+    graph_series=(
+        ("Bin Hours [h]", "nj"),
+        ("Load [W]", "bl_h"),
+        ("Delivered [W]", "pi_j"),
+        ("Power [W]", "P_j"),
+        ("Heat Pump [Wh]", "heat_pump_energy"),
+        ("Auxiliary [Wh]", "auxiliary_energy"),
+        ("Total [Wh]", "E_j"),
+    ),
+    table_title="난방 상세 표",
+)
