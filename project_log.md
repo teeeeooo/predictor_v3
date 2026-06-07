@@ -765,3 +765,34 @@
   archive하면 active folder 관리가 용이하다.
 
 ---
+
+## 2026-06-07 — Main paste policy alignment to raw text paste + visible validation
+
+### Tried
+- `ExcelLikeTableController._paste()`의 atomic numeric pre-validation reject를 제거.
+- `MetricInputTable.get_numeric_values()`가 invalid fields를 자동으로 visible
+  marking하고 `ValueError`를 raise하도록 수정.
+- `ExcelLikeTableController._paint_selection()`이 invalid field background를
+  표시하도록 수정.
+
+### Result
+- main paste는 이제 invalid value를 cell에 raw text로 적용한다.
+- invalid field는 빨간색 배경으로 표시된다.
+- `get_numeric_values()` 호출 시 invalid fields가 표시되고 계산은 실행되지 않는다.
+- undo는 paste 전체를 한 번에 되돌린다.
+- batch/common paste behavior는 변경되지 않았다.
+- controller switch는 아직 수행되지 않았다.
+
+### Decision
+- calculator main table paste policy는 common UX contract 방향으로 정렬된다.
+- paste layer는 value validation을 이유로 reject하지 않는다.
+- validation은 paste 이후 field-level에서 수행되고 visible marking으로 표시된다.
+- execution은 invalid state에서 block된다.
+- `get_numeric_values()`는 validation + execution blocking의 owner이다.
+
+### Lesson
+- atomic paste rejection은 사용자가 무엇이 잘못됐는지 알 수 없는 silent failure를
+  만들 수 있다.
+- paste → validate → execute 3-layer 분리가 사용자 의도와 일치한다.
+
+---

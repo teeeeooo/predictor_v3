@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable
 from ui_tk.layout_constants import (
     TABLE_ACTIVE_BG,
     TABLE_EDITABLE_BG,
+    TABLE_INVALID_BG,
     TABLE_SELECTED_BG,
 )
 from ui_tk.table_grid_model import parse_numeric_cell
@@ -185,11 +186,16 @@ class ExcelLikeTableController:
             for position in self._editable_positions
             if top <= position[0] <= bottom and left <= position[1] <= right
         )
+    def _base_background_for_field(self, field_key: str) -> str:
+        if hasattr(self.table, "is_field_invalid") and self.table.is_field_invalid(field_key):
+            return TABLE_INVALID_BG
+        return TABLE_EDITABLE_BG
+
     def _paint_selection(self) -> None:
         selected = set(self.selected_positions())
         for position in self._editable_positions:
             field_key = self.table.field_key_for_address(self._by_position[position])
-            color = TABLE_EDITABLE_BG
+            color = self._base_background_for_field(field_key)
             if position in selected:
                 color = TABLE_SELECTED_BG
             if position == self.active:
@@ -296,7 +302,6 @@ class ExcelLikeTableController:
         from tkinter import TclError
         try:
             matrix = parse_clipboard_matrix(self.table.clipboard_get())
-            validate_paste_matrix(matrix)
         except (TclError, ValueError):
             return "break"
         targets = clip_paste_targets(

@@ -289,11 +289,25 @@ class MetricInputTable(ttk.Frame):
         return self.set_values_batch(editable_values)
 
     def get_numeric_values(self) -> dict[str, float]:
-        """Return numeric values for editable cells or raise on invalid input."""
-        return {
-            field_key: parse_numeric_cell(value)
-            for field_key, value in self._values.items()
-        }
+        """Return numeric values for editable cells or raise on invalid input.
+
+        Invalid fields are marked with visible invalid state.
+        Valid fields have their invalid state cleared.
+        """
+        self.clear_invalid_fields()
+        invalid: dict[str, str] = {}
+        numeric: dict[str, float] = {}
+        for field_key, value in self._values.items():
+            try:
+                numeric[field_key] = parse_numeric_cell(value)
+            except ValueError:
+                invalid[field_key] = "숫자 입력 필요"
+        if invalid:
+            self.set_invalid_fields(invalid)
+            raise ValueError(
+                f"Invalid numeric input in {len(invalid)} field(s)"
+            )
+        return numeric
 
     def get_text_values(self) -> dict[str, str]:
         return dict(self._values)

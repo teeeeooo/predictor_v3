@@ -56,7 +56,11 @@
   - 258: nested notebook current-state width/height replacement repair completed.
   - 259: nested notebook width replacement using chrome-width estimate repair completed.
   - 260: HSPF detail/schema + window lifecycle arc summarized and archived after Windows smoke OK.
-- Next: Main table migration candidate check.
+  - 262: main table migration candidate check with paste/validation policy audit completed.
+  - 263: MetricInputTable TkTableSurface adapter compatibility completed.
+  - 264: MetricInputTable visible invalid-field validation foundation completed.
+  - 265: main paste policy aligned to raw text paste + visible validation + execution blocking.
+- Next: Main table controller switch preflight or ui_tk folder cleanup.
 
 ## Next Actions
 

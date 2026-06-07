@@ -133,6 +133,31 @@ class TestInvalidStateDoesNotChangeExistingBehavior:
         with pytest.raises(ValueError):
             sample_table.get_numeric_values()
 
+    def test_get_numeric_values_marks_invalid_fields(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_values_batch({"a": "bad", "b": "also_bad"})
+        with pytest.raises(ValueError):
+            sample_table.get_numeric_values()
+        assert sample_table.is_field_invalid("a") is True
+        assert sample_table.is_field_invalid("b") is True
+        assert sample_table.is_field_invalid("c") is False
+        assert sample_table.is_field_invalid("d") is False
+
+    def test_get_numeric_values_clears_previous_invalid_for_valid(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_invalid_fields({"a": "previous"})
+        assert sample_table.is_field_invalid("a") is True
+        sample_table.set_values_batch({"a": "10"})
+        numeric = sample_table.get_numeric_values()
+        assert numeric["a"] == 10.0
+        assert sample_table.is_field_invalid("a") is False
+
+    def test_get_numeric_values_clears_all_then_remarks_on_revalidation(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_invalid_fields({"a": "previous"})
+        sample_table.set_values_batch({"b": "bad"})
+        with pytest.raises(ValueError):
+            sample_table.get_numeric_values()
+        assert sample_table.is_field_invalid("a") is False
+        assert sample_table.is_field_invalid("b") is True
+
     def test_get_text_values_unchanged(self, sample_table: MetricInputTable) -> None:
         sample_table.set_values_batch({"a": "bad"})
         assert sample_table.get_text_values()["a"] == "bad"

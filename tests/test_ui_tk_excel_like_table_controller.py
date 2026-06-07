@@ -17,7 +17,7 @@ from ui_tk.excel_like_table_controller import (
     resolve_selection_bounds,
     validate_paste_matrix,
 )
-from ui_tk.layout_constants import TABLE_ACTIVE_BG, TABLE_EDITABLE_BG, TABLE_SELECTED_BG
+from ui_tk.layout_constants import TABLE_ACTIVE_BG, TABLE_EDITABLE_BG, TABLE_INVALID_BG, TABLE_SELECTED_BG
 from ui_tk.metric_input_table import MetricInputTable
 
 
@@ -197,8 +197,81 @@ def test_invalid_paste_is_rejected_without_partial_apply(controlled_table):
 
     controller._paste()
 
+    # Paste now applies raw text; invalid cells are marked via visible validation.
+    assert table.get_text_values() == {"a": "10", "b": "bad", "c": "3", "d": "4"}
+    assert len(calls) == 1
+
+    # Undo restores original values as one grouped operation.
+    controller._undo_last()
     assert table.get_text_values() == {"a": "1", "b": "2", "c": "3", "d": "4"}
-    assert calls == []
+
+
+def test_invalid_paste_marks_invalid_fields_on_validation(controlled_table):
+    table, controller, calls = controlled_table
+    controller.select((0, 0))
+    controller.select((0, 1), extend=True)
+    table.clipboard_clear()
+    table.clipboard_append("10\tbad")
+
+    controller._paste()
+
+    # After paste, numeric validation marks the invalid field.
+    with pytest.raises(ValueError):
+        table.get_numeric_values()
+    assert table.is_field_invalid("b") is True
+    assert table.is_field_invalid("a") is False
+
+
+def test_valid_paste_clears_previous_invalid_state(controlled_table):
+    table, controller, calls = controlled_table
+    # First make field "b" invalid.
+    table.set_values_batch({"b": "bad"})
+    table.get_numeric_values()
+    # This should raise and mark "b" invalid.
+    # But we need to actually trigger it.
+    try:
+        table.get_numeric_values()
+    except ValueError:
+        pass
+    assert table.is_field_invalid("b") is True
+
+    # Now paste a valid value into "b".
+    controller.select((0, 1))
+    table.clipboard_clear()
+    table.clipboard_append("99")
+    controller._paste()
+
+    # After valid paste, the field value is updated.
+    assert table.get_text_values()["b"] == "99"
+    # Validation should succeed and clear invalid state.
+    numeric = table.get_numeric_values()
+    assert numeric["b"] == 99.0
+    assert table.is_field_invalid("b") is False
+
+
+def test_invalid_field_background_shown_in_paint(controlled_table):
+    table, controller, calls = controlled_table
+    controller.select((0, 0))
+    controller.select((0, 1), extend=True)
+    table.clipboard_clear()
+    table.clipboard_append("10\tbad")
+
+    controller._paste()
+
+    # Trigger validation to mark invalid state.
+    try:
+        table.get_numeric_values()
+    except ValueError:
+        pass
+
+    # Paint should reflect invalid background for field "b".
+    controller.select((0, 1), extend=False)
+    bg = table.editable_entries["b"].cget("background")
+    assert bg == TABLE_INVALID_BG
+
+    # Valid field "a" should still have editable background.
+    bg_a = table.editable_entries["a"].cget("background")
+    assert bg_a == TABLE_EDITABLE_BG
 
 
 def test_navigation_and_click_then_type_replace(controlled_table):
