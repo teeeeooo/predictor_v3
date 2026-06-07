@@ -61,6 +61,7 @@ class TkVisibleContentMeasurement:
         self._suppress_measurement = suppress_measurement or nullcontext
         self._horizontal_margin_ratio = horizontal_margin_ratio
         self._vertical_margin_cap = vertical_margin_cap
+        self._observed_max_tab_width = 0
 
     def preferred_size(self) -> tuple[int, int]:
         """Return preferred size for the current visible content state."""
@@ -122,33 +123,23 @@ class TkVisibleContentMeasurement:
         if not tabs:
             return NestedNotebookMeasurement()
 
-        original_tab = notebook.select()
-        current_tab = original_tab or tabs[0]
-        max_tab_width = 0
-        max_tab_height = 0
-        current_tab_height = 0
+        current_tab = notebook.select() or tabs[0]
+        current_widget = notebook.nametowidget(current_tab)
+        current_tab_width = current_widget.winfo_reqwidth()
+        current_tab_height = current_widget.winfo_reqheight()
+        notebook_height = notebook.winfo_reqheight()
 
-        with self._suppress_measurement():
-            for tab_id in tabs:
-                notebook.select(tab_id)
-                notebook.update_idletasks()
-                widget = notebook.nametowidget(tab_id)
-                width = widget.winfo_reqwidth()
-                height = widget.winfo_reqheight()
-                max_tab_width = max(max_tab_width, width)
-                max_tab_height = max(max_tab_height, height)
-                if tab_id == current_tab:
-                    current_tab_height = height
-            notebook.select(current_tab)
-            notebook.update_idletasks()
-
-        if current_tab_height <= 0:
-            current_widget = notebook.nametowidget(current_tab)
-            current_tab_height = current_widget.winfo_reqheight()
+        # Update observed max width cache from current visible tab only.
+        # This avoids selecting hidden tabs (which triggers <<NotebookTabChanged>>
+        # events and creates refit loops) while still providing some horizontal
+        # width stability over time.
+        self._observed_max_tab_width = max(
+            self._observed_max_tab_width, current_tab_width
+        )
 
         return NestedNotebookMeasurement(
-            max_tab_width=max_tab_width,
-            max_tab_height=max_tab_height,
+            max_tab_width=self._observed_max_tab_width,
+            max_tab_height=current_tab_height,
             current_tab_height=current_tab_height,
-            notebook_height=notebook.winfo_reqheight(),
+            notebook_height=notebook_height,
         )

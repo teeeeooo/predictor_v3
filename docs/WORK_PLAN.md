@@ -52,6 +52,7 @@
   - 254: cleanup legacy cooling constants after schema extraction.
   - 255: Hong Kong HSPF single-case detail/bin panel wiring completed.
   - 256: shared Tk content-hugging refit/minsize lifecycle repair completed.
+  - 257: side-effect-free visible content measurement policy repair completed.
 - Next: Main table migration candidate check.
 
 ## Next Actions

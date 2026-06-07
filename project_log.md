@@ -648,3 +648,38 @@
   geometry loop를 방지하는 필수 infrastructure다.
 
 ---
+
+## 2026-06-07 — Side-effect-free visible content measurement policy repair
+
+### Tried
+- 256 이후 Windows smoke에서 확인된 Hong Kong profile flicker/refit loop 문제를
+  shared measurement policy 문제로 다룸.
+- `TkVisibleContentMeasurement._measure_nested_notebook()`이 hidden tab을
+  `notebook.select(tab_id)`로 측정하여 `<<NotebookTabChanged>>` event를 발생시키고,
+  이것이 refit을 다시 요청하는 measurement → select → event → refit loop를 유발함.
+- 측정을 side-effect-free로 전환: current selected tab만 측정하고 hidden tab을
+  select하지 않음.
+- width 안정성을 위해 instance-level `_observed_max_tab_width` cache를 추가.
+- batch dialog의 hidden-first lifecycle과 main visible refit lifecycle은 서로 다른
+  표준임을 문서화.
+
+### Result
+- `_measure_nested_notebook()`에서 programmatic tab selection 완전 제거.
+- current tab height만 사용, observed width cache는 current visible tab에서만 갱신.
+- flicker loop 제거.
+- 기존 ISO/ISEER/SASO/CSPF/HSPF regression은 변화 없음.
+- core calculator, golden, fixture, batch matrix, detail panel schema 변경 없음.
+
+### Decision
+- visible main content measurement는 반드시 side-effect-free여야 한다.
+- hidden tab size를 알기 위해 programmatic tab select를 사용하는 것은 금지한다.
+- width 안정성은 observed cache로 달성한다.
+- batch dialog의 hidden-first lifecycle과 main visible refit lifecycle은 별도 표준이다.
+
+### Lesson
+- measurement가 visible UI state를 바꾸면 event loop가 생긴다.
+- side-effect-free measurement는 visible main refit의 필수 precondition이다.
+- batch의 안정성 원인(hidden-first build)을 main에 무리하게 적용하지 말고,
+  각 lifecycle에 맞는 표준을 분리해 적용해야 한다.
+
+---
