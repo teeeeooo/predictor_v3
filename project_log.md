@@ -21,6 +21,14 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — Tk two-row matrix table skeleton completed
+
+### Decision
+- `ui_tk/batch_matrix_table.py` provides the first reusable Tk two-row matrix surface.
+- Integration path is confirmed: `BatchMatrixSpec` → `cell_role(position)` → `TkTableController`.
+- Existing `BatchTableViewport` is reused without modification.
+- Next step is Hong Kong CSPF matrix migration, not parallel maintenance of row-per-case and matrix layouts.
+
 ## 2026-06-06 — Project-wide Clean Architecture boundary policy
 
 ### Decision

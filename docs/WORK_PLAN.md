@@ -41,14 +41,16 @@
   - 236 closes the window/dialog/table/batch viewport arc: lower blank space and refit loop are resolved, remaining soft flicker is accepted, batch dialog sizing/state/viewport wheel behavior are accepted, and report workflow self-reference handling is documented.
   - 239 adds the per-cell role controller compatibility path for the batch two-row matrix foundation while preserving existing row-per-case column-role fallback behavior.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
-- Next: Tk two-row matrix table skeleton.
+  - 240 completes the Tk two-row matrix table skeleton: `BatchMatrixTable` surface, `BatchMatrixSpec` mapping, per-cell `cell_role(position)`, and existing `TkTableController` reuse are verified.
+- Next: Hong Kong CSPF matrix migration.
 
 ## Next Actions
 
-1. **Tk two-row matrix table skeleton**
-   - Provide Case + Row Type + measurement points + result metric columns, two-row add/remove, Excel paste, and logical-case calculation adapters.
-2. **Hong Kong CSPF matrix migration**
-   - Migrate the current Hong Kong CSPF batch only after the model/spec and controller compatibility slices are guarded.
+1. **Hong Kong CSPF matrix migration**
+   - Migrate the current Hong Kong CSPF batch to the two-row matrix surface behind an explicit migration path.
+2. **Batch table copy-all + CSV export parity**
+   - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
+   - Do not add xlsx export in the current arc.
 3. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
