@@ -852,6 +852,32 @@
 
 ---
 
+## 2026-06-07 — ui_tk cleanup preflight using Reference Evidence Gate
+
+### Tried
+- Reference Evidence Gate를 실제 preflight에 처음 적용.
+- code_checker map을 token-safe하게 사용해 ui_tk hotspot과 duplicate helper를
+  감사.
+- table/controller convergence boundary, detail/export duplication, window
+  related 파일을 분류.
+
+### Decision
+- `_bin_details`, `_metric_value`, `_kwh_value`는 3개/2개 section 파일에서
+  동일하게 복제되어 있어 `result_formatting.py`로 추출 가능하다.
+- `ExcelLikeTableController`는 legacy controller이며 4개 section에서 사용 중.
+  `TkTableController`로의 switch는 유효한 future slice이나 첫 slice로는
+  regression risk가 높다.
+- `MetricInputTable`과 `BatchMatrixTable`의 adapter method 추출은 controller
+  switch 안정화 후가 적절하다.
+- `BinDetailPanel`의 `__init__`/`_draw` split은 GUI smoke가 필요하므로
+  별도 slice로 deferred.
+
+### Decision
+- 첫 implementation slice는 section-level result formatting helper 추출로
+  결정. zero behavior change, Windows smoke 불필요.
+
+---
+
 ## 2026-06-07 — Reference Evidence Gate workflow integration
 
 ### Tried

@@ -68,7 +68,8 @@
   - 271: repo reference map MVP implementation completed.
   - 272: repo reference map calibration completed.
   - 273: reference evidence gate hook policy adopted into DIFF_READ_BUDGET.md and AGENT_TASK_ROUTER.md.
-- Next: ui_tk cleanup preflight or main table migration candidate check using Reference Evidence Gate.
+  - 274: ui_tk cleanup preflight completed using Reference Evidence Gate.
+- Next: Extract section-level result formatting helpers (_bin_details, _metric_value, _kwh_value) into result_formatting.py.
 
 ## Next Actions
 
