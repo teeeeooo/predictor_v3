@@ -53,6 +53,7 @@
   - 255: Hong Kong HSPF single-case detail/bin panel wiring completed.
   - 256: shared Tk content-hugging refit/minsize lifecycle repair completed.
   - 257: side-effect-free visible content measurement policy repair completed.
+  - 258: nested notebook current-state width/height replacement repair completed.
 - Next: Main table migration candidate check.
 
 ## Next Actions

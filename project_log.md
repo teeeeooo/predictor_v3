@@ -683,3 +683,30 @@
   각 lifecycle에 맞는 표준을 분리해 적용해야 한다.
 
 ---
+
+## 2026-06-07 — Nested notebook current-state width/height replacement repair
+
+### Tried
+- 257 이후 남은 Hong Kong nested notebook 창 크기 refit 문제를 current-state
+  replacement policy로 해결.
+- `_observed_max_tab_width` sticky cache를 제거하고 `current_tab_width`를 사용.
+- height correction formula가 no-op이 되던 문제를 chrome_estimate 기반으로 수정.
+
+### Result
+- `max_tab_width`는 current_tab_width로, 이전 expanded size를 고정하지 않음.
+- height correction은 chrome_estimate(tab bar height) + current_tab_height로
+  notebook sticky height를 실제 current visible height로 치환.
+- 기존 ISO/ISEER/SASO/CSPF/HSPF regression은 변화 없음.
+- core calculator, golden, fixture, batch matrix, detail panel schema 변경 없음.
+
+### Decision
+- nested notebook auto-fit의 width/height는 모두 current visible tab 기준이어야 한다.
+- observed cache는 sticky target이 아니라 chrome estimate 같은 보조 용도로만 사용.
+- height correction은 `max_tab_height` 대신 `chrome_estimate`를 사용해야 한다.
+
+### Lesson
+- sticky cache(`observed_max`)는 shrink가 필요할 때 창 크기를 고정한다.
+- side-effect-free measurement와 current-state replacement는 별개 원칙이지만
+  둘 다 충족해야 한다.
+
+---
