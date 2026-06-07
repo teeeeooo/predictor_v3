@@ -936,3 +936,26 @@
   design preflight.
 
 ---
+
+## 2026-06-07 — BinDetailPanel cleanup preflight
+
+### Tried
+- `BinDetailPanel.__init__`(115 LOC)와 `BinDetailGraph._draw`(87 LOC)의
+  long-function 원인 분석.
+- `__init__`는 selector/summary/graph/table/button widget construction sequence.
+- `_draw`는 canvas clear, axis, label, line, dot drawing sequence.
+- `set_sources`, `set_status`, `copy_table`, `export_csv` public contract 확인.
+
+### Decision
+- `__init__`는 private setup helper로 나누기에 안전하고 regression risk가 낮다.
+  (widget construction order만 보존하면 됨)
+- `_draw`는 canvas side-effect sequence이므로 split은 유효하나 Windows GUI
+  smoke가 필요하므로 별도 slice로 deferred.
+- public contract (`set_sources`, `set_status`, `copy_table`, `export_csv`)는
+  어떤 cleanup에서도 signature/behavior를 유지해야 한다.
+
+### Decision
+- 첫 implementation slice는 `BinDetailPanel.__init__` setup helper split으로
+  결정.
+
+---

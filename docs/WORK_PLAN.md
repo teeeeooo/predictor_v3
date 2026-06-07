@@ -70,7 +70,8 @@
   - 273: reference evidence gate hook policy adopted into DIFF_READ_BUDGET.md and AGENT_TASK_ROUTER.md.
   - 274: ui_tk cleanup preflight completed using Reference Evidence Gate.
   - 276: extract section-level result formatting helpers completed.
-- Next: BinDetailPanel cleanup preflight or controller switch design preflight.
+  - 277: BinDetailPanel cleanup preflight completed.
+- Next: Implement BinDetailPanel.__init__ setup helper split.
 
 ## Next Actions
 
