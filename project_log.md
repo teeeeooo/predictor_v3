@@ -998,13 +998,16 @@
   compatible (`MetricInputTable`이 이미 구현함).
 - callback chain은 `set_positions_batch` -> `set_values_batch` 경로로
   compatible.
-- **blocker**: `MetricInputTable`에 `clipboard_clear`, `clipboard_append`,
-  `clipboard_get` surface protocol methods가 없음.
+- `MetricInputTable`는 `ttk.Frame`을 상속하므로 `clipboard_clear`,
+  `clipboard_append`, `clipboard_get`, `winfo_containing`을 이미 포함함.
+  controller switch의 hard blocker는 없음.
 
 ### Decision
-- controller switch 전 반드시 `MetricInputTable`에 clipboard surface methods
-  추가가 prerequisite.
-- 그 다음 parity test foundation, 그 다음 pilot section switch 순서.
-- `winfo_containing`은 `ttk.Frame`에서 상속되므로 문제 없음.
+- controller switch의 hard blocker는 없음. `MetricInputTable`는 이미
+  `TkTableSurface` protocol을 완전히 만족함.
+- 다음 slice는 parity test foundation: `MetricInputTable` + `TkTableController`
+  behavior parity 확인.
+- binding strategy 차이(widget-level vs entry-level)는 parity test로 검증.
+- parity test 통과 후 pilot section switch.
 
 ---

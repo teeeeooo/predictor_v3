@@ -23,6 +23,14 @@ safest next implementation slice.
 - No ui_tk/sections/* changes.
 - No schema/public API changes.
 
+## Correction
+
+An earlier version of this report incorrectly identified `clipboard_clear`,
+`clipboard_append`, and `clipboard_get` as "missing" from `MetricInputTable` and
+provided a buggy recursive example (`self.clipboard_clear()` calling itself).
+This has been corrected: `MetricInputTable` already inherits these methods from
+`ttk.Frame`. There are no hard blockers for controller switch.
+
 ## Reference Evidence Gate Usage
 
 Per `docs/agent_workflows/DIFF_READ_BUDGET.md`:
@@ -86,20 +94,20 @@ Per `docs/agent_workflows/DIFF_READ_BUDGET.md`:
 | Selection painting | direct | via surface | **Compatible** |
 | Replace-on-type | entry bind | widget bind | **Compatible** |
 | Edit mode (F2/Escape) | supported | supported | **Compatible** |
-| Clipboard surface methods | not needed by ExcelLike | `clipboard_clear/append/get` | **BLOCKER** — MetricInputTable missing these protocol methods |
-| `winfo_containing` | not needed | used in `_drag` | **Compatible** — inherited from `ttk.Frame` |
+ | Clipboard surface methods | not needed by ExcelLike | `clipboard_clear/append/get` | **Compatible** — inherited from `ttk.Frame` |
+ | `winfo_containing` | not needed | used in `_drag` | **Compatible** — inherited from `ttk.Frame` |
 
-**Key blocker identified:**
+**Key finding:**
 
-`MetricInputTable` is missing three `TkTableSurface` protocol methods:
-- `clipboard_clear()`
-- `clipboard_append(text: str)`
-- `clipboard_get() -> str`
+`MetricInputTable` already satisfies the full `TkTableSurface` protocol,
+including `clipboard_clear`, `clipboard_append`, `clipboard_get`, and
+`winfo_containing`, because it inherits from `ttk.Frame` which provides all
+of these methods.
 
-These are called by `TkTableController._copy()` and `._paste()`. Without them,
-a direct switch would fail at runtime.
+**No hard blockers for controller switch.**
 
 **No-blocker list:**
+- Clipboard methods: already available via `ttk.Frame` inheritance
 - Invalid field visual state: already compatible via `default_cell_background`
 - Callback chain: already compatible via `set_positions_batch` -> `set_values_batch`
 - Selection painting: already compatible
@@ -109,17 +117,18 @@ a direct switch would fail at runtime.
 
 ## Switch Blockers and Prerequisites (Task 4 continued)
 
-**Hard prerequisites (must complete before any switch):**
-1. Add `clipboard_clear`, `clipboard_append`, `clipboard_get` to
-   `MetricInputTable`.
+**Hard prerequisites: None.** `MetricInputTable` already satisfies the full
+`TkTableSurface` protocol including clipboard methods inherited from
+`ttk.Frame`.
 
-**Soft prerequisites (nice to have before switch):**
-2. Focused parity tests exercising `MetricInputTable` + `TkTableController`
+**Soft prerequisites (recommended before switch):**
+1. Focused parity tests exercising `MetricInputTable` + `TkTableController`
    together (paste, undo, selection, invalid field marking, keyboard nav).
-3. Verify replace-on-type behavior parity between the two controllers on
+2. Verify replace-on-type behavior parity between the two controllers on
    MetricInputTable's entry widgets.
 
 **Not blockers:**
+- Clipboard methods (already inherited)
 - Invalid field marking (already compatible)
 - Callback notification (already compatible)
 - Selection painting (already compatible)
@@ -129,87 +138,75 @@ a direct switch would fail at runtime.
 
 **Rejected alternatives:**
 
-- **Direct main MetricInputTable switch**: Too risky without first adding
-  clipboard methods and running parity tests.
+- **Direct main MetricInputTable switch**: Too risky without first running
+  parity tests. Binding strategy differences (widget-level vs entry-level)
+  could cause subtle keyboard navigation regressions.
 - **One isolated calculator section pilot**: The main table IS the table used
   by sections. Switching a section would require switching the table's
   controller, which is the same blast radius.
 - **Hidden/optional controller injection flag**: Adds complexity without clear
   benefit. The switch should be a clean replacement once parity is proven.
-- **Single pilot controller switch**: Skipping the prerequisite of adding
-  missing surface methods would fail at runtime.
 
 **Recommended strategy:**
 
-1. **Precondition slice**: Add missing `TkTableSurface` protocol methods to
-   `MetricInputTable`.
-2. **Parity test slice**: Create focused tests verifying `MetricInputTable` +
+1. **Parity test slice**: Create focused tests verifying `MetricInputTable` +
    `TkTableController` behavior matches `MetricInputTable` +
    `ExcelLikeTableController` for paste, undo, selection, invalid marking,
    keyboard navigation.
-3. **Switch slice**: After parity tests pass, switch one section's controller
+2. **Switch slice**: After parity tests pass, switch one section's controller
    in a controlled manner with Windows smoke.
 
 ## Recommended Next Implementation Slice (Task 6)
 
-**Slice name**: Add missing `TkTableSurface` protocol methods to
-`MetricInputTable`
+**Slice name**: Controller switch parity test foundation
 
-**Goal**: Implement `clipboard_clear`, `clipboard_append`, `clipboard_get` in
-`MetricInputTable` so it fully satisfies the `TkTableSurface` protocol.
+**Goal**: Create focused tests that exercise `MetricInputTable` +
+`TkTableController` together to verify behavior parity with the current
+`ExcelLikeTableController` before any switch.
 
-**Files to modify**:
-- `ui_tk/metric_input_table.py` only
+**Files to create/modify**:
+- `tests/test_ui_tk_metric_input_table_controller_parity.py` (new)
 
-**Implementation**:
-```python
-def clipboard_clear(self) -> None:
-    self.clipboard_clear()
-
-def clipboard_append(self, text: str) -> None:
-    self.clipboard_append(text)
-
-def clipboard_get(self) -> str:
-    return self.clipboard_get()
-```
-
-These are thin wrappers around `ttk.Frame` inherited clipboard methods. Zero
-behavior change for existing `ExcelLikeTableController` usage.
+**Test scope**:
+- Paste: raw text paste, boundary clipping, role filtering
+- Undo: single undo, batch undo, undo after clear
+- Selection: single cell, range, active cell painting
+- Invalid field marking: `get_numeric_values` raises + visual state
+- Keyboard navigation: Tab, Return, arrows, F2, Escape
+- Replace-on-type: single character entry
 
 **Excluded**:
-- No controller switch
+- No controller switch in this slice
 - No section file changes
-- No test changes (thin wrappers, no logic)
+- No `MetricInputTable` code changes (protocol already satisfied)
 - No other files
 
 **Verification**:
-- `python3 -B -m py_compile ui_tk/metric_input_table.py`
+- `python3 -B -m pytest tests/test_ui_tk_metric_input_table_controller_parity.py`
 - `python3 -B tools/check_code_structure.py`
 - `git diff --check`
-- No pytest needed (thin wrappers)
-- No Windows smoke needed
+- Headless environment will skip widget tests; report skip count
 
 **After this slice**:
-- Controller switch parity test foundation (focused tests for
-  MetricInputTable + TkTableController)
+- Pilot section controller switch with Windows smoke
 
 ## Excluded Scope
 
 - Controller switch implementation
 - Section file changes
-- Test changes in this slice
 - `BinDetailGraph._draw` split (deferred)
 - `BinDetailPanel` further cleanup (deferred)
 
 ## Risks
 
-- None for the recommended slice (thin clipboard wrapper methods).
-- For the eventual switch: binding strategy difference (widget-level vs
-  entry-level) may cause subtle keyboard navigation differences. Parity tests
-  will catch this.
+- Parity tests may reveal subtle binding strategy differences not visible in
+  static analysis. These differences should be documented before switch.
+- Headless test environment limits some widget interaction tests; Windows
+  GUI smoke remains the final verification.
 
 ## Next
 
-- Implement missing `TkTableSurface` clipboard methods in `MetricInputTable`.
+- Create controller switch parity test foundation for
+  MetricInputTable + TkTableController.
 - After that: controller switch parity test foundation.
 - After that: pilot section controller switch with Windows smoke.

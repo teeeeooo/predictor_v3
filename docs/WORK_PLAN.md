@@ -73,7 +73,7 @@
   - 277: BinDetailPanel cleanup preflight completed.
   - 278: BinDetailPanel.__init__ setup helper split completed.
   - 279: controller switch design preflight completed.
-- Next: Add missing TkTableSurface clipboard methods to MetricInputTable.
+- Next: Controller switch parity test foundation for MetricInputTable + TkTableController.
 
 ## Next Actions
 
