@@ -1110,3 +1110,25 @@
 - Windows smoke 통과 후 다른 section 전환 고려.
 
 ---
+
+## 2026-06-07 — TkTableController type-replace flicker diagnosis
+
+### Tried
+- CSPF(TkTableController)와 HSPF(ExcelLikeTableController)의 callback/render count를
+  diagnostic test로 비교.
+- ResultPanel rebuild behavior 확인.
+- controller type-replace flow 차이 분석.
+
+### Result
+- schedule count, set_summaries count, native edit count 모두 CSPF/HSPF 동일.
+- ResultPanel은 양쪽 모두 full rebuild.
+- 유일한 discriminating difference: TkTableController._type_replace가
+  이미 focus를 가진 entry에 불필요한 focus_set()을 호출함.
+- ExcelLikeTableController._type_replace에는 focus_set() 없음.
+
+### Decision
+- flicker root cause: TkTableController._type_replace의 redundant focus_set().
+- 다음 slice: focus_set() 제거 후 Windows smoke 재확인.
+- controller switch expansion은 flicker fix 확인 후 진행.
+
+---

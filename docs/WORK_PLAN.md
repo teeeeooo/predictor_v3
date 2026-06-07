@@ -78,7 +78,8 @@
   - 282: controller parity readonly paste test corrected (real behavior test with mixed editable/readonly fixture).
   - 283: Windows parity test closeout — 13 passed, 2 skipped (Tcl/Tk install), 0 failures.
   - 284: Controller switch pilot implemented for HongKongCspfSection (TkTableController migration, 5 new pilot tests pass under Xvfb, 15 parity tests pass).
-- Next: Post-implementation Windows smoke for HongKongCspfSection controller switch pilot.
+  - 285: Diagnosed ResultPanel flicker root cause — redundant focus_set() in TkTableController._type_replace; callback/render counts identical between CSPF and HSPF.
+- Next: Remove redundant focus_set() from TkTableController._type_replace, then Windows smoke verification.
 
 ## Next Actions
 
