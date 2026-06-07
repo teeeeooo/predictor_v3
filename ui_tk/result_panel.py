@@ -39,7 +39,9 @@ class ResultPanel:
         self.summary_tables: dict[str, tk.Frame] = {}
         self.summary_header_cells: dict[str, tuple[tk.Frame, ...]] = {}
         self.summary_value_cells: dict[str, tuple[tk.Frame, ...]] = {}
+        self.summary_value_labels: dict[str, tuple[tk.Label, ...]] = {}
         self.summary_status_labels: dict[str, tk.Label] = {}
+        self._summary_shapes: dict[str, tuple[str, tuple[str, ...]]] = {}
         self._text = tk.Text(self._frame, height=10, width=60, wrap="word")
         self._text.configure(state=tk.DISABLED)
 
@@ -68,15 +70,43 @@ class ResultPanel:
         """Render latest metric summaries as compact cards and copy text."""
         summaries = tuple(summaries)
         self._hide_text_mode()
-        self._clear_summary_tables()
-        for row, summary in enumerate(summaries):
-            self._render_summary_table(row, summary)
+        if self._can_update_in_place(summaries):
+            self._update_summary_values(summaries)
+        else:
+            self._clear_summary_tables()
+            for row, summary in enumerate(summaries):
+                self._render_summary_table(row, summary)
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
     def clear(self) -> None:
         self._clear_summary_tables()
         self._hide_text_mode()
         self._set_copy_text("")
+
+    @staticmethod
+    def _shape_for(summary: ResultSummary) -> tuple[str, tuple[str, ...]]:
+        return (summary.title, tuple(label for label, _value in summary.fields))
+
+    def _can_update_in_place(self, summaries: tuple[ResultSummary, ...]) -> bool:
+        if not self.summary_tables:
+            return False
+        new_shapes = {summary.title: self._shape_for(summary) for summary in summaries}
+        if set(self._summary_shapes) != set(new_shapes):
+            return False
+        return all(
+            self._summary_shapes[title] == new_shapes[title]
+            for title in self._summary_shapes
+        )
+
+    def _update_summary_values(self, summaries: tuple[ResultSummary, ...]) -> None:
+        for summary in summaries:
+            value_labels = self.summary_value_labels.get(summary.title)
+            if value_labels:
+                for label, (_, value) in zip(value_labels, summary.fields):
+                    label.configure(text=value)
+            status_label = self.summary_status_labels.get(summary.title)
+            if status_label is not None:
+                status_label.configure(text=summary.status)
 
     def _make_summary_cell(
         self, card: tk.Frame, *, row: int, column: int, background: str
@@ -97,6 +127,7 @@ class ResultPanel:
         card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
         card.layout_policy = self.layout_policy
         self.summary_tables[summary.title] = card
+        self._summary_shapes[summary.title] = self._shape_for(summary)
         self._summary_holder.columnconfigure(0, weight=1)
         if not summary.fields:
             card.surface_role = "status_surface"
@@ -152,6 +183,7 @@ class ResultPanel:
     def _render_result_values(self, card: tk.Frame, summary: ResultSummary) -> None:
         headers = []
         values = []
+        value_labels: list[tk.Label] = []
         for column, (label, value) in enumerate(summary.fields):
             card.columnconfigure(column, weight=1)
             header = self._make_summary_cell(
@@ -173,20 +205,25 @@ class ResultPanel:
                 card, row=2, column=column, background=RESULT_VALUE_BG
             )
             value_cell.surface_role = "summary_value_cell"
-            tk.Label(
+            value_label = tk.Label(
                 value_cell, text=value, background=RESULT_VALUE_BG, font=TABLE_BODY_FONT
-            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
+            )
+            value_label.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
             headers.append(header)
             values.append(value_cell)
+            value_labels.append(value_label)
         self.summary_header_cells[summary.title] = tuple(headers)
         self.summary_value_cells[summary.title] = tuple(values)
+        self.summary_value_labels[summary.title] = tuple(value_labels)
 
     def _clear_summary_tables(self) -> None:
         for child in self._summary_holder.winfo_children():
             child.destroy()
         self.summary_tables.clear()
+        self._summary_shapes.clear()
         self.summary_header_cells.clear()
         self.summary_value_cells.clear()
+        self.summary_value_labels.clear()
         self.summary_status_labels.clear()
 
     def _set_copy_text(self, text: str) -> None:

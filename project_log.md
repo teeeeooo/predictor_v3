@@ -1150,3 +1150,23 @@
 - Windows smoke 통과 후 controller switch expansion 고려.
 
 ---
+
+## 2026-06-07 — Stable ResultPanel summary update
+
+### Tried
+- `ResultPanel.set_summaries()`의 full destroy/recreate 구조를 stable update로 개선.
+- same-shape summary는 기존 widget identity 유지, value label text와 status text만 갱신.
+- shape 변경 시 기존 full rebuild fallback 유지.
+
+### Result
+- production code 수정: `ui_tk/result_panel.py`에 stable update logic 추가.
+- 9 new tests + 10 diagnostic + 15 parity + 5 pilot = 39 tests passed under Xvfb.
+- public API 변경 없음.
+
+### Decision
+- ResultPanel stable update 구현 완료.
+- 다음 gate: Windows manual smoke로 flicker 해소 확인.
+- flicker 해소 확인 후 controller switch expansion 진행.
+- invalid text undo는 별도 후속 slice로 분리.
+
+---

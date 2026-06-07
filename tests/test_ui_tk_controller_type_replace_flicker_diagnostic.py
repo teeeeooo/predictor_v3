@@ -169,10 +169,10 @@ class TestSetSummariesCountAfterFlush:
         assert len(calls) == 1, f"Expected 1 set_summaries call, got {len(calls)}"
 
 
-class TestResultPanelRebuild:
-    """ResultPanel set_summaries destroys and recreates child widgets."""
+class TestResultPanelStableUpdate:
+    """Same-shape summaries now update in place; shape changes still rebuild."""
 
-    def test_result_panel_rebuilds_children(self, cspf_section, tk_root) -> None:
+    def test_same_shape_does_not_rebuild(self, cspf_section, tk_root) -> None:
         from ui_tk.result_models import ResultSummary
 
         panel = cspf_section.result_panel
@@ -188,7 +188,27 @@ class TestResultPanelRebuild:
         tk_root.update_idletasks()
         second_children = list(panel._summary_holder.winfo_children())
 
-        # Full rebuild: widget identities differ
+        # Stable update: widget identities preserved
+        assert first_children == second_children
+        assert len(first_children) == 1
+
+    def test_shape_change_rebuilds(self, cspf_section, tk_root) -> None:
+        from ui_tk.result_models import ResultSummary
+
+        panel = cspf_section.result_panel
+        panel.set_summaries(
+            (ResultSummary(title="Test", fields=(("A", "1"),)),)
+        )
+        tk_root.update_idletasks()
+        first_children = list(panel._summary_holder.winfo_children())
+
+        panel.set_summaries(
+            (ResultSummary(title="Test", fields=(("B", "2"),)),)
+        )
+        tk_root.update_idletasks()
+        second_children = list(panel._summary_holder.winfo_children())
+
+        # Shape changed: full rebuild
         assert first_children != second_children
         assert len(first_children) == len(second_children) == 1
 
