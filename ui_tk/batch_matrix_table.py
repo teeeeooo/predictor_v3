@@ -118,9 +118,42 @@ class BatchMatrixTable(ttk.Frame):
     def restore_snapshot(self, snapshot: object) -> None:
         if not isinstance(snapshot, (tuple, list)):
             return
-        self.cases = self.spec.restore_cases(snapshot)
-        self._rebuild_table()
-        self._notify_changed()
+        restored = self.spec.restore_cases(snapshot)
+        if len(restored) != len(self.cases):
+            self.cases = restored
+            self._rebuild_table()
+            self._notify_changed()
+            return
+        # same shape: in-place update to preserve widget continuity
+        outermost = self._batch_depth == 0
+        if outermost:
+            self._batch_changed = False
+        self._batch_depth += 1
+        changed = False
+        try:
+            for logical_index, case in enumerate(restored):
+                for key, value in case.items():
+                    if self.cases[logical_index].get(key, "") == value:
+                        continue
+                    self.cases[logical_index][key] = value
+                    var = self._variables[logical_index].get(key)
+                    if var is not None:
+                        var.set(value)
+                    changed = True
+                # snapshot에 없는 known key는 빈 문자열로 갱신
+                for key in (*self.spec.input_keys, *self.spec.result_keys):
+                    if key not in case:
+                        if self.cases[logical_index].get(key, "") != "":
+                            self.cases[logical_index][key] = ""
+                            var = self._variables[logical_index].get(key)
+                            if var is not None:
+                                var.set("")
+                            changed = True
+        finally:
+            self._batch_depth -= 1
+        if outermost and (changed or self._batch_changed):
+            self._batch_changed = False
+            self._notify_changed()
 
     def cell_frame(self, position: tuple[int, int]) -> tk.Frame:
         return self._cell_frames[position]

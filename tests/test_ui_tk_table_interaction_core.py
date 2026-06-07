@@ -91,14 +91,50 @@ def test_selected_range_single_cell_clipboard_fills_every_editable_cell():
     }
 
 
-def test_non_repeatable_multi_cell_clipboard_keeps_top_left_paste_policy():
+def test_multi_cell_clipboard_repeats_to_fill_larger_selection():
     roles = (CellRole.EDITABLE, CellRole.EDITABLE, CellRole.EDITABLE)
 
+    # 2x2 clipboard into 4x3 selection: repeats by tiling
     assert editable_paste_targets((("1", "2"), ("3", "4")), (0, 3, 0, 2), roles) == {
-        (0, 0): "1",
-        (0, 1): "2",
-        (1, 0): "3",
-        (1, 1): "4",
+        (0, 0): "1", (0, 1): "2", (0, 2): "1",
+        (1, 0): "3", (1, 1): "4", (1, 2): "3",
+        (2, 0): "1", (2, 1): "2", (2, 2): "1",
+        (3, 0): "3", (3, 1): "4", (3, 2): "3",
+    }
+
+
+def test_mx_n_clipboard_repeats_to_fill_selection():
+    roles = (CellRole.EDITABLE, CellRole.EDITABLE, CellRole.EDITABLE, CellRole.EDITABLE)
+
+    # 2x2 clipboard into 6x4 selection
+    assert editable_paste_targets(
+        (("a", "b"), ("c", "d")), (0, 5, 0, 3), roles
+    ) == {
+        (0, 0): "a", (0, 1): "b", (0, 2): "a", (0, 3): "b",
+        (1, 0): "c", (1, 1): "d", (1, 2): "c", (1, 3): "d",
+        (2, 0): "a", (2, 1): "b", (2, 2): "a", (2, 3): "b",
+        (3, 0): "c", (3, 1): "d", (3, 2): "c", (3, 3): "d",
+        (4, 0): "a", (4, 1): "b", (4, 2): "a", (4, 3): "b",
+        (5, 0): "c", (5, 1): "d", (5, 2): "c", (5, 3): "d",
+    }
+
+
+def test_3x3_clipboard_repeats_to_fill_larger_selection():
+    roles = (CellRole.EDITABLE, CellRole.EDITABLE, CellRole.EDITABLE)
+
+    # 3x3 clipboard into 9x3 selection
+    assert editable_paste_targets(
+        (("1", "2", "3"), ("4", "5", "6"), ("7", "8", "9")), (0, 8, 0, 2), roles
+    ) == {
+        (0, 0): "1", (0, 1): "2", (0, 2): "3",
+        (1, 0): "4", (1, 1): "5", (1, 2): "6",
+        (2, 0): "7", (2, 1): "8", (2, 2): "9",
+        (3, 0): "1", (3, 1): "2", (3, 2): "3",
+        (4, 0): "4", (4, 1): "5", (4, 2): "6",
+        (5, 0): "7", (5, 1): "8", (5, 2): "9",
+        (6, 0): "1", (6, 1): "2", (6, 2): "3",
+        (7, 0): "4", (7, 1): "5", (7, 2): "6",
+        (8, 0): "7", (8, 1): "8", (8, 2): "9",
     }
 
 

@@ -168,11 +168,22 @@ def editable_paste_targets_by_role(
             for row in range(top, bottom + 1)
             for column_offset, value in enumerate(matrix[0])
         )
-    else:
+    elif selection_rows == 1 and selection_columns == 1:
+        # single-cell anchor: paste full clipboard once, top-left anchored
         raw_targets = (
             ((top + row_offset, left + column_offset), value)
             for row_offset, row in enumerate(matrix)
             for column_offset, value in enumerate(row)
+        )
+    else:
+        # Repeat-fill: tile clipboard matrix across selection rectangle
+        matrix_rows = len(matrix)
+        matrix_columns = len(matrix[0]) if matrix else 0
+        raw_targets = (
+            ((top + row_offset, left + column_offset),
+             matrix[row_offset % matrix_rows][column_offset % matrix_columns])
+            for row_offset in range(selection_rows)
+            for column_offset in range(selection_columns)
         )
     return {
         position: value

@@ -21,6 +21,19 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — BatchMatrixTable interaction parity repair
+
+### Decision
+- 245 audit's "paste tiling is not common helper gap" judgment was incorrect.
+- `editable_paste_targets_by_role()` else path pasted multi-row clipboard once
+  only; this is a common helper gap, not a surface-level restore/rebuild issue.
+- Fix: tile/repeat MxN clipboard across selection rectangle via modulo indexing.
+- Single-cell anchor and 1x1/1-row special cases are preserved.
+- Same-shape `restore_snapshot` now updates cases and StringVars in-place without
+  rebuilding widgets, matching BatchCaseTable's proven pattern.
+- BatchMatrixTable exceeds 400 LOC soft limit; helper extraction is deferred
+  to a future cleanup slice.
+
 ## 2026-06-07 — BatchMatrixTable repair vs rebuild audit
 
 ### Decision

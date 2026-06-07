@@ -174,3 +174,28 @@ def test_snapshot_restore_is_logical_case_based(root):
     t.restore_snapshot(snapshot)
     assert t.cases[0][DECLARED_CAPACITY] == original[DECLARED_CAPACITY]
     t.destroy()
+
+
+def test_same_shape_restore_preserves_widgets(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    original_widget_ids = {pos: id(t.cell_widget(pos)) for pos in t._cell_widgets}
+    snapshot = t.snapshot()
+    t.cases[0][DECLARED_CAPACITY] = "9999"
+    t.restore_snapshot(snapshot)
+    # same-shape restore should not rebuild widgets
+    for pos in original_widget_ids:
+        assert pos in t._cell_widgets
+        assert id(t.cell_widget(pos)) == original_widget_ids[pos]
+    t.destroy()
+
+
+def test_shape_changing_restore_rebuilds_widgets(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    original_widget_ids = {pos: id(t.cell_widget(pos)) for pos in t._cell_widgets}
+    # create a snapshot with different number of cases
+    snapshot = [{}, {}]
+    t.restore_snapshot(snapshot)
+    # shape changed: widgets should be rebuilt
+    assert len(t.cases) == 2
+    assert t.row_count() == 4
+    t.destroy()
