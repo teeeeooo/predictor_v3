@@ -851,3 +851,25 @@
 - map staleness는 workflow hook policy와 explicit update header로 완화한다.
 
 ---
+
+## 2026-06-07 — Reference Evidence Gate workflow integration
+
+### Tried
+- code_checker reference map을 agent workflow에 연결하는 integration slice.
+- DIFF_READ_BUDGET.md에 Reference Evidence Gate 섹션 추가.
+- AGENT_TASK_ROUTER.md의 관련 route에 최소 cross-reference 추가.
+
+### Decision
+- code_checker는 기본값 OFF이며, 구조 영향 작업에서만 조건부 ON이다.
+- map 사용 시 broad read 금지, `rg`/small `sed` range로 제한적 읽기.
+- map 재생성은 structural code change 후에만, commit은 significant
+  architecture/surface change 후에만.
+- DIFF_READ_BUDGET.md가 Reference Evidence Gate의 owner 문서다.
+- AGENT_TASK_ROUTER.md의 Shared Guardrails와 Coding/UI route에서 cross-reference.
+
+### Lesson
+- token/read budget 문서가 code checker trigger policy의 자연스러운 owner다.
+- router에 긴 trigger 목록을 복붙하지 않고 workflow owner 문서를 참조하는 것이
+  유지보수에 유리하다.
+
+---

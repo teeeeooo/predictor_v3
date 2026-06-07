@@ -42,6 +42,9 @@
 - 새 script/module/feature는 `AGENTS.md` New Code Quality Gate를 따른다.
 - 코드 구조 영향 작업은 가능하면 `python3 -B tools/check_code_structure.py`를
   검증에 포함하고 error/warning을 짧게 보고한다.
+- structure-impacting helper/adapter/surface/script 작업은
+  `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
+  조건부로 사용한다.
 - public API, diagnostics schema, JSON key, 함수명은 사용자 승인 없이 변경하지
   않는다.
 - 계산기 workflow owner: `docs/agent_workflows/CALCULATOR_WORKFLOW.md`.
@@ -174,6 +177,9 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 2. ambiguous combination은 fail-fast 한다.
 3. explicit registry/manifest/selector contract를 filename scanning보다 우선한다.
 4. compatibility layer는 얇게 두고 local one-off conditional로 구조 문제를 덮지 않는다.
+5. 새 helper/adapter/surface를 만들거나 기존 파일을 split/move할 때는
+   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
+   참고한다.
 
 ### 4. Smoke / Golden / Validation test 추가
 
@@ -248,6 +254,9 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 2. 기존 model/view/delegate 또는 shell/view/controller 구조를 확인한다.
 3. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 4. 영향 범위에 맞는 focused UI validation을 수행한다.
+5. 새 table/window/detail/export surface 또는 helper/commonization을 만들 때는
+   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
+   참고한다.
 
 금지: `QTableWidget`, `setCellWidget`, UI 편의를 위한 core/schema/config 변경.
 

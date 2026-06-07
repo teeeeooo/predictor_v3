@@ -71,6 +71,58 @@ When project log sync judgment is needed:
 - read only the latest relevant 2-3 entries;
 - do not use broad `head` or `tail` content reads.
 
+## Reference Evidence Gate
+
+The code_checker reference map (`docs/code_map/CODEBASE_REFERENCE_MAP.md`) is a
+conditional pre-write evidence gate, not a default step.
+
+### When to Run
+
+Run only when the task creates, moves, splits, replaces, or commonizes code
+surfaces. Examples:
+
+- new helper / adapter / controller / table surface / result formatter /
+  workflow script
+- file move / split / delete / replacement
+- result / detail / export / table / window commonization
+- new profile UI / calculator section
+- adding responsibility to a known hotspot file
+
+### When to Skip
+
+Skip for work that does not change structure or surface inventory:
+
+- report closeout / lifecycle maintenance
+- project_log / WORK_PLAN wording
+- Windows smoke result reflection
+- focused test expectation correction
+- fixture / golden value-only update
+- typo / formatting-only change
+
+### Map Read Policy
+
+- Do **not** read the entire map by default.
+- Use `rg -n "<keyword>" docs/code_map/CODEBASE_REFERENCE_MAP.md` first.
+- Read only the matched 30–80 line range.
+- Broad map reads require a stated blocker.
+
+### Map Regenerate Policy
+
+- Regenerate (`python3 -B tools/code_checker/build_reference_map.py`) only after
+  structural code changes (new files, moved files, new symbols, removed
+  helpers).
+- Do not regenerate for wording-only or test-only changes.
+
+### Map Commit Policy
+
+- Commit regenerated map only after significant architecture or surface changes.
+- Do not commit map-only changes as standalone noise commits.
+
+### Caveat
+
+The map is evidence, not source of truth. Canonical rules live in `AGENTS.md`,
+`docs/architecture/`, and `docs/WORK_PLAN.md`.
+
 ## Tests And Command Output
 
 - Run focused tests first.
