@@ -79,10 +79,11 @@ manage viewports.
 - Nested notebooks, dynamic sub-tabs, detail toggles, and scrollable
   content can settle later than a single static section. A single fit
   immediately after render may not be enough.
-- Hidden tab width may be measured to avoid horizontal jump, but
-  automatic fit height should use the currently visible tab or sub-tab
-  unless a product decision explicitly wants the tallest hidden content
-  to reserve vertical space.
+- Automatic fit width and height must use the currently visible tab or
+  sub-tab contribution. When the container widget reports a sticky size
+  from a previous tab or detail state, replace the container
+  contribution with chrome + current visible contribution so the window
+  shrinks as well as grows.
 - Profile switches, nested tab switches, and detail open/close should
   use the same refit scheduling policy.
 - If the first post-render fit is not stable enough, schedule a settled

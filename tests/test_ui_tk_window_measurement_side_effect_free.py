@@ -32,6 +32,7 @@ class FakeNotebook:
         self._current = current
         self._select_calls: list[str] = []
         self._notebook_height = 100
+        self._notebook_width = 400
 
     def tabs(self) -> tuple[str, ...]:
         return tuple(self._tabs.keys())
@@ -47,6 +48,9 @@ class FakeNotebook:
 
     def winfo_reqheight(self) -> int:
         return self._notebook_height
+
+    def winfo_reqwidth(self) -> int:
+        return self._notebook_width
 
     def update_idletasks(self) -> None:
         pass
@@ -129,8 +133,11 @@ class TestSideEffectFreeMeasurement:
         tab_a = FakeWidget(width=500, height=250)
         tab_b = FakeWidget(width=300, height=200)
         notebook = FakeNotebook({"tab_a": tab_a, "tab_b": tab_b}, "tab_a")
+        # Content width matches notebook width (sticky at wide tab_a width)
+        notebook._notebook_width = 500
+        content = FakeContent(width=500, height=300)
         measurement = TkVisibleContentMeasurement(
-            content=FakeContent(),
+            content=content,
             scrollbar=FakeScrollbar(),
             overflow_source=FakeOverflow(),
             nested_notebook=notebook,
@@ -140,16 +147,28 @@ class TestSideEffectFreeMeasurement:
         # First snapshot with wide tab_a (width 500)
         snapshot1 = measurement.snapshot()
         assert snapshot1.diagnostics["nested_max_tab_width"] == 500
+        # Chrome width estimate = 500 - 500 = 0
+        assert snapshot1.diagnostics["chrome_width_estimate"] == 0
+        # Corrected width = content_w - notebook_w + chrome + current_tab
+        # = 500 - 500 + 0 + 500 = 500
+        # preferred_size[0] = int(500 * 1.05) + 16 = 541
+        assert snapshot1.preferred_size[0] == 541
 
         # Switch to narrow tab_b (width 300) — width should shrink
         notebook._current = "tab_b"
+        notebook._notebook_width = 500  # sticky at previous width
         snapshot2 = measurement.snapshot()
         assert snapshot2.diagnostics["nested_max_tab_width"] == 300
+        # Corrected width = 500 - 500 + 0 + 300 = 300
+        # preferred_size[0] = int(300 * 1.05) + 16 = 331
+        assert snapshot2.preferred_size[0] == 331
+        assert snapshot2.preferred_size[0] < snapshot1.preferred_size[0]
 
         # Switch back to tab_a — width should grow again
         notebook._current = "tab_a"
         snapshot3 = measurement.snapshot()
         assert snapshot3.diagnostics["nested_max_tab_width"] == 500
+        assert snapshot3.preferred_size[0] == 541
 
     def test_height_shrinks_when_detail_closes(self) -> None:
         from ui_tk.window_measurement import TkVisibleContentMeasurement
@@ -170,8 +189,8 @@ class TestSideEffectFreeMeasurement:
 
         # First measurement: detail open (tab height 500)
         snapshot1 = measurement.snapshot()
-        # Chrome estimate = 525 - 500 = 25
-        assert snapshot1.diagnostics["chrome_estimate"] == 25
+        # Chrome height estimate = 525 - 500 = 25
+        assert snapshot1.diagnostics["chrome_height_estimate"] == 25
         # Corrected height = content_h - notebook_h + chrome + current_tab
         # = 525 - 525 + 25 + 500 = 525
         # preferred_size[1] = content_height + vertical_margin
@@ -188,7 +207,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot2.preferred_size[1] == 225 + 11
         assert snapshot2.preferred_size[1] < snapshot1.preferred_size[1]
 
-    def test_chrome_estimate_computed_once(self) -> None:
+    def test_chrome_height_estimate_computed_once(self) -> None:
         from ui_tk.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
@@ -203,12 +222,35 @@ class TestSideEffectFreeMeasurement:
         )
 
         snapshot1 = measurement.snapshot()
-        assert snapshot1.diagnostics["chrome_estimate"] == 25
+        assert snapshot1.diagnostics["chrome_height_estimate"] == 25
 
         # Change notebook height (sticky); chrome estimate should stay the same
         notebook._notebook_height = 300
         snapshot2 = measurement.snapshot()
-        assert snapshot2.diagnostics["chrome_estimate"] == 25
+        assert snapshot2.diagnostics["chrome_height_estimate"] == 25
+
+    def test_chrome_width_estimate_computed_once(self) -> None:
+        from ui_tk.window_measurement import TkVisibleContentMeasurement
+
+        tab_a = FakeWidget(width=300, height=200)
+        notebook = FakeNotebook({"tab_a": tab_a}, "tab_a")
+        notebook._notebook_width = 325
+        measurement = TkVisibleContentMeasurement(
+            content=FakeContent(),
+            scrollbar=FakeScrollbar(),
+            overflow_source=FakeOverflow(),
+            nested_notebook=notebook,
+            nested_notebook_active=lambda: True,
+        )
+
+        snapshot1 = measurement.snapshot()
+        # Chrome width estimate = 325 - 300 = 25
+        assert snapshot1.diagnostics["chrome_width_estimate"] == 25
+
+        # Change notebook width (sticky); chrome estimate should stay the same
+        notebook._notebook_width = 400
+        snapshot2 = measurement.snapshot()
+        assert snapshot2.diagnostics["chrome_width_estimate"] == 25
 
     def test_snapshot_is_side_effect_free_across_repeated_calls(self) -> None:
         from ui_tk.window_measurement import TkVisibleContentMeasurement

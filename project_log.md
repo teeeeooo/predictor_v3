@@ -710,3 +710,34 @@
   둘 다 충족해야 한다.
 
 ---
+
+## 2026-06-07 — Nested notebook width replacement using chrome-width estimate
+
+### Tried
+- 258 이후 남은 width sticky 문제를 chrome-width estimate와 replacement formula로
+  해결.
+- `_chrome_estimate`를 `_chrome_height_estimate`와 `_chrome_width_estimate`로
+  분리.
+- `NestedNotebookMeasurement`에 `notebook_width` 추가.
+- width replacement formula를 height formula와 동일한 구조로 적용.
+
+### Result
+- width도 height처럼 `content_reqwidth - notebook_width + chrome + current_tab`
+  구조로 replacement되어 shrink 가능.
+- `max(content_reqwidth, current_tab_width)`는 sticky notebook width가 있으면
+  shrink를 막으므로 replacement formula가 필요.
+- 기존 ISO/ISEER/SASO/CSPF/HSPF regression은 변화 없음.
+- core calculator, golden, fixture, batch matrix, detail panel schema 변경 없음.
+
+### Decision
+- nested notebook auto-fit width/height는 모두 replacement formula를 사용.
+- chrome estimate는 axis별로 분리(height/width)하여 추적.
+- `content_reqwidth`가 sticky container width를 포함하면 `max()` fallback만으로는
+  shrink가 불가능하다.
+
+### Lesson
+- width와 height의 measurement 정책은 대칭적으로 유지해야 한다.
+- 한 축만 replacement하고 다른 축은 `max()` fallback을 남겨두면 asymmetric
+  shrink/grow behavior가 생긴다.
+
+---

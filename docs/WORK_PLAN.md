@@ -54,6 +54,7 @@
   - 256: shared Tk content-hugging refit/minsize lifecycle repair completed.
   - 257: side-effect-free visible content measurement policy repair completed.
   - 258: nested notebook current-state width/height replacement repair completed.
+  - 259: nested notebook width replacement using chrome-width estimate repair completed.
 - Next: Main table migration candidate check.
 
 ## Next Actions
