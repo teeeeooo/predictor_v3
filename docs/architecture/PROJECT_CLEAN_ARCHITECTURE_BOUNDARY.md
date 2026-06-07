@@ -179,3 +179,22 @@ Before implementation, run a short boundary triage:
 Small behavior-preserving hotfixes do not require a large preflight when they
 add no new responsibility. If repeated smoke failures show the same bug class,
 promote the issue to owner-boundary work before adding another local patch.
+
+## Reference Parity / Standardization Gate
+
+Before creating a new UI surface, script, helper, adapter, workflow path, or
+reusable component, check whether an existing stable implementation or workflow
+already covers the same concerns.
+
+The goal is not forced reuse; it is to avoid repeatedly rediscovering already
+solved behavior bugs, lifecycle handling, error handling, validation flow,
+import/export shape, cleanup/dispose, idempotency, and report workflow patterns.
+
+- If the existing reference fits, prefer reuse or adaptation.
+- If it does not fit, record why it was not reused.
+- If the new implementation diverges in user-visible behavior, lifecycle
+guarantees, or ownership boundaries, leave parity evidence in the result report.
+- If unresolved parity gaps remain, record them as known risks or next actions.
+
+This gate applies to every layer (Model, Controller, Shell, View, Policy), not
+only to UI surfaces.

@@ -61,6 +61,10 @@ When creating or changing a table-shaped UI:
 - if an existing surface already implements the same or similar user-visible
   behavior, check it as source-of-truth evidence before implementing a new
   helper/adapter;
+- broad reference parity gate: before creating a new table-shaped surface,
+  confirm whether an existing stable implementation already covers the same
+  interaction, lifecycle, or cleanup concerns, and record why it was or was not
+  reused;
 - table scroll, wheel routing, paste/copy, selection, export, and viewport
   containment require user-behavior parity, not only structural similarity;
 - prefer the existing owner/helper/adapter when it fits; if not reused, record

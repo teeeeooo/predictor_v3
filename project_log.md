@@ -21,6 +21,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — Reference parity / standardization gate added
+
+### Decision
+- A new reference parity / standardization gate is added to common process
+  documents to prevent repeated rediscovery of already-solved behavior bugs,
+  lifecycle handling, and interaction patterns.
+- When creating a new UI surface, script, helper, adapter, workflow path, or
+  reusable component, the implementer must first check whether an existing stable
+  implementation or workflow already covers the same concerns.
+- Reuse is not forced; the implementer records why an existing reference was
+  or was not reused, and leaves parity evidence in the result report.
+- Affected documents: `AGENTS.md`, `AGENT_TASK_ROUTER.md`,
+  `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`,
+  `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`,
+  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`.
+- Trigger: 242 Hong Kong CSPF matrix migration reproduced paste tiling, repeated
+  undo, and restore flicker issues that had already been solved in the existing
+  row-per-case `BatchCaseTable` surface.
+
 ## 2026-06-07 — Hong Kong CSPF matrix migration adapter pattern
 
 ### Decision

@@ -72,6 +72,10 @@ decision을 먼저 남기고 필요 시 design/report slice로 분리한다.
 prompt가 Goal/Scope/Non-goals/owner/tests를 충분히 고정하면
 `prompt-supplied boundary is sufficient` 판단으로 진행할 수 있다.
 
+새 UI surface, script, helper, adapter, workflow path, 또는 reusable component를
+만들기 전에 기존 안정화 구현이나 workflow가 있는지 확인하고,
+재사용/변형/비재사용 판단과 근거를 남긴다.
+
 ### Design First Gate
 
 영향 범위가 큰 새 기능, 사용자 흐름 변경, UI/navigation 변경, input/result

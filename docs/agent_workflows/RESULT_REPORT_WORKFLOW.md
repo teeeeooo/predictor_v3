@@ -83,6 +83,11 @@ Full report default sections:
 - Commit / Push
 - Project Memory Delta
 
+When a new UI surface, script, helper, adapter, workflow path, or reusable
+component is created or an existing stable path is replaced/extended, include a
+short reference parity section: whether an existing reference was checked, why it
+was or was not reused, and any unresolved parity gaps.
+
 ## Terminal Output
 
 For report-backed work, keep terminal/final output short. Detailed results

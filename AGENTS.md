@@ -65,6 +65,7 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 - `core/`는 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다. UI / CLI / script layer는 `core.calculator_dispatcher`, adapter, resolver 같은 public 진입점만 사용한다.
 - `ui_tk/`는 `PyQt5`나 PyQt `ui` 패키지를 import하지 않는다 (Tkinter shell 독립성 유지).
 - feasibility spike도 예외가 아니다. spike는 runtime smoke / import smoke / core call smoke / shell skeleton까지만 작게 유지하고, shell + input + result + resolver + core call + formatting을 한 파일에 모두 담지 않는다 (116→118 reset이 교훈).
+- 기존에 안정화된 구현이나 workflow가 있으면 reference parity를 확인하고, reuse/adapt 불가 시 그 이유를 남긴다.
 
 소프트 한계:
 
