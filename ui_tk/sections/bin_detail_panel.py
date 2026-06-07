@@ -26,17 +26,6 @@ class BinDetailSource:
     status: str | None = None
 
 
-_GRAPH_SERIES: tuple[tuple[str, str], ...] = (
-    ("Bin Hours [h]", "nj"),
-    ("Load [W]", "lc"),
-    ("Capacity [W]", "capacity"),
-    ("Power [W]", "power"),
-    ("EER [W/W]", "eer"),
-    ("CSTL [Wh]", "cstl_bin"),
-    ("CSEC [Wh]", "csec_bin"),
-)
-
-
 class BinDetailPanel:
     """PyQt-style detail surface with selector, summary, graph, and bin table."""
 

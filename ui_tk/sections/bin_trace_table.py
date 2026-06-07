@@ -20,30 +20,6 @@ from ui_tk.sections.bin_detail_schema import (
     COOLING_BIN_DETAIL_SCHEMA,
 )
 
-BIN_TRACE_COLUMNS = (
-    "Bin No",
-    "Temp [°C]",
-    "Hours",
-    "Load [W]",
-    "Capacity [W]",
-    "Power [W]",
-    "EER",
-    "CSTL [Wh]",
-    "CSEC [Wh]",
-)
-
-_COLUMN_KEYS = (
-    "bin_no",
-    "tj",
-    "nj",
-    "lc",
-    "capacity",
-    "power",
-    "eer",
-    "cstl_bin",
-    "csec_bin",
-)
-
 _MAX_VISIBLE_ROWS = 10
 
 
@@ -54,7 +30,7 @@ class BinTraceTable:
         self,
         parent: tk.Widget,
         *,
-        title: str = "상세 표",
+        title: str | None = None,
         schema: BinDetailSchema = COOLING_BIN_DETAIL_SCHEMA,
     ) -> None:
         self.layout_policy = "responsive"
@@ -64,7 +40,8 @@ class BinTraceTable:
         self.rows: tuple[tuple[str, ...], ...] = ()
 
         self._frame = ttk.Frame(parent)
-        self.title_label = ttk.Label(self._frame, text=title)
+        label_text = title if title is not None else schema.table_title
+        self.title_label = ttk.Label(self._frame, text=label_text)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
 
         self._table_frame = ttk.Frame(self._frame)
