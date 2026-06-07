@@ -1011,3 +1011,24 @@
 - parity test 통과 후 pilot section switch.
 
 ---
+
+## 2026-06-07 — MetricInputTable clipboard protocol compatibility check
+
+### Tried
+- `MetricInputTable`가 `ttk.Frame`을 상속하므로 `clipboard_clear`,
+  `clipboard_append`, `clipboard_get`을 이미 제공하는지 runtime 확인.
+- `TkTableController._copy` / `._paste` 호출 방식과 signature 호환성 확인.
+- focused roundtrip test 추가.
+
+### Result
+- `MetricInputTable`는 `ttk.Frame`에서 clipboard methods를 상속받음.
+- signatures가 `TkTableController`의 호출 방식과 100% 호환.
+- production code 수정 불필요.
+- 279의 "clipboard methods missing" 판단은 잘못되었음.
+- 279의 recursive wrapper 예시는 버그임.
+
+### Decision
+- controller switch의 hard blocker는 없음.
+- 다음 slice는 controller switch parity test foundation.
+
+---

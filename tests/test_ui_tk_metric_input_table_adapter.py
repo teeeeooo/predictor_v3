@@ -202,3 +202,12 @@ class TestAdapterClipboardNotShadowed:
         assert hasattr(sample_table, "clipboard_append")
         assert hasattr(sample_table, "clipboard_get")
         assert hasattr(sample_table, "winfo_containing")
+
+    def test_clipboard_roundtrip(self, sample_table: MetricInputTable) -> None:
+        # Verify inherited clipboard methods work for TkTableController
+        # copy/paste usage.  This is a smoke test; real clipboard behavior
+        # depends on the windowing system.
+        sample_table.clipboard_clear()
+        sample_table.clipboard_append("test_value")
+        result = sample_table.clipboard_get()
+        assert result == "test_value"
