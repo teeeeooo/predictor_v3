@@ -1053,6 +1053,23 @@
 
 ---
 
+## 2026-06-07 — Windows parity test closeout
+
+### Tried
+- Windows Python 3.14.5 환경에서 focused parity test 2회 실행.
+- command: `python -m pytest tests/test_ui_tk_metric_input_table_controller_parity.py -rs -vv`
+
+### Result
+- 13 passed, 2 skipped, 0 failures (2회 동일 결과, flaky 아님).
+- skip reason: local Tcl/Tk install/path issue (`Can't find a usable tk.tcl`, `init.tcl`).
+- assertion failure 없음.
+
+### Decision
+- controller switch pilot implementation 조건부 진행 허용.
+- 조건: pilot 구현 후 Windows manual smoke 필수.
+
+---
+
 ## 2026-06-07 — Fix controller parity readonly paste test
 
 ### Tried
