@@ -21,6 +21,14 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — Hong Kong CSPF matrix migration adapter pattern
+
+### Decision
+- Profile-specific batch matrix migration uses a thin adapter (`HongKongCspfMatrixController`) that bridges `BatchMatrixTable` with the existing row-per-case handler.
+- No profile-specific knowledge enters `BatchMatrixTable` or `TkTableController`.
+- Row-per-case code (`BatchCaseTable`, `BatchCalculationController`, `HONG_KONG_CSPF_BATCH_SPEC`) is preserved as importable fallback, not deleted.
+- Snapshot compatibility uses dual-format acceptance (tuple/list) in `restore_snapshot()`.
+
 ## 2026-06-07 — Tk two-row matrix table skeleton completed
 
 ### Decision

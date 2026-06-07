@@ -1,28 +1,74 @@
-"""Hong Kong CSPF row-per-case batch section."""
+"""Hong Kong CSPF batch section with two-row matrix surface.
+
+The row-per-case path (BatchCaseTable + BatchCalculationController) is
+preserved via hong_kong_cspf_batch_spec.HongKongCspfBatchHandler and
+batch_case_table.BatchCaseTable for fallback recovery.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 import tkinter as tk
 from tkinter import ttk
 
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.batch_case_table import BatchCaseTable
-from ui_tk.batch_controller import BatchCalculationController
+from ui_tk.batch_case_table import BatchCaseTable  # noqa: F401  fallback
+from ui_tk.batch_controller import BatchCalculationController  # noqa: F401  fallback
+from ui_tk.batch_matrix_models import HONG_KONG_CSPF_MATRIX_SPEC
+from ui_tk.batch_matrix_table import BatchMatrixTable
+from ui_tk.batch_models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.sections.hong_kong_cspf_batch_spec import (
-    HONG_KONG_CSPF_BATCH_SPEC,
+    HONG_KONG_CSPF_BATCH_SPEC,  # noqa: F401  fallback
     HongKongCspfBatchHandler,
 )
+from ui_tk.table.controller import TkTableController
 from ui_tk.window_geometry import parent_centered_content_geometry
 
 
 _BATCH_DIALOG_MIN_SIZE = (920, 320)
 
 
+@dataclass(frozen=True)
+class _MatrixCalculationSummary:
+    valid_rows: int
+    blank_rows: int
+    error_rows: int
+
+
+class HongKongCspfMatrixController:
+    """Batch matrix calculation adapter for Hong Kong CSPF.
+
+    Bridges BatchMatrixTable logical cases with the existing
+    HongKongCspfBatchHandler row-per-case calculation path.
+    """
+
+    def __init__(
+        self, table: BatchMatrixTable, handler: HongKongCspfBatchHandler
+    ) -> None:
+        self._table = table
+        self._handler = handler
+
+    def recalculate(self) -> _MatrixCalculationSummary:
+        valid = 0
+        blank = 0
+        error = 0
+        for index, case in enumerate(self._table.cases):
+            result = self._handler.calculate_row(case)
+            self._table.set_result(index, result.values)
+            if result.state is BatchRowState.OK:
+                valid += 1
+            elif result.state is BatchRowState.ERROR:
+                error += 1
+            else:
+                blank += 1
+        return _MatrixCalculationSummary(valid, blank, error)
+
+
 class HongKongCspfBatchSection:
-    """Auto-calculated batch surface for Hong Kong CSPF cases."""
+    """Two-row matrix batch surface for Hong Kong CSPF cases."""
 
     result_panel = None
 
@@ -37,7 +83,7 @@ class HongKongCspfBatchSection:
         self._frame.columnconfigure(0, weight=1)
         self._frame.rowconfigure(0, weight=1)
         self.status_var = tk.StringVar(master=self._frame, value="")
-        self.table = BatchCaseTable(self._frame, HONG_KONG_CSPF_BATCH_SPEC)
+        self.table = BatchMatrixTable(self._frame, HONG_KONG_CSPF_MATRIX_SPEC)
         self.table.grid(
             row=0,
             column=0,
@@ -45,7 +91,8 @@ class HongKongCspfBatchSection:
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, 6),
         )
-        self.controller = BatchCalculationController(
+        self.table.interaction_controller = TkTableController(self.table)
+        self.controller = HongKongCspfMatrixController(
             self.table,
             HongKongCspfBatchHandler(region_label),
         )
@@ -65,8 +112,8 @@ class HongKongCspfBatchSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        ttk.Button(action_row, text="Add Row", command=self.table.add_row).pack(side=tk.LEFT)
-        ttk.Button(action_row, text="Remove Row", command=self.table.remove_last_row).pack(
+        ttk.Button(action_row, text="Add Case", command=self.table.add_case).pack(side=tk.LEFT)
+        ttk.Button(action_row, text="Remove Case", command=self.table.remove_case).pack(
             side=tk.LEFT,
             padx=(6, 0),
         )
@@ -88,7 +135,7 @@ class HongKongCspfBatchSection:
 
 
 class HongKongCspfBatchDialog:
-    """Toplevel owner for the Hong Kong CSPF batch surface."""
+    """Toplevel owner for the Hong Kong CSPF batch matrix surface."""
 
     def __init__(
         self,
@@ -139,9 +186,9 @@ class HongKongCspfBatchDialog:
 
     def snapshot(self) -> list[dict[str, str]]:
         raw_snapshot: Any = self.section.table.snapshot()
-        if not isinstance(raw_snapshot, list):
-            return []
-        return [dict(row) for row in raw_snapshot if isinstance(row, dict)]
+        if isinstance(raw_snapshot, (tuple, list)):
+            return [dict(row) for row in raw_snapshot if isinstance(row, dict)]
+        return []
 
     def focus(self) -> None:
         if self.window.winfo_exists():

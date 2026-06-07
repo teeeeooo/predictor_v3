@@ -116,7 +116,7 @@ class BatchMatrixTable(ttk.Frame):
         return self.spec.snapshot_cases(self.cases)
 
     def restore_snapshot(self, snapshot: object) -> None:
-        if not isinstance(snapshot, tuple):
+        if not isinstance(snapshot, (tuple, list)):
             return
         self.cases = self.spec.restore_cases(snapshot)
         self._rebuild_table()

@@ -42,23 +42,22 @@
   - 239 adds the per-cell role controller compatibility path for the batch two-row matrix foundation while preserving existing row-per-case column-role fallback behavior.
   - Router slimming moved UI, calculator, ML/Predictor, and packaging workflow details into `docs/agent_workflows/*`; `AGENT_TASK_ROUTER.md` is now a compact route/gate map.
   - 240 completes the Tk two-row matrix table skeleton: `BatchMatrixTable` surface, `BatchMatrixSpec` mapping, per-cell `cell_role(position)`, and existing `TkTableController` reuse are verified.
-- Next: Hong Kong CSPF matrix migration.
+  - 242 migrates Hong Kong CSPF batch to the two-row matrix surface: `HongKongCspfMatrixController` adapter bridges `BatchMatrixTable` with existing `HongKongCspfBatchHandler`; row-per-case code preserved as fallback.
+- Next: Batch table copy-all + CSV export parity.
 
 ## Next Actions
 
-1. **Hong Kong CSPF matrix migration**
-   - Migrate the current Hong Kong CSPF batch to the two-row matrix surface behind an explicit migration path.
-2. **Batch table copy-all + CSV export parity**
+1. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-3. **Result/detail/export common contract check**
+2. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
-5. **Main table migration candidate check**
+3. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-6. **ui_tk folder cleanup**
+4. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-7. **HSPF detail/bin extension**
-8. **EN14825 / AHRI 210/240 / KS profile expansion**
+5. **HSPF detail/bin extension**
+6. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
