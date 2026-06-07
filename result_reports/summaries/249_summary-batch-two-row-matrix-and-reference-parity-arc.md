@@ -113,8 +113,8 @@ Reports intentionally kept active: none. The next technical action
 
 - 246 Windows smoke: MxN paste works correctly, flicker is gone, undo works
   without clicking another cell.
-- 247 Windows smoke checklist (copy-all / CSV export) is pending user
-  confirmation; no code blockers remain.
+- 247 Windows smoke: copy-all / CSV export behavior confirmed; no remaining
+  manual smoke blocker for this arc.
 
 ## Superseded / Corrected Judgments
 
