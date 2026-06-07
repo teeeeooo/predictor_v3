@@ -51,10 +51,7 @@
 2. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-3. **Batch table copy-all + CSV export parity**
-   - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
-   - Do not add xlsx export in the current arc.
-4. **Result/detail/export common contract check**
+3. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
 5. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.

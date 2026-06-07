@@ -169,8 +169,8 @@ def test_remove_case_removes_logical_pair_and_preserves_minimum_one(root):
 def test_snapshot_restore_is_logical_case_based(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
     original = dict(t.cases[0])
-    t.cases[0][DECLARED_CAPACITY] = "9999"
     snapshot = t.snapshot()
+    t.cases[0][DECLARED_CAPACITY] = "9999"
     t.restore_snapshot(snapshot)
     assert t.cases[0][DECLARED_CAPACITY] == original[DECLARED_CAPACITY]
     t.destroy()

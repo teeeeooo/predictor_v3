@@ -231,20 +231,7 @@ class BatchMatrixTable(ttk.Frame):
         self.viewport_frame.sync(self._visible_rows_height())
 
     def _build_headers(self) -> None:
-        # corner cell
-        self.table_frame.columnconfigure(0, weight=0)
-        corner = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-        corner.grid(row=0, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
-        corner.surface_role = "corner_header_cell"
-        tk.Label(
-            corner,
-            text="#",
-            width=CASE_COLUMN_WIDTH_CHARS,
-            background=TABLE_HEADER_BG,
-            font=TABLE_HEADER_FONT,
-        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
-
-        # column headers
+        # column headers (no separate row-header corner cell; Case is column 0)
         for column_index in range(self.spec.column_count):
             grid_column = column_index
             self.table_frame.columnconfigure(grid_column, weight=1)
