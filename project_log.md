@@ -741,3 +741,27 @@
   shrink/grow behavior가 생긴다.
 
 ---
+
+## 2026-06-07 — HSPF detail/schema + window lifecycle arc closeout and archive
+
+### Tried
+- 250~259 active reports를 summary(260)로 묶고 archive로 이동.
+- Windows smoke OK 상태로 window lifecycle arc를 closeout.
+- project_memory_seed에 schema-driven bin detail shell과 side-effect-free
+  measurement policy durable decisions를 추가.
+
+### Result
+- 250~259 active reports 모두 archive로 이동 완료.
+- 260 summary 작성 완료.
+- project_memory_seed에 2개 entry 추가 완료.
+- Window lifecycle 관련 문제는 사용자 확인 하에 닫을 수 있는 상태.
+
+### Decision
+- 완료된 arc는 summary와 archive로 정리하여 active report folder를 정리한다.
+- 다음 architectural assessment 전에 active report 수를 기준 이하로 유지한다.
+
+### Lesson
+- 연속된 micro-fix(256~259)는 개별 report를 남기되, 최종적으로 summary로 묶어
+  archive하면 active folder 관리가 용이하다.
+
+---

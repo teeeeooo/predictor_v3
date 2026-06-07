@@ -677,6 +677,32 @@ entries:
       - helper extraction
     assertionStatus: verified
     source: result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md
+
+  - type: decision
+    topic: schema-driven bin detail shell for cooling and heating profiles
+    content: BinDetailPanel, BinTraceTable, and BinDetailGraph are schema-driven shells parameterized by a BinDetailSchema. COOLING_BIN_DETAIL_SCHEMA is the default; HEATING_HSPF_BIN_DETAIL_SCHEMA is used for Hong Kong HSPF. No cooling-specific hardcode remains in the UI shells. Future profile-specific detail traces should declare a schema rather than modify the shell.
+    keywords:
+      - BinDetailPanel
+      - BinTraceTable
+      - BinDetailSchema
+      - schema-driven
+      - HSPF detail
+      - heating profile
+    assertionStatus: verified
+    source: result_reports/summaries/260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md
+
+  - type: decision
+    topic: side-effect-free nested notebook visible content measurement
+    content: TkVisibleContentMeasurement._measure_nested_notebook() must never programmatically select hidden tabs. Main visible refit width and height both use replacement formulas that subtract the sticky container contribution and add back chrome + current visible tab contribution. Chrome estimates are one-time computed helpers per axis, not sticky target sizes. fit_visible_content() must not update root.minsize().
+    keywords:
+      - window measurement
+      - side-effect-free
+      - nested notebook
+      - current-state replacement
+      - chrome estimate
+      - minsize
+    assertionStatus: verified
+    source: result_reports/summaries/260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md
 ```
 
 ## Known Gaps

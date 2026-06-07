@@ -55,6 +55,7 @@
   - 257: side-effect-free visible content measurement policy repair completed.
   - 258: nested notebook current-state width/height replacement repair completed.
   - 259: nested notebook width replacement using chrome-width estimate repair completed.
+  - 260: HSPF detail/schema + window lifecycle arc summarized and archived after Windows smoke OK.
 - Next: Main table migration candidate check.
 
 ## Next Actions
