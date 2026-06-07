@@ -20,6 +20,7 @@ from ui_tk.profile_resolver import (
     two_point_profile_labels,
 )
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from ui_tk.sections.result_formatting import bin_details, metric_value, kwh_value
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
@@ -154,7 +155,7 @@ class IsoIseer2PointSection:
                 result = calc.calculate_cspf(measured)
                 row = _two_point_result_row(profile_label, measured, result)
                 rows.append(row)
-                trace_results[profile_label] = _bin_details(result)
+                trace_results[profile_label] = bin_details(result)
                 detail_summaries[profile_label] = _summary_from_row(row)
             except Exception as exc:
                 errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
@@ -228,17 +229,10 @@ def _two_point_result_row(
         title,
         _eer_value(measured, "35_full"),
         _eer_value(measured, "35_half"),
-        _metric_value(result, "cspf"),
-        _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
-        _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
+        metric_value(result, "cspf"),
+        kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
+        kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
     )
-
-
-def _bin_details(result: Mapping[str, object]) -> list[dict]:
-    raw = result.get("bin_details")
-    if not isinstance(raw, list):
-        return []
-    return [dict(item) for item in raw if isinstance(item, Mapping)]
 
 
 def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
@@ -256,16 +250,3 @@ def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> s
     if capacity is None or power is None or power <= 0:
         return "-"
     return f"{capacity / power:.2f}"
-
-
-def _metric_value(result: Mapping[str, object], key: str) -> str:
-    value = result.get(key)
-    return "-" if value is None else f"{float(value):.3f}"
-
-
-def _kwh_value(result: Mapping[str, object], aliases: tuple[str, ...]) -> str:
-    for key in aliases:
-        value = result.get(key)
-        if value is not None:
-            return f"{float(value):.1f}"
-    return "-"

@@ -917,3 +917,22 @@
 - revisit 시점: ui_tk cleanup과 controller switch 완료 후.
 
 ---
+
+## 2026-06-07 — Section-level result formatting helper extraction
+
+### Tried
+- `_bin_details`, `_metric_value`, `_kwh_value`를 3개/2개 section 파일에서
+  `result_formatting.py`로 추출.
+- behavior change 없는 pure helper extraction.
+- 10개 focused test 추가.
+
+### Decision
+- `result_formatting.py`가 section-level detail/summary formatting helper의
+  canonical owner다.
+- public names: `bin_details`, `metric_value`, `kwh_value`.
+- `_kwh_value` (keyword-only `kwh_aliases` / `wh_aliases` 버전)은 summary
+  function 내부용으로 유지.
+- 다음 slice 후보: `BinDetailPanel` cleanup preflight 또는 controller switch
+  design preflight.
+
+---

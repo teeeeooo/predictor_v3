@@ -69,7 +69,8 @@
   - 272: repo reference map calibration completed.
   - 273: reference evidence gate hook policy adopted into DIFF_READ_BUDGET.md and AGENT_TASK_ROUTER.md.
   - 274: ui_tk cleanup preflight completed using Reference Evidence Gate.
-- Next: Extract section-level result formatting helpers (_bin_details, _metric_value, _kwh_value) into result_formatting.py.
+  - 276: extract section-level result formatting helpers completed.
+- Next: BinDetailPanel cleanup preflight or controller switch design preflight.
 
 ## Next Actions
 

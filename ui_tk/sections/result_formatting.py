@@ -6,7 +6,30 @@ from typing import Mapping
 
 from ui_tk.result_models import ResultSummary
 
-__all__ = ["summarize_cspf_result", "summarize_hspf_result"]
+__all__ = [
+    "summarize_cspf_result",
+    "summarize_hspf_result",
+    "bin_details",
+    "metric_value",
+    "kwh_value",
+]
+
+
+def bin_details(result: Mapping[str, object]) -> list[dict]:
+    raw = result.get("bin_details")
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, Mapping)]
+
+
+def metric_value(result: Mapping[str, object], key: str) -> str:
+    value = _value(result, (key,))
+    return "-" if value is None else f"{value:.3f}"
+
+
+def kwh_value(result: Mapping[str, object], aliases: tuple[str, ...]) -> str:
+    value = _value(result, aliases)
+    return "-" if value is None else f"{value:.1f}"
 
 
 def _value(result: Mapping[str, object], aliases: tuple[str, ...]) -> float | None:
@@ -15,11 +38,6 @@ def _value(result: Mapping[str, object], aliases: tuple[str, ...]) -> float | No
         if raw_value is not None:
             return float(raw_value)
     return None
-
-
-def _metric_value(result: Mapping[str, object], key: str) -> str:
-    value = _value(result, (key,))
-    return "-" if value is None else f"{value:.3f}"
 
 
 def _kwh_value(
@@ -41,7 +59,7 @@ def summarize_cspf_result(result: Mapping[str, object]) -> ResultSummary:
     return ResultSummary(
         title="CSPF",
         fields=(
-            ("CSPF", _metric_value(result, "cspf")),
+            ("CSPF", metric_value(result, "cspf")),
             (
                 "CSTL [kWh]",
                 _kwh_value(
@@ -67,7 +85,7 @@ def summarize_hspf_result(result: Mapping[str, object]) -> ResultSummary:
     return ResultSummary(
         title="HSPF",
         fields=(
-            ("HSPF", _metric_value(result, "hspf")),
+            ("HSPF", metric_value(result, "hspf")),
             (
                 "HSTL [kWh]",
                 _kwh_value(

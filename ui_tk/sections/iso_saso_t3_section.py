@@ -14,6 +14,7 @@ from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.metric_input_table import MetricInputTable
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from ui_tk.sections.result_formatting import bin_details, metric_value, kwh_value
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from ui_tk.table_grid_model import parse_numeric_cell
 
@@ -214,7 +215,7 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "Required only (3-point)", measured, result, include_min=False
-            ), _bin_details(result), None
+            ), bin_details(result), None
         except Exception:
             return (), [], "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
 
@@ -229,7 +230,7 @@ class IsoSasoT3Section:
             result = calc.calculate_cspf(measured)
             return _saso_result_row(
                 "With 35 Min (4-point)", measured, result, include_min=True
-            ), _bin_details(result), None
+            ), bin_details(result), None
         except Exception:
             return (), [], "계산 오류"
 
@@ -318,21 +319,14 @@ def _saso_result_row(
         _eer_value(measured, "35_full"),
         _eer_value(measured, "35_half"),
         _eer_value(measured, "35_min") if include_min else "-",
-        _metric_value(result, "cspf"),
-        _kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
-        _kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
+        metric_value(result, "cspf"),
+        kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
+        kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
     )
 
 
 def _optional_error_row(message: str) -> tuple[str, ...]:
     return ("With 35 Min (4-point)", "-", "-", "-", message, "-", "-", "-")
-
-
-def _bin_details(result: Mapping[str, object]) -> list[dict]:
-    raw = result.get("bin_details")
-    if not isinstance(raw, list):
-        return []
-    return [dict(item) for item in raw if isinstance(item, Mapping)]
 
 
 def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
@@ -350,16 +344,3 @@ def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> s
     if capacity is None or power is None or power <= 0:
         return "-"
     return f"{capacity / power:.2f}"
-
-
-def _metric_value(result: Mapping[str, object], key: str) -> str:
-    value = result.get(key)
-    return "-" if value is None else f"{float(value):.3f}"
-
-
-def _kwh_value(result: Mapping[str, object], aliases: tuple[str, ...]) -> str:
-    for key in aliases:
-        value = result.get(key)
-        if value is not None:
-            return f"{float(value):.1f}"
-    return "-"

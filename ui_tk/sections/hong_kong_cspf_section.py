@@ -25,7 +25,7 @@ from ui_tk.result_panel import ResultPanel
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from ui_tk.sections.hong_kong_cspf_batch_section import HongKongCspfBatchDialog
 from ui_tk.sections.iso16358_helpers import build_cspf_input
-from ui_tk.sections.result_formatting import summarize_cspf_result
+from ui_tk.sections.result_formatting import summarize_cspf_result, bin_details
 
 
 class HongKongCspfSection:
@@ -190,7 +190,7 @@ class HongKongCspfSection:
                 (result_status("CSPF", f"오류: {type(exc).__name__}: {exc}"),)
             )
             return
-        self._trace_rows = _bin_details(result)
+        self._trace_rows = bin_details(result)
         self._detail_summary = _summary_from_result(result)
         self._trace_status = None
         self._update_detail_panel()
@@ -241,13 +241,6 @@ class HongKongCspfSection:
             if self._batch_dialog is not None:
                 self._batch_dialog.close()
                 self._batch_dialog = None
-
-
-def _bin_details(result: Mapping[str, object]) -> list[dict]:
-    raw = result.get("bin_details")
-    if not isinstance(raw, list):
-        return []
-    return [dict(item) for item in raw if isinstance(item, Mapping)]
 
 
 def _summary_from_result(result: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
