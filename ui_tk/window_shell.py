@@ -175,8 +175,6 @@ class TkContentHuggingShell:
             screen_height=root.winfo_screenheight(),
             vertical_overflow_delta=vertical_overflow_delta,
         )
-        target_width, target_height, _x, _y = parse_window_geometry(target_geometry)
-        root.minsize(target_width, target_height)
         if root.geometry() == target_geometry:
             return ContentFitResult(target_geometry=target_geometry, applied=False)
 

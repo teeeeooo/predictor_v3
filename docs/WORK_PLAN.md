@@ -51,6 +51,7 @@
   - 253: configurable bin-detail schema extraction (foundation for HSPF detail).
   - 254: cleanup legacy cooling constants after schema extraction.
   - 255: Hong Kong HSPF single-case detail/bin panel wiring completed.
+  - 256: shared Tk content-hugging refit/minsize lifecycle repair completed.
 - Next: Main table migration candidate check.
 
 ## Next Actions

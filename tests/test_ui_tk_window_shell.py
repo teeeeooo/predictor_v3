@@ -100,7 +100,7 @@ def test_tk_content_hugging_shell_applies_geometry_once():
 
     assert result.applied is True
     assert result.target_geometry == "640x500+100+80"
-    assert root.minsize_calls == [(640, 500)]
+    assert root.minsize_calls == []
     assert root.geometry_calls == ["640x500+100+80"]
     assert root.update_calls == 2
 
@@ -113,7 +113,7 @@ def test_tk_content_hugging_shell_skips_noop_geometry_apply():
 
     assert result.applied is False
     assert result.target_geometry == "640x500+100+80"
-    assert root.minsize_calls == [(640, 500)]
+    assert root.minsize_calls == []
     assert root.geometry_calls == []
     assert root.update_calls == 1
 
@@ -131,7 +131,7 @@ def test_shell_registers_provider_based_content_form():
     result = form.fit()
 
     assert result.target_geometry == "640x500+100+80"
-    assert root.minsize_calls == [(640, 500)]
+    assert root.minsize_calls == []
     assert root.geometry_calls == ["640x500+100+80"]
     assert after_fit_results == [result]
 

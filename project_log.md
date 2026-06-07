@@ -612,3 +612,39 @@
   것이 clean architecture boundary를 지키는 방법이다.
 
 ---
+
+## 2026-06-07 — Shared Tk content-hugging refit/minsize lifecycle repair
+
+### Tried
+- Hong Kong CSPF/HSPF에서 드러난 창 크기/상세보기/minsize 문제를 shared lifecycle
+  문제로 다루어 공통 owner에서 수정.
+- `fit_visible_content()`의 minsize update를 제거하여 detail open이 minsize를
+  영구적으로 잠그지 않게 함.
+- `_on_metric_tab_changed`를 scheduler-based refit로 활성화하여 tab switch 시
+  current content 기준 refit이 동작하게 함.
+- HSPF section에 `on_trace_visibility_changed` callback contract를 CSPF와 동일하게
+  추가.
+
+### Result
+- `fit_visible_content()`는 geometry만 변경하고 minsize는 건드리지 않음.
+- Metric notebook tab change 시 `DynamicContentRefitScheduler`가 refit을 요청.
+- HSPF detail toggle 시 parent refit이 요청됨.
+- 기존 ISO/ISEER/SASO/CSPF regression은 변화 없음.
+- core calculator, golden, fixture, batch matrix, detail panel schema 변경 없음.
+
+### Decision
+- minsize는 init baseline/floor로 유지하고 content fit이 minsize를 override하지
+  않는다.
+- nested notebook tab switch refit은 direct synchronous call이 아니라
+  `DynamicContentRefitScheduler`를 통해 loop-safe하게 요청한다.
+- 모든 detail-panel section은 tab owner로부터 visibility callback을 받아야 한다.
+  누락은 wiring bug로 취급한다.
+
+### Lesson
+- `root.minsize(target)`를 content fit마다 호출하면 detail open/close 후
+  창이 다시 작아질 수 없다. minsize와 content fit target은 별도 policy로
+  관리해야 한다.
+- scheduler-based refit은 tab switch, detail toggle 등 여러 이벤트에서
+  geometry loop를 방지하는 필수 infrastructure다.
+
+---

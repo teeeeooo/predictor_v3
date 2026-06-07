@@ -5,6 +5,7 @@ Defaults mirror the feasibility MVP so Hong Kong HSPF = 3.643 is preserved.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Mapping
 
 import tkinter as tk
@@ -34,8 +35,11 @@ class HongKongHspfSection:
         self,
         parent: tk.Widget,
         region_label: str,
+        *,
+        on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
         self._region_label = region_label
+        self._on_detail_visibility_changed = on_trace_visibility_changed
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
@@ -168,6 +172,8 @@ class HongKongHspfSection:
         else:
             self.detail_panel.grid_remove()
             self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
     def _update_detail_panel(self) -> None:
         if self._trace_status is not None:

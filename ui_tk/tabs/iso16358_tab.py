@@ -92,6 +92,9 @@ class Iso16358Tab(ttk.Frame):
 
         self._metric_notebook = ttk.Notebook(self._hong_kong_frame)
         self._metric_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._metric_notebook.bind(
+            "<<NotebookTabChanged>>", self._on_metric_tab_changed
+        )
         self._measurement = TkVisibleContentMeasurement(
             content=self._content,
             scrollbar=self._scrollbar,
@@ -179,9 +182,7 @@ class Iso16358Tab(ttk.Frame):
         self._request_visible_lifecycle_refit()
 
     def _on_metric_tab_changed(self, _event=None) -> None:
-        # Disabled until nested/dynamic refit scheduling has a common owner.
-        # Binding this directly can create a select -> refit -> measure loop.
-        return
+        self._request_visible_lifecycle_refit()
 
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()
@@ -264,7 +265,7 @@ class Iso16358Tab(ttk.Frame):
             factory = _SECTION_FACTORIES.get(metric)
             if factory is None:
                 continue
-            if factory is HongKongCspfSection:
+            if factory in (HongKongCspfSection, HongKongHspfSection):
                 section = factory(
                     self._metric_notebook,
                     region_label,
