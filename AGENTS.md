@@ -101,4 +101,5 @@ global standard logic은 canonical core에 먼저 정의하고, country/region-s
   - task별 `task N: OK/NG - short summary` 한 줄.
   - `modified: <comma-separated paths>` 한 줄. 이번 작업에서 실제로 수정/생성/삭제된 파일 경로만 적는다. report-only 작업이면 report 파일만 적고, 중단/blocked로 변경이 없으면 `modified: none`을 사용한다. unrelated, pre-existing dirty/staged/untracked 파일은 포함하지 않는다.
   - `report: <report path>` 한 줄.
+- report 본문에는 개인 author 이름, email 주소, 기타 식별 정보를 기록하지 않는다. report는 작업 산출물이지 개인 기여 문서가 아니다. author 정보는 git commit metadata로 이미 추적된다.
 - 상세 내용은 Markdown report에 기록하고 터미널 출력은 위 형식으로 짧게 유지한다.

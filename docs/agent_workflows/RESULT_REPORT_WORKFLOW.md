@@ -88,6 +88,12 @@ component is created or an existing stable path is replaced/extended, include a
 short reference parity section: whether an existing reference was checked, why it
 was or was not reused, and any unresolved parity gaps.
 
+## Report Content
+
+- Do not record personal author names, email addresses, or other identifying
+  information in report bodies. The report is a task artifact, not a personal
+  attribution document. Git commit metadata already tracks authorship.
+
 ## Terminal Output
 
 For report-backed work, keep terminal/final output short. Detailed results
