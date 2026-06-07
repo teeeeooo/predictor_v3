@@ -71,7 +71,8 @@
   - 274: ui_tk cleanup preflight completed using Reference Evidence Gate.
   - 276: extract section-level result formatting helpers completed.
   - 277: BinDetailPanel cleanup preflight completed.
-- Next: Implement BinDetailPanel.__init__ setup helper split.
+  - 278: BinDetailPanel.__init__ setup helper split completed.
+- Next: BinDetailGraph._draw helper split or controller switch design preflight.
 
 ## Next Actions
 

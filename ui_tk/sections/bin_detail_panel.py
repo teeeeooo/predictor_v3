@@ -49,6 +49,16 @@ class BinDetailPanel:
         self._frame = ttk.Frame(parent)
         self._frame.columnconfigure(0, weight=1)
 
+        self._build_selector_row(show_source_selector)
+        self._build_summary_label()
+        self._build_graph_row()
+        self._build_graph_canvas()
+        self._build_table()
+        self._build_action_buttons()
+
+        self._refresh_current_source()
+
+    def _build_selector_row(self, show_source_selector: bool) -> None:
         self._selector_row = ttk.Frame(self._frame)
         self._selector_row.grid(
             row=0,
@@ -64,15 +74,18 @@ class BinDetailPanel:
             values=self._source_order,
             state="readonly",
         )
-        self.source_combo.set(default_source)
+        self.source_combo.set(self._default_source)
         self.source_combo.bind("<<ComboboxSelected>>", self._on_source_changed)
-        self.single_source_label = ttk.Label(self._selector_row, text=default_source)
+        self.single_source_label = ttk.Label(
+            self._selector_row, text=self._default_source
+        )
         if show_source_selector and len(self._source_order) > 1:
             self.source_label.grid(row=0, column=0, sticky="w", padx=(0, 6))
             self.source_combo.grid(row=0, column=1, sticky="w")
         else:
             self.single_source_label.grid(row=0, column=0, sticky="w")
 
+    def _build_summary_label(self) -> None:
         self.summary_label = ttk.Label(self._frame, text="상세 데이터 없음")
         self.summary_label.grid(
             row=1,
@@ -82,6 +95,7 @@ class BinDetailPanel:
             pady=(0, 6),
         )
 
+    def _build_graph_row(self) -> None:
         self._graph_row = ttk.Frame(self._frame)
         self._graph_row.grid(
             row=2,
@@ -102,7 +116,10 @@ class BinDetailPanel:
         self.graph_combo.pack(side=tk.LEFT)
         self.graph_combo.bind("<<ComboboxSelected>>", self._on_graph_changed)
 
-        self.graph = BinDetailGraph(self._frame, graph_series=self._schema.graph_series)
+    def _build_graph_canvas(self) -> None:
+        self.graph = BinDetailGraph(
+            self._frame, graph_series=self._schema.graph_series
+        )
         self.graph.grid(
             row=3,
             column=0,
@@ -111,7 +128,10 @@ class BinDetailPanel:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
-        self.table = BinTraceTable(self._frame, title=self._schema.table_title, schema=self._schema)
+    def _build_table(self) -> None:
+        self.table = BinTraceTable(
+            self._frame, title=self._schema.table_title, schema=self._schema
+        )
         self.table.grid(
             row=4,
             column=0,
@@ -120,6 +140,7 @@ class BinDetailPanel:
             pady=(0, 6),
         )
 
+    def _build_action_buttons(self) -> None:
         self._action_row = ttk.Frame(self._frame)
         self._action_row.grid(
             row=5,
@@ -142,8 +163,6 @@ class BinDetailPanel:
         )
         self.csv_button.surface_role = "bin_detail_csv_export"
         self.csv_button.pack(side=tk.LEFT, padx=(6, 0))
-
-        self._refresh_current_source()
 
     def grid(self, **kwargs) -> None:
         self._frame.grid(**kwargs)

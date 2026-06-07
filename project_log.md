@@ -959,3 +959,25 @@
   결정.
 
 ---
+
+## 2026-06-07 — BinDetailPanel.__init__ setup helper split
+
+### Tried
+- `BinDetailPanel.__init__`의 widget construction sequence를 6개 private
+  setup helper로 분리.
+- `_build_selector_row`, `_build_summary_label`, `_build_graph_row`,
+  `_build_graph_canvas`, `_build_table`, `_build_action_buttons`.
+
+### Result
+- `__init__`는 state init + helper calls + `_refresh_current_source()`로 정리.
+- behavior change 없음. widget hierarchy, attribute names, callback binding
+  모두 유지.
+- code map에서 `__init__`의 long-function hotspot 표시가 사라짐.
+- `_draw`는 이번 작업에서 수정하지 않음.
+
+### Decision
+- public contract는 그대로 유지.
+- 다음 slice 후보: `BinDetailGraph._draw` helper split 또는 controller switch
+  design preflight.
+
+---
