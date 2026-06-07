@@ -63,10 +63,8 @@
 1. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
 2. **ui_tk folder cleanup**
-   - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-4. **EN14825 / AHRI 210/240 / KS profile expansion**
+3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
