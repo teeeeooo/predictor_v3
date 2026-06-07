@@ -1090,3 +1090,23 @@
 - 다음 gate는 동일: Windows/iMac GUI focused parity test confirmation.
 
 ---
+
+## 2026-06-07 — Controller switch pilot implementation
+
+### Tried
+- `HongKongCspfSection`의 `rated_controller` / `input_controller`를
+  `ExcelLikeTableController`에서 `TkTableController`로 전환.
+- Xvfb 환경에서 pilot test 5개 및 parity test 15개 실행.
+
+### Result
+- 5 pilot tests: 5 passed, 0 skipped, 0 failures.
+- 15 parity tests: 15 passed, 0 skipped, 0 failures.
+- Xvfb 환경에서 전체 통과.
+- production code 수정: import 1개, controller 생성 2줄.
+
+### Decision
+- controller switch pilot 구현 완료.
+- 다음 gate: Windows manual smoke (app 실행, table interaction, paste, undo, clear, recalculate 확인).
+- Windows smoke 통과 후 다른 section 전환 고려.
+
+---

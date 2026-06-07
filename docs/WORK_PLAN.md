@@ -77,7 +77,8 @@
   - 281: controller switch parity test foundation completed.
   - 282: controller parity readonly paste test corrected (real behavior test with mixed editable/readonly fixture).
   - 283: Windows parity test closeout — 13 passed, 2 skipped (Tcl/Tk install), 0 failures.
-- Next: Controller switch pilot implementation (post-implementation Windows smoke required).
+  - 284: Controller switch pilot implemented for HongKongCspfSection (TkTableController migration, 5 new pilot tests pass under Xvfb, 15 parity tests pass).
+- Next: Post-implementation Windows smoke for HongKongCspfSection controller switch pilot.
 
 ## Next Actions
 
