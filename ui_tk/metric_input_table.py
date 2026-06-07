@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Callable, Mapping
+from typing import Callable, Iterable, Mapping
 
 from ui_tk.layout_constants import (
     TABLE_BODY_FONT,
@@ -22,6 +22,7 @@ from ui_tk.layout_constants import (
     TABLE_HEADER_FG,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
+    TABLE_INVALID_BG,
     TABLE_ROW_HEADER_CHARS,
     TABLE_ROW_HEADER_WEIGHT,
     TABLE_STATIC_BG,
@@ -78,6 +79,7 @@ class MetricInputTable(ttk.Frame):
             raise ValueError("metric input field keys must be unique")
         self.field_order: tuple[str, ...] = ()
         self.editable_addresses: tuple[CellAddress, ...] = ()
+        self._invalid_fields: dict[str, str] = {}
         self._build_table()
 
     def _build_table(self) -> None:
@@ -351,12 +353,70 @@ class MetricInputTable(ttk.Frame):
     def default_cell_background(self, position: tuple[int, int]) -> str:
         role = self.cell_role(position)
         if role is CellRole.EDITABLE:
+            field_key = self._field_key_at_position(position)
+            if field_key is not None and field_key in self._invalid_fields:
+                return TABLE_INVALID_BG
             return TABLE_EDITABLE_BG
         return TABLE_STATIC_BG
 
     def ensure_row_count(self, count: int) -> None:
         # Fixed-row surface: no-op.  Main tables never dynamically add rows.
         pass
+
+    # ---- Invalid field state API ----
+
+    def set_invalid_fields(self, errors: Mapping[str, str]) -> None:
+        """Mark editable fields as invalid with optional messages.
+
+        Unknown field keys raise ``KeyError``.
+        Read-only/static field keys are ignored.
+        """
+        for field_key in errors:
+            if field_key not in self._values:
+                raise KeyError(f"Unknown metric input field key: {field_key!r}")
+        self._invalid_fields = dict(errors)
+        self._apply_all_visual_states()
+
+    def clear_invalid_fields(self, fields: Iterable[str] | None = None) -> None:
+        """Clear invalid state for specific fields or all fields."""
+        if fields is None:
+            self._invalid_fields.clear()
+            self._apply_all_visual_states()
+            return
+        for field_key in fields:
+            if field_key not in self._values:
+                raise KeyError(f"Unknown metric input field key: {field_key!r}")
+            self._invalid_fields.pop(field_key, None)
+        self._apply_all_visual_states()
+
+    def invalid_fields(self) -> dict[str, str]:
+        """Return a copy of current invalid field state."""
+        return dict(self._invalid_fields)
+
+    def is_field_invalid(self, field_key: str) -> bool:
+        """Return whether a field is currently marked invalid."""
+        if field_key not in self._values:
+            raise KeyError(f"Unknown metric input field key: {field_key!r}")
+        return field_key in self._invalid_fields
+
+    def invalid_message(self, field_key: str) -> str | None:
+        """Return the invalid message for a field, or None if not invalid."""
+        if field_key not in self._values:
+            raise KeyError(f"Unknown metric input field key: {field_key!r}")
+        return self._invalid_fields.get(field_key)
+
+    def _apply_field_visual_state(self, field_key: str) -> None:
+        """Set entry background for one field based on invalid state."""
+        entry = self.editable_entries[field_key]
+        if field_key in self._invalid_fields:
+            entry.configure(background=TABLE_INVALID_BG)
+        else:
+            entry.configure(background=TABLE_EDITABLE_BG)
+
+    def _apply_all_visual_states(self) -> None:
+        """Apply visual state to all editable entries."""
+        for field_key in self.editable_entries:
+            self._apply_field_visual_state(field_key)
 
     def _address_at_position(self, position: tuple[int, int]) -> CellAddress:
         row, column = position
