@@ -21,6 +21,21 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — BatchMatrixTable repair vs rebuild audit
+
+### Decision
+- Audit (245) applied the 244 reference parity gate to BatchCaseTable as the
+  reference for BatchMatrixTable interaction parity.
+- BatchMatrixTable's critical gap is localized: `restore_snapshot` always calls
+  `_rebuild_table()` even on same-shape restores, causing focus loss, selection
+  loss, and flicker on undo and paste.
+- BatchCaseTable already solved this with a same-shape restore path that
+  updates model rows and StringVars directly without destroying widgets.
+- Recommendation: repair current skeleton (add same-shape restore path to
+  `restore_snapshot`) rather than partial rewrite or rebuild.
+- Public surface contract (`TkTableSurface`), migration section, adapter, and
+  handler do not need to change.
+
 ## 2026-06-07 — Reference parity / standardization gate added
 
 ### Decision

@@ -47,10 +47,13 @@
 
 ## Next Actions
 
-1. **Batch table copy-all + CSV export parity**
+1. **Repair BatchMatrixTable restore_snapshot same-shape behavior**
+   - Fix `restore_snapshot` in `BatchMatrixTable` to preserve widgets on same-shape restore (reference parity with `BatchCaseTable`).
+   - Validate with existing headless tests and Windows manual smoke.
+2. **Batch table copy-all + CSV export parity**
    - Reuse existing `table_clipboard` / `table_csv_export` style helpers and provide a batch `table_export_data()` contract.
    - Do not add xlsx export in the current arc.
-2. **Result/detail/export common contract check**
+3. **Result/detail/export common contract check**
    - Check common result/detail/export contracts before HSPF detail, EN14825, AHRI, and KS expansion.
 3. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
