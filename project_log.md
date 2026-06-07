@@ -821,3 +821,33 @@
   드러날 수 있다.
 
 ---
+
+## 2026-06-07 — Code checker reference map foundation design
+
+### Tried
+- predictor_v3에 lightweight code checker / repo reference map을 도입하는 설계.
+- existing `tools/check_code_structure.py`와의 관계 정리.
+- tracked compact map vs ignored detailed cache 경계 확정.
+- MVP scope와 workflow hook policy 정의.
+
+### Result
+- `tools/code_checker/`가 권장 소유자 폴더.
+- compact map은 `docs/code_map/CODEBASE_REFERENCE_MAP.md`로 tracked.
+- detailed cache는 `.code_checker/`로 ignored.
+- MVP는 Python symbol inventory, LOC/class/function count, import edges,
+  duplicate candidates, soft-limit hotspots, Markdown rendering.
+
+### Decision
+- map은 evidence이며 source of truth가 아니다. AGENTS.md와 architecture docs가
+  canonical rule을 유지한다.
+- `check_code_structure.py`(structural guard)와 `code_checker/`(semantic map
+  generator)는 complementary 관계다.
+- 다음 slice는 MVP implementation: `tools/code_checker/build_reference_map.py` +
+  `docs/code_map/CODEBASE_REFERENCE_MAP.md` 초기 생성.
+
+### Lesson
+- 반복되는 reference parity audit와 helper 재발견 문제는 static analysis 기반
+  map으로 부분적으로 해결 가능하다.
+- map staleness는 workflow hook policy와 explicit update header로 완화한다.
+
+---

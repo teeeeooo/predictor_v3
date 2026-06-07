@@ -64,7 +64,9 @@
   - 267: Windows-discovered stale tests/import/event simulation issues fixed.
   - 268: callback-count failure audited; test expectation corrected after contract decision.
   - 269: main paste policy / validation arc closed after Windows validation.
-- Next: AI-generated code risk checklist adoption audit.
+  - 270: code checker reference map foundation design completed.
+- Next: 271 Repo reference map MVP implementation.
+  - The prior "AI-generated code risk checklist adoption audit" action is absorbed into the reference map workflow (design decision in 270).
 
 ## Next Actions
 
