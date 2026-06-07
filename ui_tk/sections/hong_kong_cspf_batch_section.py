@@ -25,6 +25,7 @@ from ui_tk.sections.hong_kong_cspf_batch_spec import (
     HongKongCspfBatchHandler,
 )
 from ui_tk.table.controller import TkTableController
+from ui_tk.table_csv_export import export_table_to_csv
 from ui_tk.window_geometry import parent_centered_content_geometry
 
 
@@ -117,6 +118,12 @@ class HongKongCspfBatchSection:
             side=tk.LEFT,
             padx=(6, 0),
         )
+        ttk.Button(action_row, text="Copy All", command=self.table.copy_all).pack(
+            side=tk.LEFT, padx=(6, 0)
+        )
+        ttk.Button(action_row, text="Export CSV", command=self._export_csv).pack(
+            side=tk.LEFT, padx=(6, 0)
+        )
         ttk.Label(action_row, textvariable=self.status_var).pack(side=tk.LEFT, padx=(12, 0))
         self._auto_calc.flush_now()
 
@@ -132,6 +139,10 @@ class HongKongCspfBatchSection:
             f"{summary.valid_rows} valid / {summary.blank_rows} blank"
             + (f" / {summary.error_rows} invalid" if summary.error_rows else "")
         )
+
+    def _export_csv(self) -> None:
+        headers, rows = self.table.table_export_data()
+        export_table_to_csv(self._frame, "hong_kong_cspf_batch.csv", headers, rows)
 
 
 class HongKongCspfBatchDialog:

@@ -199,6 +199,20 @@ class BatchMatrixTable(ttk.Frame):
     ) -> None:
         self._values_changed_callback = callback
 
+    def table_export_data(self) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
+        headers = tuple(self._header_label(c) for c in range(self.column_count()))
+        rows = tuple(
+            tuple(self.text_at_position((r, c)) for c in range(self.column_count()))
+            for r in range(self.row_count())
+        )
+        return headers, rows
+
+    def copy_all(self) -> bool:
+        from ui_tk.table_clipboard import copy_table_to_clipboard
+
+        headers, rows = self.table_export_data()
+        return copy_table_to_clipboard(self, headers, rows)
+
     def set_result(
         self, logical_case_index: int, result_data: Mapping[str, str]
     ) -> None:

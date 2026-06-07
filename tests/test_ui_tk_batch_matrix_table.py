@@ -199,3 +199,39 @@ def test_shape_changing_restore_rebuilds_widgets(root):
     assert len(t.cases) == 2
     assert t.row_count() == 4
     t.destroy()
+
+
+def test_table_export_data_returns_headers_and_physical_rows(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    headers, rows = t.table_export_data()
+    assert headers == ("Case", "Row Type", "Declared", "35 Full", "35 Half", "CSPF", "CSEC")
+    assert len(rows) == 10  # 5 cases * 2 physical rows
+    assert rows[0][0] == "1"  # Case 1 on first physical row
+    assert rows[1][0] == ""  # blank on second physical row
+    assert rows[0][1] == "Capacity"
+    assert rows[1][1] == "Power"
+    t.destroy()
+
+
+def test_table_export_data_includes_result_first_row_only(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    t.set_result(0, {CSPF: "4.939", CSEC: "729.0"})
+    t.update_idletasks()
+    headers, rows = t.table_export_data()
+    assert rows[0][5] == "4.939"
+    assert rows[1][5] == ""  # blank on second physical row
+    assert rows[0][6] == "729.0"
+    assert rows[1][6] == ""  # blank on second physical row
+    t.destroy()
+
+
+def test_copy_all_puts_physical_grid_on_clipboard(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    t.set_result(0, {CSPF: "4.939", CSEC: "729.0"})
+    t.copy_all()
+    clipboard = t.clipboard_get()
+    lines = clipboard.splitlines()
+    assert lines[0] == "Case\tRow Type\tDeclared\t35 Full\t35 Half\tCSPF\tCSEC"
+    assert lines[1].startswith("1\tCapacity\t3500\t3600\t1700\t4.939\t729.0")
+    assert lines[2].startswith("\tPower\t\t900\t380\t\t")
+    t.destroy()
