@@ -21,6 +21,22 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-07 — Main notebook legacy vs batch dialog lifecycle audit
+
+### Decision
+- Main notebook/tab path (`Iso16358Tab`) is a partially corrected legacy path with
+  nested notebook, profile switch, dynamic refit scheduler, and visible measurement.
+- Batch dialog/table path (`HongKongCspfBatchDialog`, `BatchMatrixTable`) is a newer
+  stable path created after the 229–235 window/dialog/table arc, using hidden-first
+  sizing, internal viewport, common table foundation, and explicit state persistence.
+- Apparent duplication between `BatchCaseTable` and `BatchMatrixTable` is shape-specific
+  construction (row-per-case vs two-row matrix), not generic boilerplate. A base class
+  would be premature with only two concrete shapes.
+- `BatchMatrixTable` is at 422 LOC (soft limit 400). The next responsibility addition
+  must trigger helper extraction, not file growth. No immediate refactor is required.
+- Extraction priority: result/export contract check first, then main table migration
+  preflight, then ui_tk folder cleanup.
+
 ## 2026-06-07 — BatchMatrixTable interaction parity repair
 
 ### Decision
