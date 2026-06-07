@@ -60,7 +60,11 @@
   - 263: MetricInputTable TkTableSurface adapter compatibility completed.
   - 264: MetricInputTable visible invalid-field validation foundation completed.
   - 265: main paste policy aligned to raw text paste + visible validation + execution blocking.
-- Next: Main table controller switch preflight or ui_tk folder cleanup.
+  - 266: focused tests corrected for validation/paint semantics.
+  - 267: Windows-discovered stale tests/import/event simulation issues fixed.
+  - 268: callback-count failure audited; test expectation corrected after contract decision.
+  - 269: main paste policy / validation arc closed after Windows validation.
+- Next: AI-generated code risk checklist adoption audit.
 
 ## Next Actions
 

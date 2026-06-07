@@ -796,3 +796,28 @@
 - paste → validate → execute 3-layer 분리가 사용자 의도와 일치한다.
 
 ---
+
+## 2026-06-07 — Main paste policy / validation arc Windows validation closeout
+
+### Tried
+- 265~268 arc를 Windows validation 결과 기준으로 closeout.
+- excel_like_table_controller: 32 passed / 1 skipped.
+- metric_input_table_validation: 19 passed / 2 skipped.
+- metric_input_table_adapter: 23 passed / 1 skipped.
+
+### Result
+- assertion failure 없음.
+- 남은 skip은 Python 3.14.5 Tcl/Tk environment issue로 code defect 아님.
+- paste policy arc는 Windows validation closeout 가능.
+
+### Decision
+- 265~268 arc는 완료로 판단.
+- 다음 작업은 AI-generated code risk checklist adoption audit.
+
+### Lesson
+- headless 환경에서 skipped된 GUI tests는 Windows 실제 실행에서 assertion
+  failure가 발생할 수 있으므로, Windows validation closeout을 별도로 수행해야 한다.
+- callback count와 같은 세부 contract는 headless가 아닌 실제 실행에서만
+  드러날 수 있다.
+
+---
