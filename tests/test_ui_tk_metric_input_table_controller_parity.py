@@ -57,6 +57,31 @@ def ctrl(sample_table):
     return TkTableController(sample_table)
 
 
+@pytest.fixture
+def mixed_table(tk_root):
+    """2x2 table with left column editable and right column readonly."""
+    table = MetricInputTable(
+        tk_root,
+        columns=(("c1", "Col1"), ("c2", "Col2")),
+        rows=(("r1", "Row1"), ("r2", "Row2")),
+        editable_cells={
+            ("r1", "c1"): "a",
+            ("r2", "c1"): "b",
+        },
+    )
+    table.pack()
+    table.set_values({"a": "1", "b": "2"})
+    # right column cells are readonly; default display is "-"
+    tk_root.update_idletasks()
+    return table
+
+
+@pytest.fixture
+def mixed_ctrl(mixed_table):
+    """TkTableController wired to mixed MetricInputTable."""
+    return TkTableController(mixed_table)
+
+
 class TestAttachAndSelect:
     """Controller attaches, select/active/selected positions work."""
 
@@ -112,17 +137,31 @@ class TestCopyPaste:
         ctrl._paste()
         assert ctrl.table.text_at_position((0, 0)) == "not_a_number"
 
-    def test_paste_ignores_readonly_target(self, ctrl: TkTableController) -> None:
-        # (1,1) is editable in our fixture, so we need a readonly cell.
-        # MetricInputTable cell_role says: editable_cells keys are editable,
-        # everything else is READONLY.
-        # Our fixture: all cells are editable.  We can't easily create a
-        # readonly cell in the fixture, so we verify through role logic.
-        # For a real readonly test we would need a different fixture.
-        # This test documents the intent; full verification requires a
-        # table with mixed editable/readonly cells.
-        from ui_tk.table.roles import CellRole
-        assert ctrl.table.cell_role((0, 0)) == CellRole.EDITABLE
+    def test_paste_ignores_readonly_target(
+        self, mixed_ctrl: TkTableController
+    ) -> None:
+        # Paste a 2x2 matrix starting at (0,0).
+        # Only the left column is editable; right column must stay unchanged.
+        mixed_ctrl.select((0, 0))
+        mixed_ctrl.table.clipboard_clear()
+        mixed_ctrl.table.clipboard_append(
+            "10\tREADONLY_SHOULD_NOT_APPLY\n20\tREADONLY_SHOULD_NOT_APPLY"
+        )
+        mixed_ctrl._paste()
+
+        # Editable cells receive pasted values
+        assert mixed_ctrl.table.text_at_position((0, 0)) == "10"
+        assert mixed_ctrl.table.text_at_position((1, 0)) == "20"
+
+        # Readonly cells remain unchanged
+        assert mixed_ctrl.table.text_at_position((0, 1)) == "-"
+        assert mixed_ctrl.table.text_at_position((1, 1)) == "-"
+
+        # Verify underlying snapshot only contains editable fields
+        snapshot = mixed_ctrl.table.snapshot()
+        assert snapshot.get("a") == "10"
+        assert snapshot.get("b") == "20"
+        assert len(snapshot) == 2
 
 
 class TestClearAndUndo:

@@ -1052,3 +1052,24 @@
 - GUI pass 확인 후 controller switch pilot implementation 진행.
 
 ---
+
+## 2026-06-07 — Fix controller parity readonly paste test
+
+### Tried
+- `test_paste_ignores_readonly_target`가 실제 paste behavior를 검증하지 않음을 확인.
+- 2x2 mixed editable/readonly fixture 추가 (왼쪽 열 editable, 오른쪽 열 readonly).
+- readonly paste test를 실제 behavior 검증으로 교체:
+  - 2x2 TSV clipboard paste 수행
+  - editable cell은 값 변경, readonly cell은 변화 없음 확인
+  - underlying snapshot에 readonly field key가 생성되지 않음 확인.
+
+### Result
+- test-only correction, production code 수정 없음.
+- 15 tests collected, 15 skipped, 0 failures.
+
+### Decision
+- controller parity test suite 이제 "Paste role-filtering ignores readonly cells"를
+  실제 mixed-role fixture로 검증함.
+- 다음 gate는 동일: Windows/iMac GUI focused parity test confirmation.
+
+---

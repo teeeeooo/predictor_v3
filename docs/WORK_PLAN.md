@@ -75,7 +75,8 @@
   - 279: controller switch design preflight completed.
   - 280: MetricInputTable clipboard protocol compatibility check completed.
   - 281: controller switch parity test foundation completed.
-- Next: Windows/iMac GUI focused parity test confirmation, then controller switch pilot implementation.
+  - 282: controller parity readonly paste test corrected (real behavior test with mixed editable/readonly fixture).
+- Next: Windows/iMac GUI focused parity test confirmation (now includes corrected readonly paste test), then controller switch pilot implementation.
 
 ## Next Actions
 
