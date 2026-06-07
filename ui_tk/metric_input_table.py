@@ -28,6 +28,7 @@ from ui_tk.layout_constants import (
     TABLE_STATIC_FG,
 )
 from ui_tk.table_grid_model import parse_numeric_cell
+from ui_tk.table.roles import CellRole
 
 __all__ = ["MetricInputTable"]
 
@@ -294,3 +295,77 @@ class MetricInputTable(ttk.Frame):
 
     def get_text_values(self) -> dict[str, str]:
         return dict(self._values)
+
+    # ---- TkTableSurface-compatible adapter methods (position-based) ----
+
+    def row_count(self) -> int:
+        return len(self.rows)
+
+    def column_count(self) -> int:
+        return len(self.columns)
+
+    def cell_roles(self) -> tuple[CellRole, ...]:
+        return tuple(
+            CellRole.EDITABLE
+            if (row_key, column_key) in self.editable_cells
+            else CellRole.READONLY
+            for row_key, _row_label in self.rows
+            for column_key, _column_label in self.columns
+        )
+
+    def cell_role(self, position: tuple[int, int]) -> CellRole:
+        address = self._address_at_position(position)
+        if address in self.editable_cells:
+            return CellRole.EDITABLE
+        return CellRole.READONLY
+
+    def text_at_position(self, position: tuple[int, int]) -> str:
+        return self.text_at_address(self._address_at_position(position))
+
+    def set_positions_batch(self, values: Mapping[tuple[int, int], str]) -> bool:
+        address_values = {
+            self._address_at_position(pos): val for pos, val in values.items()
+        }
+        return self.set_address_values_batch(address_values)
+
+    def snapshot(self) -> dict[str, str]:
+        return dict(self._values)
+
+    def restore_snapshot(self, snapshot: Mapping[str, str]) -> None:
+        self.set_values_batch(dict(snapshot))
+
+    def cell_frame(self, position: tuple[int, int]) -> tk.Frame:
+        address = self._address_at_position(position)
+        return self.cell_frames[address]
+
+    def cell_widget(self, position: tuple[int, int]) -> tk.Widget:
+        field_key = self._field_key_at_position(position)
+        if field_key is not None:
+            return self.editable_entries[field_key]
+        address = self._address_at_position(position)
+        return self.cell_frames[address]
+
+    def focus_widget(self, position: tuple[int, int]) -> tk.Widget:
+        return self.cell_widget(position)
+
+    def default_cell_background(self, position: tuple[int, int]) -> str:
+        role = self.cell_role(position)
+        if role is CellRole.EDITABLE:
+            return TABLE_EDITABLE_BG
+        return TABLE_STATIC_BG
+
+    def ensure_row_count(self, count: int) -> None:
+        # Fixed-row surface: no-op.  Main tables never dynamically add rows.
+        pass
+
+    def _address_at_position(self, position: tuple[int, int]) -> CellAddress:
+        row, column = position
+        if not (0 <= row < len(self.rows)):
+            raise IndexError(f"row index {row} out of range for {len(self.rows)} rows")
+        if not (0 <= column < len(self.columns)):
+            raise IndexError(f"column index {column} out of range for {len(self.columns)} columns")
+        return (self.rows[row][0], self.columns[column][0])
+
+    def _field_key_at_position(self, position: tuple[int, int]) -> str | None:
+        address = self._address_at_position(position)
+        return self.editable_cells.get(address)
