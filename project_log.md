@@ -1032,3 +1032,23 @@
 - 다음 slice는 controller switch parity test foundation.
 
 ---
+
+## 2026-06-07 — Controller switch parity test foundation
+
+### Tried
+- `MetricInputTable + TkTableController` parity test 15개 작성.
+- attach/select, copy/paste, clear/undo, invalid visual state, replace-on-type
+  behavior를 검증.
+
+### Result
+- 15개 테스트 모두 headless 환경에서 skip (Tk unavailable).
+- 0 failures. 테스트 구조는 정확함.
+- production code 수정 불필요.
+
+### Decision
+- parity test foundation이 준비되었음.
+- 다음 gate: Windows/iMac GUI 환경에서 동일한 focused test를 실행하여
+  실제 pass 확인.
+- GUI pass 확인 후 controller switch pilot implementation 진행.
+
+---

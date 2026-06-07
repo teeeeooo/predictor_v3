@@ -74,7 +74,8 @@
   - 278: BinDetailPanel.__init__ setup helper split completed.
   - 279: controller switch design preflight completed.
   - 280: MetricInputTable clipboard protocol compatibility check completed.
-- Next: Controller switch parity test foundation for MetricInputTable + TkTableController.
+  - 281: controller switch parity test foundation completed.
+- Next: Windows/iMac GUI focused parity test confirmation, then controller switch pilot implementation.
 
 ## Next Actions
 
