@@ -31,6 +31,7 @@ class Symbol:
     name: str
     line: int
     end_line: int
+    kind: str  # "class", "top_level_function", "method", "nested_function", "constant"
 
 
 @dataclass
@@ -38,9 +39,16 @@ class FileInfo:
     path: Path
     loc: int
     classes: List[Symbol] = field(default_factory=list)
-    functions: List[Symbol] = field(default_factory=list)
+    top_level_functions: List[Symbol] = field(default_factory=list)
+    methods: List[Symbol] = field(default_factory=list)
+    nested_functions: List[Symbol] = field(default_factory=list)
     constants: List[Symbol] = field(default_factory=list)
     imports: List[str] = field(default_factory=list)
+
+    @property
+    def functions(self) -> List[Symbol]:
+        """All functions for backwards compatibility (hotspot analysis)."""
+        return self.top_level_functions + self.methods + self.nested_functions
 
 
 def _count_loc(source: str) -> int:
@@ -56,19 +64,24 @@ def _count_loc(source: str) -> int:
 class _SymbolVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.classes: List[Symbol] = []
-        self.functions: List[Symbol] = []
+        self.top_level_functions: List[Symbol] = []
+        self.methods: List[Symbol] = []
+        self.nested_functions: List[Symbol] = []
         self.constants: List[Symbol] = []
         self.imports: List[str] = []
-        self._depth = 0
+        self._context_stack: List[str] = []
 
     def _is_module_level(self) -> bool:
-        return self._depth == 0
+        return len(self._context_stack) == 0
 
-    def _push(self) -> None:
-        self._depth += 1
+    def _current_context(self) -> str | None:
+        return self._context_stack[-1] if self._context_stack else None
+
+    def _push(self, ctx: str) -> None:
+        self._context_stack.append(ctx)
 
     def _pop(self) -> None:
-        self._depth -= 1
+        self._context_stack.pop()
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.classes.append(
@@ -76,33 +89,52 @@ class _SymbolVisitor(ast.NodeVisitor):
                 name=node.name,
                 line=node.lineno,
                 end_line=getattr(node, "end_lineno", node.lineno),
+                kind="class",
             )
         )
-        self._push()
+        self._push("class")
         self.generic_visit(node)
         self._pop()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self.functions.append(
-            Symbol(
-                name=node.name,
-                line=node.lineno,
-                end_line=getattr(node, "end_lineno", node.lineno),
-            )
-        )
-        self._push()
-        self.generic_visit(node)
-        self._pop()
+        self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        self.functions.append(
-            Symbol(
-                name=node.name,
-                line=node.lineno,
-                end_line=getattr(node, "end_lineno", node.lineno),
+        self._visit_function(node)
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        ctx = self._current_context()
+        if self._is_module_level():
+            kind = "top_level_function"
+            self.top_level_functions.append(
+                Symbol(
+                    name=node.name,
+                    line=node.lineno,
+                    end_line=getattr(node, "end_lineno", node.lineno),
+                    kind=kind,
+                )
             )
-        )
-        self._push()
+        elif ctx == "class":
+            kind = "method"
+            self.methods.append(
+                Symbol(
+                    name=node.name,
+                    line=node.lineno,
+                    end_line=getattr(node, "end_lineno", node.lineno),
+                    kind=kind,
+                )
+            )
+        else:
+            kind = "nested_function"
+            self.nested_functions.append(
+                Symbol(
+                    name=node.name,
+                    line=node.lineno,
+                    end_line=getattr(node, "end_lineno", node.lineno),
+                    kind=kind,
+                )
+            )
+        self._push("function")
         self.generic_visit(node)
         self._pop()
 
@@ -115,6 +147,7 @@ class _SymbolVisitor(ast.NodeVisitor):
                             name=target.id,
                             line=node.lineno,
                             end_line=getattr(node, "end_lineno", node.lineno),
+                            kind="constant",
                         )
                     )
         self.generic_visit(node)
@@ -141,7 +174,9 @@ def scan_file(path: Path) -> FileInfo:
         path=path,
         loc=_count_loc(source),
         classes=visitor.classes,
-        functions=visitor.functions,
+        top_level_functions=visitor.top_level_functions,
+        methods=visitor.methods,
+        nested_functions=visitor.nested_functions,
         constants=visitor.constants,
         imports=visitor.imports,
     )

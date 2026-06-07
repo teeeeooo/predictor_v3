@@ -18,7 +18,7 @@ from code_checker.analyzer import (
     compute_layer_overview,
     find_duplicate_symbols,
     find_hotspots,
-    group_by_owner,
+    group_by_keyword,
 )
 from code_checker.renderer import render_compact_map
 
@@ -29,14 +29,16 @@ def build_map(repo_root: Path | None = None) -> str:
     root = repo_root or Path(__file__).resolve().parents[2]
     py_files = discover_python_files(root)
     file_infos = [scan_file(p) for p in py_files]
+    active_hotspots, legacy_hotspots = find_hotspots(file_infos, root)
     result = AnalysisResult(
         layer_overviews=compute_layer_overview(file_infos, root),
-        owner_groups=group_by_owner(file_infos, root),
-        hotspots=find_hotspots(file_infos, root),
+        keyword_hit_groups=group_by_keyword(file_infos, root),
+        active_hotspots=active_hotspots,
+        legacy_hotspots=legacy_hotspots,
         duplicates=find_duplicate_symbols(file_infos, root),
         import_edges=compute_import_edges(file_infos, root),
     )
-    return render_compact_map(result, task_number="271")
+    return render_compact_map(result, task_number="272")
 
 
 def main() -> int:

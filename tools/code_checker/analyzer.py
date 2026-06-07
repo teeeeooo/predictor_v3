@@ -1,4 +1,4 @@
-"""Analysis layer: hotspots, duplicates, owner groups, import edges."""
+"""Analysis layer: hotspots, duplicates, keyword hits, import edges."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Dict, List, Set
 from .scanner import FileInfo, Symbol
 
 OWNER_KEYWORDS: Dict[str, List[str]] = {
-    "table": ["table", "cell", "row", "column", "spreadsheet", "clipboard"],
+    "table": ["table", "spreadsheet", "clipboard"],
     "window": ["window", "dialog", "viewport", "geometry", "fit", "resize", "content"],
     "calculator": [
         "calculator",
@@ -85,6 +85,44 @@ _IGNORED_DUPLICATE_NAMES: Set[str] = {
     "configure",
 }
 
+_FRAMEWORK_METHOD_NOISE: Set[str] = {
+    "grid",
+    "pack",
+    "place",
+    "rowCount",
+    "columnCount",
+    "row_count",
+    "column_count",
+    "data",
+    "headerData",
+    "setData",
+    "set_data",
+    "flags",
+    "keyPressEvent",
+    "paintEvent",
+    "mousePressEvent",
+    "mouseMoveEvent",
+    "mouseReleaseEvent",
+    "wheelEvent",
+    "focusInEvent",
+    "focusOutEvent",
+    "showEvent",
+    "hideEvent",
+    "resizeEvent",
+    "moveEvent",
+    "closeEvent",
+    "contextMenuEvent",
+    "dragEnterEvent",
+    "dragMoveEvent",
+    "dropEvent",
+    "enterEvent",
+    "leaveEvent",
+    "timerEvent",
+    "changeEvent",
+    "event",
+    "eventFilter",
+}
+
 
 @dataclass
 class DuplicateGroup:
@@ -98,10 +136,11 @@ class HotspotFile:
     loc: int
     class_count: int
     long_functions: List[tuple[str, int]]  # (name, approx_loc)
+    category: str = "active"
 
 
 @dataclass
-class OwnerGroup:
+class KeywordHitGroup:
     keyword: str
     files: List[str]
 
@@ -122,8 +161,9 @@ class ImportEdge:
 @dataclass
 class AnalysisResult:
     layer_overviews: List[LayerOverview]
-    owner_groups: List[OwnerGroup]
-    hotspots: List[HotspotFile]
+    keyword_hit_groups: List[KeywordHitGroup]
+    active_hotspots: List[HotspotFile]
+    legacy_hotspots: List[HotspotFile]
     duplicates: List[DuplicateGroup]
     import_edges: List[ImportEdge]
 
@@ -133,6 +173,16 @@ def _rel(path: Path, root: Path) -> str:
         return str(path.relative_to(root))
     except ValueError:
         return str(path)
+
+
+def _hotspot_category(rel_path: str) -> str:
+    if rel_path.startswith("core/_legacy/"):
+        return "legacy"
+    if rel_path.startswith("ui/"):
+        return "legacy"
+    if rel_path.startswith("scripts/"):
+        return "deferred"
+    return "active"
 
 
 def compute_layer_overview(file_infos: List[FileInfo], root: Path) -> List[LayerOverview]:
@@ -154,20 +204,20 @@ def compute_layer_overview(file_infos: List[FileInfo], root: Path) -> List[Layer
     return overviews
 
 
-def group_by_owner(file_infos: List[FileInfo], root: Path) -> List[OwnerGroup]:
+def group_by_keyword(file_infos: List[FileInfo], root: Path) -> List[KeywordHitGroup]:
     keyword_to_files: Dict[str, Set[str]] = defaultdict(set)
     for fi in file_infos:
         rel = _rel(fi.path, root).lower()
-        all_names = {s.name.lower() for s in fi.classes + fi.functions + fi.constants}
+        all_names = {s.name.lower() for s in fi.classes + fi.top_level_functions + fi.constants}
         for keyword, substrings in OWNER_KEYWORDS.items():
             for sub in substrings:
                 if sub in rel or any(sub in n for n in all_names):
                     keyword_to_files[keyword].add(_rel(fi.path, root))
                     break
-    groups: List[OwnerGroup] = []
+    groups: List[KeywordHitGroup] = []
     for keyword in sorted(keyword_to_files):
         groups.append(
-            OwnerGroup(
+            KeywordHitGroup(
                 keyword=keyword,
                 files=sorted(keyword_to_files[keyword]),
             )
@@ -175,8 +225,9 @@ def group_by_owner(file_infos: List[FileInfo], root: Path) -> List[OwnerGroup]:
     return groups
 
 
-def find_hotspots(file_infos: List[FileInfo], root: Path) -> List[HotspotFile]:
-    hotspots: List[HotspotFile] = []
+def find_hotspots(file_infos: List[FileInfo], root: Path) -> tuple[List[HotspotFile], List[HotspotFile]]:
+    active: List[HotspotFile] = []
+    legacy: List[HotspotFile] = []
     for fi in file_infos:
         rel = _rel(fi.path, root)
         class_count = len(fi.classes)
@@ -192,26 +243,34 @@ def find_hotspots(file_infos: List[FileInfo], root: Path) -> List[HotspotFile]:
             or fi.loc >= LOC_NEAR_HARD
         )
         if is_hot:
-            hotspots.append(
-                HotspotFile(
-                    path=rel,
-                    loc=fi.loc,
-                    class_count=class_count,
-                    long_functions=long_functions,
-                )
+            hotspot = HotspotFile(
+                path=rel,
+                loc=fi.loc,
+                class_count=class_count,
+                long_functions=long_functions,
+                category=_hotspot_category(rel),
             )
-    return sorted(hotspots, key=lambda h: h.loc, reverse=True)
+            if hotspot.category == "active":
+                active.append(hotspot)
+            else:
+                legacy.append(hotspot)
+    active = sorted(active, key=lambda h: h.loc, reverse=True)
+    legacy = sorted(legacy, key=lambda h: h.loc, reverse=True)
+    return active, legacy
 
 
 def find_duplicate_symbols(file_infos: List[FileInfo], root: Path) -> List[DuplicateGroup]:
     symbol_map: Dict[str, List[tuple[str, int]]] = defaultdict(list)
     for fi in file_infos:
         rel = _rel(fi.path, root)
-        for sym in fi.classes + fi.functions + fi.constants:
+        # Only top-level functions, classes, and constants are eligible for extraction candidates.
+        for sym in fi.classes + fi.top_level_functions + fi.constants:
             symbol_map[sym.name].append((rel, sym.line))
     duplicates: List[DuplicateGroup] = []
     for name, locs in symbol_map.items():
         if name in _IGNORED_DUPLICATE_NAMES:
+            continue
+        if name in _FRAMEWORK_METHOD_NOISE:
             continue
         if len(locs) > 1:
             duplicates.append(DuplicateGroup(name=name, locations=sorted(locs)))
@@ -235,7 +294,10 @@ def compute_import_edges(file_infos: List[FileInfo], root: Path) -> List[ImportE
     for fi in file_infos:
         rel = _rel(fi.path, root)
         for imp in fi.imports:
-            top = imp.split(".")[0]
+            parts = imp.split(".")
+            top = parts[0]
             if top in internal:
-                edges.add((rel, top))
+                # Show up to 3 parts of the imported module for better granularity.
+                target = ".".join(parts[:3])
+                edges.add((rel, target))
     return [ImportEdge(source=s, target=t) for s, t in sorted(edges)]

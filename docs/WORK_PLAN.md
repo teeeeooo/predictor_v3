@@ -65,8 +65,9 @@
   - 268: callback-count failure audited; test expectation corrected after contract decision.
   - 269: main paste policy / validation arc closed after Windows validation.
   - 270: code checker reference map foundation design completed.
-- Next: 271 Repo reference map MVP implementation.
-  - The prior "AI-generated code risk checklist adoption audit" action is absorbed into the reference map workflow (design decision in 270).
+  - 271: repo reference map MVP implementation completed.
+  - 272: repo reference map calibration completed.
+- Next: Reference evidence gate hook policy adoption or further code_checker calibration.
 
 ## Next Actions
 
