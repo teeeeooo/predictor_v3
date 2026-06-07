@@ -981,3 +981,30 @@
   design preflight.
 
 ---
+
+## 2026-06-07 — Controller switch design preflight
+
+### Tried
+- `ExcelLikeTableController`와 `TkTableController` + `interaction_core`의
+  behavior contract를 비교 분석.
+- `MetricInputTable`의 `TkTableSurface` adapter compatibility 확인.
+- paste, undo, selection, invalid field marking, callback, keyboard
+  navigation parity assessment.
+
+### Result
+- `TkTableController`의 paste는 role-filtered (`editable_paste_targets_by_role`)
+  로 265 policy와 더 잘 정렬됨.
+- invalid field visual state는 `default_cell_background`를 통해 이미
+  compatible (`MetricInputTable`이 이미 구현함).
+- callback chain은 `set_positions_batch` -> `set_values_batch` 경로로
+  compatible.
+- **blocker**: `MetricInputTable`에 `clipboard_clear`, `clipboard_append`,
+  `clipboard_get` surface protocol methods가 없음.
+
+### Decision
+- controller switch 전 반드시 `MetricInputTable`에 clipboard surface methods
+  추가가 prerequisite.
+- 그 다음 parity test foundation, 그 다음 pilot section switch 순서.
+- `winfo_containing`은 `ttk.Frame`에서 상속되므로 문제 없음.
+
+---

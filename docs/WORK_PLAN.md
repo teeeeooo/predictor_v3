@@ -72,7 +72,8 @@
   - 276: extract section-level result formatting helpers completed.
   - 277: BinDetailPanel cleanup preflight completed.
   - 278: BinDetailPanel.__init__ setup helper split completed.
-- Next: BinDetailGraph._draw helper split or controller switch design preflight.
+  - 279: controller switch design preflight completed.
+- Next: Add missing TkTableSurface clipboard methods to MetricInputTable.
 
 ## Next Actions
 
