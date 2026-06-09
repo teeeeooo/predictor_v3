@@ -90,14 +90,16 @@
 - 301: Post-type-replace selection fix GUI smoke passed on iMac; type-replace carryover resolved; undo/paste/clear/flicker intact.
 - 302: IsoIseer2PointSection controller switch migrated to TkTableController; 6 new focused tests pass.
 - 303: Post-2-point controller switch GUI smoke passed on iMac; type-replace/undo/paste/clear/Treeview updates verified.
+- 304: IsoSasoT3Section controller switch migrated to TkTableController; 7 new focused tests pass.
 
 ## Next Actions
 
-1. **IsoSasoT3Section controller switch implementation**
-   - Migrate IsoSasoT3Section to TkTableController and add focused regression tests.
-3. **Main table migration candidate check**
+1. **Post-SASO T3 controller switch GUI smoke**
+   - Perform manual GUI smoke testing for SASO T3 section to close out the controller switch.
+   - Note: active report count is 12 (>10), lifecycle cleanup is pending and deferred until GUI smoke closeout is completed.
+2. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-4. **ui_tk folder cleanup**
+3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
 

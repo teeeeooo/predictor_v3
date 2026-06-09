@@ -1352,3 +1352,22 @@
 - 다음 action: IsoSasoT3Section controller switch implementation.
 
 ---
+
+## 2026-06-10 — Implement IsoSasoT3Section controller switch
+
+### Tried
+- 마지막 controller switch 대상인 `IsoSasoT3Section`을 `ExcelLikeTableController`에서 `TkTableController`로 전환.
+- 7개의 focused test 추가 및 검증.
+
+### Result
+- `ui_tk/sections/iso_saso_t3_section.py` 수정 완료.
+- `tests/test_ui_tk_iso_saso_t3_controller_switch.py` 신설 완료 (7 pass).
+- CSPF/HSPF/2-point controller switch 및 metric input table parity 테스트 등 40개 테스트 전체 통과.
+- py_compile OK, check_code_structure.py 신규 위반 없음.
+
+### Decision
+- IsoSasoT3Section의 controller switch migration 완료.
+- 다음 action: Post-SASO T3 controller switch GUI smoke.
+- active report count는 12개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+
+---
