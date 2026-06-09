@@ -97,6 +97,7 @@
 - 308: Closed out SASO T3 controller switch and validation alignment GUI smoke on iMac.
 - 309: Patched Reference Evidence Gate to warning-first workflow and added active report count wording policy.
 - 310: Improved code_checker with safe git metadata generation and freshness checks without hard gating.
+- 311: Decoupled reference map from specific task number labels for neutral snapshot evidence.
 
 ## Next Actions
 

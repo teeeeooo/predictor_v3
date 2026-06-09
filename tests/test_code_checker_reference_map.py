@@ -219,9 +219,10 @@ def test_renderer_has_active_and_legacy_hotspot_sections() -> None:
         duplicates=[],
         import_edges=[],
     )
-    md = render_compact_map(result, task_number="272")
+    md = render_compact_map(result)
     assert "## Active Hotspots" in md
     assert "## Legacy / Deferred Hotspots" in md
+    assert "task" not in md.split("\n")[2] # Verify no task number text in header
 
 
 def test_renderer_has_duplicate_framework_filter_note() -> None:
@@ -233,7 +234,7 @@ def test_renderer_has_duplicate_framework_filter_note() -> None:
         duplicates=[],
         import_edges=[],
     )
-    md = render_compact_map(result, task_number="272")
+    md = render_compact_map(result)
     assert "Framework methods" in md
     assert "filtered out" in md
 
@@ -289,7 +290,7 @@ def test_metadata_generation_and_rendering() -> None:
         "git_commit_short": "abc1234",
         "git_dirty": False,
     }
-    md = render_compact_map(result, task_number="310", metadata=fake_meta)
+    md = render_compact_map(result, metadata=fake_meta)
     expected_comment = render_metadata_comment(fake_meta)
     assert md.startswith(expected_comment)
     assert "abc1234" in md

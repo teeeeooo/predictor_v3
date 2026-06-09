@@ -41,7 +41,7 @@ def build_map(repo_root: Path | None = None) -> str:
         import_edges=compute_import_edges(file_infos, root),
     )
     meta = generate_metadata(root)
-    return render_compact_map(result, task_number="272", metadata=meta)
+    return render_compact_map(result, metadata=meta)
 
 
 def main() -> int:
