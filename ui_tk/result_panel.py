@@ -73,9 +73,12 @@ class ResultPanel:
         if self._can_update_in_place(summaries):
             self._update_summary_values(summaries)
         else:
+            external_focus = self._capture_external_focus()
             self._clear_summary_tables()
             for row, summary in enumerate(summaries):
                 self._render_summary_table(row, summary)
+            if external_focus is not None:
+                self._restore_focus_if_alive(external_focus)
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
     def clear(self) -> None:
@@ -225,6 +228,34 @@ class ResultPanel:
         self.summary_value_cells.clear()
         self.summary_value_labels.clear()
         self.summary_status_labels.clear()
+
+    def _capture_external_focus(self) -> tk.Widget | None:
+        focused = self._frame.focus_get()
+        if focused is None:
+            return None
+        if self._is_descendant_of_panel(focused):
+            return None
+        return focused
+
+    def _is_descendant_of_panel(self, widget: tk.Widget) -> bool:
+        try:
+            while widget is not None:
+                if widget == self._frame:
+                    return True
+                parent = widget.winfo_parent()
+                if not parent:
+                    break
+                widget = widget.nametowidget(parent)
+        except Exception:
+            pass
+        return False
+
+    def _restore_focus_if_alive(self, widget: tk.Widget) -> None:
+        try:
+            if widget.winfo_exists():
+                widget.focus_set()
+        except Exception:
+            pass
 
     def _set_copy_text(self, text: str) -> None:
         self._text.configure(state=tk.NORMAL)

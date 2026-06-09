@@ -7,6 +7,8 @@ to full rebuild when the shape changes.
 
 from __future__ import annotations
 
+import tkinter as tk
+
 import pytest
 
 from ui_tk.result_models import ResultSummary
@@ -193,3 +195,92 @@ class TestCopyText:
 
         assert "99" in second_copy
         assert second_copy != first_copy
+
+
+class TestFocusPreservation:
+    """Shape-change rebuild preserves external focus and ignores internal focus."""
+
+    def _focus_entry(self, tk_root, entry):
+        tk_root.deiconify()
+        entry.focus_force()
+        tk_root.update()
+        focused = tk_root.focus_get()
+        if focused is None:
+            pytest.skip("Focus not available in this environment")
+        return focused
+
+    def test_external_focus_preserved_on_shape_change(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("A", "1"),)),)
+        )
+        tk_root.update_idletasks()
+
+        external_entry = tk.Entry(tk_root)
+        external_entry.pack()
+        self._focus_entry(tk_root, external_entry)
+
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(), status="오류"),)
+        )
+        tk_root.update_idletasks()
+
+        assert tk_root.focus_get() == external_entry
+
+    def test_same_shape_does_not_change_focus(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("A", "1"),)),)
+        )
+        tk_root.update_idletasks()
+
+        external_entry = tk.Entry(tk_root)
+        external_entry.pack()
+        self._focus_entry(tk_root, external_entry)
+
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("A", "2"),)),)
+        )
+        tk_root.update_idletasks()
+
+        assert tk_root.focus_get() == external_entry
+
+    def test_internal_focus_not_restored_on_shape_change(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("A", "1"),)),)
+        )
+        tk_root.update_idletasks()
+
+        # Place an Entry inside the summary card so it is destroyed during rebuild.
+        card = panel._summary_holder.winfo_children()[0]
+        internal_entry = tk.Entry(card)
+        internal_entry.grid(row=10, column=0)
+        self._focus_entry(tk_root, internal_entry)
+
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(), status="오류"),)
+        )
+        tk_root.update_idletasks()
+
+        # Internal widget inside _summary_holder is destroyed by _clear_summary_tables;
+        # focus should not be forced back to a destroyed (or now absent) widget.
+        focused = tk_root.focus_get()
+        assert focused is None or focused != internal_entry
+
+    def test_destroyed_external_focus_ignored(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("A", "1"),)),)
+        )
+        tk_root.update_idletasks()
+
+        external_entry = tk.Entry(tk_root)
+        external_entry.pack()
+        self._focus_entry(tk_root, external_entry)
+
+        # Destroy the external widget before shape change
+        external_entry.destroy()
+        tk_root.update_idletasks()
+
+        # Must not raise even though the previously focused widget is gone
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(), status="오류"),)
+        )
+        tk_root.update_idletasks()

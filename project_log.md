@@ -1170,3 +1170,24 @@
 - invalid text undo는 별도 후속 slice로 분리.
 
 ---
+
+## 2026-06-09 — Preserve external focus during ResultPanel shape-change rebuild
+
+### Tried
+- ResultPanel.set_summaries() shape-change path에 external focus capture/restore helper 추가.
+- _capture_external_focus(), _is_descendant_of_panel(), _restore_focus_if_alive().
+- same-shape stable update path는 변경 없음.
+- focus preservation focused test 4개 추가.
+
+### Result
+- 13 stable update tests passed, 10 diagnostic tests passed, 15 parity tests passed, 5 pilot tests passed.
+- py_compile OK, check_code_structure no new violations.
+- headless macOS: focus 테스트는 deiconify+focus_force 필요; focus unavailable 환경에서는 skip 처리.
+
+### Decision
+- ResultPanel shape-change rebuild 시 external focus 보존하도록 구현 완료.
+- 다음 gate: Windows manual smoke로 invalid text undo 개선 여부 확인.
+- Windows smoke 후 undo 문제가 지속되면 next slice는 TkTableController edit-session undo policy fix.
+- controller switch expansion은 Windows smoke 통과 전까지 계속 보류.
+
+---

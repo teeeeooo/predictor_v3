@@ -81,7 +81,7 @@
   - 285: Diagnosed ResultPanel flicker root cause — redundant focus_set() in TkTableController._type_replace; callback/render counts identical between CSPF and HSPF.
   - 286: Removed redundant focus_set() from TkTableController._type_replace; 9 diagnostic + 15 parity + 5 pilot tests pass under Xvfb.
   - 287: Implemented stable ResultPanel summary update — same-shape summaries now update value/status text in place without full widget destroy/recreate; 39 tests pass under Xvfb.
-- Next: Post-stable-update Windows smoke for HongKongCspfSection flicker (controller switch expansion remains blocked until smoke passes; invalid text undo deferred to later follow-up).
+- Next: Post-focus-preservation Windows smoke for invalid text undo. Controller switch expansion remains blocked until smoke passes. If invalid text undo persists after this fix, next slice is TkTableController edit-session undo policy fix.
 
 ## Next Actions
 
