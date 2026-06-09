@@ -16,7 +16,6 @@ from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profil
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from ui_tk.sections.result_formatting import bin_details, metric_value, kwh_value
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
-from ui_tk.table_grid_model import parse_numeric_cell
 
 _REQUIRED_TRACE_LABEL = "Required only (3-point)"
 _OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
@@ -337,12 +336,6 @@ class IsoSasoT3Section:
         if event.widget is self._frame:
             self._auto_calc.dispose()
 
-
-def _parse_positive(text: str) -> float:
-    value = parse_numeric_cell(text)
-    if value <= 0:
-        raise ValueError("numeric cell must be positive")
-    return value
 
 
 def _saso_result_row(
