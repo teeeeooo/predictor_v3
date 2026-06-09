@@ -98,20 +98,19 @@
 - 309: Patched Reference Evidence Gate to warning-first workflow and added active report count wording policy.
 - 310: Improved code_checker with safe git metadata generation and freshness checks without hard gating.
 - 311: Decoupled reference map from specific task number labels for neutral snapshot evidence.
+- 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
 
 ## Next Actions
 
-1. **Regenerate reference map and commit milestone changes**
-   - Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections and test suites.
+1. **Controller switch arc final summary / closeout**
    - Note: active report count exceeds lifecycle threshold; cleanup pending.
-2. **Controller switch arc final summary / closeout**
-3. **Active report lifecycle cleanup**
+2. **Active report lifecycle cleanup**
    - Archive active reports to summary files once all controller switch steps are completed.
-4. **Main table migration check**
+3. **Main table migration check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-5. **ui_tk folder cleanup**
+4. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-6. **EN14825 / AHRI 210/240 / KS profile expansion**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
