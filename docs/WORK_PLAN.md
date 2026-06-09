@@ -84,18 +84,17 @@
 - Next: Post-focus-preservation GUI smoke passed; invalid text undo resolved. Controller switch expansion blocker cleared.
 - 289: Narrowed ResultPanel focus helper exception handling from broad `except Exception` to `except tk.TclError`; behavior unchanged.
 - 290: Enforced active report count check in agent output workflow; AGENTS.md, AGENT_TASK_ROUTER.md, RESULT_REPORT_WORKFLOW.md updated.
+- 292-295: Active report lifecycle cleanup completed; 28 reports archived under 4 summaries; 3 reports remain active (262, 274, 275).
 
 ## Next Actions
 
-1. **Active report lifecycle cleanup follow-up**
-   - Summary/archive maintenance for result_reports/active count >10.
-2. **Controller switch expansion readiness**
+1. **Controller switch expansion readiness**
    - Blocker cleared after GUI smoke; expand TkTableController migration to remaining sections.
-3. **Main table migration candidate check**
+2. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-4. **ui_tk folder cleanup**
+3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-5. **EN14825 / AHRI 210/240 / KS profile expansion**
+4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

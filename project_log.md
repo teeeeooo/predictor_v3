@@ -1231,3 +1231,20 @@
 - 다음 action: active report lifecycle cleanup follow-up 또는 controller switch expansion readiness.
 
 ---
+
+## 2026-06-09 — Active report lifecycle cleanup
+
+### Tried
+- 28 completed active reports를 4개 summary로 묶어 archive로 이동.
+- 3개 report(262, 274, 275)는 다음 action 관련 preflight/결과로 active에 유지.
+
+### Result
+- active report count: 31 → 3.
+- summaries: 292(paste policy), 293(reference map), 294(result formatting/bin detail), 295(controller switch/ResultPanel focus).
+- archived: 28 reports.
+
+### Decision
+- active report lifecycle cleanup 완료.
+- 다음 action: controller switch expansion readiness.
+
+---
