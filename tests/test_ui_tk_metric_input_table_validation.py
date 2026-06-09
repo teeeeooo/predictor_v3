@@ -162,6 +162,39 @@ class TestInvalidStateDoesNotChangeExistingBehavior:
         sample_table.set_values_batch({"a": "bad"})
         assert sample_table.get_text_values()["a"] == "bad"
 
+    def test_get_numeric_values_subset_valid_parse(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_values_batch({"a": "10", "b": "20", "c": "bad"})
+        # Parse only a and b
+        numeric = sample_table.get_numeric_values(["a", "b"])
+        assert numeric == {"a": 10.0, "b": 20.0}
+        assert sample_table.is_field_invalid("a") is False
+        assert sample_table.is_field_invalid("b") is False
+        assert sample_table.is_field_invalid("c") is False
+
+    def test_get_numeric_values_subset_invalid_marks_only_subset(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_values_batch({"a": "bad", "b": "20", "c": "bad"})
+        with pytest.raises(ValueError):
+            sample_table.get_numeric_values(["a", "b"])
+        # 'a' is in the subset and bad -> marked invalid
+        assert sample_table.is_field_invalid("a") is True
+        # 'b' is in the subset and good -> not marked invalid
+        assert sample_table.is_field_invalid("b") is False
+        # 'c' is bad but NOT in the subset -> not marked invalid
+        assert sample_table.is_field_invalid("c") is False
+
+    def test_get_numeric_values_subset_correction_clears_invalid(self, sample_table: MetricInputTable) -> None:
+        sample_table.set_invalid_fields({"a": "error", "b": "error"})
+        sample_table.set_values_batch({"a": "10"})
+        # Parse subset 'a', it should succeed and clear 'a''s invalid state, leaving 'b' invalid
+        numeric = sample_table.get_numeric_values(["a"])
+        assert numeric["a"] == 10.0
+        assert sample_table.is_field_invalid("a") is False
+        assert sample_table.is_field_invalid("b") is True
+
+    def test_get_numeric_values_subset_unknown_key_raises(self, sample_table: MetricInputTable) -> None:
+        with pytest.raises(KeyError):
+            sample_table.get_numeric_values(["unknown"])
+
 
 class TestInvalidStateWithReadOnlyCells:
     def test_read_only_cell_cannot_be_invalid(self, tk_root) -> None:

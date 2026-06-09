@@ -21,6 +21,19 @@ from ui_tk.table_grid_model import parse_numeric_cell
 _REQUIRED_TRACE_LABEL = "Required only (3-point)"
 _OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
 
+_REQUIRED_FIELDS = (
+    "full_46_capacity",
+    "full_46_power",
+    "full_35_capacity",
+    "full_35_power",
+    "half_35_capacity",
+    "half_35_power",
+)
+_OPTIONAL_FIELDS = (
+    "min_35_capacity",
+    "min_35_power",
+)
+
 _POINTS: tuple[tuple[str, str, str], ...] = (
     ("46_full", "full_46", "46 Full"),
     ("35_full", "full_35", "35 Full"),
@@ -179,30 +192,56 @@ class IsoSasoT3Section:
         self,
     ) -> tuple[dict[str, dict[str, float]], str | None]:
         try:
+            numeric = self.input_table.get_numeric_values(_REQUIRED_FIELDS)
+            invalid: dict[str, str] = {}
+            for field in _REQUIRED_FIELDS:
+                if numeric[field] <= 0:
+                    invalid[field] = "양수 입력 필요"
+            if invalid:
+                current_invalid = self.input_table.invalid_fields()
+                current_invalid.update(invalid)
+                self.input_table.set_invalid_fields(current_invalid)
+                raise ValueError("positivity check failed")
             return {
-                "46_full": self._point_values("full_46"),
-                "35_full": self._point_values("full_35"),
-                "35_half": self._point_values("half_35"),
+                "46_full": {
+                    "capacity": numeric["full_46_capacity"],
+                    "power": numeric["full_46_power"],
+                },
+                "35_full": {
+                    "capacity": numeric["full_35_capacity"],
+                    "power": numeric["full_35_power"],
+                },
+                "35_half": {
+                    "capacity": numeric["half_35_capacity"],
+                    "power": numeric["half_35_power"],
+                },
             }, None
         except ValueError:
-            return {}, "입력 오류: 필수 시험점 숫자 입력을 확인하세요."
+            return {}, "입력 오류: 숫자 입력을 확인하세요."
 
     def _read_optional_inputs(
         self,
         required_measured: Mapping[str, Mapping[str, float]],
     ) -> tuple[dict[str, dict[str, float]], str | None]:
         try:
+            numeric = self.input_table.get_numeric_values(_OPTIONAL_FIELDS)
+            invalid: dict[str, str] = {}
+            for field in _OPTIONAL_FIELDS:
+                if numeric[field] <= 0:
+                    invalid[field] = "양수 입력 필요"
+            if invalid:
+                current_invalid = self.input_table.invalid_fields()
+                current_invalid.update(invalid)
+                self.input_table.set_invalid_fields(current_invalid)
+                raise ValueError("positivity check failed")
             measured = {key: dict(value) for key, value in required_measured.items()}
-            measured["35_min"] = self._point_values("min_35")
+            measured["35_min"] = {
+                "capacity": numeric["min_35_capacity"],
+                "power": numeric["min_35_power"],
+            }
             return measured, None
         except ValueError:
             return {}, "입력 오류"
-
-    def _point_values(self, column_key: str) -> dict[str, float]:
-        text_values = self.input_table.get_text_values()
-        capacity = _parse_positive(text_values[f"{column_key}_capacity"])
-        power = _parse_positive(text_values[f"{column_key}_power"])
-        return {"capacity": capacity, "power": power}
 
     def _calculate_required_row(
         self, measured: Mapping[str, Mapping[str, float]]
