@@ -1371,3 +1371,21 @@
 - active report count는 12개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
 
 ---
+
+## 2026-06-10 — Code checker and reference map gate audit
+
+### Tried
+- tools/code_checker 및 CODEBASE_REFERENCE_MAP의 게이트로서의 동작 상태와 freshness trigger audit 진행.
+- Reference Evidence Gate의 워크플로우 내 실효성 및 project-wide gap 분석.
+
+### Result
+- `result_reports/active/305_code_checker_and_reference_map_gate_audit.md` 작성 완료.
+- Map Freshness, Workflow Trigger, Semantic Owner-Bypass, Duplicate Responsibility, Hotspot Expansion 등 6대 gap 분류 완료.
+- 5개 후속 작업 slice 제안 및 우선순위 수립.
+
+### Decision
+- Reference map freshness 및 semantic gate 강화 계획 수립 완료.
+- 다음 action: Post-SASO T3 controller switch GUI smoke. (이후 Slice 1: reference map 재생성/커밋으로 연계)
+- active report count는 13개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+
+---

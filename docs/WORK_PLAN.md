@@ -91,15 +91,20 @@
 - 302: IsoIseer2PointSection controller switch migrated to TkTableController; 6 new focused tests pass.
 - 303: Post-2-point controller switch GUI smoke passed on iMac; type-replace/undo/paste/clear/Treeview updates verified.
 - 304: IsoSasoT3Section controller switch migrated to TkTableController; 7 new focused tests pass.
+- 305: Code checker and reference map gate audit completed; gaps categorized and follow-up slices proposed.
 
 ## Next Actions
 
 1. **Post-SASO T3 controller switch GUI smoke**
    - Perform manual GUI smoke testing for SASO T3 section to close out the controller switch.
-   - Note: active report count is 12 (>10), lifecycle cleanup is pending and deferred until GUI smoke closeout is completed.
-2. **Main table migration candidate check**
+   - Note: active report count is 13 (>10), lifecycle cleanup is pending and deferred.
+2. **Regenerate reference map and commit milestone changes**
+   - Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections (CSPF, HSPF, 2-Point, SASO T3) and their test suites.
+3. **Reference Evidence Gate semantic check patch**
+   - Update agent workflow instructions to turn the read budget gate into a semantic check (checking for owner-bypass, duplication, and hotspot expansion).
+4. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-3. **ui_tk folder cleanup**
+5. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
