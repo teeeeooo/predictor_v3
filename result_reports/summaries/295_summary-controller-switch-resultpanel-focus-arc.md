@@ -44,7 +44,7 @@ Migrate `HongKongCspfSection` from `ExcelLikeTableController` to the common `TkT
 | 282 | Fix controller parity readonly paste test | Tests pass |
 | 283 | Windows parity test closeout | Report-only |
 | 284 | Controller switch pilot implementation for HongKongCspfSection | Implemented + 5 pilot tests |
-| 285 | Flicker diagnosis — redundant `focus_set()` in `_type_replace` | Root cause identified |
+| 285 | Flicker diagnosis — redundant `focus_set()` candidate/hypothesis; duplicate scheduling ruled out | Hypothesis tested |
 | 286 | Remove redundant `focus_set()` from `TkTableController._type_replace` | Implemented + regression test |
 | 287 | Stable ResultPanel summary update — same-shape in-place value/status update | Implemented + 9 tests |
 | 288 | Preserve external focus during ResultPanel shape-change rebuild | Implemented + 4 focus tests |
@@ -55,9 +55,10 @@ Migrate `HongKongCspfSection` from `ExcelLikeTableController` to the common `TkT
 ## Key Decisions
 
 - Controller switch is feasible; pilot implemented for HongKongCspfSection.
-- Flicker root cause: redundant `focus_set()` in `TkTableController._type_replace`.
-- Stable update: same-shape summaries update value/status text in place without widget destroy/recreate.
-- Shape-change rebuild: external focus capture/restore via `_capture_external_focus()`, `_is_descendant_of_panel()`, `_restore_focus_if_alive()`.
+- Flicker initial hypothesis: redundant `focus_set()` (not sufficient after 286 Windows smoke).
+- Direct flicker mechanism: ResultPanel full widget rebuild on repeated summary updates.
+- Effective flicker fix: 287 stable ResultPanel same-shape in-place value/status update.
+- Invalid text undo/focus issue fixed by 288 external focus preservation during shape-change rebuild.
 - Exception handling: narrowed from broad `except Exception` to `except tk.TclError`.
 - Active report count check: now enforced in AGENTS.md, AGENT_TASK_ROUTER.md, RESULT_REPORT_WORKFLOW.md.
 - GUI smoke passed on iMac: flicker-free, invalid text undo restored, profile switch intact.
