@@ -40,7 +40,7 @@ All regression and focused tests passed cleanly on macOS:
 
 ## Active Report Count
 
-- 15 active reports present (>10, cleanup pending).
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ## Lifecycle Maintenance Note
 
@@ -48,11 +48,12 @@ All regression and focused tests passed cleanly on macOS:
 
 ## Next Actions
 
-1. **Reference Evidence Gate warning-first workflow patch**
-   - Update agent workflow instructions to turn the read budget gate into a semantic check (checking for owner-bypass, duplication, and hotspot expansion).
-2. **code_checker metadata & freshness check improvement**
+1. **code_checker metadata & freshness check improvement**
    - Address task number hardcoding and map staleness detection options.
-3. **Regenerate reference map and commit milestone changes**
+2. **Regenerate reference map and commit milestone changes**
    - Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections and test suites.
-4. **Controller switch arc final summary / closeout**
-5. **Active report lifecycle cleanup**
+3. **Controller switch arc final summary / closeout**
+4. **Active report lifecycle cleanup**
+5. **Main table migration check**
+6. **ui_tk folder cleanup**
+7. **EN14825 / AHRI 210/240 / KS profile expansion**

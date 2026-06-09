@@ -63,7 +63,7 @@ Compare and align the findings of the 305 code checker audit with the original d
 
 ## Active Report Count
 
-- 14 active reports present (>10, cleanup pending).
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ## Lifecycle Maintenance Note
 

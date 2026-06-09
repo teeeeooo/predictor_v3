@@ -74,7 +74,20 @@ When project log sync judgment is needed:
 ## Reference Evidence Gate
 
 The code_checker reference map (`docs/code_map/CODEBASE_REFERENCE_MAP.md`) is a
-conditional pre-write evidence gate, not a default step.
+conditional pre-write warning-first evidence gate, not a default hard gate. It serves
+as a helper to prevent unintended code duplication or architecture bypasses, rather
+than a semantic linter. Hard structure rules are enforced by tools like
+`tools/check_code_structure.py`.
+
+### Warning-First Checklist
+
+Before editing code, briefly check the following items:
+1. **New Responsibility/Surface**: Does the task introduce a new responsibility or surface?
+2. **Duplicate Responsibility**: Is there a risk of repeating the same logic across multiple standards, profiles, or sections?
+3. **Owner Bypass**: Does it bypass existing owner/helper/adapter paths?
+4. **Hotspot Expansion**: Does it add responsibility to already bloated hotspot files?
+
+If the answer to all of the above is **No**, the agent can skip a detailed architecture preflight and proceed directly with the scoped task.
 
 ### When to Run
 
@@ -120,7 +133,7 @@ Skip for work that does not change structure or surface inventory:
 
 ### Caveat
 
-The map is evidence, not source of truth. Canonical rules live in `AGENTS.md`,
+The map is reference evidence, not a source of truth or a semantic linter. Canonical rules live in `AGENTS.md`,
 `docs/architecture/`, and `docs/WORK_PLAN.md`.
 
 ## Tests And Command Output

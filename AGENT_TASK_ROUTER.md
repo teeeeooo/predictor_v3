@@ -43,8 +43,8 @@
 - 코드 구조 영향 작업은 가능하면 `python3 -B tools/check_code_structure.py`를
   검증에 포함하고 error/warning을 짧게 보고한다.
 - structure-impacting helper/adapter/surface/script 작업은
-  `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
-  조건부로 사용한다.
+  `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
+  warning-first workflow와 checklist를 참고하여 preflight 필요 여부를 판단한다.
 - public API, diagnostics schema, JSON key, 함수명은 사용자 승인 없이 변경하지
   않는다.
 - 계산기 workflow owner: `docs/agent_workflows/CALCULATOR_WORKFLOW.md`.
@@ -108,6 +108,7 @@ implementation 범위/제외 범위를 남긴다. Implementation slice는 승인
   사용한다.
 - report-backed 작업 종료 시 active report 수가 기준을 넘으면
   summary/archive maintenance follow-up을 제안한다.
+- active report 수 관련 문구는 exact count 대신 threshold wording 정책을 따르며, 상세 규칙은 owner 문서를 참조한다.
 - active report 수 확인: `find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`
 
 ### Documentation Sync Gate

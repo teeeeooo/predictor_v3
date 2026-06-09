@@ -1368,7 +1368,7 @@
 ### Decision
 - IsoSasoT3Section의 controller switch migration 완료.
 - 다음 action: Post-SASO T3 controller switch GUI smoke.
-- active report count는 12개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
 
@@ -1386,7 +1386,7 @@
 ### Decision
 - Reference map freshness 및 semantic gate 강화 계획 수립 완료.
 - 다음 action: Post-SASO T3 controller switch GUI smoke. (이후 Slice 1: reference map 재생성/커밋으로 연계)
-- active report count는 13개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
 
@@ -1403,7 +1403,7 @@
 ### Decision
 - code_checker는 reference/structure evidence map으로 유지하고, hard-fail 검사는 `tools/check_code_structure.py`에 위임함.
 - 다음 action: SASO T3 Section Input Validation Alignment (Slice 1).
-- active report count는 14개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
 
@@ -1422,7 +1422,7 @@
 ### Decision
 - `MetricInputTable`은 numeric parsing 및 invalid visual marking을 소유하며, `IsoSasoT3Section`은 required/optional 그룹 분류 및 positivity 도메인 정책을 소유함.
 - 다음 action: Post-SASO T3 controller switch & validation GUI smoke.
-- active report count는 15개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
 
@@ -1440,6 +1440,27 @@
 ### Decision
 - SASO T3 controller switch 및 validation alignment manual GUI blocker 해제 및 closeout 완료.
 - 다음 action: Reference Evidence Gate warning-first workflow patch.
-- active report count는 15개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+- active report count exceeds lifecycle threshold; cleanup pending.
+
+---
+
+## 2026-06-10 — Reference Evidence Gate warning-first workflow patch & wording policy
+
+### Tried
+- Reference Evidence Gate를 warning-first 워크플로우로 보정하여 코드 수정 전 preflight 자문 checklist(책임/surface 추가, 중복, 우회, 핫스팟 확장 여부) 도입.
+- 영구 문서(durable docs)에는 exact active report count를 기재하지 않고 threshold wording만 표기하도록 RESULT_REPORT_WORKFLOW.md 정책 갱신.
+- `docs/WORK_PLAN.md`, `project_log.md`, `308_post_saso_t3_controller_switch_validation_gui_smoke_closeout.md` 등 기존 문서의 exact count 기록을 threshold wording으로 수정.
+
+### Result
+- `docs/agent_workflows/DIFF_READ_BUDGET.md` 및 `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` 수정 완료.
+- `AGENT_TASK_ROUTER.md` 라우팅 문구 최소 보정 완료.
+- `docs/WORK_PLAN.md` 갱신 완료.
+- `project_log.md` 내 exact count 기록 제거 및 threshold wording으로의 보정 완료.
+- `result_reports/active/308_post_saso_t3_controller_switch_validation_gui_smoke_closeout.md` 보정 완료.
+
+### Decision
+- code_checker 및 codebase reference map은 semantic linter가 아닌 구조/참조 evidence로만 사용하며, exact count는 final agent output에만 보고하여 불일치 방지.
+- 다음 action: code_checker metadata & freshness check improvement.
+- active report count exceeds lifecycle threshold; cleanup pending.
 
 ---

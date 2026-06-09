@@ -132,6 +132,11 @@ pre-existing unrelated dirty files.
   be handled as a separate follow-up.
 - Active report count command: `find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`
 - Do not run `git pull`, `git merge`, or `git rebase` unless the user asks.
+- **Active Report Count Wording Policy**:
+  - Do not write the exact active report count in durable documents (e.g., `WORK_PLAN.md`, `project_log.md`, or report bodies).
+  - Use threshold wording instead (e.g., "active report count exceeds lifecycle threshold; cleanup pending").
+  - Report the exact count only in the final agent terminal output under the `active_report_count` key.
+  - If the exact count is absolutely required in the report body, calculate it during the final verification step *after* all new active report files have been created. The default policy remains to omit exact numbers from durable documents.
 
 ## Project Memory Delta
 
