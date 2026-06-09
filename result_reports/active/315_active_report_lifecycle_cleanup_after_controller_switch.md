@@ -8,18 +8,16 @@
 
 ### Inventory Decision (인벤토리 판단 요약)
 
-- **Archive 대상 (총 16개)**: `298`, `299`, `300`, `301`, `302`, `303`, `304`, `305`, `306`, `307`, `308`, `309`, `310`, `311`, `312`, `313` (모두 controller switch 아크 및 관련 code checker/reference map 개선에 대한 완료 보고서임).
-- **Active 유지 대상 (총 5개)**:
+- **Archive 대상 (총 19개)**: `275`, `296`, `297` 및 `298`~`313` (controller switch 아크, code checker 개선 및 이전 backlog/cleanup 관련 완료 보고서들).
+- **Active 유지 대상 (총 3개)**:
   - `262_main-table-migration-candidate-check.md`: 차후 Next Action인 Main table migration check의 preflight.
   - `274_ui_tk_cleanup_preflight.md`: 차후 Next Action인 ui_tk folder cleanup의 preflight.
-  - `275_code_quality_guardrail_backlog_registration.md`: 장기 backlog 관리.
-  - `296_active_report_lifecycle_cleanup.md`: 이전 lifecycle cleanup 기록 (이번 summary 비대상).
-  - `297_wording_correction_for_295_summary.md`: 이전 wording 보정 기록 (이번 summary 비대상).
+  - `315_active_report_lifecycle_cleanup_after_controller_switch.md` (본 리포트).
 
 ### Included Changes
 
 - 생성된 요약본: `result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md`
-- 아카이브로 이동한 16개 파일들 (`result_reports/archive/` 로 git mv 이동).
+- 아카이브로 이동한 19개 파일들 (`result_reports/archive/` 로 git mv 이동).
 - `docs/WORK_PLAN.md` 갱신.
 - `project_log.md` 갱신.
 - `result_reports/memory/project_memory_seed.md` 내 summary 314 소스 추가 및 관련 3개 seed entries (MVC separation, code_checker, wording policy) 갱신.
@@ -27,7 +25,7 @@
 ### Excluded Scope
 
 - Python source 코드 수정 금지.
-- 이번 summary 범위를 초과하는 기타 active reports (`262`, `274`, `275`, `296`, `297`)의 아카이브 이동 보류 및 active 유지.
+- 차후 Next Actions와 연결되는 preflight 리포트들 (`262`, `274`)의 아카이브 이동 보류 및 active 유지.
 
 ## Verification
 

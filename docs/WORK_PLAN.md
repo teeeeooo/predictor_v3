@@ -101,6 +101,8 @@
 - 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
 - 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
+- 315: Summarized the tkinter table controller switch arc and archived covered reports.
+- 316: Corrected active report lifecycle cleanup and fixed local absolute links in summary 314.
 
 ## Next Actions
 

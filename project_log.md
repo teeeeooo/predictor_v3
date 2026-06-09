@@ -1538,3 +1538,24 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — Active report lifecycle cleanup correction
+
+### Tried
+- 직전 lifecycle cleanup 이후 active 폴더에 남은 leftover active reports(275, 296, 297)를 재검토하여 추가 아카이빙 처리.
+- 297 리포트 내의 Pending final execution 및 exact count 문구를 completed/threshold wording으로 교정 후 archive로 이동.
+- 314 summary 내 로컬 절대경로 링크(file:///Users/...)들을 repo-relative 상대경로로 보정.
+- 315 리포트 내의 remaining active 리스트를 최종 상태에 맞게 갱신.
+
+### Result
+- 3개 active reports (275, 296, 297)를 `result_reports/archive/` 로 추가 이동 완료.
+- `result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md` 의 절대경로 링크를 relative path로 변환 완료.
+- `result_reports/active/315_active_report_lifecycle_cleanup_after_controller_switch.md` 및 `docs/WORK_PLAN.md`, `project_log.md` 보정 완료.
+- `result_reports/active/316_active_report_lifecycle_cleanup_correction.md` 작성 완료.
+
+### Decision
+- active folder에는 오직 preflight 목적의 active 의사결정 리포트들(262, 274) 및 최근 결과 리포트(315)만 남겨두고 위생 상태 복구를 최종 완결함.
+- 다음 action: Main table migration check.
+- active report count meets lifecycle threshold criteria.
+
+---
