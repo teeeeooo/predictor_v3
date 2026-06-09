@@ -85,16 +85,19 @@
 - 289: Narrowed ResultPanel focus helper exception handling from broad `except Exception` to `except tk.TclError`; behavior unchanged.
 - 290: Enforced active report count check in agent output workflow; AGENTS.md, AGENT_TASK_ROUTER.md, RESULT_REPORT_WORKFLOW.md updated.
 - 292-295: Active report lifecycle cleanup completed; 28 reports archived under 4 summaries; 3 reports remain active (262, 274, 275).
+- 299: HongKongHspfSection controller switch migrated to TkTableController; 6 new focused tests pass.
 
 ## Next Actions
 
-1. **Controller switch expansion implementation**
-   - Begin implementation slice with HongKongHspfSection (most similar to pilot). Follow with IsoIseer2PointSection and IsoSasoT3Section.
-2. **Main table migration candidate check**
+1. **Post-HSPF controller switch GUI smoke**
+   - Verify Hong Kong HSPF interaction behavior, invalid input blocking, undo behavior, and detail panel toggle.
+2. **Controller switch expansion implementation**
+   - Follow up with IsoIseer2PointSection and IsoSasoT3Section controller switches.
+3. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-3. **ui_tk folder cleanup**
+4. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-4. **EN14825 / AHRI 210/240 / KS profile expansion**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

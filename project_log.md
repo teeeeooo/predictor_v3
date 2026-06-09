@@ -1264,3 +1264,21 @@
 - 다음 action: HongKongHspfSection controller switch implementation.
 
 ---
+
+## 2026-06-09 — Implement HongKongHspfSection controller switch
+
+### Tried
+- `HongKongHspfSection`을 `ExcelLikeTableController`에서 `TkTableController`로 전환.
+- 6개의 focused test 추가 및 검증.
+
+### Result
+- `ui_tk/sections/hong_kong_hspf_section.py` 수정 완료.
+- `tests/test_ui_tk_hong_kong_hspf_controller_switch.py` 신설 완료 (6 pass).
+- CSPF, stable update, metric input table parity 테스트 등 39개 테스트 통과.
+- py_compile OK, check_code_structure.py 신규 위반 없음.
+
+### Decision
+- HongKongHspfSection의 controller switch migration 완료.
+- 다음 action: Post-HSPF controller switch GUI smoke.
+
+---
