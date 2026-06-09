@@ -1191,3 +1191,19 @@
 - controller switch expansion은 Windows smoke 통과 전까지 계속 보류.
 
 ---
+
+## 2026-06-09 — Narrow ResultPanel focus helper exception handling
+
+### Tried
+- `_is_descendant_of_panel()`와 `_restore_focus_if_alive()`의 broad `except Exception`를 `except tk.TclError`로 좁힘.
+- 동작 변경 없이 code quality guardrail 반영.
+
+### Result
+- 13 stable update tests passed, 10 diagnostic tests passed.
+- py_compile OK, check_code_structure no new violations.
+
+### Decision
+- ResultPanel focus helper 예외 처리를 Tkinter 경계 오류로 한정.
+- 다음 gate는 288과 동일: Windows manual smoke.
+
+---

@@ -82,6 +82,7 @@
   - 286: Removed redundant focus_set() from TkTableController._type_replace; 9 diagnostic + 15 parity + 5 pilot tests pass under Xvfb.
   - 287: Implemented stable ResultPanel summary update — same-shape summaries now update value/status text in place without full widget destroy/recreate; 39 tests pass under Xvfb.
 - Next: Post-focus-preservation Windows smoke for invalid text undo. Controller switch expansion remains blocked until smoke passes. If invalid text undo persists after this fix, next slice is TkTableController edit-session undo policy fix.
+- 289: Narrowed ResultPanel focus helper exception handling from broad `except Exception` to `except tk.TclError`; behavior unchanged.
 
 ## Next Actions
 

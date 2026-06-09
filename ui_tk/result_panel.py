@@ -246,7 +246,7 @@ class ResultPanel:
                 if not parent:
                     break
                 widget = widget.nametowidget(parent)
-        except Exception:
+        except tk.TclError:
             pass
         return False
 
@@ -254,7 +254,7 @@ class ResultPanel:
         try:
             if widget.winfo_exists():
                 widget.focus_set()
-        except Exception:
+        except tk.TclError:
             pass
 
     def _set_copy_text(self, text: str) -> None:
