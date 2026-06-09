@@ -108,6 +108,7 @@ implementation 범위/제외 범위를 남긴다. Implementation slice는 승인
   사용한다.
 - report-backed 작업 종료 시 active report 수가 기준을 넘으면
   summary/archive maintenance follow-up을 제안한다.
+- active report 수 확인: `find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`
 
 ### Documentation Sync Gate
 
@@ -138,9 +139,10 @@ routing만 둔다.
 1. `git status --short`
 2. `git diff --stat` 또는 staged diff summary
 3. 필요한 focused validation 확인
-4. 명확한 commit message
-5. commit/push
-6. commit hash와 push 여부 보고
+4. report-backed task이면 최종 보고/커밋 전 active report count 확인 (`find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`)
+5. 명확한 commit message
+6. commit/push
+7. commit hash와 push 여부 보고
 
 ### 2. Logic 수정 / 계산 엔진 수정
 

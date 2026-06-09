@@ -130,6 +130,7 @@ pre-existing unrelated dirty files.
   more than 10 reports, do not run lifecycle maintenance automatically; add a
   short terminal note that summary/archive maintenance is pending and should
   be handled as a separate follow-up.
+- Active report count command: `find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`
 - Do not run `git pull`, `git merge`, or `git rebase` unless the user asks.
 
 ## Project Memory Delta
