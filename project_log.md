@@ -1503,3 +1503,20 @@
 - active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
+
+## 2026-06-10 — Controller switch arc final summary / closeout
+
+### Tried
+- ui_tk controller switch arc(Hong Kong HSPF/CSPF, ISO/ISEER 2-Point, SASO T3 마이그레이션 및 SASO validation alignment) 전체 완료 상태 최종 정리.
+- MVC/SoC 정렬 관점의 의사결정 기록 및 향후 active report 아카이빙을 위한 preflight closeout 리포트 작성.
+
+### Result
+- `result_reports/active/313_controller_switch_arc_final_summary_closeout.md` 작성 완료.
+- `docs/WORK_PLAN.md` 및 `project_log.md` 갱신 완료.
+
+### Decision
+- ui_tk controller switch 대수술(legacy ExcelLikeTableController에서 공통 TkTableController 전환)이 성공적으로 종결되어 안정적으로 작동하고 있음을 최종 승인 및 마감.
+- 다음 action: Active report lifecycle cleanup.
+- active report count exceeds lifecycle threshold; cleanup pending.
+
+---

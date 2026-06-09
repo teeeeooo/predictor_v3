@@ -99,18 +99,18 @@
 - 310: Improved code_checker with safe git metadata generation and freshness checks without hard gating.
 - 311: Decoupled reference map from specific task number labels for neutral snapshot evidence.
 - 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
+- 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
 
 ## Next Actions
 
-1. **Controller switch arc final summary / closeout**
-   - Note: active report count exceeds lifecycle threshold; cleanup pending.
-2. **Active report lifecycle cleanup**
+1. **Active report lifecycle cleanup**
    - Archive active reports to summary files once all controller switch steps are completed.
-3. **Main table migration check**
+   - Note: active report count exceeds lifecycle threshold; cleanup pending.
+2. **Main table migration check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-4. **ui_tk folder cleanup**
+3. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-5. **EN14825 / AHRI 210/240 / KS profile expansion**
+4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
