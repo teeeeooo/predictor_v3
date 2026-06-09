@@ -27,6 +27,12 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md` (covered reports `221c-228` and `230a-230d`, with `229` kept active as next-code-slice evidence)
 - `result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md` (covered reports `229`, `231`, `232`, `233A-233F guard`, `234`, and `235`)
 - `result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md` (covered reports `237-248`)
+- `result_reports/summaries/260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md` (covered reports `250-259`)
+- `result_reports/summaries/292_summary-paste-policy-validation-arc.md` (covered reports `261-291`)
+- `result_reports/summaries/293_summary-reference-map-code-checker-arc.md` (covered reports `270-272`)
+- `result_reports/summaries/294_summary-result-formatting-bin-detail-cleanup-arc.md` (covered reports `276-289`)
+- `result_reports/summaries/295_summary-controller-switch-resultpanel-focus-arc.md` (covered reports `290-291`)
+- `result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md` (covered reports `298-313`)
 
 ## Scope and Non-goals
 
@@ -703,6 +709,40 @@ entries:
       - minsize
     assertionStatus: verified
     source: result_reports/summaries/260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md
+
+  - type: decision
+    topic: mvc separation of concerns for tkinter table surfaces
+    content: MetricInputTable owns presentation rendering and visual invalid status marking. TkTableController + interaction_core.py manages grid controls like paste, undo stacks, and value synchronization. Section classes (e.g., IsoSasoT3Section) own positivity validation, required/optional grouping, and calculator dispatching.
+    keywords:
+      - MVC separation
+      - MetricInputTable
+      - TkTableController
+      - IsoSasoT3Section
+      - input validation
+    assertionStatus: verified
+    source: result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md
+
+  - type: decision
+    topic: code_checker as structure reference evidence
+    content: code_checker is a structure reference evidence tool providing warning-first freshness checks against the HEAD commit, not a semantic hard gate or pre-commit checker. Strict quality guardrails are enforced by check_code_structure.py.
+    keywords:
+      - code_checker
+      - reference map
+      - warning-first
+      - check_code_structure
+    assertionStatus: verified
+    source: result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md
+
+  - type: decision
+    topic: durable wording policy for active report count
+    content: To prevent exact active report count mismatches, durable documentation (e.g., WORK_PLAN.md, project_log.md, report bodies) must use threshold status wording (e.g., count exceeds threshold) instead of writing exact numbers. The exact count is reported only in the final terminal output.
+    keywords:
+      - wording policy
+      - active report count
+      - threshold wording
+      - terminal output
+    assertionStatus: verified
+    source: result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md
 ```
 
 ## Known Gaps

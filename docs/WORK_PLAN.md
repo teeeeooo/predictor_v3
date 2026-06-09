@@ -100,17 +100,16 @@
 - 311: Decoupled reference map from specific task number labels for neutral snapshot evidence.
 - 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
 - 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
+- 314: Summarized the tkinter table controller switch arc and archived covered reports.
 
 ## Next Actions
 
-1. **Active report lifecycle cleanup**
-   - Archive active reports to summary files once all controller switch steps are completed.
-   - Note: active report count exceeds lifecycle threshold; cleanup pending.
-2. **Main table migration check**
+1. **Main table migration check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-3. **ui_tk folder cleanup**
+   - Note: active report count meets lifecycle threshold criteria.
+2. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-4. **EN14825 / AHRI 210/240 / KS profile expansion**
+3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

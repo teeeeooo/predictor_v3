@@ -1520,3 +1520,21 @@
 - active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
+
+## 2026-06-10 — Active report lifecycle cleanup after controller switch arc closeout
+
+### Tried
+- 313에서 closeout된 controller switch arc 관련 active report들(298~313, 총 16개)을 summaries/314번 요약본으로 묶고, covered active reports를 archive로 이동 완료.
+- active folder에는 다음 의사결정 및 open blocker 성격의 리포트들(262, 274, 275 등)만 남겨둠.
+
+### Result
+- `result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md` 생성 완료.
+- 16개 active reports (298~313)를 `result_reports/archive/` 로 이동 완료.
+- `docs/WORK_PLAN.md`, `project_log.md` 갱신 및 `result_reports/active/315_active_report_lifecycle_cleanup_after_controller_switch.md` 리포트 작성 완료.
+
+### Decision
+- active report 갯수를 임계치 이하(criteria 충족 상태)로 정리하여 마일스톤 위생상태 복구 완료.
+- 다음 action: Main table migration check.
+- active report count meets lifecycle threshold criteria.
+
+---
