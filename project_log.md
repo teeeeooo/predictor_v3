@@ -1316,3 +1316,21 @@
 - 다음 action: IsoIseer2PointSection controller switch implementation.
 
 ---
+
+## 2026-06-09 — Implement IsoIseer2PointSection controller switch
+
+### Tried
+- `IsoIseer2PointSection`을 `ExcelLikeTableController`에서 `TkTableController`로 전환.
+- 6개의 focused test 추가 및 검증.
+
+### Result
+- `ui_tk/sections/iso_iseer_2point_section.py` 수정 완료.
+- `tests/test_ui_tk_iso_iseer_2point_controller_switch.py` 신설 완료 (6 pass).
+- CSPF, HSPF, stable update, metric input table parity 테스트 등 45개 테스트 통과.
+- py_compile OK, check_code_structure.py 신규 위반 없음.
+
+### Decision
+- IsoIseer2PointSection의 controller switch migration 완료.
+- 다음 action: Post-2-point controller switch GUI smoke.
+
+---

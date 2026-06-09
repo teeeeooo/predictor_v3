@@ -88,11 +88,12 @@
 - 299: HongKongHspfSection controller switch migrated to TkTableController; 6 new focused tests pass.
 - 300: TkTableController type-replace selection carryover fixed; select_clear() clears selection after first-char replacement; regression test added.
 - 301: Post-type-replace selection fix GUI smoke passed on iMac; type-replace carryover resolved; undo/paste/clear/flicker intact.
+- 302: IsoIseer2PointSection controller switch migrated to TkTableController; 6 new focused tests pass.
 
 ## Next Actions
 
-1. **IsoIseer2PointSection controller switch implementation**
-   - Migrate IsoIseer2PointSection to TkTableController and add focused regression tests.
+1. **Post-2-point controller switch GUI smoke**
+   - Verify ISO / ISEER 2-point interaction behavior, multi-key typing after click, invalid input blocking, undo behavior, and detail panel toggle.
 2. **Controller switch expansion implementation**
    - Follow up with IsoSasoT3Section controller switch.
 3. **Main table migration candidate check**
