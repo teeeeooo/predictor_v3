@@ -87,13 +87,14 @@
 - 292-295: Active report lifecycle cleanup completed; 28 reports archived under 4 summaries; 3 reports remain active (262, 274, 275).
 - 299: HongKongHspfSection controller switch migrated to TkTableController; 6 new focused tests pass.
 - 300: TkTableController type-replace selection carryover fixed; select_clear() clears selection after first-char replacement; regression test added.
+- 301: Post-type-replace selection fix GUI smoke passed on iMac; type-replace carryover resolved; undo/paste/clear/flicker intact.
 
 ## Next Actions
 
-1. **Post-type-replace selection fix GUI smoke**
-   - Verify Hong Kong HSPF/CSPF interaction behavior, multi-key typing after click, invalid input blocking, undo behavior, and detail panel toggle.
+1. **IsoIseer2PointSection controller switch implementation**
+   - Migrate IsoIseer2PointSection to TkTableController and add focused regression tests.
 2. **Controller switch expansion implementation**
-   - Follow up with IsoIseer2PointSection and IsoSasoT3Section controller switches.
+   - Follow up with IsoSasoT3Section controller switch.
 3. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
 4. **ui_tk folder cleanup**

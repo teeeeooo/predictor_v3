@@ -1300,3 +1300,19 @@
 - 다음 action: Post-type-replace selection fix GUI smoke.
 
 ---
+
+## 2026-06-09 — Close out post-type-replace selection fix GUI smoke
+
+### Tried
+- 300 selection carryover 버그 수정 후 iMac 실기에서 GUI smoke 테스트 수행 및 closeout.
+
+### Result
+- `calculator_tk` 정상 실행 및 Hong Kong HSPF/CSPF type-replace(`1`, `10`, `100` 입력) 정상 확인.
+- 기존 값 replace 및 후속 입력 append 확인 완료.
+- Ctrl+Z undo, valid/invalid paste, clear, ResultPanel flicker-free, profile switch 정상 유지 확인.
+
+### Decision
+- type-replace selection carryover fix 검증 통과 및 blocker 해소.
+- 다음 action: IsoIseer2PointSection controller switch implementation.
+
+---
