@@ -86,11 +86,12 @@
 - 290: Enforced active report count check in agent output workflow; AGENTS.md, AGENT_TASK_ROUTER.md, RESULT_REPORT_WORKFLOW.md updated.
 - 292-295: Active report lifecycle cleanup completed; 28 reports archived under 4 summaries; 3 reports remain active (262, 274, 275).
 - 299: HongKongHspfSection controller switch migrated to TkTableController; 6 new focused tests pass.
+- 300: TkTableController type-replace selection carryover fixed; select_clear() clears selection after first-char replacement; regression test added.
 
 ## Next Actions
 
-1. **Post-HSPF controller switch GUI smoke**
-   - Verify Hong Kong HSPF interaction behavior, invalid input blocking, undo behavior, and detail panel toggle.
+1. **Post-type-replace selection fix GUI smoke**
+   - Verify Hong Kong HSPF/CSPF interaction behavior, multi-key typing after click, invalid input blocking, undo behavior, and detail panel toggle.
 2. **Controller switch expansion implementation**
    - Follow up with IsoIseer2PointSection and IsoSasoT3Section controller switches.
 3. **Main table migration candidate check**

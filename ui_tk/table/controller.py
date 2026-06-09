@@ -217,6 +217,7 @@ class TkTableController:
             self._mode = "edit"
             self._replace_pending = False
             widget = self.table.focus_widget(position)
+            widget.select_clear()
             widget.icursor("end")
         return "break"
 

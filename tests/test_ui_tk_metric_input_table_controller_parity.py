@@ -224,3 +224,37 @@ class TestReplaceOnType:
         # Undo should restore original value
         ctrl._undo_last()
         assert ctrl.table.text_at_position((0, 0)) == original
+
+    def test_type_replace_clears_selection_for_multi_key_append(self, ctrl: TkTableController) -> None:
+        ctrl.select((0, 0))
+        widget = ctrl.table.focus_widget((0, 0))
+        widget.focus_set()
+        ctrl._show_selection_caret((0, 0))
+        ctrl.table.update_idletasks()
+
+        # 1. Click select (or caret showing) should present selection
+        assert widget.selection_present()
+
+        # 2. Fake event mimicking a printable keypress '9' (different from default '1')
+        event1 = type("Event", (), {"keysym": "9", "char": "9", "state": 0})()
+        ctrl._type_replace(event1, (0, 0))
+        ctrl.table.update_idletasks()
+
+        # 3. Value should be '9' and selection should be cleared immediately
+        assert ctrl.table.text_at_position((0, 0)) == "9"
+        assert not widget.selection_present()
+        assert widget.index("insert") == 1
+
+        # 4. Simulate subsequent typing '0' and then another '0' at insert cursor
+        cursor_pos = widget.index("insert")
+        widget.insert(cursor_pos, "0")
+        widget.icursor("end")
+
+        cursor_pos = widget.index("insert")
+        widget.insert(cursor_pos, "0")
+        widget.icursor("end")
+
+        # Trigger focus out to commit edit
+        ctrl._focus_out(None)
+
+        assert ctrl.table.text_at_position((0, 0)) == "900"

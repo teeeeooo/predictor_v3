@@ -1282,3 +1282,21 @@
 - 다음 action: Post-HSPF controller switch GUI smoke.
 
 ---
+
+## 2026-06-09 — Fix TkTableController type-replace selection carryover
+
+### Tried
+- macOS/Tk에서 셀 클릭 후 첫 글자 입력 후 다음 keystroke 입력 시 첫 글자가 덮어쓰여지는 selection carryover 문제 해결.
+- `_type_replace`에서 programmatic replace 성공 후 `widget.select_clear()` 추가.
+- type-replace multi-key append 동작 검증용 regression test 추가.
+
+### Result
+- `ui_tk/table/controller.py` 수정 완료.
+- `tests/test_ui_tk_metric_input_table_controller_parity.py`에 regression test 추가 (`test_type_replace_clears_selection_for_multi_key_append` 통과).
+- focused pytest 39개 통과, py_compile 및 구조 진단 경고 없음.
+
+### Decision
+- TkTableController type-replace selection carryover 버그 수정 완료.
+- 다음 action: Post-type-replace selection fix GUI smoke.
+
+---
