@@ -1389,3 +1389,20 @@
 - active report count는 13개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
 
 ---
+
+## 2026-06-10 — Align 305 code checker audit with original 270-272 reference map intent
+
+### Tried
+- 305 audit 결과를 270~272 original code_checker/reference map intent와 비교 검토하여 보정.
+- code_checker를 semantic hard gate로 과확장하지 않도록 follow-up 순서와 표현 정리.
+
+### Result
+- `result_reports/active/305_code_checker_and_reference_map_gate_audit.md` 보정 완료 (`semantic analysis tool` -> `reference/structure evidence map` 등으로 수정).
+- follow-up slice 순서를 재정의 (SASO T3 validation alignment 우선 적용하도록 구성).
+
+### Decision
+- code_checker는 reference/structure evidence map으로 유지하고, hard-fail 검사는 `tools/check_code_structure.py`에 위임함.
+- 다음 action: SASO T3 Section Input Validation Alignment (Slice 1).
+- active report count는 14개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+
+---

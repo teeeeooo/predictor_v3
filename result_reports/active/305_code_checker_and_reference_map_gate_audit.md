@@ -34,7 +34,7 @@ The `tools/code_checker` framework provides a semantic and structure overview of
 
 **Comparison with `check_code_structure.py`**:
 - `check_code_structure.py` is a **strict linter / enforcement gate** with hard checks (e.g., layer imports, thin app entries, hex-color policies) returning non-zero exit codes.
-- `tools/code_checker` is a **semantic analysis tool** producing human/agent-readable documentation and is treated as *evidence* rather than a blocking compilation gate.
+- `tools/code_checker` is a **reference/structure evidence map** (or symbol/import/hotspot evidence renderer) producing human/agent-readable documentation and is treated as *evidence* rather than a blocking compilation gate.
 
 ## Current Map Freshness Trigger
 
@@ -69,27 +69,32 @@ The `Reference Evidence Gate` is integrated into the read budget workflow in `DI
 
 To address these gaps systematically, the following sequential follow-up slices are proposed:
 
-### Slice 1: CODEBASE_REFERENCE_MAP.md Regeneration & Milestone Commit (High Priority)
-- **Goal**: Bring the reference map up to date with all recently completed controller switch migrations (CSPF, HSPF, 2-Point, SASO T3) and focused tests.
-- **Scope**: Re-run `build_reference_map.py` and commit the updated map.
-- **Verification**: Verify symbols, LOC, and hotspots accurately represent current state.
-
-### Slice 2: Reference Evidence Gate Semantic Questionnaires Patch
-- **Goal**: Patch the workflow documents to turn the Reference Evidence Gate from a simple "lookup" into a semantic check (e.g., check for duplication and owner-bypass before writing).
-- **Scope**: Update `docs/agent_workflows/DIFF_READ_BUDGET.md` and `AGENT_TASK_ROUTER.md`.
-- **Verification**: Structural check pass.
-
-### Slice 3: Reference Map Freshness Automation & Warning-First Gate
-- **Goal**: Integrate a quick freshness validation check into the pre-flight routine so the agent is warned when the source code structure has drifted from the committed map.
-- **Scope**: Create `tools/check_reference_map_freshness.py` or extend `check_code_structure.py`.
-- **Verification**: Run checker and verify warning triggers on structural diffs.
-
-### Slice 4: SASO T3 Section Input Validation Alignment
-- **Goal**: Refactor `IsoSasoT3Section` to align with the standard validation and error-marking semantics of `MetricInputTable`, eliminating localized input parsing and owner-bypass.
+### Slice 1: SASO T3 Section Input Validation Alignment (High Priority)
+- **Goal**: Refactor `IsoSasoT3Section` to align with the standard validation and error-marking semantics of `MetricInputTable`, eliminating localized input parsing and owner-bypass, while preserving the partial required-only fallback behavior for 35 Min invalid states.
 - **Scope**: `ui_tk/sections/iso_saso_t3_section.py`
 - **Verification**: SASO T3 validation unit tests.
 
-### Slice 5: Active Report Count Lifecycle Cleanup
+### Slice 2: Post-SASO T3 Controller Switch & Validation GUI Smoke Closeout
+- **Goal**: Perform manual GUI smoke testing for SASO T3 section to close out both the controller switch and the new validation alignment.
+- **Scope**: Manual validation on iMac/Aqua Tk.
+- **Verification**: Manual checklist verification (type-replace, paste, validation visual marking, undo).
+
+### Slice 3: Reference Evidence Gate Semantic Questionnaires Patch
+- **Goal**: Patch the workflow documents to enhance the Reference Evidence Gate with warning-first semantic question checklists (checking for owner-bypass, duplication, and hotspot expansion) during coding sessions.
+- **Scope**: Update `docs/agent_workflows/DIFF_READ_BUDGET.md` and `AGENT_TASK_ROUTER.md`.
+- **Verification**: Structural check pass.
+
+### Slice 4: code_checker Metadata & Freshness Improvement
+- **Goal**: Improve map freshness check logic and make metadata options (like hardcoded task numbers) flexible or optional in `build_reference_map.py` to prevent stale map generation issues.
+- **Scope**: `tools/code_checker/build_reference_map.py` and `tools/code_checker/renderer.py`
+- **Verification**: Run checker and verify output correctness.
+
+### Slice 5: CODEBASE_REFERENCE_MAP.md Regeneration & Milestone Commit
+- **Goal**: Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections (CSPF, HSPF, 2-Point, SASO T3) and focused tests.
+- **Scope**: Regenerate `docs/code_map/CODEBASE_REFERENCE_MAP.md` and commit.
+- **Verification**: Verify symbol inventory accuracy.
+
+### Slice 6: Active Report Count Lifecycle Cleanup
 - **Goal**: Archive current active reports (>10) into summary reports to restore codebase hygiene.
 - **Scope**: Move reports from `result_reports/active/` to `result_reports/archive/` and generate summaries.
 - **Verification**: Active report count <= 10.
@@ -109,4 +114,4 @@ To address these gaps systematically, the following sequential follow-up slices 
 
 ## Next
 
-- Regenerate reference map and commit milestone changes (Slice 1).
+- SASO T3 Section Input Validation Alignment (Slice 1).
