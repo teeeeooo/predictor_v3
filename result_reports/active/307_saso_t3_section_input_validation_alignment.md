@@ -55,14 +55,10 @@ All regression and focused tests passed cleanly on macOS:
 - `check_code_structure.py` completed with no new violations.
 - `git diff --check` passed cleanly (no trailing whitespaces).
 
-## Manual GUI Smoke Required
+## Manual GUI Smoke Completed
 
-- Run `python3 app_calculator_tk.py`.
-- Select `ISO / SASO T3` profile.
-- Enter `not_a_number` or `0` on `46 Full Capacity` (required). Verify cell turns red and calculation blocks with status `"입력 오류: 숫자 입력을 확인하세요."`.
-- Restore valid numbers. Verify red styling disappears.
-- Enter `not_a_number` or `-100` on `35 Min Capacity` (optional). Verify only `35 Min` cell turns red, the status label indicates a `35 Min` input error, and the bottom `Required only` row is still displayed.
-- Restore valid numbers on `35 Min`. Verify red styling disappears and 4-point calculations complete.
+- Manual GUI smoke verification on iMac completed by the user.
+- Verified required and optional (35 Min) invalid value highlights, partial required behavior, restoration clearing, and profile transitions.
 
 ## 305 Wording Correction
 
@@ -85,4 +81,4 @@ Modified line 28 of `result_reports/active/305_code_checker_and_reference_map_ga
 
 ## Next
 
-- Post-SASO T3 controller switch & validation GUI smoke.
+- Close out via report 308.

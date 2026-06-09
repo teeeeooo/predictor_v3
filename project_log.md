@@ -1425,3 +1425,21 @@
 - active report count는 15개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
 
 ---
+
+## 2026-06-10 — Post-SASO T3 controller switch & validation GUI smoke closeout
+
+### Tried
+- 304 SASO T3 controller switch 및 307 SASO T3 validation alignment 이후 iMac 실기에서 GUI smoke 테스트 수행 및 closeout.
+- `ui_tk/sections/iso_saso_t3_section.py` 내 미사용 parsing 관련 import/함수 정리.
+
+### Result
+- required/optional invalid input visual marking, 35 Min partial required row 유지, valid correction 복원 정상 확인.
+- paste, undo, clear 및 profile transition 정상 확인.
+- tests 35 pass, py_compile OK, check_code_structure.py 신규 위반 없음.
+
+### Decision
+- SASO T3 controller switch 및 validation alignment manual GUI blocker 해제 및 closeout 완료.
+- 다음 action: Reference Evidence Gate warning-first workflow patch.
+- active report count는 15개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+
+---

@@ -47,15 +47,10 @@ All focused regression tests passed successfully under macOS Aqua/Tk context:
 - `check_code_structure.py` found no new violations.
 - `git diff --check` passed cleanly.
 
-## Manual GUI Smoke Required
+## Manual GUI Smoke Completed
 
-The following manual verification must be run by the user:
-- Run `python3 app_calculator_tk.py`
-- Select the `ISO / SASO T3` profile.
-- Click a cell, type `1`, `10`, or `100` and confirm the full text remains without the first characters getting overwritten.
-- Verify undo (Ctrl+Z), paste, and clear functionality still work normally.
-- Confirm recalculation updates the custom result Treeview table correctly.
-- Confirm optional 35 Min toggle behavior (3-point vs 4-point calculation) and detail panel.
+- Manual GUI smoke verification on iMac completed by the user.
+- Verified type-replace input, undo, paste, clear, and result table updates are functional.
 
 ## Excluded Scope
 
@@ -68,11 +63,11 @@ The following manual verification must be run by the user:
 
 ## Lifecycle Maintenance Note
 
-- **Pending**: Deferred to a follow-up lifecycle cleanup step after manual GUI smoke closeout is completed.
+- **Pending**: Deferred to a follow-up lifecycle cleanup step.
 
 ## Next
 
-- Post-SASO T3 controller switch GUI smoke.
+- Close out via report 308.
 
 ## Commit / Push
 
