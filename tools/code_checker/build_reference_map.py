@@ -21,6 +21,8 @@ from code_checker.analyzer import (
     group_by_keyword,
 )
 from code_checker.renderer import render_compact_map
+from code_checker.metadata import generate_metadata, evaluate_freshness
+import argparse
 
 OUTPUT_PATH = Path(__file__).resolve().parents[2] / "docs" / "code_map" / "CODEBASE_REFERENCE_MAP.md"
 
@@ -38,14 +40,37 @@ def build_map(repo_root: Path | None = None) -> str:
         duplicates=find_duplicate_symbols(file_infos, root),
         import_edges=compute_import_edges(file_infos, root),
     )
-    return render_compact_map(result, task_number="272")
+    meta = generate_metadata(root)
+    return render_compact_map(result, task_number="272", metadata=meta)
 
 
 def main() -> int:
-    markdown = build_map()
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(markdown, encoding="utf-8")
-    print(f"Reference map written to {OUTPUT_PATH}")
+    parser = argparse.ArgumentParser(description="Build or check reference map freshness.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check freshness of the current reference map (warning-first)."
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Override output file path (useful for testing without modifying default map)."
+    )
+    args = parser.parse_args()
+
+    root = Path(__file__).resolve().parents[2]
+
+    if args.check:
+        res = evaluate_freshness(OUTPUT_PATH, root)
+        print(f"Freshness status: {res['status'].upper()}")
+        print(f"Message: {res['message']}")
+        return 0
+
+    markdown = build_map(root)
+    out_path = Path(args.output) if args.output else OUTPUT_PATH
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(markdown, encoding="utf-8")
+    print(f"Reference map written to {out_path}")
     print(f"Total length: {len(markdown.splitlines())} lines")
     return 0
 

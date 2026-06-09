@@ -1464,3 +1464,23 @@
 - active report count exceeds lifecycle threshold; cleanup pending.
 
 ---
+
+## 2026-06-10 — Improve code_checker metadata & freshness checking
+
+### Tried
+- tools/code_checker의 reference map 생성 흐름에 git commit short hash, dirty status, schema version 등의 compact metadata 추가.
+- 기존 CODEBASE_REFERENCE_MAP.md를 훼손하지 않는 read-only freshness check CLI 옵션(--check) 및 출력 경로 재지정 옵션(--output) 구현.
+- fake metadata 및 temp file을 사용하여 git 의존성을 회피하는 2개의 focused test 추가 및 검증.
+
+### Result
+- `tools/code_checker/metadata.py` 신설 완료.
+- `tools/code_checker/renderer.py` 및 `tools/code_checker/build_reference_map.py` 수정 완료.
+- `tests/test_code_checker_reference_map.py` 내 focused test 2개 추가 완료 및 pass (전체 11개 통과).
+- `docs/WORK_PLAN.md` 및 `project_log.md` 갱신 완료.
+
+### Decision
+- code_checker는 reference evidence tool로서 HEAD와의 정렬 상태(freshness)를 warning-first 경고로 제공하며, hard structure guard는 check_code_structure.py에만 위임함.
+- 다음 action: CODEBASE_REFERENCE_MAP 재생성.
+- active report count exceeds lifecycle threshold; cleanup pending.
+
+---

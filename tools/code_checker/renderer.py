@@ -13,6 +13,7 @@ from .analyzer import (
     KeywordHitGroup,
     LayerOverview,
 )
+from .metadata import render_metadata_comment
 
 
 def _render_header(task_number: str) -> List[str]:
@@ -129,8 +130,14 @@ def _render_usage() -> List[str]:
     return lines
 
 
-def render_compact_map(result: AnalysisResult, task_number: str = "272") -> str:
+def render_compact_map(
+    result: AnalysisResult,
+    task_number: str = "272",
+    metadata: dict[str, str | bool] | None = None,
+) -> str:
     lines: List[str] = []
+    if metadata:
+        lines.append(render_metadata_comment(metadata))
     lines.extend(_render_header(task_number))
     lines.extend(_render_layer_overview(result.layer_overviews))
     lines.extend(_render_keyword_groups(result.keyword_hit_groups))

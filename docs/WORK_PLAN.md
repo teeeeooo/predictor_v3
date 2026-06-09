@@ -96,22 +96,21 @@
 - 307: Aligned SASO T3 section input validation with MetricInputTable visual marking; preserved optional 35 Min partial behavior.
 - 308: Closed out SASO T3 controller switch and validation alignment GUI smoke on iMac.
 - 309: Patched Reference Evidence Gate to warning-first workflow and added active report count wording policy.
+- 310: Improved code_checker with safe git metadata generation and freshness checks without hard gating.
 
 ## Next Actions
 
-1. **code_checker metadata & freshness check improvement**
-   - Address task number hardcoding and map staleness detection options.
-   - Note: active report count exceeds lifecycle threshold; cleanup pending.
-2. **Regenerate reference map and commit milestone changes**
+1. **Regenerate reference map and commit milestone changes**
    - Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections and test suites.
-3. **Controller switch arc final summary / closeout**
-4. **Active report lifecycle cleanup**
+   - Note: active report count exceeds lifecycle threshold; cleanup pending.
+2. **Controller switch arc final summary / closeout**
+3. **Active report lifecycle cleanup**
    - Archive active reports to summary files once all controller switch steps are completed.
-5. **Main table migration check**
+4. **Main table migration check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-6. **ui_tk folder cleanup**
+5. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-7. **EN14825 / AHRI 210/240 / KS profile expansion**
+6. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

@@ -247,3 +247,116 @@ def test_renderer_long_function_not_self_hotspot() -> None:
     active, legacy = find_hotspots([info], root)
     assert len(active) == 0
     assert len(legacy) == 0
+
+
+# ---------------------------------------------------------------------------
+# Task 8: code_checker metadata and freshness check tests (310)
+# ---------------------------------------------------------------------------
+
+from code_checker.metadata import (
+    get_git_info,
+    generate_metadata,
+    render_metadata_comment,
+    parse_metadata_from_map,
+    evaluate_freshness,
+)
+
+def test_metadata_generation_and_rendering() -> None:
+    # 1. generate_metadata works safely even in a temp directory (fallback)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        meta = generate_metadata(tmp_path)
+        assert meta["generator"] == "code_checker"
+        assert meta["schema_version"] == "1.0.0"
+        assert "generated_at_utc" in meta
+        # Since it's a new empty dir, commit might fallback to "unknown"
+        assert "git_commit_short" in meta
+        assert "git_dirty" in meta
+
+    # 2. renderer incorporates metadata as HTML comment at the top
+    result = AnalysisResult(
+        layer_overviews=[],
+        keyword_hit_groups=[],
+        active_hotspots=[],
+        legacy_hotspots=[],
+        duplicates=[],
+        import_edges=[],
+    )
+    fake_meta = {
+        "generator": "code_checker",
+        "schema_version": "1.0.0",
+        "generated_at_utc": "2026-06-10 00:00 UTC",
+        "git_commit_short": "abc1234",
+        "git_dirty": False,
+    }
+    md = render_compact_map(result, task_number="310", metadata=fake_meta)
+    expected_comment = render_metadata_comment(fake_meta)
+    assert md.startswith(expected_comment)
+    assert "abc1234" in md
+
+
+def test_metadata_parsing_and_freshness_evaluation() -> None:
+    # 1. parsing comment back to dict
+    fake_meta = {
+        "generator": "code_checker",
+        "schema_version": "1.0.0",
+        "generated_at_utc": "2026-06-10 00:00 UTC",
+        "git_commit_short": "abc1234",
+        "git_dirty": False,
+    }
+    comment = render_metadata_comment(fake_meta)
+    parsed = parse_metadata_from_map(comment)
+    assert parsed == fake_meta
+
+    # 2. Evaluate freshness in different scenarios
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        map_file = tmp_path / "CODEBASE_REFERENCE_MAP.md"
+
+        # Scenario A: Map file does not exist
+        res_missing = evaluate_freshness(map_file, tmp_path)
+        assert res_missing["status"] == "missing"
+
+        # Scenario B: Map file exists but lacks metadata comment
+        map_file.write_text("# Reference Map Without Metadata", encoding="utf-8")
+        res_no_meta = evaluate_freshness(map_file, tmp_path)
+        assert res_no_meta["status"] == "metadata_missing"
+
+        # Scenario C: Map has metadata, evaluate freshness based on commit match
+        # Since git_commit_short of tmpdir will likely be "unknown"
+        # We write a map matching the current commit
+        current_git = get_git_info(tmp_path)
+        current_commit = current_git["commit"]
+
+        matching_meta = {
+            "generator": "code_checker",
+            "schema_version": "1.0.0",
+            "generated_at_utc": "2026-06-10 00:00 UTC",
+            "git_commit_short": current_commit,
+            "git_dirty": False,
+        }
+        comment_match = render_metadata_comment(matching_meta)
+        map_file.write_text(f"{comment_match}\n# Map content", encoding="utf-8")
+
+        res_fresh = evaluate_freshness(map_file, tmp_path)
+        if current_commit == "unknown":
+            assert res_fresh["status"] == "unknown"
+        else:
+            assert res_fresh["status"] == "fresh"
+
+        # Scenario D: Stale commit
+        stale_meta = {
+            "generator": "code_checker",
+            "schema_version": "1.0.0",
+            "generated_at_utc": "2026-06-10 00:00 UTC",
+            "git_commit_short": "stale123",
+            "git_dirty": False,
+        }
+        comment_stale = render_metadata_comment(stale_meta)
+        map_file.write_text(f"{comment_stale}\n# Map content", encoding="utf-8")
+
+        res_stale = evaluate_freshness(map_file, tmp_path)
+        if current_commit == "unknown":
+            assert res_stale["status"] == "unknown"
+        else:
+            assert res_stale["status"] == "stale"
