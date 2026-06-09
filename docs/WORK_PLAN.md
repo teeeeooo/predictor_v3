@@ -101,17 +101,16 @@
 - 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
 - 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
-- 315: Summarized the tkinter table controller switch arc and archived covered reports.
+- 315: Archived completed controller switch reports and restored active report folder hygiene.
 - 316: Corrected active report lifecycle cleanup and fixed local absolute links in summary 314.
+- 317: Audited main table migration compatibility and confirmed transition to TkTableController is complete. Recommended ui_tk folder cleanup (retiring ExcelLikeTableController) as the next slice.
 
 ## Next Actions
 
-1. **Main table migration check**
-   - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
+1. **ui_tk folder cleanup**
+   - Retire legacy `ExcelLikeTableController` and fix test gaps (e.g. references to `ExcelLikeTableController` in tests) after successful TkTableController migration.
    - Note: active report count meets lifecycle threshold criteria.
-2. **ui_tk folder cleanup**
-   - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-3. **EN14825 / AHRI 210/240 / KS profile expansion**
+2. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

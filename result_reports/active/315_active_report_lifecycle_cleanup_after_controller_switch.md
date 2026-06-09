@@ -2,7 +2,7 @@
 
 ## Goal
 
-- `ui_tk controller switch` 아크가 313에서 성공적으로 종결됨에 따라, 완료된 16개의 active reports를 314 summary로 묶고 archive로 안전하게 이동하여 active report 폴더의 위생을 복구한다.
+- `ui_tk controller switch` 아크가 313에서 성공적으로 종결됨에 따라, 완료된 active reports를 314 summary로 묶고 archive로 안전하게 이동하여 active report 폴더의 위생을 복구한다.
 
 ## Scope
 
@@ -29,7 +29,7 @@
 
 ## Verification
 
-- `git status --short` 상에서 16개 파일의 rename 및 WORK_PLAN.md, project_log.md, project_memory_seed.md 수정 및 314, 315 파일 추가 확인.
+- `git status --short` 상에서 archive 대상 파일들의 rename 및 WORK_PLAN.md, project_log.md, project_memory_seed.md 수정 및 314, 315 파일 추가 확인.
 - `python3 -B tools/check_code_structure.py` warnings 4개(기존 warnings)만 노출되며 통과.
 - `git diff --check` 통과.
 - active report count 검증 완료 (exact count는 final terminal output으로만 출력).

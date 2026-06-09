@@ -1559,3 +1559,21 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — Main table migration check after controller switch arc closeout
+
+### Tried
+- 기존 active report 262 및 274 preflight 내용을 최신 controller switch 완료(313) 상태와 비교 분석하여 메인 테이블 마이그레이션 가능성을 재평가함.
+- MetricInputTable, TkTableSurface, TkTableController, interaction_core, ExcelLikeTableController의 책임과 migration boundary를 audit함.
+- docs/WORK_PLAN.md 및 315 active report 내의 사소한 문구 mismatch(archive 개수 및 lifecycle cleanup 설명)를 보정함.
+
+### Result
+- `docs/WORK_PLAN.md` 315 설명 교정 및 `result_reports/active/315_active_report_lifecycle_cleanup_after_controller_switch.md` 의 archive 갯수/rename mismatch 보정 완료.
+- `result_reports/active/317_main_table_migration_check_after_controller_switch.md` 리포트 작성 완료.
+
+### Decision
+- 4개 main section에 대한 `TkTableController`로의 마이그레이션이 이미 완료되어 안정화되었으므로, 더 이상의 추가 메인 테이블 마이그레이션 작업은 불필요(보류)한 것으로 판단함.
+- 다음 핵심 action은 legacy ExcelLikeTableController 퇴출 및 테스트 갭 해소를 위한 `ui_tk folder cleanup`으로 결정함.
+- active report count meets lifecycle threshold criteria.
+
+---
