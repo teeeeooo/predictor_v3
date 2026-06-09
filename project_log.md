@@ -1334,3 +1334,21 @@
 - 다음 action: Post-2-point controller switch GUI smoke.
 
 ---
+
+## 2026-06-09 — Close out post-2-point controller switch GUI smoke
+
+### Tried
+- 302 IsoIseer2PointSection controller switch 이후 iMac 실기에서 GUI smoke 테스트 수행 및 closeout.
+
+### Result
+- `calculator_tk` 정상 실행 및 ISO / ISEER 2-point profile type-replace (`1`, `10`, `100` 입력) 정상 확인.
+- 기존 값 replace 및 후속 입력 append 확인 완료.
+- valid paste 후 custom Treeview result table 정상 갱신 확인.
+- invalid input/paste 시 validation block 및 오류 표시, Ctrl+Z undo 복원 확인.
+- clear/delete 및 detail panel, profile transition 정상 작동 확인.
+
+### Decision
+- IsoIseer2PointSection의 controller switch 검증 통과 및 blocker 해소.
+- 다음 action: IsoSasoT3Section controller switch implementation.
+
+---
