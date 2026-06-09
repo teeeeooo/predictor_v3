@@ -25,7 +25,7 @@ Audit `tools/code_checker` and the `CODEBASE_REFERENCE_MAP` workflows to assess 
 
 ## Current Code Checker Capability
 
-The `tools/code_checker` framework provides a semantic and structure overview of the codebase:
+The `tools/code_checker` framework provides a symbol/import/hotspot reference overview of the codebase:
 - **Layer Overview**: High-level LOC counts and file distributions per top-level folder.
 - **Keyword Hit Groups**: Fuzzy categorization mapping domain terms (`batch`, `table`, etc.) to files.
 - **Hotspots (Active/Legacy)**: Identifies files exceeding size/complexity soft limits (LOC > 250, classes > 3, methods > 60 lines).

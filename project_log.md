@@ -1406,3 +1406,22 @@
 - active report count는 14개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
 
 ---
+
+## 2026-06-10 — SASO T3 Section Input Validation Alignment
+
+### Tried
+- `IsoSasoT3Section`의 validation 로직을 `MetricInputTable`의 invalid visual marking 표준 API와 정렬.
+- `MetricInputTable.get_numeric_values()`가 field subset 단위로 validation할 수 있도록 backward-compatible하게 확장.
+
+### Result
+- `ui_tk/metric_input_table.py` 및 `ui_tk/sections/iso_saso_t3_section.py` 수정 완료.
+- `tests/test_ui_tk_metric_input_table_validation.py`에 subset validation focused test 추가 완료.
+- `tests/test_ui_tk_iso_saso_t3_controller_switch.py`에 required/optional invalid & positivity & correction focused test 추가 및 검증 완료.
+- `result_reports/active/305_code_checker_and_reference_map_gate_audit.md` 내 `semantic and structure overview` 문구 1줄 보정 완료.
+
+### Decision
+- `MetricInputTable`은 numeric parsing 및 invalid visual marking을 소유하며, `IsoSasoT3Section`은 required/optional 그룹 분류 및 positivity 도메인 정책을 소유함.
+- 다음 action: Post-SASO T3 controller switch & validation GUI smoke.
+- active report count는 15개 (>10)로, lifecycle cleanup은 보류하고 pending note 처리함.
+
+---

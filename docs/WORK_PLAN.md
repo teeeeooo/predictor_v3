@@ -93,23 +93,22 @@
 - 304: IsoSasoT3Section controller switch migrated to TkTableController; 7 new focused tests pass.
 - 305: Code checker and reference map gate audit completed; gaps categorized and follow-up slices proposed.
 - 306: Aligned 305 code checker audit with original 270-272 reference map intent; proposed corrected follow-up order.
+- 307: Aligned SASO T3 section input validation with MetricInputTable visual marking; preserved optional 35 Min partial behavior.
 
 ## Next Actions
 
-1. **SASO T3 Section Input Validation Alignment**
-   - Refactor `IsoSasoT3Section` to align input parsing and visual error marking with `MetricInputTable` standard path, keeping 35 Min fallback behavior.
-   - Note: active report count is 14 (>10), lifecycle cleanup is pending and deferred.
-2. **Post-SASO T3 controller switch & validation GUI smoke**
+1. **Post-SASO T3 controller switch & validation GUI smoke**
    - Perform iMac GUI smoke testing to close out both controller switch and validation alignment.
-3. **Reference Evidence Gate semantic check patch**
+   - Note: active report count is 15 (>10), lifecycle cleanup is pending and deferred.
+2. **Reference Evidence Gate semantic check patch**
    - Update agent workflow instructions to turn the read budget gate into a semantic check (checking for owner-bypass, duplication, and hotspot expansion).
-4. **code_checker metadata & freshness check improvement**
+3. **code_checker metadata & freshness check improvement**
    - Address task number hardcoding and map staleness detection options.
-5. **Regenerate reference map and commit milestone changes**
+4. **Regenerate reference map and commit milestone changes**
    - Re-run `build_reference_map.py` to sync the codebase reference map with all completed controller switch sections and test suites.
-6. **Main table migration check**
+5. **Main table migration check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-7. **ui_tk folder cleanup**
+6. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
