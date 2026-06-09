@@ -81,16 +81,21 @@
   - 285: Diagnosed ResultPanel flicker root cause — redundant focus_set() in TkTableController._type_replace; callback/render counts identical between CSPF and HSPF.
   - 286: Removed redundant focus_set() from TkTableController._type_replace; 9 diagnostic + 15 parity + 5 pilot tests pass under Xvfb.
   - 287: Implemented stable ResultPanel summary update — same-shape summaries now update value/status text in place without full widget destroy/recreate; 39 tests pass under Xvfb.
-- Next: Post-focus-preservation Windows smoke for invalid text undo. Controller switch expansion remains blocked until smoke passes. If invalid text undo persists after this fix, next slice is TkTableController edit-session undo policy fix.
+- Next: Post-focus-preservation GUI smoke passed; invalid text undo resolved. Controller switch expansion blocker cleared.
 - 289: Narrowed ResultPanel focus helper exception handling from broad `except Exception` to `except tk.TclError`; behavior unchanged.
+- 290: Enforced active report count check in agent output workflow; AGENTS.md, AGENT_TASK_ROUTER.md, RESULT_REPORT_WORKFLOW.md updated.
 
 ## Next Actions
 
-1. **Main table migration candidate check**
+1. **Active report lifecycle cleanup follow-up**
+   - Summary/archive maintenance for result_reports/active count >10.
+2. **Controller switch expansion readiness**
+   - Blocker cleared after GUI smoke; expand TkTableController migration to remaining sections.
+3. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
-2. **ui_tk folder cleanup**
+4. **ui_tk folder cleanup**
    - Review compatibility wrappers, root table file sprawl, owner locations, and duplicate helpers after window/table foundations stabilize.
-3. **EN14825 / AHRI 210/240 / KS profile expansion**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 

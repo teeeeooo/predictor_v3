@@ -1207,3 +1207,27 @@
 - 다음 gate는 288과 동일: Windows manual smoke.
 
 ---
+
+## 2026-06-09 — Post-focus-preservation GUI smoke closeout
+
+### Tried
+- iMac GUI smoke for 288 focus-preservation fix.
+
+### Result
+- calculator_tk 실행 OK.
+- Hong Kong CSPF profile OK.
+- 숫자 입력 시 ResultPanel flicker 없음.
+- invalid text 입력 후 오류 summary 표시 OK.
+- Ctrl+Z undo가 원래 값으로 복원됨.
+- undo 후 같은 셀에 계속 입력 가능.
+- paste / clear / numeric undo 유지.
+- detail open/close 이상 없음.
+- 다른 profile 전환 후 이상 없음.
+
+### Decision
+- Post-focus-preservation GUI smoke passed.
+- invalid text undo 문제 해결됨.
+- controller switch expansion blocker 해소됨.
+- 다음 action: active report lifecycle cleanup follow-up 또는 controller switch expansion readiness.
+
+---
