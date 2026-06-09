@@ -88,8 +88,8 @@
 
 ## Next Actions
 
-1. **Controller switch expansion readiness**
-   - Blocker cleared after GUI smoke; expand TkTableController migration to remaining sections.
+1. **Controller switch expansion implementation**
+   - Begin implementation slice with HongKongHspfSection (most similar to pilot). Follow with IsoIseer2PointSection and IsoSasoT3Section.
 2. **Main table migration candidate check**
    - Assess how existing table surfaces can converge on the common table foundation and define a safe migration slice.
 3. **ui_tk folder cleanup**

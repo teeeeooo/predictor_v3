@@ -1248,3 +1248,19 @@
 - 다음 action: controller switch expansion readiness.
 
 ---
+
+## 2026-06-09 — Controller switch expansion readiness preflight
+
+### Tried
+- 남은 section별 controller switch(TkTableController) 전환 타당성 및 blocker 검토.
+
+### Result
+- HongKongHspfSection, IsoIseer2PointSection, IsoSasoT3Section 모두 Blocker 없음.
+- MetricInputTable은 이미 TkTableSurface 프로토콜을 만족함.
+- IsoIseer2PointSection / IsoSasoT3Section의 custom result table은 Treeview 기반으로, ResultPanel stable update의 직접 영향이 없고 flicker 위험이 낮음.
+
+### Decision
+- 전환 순서를 HongKongHspfSection -> IsoIseer2PointSection -> IsoSasoT3Section 순으로 권장.
+- 다음 action: HongKongHspfSection controller switch implementation.
+
+---
