@@ -103,25 +103,12 @@
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
-- 347: Completed active report lifecycle cleanup after apps calculator relocation (described in [Report 347](result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md)).
-- 349: Completed Calculator PyQt reference retirement preflight (described in [Report 349](result_reports/active/349_calculator_pyqt_reference_retirement_preflight.md)).
-- 351: Completed mixed ISO table test split/retirement; blocker resolved (described in [Report 351](result_reports/active/351_mixed_iso_table_test_split_or_retirement.md)).
-- 353: Completed PyQt calculator-only source retirement (ui/calc_window.py, ui/calculators_2point.py, ui/calculator_errors.py retired).
-- 354: Updated active docs and PyQt support matrix after source retirement (project_architecture.md, project_brief.md, pyqt_test_support_matrix.md, README.md).
-- 355: Completed test/package naming cleanup audit; 36 test_ui_tk_*.py rename candidates identified, imports already correct, rename risk is low-to-medium.
-- 357: Completed EN14825 declared/tested GUI design contract.
-- 358: Corrected EN14825 declared/tested GUI design contract details.
-- 359: Corrected EN14825 defaults hierarchy contract open question.
-- 360: Completed EN14825 SEER data model/table model/adapter foundation slice.
-- 361: Completed EN14825 SEER model/adapter/table model correction.
-- 362: Completed Source file owner boundary policy and guard audit.
-- 363: Completed Source file owner boundary guard implementation.
+- 347-363: PyQt retirement, naming audit, EN14825 SEER model/adapter foundation, and source file owner boundary guard implementation are summarized in [Summary 364](result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md).
 
 ## Next Actions
 
-1. **Active report lifecycle cleanup if threshold reached (Recommended next slice)**
-2. **EN14825 SEER section integration with real-time updates**
-3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **EN14825 SEER section integration with real-time updates (Recommended next slice)**
+2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
 
