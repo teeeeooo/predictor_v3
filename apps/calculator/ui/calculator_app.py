@@ -23,6 +23,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
+from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 from apps.calculator.ui.window_geometry import (
     apply_overflow_correction,
     center_window,
@@ -47,11 +48,23 @@ class CalculatorTkApp:
 
         self.iso_tab = Iso16358Tab(notebook)
         notebook.add(self.iso_tab, text="ISO 16358")
+
+        self.en14825_tab = En14825Tab(notebook)
+        notebook.add(self.en14825_tab, text="EN14825")
+
+        notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
         self.root.update_idletasks()
         center_window(self.root, self.iso_tab.preferred_initial_size())
         apply_overflow_correction(self.root, self.iso_tab)
         clamp_window_to_visible_bounds(self.root)
         self.root.after_idle(self.iso_tab.fit_toplevel_to_current_content_once)
+
+    def _on_tab_changed(self, event: tk.Event) -> None:
+        notebook = event.widget
+        selected_tab = notebook.nametowidget(notebook.select())
+        if hasattr(selected_tab, "fit_toplevel_to_current_content_once"):
+            selected_tab.fit_toplevel_to_current_content_once()
 
     def run(self) -> None:
         self.root.mainloop()

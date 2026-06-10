@@ -103,11 +103,12 @@
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
-- 347-363: PyQt retirement, naming audit, EN14825 SEER model/adapter foundation, and source file owner boundary guard implementation are summarized in [Summary 364](result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md).
+- 365: memory seed sync after Summary 364 completed.
+  - 366: EN14825 SEER section integration with real-time updates (in progress).
 
 ## Next Actions
 
-1. **EN14825 SEER section integration with real-time updates (Recommended next slice)**
+1. **EN14825 SCOP integration design/preflight — next active slice**
 2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 

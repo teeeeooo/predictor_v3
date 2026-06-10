@@ -344,3 +344,81 @@ def test_seer_table_model_behavior():
     assert model.get_state("capacity_percent", "A") == "pass"
     assert model.get_state("capacity_percent", "C") == "unavailable"
     assert model.get_state("tested_capacity", "C") == "unavailable"
+
+
+def test_en14825_gui_integration():
+    """Verify EN14825 SEER section and app integration."""
+    import tkinter as tk
+    from tkinter import ttk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+
+        # Import components
+        from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+        from apps.calculator.ui.calculator_app import CalculatorTkApp
+
+        # 1. EN14825 SEER section 생성 시 table에 declared_power row가 없는지 확인한다.
+        section = En14825SeerSection(root)
+        row_keys = section.input_table.rows
+        row_names = [r[0] for r in row_keys]
+        assert "declared_power" not in row_names
+        assert "declared_power_w_for_core" not in row_names
+        assert "derived_power" not in row_names
+
+        # 2. default/prefill 값으로 initial recalculate가 crash 없이 수행되는지 확인한다.
+        summary_widget = section.result_panel
+        summary_text = summary_widget._text.get("1.0", tk.END)
+        assert "Declared SEER" in summary_text
+        assert "Tested SEER" in summary_text
+        assert "자동 계산 완료" in summary_text
+
+        # 3. editable input 변경 후 recalculate_now 또는 debounced flush 후 computed row/tested EER/percent/result summary가 갱신되는지 확인한다.
+        section.input_table.set_value("tested_power_A", "1000")  # A tested power: 900 -> 1000
+        section._auto_calc.flush_now()
+
+        # Verify tested EER A (3600 / 1000 = 3.60)
+        assert section._current_table_model.get_value("tested_eer", "A") == "3.60"
+
+        # 4. declared-only 입력 상태에서 declared result만 나오고 tested/percent가 unavailable 또는 공란 상태인지 확인한다.
+        for col in ("A", "B", "C", "D"):
+            section.input_table.set_value(f"tested_capacity_{col}", "")
+            section.input_table.set_value(f"tested_power_{col}", "")
+        section._auto_calc.flush_now()
+
+        summary_text_dec_only = summary_widget._text.get("1.0", tk.END)
+        assert "Declared SEER" in summary_text_dec_only
+        assert "Tested SEER" in summary_text_dec_only
+
+        assert section._current_table_model.get_value("tested_eer", "A") == ""
+        assert section._current_table_model.get_value("capacity_percent", "A") == ""
+
+        # 5. tested-only 입력 상태에서 tested result만 나오고 declared/percent가 unavailable 또는 공란 상태인지 확인한다.
+        for col in ("A", "B", "C", "D"):
+            section.input_table.set_value(f"declared_capacity_{col}", "")
+            section.input_table.set_value(f"declared_eer_{col}", "")
+            section.input_table.set_value(f"tested_capacity_{col}", "3600")
+            section.input_table.set_value(f"tested_power_{col}", "900")
+        section._auto_calc.flush_now()
+
+        assert section._current_table_model.get_value("tested_eer", "A") == "4.00"
+        assert section._current_table_model.get_value("declared_eer", "A") == ""
+        assert section._current_table_model.get_value("capacity_percent", "A") == ""
+
+        # 6. CalculatorTkApp notebook에 EN14825 tab이 등록되는지 확인한다.
+        app = CalculatorTkApp(root=root)
+        notebook = None
+        for child in root.winfo_children():
+            if isinstance(child, ttk.Notebook):
+                notebook = child
+                break
+        assert notebook is not None
+        tab_names = [notebook.tab(i, "text") for i in range(len(notebook.tabs()))]
+        assert "EN14825" in tab_names
+
+    finally:
+        root.destroy()
