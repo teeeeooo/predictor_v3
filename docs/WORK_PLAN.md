@@ -108,13 +108,13 @@
 - 340: Completed batch foundation foldering implementation - Slice 2 (moved batch table views, viewports, controllers, and compatibility wrapper to ui_tk/batch/ package, and regenerated reference map).
 - 342: Completed calculator-first apps package architecture audit before entrypoint handover.
 - 343: Completed PROJECT_CHARTER.md and project_architecture.md policy alignment update.
+- 344: Completed apps calculator skeleton creation and entrypoint handover.
 
 
 ## Next Actions
 
-1. **Apps package skeleton creation and calculator entrypoint handover**
-2. **ui_tk relocation to apps/calculator/ui**
-3. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **ui_tk relocation to apps/calculator/ui**
+2. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
 

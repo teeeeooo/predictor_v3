@@ -1,12 +1,11 @@
-import sys
-from PyQt5.QtWidgets import QApplication
-from ui.calc_window import CalculatorWindow
+"""Calculator application root entrypoint.
 
-def main():
-    app = QApplication(sys.argv)
-    window = CalculatorWindow()
-    window.show()
-    sys.exit(app.exec_())
+This delegates execution to the canonical apps.calculator.app entrypoint.
+"""
+
+from apps.calculator.app import main
+
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main() or 0)
