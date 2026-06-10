@@ -30,7 +30,7 @@
 * **선택**: **Option A. Retire whole mixed test** (mixed test 전체 은퇴)
 * **이유**:
   * `ProfileInputGridModel` 및 `ProfileInputGridView`는 PyQt calculator-only legacy 소스로서 은퇴 예정 대상입니다.
-  * 해당 mixed test의 핵심 비즈니스 로직(TSV copy/paste, clear, undo, navigation, tooltip, background styling)은 공용 스프레드시트 컴포넌트인 [ui/spreadsheet_table.py](../../ui/spreadsheet_table.py) 테스트용으로 작성된 [tests/test_spreadsheet_table_model.py](../../tests/test_spreadsheet_table_model.py) 및 [tests/test_spreadsheet_table_view.py](../../tests/test_spreadsheet_table_view.py)에서 이미 동일하거나 더 포괄적인 검증 항목으로 완벽하게 커버되고 있습니다.
+  * 해당 mixed test의 핵심 비즈니스 로직(TSV copy/paste, clear, undo, navigation, tooltip, background styling)은 공용 스프레드시트 컴포넌트인 [ui/spreadsheet_table.py](../../ui/spreadsheet_table.py) 테스트용으로 작성된 [tests/test_spreadsheet_table_model.py](../../tests/test_spreadsheet_table_model.py) 및 [tests/test_spreadsheet_table_view.py](../../tests/test_spreadsheet_table_view.py)에서 이미 동일하거나 더 포괄적인 검증 항목으로 충분히 보호되는 것으로 판단됩니다.
   * 따라서 mixed test 전체를 삭제(은퇴)해도 공용 컴포넌트의 테스트 커버리지 누수가 발생하지 않습니다.
 
 ## 수정한 tests (Modified/Deleted Tests)
@@ -44,8 +44,8 @@
 ## blocker 해제 여부 (Blocker Resolution Status)
 
 * **해제됨 (Resolved)**:
-  * `tests/` 디렉토리 아래의 모든 테스트 코드에서 `ui.calculators_2point` 및 `ProfileInputGrid` 임포트가 완전히 제거되었습니다.
-  * 이로써 PyQt calculator-only 소스 은퇴(retirement)의 핵심 blocker가 완전히 해제되었습니다.
+  * `tests/` 디렉토리 아래의 모든 테스트 코드에서 `ui.calculators_2point` 및 `ProfileInputGrid` 임포트가 제거되었습니다.
+  * 이로써 PyQt calculator-only 소스 은퇴(retirement)의 주요 blocker가 해제됨.
 
 ## 검증 결과 (Verification)
 
@@ -57,6 +57,7 @@
   * `pytest tests/test_spreadsheet_table_view.py` (8 skipped - macOS PyQt5 environment guard)
   * `pytest tests/test_ui_theme_tokens.py` (46 passed)
   * `pytest tests/test_pyqt_environment_guard.py` (11 passed)
+* **Validation note**: Full pytest was not run in this slice; validation was limited to focused shared utility and PyQt environment guard tests. Full pytest should be run in the subsequent PyQt calculator-only source retirement execution slice.
 
 ## WORK_PLAN 업데이트 여부 (WORK_PLAN Update Status)
 
@@ -68,4 +69,4 @@
 
 ## next action (Next Action)
 
-* Blocker가 완전히 해제되었으므로, 후속 슬라이스인 **PyQt calculator-only source retirement execution**을 실행하여 레거시 소스 코드를 은퇴시킬 수 있습니다.
+* 주요 blocker가 해제된 것으로 판단되므로, 후속 슬라이스인 **PyQt calculator-only source retirement execution**을 실행하여 레거시 소스 코드를 은퇴시킬 수 있습니다. 후속 슬라이스에서 full pytest 실행이 필요합니다.
