@@ -20,7 +20,7 @@
   - `345_relocate_ui_tk_to_apps_calculator_ui.md`
 - **분류**:
   - **Archive Candidate**: 335 ~ 345 (모두 완료되어 summaries/346으로 커버됨)
-  - **Remaining Active**: 본 보고서 (347) 단 1개만 active로 유지
+  - **Remaining Active**: cleanup evidence report remains active as the next-action pointer
 
 ## Summary 생성 결과
 

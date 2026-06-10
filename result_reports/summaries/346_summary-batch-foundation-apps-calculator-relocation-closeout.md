@@ -45,14 +45,14 @@
 
 ## 보존된 경계 (Retained Boundaries)
 
-- **ui/**: `app_train.py`, `app_predict.py` 및 legacy PyQt calculator reference 등이 사용하는 legacy PyQt multi-app UI로서 어떠한 수정 없이 원본 상태를 고스란히 보존함.
-- **train/predict**: 현행 PyQt 구조를 온전히 유지하며, `apps/train` 및 `apps/predict` 패키지는 실제 생성하지 않고 future PySide6 reserved boundary 상태로 유지함.
-- **core/calculator**: 계산 공식, region config schema, dispatcher 등의 core 계산 엔진 및 constants는 전혀 수정하지 않고 경계를 완벽히 보호함.
+- **ui/**: ui/ legacy PyQt boundary는 수정 없이 유지함.
+- **train/predict**: train/predict는 변경하지 않음.
+- **core/calculator**: core/calculator 변경 없이 경계를 유지함.
 
 ## 검증 하이라이트 (Validation Highlights)
 
 - 마이그레이션 진행 중 어떠한 비즈니스 로직, 레이아웃, 계산 동작, 컨트롤러 바인딩의 변경도 없음을 검증함.
-- `apps.calculator.ui` 이주 완료 후, 총 108개의 focused pytests 및 `check_code_structure.py` 검사를 수행하여 100% 회귀 방어(regression-free) 및 구조적 깨끗함(clean warning)을 검증함.
+- `apps.calculator.ui` 이주 완료 후, 108 focused pytests와 check_code_structure.py를 통과하여 이번 relocation 범위의 import/structure 회귀를 방어함.
 - `docs/code_map/CODEBASE_REFERENCE_MAP.md`를 최종 재생성하여 변경 사항을 명문화하고 Freshness 상태를 충족함.
 
 ## 정리 후 남은 Active Reports (Remaining Active Reports)
