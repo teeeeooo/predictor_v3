@@ -109,10 +109,11 @@
 - 353: Completed PyQt calculator-only source retirement (ui/calc_window.py, ui/calculators_2point.py, ui/calculator_errors.py retired).
 - 354: Updated active docs and PyQt support matrix after source retirement (project_architecture.md, project_brief.md, pyqt_test_support_matrix.md, README.md).
 - 355: Completed test/package naming cleanup audit; 36 test_ui_tk_*.py rename candidates identified, imports already correct, rename risk is low-to-medium.
+- 356: Completed EN14825 declared/tested GUI design contract.
 
 ## Next Actions
 
-1. **EN14825 / AHRI 210/240 / KS profile expansion (Recommended next slice)**
+1. **EN14825 SEER data model/table model/adapter (Recommended next slice)**
 2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 3. **Active report lifecycle cleanup if threshold reached**
 
