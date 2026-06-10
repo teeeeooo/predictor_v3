@@ -1,4 +1,4 @@
-from ui_tk.batch_table_viewport import BatchTableViewport
+from ui_tk.batch.viewport import BatchTableViewport
 
 
 class _FakeWidget:

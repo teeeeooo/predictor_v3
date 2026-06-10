@@ -12,7 +12,7 @@ from ui_tk.batch.matrix_models import (
     HONG_KONG_CSPF_MATRIX_SPEC,
     MatrixCellKind,
 )
-from ui_tk.batch_matrix_table import BatchMatrixTable
+from ui_tk.batch.matrix_table import BatchMatrixTable
 from ui_tk.table.controller import TkTableController
 from ui_tk.table.roles import CellRole
 

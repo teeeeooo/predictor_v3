@@ -11,9 +11,9 @@ from ui_tk.batch.models import (
     BatchProfileSpec,
     BatchTableModel,
 )
-from ui_tk.batch_table import GridAddress, batch_roles_to_cell_roles
-from ui_tk.batch_table_controller import BatchTableController
-from ui_tk.batch_table_viewport import BatchTableViewport
+from ui_tk.batch.compat_table import GridAddress, batch_roles_to_cell_roles
+from ui_tk.batch.table_controller import BatchTableController
+from ui_tk.batch.viewport import BatchTableViewport
 from ui_tk.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,

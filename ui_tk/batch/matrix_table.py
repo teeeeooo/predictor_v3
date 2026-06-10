@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from tkinter import ttk
 
 from ui_tk.batch.matrix_models import BatchMatrixSpec, MatrixCellKind
-from ui_tk.batch_table_viewport import BatchTableViewport
+from ui_tk.batch.viewport import BatchTableViewport
 from ui_tk.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,

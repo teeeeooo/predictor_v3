@@ -105,14 +105,14 @@
 - 335: Completed active report lifecycle cleanup before batch foundation foldering audit.
 - 337: Completed batch foundation foldering audit; recommended ui_tk/batch/ consolidation architecture and sliced implementation.
 - 338: Completed batch foundation foldering implementation - Slice 1 (moved toolkit-neutral model/spec files to ui_tk/batch/ package).
+- 340: Completed batch foundation foldering implementation - Slice 2 (moved batch table views, viewports, controllers, and compatibility wrapper to ui_tk/batch/ package, and regenerated reference map).
 
 
 ## Next Actions
 
-1. **Batch foundation foldering implementation - Slice 2**
-2. **Calculator entrypoint handover from PyQt to Tkinter**
-3. **ui_tk root folder inventory audit**
-4. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Calculator entrypoint handover from PyQt to Tkinter**
+2. **ui_tk root folder inventory audit**
+3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
 

@@ -1,5 +1,5 @@
 from ui_tk.batch.models import BatchColumnRole
-from ui_tk.batch_table import (
+from ui_tk.batch.compat_table import (
     batch_roles_to_cell_roles,
     editable_clear_targets,
     editable_paste_targets,
@@ -7,7 +7,7 @@ from ui_tk.batch_table import (
     resolve_adjacent_position,
     resolve_next_position,
 )
-from ui_tk.batch_table_controller import BatchTableController
+from ui_tk.batch.table_controller import BatchTableController
 
 
 class _FakeWidget:

@@ -15,7 +15,7 @@ from ui_tk.batch.matrix_models import (
     MatrixMeasurementPointSpec,
     MatrixPhysicalRowType,
 )
-from ui_tk.batch_matrix_table import BatchMatrixTable
+from ui_tk.batch.matrix_table import BatchMatrixTable
 from ui_tk.batch.models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.sections.result_formatting import kwh_value, metric_value

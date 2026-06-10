@@ -15,7 +15,7 @@ from ui_tk.batch.matrix_models import (
     MatrixMeasurementPointSpec,
     MatrixPhysicalRowType,
 )
-from ui_tk.batch_matrix_table import BatchMatrixTable
+from ui_tk.batch.matrix_table import BatchMatrixTable
 from ui_tk.batch.models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id

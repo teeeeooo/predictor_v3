@@ -7,7 +7,7 @@ from typing import Protocol
 from dataclasses import dataclass
 
 from ui_tk.batch.models import BatchRowState
-from ui_tk.batch_case_table import BatchCaseTable
+from ui_tk.batch.case_table import BatchCaseTable
 
 
 class BatchRowHandler(Protocol):
