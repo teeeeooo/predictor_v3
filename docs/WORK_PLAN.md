@@ -105,7 +105,8 @@
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
 - 365: memory seed sync after Summary 364 completed.
   - 366: EN14825 SEER section integration with real-time updates completed.
-  - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix (in progress).
+  - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
+  - 368: EN14825 SEER table section boundary line (in progress).
 
 ## Next Actions
 

@@ -130,6 +130,11 @@ class En14825SeerSection:
                 for row_key in SeerTableModel.ROW_KEYS
             ),
             editable_cells=editable_cells,
+            section_break_before_rows=(
+                "declared_capacity",
+                "tested_capacity",
+                "capacity_percent",
+            ),
         )
         self.input_table.grid(
             row=3,

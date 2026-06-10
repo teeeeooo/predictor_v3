@@ -211,3 +211,37 @@ class TestAdapterClipboardNotShadowed:
         sample_table.clipboard_append("test_value")
         result = sample_table.clipboard_get()
         assert result == "test_value"
+
+
+def test_section_break_option(tk_root) -> None:
+    # 1. With section break
+    table_with = MetricInputTable(
+        tk_root,
+        columns=(("c1", "Col1"),),
+        rows=(("r1", "Row1"), ("r2", "Row2")),
+        editable_cells={("r1", "c1"): "a", ("r2", "c1"): "b"},
+        section_break_before_rows=("r2",),
+    )
+
+    # Verify row_count, column_count are not changed
+    assert table_with.row_count() == 2
+    assert table_with.column_count() == 1
+
+    # Check pady of cells in row 0 ("r1") and row 1 ("r2")
+    frame_r1 = table_with.cell_frame((0, 0))
+    pady_r1 = frame_r1.grid_info()["pady"]
+    frame_r2 = table_with.cell_frame((1, 0))
+    pady_r2 = frame_r2.grid_info()["pady"]
+
+    assert pady_r1 == 1 or pady_r1 == (0, 1) or str(pady_r1) == "1"
+    assert pady_r2 == (6, 1) or str(pady_r2) == "6 1"
+
+    # 2. Without section break
+    table_without = MetricInputTable(
+        tk_root,
+        columns=(("c1", "Col1"),),
+        rows=(("r1", "Row1"), ("r2", "Row2")),
+        editable_cells={("r1", "c1"): "a", ("r2", "c1"): "b"},
+    )
+    pady_without_r2 = table_without.cell_frame((1, 0)).grid_info()["pady"]
+    assert pady_without_r2 == 1 or pady_without_r2 == (0, 1) or str(pady_without_r2) == "1"

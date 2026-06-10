@@ -472,3 +472,33 @@ def test_en14825_static_cell_tint():
 
     finally:
         root.destroy()
+
+
+def test_en14825_section_breaks():
+    """Verify that section breaks are correctly applied to the SEER input table."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+        from apps.calculator.ui.en14825 import SeerTableModel
+
+        section = En14825SeerSection(root)
+
+        for row_key in ("declared_capacity", "tested_capacity", "capacity_percent"):
+            row_idx = SeerTableModel.ROW_KEYS.index(row_key)
+            frame = section.input_table.cell_frame((row_idx, 0))
+            pady = frame.grid_info()["pady"]
+            assert pady == (6, 1) or str(pady) == "6 1"
+
+        part_load_row_idx = SeerTableModel.ROW_KEYS.index("part_load_ratio")
+        frame = section.input_table.cell_frame((part_load_row_idx, 0))
+        pady = frame.grid_info()["pady"]
+        assert pady == 1 or pady == (0, 1) or str(pady) == "1"
+
+    finally:
+        root.destroy()

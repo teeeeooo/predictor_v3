@@ -27,6 +27,7 @@ from apps.calculator.ui.layout_constants import (
     TABLE_ROW_HEADER_WEIGHT,
     TABLE_STATIC_BG,
     TABLE_STATIC_FG,
+    TABLE_SECTION_BREAK_GAP,
 )
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.table.roles import CellRole
@@ -51,9 +52,11 @@ class MetricInputTable(ttk.Frame):
         row_header_chars: int = TABLE_ROW_HEADER_CHARS,
         data_column_chars: int = TABLE_DATA_COLUMN_CHARS,
         values_changed_callback: ValuesChangedCallback | None = None,
+        section_break_before_rows: Iterable[str] | None = None,
         **kwargs: object,
     ) -> None:
         super().__init__(master, **kwargs)
+        self.section_break_before_rows = set(section_break_before_rows or [])
         self.columns = columns
         self.rows = rows
         self.editable_cells = dict(editable_cells)
@@ -141,7 +144,7 @@ class MetricInputTable(ttk.Frame):
 
     def _add_row_header(self, *, row: int, key: str, label: str) -> None:
         cell = self._make_cell_frame(
-            row=row, column=0, role="row_header_cell", background=TABLE_HEADER_BG
+            row=row, column=0, role="row_header_cell", background=TABLE_HEADER_BG, row_key=key
         )
         cell.surface_key = key
         self.row_header_cells[key] = cell
@@ -159,7 +162,7 @@ class MetricInputTable(ttk.Frame):
         self, *, row: int, column: int, address: CellAddress
     ) -> None:
         cell = self._make_cell_frame(
-            row=row, column=column, role="static_cell", background=TABLE_STATIC_BG
+            row=row, column=column, role="static_cell", background=TABLE_STATIC_BG, row_key=address[0]
         )
         cell.surface_address = address
         self.cell_frames[address] = cell
@@ -179,7 +182,11 @@ class MetricInputTable(ttk.Frame):
         self, *, row: int, column: int, address: CellAddress, field_key: str
     ) -> None:
         cell = self._make_cell_frame(
-            row=row, column=column, role="editable_cell", background=TABLE_EDITABLE_BG
+            row=row,
+            column=column,
+            role="editable_cell",
+            background=TABLE_EDITABLE_BG,
+            row_key=address[0],
         )
         cell.surface_address = address
         self.cell_frames[address] = cell
@@ -212,10 +219,20 @@ class MetricInputTable(ttk.Frame):
         self.editable_addresses += (address,)
 
     def _make_cell_frame(
-        self, *, row: int, column: int, role: str, background: str
+        self,
+        *,
+        row: int,
+        column: int,
+        role: str,
+        background: str,
+        row_key: str | None = None,
     ) -> tk.Frame:
         cell = tk.Frame(self.table_frame, background=background, borderwidth=0)
-        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        if row_key is not None and row_key in self.section_break_before_rows:
+            pady = (TABLE_SECTION_BREAK_GAP, 1)
+        else:
+            pady = (0, 1)
+        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=pady)
         cell.surface_role = role
         return cell
 
