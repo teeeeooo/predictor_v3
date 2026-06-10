@@ -6,7 +6,7 @@
 * 이번 작업은 guard 구현 및 문서 보정 slice이며, 기존 소스 이동/리팩토링 등은 수행하지 않는다.
 
 ## 수정 파일 (Modified Files)
-* [tools/check_code_structure.py](../check_code_structure.py): 5가지의 신규 owner boundary guard 구현 및 run_checks() 통합
+* [check_code_structure.py](../../tools/check_code_structure.py): 5가지의 신규 owner boundary guard 구현 및 run_checks() 통합
 * [tests/test_code_structure_guard.py](../../tests/test_code_structure_guard.py): 각 가드 규칙들에 대응하는 5개 focused unit tests 추가
 * [docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md](../../docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md): Good example 링크를 absolute URL에서 relative code path로 수정
 * [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md): 작업 완료 기록 반영 및 Next Actions 조율
@@ -54,4 +54,4 @@
 * `git diff --check`: whitespace 에러 없음.
 
 ## Next Action
-* **Active report lifecycle cleanup** (16개의 active report가 쌓여 있으므로 summaries/archive 정리 실행).
+* **Active report lifecycle cleanup** (active report 수가 cleanup 기준에 도달했으므로 summaries/archive 정리 실행).
