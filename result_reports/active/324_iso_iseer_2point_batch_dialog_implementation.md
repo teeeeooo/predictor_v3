@@ -17,17 +17,17 @@
 
 ## Created Files (생성 파일)
 
-- [ui_tk/batch_dialogs/profiles/iso_iseer_2point.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/profiles/iso_iseer_2point.py)
-- [tests/test_ui_tk_iso_iseer_2point_batch_dialog.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/tests/test_ui_tk_iso_iseer_2point_batch_dialog.py)
+- [ui_tk/batch_dialogs/profiles/iso_iseer_2point.py](ui_tk/batch_dialogs/profiles/iso_iseer_2point.py)
+- [tests/test_ui_tk_iso_iseer_2point_batch_dialog.py](tests/test_ui_tk_iso_iseer_2point_batch_dialog.py)
 
 ## Modified Files (수정 파일)
 
-- [ui_tk/batch_dialogs/profiles/__init__.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/profiles/__init__.py)
-- [ui_tk/sections/iso_iseer_2point_section.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/sections/iso_iseer_2point_section.py)
-- [result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md) (Closeout Note 보정)
-- [docs/WORK_PLAN.md](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/docs/WORK_PLAN.md)
-- [project_log.md](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/project_log.md)
-- [docs/code_map/CODEBASE_REFERENCE_MAP.md](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/docs/code_map/CODEBASE_REFERENCE_MAP.md)
+- [ui_tk/batch_dialogs/profiles/__init__.py](ui_tk/batch_dialogs/profiles/__init__.py)
+- [ui_tk/sections/iso_iseer_2point_section.py](ui_tk/sections/iso_iseer_2point_section.py)
+- [result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md](result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md) (Closeout Note 보정)
+- [docs/WORK_PLAN.md](docs/WORK_PLAN.md)
+- [project_log.md](project_log.md)
+- [docs/code_map/CODEBASE_REFERENCE_MAP.md](docs/code_map/CODEBASE_REFERENCE_MAP.md)
 
 ## ISO 2-point Batch Profile Adapter Responsibility (ISO 2-point batch profile 어댑터 책임)
 
@@ -76,9 +76,10 @@
 - root의 `ui_tk/batch_*.py` 폴더 이동은 작업 범위 외로 엄격히 제외되었습니다.
 - calculator/core 및 ML predictor, golden fixture 등의 변경은 발생하지 않았습니다.
 
-## Manual GUI Smoke Requirement (수동 GUI 스모크 검증 필요 여부)
+## Manual GUI Smoke Status (수동 GUI 스모크 검증 상태)
 
-- **필요**: 이번 324 작업은 자동 검증을 통과했으나, 실제 사용자 환경에서의 "Multi 입력" 레이아웃 안착 위치, 복사/붙여넣기 편의성, 닫기 후 재오픈 시의 정상 복원 여부 수동 확인이 필요합니다. (사용자 수동 스모크 결과는 다음 SASO T3 또는 closeout 작업 시작 전 closeout note에 수집됩니다.)
+- **완료**: 사용자 수동 GUI 확인 결과 이상 없음이 확인되었습니다.
+- **운영 원칙**: 앞으로 Codex 프롬프트에는 사용자 수동 GUI 확인 세부 항목을 포함하지 않으며, 사용자가 별도 확인 후 결과만 closeout에 반영하는 운영 방식을 적용합니다.
 
 ## Next Actions (향후 작업)
 
