@@ -17,9 +17,14 @@
 
 ## 3. 핵심 아키텍처 원칙
 - **공통 엔진 우선:** 지역별(Region) 하드코딩을 먼저 적용하지 않고, 공통 엔진 / profile / config / handler 구조를 먼저 검토하여 확장성을 유지합니다.
-- **PyQt5 유지:** PyQt5를 표준으로 유지하며, PyQt6로의 전환은 금지합니다.
+- **UI 툴킷 정책 (UI Toolkit Policy):**
+  - Calculator UI는 Tkinter 전환을 활성 마이그레이션 방향(active migration direction)으로 진행합니다.
+  - Train/Predict의 기존 legacy PyQt5 경로는 재작성 전까지 그대로 유지합니다 (PyQt6로의 전환은 금지).
+  - 향후 Train/Predict의 신규 재작성(rewrite)은 별도의 Design Gate를 거쳐 PySide6를 타겟으로 할 수 있습니다.
 - **API 안정성:** `core` 모듈의 calculator public API는 신중하게 유지합니다.
-- **UI 분리:** Train/Predict UI 작업과 계산기 UI 작업을 섞어 진행하여 기존 코드를 깨뜨리지 않도록 철저히 분리합니다.
+- **UI 분리 및 경계 (UI Separation & Boundary):**
+  - Calculator, Train, Predict 애플리케이션의 화면 및 비즈니스 로직 책임을 명확히 구분하며, 작업을 서로 섞지 않습니다.
+  - 장기적인 애플리케이션 패키지 경계는 `apps/{calculator,train,predict}/` 구조를 지향합니다.
 - **Schema boundary 분리:** region config, HW candidate input, ML output/result schema, calculator result schema를 섞지 않습니다.
 - **Architecture contract 위치:** calculator profile resolver와 역탐색 boundary의 상세 기준은 `docs/architecture/project_architecture.md`에 둡니다.
 
@@ -33,8 +38,8 @@
 - 주요 계산 경로가 regression test로 보호된다.
 - 계산 로직 변경 시 전체 테스트로 회귀를 방어할 수 있다.
 
-### Phase 2 — Calculator UI v1
-- 엔지니어가 규격 계산 입력값을 직접 넣고 결과를 확인할 수 있는 UI를 만든다.
+### Phase 2 — Calculator UI v1 (Tkinter Migration)
+- 엔지니어가 규격 계산 입력값을 직접 넣고 결과를 확인할 수 있는 Tkinter 기반 UI를 구축하고 마이그레이션한다.
 - 우선 ISO16358/CSPF부터 안정화하고, HSPF/EN14825/AHRI는 단계적으로 연결한다.
 
 완료 기준:

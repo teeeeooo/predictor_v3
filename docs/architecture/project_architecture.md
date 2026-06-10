@@ -11,9 +11,13 @@
   - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등)
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
-- **`ui/`**: PyQt5 기반 GUI 구성 요소
-  - `base_model.py`: `QAbstractTableModel`을 상속받은 데이터 모델
-  - `predict_window.py`: 예측 UI 및 ODU 캐스케이딩 로직 전담
+- **`ui/`**: legacy PyQt5 기반 multi-app GUI 구성 요소
+  - 현재 `app_calculator.py`, `app_train.py`, `app_predict.py`가 공유하는 레거시 화면 경로입니다.
+- **`ui_tk/`**: calculator-only Tkinter 기반 마이그레이션 소스
+  - 계산기용 신규 UI로, generic `ui`로 이름을 변경하지 않고 `ui_tk`로 유지합니다.
+- **`apps/` (장기 지향 패키지 경계)**:
+  - 장기적으로 `apps/{calculator,train,predict}/` 패키지 구조로 나아가며, 현재 Tkinter 계산기 UI(`ui_tk/`)는 향후 `apps/calculator/ui/` 하위로 마이그레이션될 예정입니다.
+  - `apps/train` 및 `apps/predict`는 현 시점에서는 물리적 폴더를 생성하지 않고, 향후 PySide6 재작성 시점에 생성할 reserved boundary로 문서상 선언합니다.
 - **`data/`**: 규격 설정(JSON) 및 학습 데이터
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
 
@@ -62,7 +66,11 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 - **Cascading autofill 단계**: 계층형 자동완성은 데이터 조회, signal-blocked value write, UI 상태/rendering update의 3단계를 분리한다.
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
-### 3.3 UI Model/View Guardrails
+### 3.3 UI Model/View Guardrails (PyQt Legacy UI 전용)
+
+> [!NOTE]
+> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)에 적용되는 규칙입니다. 신규 Tkinter 기반 계산기 UI(`ui_tk/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
+
 - **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
 - **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
@@ -210,7 +218,10 @@ Compatibility profile 선택은 opt-in이어야 한다. `region=au_nz` 또는 `s
 
 ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)는 별도 calculator/profile/test namespace로 유지한다. Excel COM dump, golden/sample/test-only value는 production region config에 넣지 않고, compatibility reference artifact 또는 test fixture namespace에서만 다룬다.
 
-### UI / calc_window.py routing contract
+### UI / calc_window.py routing contract (PyQt Legacy Calculator Reference)
+
+> [!NOTE]
+> `ui/calc_window.py` 및 관련 PyQt5 기반 계산기 코드는 현재 마이그레이션을 위한 read-only reference로 유지되며, 차후 `apps/calculator` 구조화가 완료되면 은퇴(retire) 예정입니다. 이 라우팅 계약은 향후 Tkinter 기반 계산기(`ui_tk/` 및 `apps/calculator/ui/`)의 설계 구조로 고스란히 승계됩니다.
 
 `calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
 
