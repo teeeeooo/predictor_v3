@@ -31,7 +31,7 @@ YAML 형식으로 추가된 2개의 entries 세부사항은 다음과 같습니�
 * `git status --short`: `project_memory_seed.md` 수정 및 새 active report 생성 상태 확인 완료.
 
 ## Known Risks
-* Memory seed entries가 누적되어 50개 임계치에 도달하는 경우, 추후 memory maintenance task를 제안하여 seed 정리 및 indexing preflight를 수행해야 하는 장기적 과제가 있습니다. (현재는 threshold 미만이므로 cleanup 보류)
+* Memory seed entries가 계속 누적되고 있으므로, seed count가 maintenance audit 기준을 넘은 경우 별도 memory maintenance audit task로 다룬다. 이번 작업에서는 broad seed maintenance를 수행하지 않는다.
 
 ## Project Memory Seed Sync Judgment
 * Summary 364 마일스톤에 대한 memory seed sync를 완료하여 memory seed의 최신성을 동기화하였습니다. 향후 GUI section integration 작업 시 이 entries 정보가 참고자료로 자동 활용됩니다.
