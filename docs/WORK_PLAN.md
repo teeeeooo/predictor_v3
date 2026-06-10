@@ -101,19 +101,8 @@
 - 312: Regenerated CODEBASE_REFERENCE_MAP.md with embedded git metadata and neutral headers.
 - 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
-- 315: Archived completed controller switch reports and restored active report folder hygiene.
-- 316: Corrected active report lifecycle cleanup and fixed local absolute links in summary 314.
-- 317: Audited main table migration compatibility and confirmed transition to TkTableController is complete. Recommended ui_tk folder cleanup (retiring ExcelLikeTableController) as the next slice.
-- 318: Retired legacy ExcelLikeTableController, corrected test gaps in tests/test_ui_tk_iso_table_autocalc.py and tests/test_ui_tk_table_controller.py, and added focused interactive behavior tests in tests/test_ui_tk_metric_input_table_controller_parity.py.
-- 319: Audited ui_tk batch dialog folder boundary before profile batch expansion and proposed next folder organization slice.
-- 320: Corrected batch dialog folder boundary decision to use a scalable shell + profiles composition architecture.
-- 321: Implemented batch dialog shell + profiles skeleton and relocated Hong Kong CSPF batch dialog without behavior change.
-- 322: Closed out manual GUI smoke and corrected private attribute access on batch dialog wrapper.
-- 323: Removed private _shell attribute access from integration test and added shell-level unit tests.
-- 324: Implemented ISO / India ISEER 2-point batch dialog and adapter, integrated with IsoIseer2PointSection.
-- 325: Corrected 324 active report local links and resolved manual verification status.
-- 326: Implemented SASO T3 batch dialog and adapter, integrated with IsoSasoT3Section.
-- 327: Corrected SASO T3 batch optional partial validation and result header/order (4pt first, 3pt second).
+- 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
+- 335: Completed active report lifecycle cleanup before batch foundation foldering audit.
 
 
 ## Next Actions
