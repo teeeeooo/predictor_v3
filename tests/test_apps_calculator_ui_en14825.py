@@ -322,7 +322,7 @@ def test_seer_table_model_behavior():
 
     # Check cell values
     assert model.get_value("condition_temp", "A") == "35°C"
-    assert model.get_value("part_load_ratio", "A") == "100.0%"
+    assert model.get_value("part_load_ratio", "A") == "100%"
     assert model.get_value("part_load_w", "A") == "3000"
 
     assert model.get_value("declared_capacity", "A") == "3600"
@@ -419,6 +419,56 @@ def test_en14825_gui_integration():
         assert notebook is not None
         tab_names = [notebook.tab(i, "text") for i in range(len(notebook.tabs()))]
         assert "EN14825" in tab_names
+
+    finally:
+        root.destroy()
+
+
+def test_en14825_static_cell_tint():
+    """Verify that static computed cells expose their Label as widget and get correctly tinted."""
+    import tkinter as tk
+    from tkinter import ttk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+        from apps.calculator.ui.layout_constants import TABLE_PASS_BG, TABLE_INVALID_BG
+        from apps.calculator.ui.table.roles import CellRole
+        from apps.calculator.ui.en14825 import SeerTableModel
+
+        section = En14825SeerSection(root)
+
+        row_idx = SeerTableModel.ROW_KEYS.index("eer_percent")
+        col_idx = SeerTableModel.COL_KEYS.index("A")
+        position = (row_idx, col_idx)
+
+        # Verify role is READONLY
+        assert section.input_table.cell_role(position) == CellRole.READONLY
+
+        # Get widget
+        widget = section.input_table.cell_widget(position)
+        assert isinstance(widget, tk.Label)
+
+        # Repaint and verify background colors
+        section._auto_calc.flush_now()
+
+        frame = section.input_table.cell_frame(position)
+        assert frame.cget("background") == TABLE_PASS_BG
+        assert widget.cget("background") == TABLE_PASS_BG
+
+        # Now set invalid input to tested_power to trigger invalid state/recalculate
+        section.input_table.set_value("tested_power_A", "0")
+        section._auto_calc.flush_now()
+
+        # Power state is invalid
+        power_row_idx = SeerTableModel.ROW_KEYS.index("tested_power")
+        power_pos = (power_row_idx, col_idx)
+        power_widget = section.input_table.cell_widget(power_pos)
+        assert power_widget.cget("background") == TABLE_INVALID_BG
 
     finally:
         root.destroy()

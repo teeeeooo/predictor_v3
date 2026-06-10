@@ -104,7 +104,8 @@
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
 - 365: memory seed sync after Summary 364 completed.
-  - 366: EN14825 SEER section integration with real-time updates (in progress).
+  - 366: EN14825 SEER section integration with real-time updates completed.
+  - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix (in progress).
 
 ## Next Actions
 

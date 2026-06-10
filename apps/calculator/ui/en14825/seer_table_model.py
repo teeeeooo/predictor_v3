@@ -105,7 +105,7 @@ class SeerTableModel:
             if temp is not None:
                 ratio_pct, load_w = SeerAdapter.get_part_load_info(temp, self.p_design_c_w, self.t_design_c)
                 if row_key == "part_load_ratio":
-                    return f"{ratio_pct:.1f}%"
+                    return f"{ratio_pct:.0f}%"
                 else:
                     return f"{load_w:.0f}"
             return ""

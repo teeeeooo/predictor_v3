@@ -75,6 +75,7 @@ class MetricInputTable(ttk.Frame):
         self.editable_cell_frames: dict[str, tk.Frame] = {}
         self.static_cell_frames: dict[CellAddress, tk.Frame] = {}
         self.cell_frames: dict[CellAddress, tk.Frame] = {}
+        self.static_cell_labels: dict[CellAddress, tk.Label] = {}
         if len(set(self.editable_cells.values())) != len(self.editable_cells):
             raise ValueError("metric input field keys must be unique")
         self.field_order: tuple[str, ...] = ()
@@ -163,14 +164,16 @@ class MetricInputTable(ttk.Frame):
         cell.surface_address = address
         self.cell_frames[address] = cell
         self.static_cell_frames[address] = cell
-        tk.Label(
+        label = tk.Label(
             cell,
             text="-",
             width=self.data_column_chars,
             background=TABLE_STATIC_BG,
             foreground=TABLE_STATIC_FG,
             font=TABLE_BODY_FONT,
-        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
+        )
+        label.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
+        self.static_cell_labels[address] = label
 
     def _add_editable_cell(
         self, *, row: int, column: int, address: CellAddress, field_key: str
@@ -372,6 +375,9 @@ class MetricInputTable(ttk.Frame):
         if field_key is not None:
             return self.editable_entries[field_key]
         address = self._address_at_position(position)
+        label = self.static_cell_labels.get(address)
+        if label is not None:
+            return label
         return self.cell_frames[address]
 
     def focus_widget(self, position: tuple[int, int]) -> tk.Widget:

@@ -26,9 +26,8 @@ from apps.calculator.ui.layout_constants import (
     TABLE_INVALID_BG,
     TABLE_STATIC_BG,
     TABLE_EDITABLE_BG,
+    TABLE_PASS_BG,
 )
-
-PASS_TINT = "#" + "dcfce7"
 
 STATUS_MAPPINGS = {
     "idle": "대기 중",
@@ -54,18 +53,10 @@ class En14825SeerSection:
         self.adapter = SeerAdapter()
         self._current_table_model: SeerTableModel | None = None
 
-        self._frame = ttk.LabelFrame(parent, text="EN14825 SEER 계산")
+        self._frame = ttk.LabelFrame(parent, text="SEER Comparison (EN 14825)")
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Auxiliary Parameters Frame
-        ttk.Label(self._frame, text="설계 및 보조 운전 사양").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(ISO_SECTION_BLOCK_GAP, 4),
-        )
-
         self._p_design_var = tk.StringVar(value="3000")
         self._t_design_var = tk.StringVar(value="35.0")
         self._cd_var = tk.StringVar(value="0.25")
@@ -80,34 +71,40 @@ class En14825SeerSection:
             column=0,
             sticky="ew",
             padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
+            pady=(8, ISO_SECTION_BLOCK_GAP),
         )
 
-        # Row 0: Pdesignc, Tdesignc, Cd
-        ttk.Label(aux_frame, text="Pdesignc [W]:").grid(row=0, column=0, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._p_design_var, width=8).grid(row=0, column=1, sticky="w", padx=(0, 16), pady=2)
+        # Design Specs Frame (Pdesignc, Tdesignc, Cd)
+        design_frame = ttk.LabelFrame(aux_frame, text="설계 사양 (Design Specs)")
+        design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
-        ttk.Label(aux_frame, text="Tdesignc [°C]:").grid(row=0, column=2, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._t_design_var, width=8).grid(row=0, column=3, sticky="w", padx=(0, 16), pady=2)
+        ttk.Label(design_frame, text="Pdesignc [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(design_frame, textvariable=self._p_design_var, width=8).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
 
-        ttk.Label(aux_frame, text="Cd:").grid(row=0, column=4, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._cd_var, width=8).grid(row=0, column=5, sticky="w", padx=(0, 16), pady=2)
+        ttk.Label(design_frame, text="Tdesignc [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(design_frame, textvariable=self._t_design_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
 
-        # Row 1: Pto, Psb, Pck, Poff
-        ttk.Label(aux_frame, text="Pto [W]:").grid(row=1, column=0, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._p_to_var, width=8).grid(row=1, column=1, sticky="w", padx=(0, 16), pady=2)
+        ttk.Label(design_frame, text="Cd:").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(design_frame, textvariable=self._cd_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 6), pady=6)
 
-        ttk.Label(aux_frame, text="Psb [W]:").grid(row=1, column=2, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._p_sb_var, width=8).grid(row=1, column=3, sticky="w", padx=(0, 16), pady=2)
+        # Standby/Aux power Frame (Pto, Psb, Pck, Poff)
+        standby_frame = ttk.LabelFrame(aux_frame, text="대기 및 보조 전력 (Aux Power [W])")
+        standby_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        ttk.Label(aux_frame, text="Pck [W]:").grid(row=1, column=4, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._p_ck_var, width=8).grid(row=1, column=5, sticky="w", padx=(0, 16), pady=2)
+        ttk.Label(standby_frame, text="Pto:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(standby_frame, textvariable=self._p_to_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
 
-        ttk.Label(aux_frame, text="Poff [W]:").grid(row=1, column=6, sticky="w", padx=(0, 4), pady=2)
-        ttk.Entry(aux_frame, textvariable=self._p_off_var, width=8).grid(row=1, column=7, sticky="w", padx=(0, 16), pady=2)
+        ttk.Label(standby_frame, text="Psb:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(standby_frame, textvariable=self._p_sb_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+
+        ttk.Label(standby_frame, text="Pck:").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(standby_frame, textvariable=self._p_ck_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
+
+        ttk.Label(standby_frame, text="Poff:").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(standby_frame, textvariable=self._p_off_var, width=6).grid(row=0, column=7, sticky="w", padx=(0, 6), pady=6)
 
         # 2. Main Matrix Table
-        ttk.Label(self._frame, text="시험 및 운전 데이터 입력").grid(
+        ttk.Label(self._frame, text="SEER Test Conditions & Data").grid(
             row=2,
             column=0,
             sticky="w",
@@ -306,11 +303,9 @@ class En14825SeerSection:
         self.input_controller._paint_selection()
 
     def _set_static_cell_value(self, address: tuple[str, str], value: str) -> None:
-        frame = self.input_table.static_cell_frames.get(address)
-        if frame:
-            for child in frame.winfo_children():
-                if isinstance(child, tk.Label):
-                    child.configure(text=value)
+        label = self.input_table.static_cell_labels.get(address)
+        if label:
+            label.configure(text=value)
 
     def _resolve_cell_bg(self, position: tuple[int, int]) -> str:
         row, col = self.input_table._address_at_position(position)
@@ -323,7 +318,7 @@ class En14825SeerSection:
         if state == "invalid":
             return TABLE_INVALID_BG
         elif state == "pass":
-            return PASS_TINT
+            return TABLE_PASS_BG
         elif state == "unavailable":
             return TABLE_STATIC_BG
         else:

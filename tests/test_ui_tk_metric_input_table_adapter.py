@@ -139,7 +139,7 @@ class TestAdapterWidgets:
         widget = sample_table.cell_widget((0, 0))
         assert widget is sample_table.editable_entries["a"]
 
-    def test_cell_widget_readonly_returns_frame(self, tk_root) -> None:
+    def test_cell_widget_readonly_returns_label(self, tk_root) -> None:
         table = MetricInputTable(
             tk_root,
             columns=(("c1", "Col1"), ("c2", "Col2")),
@@ -147,7 +147,7 @@ class TestAdapterWidgets:
             editable_cells={("r1", "c1"): "a"},
         )
         widget = table.cell_widget((0, 1))
-        assert widget is table.cell_frames[("r1", "c2")]
+        assert widget is table.static_cell_labels[("r1", "c2")]
 
     def test_focus_widget_matches_cell_widget(self, sample_table: MetricInputTable) -> None:
         assert sample_table.focus_widget((0, 0)) is sample_table.cell_widget((0, 0))
