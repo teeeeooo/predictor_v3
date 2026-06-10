@@ -766,7 +766,7 @@ entries:
       - AHRI 210/240
       - MVC boundary
     assertionStatus: verified
-    source: result_reports/active/331_memory_seed_maintenance_audit.md (user-confirmed direction corrections)
+    source: result_reports/active/332_memory_seed_maintenance_execution.md (user-confirmed direction corrections after 331 audit)
 ```
 
 ## Known Gaps
