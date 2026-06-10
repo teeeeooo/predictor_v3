@@ -1,9 +1,4 @@
-"""Hong Kong CSPF batch section with two-row matrix surface.
-
-The row-per-case path (BatchCaseTable + BatchCalculationController) is
-preserved via hong_kong_cspf_batch_spec.HongKongCspfBatchHandler and
-batch_case_table.BatchCaseTable for fallback recovery.
-"""
+"""Hong Kong CSPF batch profile adapters and wrappers."""
 
 from __future__ import annotations
 
@@ -14,22 +9,14 @@ import tkinter as tk
 from tkinter import ttk
 
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.batch_case_table import BatchCaseTable  # noqa: F401  fallback
-from ui_tk.batch_controller import BatchCalculationController  # noqa: F401  fallback
 from ui_tk.batch_matrix_models import HONG_KONG_CSPF_MATRIX_SPEC
 from ui_tk.batch_matrix_table import BatchMatrixTable
 from ui_tk.batch_models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
-from ui_tk.sections.hong_kong_cspf_batch_spec import (
-    HONG_KONG_CSPF_BATCH_SPEC,  # noqa: F401  fallback
-    HongKongCspfBatchHandler,
-)
+from ui_tk.sections.hong_kong_cspf_batch_spec import HongKongCspfBatchHandler
 from ui_tk.table.controller import TkTableController
 from ui_tk.table_csv_export import export_table_to_csv
-from ui_tk.window_geometry import parent_centered_content_geometry
-
-
-_BATCH_DIALOG_MIN_SIZE = (920, 320)
+from ui_tk.batch_dialogs.shell import BatchDialogShell
 
 
 @dataclass(frozen=True)
@@ -145,8 +132,44 @@ class HongKongCspfBatchSection:
         export_table_to_csv(self._frame, "hong_kong_cspf_batch.csv", headers, rows)
 
 
+class HongKongCspfBatchAdapter:
+    """Composition adapter implementing BatchProfileAdapter for Hong Kong CSPF."""
+
+    def __init__(self, region_label: str, initial_snapshot: object | None = None) -> None:
+        self.region_label = region_label
+        self.initial_snapshot = initial_snapshot
+        self.section: HongKongCspfBatchSection | None = None
+
+    @property
+    def title(self) -> str:
+        return f"CSPF Batch ({self.region_label})"
+
+    @property
+    def min_size(self) -> tuple[int, int]:
+        return (920, 320)
+
+    def build_content(self, parent: tk.Widget) -> tk.Widget:
+        self.section = HongKongCspfBatchSection(
+            parent,
+            self.region_label,
+            initial_snapshot=self.initial_snapshot,
+        )
+        return self.section._frame
+
+    def dispose(self) -> None:
+        if self.section is not None:
+            self.section.dispose()
+
+    def snapshot(self) -> list[dict[str, str]]:
+        if self.section is not None:
+            raw_snapshot = self.section.table.snapshot()
+            if isinstance(raw_snapshot, (tuple, list)):
+                return [dict(row) for row in raw_snapshot if isinstance(row, dict)]
+        return []
+
+
 class HongKongCspfBatchDialog:
-    """Toplevel owner for the Hong Kong CSPF batch matrix surface."""
+    """Toplevel owner wrapper for Hong Kong CSPF batch dialog, utilizing BatchDialogShell."""
 
     def __init__(
         self,
@@ -156,52 +179,16 @@ class HongKongCspfBatchDialog:
         initial_snapshot: object | None = None,
         on_close: Callable[[list[dict[str, str]]], None] | None = None,
     ) -> None:
-        self._on_close = on_close
-        self.window = tk.Toplevel(parent)
-        self.window.withdraw()
-        self.window.title(f"CSPF Batch ({region_label})")
-        self.window.columnconfigure(0, weight=1)
-        self.window.rowconfigure(0, weight=1)
-        self.section = HongKongCspfBatchSection(
-            self.window,
-            region_label,
-            initial_snapshot=initial_snapshot,
-        )
-        self.section.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self._apply_initial_geometry(parent)
-        self.window.protocol("WM_DELETE_WINDOW", self.close)
-        self.window.deiconify()
-        self.window.lift()
-
-    def _apply_initial_geometry(self, parent: tk.Widget) -> None:
-        parent_toplevel = parent.winfo_toplevel()
-        parent_toplevel.update_idletasks()
-        self.window.update_idletasks()
-        self.window.minsize(*_BATCH_DIALOG_MIN_SIZE)
-        geometry = parent_centered_content_geometry(
-            parent_toplevel.geometry(),
-            (self.window.winfo_reqwidth(), self.window.winfo_reqheight()),
-            self.window.winfo_screenwidth(),
-            self.window.winfo_screenheight(),
-            _BATCH_DIALOG_MIN_SIZE,
-        )
-        self.window.geometry(geometry)
+        self.adapter = HongKongCspfBatchAdapter(region_label, initial_snapshot=initial_snapshot)
+        self._shell = BatchDialogShell(parent, self.adapter, on_close=on_close)
+        self.section = self.adapter.section
+        self.window = self._shell.window
 
     def close(self) -> None:
-        snapshot = self.snapshot()
-        self.section.dispose()
-        if self.window.winfo_exists():
-            self.window.destroy()
-        if self._on_close is not None:
-            self._on_close(snapshot)
+        self._shell.close()
 
     def snapshot(self) -> list[dict[str, str]]:
-        raw_snapshot: Any = self.section.table.snapshot()
-        if isinstance(raw_snapshot, (tuple, list)):
-            return [dict(row) for row in raw_snapshot if isinstance(row, dict)]
-        return []
+        return self._shell._adapter.snapshot()
 
     def focus(self) -> None:
-        if self.window.winfo_exists():
-            self.window.lift()
-            self.window.focus_force()
+        self._shell.focus()

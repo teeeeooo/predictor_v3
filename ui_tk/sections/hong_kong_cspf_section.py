@@ -23,7 +23,7 @@ from ui_tk.profile_resolver import resolve_profile_id
 from ui_tk.result_models import result_status
 from ui_tk.result_panel import ResultPanel
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
-from ui_tk.sections.hong_kong_cspf_batch_section import HongKongCspfBatchDialog
+from ui_tk.batch_dialogs.profiles.hong_kong_cspf import HongKongCspfBatchDialog
 from ui_tk.sections.iso16358_helpers import build_cspf_input
 from ui_tk.sections.result_formatting import summarize_cspf_result, bin_details
 

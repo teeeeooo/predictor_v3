@@ -107,16 +107,16 @@
 - 318: Retired legacy ExcelLikeTableController, corrected test gaps in tests/test_ui_tk_iso_table_autocalc.py and tests/test_ui_tk_table_controller.py, and added focused interactive behavior tests in tests/test_ui_tk_metric_input_table_controller_parity.py.
 - 319: Audited ui_tk batch dialog folder boundary before profile batch expansion and proposed next folder organization slice.
 - 320: Corrected batch dialog folder boundary decision to use a scalable shell + profiles composition architecture.
+- 321: Implemented batch dialog shell + profiles skeleton and relocated Hong Kong CSPF batch dialog without behavior change.
 
 ## Next Actions
 
-1. **Batch dialog shell + profiles skeleton and Hong Kong CSPF relocation**
-   - Build `ui_tk/batch_dialogs/shell.py` and `profiles/` structure, and relocate Hong Kong CSPF batch dialog without behavior change.
-2. **ISO 2-point batch dialog implementation**
+1. **ISO 2-point batch dialog implementation**
    - Implement batch matrix dialog for ISO / ISEER 2-point profile.
-3. **SASO T3 batch dialog implementation**
+2. **SASO T3 batch dialog implementation**
    - Implement batch matrix dialog for SASO T3 profile, preserving optional 35 Min behavior.
-4. **Calculator entrypoint handover from PyQt to Tkinter**
+3. **Calculator entrypoint handover from PyQt to Tkinter**
+4. **ui_tk root folder inventory audit**
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints

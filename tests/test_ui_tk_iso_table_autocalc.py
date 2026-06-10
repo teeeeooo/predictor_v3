@@ -1279,7 +1279,7 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
 
 
 def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
-    from ui_tk.sections import hong_kong_cspf_batch_section as batch_dialog_module
+    from ui_tk.batch_dialogs import shell as batch_dialog_module
 
     geometry_calls = []
     original_geometry = batch_dialog_module.parent_centered_content_geometry
@@ -1311,8 +1311,8 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert first_dialog.window.winfo_exists()
     assert geometry_calls
     assert first_dialog.window.state() == "normal"
-    assert first_dialog.section.table.model.spec.profile_key == "hong_kong_cspf"
-    assert len(first_dialog.section.table.model.rows) == 5
+    assert first_dialog.section.table.spec.profile_key == "hong_kong_cspf"
+    assert len(first_dialog.section.table.cases) == 5
     assert first_dialog.section.table.viewport_frame.surface_role == "batch_table_viewport"
     assert first_dialog.section.table.viewport_frame.layout_policy == (
         "vertical_scroll_containment"
@@ -1320,17 +1320,16 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert first_dialog.section.table.table_frame.layout_policy == (
         "vertical_scroll_containment"
     )
-    assert first_dialog.section.table.model.spec.status_keys == ()
-    assert "case" not in first_dialog.section.table.model.spec.input_keys
-    assert first_dialog.section.table.row_header_texts() == ("1", "2", "3", "4", "5")
+    assert "case" not in first_dialog.section.table.spec.input_keys
+    assert tuple(str(i + 1) for i in range(len(first_dialog.section.table.cases))) == ("1", "2", "3", "4", "5")
     assert set(tab.sections) == {"CSPF", "HSPF"}
     dialog_buttons = _widget_texts(first_dialog.window)
     assert "Run Batch" not in dialog_buttons
     assert "Clear Results" not in dialog_buttons
-    first_dialog.section.table.add_row()
+    first_dialog.section.table.add_case()
     tk_root.update_idletasks()
     assert first_dialog.section.table.scrollbar_visible
-    assert first_dialog.section.table.row_header_texts() == (
+    assert tuple(str(i + 1) for i in range(len(first_dialog.section.table.cases))) == (
         "1",
         "2",
         "3",
@@ -1338,17 +1337,17 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
         "5",
         "6",
     )
-    first_dialog.section.table.set_text_rows(
+    first_dialog.section.table.restore_snapshot(
         [
             {
-                "declared": "3500",
+                "declared_capacity": "3500",
                 "full_capacity": "3600",
                 "full_power": "900",
                 "half_capacity": "1700",
                 "half_power": "380",
             },
             {
-                "declared": "4200",
+                "declared_capacity": "4200",
                 "full_capacity": "4300",
                 "full_power": "1000",
                 "half_capacity": "2100",
@@ -1358,7 +1357,7 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
             {},
             {},
             {
-                "declared": "5000",
+                "declared_capacity": "5000",
                 "full_capacity": "5100",
                 "full_power": "1300",
                 "half_capacity": "2400",
@@ -1383,10 +1382,10 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
 
     assert reopened_dialog is not None
     assert reopened_dialog is not first_dialog
-    assert len(reopened_dialog.section.table.model.rows) == 6
-    assert reopened_dialog.section.table.model.rows[0]["declared"] == "3500"
-    assert reopened_dialog.section.table.model.rows[1]["full_power"] == "1000"
-    assert reopened_dialog.section.table.model.rows[5]["half_power"] == "620"
+    assert len(reopened_dialog.section.table.cases) == 6
+    assert reopened_dialog.section.table.cases[0]["declared_capacity"] == "3500"
+    assert reopened_dialog.section.table.cases[1]["full_power"] == "1000"
+    assert reopened_dialog.section.table.cases[5]["half_power"] == "620"
     assert reopened_dialog.section.table.scrollbar_visible
 
     reopened_dialog.close()

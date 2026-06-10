@@ -1632,3 +1632,23 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — Build batch dialog shell + profiles skeleton and relocate Hong Kong CSPF
+
+### Tried
+- 320 설계 보정에 따라 flat batch_dialogs 구조가 아닌 `ui_tk/batch_dialogs/shell.py` (공통 Toplevel container, geometry settle, close callback, snapshot handoff 담당)와 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` (프로필별 matrix table layout, controller 연동 담당) 구조를 실제 코드로 구현 및 이주 완료.
+- `ui_tk/sections/hong_kong_cspf_section.py` 및 관련 테스트의 import 경로와 API 호출부를 최신 구조에 맞춰 정상 갱신.
+- `ui_tk/sections/hong_kong_cspf_batch_section.py` 파일을 삭제 처리.
+- `tests/test_ui_tk_iso_table_autocalc.py`의 `test_hong_kong_cspf_batch_opens_dialog_not_metric_tab` 테스트 및 `tests/test_ui_tk_hong_kong_cspf_matrix_migration.py` 테스트가 신규 API에 대응하도록 테스트 코드 assertion 및 mock을 교정.
+
+### Result
+- `ui_tk/batch_dialogs/shell.py` 및 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` 생성 완료.
+- `ui_tk/sections/hong_kong_cspf_batch_section.py` 파일 제거 완료.
+- 관련 import 경로 갱신 및 `pytest` 검증 완료.
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
+- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 신규 리포트 생성 및 `320` 리포트 마감 note 보정 완료.
+
+### Decision
+- 공통 Toplevel lifecycle/geometry/snapshot 관리와 프로필별 뷰 구성 어댑터 간의 Composition 설계가 정상 동작함을 최종 승인 및 마감.
+- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
+- active report count meets lifecycle threshold criteria.

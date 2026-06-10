@@ -17,7 +17,7 @@ from ui_tk.sections.hong_kong_cspf_batch_spec import (
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,
 )
-from ui_tk.sections.hong_kong_cspf_batch_section import (
+from ui_tk.batch_dialogs.profiles.hong_kong_cspf import (
     HongKongCspfMatrixController,
 )
 
