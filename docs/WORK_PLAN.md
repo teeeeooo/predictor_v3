@@ -104,13 +104,15 @@
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
 - 347: Completed active report lifecycle cleanup after apps calculator relocation (described in [Report 347](result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md)).
+- 349: Completed Calculator PyQt reference retirement preflight (described in [Report 349](result_reports/active/349_calculator_pyqt_reference_retirement_preflight.md)).
 
 
 ## Next Actions
 
-1. **Calculator PyQt reference retirement preflight**
+1. **Mixed ISO table test split or retirement (Recommended next slice)**
 2. **Test/package naming cleanup after apps calculator UI relocation**
 3. **EN14825 / AHRI 210/240 / KS profile expansion**
+
 
 
 
