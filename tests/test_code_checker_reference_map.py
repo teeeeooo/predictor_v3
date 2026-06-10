@@ -126,7 +126,7 @@ def test_duplicate_includes_repeated_top_level_helpers() -> None:
 def test_hotspot_active_vs_legacy_split() -> None:
     root = Path("/repo")
     active_fi = FileInfo(
-        path=Path("/repo/ui_tk/big_file.py"),
+        path=Path("/repo/apps/calculator/ui/big_file.py"),
         loc=500,
         classes=[Symbol("A", 1, 2, "class")],
         top_level_functions=[],
@@ -151,7 +151,7 @@ def test_hotspot_active_vs_legacy_split() -> None:
     )
     active, legacy = find_hotspots([active_fi, legacy_fi, deferred_fi], root)
     assert len(active) == 1
-    assert active[0].path == "ui_tk/big_file.py"
+    assert active[0].path == "apps/calculator/ui/big_file.py"
     assert active[0].category == "active"
     assert len(legacy) == 2
     legacy_paths = {h.path for h in legacy}
@@ -166,7 +166,7 @@ def test_hotspot_active_vs_legacy_split() -> None:
 def test_keyword_hit_group_not_ownership() -> None:
     root = Path("/tmp")
     fi = FileInfo(
-        path=Path("/tmp/ui_tk/table_widget.py"),
+        path=Path("/tmp/apps/calculator/ui/table_widget.py"),
         loc=10,
         classes=[Symbol("TableWidget", 1, 2, "class")],
         top_level_functions=[],

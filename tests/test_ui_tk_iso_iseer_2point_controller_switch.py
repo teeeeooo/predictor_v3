@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.table.controller import TkTableController
+from apps.calculator.ui.table.controller import TkTableController
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def tk_root():
 
 @pytest.fixture
 def section(tk_root):
-    from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
+    from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
 
     sec = IsoIseer2PointSection(tk_root)
     sec.pack()

@@ -1,7 +1,7 @@
 import importlib
 import sys
 
-from ui_tk.sections.iso16358_helpers import (
+from apps.calculator.ui.sections.iso16358_helpers import (
     build_cspf_input,
     build_hspf_input,
     format_cspf_result,
@@ -15,11 +15,11 @@ def test_helper_module_import_does_not_require_tkinter_or_pyqt():
             name == "tkinter"
             or name.startswith("tkinter.")
             or name.startswith("PyQt5")
-            or name == "ui_tk.sections.iso16358_helpers"
+            or name == "apps.calculator.ui.sections.iso16358_helpers"
         ):
             del sys.modules[name]
 
-    importlib.import_module("ui_tk.sections.iso16358_helpers")
+    importlib.import_module("apps.calculator.ui.sections.iso16358_helpers")
 
     tkinter_loaded = any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules

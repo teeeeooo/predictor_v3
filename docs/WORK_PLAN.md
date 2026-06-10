@@ -109,12 +109,14 @@
 - 342: Completed calculator-first apps package architecture audit before entrypoint handover.
 - 343: Completed PROJECT_CHARTER.md and project_architecture.md policy alignment update.
 - 344: Completed apps calculator skeleton creation and entrypoint handover.
+- 345: Completed ui_tk relocation to apps/calculator/ui.
 
 
 ## Next Actions
 
-1. **ui_tk relocation to apps/calculator/ui**
-2. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Active report lifecycle cleanup (threshold exceeded)**
+2. **Calculator PyQt reference retirement preflight**
+3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
 

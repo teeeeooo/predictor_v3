@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.table.controller import TkTableController
+from apps.calculator.ui.table.controller import TkTableController
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def tk_root():
 
 @pytest.fixture
 def section(tk_root):
-    from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+    from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
     sec = HongKongHspfSection(tk_root, region_label="Hong Kong")
     sec.pack()

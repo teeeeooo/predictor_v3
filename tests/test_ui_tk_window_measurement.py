@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-from ui_tk.window_measurement import TkVisibleContentMeasurement
+from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
 
 class FakeContent:

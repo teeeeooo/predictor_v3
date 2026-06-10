@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.table.controller import TkTableController
+from apps.calculator.ui.table.controller import TkTableController
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def tk_root():
 
 @pytest.fixture
 def section(tk_root):
-    from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
+    from apps.calculator.ui.sections.iso_saso_t3_section import IsoSasoT3Section
 
     sec = IsoSasoT3Section(tk_root)
     sec.pack()
@@ -103,7 +103,7 @@ class TestRecalculate:
 
         # Verify invalid field is visually marked
         assert section.input_table.is_field_invalid("full_46_capacity") is True
-        from ui_tk.layout_constants import TABLE_INVALID_BG
+        from apps.calculator.ui.layout_constants import TABLE_INVALID_BG
         assert section.input_table.editable_entries["full_46_capacity"].cget("background") == TABLE_INVALID_BG
 
     def test_recalculate_blocks_on_required_non_positive_value(self, section) -> None:

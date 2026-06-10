@@ -86,7 +86,7 @@ class FakeOverflow:
 
 class TestSideEffectFreeMeasurement:
     def test_measurement_does_not_select_hidden_tabs(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         tab_b = FakeWidget(width=500, height=250)
@@ -107,7 +107,7 @@ class TestSideEffectFreeMeasurement:
         assert select_with_arg_calls == []
 
     def test_current_tab_width_and_height_are_used(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         tab_b = FakeWidget(width=500, height=250)
@@ -128,7 +128,7 @@ class TestSideEffectFreeMeasurement:
         assert diagnostics["nested_max_tab_height"] == 200
 
     def test_width_shrinks_when_switching_to_narrow_tab(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=500, height=250)
         tab_b = FakeWidget(width=300, height=200)
@@ -171,7 +171,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot3.preferred_size[0] == 541
 
     def test_height_shrinks_when_detail_closes(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=500)
         notebook = FakeNotebook({"tab_a": tab_a}, "tab_a")
@@ -208,7 +208,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot2.preferred_size[1] < snapshot1.preferred_size[1]
 
     def test_chrome_height_estimate_computed_once(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         notebook = FakeNotebook({"tab_a": tab_a}, "tab_a")
@@ -230,7 +230,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot2.diagnostics["chrome_height_estimate"] == 25
 
     def test_chrome_width_estimate_computed_once(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         notebook = FakeNotebook({"tab_a": tab_a}, "tab_a")
@@ -253,7 +253,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot2.diagnostics["chrome_width_estimate"] == 25
 
     def test_snapshot_is_side_effect_free_across_repeated_calls(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         tab_b = FakeWidget(width=500, height=250)
@@ -273,7 +273,7 @@ class TestSideEffectFreeMeasurement:
         assert select_with_arg_calls == []
 
     def test_no_nested_notebook_returns_empty_measurement(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         measurement = TkVisibleContentMeasurement(
             content=FakeContent(),
@@ -288,7 +288,7 @@ class TestSideEffectFreeMeasurement:
         assert snapshot.diagnostics["nested_current_tab_height"] == 0
 
     def test_inactive_nested_notebook_returns_empty_measurement(self) -> None:
-        from ui_tk.window_measurement import TkVisibleContentMeasurement
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
         tab_a = FakeWidget(width=300, height=200)
         notebook = FakeNotebook({"tab_a": tab_a}, "tab_a")

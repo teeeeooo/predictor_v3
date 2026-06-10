@@ -26,14 +26,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # ---------------------------------------------------------------------------
 
 
-def test_core_layer_rejects_ui_tk_import():
+def test_core_layer_rejects_apps.calculator.ui_import():
     findings = guard.check_banned_imports(
-        "from ui_tk.profile_resolver import resolve_profile_id\n",
+        "from apps.calculator.ui.profile_resolver import resolve_profile_id\n",
         "core/something.py",
         "core",
         guard.BANNED_IMPORTS["core"],
     )
-    assert any("ui_tk" in f.message for f in findings)
+    assert any("apps.calculator.ui" in f.message for f in findings)
     assert all(f.severity == "error" for f in findings)
 
 
@@ -67,33 +67,33 @@ def test_core_layer_allows_pure_python_import():
     assert findings == []
 
 
-def test_ui_tk_layer_rejects_pyqt5_import():
+def test_apps.calculator.ui_layer_rejects_pyqt5_import():
     findings = guard.check_banned_imports(
         "from PyQt5.QtWidgets import QWidget\n",
-        "ui_tk/something.py",
-        "ui_tk",
-        guard.BANNED_IMPORTS["ui_tk"],
+        "apps/calculator/ui/something.py",
+        "apps.calculator.ui",
+        guard.BANNED_IMPORTS["apps.calculator.ui"],
     )
     assert any("PyQt5" in f.message for f in findings)
 
 
-def test_ui_tk_layer_rejects_ui_import():
+def test_apps.calculator.ui_layer_rejects_ui_import():
     findings = guard.check_banned_imports(
         "from ui.calc_window import CalculatorWindow\n",
-        "ui_tk/something.py",
-        "ui_tk",
-        guard.BANNED_IMPORTS["ui_tk"],
+        "apps/calculator/ui/something.py",
+        "apps.calculator.ui",
+        guard.BANNED_IMPORTS["apps.calculator.ui"],
     )
     assert any("'ui'" in f.message for f in findings)
 
 
-def test_ui_tk_layer_allows_tkinter_and_core_dispatcher():
+def test_apps.calculator.ui_layer_allows_tkinter_and_core_dispatcher():
     findings = guard.check_banned_imports(
         "import tkinter as tk\nfrom core.calculator_dispatcher import "
         "create_calculator_for_profile\n",
-        "ui_tk/something.py",
-        "ui_tk",
-        guard.BANNED_IMPORTS["ui_tk"],
+        "apps/calculator/ui/something.py",
+        "apps.calculator.ui",
+        guard.BANNED_IMPORTS["apps.calculator.ui"],
     )
     assert findings == []
 
@@ -125,7 +125,7 @@ def test_app_entrypoint_rejects_loc_overflow():
 
 def test_app_entrypoint_accepts_thin_file():
     source = (
-        "from ui_tk.calculator_app import main\n\n"
+        "from apps.calculator.ui.calculator_app import main\n\n"
         "if __name__ == '__main__':\n    main()\n"
     )
     findings = guard.check_app_entrypoint_thin(source, "app_x.py")
@@ -133,11 +133,11 @@ def test_app_entrypoint_accepts_thin_file():
 
 
 # ---------------------------------------------------------------------------
-# ui_tk lightweight shell anti-pattern
+# apps.calculator.ui lightweight shell anti-pattern
 # ---------------------------------------------------------------------------
 
 
-def test_ui_tk_anti_pattern_trips_on_multi_responsibility_file():
+def test_apps.calculator.ui_anti_pattern_trips_on_multi_responsibility_file():
     """A file that defines shell + tab + section + resolver +
     result-panel responsibilities all in one place must fail."""
     source = (
@@ -149,31 +149,31 @@ def test_ui_tk_anti_pattern_trips_on_multi_responsibility_file():
         "class ResultPanel:\n    pass\n\n"
         "def resolve_profile_id(region, metric):\n    return ''\n"
     )
-    findings = guard.check_ui_tk_shell_anti_pattern(source, "ui_tk/calculator_app.py")
+    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "apps/calculator/ui/calculator_app.py")
     assert findings, "anti-pattern check should fire on multi-responsibility file"
     assert "mixes too many responsibilities" in findings[0].message
 
 
-def test_ui_tk_anti_pattern_ignores_dedicated_module():
+def test_apps.calculator.ui_anti_pattern_ignores_dedicated_module():
     """A single-responsibility module (e.g. only ``Iso16358Tab``) must
     not trip the anti-pattern even if it imports the resolver/etc."""
     source = (
-        "from ui_tk.profile_resolver import resolve_profile_id, REGION_BY_LABEL\n"
-        "from ui_tk.result_panel import ResultPanel\n"
-        "from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection\n\n"
+        "from apps.calculator.ui.profile_resolver import resolve_profile_id, REGION_BY_LABEL\n"
+        "from apps.calculator.ui.result_panel import ResultPanel\n"
+        "from apps.calculator.ui.sections.hong_kong_cspf_section import HongKongCspfSection\n\n"
         "class Iso16358Tab:\n    pass\n"
     )
-    findings = guard.check_ui_tk_shell_anti_pattern(source, "ui_tk/tabs/iso16358_tab.py")
+    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "apps/calculator/ui/tabs/iso16358_tab.py")
     assert findings == []
 
 
-def test_ui_tk_anti_pattern_ignores_non_ui_tk_path():
+def test_apps.calculator.ui_anti_pattern_ignores_non_apps.calculator.ui_path():
     source = (
         "class CalculatorTkApp:\n    pass\n\n"
         "class Iso16358Tab:\n    pass\n\n"
         "class HongKongCspfSection:\n    pass\n"
     )
-    findings = guard.check_ui_tk_shell_anti_pattern(source, "ui/other.py")
+    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "ui/other.py")
     assert findings == []
 
 
@@ -195,7 +195,7 @@ def _visual_findings(source: str, relpath: str):
 def test_ui_visual_owner_rejects_raw_hex_in_component():
     findings = _visual_findings(
         'def render_background():\n    return "#e8edf2"\n',
-        "ui_tk/result_panel.py",
+        "apps/calculator/ui/result_panel.py",
     )
     assert any("raw hex color literal" in finding.message for finding in findings)
 
@@ -203,7 +203,7 @@ def test_ui_visual_owner_rejects_raw_hex_in_component():
 def test_ui_visual_owner_rejects_local_visual_constant_in_component():
     findings = _visual_findings(
         "RESULT_HEADER_BG = theme_value('result.header')\n",
-        "ui_tk/result_panel.py",
+        "apps/calculator/ui/result_panel.py",
     )
     assert any("local visual constant" in finding.message for finding in findings)
 
@@ -211,7 +211,7 @@ def test_ui_visual_owner_rejects_local_visual_constant_in_component():
 def test_ui_visual_owner_allows_tokens_in_owner_file():
     findings = _visual_findings(
         'RESULT_HEADER_BG = "#e8edf2"\nTABLE_CELL_PADX = 8\n',
-        "ui_tk/layout_constants.py",
+        "apps/calculator/ui/layout_constants.py",
     )
     assert findings == []
 
@@ -259,7 +259,7 @@ def test_soft_limit_warns_when_class_count_exceeded():
     )
     findings = guard.check_soft_limits(
         source,
-        "ui_tk/many_classes.py",
+        "apps/calculator/ui/many_classes.py",
         loc_allowlist=set(),
         class_allowlist=set(),
     )

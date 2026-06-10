@@ -27,7 +27,7 @@ def tk_root():
 
 class TestWindowShellMinsizePolicy:
     def test_fit_visible_content_does_not_update_minsize(self) -> None:
-        from ui_tk.window_shell import TkContentHuggingShell
+        from apps.calculator.ui.window_shell import TkContentHuggingShell
 
         class FakeRoot:
             def __init__(self) -> None:
@@ -63,7 +63,7 @@ class TestWindowShellMinsizePolicy:
         assert root.geometry_calls == ["1200x800+100+80"]
 
     def test_fit_visible_content_to_smaller_target_does_not_raise_minsize(self) -> None:
-        from ui_tk.window_shell import TkContentHuggingShell
+        from apps.calculator.ui.window_shell import TkContentHuggingShell
 
         class FakeRoot:
             def __init__(self) -> None:
@@ -100,7 +100,7 @@ class TestWindowShellMinsizePolicy:
 
 class TestHspfDetailVisibilityCallback:
     def test_hspf_section_accepts_callback_parameter(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         calls = []
         section = HongKongHspfSection(
@@ -111,7 +111,7 @@ class TestHspfDetailVisibilityCallback:
         assert section._on_detail_visibility_changed is not None
 
     def test_hspf_detail_toggle_calls_callback(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         calls = []
         section = HongKongHspfSection(
@@ -125,7 +125,7 @@ class TestHspfDetailVisibilityCallback:
         assert "changed" in calls
 
     def test_hspf_detail_toggle_without_callback_does_not_crash(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -136,7 +136,7 @@ class TestHspfDetailVisibilityCallback:
 
 class TestMetricTabChangeRefitScheduling:
     def test_metric_tab_change_requests_refit(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()
@@ -154,7 +154,7 @@ class TestMetricTabChangeRefitScheduling:
         assert tab._refit_scheduler.is_pending
 
     def test_mode_change_still_requests_refit(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()
@@ -163,7 +163,7 @@ class TestMetricTabChangeRefitScheduling:
         assert tab._refit_scheduler.is_pending
 
     def test_iso_iseer_section_receives_visibility_callback(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()
@@ -173,7 +173,7 @@ class TestMetricTabChangeRefitScheduling:
         assert tab._two_point_section._on_trace_visibility_changed is not None
 
     def test_saso_section_receives_visibility_callback(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()
@@ -184,7 +184,7 @@ class TestMetricTabChangeRefitScheduling:
         assert tab._saso_t3_section._on_trace_visibility_changed is not None
 
     def test_hong_kong_cspf_receives_visibility_callback(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()
@@ -196,7 +196,7 @@ class TestMetricTabChangeRefitScheduling:
         assert cspf_section._on_detail_visibility_changed is not None
 
     def test_hong_kong_hspf_receives_visibility_callback(self, tk_root) -> None:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(tk_root)
         tk_root.update_idletasks()

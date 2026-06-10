@@ -28,7 +28,7 @@ def tk_root():
 
 @pytest.fixture
 def cspf_section(tk_root):
-    from ui_tk.sections.hong_kong_cspf_section import HongKongCspfSection
+    from apps.calculator.ui.sections.hong_kong_cspf_section import HongKongCspfSection
 
     sec = HongKongCspfSection(tk_root, region_label="Hong Kong")
     sec.pack()
@@ -38,7 +38,7 @@ def cspf_section(tk_root):
 
 @pytest.fixture
 def hspf_section(tk_root):
-    from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+    from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
     sec = HongKongHspfSection(tk_root, region_label="Hong Kong")
     sec.pack()
@@ -173,7 +173,7 @@ class TestResultPanelStableUpdate:
     """Same-shape summaries now update in place; shape changes still rebuild."""
 
     def test_same_shape_does_not_rebuild(self, cspf_section, tk_root) -> None:
-        from ui_tk.result_models import ResultSummary
+        from apps.calculator.ui.result_models import ResultSummary
 
         panel = cspf_section.result_panel
         panel.set_summaries(
@@ -193,7 +193,7 @@ class TestResultPanelStableUpdate:
         assert len(first_children) == 1
 
     def test_shape_change_rebuilds(self, cspf_section, tk_root) -> None:
-        from ui_tk.result_models import ResultSummary
+        from apps.calculator.ui.result_models import ResultSummary
 
         panel = cspf_section.result_panel
         panel.set_summaries(

@@ -1,4 +1,4 @@
-from ui_tk.batch.matrix_models import (
+from apps.calculator.ui.batch.matrix_models import (
     CSEC,
     CSPF,
     DECLARED_CAPACITY,
@@ -9,8 +9,8 @@ from ui_tk.batch.matrix_models import (
     HONG_KONG_CSPF_MATRIX_SPEC,
     MatrixCellKind,
 )
-from ui_tk.table.controller import TkTableController
-from ui_tk.table.roles import CellRole
+from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.roles import CellRole
 
 
 class _FakeWidget:

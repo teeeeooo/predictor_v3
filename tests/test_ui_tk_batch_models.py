@@ -1,6 +1,6 @@
 import pytest
 
-from ui_tk.batch.models import (
+from apps.calculator.ui.batch.models import (
     BatchColumnRole,
     BatchColumnSpec,
     BatchProfileSpec,

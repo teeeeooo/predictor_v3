@@ -13,11 +13,12 @@
   - `trainer.py`: 모델 학습 및 로그 관리
 - **`ui/`**: legacy PyQt5 기반 multi-app GUI 구성 요소
   - 현재 `app_calculator.py`, `app_train.py`, `app_predict.py`가 공유하는 레거시 화면 경로입니다.
-- **`ui_tk/`**: calculator-only Tkinter 기반 마이그레이션 소스
-  - 계산기용 신규 UI로, generic `ui`로 이름을 변경하지 않고 `ui_tk`로 유지합니다.
-- **`apps/` (장기 지향 패키지 경계)**:
-  - 장기적으로 `apps/{calculator,train,predict}/` 패키지 구조로 나아가며, 현재 Tkinter 계산기 UI(`ui_tk/`)는 향후 `apps/calculator/ui/` 하위로 마이그레이션될 예정입니다.
-  - `apps/train` 및 `apps/predict`는 현 시점에서는 물리적 폴더를 생성하지 않고, 향후 PySide6 재작성 시점에 생성할 reserved boundary로 문서상 선언합니다.
+- **`apps/` (애플리케이션 패키지 경계)**:
+  - 장기적으로 `apps/{calculator,train,predict}/` 구조를 가집니다.
+  - **`apps/calculator/`**: 활성 마이그레이션된 계산기 애플리케이션 영역입니다.
+    - `app.py`: 계산기 메인 실행 진입점.
+    - `ui/`: 마이그레이션이 완료된 calculator-only Tkinter UI 패키지 (이전 `ui_tk/`가 이 위치로 완전히 이주됨). generic `ui/`로 이름을 섞거나 변경하지 않습니다.
+  - **`apps/train/` 및 `apps/predict/`**: 현 시점에서는 물리적 폴더를 생성하지 않고, 향후 PySide6 재작성 시점에 생성할 reserved boundary로 문서상 선언합니다.
 - **`data/`**: 규격 설정(JSON) 및 학습 데이터
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
 
@@ -69,7 +70,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 ### 3.3 UI Model/View Guardrails (PyQt Legacy UI 전용)
 
 > [!NOTE]
-> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)에 적용되는 규칙입니다. 신규 Tkinter 기반 계산기 UI(`ui_tk/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
+> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)에 적용되는 규칙입니다. 신규 Tkinter 기반 계산기 UI(`apps/calculator/ui/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
 
 - **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
@@ -221,7 +222,7 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 ### UI / calc_window.py routing contract (PyQt Legacy Calculator Reference)
 
 > [!NOTE]
-> `ui/calc_window.py` 및 관련 PyQt5 기반 계산기 코드는 현재 마이그레이션을 위한 read-only reference로 유지되며, 차후 `apps/calculator` 구조화가 완료되면 은퇴(retire) 예정입니다. 이 라우팅 계약은 향후 Tkinter 기반 계산기(`ui_tk/` 및 `apps/calculator/ui/`)의 설계 구조로 고스란히 승계됩니다.
+> `ui/calc_window.py` 및 관련 PyQt5 기반 계산기 코드는 현재 마이그레이션을 위한 read-only reference로 유지되며, 차후 `apps/calculator` 구조화가 완료되면 은퇴(retire) 예정입니다. 이 라우팅 계약은 향후 Tkinter 기반 계산기(`apps/calculator/ui/`)의 설계 구조로 고스란히 승계됩니다.
 
 `calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
 
@@ -267,14 +268,14 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 
 ## 6. New module / script boundary
 
-본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `ui_tk/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
+본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `apps/calculator/ui/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
 
-- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculator_dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `ui_tk`, `PyQt5`, `tkinter`를 import하지 않는다.
-- Tkinter shell 독립성: `ui_tk/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculator_dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `PyQt5`, `tkinter`를 import하지 않는다.
+- Tkinter shell 독립성: `apps/calculator/ui/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
 - Thin entrypoint: `app_*.py` 는 import + 한 두 줄 entrypoint 함수만 둔다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하). 실제 책임은 layer 모듈에 둔다.
 - Multi-responsibility 한 파일 금지: shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다. 새 작업에서 3개 이상 신규 책임 영역이 발생하면 skeleton/interface 작업과 구현 작업을 분리한다.
 - Hard-coded 값 격리: region, profile, metric, result key, default 값은 SSOT (config, constants, resolver, token module) 한 곳에서만 정의한다. 2곳 이상 반복되는 literal/mapping/formatting은 helper/registry 후보로 본다.
 - Soft limit (warning): 새 파일은 250 LOC / class 3개 / 함수 60~80 LOC 이내가 기본. 초과 예상 시 분리 계획을 먼저 보고한다. 기존 known-large / historical 파일은 `tools/check_code_structure.py`의 allowlist로 일시 면제한다.
 - Spike 예외 없음: feasibility spike도 shell + input + result + resolver + core call + formatting을 한 파일에 동시에 담지 않는다 (116 spike → 118 reset 사례 참고).
 
-자동 검사는 `tools/check_code_structure.py`가 conservative한 첫 버전으로 제공한다 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit). 코드 구조에 영향을 주는 작업의 검증에 포함한다.
+자동 검사는 `tools/check_code_structure.py`가 conservative한 첫 버전으로 제공한다 (layer import 금지, app entrypoint thin, apps/calculator/ui multi-책임 anti-pattern, LOC / class soft limit). 코드 구조에 영향을 주는 작업의 검증에 포함한다.

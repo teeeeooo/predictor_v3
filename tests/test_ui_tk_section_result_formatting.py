@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.sections.result_formatting import (
+from apps.calculator.ui.sections.result_formatting import (
     bin_details,
     kwh_value,
     metric_value,

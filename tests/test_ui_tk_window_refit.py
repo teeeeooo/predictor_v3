@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ui_tk.window_refit import DynamicContentRefitScheduler
+from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
 
 
 class FakeRefitOwner:

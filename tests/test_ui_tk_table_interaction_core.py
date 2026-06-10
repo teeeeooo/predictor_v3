@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-from ui_tk.table.interaction_core import (
+from apps.calculator.ui.table.interaction_core import (
     UndoStack,
     copyable_positions,
     editable_clear_targets,
@@ -13,7 +13,7 @@ from ui_tk.table.interaction_core import (
     resolve_next_position,
     selection_bounds,
 )
-from ui_tk.table.roles import CellRole
+from apps.calculator.ui.table.roles import CellRole
 
 
 def test_interaction_core_import_does_not_load_tkinter():
@@ -22,7 +22,7 @@ def test_interaction_core_import_does_not_load_tkinter():
             sys.executable,
             "-B",
             "-c",
-            "import ui_tk.table.interaction_core, sys; "
+            "import apps.calculator.ui.table.interaction_core, sys; "
             "assert 'tkinter' not in sys.modules",
         ],
         check=False,

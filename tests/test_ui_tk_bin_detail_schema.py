@@ -26,7 +26,7 @@ def tk_root():
         root.destroy()
 
 
-from ui_tk.sections.bin_detail_schema import (
+from apps.calculator.ui.sections.bin_detail_schema import (
     BinDetailSchema,
     COOLING_BIN_DETAIL_SCHEMA,
     HEATING_HSPF_BIN_DETAIL_SCHEMA,
@@ -71,19 +71,19 @@ class TestBinDetailSchema:
 
 class TestBinTraceTableDefaultSchema:
     def test_default_headers_are_cooling(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root)
         assert table.column_labels == COOLING_BIN_DETAIL_SCHEMA.column_labels
 
     def test_default_title_is_cooling_schema_title(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root)
         assert table.title_label.cget("text") == COOLING_BIN_DETAIL_SCHEMA.table_title
 
     def test_default_table_export_data_with_rows(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root)
         sample = [
@@ -107,7 +107,7 @@ class TestBinTraceTableDefaultSchema:
         assert rows[0][5] == "800.00"  # power formatted to 2 decimals
 
     def test_default_status_when_no_rows(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root)
         table.set_data(None)
@@ -118,7 +118,7 @@ class TestBinTraceTableDefaultSchema:
 
 class TestBinTraceTableCustomSchema:
     def test_custom_schema_headers(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         custom = BinDetailSchema(
             column_labels=("Idx", "Temp"),
@@ -130,7 +130,7 @@ class TestBinTraceTableCustomSchema:
         assert table.column_labels == ("Idx", "Temp")
 
     def test_custom_schema_row_conversion(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         custom = BinDetailSchema(
             column_labels=("Idx", "Temp"),
@@ -146,19 +146,19 @@ class TestBinTraceTableCustomSchema:
 
 class TestBinTraceTableHeatingSchema:
     def test_heating_schema_default_title(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root, schema=HEATING_HSPF_BIN_DETAIL_SCHEMA)
         assert table.title_label.cget("text") == HEATING_HSPF_BIN_DETAIL_SCHEMA.table_title
 
     def test_explicit_title_overrides_schema_title(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root, schema=HEATING_HSPF_BIN_DETAIL_SCHEMA, title="Custom Title")
         assert table.title_label.cget("text") == "Custom Title"
 
     def test_heating_schema_row_conversion(self, tk_root) -> None:
-        from ui_tk.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 
         table = BinTraceTable(tk_root, schema=HEATING_HSPF_BIN_DETAIL_SCHEMA)
         sample = [
@@ -186,7 +186,7 @@ class TestBinTraceTableHeatingSchema:
 
 class TestBinDetailPanelDefaultSchema:
     def test_default_graph_series_labels(self, tk_root) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailPanel
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel
 
         panel = BinDetailPanel(
             tk_root,
@@ -199,7 +199,7 @@ class TestBinDetailPanelDefaultSchema:
         assert list(panel.graph_combo.cget("values")) == expected_labels
 
     def test_default_graph_series_first_selected(self, tk_root) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailPanel
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel
 
         panel = BinDetailPanel(
             tk_root,
@@ -213,7 +213,7 @@ class TestBinDetailPanelDefaultSchema:
 
 class TestBinDetailPanelCustomSchema:
     def test_custom_graph_series_labels(self, tk_root) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailPanel
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel
 
         custom = BinDetailSchema(
             column_labels=("A",),
@@ -232,7 +232,7 @@ class TestBinDetailPanelCustomSchema:
         assert list(panel.graph_combo.cget("values")) == expected_labels
 
     def test_custom_graph_series_first_selected(self, tk_root) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailPanel
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel
 
         custom = BinDetailSchema(
             column_labels=("A",),
@@ -252,7 +252,7 @@ class TestBinDetailPanelCustomSchema:
 
 class TestBinDetailPanelHeatingSchema:
     def test_heating_graph_series_labels(self, tk_root) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailPanel
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel
 
         panel = BinDetailPanel(
             tk_root,
@@ -268,7 +268,7 @@ class TestBinDetailPanelHeatingSchema:
 
 class TestBinDetailGraphCustomSeries:
     def test_custom_series_label_lookup(self) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailGraph
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailGraph
 
         custom_series = (("Alpha", "a"), ("Beta", "b"))
         graph = BinDetailGraph.__new__(BinDetailGraph)
@@ -277,7 +277,7 @@ class TestBinDetailGraphCustomSeries:
         assert graph._series_label() == "Beta"
 
     def test_custom_series_fallback_label(self) -> None:
-        from ui_tk.sections.bin_detail_panel import BinDetailGraph
+        from apps.calculator.ui.sections.bin_detail_panel import BinDetailGraph
 
         custom_series = (("Alpha", "a"), ("Beta", "b"))
         graph = BinDetailGraph.__new__(BinDetailGraph)

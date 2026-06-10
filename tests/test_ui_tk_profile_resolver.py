@@ -1,4 +1,4 @@
-"""Pure-Python tests for ``ui_tk.profile_resolver``.
+"""Pure-Python tests for ``apps.calculator.ui.profile_resolver``.
 
 The resolver must be importable without Tkinter or PyQt. These tests
 guard the UI label → ``profile_id`` boundary that keeps ``profile_id`` /
@@ -10,7 +10,7 @@ import sys
 
 import pytest
 
-from ui_tk import profile_resolver
+from apps.calculator.ui import profile_resolver
 
 
 def test_region_labels_contains_hong_kong():
@@ -107,10 +107,10 @@ def test_resolver_module_does_not_require_tkinter_or_pyqt():
     those modules back in."""
     # Drop anything already cached so importlib reloads cleanly.
     for name in list(sys.modules):
-        if name.startswith("tkinter") or name.startswith("PyQt5") or name == "ui_tk.profile_resolver":
+        if name.startswith("tkinter") or name.startswith("PyQt5") or name == "apps.calculator.ui.profile_resolver":
             del sys.modules[name]
 
-    importlib.import_module("ui_tk.profile_resolver")
+    importlib.import_module("apps.calculator.ui.profile_resolver")
 
     tkinter_loaded = any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules

@@ -16,8 +16,8 @@ import textwrap
 import pytest
 
 from core.calculator_dispatcher import create_calculator_for_profile
-from ui_tk.profile_resolver import resolve_profile_id
-from ui_tk.window_geometry import (
+from apps.calculator.ui.profile_resolver import resolve_profile_id
+from apps.calculator.ui.window_geometry import (
     apply_overflow_correction,
     capped_window_size,
     clamp_geometry_vertically_to_visible_bounds,
@@ -32,7 +32,7 @@ from ui_tk.window_geometry import (
     preferred_content_fit_geometry,
     resolve_min_window_size,
 )
-from ui_tk.layout_constants import (
+from apps.calculator.ui.layout_constants import (
     APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
     APP_WINDOW_FALLBACK_MIN_HEIGHT,
     APP_WINDOW_FALLBACK_MIN_WIDTH,
@@ -42,16 +42,16 @@ from ui_tk.layout_constants import (
     APP_WINDOW_SCREEN_MARGIN_X_RATIO,
     APP_WINDOW_SCREEN_MARGIN_Y_RATIO,
 )
-from ui_tk.tabs.iso16358_tab import mousewheel_units
+from apps.calculator.ui.tabs.iso16358_tab import mousewheel_units
 
 
-def test_pyqt5_not_imported_via_ui_tk_calculator_app():
+def test_pyqt5_not_imported_via_apps.calculator.ui_calculator_app():
     """Importing the Tkinter shell must not pull PyQt5 in."""
     for name in list(sys.modules):
         if name.startswith("PyQt5"):
             del sys.modules[name]
 
-    import ui_tk.calculator_app  # noqa: F401 — imported for side effects
+    import apps.calculator.ui.calculator_app  # noqa: F401 — imported for side effects
 
     assert not any(name.startswith("PyQt5") for name in sys.modules)
 
@@ -280,8 +280,8 @@ except tk.TclError:
 try:
     root.withdraw()
 
-    from ui_tk.calculator_app import CalculatorTkApp
-    from ui_tk.tabs.iso16358_tab import Iso16358Tab
+    from apps.calculator.ui.calculator_app import CalculatorTkApp
+    from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
     app = CalculatorTkApp(root=root)
     root.update_idletasks()
@@ -342,8 +342,8 @@ def test_calculator_launch_schedules_one_shot_content_fit(monkeypatch):
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.calculator_app import CalculatorTkApp
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.calculator_app import CalculatorTkApp
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         calls = []
         original = Iso16358Tab.fit_toplevel_to_current_content_once
@@ -373,7 +373,7 @@ def test_scrollable_frame_hides_scrollbar_when_content_fits():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.scrollable_frame import ScrollableFrame
+        from apps.calculator.ui.scrollable_frame import ScrollableFrame
 
         sf = ScrollableFrame(root)
         sf.pack(fill="both", expand=True)
@@ -401,7 +401,7 @@ def test_scrollable_frame_shows_scrollbar_when_content_overflows():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.scrollable_frame import ScrollableFrame
+        from apps.calculator.ui.scrollable_frame import ScrollableFrame
 
         sf = ScrollableFrame(root)
         sf.pack(fill="both", expand=True)
@@ -427,7 +427,7 @@ def test_scrollable_frame_vertical_overflow_delta_matches_bbox():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.scrollable_frame import ScrollableFrame
+        from apps.calculator.ui.scrollable_frame import ScrollableFrame
 
         sf = ScrollableFrame(root)
         sf.pack(fill="both", expand=True)
@@ -450,7 +450,7 @@ def test_scrollable_frame_destroy_keeps_sibling_mousewheel_binding():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.scrollable_frame import ScrollableFrame
+        from apps.calculator.ui.scrollable_frame import ScrollableFrame
 
         first = ScrollableFrame(root)
         first.pack(fill="both", expand=True)
@@ -483,7 +483,7 @@ def test_overflow_correction_grows_window_once():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         tab = Iso16358Tab(root)
         tab.pack(fill="both", expand=True)
@@ -543,8 +543,8 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.tabs import iso16358_tab
-        from ui_tk.tabs.iso16358_tab import Iso16358Tab
+        from apps.calculator.ui.tabs import iso16358_tab
+        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         calls = []
         registered = []
@@ -647,7 +647,7 @@ def test_resize_geometry_changes_do_not_hang():
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from ui_tk.calculator_app import CalculatorTkApp
+        from apps.calculator.ui.calculator_app import CalculatorTkApp
 
         app = CalculatorTkApp(root=root)
         root.update_idletasks()

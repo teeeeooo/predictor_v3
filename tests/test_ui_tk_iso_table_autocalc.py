@@ -7,19 +7,19 @@ import sys
 
 import pytest
 
-from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.table.controller import TkTableController
-import ui_tk.layout_constants as layout_constants
-from ui_tk.layout_constants import (
+from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.table.controller import TkTableController
+import apps.calculator.ui.layout_constants as layout_constants
+from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
     TABLE_CELL_PADY,
     TABLE_DATA_COLUMN_CHARS,
     TABLE_FONT_SIZE,
     TABLE_ROW_HEADER_CHARS,
 )
-from ui_tk.metric_input_table import MetricInputTable
-from ui_tk import table_csv_export
-from ui_tk import table_clipboard
+from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui import table_csv_export
+from apps.calculator.ui import table_clipboard
 
 
 class FakeAfterOwner:
@@ -152,7 +152,7 @@ def _assert_canvas_has_scale_label(canvas, series_label: str) -> None:
 
 
 def test_bin_detail_graph_returns_y_scale_for_selected_series():
-    from ui_tk.sections.bin_detail_panel import BinDetailGraph
+    from apps.calculator.ui.sections.bin_detail_panel import BinDetailGraph
 
     graph = BinDetailGraph.__new__(BinDetailGraph)
     graph._graph_series = (
@@ -186,7 +186,7 @@ def test_bin_detail_graph_returns_y_scale_for_selected_series():
 
 
 def _make_tab(root):
-    from ui_tk.tabs.iso16358_tab import Iso16358Tab
+    from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
     tab = Iso16358Tab(root)
     tab.pack(fill="both", expand=True)
@@ -1203,7 +1203,7 @@ def test_iso_tab_import_does_not_pull_in_pyqt5():
         if name.startswith("PyQt5"):
             del sys.modules[name]
 
-    import ui_tk.tabs.iso16358_tab  # noqa: F401
+    import apps.calculator.ui.tabs.iso16358_tab  # noqa: F401
 
     assert not any(name.startswith("PyQt5") for name in sys.modules)
 
@@ -1281,7 +1281,7 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
 
 
 def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
-    from ui_tk.batch_dialogs import shell as batch_dialog_module
+    from apps.calculator.ui.batch_dialogs import shell as batch_dialog_module
 
     geometry_calls = []
     original_geometry = batch_dialog_module.parent_centered_content_geometry

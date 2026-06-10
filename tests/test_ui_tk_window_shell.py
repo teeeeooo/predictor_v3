@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.window_geometry import capped_window_size
+from apps.calculator.ui.window_geometry import capped_window_size
 from dataclasses import dataclass
 
-from ui_tk.window_shell import TkContentHuggingShell, visible_content_fit_geometry
+from apps.calculator.ui.window_shell import TkContentHuggingShell, visible_content_fit_geometry
 
 
 @dataclass(frozen=True)

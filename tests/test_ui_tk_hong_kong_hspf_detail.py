@@ -30,7 +30,7 @@ def tk_root():
 
 class TestHongKongHspfSectionDefaults:
     def test_section_defaults_calculate_hspf_summary(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -46,14 +46,14 @@ class TestHongKongHspfSectionDefaults:
 
 class TestHongKongHspfDetailPanel:
     def test_detail_panel_initially_hidden(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
         assert not section.detail_panel.is_visible()
 
     def test_detail_toggle_opens_detail_panel(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -64,7 +64,7 @@ class TestHongKongHspfDetailPanel:
         assert section.detail_toggle.cget("text") == "상세 닫기 ↑"
 
     def test_detail_toggle_closes_detail_panel(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         section.detail_toggle.invoke()
@@ -76,8 +76,8 @@ class TestHongKongHspfDetailPanel:
         assert section.detail_toggle.cget("text") == "상세 보기 ↓"
 
     def test_detail_panel_uses_heating_graph_labels(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
-        from ui_tk.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -87,8 +87,8 @@ class TestHongKongHspfDetailPanel:
         assert list(section.detail_panel.graph_combo.cget("values")) == expected_labels
 
     def test_detail_table_headers_equal_heating_schema(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
-        from ui_tk.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -97,7 +97,7 @@ class TestHongKongHspfDetailPanel:
         assert section.detail_panel.table.column_labels == HEATING_HSPF_BIN_DETAIL_SCHEMA.column_labels
 
     def test_detail_rows_populated_from_bin_details(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -111,7 +111,7 @@ class TestHongKongHspfDetailPanel:
         assert "formula45_half_full" in all_text or "cycling" in all_text
 
     def test_detail_copy_button_uses_header_included_tsv(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
@@ -125,7 +125,7 @@ class TestHongKongHspfDetailPanel:
         assert "Bin No" in lines[0]
 
     def test_detail_csv_button_calls_helper(self, monkeypatch, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         calls = []
 
@@ -134,7 +134,7 @@ class TestHongKongHspfDetailPanel:
             return True
 
         monkeypatch.setattr(
-            "ui_tk.table_csv_export.export_table_to_csv", _fake_export
+            "apps.calculator.ui.table_csv_export.export_table_to_csv", _fake_export
         )
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
@@ -153,7 +153,7 @@ class TestHongKongHspfDetailPanel:
 
 class TestHongKongHspfInvalidInput:
     def test_invalid_input_clears_stale_rows(self, tk_root) -> None:
-        from ui_tk.sections.hong_kong_hspf_section import HongKongHspfSection
+        from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()

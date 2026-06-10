@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from ui_tk.layout_constants import TABLE_EDITABLE_BG, TABLE_STATIC_BG
-from ui_tk.metric_input_table import MetricInputTable
-from ui_tk.table.roles import CellRole
+from apps.calculator.ui.layout_constants import TABLE_EDITABLE_BG, TABLE_STATIC_BG
+from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.table.roles import CellRole
 
 
 @pytest.fixture

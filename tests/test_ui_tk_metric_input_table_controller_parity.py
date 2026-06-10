@@ -12,10 +12,10 @@ from typing import Any
 
 import pytest
 
-from ui_tk.layout_constants import TABLE_INVALID_BG
-from ui_tk.metric_input_table import MetricInputTable
-from ui_tk.table.controller import TkTableController
-from ui_tk.table.interaction_core import CellAddress
+from apps.calculator.ui.layout_constants import TABLE_INVALID_BG
+from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.interaction_core import CellAddress
 
 
 @pytest.fixture
@@ -201,7 +201,7 @@ class TestInvalidVisualState:
     def test_invalid_cleared_background_returns_editable(self, ctrl: TkTableController) -> None:
         ctrl.table.set_invalid_fields({"a": "bad"})
         ctrl.table.clear_invalid_fields()
-        from ui_tk.layout_constants import TABLE_EDITABLE_BG
+        from apps.calculator.ui.layout_constants import TABLE_EDITABLE_BG
         color = ctrl.table.default_cell_background((0, 0))
         assert color == TABLE_EDITABLE_BG
 

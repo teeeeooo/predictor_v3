@@ -1,6 +1,6 @@
 """Calculator application entrypoint."""
 
-from ui_tk.calculator_app import main as _run_tk_calculator
+from apps.calculator.ui.calculator_app import main as _run_tk_calculator
 
 
 def main() -> int:

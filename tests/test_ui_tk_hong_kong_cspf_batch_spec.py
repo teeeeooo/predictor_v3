@@ -1,6 +1,6 @@
 from core.calculator_dispatcher import create_calculator_for_profile
-from ui_tk.profile_resolver import resolve_profile_id
-from ui_tk.sections.hong_kong_cspf_batch_spec import (
+from apps.calculator.ui.profile_resolver import resolve_profile_id
+from apps.calculator.ui.sections.hong_kong_cspf_batch_spec import (
     CSEC,
     CSPF,
     DECLARED,
@@ -11,8 +11,8 @@ from ui_tk.sections.hong_kong_cspf_batch_spec import (
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,
 )
-from ui_tk.sections.iso16358_helpers import build_cspf_input
-from ui_tk.sections.result_formatting import summarize_cspf_result
+from apps.calculator.ui.sections.iso16358_helpers import build_cspf_input
+from apps.calculator.ui.sections.result_formatting import summarize_cspf_result
 
 
 def _default_row() -> dict[str, str]:

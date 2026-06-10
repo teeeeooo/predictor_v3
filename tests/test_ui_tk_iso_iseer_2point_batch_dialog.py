@@ -5,9 +5,9 @@ from __future__ import annotations
 import tkinter as tk
 import pytest
 
-from ui_tk.batch.models import BatchRowState
-from ui_tk.sections.iso_iseer_2point_section import IsoIseer2PointSection
-from ui_tk.batch_dialogs.profiles.iso_iseer_2point import (
+from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
+from apps.calculator.ui.batch_dialogs.profiles.iso_iseer_2point import (
     IsoIseer2PointBatchDialog,
     IsoIseer2PointBatchHandler,
     ISO_ISEER_2POINT_MATRIX_SPEC,

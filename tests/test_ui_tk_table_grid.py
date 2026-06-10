@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from ui_tk.table_grid_model import GridColumn, GridRow
+from apps.calculator.ui.table_grid_model import GridColumn, GridRow
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def tk_root():
 
 
 def _grid(root, callback=None):
-    from ui_tk.table_grid import TableGrid
+    from apps.calculator.ui.table_grid import TableGrid
 
     return TableGrid(
         root,
@@ -37,7 +37,7 @@ def test_adapter_import_does_not_import_pyqt5():
         if name.startswith("PyQt5"):
             del sys.modules[name]
 
-    import ui_tk.table_grid  # noqa: F401
+    import apps.calculator.ui.table_grid  # noqa: F401
 
     assert not any(name.startswith("PyQt5") for name in sys.modules)
 

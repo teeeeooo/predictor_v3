@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-from ui_tk.table.controller import TkTableController
-from ui_tk.table.roles import CellRole
+from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.roles import CellRole
 
 
 class _FakeWidget:

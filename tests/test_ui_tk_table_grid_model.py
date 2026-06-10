@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from ui_tk.table_grid_model import (
+from apps.calculator.ui.table_grid_model import (
     GridCellState,
     GridColumn,
     GridRow,
@@ -27,11 +27,11 @@ def test_model_module_does_not_import_ui_toolkits():
             name == "tkinter"
             or name.startswith("tkinter.")
             or name.startswith("PyQt5")
-            or name == "ui_tk.table_grid_model"
+            or name == "apps.calculator.ui.table_grid_model"
         ):
             del sys.modules[name]
 
-    importlib.import_module("ui_tk.table_grid_model")
+    importlib.import_module("apps.calculator.ui.table_grid_model")
 
     assert not any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules

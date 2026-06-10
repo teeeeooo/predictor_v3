@@ -14,7 +14,7 @@ def test_entrypoint_imports_do_not_run_gui():
 
 
 def test_apps_calculator_app_main_delegation(monkeypatch):
-    """Verify that apps.calculator.app.main calls ui_tk.calculator_app.main."""
+    """Verify that apps.calculator.app.main calls apps.calculator.ui.calculator_app.main."""
     called = False
 
     def mock_run_tk_calculator():

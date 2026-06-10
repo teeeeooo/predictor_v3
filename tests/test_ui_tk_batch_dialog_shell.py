@@ -5,7 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 import pytest
 
-from ui_tk.batch_dialogs.shell import BatchDialogShell
+from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 
 
 class FakeProfileAdapter:

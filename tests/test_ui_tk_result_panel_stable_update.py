@@ -11,8 +11,8 @@ import tkinter as tk
 
 import pytest
 
-from ui_tk.result_models import ResultSummary
-from ui_tk.result_panel import ResultPanel
+from apps.calculator.ui.result_models import ResultSummary
+from apps.calculator.ui.result_panel import ResultPanel
 
 
 @pytest.fixture
