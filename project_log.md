@@ -1597,157 +1597,36 @@
 - 다음 핵심 action은 `EN14825 / AHRI 210/240 / KS profile expansion` 단계로 진입하는 것으로 결정함.
 - active report count meets lifecycle threshold criteria.
 
----
-
-## 2026-06-10 — ui_tk batch dialog folder boundary audit before profile batch expansion
-
-### Tried
-- ISO 2-point 및 SASO T3 batch dialog 확장 전 `ui_tk` 내부의 batch dialog 관련 파일들(`hong_kong_cspf_batch_section.py`, `batch_matrix_table.py` 등)의 폴더 boundary와 MVC/SoC 책임을 audit함.
-- `HongKongCspfBatchDialog`가 dialog shell로서의 책임을 갖고 `HongKongCspfBatchSection`이 section widget의 책임을 가짐을 확인하고, 폴더링 후보(A. batch_dialogs, B. dialogs/batch, C. batch)를 비교 평가함.
-- dynamic toggle(SASO T3), 비교 result surface(ISO 2-point) 차이에 따른 공통화 타당성을 평가하고, profile-specific dialog 배치의 안전성을 분석함.
-
-### Result
-- `result_reports/active/319_ui_tk_batch_dialog_folder_boundary_audit.md` 리포트 생성 완료.
-- `docs/WORK_PLAN.md`에 task 319 완료 상태를 반영하고, 제안된 Next Actions 흐름으로 업데이트 완료.
-
-### Decision
-- batch dialog 확장 시의 import churn 및 file pollution을 방지하기 위해 `ui_tk/batch_dialogs/` 폴더 boundary를 도입하고, `HongKongCspfBatchDialog`를 이주하는 작업(`Move HongKongCspfBatchDialog to batch_dialogs`)을 다음 implementation slice로 정함.
-- active report count meets lifecycle threshold criteria.
 
 ---
 
-## 2026-06-10 — Correct batch dialog folder boundary decision to shell + profiles composition
-
-### Tried
-- 319의 flat `ui_tk/batch_dialogs/` 폴더 결정을 재검토하고, 다수 프로필 확장 시 발생하는 Toplevel 윈도우/lifecycle 제어 코드 복사-붙여넣기 방지를 위한 `shell + profiles` composition 구조 설계를 구상 및 확정함.
-- `PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` 및 `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md` 문서를 대조하여, Toplevel window lifecycle, focus, close callback, hidden-first geometry settle/show, snapshot handoff 책임을 `shell.py`로 격리하고 profile-specific 구성은 얇은 어댑터 프레임으로 제한하도록 규칙을 세움.
-
-### Result
-- `result_reports/active/319_ui_tk_batch_dialog_folder_boundary_audit.md` 리포트 보정 및 `result_reports/active/320_batch_dialog_shell_profiles_boundary_correction.md` 신규 리포트 작성 완료.
-- `docs/WORK_PLAN.md`에 task 320 완료 상태 반영 및 Next Actions(shell + profiles skeleton 및 CSPF 이주) 업데이트 완료.
+## 2026-06-10 — Batch dialog shell/profile architecture decision
 
 ### Decision
-- 다형성 상속 남용 없이 Composition 기반으로 `batch_dialogs/shell.py` 컨테이너와 `batch_dialogs/profiles/` 하위 어댑터 간의 책임을 양분하도록 최종 승인함.
-- 다음 핵심 action은 `Batch dialog shell + profiles skeleton and Hong Kong CSPF relocation` 구현 단계로 진입하는 것으로 결정함.
-- active report count meets lifecycle threshold criteria.
+- ISO 2-point 및 SASO T3 batch dialog 확장 전 `ui_tk` batch dialog 폴더 boundary를 audit한 결과, flat `batch_dialogs/` 구조보다 `shell.py` + `profiles/` composition 구조가 적합하다고 확정함 (319→320 재결정).
+- `batch_dialogs/shell.py`가 Toplevel lifecycle, focus, close callback, hidden-first geometry settle, snapshot handoff를 단독 소유하고, 프로필별 파일은 matrix table layout + controller 연동만 담당하는 thin adapter로 제한하는 원칙을 수립함.
+- 다형성 상속 없이 Composition 기반으로 책임을 양분하는 구조를 최종 승인함.
+- 참조: reports 319, 320.
 
 ---
 
-## 2026-06-10 — Build batch dialog shell + profiles skeleton and relocate Hong Kong CSPF
-
-### Tried
-- 320 설계 보정에 따라 flat batch_dialogs 구조가 아닌 `ui_tk/batch_dialogs/shell.py` (공통 Toplevel container, geometry settle, close callback, snapshot handoff 담당)와 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` (프로필별 matrix table layout, controller 연동 담당) 구조를 실제 코드로 구현 및 이주 완료.
-- `ui_tk/sections/hong_kong_cspf_section.py` 및 관련 테스트의 import 경로와 API 호출부를 최신 구조에 맞춰 정상 갱신.
-- `ui_tk/sections/hong_kong_cspf_batch_section.py` 파일을 삭제 처리.
-- `tests/test_ui_tk_iso_table_autocalc.py`의 `test_hong_kong_cspf_batch_opens_dialog_not_metric_tab` 테스트 및 `tests/test_ui_tk_hong_kong_cspf_matrix_migration.py` 테스트가 신규 API에 대응하도록 테스트 코드 assertion 및 mock을 교정.
-
-### Result
-- `ui_tk/batch_dialogs/shell.py` 및 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` 생성 완료.
-- `ui_tk/sections/hong_kong_cspf_batch_section.py` 파일 제거 완료.
-- 관련 import 경로 갱신 및 `pytest` 검증 완료.
-- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
-- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 신규 리포트 생성 및 `320` 리포트 마감 note 보정 완료.
+## 2026-06-10 — Batch dialog shell implementation and cleanup
 
 ### Decision
-- 공통 Toplevel lifecycle/geometry/snapshot 관리와 프로필별 뷰 구성 어댑터 간의 Composition 설계가 정상 동작함을 최종 승인 및 마감.
-- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
+- `BatchDialogShell` + `profiles/hong_kong_cspf.py` 구현 및 이주를 완료하고, `hong_kong_cspf_batch_section.py` 제거 후 사용자 manual GUI smoke 이상 없음을 확인함 (321→322 closeout).
+- `HongKongCspfBatchDialog.snapshot()`이 `BatchDialogShell`의 private attribute에 직접 접근하던 구현을 `BatchDialogShell.snapshot()` public 메서드로 전환하여 캡슐화를 완결함 (322→323 correction).
+- 테스트 내 private access(`_shell.snapshot()`)를 제거하고, shell-level snapshot 검증은 `test_ui_tk_batch_dialog_shell.py` 전용 unit test로 이관함.
+- 현재 검증 범위 내 마감.
+- 참조: reports 321, 322, 323.
 
 ---
 
-## 2026-06-10 — Batch dialog relocation smoke closeout and private access correction
-
-### Tried
-- 321 relocation 작업 후 사용자가 수행한 manual GUI smoke 결과(Multi 입력 오픈, snapshot 복원, 추가/삭제/복사/Export CSV, debounced auto calculation 및 상태 메시지 갱신, 안착 위치/크기 등 동작 이상 없음)를 closeout 처리.
-- `HongKongCspfBatchDialog.snapshot()`에서 `BatchDialogShell`의 private attribute(`_adapter`)에 직접 접근하던 구현을 보정하여, `BatchDialogShell`에 public `snapshot()` 메서드를 추가하고 `close()`와 `HongKongCspfBatchDialog.snapshot()` 모두 이 public 메서드를 사용하도록 변경.
-- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 내에 남아 있던 로컬 절대경로(`file:///Users/...`) 링크들을 repo-relative path 또는 plain path로 교정.
-
-### Result
-- `ui_tk/batch_dialogs/shell.py` 및 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` 소스 코드 수정 완료.
-- `tests/test_ui_tk_iso_table_autocalc.py`에 public snapshot method 검증 assertion 보강 완료.
-- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 파일 링크 교정 및 closeout note 반영 완료.
-- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
-- `result_reports/active/322_batch_dialog_relocation_smoke_closeout_private_access.md` 신규 리포트 생성 완료.
+## 2026-06-10 — ISO and SASO batch profile expansion
 
 ### Decision
-- batch dialog의 private access 제거와 사용자 manual smoke closeout을 완료함으로써 profile 확장 전 batch dialog relocation 단계를 최종 완결함.
-- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
-- active report count meets lifecycle threshold criteria.
-
----
-
-## 2026-06-10 — Remove private shell access from batch dialog test
-
-### Tried
-- `tests/test_ui_tk_iso_table_autocalc.py`에 남아 있던 `first_dialog._shell.snapshot()` 직접 검증 코드를 제거하고, 다이얼로그의 public `snapshot()` wrapper만 사용하도록 보정.
-- `BatchDialogShell.snapshot()` public method 기능 자체는 신설된 shell-level focused unit test(`tests/test_ui_tk_batch_dialog_shell.py`)에서 mock adapter를 사용하여 격리 검증하도록 이관.
-- `result_reports/active/322_batch_dialog_relocation_smoke_closeout_private_access.md` 파일에 post-commit correction note 추가.
-
-### Result
-- `tests/test_ui_tk_iso_table_autocalc.py` 및 `tests/test_ui_tk_batch_dialog_shell.py` 테스트 코드 수정/생성 완료.
-- `result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md` 신규 리포트 생성 완료.
-
-### Decision
-- 테스트 코드 내의 private access를 완전히 제거하여 캡슐화 검증을 완결함.
-- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
-- active report count meets lifecycle threshold criteria.
-
----
-
-## 2026-06-10 — ISO 2-point batch dialog implementation
-
-### Tried
-- Relocated batch shell + profiles composition structure를 활용하여 ISO/India ISEER 2-point batch dialog (`IsoIseer2PointBatchDialog` 및 `IsoIseer2PointBatchAdapter` 등)를 `ui_tk/batch_dialogs/profiles/iso_iseer_2point.py`에 구현 완료.
-- `ui_tk/sections/iso_iseer_2point_section.py`에 "Multi 입력" 버튼을 추가하고 batch dialog open, focus, close, snapshot 흐름을 연결.
-- `tests/test_ui_tk_iso_iseer_2point_batch_dialog.py`를 신설하여 dialog open, focus path 유지, snapshot save/restore, 그리고 ISO 16358-1 / India ISEER 비교 계산 값의 정상 출력을 검증.
-- `result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md`에 closeout note 보정 완료.
-- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
-
-### Result
-- `ui_tk/batch_dialogs/profiles/iso_iseer_2point.py` 신규 생성 완료.
-- `ui_tk/batch_dialogs/profiles/__init__.py`에서 `IsoIseer2PointBatchDialog` export 완료.
-- `ui_tk/sections/iso_iseer_2point_section.py` 수정 완료.
-- `tests/test_ui_tk_iso_iseer_2point_batch_dialog.py` 신규 생성 및 focused tests pass 완료.
-
-### Decision
-- ISO 2-point profile matrix batch 구현을 generic shell 계약에 완벽히 맞추어 성공적으로 완결함.
-- 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
-- active report count meets lifecycle threshold criteria.
-
----
-
-## 2026-06-10 — ISO 2-point batch dialog report closeout correction
-
-### Tried
-- 324 active report 내의 file:///Users/... 로컬 절대경로 링크들을 repo-relative path로 일괄 보정.
-- 324 active report 내의 사용자 manual smoke 검증 상태를 "완료"로 정정하고, 향후 Codex 프롬프트에는 사용자 수동 GUI 확인 세부 항목을 생략하고 결과만 반영한다는 운영 원칙을 명시.
-
-### Result
-- `result_reports/active/324_iso_iseer_2point_batch_dialog_implementation.md` 수정 완료.
-- `result_reports/active/325_iso_iseer_2point_batch_dialog_report_closeout_correction.md` 신규 리포트 생성 완료.
-
-### Decision
-- 324 리포트 내의 문서 불일치와 수동 검증 보정을 마침으로써 ISO 2-point batch dialog 작업을 최종 closeout함.
-- 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
-- active report count meets lifecycle threshold criteria.
-
----
-
-## 2026-06-10 — SASO T3 batch dialog implementation
-
-### Tried
-- Relocated batch shell + profiles composition structure를 활용하여 SASO T3 batch dialog (`SasoT3BatchDialog` 및 `SasoT3BatchAdapter` 등)를 `ui_tk/batch_dialogs/profiles/saso_t3.py`에 구현 완료.
-- `ui_tk/sections/iso_saso_t3_section.py`에 "Multi 입력" 버튼을 추가하고 batch dialog open, focus, close, snapshot 흐름을 연결.
-- `tests/test_ui_tk_saso_t3_batch_dialog.py`를 신설하여 dialog open, focus path 유지, snapshot save/restore, 그리고 SASO T3의 required-only/optional 35 Min 계산 동작을 검증.
-- `result_reports/active/325_iso_iseer_2point_batch_dialog_report_closeout_correction.md`에 closeout note 보정 완료.
-- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
-
-### Result
-- `ui_tk/batch_dialogs/profiles/saso_t3.py` 신규 생성 완료.
-- `ui_tk/batch_dialogs/profiles/__init__.py`에서 `SasoT3BatchDialog` export 완료.
-- `ui_tk/sections/iso_saso_t3_section.py` 수정 완료.
-- `tests/test_ui_tk_saso_t3_batch_dialog.py` 신규 생성 및 focused tests pass 완료.
-
-### Decision
-- SASO T3 profile matrix batch 구현을 generic shell 계약에 완벽히 맞추어 성공적으로 완결함.
-- 다음 핵심 action은 `Batch foundation foldering audit`로 결정함.
-- active report count meets lifecycle threshold criteria.
+- ISO/India ISEER 2-point batch dialog를 `profiles/iso_iseer_2point.py`로, SASO T3 batch dialog를 `profiles/saso_t3.py`로 각각 구현 완료 (324, 326).
+- SASO T3의 optional 35 Min partial 입력 처리 불일치 보정 및 header/column 순서(4pt first, 3pt second) 보정을 완료함 (327).
+- ISO 2-point 리포트 내 로컬 절대경로 링크 교정 및 manual smoke 검증 기록 운영 원칙 수립 (325).
+- 향후 prompt에서 수동 GUI 확인 세부 항목을 생략하고 결과만 반영한다는 운영 원칙 명시.
+- 다음 핵심 action은 `Batch foundation foldering audit`.
+- 참조: reports 324, 325, 326, 327.
