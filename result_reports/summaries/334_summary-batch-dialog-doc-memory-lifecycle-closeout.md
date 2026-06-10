@@ -56,7 +56,9 @@
 - 본 summary 정리로 인해 staging memory seed 에 반영이 필요한 추가적인 decisions, procedures 변경사항은 없으며, memory seed의 상태는 **no update** (수정 없음)으로 종결한다. (실제 memory seed 파일은 이번 태스크에서 수정하지 않음)
 
 ## Remaining Active Reports
-- **None**: 완료된 21개 active reports가 모두 본 summary에 수렴되어 archive로 이주하므로, active 폴더 하위에 남은 보고서는 없습니다.
+
+- The previous active reports covered by this summary were archived.
+- Lifecycle cleanup evidence and reports created after this summary are outside this summary coverage and may remain active until the next lifecycle cleanup.
 
 ## Excluded Scope
 - production calculator core logic / model predictor / config / tests logic 등 code behavior 변경 없음.

@@ -8,7 +8,10 @@
 
 ### 1. Active Report Inventory & Classification
 - **Inventory & Archive Candidates (총 21개)**: `262`, `274`, `315`, `316`, `317`, `318`, `319`, `320`, `321`, `322`, `323`, `324`, `325`, `326`, `327`, `328`, `329`, `330`, `331`, `332`, `333` 의 모든 기존 active report는 이미 구현 완료 또는 수렴 및 정리가 완료되어 archive candidate로 분류됨.
-- **Remaining Active Reports (유지 대상)**: 없음. 모든 active reports가 요약 및 아카이브 완료됨.
+- **Remaining Active Reports (유지 대상)**:
+  - Previous active reports covered by summary 334 were archived.
+  - This cleanup report remains active as lifecycle cleanup evidence and next-action pointer.
+  - Later reports are outside this cleanup scope and remain subject to the next lifecycle cleanup.
 - **Needs User Decision (보류 대상)**: 없음.
 
 ### 2. Summary & Archive Execution
