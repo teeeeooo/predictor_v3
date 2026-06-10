@@ -180,7 +180,37 @@ Small behavior-preserving hotfixes do not require a large preflight when they
 add no new responsibility. If repeated smoke failures show the same bug class,
 promote the issue to owner-boundary work before adding another local patch.
 
+## Source File Owner Boundary Policy
+
+To prevent scattering files and building architectural debt, we enforce a codebase-wide policy for organizing new files:
+
+1. **Determine the Owner Boundary First**: Before creating any new source file, decide which feature, domain, standard, or tool owns the functionality.
+2. **Avoid Flat Files in Broad Folders**: Do not add feature-specific flat files directly into broad, root-level directories (e.g., `apps/calculator/ui/`, `core/`, `tests/`, `tools/`). Broad folders are not dumping grounds.
+3. **Establish a Feature Package First**: If a feature is expected to expand to multiple responsibilities (e.g., having its own data models, adapters, table models, views, controllers, or helper files), define a feature package (a subdirectory with `__init__.py`) instead of scattering individual files.
+4. **Halt on Out-of-Scope Packages**: If creating a package is outside your current task scope, do not place temporary flat files in broad folders. Stop and report for clarification.
+5. **Clean SoC via Package Isolation**: Separation of concerns (SoC) or MVC should be achieved by dividing responsibilities *within* the feature package directory, not by spreading flat files across different broad directories.
+6. **No New Flat Debt**: Existing legacy flat structures are preserved until they are audited and refactored under a separate task, but adding new flat debt is strictly prohibited.
+
+### Visual Examples
+
+* **Good (Clean Package Boundaries)**:
+  * [seer_models.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_models.py)
+  * [seer_adapter.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_adapter.py)
+  * [seer_table_model.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_table_model.py)
+  * `apps/calculator/ui/batch/models.py`
+  * `apps/calculator/ui/batch/controller.py`
+
+* **Bad (Flat File Dumping)**:
+  * `apps/calculator/ui/en14825_seer_models.py`
+  * `apps/calculator/ui/en14825_seer_adapter.py`
+  * `apps/calculator/ui/sections/en14825_seer_adapter.py`
+  * `apps/calculator/ui/sections/en14825_seer_table_model.py`
+  * `core/en14825_helper_extra.py`
+  * `core/new_standard_misc.py`
+  * `tests/test_newstandard_everything.py`
+
 ## Reference Parity / Standardization Gate
+
 
 Before creating a new UI surface, script, helper, adapter, workflow path, or
 reusable component, check whether an existing stable implementation or workflow

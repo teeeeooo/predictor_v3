@@ -79,6 +79,16 @@ prompt가 Goal/Scope/Non-goals/owner/tests를 충분히 고정하면
 만들기 전에 기존 안정화 구현이나 workflow가 있는지 확인하고,
 재사용/변형/비재사용 판단과 근거를 남긴다.
 
+#### New Source File Owner Preflight
+
+모든 coding task(UI, calculator, core, tools 등)에 대해, **신규 source file을 생성할 때**는 구현 전에 반드시 다음 질문을 확인하는 preflight 단계를 거쳐야 한다. (새 파일 생성이 없는 일반 코드 수정은 본 preflight 대상이 아님)
+
+1. **What feature/domain owns this file?**: 이 파일이 처리할 기능이나 도메인의 책임 영역은 무엇인가?
+2. **Is there an existing owner package?**: 해당 기능/도메인을 위한 전용 패키지(예: `apps/calculator/ui/en14825/`)가 이미 존재하는가?
+3. **Will this feature likely need multiple files?**: 이 피처가 향후 data model, adapter, view, controller, table, result, batch, helper 등 여러 역할의 파일들로 확장될 가능성이 높은가?
+4. **If yes, create/use a feature package**: 확장성이 예상되는 경우 broad folder에 flat하게 파일을 추가하지 말고, 독립된 feature package 디렉토리를 신설하거나 기존 패키지를 활용한다.
+5. **Halt and report**: 패키지 신설/경계 정의 작업이 현재 할당된 task의 scope를 벗어나는 경우, 임시 flat file을 생성하여 부채를 쌓지 말고 즉시 작업을 중단하고 보고한다.
+
 ### Design First Gate
 
 영향 범위가 큰 새 기능, 사용자 흐름 변경, UI/navigation 변경, input/result

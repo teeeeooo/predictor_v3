@@ -8,7 +8,7 @@
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
-  - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등)
+  - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등). 현재 core root에 존재하는 flat calculator 파일들은 레거시 및 현재 공개 인터페이스(public surface)입니다. 신규 규격이나 헬퍼 파일들을 core root에 flat하게 추가하는 것은 별도의 owner/package 설계 심사 없이 보류/금지됩니다. (핵심 구조의 물리적 폴더 분류는 이번 작업에서 수행하지 않고 유지합니다.)
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
 - **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
@@ -18,10 +18,15 @@
   - 장기적으로 `apps/{calculator,train,predict}/` 구조를 가집니다.
   - **`apps/calculator/`**: 활성 마이그레이션된 계산기 애플리케이션 영역입니다.
     - `app.py`: 계산기 메인 실행 진입점.
-    - `ui/`: 마이그레이션이 완료된 calculator-only Tkinter UI 패키지 (이전 `ui_tk/`가 이 위치로 완전히 이주됨). generic `ui/`로 이름을 섞거나 변경하지 않습니다.
+    - `ui/`: 마이그레이션이 완료된 calculator-only Tkinter UI 패키지. generic `ui/`로 이름을 섞거나 변경하지 않습니다.
+      - **Reusable UI / Common Shell**: `metric_input_table.py`, `result_panel.py` 등 공용 재사용 컴포넌트와 윈도우 쉘 파일들이 위치합니다.
+      - **Feature Packages**: `en14825/`, `batch/` 등 특정 계산 규격/피처 전용 패키지로, 피처별 model, adapter, table model, helper 파일들을 캡슐화하여 둡니다.
+      - **`sections/`**: 개별 계산 섹션을 조립하는 thin glue 및 registration/routing 성격의 코드로 역할을 제한하며, 피처 전용 model, adapter, table model 파일들을 흩뿌려 두는 dumping ground로 사용하지 않습니다.
   - **`apps/train/` 및 `apps/predict/`**: 현 시점에서는 물리적 폴더를 생성하지 않고, 향후 PySide6 재작성 시점에 생성할 reserved boundary로 문서상 선언합니다.
 - **`data/`**: 규격 설정(JSON) 및 학습 데이터
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
+- **`tests/`**: 테스트 코드 영역으로, 소스 코드 소유주(source owner) 및 패키지 경계를 그대로 반영한 focused tests 구성을 최우선으로 합니다. (예: `test_apps_calculator_ui_en14825.py`)
+- **`tools/`**: standalone 형태의 관리 및 코드 정적 분석/검사 툴만 제한적으로 허용합니다. (예: `check_code_structure.py`)
 
 ## 2. ML 피처 및 데이터 구조
 
