@@ -110,9 +110,10 @@
 
 ## Next Actions
 
-1. **Calculator entrypoint handover from PyQt to Tkinter**
-2. **ui_tk root folder inventory audit**
-3. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Apps package architecture audit before calculator entrypoint handover**
+2. **Calculator entrypoint handover from PyQt to Tkinter**
+3. **ui_tk root folder inventory audit, or merge into apps architecture audit if ownership overlap is confirmed**
+4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
 

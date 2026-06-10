@@ -53,7 +53,7 @@
 
 ## WORK_PLAN 업데이트 여부
 
-- `docs/WORK_PLAN.md`에 Slice 2 완료 사실을 명시하고, Next Actions의 최상단 항목을 `Calculator entrypoint handover from PyQt to Tkinter`로 최신화함.
+- `docs/WORK_PLAN.md`에 Slice 2 완료 사실을 명시하고, Next Actions의 최상단 항목을 `Apps package architecture audit before calculator entrypoint handover`로 최신화함.
 
 ## 제외 범위 (Excluded Scope)
 
@@ -92,4 +92,7 @@
 
 ## Next Action suggested (차기 과제)
 
-1. **Calculator entrypoint handover from PyQt to Tkinter**
+1. **Apps package architecture audit before calculator entrypoint handover**
+   - Batch foundation foldering is complete.
+   - Before calculator entrypoint handover, app package boundary must be audited because the long-term target is `apps/{calculator,train,predict}/`.
+   - `ui_tk/` is a calculator-only Tkinter migration source, while `ui/` remains legacy PyQt multi-app UI until later retirement/rewrite decisions.
