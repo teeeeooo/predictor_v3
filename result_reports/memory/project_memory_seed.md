@@ -372,7 +372,9 @@ entries:
       - PyQt
       - Tkinter
       - calculator-only
-    assertionStatus: verified
+    assertionStatus: superseded
+    resolutionStatus: superseded
+    supersededBy: Tkinter calculator active direction and PyQt/PySide6 UI transition
     source: result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md (covered reports 124-131; PyQt / Tkinter Direction)
 
   - type: open_question
@@ -383,7 +385,8 @@ entries:
       - PyInstaller
       - PyQt
       - validation
-    assertionStatus: observed
+    assertionStatus: stale
+    resolutionStatus: stale
     source: result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md (covered reports 124-131; Remaining Work and Next Suggested Actions)
 
   - type: procedure
@@ -444,7 +447,9 @@ entries:
       - auto-calc
       - PyQt calculator retirement
       - packaging
-    assertionStatus: verified
+    assertionStatus: superseded
+    resolutionStatus: superseded
+    supersededBy: Tkinter calculator active direction and PyQt/PySide6 UI transition
     source: result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md (covered reports 158-164; Tkinter Calculator Status and PyQt Calculator Retirement Status)
 
   - type: decision
@@ -607,6 +612,8 @@ entries:
       - Hong Kong
       - window geometry
     assertionStatus: superseded
+    resolutionStatus: retired
+    supersededBy: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md
     source: result_reports/summaries/221_summary-post-main-table-window-refit-arc.md; result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md
 
   - type: decision
@@ -640,7 +647,7 @@ entries:
       - window_shell
       - Hong Kong lower blank space
     assertionStatus: superseded
-    resolutionStatus: resolved
+    resolutionStatus: retired
     supersededBy: result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
     source: result_reports/summaries/231_summary-architecture-uiux-boundary-and-window-refit-arc.md; result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
 
@@ -654,6 +661,7 @@ entries:
       - result metrics
       - export deferred
     assertionStatus: superseded
+    resolutionStatus: retired
     source: result_reports/summaries/236_summary-window-dialog-batch-viewport-arc.md
     supersededBy: result_reports/summaries/249_summary-batch-two-row-matrix-and-reference-parity-arc.md
 
@@ -743,6 +751,22 @@ entries:
       - terminal output
     assertionStatus: verified
     source: result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md
+
+  - type: decision
+    topic: Tkinter calculator active direction and PyQt/PySide6 UI transition
+    content: PyQt calculator-only path is a read-only reference during the Tkinter calculator transition. Keep PyQt calculator reference only while EN14825 and AHRI 210/240 implementation still needs it. When reference need ends, PyQt calculator-only path may be retired. Predict and Train PyQt applications are separate from the calculator and remain retained for now. Future Predict/Train UI rewrite should target PySide6 and conform to shell/MVC boundary policy because current Predict/Train PyQt predates the shell/MVC structure. app_calculator_tk.py to app_calculator.py handover remains a separate future task.
+    keywords:
+      - predictor_v3
+      - PyQt calculator
+      - Tkinter calculator
+      - PySide6
+      - Predict Train UI
+      - entrypoint handover
+      - EN14825
+      - AHRI 210/240
+      - MVC boundary
+    assertionStatus: verified
+    source: result_reports/active/331_memory_seed_maintenance_audit.md (user-confirmed direction corrections)
 ```
 
 ## Known Gaps
