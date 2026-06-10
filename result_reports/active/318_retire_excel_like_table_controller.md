@@ -76,4 +76,4 @@
 
 ## Next Action Suggested
 
-1. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **ui_tk batch dialog folder boundary audit** (Proposed in 318, followed by batch dialog folder relocation)

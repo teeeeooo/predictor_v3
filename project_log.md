@@ -1598,3 +1598,20 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — ui_tk batch dialog folder boundary audit before profile batch expansion
+
+### Tried
+- ISO 2-point 및 SASO T3 batch dialog 확장 전 `ui_tk` 내부의 batch dialog 관련 파일들(`hong_kong_cspf_batch_section.py`, `batch_matrix_table.py` 등)의 폴더 boundary와 MVC/SoC 책임을 audit함.
+- `HongKongCspfBatchDialog`가 dialog shell로서의 책임을 갖고 `HongKongCspfBatchSection`이 section widget의 책임을 가짐을 확인하고, 폴더링 후보(A. batch_dialogs, B. dialogs/batch, C. batch)를 비교 평가함.
+- dynamic toggle(SASO T3), 비교 result surface(ISO 2-point) 차이에 따른 공통화 타당성을 평가하고, profile-specific dialog 배치의 안전성을 분석함.
+
+### Result
+- `result_reports/active/319_ui_tk_batch_dialog_folder_boundary_audit.md` 리포트 생성 완료.
+- `docs/WORK_PLAN.md`에 task 319 완료 상태를 반영하고, 제안된 Next Actions 흐름으로 업데이트 완료.
+
+### Decision
+- batch dialog 확장 시의 import churn 및 file pollution을 방지하기 위해 `ui_tk/batch_dialogs/` 폴더 boundary를 도입하고, `HongKongCspfBatchDialog`를 이주하는 작업(`Move HongKongCspfBatchDialog to batch_dialogs`)을 다음 implementation slice로 정함.
+- active report count meets lifecycle threshold criteria.
+
+---

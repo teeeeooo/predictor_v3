@@ -105,11 +105,18 @@
 - 316: Corrected active report lifecycle cleanup and fixed local absolute links in summary 314.
 - 317: Audited main table migration compatibility and confirmed transition to TkTableController is complete. Recommended ui_tk folder cleanup (retiring ExcelLikeTableController) as the next slice.
 - 318: Retired legacy ExcelLikeTableController, corrected test gaps in tests/test_ui_tk_iso_table_autocalc.py and tests/test_ui_tk_table_controller.py, and added focused interactive behavior tests in tests/test_ui_tk_metric_input_table_controller_parity.py.
+- 319: Audited ui_tk batch dialog folder boundary before profile batch expansion and proposed next folder organization slice.
 
 ## Next Actions
 
-1. **EN14825 / AHRI 210/240 / KS profile expansion**
-   - Expand profile coverage to include European EN14825, American AHRI 210/240, and Korean KS profiles.
+1. **Move Hong Kong CSPF batch dialog to batch_dialogs**
+   - Establish the `ui_tk/batch_dialogs/` package boundary and relocate `HongKongCspfBatchDialog` without behavior change.
+2. **ISO 2-point batch dialog implementation**
+   - Implement batch matrix dialog for ISO / ISEER 2-point profile.
+3. **SASO T3 batch dialog implementation**
+   - Implement batch matrix dialog for SASO T3 profile, preserving optional 35 Min behavior.
+4. **Calculator entrypoint handover from PyQt to Tkinter**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 ## Active Constraints
 
