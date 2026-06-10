@@ -103,15 +103,15 @@
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335: Completed active report lifecycle cleanup before batch foundation foldering audit.
+- 337: Completed batch foundation foldering audit; recommended ui_tk/batch/ consolidation architecture and sliced implementation.
 
 
 ## Next Actions
 
-1. **Batch foundation foldering audit**
-2. **Batch foundation foldering implementation**
-3. **Calculator entrypoint handover from PyQt to Tkinter**
-4. **ui_tk root folder inventory audit**
-5. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Batch foundation foldering implementation**
+2. **Calculator entrypoint handover from PyQt to Tkinter**
+3. **ui_tk root folder inventory audit**
+4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
 
