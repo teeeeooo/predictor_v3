@@ -93,3 +93,9 @@ ui_tk/
 3. **SASO T3 batch dialog implementation** (matrix-based optional 35 Min toggle rendering)
 4. **Calculator entrypoint handover from PyQt to Tkinter**
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
+
+## Closeout Note (June 10, 2026)
+
+- `ui_tk/batch_dialogs/shell.py` 공통 껍데기(Toplevel shell, geometry settle, snapshot handoff)와 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` profile adapter 이주를 성공적으로 완료했습니다.
+- `ui_tk/sections/hong_kong_cspf_section.py` 및 관련 테스트의 import 경로와 API 호출부를 최신 구조에 맞춰 정상 갱신하였으며, 모든 연동 테스트가 통과하였습니다.
+
