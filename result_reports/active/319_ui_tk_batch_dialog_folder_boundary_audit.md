@@ -48,13 +48,16 @@
 
 향후 ISO 2-point 및 SASO T3 batch dialog를 추가적으로 확장하여 배치 연산을 완성할 때 적합한 폴더링 후보들은 다음과 같습니다.
 
-### Candidate A: `ui_tk/batch_dialogs/`
-- **구조**: `ui_tk/batch_dialogs/hong_kong_cspf_batch.py`, `ui_tk/batch_dialogs/iso_iseer_2point_batch.py` 등
+### Candidate A: `ui_tk/batch_dialogs/` (Shell + Profiles Package)
+- **구조**:
+  - `ui_tk/batch_dialogs/shell.py` (공통 Toplevel 윈도우 관리 및 lifecycle 소유)
+  - `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` 등 (프로필별 구체 어댑터 구성)
 - **장점**:
-  - `ui_tk/` 루트의 components 개수를 지나치게 늘리지 않으면서, 배치 연산 전용 다이얼로그를 직관적으로 한곳에 보관.
-  - depth가 1단계로 얕아 단순하고 import 경로 관리가 간결함.
+  - `ui_tk/` 루트의 components 개수를 지나치게 늘리지 않으면서, 배치 연산 전용 다이얼로그의 아키텍처 경계를 명확히 분리.
+  - Toplevel shell, geometry, focus, snapshot handoff 등 공통 UI 책임을 `shell.py`로 격리하여 코드 복사-붙여넣기 방지 및 유지보수성 향상.
+  - 신규 프로필 확장 시 `profiles/` 폴더 하위에 얇은 어댑터 파일만 추가하면 되므로 확장성이 우수함.
 - **단점**:
-  - 다이얼로그 전용 폴더가 생겨 다이얼로그가 아닌 배치 컴포넌트(예: batch_matrix_table.py)들과는 분리됨.
+  - flat 구조에 비해 초기 설계 구성(shell과 profile의 분리) 비용이 약간 발생함.
 
 ### Candidate B: `ui_tk/dialogs/batch/`
 - **구조**: `ui_tk/dialogs/batch/hong_kong_cspf.py` 등
@@ -74,20 +77,21 @@
 - **장점**: 파일 이주 비용과 import churn이 전혀 없음.
 - **단점**: 일반 탭 내부의 static section widget들과 popup dialog window들이 섞여 `sections/` 폴더가 혼잡해지고 책임을 알아보기 어려워짐.
 
-### 결론: **Candidate A (`ui_tk/batch_dialogs/`) 채택**
-- 프로필별 배치 다이얼로그들은 독립적인 사용자 화면 흐름을 관리하므로 `ui_tk/batch_dialogs/`로 격리하는 것이 책임을 명확히 하고, `ui_tk/sections/` 폴더 오염을 방지하는 최적의 설계 대안입니다.
+### 결론: **Candidate A (`ui_tk/batch_dialogs/` Shell + Profiles) 채택**
+- 프로필별 배치 다이얼로그들은 독립적인 사용자 화면 흐름을 구성하되, 공통 Toplevel window lifecycle, hidden-first geometry settle/show, focus, snapshot handoff 등은 `shell.py`로 공통화하고, `profiles/` 하위 어댑터가 이를 채우도록 아키텍처 경계를 보정합니다.
+- 이는 flat 구조 채택 시 발생하는 "프로필별 full-dialog 코드 복사-붙여넣기(anti-pattern)" 위험을 미연에 방지합니다.
 
 ## Batch Dialog Commonization Feasibility (공통화 필요성 판단)
 
 1. **공통 Dialog Base 도입 여부**:
-   - **판단**: 지금 단계에서 무리하게 공통 다이얼로그 base class를 도입하지 않고, 각 프로필별로 독립적인 다이얼로그 파일(profile-specific dialog)을 작성하는 것이 훨씬 안전합니다.
+   - **판단**: 거대한 abstract base class를 만들지는 않습니다. 대신 `shell.py`가 공통 Toplevel lifecycle 및 snapshot handoff 계약을 관리하고, profile-specific 파일들이 얇은 adapter/composition 형태로 동작하도록 결합(Composition-first)을 유도합니다.
 2. **이유 및 리스크**:
-   - SASO T3는 **35 Min optional test toggle**이라는 특수한 입력 필드 제어(활성/비활성 연동)와 trace profile combo가 결합되어 동작합니다.
+   - SASO T3는 **35 Min optional test toggle** 제어 및 trace profile combo가 결합되어 동작합니다.
    - ISO 2-point는 **ISO 16358-1과 India ISEER의 두 가지 비교 연산 결과**를 출력하는 비교 테이블 위젯과 visual canvas를 포함합니다.
    - 반면 Hong Kong CSPF는 단일 프로필 연산 결과와 Matrix 데이터만 관리합니다.
-   - 공통화를 성급히 시도할 경우, 다이얼로그 껍데기에 지나치게 많은 다형성 옵션이나 분기 코드가 생겨 코드가 복잡해지고 SASO T3의 특수 동작을 방어하기 어려워집니다.
+   - 상속 기반의 공통화를 서두르면 다이얼로그 껍데기에 지나치게 많은 다형성 옵션이나 분기 코드가 생기게 됩니다. 따라서, 공통 책임은 `shell.py`에 두고, 화면 구성의 변형은 profile-specific adapter frame에 위임하는 방식이 가장 안전합니다.
 3. **공통화 가능 범위**:
-   - 창 크기 조정(`_apply_initial_geometry`), ` DebouncedAutoCalc`, `export_table_to_csv` 등 이미 공통 모듈화된 helper 라이브러리를 재사용하는 선에서 그치고, 윈도우 레이아웃과 뷰-컨트롤러 매핑은 프로필별 파일에 독자적으로 두는 것이 적합합니다.
+   - 창 크기 및 hidden-first geometry settle/show, Toplevel 윈도우 핸들링, snapshot persist 콜백 실행 등 공통 윈도우 제어 책임을 `shell.py`에 내장합니다.
 
 ## Clean Architecture MVC/SoC 관점 판단
 
@@ -98,18 +102,20 @@
 
 ## Next Implementation Slice Proposal (다음 구현 작업 제안)
 
-- **선택된 작업**: **Move Hong Kong CSPF batch dialog to `batch_dialogs` folder without behavior change**
-  - 배치 다이얼로그 확장에 앞서 패키지 경계를 명확히 하고, 기존의 검증된 Hong Kong CSPF 배치 다이얼로그를 신규 폴더 `ui_tk/batch_dialogs/`로 이주하여 폴더 구조와 import 관계를 정리하는 작업을 최우선 실행합니다.
+- **선택된 작업**: **Batch dialog shell + profiles skeleton and Hong Kong CSPF relocation**
+  - 배치 다이얼로그 확장에 앞서 `ui_tk/batch_dialogs/shell.py` 공통 골격과 `ui_tk/batch_dialogs/profiles/` 구조를 신설하고, 기존의 검증된 Hong Kong CSPF 배치 다이얼로그를 신규 패키지 경계에 맞게 분리 이주하는 작업을 최우선 실행합니다.
 
 ### Next Slice Details:
-- **작업명**: ui_tk: Move Hong Kong CSPF batch dialog to `batch_dialogs` folder
+- **작업명**: ui_tk: Build batch dialog shell + profiles package and relocate Hong Kong CSPF
 - **목적**:
-  - `ui_tk/batch_dialogs/` 폴더를 신설하고 `HongKongCspfBatchDialog`를 이주하여 dialog shell과 section widget의 책임을 분리.
-  - 향후 ISO 2-point 및 SASO T3 batch dialog가 입주할 패키지 공간 확립.
+  - `ui_tk/batch_dialogs/shell.py` 공통 껍데기(Toplevel shell, geometry settle, snapshot handoff)를 빌드.
+  - `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py`를 신설하여 기존 cspf 배치 데이터 스펙 및 계산 어댑터를 이주.
+  - 공통 shell과 profile adapter 간의 clean composition 계약 검증.
 - **수정 허용 후보**:
   - `ui_tk/sections/hong_kong_cspf_section.py` (import 경로 수정)
   - `tests/test_ui_tk_iso_table_autocalc.py` (import 경로 수정)
-  - `ui_tk/batch_dialogs/hong_kong_cspf_batch.py` (이주 생성)
+  - `ui_tk/batch_dialogs/shell.py` (공통 shell 작성)
+  - `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` (어댑터 작성)
   - `ui_tk/sections/hong_kong_cspf_batch_section.py` (dialog 제거 및 section만 잔류)
 - **수정 금지 후보**:
   - `ui_tk/batch_matrix_table.py` 등 batch table foundation 전체
@@ -119,7 +125,7 @@
   - `python3 -B tools/check_code_structure.py`
   - `pytest tests/test_ui_tk_iso_table_autocalc.py`
 - **GUI smoke 필요 여부**:
-  - **필요 (Yes)**: 이주 후 실제 Hong Kong CSPF 탭에서 배치 창이 정상적으로 뜨고, 추가/삭제/복사/엑셀 내보내기 및 실시간 연산 결과 갱신이 비주얼 및 기능 오작동 없이 작동하는지 수동 검증 필수.
+  - **필요 (Yes)**: 이주 후 실제 Hong Kong CSPF 탭에서 배치 창이 정상적으로 뜨고, 추가/삭제/복사/엑셀 내보내기 및 실시간 연산 결과 갱신이 비주얼 및 기능 오작동 없이 작동하는지 수동 검증 필수. 특히 shell-profile 간의 snapshot handoff와 hidden-first geometry 안착 여부 검증 관점 추가.
 
 ## Verification Result (검증 결과)
 
@@ -135,6 +141,8 @@
 
 ## Next Suggested Action
 
-1. **Move Hong Kong CSPF batch dialog to `ui_tk/batch_dialogs/` folder** (established package boundary)
+1. **Build batch dialog shell + profiles skeleton and relocate Hong Kong CSPF** (establish package and compose adapter)
 2. **ISO 2-point batch dialog implementation** (matrix-based comparison result rendering)
 3. **SASO T3 batch dialog implementation** (matrix-based optional 35 Min toggle rendering)
+4. **Calculator entrypoint handover from PyQt to Tkinter**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**

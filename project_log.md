@@ -1615,3 +1615,20 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — Correct batch dialog folder boundary decision to shell + profiles composition
+
+### Tried
+- 319의 flat `ui_tk/batch_dialogs/` 폴더 결정을 재검토하고, 다수 프로필 확장 시 발생하는 Toplevel 윈도우/lifecycle 제어 코드 복사-붙여넣기 방지를 위한 `shell + profiles` composition 구조 설계를 구상 및 확정함.
+- `PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` 및 `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md` 문서를 대조하여, Toplevel window lifecycle, focus, close callback, hidden-first geometry settle/show, snapshot handoff 책임을 `shell.py`로 격리하고 profile-specific 구성은 얇은 어댑터 프레임으로 제한하도록 규칙을 세움.
+
+### Result
+- `result_reports/active/319_ui_tk_batch_dialog_folder_boundary_audit.md` 리포트 보정 및 `result_reports/active/320_batch_dialog_shell_profiles_boundary_correction.md` 신규 리포트 작성 완료.
+- `docs/WORK_PLAN.md`에 task 320 완료 상태 반영 및 Next Actions(shell + profiles skeleton 및 CSPF 이주) 업데이트 완료.
+
+### Decision
+- 다형성 상속 남용 없이 Composition 기반으로 `batch_dialogs/shell.py` 컨테이너와 `batch_dialogs/profiles/` 하위 어댑터 간의 책임을 양분하도록 최종 승인함.
+- 다음 핵심 action은 `Batch dialog shell + profiles skeleton and Hong Kong CSPF relocation` 구현 단계로 진입하는 것으로 결정함.
+- active report count meets lifecycle threshold criteria.
+
+---
