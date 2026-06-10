@@ -1,6 +1,6 @@
 import pytest
 
-from ui_tk.batch_models import (
+from ui_tk.batch.models import (
     BatchColumnRole,
     BatchColumnSpec,
     BatchProfileSpec,

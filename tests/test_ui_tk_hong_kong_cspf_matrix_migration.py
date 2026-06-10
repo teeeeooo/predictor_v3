@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ui_tk.batch_matrix_models import (
+from ui_tk.batch.matrix_models import (
     CSEC,
     CSPF,
     DECLARED_CAPACITY,
@@ -12,7 +12,7 @@ from ui_tk.batch_matrix_models import (
     HALF_POWER,
     HONG_KONG_CSPF_MATRIX_SPEC,
 )
-from ui_tk.batch_models import BatchRowState
+from ui_tk.batch.models import BatchRowState
 from ui_tk.sections.hong_kong_cspf_batch_spec import (
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,

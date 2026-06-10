@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from collections.abc import Callable, Iterable, Mapping
 
-from ui_tk.batch_models import (
+from ui_tk.batch.models import (
     BatchColumnRole,
     BatchProfileSpec,
     BatchTableModel,

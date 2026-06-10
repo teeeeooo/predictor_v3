@@ -10,13 +10,13 @@ from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.batch_matrix_models import (
+from ui_tk.batch.matrix_models import (
     BatchMatrixSpec,
     MatrixMeasurementPointSpec,
     MatrixPhysicalRowType,
 )
 from ui_tk.batch_matrix_table import BatchMatrixTable
-from ui_tk.batch_models import BatchRowState
+from ui_tk.batch.models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from ui_tk.sections.result_formatting import kwh_value, metric_value

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from ui_tk.batch_models import BatchColumnRole
+from ui_tk.batch.models import BatchColumnRole
 from ui_tk.table.interaction_core import (
     CellAddress as GridAddress,
     ClipboardMatrix,

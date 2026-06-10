@@ -5,7 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 import pytest
 
-from ui_tk.batch_models import BatchRowState
+from ui_tk.batch.models import BatchRowState
 from ui_tk.sections.iso_saso_t3_section import IsoSasoT3Section
 from ui_tk.batch_dialogs.profiles.saso_t3 import (
     SasoT3BatchDialog,

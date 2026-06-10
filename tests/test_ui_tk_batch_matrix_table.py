@@ -1,7 +1,7 @@
 import pytest
 import tkinter as tk
 
-from ui_tk.batch_matrix_models import (
+from ui_tk.batch.matrix_models import (
     CSEC,
     CSPF,
     DECLARED_CAPACITY,

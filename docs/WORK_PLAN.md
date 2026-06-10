@@ -104,11 +104,12 @@
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335: Completed active report lifecycle cleanup before batch foundation foldering audit.
 - 337: Completed batch foundation foldering audit; recommended ui_tk/batch/ consolidation architecture and sliced implementation.
+- 338: Completed batch foundation foldering implementation - Slice 1 (moved toolkit-neutral model/spec files to ui_tk/batch/ package).
 
 
 ## Next Actions
 
-1. **Batch foundation foldering implementation**
+1. **Batch foundation foldering implementation - Slice 2**
 2. **Calculator entrypoint handover from PyQt to Tkinter**
 3. **ui_tk root folder inventory audit**
 4. **EN14825 / AHRI 210/240 / KS profile expansion**

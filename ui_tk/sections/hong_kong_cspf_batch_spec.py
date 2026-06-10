@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from core.calculator_dispatcher import create_calculator_for_profile
-from ui_tk.batch_models import (
+from ui_tk.batch.models import (
     BatchColumnRole,
     BatchColumnSpec,
     BatchProfileSpec,

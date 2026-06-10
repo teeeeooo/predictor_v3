@@ -1,4 +1,4 @@
-from ui_tk.batch_models import BatchColumnRole
+from ui_tk.batch.models import BatchColumnRole
 from ui_tk.batch_table import (
     batch_roles_to_cell_roles,
     editable_clear_targets,

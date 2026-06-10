@@ -9,9 +9,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.batch_matrix_models import HONG_KONG_CSPF_MATRIX_SPEC
+from ui_tk.batch.matrix_models import HONG_KONG_CSPF_MATRIX_SPEC
 from ui_tk.batch_matrix_table import BatchMatrixTable
-from ui_tk.batch_models import BatchRowState
+from ui_tk.batch.models import BatchRowState
 from ui_tk.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from ui_tk.sections.hong_kong_cspf_batch_spec import HongKongCspfBatchHandler
 from ui_tk.table.controller import TkTableController
