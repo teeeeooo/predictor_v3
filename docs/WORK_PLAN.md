@@ -102,20 +102,14 @@
 - 313: Closed out the ui_tk controller switch arc and summarized the validation/evidence milestones.
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
-- 335: Completed active report lifecycle cleanup before batch foundation foldering audit.
-- 337: Completed batch foundation foldering audit; recommended ui_tk/batch/ consolidation architecture and sliced implementation.
-- 338: Completed batch foundation foldering implementation - Slice 1 (moved toolkit-neutral model/spec files to ui_tk/batch/ package).
-- 340: Completed batch foundation foldering implementation - Slice 2 (moved batch table views, viewports, controllers, and compatibility wrapper to ui_tk/batch/ package, and regenerated reference map).
-- 342: Completed calculator-first apps package architecture audit before entrypoint handover.
-- 343: Completed PROJECT_CHARTER.md and project_architecture.md policy alignment update.
-- 344: Completed apps calculator skeleton creation and entrypoint handover.
-- 345: Completed ui_tk relocation to apps/calculator/ui.
+- 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
+- 347: Completed active report lifecycle cleanup after apps calculator relocation (described in [Report 347](result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md)).
 
 
 ## Next Actions
 
-1. **Active report lifecycle cleanup (threshold exceeded)**
-2. **Calculator PyQt reference retirement preflight**
+1. **Calculator PyQt reference retirement preflight**
+2. **Test/package naming cleanup after apps calculator UI relocation**
 3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
