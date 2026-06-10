@@ -108,11 +108,12 @@
 - 351: Completed mixed ISO table test split/retirement; blocker resolved (described in [Report 351](result_reports/active/351_mixed_iso_table_test_split_or_retirement.md)).
 - 353: Completed PyQt calculator-only source retirement (ui/calc_window.py, ui/calculators_2point.py, ui/calculator_errors.py retired).
 - 354: Updated active docs and PyQt support matrix after source retirement (project_architecture.md, project_brief.md, pyqt_test_support_matrix.md, README.md).
+- 355: Completed test/package naming cleanup audit; 36 test_ui_tk_*.py rename candidates identified, imports already correct, rename risk is low-to-medium.
 
 ## Next Actions
 
-1. **Test/package naming cleanup after apps calculator UI relocation (Recommended next slice)**
-2. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **EN14825 / AHRI 210/240 / KS profile expansion (Recommended next slice)**
+2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 3. **Active report lifecycle cleanup if threshold reached**
 
 
