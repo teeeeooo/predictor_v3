@@ -109,6 +109,7 @@
 - 320: Corrected batch dialog folder boundary decision to use a scalable shell + profiles composition architecture.
 - 321: Implemented batch dialog shell + profiles skeleton and relocated Hong Kong CSPF batch dialog without behavior change.
 - 322: Closed out manual GUI smoke and corrected private attribute access on batch dialog wrapper.
+- 323: Removed private _shell attribute access from integration test and added shell-level unit tests.
 
 ## Next Actions
 

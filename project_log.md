@@ -1672,3 +1672,21 @@
 - batch dialog의 private access 제거와 사용자 manual smoke closeout을 완료함으로써 profile 확장 전 batch dialog relocation 단계를 최종 완결함.
 - 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
 - active report count meets lifecycle threshold criteria.
+
+---
+
+## 2026-06-10 — Remove private shell access from batch dialog test
+
+### Tried
+- `tests/test_ui_tk_iso_table_autocalc.py`에 남아 있던 `first_dialog._shell.snapshot()` 직접 검증 코드를 제거하고, 다이얼로그의 public `snapshot()` wrapper만 사용하도록 보정.
+- `BatchDialogShell.snapshot()` public method 기능 자체는 신설된 shell-level focused unit test(`tests/test_ui_tk_batch_dialog_shell.py`)에서 mock adapter를 사용하여 격리 검증하도록 이관.
+- `result_reports/active/322_batch_dialog_relocation_smoke_closeout_private_access.md` 파일에 post-commit correction note 추가.
+
+### Result
+- `tests/test_ui_tk_iso_table_autocalc.py` 및 `tests/test_ui_tk_batch_dialog_shell.py` 테스트 코드 수정/생성 완료.
+- `result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md` 신규 리포트 생성 완료.
+
+### Decision
+- 테스트 코드 내의 private access를 완전히 제거하여 캡슐화 검증을 완결함.
+- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
+- active report count meets lifecycle threshold criteria.

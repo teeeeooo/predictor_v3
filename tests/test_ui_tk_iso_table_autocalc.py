@@ -1367,7 +1367,6 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     )
 
     assert first_dialog.snapshot()[0]["declared_capacity"] == "3500"
-    assert first_dialog._shell.snapshot()[0]["declared_capacity"] == "3500"
     assert cspf._batch_dialog is first_dialog
 
     first_dialog.close()
