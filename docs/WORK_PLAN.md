@@ -115,13 +115,13 @@
 - 360: Completed EN14825 SEER data model/table model/adapter foundation slice.
 - 361: Completed EN14825 SEER model/adapter/table model correction.
 - 362: Completed Source file owner boundary policy and guard audit.
+- 363: Completed Source file owner boundary guard implementation.
 
 ## Next Actions
 
-1. **Source file owner boundary guard implementation (Recommended next slice)**
-2. **Active report lifecycle cleanup if threshold reached**
-3. **EN14825 SEER section integration with real-time updates**
-4. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **Active report lifecycle cleanup if threshold reached (Recommended next slice)**
+2. **EN14825 SEER section integration with real-time updates**
+3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
 

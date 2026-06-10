@@ -280,6 +280,85 @@ def test_class_soft_limit_skipped_when_in_allowlist():
 
 
 # ---------------------------------------------------------------------------
+# Source File Owner Boundary Policy checks
+# ---------------------------------------------------------------------------
+
+
+def test_check_ui_root_flat_feature_file():
+    # Bad examples
+    assert any(
+        f.severity == "error" and "Feature-specific flat file" in f.message
+        for f in guard.check_ui_root_flat_feature_file("apps/calculator/ui/en14825_seer_adapter.py")
+    )
+    assert any(
+        f.severity == "error" and "Feature-specific flat file" in f.message
+        for f in guard.check_ui_root_flat_feature_file("apps/calculator/ui/saso_t3.py")
+    )
+    # Good examples
+    assert guard.check_ui_root_flat_feature_file("apps/calculator/ui/en14825/seer_adapter.py") == []
+    assert guard.check_ui_root_flat_feature_file("apps/calculator/ui/result_panel.py") == []
+
+
+def test_check_sections_flat_model_adapter_table():
+    # Bad examples
+    assert any(
+        f.severity == "error" and "UI glue/routing only" in f.message
+        for f in guard.check_sections_flat_model_adapter_table("apps/calculator/ui/sections/en14825_seer_table_model.py")
+    )
+    assert any(
+        f.severity == "error" and "UI glue/routing only" in f.message
+        for f in guard.check_sections_flat_model_adapter_table("apps/calculator/ui/sections/saso_adapter.py")
+    )
+    # Good examples
+    assert guard.check_sections_flat_model_adapter_table("apps/calculator/ui/en14825/seer_table_model.py") == []
+    assert guard.check_sections_flat_model_adapter_table("apps/calculator/ui/sections/en14825_section.py") == []
+    assert guard.check_sections_flat_model_adapter_table("apps/calculator/ui/sections/iso_saso_t3_section.py") == []
+
+
+def test_check_core_root_flat_helper_misc_utils():
+    # Bad examples
+    assert any(
+        f.severity == "warning" and "Avoid adding new flat helper/misc/utils files" in f.message
+        for f in guard.check_core_root_flat_helper_misc_utils("core/new_standard_utils.py")
+    )
+    assert any(
+        f.severity == "warning" and "Avoid adding new flat helper/misc/utils files" in f.message
+        for f in guard.check_core_root_flat_helper_misc_utils("core/foo_helper.py")
+    )
+    # Good examples
+    assert guard.check_core_root_flat_helper_misc_utils("core/calculator_en14825.py") == []
+    assert guard.check_core_root_flat_helper_misc_utils("core/utils.py") == []  # Not ending in _utils.py
+
+
+def test_check_tests_mega_test_naming():
+    # Bad examples
+    assert any(
+        f.severity == "warning" and "Avoid using generic mega-test names" in f.message
+        for f in guard.check_tests_mega_test_naming("tests/test_newstandard_everything.py")
+    )
+    assert any(
+        f.severity == "warning" and "Avoid using generic mega-test names" in f.message
+        for f in guard.check_tests_mega_test_naming("tests/test_foo_all.py")
+    )
+    # Good examples
+    assert guard.check_tests_mega_test_naming("tests/test_apps_calculator_ui_en14825.py") == []
+    assert guard.check_tests_mega_test_naming("tests/test_ui_theme_tokens.py") == []
+
+
+def test_check_ui_package_registry():
+    # Bad examples (new unregistered directory)
+    assert any(
+        f.severity == "warning" and "not in the allowed package registry" in f.message
+        for f in guard.check_ui_package_registry("apps/calculator/ui/new_unregistered_package/foo.py")
+    )
+    # Good examples (registered package)
+    assert guard.check_ui_package_registry("apps/calculator/ui/en14825/seer_adapter.py") == []
+    assert guard.check_ui_package_registry("apps/calculator/ui/batch/models.py") == []
+    # Flat file (registry check is only for packages under ui/, meaning depth >= 5)
+    assert guard.check_ui_package_registry("apps/calculator/ui/result_panel.py") == []
+
+
+# ---------------------------------------------------------------------------
 # Repo-wide pass
 # ---------------------------------------------------------------------------
 

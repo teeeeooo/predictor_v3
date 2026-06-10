@@ -401,6 +401,127 @@ def check_soft_limits(
     return findings
 
 
+def check_ui_root_flat_feature_file(relpath: str) -> List[Finding]:
+    """Ensure feature-specific files are not added directly to apps/calculator/ui root."""
+    findings: List[Finding] = []
+    path_parts = relpath.split("/")
+    if len(path_parts) == 4 and path_parts[0:3] == ["apps", "calculator", "ui"]:
+        filename = path_parts[3]
+        # Feature-specific prefixes that must not be flat in root
+        banned_prefixes = ("en14825_", "ahri_", "seer2_", "hspf2_", "saso_", "ks_c9306_")
+        for prefix in banned_prefixes:
+            if filename.startswith(prefix):
+                findings.append(
+                    Finding(
+                        severity="error",
+                        path=relpath,
+                        message=(
+                            f"Feature-specific flat file '{filename}' is not allowed in apps/calculator/ui root. "
+                            "Use a feature package directory."
+                        ),
+                    )
+                )
+    return findings
+
+
+def check_sections_flat_model_adapter_table(relpath: str) -> List[Finding]:
+    """Ensure feature-specific model/adapter/table files are not placed inside sections/."""
+    findings: List[Finding] = []
+    path_parts = relpath.split("/")
+    if len(path_parts) >= 5 and path_parts[0:4] == ["apps", "calculator", "ui", "sections"]:
+        filename = path_parts[-1]
+        banned_suffixes = (
+            "_adapter.py",
+            "_adapters.py",
+            "_model.py",
+            "_models.py",
+            "_table_model.py",
+            "_table_models.py",
+        )
+        for suffix in banned_suffixes:
+            if filename.endswith(suffix):
+                findings.append(
+                    Finding(
+                        severity="error",
+                        path=relpath,
+                        message=(
+                            f"Sections folder is for UI glue/routing only. File '{filename}' "
+                            "violates clean architecture boundary."
+                        ),
+                    )
+                )
+    return findings
+
+
+def check_core_root_flat_helper_misc_utils(relpath: str) -> List[Finding]:
+    """Warn when new helper/misc/utils flat files are added directly under core root."""
+    findings: List[Finding] = []
+    path_parts = relpath.split("/")
+    if len(path_parts) == 2 and path_parts[0] == "core":
+        filename = path_parts[1]
+        banned_suffixes = (
+            "_helper.py",
+            "_helpers.py",
+            "_misc.py",
+            "_utils.py",
+        )
+        for suffix in banned_suffixes:
+            if filename.endswith(suffix):
+                findings.append(
+                    Finding(
+                        severity="warning",
+                        path=relpath,
+                        message=(
+                            f"Avoid adding new flat helper/misc/utils files like '{filename}' directly in core root. "
+                            "Place them inside standard/domain packages."
+                        ),
+                    )
+                )
+    return findings
+
+
+def check_tests_mega_test_naming(relpath: str) -> List[Finding]:
+    """Warn when generic mega-test files are added under tests/."""
+    findings: List[Finding] = []
+    path_parts = relpath.split("/")
+    if len(path_parts) >= 2 and path_parts[0] == "tests":
+        filename = path_parts[-1]
+        if filename.startswith("test_") and (filename.endswith("_everything.py") or filename.endswith("_all.py")):
+            findings.append(
+                Finding(
+                    severity="warning",
+                    path=relpath,
+                    message=(
+                        f"Avoid using generic mega-test names like '{filename}'. "
+                        "Use focused test files mapping to source packages."
+                    ),
+                )
+            )
+    return findings
+
+
+def check_ui_package_registry(relpath: str) -> List[Finding]:
+    """Warn if a new subdirectory is added under apps/calculator/ui without being registered."""
+    findings: List[Finding] = []
+    path_parts = relpath.split("/")
+    if len(path_parts) >= 5 and path_parts[0:3] == ["apps", "calculator", "ui"]:
+        subdir = path_parts[3]
+        allowed_packages = {"batch", "batch_dialogs", "en14825", "sections", "table", "tabs"}
+        if subdir not in allowed_packages:
+            findings.append(
+                Finding(
+                    severity="warning",
+                    path=relpath,
+                    message=(
+                        f"Directory '{subdir}' is not in the allowed package registry under apps/calculator/ui. "
+                        "Consider registering it if it is a new feature package."
+                    ),
+                )
+            )
+    return findings
+
+
+
 # ---------------------------------------------------------------------------
 # File discovery
 # ---------------------------------------------------------------------------
@@ -437,15 +558,16 @@ def _relpath(path: Path, repo_root: Path) -> str:
 def run_checks(repo_root: Path) -> List[Finding]:
     findings: List[Finding] = []
 
-    # 1. core/ banned imports
+    # 1. core/ banned imports + flat helper/misc/utils checks
     for path in _iter_py_files(repo_root, "core"):
         relpath = _relpath(path, repo_root)
         source = path.read_text(encoding="utf-8")
         findings.extend(
             check_banned_imports(source, relpath, "core", BANNED_IMPORTS["core"])
         )
+        findings.extend(check_core_root_flat_helper_misc_utils(relpath))
 
-    # 2. apps/calculator/ui/ banned imports + shell anti-pattern + visual-value ownership
+    # 2. apps/calculator/ui/ banned imports + shell anti-pattern + visual-value ownership + boundary checks
     for path in _iter_py_files(repo_root, "apps/calculator/ui"):
         relpath = _relpath(path, repo_root)
         source = path.read_text(encoding="utf-8")
@@ -462,6 +584,9 @@ def run_checks(repo_root: Path) -> List[Finding]:
                 allowlist_paths=UI_VISUAL_ALLOWLIST_PATHS,
             )
         )
+        findings.extend(check_ui_root_flat_feature_file(relpath))
+        findings.extend(check_sections_flat_model_adapter_table(relpath))
+        findings.extend(check_ui_package_registry(relpath))
 
     # 3. app_*.py thin entrypoint
     for path in _iter_app_entrypoints(repo_root):
@@ -486,6 +611,11 @@ def run_checks(repo_root: Path) -> List[Finding]:
                     class_allowlist=CLASS_ALLOWLIST,
                 )
             )
+
+    # 5. tests/ naming checks
+    for path in _iter_py_files(repo_root, "tests"):
+        relpath = _relpath(path, repo_root)
+        findings.extend(check_tests_mega_test_naming(relpath))
 
     return findings
 

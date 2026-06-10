@@ -194,9 +194,9 @@ To prevent scattering files and building architectural debt, we enforce a codeba
 ### Visual Examples
 
 * **Good (Clean Package Boundaries)**:
-  * [seer_models.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_models.py)
-  * [seer_adapter.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_adapter.py)
-  * [seer_table_model.py](file:///Users/sunjaekim/Downloads/%ED%83%9C%EC%9A%B0%20%EC%9E%91%EC%97%85/predictor_v3/apps/calculator/ui/en14825/seer_table_model.py)
+  * `apps/calculator/ui/en14825/seer_models.py`
+  * `apps/calculator/ui/en14825/seer_adapter.py`
+  * `apps/calculator/ui/en14825/seer_table_model.py`
   * `apps/calculator/ui/batch/models.py`
   * `apps/calculator/ui/batch/controller.py`
 
