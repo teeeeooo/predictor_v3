@@ -112,10 +112,11 @@
 - 357: Completed EN14825 declared/tested GUI design contract.
 - 358: Corrected EN14825 declared/tested GUI design contract details.
 - 359: Corrected EN14825 defaults hierarchy contract open question.
+- 360: Completed EN14825 SEER data model/table model/adapter foundation slice.
 
 ## Next Actions
 
-1. **EN14825 SEER data model/table model/adapter (Recommended next slice)**
+1. **EN14825 SEER section integration with real-time updates (Recommended next slice)**
 2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 3. **Active report lifecycle cleanup if threshold reached**
 
