@@ -106,13 +106,14 @@
 - 337: Completed batch foundation foldering audit; recommended ui_tk/batch/ consolidation architecture and sliced implementation.
 - 338: Completed batch foundation foldering implementation - Slice 1 (moved toolkit-neutral model/spec files to ui_tk/batch/ package).
 - 340: Completed batch foundation foldering implementation - Slice 2 (moved batch table views, viewports, controllers, and compatibility wrapper to ui_tk/batch/ package, and regenerated reference map).
+- 342: Completed calculator-first apps package architecture audit before entrypoint handover.
 
 
 ## Next Actions
 
-1. **Apps package architecture audit before calculator entrypoint handover**
-2. **Calculator entrypoint handover from PyQt to Tkinter**
-3. **ui_tk root folder inventory audit, or merge into apps architecture audit if ownership overlap is confirmed**
+1. **Charter/architecture policy alignment doc update**
+2. **Apps package skeleton creation and calculator entrypoint handover**
+3. **ui_tk relocation to apps/calculator/ui**
 4. **EN14825 / AHRI 210/240 / KS profile expansion**
 
 
