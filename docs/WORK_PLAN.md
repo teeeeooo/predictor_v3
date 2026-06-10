@@ -105,11 +105,12 @@
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
 - 347: Completed active report lifecycle cleanup after apps calculator relocation (described in [Report 347](result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md)).
 - 349: Completed Calculator PyQt reference retirement preflight (described in [Report 349](result_reports/active/349_calculator_pyqt_reference_retirement_preflight.md)).
-
+- 351: Completed mixed ISO table test split/retirement; blocker resolved (described in [Report 351](result_reports/active/351_mixed_iso_table_test_split_or_retirement.md)).
+- 353: Completed PyQt calculator-only source retirement (ui/calc_window.py, ui/calculators_2point.py, ui/calculator_errors.py retired).
 
 ## Next Actions
 
-1. **Mixed ISO table test split or retirement (Recommended next slice)**
+1. **PyQt calculator active docs/support matrix update after source retirement (Recommended next slice)**
 2. **Test/package naming cleanup after apps calculator UI relocation**
 3. **EN14825 / AHRI 210/240 / KS profile expansion**
 
@@ -135,7 +136,7 @@
 
 ## Deferred / Hold
 
-- PyQt calculator source retirement remains on hold.
+- PyQt calculator-only source retirement completed; active docs/support matrix update is a recommended follow-up slice.
 - Windows calculator_tk packaged size is approximately 11 MB and acceptable for the current deployment candidate.
 - SASO follow-up polish is on hold (no concrete issue after 190-b smoke).
 - Graph export/HTML export is deferred until after graph parity is stable.

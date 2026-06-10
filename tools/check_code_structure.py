@@ -67,17 +67,13 @@ LOC_ALLOWLIST: Set[str] = {
     "core/calculator_ahri_hspf2.py",
     "core/calculator_en14825.py",
     "core/calculator_asnzs_hspf_excel.py",
-    "ui/calc_window.py",
-    "ui/calculators_2point.py",
     "ui/spreadsheet_table.py",
 }
 
 # Files exempt from class-count soft limit.
 CLASS_ALLOWLIST: Set[str] = {
     "core/_legacy/calculator_iso16358_legacy.py",
-    "ui/calculators_2point.py",
     "ui/spreadsheet_table.py",
-    "ui/calc_window.py",
 }
 
 # Thin app entrypoint limits.
