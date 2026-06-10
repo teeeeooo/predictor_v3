@@ -1,4 +1,4 @@
-# Active Report 356: EN14825 Declared/Tested GUI Design Contract
+# Active Report 357: EN14825 Declared/Tested GUI Design Contract
 
 ## 목표 (Goal)
 * EN14825 GUI 구현 전에 declared/tested 기반 UI 계약을 문서화한다.
@@ -36,19 +36,20 @@
   * Declared와 Tested가 모두 있는 경우에만 point별 비교 % 및 최종 SEER/SCOP %를 표시한다.
   * 별도의 OK/NG 텍스트는 표시하지 않으며, % cell의 배경색으로만 판정한다.
   * 판정 기준: Capacity % < 90% 또는 Capacity % >= 110% 이면 pale red(tinted) cell / EER % < 90% 또는 COP % < 90% 이면 pale red(tinted) cell / 그 외는 normal/pale green(pass-tinted) cell.
+  * 최종 결과 판정: Final SEER % / SCOP %가 **92% 미만**이면 red-tinted cell로 표시하고, 92% 이상이면 normal/pass-tinted cell로 표시한다 (upper bound limit 적용 없음).
 * **SEER GUI**:
   * Columns: A(35°C), B(30°C), C(25°C), D(20°C).
   * Main table + right guide card (two-column layout) + bottom result panel.
   * Real-time calculation 방식 (Calculate 버튼 없음).
 * **SCOP GUI**:
   * Climate card: Average (default active), Warmer, Colder. 다중 활성화 및 개별 독립 계산 지원.
-  * Climate card별 auxiliary inputs: Pdesign_h [W], Tbiv [°C], TOL [°C]. (Default: Average Tbiv 2°C, TOL -7°C / Warmer Tbiv 7°C, TOL 2°C / Colder Tbiv -7°C, TOL -15°C 등 config-derived default 적용).
+  * Climate card별 auxiliary inputs: Pdesign_h [W], Tbiv [°C], TOL [°C]. (Default: Average Tbiv -10°C, TOL -11°C / Warmer Tbiv 2°C, TOL -11°C / Colder Tbiv -15°C, TOL -22°C 와 같이 user-editable default 적용).
   * Columns: A, B, C, D, TOL, Tbiv. Test point 온도는 config 및 user overrides를 동적으로 표기.
 * **Guide Cards**:
   * SEER: `SEER Test Conditions` (A/B/C/D outdoor DB temp 및 part load ratio만 표시, wet-bulb/indoor/symbolic 설명 제외).
   * SCOP: `SCOP Test Conditions` (A/B/C/D/TOL/Tbiv outdoor DB temp 및 part load ratio 표시, wet-bulb은 config에 있을 때만 포함, indoor/symbolic 설명 제외).
   * Guide card는 helper text일 뿐이며 계산 소스로 사용하지 않는다.
-* **Visual Style**: Clean light engineering-tool look (light gray background, white cards, subtle borders, blue active accent, pale green/red cell tinting).
+* **Visual Style**: Clean light engineering-tool look (light gray background, white cards, subtle borders, blue active accent, pale green/red cell tinting). 기존 `apps/calculator/ui` architecture pattern (section owner, thin adapter boundary, reusable table/result components, existing layout token reuse)을 엄격히 준수한다.
 
 ## Batch 정책 요약 (Batch Contract Summary)
 * Batch 기능은 이번 slice에서 구현하지 않는다.
@@ -63,7 +64,7 @@
 * data/region_configs 수정.
 
 ## WORK_PLAN 업데이트 여부
-* [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md)의 Recent History에 356번 항목(design contract 완료)을 추가하고, Next Actions의 1순위 추천 대상을 `EN14825 SEER data model/table model/adapter`로 업데이트하였다.
+* [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md)의 Recent History에 357번 항목(design contract 완료)을 추가하고, Next Actions의 1순위 추천 대상을 `EN14825 SEER data model/table model/adapter`로 업데이트하였다.
 
 ## 검증 결과 (Verification Results)
 * `git status --short`: 수정되거나 새로 생성된 파일 리스트 확인 완료.

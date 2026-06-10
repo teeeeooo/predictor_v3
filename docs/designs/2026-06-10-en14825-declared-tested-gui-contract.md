@@ -15,9 +15,9 @@ This design contract outlines the UI specifications, data models, behavior rules
 * Supporting multi-climate simultaneous batch processing in this slice.
 
 ## 3. Current Code Boundaries
-* Current Calculator UI package: [apps/calculator/ui/](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/apps/calculator/ui/).
-* Deprecated PyQt calculator-only files ([ui/calc_window.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calc_window.py), [ui/calculators_2point.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calculators_2point.py), [ui/calculator_errors.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calculator_errors.py)) are retired and must not be imported or used.
-* The public API of [core/calculator_en14825.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/core/calculator_en14825.py) is preserved as-is.
+* Current Calculator UI package: [apps/calculator/ui/](../../apps/calculator/ui/).
+* Deprecated PyQt calculator-only files ([ui/calc_window.py](../../ui/calc_window.py), [ui/calculators_2point.py](../../ui/calculators_2point.py), [ui/calculator_errors.py](../../ui/calculator_errors.py)) are retired and must not be imported or used.
+* The public API of [core/calculator_en14825.py](../../core/calculator_en14825.py) is preserved as-is.
 
 ## 4. Core API Contract
 The UI adapter/controller layer interacts with the core calculator using the following methods:
@@ -122,17 +122,17 @@ For each active climate card:
 * `Pdesign_h` (Design heating load) — Entered in **W**.
 * `Tbiv` (Bivalent temperature) — Entered in **°C**.
 * `TOL` (Limit operating temperature) — Entered in **°C**.
-* **Defaults (to be verified from configuration schema)**:
-  * **Average**: Tbiv = 2°C, TOL = -7°C (based on `en14825_scop.json` maximum bounds)
-  * **Warmer**: Tbiv = 7°C, TOL = 2°C
-  * **Colder**: Tbiv = -7°C, TOL = -15°C
-  * *Note*: If configuration config files change, defaults must dynamically reflect the config-derived values.
+* **Defaults (User-Editable UI Defaults)**:
+  * **Average**: Tbiv = -10°C, TOL = -11°C
+  * **Warmer**: Tbiv = 2°C, TOL = -11°C
+  * **Colder**: Tbiv = -15°C, TOL = -22°C
+  * *Note*: These values are prefilled defaults in the UI input fields. They are fully **user-editable** rather than immutable standard values. The currently modified UI values for Tbiv and TOL must be passed to the core calculator. The maximum bounds (`tbiv_max_c`, `tol_max_c`) from `en14825_scop.json` represent validation limits, not UI prefill defaults.
 
 ### Column Definitions
 * Columns: `A`, `B`, `C`, `D`, `TOL`, `Tbiv`
 * Header Row (Outdoor Air dry-bulb Temperature):
-  * Temperature values are derived from `en14825_scop.json` (A=-7°C, B=2°C, C=7°C, D=12°C).
-  * TOL and Tbiv columns display dynamic outdoor dry-bulb temperatures bound to the active auxiliary inputs.
+  * Fixed test conditions for EN14825 test point schema are: **A = -7°C**, **B = 2°C**, **C = 7°C**, **D = 12°C**. These values are resolved condition values to be displayed in the header/condition row and the guide card.
+  * TOL and Tbiv temperatures are variable values based on the climate defaults and user override values.
 
 ### Row Definitions
 1. **Condition / Temp** (Read-only text)
@@ -152,10 +152,11 @@ Comparison percentage rows (`Capacity %`, `EER %`, `COP %`) and final result met
 Visual judgment is cell-color-coded (no OK/NG text row is added):
 * **Capacity %**: Red-tinted if $< 90\%$ or $\ge 110\%$. Otherwise normal/pass-tinted.
 * **EER % / COP %**: Red-tinted if $< 90\%$. Otherwise normal/pass-tinted.
-* **Final SEER % / SCOP %**: Red-tinted if $< 90\%$ (or based on standard tolerances). Otherwise normal/pass-tinted.
+* **Final SEER % / SCOP %**: Computed only when both Declared and Tested results exist. Red-tinted if **< 92%**. Otherwise normal/pass-tinted (no upper bound limit is applied).
 * **Normal cell**: White or standard input/label background.
 * **Pass-tinted cell**: Pale green.
 * **Invalid-tinted cell**: Pale red.
+* **Constraints**: No OK/NG text row or final pass/fail labels are allowed.
 
 ## 10. Result Panel Contract
 The result panel displays calculated metrics in real-time as a bottom card containing compact metric tiles.
@@ -187,14 +188,23 @@ The guide cards display reference information in a side panel (two-column layout
 
 ### SCOP Guide Card
 * **Title**: `SCOP Test Conditions`
-* **Content**: Details on points A/B/C/D/TOL/Tbiv specifying outdoor dry-bulb temperatures and part load ratios.
+* **Content**: Details on points A/B/C/D/TOL/Tbiv specifying outdoor dry-bulb temperatures and part load ratios (A = -7°C, B = 2°C, C = 7°C, D = 12°C; Tbiv/TOL are climate defaults or user overrides).
 * **Constraints**:
   * Outdoor wet-bulb temperatures are included **only** if they are available in the config/reference schema.
   * Do not include indoor condition notes.
-  * Do not use the card to explain symbolic meanings such as "bivalent temperature" or "limit operation temperature."
+  * Do not use the card to explain symbolic meanings such as "bivalent temperature" or "limit operation temperature." (Do not design it as a glossary or definitions card).
 
 ## 12. Visual Style Contract
-* **Theme**: Light engineering-tool look.
+* **Theme**: Light engineering-tool look. EN14825 may improve upon existing layouts with a polished interface (e.g., cleaner tables or guide card arrangements), but it must strictly adhere to the existing `apps/calculator/ui` architecture patterns.
+  * **Architectural Boundaries**:
+    * Clean section separation using the **section owner** pattern.
+    * Decoupled business logic via a **thin adapter/controller boundary**.
+    * Reuse of **reusable table/model/result components where practical** (e.g., `MetricInputTable`, `ResultPanel`).
+    * High priority on **existing theme/layout token reuse**.
+  * **Visual Constraints**:
+    * Introducing a new dashboard framework or independent visual system is **strictly prohibited**.
+    * Hardcoding new color palettes is forbidden. If additional color tokens are required, the need for a new token owner must be explicitly reported in the implementation slice.
+    * Do not enforce exact styling alignment with Hong Kong, SASO, or ISO profiles; however, any styling enhancements made in EN14825 are candidates for future reverse-rollout to other profiles, which remains a future work item.
   * Page background: Very light gray.
   * Card backgrounds: Solid white with small border radii and subtle light-gray borders.
   * Spacing: Compact yet highly readable.
