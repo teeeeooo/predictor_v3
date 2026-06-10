@@ -1577,3 +1577,24 @@
 - active report count meets lifecycle threshold criteria.
 
 ---
+
+## 2026-06-10 — Retire legacy ExcelLikeTableController and correct test gaps
+
+### Tried
+- production main table path에서 더 이상 사용되지 않는 legacy `ExcelLikeTableController`를 안전하게 제거 (`git rm ui_tk/excel_like_table_controller.py`).
+- legacy controller 전용 테스트가 검증하던 paste / undo / clear / type-replace 등의 behavior가 `TkTableController`에서 정상 동작하는지 inventory를 대조함.
+- `tests/test_ui_tk_excel_like_table_controller.py` 삭제 (`git rm`) 전, 부족한 controller interactive behavior(F2, Escape, Arrow Navigation, Shift Click 등)에 대한 focused unit test를 `tests/test_ui_tk_metric_input_table_controller_parity.py`에 보강함.
+- `tests/test_ui_tk_iso_table_autocalc.py`와 `tests/test_ui_tk_table_controller.py`에 남아있던 `ExcelLikeTableController` import 및 type assertion을 `TkTableController` 기준으로 정정 및 behavior assertion으로 교정함.
+
+### Result
+- `ui_tk/excel_like_table_controller.py` 및 `tests/test_ui_tk_excel_like_table_controller.py` 제거 완료.
+- `tests/test_ui_tk_iso_table_autocalc.py` 및 `tests/test_ui_tk_table_controller.py` 내 legacy assertion 교정 완료.
+- `tests/test_ui_tk_metric_input_table_controller_parity.py`에 interactive behavior test 추가 완료.
+- `result_reports/active/318_retire_excel_like_table_controller.md` 리포트 생성 및 `317` 리포트에 closeout note 반영 완료.
+
+### Decision
+- legacy controller가 성공적으로 퇴출되고 테스트 갭 교정이 마감되었으므로 `ui_tk folder cleanup` 단계를 종결함.
+- 다음 핵심 action은 `EN14825 / AHRI 210/240 / KS profile expansion` 단계로 진입하는 것으로 결정함.
+- active report count meets lifecycle threshold criteria.
+
+---

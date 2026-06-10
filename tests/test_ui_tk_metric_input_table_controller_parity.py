@@ -258,3 +258,54 @@ class TestReplaceOnType:
         ctrl._focus_out(None)
 
         assert ctrl.table.text_at_position((0, 0)) == "900"
+
+
+class TestInteractiveBehaviors:
+    """Tests F2, Escape, Arrow Navigation, and Click Extension for TkTableController."""
+
+    def test_f2_enters_edit_mode(self, ctrl: TkTableController) -> None:
+        ctrl.select((0, 0))
+        assert ctrl._mode == "selection"
+        ctrl._edit_f2()
+        assert ctrl._mode == "edit"
+        assert not ctrl._replace_pending
+
+    def test_escape_revert_edit(self, ctrl: TkTableController) -> None:
+        ctrl.select((0, 0))
+        original = ctrl.table.text_at_position((0, 0))
+        ctrl._edit_f2()
+        widget = ctrl.table.focus_widget((0, 0))
+        widget.delete(0, "end")
+        widget.insert(0, "999")
+        assert ctrl.table.text_at_position((0, 0)) == "999"
+
+        ctrl._escape()
+        assert ctrl.table.text_at_position((0, 0)) == original
+        assert ctrl._mode == "selection"
+
+    def test_arrow_keys_navigate_in_selection_mode(self, ctrl: TkTableController) -> None:
+        ctrl.select((0, 0))
+        assert ctrl.active == (0, 0)
+        ctrl._arrow("right")
+        assert ctrl.active == (0, 1)
+        ctrl._arrow("down")
+        assert ctrl.active == (1, 1)
+        ctrl._arrow("left")
+        assert ctrl.active == (1, 0)
+        ctrl._arrow("up")
+        assert ctrl.active == (0, 0)
+
+    def test_shift_click_extends_selection(self, ctrl: TkTableController) -> None:
+        # Simulate click on (0, 0) without shift
+        event1 = type("Event", (), {"state": 0})()
+        ctrl._click(event1, (0, 0))
+        assert ctrl.selected_positions() == ((0, 0),)
+
+        # Simulate click on (1, 1) with shift (state 0x0001 is Shift)
+        event2 = type("Event", (), {"state": 1})()
+        ctrl._click(event2, (1, 1))
+        positions = ctrl.selected_positions()
+        assert (0, 0) in positions
+        assert (0, 1) in positions
+        assert (1, 0) in positions
+        assert (1, 1) in positions

@@ -71,7 +71,8 @@
 
 ## Next Suggested Action
 
-1. **ui_tk folder cleanup** (ExcelLikeTableController 삭제 및 test gap correction)
+1. **ui_tk folder cleanup** (ExcelLikeTableController 삭제 및 test gap correction) - **Resolved/Closed**
+   - *Closeout Note*: 후속 작업을 통해 `excel_like_table_controller.py` 및 관련 테스트가 퇴출되고 `tests/test_ui_tk_iso_table_autocalc.py` 등의 단언문이 `TkTableController` 기준으로 성공적으로 교정되었습니다.
 
 ## Scope Compliance
 

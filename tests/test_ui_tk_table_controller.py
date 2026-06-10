@@ -28,6 +28,9 @@ class _FakeWidget:
     def selection_clear(self):
         self.selection = None
 
+    def select_clear(self):
+        self.selection_clear()
+
     def icursor(self, index):
         self.cursor = index
 

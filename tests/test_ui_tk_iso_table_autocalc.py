@@ -8,7 +8,7 @@ import sys
 import pytest
 
 from ui_tk.auto_calc import DebouncedAutoCalc
-from ui_tk.excel_like_table_controller import ExcelLikeTableController
+from ui_tk.table.controller import TkTableController
 import ui_tk.layout_constants as layout_constants
 from ui_tk.layout_constants import (
     ISO_SECTION_PADX,
@@ -281,7 +281,7 @@ def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
         "half_capacity": "1700",
         "half_power": "380",
     }
-    assert isinstance(section.input_controller, ExcelLikeTableController)
+    assert isinstance(section.input_controller, TkTableController)
 
     table = section.result_table
     assert table.surface_role == "two_point_result_surface"
@@ -568,7 +568,7 @@ def test_saso_t3_profile_renders_default_result(tk_root):
         ("min_35", "35 Min"),
     )
     assert section.input_table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
-    assert isinstance(section.input_controller, ExcelLikeTableController)
+    assert isinstance(section.input_controller, TkTableController)
     assert section.optional_min_enabled.get() is True
     assert section.optional_min_toggle.winfo_manager() == ""
     assert "35 Min optional test 사용" not in _widget_texts(section._frame)
@@ -1216,11 +1216,11 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert isinstance(hspf.input_table, MetricInputTable)
     assert isinstance(cspf.rated_table, MetricInputTable)
     assert not hasattr(hspf, "rated_table")
-    assert isinstance(cspf.rated_controller, ExcelLikeTableController)
-    assert cspf.rated_table.interaction_controller is cspf.rated_controller
+    assert isinstance(cspf.rated_controller, TkTableController)
+    assert cspf.rated_controller.table is cspf.rated_table
     for section in (cspf, hspf):
-        assert isinstance(section.input_controller, ExcelLikeTableController)
-        assert section.input_table.interaction_controller is section.input_controller
+        assert isinstance(section.input_controller, TkTableController)
+        assert section.input_controller.table is section.input_table
 
     buttons = []
     labels = []

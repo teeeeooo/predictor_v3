@@ -104,13 +104,12 @@
 - 315: Archived completed controller switch reports and restored active report folder hygiene.
 - 316: Corrected active report lifecycle cleanup and fixed local absolute links in summary 314.
 - 317: Audited main table migration compatibility and confirmed transition to TkTableController is complete. Recommended ui_tk folder cleanup (retiring ExcelLikeTableController) as the next slice.
+- 318: Retired legacy ExcelLikeTableController, corrected test gaps in tests/test_ui_tk_iso_table_autocalc.py and tests/test_ui_tk_table_controller.py, and added focused interactive behavior tests in tests/test_ui_tk_metric_input_table_controller_parity.py.
 
 ## Next Actions
 
-1. **ui_tk folder cleanup**
-   - Retire legacy `ExcelLikeTableController` and fix test gaps (e.g. references to `ExcelLikeTableController` in tests) after successful TkTableController migration.
-   - Note: active report count meets lifecycle threshold criteria.
-2. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **EN14825 / AHRI 210/240 / KS profile expansion**
+   - Expand profile coverage to include European EN14825, American AHRI 210/240, and Korean KS profiles.
 
 ## Active Constraints
 
