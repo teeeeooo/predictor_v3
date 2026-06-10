@@ -94,7 +94,7 @@ construction.
 | macOS + Python 3.12/3.11 + PyQt5 | pending validation | Should be tested in a dedicated venv before being treated as supported. |
 | Windows + Python 3.12/3.11 + PyQt5 | pending validation / preferred future validation host | Good candidate for future PyQt and packaging-host checks, but not yet verified by this guide. |
 | Linux + Python 3.14 + PyQt5 | not classified as known-bad | The current guard does not skip Linux. Run the PyQt tests if a Qt-capable host is available. |
-| No PyQt5 installed | skipped | Existing `pytest.importorskip(\"PyQt5\")` behavior applies. |
+| No PyQt5 installed | skipped | Existing `pytest.importorskip("PyQt5")` behavior applies. |
 | Tkinter-only paths | unaffected | Tkinter tests and app paths do not depend on PyQt5 and are not controlled by this policy. |
 
 Python 3.15+ is not skipped by the current guard. Extend the guard only
@@ -139,7 +139,7 @@ means the host matches the known-bad environment policy. It does not
 mean the remaining PyQt tests are deleted or retired.
 
 If PyQt5 is not installed, skips come from the existing
-`pytest.importorskip(\"PyQt5\")` policy.
+`pytest.importorskip("PyQt5")` policy.
 
 ## When To Revalidate
 
