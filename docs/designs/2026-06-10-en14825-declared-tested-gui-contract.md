@@ -255,6 +255,14 @@ Development of this interface will proceed in the following order:
    * **Goal**: Add multi-run testing support for heating batches.
 
 ## 15. Open Questions / Decisions Needed
-1. **Config Defaults Hierarchy**: Confirm whether config files (`eu.json`, `en14825_scop.json`) should completely override hardcoded defaults or if dynamic runtime merging is preferred.
-   * *Contract Policy*: Config-derived defaults are authoritative.
+1. **Config Defaults Hierarchy & Prefill Policy**:
+   * *Contract Policy*: EN14825 GUI uses explicit UI default owners rather than blindly deriving all UI defaults from config files.
+   * SCOP A/B/C/D outdoor dry-bulb conditions are config/schema-backed fixed test conditions (A = -7°C, B = 2°C, C = 7°C, D = 12°C).
+   * SCOP Tbiv/TOL prefill defaults are explicitly confirmed UI defaults:
+     * Average: Tbiv = -10°C, TOL = -11°C
+     * Warmer: Tbiv = 2°C, TOL = -11°C
+     * Colder: Tbiv = -15°C, TOL = -22°C
+   * All Tbiv/TOL prefill defaults are **user-editable**. The current UI values (not the initial defaults) are passed to the core calculator.
+   * Config-derived boundaries such as `tbiv_max_c`/`tol_max_c` from `en14825_scop.json` may be used as validation limits or metadata, but NOT as UI prefill defaults.
+   * Any future config/default merge policy must preserve this explicit UI default contract.
 2. **Color Palette Mapping**: Standardize the exact hex color codes for "pale green" (pass) and "pale red" (invalid) tinting to match the existing theme tokens in `ui/theme.py`.

@@ -111,6 +111,7 @@
 - 355: Completed test/package naming cleanup audit; 36 test_ui_tk_*.py rename candidates identified, imports already correct, rename risk is low-to-medium.
 - 357: Completed EN14825 declared/tested GUI design contract.
 - 358: Corrected EN14825 declared/tested GUI design contract details.
+- 359: Corrected EN14825 defaults hierarchy contract open question.
 
 ## Next Actions
 
