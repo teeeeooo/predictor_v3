@@ -7,25 +7,25 @@
 
 ## 확인한 기준 문서/report (Reference Documents)
 
-* [AGENT_TASK_ROUTER.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/AGENT_TASK_ROUTER.md): Documentation Sync / Result Report Workflow / Architecture / UI / Reference Evidence Gate 섹션의 라우팅 정보 확인.
-* [docs/WORK_PLAN.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/docs/WORK_PLAN.md): 최신 이력 및 Next Actions 확인.
-* [docs/architecture/project_architecture.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/docs/architecture/project_architecture.md): 앱 및 UI 경계 정의, 레거시 PyQt 계산기 reference 성격 및 라우팅 계약 확인.
-* [result_reports/archive/154_pyqt-calculator-retirement-audit.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/result_reports/archive/154_pyqt-calculator-retirement-audit.md): 레거시 PyQt calculator-only 소스 및 테스트 분류 이력 확인.
-* [result_reports/archive/156_shared-pyqt-utility-retention-decision.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/result_reports/archive/156_shared-pyqt-utility-retention-decision.md): shared utility quarantine/hold 결정 사항 및 mixed test blocker 확인.
-* [result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md): apps/calculator relocation 완료 요약 확인.
-* [result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/result_reports/active/347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md): 차기 최우선 과제인 preflight 진단 정보 확인.
+* [AGENT_TASK_ROUTER.md](../../AGENT_TASK_ROUTER.md): Documentation Sync / Result Report Workflow / Architecture / UI / Reference Evidence Gate 섹션의 라우팅 정보 확인.
+* [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md): 최신 이력 및 Next Actions 확인.
+* [docs/architecture/project_architecture.md](../../docs/architecture/project_architecture.md): 앱 및 UI 경계 정의, 레거시 PyQt 계산기 reference 성격 및 라우팅 계약 확인.
+* [154_pyqt-calculator-retirement-audit.md](../archive/154_pyqt-calculator-retirement-audit.md): 레거시 PyQt calculator-only 소스 및 테스트 분류 이력 확인.
+* [156_shared-pyqt-utility-retention-decision.md](../archive/156_shared-pyqt-utility-retention-decision.md): shared utility quarantine/hold 결정 사항 및 mixed test blocker 확인.
+* [346_summary-batch-foundation-apps-calculator-relocation-closeout.md](../summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md): apps/calculator relocation 완료 요약 확인.
+* [347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md](347_active_report_lifecycle_cleanup_after_apps_calculator_relocation.md): 차기 최우선 과제인 preflight 진단 정보 확인.
 
 ## Current Runtime Ownership Inventory
 
-현재 canonical calculator entrypoint는 [apps/calculator/app.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/apps/calculator/app.py)이며, Tkinter calculator UI는 [apps/calculator/ui/](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/apps/calculator/ui/) 패키지가 완전히 소유하고 있습니다.
+현재 canonical calculator entrypoint는 [apps/calculator/app.py](../../apps/calculator/app.py)이며, Tkinter calculator UI는 [apps/calculator/ui/](../../apps/calculator/ui/) 패키지가 완전히 소유하고 있습니다.
 
 * **루트 entrypoint 확인**:
-  * [app_calculator.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/app_calculator.py)는 `apps.calculator.app:main`의 thin wrapper이며, 더 이상 `ui.calc_window`를 임포트하지 않습니다.
-  * [app_calculator_tk.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/app_calculator_tk.py) 또한 `apps.calculator.app:main`으로 위임하는 deprecated wrapper입니다.
+  * [app_calculator.py](../../app_calculator.py)는 `apps.calculator.app:main`의 thin wrapper이며, 더 이상 `ui.calc_window`를 임포트하지 않습니다.
+  * [app_calculator_tk.py](../../app_calculator_tk.py) 또한 `apps.calculator.app:main`으로 위임하는 deprecated wrapper입니다.
 * **PyQt Train/Predict entrypoint 확인**:
-  * [app_train.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/app_train.py)와 [app_predict.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/app_predict.py)는 각각 PyQt5 기반의 [ui/train_window.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/train_window.py) 및 [ui/predict_window.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/predict_window.py)를 계속 사용하고 있습니다.
+  * [app_train.py](../../app_train.py)와 [app_predict.py](../../app_predict.py)는 각각 PyQt5 기반의 [ui/train_window.py](../../ui/train_window.py) 및 [ui/predict_window.py](../../ui/predict_window.py)를 계속 사용하고 있습니다.
 * **레거시 PyQt 계산기 전용 소스**:
-  * [ui/calc_window.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calc_window.py), [ui/calculators_2point.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calculators_2point.py), [ui/calculator_errors.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calculator_errors.py)는 현재 런타임 진입 경로가 완전히 분리되어 있는 calculator-only 레거시입니다.
+  * [ui/calc_window.py](../../ui/calc_window.py), [ui/calculators_2point.py](../../ui/calculators_2point.py), [ui/calculator_errors.py](../../ui/calculator_errors.py)는 현재 런타임 진입 경로가 완전히 분리되어 있는 calculator-only 레거시입니다.
 
 ## EN/AHRI/KS Reference Value Inventory
 
@@ -61,23 +61,23 @@
   * HP: `AHRI SEER2 (HP) 결과: {seer2} / HSPF2 v3 결과: {rounded_hspf2}`
 
 ### 3. KS C 9306 사양
-* 레거시 PyQt 계산기 UI([ui/calc_window.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/calc_window.py))에는 KS 관련 탭이나 UI 요소가 설계되지 않았습니다 (inventory 결과: 없음).
+* 레거시 PyQt 계산기 UI([ui/calc_window.py](../../ui/calc_window.py))에는 KS 관련 탭이나 UI 요소가 설계되지 않았습니다 (inventory 결과: 없음).
 
 ## Test Ownership / Blocker Inventory
 
 * **Calculator-only retirement candidate**:
   * (기존 155번에서 `test_app_calculator_ui_smoke.py`와 `test_calculator_errors.py`는 이미 삭제/정리 완료됨)
 * **Mixed test blocker (분리 필수)**:
-  * [tests/test_iso16358_table_excel_like_behavior.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/test_iso16358_table_excel_like_behavior.py): `ui/calculators_2point.py`의 `ProfileInputGridModel`/`ProfileInputGridView`를 직접 임포트하여 Excel-like 상호작용을 테스트하고 있습니다. 소스 삭제 전에 반드시 이 테스트를 분리(split)하거나 PyQt 의존성을 retire해야 합니다.
+  * [tests/test_iso16358_table_excel_like_behavior.py](../../tests/test_iso16358_table_excel_like_behavior.py): `ui/calculators_2point.py`의 `ProfileInputGridModel`/`ProfileInputGridView`를 직접 임포트하여 Excel-like 상호작용을 테스트하고 있습니다. 소스 삭제 전에 반드시 이 테스트를 분리(split)하거나 PyQt 의존성을 retire해야 합니다.
 * **Retained shared utility tests (유지 대상)**:
-  * [tests/test_spreadsheet_table_model.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/test_spreadsheet_table_model.py), [tests/test_spreadsheet_table_view.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/test_spreadsheet_table_view.py): `ui/spreadsheet_table.py`를 커버하며, PyQt의 재사용 가능한 스프레드시트 뷰 기능을 보호합니다.
-  * [tests/test_ui_theme_tokens.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/test_ui_theme_tokens.py): `ui/theme.py` 토큰 검증용입니다.
+  * [tests/test_spreadsheet_table_model.py](../../tests/test_spreadsheet_table_model.py), [tests/test_spreadsheet_table_view.py](../../tests/test_spreadsheet_table_view.py): `ui/spreadsheet_table.py`를 커버하며, PyQt의 재사용 가능한 스프레드시트 뷰 기능을 보호합니다.
+  * [tests/test_ui_theme_tokens.py](../../tests/test_ui_theme_tokens.py): `ui/theme.py` 토큰 검증용입니다.
 * **Retained PyQt environment guard tests (유지 대상)**:
-  * [tests/test_pyqt_environment_guard.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/test_pyqt_environment_guard.py) 및 [tests/helpers/pyqt_env.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/tests/helpers/pyqt_env.py).
+  * [tests/test_pyqt_environment_guard.py](../../tests/test_pyqt_environment_guard.py) 및 [tests/helpers/pyqt_env.py](../../tests/helpers/pyqt_env.py).
 
 ## Shared Utility Hold Status
 
-* [ui/spreadsheet_table.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/spreadsheet_table.py) 및 [ui/theme.py](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/ui/theme.py)는 Predict/Train 화면이나 미래의 PyQt5/PySide6 인터페이스에서 재사용될 수 있는 spreadsheet 및 디자인 토큰 컴포넌트입니다.
+* [ui/spreadsheet_table.py](../../ui/spreadsheet_table.py) 및 [ui/theme.py](../../ui/theme.py)는 Predict/Train 화면이나 미래의 PyQt5/PySide6 인터페이스에서 재사용될 수 있는 spreadsheet 및 디자인 토큰 컴포넌트입니다.
 * 156번 리포트의 Hold 결정 정책에 따라, 본 파일들은 은퇴 대상에서 제외하고 **quarantine/hold** 상태로 계속 유지합니다.
 
 ## Retirement Readiness Judgment
@@ -116,7 +116,7 @@
 
 ## WORK_PLAN 업데이트 여부
 
-* [docs/WORK_PLAN.md](file:///Users/sunjaekim/Downloads/태우 작업/predictor_v3/docs/WORK_PLAN.md)에 preflight 완료 상태를 업데이트하고 차기 recommended next slice를 등록하였습니다.
+* [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md)에 preflight 완료 상태를 업데이트하고 차기 recommended next slice를 등록하였습니다.
 
 ## Next Action
 
