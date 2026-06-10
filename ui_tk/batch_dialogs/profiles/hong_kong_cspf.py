@@ -188,7 +188,7 @@ class HongKongCspfBatchDialog:
         self._shell.close()
 
     def snapshot(self) -> list[dict[str, str]]:
-        return self._shell._adapter.snapshot()
+        return self._shell.snapshot()
 
     def focus(self) -> None:
         self._shell.focus()

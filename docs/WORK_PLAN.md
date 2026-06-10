@@ -108,6 +108,7 @@
 - 319: Audited ui_tk batch dialog folder boundary before profile batch expansion and proposed next folder organization slice.
 - 320: Corrected batch dialog folder boundary decision to use a scalable shell + profiles composition architecture.
 - 321: Implemented batch dialog shell + profiles skeleton and relocated Hong Kong CSPF batch dialog without behavior change.
+- 322: Closed out manual GUI smoke and corrected private attribute access on batch dialog wrapper.
 
 ## Next Actions
 

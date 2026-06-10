@@ -73,8 +73,11 @@ class BatchDialogShell:
         )
         self.window.geometry(geometry)
 
+    def snapshot(self) -> list[dict[str, str]]:
+        return self._adapter.snapshot()
+
     def close(self) -> None:
-        snapshot = self._adapter.snapshot()
+        snapshot = self.snapshot()
         self._adapter.dispose()
         if self.window.winfo_exists():
             self.window.destroy()

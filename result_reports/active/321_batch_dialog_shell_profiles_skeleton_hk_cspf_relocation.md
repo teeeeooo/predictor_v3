@@ -32,10 +32,10 @@ ui_tk/
 ## Created and Relocated Files (생성 및 이동/삭제 파일)
 
 ### Created Files (생성된 파일)
-- [ui_tk/batch_dialogs/__init__.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/__init__.py)
-- [ui_tk/batch_dialogs/shell.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/shell.py)
-- [ui_tk/batch_dialogs/profiles/__init__.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/profiles/__init__.py)
-- [ui_tk/batch_dialogs/profiles/hong_kong_cspf.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/batch_dialogs/profiles/hong_kong_cspf.py)
+- [ui_tk/batch_dialogs/__init__.py](../../ui_tk/batch_dialogs/__init__.py)
+- [ui_tk/batch_dialogs/shell.py](../../ui_tk/batch_dialogs/shell.py)
+- [ui_tk/batch_dialogs/profiles/__init__.py](../../ui_tk/batch_dialogs/profiles/__init__.py)
+- [ui_tk/batch_dialogs/profiles/hong_kong_cspf.py](../../ui_tk/batch_dialogs/profiles/hong_kong_cspf.py)
 
 ### Relocated/Deleted Files (이동/삭제된 파일)
 - `ui_tk/sections/hong_kong_cspf_batch_section.py` (완전 삭제 처리 완료)
@@ -55,7 +55,7 @@ ui_tk/
 
 ## Section Integration & Compatibility Shim (통합 및 호환성)
 
-- [ui_tk/sections/hong_kong_cspf_section.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/ui_tk/sections/hong_kong_cspf_section.py)가 새 경로인 `ui_tk.batch_dialogs.profiles.hong_kong_cspf`에서 `HongKongCspfBatchDialog`를 바로 import하도록 업데이트했습니다.
+- [ui_tk/sections/hong_kong_cspf_section.py](../../ui_tk/sections/hong_kong_cspf_section.py)가 새 경로인 `ui_tk.batch_dialogs.profiles.hong_kong_cspf`에서 `HongKongCspfBatchDialog`를 바로 import하도록 업데이트했습니다.
 - 외부 interface와 기존 test가 여전히 `first_dialog.section.table`에 접근하거나 `close()`, `snapshot()`, `focus()` 메서드를 원활히 사용할 수 있도록 `HongKongCspfBatchDialog`가 `BatchDialogShell`을 Composition으로 포장하여 public interface를 그대로 유지하는 **Compatibility wrapper** 역할을 하도록 구성했습니다.
 - 임시 transitional import shim 파일 없이 legacy `hong_kong_cspf_batch_section.py`를 완전 제거(`git rm`)하여 중복 소스 코드 오너십 우려를 완전히 제거했습니다.
 
@@ -68,8 +68,8 @@ ui_tk/
 ## Verification & Test Results (검증 결과)
 
 - `python3 -B -m py_compile`을 통해 새로 생성/수정된 Python 파일들의 구문 오류 및 import 순환 우려가 없음을 입증했습니다.
-- [tests/test_ui_tk_iso_table_autocalc.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/tests/test_ui_tk_iso_table_autocalc.py) 내 `test_hong_kong_cspf_batch_opens_dialog_not_metric_tab` 테스트에서 사용되던 legacy `row_header_texts`, `add_row`, `set_text_rows` 및 `declared` 키 등을 `BatchMatrixTable` API 규격(`cases`, `add_case`, `restore_snapshot`, `declared_capacity`)에 맞춰 경량 교정 완료했습니다.
-- [tests/test_ui_tk_hong_kong_cspf_matrix_migration.py](file:///Users/sunjaekim/Downloads/태우%20작업/predictor_v3/tests/test_ui_tk_hong_kong_cspf_matrix_migration.py)의 import 경로를 갱신하여 총 15개 focused batch 연동 테스트가 모두 정상 `PASSED` 함을 확인했습니다.
+- [tests/test_ui_tk_iso_table_autocalc.py](../../tests/test_ui_tk_iso_table_autocalc.py) 내 `test_hong_kong_cspf_batch_opens_dialog_not_metric_tab` 테스트에서 사용되던 legacy `row_header_texts`, `add_row`, `set_text_rows` 및 `declared` 키 등을 `BatchMatrixTable` API 규격(`cases`, `add_case`, `restore_snapshot`, `declared_capacity`)에 맞춰 경량 교정 완료했습니다.
+- [tests/test_ui_tk_hong_kong_cspf_matrix_migration.py](../../tests/test_ui_tk_hong_kong_cspf_matrix_migration.py)의 import 경로를 갱신하여 총 15개 focused batch 연동 테스트가 모두 정상 `PASSED` 함을 확인했습니다.
 - `python3 -B tools/code_checker/build_reference_map.py` 실행 결과, reference map이 최신 상태(`FRESH`)를 만족하며 uncommitted changes를 정상 검출했습니다.
 - `python3 -B tools/check_code_structure.py` 결과, 신규 작성 파일에 대한 layer violation이나 boundary 규칙 위반 없이 structure check가 통과함을 확인했습니다.
 
@@ -93,3 +93,8 @@ ui_tk/
 2. 값을 수정한 후 닫기(X 또는 윈도우 닫기)를 한 후 다시 "Multi 입력"을 열었을 때 수정된 데이터가 유실되지 않고 정상 복원되어 있는가?
 3. Add Case / Remove Case / Copy All / Export CSV 버튼 클릭 시 기능이 오작동 없이 원활히 수행되는가?
 4. 테이블 입력 필드 수정 시 debounced auto calculation 결과 메시지가 하단 상태창에 실시간으로 정상 업데이트되는가?
+
+## Closeout Note (June 10, 2026)
+
+- **Manual GUI Smoke**: 사용자가 수동 검증을 수행한 결과, 모든 항목(Multi 입력 오픈, snapshot 복원, 추가/삭제/복사/Export CSV, debounced auto calculation 및 상태 메시지 갱신, 안착 위치/크기 등)에 이상이 없음이 최종 확인되었습니다.
+- **Private Access Correction**: `HongKongCspfBatchDialog.snapshot()`이 `BatchDialogShell`의 private attribute인 `_adapter`에 직접 접근하던 구현을 제거했습니다. `BatchDialogShell.snapshot()` public 메서드를 추가하여 안전하고 규격화된 방식으로 동작하도록 보정하였습니다.

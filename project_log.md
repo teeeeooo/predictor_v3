@@ -1651,4 +1651,24 @@
 ### Decision
 - 공통 Toplevel lifecycle/geometry/snapshot 관리와 프로필별 뷰 구성 어댑터 간의 Composition 설계가 정상 동작함을 최종 승인 및 마감.
 - 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
+
+---
+
+## 2026-06-10 — Batch dialog relocation smoke closeout and private access correction
+
+### Tried
+- 321 relocation 작업 후 사용자가 수행한 manual GUI smoke 결과(Multi 입력 오픈, snapshot 복원, 추가/삭제/복사/Export CSV, debounced auto calculation 및 상태 메시지 갱신, 안착 위치/크기 등 동작 이상 없음)를 closeout 처리.
+- `HongKongCspfBatchDialog.snapshot()`에서 `BatchDialogShell`의 private attribute(`_adapter`)에 직접 접근하던 구현을 보정하여, `BatchDialogShell`에 public `snapshot()` 메서드를 추가하고 `close()`와 `HongKongCspfBatchDialog.snapshot()` 모두 이 public 메서드를 사용하도록 변경.
+- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 내에 남아 있던 로컬 절대경로(`file:///Users/...`) 링크들을 repo-relative path 또는 plain path로 교정.
+
+### Result
+- `ui_tk/batch_dialogs/shell.py` 및 `ui_tk/batch_dialogs/profiles/hong_kong_cspf.py` 소스 코드 수정 완료.
+- `tests/test_ui_tk_iso_table_autocalc.py`에 public snapshot method 검증 assertion 보강 완료.
+- `result_reports/active/321_batch_dialog_shell_profiles_skeleton_hk_cspf_relocation.md` 파일 링크 교정 및 closeout note 반영 완료.
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
+- `result_reports/active/322_batch_dialog_relocation_smoke_closeout_private_access.md` 신규 리포트 생성 완료.
+
+### Decision
+- batch dialog의 private access 제거와 사용자 manual smoke closeout을 완료함으로써 profile 확장 전 batch dialog relocation 단계를 최종 완결함.
+- 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
 - active report count meets lifecycle threshold criteria.
