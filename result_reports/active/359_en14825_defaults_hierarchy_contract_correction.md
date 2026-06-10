@@ -20,8 +20,8 @@
 * **통합 정책**: 향후 어떠한 config/default merge 정책이 추가되더라도 위의 명시적인 UI default 계약은 보존되어야 합니다.
 
 ## 수정 파일 (Modified Files)
-* [docs/designs/2026-06-10-en14825-declared-tested-gui-contract.md](../designs/2026-06-10-en14825-declared-tested-gui-contract.md)
-* [docs/WORK_PLAN.md](../WORK_PLAN.md)
+* [docs/designs/2026-06-10-en14825-declared-tested-gui-contract.md](../../docs/designs/2026-06-10-en14825-declared-tested-gui-contract.md)
+* [docs/WORK_PLAN.md](../../docs/WORK_PLAN.md)
 
 ## 변경하지 않은 범위 (Non-goals)
 * production Python source 및 tests 수정 없음.
