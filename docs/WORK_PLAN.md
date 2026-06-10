@@ -107,12 +107,13 @@
 - 349: Completed Calculator PyQt reference retirement preflight (described in [Report 349](result_reports/active/349_calculator_pyqt_reference_retirement_preflight.md)).
 - 351: Completed mixed ISO table test split/retirement; blocker resolved (described in [Report 351](result_reports/active/351_mixed_iso_table_test_split_or_retirement.md)).
 - 353: Completed PyQt calculator-only source retirement (ui/calc_window.py, ui/calculators_2point.py, ui/calculator_errors.py retired).
+- 354: Updated active docs and PyQt support matrix after source retirement (project_architecture.md, project_brief.md, pyqt_test_support_matrix.md, README.md).
 
 ## Next Actions
 
-1. **PyQt calculator active docs/support matrix update after source retirement (Recommended next slice)**
-2. **Test/package naming cleanup after apps calculator UI relocation**
-3. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Test/package naming cleanup after apps calculator UI relocation (Recommended next slice)**
+2. **EN14825 / AHRI 210/240 / KS profile expansion**
+3. **Active report lifecycle cleanup if threshold reached**
 
 
 

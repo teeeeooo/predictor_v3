@@ -17,7 +17,7 @@ README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이�
 
 - ML train/predict workflow: `app_train.py`, `app_predict.py`
 - Standards calculators and shared logic: `core/`
-- Calculator UI and application entry points: `ui/`, `app_calculator.py`
+- Calculator UI and application entry points: `app_calculator.py` → `apps/calculator/ui/`
 - Region/profile configuration: `data/region_configs/`
 - Regression, smoke, golden, validation tests: `tests/`
 - Standard documentation and architecture notes: `docs/`
@@ -37,7 +37,7 @@ README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이�
 | Path | Role |
 | --- | --- |
 | `core/` | ML predictor support, constants/model registry, standards calculator logic |
-| `ui/` | Qt UI modules and calculator/predictor UI integration |
+| `ui/` | Legacy PyQt5 Train/Predict UI modules; PyQt calculator-only source retired |
 | `data/region_configs/` | Region and standard configuration JSON files |
 | `tests/` | Smoke, golden, validation, profile, and regression tests |
 | `docs/` | Standards docs, architecture notes, knowledge docs, design records |

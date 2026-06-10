@@ -11,8 +11,9 @@
   - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등)
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
-- **`ui/`**: legacy PyQt5 기반 multi-app GUI 구성 요소
-  - 현재 `app_calculator.py`, `app_train.py`, `app_predict.py`가 공유하는 레거시 화면 경로입니다.
+- **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
+  - `app_train.py`와 `app_predict.py`가 공유하는 레거시 Train/Predict 화면 경로입니다.
+  - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
 - **`apps/` (애플리케이션 패키지 경계)**:
   - 장기적으로 `apps/{calculator,train,predict}/` 구조를 가집니다.
   - **`apps/calculator/`**: 활성 마이그레이션된 계산기 애플리케이션 영역입니다.
@@ -219,33 +220,23 @@ Compatibility profile 선택은 opt-in이어야 한다. `region=au_nz` 또는 `s
 
 ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)는 별도 calculator/profile/test namespace로 유지한다. Excel COM dump, golden/sample/test-only value는 production region config에 넣지 않고, compatibility reference artifact 또는 test fixture namespace에서만 다룬다.
 
-### UI / calc_window.py routing contract (PyQt Legacy Calculator Reference)
+### PyQt Legacy Calculator Reference (Retired)
 
 > [!NOTE]
-> `ui/calc_window.py` 및 관련 PyQt5 기반 계산기 코드는 현재 마이그레이션을 위한 read-only reference로 유지되며, 차후 `apps/calculator` 구조화가 완료되면 은퇴(retire) 예정입니다. 이 라우팅 계약은 향후 Tkinter 기반 계산기(`apps/calculator/ui/`)의 설계 구조로 고스란히 승계됩니다.
+> `ui/calc_window.py`, `ui/calculators_2point.py`, `ui/calculator_errors.py`는 은퇴(retired)되었습니다. current calculator UI는 `apps/calculator/ui/`입니다. `app_calculator.py`는 `apps.calculator.app:main` wrapper입니다.
 
-`calc_window.py`는 장기적으로 config filename을 직접 scan해서 calculator에 전달하지 않는다. UI는 `standard / region / metric / mode / profile_id` selector를 제공하고, resolver가 calculator profile과 config path를 결정한다.
+이 섹션은 PyQt calculator-only source retirement(Report 353) 이전의 routing contract와 module boundary 설계 결정을 historical record로 보존합니다. 아래 내용은 더 이상 current implementation 설명이 아닙니다.
 
-UI 편의를 위해 core calculator validation을 약화하지 않는다. UI는 입력 수집과 표시를 담당하고, calculator selection과 config resolution은 manifest/profile contract를 따른다.
+**Retired routing contract summary (historical)**:
+- `calc_window.py`는 `standard / region / metric / mode / profile_id` selector와 resolver 기반 calculator construction(`create_calculator_for_profile()`) 경로를 설계 기준으로 했습니다.
+- `ui/calculators_2point.py::IsoCspfSingleWidget`이 ISO tab UI owner였습니다.
+- `ui/calculator_errors.py`는 validation error styling/message routing을 담당했습니다.
 
-현재 `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP selector는 profile label과 `profile_id` item data를 사용한다. Calculator construction은 `create_calculator_for_profile()` 경로를 따른다.
+**Current state**:
+- Current calculator UI: `apps/calculator/ui/`
+- Retained shared PyQt utility: `ui/spreadsheet_table.py`, `ui/theme.py` (quarantine/hold)
+- Retained Train/Predict PyQt: `ui/train_window.py`, `ui/predict_window.py`, `ui/base_model.py`, `ui/base_view.py`
 
-### Calculator UI module boundary
-
-`ui/calc_window.py`의 `CalculatorWindow`는 shell / entry 역할만 유지한다. 다음 책임은 별도 module로 분리해 누적을 막는다 (구체 분리 순서와 슬라이스는 `docs/designs/2026-05-22-calculator-ui-module-boundary.md` 참고).
-
-- ISO tab UI / auto-calc / result panel은 이미 `ui/calculators_2point.py::IsoCspfSingleWidget`이 owner. `calc_window`는 instance를 부착만 한다.
-- EN14825 tab의 UI construction, table read, W→kW 변환, calculate helper, result text formatting은 `ui/calculator_en_tab.py` (또는 동등 module)로 분리한다.
-- AHRI 210/240 tab의 UI construction, SEER2/HSPF2 input read, calculate helper, HSPF2 v3 derivation, result text formatting은 `ui/calculator_ahri_tab.py`로 분리한다.
-- 공통 result/status panel은 `ui/calculator_result_panel.py` (Slice γ 예정), debounce/recompute helper는 `ui/calculator_recompute.py` (Slice β 예정), validation error styling/message routing은 `ui/calculator_errors.py` (Slice δ 예정)로 분리한다.
-
-원칙:
-
-- `calc_window.py`에 EN/AHRI 계산 UI 책임을 계속 누적하지 않는다.
-- tab module은 자기 widget tree와 read/format helper만 소유한다. core calculator construction (`create_calculator_for_profile`)과 profile manifest는 그대로 둔다.
-- core calculator 공식, validation, region config schema, profile dispatcher는 UI module refactor에 맞춰 바꾸지 않는다.
-- tab module의 public interface는 `(parent, theme tokens)` 입력과 `set_calculator(...)`, `read_inputs()` / `calculate()` / `set_result_text()`, table model의 `values_changed` signal 노출 정도로 좁게 유지한다.
-- `InputValidationError`와 `_get_float_val` 같은 공용 helper는 별도 `ui/calculator_errors.py` 또는 `ui/_calc_input_helpers.py`로 이동 가능하며, tab module은 그 helper를 import한다.
 
 ### Result schema boundary
 
