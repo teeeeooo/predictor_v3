@@ -24,6 +24,7 @@ from ui_tk.sections.result_formatting import bin_details, metric_value, kwh_valu
 from ui_tk.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
+from ui_tk.batch_dialogs.profiles.iso_iseer_2point import IsoIseer2PointBatchDialog
 
 
 class IsoIseer2PointSection:
@@ -39,6 +40,8 @@ class IsoIseer2PointSection:
         self._trace_results: dict[str, list[dict]] = {}
         self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
         self._trace_status: str | None = "상세 데이터 없음"
+        self._batch_dialog: IsoIseer2PointBatchDialog | None = None
+        self._batch_snapshot: list[dict[str, str]] | None = None
         self._frame = ttk.LabelFrame(parent, text="ISO / ISEER 2-point 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -81,19 +84,28 @@ class IsoIseer2PointSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.detail_toggle = ttk.Button(
-            self._frame,
-            text="상세 보기 ↓",
-            command=self._toggle_detail,
-        )
-        self.detail_toggle.surface_role = "two_point_detail_toggle"
-        self.detail_toggle.grid(
+        self.action_row = ttk.Frame(self._frame)
+        self.action_row.grid(
             row=3,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.batch_button = ttk.Button(
+            self.action_row,
+            text="Multi 입력",
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "iso_iseer_2point_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "two_point_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self._detail_visible = False
         self.detail_panel = BinDetailPanel(
             self._frame,
@@ -171,6 +183,21 @@ class IsoIseer2PointSection:
         self._update_detail_panel()
         self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
 
+    def _open_batch_dialog(self) -> None:
+        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
+            self._batch_dialog.focus()
+            return
+        self._batch_dialog = IsoIseer2PointBatchDialog(
+            self._frame.winfo_toplevel(),
+            initial_snapshot=self._batch_snapshot,
+            on_close=self._clear_batch_dialog,
+        )
+
+    def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
+        if snapshot is not None:
+            self._batch_snapshot = snapshot
+        self._batch_dialog = None
+
     def _toggle_detail(self) -> None:
         self._detail_visible = not self._detail_visible
         if self._detail_visible:
@@ -218,6 +245,9 @@ class IsoIseer2PointSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            if self._batch_dialog is not None:
+                self._batch_dialog.close()
+                self._batch_dialog = None
 
 
 def _two_point_result_row(

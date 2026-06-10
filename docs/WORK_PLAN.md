@@ -110,16 +110,17 @@
 - 321: Implemented batch dialog shell + profiles skeleton and relocated Hong Kong CSPF batch dialog without behavior change.
 - 322: Closed out manual GUI smoke and corrected private attribute access on batch dialog wrapper.
 - 323: Removed private _shell attribute access from integration test and added shell-level unit tests.
+- 324: Implemented ISO / India ISEER 2-point batch dialog and adapter, integrated with IsoIseer2PointSection.
 
 ## Next Actions
 
-1. **ISO 2-point batch dialog implementation**
-   - Implement batch matrix dialog for ISO / ISEER 2-point profile.
-2. **SASO T3 batch dialog implementation**
-   - Implement batch matrix dialog for SASO T3 profile, preserving optional 35 Min behavior.
-3. **Calculator entrypoint handover from PyQt to Tkinter**
-4. **ui_tk root folder inventory audit**
-5. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **SASO T3 batch dialog implementation**
+2. **Batch foundation foldering audit**
+3. **Batch foundation foldering implementation**
+4. **Calculator entrypoint handover from PyQt to Tkinter**
+5. **ui_tk root folder inventory audit**
+6. **EN14825 / AHRI 210/240 / KS profile expansion**
+
 
 ## Active Constraints
 

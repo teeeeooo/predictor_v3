@@ -1690,3 +1690,25 @@
 - 테스트 코드 내의 private access를 완전히 제거하여 캡슐화 검증을 완결함.
 - 다음 핵심 action은 `ISO 2-point batch dialog implementation`으로 결정함.
 - active report count meets lifecycle threshold criteria.
+
+---
+
+## 2026-06-10 — ISO 2-point batch dialog implementation
+
+### Tried
+- Relocated batch shell + profiles composition structure를 활용하여 ISO/India ISEER 2-point batch dialog (`IsoIseer2PointBatchDialog` 및 `IsoIseer2PointBatchAdapter` 등)를 `ui_tk/batch_dialogs/profiles/iso_iseer_2point.py`에 구현 완료.
+- `ui_tk/sections/iso_iseer_2point_section.py`에 "Multi 입력" 버튼을 추가하고 batch dialog open, focus, close, snapshot 흐름을 연결.
+- `tests/test_ui_tk_iso_iseer_2point_batch_dialog.py`를 신설하여 dialog open, focus path 유지, snapshot save/restore, 그리고 ISO 16358-1 / India ISEER 비교 계산 값의 정상 출력을 검증.
+- `result_reports/active/323_remove_private_shell_access_from_batch_dialog_test.md`에 closeout note 보정 완료.
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
+
+### Result
+- `ui_tk/batch_dialogs/profiles/iso_iseer_2point.py` 신규 생성 완료.
+- `ui_tk/batch_dialogs/profiles/__init__.py`에서 `IsoIseer2PointBatchDialog` export 완료.
+- `ui_tk/sections/iso_iseer_2point_section.py` 수정 완료.
+- `tests/test_ui_tk_iso_iseer_2point_batch_dialog.py` 신규 생성 및 focused tests pass 완료.
+
+### Decision
+- ISO 2-point profile matrix batch 구현을 generic shell 계약에 완벽히 맞추어 성공적으로 완결함.
+- 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
+- active report count meets lifecycle threshold criteria.
