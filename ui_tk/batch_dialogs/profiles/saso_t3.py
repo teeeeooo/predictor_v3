@@ -82,12 +82,12 @@ SASO_T3_MATRIX_SPEC = BatchMatrixSpec(
         ),
     ),
     result_metrics=(
-        ("req_cspf", "Req CSPF", 9),
-        ("req_cstl", "Req CSTL", 10),
-        ("req_csec", "Req CSEC", 10),
         ("opt_cspf", "4pt CSPF", 9),
         ("opt_cstl", "4pt CSTL", 10),
         ("opt_csec", "4pt CSEC", 10),
+        ("req_cspf", "3pt CSPF", 9),
+        ("req_cstl", "3pt CSTL", 10),
+        ("req_csec", "3pt CSEC", 10),
     ),
     default_cases=(
         {
@@ -177,18 +177,29 @@ class SasoT3BatchHandler:
             req_csec_val = kwh_value(req_res, ("annual_power_kwh", "csec_kwh", "csec"))
 
             # Check optional inputs
-            optional_keys = ("min_35_capacity", "min_35_power")
-            has_optional = all(str(row.get(k, "")).strip() for k in optional_keys)
+            opt_cap_str = str(row.get("min_35_capacity", "")).strip()
+            opt_pw_str = str(row.get("min_35_power", "")).strip()
 
             opt_cspf_val = ""
             opt_cstl_val = ""
             opt_csec_val = ""
             has_optional_error = False
+            has_optional = False
 
-            if has_optional:
+            if not opt_cap_str and not opt_pw_str:
+                # Both blank: OK, no optional calculation
+                pass
+            elif opt_cap_str and opt_pw_str:
+                # Both present: try calculating 4pt
+                has_optional = True
+            else:
+                # One present, one blank: error
+                has_optional_error = True
+
+            if has_optional and not has_optional_error:
                 try:
-                    min_35_cap = parse_numeric_cell(str(row.get("min_35_capacity", "")))
-                    min_35_pw = parse_numeric_cell(str(row.get("min_35_power", "")))
+                    min_35_cap = parse_numeric_cell(opt_cap_str)
+                    min_35_pw = parse_numeric_cell(opt_pw_str)
 
                     if min_35_cap <= 0 or min_35_pw <= 0:
                         raise ValueError("positivity check failed")

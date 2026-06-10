@@ -109,11 +109,54 @@ def test_saso_t3_batch_handler_calculates_cases():
     assert res_req.values["req_cspf"] == "4.166"
     assert res_req.values["opt_cspf"] == ""
     
+    # Partial optional inputs: capacity only
+    res_partial_cap = handler.calculate_row({
+        "full_46_capacity": "5000",
+        "full_46_power": "1500",
+        "full_35_capacity": "6000",
+        "full_35_power": "1500",
+        "half_35_capacity": "3000",
+        "half_35_power": "680",
+        "min_35_capacity": "1200",
+    })
+    assert res_partial_cap.state is BatchRowState.ERROR
+    assert res_partial_cap.values["req_cspf"] == "4.166"
+    assert res_partial_cap.values["opt_cspf"] == ""
+
+    # Partial optional inputs: power only
+    res_partial_pw = handler.calculate_row({
+        "full_46_capacity": "5000",
+        "full_46_power": "1500",
+        "full_35_capacity": "6000",
+        "full_35_power": "1500",
+        "half_35_capacity": "3000",
+        "half_35_power": "680",
+        "min_35_power": "300",
+    })
+    assert res_partial_pw.state is BatchRowState.ERROR
+    assert res_partial_pw.values["req_cspf"] == "4.166"
+    assert res_partial_pw.values["opt_cspf"] == ""
+
+    # Invalid optional inputs: non-positive value
+    res_invalid_opt = handler.calculate_row({
+        "full_46_capacity": "5000",
+        "full_46_power": "1500",
+        "full_35_capacity": "6000",
+        "full_35_power": "1500",
+        "half_35_capacity": "3000",
+        "half_35_power": "680",
+        "min_35_capacity": "1200",
+        "min_35_power": "-300",
+    })
+    assert res_invalid_opt.state is BatchRowState.ERROR
+    assert res_invalid_opt.values["req_cspf"] == "4.166"
+    assert res_invalid_opt.values["opt_cspf"] == ""
+
     # Empty row case
     empty_result = handler.calculate_row({})
     assert empty_result.state is BatchRowState.PENDING
     assert empty_result.values["req_cspf"] == ""
-    
+
     # Invalid required row case
     invalid_result = handler.calculate_row({
         "full_46_capacity": "not-a-number",
@@ -132,3 +175,14 @@ def test_saso_t3_batch_spec_properties():
     assert spec.profile_key == "saso_t3"
     assert "req_cspf" in spec.result_keys
     assert "opt_cspf" in spec.result_keys
+
+    # Verify display order (4pt first, then 3pt)
+    assert spec.result_keys.index("opt_cspf") < spec.result_keys.index("req_cspf")
+    assert spec.result_keys.index("opt_cstl") < spec.result_keys.index("req_cstl")
+    assert spec.result_keys.index("opt_csec") < spec.result_keys.index("req_csec")
+
+    # Verify labels (no 'Req' should remain, they should be '3pt')
+    labels = [label for key, label, width in spec.result_metrics]
+    assert all("Req" not in label for label in labels)
+    assert any("3pt" in label for label in labels)
+    assert any("4pt" in label for label in labels)

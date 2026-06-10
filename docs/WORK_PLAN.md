@@ -113,6 +113,8 @@
 - 324: Implemented ISO / India ISEER 2-point batch dialog and adapter, integrated with IsoIseer2PointSection.
 - 325: Corrected 324 active report local links and resolved manual verification status.
 - 326: Implemented SASO T3 batch dialog and adapter, integrated with IsoSasoT3Section.
+- 327: Corrected SASO T3 batch optional partial validation and result header/order (4pt first, 3pt second).
+
 
 ## Next Actions
 
