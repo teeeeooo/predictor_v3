@@ -1729,3 +1729,25 @@
 - 324 리포트 내의 문서 불일치와 수동 검증 보정을 마침으로써 ISO 2-point batch dialog 작업을 최종 closeout함.
 - 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
 - active report count meets lifecycle threshold criteria.
+
+---
+
+## 2026-06-10 — SASO T3 batch dialog implementation
+
+### Tried
+- Relocated batch shell + profiles composition structure를 활용하여 SASO T3 batch dialog (`SasoT3BatchDialog` 및 `SasoT3BatchAdapter` 등)를 `ui_tk/batch_dialogs/profiles/saso_t3.py`에 구현 완료.
+- `ui_tk/sections/iso_saso_t3_section.py`에 "Multi 입력" 버튼을 추가하고 batch dialog open, focus, close, snapshot 흐름을 연결.
+- `tests/test_ui_tk_saso_t3_batch_dialog.py`를 신설하여 dialog open, focus path 유지, snapshot save/restore, 그리고 SASO T3의 required-only/optional 35 Min 계산 동작을 검증.
+- `result_reports/active/325_iso_iseer_2point_batch_dialog_report_closeout_correction.md`에 closeout note 보정 완료.
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md` 재생성 완료.
+
+### Result
+- `ui_tk/batch_dialogs/profiles/saso_t3.py` 신규 생성 완료.
+- `ui_tk/batch_dialogs/profiles/__init__.py`에서 `SasoT3BatchDialog` export 완료.
+- `ui_tk/sections/iso_saso_t3_section.py` 수정 완료.
+- `tests/test_ui_tk_saso_t3_batch_dialog.py` 신규 생성 및 focused tests pass 완료.
+
+### Decision
+- SASO T3 profile matrix batch 구현을 generic shell 계약에 완벽히 맞추어 성공적으로 완결함.
+- 다음 핵심 action은 `Batch foundation foldering audit`로 결정함.
+- active report count meets lifecycle threshold criteria.

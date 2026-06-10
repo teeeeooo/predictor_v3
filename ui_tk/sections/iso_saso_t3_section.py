@@ -16,6 +16,7 @@ from ui_tk.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profil
 from ui_tk.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from ui_tk.sections.result_formatting import bin_details, metric_value, kwh_value
 from ui_tk.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
+from ui_tk.batch_dialogs.profiles.saso_t3 import SasoT3BatchDialog
 
 _REQUIRED_TRACE_LABEL = "Required only (3-point)"
 _OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
@@ -66,6 +67,8 @@ class IsoSasoT3Section:
         self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
         self._detail_statuses: dict[str, str] = {}
         self._trace_status: str | None = "상세 데이터 없음"
+        self._batch_dialog: SasoT3BatchDialog | None = None
+        self._batch_snapshot: list[dict[str, str]] | None = None
         self._frame = ttk.LabelFrame(parent, text="SASO T3 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -106,19 +109,28 @@ class IsoSasoT3Section:
             row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.detail_toggle = ttk.Button(
-            self._frame,
-            text="상세 보기 ↓",
-            command=self._toggle_detail,
-        )
-        self.detail_toggle.surface_role = "saso_t3_detail_toggle"
-        self.detail_toggle.grid(
+        self.action_row = ttk.Frame(self._frame)
+        self.action_row.grid(
             row=4,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.batch_button = ttk.Button(
+            self.action_row,
+            text="Multi 입력",
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "saso_t3_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "saso_t3_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self._detail_visible = False
         self.detail_panel = BinDetailPanel(
             self._frame,
@@ -285,6 +297,21 @@ class IsoSasoT3Section:
         self.optional_min_enabled.set(True)
         self._sync_optional_min_state()
 
+    def _open_batch_dialog(self) -> None:
+        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
+            self._batch_dialog.focus()
+            return
+        self._batch_dialog = SasoT3BatchDialog(
+            self._frame.winfo_toplevel(),
+            initial_snapshot=self._batch_snapshot,
+            on_close=self._clear_batch_dialog,
+        )
+
+    def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
+        if snapshot is not None:
+            self._batch_snapshot = snapshot
+        self._batch_dialog = None
+
     def _toggle_detail(self) -> None:
         self._detail_visible = not self._detail_visible
         if self._detail_visible:
@@ -335,6 +362,9 @@ class IsoSasoT3Section:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            if self._batch_dialog is not None:
+                self._batch_dialog.close()
+                self._batch_dialog = None
 
 
 

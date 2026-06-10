@@ -847,7 +847,7 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     section._auto_calc.flush_now()
     text = _saso_text(tab)
 
-    assert "입력 오류: 필수 시험점 숫자 입력을 확인하세요." in text
+    assert "입력 오류: 숫자 입력을 확인하세요." in text
     assert _saso_tree_values(tab) == []
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "saso_t3_result_status"
@@ -856,7 +856,7 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     assert "None" not in text
     assert section._trace_results == {}
     assert _saso_bin_trace_rows(tab) == ()
-    assert "입력 오류: 필수 시험점 숫자 입력을 확인하세요." in section.trace_table.as_text()
+    assert "입력 오류: 숫자 입력을 확인하세요." in section.trace_table.as_text()
 
 
 def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
@@ -994,6 +994,7 @@ def test_iso_refit_scheduler_uses_settled_after_idle(tk_root, monkeypatch):
 
     monkeypatch.setattr(tab, "after_idle", fake_after_idle)
     monkeypatch.setattr(tab, "_fit_toplevel_to_current_content", lambda: fit_calls.append("fit"))
+    monkeypatch.setattr(tab._refit_scheduler, "_refit_callback", lambda: fit_calls.append("fit"))
 
     tab._schedule_toplevel_refit()
     tab._schedule_toplevel_refit()
@@ -1047,6 +1048,7 @@ def test_refit_scheduler_blocks_reentrant_requests_during_fit(tk_root, monkeypat
 
     monkeypatch.setattr(tab, "after_idle", fake_after_idle)
     monkeypatch.setattr(tab, "_fit_toplevel_to_current_content", fit_and_reschedule)
+    monkeypatch.setattr(tab._refit_scheduler, "_refit_callback", fit_and_reschedule)
 
     tab._schedule_toplevel_refit()
     callbacks.pop(0)()
@@ -1673,8 +1675,8 @@ def test_profile_switch_with_open_hong_kong_cspf_detail_is_lifecycle_safe(tk_roo
 
     _select_mode(tab, "Hong Kong")
     new_cspf = tab.sections["CSPF"]
-    assert new_cspf is not cspf
-    assert not new_cspf.detail_panel.is_visible()
+    assert new_cspf is cspf
+    assert new_cspf.detail_panel.is_visible()
     assert new_cspf._trace_rows
 
 

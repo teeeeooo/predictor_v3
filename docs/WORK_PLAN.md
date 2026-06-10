@@ -112,15 +112,16 @@
 - 323: Removed private _shell attribute access from integration test and added shell-level unit tests.
 - 324: Implemented ISO / India ISEER 2-point batch dialog and adapter, integrated with IsoIseer2PointSection.
 - 325: Corrected 324 active report local links and resolved manual verification status.
+- 326: Implemented SASO T3 batch dialog and adapter, integrated with IsoSasoT3Section.
 
 ## Next Actions
 
-1. **SASO T3 batch dialog implementation**
-2. **Batch foundation foldering audit**
-3. **Batch foundation foldering implementation**
-4. **Calculator entrypoint handover from PyQt to Tkinter**
-5. **ui_tk root folder inventory audit**
-6. **EN14825 / AHRI 210/240 / KS profile expansion**
+1. **Batch foundation foldering audit**
+2. **Batch foundation foldering implementation**
+3. **Calculator entrypoint handover from PyQt to Tkinter**
+4. **ui_tk root folder inventory audit**
+5. **EN14825 / AHRI 210/240 / KS profile expansion**
+
 
 
 ## Active Constraints
