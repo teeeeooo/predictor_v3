@@ -55,3 +55,7 @@
 ## Active Report Count Status (액티브 리포트 수 상태)
 
 - active report count meets lifecycle threshold criteria.
+
+## Closeout Note (종료 노트)
+
+- **ISO 2-point batch dialog report closeout correction**이 완료되었습니다. 다음 작업인 SASO T3 batch dialog implementation 단계로 안전하게 이관합니다.
