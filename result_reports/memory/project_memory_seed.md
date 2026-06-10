@@ -33,6 +33,9 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/294_summary-result-formatting-bin-detail-cleanup-arc.md` (covered reports `276-289`)
 - `result_reports/summaries/295_summary-controller-switch-resultpanel-focus-arc.md` (covered reports `290-291`)
 - `result_reports/summaries/314_summary-tkinter-table-controller-switch-arc-closeout.md` (covered reports `298-313`)
+- `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md` (covered reports `315-333`)
+- `result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md` (covered reports `335-345`)
+- `result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md` (covered reports `347-363`)
 
 ## Scope and Non-goals
 
@@ -767,6 +770,30 @@ entries:
       - MVC boundary
     assertionStatus: verified
     source: result_reports/active/332_memory_seed_maintenance_execution.md (user-confirmed direction corrections after 331 audit)
+
+  - type: decision
+    topic: predictor_v3 source file owner boundary policy
+    content: Before creating any new source file, the feature/domain owner boundary must be determined. Adding feature-specific flat files under broad folders (ui root, core root, sections, tests, tools) is forbidden. Calculator UI features likely to expand to multiple files must be isolated inside a feature package directory (e.g., apps/calculator/ui/en14825/) where model, adapter, table model, controller, and helper files are separated. Static checks in check_code_structure.py block flat feature file additions in ui root and sections/ as hard errors, and flag core helper, tests mega naming, and unregistered directories as warnings.
+    keywords:
+      - predictor_v3
+      - source owner boundary
+      - feature package
+      - check_code_structure
+      - flat file guard
+    assertionStatus: verified
+    source: result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md
+
+  - type: decision
+    topic: EN14825 GUI prefill defaults hierarchy
+    content: EN14825 prefill defaults are user-editable UI inputs independent of config maximum/minimum validation limits. The core calculator receives the user-edited resolved values from the UI, not the config prefill default directly. Declared power is treated as an adapter/model-internal derived value (declared_power_w_for_core) for the core calculator and is never exposed in the UI as a table row.
+    keywords:
+      - predictor_v3
+      - EN14825
+      - prefill defaults
+      - UI input
+      - adapter boundary
+    assertionStatus: verified
+    source: result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md
 ```
 
 ## Known Gaps
