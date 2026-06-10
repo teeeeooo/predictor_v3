@@ -6,7 +6,7 @@
 
 ## 기준으로 사용한 337 Audit (Reference)
 
-- [337_batch_foundation_foldering_audit.md](result_reports/active/337_batch_foundation_foldering_audit.md)
+- [337_batch_foundation_foldering_audit.md](337_batch_foundation_foldering_audit.md)
   - Candidate A (ui_tk/batch/ consolidation) 구조에 기반한 Slice 1 계획을 준수하여 진행함.
 
 ## 이동한 파일 (Moved Files)
@@ -52,7 +52,7 @@
 - `python3 -B tools/check_code_structure.py` 통과 (OK)
 - `git diff --check` 상의 whitespace 문제 없음 (OK)
 - **Focused pytests** (총 65개 테스트 모두 성공 통과):
-  - `tests/test_ui_tk_hong_kong_cspf_matrix_migration.py` (PASED)
+  - `tests/test_ui_tk_hong_kong_cspf_matrix_migration.py` (PASSED)
   - `tests/test_ui_tk_iso_iseer_2point_batch_dialog.py` (PASSED)
   - `tests/test_ui_tk_saso_t3_batch_dialog.py` (PASSED)
   - `tests/test_ui_tk_batch_dialog_shell.py` (PASSED)
