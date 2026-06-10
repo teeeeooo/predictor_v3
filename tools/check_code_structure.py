@@ -6,20 +6,20 @@ Conservative first version. Designed to be run from the repo root:
 
 Checks:
 
-1. ``core/`` files must not import ``ui``, ``ui_tk``, ``PyQt5``, or
+1. ``core/`` files must not import ``ui``, ``apps.calculator.ui``, ``PyQt5``, or
    ``tkinter`` (calculator core stays pure-Python / framework-free).
-2. ``ui_tk/`` files must not import ``PyQt5`` or the PyQt ``ui``
+2. ``apps/calculator/ui/`` files must not import ``PyQt5`` or the PyQt ``ui``
    package (Tkinter shell is independent of PyQt).
 3. ``app_*.py`` entrypoints at repo root must be thin: no class
    definitions, ≤ 3 module-level ``def``\\s, ≤ 80 LOC.
-4. ``ui_tk/`` lightweight shell anti-pattern: a single file must not
+4. ``apps/calculator/ui/`` lightweight shell anti-pattern: a single file must not
    bundle shell + tab + section + resolver + result-panel
    responsibilities (the 116 spike shape).
 5. Soft LOC / class-count limits per production file
-   (``core/``, ``ui/``, ``ui_tk/``, ``scripts/``). Known-large
+   (``core/``, ``ui/``, ``apps/``, ``scripts/``). Known-large
    historical files are allowlisted (see ``LOC_ALLOWLIST`` /
    ``CLASS_ALLOWLIST``).
-6. ``ui_tk/`` visual values are defined in configured owner modules,
+6. ``apps/calculator/ui/`` visual values are defined in configured owner modules,
    not redeclared as raw colors or local visual constants in components.
 
 The script reads Python source files only — no PyQt / Tkinter
@@ -49,8 +49,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # Banned import roots per layer. A file in ``layer`` cannot import any
 # module whose dotted name starts with one of these roots.
 BANNED_IMPORTS: dict = {
-    "core": ("ui", "ui_tk", "PyQt5", "tkinter"),
-    "ui_tk": ("PyQt5", "ui"),
+    "core": ("ui", "PyQt5", "tkinter", "apps.calculator.ui"),
+    "apps.calculator.ui": ("PyQt5", "ui"),
 }
 
 # LOC soft limit (warning, not failure) for production source files.
@@ -68,12 +68,19 @@ LOC_ALLOWLIST: Set[str] = {
     "core/calculator_en14825.py",
     "core/calculator_asnzs_hspf_excel.py",
     "ui/spreadsheet_table.py",
+    "apps/calculator/ui/metric_input_table.py",
+    "apps/calculator/ui/sections/iso_saso_t3_section.py",
+    "apps/calculator/ui/sections/bin_detail_panel.py",
+    "apps/calculator/ui/batch/matrix_table.py",
+    "apps/calculator/ui/batch_dialogs/profiles/saso_t3.py",
 }
 
 # Files exempt from class-count soft limit.
 CLASS_ALLOWLIST: Set[str] = {
     "core/_legacy/calculator_iso16358_legacy.py",
     "ui/spreadsheet_table.py",
+    "apps/calculator/ui/batch_dialogs/profiles/saso_t3.py",
+    "apps/calculator/ui/batch_dialogs/profiles/iso_iseer_2point.py",
 }
 
 # Thin app entrypoint limits.
@@ -81,13 +88,13 @@ APP_ENTRYPOINT_MAX_LOC = 80
 APP_ENTRYPOINT_MAX_FUNCS = 3
 
 # Roots that get LOC / class-count soft-limit reporting.
-PRODUCTION_ROOTS: Tuple[str, ...] = ("core", "ui", "ui_tk", "scripts")
+PRODUCTION_ROOTS: Tuple[str, ...] = ("core", "ui", "apps", "scripts")
 
 # Tkinter visual values belong to explicit owner modules. This is a path-based
 # boundary so other toolkit adapters or projects can configure the same check.
-UI_VISUAL_SCAN_ROOTS: Tuple[str, ...] = ("ui_tk",)
+UI_VISUAL_SCAN_ROOTS: Tuple[str, ...] = ("apps/calculator/ui",)
 UI_VISUAL_OWNER_PATHS: Set[str] = {
-    "ui_tk/layout_constants.py",
+    "apps/calculator/ui/layout_constants.py",
     "ui_common/visual_tokens.py",
 }
 UI_VISUAL_ALLOWLIST_PATHS: Set[str] = set()
@@ -127,24 +134,19 @@ class Finding:
 # ---------------------------------------------------------------------------
 
 
-def _module_root(import_name: str) -> str:
-    """Return the top-level package portion of an import name."""
-    return import_name.split(".", 1)[0]
-
-
 def _imported_modules(tree: ast.AST) -> Set[str]:
-    """Collect top-level module names referenced by ``import`` /
+    """Collect module names referenced by ``import`` /
     ``from`` statements in ``tree``."""
     modules: Set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                modules.add(_module_root(alias.name))
+                modules.add(alias.name)
         elif isinstance(node, ast.ImportFrom):
             if node.level:  # relative import — skip, not subject to ban list
                 continue
             if node.module:
-                modules.add(_module_root(node.module))
+                modules.add(node.module)
     return modules
 
 
@@ -166,14 +168,16 @@ def check_banned_imports(
 
     findings: List[Finding] = []
     for module in sorted(_imported_modules(tree)):
-        if module in banned_roots:
-            findings.append(
-                Finding(
-                    "error",
-                    relpath,
-                    f"{layer}/ layer must not import '{module}'",
+        for banned in banned_roots:
+            if module == banned or module.startswith(banned + "."):
+                findings.append(
+                    Finding(
+                        "error",
+                        relpath,
+                        f"{layer}/ layer must not import '{banned}'",
+                    )
                 )
-            )
+                break
     return findings
 
 
@@ -271,17 +275,17 @@ def _responsibility_kinds_defined(tree: ast.Module) -> Set[str]:
     return kinds
 
 
-def check_ui_tk_shell_anti_pattern(source: str, relpath: str) -> List[Finding]:
+def check_apps_calculator_ui_shell_anti_pattern(source: str, relpath: str) -> List[Finding]:
     """Catch the 116 spike shape: shell + tab + section + resolver +
-    result panel all *defined* in one ``ui_tk/`` file.
+    result panel all *defined* in one ``apps/calculator/ui/`` file.
 
-    Files in ``ui_tk/`` are expected to specialize. Dedicated modules
+    Files in ``apps/calculator/ui/`` are expected to specialize. Dedicated modules
     (``calculator_app``, ``tabs/*``, ``sections/*``, ``result_panel``,
     ``profile_resolver``, ``input_widgets``) each define exactly one
     responsibility and are not flagged. The rule trips only when 3 or
     more responsibilities are defined in the same file.
     """
-    if not relpath.startswith("ui_tk/"):
+    if not relpath.startswith("apps/calculator/ui/"):
         return []
     try:
         tree = ast.parse(source)
@@ -294,7 +298,7 @@ def check_ui_tk_shell_anti_pattern(source: str, relpath: str) -> List[Finding]:
             Finding(
                 "error",
                 relpath,
-                "ui_tk/ file mixes too many responsibilities "
+                "apps/calculator/ui/ file mixes too many responsibilities "
                 f"(defines {len(kinds)}: {kinds_str}). Split into "
                 "dedicated modules.",
             )
@@ -441,14 +445,14 @@ def run_checks(repo_root: Path) -> List[Finding]:
             check_banned_imports(source, relpath, "core", BANNED_IMPORTS["core"])
         )
 
-    # 2. ui_tk/ banned imports + shell anti-pattern + visual-value ownership
-    for path in _iter_py_files(repo_root, "ui_tk"):
+    # 2. apps/calculator/ui/ banned imports + shell anti-pattern + visual-value ownership
+    for path in _iter_py_files(repo_root, "apps/calculator/ui"):
         relpath = _relpath(path, repo_root)
         source = path.read_text(encoding="utf-8")
         findings.extend(
-            check_banned_imports(source, relpath, "ui_tk", BANNED_IMPORTS["ui_tk"])
+            check_banned_imports(source, relpath, "apps.calculator.ui", BANNED_IMPORTS["apps.calculator.ui"])
         )
-        findings.extend(check_ui_tk_shell_anti_pattern(source, relpath))
+        findings.extend(check_apps_calculator_ui_shell_anti_pattern(source, relpath))
         findings.extend(
             check_ui_visual_value_ownership(
                 source,

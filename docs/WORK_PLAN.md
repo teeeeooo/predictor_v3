@@ -129,7 +129,7 @@
 - Do not change `ResultPanel` for SASO/2-point comparison unless a later design slice explicitly chooses that path.
 - Result surface/export rules are owned by `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`; `docs/designs/2026-05-30-tkinter-result-surface-export-boundary.md` is decision evidence.
 - Excel-like interaction rules are owned by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`; `docs/designs/2026-05-30-tkinter-excel-like-table-contract-recovery.md` is decision evidence.
-- Read-only result/detail table copy uses `table_export_data()` through `ui_tk/table_clipboard.py`; result comparison tables provide TSV copy only, while detail/bin tables keep TSV copy plus CSV export.
+- Read-only result/detail table copy uses `table_export_data()` through `apps/calculator/ui/table_clipboard.py`; result comparison tables provide TSV copy only, while detail/bin tables keep TSV copy plus CSV export.
 - Main result surfaces should expose `상세 보기 ↓ / 상세 닫기 ↑` rather than user-visible `Trace` controls.
 - Detail graph x-axis is outdoor temperature `tj` shown as `Outdoor Temp [°C]`; `Bin Hours [h]` is a selectable y-series backed by `nj`.
 - Do not introduce `BaseSection` or a shared result framework for the CSV export foundation.
@@ -146,10 +146,10 @@
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
 - Internal formula trace is outside the current project execution scope and remains long-hold unless a separate core/data contract is approved.
 - xlsx export is deferred; CSV parity is the current export target.
-- Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions, but profile expansion should wait until result/detail/export common contracts, two-row batch foundation, main table migration candidate review, and ui_tk cleanup direction are checked.
+- Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions; profile expansion is the active next step.
 - AS/NZS Excel compatibility Z-phase remains deferred.
 - Historical ISO/KS/ASNZS workbook compatibility details stay outside this execution board.
-- Code quality guardrail backlog is tracked in `docs/REFACTOR_PLAN.md`; revisit after ui_tk cleanup / controller switch slices expose real checker needs.
+- Code quality guardrail backlog is tracked in `docs/REFACTOR_PLAN.md`; revisit after profile expansion.
 
 ## Recent Summaries
 

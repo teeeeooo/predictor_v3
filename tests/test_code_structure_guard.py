@@ -26,7 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # ---------------------------------------------------------------------------
 
 
-def test_core_layer_rejects_apps.calculator.ui_import():
+def test_core_layer_rejects_apps_calculator_ui_import():
     findings = guard.check_banned_imports(
         "from apps.calculator.ui.profile_resolver import resolve_profile_id\n",
         "core/something.py",
@@ -67,7 +67,7 @@ def test_core_layer_allows_pure_python_import():
     assert findings == []
 
 
-def test_apps.calculator.ui_layer_rejects_pyqt5_import():
+def test_apps_calculator_ui_layer_rejects_pyqt5_import():
     findings = guard.check_banned_imports(
         "from PyQt5.QtWidgets import QWidget\n",
         "apps/calculator/ui/something.py",
@@ -77,7 +77,7 @@ def test_apps.calculator.ui_layer_rejects_pyqt5_import():
     assert any("PyQt5" in f.message for f in findings)
 
 
-def test_apps.calculator.ui_layer_rejects_ui_import():
+def test_apps_calculator_ui_layer_rejects_ui_import():
     findings = guard.check_banned_imports(
         "from ui.calc_window import CalculatorWindow\n",
         "apps/calculator/ui/something.py",
@@ -87,7 +87,7 @@ def test_apps.calculator.ui_layer_rejects_ui_import():
     assert any("'ui'" in f.message for f in findings)
 
 
-def test_apps.calculator.ui_layer_allows_tkinter_and_core_dispatcher():
+def test_apps_calculator_ui_layer_allows_tkinter_and_core_dispatcher():
     findings = guard.check_banned_imports(
         "import tkinter as tk\nfrom core.calculator_dispatcher import "
         "create_calculator_for_profile\n",
@@ -137,7 +137,7 @@ def test_app_entrypoint_accepts_thin_file():
 # ---------------------------------------------------------------------------
 
 
-def test_apps.calculator.ui_anti_pattern_trips_on_multi_responsibility_file():
+def test_apps_calculator_ui_anti_pattern_trips_on_multi_responsibility_file():
     """A file that defines shell + tab + section + resolver +
     result-panel responsibilities all in one place must fail."""
     source = (
@@ -149,12 +149,12 @@ def test_apps.calculator.ui_anti_pattern_trips_on_multi_responsibility_file():
         "class ResultPanel:\n    pass\n\n"
         "def resolve_profile_id(region, metric):\n    return ''\n"
     )
-    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "apps/calculator/ui/calculator_app.py")
+    findings = guard.check_apps_calculator_ui_shell_anti_pattern(source, "apps/calculator/ui/calculator_app.py")
     assert findings, "anti-pattern check should fire on multi-responsibility file"
     assert "mixes too many responsibilities" in findings[0].message
 
 
-def test_apps.calculator.ui_anti_pattern_ignores_dedicated_module():
+def test_apps_calculator_ui_anti_pattern_ignores_dedicated_module():
     """A single-responsibility module (e.g. only ``Iso16358Tab``) must
     not trip the anti-pattern even if it imports the resolver/etc."""
     source = (
@@ -163,17 +163,17 @@ def test_apps.calculator.ui_anti_pattern_ignores_dedicated_module():
         "from apps.calculator.ui.sections.hong_kong_cspf_section import HongKongCspfSection\n\n"
         "class Iso16358Tab:\n    pass\n"
     )
-    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "apps/calculator/ui/tabs/iso16358_tab.py")
+    findings = guard.check_apps_calculator_ui_shell_anti_pattern(source, "apps/calculator/ui/tabs/iso16358_tab.py")
     assert findings == []
 
 
-def test_apps.calculator.ui_anti_pattern_ignores_non_apps.calculator.ui_path():
+def test_apps_calculator_ui_anti_pattern_ignores_non_apps_calculator_ui_path():
     source = (
         "class CalculatorTkApp:\n    pass\n\n"
         "class Iso16358Tab:\n    pass\n\n"
         "class HongKongCspfSection:\n    pass\n"
     )
-    findings = guard.check_apps.calculator.ui_shell_anti_pattern(source, "ui/other.py")
+    findings = guard.check_apps_calculator_ui_shell_anti_pattern(source, "ui/other.py")
     assert findings == []
 
 
