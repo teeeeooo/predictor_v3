@@ -8,6 +8,7 @@ from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
 class SeerTableModel:
     """Headless table model to feed data and cell metadata into UI widgets."""
 
+    # Note: declared_power_w_for_core is adapter/core only and must never be exposed here as a table row.
     ROW_KEYS = (
         "condition_temp",
         "part_load_ratio",
@@ -20,7 +21,7 @@ class SeerTableModel:
         "capacity_percent",
         "eer_percent",
     )
-    
+
     COL_KEYS = ("A", "B", "C", "D")
 
     ROW_LABELS = {
@@ -92,7 +93,7 @@ class SeerTableModel:
         """Return the formatted string representation of the cell value."""
         inp = self.inputs.get(col_key)
         comp = self.computed.get(col_key)
-        
+
         # 1. Condition Temperature (fixed DB)
         if row_key == "condition_temp":
             temp = self.OUTDOOR_TEMPS.get(col_key)

@@ -15,7 +15,11 @@ class SeerPointInput:
 @dataclass
 class SeerPointComputed:
     """Computed rows and comparison states for a single SEER test point."""
-    declared_power: Optional[float] = None  # W (derived from declared_capacity / declared_eer)
+
+    # Internal adapter/core-only derived value.
+    # Must never be exposed as an editable or display table row.
+    declared_power_w_for_core: Optional[float] = None  # W (derived from declared_capacity / declared_eer)
+
     tested_eer: Optional[float] = None      # dimensionless (tested_capacity / tested_power)
     capacity_percent: Optional[float] = None # tested_capacity / declared_capacity * 100
     eer_percent: Optional[float] = None      # tested_eer / declared_eer * 100
@@ -45,5 +49,7 @@ class SeerResultSummary:
     tested_seer_state: str = "neutral"
     tested_qc_state: str = "neutral"
     seer_percent_state: str = "neutral"
-    
-    status: str = "대기 중"
+
+    # SoC: status_code acts as state indicator; message is optional detail
+    status_code: str = "idle"
+    message: Optional[str] = None

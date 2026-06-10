@@ -113,6 +113,7 @@
 - 358: Corrected EN14825 declared/tested GUI design contract details.
 - 359: Corrected EN14825 defaults hierarchy contract open question.
 - 360: Completed EN14825 SEER data model/table model/adapter foundation slice.
+- 361: Completed EN14825 SEER model/adapter/table model correction.
 
 ## Next Actions
 
