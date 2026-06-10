@@ -52,3 +52,8 @@
 3. **Calculator entrypoint handover from PyQt to Tkinter**
 4. **ui_tk root folder inventory audit**
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
+
+## Post-Commit Correction Note (June 10, 2026)
+
+- **Test-side Private Access Cleanup**: production 단의 private access 제거에 이어, `tests/test_ui_tk_iso_table_autocalc.py`에 남아 있던 `first_dialog._shell.snapshot()` 직접 검증 코드를 완전히 제거하였습니다.
+- **Verification Strategy**: `BatchDialogShell.snapshot()` public method 기능 자체는 신설된 shell-level focused unit test([tests/test_ui_tk_batch_dialog_shell.py](../../tests/test_ui_tk_batch_dialog_shell.py))에서 mock adapter를 사용해 격리 검증하도록 이관하였으며, 통합 테스트에서는 dialog의 public `snapshot()` wrapper만 사용하도록 보정했습니다.
