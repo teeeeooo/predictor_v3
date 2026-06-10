@@ -50,3 +50,7 @@
 3. **Calculator entrypoint handover from PyQt to Tkinter**
 4. **ui_tk root folder inventory audit**
 5. **EN14825 / AHRI 210/240 / KS profile expansion**
+
+## Closeout Note (종료 노트)
+
+- **ISO 2-point batch dialog implementation** 시작 전 private test access cleanup과 323 검증이 성공적으로 완료되었습니다.
