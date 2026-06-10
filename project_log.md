@@ -1712,3 +1712,20 @@
 - ISO 2-point profile matrix batch 구현을 generic shell 계약에 완벽히 맞추어 성공적으로 완결함.
 - 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
 - active report count meets lifecycle threshold criteria.
+
+---
+
+## 2026-06-10 — ISO 2-point batch dialog report closeout correction
+
+### Tried
+- 324 active report 내의 file:///Users/... 로컬 절대경로 링크들을 repo-relative path로 일괄 보정.
+- 324 active report 내의 사용자 manual smoke 검증 상태를 "완료"로 정정하고, 향후 Codex 프롬프트에는 사용자 수동 GUI 확인 세부 항목을 생략하고 결과만 반영한다는 운영 원칙을 명시.
+
+### Result
+- `result_reports/active/324_iso_iseer_2point_batch_dialog_implementation.md` 수정 완료.
+- `result_reports/active/325_iso_iseer_2point_batch_dialog_report_closeout_correction.md` 신규 리포트 생성 완료.
+
+### Decision
+- 324 리포트 내의 문서 불일치와 수동 검증 보정을 마침으로써 ISO 2-point batch dialog 작업을 최종 closeout함.
+- 다음 핵심 action은 `SASO T3 batch dialog implementation`으로 결정함.
+- active report count meets lifecycle threshold criteria.

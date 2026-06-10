@@ -111,6 +111,7 @@
 - 322: Closed out manual GUI smoke and corrected private attribute access on batch dialog wrapper.
 - 323: Removed private _shell attribute access from integration test and added shell-level unit tests.
 - 324: Implemented ISO / India ISEER 2-point batch dialog and adapter, integrated with IsoIseer2PointSection.
+- 325: Corrected 324 active report local links and resolved manual verification status.
 
 ## Next Actions
 
