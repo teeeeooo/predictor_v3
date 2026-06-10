@@ -66,3 +66,10 @@
 ## Active Report Count Status (액티브 리포트 수 상태)
 
 - active report count meets lifecycle threshold criteria. (활성 리포트 개수가 임계점에 도달해 있으므로, 이후 작업 중 summary/archive maintenance 수행을 적극 권장함.)
+
+## 326 Correction Note (326 보정 노트)
+
+- **optional partial 35 Min validation correction**: `min_35_capacity`와 `min_35_power` 중 하나만 입력된 partial case에서 required-only OK 상태로 빠져나가지 않고 `BatchRowState.ERROR`로 바르게 걸러지도록 validation 로직을 강화했습니다.
+- **Req label을 3pt label로 변경**: 사용자에게 직관적이지 않은 `Req` 명칭을 `3pt`로 변경하였습니다.
+- **result order를 4pt first / 3pt second로 변경**: 사용자가 더 관심을 갖는 4-point 결과를 테이블 및 csv/clipboard export 상에서 처음에 노출하고, 3-point 결과를 뒤에 배치하도록 컬럼 순서를 보정했습니다.
+- **test 보강 결과**: `tests/test_ui_tk_saso_t3_batch_dialog.py` 내의 spec properties 검증 및 handler case calculation 테스트를 확장하여, partial input validation 및 order/label 변경 사항이 올바르게 검증됨을 확인했습니다.
