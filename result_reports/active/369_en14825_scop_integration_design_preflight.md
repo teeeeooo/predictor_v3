@@ -1,4 +1,4 @@
-# 365. EN14825 SCOP Integration Design / Preflight Report
+# 369. EN14825 SCOP Integration Design / Preflight Report
 
 This report summarizes the design audit and preflight findings for the integration of the EN14825 SCOP (heating) comparison interface.
 
@@ -49,7 +49,7 @@ To keep package boundaries clean, the newly designed SCOP files will reside insi
 
 ## Changed Files
 * `docs/designs/2026-06-11-en14825-scop-gui-integration-design.md` (created)
-* `result_reports/active/365_en14825_scop_integration_design_preflight.md` (created)
+* `result_reports/active/369_en14825_scop_integration_design_preflight.md` (created)
 * `docs/WORK_PLAN.md` (modified)
 
 ## Validation
@@ -72,5 +72,5 @@ Begin implementation of Slice 1: Define `ScopPointInput`, `ScopPointComputed`, `
     - gui
     - contract
   assertionStatus: verified
-  source: 365_en14825_scop_integration_design_preflight.md
+  source: 369_en14825_scop_integration_design_preflight.md
 ```
