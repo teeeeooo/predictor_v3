@@ -103,15 +103,17 @@
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
-- 365: memory seed sync after Summary 364 completed.
+- 365: EN14825 SCOP integration design/preflight completed.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
 
 ## Next Actions
 
-1. **EN14825 SCOP integration design/preflight — next active slice**
-2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **EN14825 SCOP Slice 1: data model, table model, and adapter foundation + tests — next active slice**
+2. **EN14825 SCOP Slice 2: section UI integration (climate toggles, dynamic table mapping) + tests — deferred**
+3. **EN14825 SCOP Slice 3: tab composition layout refit polish — deferred**
+4. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
 
