@@ -497,3 +497,94 @@ def test_scop_adapter_invalid_override_prevention():
 
     assert res.status_code == "invalid_temp_override"
     assert len(fake_core.calls) == 0  # Should NOT call core
+
+
+def test_scop_gui_integration_basics():
+    """Verify that En14825ScopSection initializes and behaves correctly on basic operations."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+
+        # 1. En14825ScopSection 생성 시 average card가 active이고 warmer/colder는 inactive인지 확인
+        section = En14825ScopSection(root)
+
+        assert section.climate_active_vars["average"].get() is True
+        assert section.climate_active_vars["warmer"].get() is False
+        assert section.climate_active_vars["colder"].get() is False
+
+        # Verify collapsed/packed state
+        assert section.climate_inner_frames["average"].winfo_manager() != ""
+        assert section.climate_inner_frames["warmer"].winfo_manager() == ""
+
+        # 2. average table에 declared_power row가 노출되지 않는지 확인
+        row_keys = [r[0] for r in section.input_tables["average"].rows]
+        assert "declared_power" not in row_keys
+        assert "declared_power_w_for_core" not in row_keys
+        assert "derived_power" not in row_keys
+
+        # 3. 기본/prefill 상태에서 recalculate가 crash 없이 수행되는지 확인
+        section._auto_calc.flush_now()
+        summary_widget = section.result_panel
+        summary_text = summary_widget._text.get("1.0", tk.END)
+        assert "EN14825 SCOP - Average" in summary_text
+        assert "자동 계산 완료" in summary_text
+
+        # 4. table input 변경 후 tested_cop, capacity_percent, cop_percent row가 갱신되는지 확인
+        section.input_tables["average"].set_value("tested_power_A", "1200")
+        section._auto_calc.flush_now()
+
+        avg_model = section._current_table_models["average"]
+        assert avg_model.get_value("tested_cop", "A") == "2.50"  # 3000 / 1200 = 2.50
+
+        # 5. TOL/Tbiv 입력 변경 후 TOL/Tbiv column label 또는 condition_temp row가 갱신되는지 확인
+        section.tbiv_vars["average"].set("-5")
+        section.tol_vars["average"].set("-12")
+        section._auto_calc.flush_now()
+
+        # Check condition_temp row values
+        avg_model = section._current_table_models["average"]
+        assert avg_model.get_value("condition_temp", "Tbiv") == "-5°C"
+        assert avg_model.get_value("condition_temp", "TOL") == "-12°C"
+
+        # Check column label dynamically updated
+        label_text = section.input_tables["average"].header_cells["Tbiv"].winfo_children()[0].cget("text")
+        assert "Tbiv (-5°C)" in label_text
+
+        # 6. warmer toggle 활성화 시 warmer card/table/result가 계산 대상에 포함되는지 확인
+        section.climate_active_vars["warmer"].set(True)
+        section._on_climate_toggle()
+        section._auto_calc.flush_now()
+
+        summary_text_two = summary_widget._text.get("1.0", tk.END)
+        assert "EN14825 SCOP - Average" in summary_text_two
+        assert "EN14825 SCOP - Warmer" in summary_text_two
+
+        # 7. invalid TOL > Tbiv 상태가 crash 없이 status로 표시되는지 확인
+        section.tbiv_vars["average"].set("-10")
+        section.tol_vars["average"].set("-5")
+        section._auto_calc.flush_now()
+
+        summary_text_err = summary_widget._text.get("1.0", tk.END)
+        assert "TOL/Tbiv 범위 오류" in summary_text_err
+
+        # 8. common standby input 변경 시 active climate result recalculation이 수행되는지 확인
+        section.tbiv_vars["average"].set("-10")
+        section.tol_vars["average"].set("-11")
+        section._auto_calc.flush_now()
+
+        summary_text_before = summary_widget._text.get("1.0", tk.END)
+
+        section._p_to_var.set("50")
+        section._auto_calc.flush_now()
+
+        summary_text_after = summary_widget._text.get("1.0", tk.END)
+        assert summary_text_before != summary_text_after
+
+    finally:
+        root.destroy()

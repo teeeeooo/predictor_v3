@@ -142,6 +142,14 @@ class MetricInputTable(ttk.Frame):
             font=TABLE_HEADER_FONT,
         ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
 
+    def update_column_header(self, column_key: str, new_label: str) -> None:
+        """Update the text label of a column header dynamically."""
+        cell = self.header_cells.get(column_key)
+        if cell:
+            for child in cell.winfo_children():
+                if isinstance(child, tk.Label):
+                    child.configure(text=new_label)
+
     def _add_row_header(self, *, row: int, key: str, label: str) -> None:
         cell = self._make_cell_frame(
             row=row, column=0, role="row_header_cell", background=TABLE_HEADER_BG, row_key=key
