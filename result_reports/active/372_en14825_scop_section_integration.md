@@ -6,10 +6,10 @@ This report summarizes the implementation of the EN14825 SCOP stacked climate vi
 Integrate the SCOP comparison table logic into a polished, stacked climate zone Tkinter LabelFrame view using `MetricInputTable` and dynamic header mappings.
 
 ## Scope
-* Implemented generic helper `update_column_header(column_key, new_label)` inside [metric_input_table.py](file:///workspaces/predictor_v3/apps/calculator/ui/metric_input_table.py) to allow dynamic changes of header text.
-* Created [en14825_scop_section.py](file:///workspaces/predictor_v3/apps/calculator/ui/sections/en14825_scop_section.py) containing the `En14825ScopSection` class.
+* Implemented generic helper `update_column_header(column_key, new_label)` inside `apps/calculator/ui/metric_input_table.py` to allow dynamic changes of header text.
+* Created `apps/calculator/ui/sections/en14825_scop_section.py` containing the `En14825ScopSection` class.
 * Tied auxiliary parameters, three collapsible climate tables (Average, Warmer, Colder), active checkbutton toggles, and dynamic result panel mappings together.
-* Wrote focused Tkinter integration test case `test_scop_gui_integration_basics` inside [test_apps_calculator_ui_en14825_scop.py](file:///workspaces/predictor_v3/tests/test_apps_calculator_ui_en14825_scop.py).
+* Wrote focused Tkinter integration test case `test_scop_gui_integration_basics` inside `tests/test_apps_calculator_ui_en14825_scop.py`.
 
 ## Non-goals
 * No registration of the section in `En14825Tab` or main app notebook in this slice (deferred to Slice 3).
@@ -55,15 +55,15 @@ The section maintains high separation of concerns:
 * Validation failures (e.g., `TOL > Tbiv`) display localized error messages gracefully without causing application crashes.
 
 ## Test Results
-* 16 unit tests passed, and 1 GUI test was skipped gracefully (due to headless environment) in [test_apps_calculator_ui_en14825_scop.py](file:///workspaces/predictor_v3/tests/test_apps_calculator_ui_en14825_scop.py).
-* SEER tests in [test_apps_calculator_ui_en14825.py](file:///workspaces/predictor_v3/tests/test_apps_calculator_ui_en14825.py) passed successfully with no regression.
+* 16 unit tests passed, and 1 GUI test was skipped gracefully (due to headless environment) in `tests/test_apps_calculator_ui_en14825_scop.py`.
+* SEER tests in `tests/test_apps_calculator_ui_en14825.py` passed successfully with no regression.
 
 ## Changed Files
-* [apps/calculator/ui/sections/en14825_scop_section.py](file:///workspaces/predictor_v3/apps/calculator/ui/sections/en14825_scop_section.py) (Created in commit `d3de1bf`)
-* [apps/calculator/ui/metric_input_table.py](file:///workspaces/predictor_v3/apps/calculator/ui/metric_input_table.py) (Modified in commit `d3de1bf`)
-* [tests/test_apps_calculator_ui_en14825_scop.py](file:///workspaces/predictor_v3/tests/test_apps_calculator_ui_en14825_scop.py) (Modified in commit `d3de1bf`)
-* [docs/WORK_PLAN.md](file:///workspaces/predictor_v3/docs/WORK_PLAN.md) (Modified)
-* [result_reports/active/372_en14825_scop_section_integration.md](file:///workspaces/predictor_v3/result_reports/active/372_en14825_scop_section_integration.md) (Created)
+* `apps/calculator/ui/sections/en14825_scop_section.py` (Created in commit `d3de1bf`)
+* `apps/calculator/ui/metric_input_table.py` (Modified in commit `d3de1bf`)
+* `tests/test_apps_calculator_ui_en14825_scop.py` (Modified in commit `d3de1bf`)
+* `docs/WORK_PLAN.md` (Modified)
+* `result_reports/active/372_en14825_scop_section_integration.md` (Created)
 
 ## Known Failures / Risks
 * The code checker script issued a soft LOC warning for `en14825_scop_section.py` exceeding 400 LOC (measured at 486 LOC). This is acceptable for this slice as the file manages multiple independent sub-tables and toggles, but future responsibilities (like details graph panels or batch dialog forms) must be placed in separate files to prevent bloating.
@@ -77,7 +77,8 @@ Verified all instructions in `AGENTS.md` and the user prompt. No calculator note
 
 ## Commit / Push
 * Source/test changes committed in `d3de1bf`.
-* Report/docs changes will be committed next, and then all commits will be pushed to the remote repository.
+* Report/docs changes committed in `d9c218e`.
+* Push completed to origin/main.
 
 ## Project Memory Delta
 - none
