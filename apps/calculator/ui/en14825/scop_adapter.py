@@ -31,6 +31,33 @@ class ScopAdapter:
             raise ValueError(f"Unknown SCOP climate: {climate}")
         return climates[climate_key]
 
+    def resolve_temperature_overrides(
+        self,
+        climate: str,
+        tbiv_temp_c: Optional[float] = None,
+        tol_temp_c: Optional[float] = None,
+    ) -> Tuple[float, float]:
+        """Resolve effective bivalent and TOL temperatures using climate defaults when overrides are omitted."""
+        if not climate:
+            raise ValueError("Climate must be specified.")
+        climate_key = climate.strip().lower()
+
+        defaults = self.CLIMATE_DEFAULTS.get(climate_key, {})
+        default_tbiv = defaults.get("tbiv")
+        default_tol = defaults.get("tol")
+
+        if default_tbiv is None or default_tol is None:
+            climate_data = self.get_climate_data(climate_key)
+            if default_tbiv is None:
+                default_tbiv = float(climate_data.get("tbiv_max_c", 2.0))
+            if default_tol is None:
+                default_tol = float(climate_data.get("tol_max_c", -7.0))
+
+        eff_tbiv = tbiv_temp_c if tbiv_temp_c is not None else default_tbiv
+        eff_tol = tol_temp_c if tol_temp_c is not None else default_tol
+
+        return eff_tbiv, eff_tol
+
     @staticmethod
     def get_part_load_info(tj: float, p_design_h_w: float, t_design_h: float) -> Tuple[float, float]:
         """Calculate part load ratio (%) and part load (W) for a given outdoor dry-bulb temperature.
@@ -172,10 +199,15 @@ class ScopAdapter:
             summary.message = "t_design_h cannot be 16°C"
             return summary
 
-        # Check bivalent / TOL overrides relation if provided
-        eff_tbiv = tbiv_temp_c if tbiv_temp_c is not None else self.CLIMATE_DEFAULTS.get(climate, {}).get("tbiv", climate_data.get("tbiv_max_c"))
-        eff_tol = tol_temp_c if tol_temp_c is not None else self.CLIMATE_DEFAULTS.get(climate, {}).get("tol", climate_data.get("tol_max_c"))
-        if eff_tbiv is not None and eff_tol is not None and eff_tol > eff_tbiv:
+        # Check bivalent / TOL overrides relation using resolved defaults
+        try:
+            eff_tbiv, eff_tol = self.resolve_temperature_overrides(climate, tbiv_temp_c, tol_temp_c)
+        except Exception as exc:
+            summary.status_code = "invalid_climate"
+            summary.message = f"Invalid climate: {str(exc)}"
+            return summary
+
+        if eff_tol > eff_tbiv:
             summary.status_code = "invalid_temp_override"
             summary.message = f"TOL ({eff_tol}) must be <= Tbiv ({eff_tbiv})"
             return summary
@@ -234,8 +266,8 @@ class ScopAdapter:
                     climate=climate,
                     cd=cd,
                     appliance_type=appliance_type,
-                    tbiv_temp_c=tbiv_temp_c,
-                    tol_temp_c=tol_temp_c,
+                    tbiv_temp_c=eff_tbiv,
+                    tol_temp_c=eff_tol,
                 )
                 summary.declared_scop = dec_res["scop"]
                 summary.declared_qh_kwh = dec_res["qh_kwh"]
@@ -268,8 +300,8 @@ class ScopAdapter:
                     climate=climate,
                     cd=cd,
                     appliance_type=appliance_type,
-                    tbiv_temp_c=tbiv_temp_c,
-                    tol_temp_c=tol_temp_c,
+                    tbiv_temp_c=eff_tbiv,
+                    tol_temp_c=eff_tol,
                 )
                 summary.tested_scop = test_res["scop"]
                 summary.tested_qh_kwh = test_res["qh_kwh"]
