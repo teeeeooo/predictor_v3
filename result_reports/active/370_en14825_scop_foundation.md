@@ -61,7 +61,7 @@ The separation of concerns is maintained:
 All 15 SEER tests also pass successfully with no regression.
 
 ## Known Risks / Gaps
-None. All boundary mappings and fallback options are verified with unit tests.
+None. Temperature default boundary was later corrected by report 371.
 
 ## Next Suggested Action
 Proceed to **Slice 2: section UI integration** (`en14825_scop_section.py`) to build the stacked climate cards and bind dynamic events.
