@@ -57,7 +57,7 @@ class En14825SeerSection:
         self.adapter = SeerAdapter()
         self._current_table_model: SeerTableModel | None = None
 
-        self._frame = ttk.LabelFrame(parent, text="SEER Comparison (EN 14825)")
+        self._frame = ttk.LabelFrame(parent, text="SEER")
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Auxiliary Parameters Frame

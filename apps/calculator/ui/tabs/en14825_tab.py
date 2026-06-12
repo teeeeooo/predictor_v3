@@ -34,25 +34,6 @@ class En14825Tab(ttk.Frame):
         self._p_off_var = tk.StringVar(value="0")
         self._appliance_type_var = tk.StringVar(value="reversible")
 
-        common_frame = ttk.LabelFrame(self._content, text="공통 입력")
-        common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
-        ttk.Label(common_frame, text="Pto [W]").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_to_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
-        ttk.Label(common_frame, text="Psb [W]").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_sb_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
-        ttk.Label(common_frame, text="Pck [W]").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_ck_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
-        ttk.Label(common_frame, text="Poff [W]").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_off_var, width=6).grid(row=0, column=7, sticky="w", padx=(0, 10), pady=6)
-        ttk.Label(common_frame, text="기기 유형").grid(row=0, column=8, sticky="w", padx=(6, 4), pady=6)
-        ttk.Combobox(
-            common_frame,
-            textvariable=self._appliance_type_var,
-            values=("reversible", "heating_only"),
-            width=12,
-            state="readonly",
-        ).grid(row=0, column=9, sticky="w", padx=(0, 6), pady=6)
-
         self._standard_notebook = ttk.Notebook(self._content)
         self._standard_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self._standard_notebook.bind(
@@ -64,11 +45,13 @@ class En14825Tab(ttk.Frame):
         self._standard_notebook.add(self._seer_frame, text="SEER")
         self._standard_notebook.add(self._scop_frame, text="SCOP")
 
+        self._create_common_input_panel(self._seer_frame)
         self.seer_section = En14825SeerSection(
             self._seer_frame,
             common_input_values=self._common_input_values,
         )
         self.seer_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._create_common_input_panel(self._scop_frame)
         self.scop_section = En14825ScopSection(
             self._scop_frame,
             on_trace_visibility_changed=self._request_visible_lifecycle_refit,
@@ -152,3 +135,24 @@ class En14825Tab(ttk.Frame):
     def _on_common_input_changed(self) -> None:
         self.seer_section.schedule_recalculate()
         self.scop_section.schedule_recalculate()
+
+    def _create_common_input_panel(self, parent: tk.Widget) -> ttk.LabelFrame:
+        common_frame = ttk.LabelFrame(parent, text="공통 입력")
+        common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
+        ttk.Label(common_frame, text="Pto [W]").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(common_frame, textvariable=self._p_to_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
+        ttk.Label(common_frame, text="Psb [W]").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(common_frame, textvariable=self._p_sb_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+        ttk.Label(common_frame, text="Pck [W]").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(common_frame, textvariable=self._p_ck_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
+        ttk.Label(common_frame, text="Poff [W]").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
+        ttk.Entry(common_frame, textvariable=self._p_off_var, width=6).grid(row=0, column=7, sticky="w", padx=(0, 10), pady=6)
+        ttk.Label(common_frame, text="기기 유형").grid(row=0, column=8, sticky="w", padx=(6, 4), pady=6)
+        ttk.Combobox(
+            common_frame,
+            textvariable=self._appliance_type_var,
+            values=("reversible", "heating_only"),
+            width=12,
+            state="readonly",
+        ).grid(row=0, column=9, sticky="w", padx=(0, 6), pady=6)
+        return common_frame

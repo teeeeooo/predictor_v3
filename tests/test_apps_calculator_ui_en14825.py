@@ -529,6 +529,12 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert tab_names == ["SEER", "SCOP"]
         assert isinstance(tab.seer_section, En14825SeerSection)
         assert isinstance(tab.scop_section, En14825ScopSection)
+        assert tab.seer_section._frame.cget("text") == "SEER"
+        assert tab.scop_section._frame.cget("text") == "SCOP"
+        assert "Comparison (EN 14825)" not in tab.seer_section._frame.cget("text")
+        assert "Comparison (EN 14825)" not in tab.scop_section._frame.cget("text")
+        assert tab._seer_frame.winfo_children()[0].cget("text") == "공통 입력"
+        assert tab._scop_frame.winfo_children()[0].cget("text") == "공통 입력"
         assert hasattr(tab, "_p_to_var")
         assert hasattr(tab, "_p_sb_var")
         assert hasattr(tab, "_p_ck_var")

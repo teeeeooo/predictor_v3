@@ -53,7 +53,7 @@ class En14825ScopSection:
         self.adapter = ScopAdapter()
         self._current_table_models: dict[str, ScopTableModel] = {}
 
-        self._frame = ttk.LabelFrame(parent, text="SCOP Comparison (EN 14825)")
+        self._frame = ttk.LabelFrame(parent, text="SCOP")
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Top Auxiliary Parameters Frame
@@ -69,7 +69,7 @@ class En14825ScopSection:
         )
 
         # Specs Frame (Cd)
-        specs_frame = ttk.LabelFrame(aux_frame, text="기본 사양 (Base Specs)")
+        specs_frame = ttk.LabelFrame(aux_frame, text="설계 사양")
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
         ttk.Label(specs_frame, text="Cd:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
@@ -104,7 +104,7 @@ class En14825ScopSection:
         card_row_start = 2
         for i, clm in enumerate(self.climates):
             # LabelFrame for climate
-            card = ttk.LabelFrame(self._frame, text=f"{clm.capitalize()} 기후 조건 ({clm.capitalize()} Climate)")
+            card = ttk.LabelFrame(self._frame, text=f"{clm.capitalize()} 조건")
             card.grid(
                 row=card_row_start + i,
                 column=0,
@@ -123,7 +123,7 @@ class En14825ScopSection:
 
             chk = ttk.Checkbutton(
                 toggle_frame,
-                text="기후 활성화 (Activate Climate)",
+                text="활성화",
                 variable=active_var,
                 command=self._on_climate_toggle,
             )

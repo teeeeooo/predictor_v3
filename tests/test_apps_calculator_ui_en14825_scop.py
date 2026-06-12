@@ -519,6 +519,13 @@ def test_scop_gui_integration_basics():
         # 1. En14825ScopSection 생성 시 average card가 active이고 warmer/colder는 inactive인지 확인
         section = En14825ScopSection(root)
 
+        assert section._frame.cget("text") == "SCOP"
+        assert "Comparison (EN 14825)" not in section._frame.cget("text")
+        assert section.climate_cards["average"].cget("text") == "Average 조건"
+        assert section.climate_cards["warmer"].cget("text") == "Warmer 조건"
+        assert section.climate_cards["colder"].cget("text") == "Colder 조건"
+        average_toggle = section.climate_cards["average"].winfo_children()[0].winfo_children()[0]
+        assert average_toggle.cget("text") == "활성화"
         assert section.climate_active_vars["average"].get() is True
         assert section.climate_active_vars["warmer"].get() is False
         assert section.climate_active_vars["colder"].get() is False
