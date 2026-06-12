@@ -585,11 +585,55 @@ def test_scop_gui_integration_basics():
 
         summary_text_before = summary_widget._text.get("1.0", tk.END)
 
-        section._p_to_var.set("50")
+        section._common_input_values = lambda: {
+            "p_to": "50",
+            "p_sb": "0",
+            "p_ck": "0",
+            "p_off": "0",
+            "appliance_type": "reversible",
+        }
         section._auto_calc.flush_now()
 
         summary_text_after = summary_widget._text.get("1.0", tk.END)
         assert summary_text_before != summary_text_after
+
+    finally:
+        root.destroy()
+
+
+def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
+    """SCOP section reads auxiliary power and appliance type from tab owner provider."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    common_values = {
+        "p_to": "60",
+        "p_sb": "10",
+        "p_ck": "20",
+        "p_off": "5",
+        "appliance_type": "heating_only",
+    }
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+
+        section = En14825ScopSection(root, common_input_values=lambda: common_values)
+        fake_core = FakeHeatingCalculator()
+        section.adapter = ScopAdapter(calculator=fake_core)
+
+        section.recalculate_now()
+
+        assert fake_core.calls
+        call = fake_core.calls[0]
+        assert call["p_to"] == 0.06
+        assert call["p_sb"] == 0.01
+        assert call["p_ck"] == 0.02
+        assert call["p_off"] == 0.005
+        assert call["appliance_type"] == "heating_only"
 
     finally:
         root.destroy()

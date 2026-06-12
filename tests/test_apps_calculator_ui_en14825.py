@@ -529,6 +529,20 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert tab_names == ["SEER", "SCOP"]
         assert isinstance(tab.seer_section, En14825SeerSection)
         assert isinstance(tab.scop_section, En14825ScopSection)
+        assert hasattr(tab, "_p_to_var")
+        assert hasattr(tab, "_p_sb_var")
+        assert hasattr(tab, "_p_ck_var")
+        assert hasattr(tab, "_p_off_var")
+        assert hasattr(tab, "_appliance_type_var")
+        assert not hasattr(tab.seer_section, "_p_to_var")
+        assert not hasattr(tab.scop_section, "_p_to_var")
+        assert not hasattr(tab.scop_section, "_appliance_type_var")
+
+        tab._p_to_var.set("25")
+        tab._p_sb_var.set("5")
+        tab._p_ck_var.set("2")
+        tab._p_off_var.set("1")
+        tab._appliance_type_var.set("heating_only")
 
         tab.scop_section._auto_calc.flush_now()
         summary_text = tab.scop_section.result_panel._text.get("1.0", tk.END)
@@ -544,12 +558,43 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
 
         tab._standard_notebook.select(tab._scop_frame)
         tab._on_standard_tab_changed()
+        assert tab._p_to_var.get() == "25"
+        assert tab._appliance_type_var.get() == "heating_only"
         tab.scop_section.climate_active_vars["warmer"].set(True)
         tab.scop_section._on_climate_toggle()
         tab.scop_section.climate_active_vars["colder"].set(True)
         tab.scop_section._on_climate_toggle()
 
         assert refit_requests == [1, 1, 1]
+
+    finally:
+        root.destroy()
+
+
+def test_seer_section_uses_en14825_common_auxiliary_inputs():
+    """SEER section reads auxiliary power from the EN14825 tab owner provider."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    common_values = {"p_to": "50", "p_sb": "10", "p_ck": "20", "p_off": "5"}
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+
+        section = En14825SeerSection(root, common_input_values=lambda: common_values)
+        fake_core = FakeCalculator()
+        section.adapter = SeerAdapter(calculator=fake_core)
+
+        section.recalculate_now()
+
+        assert fake_core.captured_p_to == 0.05
+        assert fake_core.captured_p_sb == 0.01
+        assert fake_core.captured_p_ck == 0.02
+        assert fake_core.captured_p_off == 0.005
 
     finally:
         root.destroy()

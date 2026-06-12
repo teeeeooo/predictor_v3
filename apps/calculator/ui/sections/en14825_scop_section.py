@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
 
@@ -38,21 +38,26 @@ class En14825ScopSection:
         parent: tk.Widget,
         *,
         on_trace_visibility_changed: Callable[[], None] | None = None,
+        common_input_values: Callable[[], Mapping[str, str]] | None = None,
     ) -> None:
         self._on_detail_visibility_changed = on_trace_visibility_changed
+        self._common_input_values = common_input_values or (
+            lambda: {
+                "p_to": "0",
+                "p_sb": "0",
+                "p_ck": "0",
+                "p_off": "0",
+                "appliance_type": "reversible",
+            }
+        )
         self.adapter = ScopAdapter()
         self._current_table_models: dict[str, ScopTableModel] = {}
 
         self._frame = ttk.LabelFrame(parent, text="SCOP Comparison (EN 14825)")
         self._frame.columnconfigure(0, weight=1)
 
-        # 1. Top Auxiliary Parameters Frame (Standby and Cd)
+        # 1. Top Auxiliary Parameters Frame
         self._cd_var = tk.StringVar(value="0.25")
-        self._p_to_var = tk.StringVar(value="0")
-        self._p_sb_var = tk.StringVar(value="0")
-        self._p_ck_var = tk.StringVar(value="0")
-        self._p_off_var = tk.StringVar(value="0")
-        self._appliance_type_var = tk.StringVar(value="reversible")
 
         aux_frame = ttk.Frame(self._frame)
         aux_frame.grid(
@@ -63,38 +68,12 @@ class En14825ScopSection:
             pady=(8, ISO_SECTION_BLOCK_GAP),
         )
 
-        # Specs Frame (Cd, Appliance Type)
+        # Specs Frame (Cd)
         specs_frame = ttk.LabelFrame(aux_frame, text="기본 사양 (Base Specs)")
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
         ttk.Label(specs_frame, text="Cd:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(specs_frame, textvariable=self._cd_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
-
-        ttk.Label(specs_frame, text="기기 유형:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        appliance_combo = ttk.Combobox(
-            specs_frame,
-            textvariable=self._appliance_type_var,
-            values=("reversible", "heating_only"),
-            width=12,
-            state="readonly",
-        )
-        appliance_combo.grid(row=0, column=3, sticky="w", padx=(0, 6), pady=6)
-
-        # Standby power Frame
-        standby_frame = ttk.LabelFrame(aux_frame, text="대기 및 보조 전력 (Aux Power [W])")
-        standby_frame.pack(side=tk.LEFT, fill=tk.Y)
-
-        ttk.Label(standby_frame, text="Pto:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(standby_frame, textvariable=self._p_to_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
-
-        ttk.Label(standby_frame, text="Psb:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(standby_frame, textvariable=self._p_sb_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
-
-        ttk.Label(standby_frame, text="Pck:").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(standby_frame, textvariable=self._p_ck_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
-
-        ttk.Label(standby_frame, text="Poff:").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(standby_frame, textvariable=self._p_off_var, width=6).grid(row=0, column=7, sticky="w", padx=(0, 6), pady=6)
+        ttk.Entry(specs_frame, textvariable=self._cd_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
 
         # 2. Stacked Climate Cards
         self.climates = ("average", "warmer", "colder")
@@ -240,15 +219,7 @@ class En14825ScopSection:
             table.set_values_changed_callback(self._auto_calc.schedule)
 
         # Bind auxiliary changes to scheduler
-        for var in (
-            self._cd_var,
-            self._p_to_var,
-            self._p_sb_var,
-            self._p_ck_var,
-            self._p_off_var,
-            self._appliance_type_var,
-        ):
-            var.trace_add("write", lambda *args: self._auto_calc.schedule())
+        self._cd_var.trace_add("write", lambda *args: self._auto_calc.schedule())
 
         for d_vars in (self.p_design_h_vars, self.tbiv_vars, self.tol_vars):
             for var in d_vars.values():
@@ -264,6 +235,9 @@ class En14825ScopSection:
 
     def cancel_pending(self) -> None:
         self._auto_calc.cancel()
+
+    def schedule_recalculate(self) -> None:
+        self._auto_calc.schedule()
 
     def _on_climate_toggle(self) -> None:
         """Collapse or expand inner climate tables depending on checkbutton state."""
@@ -281,12 +255,13 @@ class En14825ScopSection:
             self._on_detail_visibility_changed()
 
     def recalculate_now(self) -> None:
-        p_to_w = self._parse_float_safe(self._p_to_var.get(), 0.0)
-        p_sb_w = self._parse_float_safe(self._p_sb_var.get(), 0.0)
-        p_ck_w = self._parse_float_safe(self._p_ck_var.get(), 0.0)
-        p_off_w = self._parse_float_safe(self._p_off_var.get(), 0.0)
+        common_inputs = self._common_input_values()
+        p_to_w = self._parse_float_safe(common_inputs.get("p_to", "0"), 0.0)
+        p_sb_w = self._parse_float_safe(common_inputs.get("p_sb", "0"), 0.0)
+        p_ck_w = self._parse_float_safe(common_inputs.get("p_ck", "0"), 0.0)
+        p_off_w = self._parse_float_safe(common_inputs.get("p_off", "0"), 0.0)
         cd = self._parse_float_safe(self._cd_var.get(), 0.25)
-        appliance_type = self._appliance_type_var.get()
+        appliance_type = common_inputs.get("appliance_type", "reversible")
 
         summaries = []
 
