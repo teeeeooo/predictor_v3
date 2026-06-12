@@ -77,6 +77,10 @@ For compact report-only or narrow UI correction work, keep MVC/SoC, behavior
 preservation, and known risks to one or two bullets each unless the decision
 would otherwise be ambiguous.
 
+If the user explicitly asks for no report on a docs/workflow cleanup, do not
+create a report solely because a tracked docs file changed. Keep the terminal
+summary short and record the commit/push result there.
+
 Full report default sections:
 
 - Goal
@@ -127,6 +131,10 @@ the active report count policy or the commit/push wording policy.
 
 For report-backed work, keep terminal/final output short. Detailed results
 belong in the report.
+
+When the user does not require a fixed long output schema, use at most six short
+lines: `modified`, `created/report` when relevant, `validation`, `commit`,
+`push`, and `next`. Do not repeat report sections in terminal output.
 
 Use this final shape:
 

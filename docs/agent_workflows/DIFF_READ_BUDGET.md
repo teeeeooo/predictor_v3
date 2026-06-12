@@ -163,6 +163,8 @@ The map is reference evidence, not a source of truth or a semantic linter. Canon
 
 - During implementation, run the highest-risk focused test or compile command
   first; defer the full required validation command set to the final check.
+- If an early focused check already passed, do not rerun it before final
+  validation unless code affecting that path changed again.
 - Inspect long tracebacks only after failure.
 - Full pytest is allowed when the task touches core, calculator, ML, schema,
   golden, or broad behavior, but the need must be explicit.
