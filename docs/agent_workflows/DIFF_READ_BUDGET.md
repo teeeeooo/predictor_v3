@@ -30,6 +30,20 @@ a blocker is stated. "Might be useful" is not a blocker.
 6. `sed -n '<small range>' <file>`
 7. Only if still needed: `git diff -- <file>` or a narrow hunk/range.
 
+## Audit / Report Read Sequence
+
+For audit/report work, make the first source pass structural, then targeted:
+
+1. locate headings, classes, and methods with `rg -n`;
+2. read only the matched heading or method ranges needed for the inventory;
+3. use adjacent owner/helper files only to confirm responsibility boundaries;
+4. expand to broad chunks only when method boundaries are unclear or the audit
+   explicitly requires full-file inventory, and state that blocker first.
+
+Do not use large top-of-file reads such as `sed -n '1,160p'` for policy,
+workflow, or source files when a heading/method hit already identifies the
+needed range.
+
 ## Smoke Follow-up Order
 
 For manual-smoke follow-up or narrow bug follow-up work, keep the first pass to

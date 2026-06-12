@@ -68,6 +68,11 @@ Compact report minimum sections:
 - Known Risks
 - Commit / Push
 
+Compact audit reports should preserve the decision, not duplicate terminal
+output. Prefer a short inventory table or tight bullets for evidence,
+classification, decision, and next action. Keep validation and command output to
+one-line status summaries unless a failure/blocker needs detail.
+
 Full report default sections:
 
 - Goal

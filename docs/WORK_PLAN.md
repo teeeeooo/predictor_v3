@@ -120,6 +120,10 @@
 2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after helper extraction**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
+Read/report discipline note: audit/report work should use heading/method-first
+targeted reads and compact decision reports; avoid broad reads and duplicated
+terminal/report summaries unless a blocker requires expansion.
+
 
 
 
