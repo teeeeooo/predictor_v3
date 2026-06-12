@@ -11,6 +11,7 @@ from apps.calculator.ui.en14825 import (
 from core.calculator_en14825 import EN14825Calculator
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
+    format_scop_compact_rows,
     format_scop_climate_error_summary,
     format_scop_result_summary,
 )
@@ -526,6 +527,11 @@ def test_scop_gui_integration_basics():
         assert section.climate_cards["colder"].cget("text") == "Colder 조건"
         average_toggle = section.climate_cards["average"].winfo_children()[0].winfo_children()[0]
         assert average_toggle.cget("text") == "활성화"
+        assert section.t_design_h_value_labels["average"].cget("text") == "-10"
+        assert section.t_design_h_value_labels["warmer"].cget("text") == "2"
+        assert section.t_design_h_value_labels["colder"].cget("text") == "-22"
+        assert section._result_surface.grid_info()["column"] == 1
+        assert section.result_panel._frame.winfo_manager() == ""
         assert section.climate_active_vars["average"].get() is True
         assert section.climate_active_vars["warmer"].get() is False
         assert section.climate_active_vars["colder"].get() is False
@@ -546,6 +552,10 @@ def test_scop_gui_integration_basics():
         summary_text = summary_widget._text.get("1.0", tk.END)
         assert "EN14825 SCOP - Average" in summary_text
         assert "자동 계산 완료" in summary_text
+        assert section._result_cards["average"].winfo_manager() != ""
+        assert section._result_cards["warmer"].winfo_manager() == ""
+        assert section._result_value_labels["average"][("Declared", "SCOP")].cget("text") != "-"
+        assert section._result_value_labels["average"][("Tested", "SCOP")].cget("text") != "-"
 
         # 4. table input 변경 후 tested_cop, capacity_percent, cop_percent row가 갱신되는지 확인
         section.input_tables["average"].set_value("tested_power_A", "1200")
@@ -576,6 +586,7 @@ def test_scop_gui_integration_basics():
         summary_text_two = summary_widget._text.get("1.0", tk.END)
         assert "EN14825 SCOP - Average" in summary_text_two
         assert "EN14825 SCOP - Warmer" in summary_text_two
+        assert section._result_cards["warmer"].winfo_manager() != ""
 
         # 7. invalid TOL > Tbiv 상태가 crash 없이 status로 표시되는지 확인
         section.tbiv_vars["average"].set("-10")
@@ -710,6 +721,10 @@ def test_scop_result_formatter_formats_complete_and_missing_values():
     assert ("Declared SCOP", "4.12") in result.fields
     assert ("SCOP %", "96.7%") in result.fields
     assert ("Tested Total [kWh]", "-") in result.fields
+    compact_rows = dict(format_scop_compact_rows(summary))
+    assert ("SCOP", "4.12") in compact_rows["Declared"]
+    assert ("SCOP", "3.99") in compact_rows["Tested"]
+    assert ("SCOP %", "96.7%") in compact_rows["Tested"]
 
 
 def test_scop_result_formatter_formats_climate_error():

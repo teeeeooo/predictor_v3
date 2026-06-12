@@ -38,6 +38,34 @@ def format_scop_result_summary(summary: ScopResultSummary, climate: str) -> Resu
     )
 
 
+def format_scop_compact_rows(summary: ScopResultSummary) -> tuple[tuple[str, tuple[tuple[str, str], ...]], ...]:
+    """Return compact Declared/Tested rows for the section-local result surface."""
+    return (
+        (
+            "Declared",
+            (
+                ("SCOP", _format_optional(summary.declared_scop, ".2f")),
+                ("QH [kWh]", _format_optional(summary.declared_qh_kwh, ".1f")),
+                ("Total [kWh]", _format_optional(summary.declared_total_kwh, ".1f")),
+            ),
+        ),
+        (
+            "Tested",
+            (
+                ("SCOP", _format_optional(summary.tested_scop, ".2f")),
+                ("QH [kWh]", _format_optional(summary.tested_qh_kwh, ".1f")),
+                ("Total [kWh]", _format_optional(summary.tested_total_kwh, ".1f")),
+                ("SCOP %", _format_optional(summary.scop_percent, ".1f", suffix="%")),
+            ),
+        ),
+    )
+
+
+def format_scop_status(summary: ScopResultSummary) -> str:
+    """Return the user-facing status text for a SCOP result summary."""
+    return STATUS_MAPPINGS.get(summary.status_code, "계산 완료")
+
+
 def format_scop_climate_error_summary(climate: str, message: str) -> ResultSummary:
     """Build a climate-local error summary for invalid climate configuration."""
     return ResultSummary(

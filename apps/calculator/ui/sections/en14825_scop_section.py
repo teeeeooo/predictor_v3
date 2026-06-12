@@ -17,8 +17,10 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
+    format_scop_compact_rows,
     format_scop_climate_error_summary,
     format_scop_result_summary,
+    format_scop_status,
 )
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
@@ -55,6 +57,7 @@ class En14825ScopSection:
 
         self._frame = ttk.LabelFrame(parent, text="SCOP")
         self._frame.columnconfigure(0, weight=1)
+        self._frame.columnconfigure(1, weight=0)
 
         # 1. Top Auxiliary Parameters Frame
         self._cd_var = tk.StringVar(value="0.25")
@@ -80,6 +83,7 @@ class En14825ScopSection:
         self.climate_cards: dict[str, ttk.LabelFrame] = {}
         self.climate_active_vars: dict[str, tk.BooleanVar] = {}
         self.climate_inner_frames: dict[str, ttk.Frame] = {}
+        self.t_design_h_value_labels: dict[str, ttk.Label] = {}
 
         # Climate-specific vars
         self.p_design_h_vars: dict[str, tk.StringVar] = {
@@ -141,11 +145,16 @@ class En14825ScopSection:
             ttk.Label(inputs_frame, text="Pdesignh [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4))
             ttk.Entry(inputs_frame, textvariable=self.p_design_h_vars[clm], width=8).grid(row=0, column=1, sticky="w", padx=(0, 10))
 
-            ttk.Label(inputs_frame, text="Tbiv [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4))
-            ttk.Entry(inputs_frame, textvariable=self.tbiv_vars[clm], width=6).grid(row=0, column=3, sticky="w", padx=(0, 10))
+            ttk.Label(inputs_frame, text="Tdesignh [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4))
+            t_design_label = ttk.Label(inputs_frame, text=self._format_t_design_h(clm), width=6)
+            t_design_label.grid(row=0, column=3, sticky="w", padx=(0, 10))
+            self.t_design_h_value_labels[clm] = t_design_label
 
-            ttk.Label(inputs_frame, text="TOL [°C]:").grid(row=0, column=4, sticky="w", padx=(6, 4))
-            ttk.Entry(inputs_frame, textvariable=self.tol_vars[clm], width=6).grid(row=0, column=5, sticky="w", padx=(0, 6))
+            ttk.Label(inputs_frame, text="Tbiv [°C]:").grid(row=0, column=4, sticky="w", padx=(6, 4))
+            ttk.Entry(inputs_frame, textvariable=self.tbiv_vars[clm], width=6).grid(row=0, column=5, sticky="w", padx=(0, 10))
+
+            ttk.Label(inputs_frame, text="TOL [°C]:").grid(row=0, column=6, sticky="w", padx=(6, 4))
+            ttk.Entry(inputs_frame, textvariable=self.tol_vars[clm], width=6).grid(row=0, column=7, sticky="w", padx=(0, 6))
 
             # Table construction
             editable_cells = {}
@@ -201,15 +210,23 @@ class En14825ScopSection:
 
             self.table_controllers[clm] = TkTableController(table)
 
-        # 3. Bottom Result Summary Panel
-        self.result_panel = ResultPanel(self._frame, title="SCOP 결과")
-        self.result_panel.grid(
-            row=card_row_start + len(self.climates),
-            column=0,
-            sticky="ew",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
+        self._result_surface = ttk.LabelFrame(self._frame, text="SCOP 결과")
+        self._result_surface.grid(
+            row=card_row_start,
+            column=1,
+            rowspan=len(self.climates),
+            sticky="n",
+            padx=(0, ISO_SECTION_PADX),
+            pady=(0, 10),
         )
+        self._result_cards: dict[str, ttk.Frame] = {}
+        self._result_status_labels: dict[str, ttk.Label] = {}
+        self._result_value_labels: dict[str, dict[tuple[str, str], ttk.Label]] = {}
+        for clm in self.climates:
+            self._create_result_card(clm)
+
+        # Compatibility text model for existing non-layout tests.
+        self.result_panel = ResultPanel(self._frame, title="SCOP 결과")
 
         # 4. Debounced auto-calc scheduler
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
@@ -272,6 +289,7 @@ class En14825ScopSection:
 
             if not active:
                 self._current_table_models.pop(clm, None)
+                self._set_result_card_visible(clm, False)
                 continue
 
             try:
@@ -281,6 +299,7 @@ class En14825ScopSection:
                 if input_mapping.invalid_fields:
                     table.set_invalid_fields(input_mapping.invalid_fields)
                     self._clear_computed_rows(clm)
+                    self._clear_result_card(clm)
                     continue
                 else:
                     table.clear_invalid_fields()
@@ -292,6 +311,7 @@ class En14825ScopSection:
 
             except Exception:
                 self._clear_computed_rows(clm)
+                self._clear_result_card(clm)
                 continue
 
             inputs = input_mapping.inputs
@@ -303,6 +323,7 @@ class En14825ScopSection:
                 t_design_h = float(climate_data["t_design_h_c"])
             except Exception as exc:
                 self._clear_computed_rows(clm)
+                self._show_result_card_error(clm, str(exc))
                 # Show climate-local status
                 summaries.append(format_scop_climate_error_summary(clm, str(exc)))
                 continue
@@ -349,12 +370,64 @@ class En14825ScopSection:
             controller._paint_selection()
 
             # Add to result summary list
+            self._update_result_card(clm, summary)
             summaries.append(format_scop_result_summary(summary, clm))
 
         if not summaries:
             self.result_panel.clear()
         else:
             self.result_panel.set_summaries(summaries)
+
+    def _format_t_design_h(self, climate: str) -> str:
+        try:
+            return f"{float(self.adapter.get_climate_data(climate)['t_design_h_c']):.0f}"
+        except Exception:
+            return "-"
+
+    def _create_result_card(self, climate: str) -> None:
+        card = ttk.Frame(self._result_surface)
+        card.pack(fill=tk.X, padx=6, pady=(6, 0))
+        ttk.Label(card, text=climate.capitalize(), font=("TkDefaultFont", 10, "bold")).grid(
+            row=0, column=0, columnspan=5, sticky="w"
+        )
+        status = ttk.Label(card, text="대기 중")
+        status.grid(row=1, column=0, columnspan=5, sticky="w", pady=(0, 2))
+        self._result_cards[climate] = card
+        self._result_status_labels[climate] = status
+        self._result_value_labels[climate] = {}
+        for row_index, row_label in enumerate(("Declared", "Tested"), start=2):
+            ttk.Label(card, text=row_label).grid(row=row_index, column=0, sticky="w", padx=(0, 6))
+            for col_index, key in enumerate(("SCOP", "QH [kWh]", "Total [kWh]", "SCOP %"), start=1):
+                value = ttk.Label(card, text="-", width=9, anchor="e")
+                value.grid(row=row_index, column=col_index, sticky="e", padx=(2, 0))
+                self._result_value_labels[climate][(row_label, key)] = value
+
+    def _set_result_card_visible(self, climate: str, visible: bool) -> None:
+        card = self._result_cards[climate]
+        if visible and not card.winfo_manager():
+            card.pack(fill=tk.X, padx=6, pady=(6, 0))
+        elif not visible and card.winfo_manager():
+            card.pack_forget()
+
+    def _update_result_card(self, climate: str, summary) -> None:
+        self._set_result_card_visible(climate, True)
+        self._result_status_labels[climate].configure(text=format_scop_status(summary))
+        values = self._result_value_labels[climate]
+        for row_label, fields in format_scop_compact_rows(summary):
+            field_map = dict(fields)
+            for key in ("SCOP", "QH [kWh]", "Total [kWh]", "SCOP %"):
+                values[(row_label, key)].configure(text=field_map.get(key, "-"))
+
+    def _show_result_card_error(self, climate: str, message: str) -> None:
+        self._set_result_card_visible(climate, True)
+        self._result_status_labels[climate].configure(text=f"기류/설정 오류: {message}")
+        for label in self._result_value_labels[climate].values():
+            label.configure(text="-")
+
+    def _clear_result_card(self, climate: str) -> None:
+        self._result_status_labels[climate].configure(text="대기 중")
+        for label in self._result_value_labels[climate].values():
+            label.configure(text="-")
 
     def _parse_float_safe(self, text: str, default: float | None) -> float | None:
         try:
