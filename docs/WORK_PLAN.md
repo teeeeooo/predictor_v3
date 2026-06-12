@@ -114,9 +114,9 @@
 
 ## Next Actions
 
-1. **EN14825 SCOP tab composition manual smoke closeout — next active slice**
-   - Verify SEER/SCOP nested tab switching, SCOP climate toggles, and window
-     refit behavior manually on the target desktop.
+1. **EN14825 SCOP result surface UX correction — next active slice**
+   - Keep common EN14825 inputs owned by the EN14825 tab; correct only the SCOP
+     result surface placement/arrangement issues found during manual review.
 2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
