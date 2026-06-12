@@ -9,6 +9,11 @@ from apps.calculator.ui.en14825 import (
     ScopTableModel,
 )
 from core.calculator_en14825 import EN14825Calculator
+from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
+from apps.calculator.ui.sections.en14825_scop_result_formatter import (
+    format_scop_climate_error_summary,
+    format_scop_result_summary,
+)
 
 
 class FakeHeatingCalculator:
@@ -588,3 +593,88 @@ def test_scop_gui_integration_basics():
 
     finally:
         root.destroy()
+
+
+def test_scop_input_mapper_builds_declared_and_tested_points():
+    """Parse text values into SCOP point input models without depending on widgets."""
+    text_values = _scop_text_values()
+
+    result = build_scop_point_inputs(text_values)
+
+    assert result.invalid_fields == {}
+    assert result.inputs["A"] == ScopPointInput(
+        declared_capacity=3000.0,
+        declared_cop=2.8,
+        tested_capacity=3000.0,
+        tested_power=1070.0,
+    )
+    assert result.inputs["Tbiv"].declared_capacity == 3000.0
+    assert result.inputs["Tbiv"].tested_power == 1070.0
+
+
+def test_scop_input_mapper_allows_declared_only_and_blank_tested_values():
+    """Blank tested values should stay None so declared-only calculation can proceed."""
+    text_values = _scop_text_values()
+    for col in ScopTableModel.COL_KEYS:
+        text_values[f"tested_capacity_{col}"] = ""
+        text_values[f"tested_power_{col}"] = " "
+
+    result = build_scop_point_inputs(text_values)
+
+    assert result.invalid_fields == {}
+    assert result.inputs["A"].declared_capacity == 3000.0
+    assert result.inputs["A"].declared_cop == 2.8
+    assert result.inputs["A"].tested_capacity is None
+    assert result.inputs["A"].tested_power is None
+
+
+def test_scop_input_mapper_reports_invalid_numeric_fields():
+    """Invalid numeric text should be reported with the original field key."""
+    text_values = _scop_text_values()
+    text_values["declared_capacity_A"] = "abc"
+
+    result = build_scop_point_inputs(text_values)
+
+    assert result.invalid_fields == {"declared_capacity_A": "숫자 입력 필요"}
+    assert result.inputs["A"].declared_capacity is None
+
+
+def test_scop_result_formatter_formats_complete_and_missing_values():
+    """Format SCOP result summaries without direct ResultPanel or Tk dependencies."""
+    summary = ScopResultSummary(
+        declared_scop=4.123,
+        tested_scop=3.987,
+        scop_percent=96.7,
+        declared_qh_kwh=1200.0,
+        tested_qh_kwh=1234.56,
+        declared_total_kwh=321.0,
+        tested_total_kwh=None,
+        status_code="complete",
+    )
+
+    result = format_scop_result_summary(summary, "average")
+
+    assert result.title == "EN14825 SCOP - Average"
+    assert result.status == "자동 계산 완료"
+    assert ("Declared SCOP", "4.12") in result.fields
+    assert ("SCOP %", "96.7%") in result.fields
+    assert ("Tested Total [kWh]", "-") in result.fields
+
+
+def test_scop_result_formatter_formats_climate_error():
+    """Climate-local error summaries stay outside the section widget code."""
+    result = format_scop_climate_error_summary("warmer", "bad climate")
+
+    assert result.title == "WARMER SCOP 결과"
+    assert result.fields == (("Climate", "Warmer"),)
+    assert result.status == "기류/설정 오류: bad climate"
+
+
+def _scop_text_values() -> dict[str, str]:
+    values: dict[str, str] = {}
+    for col in ScopTableModel.COL_KEYS:
+        values[f"declared_capacity_{col}"] = "3000"
+        values[f"declared_cop_{col}"] = "2.80"
+        values[f"tested_capacity_{col}"] = "3000"
+        values[f"tested_power_{col}"] = "1070"
+    return values

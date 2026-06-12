@@ -7,9 +7,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.en14825 import (
-    ScopPointInput,
-    ScopPointComputed,
-    ScopResultSummary,
     ScopAdapter,
     ScopTableModel,
 )
@@ -18,8 +15,11 @@ from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.result_panel import ResultPanel
-from apps.calculator.ui.result_models import ResultSummary
-from apps.calculator.ui.table_grid_model import parse_numeric_cell
+from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
+from apps.calculator.ui.sections.en14825_scop_result_formatter import (
+    format_scop_climate_error_summary,
+    format_scop_result_summary,
+)
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
@@ -28,18 +28,6 @@ from apps.calculator.ui.layout_constants import (
     TABLE_EDITABLE_BG,
     TABLE_PASS_BG,
 )
-
-STATUS_MAPPINGS = {
-    "idle": "대기 중",
-    "complete": "자동 계산 완료",
-    "invalid_design_load": "설계 난방 부하 오류 (0 초과 필요)",
-    "invalid_t_design": "설계 온도 오류 (16°C 불가)",
-    "invalid_climate": "기후 선택 오류",
-    "invalid_temp_override": "TOL/Tbiv 범위 오류 (TOL <= Tbiv 필요)",
-    "input_incomplete": "입력 대기 중 (Declared 또는 Tested 데이터 입력 필요)",
-    "declared_error": "Declared 계산 오류",
-    "tested_error": "Tested 계산 오류",
-}
 
 
 class En14825ScopSection:
@@ -313,21 +301,10 @@ class En14825ScopSection:
 
             try:
                 # 1. Read and validate text values from input matrix
-                text_vals = table.get_text_values()
-                invalid_fields = {}
-                parsed_vals = {}
-                for field_key, raw_val in text_vals.items():
-                    stripped = raw_val.strip()
-                    if not stripped:
-                        parsed_vals[field_key] = None
-                    else:
-                        try:
-                            parsed_vals[field_key] = parse_numeric_cell(raw_val)
-                        except ValueError:
-                            invalid_fields[field_key] = "숫자 입력 필요"
+                input_mapping = build_scop_point_inputs(table.get_text_values())
 
-                if invalid_fields:
-                    table.set_invalid_fields(invalid_fields)
+                if input_mapping.invalid_fields:
+                    table.set_invalid_fields(input_mapping.invalid_fields)
                     self._clear_computed_rows(clm)
                     continue
                 else:
@@ -342,15 +319,7 @@ class En14825ScopSection:
                 self._clear_computed_rows(clm)
                 continue
 
-            # Build point inputs
-            inputs = {}
-            for col in ScopTableModel.COL_KEYS:
-                inputs[col] = ScopPointInput(
-                    declared_capacity=parsed_vals[f"declared_capacity_{col}"],
-                    declared_cop=parsed_vals[f"declared_cop_{col}"],
-                    tested_capacity=parsed_vals[f"tested_capacity_{col}"],
-                    tested_power=parsed_vals[f"tested_power_{col}"],
-                )
+            inputs = input_mapping.inputs
 
             # Resolve effective temperatures
             try:
@@ -360,13 +329,7 @@ class En14825ScopSection:
             except Exception as exc:
                 self._clear_computed_rows(clm)
                 # Show climate-local status
-                summaries.append(
-                    ResultSummary(
-                        title=f"{clm.upper()} SCOP 결과",
-                        fields=(("Climate", clm.capitalize()),),
-                        status=f"기류/설정 오류: {str(exc)}",
-                    )
-                )
+                summaries.append(format_scop_climate_error_summary(clm, str(exc)))
                 continue
 
             # Perform calculation
@@ -411,24 +374,7 @@ class En14825ScopSection:
             controller._paint_selection()
 
             # Add to result summary list
-            status_text = STATUS_MAPPINGS.get(summary.status_code, "계산 완료")
-            fields = (
-                ("기후 (Climate)", clm.capitalize()),
-                ("Declared SCOP", f"{summary.declared_scop:.2f}" if summary.declared_scop is not None else "-"),
-                ("Tested SCOP", f"{summary.tested_scop:.2f}" if summary.tested_scop is not None else "-"),
-                ("SCOP %", f"{summary.scop_percent:.1f}%" if summary.scop_percent is not None else "-"),
-                ("Declared QH [kWh]", f"{summary.declared_qh_kwh:.1f}" if summary.declared_qh_kwh is not None else "-"),
-                ("Tested QH [kWh]", f"{summary.tested_qh_kwh:.1f}" if summary.tested_qh_kwh is not None else "-"),
-                ("Declared Total [kWh]", f"{summary.declared_total_kwh:.1f}" if summary.declared_total_kwh is not None else "-"),
-                ("Tested Total [kWh]", f"{summary.tested_total_kwh:.1f}" if summary.tested_total_kwh is not None else "-"),
-            )
-            summaries.append(
-                ResultSummary(
-                    title=f"EN14825 SCOP - {clm.capitalize()}",
-                    fields=fields,
-                    status=status_text,
-                )
-            )
+            summaries.append(format_scop_result_summary(summary, clm))
 
         if not summaries:
             self.result_panel.clear()
