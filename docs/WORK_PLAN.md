@@ -114,10 +114,10 @@
 
 ## Next Actions
 
-1. **EN14825 SCOP Slice 3: tab composition layout refit polish — next active slice**
-   - Helper extraction removed SCOP input mapping/result formatting from the
-     section; proceed without adding those responsibilities back.
-2. **SCOP climate card subcomponent split — defer unless Slice 3 needs card-level layout/refit ownership**
+1. **EN14825 SCOP tab composition manual smoke closeout — next active slice**
+   - Verify SEER/SCOP nested tab switching, SCOP climate toggles, and window
+     refit behavior manually on the target desktop.
+2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 Read/report discipline note: audit/report work should use heading/method-first
