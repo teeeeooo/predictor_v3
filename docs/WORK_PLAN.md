@@ -114,10 +114,10 @@
 
 ## Next Actions
 
-1. **Report 372 hygiene correction or SCOP section responsibility split audit — next active slice**
-   - Choose based on repo status before adding more responsibility to the SCOP
-     section UI path.
-2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after hygiene/audit decision**
+1. **SCOP section responsibility split audit — next active slice**
+   - Complete the responsibility audit before adding more responsibility to the
+     SCOP section UI path.
+2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after split audit decision**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
