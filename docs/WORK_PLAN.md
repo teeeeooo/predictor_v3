@@ -115,9 +115,9 @@
 
 ## Next Actions
 
-1. **EN14825 SCOP result surface UX correction — next active slice**
-   - Keep common EN14825 inputs owned by the EN14825 tab; correct only the SCOP
-     result surface placement/arrangement issues found during manual review.
+1. **EN14825 SCOP result surface manual smoke closeout — next active slice**
+   - Verify the right-side compact SCOP result surface, Declared/Tested stacked
+     rows, and Tdesignh read-only labels on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
