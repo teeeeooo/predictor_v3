@@ -1,4 +1,4 @@
-"""EN14825 standard tab containing the SEER calculation section."""
+"""EN14825 standard tab containing SEER and SCOP calculation sections."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
@@ -13,7 +14,7 @@ from apps.calculator.ui.window_shell import TkContentHuggingShell
 
 
 class En14825Tab(ttk.Frame):
-    """Tab container for the EN14825 SEER calculator UI."""
+    """Tab container for EN14825 SEER and SCOP calculator UI."""
 
     def __init__(self, parent: tk.Widget) -> None:
         super().__init__(parent)
@@ -22,24 +23,39 @@ class En14825Tab(ttk.Frame):
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
 
-        # Composes the SEER section
-        self.seer_section = En14825SeerSection(self._content)
-        self.seer_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-
-        # Alias for result panel validation compatibility
-        self.result_panel = self.seer_section.result_panel
-
         self._refit_scheduler = DynamicContentRefitScheduler(
             self,
             self._fit_toplevel_to_current_content,
         )
 
+        self._standard_notebook = ttk.Notebook(self._content)
+        self._standard_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._standard_notebook.bind(
+            "<<NotebookTabChanged>>", self._on_standard_tab_changed
+        )
+
+        self._seer_frame = ttk.Frame(self._standard_notebook)
+        self._scop_frame = ttk.Frame(self._standard_notebook)
+        self._standard_notebook.add(self._seer_frame, text="SEER")
+        self._standard_notebook.add(self._scop_frame, text="SCOP")
+
+        self.seer_section = En14825SeerSection(self._seer_frame)
+        self.seer_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.scop_section = En14825ScopSection(
+            self._scop_frame,
+            on_trace_visibility_changed=self._request_visible_lifecycle_refit,
+        )
+        self.scop_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Alias for result panel validation compatibility.
+        self.result_panel = self.seer_section.result_panel
+
         self._measurement = TkVisibleContentMeasurement(
             content=self._content,
             scrollbar=self._scrollbar,
             overflow_source=self._scrollable,
-            nested_notebook=None,
-            nested_notebook_active=lambda: False,
+            nested_notebook=self._standard_notebook,
+            nested_notebook_active=lambda: True,
             suppress_measurement=self._refit_scheduler.suppress_requests,
         )
         self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
@@ -79,3 +95,9 @@ class En14825Tab(ttk.Frame):
 
     def fit_toplevel_to_current_content_once(self) -> None:
         self._fit_toplevel_to_current_content()
+
+    def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
+        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+
+    def _on_standard_tab_changed(self, _event=None) -> None:
+        self._request_visible_lifecycle_refit()

@@ -502,3 +502,54 @@ def test_en14825_section_breaks():
 
     finally:
         root.destroy()
+
+
+def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
+    """Verify EN14825 tab composition exposes SEER/SCOP and SCOP refit callback."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.tabs.en14825_tab import En14825Tab
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+        from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+
+        tab = En14825Tab(root)
+        tab.pack(fill=tk.BOTH, expand=True)
+        root.update_idletasks()
+
+        tab_names = [
+            tab._standard_notebook.tab(tab_id, "text")
+            for tab_id in tab._standard_notebook.tabs()
+        ]
+        assert tab_names == ["SEER", "SCOP"]
+        assert isinstance(tab.seer_section, En14825SeerSection)
+        assert isinstance(tab.scop_section, En14825ScopSection)
+
+        tab.scop_section._auto_calc.flush_now()
+        summary_text = tab.scop_section.result_panel._text.get("1.0", tk.END)
+        assert "EN14825 SCOP - Average" in summary_text
+        assert "자동 계산 완료" in summary_text
+
+        refit_requests = []
+
+        def record_refit(*, settle_cycles: int = 1) -> None:
+            refit_requests.append(settle_cycles)
+
+        tab._refit_scheduler.request_refit = record_refit
+
+        tab._standard_notebook.select(tab._scop_frame)
+        tab._on_standard_tab_changed()
+        tab.scop_section.climate_active_vars["warmer"].set(True)
+        tab.scop_section._on_climate_toggle()
+        tab.scop_section.climate_active_vars["colder"].set(True)
+        tab.scop_section._on_climate_toggle()
+
+        assert refit_requests == [1, 1, 1]
+
+    finally:
+        root.destroy()
