@@ -108,6 +108,7 @@
 - 372: EN14825 SCOP Slice 2 section UI integration completed.
 - 373: Soft LOC warning triage workflow hardening completed; changed/new source
   soft warnings now require report triage before the next code slice.
+- 379: EN14825 common input placement and terminology correction completed.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
