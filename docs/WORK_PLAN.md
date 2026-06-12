@@ -114,10 +114,10 @@
 
 ## Next Actions
 
-1. **SCOP section minimal helper extraction — next active slice**
-   - Extract input mapping/result summary formatting responsibilities before
-     adding Slice 3 layout/refit responsibility to the SCOP section UI path.
-2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after helper extraction**
+1. **EN14825 SCOP Slice 3: tab composition layout refit polish — next active slice**
+   - Helper extraction removed SCOP input mapping/result formatting from the
+     section; proceed without adding those responsibilities back.
+2. **SCOP climate card subcomponent split — defer unless Slice 3 needs card-level layout/refit ownership**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 Read/report discipline note: audit/report work should use heading/method-first
