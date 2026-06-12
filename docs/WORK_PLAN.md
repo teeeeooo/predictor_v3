@@ -114,10 +114,10 @@
 
 ## Next Actions
 
-1. **SCOP section responsibility split audit — next active slice**
-   - Complete the responsibility audit before adding more responsibility to the
-     SCOP section UI path.
-2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after split audit decision**
+1. **SCOP section minimal helper extraction — next active slice**
+   - Extract input mapping/result summary formatting responsibilities before
+     adding Slice 3 layout/refit responsibility to the SCOP section UI path.
+2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after helper extraction**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
