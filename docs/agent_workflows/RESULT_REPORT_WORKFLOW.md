@@ -88,6 +88,26 @@ component is created or an existing stable path is replaced/extended, include a
 short reference parity section: whether an existing reference was checked, why it
 was or was not reused, and any unresolved parity gaps.
 
+For report-backed source/test changes, include compact structure warning
+coverage when relevant:
+
+- `Structure Warnings`: `none` is enough when no changed/new source file emits a
+  structure warning, or for docs-only work.
+- `Warning Triage`: if a changed/new source file emits a soft warning, record
+  the warning path, reason, and action.
+
+Recommended warning triage actions:
+
+- `none`
+- `accepted for this slice with reason`
+- `split audit required before next code slice`
+- `split implementation required before continuing`
+- `blocked`
+
+Do not turn every report into a long template. The rule is to prevent source
+structure warnings from being hidden behind "validation OK"; it does not change
+the active report count policy or the commit/push wording policy.
+
 ## Report Content
 
 - Do not record personal author names, email addresses, or other identifying

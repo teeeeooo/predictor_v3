@@ -143,6 +143,13 @@ When a stop condition appears, create a small owner-boundary preflight or
 report slice before implementation unless the user explicitly approves a scoped
 hotfix.
 
+Structure guard warnings are not architectural acceptance. When a new or
+substantially changed source file exceeds a soft LOC limit, the report should
+either explain why the current responsibilities can stay together for this slice
+or set the next action to a responsibility split audit. If repeated mapping,
+formatting, routing, result formatting, or lifecycle handling accumulates in a
+View or Adapter, revisit the owner boundary before adding more responsibility.
+
 ## Observed Example / Evidence
 
 Example names are evidence, not scope boundaries. A concrete dynamic GUI

@@ -52,6 +52,24 @@ Before editing UI surface code:
 - for structure-impacting UI work, `python3 -B tools/check_code_structure.py`
   can be used as a preflight guard, not only as a commit-time validator.
 
+## Post-implementation Soft Warning Triage
+
+After creating or substantially changing a UI surface, adapter, helper,
+controller, or view file, do not move directly to the next feature/code slice if
+`check_code_structure.py` reports a soft LOC warning for that changed/new file.
+Record a short responsibility triage first:
+
+- current responsibilities in the file;
+- responsibilities that still belong inside the current owner;
+- candidate responsibilities for helper/adapter/controller/view split;
+- next action: accepted for this slice with reason, split audit before the next
+  code slice, split implementation before continuing, or blocked.
+
+A soft warning is not an automatic hard failure and does not require mechanical
+line-count reduction. Small hotfixes or unchanged legacy warnings may be
+accepted with reason. If the next task would add more responsibility to the same
+warning file, complete the split audit or split implementation first.
+
 ## Table Surface Gate
 
 When creating or changing a table-shaped UI:

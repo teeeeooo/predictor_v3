@@ -42,6 +42,10 @@
 - 새 script/module/feature는 `AGENTS.md` New Code Quality Gate를 따른다.
 - 코드 구조 영향 작업은 가능하면 `python3 -B tools/check_code_structure.py`를
   검증에 포함하고 error/warning을 짧게 보고한다.
+- changed/new source file에 structure soft warning이 발생하면 다음
+  implementation slice 선택 전에
+  `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`의 warning triage rule을
+  따른다.
 - structure-impacting helper/adapter/surface/script 작업은
   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
   warning-first workflow와 checklist를 참고하여 preflight 필요 여부를 판단한다.

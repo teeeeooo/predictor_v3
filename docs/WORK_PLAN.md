@@ -106,14 +106,19 @@
 - 369: EN14825 SCOP integration design/preflight completed.
 - 370: EN14825 SCOP Slice 1 foundation (models, adapter, table model, tests) completed.
 - 372: EN14825 SCOP Slice 2 section UI integration completed.
+- 373: Soft LOC warning triage workflow hardening completed; changed/new source
+  soft warnings now require report triage before the next code slice.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
 
 ## Next Actions
 
-1. **EN14825 SCOP Slice 3: tab composition layout refit polish — next active slice**
-2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **Report 372 hygiene correction or SCOP section responsibility split audit — next active slice**
+   - Choose based on repo status before adding more responsibility to the SCOP
+     section UI path.
+2. **EN14825 SCOP Slice 3: tab composition layout refit polish — after hygiene/audit decision**
+3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 
 
