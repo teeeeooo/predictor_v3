@@ -73,6 +73,10 @@ output. Prefer a short inventory table or tight bullets for evidence,
 classification, decision, and next action. Keep validation and command output to
 one-line status summaries unless a failure/blocker needs detail.
 
+For compact report-only or narrow UI correction work, keep MVC/SoC, behavior
+preservation, and known risks to one or two bullets each unless the decision
+would otherwise be ambiguous.
+
 Full report default sections:
 
 - Goal

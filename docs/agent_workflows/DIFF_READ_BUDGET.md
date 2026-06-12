@@ -28,7 +28,12 @@ a blocker is stated. "Might be useful" is not a blocker.
 4. `git status --short`
 5. `rg -n "<function_or_keyword>" <target files>`
 6. `sed -n '<small range>' <file>`
-7. Only if still needed: `git diff -- <file>` or a narrow hunk/range.
+7. Only if still needed: `git diff -U1 -- <file>` or a narrow hunk/range.
+
+Keep source and test searches separate by default. Search source owners first;
+search tests only after the behavior or assertion surface is clear. Avoid one
+large `rg` across source and tests unless the task is specifically locating a
+symbol across both.
 
 ## Audit / Report Read Sequence
 
@@ -43,6 +48,10 @@ For audit/report work, make the first source pass structural, then targeted:
 Do not use large top-of-file reads such as `sed -n '1,160p'` for policy,
 workflow, or source files when a heading/method hit already identifies the
 needed range.
+
+For implementation diff review, prefer `git diff --stat` followed by
+`git diff -U1 -- <changed file>`. Use full-file diff output only when the hunk
+context is insufficient to verify ownership, behavior, or accidental edits.
 
 ## Smoke Follow-up Order
 
@@ -152,7 +161,8 @@ The map is reference evidence, not a source of truth or a semantic linter. Canon
 
 ## Tests And Command Output
 
-- Run focused tests first.
+- During implementation, run the highest-risk focused test or compile command
+  first; defer the full required validation command set to the final check.
 - Inspect long tracebacks only after failure.
 - Full pytest is allowed when the task touches core, calculator, ML, schema,
   golden, or broad behavior, but the need must be explicit.
