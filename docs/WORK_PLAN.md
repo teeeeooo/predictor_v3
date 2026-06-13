@@ -107,12 +107,17 @@
   table-input consistency rollback, target desktop manual smoke closeout, and
   active report lifecycle cleanup are summarized in
   [Summary 385](result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md).
+- 386: EN14825 appliance type auxiliary-hours audit completed; SCOP already
+  applies reversible/heating_only auxiliary hours, while SEER currently uses
+  reversible cooling hours only and needs a preflight before cooling_only
+  support is implemented.
 
 ## Next Actions
 
-1. **EN14825 appliance type auxiliary-hours audit — next active slice**
-   - Audit whether `reversible` / `heating_only` should alter auxiliary-hours
-     handling, owner boundary, and calculation contract before implementation.
+1. **EN14825 appliance type auxiliary-hours implementation preflight — next active slice**
+   - Choose the UI contract for cooling_only vs heating_only selections,
+     decide the cooling-hours owner, and define the backward-compatible SEER
+     appliance_type API/tests before implementation.
 2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
