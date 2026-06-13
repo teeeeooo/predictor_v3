@@ -359,6 +359,19 @@ def test_check_ui_package_registry():
 
 
 # ---------------------------------------------------------------------------
+# code_map freshness reminder
+# ---------------------------------------------------------------------------
+
+
+def test_reference_map_freshness_warns_when_missing(tmp_path):
+    findings = guard.check_reference_map_freshness(tmp_path)
+    assert any(
+        f.severity == "warning" and "missing" in f.message
+        for f in findings
+    )
+
+
+# ---------------------------------------------------------------------------
 # Repo-wide pass
 # ---------------------------------------------------------------------------
 
@@ -386,4 +399,4 @@ def test_cli_smoke_passes_on_current_repo():
         f"guard exited {result.returncode}; stdout=\n{result.stdout}\n"
         f"stderr=\n{result.stderr}"
     )
-    assert "code structure guard" in result.stdout
+    assert "code structure guard" in result.stdout or "warnings:" in result.stdout

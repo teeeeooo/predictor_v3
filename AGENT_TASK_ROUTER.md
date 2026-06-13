@@ -48,7 +48,8 @@
   따른다.
 - structure-impacting helper/adapter/surface/script 작업은
   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
-  warning-first workflow와 checklist를 참고하여 preflight 필요 여부를 판단한다.
+  warning-first workflow와 checklist를 참고하여 preflight 및 regenerate/report
+  필요 여부를 판단한다.
 - public API, diagnostics schema, JSON key, 함수명은 사용자 승인 없이 변경하지
   않는다.
 - 계산기 workflow owner: `docs/agent_workflows/CALCULATOR_WORKFLOW.md`.
@@ -196,7 +197,7 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 4. compatibility layer는 얇게 두고 local one-off conditional로 구조 문제를 덮지 않는다.
 5. 새 helper/adapter/surface를 만들거나 기존 파일을 split/move할 때는
    `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
-   참고한다.
+   참고하고 code_map check/regenerate 판단을 report에 남긴다.
 
 ### 4. Smoke / Golden / Validation test 추가
 
@@ -273,7 +274,7 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 4. 영향 범위에 맞는 focused UI validation을 수행한다.
 5. 새 table/window/detail/export surface 또는 helper/commonization을 만들 때는
    `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
-   참고한다.
+   참고하고 code_map check/regenerate 판단을 report에 남긴다.
 
 금지: `QTableWidget`, `setCellWidget`, UI 편의를 위한 core/schema/config 변경.
 

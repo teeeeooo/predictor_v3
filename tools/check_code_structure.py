@@ -40,6 +40,14 @@ from typing import Iterable, List, Sequence, Set, Tuple
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+try:
+    from tools.code_checker.metadata import evaluate_freshness
+except ModuleNotFoundError:  # pragma: no cover - script execution path
+    _TOOLS_DIR = Path(__file__).resolve().parent
+    _tools_str = str(_TOOLS_DIR)
+    if _tools_str not in sys.path:
+        sys.path.insert(0, _tools_str)
+    from code_checker.metadata import evaluate_freshness
 
 
 # ---------------------------------------------------------------------------
@@ -104,6 +112,7 @@ RAW_HEX_COLOR_PATTERN = re.compile(
 LOCAL_VISUAL_CONSTANT_PATTERN = re.compile(
     r"(?:_BG|_FG|_COLOR|_FONT|_PAD[A-Z_]*|_WIDTH|_HEIGHT)$"
 )
+REFERENCE_MAP_PATH = "docs/code_map/CODEBASE_REFERENCE_MAP.md"
 
 
 # ---------------------------------------------------------------------------
@@ -521,6 +530,30 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
     return findings
 
 
+def check_reference_map_freshness(repo_root: Path) -> List[Finding]:
+    """Emit warning-first reminders for code_map freshness.
+
+    This is intentionally metadata-only. It does not inspect architecture
+    semantics and never fails the structure guard.
+    """
+    relpath = REFERENCE_MAP_PATH
+    result = evaluate_freshness(repo_root / relpath, repo_root)
+    status = result.get("status")
+    if status in {"fresh", "unknown"}:
+        return []
+    return [
+        Finding(
+            "warning",
+            relpath,
+            "code_map freshness reminder: "
+            f"{status}; {result.get('message', '')} Run "
+            "python3 -B tools/code_checker/build_reference_map.py --check "
+            "and record checked/skipped/regenerated/no-change judgment for "
+            "structure-impacting work.",
+        )
+    ]
+
+
 
 # ---------------------------------------------------------------------------
 # File discovery
@@ -616,6 +649,9 @@ def run_checks(repo_root: Path) -> List[Finding]:
     for path in _iter_py_files(repo_root, "tests"):
         relpath = _relpath(path, repo_root)
         findings.extend(check_tests_mega_test_naming(relpath))
+
+    # 6. code_map freshness reminder (warning-first reference evidence gate)
+    findings.extend(check_reference_map_freshness(repo_root))
 
     return findings
 

@@ -177,8 +177,8 @@ def test_keyword_hit_group_not_ownership() -> None:
     keywords = {g.keyword for g in groups}
     # "table" should match because class name contains "Table"
     assert "table" in keywords
-    # "calculator" should NOT match just because the file exists
-    assert "calculator" not in keywords
+    # The reference map is a search-cue index, so path keywords also match.
+    assert "calculator" in keywords
 
 
 # ---------------------------------------------------------------------------

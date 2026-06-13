@@ -105,6 +105,14 @@ component is created or an existing stable path is replaced/extended, include a
 short reference parity section: whether an existing reference was checked, why it
 was or was not reused, and any unresolved parity gaps.
 
+For structure-impacting source changes, include a compact code map judgment from
+`docs/agent_workflows/DIFF_READ_BUDGET.md`:
+
+- `code_map_check`: `checked`, `skipped`, `regenerated`, or `no-change`
+- if skipped, record the short reason;
+- if regenerated, record whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` is
+  included in the diff.
+
 For report-backed source/test changes, include compact structure warning
 coverage when relevant:
 

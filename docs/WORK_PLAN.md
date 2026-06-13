@@ -129,6 +129,10 @@
 - 392: SCOP LOC soft warning deferred check completed; current SCOP section
   still exceeds the soft LOC limit, but no new card-level layout/refit
   responsibility is being added now, so split implementation remains deferred.
+- 393: Code map freshness correction completed; Reference Evidence Gate now
+  requires explicit code_map check/regenerate judgment for structure-impacting
+  source changes, while remaining warning-first evidence rather than a semantic
+  linter.
 
 ## Next Actions
 

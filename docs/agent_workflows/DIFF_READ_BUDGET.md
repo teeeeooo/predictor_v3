@@ -114,8 +114,8 @@ If the answer to all of the above is **No**, the agent can skip a detailed archi
 
 ### When to Run
 
-Run only when the task creates, moves, splits, replaces, or commonizes code
-surfaces. Examples:
+Run before editing when a structural source change creates, moves, splits,
+replaces, or commonizes code surfaces. Examples:
 
 - new helper / adapter / controller / table surface / result formatter /
   workflow script
@@ -123,6 +123,8 @@ surfaces. Examples:
 - result / detail / export / table / window commonization
 - new profile UI / calculator section
 - adding responsibility to a known hotspot file
+- new or meaningfully changed helper, adapter, controller, table surface,
+  result surface, window/commonization path, or profile UI
 
 ### When to Skip
 
@@ -147,7 +149,13 @@ Skip for work that does not change structure or surface inventory:
 - Regenerate (`python3 -B tools/code_checker/build_reference_map.py`) only after
   structural code changes (new files, moved files, new symbols, removed
   helpers).
+- After implementation, explicitly judge regenerate need when there are new
+  files, new symbols, moved files, removed helpers, new surfaces, or changed
+  owner/commonization paths.
 - Do not regenerate for wording-only or test-only changes.
+- In the report/final output, record `code_map_check` as `checked`, `skipped`,
+  `regenerated`, or `no-change`. If skipped, include the short reason. If
+  regenerated, include whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` changed.
 
 ### Map Commit Policy
 
