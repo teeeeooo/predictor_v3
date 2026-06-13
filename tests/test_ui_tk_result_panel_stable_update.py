@@ -88,6 +88,61 @@ class TestStableUpdate:
         tk_root.update_idletasks()
         assert status.cget("text") == "계산 완료"
 
+    def test_summary_columns_use_uniform_width_policy(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (
+                ResultSummary(
+                    title="CSPF",
+                    fields=(
+                        ("CSPF", "4.939"),
+                        ("CSTL [kWh]", "1769.6"),
+                        ("CSEC [kWh]", "358.3"),
+                    ),
+                    status="자동 계산 완료",
+                ),
+            )
+        )
+        tk_root.update_idletasks()
+
+        card = panel.summary_tables["CSPF"]
+        header_widths = tuple(
+            cell.winfo_width() for cell in panel.summary_header_cells["CSPF"]
+        )
+        value_widths = tuple(
+            cell.winfo_width() for cell in panel.summary_value_cells["CSPF"]
+        )
+
+        assert {
+            card.grid_columnconfigure(column)["uniform"]
+            for column in range(3)
+        } == {"summary_fields"}
+        assert len(set(header_widths)) == 1
+        assert len(set(value_widths)) == 1
+
+    def test_content_hug_summary_table_does_not_expand_with_window(self, tk_root) -> None:
+        tk_root.geometry("500x300")
+        panel = ResultPanel(tk_root, title="Test Results")
+        panel.pack(anchor="w")
+        panel.set_summaries(
+            (
+                ResultSummary(
+                    title="CSPF",
+                    fields=(
+                        ("CSPF", "4.939"),
+                        ("CSTL [kWh]", "1769.6"),
+                        ("CSEC [kWh]", "358.3"),
+                    ),
+                ),
+            )
+        )
+        tk_root.update_idletasks()
+        initial_width = panel.summary_tables["CSPF"].winfo_width()
+
+        tk_root.geometry("900x300")
+        tk_root.update_idletasks()
+
+        assert panel.summary_tables["CSPF"].winfo_width() == initial_width
+
 
 class TestRebuildOnShapeChange:
     """Shape changes trigger full widget rebuild."""

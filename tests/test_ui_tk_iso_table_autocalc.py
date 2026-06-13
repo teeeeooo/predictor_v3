@@ -1521,6 +1521,8 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
         ("CSPF", ("CSPF", "CSTL [kWh]", "CSEC [kWh]")),
         ("HSPF", ("HSPF", "HSTL [kWh]", "HSEC [kWh]")),
     ):
+        tab._metric_notebook.select(tab.sections[metric]._frame)
+        tab._metric_notebook.update_idletasks()
         panel = tab.sections[metric].result_panel
         result_labels = _label_texts(panel._summary_holder)
         for label in labels:
@@ -1530,6 +1532,16 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
         assert panel.summary_tables[metric].layout_policy == panel.layout_policy
         assert len(panel.summary_header_cells[metric]) == 3
         assert len(panel.summary_value_cells[metric]) == 3
+        header_widths = tuple(
+            cell.winfo_width() for cell in panel.summary_header_cells[metric]
+        )
+        value_widths = tuple(
+            cell.winfo_width() for cell in panel.summary_value_cells[metric]
+        )
+        assert len(set(header_widths)) == 1
+        assert len(set(value_widths)) == 1
+        assert header_widths[0] >= header_widths[1]
+        assert value_widths[0] >= value_widths[1]
         assert panel.summary_status_labels[metric].surface_role == "summary_status"
 
     tab.sections["CSPF"].recalculate_now()

@@ -124,11 +124,15 @@ class ResultPanel:
     ) -> tk.Frame:
         cell = tk.Frame(card, background=background, borderwidth=0)
         cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        self._configure_summary_column(card, column)
+        return cell
+
+    def _configure_summary_column(self, card: tk.Frame, column: int) -> None:
         card.columnconfigure(
             column,
             weight=0 if self.layout_policy == "content_hug" else 1,
+            uniform="summary_fields",
         )
-        return cell
 
     def _render_summary_table(self, row: int, summary: ResultSummary) -> None:
         card = tk.Frame(
@@ -180,10 +184,7 @@ class ResultPanel:
         self, card: tk.Frame, summary: ResultSummary, *, row: int
     ) -> None:
         if not summary.fields:
-            card.columnconfigure(
-                0,
-                weight=0 if self.layout_policy == "content_hug" else 1,
-            )
+            self._configure_summary_column(card, 0)
         status = tk.Label(
             card,
             text=summary.status,
@@ -210,10 +211,7 @@ class ResultPanel:
         values = []
         value_labels: list[tk.Label] = []
         for column, (label, value) in enumerate(summary.fields):
-            card.columnconfigure(
-                column,
-                weight=0 if self.layout_policy == "content_hug" else 1,
-            )
+            self._configure_summary_column(card, column)
             header = self._make_summary_cell(
                 card, row=1, column=column, background=RESULT_HEADER_BG
             )
