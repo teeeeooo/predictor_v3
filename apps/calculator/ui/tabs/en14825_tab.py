@@ -35,7 +35,6 @@ class En14825Tab(ttk.Frame):
         self._p_sb_var = tk.StringVar(value="0")
         self._p_ck_var = tk.StringVar(value="0")
         self._p_off_var = tk.StringVar(value="0")
-        self._appliance_type_var = tk.StringVar(value="reversible")
         self._common_input_tables: list[MetricInputTable] = []
         self._common_input_controllers: list[TkTableController] = []
         self._syncing_common_inputs = False
@@ -72,9 +71,6 @@ class En14825Tab(ttk.Frame):
             self._p_off_var,
         ):
             var.trace_add("write", lambda *args: self._on_common_numeric_var_changed())
-        self._appliance_type_var.trace_add(
-            "write", lambda *args: self._on_common_input_changed()
-        )
 
         # Alias for result panel validation compatibility.
         self.result_panel = self.seer_section.result_panel
@@ -137,7 +133,6 @@ class En14825Tab(ttk.Frame):
             "p_sb": self._p_sb_var.get(),
             "p_ck": self._p_ck_var.get(),
             "p_off": self._p_off_var.get(),
-            "appliance_type": self._appliance_type_var.get(),
         }
 
     def _common_numeric_values(self) -> dict[str, str]:
@@ -226,12 +221,4 @@ class En14825Tab(ttk.Frame):
         self._common_input_tables.append(table)
         self._common_input_controllers.append(TkTableController(table))
 
-        ttk.Label(common_frame, text="기기 유형").grid(row=0, column=1, sticky="w", padx=(10, 4), pady=6)
-        ttk.Combobox(
-            common_frame,
-            textvariable=self._appliance_type_var,
-            values=("reversible", "heating_only"),
-            width=12,
-            state="readonly",
-        ).grid(row=0, column=2, sticky="w", padx=(0, 6), pady=6)
         return common_frame

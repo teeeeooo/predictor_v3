@@ -621,7 +621,6 @@ def test_scop_gui_integration_basics():
             "p_sb": "0",
             "p_ck": "0",
             "p_off": "0",
-            "appliance_type": "reversible",
         }
         section._auto_calc.flush_now()
 
@@ -645,7 +644,6 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         "p_sb": "10",
         "p_ck": "20",
         "p_off": "5",
-        "appliance_type": "heating_only",
     }
 
     try:
@@ -653,6 +651,11 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 
         section = En14825ScopSection(root, common_input_values=lambda: common_values)
+        assert tuple(section.appliance_type_selector.cget("values")) == (
+            "reversible",
+            "heating_only",
+        )
+        section._appliance_type_var.set("heating_only")
         fake_core = FakeHeatingCalculator()
         section.adapter = ScopAdapter(calculator=fake_core)
 

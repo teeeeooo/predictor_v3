@@ -1,3 +1,5 @@
+import pytest
+
 from core.calculator_en14825 import EN14825Calculator
 
 
@@ -46,6 +48,75 @@ def test_en14825_golden_seer():
     )
 
     assert_golden_close(result["seer"], 9.104, "SEER")
+
+
+def test_en14825_seer_default_matches_reversible():
+    calculator = EN14825Calculator()
+    kwargs = {
+        "test_points": {
+            "A": (3.6233, 0.847),
+            "B": (2.4691, 0.389),
+            "C": (1.5150, 0.137),
+            "D": (1.1277, 0.062),
+        },
+        "p_design_c": 3.5,
+        "t_design_c": 35,
+        **STANDBY_POWER_KW,
+    }
+
+    default_result = calculator.calculate_seer(**kwargs)
+    reversible_result = calculator.calculate_seer(
+        **kwargs, appliance_type="reversible"
+    )
+
+    assert default_result["seer"] == reversible_result["seer"]
+    assert default_result["seer_on"] == reversible_result["seer_on"]
+    assert default_result["qc_kwh"] == reversible_result["qc_kwh"]
+
+
+def test_en14825_seer_cooling_only_auxiliary_hours_reduce_seer():
+    calculator = EN14825Calculator()
+    kwargs = {
+        "test_points": {
+            "A": (3.6233, 0.847),
+            "B": (2.4691, 0.389),
+            "C": (1.5150, 0.137),
+            "D": (1.1277, 0.062),
+        },
+        "p_design_c": 3.5,
+        "t_design_c": 35,
+        "p_to": 0.0066,
+        "p_sb": 0.0012,
+        "p_ck": 0.01,
+        "p_off": 0.01,
+    }
+
+    reversible_result = calculator.calculate_seer(
+        **kwargs, appliance_type="reversible"
+    )
+    cooling_only_result = calculator.calculate_seer(
+        **kwargs, appliance_type="cooling_only"
+    )
+
+    assert cooling_only_result["seer"] < reversible_result["seer"]
+
+
+def test_en14825_seer_invalid_appliance_type_raises():
+    calculator = EN14825Calculator()
+
+    with pytest.raises(ValueError, match="Unknown SEER appliance_type"):
+        calculator.calculate_seer(
+            test_points={
+                "A": (3.6233, 0.847),
+                "B": (2.4691, 0.389),
+                "C": (1.5150, 0.137),
+                "D": (1.1277, 0.062),
+            },
+            p_design_c=3.5,
+            t_design_c=35,
+            appliance_type="heating_only",
+            **STANDBY_POWER_KW,
+        )
 
 
 def test_en14825_golden_scop_average():

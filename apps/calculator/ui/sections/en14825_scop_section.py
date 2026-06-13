@@ -48,7 +48,6 @@ class En14825ScopSection:
                 "p_sb": "0",
                 "p_ck": "0",
                 "p_off": "0",
-                "appliance_type": "reversible",
             }
         )
         self.adapter = ScopAdapter()
@@ -59,6 +58,7 @@ class En14825ScopSection:
 
         # 1. Top Auxiliary Parameters Frame
         self._cd_var = tk.StringVar(value="0.25")
+        self._appliance_type_var = tk.StringVar(value="reversible")
         self._syncing_aux_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
@@ -85,6 +85,19 @@ class En14825ScopSection:
         self.cd_table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
         self.cd_table.set_values({"cd": self._cd_var.get()})
         self.cd_controller = TkTableController(self.cd_table)
+        ttk.Label(specs_frame, text="난방 기기 유형").grid(
+            row=0, column=1, sticky="w", padx=(10, 4), pady=6
+        )
+        self.appliance_type_selector = ttk.Combobox(
+            specs_frame,
+            textvariable=self._appliance_type_var,
+            values=("reversible", "heating_only"),
+            width=12,
+            state="readonly",
+        )
+        self.appliance_type_selector.grid(
+            row=0, column=2, sticky="w", padx=(0, 6), pady=6
+        )
 
         # 2. Stacked Climate Cards
         self.climates = ("average", "warmer", "colder")
@@ -265,6 +278,9 @@ class En14825ScopSection:
 
         # Bind auxiliary changes to scheduler
         self._cd_var.trace_add("write", lambda *args: self._on_cd_var_changed())
+        self._appliance_type_var.trace_add(
+            "write", lambda *args: self._auto_calc.schedule()
+        )
 
         for d_vars in (self.p_design_h_vars, self.tbiv_vars, self.tol_vars):
             for clm, var in d_vars.items():
@@ -361,7 +377,7 @@ class En14825ScopSection:
         p_ck_w = self._parse_float_safe(common_inputs.get("p_ck", "0"), 0.0)
         p_off_w = self._parse_float_safe(common_inputs.get("p_off", "0"), 0.0)
         cd = self._parse_float_safe(self._cd_var.get(), 0.25)
-        appliance_type = common_inputs.get("appliance_type", "reversible")
+        appliance_type = self._appliance_type_var.get()
 
         summaries = []
 

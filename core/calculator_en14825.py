@@ -29,6 +29,10 @@ H_TO  = 221    # thermostat-off 시간 (h), Table D.1
 H_SB  = 2142   # standby 시간 (h), Table D.1
 H_CK  = 2672   # crankcase heater 시간 (h), Table D.3 Reversible
 H_OFF = 0      # off 시간 (h), Table D.1 Reversible = 0
+SEER_OPERATIONAL_HOURS = {
+    "reversible": {"h_ce": H_CE, "h_to": H_TO, "h_sb": H_SB, "h_ck": H_CK, "h_off": H_OFF},
+    "cooling_only": {"h_ce": 350, "h_to": 221, "h_sb": 2142, "h_ck": 7760, "h_off": 5088},
+}
 
 # ── 열화계수 기본값 (규격 6.4.2.1) ───────────────────────
 CD_DEFAULT = 0.25
@@ -230,22 +234,37 @@ class EN14825Calculator:
 
         return numerator / denominator
 
+    def _get_seer_operational_hours(self, appliance_type: str) -> dict:
+        if appliance_type not in SEER_OPERATIONAL_HOURS:
+            raise ValueError(
+                f"Unknown SEER appliance_type: {appliance_type}. "
+                f"Expected one of {sorted(SEER_OPERATIONAL_HOURS.keys())}"
+            )
+        return SEER_OPERATIONAL_HOURS[appliance_type]
+
     # [버그 1 수정]: 들여쓰기 4칸 정렬
     def calculate_seer(self, test_points: dict, p_to: float, p_sb: float, p_ck: float, p_off: float,
                        p_design_c: float, # A포인트와 분리하여 독립적으로 받음
-                       t_design_c: float = T_DESIGN_C, cd: float = CD_DEFAULT) -> dict:
+                       t_design_c: float = T_DESIGN_C, cd: float = CD_DEFAULT, *,
+                       appliance_type: str = "reversible") -> dict:
         """
         EN 14825 SEER 계산
         """
         self._validate_test_points(test_points)
+        operational_hours = self._get_seer_operational_hours(appliance_type)
 
         # 1. 연간 냉방수요 Qc (kWh) — 입력받은 설계 부하 사용
-        qc_kwh = p_design_c * H_CE
+        qc_kwh = p_design_c * operational_hours["h_ce"]
         
         # 2. SEERon 계산 — 보간 로직에 p_design_c 전달
         seer_on = self._calculate_seer_on(test_points, p_design_c, t_design_c, cd)        
        
-        standby_kwh = (H_TO * p_to) + (H_SB * p_sb) + (H_CK * p_ck) + (H_OFF * p_off)
+        standby_kwh = (
+            operational_hours["h_to"] * p_to
+            + operational_hours["h_sb"] * p_sb
+            + operational_hours["h_ck"] * p_ck
+            + operational_hours["h_off"] * p_off
+        )
         
         active_kwh   = qc_kwh / seer_on
         total_kwh    = active_kwh + standby_kwh

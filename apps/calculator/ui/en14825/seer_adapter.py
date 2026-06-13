@@ -127,6 +127,7 @@ class SeerAdapter:
         p_off_w: float = 0.0,
         t_design_c: float = T_DESIGN_C,
         cd: float = CD_DEFAULT,
+        appliance_type: str = "reversible",
     ) -> SeerResultSummary:
         """Call the core SEER calculator and build the final summary.
 
@@ -194,6 +195,7 @@ class SeerAdapter:
                     p_design_c=p_design_c_kw,
                     t_design_c=t_design_c,
                     cd=cd,
+                    appliance_type=appliance_type,
                 )
                 summary.declared_seer = dec_res["seer"]
                 summary.declared_qc_kwh = dec_res["qc_kwh"]
@@ -222,6 +224,7 @@ class SeerAdapter:
                     p_design_c=p_design_c_kw,
                     t_design_c=t_design_c,
                     cd=cd,
+                    appliance_type=appliance_type,
                 )
                 summary.tested_seer = test_res["seer"]
                 summary.tested_qc_kwh = test_res["qc_kwh"]

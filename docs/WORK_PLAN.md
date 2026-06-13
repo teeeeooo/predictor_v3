@@ -111,13 +111,15 @@
   applies reversible/heating_only auxiliary hours, while SEER currently uses
   reversible cooling hours only and needs a preflight before cooling_only
   support is implemented.
+- 387: EN14825 SEER cooling_only auxiliary-hours support completed; default
+  reversible SEER remains unchanged, cooling_only applies official HOFF/HCK
+  hours, and appliance selectors are split between SEER and SCOP.
 
 ## Next Actions
 
-1. **EN14825 appliance type auxiliary-hours implementation preflight — next active slice**
-   - Choose the UI contract for cooling_only vs heating_only selections,
-     decide the cooling-hours owner, and define the backward-compatible SEER
-     appliance_type API/tests before implementation.
+1. **EN14825 appliance type manual smoke closeout — next active slice**
+   - Verify SEER reversible/cooling_only selector behavior and SCOP
+     reversible/heating_only selector behavior on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

@@ -64,6 +64,7 @@ class En14825SeerSection:
         self._p_design_var = tk.StringVar(value="3000")
         self._t_design_var = tk.StringVar(value="35.0")
         self._cd_var = tk.StringVar(value="0.25")
+        self._appliance_type_var = tk.StringVar(value="reversible")
         self._syncing_design_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
@@ -101,6 +102,19 @@ class En14825SeerSection:
             self._on_design_table_values_changed
         )
         self.design_controller = TkTableController(self.design_table)
+        ttk.Label(design_frame, text="냉방 기기 유형").grid(
+            row=0, column=1, sticky="w", padx=(10, 4), pady=6
+        )
+        self.appliance_type_selector = ttk.Combobox(
+            design_frame,
+            textvariable=self._appliance_type_var,
+            values=("reversible", "cooling_only"),
+            width=12,
+            state="readonly",
+        )
+        self.appliance_type_selector.grid(
+            row=0, column=2, sticky="w", padx=(0, 6), pady=6
+        )
 
         # 2. Main Matrix Table
         ttk.Label(self._frame, text="SEER Test Conditions & Data").grid(
@@ -191,6 +205,9 @@ class En14825SeerSection:
             self._cd_var,
         ):
             var.trace_add("write", lambda *args: self._on_design_var_changed())
+        self._appliance_type_var.trace_add(
+            "write", lambda *args: self._auto_calc.schedule()
+        )
 
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self._auto_calc.flush_now()
@@ -263,6 +280,7 @@ class En14825SeerSection:
             p_design_c_w = self._parse_float_safe(self._p_design_var.get(), 0.0)
             t_design_c = self._parse_float_safe(self._t_design_var.get(), 35.0)
             cd = self._parse_float_safe(self._cd_var.get(), 0.25)
+            appliance_type = self._appliance_type_var.get()
             common_inputs = self._common_input_values()
             p_to_w = self._parse_float_safe(common_inputs.get("p_to", "0"), 0.0)
             p_sb_w = self._parse_float_safe(common_inputs.get("p_sb", "0"), 0.0)
@@ -295,6 +313,7 @@ class En14825SeerSection:
             p_off_w=p_off_w,
             t_design_c=t_design_c,
             cd=cd,
+            appliance_type=appliance_type,
         )
 
         self._current_table_model = SeerTableModel(

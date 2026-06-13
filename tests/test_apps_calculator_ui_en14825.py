@@ -23,9 +23,11 @@ class FakeCalculator:
         self.captured_p_design_c = None
         self.captured_t_design_c = None
         self.captured_cd = None
+        self.captured_appliance_type = None
 
     def calculate_seer(self, test_points: dict, p_to: float, p_sb: float, p_ck: float, p_off: float,
-                       p_design_c: float, t_design_c: float, cd: float) -> dict:
+                       p_design_c: float, t_design_c: float, cd: float,
+                       appliance_type: str = "reversible") -> dict:
         self.captured_test_points = test_points
         self.captured_p_to = p_to
         self.captured_p_sb = p_sb
@@ -34,6 +36,7 @@ class FakeCalculator:
         self.captured_p_design_c = p_design_c
         self.captured_t_design_c = t_design_c
         self.captured_cd = cd
+        self.captured_appliance_type = appliance_type
         return {
             "seer": 5.0,
             "seer_on": 5.2,
@@ -113,6 +116,7 @@ def test_seer_adapter_w_to_kw_conversion_with_stub():
         p_off_w=10.0,
         t_design_c=35.0,
         cd=0.25,
+        appliance_type="cooling_only",
     )
 
     # Verify W -> kW conversion on auxiliary bounds
@@ -123,6 +127,7 @@ def test_seer_adapter_w_to_kw_conversion_with_stub():
     assert fake_core.captured_p_off == 0.01
     assert fake_core.captured_t_design_c == 35.0
     assert fake_core.captured_cd == 0.25
+    assert fake_core.captured_appliance_type == "cooling_only"
 
     # Verify W -> kW conversion on test points
     # Point A: declared capacity 3600W -> 3.6kW, derived power 900W -> 0.9kW
@@ -539,10 +544,18 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert hasattr(tab, "_p_sb_var")
         assert hasattr(tab, "_p_ck_var")
         assert hasattr(tab, "_p_off_var")
-        assert hasattr(tab, "_appliance_type_var")
+        assert not hasattr(tab, "_appliance_type_var")
+        assert "appliance_type" not in tab._common_input_tables[0].get_text_values()
         assert not hasattr(tab.seer_section, "_p_to_var")
         assert not hasattr(tab.scop_section, "_p_to_var")
-        assert not hasattr(tab.scop_section, "_appliance_type_var")
+        assert tuple(tab.seer_section.appliance_type_selector.cget("values")) == (
+            "reversible",
+            "cooling_only",
+        )
+        assert tuple(tab.scop_section.appliance_type_selector.cget("values")) == (
+            "reversible",
+            "heating_only",
+        )
         seer_snapshot = tab._measurement.snapshot()
         seer_diagnostics = seer_snapshot.diagnostics
         assert tab._standard_notebook.tab(tab._standard_notebook.select(), "text") == "SEER"
@@ -558,7 +571,8 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         tab._p_sb_var.set("5")
         tab._p_ck_var.set("2")
         tab._p_off_var.set("1")
-        tab._appliance_type_var.set("heating_only")
+        tab.seer_section._appliance_type_var.set("cooling_only")
+        tab.scop_section._appliance_type_var.set("heating_only")
 
         tab.scop_section._auto_calc.flush_now()
         summary_text = tab.scop_section.result_panel._text.get("1.0", tk.END)
@@ -575,7 +589,8 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         tab._standard_notebook.select(tab._scop_frame)
         tab._on_standard_tab_changed()
         assert tab._p_to_var.get() == "25"
-        assert tab._appliance_type_var.get() == "heating_only"
+        assert tab.seer_section._appliance_type_var.get() == "cooling_only"
+        assert tab.scop_section._appliance_type_var.get() == "heating_only"
         tab.scop_section.climate_active_vars["warmer"].set(True)
         tab.scop_section._on_climate_toggle()
         tab.scop_section.climate_active_vars["colder"].set(True)
