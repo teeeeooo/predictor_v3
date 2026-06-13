@@ -123,15 +123,14 @@
 - 390: ResultPanel summary column width alignment completed; summary columns
   now use a uniform grid group so short metric columns align with kWh columns
   while content-hug table width remains bounded.
+- 391: ResultPanel/table width manual smoke closeout completed; target desktop
+  check confirmed ISO/HK/EN14825 input/result tables do not over-stretch on
+  window expansion and Hong Kong CSPF/HSPF result columns align correctly.
 
 ## Next Actions
 
-1. **Calculator bounded-width manual smoke closeout — next active slice**
-   - Verify ISO/HK/EN14825 input and result tables keep content width when the
-     calculator window is expanded on the target desktop, including Hong Kong
-     CSPF/HSPF summary column alignment.
-2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
-3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
+2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated

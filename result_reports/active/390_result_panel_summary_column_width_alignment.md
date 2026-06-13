@@ -36,10 +36,13 @@ width while the card remains bounded to content width.
 - `python3 -B -m pytest tests/test_ui_tk_iso_table_autocalc.py -q`
 - `python3 -B -m pytest tests/test_apps_calculator_ui_en14825.py -q`
 - `python3 -B -m pytest tests/test_apps_calculator_ui_en14825_scop.py -q`
+- Manual smoke:
+  - Window expansion does not over-stretch ISO/HK/EN14825 input/result tables.
+  - Hong Kong CSPF/HSPF result table column width alignment has no visible issue.
 
 Full final validation is recorded in the terminal closeout.
 
 ## Next
 
-Run target desktop manual smoke for ISO/HK/EN14825 bounded table width and
-Hong Kong CSPF/HSPF summary column alignment.
+Manual smoke pending is closed. No follow-up is required for this result panel
+column-width issue.
