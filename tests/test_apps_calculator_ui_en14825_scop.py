@@ -532,6 +532,9 @@ def test_scop_gui_integration_basics():
         assert section.t_design_h_value_labels["colder"].cget("text") == "-22"
         assert not hasattr(section, "_result_surface")
         assert section._result_cards["average"].grid_info()["column"] == 1
+        assert section._result_cards["average"].grid_info()["row"] == 1
+        assert section.input_tables["average"].grid_info()["row"] == 1
+        assert section._result_cards["average"].grid_info()["pady"] == section.input_tables["average"].grid_info()["pady"]
         assert section._result_cards["average"].master.master is section.climate_inner_frames["average"]
         assert section.result_panel._frame.winfo_manager() == ""
         assert section.climate_active_vars["average"].get() is True
@@ -559,6 +562,13 @@ def test_scop_gui_integration_basics():
         assert section._result_cards["warmer"].winfo_manager() == ""
         assert section._result_value_labels["average"][("Declared", "SCOP")].cget("text") != "-"
         assert section._result_value_labels["average"][("Tested", "SCOP")].cget("text") != "-"
+        from apps.calculator.ui.layout_constants import RESULT_HEADER_BG, TABLE_PASS_BG
+
+        result_surface = section._result_surfaces["average"]
+        assert result_surface.header_labels["row_label"].cget("text") == "구분"
+        assert result_surface.header_labels["row_label"].cget("background") == RESULT_HEADER_BG
+        assert section._result_value_labels["average"][("Tested", "SCOP")].cget("background") == TABLE_PASS_BG
+        assert result_surface.row_header_labels["Tested"].cget("background") == TABLE_PASS_BG
 
         # 4. table input 변경 후 tested_cop, capacity_percent, cop_percent row가 갱신되는지 확인
         section.input_tables["average"].set_value("tested_power_A", "1200")

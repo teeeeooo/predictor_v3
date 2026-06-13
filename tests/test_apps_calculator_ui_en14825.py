@@ -543,6 +543,16 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert not hasattr(tab.seer_section, "_p_to_var")
         assert not hasattr(tab.scop_section, "_p_to_var")
         assert not hasattr(tab.scop_section, "_appliance_type_var")
+        seer_snapshot = tab._measurement.snapshot()
+        seer_diagnostics = seer_snapshot.diagnostics
+        assert tab._standard_notebook.tab(tab._standard_notebook.select(), "text") == "SEER"
+        assert seer_diagnostics["nested_current_tab_width"] == tab._seer_frame.winfo_reqwidth()
+        assert seer_diagnostics["nested_widest_tab_width"] == tab._scop_frame.winfo_reqwidth()
+        assert seer_diagnostics["chrome_width_estimate"] < (
+            seer_diagnostics["nested_notebook_width"]
+            - seer_diagnostics["nested_current_tab_width"]
+        )
+        assert seer_snapshot.preferred_size[0] < seer_diagnostics["nested_notebook_width"]
 
         tab._p_to_var.set("25")
         tab._p_sb_var.set("5")

@@ -143,14 +143,11 @@ class En14825ScopSection:
             body.pack(fill=tk.BOTH, expand=True)
             body.columnconfigure(0, weight=1)
             body.columnconfigure(1, weight=0)
-            body.rowconfigure(0, weight=1)
-
-            input_area = ttk.Frame(body)
-            input_area.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+            body.rowconfigure(1, weight=1)
 
             # Setup climate specific auxiliary inputs
-            inputs_frame = ttk.Frame(input_area)
-            inputs_frame.pack(anchor="w", pady=(0, 6))
+            inputs_frame = ttk.Frame(body)
+            inputs_frame.grid(row=0, column=0, sticky="w", pady=(0, 6))
 
             ttk.Label(inputs_frame, text="Pdesignh [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4))
             ttk.Entry(inputs_frame, textvariable=self.p_design_h_vars[clm], width=8).grid(row=0, column=1, sticky="w", padx=(0, 10))
@@ -173,7 +170,7 @@ class En14825ScopSection:
                     editable_cells[(row, col)] = f"{row}_{col}"
 
             table = MetricInputTable(
-                input_area,
+                body,
                 columns=tuple(
                     (col_key, col_key) for col_key in ScopTableModel.COL_KEYS
                 ),
@@ -184,7 +181,7 @@ class En14825ScopSection:
                 editable_cells=editable_cells,
                 section_break_before_rows=ScopTableModel.SECTION_BREAK_BEFORE_ROWS,
             )
-            table.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
+            table.grid(row=1, column=0, sticky="nsew", padx=(0, 8), pady=(0, 6))
             table.default_cell_background = lambda pos, c=clm: self._resolve_cell_bg(pos, c)
             self.input_tables[clm] = table
 
@@ -221,7 +218,7 @@ class En14825ScopSection:
             self.table_controllers[clm] = TkTableController(table)
 
             result_surface = ScopResultSurface(body)
-            result_surface.grid(row=0, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
+            result_surface.grid(row=1, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
             self._result_surfaces[clm] = result_surface
             self._result_cards[clm] = result_surface.frame
             self._result_value_labels[clm] = result_surface.value_labels

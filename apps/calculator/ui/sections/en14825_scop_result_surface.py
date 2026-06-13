@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk
 
 from apps.calculator.ui.en14825 import ScopResultSummary
 from apps.calculator.ui.layout_constants import (
     RESULT_HEADER_BG,
     RESULT_STATUS_FG,
     RESULT_VALUE_BG,
+    TABLE_PASS_BG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
@@ -36,6 +36,8 @@ class ScopResultSurface:
             relief=tk.SOLID,
         )
         self._frame.surface_role = "summary_table"
+        self._header_labels: dict[str, tk.Label] = {}
+        self._row_header_labels: dict[str, tk.Label] = {}
         self._status_label = tk.Label(
             self._frame,
             text="대기 중",
@@ -56,6 +58,14 @@ class ScopResultSurface:
     @property
     def value_labels(self) -> dict[tuple[str, str], tk.Label]:
         return self._value_labels
+
+    @property
+    def header_labels(self) -> dict[str, tk.Label]:
+        return self._header_labels
+
+    @property
+    def row_header_labels(self) -> dict[str, tk.Label]:
+        return self._row_header_labels
 
     def grid(self, **kwargs) -> None:
         self._frame.grid(**kwargs)
@@ -92,27 +102,39 @@ class ScopResultSurface:
         for column in range(1, len(self._COLUMNS) + 1):
             self._frame.columnconfigure(column, weight=1)
 
-        self._status_label.grid(
-            row=0,
-            column=0,
-            columnspan=len(self._COLUMNS) + 1,
-            sticky="ew",
-            padx=(0, 1),
-            pady=(0, 1),
+        self._header_labels["row_label"] = self._make_cell(
+            row=0, column=0, text="구분", header=True
         )
-        ttk.Label(self._frame, text="").grid(row=1, column=0, sticky="ew")
         for column, key in enumerate(self._COLUMNS, start=1):
-            self._make_cell(row=1, column=column, text=key, header=True)
+            self._header_labels[key] = self._make_cell(
+                row=0, column=column, text=key, header=True
+            )
 
-        for row_index, row_label in enumerate(("Declared", "Tested"), start=2):
-            self._make_cell(row=row_index, column=0, text=row_label, header=True)
+        for row_index, row_label in enumerate(("Declared", "Tested"), start=1):
+            highlight = row_label == "Tested"
+            self._row_header_labels[row_label] = self._make_cell(
+                row=row_index,
+                column=0,
+                text=row_label,
+                header=True,
+                background=TABLE_PASS_BG if highlight else None,
+            )
             for column, key in enumerate(self._COLUMNS, start=1):
                 self._value_labels[(row_label, key)] = self._make_cell(
                     row=row_index,
                     column=column,
                     text="-",
                     anchor="e",
+                    background=TABLE_PASS_BG if highlight else None,
                 )
+        self._status_label.grid(
+            row=3,
+            column=0,
+            columnspan=len(self._COLUMNS) + 1,
+            sticky="ew",
+            padx=(0, 1),
+            pady=(0, 1),
+        )
 
     def _make_cell(
         self,
@@ -122,8 +144,9 @@ class ScopResultSurface:
         text: str,
         header: bool = False,
         anchor: str = "center",
+        background: str | None = None,
     ) -> tk.Label:
-        background = RESULT_HEADER_BG if header else RESULT_VALUE_BG
+        background = background or (RESULT_HEADER_BG if header else RESULT_VALUE_BG)
         font = TABLE_HEADER_FONT if header else TABLE_BODY_FONT
         label = tk.Label(
             self._frame,

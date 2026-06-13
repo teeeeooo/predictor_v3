@@ -112,16 +112,20 @@
 - 381: EN14825 SCOP per-climate result surface correction completed; root-level
   SCOP right-side result surface removed and climate-local result blocks added
   beside each active input table.
+- 382: EN14825 SCOP window size/result surface correction completed; SEER
+  preferred-size measurement no longer inherits hidden SCOP sticky width, SCOP
+  result tables align with input table tops, and Tested result cells use pass
+  green emphasis.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
 
 ## Next Actions
 
-1. **EN14825 SCOP per-climate result surface manual smoke closeout — next active slice**
-   - Verify Average/Warmer/Colder climate-local compact result blocks, inactive
-     climate collapse behavior, first-launch width, SEER tab width, and
-     Tdesignh read-only labels on the target desktop.
+1. **EN14825 SCOP window size/result surface smoke closeout — next active slice**
+   - Re-check first-launch width, EN14825 SEER tab width, SCOP result table top
+     alignment, Tested row pass emphasis, inactive climate collapse behavior,
+     and Tdesignh read-only labels on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

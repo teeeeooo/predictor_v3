@@ -24,6 +24,7 @@ class NestedNotebookMeasurement:
 
     max_tab_width: int = 0
     max_tab_height: int = 0
+    widest_tab_width: int = 0
     current_tab_width: int = 0
     current_tab_height: int = 0
     notebook_height: int = 0
@@ -123,6 +124,7 @@ class TkVisibleContentMeasurement:
             "content_reqheight": self._content.winfo_reqheight(),
             "nested_max_tab_width": nested.max_tab_width,
             "nested_max_tab_height": nested.max_tab_height,
+            "nested_widest_tab_width": nested.widest_tab_width,
             "nested_current_tab_width": nested.current_tab_width,
             "nested_current_tab_height": nested.current_tab_height,
             "nested_notebook_height": nested.notebook_height,
@@ -151,6 +153,10 @@ class TkVisibleContentMeasurement:
         current_widget = notebook.nametowidget(current_tab)
         current_tab_width = current_widget.winfo_reqwidth()
         current_tab_height = current_widget.winfo_reqheight()
+        tab_widths = tuple(
+            notebook.nametowidget(tab_id).winfo_reqwidth() for tab_id in tabs
+        )
+        widest_tab_width = max((current_tab_width, *tab_widths), default=current_tab_width)
         notebook_height = notebook.winfo_reqheight()
         notebook_width = notebook.winfo_reqwidth()
 
@@ -162,15 +168,16 @@ class TkVisibleContentMeasurement:
         if self._chrome_height_estimate is None:
             self._chrome_height_estimate = max(0, notebook_height - current_tab_height)
 
-        # Estimate tab border/padding chrome width once.
-        # At first visit, notebook_width should equal chrome + current_tab_width,
-        # so notebook_width - current_tab_width gives the chrome width.
+        # Estimate tab border/padding chrome width once. Tk notebook requested
+        # width can already be sticky at a hidden wide tab, so subtract the
+        # widest known tab instead of the current visible tab.
         if self._chrome_width_estimate is None:
-            self._chrome_width_estimate = max(0, notebook_width - current_tab_width)
+            self._chrome_width_estimate = max(0, notebook_width - widest_tab_width)
 
         return NestedNotebookMeasurement(
             max_tab_width=current_tab_width,
             max_tab_height=current_tab_height,
+            widest_tab_width=widest_tab_width,
             current_tab_width=current_tab_width,
             current_tab_height=current_tab_height,
             notebook_height=notebook_height,
