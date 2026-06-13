@@ -51,7 +51,7 @@ class MetricInputTable(ttk.Frame):
         editable_cells: Mapping[CellAddress, str],
         row_header_chars: int = TABLE_ROW_HEADER_CHARS,
         data_column_chars: int = TABLE_DATA_COLUMN_CHARS,
-        layout_policy: str = "responsive",
+        layout_policy: str = "content_hug",
         values_changed_callback: ValuesChangedCallback | None = None,
         section_break_before_rows: Iterable[str] | None = None,
         **kwargs: object,

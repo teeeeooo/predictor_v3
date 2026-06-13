@@ -33,7 +33,7 @@ class BinTraceTable:
         title: str | None = None,
         schema: BinDetailSchema = COOLING_BIN_DETAIL_SCHEMA,
     ) -> None:
-        self.layout_policy = "responsive"
+        self.layout_policy = "content_hug"
         self.surface_role = "bin_trace_surface"
         self.schema = schema
         self.column_labels = schema.column_labels
@@ -45,7 +45,7 @@ class BinTraceTable:
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
 
         self._table_frame = ttk.Frame(self._frame)
-        self._table_frame.pack(side=tk.TOP, fill=tk.X)
+        self._table_frame.pack(side=tk.TOP, anchor="w")
         self.table = ttk.Treeview(
             self._table_frame,
             columns=self.column_labels,
@@ -58,7 +58,7 @@ class BinTraceTable:
             self._table_frame, orient=tk.VERTICAL, command=self.table.yview
         )
         self.table.configure(yscrollcommand=self.scrollbar.set)
-        self.table.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.table.pack(side=tk.LEFT)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         for column in self.column_labels:
             self.table.heading(column, text=column)
@@ -67,7 +67,7 @@ class BinTraceTable:
                 anchor=tk.CENTER,
                 width=TABLE_DATA_COLUMN_CHARS * 9,
                 minwidth=80,
-                stretch=True,
+                stretch=False,
             )
 
         self.table.bind("<Control-c>", self.copy)
@@ -102,7 +102,7 @@ class BinTraceTable:
         if self.status_label.winfo_manager():
             self.status_label.pack_forget()
         if not self._table_frame.winfo_manager():
-            self._table_frame.pack(side=tk.TOP, fill=tk.X)
+            self._table_frame.pack(side=tk.TOP, anchor="w")
         self.table.configure(height=max(1, min(len(rows), _MAX_VISIBLE_ROWS)))
         for row in rows:
             self.table.insert("", tk.END, values=row)
@@ -115,7 +115,7 @@ class BinTraceTable:
         self._table_frame.pack_forget()
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, fill=tk.X)
+            self.status_label.pack(side=tk.TOP, anchor="w")
 
     def table_rows(self) -> tuple[tuple[str, ...], ...]:
         return self.rows

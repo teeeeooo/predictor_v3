@@ -92,7 +92,7 @@ class IsoSasoT3Section:
             },
         )
         self.input_table.grid(
-            row=1, column=0, sticky="ew", padx=ISO_SECTION_PADX, pady=(0, 6),
+            row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6),
         )
 
         self.optional_min_enabled = tk.BooleanVar(master=self._frame, value=True)
@@ -106,7 +106,7 @@ class IsoSasoT3Section:
         self.result_table = IsoSasoT3ResultTable(self._frame)
         self.result_panel = self.result_table
         self.result_table.grid(
-            row=3, column=0, sticky="ew", padx=ISO_SECTION_PADX,
+            row=3, column=0, sticky="w", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
         self.action_row = ttk.Frame(self._frame)

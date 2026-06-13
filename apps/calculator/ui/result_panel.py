@@ -29,13 +29,21 @@ class ResultPanel:
         parent: tk.Widget,
         *,
         title: str = "결과",
+        layout_policy: str = "content_hug",
     ) -> None:
-        self.layout_policy = "responsive"
+        if layout_policy not in {"responsive", "content_hug"}:
+            raise ValueError(
+                "ResultPanel layout_policy must be 'responsive' or 'content_hug'"
+            )
+        self.layout_policy = layout_policy
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
         self._summary_holder = ttk.Frame(self._frame)
-        self._summary_holder.pack(side=tk.TOP, fill=tk.X)
+        if self.layout_policy == "content_hug":
+            self._summary_holder.pack(side=tk.TOP, anchor="w")
+        else:
+            self._summary_holder.pack(side=tk.TOP, fill=tk.X)
         self.summary_tables: dict[str, tk.Frame] = {}
         self.summary_header_cells: dict[str, tuple[tk.Frame, ...]] = {}
         self.summary_value_cells: dict[str, tuple[tk.Frame, ...]] = {}
@@ -116,7 +124,10 @@ class ResultPanel:
     ) -> tk.Frame:
         cell = tk.Frame(card, background=background, borderwidth=0)
         cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
-        card.columnconfigure(column, weight=1)
+        card.columnconfigure(
+            column,
+            weight=0 if self.layout_policy == "content_hug" else 1,
+        )
         return cell
 
     def _render_summary_table(self, row: int, summary: ResultSummary) -> None:
@@ -127,11 +138,19 @@ class ResultPanel:
             borderwidth=1,
             relief=tk.SOLID,
         )
-        card.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        card.grid(
+            row=row,
+            column=0,
+            sticky="w" if self.layout_policy == "content_hug" else "ew",
+            pady=(0, 8),
+        )
         card.layout_policy = self.layout_policy
         self.summary_tables[summary.title] = card
         self._summary_shapes[summary.title] = self._shape_for(summary)
-        self._summary_holder.columnconfigure(0, weight=1)
+        self._summary_holder.columnconfigure(
+            0,
+            weight=0 if self.layout_policy == "content_hug" else 1,
+        )
         if not summary.fields:
             card.surface_role = "status_surface"
             self._render_status(card, summary, row=0)
@@ -161,7 +180,10 @@ class ResultPanel:
         self, card: tk.Frame, summary: ResultSummary, *, row: int
     ) -> None:
         if not summary.fields:
-            card.columnconfigure(0, weight=1)
+            card.columnconfigure(
+                0,
+                weight=0 if self.layout_policy == "content_hug" else 1,
+            )
         status = tk.Label(
             card,
             text=summary.status,
@@ -188,7 +210,10 @@ class ResultPanel:
         values = []
         value_labels: list[tk.Label] = []
         for column, (label, value) in enumerate(summary.fields):
-            card.columnconfigure(column, weight=1)
+            card.columnconfigure(
+                column,
+                weight=0 if self.layout_policy == "content_hug" else 1,
+            )
             header = self._make_summary_cell(
                 card, row=1, column=column, background=RESULT_HEADER_BG
             )

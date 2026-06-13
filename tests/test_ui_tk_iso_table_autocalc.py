@@ -1274,10 +1274,10 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
         )
         assert section.input_table.grid_info()["padx"] == ISO_SECTION_PADX
         assert section.result_panel._frame.grid_info()["padx"] == ISO_SECTION_PADX
-        assert section.input_table.grid_info()["sticky"] == "ew"
-        assert section.result_panel._frame.grid_info()["sticky"] == "ew"
+        assert section.input_table.grid_info()["sticky"] == "w"
+        assert section.result_panel._frame.grid_info()["sticky"] == "w"
     assert cspf.rated_table.grid_info()["padx"] == ISO_SECTION_PADX
-    assert cspf.rated_table.grid_info()["sticky"] == "ew"
+    assert cspf.rated_table.grid_info()["sticky"] == "w"
 
 
 def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
@@ -1401,8 +1401,8 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
         roles = _surface_roles(table)
 
         assert table.table_frame.surface_role == "table_frame"
-        assert table.layout_policy == "responsive"
-        assert table.table_frame.layout_policy == "responsive"
+        assert table.layout_policy == "content_hug"
+        assert table.table_frame.layout_policy == "content_hug"
         assert table.row_header_chars == TABLE_ROW_HEADER_CHARS
         assert table.data_column_chars == TABLE_DATA_COLUMN_CHARS
         assert not hasattr(table, "content_width")
@@ -1463,7 +1463,7 @@ def test_metric_inputs_render_bordered_matrix_cell_roles(tk_root):
         assert TABLE_CELL_PADY <= 4
 
 
-def test_metric_surfaces_expand_together_with_window_width(tk_root):
+def test_metric_surfaces_keep_content_width_when_window_expands(tk_root):
     tk_root.geometry("650x900")
     tab = _make_hong_kong_tab(tk_root)
     _flush_defaults(tab)
@@ -1497,11 +1497,10 @@ def test_metric_surfaces_expand_together_with_window_width(tk_root):
     }
 
     for metric in ("CSPF", "HSPF"):
-        assert len(set(initial[metric])) == 1
-        assert len(set(expanded[metric])) == 1
         assert len(set(initial_offsets[metric])) == 1
         assert len(set(expanded_offsets[metric])) == 1
-        assert expanded[metric][0] > initial[metric][0]
+        assert expanded[metric] == initial[metric]
+        assert expanded_offsets[metric] == initial_offsets[metric]
 
 
 def test_default_autocalc_results_are_section_local_without_append_growth(tk_root):
@@ -1527,7 +1526,7 @@ def test_default_autocalc_results_are_section_local_without_append_growth(tk_roo
         for label in labels:
             assert label in result_labels
         assert panel.summary_tables[metric].surface_role == "summary_table"
-        assert panel.layout_policy == "responsive"
+        assert panel.layout_policy == "content_hug"
         assert panel.summary_tables[metric].layout_policy == panel.layout_policy
         assert len(panel.summary_header_cells[metric]) == 3
         assert len(panel.summary_value_cells[metric]) == 3

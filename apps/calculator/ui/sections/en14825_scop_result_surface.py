@@ -36,6 +36,8 @@ class ScopResultSurface:
             relief=tk.SOLID,
         )
         self._frame.surface_role = "summary_table"
+        self._frame.layout_policy = "content_hug"
+        self.layout_policy = "content_hug"
         self._header_labels: dict[str, tk.Label] = {}
         self._row_header_labels: dict[str, tk.Label] = {}
         self._status_label = tk.Label(
@@ -100,7 +102,7 @@ class ScopResultSurface:
     def _build(self) -> None:
         self._frame.columnconfigure(0, weight=0)
         for column in range(1, len(self._COLUMNS) + 1):
-            self._frame.columnconfigure(column, weight=1)
+            self._frame.columnconfigure(column, weight=0)
 
         self._header_labels["row_label"] = self._make_cell(
             row=0, column=0, text="구분", header=True
@@ -131,7 +133,7 @@ class ScopResultSurface:
             row=3,
             column=0,
             columnspan=len(self._COLUMNS) + 1,
-            sticky="ew",
+            sticky="w",
             padx=(0, 1),
             pady=(0, 1),
         )

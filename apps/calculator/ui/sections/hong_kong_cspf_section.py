@@ -57,7 +57,7 @@ class HongKongCspfSection:
         self.rated_table.grid(
             row=0,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, 6),
         )
@@ -81,7 +81,7 @@ class HongKongCspfSection:
         self.input_table.grid(
             row=2,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
@@ -89,7 +89,7 @@ class HongKongCspfSection:
         self.result_panel.grid(
             row=3,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )

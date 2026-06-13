@@ -154,7 +154,7 @@ class En14825SeerSection:
         self.input_table.grid(
             row=3,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
@@ -191,7 +191,7 @@ class En14825SeerSection:
         self.result_panel.grid(
             row=4,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )

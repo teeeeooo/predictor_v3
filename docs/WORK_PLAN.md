@@ -117,12 +117,15 @@
 - 388: MetricInputTable content_hug layout policy completed; EN14825 common,
   design, Cd, and climate auxiliary input tables now keep natural width while
   SEER/SCOP main condition matrices remain responsive.
+- 389: Calculator table bounded-width layout correction completed; calculator
+  input matrices and compact result tables now keep content width by default,
+  with responsive retained as an explicit table/result policy option.
 
 ## Next Actions
 
-1. **MetricInputTable content_hug manual smoke closeout — next active slice**
-   - Verify EN14825 common/design/auxiliary table width, selector labels, and
-     main matrix responsiveness on the target desktop.
+1. **Calculator bounded-width manual smoke closeout — next active slice**
+   - Verify ISO/HK/EN14825 input and result tables keep content width when the
+     calculator window is expanded on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

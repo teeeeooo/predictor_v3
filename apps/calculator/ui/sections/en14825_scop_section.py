@@ -168,9 +168,9 @@ class En14825ScopSection:
 
             body = ttk.Frame(inner)
             body.pack(fill=tk.BOTH, expand=True)
-            body.columnconfigure(0, weight=1)
+            body.columnconfigure(0, weight=0)
             body.columnconfigure(1, weight=0)
-            body.rowconfigure(1, weight=1)
+            body.rowconfigure(1, weight=0)
 
             # Setup climate specific auxiliary inputs
             inputs_frame = ttk.Frame(body)
@@ -222,7 +222,7 @@ class En14825ScopSection:
                 editable_cells=editable_cells,
                 section_break_before_rows=ScopTableModel.SECTION_BREAK_BEFORE_ROWS,
             )
-            table.grid(row=1, column=0, sticky="nsew", padx=(0, 8), pady=(0, 6))
+            table.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 6))
             table.default_cell_background = lambda pos, c=clm: self._resolve_cell_bg(pos, c)
             self.input_tables[clm] = table
 

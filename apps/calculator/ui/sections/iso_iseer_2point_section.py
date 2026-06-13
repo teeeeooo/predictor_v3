@@ -69,7 +69,7 @@ class IsoIseer2PointSection:
         self.input_table.grid(
             row=1,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
@@ -80,7 +80,7 @@ class IsoIseer2PointSection:
         self.result_table.grid(
             row=2,
             column=0,
-            sticky="ew",
+            sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )

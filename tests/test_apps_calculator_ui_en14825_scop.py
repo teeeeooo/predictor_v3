@@ -543,7 +543,10 @@ def test_scop_gui_integration_basics():
         assert section.cd_table.layout_policy == "content_hug"
         assert section.appliance_type_label.cget("text") == "Type"
         assert section.climate_input_tables["average"].layout_policy == "content_hug"
-        assert section.input_tables["average"].layout_policy == "responsive"
+        assert section.input_tables["average"].layout_policy == "content_hug"
+        assert section.input_tables["average"].grid_info()["sticky"] == "w"
+        assert section._result_surfaces["average"].layout_policy == "content_hug"
+        assert section._result_cards["average"].layout_policy == "content_hug"
 
         # Verify collapsed/packed state
         assert section.climate_inner_frames["average"].winfo_manager() != ""

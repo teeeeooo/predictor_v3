@@ -28,7 +28,7 @@ class IsoIseer2PointResultTable:
     """Section-local, read-only profile comparison surface."""
 
     def __init__(self, parent: tk.Widget, *, title: str = "ISO / ISEER 결과") -> None:
-        self.layout_policy = "responsive"
+        self.layout_policy = "content_hug"
         self.surface_role = "two_point_result_surface"
         self.column_labels = TWO_POINT_RESULT_COLUMNS
         self.row_labels: tuple[str, ...] = ()
@@ -46,7 +46,7 @@ class IsoIseer2PointResultTable:
             selectmode="browse",
         )
         self.table.surface_role = "two_point_comparison_table"
-        self.table.pack(side=tk.TOP, fill=tk.X)
+        self.table.pack(side=tk.TOP, anchor="w")
         for column in self.column_labels:
             self.table.heading(column, text=column)
             self.table.column(
@@ -54,9 +54,15 @@ class IsoIseer2PointResultTable:
                 anchor=tk.CENTER,
                 width=TABLE_DATA_COLUMN_CHARS * 9,
                 minwidth=80,
-                stretch=True,
+                stretch=False,
             )
-        self.table.column("Region/Profile", anchor=tk.W, width=150, minwidth=120)
+        self.table.column(
+            "Region/Profile",
+            anchor=tk.W,
+            width=150,
+            minwidth=120,
+            stretch=False,
+        )
         self.table.bind("<Control-c>", self.copy)
         self.table.bind("<Command-c>", self.copy)
         self.table.bind("<Control-a>", self.select_all)
@@ -88,7 +94,7 @@ class IsoIseer2PointResultTable:
             self.table.insert("", tk.END, values=row)
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, fill=tk.X, pady=(4, 0))
+            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(self.as_text())
 
     def set_status(self, status: str) -> None:
@@ -98,7 +104,7 @@ class IsoIseer2PointResultTable:
         self.table.pack_forget()
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, fill=tk.X, pady=(4, 0))
+            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(status)
 
     def clear(self) -> None:
@@ -140,7 +146,7 @@ class IsoIseer2PointResultTable:
 
     def _show_table(self) -> None:
         if not self.table.winfo_manager():
-            self.table.pack(side=tk.TOP, fill=tk.X)
+            self.table.pack(side=tk.TOP, anchor="w")
 
     def _clear_tree(self) -> None:
         for item_id in self.table.get_children():

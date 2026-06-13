@@ -30,7 +30,7 @@ class IsoSasoT3ResultTable:
     """Section-local, read-only SASO 3-point/4-point comparison surface."""
 
     def __init__(self, parent: tk.Widget, *, title: str = "SASO T3 결과") -> None:
-        self.layout_policy = "responsive"
+        self.layout_policy = "content_hug"
         self.surface_role = "saso_t3_result_surface"
         self.column_labels = SASO_T3_RESULT_COLUMNS
         self.row_labels: tuple[str, ...] = ()
@@ -48,7 +48,7 @@ class IsoSasoT3ResultTable:
             selectmode="browse",
         )
         self.table.surface_role = "saso_t3_comparison_table"
-        self.table.pack(side=tk.TOP, fill=tk.X)
+        self.table.pack(side=tk.TOP, anchor="w")
         for column in self.column_labels:
             self.table.heading(column, text=column)
             self.table.column(
@@ -56,9 +56,15 @@ class IsoSasoT3ResultTable:
                 anchor=tk.CENTER,
                 width=TABLE_DATA_COLUMN_CHARS * 9,
                 minwidth=80,
-                stretch=True,
+                stretch=False,
             )
-        self.table.column("Scenario", anchor=tk.W, width=180, minwidth=150)
+        self.table.column(
+            "Scenario",
+            anchor=tk.W,
+            width=180,
+            minwidth=150,
+            stretch=False,
+        )
         self.table.bind("<Control-c>", self.copy)
         self.table.bind("<Command-c>", self.copy)
         self.table.bind("<Control-a>", self.select_all)
@@ -91,7 +97,7 @@ class IsoSasoT3ResultTable:
             self.table.insert("", tk.END, values=row)
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, fill=tk.X, pady=(4, 0))
+            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(self.as_text())
 
     def set_status(self, status: str) -> None:
@@ -101,7 +107,7 @@ class IsoSasoT3ResultTable:
         self.table.pack_forget()
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, fill=tk.X, pady=(4, 0))
+            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(status)
 
     def as_text(self) -> str:
@@ -134,7 +140,7 @@ class IsoSasoT3ResultTable:
 
     def _show_table(self) -> None:
         if not self.table.winfo_manager():
-            self.table.pack(side=tk.TOP, fill=tk.X)
+            self.table.pack(side=tk.TOP, anchor="w")
 
     def _clear_tree(self) -> None:
         for item_id in self.table.get_children():

@@ -256,13 +256,29 @@ def test_section_break_option(tk_root) -> None:
 
 
 class TestLayoutPolicy:
-    def test_default_layout_policy_is_responsive(self, sample_table: MetricInputTable) -> None:
-        assert sample_table.layout_policy == "responsive"
-        assert sample_table.table_frame.layout_policy == "responsive"
-        assert _grid_sticky(sample_table.table_frame) == "ew"
-        assert _column_weight(sample_table, 0) == 1
-        assert _column_weight(sample_table.table_frame, 0) > 0
-        assert _column_weight(sample_table.table_frame, 1) > 0
+    def test_default_layout_policy_is_content_hug(self, sample_table: MetricInputTable) -> None:
+        assert sample_table.layout_policy == "content_hug"
+        assert sample_table.table_frame.layout_policy == "content_hug"
+        assert _grid_sticky(sample_table.table_frame) == "w"
+        assert _column_weight(sample_table, 0) == 0
+        assert _column_weight(sample_table.table_frame, 0) == 0
+        assert _column_weight(sample_table.table_frame, 1) == 0
+
+    def test_responsive_layout_policy_distributes_extra_width(self, tk_root) -> None:
+        table = MetricInputTable(
+            tk_root,
+            columns=(("c1", "Col1"), ("c2", "Col2")),
+            rows=(("r1", "Row1"),),
+            editable_cells={("r1", "c1"): "a", ("r1", "c2"): "b"},
+            layout_policy="responsive",
+        )
+
+        assert table.layout_policy == "responsive"
+        assert table.table_frame.layout_policy == "responsive"
+        assert _grid_sticky(table.table_frame) == "ew"
+        assert _column_weight(table, 0) == 1
+        assert _column_weight(table.table_frame, 0) > 0
+        assert _column_weight(table.table_frame, 1) > 0
 
     def test_content_hug_layout_does_not_distribute_extra_width(self, tk_root) -> None:
         table = MetricInputTable(
