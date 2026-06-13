@@ -546,8 +546,17 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert hasattr(tab, "_p_off_var")
         assert not hasattr(tab, "_appliance_type_var")
         assert "appliance_type" not in tab._common_input_tables[0].get_text_values()
+        assert tab._common_input_tables[0].layout_policy == "content_hug"
+        assert tab._common_input_tables[0].table_frame.layout_policy == "content_hug"
         assert not hasattr(tab.seer_section, "_p_to_var")
         assert not hasattr(tab.scop_section, "_p_to_var")
+        assert tab.seer_section.design_table.layout_policy == "content_hug"
+        assert tab.seer_section.input_table.layout_policy == "responsive"
+        assert tab.seer_section.appliance_type_label.cget("text") == "Type"
+        assert tab.scop_section.cd_table.layout_policy == "content_hug"
+        assert tab.scop_section.climate_input_tables["average"].layout_policy == "content_hug"
+        assert tab.scop_section.input_tables["average"].layout_policy == "responsive"
+        assert tab.scop_section.appliance_type_label.cget("text") == "Type"
         assert tuple(tab.seer_section.appliance_type_selector.cget("values")) == (
             "reversible",
             "cooling_only",

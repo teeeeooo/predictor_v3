@@ -79,7 +79,7 @@ class En14825SeerSection:
         # Design Specs Frame (Pdesignc, Tdesignc, Cd)
         design_frame = ttk.LabelFrame(aux_frame, text="설계 사양 (Design Specs)")
         design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        design_frame.columnconfigure(0, weight=1)
+        design_frame.columnconfigure(0, weight=0)
         self.design_table = MetricInputTable(
             design_frame,
             columns=(
@@ -95,14 +95,16 @@ class En14825SeerSection:
             },
             row_header_chars=8,
             data_column_chars=10,
+            layout_policy="content_hug",
         )
-        self.design_table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        self.design_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
         self.design_table.set_values(self._design_input_values())
         self.design_table.set_values_changed_callback(
             self._on_design_table_values_changed
         )
         self.design_controller = TkTableController(self.design_table)
-        ttk.Label(design_frame, text="냉방 기기 유형").grid(
+        self.appliance_type_label = ttk.Label(design_frame, text="Type")
+        self.appliance_type_label.grid(
             row=0, column=1, sticky="w", padx=(10, 4), pady=6
         )
         self.appliance_type_selector = ttk.Combobox(

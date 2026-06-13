@@ -114,12 +114,15 @@
 - 387: EN14825 SEER cooling_only auxiliary-hours support completed; default
   reversible SEER remains unchanged, cooling_only applies official HOFF/HCK
   hours, and appliance selectors are split between SEER and SCOP.
+- 388: MetricInputTable content_hug layout policy completed; EN14825 common,
+  design, Cd, and climate auxiliary input tables now keep natural width while
+  SEER/SCOP main condition matrices remain responsive.
 
 ## Next Actions
 
-1. **EN14825 appliance type manual smoke closeout — next active slice**
-   - Verify SEER reversible/cooling_only selector behavior and SCOP
-     reversible/heating_only selector behavior on the target desktop.
+1. **MetricInputTable content_hug manual smoke closeout — next active slice**
+   - Verify EN14825 common/design/auxiliary table width, selector labels, and
+     main matrix responsiveness on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

@@ -73,7 +73,7 @@ class En14825ScopSection:
         # Specs Frame (Cd)
         specs_frame = ttk.LabelFrame(aux_frame, text="설계 사양")
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        specs_frame.columnconfigure(0, weight=1)
+        specs_frame.columnconfigure(0, weight=0)
         self.cd_table = MetricInputTable(
             specs_frame,
             columns=(("cd", "Cd"),),
@@ -81,11 +81,13 @@ class En14825ScopSection:
             editable_cells={("design", "cd"): "cd"},
             row_header_chars=8,
             data_column_chars=8,
+            layout_policy="content_hug",
         )
-        self.cd_table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        self.cd_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
         self.cd_table.set_values({"cd": self._cd_var.get()})
         self.cd_controller = TkTableController(self.cd_table)
-        ttk.Label(specs_frame, text="난방 기기 유형").grid(
+        self.appliance_type_label = ttk.Label(specs_frame, text="Type")
+        self.appliance_type_label.grid(
             row=0, column=1, sticky="w", padx=(10, 4), pady=6
         )
         self.appliance_type_selector = ttk.Combobox(
@@ -173,7 +175,7 @@ class En14825ScopSection:
             # Setup climate specific auxiliary inputs
             inputs_frame = ttk.Frame(body)
             inputs_frame.grid(row=0, column=0, sticky="w", pady=(0, 6))
-            inputs_frame.columnconfigure(0, weight=1)
+            inputs_frame.columnconfigure(0, weight=0)
 
             climate_table = MetricInputTable(
                 inputs_frame,
@@ -190,8 +192,9 @@ class En14825ScopSection:
                 },
                 row_header_chars=8,
                 data_column_chars=10,
+                layout_policy="content_hug",
             )
-            climate_table.grid(row=0, column=0, sticky="ew", padx=(6, 10))
+            climate_table.grid(row=0, column=0, sticky="w", padx=(6, 10))
             climate_table.set_values(self._climate_aux_values(clm))
             self.climate_input_tables[clm] = climate_table
             self.climate_input_controllers[clm] = TkTableController(climate_table)

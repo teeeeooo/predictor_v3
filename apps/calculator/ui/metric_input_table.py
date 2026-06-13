@@ -51,18 +51,23 @@ class MetricInputTable(ttk.Frame):
         editable_cells: Mapping[CellAddress, str],
         row_header_chars: int = TABLE_ROW_HEADER_CHARS,
         data_column_chars: int = TABLE_DATA_COLUMN_CHARS,
+        layout_policy: str = "responsive",
         values_changed_callback: ValuesChangedCallback | None = None,
         section_break_before_rows: Iterable[str] | None = None,
         **kwargs: object,
     ) -> None:
         super().__init__(master, **kwargs)
+        if layout_policy not in {"responsive", "content_hug"}:
+            raise ValueError(
+                "MetricInputTable layout_policy must be 'responsive' or 'content_hug'"
+            )
         self.section_break_before_rows = set(section_break_before_rows or [])
         self.columns = columns
         self.rows = rows
         self.editable_cells = dict(editable_cells)
         self.row_header_chars = row_header_chars
         self.data_column_chars = data_column_chars
-        self.layout_policy = "responsive"
+        self.layout_policy = layout_policy
         self._values_changed_callback = values_changed_callback
         self._values: dict[str, str] = {
             field_key: "" for field_key in self.editable_cells.values()
@@ -87,7 +92,8 @@ class MetricInputTable(ttk.Frame):
         self._build_table()
 
     def _build_table(self) -> None:
-        self.columnconfigure(0, weight=1)
+        is_content_hug = self.layout_policy == "content_hug"
+        self.columnconfigure(0, weight=0 if is_content_hug else 1)
         self.table_frame = tk.Frame(
             self,
             name="matrix_surface",
@@ -95,7 +101,11 @@ class MetricInputTable(ttk.Frame):
             borderwidth=1,
             relief=tk.SOLID,
         )
-        self.table_frame.grid(row=0, column=0, sticky="ew")
+        self.table_frame.grid(
+            row=0,
+            column=0,
+            sticky="w" if is_content_hug else "ew",
+        )
         self.table_frame.surface_role = "table_frame"
         self.table_frame.layout_policy = self.layout_policy
         self._configure_column_weights()
@@ -122,9 +132,15 @@ class MetricInputTable(ttk.Frame):
                 )
 
     def _configure_column_weights(self) -> None:
-        self.table_frame.columnconfigure(0, weight=TABLE_ROW_HEADER_WEIGHT)
+        if self.layout_policy == "content_hug":
+            row_header_weight = 0
+            data_column_weight = 0
+        else:
+            row_header_weight = TABLE_ROW_HEADER_WEIGHT
+            data_column_weight = TABLE_DATA_COLUMN_WEIGHT
+        self.table_frame.columnconfigure(0, weight=row_header_weight)
         for column in range(1, len(self.columns) + 1):
-            self.table_frame.columnconfigure(column, weight=TABLE_DATA_COLUMN_WEIGHT)
+            self.table_frame.columnconfigure(column, weight=data_column_weight)
 
     def _add_header_cell(self, *, column: int, key: str | None, label: str) -> None:
         cell = self._make_cell_frame(

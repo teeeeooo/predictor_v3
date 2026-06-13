@@ -540,6 +540,10 @@ def test_scop_gui_integration_basics():
         assert section.climate_active_vars["average"].get() is True
         assert section.climate_active_vars["warmer"].get() is False
         assert section.climate_active_vars["colder"].get() is False
+        assert section.cd_table.layout_policy == "content_hug"
+        assert section.appliance_type_label.cget("text") == "Type"
+        assert section.climate_input_tables["average"].layout_policy == "content_hug"
+        assert section.input_tables["average"].layout_policy == "responsive"
 
         # Verify collapsed/packed state
         assert section.climate_inner_frames["average"].winfo_manager() != ""

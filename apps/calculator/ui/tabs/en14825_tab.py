@@ -194,7 +194,7 @@ class En14825Tab(ttk.Frame):
     def _create_common_input_panel(self, parent: tk.Widget) -> ttk.LabelFrame:
         common_frame = ttk.LabelFrame(parent, text="공통 입력")
         common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
-        common_frame.columnconfigure(0, weight=1)
+        common_frame.columnconfigure(0, weight=0)
         table = MetricInputTable(
             common_frame,
             columns=(
@@ -212,8 +212,9 @@ class En14825Tab(ttk.Frame):
             },
             row_header_chars=8,
             data_column_chars=8,
+            layout_policy="content_hug",
         )
-        table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
         table.set_values(self._common_numeric_values())
         table.set_values_changed_callback(
             lambda table=table: self._on_common_table_values_changed(table)
