@@ -126,11 +126,14 @@
 - 391: ResultPanel/table width manual smoke closeout completed; target desktop
   check confirmed ISO/HK/EN14825 input/result tables do not over-stretch on
   window expansion and Hong Kong CSPF/HSPF result columns align correctly.
+- 392: SCOP LOC soft warning deferred check completed; current SCOP section
+  still exceeds the soft LOC limit, but no new card-level layout/refit
+  responsibility is being added now, so split implementation remains deferred.
 
 ## Next Actions
 
-1. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
-2. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
+1. **EN14825 batch integration preflight**
+2. **AHRI 210/240 tab preflight**
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
@@ -164,6 +167,11 @@ terminal/report summaries unless a blocker requires expansion.
 - Graph export/HTML export is deferred until after graph parity is stable.
 - ResultPanel summary export/copy alignment is deferred unless manual smoke shows summary copy/export parity is still needed.
 - MetricInputTable full-table copy enhancement is deferred after ResultPanel alignment.
+- SCOP climate card subcomponent split is deferred unless follow-up work adds
+  new card-level layout/refit responsibility; run a split audit before that
+  kind of SCOP section code slice.
+- Test/package naming cleanup execution (`test_ui_tk_*` to
+  `test_apps_calculator_ui_*`) can be deferred.
 - Internal formula trace is outside the current project execution scope and remains long-hold unless a separate core/data contract is approved.
 - xlsx export is deferred; CSV parity is the current export target.
 - Hong Kong HSPF detail/bin, EN/AHRI/KS detail/bin expansion, and batch calculator result are required follow-up work under Next Actions; profile expansion is the active next step.
