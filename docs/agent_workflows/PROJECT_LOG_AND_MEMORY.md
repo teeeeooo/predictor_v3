@@ -54,5 +54,13 @@ seed entry importance, supersession, resolution status, or staleness.
 
 General source/code/doc work does not rewrite memory seed entries.
 
+For summary lifecycle tasks, perform this memory seed checklist before closeout:
+
+- confirm whether the new summary must be registered under Source Summaries;
+- judge whether the summary contains durable decision, procedure, error, or
+  open_question candidates;
+- add only minimal summary-level entries when durable memory exists;
+- if the seed is not updated, record the reason in the summary/report.
+
 If a seed exceeds 50 entries, report a maintenance audit candidate. If it
 exceeds 75 entries, perform maintenance in a dedicated task.

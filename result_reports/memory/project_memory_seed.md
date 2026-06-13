@@ -36,6 +36,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md` (covered reports `315-333`)
 - `result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md` (covered reports `335-345`)
 - `result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md` (covered reports `347-363`)
+- `result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md` (covered reports `365-384`)
 
 ## Scope and Non-goals
 

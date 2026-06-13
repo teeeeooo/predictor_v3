@@ -59,6 +59,10 @@ Compact report mode is allowed for:
 - report lifecycle maintenance;
 - audit/report-only work without code behavior changes.
 
+Summary/archive lifecycle maintenance must route to
+`docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` for the memory seed check
+before closeout.
+
 Compact report minimum sections:
 
 - Goal
