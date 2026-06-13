@@ -103,37 +103,17 @@
 - 314: Summarized the tkinter table controller switch arc and archived covered reports.
 - 315-333: Active report lifecycle cleanup, batch dialog shell/profile expansion, project log archiving, and memory seed maintenance are summarized in `result_reports/summaries/334_summary-batch-dialog-doc-memory-lifecycle-closeout.md`.
 - 335-345: Batch foundation foldering, apps package architecture alignment, entrypoint handover, and Tkinter UI relocation are summarized in [Summary 346](result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md).
-- 369: EN14825 SCOP integration design/preflight completed.
-- 370: EN14825 SCOP Slice 1 foundation (models, adapter, table model, tests) completed.
-- 372: EN14825 SCOP Slice 2 section UI integration completed.
-- 373: Soft LOC warning triage workflow hardening completed; changed/new source
-  soft warnings now require report triage before the next code slice.
-- 379: EN14825 common input placement and terminology correction completed.
-- 381: EN14825 SCOP per-climate result surface correction completed; root-level
-  SCOP right-side result surface removed and climate-local result blocks added
-  beside each active input table.
-- 382: EN14825 SCOP window size/result surface correction completed; SEER
-  preferred-size measurement no longer inherits hidden SCOP sticky width, SCOP
-  result tables align with input table tops, and Tested result cells use pass
-  green emphasis.
-- 383: Calculator initial ISO sizing and EN14825 form-entry undo correction
-  completed; first-launch ISO size now refits after top-level notebook settle,
-  and EN14825 form entries have lightweight Ctrl/Cmd-Z undo.
-- 384: EN14825 table input consistency correction completed; form-entry undo
-  helper removed, and common/SEER/SCOP numeric auxiliary inputs now use
-  MetricInputTable + TkTableController while appliance type remains a dropdown.
-  - 366: EN14825 SEER section integration with real-time updates completed.
-  - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
-  - 368: EN14825 SEER table section boundary line (in progress).
+- 365-384: EN14825 SEER/SCOP UI correction arc, initial ISO sizing fix,
+  table-input consistency rollback, target desktop manual smoke closeout, and
+  active report lifecycle cleanup are summarized in
+  [Summary 385](result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md).
 
 ## Next Actions
 
-1. **Calculator UI manual smoke closeout — next active slice**
-   - Re-check first-launch ISO 2-point size, profile switch/return sizing,
-     EN14825 SEER/SCOP widths, SCOP result alignment/Tested emphasis, and
-     EN14825 auxiliary table selection/copy/paste/Ctrl/Cmd-Z behavior on the
-     target desktop.
-2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
+1. **EN14825 appliance type auxiliary-hours audit — next active slice**
+   - Audit whether `reversible` / `heating_only` should alter auxiliary-hours
+     handling, owner boundary, and calculation contract before implementation.
+2. **SCOP climate card subcomponent split — defer unless follow-up work adds more card-level layout/refit responsibility**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 
 Read/report discipline note: audit/report work should use heading/method-first
