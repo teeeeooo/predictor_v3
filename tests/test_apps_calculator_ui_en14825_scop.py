@@ -670,6 +670,40 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         root.destroy()
 
 
+def test_scop_auxiliary_inputs_use_table_controller_undo():
+    """SCOP Cd and climate auxiliary inputs use table controller undo semantics."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+
+        section = En14825ScopSection(root)
+        section._cd_var.set("0.30")
+        assert section.cd_controller.table.get_text_values()["cd"] == "0.30"
+        section.cd_controller.select((0, 0))
+        section.cd_controller._clear()
+        assert section._cd_var.get() == ""
+        section.cd_controller._undo_last()
+        assert section._cd_var.get() == "0.30"
+
+        section.p_design_h_vars["average"].set("3500")
+        climate_controller = section.climate_input_controllers["average"]
+        assert climate_controller.table.get_text_values()["p_design_h"] == "3500"
+        climate_controller.select((0, 0))
+        climate_controller._clear()
+        assert section.p_design_h_vars["average"].get() == ""
+        climate_controller._undo_last()
+        assert section.p_design_h_vars["average"].get() == "3500"
+
+    finally:
+        root.destroy()
+
+
 def test_scop_input_mapper_builds_declared_and_tested_points():
     """Parse text values into SCOP point input models without depending on widgets."""
     text_values = _scop_text_values()

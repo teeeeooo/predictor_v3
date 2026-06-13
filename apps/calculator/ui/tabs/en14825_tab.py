@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
-from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
+from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
 from apps.calculator.ui.window_shell import TkContentHuggingShell
@@ -34,6 +36,9 @@ class En14825Tab(ttk.Frame):
         self._p_ck_var = tk.StringVar(value="0")
         self._p_off_var = tk.StringVar(value="0")
         self._appliance_type_var = tk.StringVar(value="reversible")
+        self._common_input_tables: list[MetricInputTable] = []
+        self._common_input_controllers: list[TkTableController] = []
+        self._syncing_common_inputs = False
 
         self._standard_notebook = ttk.Notebook(self._content)
         self._standard_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
@@ -65,9 +70,11 @@ class En14825Tab(ttk.Frame):
             self._p_sb_var,
             self._p_ck_var,
             self._p_off_var,
-            self._appliance_type_var,
         ):
-            var.trace_add("write", lambda *args: self._on_common_input_changed())
+            var.trace_add("write", lambda *args: self._on_common_numeric_var_changed())
+        self._appliance_type_var.trace_add(
+            "write", lambda *args: self._on_common_input_changed()
+        )
 
         # Alias for result panel validation compatibility.
         self.result_panel = self.seer_section.result_panel
@@ -133,35 +140,98 @@ class En14825Tab(ttk.Frame):
             "appliance_type": self._appliance_type_var.get(),
         }
 
+    def _common_numeric_values(self) -> dict[str, str]:
+        return {
+            "p_to": self._p_to_var.get(),
+            "p_sb": self._p_sb_var.get(),
+            "p_ck": self._p_ck_var.get(),
+            "p_off": self._p_off_var.get(),
+        }
+
     def _on_common_input_changed(self) -> None:
         self.seer_section.schedule_recalculate()
         self.scop_section.schedule_recalculate()
 
+    def _on_common_numeric_var_changed(self) -> None:
+        if self._syncing_common_inputs:
+            return
+        self._sync_common_input_tables(self._common_numeric_values())
+        self._on_common_input_changed()
+
+    def _on_common_table_values_changed(self, table: MetricInputTable) -> None:
+        if self._syncing_common_inputs:
+            return
+        values = table.get_text_values()
+        self._syncing_common_inputs = True
+        try:
+            self._set_common_numeric_vars(values)
+            self._sync_common_input_tables(values, source=table)
+        finally:
+            self._syncing_common_inputs = False
+        self._on_common_input_changed()
+
+    def _set_common_numeric_vars(self, values: Mapping[str, str]) -> None:
+        var_by_key = {
+            "p_to": self._p_to_var,
+            "p_sb": self._p_sb_var,
+            "p_ck": self._p_ck_var,
+            "p_off": self._p_off_var,
+        }
+        for key, var in var_by_key.items():
+            value = values.get(key, var.get())
+            if var.get() != value:
+                var.set(value)
+
+    def _sync_common_input_tables(
+        self,
+        values: Mapping[str, str],
+        *,
+        source: MetricInputTable | None = None,
+    ) -> None:
+        self._syncing_common_inputs = True
+        try:
+            for table in self._common_input_tables:
+                if table is not source:
+                    table.set_values_batch(values)
+        finally:
+            self._syncing_common_inputs = False
+
     def _create_common_input_panel(self, parent: tk.Widget) -> ttk.LabelFrame:
         common_frame = ttk.LabelFrame(parent, text="공통 입력")
         common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
-        ttk.Label(common_frame, text="Pto [W]").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        p_to_entry = ttk.Entry(common_frame, textvariable=self._p_to_var, width=6)
-        p_to_entry.grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(p_to_entry, self._p_to_var)
-        ttk.Label(common_frame, text="Psb [W]").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        p_sb_entry = ttk.Entry(common_frame, textvariable=self._p_sb_var, width=6)
-        p_sb_entry.grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(p_sb_entry, self._p_sb_var)
-        ttk.Label(common_frame, text="Pck [W]").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        p_ck_entry = ttk.Entry(common_frame, textvariable=self._p_ck_var, width=6)
-        p_ck_entry.grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(p_ck_entry, self._p_ck_var)
-        ttk.Label(common_frame, text="Poff [W]").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
-        p_off_entry = ttk.Entry(common_frame, textvariable=self._p_off_var, width=6)
-        p_off_entry.grid(row=0, column=7, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(p_off_entry, self._p_off_var)
-        ttk.Label(common_frame, text="기기 유형").grid(row=0, column=8, sticky="w", padx=(6, 4), pady=6)
+        common_frame.columnconfigure(0, weight=1)
+        table = MetricInputTable(
+            common_frame,
+            columns=(
+                ("p_to", "Pto [W]"),
+                ("p_sb", "Psb [W]"),
+                ("p_ck", "Pck [W]"),
+                ("p_off", "Poff [W]"),
+            ),
+            rows=(("common", "입력값"),),
+            editable_cells={
+                ("common", "p_to"): "p_to",
+                ("common", "p_sb"): "p_sb",
+                ("common", "p_ck"): "p_ck",
+                ("common", "p_off"): "p_off",
+            },
+            row_header_chars=8,
+            data_column_chars=8,
+        )
+        table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        table.set_values(self._common_numeric_values())
+        table.set_values_changed_callback(
+            lambda table=table: self._on_common_table_values_changed(table)
+        )
+        self._common_input_tables.append(table)
+        self._common_input_controllers.append(TkTableController(table))
+
+        ttk.Label(common_frame, text="기기 유형").grid(row=0, column=1, sticky="w", padx=(10, 4), pady=6)
         ttk.Combobox(
             common_frame,
             textvariable=self._appliance_type_var,
             values=("reversible", "heating_only"),
             width=12,
             state="readonly",
-        ).grid(row=0, column=9, sticky="w", padx=(0, 6), pady=6)
+        ).grid(row=0, column=2, sticky="w", padx=(0, 6), pady=6)
         return common_frame

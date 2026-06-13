@@ -119,6 +119,9 @@
 - 383: Calculator initial ISO sizing and EN14825 form-entry undo correction
   completed; first-launch ISO size now refits after top-level notebook settle,
   and EN14825 form entries have lightweight Ctrl/Cmd-Z undo.
+- 384: EN14825 table input consistency correction completed; form-entry undo
+  helper removed, and common/SEER/SCOP numeric auxiliary inputs now use
+  MetricInputTable + TkTableController while appliance type remains a dropdown.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
@@ -128,7 +131,8 @@
 1. **Calculator UI manual smoke closeout — next active slice**
    - Re-check first-launch ISO 2-point size, profile switch/return sizing,
      EN14825 SEER/SCOP widths, SCOP result alignment/Tested emphasis, and
-     EN14825 form Entry Ctrl/Cmd-Z behavior on the target desktop.
+     EN14825 auxiliary table selection/copy/paste/Ctrl/Cmd-Z behavior on the
+     target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

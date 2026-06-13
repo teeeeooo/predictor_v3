@@ -17,7 +17,6 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
-from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
@@ -65,6 +64,7 @@ class En14825SeerSection:
         self._p_design_var = tk.StringVar(value="3000")
         self._t_design_var = tk.StringVar(value="35.0")
         self._cd_var = tk.StringVar(value="0.25")
+        self._syncing_design_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
         aux_frame.grid(
@@ -78,21 +78,29 @@ class En14825SeerSection:
         # Design Specs Frame (Pdesignc, Tdesignc, Cd)
         design_frame = ttk.LabelFrame(aux_frame, text="설계 사양 (Design Specs)")
         design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-
-        ttk.Label(design_frame, text="Pdesignc [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        p_design_entry = ttk.Entry(design_frame, textvariable=self._p_design_var, width=8)
-        p_design_entry.grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(p_design_entry, self._p_design_var)
-
-        ttk.Label(design_frame, text="Tdesignc [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        t_design_entry = ttk.Entry(design_frame, textvariable=self._t_design_var, width=6)
-        t_design_entry.grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
-        attach_form_entry_undo(t_design_entry, self._t_design_var)
-
-        ttk.Label(design_frame, text="Cd:").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        cd_entry = ttk.Entry(design_frame, textvariable=self._cd_var, width=6)
-        cd_entry.grid(row=0, column=5, sticky="w", padx=(0, 6), pady=6)
-        attach_form_entry_undo(cd_entry, self._cd_var)
+        design_frame.columnconfigure(0, weight=1)
+        self.design_table = MetricInputTable(
+            design_frame,
+            columns=(
+                ("p_design_c", "Pdesignc [W]"),
+                ("t_design_c", "Tdesignc [°C]"),
+                ("cd", "Cd"),
+            ),
+            rows=(("design", "입력값"),),
+            editable_cells={
+                ("design", "p_design_c"): "p_design_c",
+                ("design", "t_design_c"): "t_design_c",
+                ("design", "cd"): "cd",
+            },
+            row_header_chars=8,
+            data_column_chars=10,
+        )
+        self.design_table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        self.design_table.set_values(self._design_input_values())
+        self.design_table.set_values_changed_callback(
+            self._on_design_table_values_changed
+        )
+        self.design_controller = TkTableController(self.design_table)
 
         # 2. Main Matrix Table
         ttk.Label(self._frame, text="SEER Test Conditions & Data").grid(
@@ -182,7 +190,7 @@ class En14825SeerSection:
             self._t_design_var,
             self._cd_var,
         ):
-            var.trace_add("write", lambda *args: self._auto_calc.schedule())
+            var.trace_add("write", lambda *args: self._on_design_var_changed())
 
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self._auto_calc.flush_now()
@@ -194,6 +202,37 @@ class En14825SeerSection:
         self._auto_calc.cancel()
 
     def schedule_recalculate(self) -> None:
+        self._auto_calc.schedule()
+
+    def _design_input_values(self) -> dict[str, str]:
+        return {
+            "p_design_c": self._p_design_var.get(),
+            "t_design_c": self._t_design_var.get(),
+            "cd": self._cd_var.get(),
+        }
+
+    def _on_design_var_changed(self) -> None:
+        if not self._syncing_design_inputs:
+            self.design_table.set_values_batch(self._design_input_values())
+        self._auto_calc.schedule()
+
+    def _on_design_table_values_changed(self) -> None:
+        if self._syncing_design_inputs:
+            return
+        values = self.design_table.get_text_values()
+        var_by_key = {
+            "p_design_c": self._p_design_var,
+            "t_design_c": self._t_design_var,
+            "cd": self._cd_var,
+        }
+        self._syncing_design_inputs = True
+        try:
+            for key, var in var_by_key.items():
+                value = values.get(key, var.get())
+                if var.get() != value:
+                    var.set(value)
+        finally:
+            self._syncing_design_inputs = False
         self._auto_calc.schedule()
 
     def recalculate_now(self) -> None:

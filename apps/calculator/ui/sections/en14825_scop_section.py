@@ -14,7 +14,6 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
-from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
@@ -60,6 +59,7 @@ class En14825ScopSection:
 
         # 1. Top Auxiliary Parameters Frame
         self._cd_var = tk.StringVar(value="0.25")
+        self._syncing_aux_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
         aux_frame.grid(
@@ -73,11 +73,18 @@ class En14825ScopSection:
         # Specs Frame (Cd)
         specs_frame = ttk.LabelFrame(aux_frame, text="설계 사양")
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-
-        ttk.Label(specs_frame, text="Cd:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        cd_entry = ttk.Entry(specs_frame, textvariable=self._cd_var, width=6)
-        cd_entry.grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
-        attach_form_entry_undo(cd_entry, self._cd_var)
+        specs_frame.columnconfigure(0, weight=1)
+        self.cd_table = MetricInputTable(
+            specs_frame,
+            columns=(("cd", "Cd"),),
+            rows=(("design", "입력값"),),
+            editable_cells={("design", "cd"): "cd"},
+            row_header_chars=8,
+            data_column_chars=8,
+        )
+        self.cd_table.grid(row=0, column=0, sticky="ew", padx=6, pady=6)
+        self.cd_table.set_values({"cd": self._cd_var.get()})
+        self.cd_controller = TkTableController(self.cd_table)
 
         # 2. Stacked Climate Cards
         self.climates = ("average", "warmer", "colder")
@@ -105,6 +112,8 @@ class En14825ScopSection:
 
         self.input_tables: dict[str, MetricInputTable] = {}
         self.table_controllers: dict[str, TkTableController] = {}
+        self.climate_input_tables: dict[str, MetricInputTable] = {}
+        self.climate_input_controllers: dict[str, TkTableController] = {}
         self._result_surfaces: dict[str, ScopResultSurface] = {}
         self._result_cards: dict[str, tk.Frame] = {}
         self._result_value_labels: dict[str, dict[tuple[str, str], tk.Label]] = {}
@@ -151,26 +160,33 @@ class En14825ScopSection:
             # Setup climate specific auxiliary inputs
             inputs_frame = ttk.Frame(body)
             inputs_frame.grid(row=0, column=0, sticky="w", pady=(0, 6))
+            inputs_frame.columnconfigure(0, weight=1)
 
-            ttk.Label(inputs_frame, text="Pdesignh [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4))
-            p_design_entry = ttk.Entry(inputs_frame, textvariable=self.p_design_h_vars[clm], width=8)
-            p_design_entry.grid(row=0, column=1, sticky="w", padx=(0, 10))
-            attach_form_entry_undo(p_design_entry, self.p_design_h_vars[clm])
+            climate_table = MetricInputTable(
+                inputs_frame,
+                columns=(
+                    ("p_design_h", "Pdesignh [W]"),
+                    ("tbiv", "Tbiv [°C]"),
+                    ("tol", "TOL [°C]"),
+                ),
+                rows=(("design", "입력값"),),
+                editable_cells={
+                    ("design", "p_design_h"): "p_design_h",
+                    ("design", "tbiv"): "tbiv",
+                    ("design", "tol"): "tol",
+                },
+                row_header_chars=8,
+                data_column_chars=10,
+            )
+            climate_table.grid(row=0, column=0, sticky="ew", padx=(6, 10))
+            climate_table.set_values(self._climate_aux_values(clm))
+            self.climate_input_tables[clm] = climate_table
+            self.climate_input_controllers[clm] = TkTableController(climate_table)
 
-            ttk.Label(inputs_frame, text="Tdesignh [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4))
+            ttk.Label(inputs_frame, text="Tdesignh [°C]:").grid(row=0, column=1, sticky="w", padx=(6, 4))
             t_design_label = ttk.Label(inputs_frame, text=self._format_t_design_h(clm), width=6)
-            t_design_label.grid(row=0, column=3, sticky="w", padx=(0, 10))
+            t_design_label.grid(row=0, column=2, sticky="w", padx=(0, 6))
             self.t_design_h_value_labels[clm] = t_design_label
-
-            ttk.Label(inputs_frame, text="Tbiv [°C]:").grid(row=0, column=4, sticky="w", padx=(6, 4))
-            tbiv_entry = ttk.Entry(inputs_frame, textvariable=self.tbiv_vars[clm], width=6)
-            tbiv_entry.grid(row=0, column=5, sticky="w", padx=(0, 10))
-            attach_form_entry_undo(tbiv_entry, self.tbiv_vars[clm])
-
-            ttk.Label(inputs_frame, text="TOL [°C]:").grid(row=0, column=6, sticky="w", padx=(6, 4))
-            tol_entry = ttk.Entry(inputs_frame, textvariable=self.tol_vars[clm], width=6)
-            tol_entry.grid(row=0, column=7, sticky="w", padx=(0, 6))
-            attach_form_entry_undo(tol_entry, self.tol_vars[clm])
 
             # Table construction
             editable_cells = {}
@@ -241,13 +257,21 @@ class En14825ScopSection:
         # Hook table edits to recalculate
         for table in self.input_tables.values():
             table.set_values_changed_callback(self._auto_calc.schedule)
+        self.cd_table.set_values_changed_callback(self._on_cd_table_values_changed)
+        for clm, table in self.climate_input_tables.items():
+            table.set_values_changed_callback(
+                lambda clm=clm: self._on_climate_table_values_changed(clm)
+            )
 
         # Bind auxiliary changes to scheduler
-        self._cd_var.trace_add("write", lambda *args: self._auto_calc.schedule())
+        self._cd_var.trace_add("write", lambda *args: self._on_cd_var_changed())
 
         for d_vars in (self.p_design_h_vars, self.tbiv_vars, self.tol_vars):
-            for var in d_vars.values():
-                var.trace_add("write", lambda *args: self._auto_calc.schedule())
+            for clm, var in d_vars.items():
+                var.trace_add(
+                    "write",
+                    lambda *args, clm=clm: self._on_climate_var_changed(clm),
+                )
 
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         
@@ -261,6 +285,56 @@ class En14825ScopSection:
         self._auto_calc.cancel()
 
     def schedule_recalculate(self) -> None:
+        self._auto_calc.schedule()
+
+    def _climate_aux_values(self, climate: str) -> dict[str, str]:
+        return {
+            "p_design_h": self.p_design_h_vars[climate].get(),
+            "tbiv": self.tbiv_vars[climate].get(),
+            "tol": self.tol_vars[climate].get(),
+        }
+
+    def _on_cd_var_changed(self) -> None:
+        if not self._syncing_aux_inputs:
+            self.cd_table.set_values_batch({"cd": self._cd_var.get()})
+        self._auto_calc.schedule()
+
+    def _on_cd_table_values_changed(self) -> None:
+        if self._syncing_aux_inputs:
+            return
+        value = self.cd_table.get_text_values().get("cd", self._cd_var.get())
+        self._syncing_aux_inputs = True
+        try:
+            if self._cd_var.get() != value:
+                self._cd_var.set(value)
+        finally:
+            self._syncing_aux_inputs = False
+        self._auto_calc.schedule()
+
+    def _on_climate_var_changed(self, climate: str) -> None:
+        if not self._syncing_aux_inputs:
+            self.climate_input_tables[climate].set_values_batch(
+                self._climate_aux_values(climate)
+            )
+        self._auto_calc.schedule()
+
+    def _on_climate_table_values_changed(self, climate: str) -> None:
+        if self._syncing_aux_inputs:
+            return
+        values = self.climate_input_tables[climate].get_text_values()
+        var_by_key = {
+            "p_design_h": self.p_design_h_vars[climate],
+            "tbiv": self.tbiv_vars[climate],
+            "tol": self.tol_vars[climate],
+        }
+        self._syncing_aux_inputs = True
+        try:
+            for key, var in var_by_key.items():
+                value = values.get(key, var.get())
+                if var.get() != value:
+                    var.set(value)
+        finally:
+            self._syncing_aux_inputs = False
         self._auto_calc.schedule()
 
     def _on_climate_toggle(self) -> None:

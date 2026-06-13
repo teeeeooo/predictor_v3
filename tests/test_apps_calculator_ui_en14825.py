@@ -616,8 +616,8 @@ def test_seer_section_uses_en14825_common_auxiliary_inputs():
         root.destroy()
 
 
-def test_en14825_common_and_design_entries_support_simple_undo():
-    """Form entries keep a lightweight Ctrl-Z undo path outside table controller."""
+def test_en14825_common_and_design_inputs_use_table_controller_undo():
+    """Auxiliary numeric inputs use MetricInputTable controller undo semantics."""
     import tkinter as tk
     try:
         root = tk.Tk()
@@ -632,32 +632,23 @@ def test_en14825_common_and_design_entries_support_simple_undo():
         tab.pack(fill=tk.BOTH, expand=True)
         root.update_idletasks()
 
-        common_entry = _entry_for_variable(tab, tab._p_to_var)
         tab._p_to_var.set("12")
-        tab._p_to_var.set("123")
-        assert common_entry.bind("<Control-z>")
-        common_entry._form_entry_undo()
+        common_controller = tab._common_input_controllers[0]
+        assert common_controller.table.get_text_values()["p_to"] == "12"
+        common_controller.select((0, 0))
+        common_controller._clear()
+        assert tab._p_to_var.get() == ""
+        common_controller._undo_last()
         assert tab._p_to_var.get() == "12"
 
-        design_entry = _entry_for_variable(tab, tab.seer_section._p_design_var)
         tab.seer_section._p_design_var.set("3100")
-        tab.seer_section._p_design_var.set("3200")
-        assert design_entry.bind("<Control-z>")
-        design_entry._form_entry_undo()
+        design_controller = tab.seer_section.design_controller
+        assert design_controller.table.get_text_values()["p_design_c"] == "3100"
+        design_controller.select((0, 0))
+        design_controller._clear()
+        assert tab.seer_section._p_design_var.get() == ""
+        design_controller._undo_last()
         assert tab.seer_section._p_design_var.get() == "3100"
 
     finally:
         root.destroy()
-
-
-def _entry_for_variable(parent, variable):
-    from tkinter import ttk
-
-    for child in parent.winfo_children():
-        if isinstance(child, ttk.Entry) and child.cget("textvariable") == str(variable):
-            return child
-        try:
-            return _entry_for_variable(child, variable)
-        except LookupError:
-            pass
-    raise LookupError(f"Entry not found for variable {variable}")
