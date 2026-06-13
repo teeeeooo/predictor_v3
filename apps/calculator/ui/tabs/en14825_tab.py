@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
@@ -140,13 +141,21 @@ class En14825Tab(ttk.Frame):
         common_frame = ttk.LabelFrame(parent, text="공통 입력")
         common_frame.pack(fill=tk.X, padx=4, pady=(4, 0))
         ttk.Label(common_frame, text="Pto [W]").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_to_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
+        p_to_entry = ttk.Entry(common_frame, textvariable=self._p_to_var, width=6)
+        p_to_entry.grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(p_to_entry, self._p_to_var)
         ttk.Label(common_frame, text="Psb [W]").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_sb_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+        p_sb_entry = ttk.Entry(common_frame, textvariable=self._p_sb_var, width=6)
+        p_sb_entry.grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(p_sb_entry, self._p_sb_var)
         ttk.Label(common_frame, text="Pck [W]").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_ck_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
+        p_ck_entry = ttk.Entry(common_frame, textvariable=self._p_ck_var, width=6)
+        p_ck_entry.grid(row=0, column=5, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(p_ck_entry, self._p_ck_var)
         ttk.Label(common_frame, text="Poff [W]").grid(row=0, column=6, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(common_frame, textvariable=self._p_off_var, width=6).grid(row=0, column=7, sticky="w", padx=(0, 10), pady=6)
+        p_off_entry = ttk.Entry(common_frame, textvariable=self._p_off_var, width=6)
+        p_off_entry.grid(row=0, column=7, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(p_off_entry, self._p_off_var)
         ttk.Label(common_frame, text="기기 유형").grid(row=0, column=8, sticky="w", padx=(6, 4), pady=6)
         ttk.Combobox(
             common_frame,

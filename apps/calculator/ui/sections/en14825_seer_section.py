@@ -17,6 +17,7 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
@@ -79,13 +80,19 @@ class En14825SeerSection:
         design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
         ttk.Label(design_frame, text="Pdesignc [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(design_frame, textvariable=self._p_design_var, width=8).grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
+        p_design_entry = ttk.Entry(design_frame, textvariable=self._p_design_var, width=8)
+        p_design_entry.grid(row=0, column=1, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(p_design_entry, self._p_design_var)
 
         ttk.Label(design_frame, text="Tdesignc [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(design_frame, textvariable=self._t_design_var, width=6).grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+        t_design_entry = ttk.Entry(design_frame, textvariable=self._t_design_var, width=6)
+        t_design_entry.grid(row=0, column=3, sticky="w", padx=(0, 10), pady=6)
+        attach_form_entry_undo(t_design_entry, self._t_design_var)
 
         ttk.Label(design_frame, text="Cd:").grid(row=0, column=4, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(design_frame, textvariable=self._cd_var, width=6).grid(row=0, column=5, sticky="w", padx=(0, 6), pady=6)
+        cd_entry = ttk.Entry(design_frame, textvariable=self._cd_var, width=6)
+        cd_entry.grid(row=0, column=5, sticky="w", padx=(0, 6), pady=6)
+        attach_form_entry_undo(cd_entry, self._cd_var)
 
         # 2. Main Matrix Table
         ttk.Label(self._frame, text="SEER Test Conditions & Data").grid(

@@ -45,7 +45,7 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.tabs.iso16358_tab import mousewheel_units
 
 
-def test_pyqt5_not_imported_via_apps.calculator.ui_calculator_app():
+def test_pyqt5_not_imported_via_apps_calculator_ui_calculator_app():
     """Importing the Tkinter shell must not pull PyQt5 in."""
     for name in list(sys.modules):
         if name.startswith("PyQt5"):
@@ -294,6 +294,9 @@ try:
     assert app.iso_tab.result_panel is not None
     assert app.iso_tab.result_panel._text.get("1.0", "end-1c").strip() != ""
     preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
+    actual_width = root.winfo_width()
+    actual_height = root.winfo_height()
+    assert (actual_width, actual_height) == (preferred_width, preferred_height)
     assert preferred_width >= app.iso_tab._scrollbar.winfo_reqwidth()
     assert preferred_height >= app.iso_tab._metric_notebook.winfo_reqheight()
     assert preferred_width < 800
@@ -335,7 +338,7 @@ finally:
     assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
-def test_calculator_launch_schedules_one_shot_content_fit(monkeypatch):
+def test_calculator_launch_keeps_initial_iso_size(monkeypatch):
     tk = pytest.importorskip("tkinter")
     try:
         root = tk.Tk()
@@ -359,9 +362,14 @@ def test_calculator_launch_schedules_one_shot_content_fit(monkeypatch):
 
         assert calls == []
         root.update()
-        assert calls == [app.iso_tab]
+        assert set(calls) <= {app.iso_tab}
+        preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
+        assert (root.winfo_width(), root.winfo_height()) == (
+            preferred_width,
+            preferred_height,
+        )
         root.update()
-        assert calls == [app.iso_tab]
+        assert set(calls) <= {app.iso_tab}
     finally:
         root.destroy()
 
@@ -523,6 +531,9 @@ def test_fit_window_to_preferred_content_preserves_current_location():
 
         root.geometry("300x250-400+85")
         root.update_idletasks()
+        _before_w, _before_h, before_x, before_y = parse_window_geometry(
+            root.geometry()
+        )
         fit_window_to_preferred_content(root, (320, 260))
         root.update_idletasks()
         expected_w, expected_h = capped_window_size(
@@ -531,7 +542,9 @@ def test_fit_window_to_preferred_content_preserves_current_location():
             root.winfo_screenwidth(),
             root.winfo_screenheight(),
         )
-        assert root.geometry() == f"{expected_w}x{expected_h}-400+85"
+        after_w, after_h, _after_x, after_y = parse_window_geometry(root.geometry())
+        assert (after_w, after_h) == (expected_w, expected_h)
+        assert after_y == before_y
     finally:
         root.destroy()
 

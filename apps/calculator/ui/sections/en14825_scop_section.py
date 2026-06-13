@@ -14,6 +14,7 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.form_entry_undo import attach_form_entry_undo
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
@@ -74,7 +75,9 @@ class En14825ScopSection:
         specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
         ttk.Label(specs_frame, text="Cd:").grid(row=0, column=0, sticky="w", padx=(6, 4), pady=6)
-        ttk.Entry(specs_frame, textvariable=self._cd_var, width=6).grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
+        cd_entry = ttk.Entry(specs_frame, textvariable=self._cd_var, width=6)
+        cd_entry.grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
+        attach_form_entry_undo(cd_entry, self._cd_var)
 
         # 2. Stacked Climate Cards
         self.climates = ("average", "warmer", "colder")
@@ -150,7 +153,9 @@ class En14825ScopSection:
             inputs_frame.grid(row=0, column=0, sticky="w", pady=(0, 6))
 
             ttk.Label(inputs_frame, text="Pdesignh [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4))
-            ttk.Entry(inputs_frame, textvariable=self.p_design_h_vars[clm], width=8).grid(row=0, column=1, sticky="w", padx=(0, 10))
+            p_design_entry = ttk.Entry(inputs_frame, textvariable=self.p_design_h_vars[clm], width=8)
+            p_design_entry.grid(row=0, column=1, sticky="w", padx=(0, 10))
+            attach_form_entry_undo(p_design_entry, self.p_design_h_vars[clm])
 
             ttk.Label(inputs_frame, text="Tdesignh [°C]:").grid(row=0, column=2, sticky="w", padx=(6, 4))
             t_design_label = ttk.Label(inputs_frame, text=self._format_t_design_h(clm), width=6)
@@ -158,10 +163,14 @@ class En14825ScopSection:
             self.t_design_h_value_labels[clm] = t_design_label
 
             ttk.Label(inputs_frame, text="Tbiv [°C]:").grid(row=0, column=4, sticky="w", padx=(6, 4))
-            ttk.Entry(inputs_frame, textvariable=self.tbiv_vars[clm], width=6).grid(row=0, column=5, sticky="w", padx=(0, 10))
+            tbiv_entry = ttk.Entry(inputs_frame, textvariable=self.tbiv_vars[clm], width=6)
+            tbiv_entry.grid(row=0, column=5, sticky="w", padx=(0, 10))
+            attach_form_entry_undo(tbiv_entry, self.tbiv_vars[clm])
 
             ttk.Label(inputs_frame, text="TOL [°C]:").grid(row=0, column=6, sticky="w", padx=(6, 4))
-            ttk.Entry(inputs_frame, textvariable=self.tol_vars[clm], width=6).grid(row=0, column=7, sticky="w", padx=(0, 6))
+            tol_entry = ttk.Entry(inputs_frame, textvariable=self.tol_vars[clm], width=6)
+            tol_entry.grid(row=0, column=7, sticky="w", padx=(0, 6))
+            attach_form_entry_undo(tol_entry, self.tol_vars[clm])
 
             # Table construction
             editable_cells = {}

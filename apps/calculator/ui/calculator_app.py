@@ -43,28 +43,43 @@ class CalculatorTkApp:
         self.root = root if root is not None else tk.Tk()
         self.root.title("Calculator (Tkinter)")
 
-        notebook = ttk.Notebook(self.root)
-        notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.iso_tab = Iso16358Tab(notebook)
-        notebook.add(self.iso_tab, text="ISO 16358")
+        self.iso_tab = Iso16358Tab(self.notebook)
+        self.notebook.add(self.iso_tab, text="ISO 16358")
 
-        self.en14825_tab = En14825Tab(notebook)
-        notebook.add(self.en14825_tab, text="EN14825")
+        self.en14825_tab = En14825Tab(self.notebook)
+        self.notebook.add(self.en14825_tab, text="EN14825")
 
-        notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self._ignore_initial_tab_changed = True
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         self.root.update_idletasks()
-        center_window(self.root, self.iso_tab.preferred_initial_size())
+        initial_size = self.iso_tab.preferred_initial_size()
+        self._set_notebook_content_size(initial_size)
+        center_window(self.root, initial_size)
         apply_overflow_correction(self.root, self.iso_tab)
         clamp_window_to_visible_bounds(self.root)
-        self.root.after_idle(self.iso_tab.fit_toplevel_to_current_content_once)
+        self.root.after(0, self._apply_initial_iso_fit)
+
+    def _apply_initial_iso_fit(self) -> None:
+        self._ignore_initial_tab_changed = False
+        self.iso_tab.fit_toplevel_to_current_content_once()
 
     def _on_tab_changed(self, event: tk.Event) -> None:
+        if self._ignore_initial_tab_changed:
+            return
         notebook = event.widget
         selected_tab = notebook.nametowidget(notebook.select())
+        if hasattr(selected_tab, "preferred_initial_size"):
+            self._set_notebook_content_size(selected_tab.preferred_initial_size())
         if hasattr(selected_tab, "fit_toplevel_to_current_content_once"):
             selected_tab.fit_toplevel_to_current_content_once()
+
+    def _set_notebook_content_size(self, size: tuple[int, int]) -> None:
+        width, height = size
+        self.notebook.configure(width=max(1, width), height=max(1, height))
 
     def run(self) -> None:
         self.root.mainloop()

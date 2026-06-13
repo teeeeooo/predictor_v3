@@ -614,3 +614,50 @@ def test_seer_section_uses_en14825_common_auxiliary_inputs():
 
     finally:
         root.destroy()
+
+
+def test_en14825_common_and_design_entries_support_simple_undo():
+    """Form entries keep a lightweight Ctrl-Z undo path outside table controller."""
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.tabs.en14825_tab import En14825Tab
+
+        tab = En14825Tab(root)
+        tab.pack(fill=tk.BOTH, expand=True)
+        root.update_idletasks()
+
+        common_entry = _entry_for_variable(tab, tab._p_to_var)
+        tab._p_to_var.set("12")
+        tab._p_to_var.set("123")
+        assert common_entry.bind("<Control-z>")
+        common_entry._form_entry_undo()
+        assert tab._p_to_var.get() == "12"
+
+        design_entry = _entry_for_variable(tab, tab.seer_section._p_design_var)
+        tab.seer_section._p_design_var.set("3100")
+        tab.seer_section._p_design_var.set("3200")
+        assert design_entry.bind("<Control-z>")
+        design_entry._form_entry_undo()
+        assert tab.seer_section._p_design_var.get() == "3100"
+
+    finally:
+        root.destroy()
+
+
+def _entry_for_variable(parent, variable):
+    from tkinter import ttk
+
+    for child in parent.winfo_children():
+        if isinstance(child, ttk.Entry) and child.cget("textvariable") == str(variable):
+            return child
+        try:
+            return _entry_for_variable(child, variable)
+        except LookupError:
+            pass
+    raise LookupError(f"Entry not found for variable {variable}")

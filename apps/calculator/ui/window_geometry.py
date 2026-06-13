@@ -27,7 +27,9 @@ class SupportsVerticalOverflowDelta(Protocol):
     def vertical_overflow_delta(self) -> int: ...
 
 
-_GEOMETRY_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
+_GEOMETRY_RE = re.compile(
+    r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>(?:[+-]|--)\d+)(?P<y>(?:[+-]|--)\d+)$"
+)
 
 
 def parse_window_geometry(geometry: str) -> tuple[int, int, int, int]:
@@ -37,13 +39,19 @@ def parse_window_geometry(geometry: str) -> tuple[int, int, int, int]:
     return (
         int(match.group("width")),
         int(match.group("height")),
-        int(match.group("x")),
-        int(match.group("y")),
+        _parse_geometry_coordinate(match.group("x")),
+        _parse_geometry_coordinate(match.group("y")),
     )
 
 
 def format_window_geometry(width: int, height: int, x: int, y: int) -> str:
     return f"{width}x{height}{x:+d}{y:+d}"
+
+
+def _parse_geometry_coordinate(value: str) -> int:
+    if value.startswith("--"):
+        return -int(value[2:])
+    return int(value)
 
 
 def _screen_margin_y(screen_height: int) -> int:
