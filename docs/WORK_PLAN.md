@@ -109,15 +109,19 @@
 - 373: Soft LOC warning triage workflow hardening completed; changed/new source
   soft warnings now require report triage before the next code slice.
 - 379: EN14825 common input placement and terminology correction completed.
+- 381: EN14825 SCOP per-climate result surface correction completed; root-level
+  SCOP right-side result surface removed and climate-local result blocks added
+  beside each active input table.
   - 366: EN14825 SEER section integration with real-time updates completed.
   - 367: EN14825 SEER UI parity correction + MetricInputTable static cell tint fix completed.
   - 368: EN14825 SEER table section boundary line (in progress).
 
 ## Next Actions
 
-1. **EN14825 SCOP result surface manual smoke closeout — next active slice**
-   - Verify the right-side compact SCOP result surface, Declared/Tested stacked
-     rows, and Tdesignh read-only labels on the target desktop.
+1. **EN14825 SCOP per-climate result surface manual smoke closeout — next active slice**
+   - Verify Average/Warmer/Colder climate-local compact result blocks, inactive
+     climate collapse behavior, first-launch width, SEER tab width, and
+     Tdesignh read-only labels on the target desktop.
 2. **SCOP climate card subcomponent split — defer unless follow-up smoke shows card-level layout/refit ownership is needed**
 3. **Test/package naming cleanup execution (test_ui_tk_* → test_apps_calculator_ui_*) — can be deferred**
 

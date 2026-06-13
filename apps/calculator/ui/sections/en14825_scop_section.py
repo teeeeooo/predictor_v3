@@ -17,11 +17,10 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
-    format_scop_compact_rows,
     format_scop_climate_error_summary,
     format_scop_result_summary,
-    format_scop_status,
 )
+from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSurface
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
@@ -57,7 +56,6 @@ class En14825ScopSection:
 
         self._frame = ttk.LabelFrame(parent, text="SCOP")
         self._frame.columnconfigure(0, weight=1)
-        self._frame.columnconfigure(1, weight=0)
 
         # 1. Top Auxiliary Parameters Frame
         self._cd_var = tk.StringVar(value="0.25")
@@ -104,6 +102,9 @@ class En14825ScopSection:
 
         self.input_tables: dict[str, MetricInputTable] = {}
         self.table_controllers: dict[str, TkTableController] = {}
+        self._result_surfaces: dict[str, ScopResultSurface] = {}
+        self._result_cards: dict[str, tk.Frame] = {}
+        self._result_value_labels: dict[str, dict[tuple[str, str], tk.Label]] = {}
 
         card_row_start = 2
         for i, clm in enumerate(self.climates):
@@ -138,8 +139,17 @@ class En14825ScopSection:
             inner.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.climate_inner_frames[clm] = inner
 
+            body = ttk.Frame(inner)
+            body.pack(fill=tk.BOTH, expand=True)
+            body.columnconfigure(0, weight=1)
+            body.columnconfigure(1, weight=0)
+            body.rowconfigure(0, weight=1)
+
+            input_area = ttk.Frame(body)
+            input_area.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+
             # Setup climate specific auxiliary inputs
-            inputs_frame = ttk.Frame(inner)
+            inputs_frame = ttk.Frame(input_area)
             inputs_frame.pack(anchor="w", pady=(0, 6))
 
             ttk.Label(inputs_frame, text="Pdesignh [W]:").grid(row=0, column=0, sticky="w", padx=(6, 4))
@@ -163,7 +173,7 @@ class En14825ScopSection:
                     editable_cells[(row, col)] = f"{row}_{col}"
 
             table = MetricInputTable(
-                inner,
+                input_area,
                 columns=tuple(
                     (col_key, col_key) for col_key in ScopTableModel.COL_KEYS
                 ),
@@ -210,20 +220,11 @@ class En14825ScopSection:
 
             self.table_controllers[clm] = TkTableController(table)
 
-        self._result_surface = ttk.LabelFrame(self._frame, text="SCOP 결과")
-        self._result_surface.grid(
-            row=card_row_start,
-            column=1,
-            rowspan=len(self.climates),
-            sticky="n",
-            padx=(0, ISO_SECTION_PADX),
-            pady=(0, 10),
-        )
-        self._result_cards: dict[str, ttk.Frame] = {}
-        self._result_status_labels: dict[str, ttk.Label] = {}
-        self._result_value_labels: dict[str, dict[tuple[str, str], ttk.Label]] = {}
-        for clm in self.climates:
-            self._create_result_card(clm)
+            result_surface = ScopResultSurface(body)
+            result_surface.grid(row=0, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
+            self._result_surfaces[clm] = result_surface
+            self._result_cards[clm] = result_surface.frame
+            self._result_value_labels[clm] = result_surface.value_labels
 
         # Compatibility text model for existing non-layout tests.
         self.result_panel = ResultPanel(self._frame, title="SCOP 결과")
@@ -263,8 +264,10 @@ class En14825ScopSection:
             inner = self.climate_inner_frames[clm]
             if active:
                 inner.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+                self._set_result_card_visible(clm, True)
             else:
                 inner.pack_forget()
+                self._set_result_card_visible(clm, False)
 
         # Re-trigger calculation and layout refit
         self._auto_calc.schedule()
@@ -384,50 +387,20 @@ class En14825ScopSection:
         except Exception:
             return "-"
 
-    def _create_result_card(self, climate: str) -> None:
-        card = ttk.Frame(self._result_surface)
-        card.pack(fill=tk.X, padx=6, pady=(6, 0))
-        ttk.Label(card, text=climate.capitalize(), font=("TkDefaultFont", 10, "bold")).grid(
-            row=0, column=0, columnspan=5, sticky="w"
-        )
-        status = ttk.Label(card, text="대기 중")
-        status.grid(row=1, column=0, columnspan=5, sticky="w", pady=(0, 2))
-        self._result_cards[climate] = card
-        self._result_status_labels[climate] = status
-        self._result_value_labels[climate] = {}
-        for row_index, row_label in enumerate(("Declared", "Tested"), start=2):
-            ttk.Label(card, text=row_label).grid(row=row_index, column=0, sticky="w", padx=(0, 6))
-            for col_index, key in enumerate(("SCOP", "QH [kWh]", "Total [kWh]", "SCOP %"), start=1):
-                value = ttk.Label(card, text="-", width=9, anchor="e")
-                value.grid(row=row_index, column=col_index, sticky="e", padx=(2, 0))
-                self._result_value_labels[climate][(row_label, key)] = value
-
     def _set_result_card_visible(self, climate: str, visible: bool) -> None:
-        card = self._result_cards[climate]
-        if visible and not card.winfo_manager():
-            card.pack(fill=tk.X, padx=6, pady=(6, 0))
-        elif not visible and card.winfo_manager():
-            card.pack_forget()
+        if visible:
+            self._result_surfaces[climate].show()
+        else:
+            self._result_surfaces[climate].hide()
 
     def _update_result_card(self, climate: str, summary) -> None:
-        self._set_result_card_visible(climate, True)
-        self._result_status_labels[climate].configure(text=format_scop_status(summary))
-        values = self._result_value_labels[climate]
-        for row_label, fields in format_scop_compact_rows(summary):
-            field_map = dict(fields)
-            for key in ("SCOP", "QH [kWh]", "Total [kWh]", "SCOP %"):
-                values[(row_label, key)].configure(text=field_map.get(key, "-"))
+        self._result_surfaces[climate].update(summary)
 
     def _show_result_card_error(self, climate: str, message: str) -> None:
-        self._set_result_card_visible(climate, True)
-        self._result_status_labels[climate].configure(text=f"기류/설정 오류: {message}")
-        for label in self._result_value_labels[climate].values():
-            label.configure(text="-")
+        self._result_surfaces[climate].show_error(message)
 
     def _clear_result_card(self, climate: str) -> None:
-        self._result_status_labels[climate].configure(text="대기 중")
-        for label in self._result_value_labels[climate].values():
-            label.configure(text="-")
+        self._result_surfaces[climate].clear()
 
     def _parse_float_safe(self, text: str, default: float | None) -> float | None:
         try:

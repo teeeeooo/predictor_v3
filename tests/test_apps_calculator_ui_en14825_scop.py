@@ -530,7 +530,9 @@ def test_scop_gui_integration_basics():
         assert section.t_design_h_value_labels["average"].cget("text") == "-10"
         assert section.t_design_h_value_labels["warmer"].cget("text") == "2"
         assert section.t_design_h_value_labels["colder"].cget("text") == "-22"
-        assert section._result_surface.grid_info()["column"] == 1
+        assert not hasattr(section, "_result_surface")
+        assert section._result_cards["average"].grid_info()["column"] == 1
+        assert section._result_cards["average"].master.master is section.climate_inner_frames["average"]
         assert section.result_panel._frame.winfo_manager() == ""
         assert section.climate_active_vars["average"].get() is True
         assert section.climate_active_vars["warmer"].get() is False
@@ -539,6 +541,7 @@ def test_scop_gui_integration_basics():
         # Verify collapsed/packed state
         assert section.climate_inner_frames["average"].winfo_manager() != ""
         assert section.climate_inner_frames["warmer"].winfo_manager() == ""
+        assert section._result_cards["warmer"].winfo_manager() == ""
 
         # 2. average table에 declared_power row가 노출되지 않는지 확인
         row_keys = [r[0] for r in section.input_tables["average"].rows]
