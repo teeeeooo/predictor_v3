@@ -1,0 +1,112 @@
+{
+  "standard": "BS EN 14825:2012 / EN 14825:2012 (E)",
+  "source": {
+    "document": "EN14825-병합됨.pdf",
+    "tables": [
+      "Table 2: air-to-air test point outdoor temperatures",
+      "Table 36: cooling season bin hours",
+      "Table 37: heating season bin hours",
+      "Table D.1: hours used for reference SEER",
+      "Table D.2: hours used for reference SCOP",
+      "Table D.3: crankcase heater mode hours for reference SEER",
+      "Table D.4: crankcase heater mode hours for reference SCOP"
+    ]
+  },
+  "unit_system": "metric",
+  "seer": {
+    "mode": "cooling",
+    "metric": "SEER",
+    "system_type": "air_to_air_variable_capacity",
+    "design": {
+      "t_design_c": 35,
+      "h_ce": 350
+    },
+    "test_point_temps": {
+      "A": 35,
+      "B": 30,
+      "C": 25,
+      "D": 20
+    },
+    "bin_data": {
+      "temps": [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+      "hours": [205, 227, 225, 225, 216, 215, 218, 197, 178, 158, 137, 109, 88, 63, 39, 31, 24, 17, 13, 9, 4, 3, 1, 0]
+    },
+    "operational_hours": {
+      "reversible": {"h_ce": 350, "h_to": 221, "h_sb": 2142, "h_ck": 2672, "h_off": 0},
+      "cooling_only": {"h_ce": 350, "h_to": 221, "h_sb": 2142, "h_ck": 7760, "h_off": 5088}
+    },
+    "defaults": {
+      "degradation_coefficient": 0.25,
+      "appliance_type": "reversible"
+    }
+  },
+  "scop": {
+    "standard": "BS EN 14825:2012 / EN 14825:2012 (E)",
+    "mode": "heating",
+    "metric": "SCOP",
+    "unit_system": "metric",
+    "system_type": "air_to_air_variable_capacity_reversible",
+    "source": {
+      "document": "EN14825-병합됨.pdf",
+      "tables": [
+        "Table 37: heating season bin hours",
+        "Table D.2: hours used for reference SCOP",
+        "Table D.4: crankcase heater mode hours for reference SCOP"
+      ]
+    },
+    "_comment": "SCOP scaffold for air conditioners excluding single/double duct. Bin hours and operating hours are sourced from the uploaded EN14825 PDF. The calculator treats user-entered A/B/C/D/TOL/Tbiv capacity and power as already resolved part-load declared points for Clause 7.4.",
+    "heating_test_point_schema": {
+      "A": {"outdoor_db_c": -7, "description": "Heating declared point A"},
+      "B": {"outdoor_db_c": 2, "description": "Heating declared point B"},
+      "C": {"outdoor_db_c": 7, "description": "Heating declared point C"},
+      "D": {"outdoor_db_c": 12, "description": "Heating declared point D"},
+      "Tbiv": {"description": "Heating declared point at bivalent temperature"},
+      "TOL": {"description": "Heating declared point at operation limit temperature"}
+    },
+    "climates": {
+      "average": {
+        "label": "Average",
+        "t_design_h_c": -10,
+        "tbiv_max_c": 2,
+        "tol_max_c": -7,
+        "heating_bin_temps_c": [-30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "heating_bin_hours": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 25, 23, 24, 27, 68, 91, 89, 165, 173, 240, 280, 320, 357, 356, 303, 330, 326, 348, 335, 315, 215, 169, 151, 105, 74],
+        "heating_bin_hours_total": 4910
+      },
+      "warmer": {
+        "label": "Warmer",
+        "t_design_h_c": 2,
+        "tbiv_max_c": 7,
+        "tol_max_c": 2,
+        "heating_bin_temps_c": [-30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "heating_bin_hours": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 22, 63, 63, 175, 162, 259, 360, 428, 430, 503, 444, 384, 294],
+        "heating_bin_hours_total": 3590
+      },
+      "colder": {
+        "label": "Colder",
+        "t_design_h_c": -22,
+        "tbiv_max_c": -7,
+        "tol_max_c": -15,
+        "heating_bin_temps_c": [-30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "heating_bin_hours": [0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 13, 17, 19, 26, 39, 41, 35, 52, 37, 41, 43, 54, 90, 125, 169, 195, 278, 306, 454, 385, 490, 533, 380, 228, 261, 279, 229, 269, 233, 230, 243, 191, 146, 150, 97, 61],
+        "heating_bin_hours_total": 6446
+      }
+    },
+    "operational_hours": {
+      "reversible": {
+        "average": {"h_he": 1400, "h_to": 179, "h_sb": 0, "h_off": 0, "h_ck": 179},
+        "warmer": {"h_he": 1400, "h_to": 755, "h_sb": 0, "h_off": 0, "h_ck": 755},
+        "colder": {"h_he": 2100, "h_to": 131, "h_sb": 0, "h_off": 0, "h_ck": 131}
+      },
+      "heating_only": {
+        "average": {"h_he": 1400, "h_to": 179, "h_sb": 0, "h_off": 3672, "h_ck": 3851},
+        "warmer": {"h_he": 1400, "h_to": 755, "h_sb": 0, "h_off": 4345, "h_ck": 4476},
+        "colder": {"h_he": 2100, "h_to": 131, "h_sb": 0, "h_off": 2189, "h_ck": 2944}
+      }
+    },
+    "defaults": {
+      "degradation_coefficient": 0.25,
+      "appliance_type": "reversible"
+    }
+  }
+}

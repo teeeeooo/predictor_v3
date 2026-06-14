@@ -43,17 +43,43 @@ class EN14825Calculator:
     def __init__(self, scop_config_path: str = None):
         if scop_config_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            scop_config_path = os.path.join(base_dir, "data", "region_configs", "en14825_scop.json")
+            scop_config_path = os.path.join(base_dir, "data", "region_configs", "en14825.json")
 
         self.scop_config_path = scop_config_path
-        self.scop_config = self._load_scop_config(scop_config_path)
+        loaded_config = self._load_config(scop_config_path)
+        self.config, self.seer_config, self.scop_config = self._split_config(loaded_config)
 
-    def _load_scop_config(self, config_path: str) -> dict:
+    def _load_config(self, config_path: str) -> dict:
         if not os.path.exists(config_path):
-            raise FileNotFoundError(f"SCOP config file not found: {config_path}")
+            raise FileNotFoundError(f"EN14825 config file not found: {config_path}")
 
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    def _split_config(self, config: dict) -> tuple:
+        if "seer" in config and "scop" in config:
+            return config, config["seer"], config["scop"]
+
+        return {
+            "standard": config.get("standard", "BS EN 14825:2012 / EN 14825:2012 (E)"),
+            "unit_system": config.get("unit_system", "metric"),
+            "seer": self._default_seer_config(),
+            "scop": config,
+        }, self._default_seer_config(), config
+
+    def _default_seer_config(self) -> dict:
+        return {
+            "mode": "cooling",
+            "metric": "SEER",
+            "design": {"t_design_c": T_DESIGN_C, "h_ce": H_CE},
+            "test_point_temps": {"A": T_A, "B": T_B, "C": T_C, "D": T_D},
+            "bin_data": {"temps": COOLING_BIN_TEMPS, "hours": COOLING_BIN_HOURS},
+            "operational_hours": SEER_OPERATIONAL_HOURS,
+            "defaults": {
+                "degradation_coefficient": CD_DEFAULT,
+                "appliance_type": "reversible",
+            },
+        }
 
     def _safe_div(self, num: float, den: float, fallback: float = 0.0) -> float:
         return num / den if den != 0 else fallback

@@ -50,6 +50,23 @@ def test_en14825_golden_seer():
     assert_golden_close(result["seer"], 9.104, "SEER")
 
 
+def test_en14825_unified_config_loads_seer_and_scop_sections():
+    calculator = EN14825Calculator("data/region_configs/en14825.json")
+
+    assert calculator.seer_config["design"]["t_design_c"] == 35
+    assert calculator.seer_config["operational_hours"]["cooling_only"]["h_off"] == 5088
+    assert calculator.scop_config["climates"]["warmer"]["t_design_h_c"] == 2
+    assert calculator.scop_config["operational_hours"]["heating_only"]["warmer"]["h_ck"] == 4476
+
+
+def test_en14825_legacy_scop_config_still_loads_with_seer_fallback():
+    calculator = EN14825Calculator("data/region_configs/en14825_scop.json")
+
+    assert calculator.scop_config["climates"]["average"]["heating_bin_hours_total"] == 4910
+    assert calculator.seer_config["bin_data"]["temps"][0] == 17
+    assert calculator.seer_config["operational_hours"]["reversible"]["h_ck"] == 2672
+
+
 def test_en14825_seer_default_matches_reversible():
     calculator = EN14825Calculator()
     kwargs = {

@@ -140,13 +140,16 @@
   between unused SEER-like `eu.json`, active SCOP `en14825_scop.json`, and
   core-local SEER constants, so config design should precede batch preflight and
   SCOP Warmer A correction.
+- 396: EN14825 unified config migration Step 1 completed; `en14825.json` now
+  owns `seer`/`scop` sections, profiles point to the unified config, and legacy
+  SCOP-only config loading remains compatible.
 
 ## Next Actions
 
-1. **EN14825 config consolidation design**
+1. **EN14825 SEER config-driven calculation migration**
 
-Deferred: EN14825 batch integration preflight should wait until EN14825 config
-ownership and the SCOP Warmer A correction schema are designed.
+Deferred: EN14825 batch integration preflight and SCOP Warmer A inactive-point
+correction should wait until config-driven SEER migration is complete.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated

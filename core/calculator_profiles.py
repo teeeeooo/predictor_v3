@@ -42,7 +42,7 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         metric="SCOP",
         mode="heating",
         calculator_id="en14825",
-        config_path="data/region_configs/en14825_scop.json",
+        config_path="data/region_configs/en14825.json",
         enabled=True,
     ),
     CalculatorProfile(
@@ -52,7 +52,7 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         metric="SEER",
         mode="cooling",
         calculator_id="en14825",
-        config_path="data/region_configs/en14825_scop.json",
+        config_path="data/region_configs/en14825.json",
         enabled=True,
     ),
     CalculatorProfile(

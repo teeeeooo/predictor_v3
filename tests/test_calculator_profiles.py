@@ -24,7 +24,7 @@ def test_resolve_ahri_hspf2_by_profile_id_returns_usa_hspf2_json():
     assert profile.config_path == "data/region_configs/usa_hspf2.json"
 
 
-def test_resolve_en14825_scop_by_profile_id_returns_scop_json():
+def test_resolve_en14825_scop_by_profile_id_returns_unified_en14825_json():
     profile = resolve_calculator_profile(profile_id="en14825_scop")
 
     assert profile.profile_id == "en14825_scop"
@@ -33,10 +33,10 @@ def test_resolve_en14825_scop_by_profile_id_returns_scop_json():
     assert profile.metric == "SCOP"
     assert profile.mode == "heating"
     assert profile.calculator_id == "en14825"
-    assert profile.config_path == "data/region_configs/en14825_scop.json"
+    assert profile.config_path == "data/region_configs/en14825.json"
 
 
-def test_resolve_en14825_seer_by_profile_id_shares_calculator_with_scop():
+def test_resolve_en14825_seer_by_profile_id_uses_unified_en14825_json():
     profile = resolve_calculator_profile(profile_id="en14825_seer")
 
     assert profile.profile_id == "en14825_seer"
@@ -45,8 +45,7 @@ def test_resolve_en14825_seer_by_profile_id_shares_calculator_with_scop():
     assert profile.metric == "SEER"
     assert profile.mode == "cooling"
     assert profile.calculator_id == "en14825"
-    # SEER 경로는 SCOP config의 정적 키를 읽지 않으므로 같은 config_path를 공유한다.
-    assert profile.config_path == "data/region_configs/en14825_scop.json"
+    assert profile.config_path == "data/region_configs/en14825.json"
 
 
 def test_resolve_en14825_seer_by_selector():
