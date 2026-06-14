@@ -55,6 +55,7 @@ class En14825SeerSection:
             lambda: {"p_to": "0", "p_sb": "0", "p_ck": "0", "p_off": "0"}
         )
         self.adapter = SeerAdapter()
+        self._seer_defaults = self.adapter.get_seer_defaults()
         self._current_table_model: SeerTableModel | None = None
 
         self._frame = ttk.LabelFrame(parent, text="SEER")
@@ -62,9 +63,9 @@ class En14825SeerSection:
 
         # 1. Auxiliary Parameters Frame
         self._p_design_var = tk.StringVar(value="3000")
-        self._t_design_var = tk.StringVar(value="35.0")
-        self._cd_var = tk.StringVar(value="0.25")
-        self._appliance_type_var = tk.StringVar(value="reversible")
+        self._t_design_var = tk.StringVar(value=str(self._seer_defaults["t_design_c"]))
+        self._cd_var = tk.StringVar(value=str(self._seer_defaults["degradation_coefficient"]))
+        self._appliance_type_var = tk.StringVar(value=self._seer_defaults["appliance_type"])
         self._syncing_design_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
@@ -280,8 +281,8 @@ class En14825SeerSection:
 
             # Read auxiliary values
             p_design_c_w = self._parse_float_safe(self._p_design_var.get(), 0.0)
-            t_design_c = self._parse_float_safe(self._t_design_var.get(), 35.0)
-            cd = self._parse_float_safe(self._cd_var.get(), 0.25)
+            t_design_c = self._parse_float_safe(self._t_design_var.get(), self._seer_defaults["t_design_c"])
+            cd = self._parse_float_safe(self._cd_var.get(), self._seer_defaults["degradation_coefficient"])
             appliance_type = self._appliance_type_var.get()
             common_inputs = self._common_input_values()
             p_to_w = self._parse_float_safe(common_inputs.get("p_to", "0"), 0.0)

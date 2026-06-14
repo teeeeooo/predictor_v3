@@ -10,9 +10,6 @@ EN 14825:2012 SEER/SCOP 계산 엔진
 import json
 import os
 
-T_DESIGN_C = 35
-CD_DEFAULT = 0.25
-
 class EN14825Calculator:
     """EN 14825:2012 SEER/SCOP 계산기"""
 

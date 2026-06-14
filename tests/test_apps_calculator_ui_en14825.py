@@ -78,6 +78,19 @@ def test_seer_part_load_calculations():
     assert r == 0.0 and l == 0.0
 
 
+def test_seer_adapter_defaults_come_from_en14825_config():
+    """SEER UI defaults are sourced from the unified EN14825 config."""
+    adapter = SeerAdapter()
+
+    defaults = adapter.get_seer_defaults()
+
+    assert defaults == {
+        "t_design_c": 35.0,
+        "degradation_coefficient": 0.25,
+        "appliance_type": "reversible",
+    }
+
+
 def test_seer_adapter_compute_points():
     """Verify intermediate computation logic on point level."""
     inputs = {
@@ -268,7 +281,7 @@ def test_seer_table_model_and_row_protection():
     }
     adapter = SeerAdapter()
     computed = adapter.compute_points(inputs)
-    model = SeerTableModel(inputs, computed, 3000.0)
+    model = SeerTableModel(inputs, computed, 3000.0, t_design_c=35.0)
 
     # Assert row keys exists but declared power is excluded
     row_keys = model.get_row_keys()
@@ -369,6 +382,10 @@ def test_en14825_gui_integration():
 
         # 1. EN14825 SEER section 생성 시 table에 declared_power row가 없는지 확인한다.
         section = En14825SeerSection(root)
+        defaults = section.adapter.get_seer_defaults()
+        assert section._t_design_var.get() == str(defaults["t_design_c"])
+        assert section._cd_var.get() == str(defaults["degradation_coefficient"])
+        assert section._appliance_type_var.get() == defaults["appliance_type"]
         row_keys = section.input_table.rows
         row_names = [r[0] for r in row_keys]
         assert "declared_power" not in row_names

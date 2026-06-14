@@ -1,7 +1,7 @@
 """Adapter layer translating UI inputs (W) to core calculator inputs (kW) and parsing results for SEER."""
 
 from typing import Dict, Optional, Tuple
-from core.calculator_en14825 import EN14825Calculator, T_DESIGN_C, CD_DEFAULT
+from core.calculator_en14825 import EN14825Calculator
 from apps.calculator.ui.en14825.seer_models import (
     SeerPointInput,
     SeerPointComputed,
@@ -15,7 +15,7 @@ class SeerAdapter:
         self.calculator = calculator or EN14825Calculator()
 
     @staticmethod
-    def get_part_load_info(tj: float, p_design_c_w: float, t_design_c: float = T_DESIGN_C) -> Tuple[float, float]:
+    def get_part_load_info(tj: float, p_design_c_w: float, t_design_c: float) -> Tuple[float, float]:
         """Calculate part load ratio (%) and part load (W) for a given outdoor dry-bulb temperature.
 
         Formula matches the core cooling load line:
@@ -30,6 +30,21 @@ class SeerAdapter:
         ratio = (tj - 16.0) / (t_design_c - 16.0)
         ratio = max(0.0, ratio)
         return ratio * 100.0, p_design_c_w * ratio
+
+    def get_seer_defaults(self) -> dict:
+        """Return UI defaults owned by the unified EN14825 config."""
+        try:
+            seer_config = self.calculator.seer_config
+            defaults = seer_config["defaults"]
+            return {
+                "t_design_c": float(seer_config["design"]["t_design_c"]),
+                "degradation_coefficient": float(defaults["degradation_coefficient"]),
+                "appliance_type": str(defaults["appliance_type"]),
+            }
+        except AttributeError as exc:
+            raise ValueError("SEER calculator does not expose seer_config defaults.") from exc
+        except KeyError as exc:
+            raise ValueError(f"Missing SEER UI default config key: {exc.args[0]}") from exc
 
     def compute_points(self, inputs: Dict[str, SeerPointInput]) -> Dict[str, SeerPointComputed]:
         """Compute intermediate fields (EER, derived power, comparison percentages, and cell states)."""
@@ -125,15 +140,23 @@ class SeerAdapter:
         p_sb_w: float = 0.0,
         p_ck_w: float = 0.0,
         p_off_w: float = 0.0,
-        t_design_c: float = T_DESIGN_C,
-        cd: float = CD_DEFAULT,
-        appliance_type: str = "reversible",
+        t_design_c: float = None,
+        cd: float = None,
+        appliance_type: str = None,
     ) -> SeerResultSummary:
         """Call the core SEER calculator and build the final summary.
 
         Performs W -> kW conversion on boundary.
         """
         summary = SeerResultSummary()
+        if t_design_c is None or cd is None or appliance_type is None:
+            config_defaults = self.get_seer_defaults()
+            if t_design_c is None:
+                t_design_c = config_defaults["t_design_c"]
+            if cd is None:
+                cd = config_defaults["degradation_coefficient"]
+            if appliance_type is None:
+                appliance_type = config_defaults["appliance_type"]
 
         if p_design_c_w <= 0:
             summary.status_code = "invalid_design_load"

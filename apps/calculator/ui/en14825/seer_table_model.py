@@ -1,7 +1,6 @@
 """Headless table model containing SEER row/column structure, cell values, and state metadata."""
 
 from typing import Dict, Tuple
-from core.calculator_en14825 import T_DESIGN_C
 from apps.calculator.ui.en14825.seer_models import SeerPointInput, SeerPointComputed
 from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
 
@@ -57,7 +56,7 @@ class SeerTableModel:
         inputs: Dict[str, SeerPointInput],
         computed: Dict[str, SeerPointComputed],
         p_design_c_w: float,
-        t_design_c: float = T_DESIGN_C,
+        t_design_c: float,
     ) -> None:
         self.inputs = inputs
         self.computed = computed

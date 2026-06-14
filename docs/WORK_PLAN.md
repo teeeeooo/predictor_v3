@@ -151,6 +151,9 @@
 - 399: EN14825 legacy config and fallback cleanup completed; the unified
   `en14825.json` owner is now fail-fast, legacy config files were removed, and
   the calculator constructor uses `config_path`.
+- 400: EN14825 UI import dependency cleanup completed; SEER UI defaults now come
+  from adapter/config state and no active app/core/test code imports core
+  fallback constants.
 
 ## Next Actions
 
