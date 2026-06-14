@@ -76,6 +76,9 @@ Compact audit reports should preserve the decision, not duplicate terminal
 output. Prefer a short inventory table or tight bullets for evidence,
 classification, decision, and next action. Keep validation and command output to
 one-line status summaries unless a failure/blocker needs detail.
+Validation scope follows the task-specific workflow owner; reports should record
+what was run and any skipped stronger checks, not create a separate command
+matrix.
 
 For compact report-only or narrow UI correction work, keep MVC/SoC, behavior
 preservation, and known risks to one or two bullets each unless the decision
@@ -112,6 +115,10 @@ For structure-impacting source changes, include a compact code map judgment from
 - if skipped, record the short reason;
 - if regenerated, record whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` is
   included in the diff.
+
+Docs-only, report-only, manual-smoke reflection, and audit-only work can omit
+`code_map_check` unless the task specifically audits source structure inventory
+or the code map.
 
 For report-backed source/test changes, include compact structure warning
 coverage when relevant:

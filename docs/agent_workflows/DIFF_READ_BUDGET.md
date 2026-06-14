@@ -102,6 +102,11 @@ as a helper to prevent unintended code duplication or architecture bypasses, rat
 than a semantic linter. Hard structure rules are enforced by tools like
 `tools/check_code_structure.py`.
 
+Use `tools/check_code_structure.py` as a final guard for structure-impacting
+source work. Do not include it in the default verification set for docs/report
+cleanup, manual-smoke closeout reflection, or audit-only work with no source
+structure change.
+
 ### Warning-First Checklist
 
 Before editing code, briefly check the following items:
@@ -156,6 +161,9 @@ Skip for work that does not change structure or surface inventory:
 - In the report/final output, record `code_map_check` as `checked`, `skipped`,
   `regenerated`, or `no-change`. If skipped, include the short reason. If
   regenerated, include whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` changed.
+- Do not run code_map check/regenerate for docs-only, report-only, manual-smoke
+  reflection, or audit-only work unless that audit is specifically about the
+  code map or structural source inventory.
 
 ### Map Commit Policy
 
@@ -173,6 +181,9 @@ The map is reference evidence, not a source of truth or a semantic linter. Canon
   first; defer the full required validation command set to the final check.
 - If an early focused check already passed, do not rerun it before final
   validation unless code affecting that path changed again.
+- Choose validation commands from the task-specific workflow owner. Do not add
+  structure guard, code_map, calculator tests, or UI tests just because they
+  were used in a prior task.
 - Inspect long tracebacks only after failure.
 - Full pytest is allowed when the task touches core, calculator, ML, schema,
   golden, or broad behavior, but the need must be explicit.

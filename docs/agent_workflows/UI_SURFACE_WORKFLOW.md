@@ -143,6 +143,10 @@ Use focused validation by owner:
 - focused UI import or smoke tests for changed surfaces;
 - Windows/manual smoke only for platform behavior that cannot be reliably
   automated.
+- if UI source structure changed, follow the structure guard and code_map
+  judgment rules in `docs/agent_workflows/DIFF_READ_BUDGET.md`;
+- for visual-only or manual-smoke result reflection, do not repeat focused UI
+  tests, structure guard, or code_map checks unless source changed again.
 
 Do not rerun broad focused tests just because they were used in an earlier
 slice. Rerun them only when the changed helper/controller/provider path is

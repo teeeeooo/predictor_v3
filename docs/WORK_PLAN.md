@@ -133,6 +133,9 @@
   requires explicit code_map check/regenerate judgment for structure-impacting
   source changes, while remaining warning-first evidence rather than a semantic
   linter.
+- 394: Verification scope owner audit completed; no separate
+  `VERIFICATION_PROFILES.md` is needed because validation scope stays with
+  existing task-specific workflow owners.
 
 ## Next Actions
 

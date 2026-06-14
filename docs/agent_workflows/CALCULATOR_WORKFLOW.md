@@ -55,6 +55,10 @@ reference workflow details. `AGENT_TASK_ROUTER.md` only routes here.
   and user-facing calculator calls.
 - Validation tests defend input requirements, positive numeric constraints, and
   error boundaries.
+- Use focused calculator validation for core/calculator logic, schema/public
+  API, golden, fixture, or calculator route changes.
+- Do not run calculator tests for docs-only or audit-only work that does not
+  change calculator behavior, schema, fixtures, or expected values.
 - Never distort calculation logic only to fit a test.
 - Golden expected changes require official calculator evidence, hand
   calculation, or an already accepted project decision.

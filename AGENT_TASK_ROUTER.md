@@ -36,6 +36,8 @@
 - commit/push, tracked file 삭제, irreversible/external action은 사용자 명시
   승인 없이는 수행하지 않는다.
 - skipped, blocked, weaker-verified 항목은 완료 보고에 남긴다.
+- 검증 범위는 task-specific workflow owner를 따르고, 라우터에는 세부 command
+  matrix를 두지 않는다.
 
 ### Shared Guardrails
 
