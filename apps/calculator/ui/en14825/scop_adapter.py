@@ -12,6 +12,8 @@ from apps.calculator.ui.en14825.scop_models import (
 class ScopAdapter:
     """Adapter to compute intermediate heating values and coordinate with the core calculator."""
 
+    POINT_KEYS = ("A", "B", "C", "D", "TOL", "Tbiv")
+
     CLIMATE_DEFAULTS = {
         "average": {"tbiv": -10.0, "tol": -11.0},
         "warmer": {"tbiv": 2.0, "tol": -11.0},
@@ -58,6 +60,55 @@ class ScopAdapter:
 
         return eff_tbiv, eff_tol
 
+    def resolve_point_availability(
+        self,
+        climate: str,
+        tbiv_temp_c: Optional[float] = None,
+        tol_temp_c: Optional[float] = None,
+    ) -> dict:
+        """Resolve UI point availability from the core/config SCOP point contract."""
+        climate_key = climate.strip().lower()
+        climate_data = self.get_climate_data(climate_key)
+        eff_tbiv, eff_tol = self.resolve_temperature_overrides(climate_key, tbiv_temp_c, tol_temp_c)
+        resolver = getattr(self.calculator, "_resolve_scop_point_contract", None)
+        if not callable(resolver):
+            raise ValueError("SCOP calculator does not expose point contract resolver.")
+
+        contract = resolver(climate_key, climate_data, eff_tbiv, eff_tol)
+        required = tuple(contract["required_independent_points"])
+        mapped = dict(contract["mapped_points"])
+        inactive = tuple(contract["inactive_points"])
+        temperatures = dict(contract["resolved_temperatures"])
+        required_set = set(required)
+        inactive_set = set(inactive)
+
+        point_states = {}
+        for key in self.POINT_KEYS:
+            if key in required_set:
+                state = "required"
+            elif key in mapped:
+                state = "mapped"
+            elif key in inactive_set and key in ("TOL", "Tbiv"):
+                state = "threshold_only"
+            elif key in inactive_set:
+                state = "inactive"
+            else:
+                state = "inactive"
+            point_states[key] = {
+                "state": state,
+                "required": state == "required",
+                "mapped_from": mapped.get(key),
+                "temp_c": temperatures.get(key),
+            }
+
+        return {
+            "required_independent_points": required,
+            "mapped_points": mapped,
+            "inactive_points": inactive,
+            "resolved_temperatures": temperatures,
+            "points": point_states,
+        }
+
     @staticmethod
     def get_part_load_info(tj: float, p_design_h_w: float, t_design_h: float) -> Tuple[float, float]:
         """Calculate part load ratio (%) and part load (W) for a given outdoor dry-bulb temperature.
@@ -78,7 +129,7 @@ class ScopAdapter:
     def compute_points(self, inputs: Dict[str, ScopPointInput]) -> Dict[str, ScopPointComputed]:
         """Compute intermediate fields (COP, derived power, comparison percentages, and cell states)."""
         computed = {}
-        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+        for key in self.POINT_KEYS:
             inp = inputs.get(key) or ScopPointInput()
             comp = ScopPointComputed()
 
@@ -213,11 +264,18 @@ class ScopAdapter:
             return summary
 
         computed_points = self.compute_points(inputs)
+        try:
+            availability = self.resolve_point_availability(climate, eff_tbiv, eff_tol)
+            required_points = availability["required_independent_points"]
+        except Exception as exc:
+            summary.status_code = "invalid_point_contract"
+            summary.message = f"Invalid point availability: {str(exc)}"
+            return summary
 
         # 1. Check completeness of declared and tested source sets
         declared_complete = True
         tested_complete = True
-        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+        for key in required_points:
             comp = computed_points[key]
             inp = inputs.get(key)
 
@@ -247,7 +305,7 @@ class ScopAdapter:
         # Declared-only calculation
         if declared_complete:
             core_declared_points = {}
-            for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+            for key in required_points:
                 inp = inputs[key]
                 comp = computed_points[key]
                 core_declared_points[key] = {
@@ -282,7 +340,7 @@ class ScopAdapter:
         # Tested-only calculation
         if tested_complete:
             core_tested_points = {}
-            for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+            for key in required_points:
                 inp = inputs[key]
                 core_tested_points[key] = {
                     "capacity": inp.tested_capacity / 1000.0,

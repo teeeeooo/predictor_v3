@@ -59,6 +59,7 @@ class ScopTableModel:
         t_design_h: float,
         tbiv_temp_c: float,
         tol_temp_c: float,
+        point_availability: dict,
     ) -> None:
         self.inputs = inputs
         self.computed = computed
@@ -67,6 +68,7 @@ class ScopTableModel:
         self.t_design_h = t_design_h
         self.tbiv_temp_c = tbiv_temp_c
         self.tol_temp_c = tol_temp_c
+        self.point_availability = point_availability
 
     def get_row_keys(self) -> Tuple[str, ...]:
         """Return table row keys in visual order."""
@@ -82,23 +84,25 @@ class ScopTableModel:
 
     def get_col_label(self, col_key: str) -> str:
         """Return the user-facing label for a column key, incorporating active temperatures."""
-        if col_key in self.OUTDOOR_TEMPS:
-            temp = self.OUTDOOR_TEMPS[col_key]
+        temp = self._resolved_temp(col_key)
+        if temp is not None:
             return f"{col_key} ({temp:.0f}°C)"
-        if col_key == "TOL":
-            return f"TOL ({self.tol_temp_c:.0f}°C)"
-        if col_key == "Tbiv":
-            return f"Tbiv ({self.tbiv_temp_c:.0f}°C)"
         return col_key
 
     def is_editable(self, row_key: str, col_key: str) -> bool:
         """Return True if the specified cell is user-editable."""
-        return row_key in (
+        return self._is_required_point(col_key) and row_key in (
             "declared_capacity",
             "declared_cop",
             "tested_capacity",
             "tested_power",
         )
+
+    def _is_required_point(self, col_key: str) -> bool:
+        return self.point_availability.get("points", {}).get(col_key, {}).get("state") == "required"
+
+    def _resolved_temp(self, col_key: str) -> float | None:
+        return self.point_availability.get("resolved_temperatures", {}).get(col_key)
 
     def get_value(self, row_key: str, col_key: str) -> str:
         """Return the formatted string representation of the cell value."""
@@ -107,24 +111,18 @@ class ScopTableModel:
 
         # 1. Condition Temperature (fixed DB or TOL/Tbiv active temperature)
         if row_key == "condition_temp":
-            if col_key in self.OUTDOOR_TEMPS:
-                temp = self.OUTDOOR_TEMPS[col_key]
+            temp = self._resolved_temp(col_key)
+            if temp is not None:
                 return f"{temp:.0f}°C"
-            if col_key == "TOL":
-                return f"{self.tol_temp_c:.0f}°C"
-            if col_key == "Tbiv":
-                return f"{self.tbiv_temp_c:.0f}°C"
+            return ""
+
+        if not self._is_required_point(col_key):
             return ""
 
         # 2. Part Load Ratio (%) and Part Load (W)
         if row_key in ("part_load_ratio", "part_load_w"):
-            if col_key in self.OUTDOOR_TEMPS:
-                temp = self.OUTDOOR_TEMPS[col_key]
-            elif col_key == "TOL":
-                temp = self.tol_temp_c
-            elif col_key == "Tbiv":
-                temp = self.tbiv_temp_c
-            else:
+            temp = self._resolved_temp(col_key)
+            if temp is None:
                 return ""
 
             ratio_pct, load_w = ScopAdapter.get_part_load_info(temp, self.p_design_h_w, self.t_design_h)
@@ -168,6 +166,8 @@ class ScopTableModel:
 
         if row_key == "condition_temp":
             return "neutral"
+        if not self._is_required_point(col_key):
+            return "unavailable"
         if row_key in ("part_load_ratio", "part_load_w"):
             return "neutral" if self.p_design_h_w > 0 else "unavailable"
 

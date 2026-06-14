@@ -154,10 +154,13 @@
 - 400: EN14825 UI import dependency cleanup completed; SEER UI defaults now come
   from adapter/config state and no active app/core/test code imports core
   fallback constants.
+- 401: EN14825 SCOP UI point availability correction completed; SCOP UI now uses
+  adapter-resolved core/config point availability so inactive, mapped, and
+  threshold-only points are blank/readonly instead of required inputs.
 
 ## Next Actions
 
-1. **EN14825 SCOP UI point availability correction**
+1. **EN14825 SCOP UI point availability manual smoke**
 
 Deferred: EN14825 batch integration preflight should wait until SCOP UI point
 availability follows the core/config contract.

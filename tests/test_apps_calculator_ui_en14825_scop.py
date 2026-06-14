@@ -44,6 +44,26 @@ class FakeHeatingCalculator:
             }
         }
 
+    def _resolve_scop_point_contract(
+        self,
+        climate_key: str,
+        climate_data: dict,
+        tbiv_temp_c: float = None,
+        tol_temp_c: float = None,
+    ) -> dict:
+        standard_temps = {"A": -7.0, "B": 2.0, "C": 7.0, "D": 12.0}
+        resolved = dict(standard_temps)
+        resolved["Tbiv"] = float(tbiv_temp_c)
+        resolved["TOL"] = float(tol_temp_c)
+        return {
+            "active_standard_points": ("A", "B", "C", "D"),
+            "required_independent_points": ("A", "B", "C", "D", "TOL", "Tbiv"),
+            "mapped_points": {},
+            "inactive_points": (),
+            "resolved_temperatures": resolved,
+            "curve_point_keys": ("A", "B", "C", "D", "TOL", "Tbiv"),
+        }
+
     def calculate_scop(
         self,
         test_points: dict,
@@ -292,6 +312,59 @@ def test_scop_adapter_validation_failures():
     assert res.status_code == "input_incomplete"
 
 
+def test_scop_adapter_resolves_warmer_contract_availability():
+    """Warmer point availability follows the core/config point contract."""
+    adapter = ScopAdapter()
+
+    availability = adapter.resolve_point_availability("warmer", tbiv_temp_c=2.0, tol_temp_c=-11.0)
+
+    assert availability["required_independent_points"] == ("B", "C", "D")
+    assert availability["points"]["A"]["state"] == "inactive"
+    assert availability["points"]["Tbiv"]["state"] == "mapped"
+    assert availability["points"]["Tbiv"]["mapped_from"] == "B"
+    assert availability["points"]["TOL"]["state"] == "threshold_only"
+
+
+def test_scop_adapter_warmer_calculates_without_inactive_or_mapped_points():
+    """Warmer calculation does not require dummy A/TOL/Tbiv inputs."""
+    inputs = {
+        "B": ScopPointInput(declared_capacity=1329.3, declared_cop=5.229, tested_capacity=1329.3, tested_power=254.2),
+        "C": ScopPointInput(declared_capacity=908.3, declared_cop=5.898, tested_capacity=908.3, tested_power=154.0),
+        "D": ScopPointInput(declared_capacity=929.9, declared_cop=7.554, tested_capacity=929.9, tested_power=123.1),
+    }
+    adapter = ScopAdapter()
+
+    result = adapter.calculate(
+        inputs=inputs,
+        p_design_h_w=1300.0,
+        climate="warmer",
+        tbiv_temp_c=2.0,
+        tol_temp_c=-11.0,
+    )
+
+    assert result.status_code == "complete"
+    assert result.declared_scop is not None
+    assert result.tested_scop is not None
+
+
+def test_scop_adapter_average_keeps_a_and_independent_tol_required():
+    """Average A and TOL=-11 remain required independent inputs."""
+    inputs = {
+        "B": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
+        "C": ScopPointInput(declared_capacity=2000.0, declared_cop=4.0),
+        "D": ScopPointInput(declared_capacity=1000.0, declared_cop=4.5),
+        "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
+    }
+    adapter = ScopAdapter()
+    availability = adapter.resolve_point_availability("average", tbiv_temp_c=-10.0, tol_temp_c=-11.0)
+
+    result = adapter.calculate(inputs, p_design_h_w=3000.0, climate="average", tbiv_temp_c=-10.0, tol_temp_c=-11.0)
+
+    assert "A" in availability["required_independent_points"]
+    assert "TOL" in availability["required_independent_points"]
+    assert result.status_code == "input_incomplete"
+
+
 def test_scop_table_model_definitions():
     """Verify table row structure and confirm declared power row is NOT exposed."""
     inputs = {
@@ -300,6 +373,7 @@ def test_scop_table_model_definitions():
     }
     adapter = ScopAdapter()
     computed = adapter.compute_points(inputs)
+    availability = adapter.resolve_point_availability("average", -10.0, -11.0)
     model = ScopTableModel(
         inputs=inputs,
         computed=computed,
@@ -308,6 +382,7 @@ def test_scop_table_model_definitions():
         t_design_h=-10.0,
         tbiv_temp_c=-10.0,
         tol_temp_c=-11.0,
+        point_availability=availability,
     )
 
     row_keys = model.get_row_keys()
@@ -322,6 +397,42 @@ def test_scop_table_model_definitions():
     assert "derived_power" not in row_keys
 
 
+def test_scop_table_model_blanks_unavailable_point_inputs():
+    """Mapped/inactive/threshold-only points are blank and readonly in the model."""
+    inputs = {
+        "A": ScopPointInput(declared_capacity=9999.0, declared_cop=1.0, tested_capacity=9999.0, tested_power=9999.0),
+        "B": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5, tested_capacity=3000.0, tested_power=900.0),
+        "C": ScopPointInput(declared_capacity=2000.0, declared_cop=4.0, tested_capacity=2000.0, tested_power=500.0),
+        "D": ScopPointInput(declared_capacity=1000.0, declared_cop=4.5, tested_capacity=1000.0, tested_power=250.0),
+        "TOL": ScopPointInput(declared_capacity=9999.0, declared_cop=1.0, tested_capacity=9999.0, tested_power=9999.0),
+        "Tbiv": ScopPointInput(declared_capacity=9999.0, declared_cop=1.0, tested_capacity=9999.0, tested_power=9999.0),
+    }
+    adapter = ScopAdapter()
+    computed = adapter.compute_points(inputs)
+    availability = adapter.resolve_point_availability("warmer", 2.0, -11.0)
+    model = ScopTableModel(
+        inputs=inputs,
+        computed=computed,
+        p_design_h_w=1300.0,
+        climate="warmer",
+        t_design_h=2.0,
+        tbiv_temp_c=2.0,
+        tol_temp_c=-11.0,
+        point_availability=availability,
+    )
+
+    for col in ("A", "TOL", "Tbiv"):
+        assert model.is_editable("declared_capacity", col) is False
+        assert model.is_editable("tested_power", col) is False
+        assert model.get_value("declared_capacity", col) == ""
+        assert model.get_value("tested_power", col) == ""
+        assert model.get_value("tested_cop", col) == ""
+        assert model.get_state("declared_capacity", col) == "unavailable"
+
+    assert model.is_editable("declared_capacity", "B") is True
+    assert model.get_value("declared_capacity", "B") == "3000"
+
+
 def test_scop_table_model_formatting_and_labels():
     """Verify table model labels reflect overrides and formatting is consistent."""
     inputs = {
@@ -330,6 +441,7 @@ def test_scop_table_model_formatting_and_labels():
     }
     adapter = ScopAdapter()
     computed = adapter.compute_points(inputs)
+    availability = adapter.resolve_point_availability("average", -9.0, -12.0)
     model = ScopTableModel(
         inputs=inputs,
         computed=computed,
@@ -338,6 +450,7 @@ def test_scop_table_model_formatting_and_labels():
         t_design_h=-10.0,
         tbiv_temp_c=-9.0,   # override
         tol_temp_c=-12.0,  # override
+        point_availability=availability,
     )
 
     # Dynamic column labels
@@ -633,6 +746,54 @@ def test_scop_gui_integration_basics():
 
         summary_text_after = summary_widget._text.get("1.0", tk.END)
         assert summary_text_before != summary_text_after
+
+    finally:
+        root.destroy()
+
+
+def test_scop_section_applies_point_availability_to_warmer_table():
+    """Warmer A/TOL/Tbiv cells become blank readonly while Average required cells stay editable."""
+    import tkinter as tk
+    from apps.calculator.ui.table.roles import CellRole
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+
+        section = En14825ScopSection(root)
+        section.climate_active_vars["warmer"].set(True)
+        section._on_climate_toggle()
+        section._auto_calc.flush_now()
+
+        warmer_model = section._current_table_models["warmer"]
+        warmer_table = section.input_tables["warmer"]
+        input_rows = ("declared_capacity", "declared_cop", "tested_capacity", "tested_power")
+        for col in ("A", "TOL", "Tbiv"):
+            for row in input_rows:
+                assert warmer_model.is_editable(row, col) is False
+                assert warmer_model.get_value(row, col) == ""
+                row_idx = ScopTableModel.ROW_KEYS.index(row)
+                col_idx = ScopTableModel.COL_KEYS.index(col)
+                assert warmer_table.cell_role((row_idx, col_idx)) == CellRole.READONLY
+
+        assert warmer_model.is_editable("declared_capacity", "B") is True
+        b_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
+        b_col = ScopTableModel.COL_KEYS.index("B")
+        assert warmer_table.cell_role((b_row, b_col)) == CellRole.EDITABLE
+
+        average_model = section._current_table_models["average"]
+        average_table = section.input_tables["average"]
+        a_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
+        a_col = ScopTableModel.COL_KEYS.index("A")
+        tol_col = ScopTableModel.COL_KEYS.index("TOL")
+        assert average_model.is_editable("declared_capacity", "A") is True
+        assert average_model.is_editable("declared_capacity", "TOL") is True
+        assert average_table.cell_role((a_row, a_col)) == CellRole.EDITABLE
+        assert average_table.cell_role((a_row, tol_col)) == CellRole.EDITABLE
 
     finally:
         root.destroy()

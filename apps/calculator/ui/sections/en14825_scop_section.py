@@ -257,6 +257,7 @@ class En14825ScopSection:
             )
 
             self.table_controllers[clm] = TkTableController(table)
+            self._install_availability_cell_role(table)
 
             result_surface = ScopResultSurface(body)
             result_surface.grid(row=1, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
@@ -395,6 +396,17 @@ class En14825ScopSection:
                 continue
 
             try:
+                # Read climate-specific auxiliary values first so point availability
+                # can blank/lock cells before text parsing.
+                p_design_h_w = self._parse_float_safe(self.p_design_h_vars[clm].get(), 0.0)
+                tbiv_temp_c = self._parse_float_safe(self.tbiv_vars[clm].get(), None)
+                tol_temp_c = self._parse_float_safe(self.tol_vars[clm].get(), None)
+                eff_tbiv, eff_tol = self.adapter.resolve_temperature_overrides(clm, tbiv_temp_c, tol_temp_c)
+                climate_data = self.adapter.get_climate_data(clm)
+                t_design_h = float(climate_data["t_design_h_c"])
+                point_availability = self.adapter.resolve_point_availability(clm, eff_tbiv, eff_tol)
+                self._apply_point_availability(table, point_availability)
+
                 # 1. Read and validate text values from input matrix
                 input_mapping = build_scop_point_inputs(table.get_text_values())
 
@@ -406,29 +418,12 @@ class En14825ScopSection:
                 else:
                     table.clear_invalid_fields()
 
-                # Read climate-specific auxiliary values
-                p_design_h_w = self._parse_float_safe(self.p_design_h_vars[clm].get(), 0.0)
-                tbiv_temp_c = self._parse_float_safe(self.tbiv_vars[clm].get(), None)
-                tol_temp_c = self._parse_float_safe(self.tol_vars[clm].get(), None)
-
             except Exception:
                 self._clear_computed_rows(clm)
                 self._clear_result_card(clm)
                 continue
 
             inputs = input_mapping.inputs
-
-            # Resolve effective temperatures
-            try:
-                eff_tbiv, eff_tol = self.adapter.resolve_temperature_overrides(clm, tbiv_temp_c, tol_temp_c)
-                climate_data = self.adapter.get_climate_data(clm)
-                t_design_h = float(climate_data["t_design_h_c"])
-            except Exception as exc:
-                self._clear_computed_rows(clm)
-                self._show_result_card_error(clm, str(exc))
-                # Show climate-local status
-                summaries.append(format_scop_climate_error_summary(clm, str(exc)))
-                continue
 
             # Perform calculation
             computed = self.adapter.compute_points(inputs)
@@ -446,10 +441,6 @@ class En14825ScopSection:
                 tol_temp_c=tol_temp_c,
             )
 
-            # Update column headers dynamically
-            table.update_column_header("TOL", f"TOL ({eff_tol:.0f}°C)")
-            table.update_column_header("Tbiv", f"Tbiv ({eff_tbiv:.0f}°C)")
-
             model = ScopTableModel(
                 inputs=inputs,
                 computed=computed,
@@ -458,8 +449,13 @@ class En14825ScopSection:
                 t_design_h=t_design_h,
                 tbiv_temp_c=eff_tbiv,
                 tol_temp_c=eff_tol,
+                point_availability=point_availability,
             )
             self._current_table_models[clm] = model
+
+            # Update column headers dynamically
+            for col in ScopTableModel.COL_KEYS:
+                table.update_column_header(col, model.get_col_label(col))
 
             # Update static cells in table
             for row in ScopTableModel.ROW_KEYS:
@@ -527,6 +523,45 @@ class En14825ScopSection:
         label = table.static_cell_labels.get(address)
         if label:
             label.configure(text=value)
+
+    def _install_availability_cell_role(self, table: MetricInputTable) -> None:
+        if hasattr(table, "_scop_base_cell_role"):
+            return
+        table._scop_base_cell_role = table.cell_role
+        table._scop_unavailable_addresses = set()
+
+        def cell_role(position: tuple[int, int], table=table):
+            address = table._address_at_position(position)
+            if address in table._scop_unavailable_addresses:
+                return CellRole.READONLY
+            return table._scop_base_cell_role(position)
+
+        table.cell_role = cell_role
+
+    def _apply_point_availability(self, table: MetricInputTable, point_availability: dict) -> None:
+        input_rows = ("declared_capacity", "declared_cop", "tested_capacity", "tested_power")
+        unavailable_addresses = {
+            (row, col)
+            for col, meta in point_availability.get("points", {}).items()
+            if meta.get("state") != "required"
+            for row in input_rows
+        }
+        table._scop_unavailable_addresses = unavailable_addresses
+
+        blank_values = {}
+        for address in unavailable_addresses:
+            field_key = table.field_key_for_address(address)
+            if field_key is not None:
+                blank_values[field_key] = ""
+        if blank_values:
+            table.set_values_batch(blank_values)
+
+        for address, field_key in table.editable_cells.items():
+            entry = table.editable_entries[field_key]
+            if address in unavailable_addresses:
+                entry.configure(state=tk.DISABLED, background=TABLE_STATIC_BG)
+            else:
+                entry.configure(state=tk.NORMAL, background=TABLE_EDITABLE_BG)
 
     def _resolve_cell_bg(self, position: tuple[int, int], climate: str) -> str:
         table = self.input_tables[climate]
