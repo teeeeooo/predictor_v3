@@ -37,12 +37,12 @@
 | --- | --- | --- | --- | --- | --- |
 | `test_points["A"..."D"]` | declared capacity and power at A/B/C/D | kW, kW | Yes | 각 capacity/power는 0보다 커야 한다. | EN14825:2012 Table 2 |
 | `p_design_c` | Pdesignc | kW | Yes | 0보다 커야 한다. | EN14825:2012 Clause 6.2 |
-| `t_design_c` | Tdesignc | °C | No | 기본 35 °C, 16 °C는 부하선 분모가 0이므로 금지한다. | EN14825:2012 Table 2 |
+| `t_design_c` | Tdesignc | °C | No | 기본값은 `en14825.json`의 `seer.design.t_design_c`다. 16 °C는 부하선 분모가 0이므로 금지한다. | EN14825:2012 Table 2 |
 | `p_to` | Pto | kW | Yes | 보조전력 합산에 직접 사용한다. | EN14825:2012 Annex D Table D.1 |
 | `p_sb` | Psb | kW | Yes | 보조전력 합산에 직접 사용한다. | EN14825:2012 Annex D Table D.1 |
 | `p_ck` | Pck | kW | Yes | 보조전력 합산에 직접 사용한다. | EN14825:2012 Annex D Table D.3 |
 | `p_off` | Poff | kW | Yes | 가역식 냉방 기준 `Hoff = 0`이므로 현재 기본 경로에서는 영향이 없다. | EN14825:2012 Annex D Table D.1 |
-| `cd` | Cd | dimensionless | No | 기본 0.25다. | EN14825:2012 Clause 6.4.2.1 |
+| `cd` | Cd | dimensionless | No | 기본값은 `en14825.json`의 `seer.defaults.degradation_coefficient`다. | EN14825:2012 Clause 6.4.2.1 |
 
 ### SCOP
 
@@ -87,10 +87,10 @@
 ### SEER Flow
 
 1. A/B/C/D 입력 capacity와 power가 모두 0보다 큰지 확인한다.
-2. `Qc = Pdesignc * Hce`를 계산한다. 현재 `Hce = 350 h`다. 근거: EN14825:2012 Clause 6.2, Annex D Table D.1.
+2. `en14825.json`의 `seer.operational_hours`에서 appliance type별 `Hce`를 읽고 `Qc = Pdesignc * Hce`를 계산한다. 현재 기본 `Hce = 350 h`다. 근거: EN14825:2012 Clause 6.2, Annex D Table D.1.
 3. 각 냉방 declared point의 `EERDC = capacity / power`를 계산한다.
 4. A는 degradation을 적용하지 않고, B/C/D는 declared capacity가 required cooling load보다 큰 경우 Cd degradation을 적용한다. 근거: EN14825:2012 Clause 6.4.2.1.
-5. Table 36의 각 bin에서 `Pc(Tj) = Pdesignc * (Tj - 16) / (Tdesignc - 16)`을 계산한다. 근거: EN14825:2012 Table 36, Clause 6.4.
+5. `en14825.json`의 `seer.bin_data` Table 36 bin에서 `Pc(Tj) = Pdesignc * (Tj - 16) / (Tdesignc - 16)`을 계산한다. 근거: EN14825:2012 Table 36, Clause 6.4.
 6. bin 온도별 `EERPL(Tj)`를 A/B/C/D point에서 선형 보간한다. 범위 밖은 끝점으로 clamp한다.
 7. `SEERon = sum(hj * Pc(Tj)) / sum(hj * Pc(Tj) / EERPL(Tj))`를 계산한다. 근거: EN14825:2012 Clause 6.3.
 8. `SEER = Qc / (Qc / SEERon + Hto*Pto + Hsb*Psb + Hck*Pck + Hoff*Poff)`를 계산한다. 근거: EN14825:2012 Clause 6.1, Annex D Table D.1, Table D.3.
@@ -130,11 +130,11 @@
 
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
-| Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section / `core/calculator_en14825.py` | config owner, current module constants | n/a | Step 1 preserves core constant-driven calculation |
+| Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section | `_get_seer_bin_data` | n/a | module constants remain legacy fallback |
 | Cooling load line | `core/calculator_en14825.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
 | EERPL declared point | `core/calculator_en14825.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
-| SEERon | `core/calculator_en14825.py` | `_calculate_seer_on` | `seer_on` | Table 36 bin loop |
-| SEER | `core/calculator_en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | 반환값은 반올림된다. |
+| SEERon | `core/calculator_en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
+| SEER | `core/calculator_en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | `seer.design`, `seer.defaults`, `seer.operational_hours` 기본값을 사용한다. |
 | Table 37 and Annex D data | `data/region_configs/en14825.json` `scop` section | n/a | source data | climate와 appliance_type별 값 |
 | SCOP point validation | `core/calculator_en14825.py` | `_validate_scop_points` | internal | TOL/Tbiv 제한 검증 |
 | Heating load line | `core/calculator_en14825.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |

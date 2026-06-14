@@ -143,13 +143,16 @@
 - 396: EN14825 unified config migration Step 1 completed; `en14825.json` now
   owns `seer`/`scop` sections, profiles point to the unified config, and legacy
   SCOP-only config loading remains compatible.
+- 397: EN14825 SEER config-driven calculation migration completed; SEER now reads
+  cooling bins, test point temperatures, defaults, and operational hours from
+  `en14825.json` while retaining legacy SCOP-only fallback behavior.
 
 ## Next Actions
 
-1. **EN14825 SEER config-driven calculation migration**
+1. **EN14825 SCOP point contract correction design**
 
-Deferred: EN14825 batch integration preflight and SCOP Warmer A inactive-point
-correction should wait until config-driven SEER migration is complete.
+Deferred: EN14825 batch integration preflight should wait until the SCOP point
+contract correction design is complete.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated

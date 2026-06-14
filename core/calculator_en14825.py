@@ -81,6 +81,28 @@ class EN14825Calculator:
             },
         }
 
+    def _get_seer_design_value(self, key: str, fallback: float) -> float:
+        return float(self.seer_config.get("design", {}).get(key, fallback))
+
+    def _get_seer_default_value(self, key: str, fallback: float) -> float:
+        return float(self.seer_config.get("defaults", {}).get(key, fallback))
+
+    def _get_seer_test_point_temps(self) -> dict:
+        point_temps = self.seer_config.get("test_point_temps", {})
+        required = ("A", "B", "C", "D")
+        missing = [key for key in required if key not in point_temps]
+        if missing:
+            raise ValueError(f"Missing SEER test point temperature(s): {missing}")
+        return {key: float(point_temps[key]) for key in required}
+
+    def _get_seer_bin_data(self) -> tuple:
+        bin_data = self.seer_config.get("bin_data", {})
+        temps = bin_data.get("temps", [])
+        hours = bin_data.get("hours", [])
+        if len(temps) != len(hours):
+            raise ValueError("SEER cooling bin temperature/hour length mismatch.")
+        return temps, hours
+
     def _safe_div(self, num: float, den: float, fallback: float = 0.0) -> float:
         return num / den if den != 0 else fallback
 
@@ -162,7 +184,7 @@ class EN14825Calculator:
         t_design_c: float,
         cd: float,
     ) -> list:
-        point_temps = {"A": T_A, "B": T_B, "C": T_C, "D": T_D}
+        point_temps = self._get_seer_test_point_temps()
         points = []
         for key in ("D", "C", "B", "A"):
             temp = float(point_temps[key])
@@ -238,8 +260,9 @@ class EN14825Calculator:
         numerator   = 0.0  # Σ(hj × Pc(Tj))
         denominator = 0.0  # Σ(hj × Pc(Tj) / EERpl(Tj))
         eer_points = self._build_cooling_eerpl_points(test_points, p_design_c, t_design_c, cd)
+        bin_temps, bin_hours = self._get_seer_bin_data()
 
-        for tj, hj in zip(COOLING_BIN_TEMPS, COOLING_BIN_HOURS):
+        for tj, hj in zip(bin_temps, bin_hours):
             if hj == 0:
                 continue
 
@@ -261,22 +284,29 @@ class EN14825Calculator:
         return numerator / denominator
 
     def _get_seer_operational_hours(self, appliance_type: str) -> dict:
-        if appliance_type not in SEER_OPERATIONAL_HOURS:
+        operational_hours = self.seer_config.get("operational_hours", {})
+        if appliance_type not in operational_hours:
             raise ValueError(
                 f"Unknown SEER appliance_type: {appliance_type}. "
-                f"Expected one of {sorted(SEER_OPERATIONAL_HOURS.keys())}"
+                f"Expected one of {sorted(operational_hours.keys())}"
             )
-        return SEER_OPERATIONAL_HOURS[appliance_type]
+        return operational_hours[appliance_type]
 
     # [버그 1 수정]: 들여쓰기 4칸 정렬
     def calculate_seer(self, test_points: dict, p_to: float, p_sb: float, p_ck: float, p_off: float,
                        p_design_c: float, # A포인트와 분리하여 독립적으로 받음
-                       t_design_c: float = T_DESIGN_C, cd: float = CD_DEFAULT, *,
-                       appliance_type: str = "reversible") -> dict:
+                       t_design_c: float = None, cd: float = None, *,
+                       appliance_type: str = None) -> dict:
         """
         EN 14825 SEER 계산
         """
         self._validate_test_points(test_points)
+        if t_design_c is None:
+            t_design_c = self._get_seer_design_value("t_design_c", T_DESIGN_C)
+        if cd is None:
+            cd = self._get_seer_default_value("degradation_coefficient", CD_DEFAULT)
+        if appliance_type is None:
+            appliance_type = self.seer_config.get("defaults", {}).get("appliance_type", "reversible")
         operational_hours = self._get_seer_operational_hours(appliance_type)
 
         # 1. 연간 냉방수요 Qc (kWh) — 입력받은 설계 부하 사용
