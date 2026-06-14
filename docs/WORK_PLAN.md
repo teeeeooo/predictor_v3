@@ -136,11 +136,17 @@
 - 394: Verification scope owner audit completed; no separate
   `VERIFICATION_PROFILES.md` is needed because validation scope stays with
   existing task-specific workflow owners.
+- 395: EN14825 config consolidation audit completed; current ownership is split
+  between unused SEER-like `eu.json`, active SCOP `en14825_scop.json`, and
+  core-local SEER constants, so config design should precede batch preflight and
+  SCOP Warmer A correction.
 
 ## Next Actions
 
-1. **EN14825 batch integration preflight**
-2. **AHRI 210/240 tab preflight**
+1. **EN14825 config consolidation design**
+
+Deferred: EN14825 batch integration preflight should wait until EN14825 config
+ownership and the SCOP Warmer A correction schema are designed.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
