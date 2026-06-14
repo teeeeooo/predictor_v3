@@ -48,9 +48,9 @@
 
 | Field | Standard symbol | Unit | Required | Validation rule | Reference |
 | --- | --- | --- | --- | --- | --- |
-| `test_points["A"..."D"]` | declared capacity and power at A/B/C/D | kW, kW | Yes | dict 또는 tuple 입력 가능, capacity/power는 0보다 커야 한다. | EN14825:2012 Clause 5.2 |
-| `test_points["TOL"]` | declared point at TOL | kW, kW | Yes | `TOL <= Tbiv`, 기후별 `tol_max_c` 이하 | EN14825:2012 Clause 7.4 |
-| `test_points["Tbiv"]` | declared point at Tbiv | kW, kW | Yes | 기후별 `tbiv_max_c` 이하 | EN14825:2012 Clause 7.4 |
+| `test_points["A"..."D"]` | declared capacity and power at A/B/C/D | kW, kW | Conditional | `scop.point_contract`가 climate별 required standard points를 정한다. Warmer A는 inactive다. | EN14825:2012 Clause 5.2 |
+| `test_points["TOL"]` | declared point at TOL | kW, kW | Conditional | `TOL <= Tbiv`, 기후별 `tol_max_c` 이하. Standard point와 같은 온도이면 해당 standard point 값으로 mapping한다. | EN14825:2012 Clause 7.4 |
+| `test_points["Tbiv"]` | declared point at Tbiv | kW, kW | Conditional | 기후별 `tbiv_max_c` 이하. Standard point와 같은 온도이면 해당 standard point 값으로 mapping한다. | EN14825:2012 Clause 7.4 |
 | `p_design_h` | Pdesignh | kW | Yes | 0보다 커야 한다. | EN14825:2012 Clause 7.2 |
 | `climate` | climate condition | n/a | Yes | `average`, `warmer`, `colder`; alias `avg`, `a`, `w`, `c` 허용 | EN14825:2012 Table 37 |
 | `p_to`, `p_sb`, `p_ck`, `p_off` | Pto, Psb, Pck, Poff | kW | Yes | Annex D 운전 시간과 곱해 연간 에너지로 합산한다. | EN14825:2012 Annex D Table D.2, Table D.4 |
@@ -98,12 +98,12 @@
 ### SCOP Flow
 
 1. 기후 문자열을 정규화하고, JSON에서 기후별 `Tdesignh`, heating bin temperature/hour, Tbiv/TOL 제한, Annex D 운전 시간을 읽는다. 근거: EN14825:2012 Table 37, Annex D Table D.2, Table D.4.
-2. A/B/C/D/TOL/Tbiv declared point를 해석한다. dict 입력은 `capacity`, `power`, 선택적 `temp_c`를 사용하고, tuple 입력은 capacity/power만 사용한다.
-3. 온도가 입력되지 않은 A/B/C/D는 JSON schema의 -7/2/7/12 °C를 사용한다. Tbiv/TOL은 사용자 입력 온도 또는 기후별 최대값을 사용한다.
+2. `en14825.json`의 `scop.point_contract`로 active, required, mapped, inactive point를 해석한다. Warmer A는 inactive이며 독립 입력이 아니다.
+3. 온도가 입력되지 않은 active A/B/C/D는 JSON schema의 -7/2/7/12 °C를 사용한다. Tbiv/TOL은 사용자 입력 온도 또는 기후별 최대값을 사용한다.
 4. `Tbiv <= climate tbiv_max`, `TOL <= climate tol_max`, `TOL <= Tbiv`를 검증한다.
-5. 각 declared point에서 `Ph(Tj) = Pdesignh * (Tj - 16) / (Tdesignh - 16)`를 계산한다. 근거: EN14825:2012 Clause 7.2, Table 37.
+5. TOL/Tbiv가 active standard point와 같은 온도이면 독립 입력을 요구하지 않고 같은 온도의 standard point capacity/power를 사용한다.
 6. 각 declared point에서 `COPDC = capacity / power`를 계산하고, 현재 declared-point 입력 스키마에 맞춘 Clause 7.4.2.2 해석으로 `COPPL`을 결정한다.
-7. capacity curve와 COPPL curve를 온도순으로 구성한다. 같은 온도에 여러 point가 있으면 priority는 `TOL > Tbiv > A > B > C > D`다.
+7. capacity curve와 COPPL curve를 resolver의 canonical curve point set으로 구성한다. Duplicate temperature node는 두 curve에서 같은 source point를 사용한다.
 8. Table 37 각 bin에서 `Ph(Tj)`를 계산한다. `Tj < TOL`이면 히트펌프 용량과 COPPL은 0이며 `elbu = Ph(Tj)`다.
 9. `Tj >= TOL`이면 capacity와 COPPL을 선형 보간한다. COPPL은 상단 범위에서 마지막 두 점을 사용해 외삽할 수 있다.
 10. `Pdh(Tj) >= Ph(Tj)`이면 보조 전기 히터는 0이고, 부족하면 `elbu(Tj) = Ph(Tj) - Pdh(Tj)`다. 근거: EN14825:2012 Equation 9.
@@ -136,10 +136,11 @@
 | SEERon | `core/calculator_en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
 | SEER | `core/calculator_en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | `seer.design`, `seer.defaults`, `seer.operational_hours` 기본값을 사용한다. |
 | Table 37 and Annex D data | `data/region_configs/en14825.json` `scop` section | n/a | source data | climate와 appliance_type별 값 |
-| SCOP point validation | `core/calculator_en14825.py` | `_validate_scop_points` | internal | TOL/Tbiv 제한 검증 |
+| SCOP point contract | `data/region_configs/en14825.json` `scop.point_contract` | `_resolve_scop_point_contract` | internal | climate별 required/mapped/inactive point 결정 |
+| SCOP point validation | `core/calculator_en14825.py` | `_validate_scop_points` | internal | contract 해석과 TOL/Tbiv 제한 검증 |
 | Heating load line | `core/calculator_en14825.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |
 | SCOP Cd handling | `core/calculator_en14825.py` | `_scop_pl_at_declared_point` | internal | Clause 7.4.2.2를 declared-point schema에 맞춰 해석 |
-| SCOP capacity/COPPL curve | `core/calculator_en14825.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | 같은 온도 priority 존재 |
+| SCOP capacity/COPPL curve | `core/calculator_en14825.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | duplicate temperature는 같은 canonical curve point를 사용 |
 | SCOPon | `core/calculator_en14825.py` | `_calculate_scop_on` | `scop_on`, `bin_details` | Equation 9 구조 |
 | SCOP | `core/calculator_en14825.py` | `calculate_scop` | `scop`, `SCOP`, `qh_kwh`, `active_kwh`, `standby_kwh`, `total_kwh` | SCOPnet은 반환하지 않는다. |
 

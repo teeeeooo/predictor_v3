@@ -42,6 +42,13 @@ def scop_points(tbiv_temp_c, tol_temp_c):
     }
 
 
+def scop_points_without(*keys, tbiv_temp_c=2, tol_temp_c=-11):
+    points = scop_points(tbiv_temp_c=tbiv_temp_c, tol_temp_c=tol_temp_c)
+    for key in keys:
+        points.pop(key)
+    return points
+
+
 def test_en14825_golden_seer():
     calculator = EN14825Calculator()
     result = calculator.calculate_seer(
@@ -197,6 +204,90 @@ def test_en14825_golden_scop_average():
     )
 
     assert_golden_close(result["scop"], 5.108, "SCOP average")
+
+
+def test_en14825_scop_warmer_a_tol_tbiv_independent_inputs_not_required():
+    calculator = EN14825Calculator()
+
+    result = calculator.calculate_scop(
+        test_points=scop_points_without("A", "TOL", "Tbiv", tbiv_temp_c=2, tol_temp_c=-11),
+        p_design_h=1.3,
+        climate="warmer",
+        tbiv_temp_c=2,
+        tol_temp_c=-11,
+        **STANDBY_POWER_KW,
+    )
+
+    assert result["scop"] > 0
+
+
+def test_en14825_scop_warmer_tbiv_at_2_maps_to_b():
+    calculator = EN14825Calculator()
+    climate_data = calculator._get_scop_climate_data("warmer")
+
+    resolution = calculator._validate_scop_points(
+        test_points=scop_points_without("A", "TOL", "Tbiv", tbiv_temp_c=2, tol_temp_c=-11),
+        climate_key="warmer",
+        climate_data=climate_data,
+        tbiv_temp_c=2,
+        tol_temp_c=-11,
+    )
+
+    assert resolution["contract"]["mapped_points"]["Tbiv"] == "B"
+    assert "Tbiv" not in resolution["contract"]["required_independent_points"]
+    assert "Tbiv" not in resolution["contract"]["curve_point_keys"]
+    assert resolution["points"]["Tbiv"]["capacity"] == resolution["points"]["B"]["capacity"]
+    assert resolution["points"]["Tbiv"]["power"] == resolution["points"]["B"]["power"]
+
+
+def test_en14825_scop_warmer_tol_below_first_nonzero_bin_not_required():
+    calculator = EN14825Calculator()
+    climate_data = calculator._get_scop_climate_data("warmer")
+
+    resolution = calculator._validate_scop_points(
+        test_points=scop_points_without("A", "TOL", "Tbiv", tbiv_temp_c=2, tol_temp_c=-11),
+        climate_key="warmer",
+        climate_data=climate_data,
+        tbiv_temp_c=2,
+        tol_temp_c=-11,
+    )
+
+    assert "TOL" not in resolution["contract"]["required_independent_points"]
+    assert "TOL" not in resolution["contract"]["curve_point_keys"]
+    assert "TOL" in resolution["contract"]["inactive_points"]
+    assert resolution["points"]["TOL"]["temp_c"] == -11
+
+
+@pytest.mark.parametrize(
+    "climate,tbiv_temp_c,tol_temp_c",
+    [("average", -10, -11), ("colder", -15, -22)],
+)
+def test_en14825_scop_average_and_colder_keep_a_required(climate, tbiv_temp_c, tol_temp_c):
+    calculator = EN14825Calculator()
+
+    with pytest.raises(ValueError, match="Missing SCOP test point: A"):
+        calculator.calculate_scop(
+            test_points=scop_points_without("A", tbiv_temp_c=tbiv_temp_c, tol_temp_c=tol_temp_c),
+            p_design_h=2.4,
+            climate=climate,
+            tbiv_temp_c=tbiv_temp_c,
+            tol_temp_c=tol_temp_c,
+            **STANDBY_POWER_KW,
+        )
+
+
+def test_en14825_scop_average_tol_minus11_remains_required():
+    calculator = EN14825Calculator()
+
+    with pytest.raises(ValueError, match="Missing SCOP test point: TOL"):
+        calculator.calculate_scop(
+            test_points=scop_points_without("TOL", tbiv_temp_c=-10, tol_temp_c=-11),
+            p_design_h=2.4,
+            climate="average",
+            tbiv_temp_c=-10,
+            tol_temp_c=-11,
+            **STANDBY_POWER_KW,
+        )
 
 
 def test_en14825_golden_scop_warmer():

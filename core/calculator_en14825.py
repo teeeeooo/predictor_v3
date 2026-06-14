@@ -380,6 +380,42 @@ class EN14825Calculator:
         except KeyError as exc:
             raise ValueError(f"Missing SCOP operational hours for {appliance_type}/{climate_key}") from exc
 
+    def _default_scop_point_contract(self) -> dict:
+        return {
+            "standard_points": ["A", "B", "C", "D"],
+            "conditional_points": ["TOL", "Tbiv"],
+            "all_logical_points": ["A", "B", "C", "D", "TOL", "Tbiv"],
+            "climate_standard_points": {
+                "average": ["A", "B", "C", "D"],
+                "warmer": ["B", "C", "D"],
+                "colder": ["A", "B", "C", "D"],
+            },
+            "duplicate_temperature_policy": "standard_point_value_is_source",
+            "below_nonzero_bin_policy": (
+                "conditional point below first useful nonzero-bin interpolation "
+                "segment is not required as independent input"
+            ),
+        }
+
+    def _get_scop_point_contract(self) -> dict:
+        return self.scop_config.get("point_contract") or self._default_scop_point_contract()
+
+    def _get_scop_standard_point_temps(self) -> dict:
+        schema = self.scop_config.get("heating_test_point_schema", {})
+        point_temps = {}
+        for key in ("A", "B", "C", "D"):
+            try:
+                point_temps[key] = float(schema[key]["outdoor_db_c"])
+            except KeyError as exc:
+                raise ValueError(f"Missing SCOP schema temperature for point {key}") from exc
+        return point_temps
+
+    def _first_nonzero_heating_bin_temp(self, climate_data: dict) -> float:
+        for temp, hours in zip(climate_data.get("heating_bin_temps_c", []), climate_data.get("heating_bin_hours", [])):
+            if hours > 0:
+                return float(temp)
+        raise ValueError("SCOP climate has no nonzero heating bin hours.")
+
     def _parse_scop_point(self, test_points: dict, key: str) -> dict:
         if key not in test_points:
             raise ValueError(f"Missing SCOP test point: {key}")
@@ -432,19 +468,110 @@ class EN14825Calculator:
 
         raise ValueError(f"Unknown SCOP test point key: {key}")
 
-    def _validate_scop_points(
+    def _conditional_scop_point_required(
         self,
-        test_points: dict,
+        temp_c: float,
+        source_key: str,
+        active_standard_temps: dict,
+        first_nonzero_bin_temp: float,
+    ) -> bool:
+        if source_key is not None:
+            return False
+        if temp_c == first_nonzero_bin_temp:
+            return True
+        if temp_c < first_nonzero_bin_temp:
+            upper_temps = [temp for temp in active_standard_temps.values() if temp >= first_nonzero_bin_temp]
+            if not upper_temps:
+                return False
+            return temp_c < first_nonzero_bin_temp < min(upper_temps)
+        return True
+
+    def _resolve_scop_point_contract(
+        self,
+        climate_key: str,
         climate_data: dict,
         tbiv_temp_c: float = None,
         tol_temp_c: float = None,
     ) -> dict:
-        required_keys = ("A", "B", "C", "D", "TOL", "Tbiv")
+        contract = self._get_scop_point_contract()
+        standard_points = tuple(contract.get("standard_points", ("A", "B", "C", "D")))
+        conditional_points = tuple(contract.get("conditional_points", ("TOL", "Tbiv")))
+        climate_points = contract.get("climate_standard_points", {})
+        active_standard_points = tuple(climate_points.get(climate_key, standard_points))
+
+        standard_temps = self._get_scop_standard_point_temps()
+        active_standard_temps = {
+            key: standard_temps[key]
+            for key in active_standard_points
+            if key in standard_temps
+        }
+        resolved_temps = {key: standard_temps[key] for key in standard_points}
+        resolved_temps["Tbiv"] = float(tbiv_temp_c if tbiv_temp_c is not None else climate_data["tbiv_max_c"])
+        resolved_temps["TOL"] = float(tol_temp_c if tol_temp_c is not None else climate_data["tol_max_c"])
+
+        required = list(active_standard_points)
+        mapped = {}
+        inactive = [key for key in standard_points if key not in active_standard_points]
+        first_nonzero = self._first_nonzero_heating_bin_temp(climate_data)
+
+        for key in conditional_points:
+            temp_c = resolved_temps[key]
+            source_key = None
+            for point_key, point_temp in active_standard_temps.items():
+                if temp_c == point_temp:
+                    source_key = point_key
+                    break
+            if source_key is not None:
+                mapped[key] = source_key
+                continue
+            if self._conditional_scop_point_required(temp_c, source_key, active_standard_temps, first_nonzero):
+                required.append(key)
+            else:
+                inactive.append(key)
+
+        curve_point_keys = tuple(
+            key for key in required
+            if key in standard_points or key in conditional_points
+        )
+        return {
+            "active_standard_points": active_standard_points,
+            "required_independent_points": tuple(required),
+            "mapped_points": mapped,
+            "inactive_points": tuple(inactive),
+            "resolved_temperatures": resolved_temps,
+            "curve_point_keys": curve_point_keys,
+        }
+
+    def _validate_scop_points(
+        self,
+        test_points: dict,
+        climate_key: str,
+        climate_data: dict,
+        tbiv_temp_c: float = None,
+        tol_temp_c: float = None,
+    ) -> dict:
+        contract = self._resolve_scop_point_contract(climate_key, climate_data, tbiv_temp_c, tol_temp_c)
+        required_keys = contract["required_independent_points"]
         points = {}
         for key in required_keys:
             point = self._parse_scop_point(test_points, key)
-            point["temp_c"] = self._get_scop_point_temp(key, point, climate_data, tbiv_temp_c, tol_temp_c)
+            point["temp_c"] = contract["resolved_temperatures"][key]
             points[key] = point
+
+        for key, source_key in contract["mapped_points"].items():
+            if source_key not in points:
+                raise ValueError(f"Mapped SCOP point {key} source is missing: {source_key}")
+            point = dict(points[source_key])
+            point["temp_c"] = contract["resolved_temperatures"][key]
+            point["mapped_from"] = source_key
+            points[key] = point
+
+        for key in contract["inactive_points"]:
+            if key not in points:
+                points[key] = {
+                    "temp_c": contract["resolved_temperatures"][key],
+                    "inactive": True,
+                }
 
         if points["Tbiv"]["temp_c"] > climate_data["tbiv_max_c"]:
             raise ValueError(
@@ -459,7 +586,10 @@ class EN14825Calculator:
                 f"TOL must be <= Tbiv for SCOP heating calculation: "
                 f"TOL={points['TOL']['temp_c']}, Tbiv={points['Tbiv']['temp_c']}"
             )
-        return points
+        return {
+            "points": points,
+            "contract": contract,
+        }
 
     def _heating_part_load(self, tj: float, p_design_h: float, t_design_h: float) -> float:
         if p_design_h <= 0:
@@ -496,11 +626,17 @@ class EN14825Calculator:
             "degradation_factor": data["degradation_factor"],
         }
 
-    def _build_scop_points(self, points: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
+    def _build_scop_points(self, point_resolution: dict, climate_data: dict, p_design_h: float, cd: float) -> dict:
         t_design_h = float(climate_data["t_design_h_c"])
+        points = point_resolution["points"]
+        contract = point_resolution["contract"]
         resolved = {}
-        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
-            point = dict(points[key])
+        for key, source_point in points.items():
+            if source_point.get("inactive"):
+                resolved[key] = dict(source_point)
+                resolved[key]["key"] = key
+                continue
+            point = dict(source_point)
             load = self._heating_part_load(point["temp_c"], p_design_h, t_design_h)
             perf = self._scop_pl_at_declared_point(point, load, cd)
             point.update({
@@ -516,18 +652,18 @@ class EN14825Calculator:
 
         return {
             "points": resolved,
-            "capacity_curve": self._scop_capacity_curve_points(resolved),
-            "coppl_curve": self._scop_coppl_curve_points(resolved),
+            "capacity_curve": self._scop_capacity_curve_points(resolved, contract["curve_point_keys"]),
+            "coppl_curve": self._scop_coppl_curve_points(resolved, contract["curve_point_keys"]),
         }
 
-    def _scop_capacity_curve_points(self, points: dict) -> list:
-        priority = {"TOL": 60, "Tbiv": 50, "A": 40, "B": 30, "C": 20, "D": 10}
+    def _scop_capacity_curve_points(self, points: dict, curve_point_keys: tuple) -> list:
         by_temp = {}
-        for key in ("A", "B", "C", "D", "TOL", "Tbiv"):
+        for key in curve_point_keys:
             point = points[key]
+            if point.get("inactive"):
+                continue
             temp = point["temp_c"]
-            current = by_temp.get(temp)
-            if current is None or priority[key] > priority[current["key"]]:
+            if temp not in by_temp:
                 by_temp[temp] = {
                     "key": key,
                     "temp_c": temp,
@@ -536,29 +672,21 @@ class EN14825Calculator:
                 }
         return sorted(by_temp.values(), key=lambda point: point["temp_c"])
 
-    def _scop_coppl_curve_points(self, points: dict) -> list:
-        curve = []
-        used_temps = set()
-        for key in ("A", "B", "C", "D"):
+    def _scop_coppl_curve_points(self, points: dict, curve_point_keys: tuple) -> list:
+        by_temp = {}
+        for key in curve_point_keys:
             point = points[key]
-            used_temps.add(point["temp_c"])
-            curve.append({
-                "key": key,
-                "temp_c": point["temp_c"],
-                "value": point["cop_pl"],
-                "cop_pl": point["cop_pl"],
-            })
-        for key in ("TOL", "Tbiv"):
-            point = points[key]
-            if point["temp_c"] in used_temps:
+            if point.get("inactive"):
                 continue
-            curve.append({
-                "key": key,
-                "temp_c": point["temp_c"],
-                "value": point["cop_pl"],
-                "cop_pl": point["cop_pl"],
-            })
-        return sorted(curve, key=lambda point: point["temp_c"])
+            temp = point["temp_c"]
+            if temp not in by_temp:
+                by_temp[temp] = {
+                    "key": key,
+                    "temp_c": temp,
+                    "value": point["cop_pl"],
+                    "cop_pl": point["cop_pl"],
+                }
+        return sorted(by_temp.values(), key=lambda point: point["temp_c"])
 
     def _capacity_at_temp_for_scop(self, tj: float, scop_points: dict) -> tuple:
         return self._interpolate_from_points(tj, scop_points["capacity_curve"])
@@ -674,8 +802,8 @@ class EN14825Calculator:
         if appliance_type is None:
             appliance_type = defaults.get("appliance_type", "reversible")
 
-        points = self._validate_scop_points(test_points, climate_data, tbiv_temp_c, tol_temp_c)
-        scop_points = self._build_scop_points(points, climate_data, p_design_h, cd)
+        point_resolution = self._validate_scop_points(test_points, climate_key, climate_data, tbiv_temp_c, tol_temp_c)
+        scop_points = self._build_scop_points(point_resolution, climate_data, p_design_h, cd)
         operational_hours = self._get_scop_operational_hours(climate_key, appliance_type)
         scop_on_data = self._calculate_scop_on(scop_points, climate_data, p_design_h, cd)
 

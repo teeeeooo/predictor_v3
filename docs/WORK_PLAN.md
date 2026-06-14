@@ -146,13 +146,16 @@
 - 397: EN14825 SEER config-driven calculation migration completed; SEER now reads
   cooling bins, test point temperatures, defaults, and operational hours from
   `en14825.json` while retaining legacy SCOP-only fallback behavior.
+- 398: EN14825 SCOP point contract core/config implementation completed; unified
+  config owns `scop.point_contract`, core resolves required/mapped/inactive
+  points, and existing golden expectations remain unchanged.
 
 ## Next Actions
 
-1. **EN14825 SCOP point contract correction design**
+1. **EN14825 SCOP UI point availability correction**
 
-Deferred: EN14825 batch integration preflight should wait until the SCOP point
-contract correction design is complete.
+Deferred: EN14825 batch integration preflight should wait until SCOP UI point
+availability follows the core/config contract.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
