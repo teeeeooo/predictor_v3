@@ -10,43 +10,19 @@ EN 14825:2012 SEER/SCOP 계산 엔진
 import json
 import os
 
-# ── 냉방 빈 데이터 (Table 36) ─────────────────────────────
-COOLING_BIN_TEMPS = [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
-COOLING_BIN_HOURS = [205, 227, 225, 225, 216, 215, 218, 197, 178, 158, 137, 109, 88, 63, 39, 31, 24, 17, 13, 9, 4, 3, 1, 0]
-
-# ── 냉방 설계조건 (Table 2, Air-to-air) ──────────────────
-T_DESIGN_C = 35   # 설계 외기온도 (°C)
-H_CE       = 350  # 등가 냉방시간 (h), Annex D Table D.1
-
-# ── 테스트 포인트 외기온도 (Table 2) ─────────────────────
-T_A = 35  # 조건A: 100% 부하
-T_B = 30  # 조건B:  74% 부하
-T_C = 25  # 조건C:  47% 부하
-T_D = 20  # 조건D:  21% 부하
-
-# ── 대기전력 운전 시간 — Reversible 기준 (Annex D) ───────
-H_TO  = 221    # thermostat-off 시간 (h), Table D.1
-H_SB  = 2142   # standby 시간 (h), Table D.1
-H_CK  = 2672   # crankcase heater 시간 (h), Table D.3 Reversible
-H_OFF = 0      # off 시간 (h), Table D.1 Reversible = 0
-SEER_OPERATIONAL_HOURS = {
-    "reversible": {"h_ce": H_CE, "h_to": H_TO, "h_sb": H_SB, "h_ck": H_CK, "h_off": H_OFF},
-    "cooling_only": {"h_ce": 350, "h_to": 221, "h_sb": 2142, "h_ck": 7760, "h_off": 5088},
-}
-
-# ── 열화계수 기본값 (규격 6.4.2.1) ───────────────────────
+T_DESIGN_C = 35
 CD_DEFAULT = 0.25
 
 class EN14825Calculator:
     """EN 14825:2012 SEER/SCOP 계산기"""
 
-    def __init__(self, scop_config_path: str = None):
-        if scop_config_path is None:
+    def __init__(self, config_path: str = None):
+        if config_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            scop_config_path = os.path.join(base_dir, "data", "region_configs", "en14825.json")
+            config_path = os.path.join(base_dir, "data", "region_configs", "en14825.json")
 
-        self.scop_config_path = scop_config_path
-        loaded_config = self._load_config(scop_config_path)
+        self.config_path = config_path
+        loaded_config = self._load_config(config_path)
         self.config, self.seer_config, self.scop_config = self._split_config(loaded_config)
 
     def _load_config(self, config_path: str) -> dict:
@@ -57,35 +33,21 @@ class EN14825Calculator:
             return json.load(f)
 
     def _split_config(self, config: dict) -> tuple:
-        if "seer" in config and "scop" in config:
-            return config, config["seer"], config["scop"]
+        if "seer" not in config or "scop" not in config:
+            raise ValueError("EN14825 config must include 'seer' and 'scop' sections.")
+        return config, config["seer"], config["scop"]
 
-        return {
-            "standard": config.get("standard", "BS EN 14825:2012 / EN 14825:2012 (E)"),
-            "unit_system": config.get("unit_system", "metric"),
-            "seer": self._default_seer_config(),
-            "scop": config,
-        }, self._default_seer_config(), config
+    def _get_seer_design_value(self, key: str) -> float:
+        try:
+            return float(self.seer_config["design"][key])
+        except KeyError as exc:
+            raise ValueError(f"Missing SEER design config key: {key}") from exc
 
-    def _default_seer_config(self) -> dict:
-        return {
-            "mode": "cooling",
-            "metric": "SEER",
-            "design": {"t_design_c": T_DESIGN_C, "h_ce": H_CE},
-            "test_point_temps": {"A": T_A, "B": T_B, "C": T_C, "D": T_D},
-            "bin_data": {"temps": COOLING_BIN_TEMPS, "hours": COOLING_BIN_HOURS},
-            "operational_hours": SEER_OPERATIONAL_HOURS,
-            "defaults": {
-                "degradation_coefficient": CD_DEFAULT,
-                "appliance_type": "reversible",
-            },
-        }
-
-    def _get_seer_design_value(self, key: str, fallback: float) -> float:
-        return float(self.seer_config.get("design", {}).get(key, fallback))
-
-    def _get_seer_default_value(self, key: str, fallback: float) -> float:
-        return float(self.seer_config.get("defaults", {}).get(key, fallback))
+    def _get_seer_default_value(self, key: str) -> float:
+        try:
+            return float(self.seer_config["defaults"][key])
+        except KeyError as exc:
+            raise ValueError(f"Missing SEER default config key: {key}") from exc
 
     def _get_seer_test_point_temps(self) -> dict:
         point_temps = self.seer_config.get("test_point_temps", {})
@@ -96,9 +58,12 @@ class EN14825Calculator:
         return {key: float(point_temps[key]) for key in required}
 
     def _get_seer_bin_data(self) -> tuple:
-        bin_data = self.seer_config.get("bin_data", {})
-        temps = bin_data.get("temps", [])
-        hours = bin_data.get("hours", [])
+        try:
+            bin_data = self.seer_config["bin_data"]
+            temps = bin_data["temps"]
+            hours = bin_data["hours"]
+        except KeyError as exc:
+            raise ValueError("Missing SEER cooling bin data config.") from exc
         if len(temps) != len(hours):
             raise ValueError("SEER cooling bin temperature/hour length mismatch.")
         return temps, hours
@@ -302,11 +267,14 @@ class EN14825Calculator:
         """
         self._validate_test_points(test_points)
         if t_design_c is None:
-            t_design_c = self._get_seer_design_value("t_design_c", T_DESIGN_C)
+            t_design_c = self._get_seer_design_value("t_design_c")
         if cd is None:
-            cd = self._get_seer_default_value("degradation_coefficient", CD_DEFAULT)
+            cd = self._get_seer_default_value("degradation_coefficient")
         if appliance_type is None:
-            appliance_type = self.seer_config.get("defaults", {}).get("appliance_type", "reversible")
+            try:
+                appliance_type = self.seer_config["defaults"]["appliance_type"]
+            except KeyError as exc:
+                raise ValueError("Missing SEER default config key: appliance_type") from exc
         operational_hours = self._get_seer_operational_hours(appliance_type)
 
         # 1. 연간 냉방수요 Qc (kWh) — 입력받은 설계 부하 사용
@@ -380,25 +348,11 @@ class EN14825Calculator:
         except KeyError as exc:
             raise ValueError(f"Missing SCOP operational hours for {appliance_type}/{climate_key}") from exc
 
-    def _default_scop_point_contract(self) -> dict:
-        return {
-            "standard_points": ["A", "B", "C", "D"],
-            "conditional_points": ["TOL", "Tbiv"],
-            "all_logical_points": ["A", "B", "C", "D", "TOL", "Tbiv"],
-            "climate_standard_points": {
-                "average": ["A", "B", "C", "D"],
-                "warmer": ["B", "C", "D"],
-                "colder": ["A", "B", "C", "D"],
-            },
-            "duplicate_temperature_policy": "standard_point_value_is_source",
-            "below_nonzero_bin_policy": (
-                "conditional point below first useful nonzero-bin interpolation "
-                "segment is not required as independent input"
-            ),
-        }
-
     def _get_scop_point_contract(self) -> dict:
-        return self.scop_config.get("point_contract") or self._default_scop_point_contract()
+        try:
+            return self.scop_config["point_contract"]
+        except KeyError as exc:
+            raise ValueError("Missing SCOP point contract config.") from exc
 
     def _get_scop_standard_point_temps(self) -> dict:
         schema = self.scop_config.get("heating_test_point_schema", {})
@@ -442,31 +396,6 @@ class EN14825Calculator:
             "cop_pl": self._safe_div(capacity, power),
             "temp_c": float(temp_c) if temp_c is not None else None,
         }
-
-    def _get_scop_point_temp(
-        self,
-        key: str,
-        point: dict,
-        climate_data: dict,
-        tbiv_temp_c: float = None,
-        tol_temp_c: float = None,
-    ) -> float:
-        if point.get("temp_c") is not None:
-            return point["temp_c"]
-
-        schema = self.scop_config.get("heating_test_point_schema", {})
-        if key in ("A", "B", "C", "D"):
-            try:
-                return float(schema[key]["outdoor_db_c"])
-            except KeyError as exc:
-                raise ValueError(f"Missing SCOP schema temperature for point {key}") from exc
-
-        if key == "Tbiv":
-            return float(tbiv_temp_c if tbiv_temp_c is not None else climate_data["tbiv_max_c"])
-        if key == "TOL":
-            return float(tol_temp_c if tol_temp_c is not None else climate_data["tol_max_c"])
-
-        raise ValueError(f"Unknown SCOP test point key: {key}")
 
     def _conditional_scop_point_required(
         self,
@@ -798,9 +727,15 @@ class EN14825Calculator:
         climate_data = self._get_scop_climate_data(climate_key)
         defaults = self.scop_config.get("defaults", {})
         if cd is None:
-            cd = defaults.get("degradation_coefficient", CD_DEFAULT)
+            try:
+                cd = defaults["degradation_coefficient"]
+            except KeyError as exc:
+                raise ValueError("Missing SCOP default config key: degradation_coefficient") from exc
         if appliance_type is None:
-            appliance_type = defaults.get("appliance_type", "reversible")
+            try:
+                appliance_type = defaults["appliance_type"]
+            except KeyError as exc:
+                raise ValueError("Missing SCOP default config key: appliance_type") from exc
 
         point_resolution = self._validate_scop_points(test_points, climate_key, climate_data, tbiv_temp_c, tol_temp_c)
         scop_points = self._build_scop_points(point_resolution, climate_data, p_design_h, cd)

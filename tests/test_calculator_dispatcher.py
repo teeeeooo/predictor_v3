@@ -58,14 +58,14 @@ def test_dispatcher_returns_en14825_calculator_for_en14825_scop_profile_id():
     calculator = create_calculator_for_profile(profile_id="en14825_scop")
 
     assert isinstance(calculator, EN14825Calculator)
-    assert calculator.scop_config_path == "data/region_configs/en14825.json"
+    assert calculator.config_path == "data/region_configs/en14825.json"
 
 
 def test_dispatcher_returns_en14825_calculator_for_en14825_seer_profile_id():
     calculator = create_calculator_for_profile(profile_id="en14825_seer")
 
     assert isinstance(calculator, EN14825Calculator)
-    assert calculator.scop_config_path == "data/region_configs/en14825.json"
+    assert calculator.config_path == "data/region_configs/en14825.json"
 
 
 @pytest.mark.parametrize(

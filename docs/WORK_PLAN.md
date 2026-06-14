@@ -136,19 +136,21 @@
 - 394: Verification scope owner audit completed; no separate
   `VERIFICATION_PROFILES.md` is needed because validation scope stays with
   existing task-specific workflow owners.
-- 395: EN14825 config consolidation audit completed; current ownership is split
-  between unused SEER-like `eu.json`, active SCOP `en14825_scop.json`, and
-  core-local SEER constants, so config design should precede batch preflight and
-  SCOP Warmer A correction.
+- 395: EN14825 config consolidation audit completed; ownership split was
+  confirmed as an implementation-history artifact, so config design should
+  precede batch preflight and SCOP Warmer A correction.
 - 396: EN14825 unified config migration Step 1 completed; `en14825.json` now
   owns `seer`/`scop` sections, profiles point to the unified config, and legacy
   SCOP-only config loading remains compatible.
 - 397: EN14825 SEER config-driven calculation migration completed; SEER now reads
   cooling bins, test point temperatures, defaults, and operational hours from
-  `en14825.json` while retaining legacy SCOP-only fallback behavior.
+  `en14825.json`.
 - 398: EN14825 SCOP point contract core/config implementation completed; unified
   config owns `scop.point_contract`, core resolves required/mapped/inactive
   points, and existing golden expectations remain unchanged.
+- 399: EN14825 legacy config and fallback cleanup completed; the unified
+  `en14825.json` owner is now fail-fast, legacy config files were removed, and
+  the calculator constructor uses `config_path`.
 
 ## Next Actions
 

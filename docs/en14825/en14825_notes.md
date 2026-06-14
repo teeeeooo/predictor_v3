@@ -56,7 +56,7 @@
 | `p_to`, `p_sb`, `p_ck`, `p_off` | Pto, Psb, Pck, Poff | kW | Yes | Annex D 운전 시간과 곱해 연간 에너지로 합산한다. | EN14825:2012 Annex D Table D.2, Table D.4 |
 | `tbiv_temp_c` | Tbiv | °C | No | 없으면 기후별 최대값을 사용한다. | EN14825:2012 Clause 5.2 |
 | `tol_temp_c` | TOL | °C | No | 없으면 기후별 최대값을 사용한다. | EN14825:2012 Clause 5.2 |
-| `cd` | Cd | dimensionless | No | 기본 0.25다. | EN14825:2012 Clause 7.4.2.1 |
+| `cd` | Cd | dimensionless | No | 기본값은 `en14825.json`의 `scop.defaults.degradation_coefficient`다. | EN14825:2012 Clause 7.4.2.1 |
 | `appliance_type` | appliance type | n/a | No | 기본 `reversible`, `heating_only`도 JSON에 존재한다. | EN14825:2012 Annex D Table D.2, Table D.4 |
 
 ## 5. Output Schema
@@ -130,7 +130,7 @@
 
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
-| Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section | `_get_seer_bin_data` | n/a | module constants remain legacy fallback |
+| Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section | `_get_seer_bin_data` | n/a | missing config data fails fast |
 | Cooling load line | `core/calculator_en14825.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
 | EERPL declared point | `core/calculator_en14825.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
 | SEERon | `core/calculator_en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
