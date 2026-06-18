@@ -33,8 +33,9 @@
 - `scop.point_contract` owns required, mapped, inactive, and threshold-only
   logical point behavior. Core resolution is propagated through adapter/table
   model/UI boundaries so unavailable SCOP inputs are not independent inputs.
-- Existing golden expectations remain unchanged. The next gate is EN14825 SCOP
-  point-availability manual smoke before batch integration preflight.
+- Existing golden expectations remain unchanged. EN14825 SCOP point-availability
+  manual smoke is user-confirmed complete, so batch integration preflight is now
+  unblocked.
 
 ### Reference
 - `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`

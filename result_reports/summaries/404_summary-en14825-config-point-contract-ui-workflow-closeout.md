@@ -11,8 +11,7 @@ hardening arc.
 - Covered active reports: 386-403.
 - Archived only reports whose implementation, validation, audit decision, or
   follow-up correction is complete or compactly preserved here.
-- Preserved the remaining SCOP manual smoke and deferred batch/split work as
-  explicit next-action or risk items.
+- Preserved the deferred batch/split work as explicit next-action or risk items.
 
 ## Closed Results
 
@@ -42,7 +41,8 @@ hardening arc.
 
 - Calculator input/result bounded-width behavior: OK.
 - Hong Kong CSPF/HSPF result-column alignment: OK.
-- EN14825 SCOP point availability presentation: pending as the next action.
+- EN14825 SCOP point availability presentation: OK, user-confirmed after the
+  lifecycle closeout.
 
 ## Workflow Decisions
 
@@ -81,7 +81,8 @@ hardening arc.
 ## Documentation Sync
 
 - `docs/WORK_PLAN.md`: compressed reports 386-403 into this summary reference;
-  next execution action is unchanged.
+  after user-confirmed SCOP manual smoke, the next action advances to EN14825
+  batch integration preflight.
 - `project_log.md`: added one milestone entry for unified EN14825 config
   ownership and SCOP point-contract propagation.
 - `result_reports/memory/project_memory_seed.md`: registered this summary and
@@ -101,7 +102,7 @@ hardening arc.
 
 ## Next Action
 
-EN14825 SCOP UI point availability manual smoke.
+EN14825 batch integration preflight.
 
 ## Verification
 
@@ -117,8 +118,6 @@ EN14825 SCOP UI point availability manual smoke.
 
 ## Known Risks
 
-- SCOP point availability visual behavior still needs the planned manual smoke.
-- EN14825 batch integration preflight remains deferred until that smoke closes.
 - The SCOP section soft LOC warning remains accepted/deferred under the split
   audit trigger above.
 
