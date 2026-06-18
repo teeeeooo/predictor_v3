@@ -157,13 +157,16 @@
 - 401: EN14825 SCOP UI point availability correction completed; SCOP UI now uses
   adapter-resolved core/config point availability so inactive, mapped, and
   threshold-only points are blank/readonly instead of required inputs.
+- 402: MetricInputTable unavailable-cell presentation correction completed; SCOP
+  unavailable input cells now use reusable static label presentation instead of
+  disabled Entry rendering.
 
 ## Next Actions
 
 1. **EN14825 SCOP UI point availability manual smoke**
 
 Deferred: EN14825 batch integration preflight should wait until SCOP UI point
-availability follows the core/config contract.
+availability manual smoke is completed.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated

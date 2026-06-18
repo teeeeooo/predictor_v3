@@ -75,6 +75,8 @@ class MetricInputTable(ttk.Frame):
         self._variables: dict[str, tk.StringVar] = {}
         self._entries: dict[str, tk.Entry] = {}
         self.editable_entries = self._entries
+        self._readonly_cell_labels: dict[str, tk.Label] = {}
+        self._readonly_presentation_addresses: set[CellAddress] = set()
         self._batch_depth = 0
         self._batch_changed = False
         self.table_frame: tk.Frame
@@ -237,8 +239,18 @@ class MetricInputTable(ttk.Frame):
             "<Return>",
             lambda _event, field_key=field_key: self._focus_next(field_key),
         )
+        readonly_label = tk.Label(
+            cell,
+            text="",
+            width=self.data_column_chars,
+            background=TABLE_STATIC_BG,
+            foreground=TABLE_STATIC_FG,
+            font=TABLE_BODY_FONT,
+        )
+        readonly_label.surface_role = "readonly_cell_label"
         self._variables[field_key] = variable
         self._entries[field_key] = entry
+        self._readonly_cell_labels[field_key] = readonly_label
         self.field_order += (field_key,)
         self.editable_addresses += (address,)
 
@@ -332,6 +344,31 @@ class MetricInputTable(ttk.Frame):
         }
         return self.set_values_batch(editable_values)
 
+    def set_readonly_addresses(
+        self,
+        addresses: Iterable[CellAddress],
+        *,
+        display_values: Mapping[CellAddress, str] | None = None,
+    ) -> bool:
+        """Show editable addresses with static/read-only cell presentation."""
+        display_values = display_values or {}
+        readonly_addresses = {
+            address for address in addresses if address in self.editable_cells
+        }
+        changed = readonly_addresses != self._readonly_presentation_addresses
+        self._readonly_presentation_addresses = readonly_addresses
+        for address, field_key in self.editable_cells.items():
+            display_value = display_values.get(address, self._values[field_key])
+            changed = (
+                self._apply_cell_presentation(
+                    field_key=field_key,
+                    readonly=address in readonly_addresses,
+                    display_value=display_value,
+                )
+                or changed
+            )
+        return changed
+
     def get_numeric_values(self, fields: Iterable[str] | None = None) -> dict[str, float]:
         """Return numeric values for editable cells or raise on invalid input.
 
@@ -380,7 +417,10 @@ class MetricInputTable(ttk.Frame):
     def cell_roles(self) -> tuple[CellRole, ...]:
         return tuple(
             CellRole.EDITABLE
-            if (row_key, column_key) in self.editable_cells
+            if (
+                (row_key, column_key) in self.editable_cells
+                and (row_key, column_key) not in self._readonly_presentation_addresses
+            )
             else CellRole.READONLY
             for row_key, _row_label in self.rows
             for column_key, _column_label in self.columns
@@ -388,7 +428,10 @@ class MetricInputTable(ttk.Frame):
 
     def cell_role(self, position: tuple[int, int]) -> CellRole:
         address = self._address_at_position(position)
-        if address in self.editable_cells:
+        if (
+            address in self.editable_cells
+            and address not in self._readonly_presentation_addresses
+        ):
             return CellRole.EDITABLE
         return CellRole.READONLY
 
@@ -412,10 +455,12 @@ class MetricInputTable(ttk.Frame):
         return self.cell_frames[address]
 
     def cell_widget(self, position: tuple[int, int]) -> tk.Widget:
+        address = self._address_at_position(position)
         field_key = self._field_key_at_position(position)
         if field_key is not None:
+            if address in self._readonly_presentation_addresses:
+                return self._readonly_cell_labels[field_key]
             return self.editable_entries[field_key]
-        address = self._address_at_position(position)
         label = self.static_cell_labels.get(address)
         if label is not None:
             return label
@@ -491,6 +536,51 @@ class MetricInputTable(ttk.Frame):
         """Apply visual state to all editable entries."""
         for field_key in self.editable_entries:
             self._apply_field_visual_state(field_key)
+
+    def _apply_cell_presentation(
+        self,
+        *,
+        field_key: str,
+        readonly: bool,
+        display_value: str,
+    ) -> bool:
+        entry = self.editable_entries[field_key]
+        readonly_label = self._readonly_cell_labels[field_key]
+        cell = self.editable_cell_frames[field_key]
+        if readonly:
+            previous_text = readonly_label.cget("text")
+            readonly_label.configure(text=display_value, background=TABLE_STATIC_BG)
+            entry.configure(state=tk.NORMAL)
+            if entry.winfo_manager():
+                entry.pack_forget()
+            if not readonly_label.winfo_manager():
+                readonly_label.pack(
+                    fill=tk.BOTH,
+                    expand=True,
+                    padx=TABLE_CELL_PADX,
+                    pady=TABLE_CELL_PADY,
+                )
+            cell.configure(background=TABLE_STATIC_BG)
+            return previous_text != display_value
+
+        was_readonly_visible = bool(readonly_label.winfo_manager())
+        if was_readonly_visible:
+            readonly_label.pack_forget()
+        if not entry.winfo_manager():
+            entry.pack(
+                fill=tk.BOTH,
+                expand=True,
+                padx=TABLE_CELL_PADX,
+                pady=TABLE_CELL_PADY,
+            )
+        entry.configure(state=tk.NORMAL)
+        self._apply_field_visual_state(field_key)
+        cell.configure(
+            background=TABLE_INVALID_BG
+            if field_key in self._invalid_fields
+            else TABLE_EDITABLE_BG
+        )
+        return was_readonly_visible
 
     def _address_at_position(self, position: tuple[int, int]) -> CellAddress:
         row, column = position

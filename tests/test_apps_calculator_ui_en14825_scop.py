@@ -778,22 +778,37 @@ def test_scop_section_applies_point_availability_to_warmer_table():
                 assert warmer_model.get_value(row, col) == ""
                 row_idx = ScopTableModel.ROW_KEYS.index(row)
                 col_idx = ScopTableModel.COL_KEYS.index(col)
+                field_key = warmer_table.field_key_for_address((row, col))
+                assert field_key is not None
+                entry = warmer_table.editable_entries[field_key]
+                widget = warmer_table.cell_widget((row_idx, col_idx))
                 assert warmer_table.cell_role((row_idx, col_idx)) == CellRole.READONLY
+                assert widget is not entry
+                assert widget.winfo_class() == "Label"
+                assert widget.winfo_manager() == "pack"
+                assert widget.cget("text") == ""
+                assert entry.winfo_manager() == ""
+                assert entry.cget("state") == "normal"
 
         assert warmer_model.is_editable("declared_capacity", "B") is True
         b_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
         b_col = ScopTableModel.COL_KEYS.index("B")
+        b_entry = warmer_table.editable_entries["declared_capacity_B"]
         assert warmer_table.cell_role((b_row, b_col)) == CellRole.EDITABLE
+        assert warmer_table.cell_widget((b_row, b_col)) is b_entry
+        assert b_entry.winfo_manager() == "pack"
 
         average_model = section._current_table_models["average"]
         average_table = section.input_tables["average"]
         a_row = ScopTableModel.ROW_KEYS.index("declared_capacity")
         a_col = ScopTableModel.COL_KEYS.index("A")
         tol_col = ScopTableModel.COL_KEYS.index("TOL")
+        average_a_entry = average_table.editable_entries["declared_capacity_A"]
         assert average_model.is_editable("declared_capacity", "A") is True
         assert average_model.is_editable("declared_capacity", "TOL") is True
         assert average_table.cell_role((a_row, a_col)) == CellRole.EDITABLE
         assert average_table.cell_role((a_row, tol_col)) == CellRole.EDITABLE
+        assert average_table.cell_widget((a_row, a_col)) is average_a_entry
 
     finally:
         root.destroy()

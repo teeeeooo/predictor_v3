@@ -257,7 +257,6 @@ class En14825ScopSection:
             )
 
             self.table_controllers[clm] = TkTableController(table)
-            self._install_availability_cell_role(table)
 
             result_surface = ScopResultSurface(body)
             result_surface.grid(row=1, column=1, sticky="ne", padx=(0, 2), pady=(0, 6))
@@ -405,7 +404,8 @@ class En14825ScopSection:
                 climate_data = self.adapter.get_climate_data(clm)
                 t_design_h = float(climate_data["t_design_h_c"])
                 point_availability = self.adapter.resolve_point_availability(clm, eff_tbiv, eff_tol)
-                self._apply_point_availability(table, point_availability)
+                if self._apply_point_availability(table, point_availability):
+                    controller.refresh()
 
                 # 1. Read and validate text values from input matrix
                 input_mapping = build_scop_point_inputs(table.get_text_values())
@@ -524,21 +524,7 @@ class En14825ScopSection:
         if label:
             label.configure(text=value)
 
-    def _install_availability_cell_role(self, table: MetricInputTable) -> None:
-        if hasattr(table, "_scop_base_cell_role"):
-            return
-        table._scop_base_cell_role = table.cell_role
-        table._scop_unavailable_addresses = set()
-
-        def cell_role(position: tuple[int, int], table=table):
-            address = table._address_at_position(position)
-            if address in table._scop_unavailable_addresses:
-                return CellRole.READONLY
-            return table._scop_base_cell_role(position)
-
-        table.cell_role = cell_role
-
-    def _apply_point_availability(self, table: MetricInputTable, point_availability: dict) -> None:
+    def _apply_point_availability(self, table: MetricInputTable, point_availability: dict) -> bool:
         input_rows = ("declared_capacity", "declared_cop", "tested_capacity", "tested_power")
         unavailable_addresses = {
             (row, col)
@@ -546,7 +532,6 @@ class En14825ScopSection:
             if meta.get("state") != "required"
             for row in input_rows
         }
-        table._scop_unavailable_addresses = unavailable_addresses
 
         blank_values = {}
         for address in unavailable_addresses:
@@ -556,12 +541,10 @@ class En14825ScopSection:
         if blank_values:
             table.set_values_batch(blank_values)
 
-        for address, field_key in table.editable_cells.items():
-            entry = table.editable_entries[field_key]
-            if address in unavailable_addresses:
-                entry.configure(state=tk.DISABLED, background=TABLE_STATIC_BG)
-            else:
-                entry.configure(state=tk.NORMAL, background=TABLE_EDITABLE_BG)
+        return table.set_readonly_addresses(
+            unavailable_addresses,
+            display_values={address: "" for address in unavailable_addresses},
+        )
 
     def _resolve_cell_bg(self, position: tuple[int, int], climate: str) -> str:
         table = self.input_tables[climate]

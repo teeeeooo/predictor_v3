@@ -84,6 +84,13 @@ class TestAdapterCellRole:
         assert table.cell_role((0, 0)) is CellRole.EDITABLE
         assert table.cell_role((0, 1)) is CellRole.READONLY
 
+    def test_set_readonly_addresses_changes_editable_role(self, sample_table: MetricInputTable) -> None:
+        changed = sample_table.set_readonly_addresses({("r1", "c1")})
+
+        assert changed is True
+        assert sample_table.cell_role((0, 0)) is CellRole.READONLY
+        assert sample_table.cell_role((0, 1)) is CellRole.EDITABLE
+
 
 class TestAdapterTextAccess:
     def test_text_at_position_matches_text_at_address(self, sample_table: MetricInputTable) -> None:
@@ -159,6 +166,39 @@ class TestAdapterWidgets:
 
     def test_focus_widget_matches_cell_widget(self, sample_table: MetricInputTable) -> None:
         assert sample_table.focus_widget((0, 0)) is sample_table.cell_widget((0, 0))
+
+    def test_readonly_address_uses_static_label_presentation(
+        self, sample_table: MetricInputTable
+    ) -> None:
+        entry = sample_table.editable_entries["a"]
+
+        sample_table.set_readonly_addresses(
+            {("r1", "c1")},
+            display_values={("r1", "c1"): ""},
+        )
+
+        widget = sample_table.cell_widget((0, 0))
+        assert widget is not entry
+        assert widget.winfo_class() == "Label"
+        assert widget.winfo_manager() == "pack"
+        assert widget.cget("text") == ""
+        assert widget.cget("background") == TABLE_STATIC_BG
+        assert entry.winfo_manager() == ""
+        assert entry.cget("state") == "normal"
+
+    def test_readonly_address_restores_editable_entry(
+        self, sample_table: MetricInputTable
+    ) -> None:
+        entry = sample_table.editable_entries["a"]
+        sample_table.set_readonly_addresses({("r1", "c1")})
+
+        changed = sample_table.set_readonly_addresses(set())
+
+        assert changed is True
+        assert sample_table.cell_widget((0, 0)) is entry
+        assert entry.winfo_manager() == "pack"
+        assert entry.cget("state") == "normal"
+        assert sample_table.cell_role((0, 0)) is CellRole.EDITABLE
 
 
 class TestAdapterBackground:
