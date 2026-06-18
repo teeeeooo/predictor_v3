@@ -133,7 +133,7 @@ class ScopResultSurface:
             row=3,
             column=0,
             columnspan=len(self._COLUMNS) + 1,
-            sticky="w",
+            sticky="ew",
             padx=(0, 1),
             pady=(0, 1),
         )

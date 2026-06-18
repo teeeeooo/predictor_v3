@@ -682,13 +682,20 @@ def test_scop_gui_integration_basics():
         assert section._result_cards["warmer"].winfo_manager() == ""
         assert section._result_value_labels["average"][("Declared", "SCOP")].cget("text") != "-"
         assert section._result_value_labels["average"][("Tested", "SCOP")].cget("text") != "-"
-        from apps.calculator.ui.layout_constants import RESULT_HEADER_BG, TABLE_PASS_BG
+        from apps.calculator.ui.layout_constants import (
+            RESULT_HEADER_BG,
+            RESULT_VALUE_BG,
+            TABLE_PASS_BG,
+        )
 
         result_surface = section._result_surfaces["average"]
         assert result_surface.header_labels["row_label"].cget("text") == "구분"
         assert result_surface.header_labels["row_label"].cget("background") == RESULT_HEADER_BG
         assert section._result_value_labels["average"][("Tested", "SCOP")].cget("background") == TABLE_PASS_BG
         assert result_surface.row_header_labels["Tested"].cget("background") == TABLE_PASS_BG
+        assert result_surface._status_label.grid_info()["sticky"] == "ew"
+        assert result_surface._status_label.cget("anchor") == "w"
+        assert result_surface._status_label.cget("background") == RESULT_VALUE_BG
 
         # 4. table input 변경 후 tested_cop, capacity_percent, cop_percent row가 갱신되는지 확인
         section.input_tables["average"].set_value("tested_power_A", "1200")

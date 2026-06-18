@@ -160,6 +160,8 @@
 - 402: MetricInputTable unavailable-cell presentation correction completed; SCOP
   unavailable input cells now use reusable static label presentation instead of
   disabled Entry rendering.
+- 403: SCOP result surface status row fill correction completed; the left-aligned
+  status label now fills the full result table width with the result background.
 
 ## Next Actions
 
