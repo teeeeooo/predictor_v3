@@ -37,6 +37,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/346_summary-batch-foundation-apps-calculator-relocation-closeout.md` (covered reports `335-345`)
 - `result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md` (covered reports `347-363`)
 - `result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md` (covered reports `365-384`)
+- `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md` (covered reports `386-403`)
 
 ## Scope and Non-goals
 
@@ -795,6 +796,31 @@ entries:
       - adapter boundary
     assertionStatus: verified
     source: result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md
+
+  - type: decision
+    topic: EN14825 unified config ownership
+    content: EN14825 uses data/region_configs/en14825.json as its single active config owner with namespaced seer and scop sections. SEER calculation and UI defaults flow through config/adapter ownership, legacy EN14825 config and fallback paths are removed, and the calculator constructor accepts config_path.
+    keywords:
+      - predictor_v3
+      - EN14825
+      - unified config
+      - config ownership
+      - adapter defaults
+    assertionStatus: verified
+    source: result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md (covered reports 395-400)
+
+  - type: decision
+    topic: EN14825 SCOP point contract propagation
+    content: EN14825 SCOP logical point availability is owned by scop.point_contract, including required, mapped, inactive, and threshold-only states. Core resolution is propagated through adapter and table-model boundaries to the UI, where unavailable points are blank static/read-only presentations rather than independent inputs.
+    keywords:
+      - predictor_v3
+      - EN14825
+      - SCOP
+      - point contract
+      - unavailable input
+      - UI adapter boundary
+    assertionStatus: verified
+    source: result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md (covered reports 398, 401-402)
 ```
 
 ## Known Gaps

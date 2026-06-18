@@ -22,6 +22,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-18 — EN14825 unified config and SCOP point contract milestone
+
+### Decision
+- `data/region_configs/en14825.json` is the single active EN14825 config owner
+  with namespaced `seer` and `scop` sections; legacy config/fallback ownership
+  was removed and the calculator constructor uses `config_path`.
+- EN14825 SEER calculation and UI defaults read through config/adapter ownership
+  rather than core module constants.
+- `scop.point_contract` owns required, mapped, inactive, and threshold-only
+  logical point behavior. Core resolution is propagated through adapter/table
+  model/UI boundaries so unavailable SCOP inputs are not independent inputs.
+- Existing golden expectations remain unchanged. The next gate is EN14825 SCOP
+  point-availability manual smoke before batch integration preflight.
+
+### Reference
+- `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
+
 ## 2026-06-07 — Reference parity / standardization gate added
 
 ### Decision

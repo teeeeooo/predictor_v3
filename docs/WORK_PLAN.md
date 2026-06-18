@@ -107,61 +107,10 @@
   table-input consistency rollback, target desktop manual smoke closeout, and
   active report lifecycle cleanup are summarized in
   [Summary 385](result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md).
-- 386: EN14825 appliance type auxiliary-hours audit completed; SCOP already
-  applies reversible/heating_only auxiliary hours, while SEER currently uses
-  reversible cooling hours only and needs a preflight before cooling_only
-  support is implemented.
-- 387: EN14825 SEER cooling_only auxiliary-hours support completed; default
-  reversible SEER remains unchanged, cooling_only applies official HOFF/HCK
-  hours, and appliance selectors are split between SEER and SCOP.
-- 388: MetricInputTable content_hug layout policy completed; EN14825 common,
-  design, Cd, and climate auxiliary input tables now keep natural width while
-  SEER/SCOP main condition matrices remain responsive.
-- 389: Calculator table bounded-width layout correction completed; calculator
-  input matrices and compact result tables now keep content width by default,
-  with responsive retained as an explicit table/result policy option.
-- 390: ResultPanel summary column width alignment completed; summary columns
-  now use a uniform grid group so short metric columns align with kWh columns
-  while content-hug table width remains bounded.
-- 391: ResultPanel/table width manual smoke closeout completed; target desktop
-  check confirmed ISO/HK/EN14825 input/result tables do not over-stretch on
-  window expansion and Hong Kong CSPF/HSPF result columns align correctly.
-- 392: SCOP LOC soft warning deferred check completed; current SCOP section
-  still exceeds the soft LOC limit, but no new card-level layout/refit
-  responsibility is being added now, so split implementation remains deferred.
-- 393: Code map freshness correction completed; Reference Evidence Gate now
-  requires explicit code_map check/regenerate judgment for structure-impacting
-  source changes, while remaining warning-first evidence rather than a semantic
-  linter.
-- 394: Verification scope owner audit completed; no separate
-  `VERIFICATION_PROFILES.md` is needed because validation scope stays with
-  existing task-specific workflow owners.
-- 395: EN14825 config consolidation audit completed; ownership split was
-  confirmed as an implementation-history artifact, so config design should
-  precede batch preflight and SCOP Warmer A correction.
-- 396: EN14825 unified config migration Step 1 completed; `en14825.json` now
-  owns `seer`/`scop` sections, profiles point to the unified config, and legacy
-  SCOP-only config loading remains compatible.
-- 397: EN14825 SEER config-driven calculation migration completed; SEER now reads
-  cooling bins, test point temperatures, defaults, and operational hours from
-  `en14825.json`.
-- 398: EN14825 SCOP point contract core/config implementation completed; unified
-  config owns `scop.point_contract`, core resolves required/mapped/inactive
-  points, and existing golden expectations remain unchanged.
-- 399: EN14825 legacy config and fallback cleanup completed; the unified
-  `en14825.json` owner is now fail-fast, legacy config files were removed, and
-  the calculator constructor uses `config_path`.
-- 400: EN14825 UI import dependency cleanup completed; SEER UI defaults now come
-  from adapter/config state and no active app/core/test code imports core
-  fallback constants.
-- 401: EN14825 SCOP UI point availability correction completed; SCOP UI now uses
-  adapter-resolved core/config point availability so inactive, mapped, and
-  threshold-only points are blank/readonly instead of required inputs.
-- 402: MetricInputTable unavailable-cell presentation correction completed; SCOP
-  unavailable input cells now use reusable static label presentation instead of
-  disabled Entry rendering.
-- 403: SCOP result surface status row fill correction completed; the left-aligned
-  status label now fills the full result table width with the result background.
+- 386-403: EN14825 auxiliary-hours, bounded table/result layout, workflow
+  hardening, unified config ownership, SCOP point contract/UI presentation, and
+  lifecycle closeout are summarized in
+  [Summary 404](../result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md).
 
 ## Next Actions
 
