@@ -123,10 +123,13 @@
 - 409: EN14825 SCOP batch headless foundation completed; the dynamic matrix spec
   follows adapter-resolved point availability and the tested-only row handler
   keeps `Pdesignh` case-local.
+- 410: EN14825 SEER batch dialog wiring completed; the reusable shell/profile
+  path now owns dialog-local common inputs, matrix auto-calculation, compact
+  status, copy/export, and combined common/case snapshot restoration.
 
 ## Next Actions
 
-1. **EN14825 SEER batch dialog wiring**
+1. **EN14825 SCOP batch rebuild/snapshot policy design**
 
 Hold: SCOP dialog wiring requires an explicit dynamic matrix rebuild/snapshot
 preservation policy; this does not block the SCOP headless slice.

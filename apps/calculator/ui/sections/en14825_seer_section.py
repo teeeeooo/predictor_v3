@@ -17,6 +17,10 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
+    En14825SeerBatchDialog,
+    En14825SeerBatchSnapshot,
+)
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
@@ -57,6 +61,8 @@ class En14825SeerSection:
         self.adapter = SeerAdapter()
         self._seer_defaults = self.adapter.get_seer_defaults()
         self._current_table_model: SeerTableModel | None = None
+        self._batch_dialog: En14825SeerBatchDialog | None = None
+        self._batch_snapshot: En14825SeerBatchSnapshot | None = None
 
         self._frame = ttk.LabelFrame(parent, text="SEER")
         self._frame.columnconfigure(0, weight=1)
@@ -197,6 +203,22 @@ class En14825SeerSection:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
+        action_row = ttk.Frame(self._frame)
+        action_row.grid(
+            row=5,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.batch_button = ttk.Button(
+            action_row,
+            text="SEER Batch",
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "en14825_seer_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
+
         # 4. Debounced auto-calc scheduler
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
@@ -223,6 +245,24 @@ class En14825SeerSection:
 
     def schedule_recalculate(self) -> None:
         self._auto_calc.schedule()
+
+    def _open_batch_dialog(self) -> None:
+        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
+            self._batch_dialog.focus()
+            return
+        self._batch_dialog = En14825SeerBatchDialog(
+            self._frame.winfo_toplevel(),
+            initial_snapshot=self._batch_snapshot,
+            on_close=self._clear_batch_dialog,
+        )
+
+    def _clear_batch_dialog(
+        self,
+        snapshot: En14825SeerBatchSnapshot | None = None,
+    ) -> None:
+        if snapshot is not None:
+            self._batch_snapshot = snapshot
+        self._batch_dialog = None
 
     def _design_input_values(self) -> dict[str, str]:
         return {
@@ -405,3 +445,6 @@ class En14825SeerSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            if self._batch_dialog is not None:
+                self._batch_dialog.close()
+                self._batch_dialog = None
