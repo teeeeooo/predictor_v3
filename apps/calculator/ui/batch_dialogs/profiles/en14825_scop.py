@@ -93,7 +93,13 @@ class En14825ScopBatchSection:
 
     def _build_common_inputs(self) -> None:
         frame = ttk.LabelFrame(self._frame, text="Common Inputs")
-        frame.grid(row=0, column=0, sticky="ew", padx=ISO_SECTION_PADX, pady=(ISO_SECTION_BLOCK_GAP, 0))
+        frame.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=ISO_SECTION_PADX,
+            pady=(ISO_SECTION_BLOCK_GAP, 0),
+        )
         condition_fields = (
             ("climate", "Climate"),
             ("tbiv_temp_c", "Tbiv [°C]"),
@@ -102,21 +108,48 @@ class En14825ScopBatchSection:
         for column, (key, label) in enumerate(condition_fields):
             ttk.Label(frame, text=label).grid(row=0, column=column, padx=3, pady=(4, 2))
             if key == "climate":
-                widget = ttk.Combobox(frame, textvariable=self._vars[key], values=("average", "warmer", "colder"), state="readonly", width=10)
+                widget = ttk.Combobox(
+                    frame,
+                    textvariable=self._vars[key],
+                    values=("average", "warmer", "colder"),
+                    state="readonly",
+                    width=10,
+                )
             else:
                 widget = ttk.Entry(frame, textvariable=self._vars[key], width=10)
             widget.grid(row=1, column=column, padx=3, pady=(0, 4))
-        ttk.Button(frame, text="Apply Conditions", command=self._apply_conditions).grid(row=1, column=3, padx=(6, 12), pady=(0, 4))
+        ttk.Button(
+            frame,
+            text="Apply Conditions",
+            command=self._apply_conditions,
+        ).grid(row=1, column=3, padx=(6, 12), pady=(0, 4))
         for offset, (key, label) in enumerate(_AUX_FIELDS, start=4):
             ttk.Label(frame, text=label).grid(row=0, column=offset, padx=3, pady=(4, 2))
-            ttk.Entry(frame, textvariable=self._vars[key], width=9).grid(row=1, column=offset, padx=3, pady=(0, 4))
+            ttk.Entry(frame, textvariable=self._vars[key], width=9).grid(
+                row=1,
+                column=offset,
+                padx=3,
+                pady=(0, 4),
+            )
         type_column = 4 + len(_AUX_FIELDS)
         ttk.Label(frame, text="Type").grid(row=0, column=type_column, padx=3, pady=(4, 2))
-        ttk.Combobox(frame, textvariable=self._vars["appliance_type"], values=("reversible",), state="readonly", width=11).grid(row=1, column=type_column, padx=3, pady=(0, 4))
+        ttk.Combobox(
+            frame,
+            textvariable=self._vars["appliance_type"],
+            values=("reversible",),
+            state="readonly",
+            width=11,
+        ).grid(row=1, column=type_column, padx=3, pady=(0, 4))
 
     def _build_actions(self) -> None:
         row = ttk.Frame(self._frame)
-        row.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, ISO_SECTION_BLOCK_GAP))
+        row.grid(
+            row=2,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
         for label, command in (
             ("Add Case", self._add_case),
             ("Remove Case", self._remove_case),
@@ -127,7 +160,12 @@ class En14825ScopBatchSection:
         ttk.Label(row, textvariable=self.status_var).pack(side=tk.LEFT, padx=(6, 0))
 
     def _build_spec(self, conditions: En14825ScopBatchActiveConditions) -> BatchMatrixSpec:
-        return build_en14825_scop_batch_spec(conditions.climate, conditions.tbiv_temp_c, conditions.tol_temp_c, adapter=self._adapter)
+        return build_en14825_scop_batch_spec(
+            conditions.climate,
+            conditions.tbiv_temp_c,
+            conditions.tol_temp_c,
+            adapter=self._adapter,
+        )
 
     def _create_table(self, spec: BatchMatrixSpec) -> None:
         self.table = BatchMatrixTable(self._table_host, spec)
@@ -235,7 +273,10 @@ class En14825ScopBatchSection:
                 pending += 1
         if self._set_draft_status():
             return
-        self.status_var.set(f"{valid} valid / {pending} pending" + (f" / {errors} invalid" if errors else ""))
+        self.status_var.set(
+            f"{valid} valid / {pending} pending"
+            + (f" / {errors} invalid" if errors else "")
+        )
 
     def _export_csv(self) -> None:
         headers, rows = self.table.table_export_data()
