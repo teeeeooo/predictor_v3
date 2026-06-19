@@ -181,6 +181,8 @@ The map is reference evidence, not a source of truth or a semantic linter. Canon
   first; defer the full required validation command set to the final check.
 - If an early focused check already passed, do not rerun it before final
   validation unless code affecting that path changed again.
+- When the final focused suite is a superset of earlier checks, run only the
+  superset instead of repeating its already-covered subsets separately.
 - Choose validation commands from the task-specific workflow owner. Do not add
   structure guard, code_map, calculator tests, or UI tests just because they
   were used in a prior task.
