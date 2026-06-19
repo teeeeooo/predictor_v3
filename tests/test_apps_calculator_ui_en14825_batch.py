@@ -77,6 +77,13 @@ def test_seer_batch_spec_shape_and_keys() -> None:
         "c",
         "d",
     )
+    assert tuple(point.label for point in spec.measurement_points) == (
+        "Pdesignc",
+        "A (35°C)",
+        "B (30°C)",
+        "C (25°C)",
+        "D (20°C)",
+    )
     assert spec.input_keys == tuple(VALID_CASE)
     assert spec.result_keys == ("seer", "qc_kwh")
 
@@ -149,7 +156,7 @@ def test_seer_batch_handler_distinguishes_blank_partial_and_invalid_rows(
     invalid = handler.calculate_row({**VALID_CASE, "a_capacity": "bad"})
 
     assert blank.state is BatchRowState.PENDING
-    assert partial.state is BatchRowState.ERROR
+    assert partial.state is BatchRowState.PENDING
     assert invalid.state is BatchRowState.ERROR
     assert blank.values == partial.values == invalid.values == {
         "seer": "",

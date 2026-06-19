@@ -61,10 +61,10 @@ EN14825_SEER_BATCH_SPEC = BatchMatrixSpec(
     row_type_labels=_ROW_TYPE_LABELS,
     measurement_points=(
         _measurement_point("p_design_c", "Pdesignc", "p_design_c", None),
-        _measurement_point("a", "A 35C", "a_capacity", "a_power"),
-        _measurement_point("b", "B 30C", "b_capacity", "b_power"),
-        _measurement_point("c", "C 25C", "c_capacity", "c_power"),
-        _measurement_point("d", "D 20C", "d_capacity", "d_power"),
+        _measurement_point("a", "A (35°C)", "a_capacity", "a_power"),
+        _measurement_point("b", "B (30°C)", "b_capacity", "b_power"),
+        _measurement_point("c", "C (25°C)", "c_capacity", "c_power"),
+        _measurement_point("d", "D (20°C)", "d_capacity", "d_power"),
     ),
     result_metrics=(
         ("seer", "SEER", 9),
@@ -123,7 +123,7 @@ class En14825SeerBatchHandler:
         if not any(text_values.values()):
             return self._blank_result(BatchRowState.PENDING)
         if not all(text_values.values()):
-            return self._blank_result(BatchRowState.ERROR)
+            return self._blank_result(BatchRowState.PENDING)
 
         try:
             numeric = {

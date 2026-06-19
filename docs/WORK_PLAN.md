@@ -118,6 +118,8 @@
   SEER headless spec/handler slice.
 - 407: EN14825 SEER batch headless foundation completed; the tested-only matrix
   spec and adapter-backed row handler now have focused contract tests.
+- 408: EN14825 SEER batch partial-row UX and point labels corrected; incomplete
+  rows remain pending during entry and point headers use explicit °C notation.
 
 ## Next Actions
 
