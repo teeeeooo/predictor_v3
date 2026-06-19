@@ -288,13 +288,13 @@ Current status after this owner document lands:
 
 - policy owner: implemented;
 - router links: implemented;
-- `check_agent_change_gate.py`: pending;
+- `check_agent_change_gate.py --cached`: implemented and focused-tested;
 - pre-commit/commit-msg hooks: pending;
 - pre-push and CI branch mode: pending.
 
 Implementation order:
 
-1. Implement and test `tools/check_agent_change_gate.py --cached`.
+1. Run `python3 -B tools/check_agent_change_gate.py --cached` against staged changes.
 2. Add pre-commit and commit-msg hooks.
 3. Add branch-diff mode and CI/pre-push integration after the cached gate is
    stable.
