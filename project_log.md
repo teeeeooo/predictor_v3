@@ -586,3 +586,12 @@
 - 향후 prompt에서 수동 GUI 확인 세부 항목을 생략하고 결과만 반영한다는 운영 원칙 명시.
 - 다음 핵심 action은 `Batch foundation foldering audit`.
 - 참조: reports 324, 325, 326, 327.
+
+---
+
+## 2026-06-20 — Agent change gate owner and routing contract
+
+### Decision
+- 구조 영향 source 작업의 pre-write boundary, Read Ledger, staged report association, no-report exemption, future hook/CI 정책을 `docs/agent_workflows/AGENT_CHANGE_GATES.md`로 단일 owner화함.
+- `AGENTS.md`, `AGENT_TASK_ROUTER.md`, `ACTIVE_DOCUMENTS.md`는 owner로 이동하는 최소 link만 유지하고 세부 정책을 복제하지 않음.
+- policy owner와 routing은 활성이지만 staged gate tool과 hooks는 미구현이며, 다음 slice에서 `check_agent_change_gate.py --cached`를 별도 구현하기로 함.

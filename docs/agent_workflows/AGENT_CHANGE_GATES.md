@@ -287,17 +287,16 @@ unavailable. CI checks generated artifacts; it does not regenerate them.
 Current status after this owner document lands:
 
 - policy owner: implemented;
-- router links: pending;
+- router links: implemented;
 - `check_agent_change_gate.py`: pending;
 - pre-commit/commit-msg hooks: pending;
 - pre-push and CI branch mode: pending.
 
 Implementation order:
 
-1. Add minimal links from `AGENTS.md` and `AGENT_TASK_ROUTER.md`.
-2. Implement and test `tools/check_agent_change_gate.py --cached`.
-3. Add pre-commit and commit-msg hooks.
-4. Add branch-diff mode and CI/pre-push integration after the cached gate is
+1. Implement and test `tools/check_agent_change_gate.py --cached`.
+2. Add pre-commit and commit-msg hooks.
+3. Add branch-diff mode and CI/pre-push integration after the cached gate is
    stable.
 
 Do not duplicate this policy text into routing documents.

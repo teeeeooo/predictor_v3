@@ -58,6 +58,8 @@
 - ML/Predictor workflow owner: `docs/agent_workflows/ML_PREDICTOR_WORKFLOW.md`.
 - UI surface workflow owner: `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`.
 - Read/diff discipline owner: `docs/agent_workflows/DIFF_READ_BUDGET.md`.
+- Agent change gate owner: `docs/agent_workflows/AGENT_CHANGE_GATES.md`
+  (pre-write/read/report policy active; staged tool/hooks pending).
 - 문서/lifecycle owner: `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`.
 - report/log/memory owner:
   `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`,
@@ -200,6 +202,9 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 5. 새 helper/adapter/surface를 만들거나 기존 파일을 split/move할 때는
    `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
    참고하고 code_map check/regenerate 판단을 report에 남긴다.
+6. 새 source/surface 또는 hotspot 책임 추가는
+   `docs/agent_workflows/AGENT_CHANGE_GATES.md`의 pre-write boundary와
+   structured report contract를 따른다.
 
 ### 4. Smoke / Golden / Validation test 추가
 
@@ -277,6 +282,8 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 5. 새 table/window/detail/export surface 또는 helper/commonization을 만들 때는
    `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
    참고하고 code_map check/regenerate 판단을 report에 남긴다.
+6. 새 UI source/profile/dialog 또는 hotspot 책임 추가는
+   `docs/agent_workflows/AGENT_CHANGE_GATES.md`를 따른다.
 
 금지: `QTableWidget`, `setCellWidget`, UI 편의를 위한 core/schema/config 변경.
 

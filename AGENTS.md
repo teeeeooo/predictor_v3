@@ -76,6 +76,10 @@ Routing/schema/architecture-sensitive 변경, guard-test decision, agent rule/ro
 
 자동 guard: `python3 -B tools/check_code_structure.py`는 위 boundary 중 일부 (layer import 금지, app entrypoint thin, ui_tk multi-책임 anti-pattern, LOC / class soft limit)를 conservative하게 검사한다. 코드 구조에 영향을 주는 작업의 검증에 포함한다 (전체 강제 실행은 아님).
 
+구조 영향 source 작업은 `docs/agent_workflows/AGENT_CHANGE_GATES.md`의
+pre-write boundary, Read Ledger, structured `change_gate` 정책을 따른다.
+staged gate tool과 hooks는 아직 미구현이므로 자동 강제 상태로 보고하지 않는다.
+
 ## Document Triggers
 
 - ISO16358 / KS C 9306 / Excel COM / region config / docs `*_notes.md` 작업은 `AGENT_TASK_ROUTER.md`의 Shared Guardrails와 해당 route를 따른다.

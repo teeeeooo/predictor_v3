@@ -36,6 +36,7 @@
 | --- | --- | --- | --- |
 | `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` | Result report creation, numbering, terminal output, and commit/push workflow owner | `AGENT_TASK_ROUTER.md`, report-backed tasks | `result_reports/active/`, `result_reports/summaries/`, `result_reports/archive/`, `result_reports/memory/` |
 | `docs/agent_workflows/DIFF_READ_BUDGET.md` | Read-budget and diff-inspection discipline owner | `AGENT_TASK_ROUTER.md`, large docs/diff/code inspection tasks | targeted source/docs ranges, terminal output discipline |
+| `docs/agent_workflows/AGENT_CHANGE_GATES.md` | Pre-write boundary, Read Ledger, staged report association, and future hook/CI gate policy owner | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, structure-impacting source work | active reports, future change-gate tools and hooks |
 | `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` | Project log update judgment and memory seed workflow owner | `AGENT_TASK_ROUTER.md`, lifecycle/memory/log tasks | `project_log.md`, `result_reports/memory/project_memory_seed.md`, project log archive |
 | `docs/agent_workflows/SMOKE_LOOP_MODE.md` | Manual UI smoke-loop micro-fix workflow owner | `AGENT_TASK_ROUTER.md`, user smoke-loop instructions | focused UI fixes, stable checkpoint follow-up |
 | `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md` | Documentation sync and active-doc lifecycle workflow owner | `AGENT_TASK_ROUTER.md`, docs/lifecycle/commit tasks | `ACTIVE_DOCUMENTS.md`, work plan/refactor/brief/log sync judgments |
