@@ -113,10 +113,16 @@
   [Summary 404](../result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md).
 - 405: EN14825 SCOP UI point availability manual smoke completion was
   user-confirmed; batch integration preflight is now unblocked.
+- 406: EN14825 batch integration preflight completed; existing batch
+  matrix/dialog foundation will be reused, and implementation starts with the
+  SEER headless spec/handler slice.
 
 ## Next Actions
 
-1. **EN14825 batch integration preflight**
+1. **EN14825 SEER batch headless spec/handler foundation**
+
+Hold: SCOP dialog wiring requires an explicit dynamic matrix rebuild/snapshot
+preservation policy; this does not block the SEER headless slice.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
