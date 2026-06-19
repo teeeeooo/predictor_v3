@@ -116,13 +116,15 @@
 - 406: EN14825 batch integration preflight completed; existing batch
   matrix/dialog foundation will be reused, and implementation starts with the
   SEER headless spec/handler slice.
+- 407: EN14825 SEER batch headless foundation completed; the tested-only matrix
+  spec and adapter-backed row handler now have focused contract tests.
 
 ## Next Actions
 
-1. **EN14825 SEER batch headless spec/handler foundation**
+1. **EN14825 SCOP batch headless spec/handler foundation**
 
 Hold: SCOP dialog wiring requires an explicit dynamic matrix rebuild/snapshot
-preservation policy; this does not block the SEER headless slice.
+preservation policy; this does not block the SCOP headless slice.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
