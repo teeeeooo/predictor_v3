@@ -126,13 +126,16 @@
 - 410: EN14825 SEER batch dialog wiring completed; the reusable shell/profile
   path now owns dialog-local common inputs, matrix auto-calculation, compact
   status, copy/export, and combined common/case snapshot restoration.
+- 412: EN14825 SCOP batch profile-local rebuild/snapshot slice completed;
+  draft common values, active matrix conditions, and hidden-point case inputs
+  now have separate preservation contracts without changing generic shell/table APIs.
 
 ## Next Actions
 
-1. **EN14825 SCOP batch rebuild/snapshot policy design**
+1. **EN14825 SCOP batch parent section wiring**
 
-Hold: SCOP dialog wiring requires an explicit dynamic matrix rebuild/snapshot
-preservation policy; this does not block the SCOP headless slice.
+The SCOP dynamic rebuild/snapshot policy is implemented profile-locally; parent
+section wiring remains a separate thin lifecycle slice.
 
 Read/report discipline note: audit/report work should use heading/method-first
 targeted reads and compact decision reports; avoid broad reads and duplicated
