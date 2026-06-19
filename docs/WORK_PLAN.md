@@ -120,10 +120,13 @@
   spec and adapter-backed row handler now have focused contract tests.
 - 408: EN14825 SEER batch partial-row UX and point labels corrected; incomplete
   rows remain pending during entry and point headers use explicit °C notation.
+- 409: EN14825 SCOP batch headless foundation completed; the dynamic matrix spec
+  follows adapter-resolved point availability and the tested-only row handler
+  keeps `Pdesignh` case-local.
 
 ## Next Actions
 
-1. **EN14825 SCOP batch headless spec/handler foundation**
+1. **EN14825 SEER batch dialog wiring**
 
 Hold: SCOP dialog wiring requires an explicit dynamic matrix rebuild/snapshot
 preservation policy; this does not block the SCOP headless slice.
