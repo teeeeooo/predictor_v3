@@ -27,13 +27,13 @@
 
 ## Current Slice
 
-- AHRI SEER2 batch, pending explicit implementation approval.
-- The SEER2 main UI foundation is complete; batch and HSPF2 remain separate
-  slices under the approved AHRI UI/Batch design contract.
+- AHRI HSPF2 main UI foundation, pending explicit implementation approval.
+- The SEER2 main UI and batch are complete; HSPF2 main and batch remain
+  separate slices under the approved AHRI UI/Batch design contract.
 
 ## Next Actions
 
-1. Implement the AHRI SEER2 batch as a separate approved slice.
+1. Implement the AHRI HSPF2 main UI foundation as a separate approved slice.
 
 ## Active Blockers / Open Decisions
 
@@ -45,7 +45,7 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to SEER2 batch only; do not combine HSPF2.
+- Keep the next slice to HSPF2 main UI only; do not combine HSPF2 batch.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
