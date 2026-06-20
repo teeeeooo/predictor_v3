@@ -30,6 +30,7 @@ class FakeSeer2Calculator:
     def __init__(self) -> None:
         self.points = None
         self.system_type = None
+        self.config = {"constants": {"cooling_season_hours": 1000}}
 
     def calculate_seer2(
         self,
@@ -58,8 +59,8 @@ def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
     assert calculator.system_type == "AC"
     assert summary is not None
     assert summary.seer2 == 13.677
-    assert summary.total_cooling_kbtu == pytest.approx(11.961491)
-    assert summary.total_energy_kwh == pytest.approx(0.874552)
+    assert summary.total_cooling_kbtu == pytest.approx(11961.491)
+    assert summary.total_energy_kwh == pytest.approx(874.552)
     assert summary.eer2_by_point["A_Full"] == 12.0
 
 
@@ -105,6 +106,23 @@ def test_seer2_adapter_rejects_missing_or_invalid_required_core_result(
         match=f"Invalid AHRI SEER2 core result: {invalid_key}",
     ):
         adapter.calculate(SAMPLE_VALUES, system_type="HP")
+
+
+@pytest.mark.parametrize(
+    "constants",
+    ({}, {"cooling_season_hours": "invalid"}, {"cooling_season_hours": 0}),
+)
+def test_seer2_adapter_rejects_missing_or_invalid_cooling_season_hours(
+    constants,
+) -> None:
+    calculator = FakeSeer2Calculator()
+    calculator.config = {"constants": constants}
+
+    with pytest.raises(
+        ValueError,
+        match="Invalid AHRI SEER2 calculator config: cooling_season_hours",
+    ):
+        AhriSeer2Adapter(calculator).calculate(SAMPLE_VALUES, system_type="HP")
 
 
 @pytest.fixture
@@ -160,8 +178,8 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     result_values = section.result_panel.summary_value_labels["SEER2"]
     assert [label.cget("text") for label in result_values] == [
         "13.677",
-        "11.961",
-        "0.875",
+        "11961.491",
+        "874.552",
     ]
     assert section.result_panel.summary_status_labels["SEER2"].cget("text") == (
         "자동 계산 완료"

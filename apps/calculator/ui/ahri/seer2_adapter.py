@@ -19,6 +19,8 @@ AHRI_SEER2_TEMPERATURES_C = {
 
 
 class _Seer2Calculator(Protocol):
+    config: Mapping[str, object]
+
     def calculate_seer2(
         self,
         test_points: Mapping[str, tuple[float, float]],
@@ -97,19 +99,39 @@ class AhriSeer2Adapter:
             points,
             system_type=system_type,
         )
+        cooling_season_hours = self._cooling_season_hours()
         return AhriSeer2Summary(
             seer2=self._required_float(result, "SEER2"),
             total_cooling_kbtu=(
-                self._required_float(result, "total_cooling_Btu") / 1000.0
+                self._required_float(result, "total_cooling_Btu")
+                * cooling_season_hours
+                / 1000.0
             ),
             total_energy_kwh=(
-                self._required_float(result, "total_energy_Wh") / 1000.0
+                self._required_float(result, "total_energy_Wh")
+                * cooling_season_hours
+                / 1000.0
             ),
             eer2_by_point={
                 point: points[point][0] / points[point][1]
                 for point in AHRI_SEER2_POINT_ORDER
             },
         )
+
+    def _cooling_season_hours(self) -> float:
+        key = "cooling_season_hours"
+        try:
+            constants = self._calculator.config["constants"]
+            if not isinstance(constants, Mapping):
+                raise TypeError("constants must be a mapping")
+            value = float(constants[key])
+            if value <= 0:
+                raise ValueError("must be positive")
+            return value
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Invalid AHRI SEER2 calculator config: {key}"
+            ) from exc
 
     @staticmethod
     def _required_float(result: Mapping[str, object], key: str) -> float:
