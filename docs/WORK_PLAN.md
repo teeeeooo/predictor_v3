@@ -27,15 +27,15 @@
 
 ## Current Slice
 
-- AHRI HSPF2 A2 capacity-only and source mapping polish, pending explicit
+- AHRI visible-content sizing correction implementation, pending explicit
   approval.
-- AHRI visible-content refit now follows the selected-surface lifecycle; the
-  remaining polish is a separate calculator-contract slice.
+- Diagnostics confirmed that the nested notebook requested height contaminates
+  the cached chrome estimate; report 435 owns the evidence and proposal.
 
 ## Next Actions
 
-1. Perform AHRI HSPF2 A2 capacity-only and source mapping polish as a
-   separately approved slice.
+1. Implement the approved AHRI sizing correction from report 435 as a separate
+   slice.
 
 ## Active Blockers / Open Decisions
 
@@ -47,7 +47,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to HSPF2 A2 capacity-only and source mapping polish only.
+- Keep the next slice to AHRI sizing correction only; do not mix A2/source
+  polish or project-wide literal/token gates.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
