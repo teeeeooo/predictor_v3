@@ -76,36 +76,56 @@ def parse_change_gate(source: str) -> ChangeGate:
 def parse_manifest(source: str) -> TaskManifest:
     allowed: list[str] = []
     report_path: str | None = None
-    reason = scope = ""
-    approved = False
+    exemption: dict[str, str] = {}
+    seen_top_level: set[str] = set()
     section = ""
     for raw in source.splitlines():
         text = raw.strip()
         if not text or text.startswith("#"):
             continue
-        if text == "allowed_paths:":
-            section = "paths"
-        elif text == "report_exemption:":
-            section = "exemption"
-        elif section == "paths" and text.startswith("- "):
-            allowed.append(_plain_value(text[2:]))
-        elif text.startswith("report_path:"):
-            value = _plain_value(text.split(":", 1)[1])
-            report_path = None if value in {"", "null", "~"} else value
-            section = ""
-        elif section == "exemption" and ":" in text:
+        if "\t" in raw:
+            raise ValueError("manifest indentation must use spaces")
+        indent = len(raw) - len(raw.lstrip(" "))
+        if indent == 0:
+            key, separator, value = text.partition(":")
+            if not separator or key not in {"allowed_paths", "report_path", "report_exemption"}:
+                raise ValueError(f"unknown manifest top-level field: {key}")
+            if key in seen_top_level:
+                raise ValueError(f"duplicate manifest top-level field: {key}")
+            seen_top_level.add(key)
+            if key == "report_path":
+                value = _plain_value(value)
+                report_path = None if value in {"", "null", "~"} else value
+                section = ""
+            else:
+                if value.strip():
+                    raise ValueError(f"manifest {key} must be a block")
+                section = key
+            continue
+        if indent != 2:
+            raise ValueError("manifest nested fields must use two-space indentation")
+        if section == "allowed_paths" and text.startswith("- "):
+            path = _plain_value(text[2:])
+            if not path:
+                raise ValueError("manifest allowed_paths entries must be nonempty")
+            allowed.append(path)
+            continue
+        if section == "report_exemption" and ":" in text:
             key, value = text.split(":", 1)
-            value = _plain_value(value)
-            if key == "reason":
-                reason = value
-            elif key == "scope":
-                scope = value
-            elif key == "approved_by_user":
-                approved = value.lower() == "true"
+            if key not in {"reason", "scope", "approved_by_user"}:
+                raise ValueError(f"unknown report_exemption field: {key}")
+            if key in exemption:
+                raise ValueError(f"duplicate report_exemption field: {key}")
+            exemption[key] = _plain_value(value)
+            continue
+        raise ValueError(f"invalid manifest field placement: {text}")
     if not allowed:
         raise ValueError("manifest allowed_paths must be nonempty")
     if any("*" in path or "?" in path for path in allowed):
         raise ValueError("manifest allowed_paths must use literal paths")
+    reason = exemption.get("reason", "")
+    scope = exemption.get("scope", "")
+    approved = exemption.get("approved_by_user", "") == "true"
     if reason not in _EXEMPTION_VALUES - {"none"}:
         raise ValueError(f"unsupported manifest exemption: {reason}")
     if not scope or not approved:

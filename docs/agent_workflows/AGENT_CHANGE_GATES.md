@@ -174,7 +174,7 @@ schema/public API changes, expected/golden changes, or new workflow/tool source.
 
 ### Local Manifest
 
-The future local hook may read a task manifest resolved through:
+The cached checker and future local hook read a task manifest resolved through:
 
 ```bash
 git rev-parse --git-path agent_task_manifest.yml
@@ -200,6 +200,8 @@ Rules:
 - `report_path`, when set, must identify one staged active report;
 - reason and scope must be allowed and compatible;
 - `approved_by_user` must be exactly `true`.
+- unknown or duplicate top-level/nested fields and misplaced indentation fail;
+  unrecognized manifest content is never silently ignored.
 
 `user-approved-docs-only` accepts docs/report text paths only.
 `user-approved-formatting-only` accepts existing files only and requires the

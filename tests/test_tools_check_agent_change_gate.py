@@ -82,6 +82,33 @@ report_exemption:
         )
 
 
+@pytest.mark.parametrize(
+    ("source", "message"),
+    [
+        (
+            "allowed_paths:\n  - tools/existing.py\nunknown: value\n",
+            "unknown manifest top-level field",
+        ),
+        (
+            "allowed_paths:\n  - tools/existing.py\nreport_exemption:\n  typo: value\n",
+            "unknown report_exemption field",
+        ),
+        (
+            "allowed_paths:\n  - tools/existing.py\n  report_path: report.md\n",
+            "invalid manifest field placement",
+        ),
+        (
+            "allowed_paths:\n  - tools/existing.py\nreport_exemption:\n"
+            "  reason: status-only\n  scope: status\n  approved_by_user: TRUE\n",
+            "approved_by_user: true",
+        ),
+    ],
+)
+def test_manifest_rejects_unknown_or_ambiguously_placed_fields(source: str, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        parse_manifest(source)
+
+
 def test_relevant_change_requires_staged_active_report(repo: Path) -> None:
     target = repo / "tools/existing.py"
     target.write_text("VALUE = 2\n", encoding="utf-8")
@@ -101,6 +128,19 @@ def test_gate_reads_staged_report_blob_not_worktree(repo: Path) -> None:
     _git(repo, "add", "tools/existing.py")
     report_path = _stage_report(repo)
     (repo / report_path).write_text("change_gate:\n  invalid: worktree-only\n", encoding="utf-8")
+
+    assert not [item for item in evaluate_cached(GitIndex(repo)) if item.severity == "error"]
+
+
+def test_source_policy_reads_staged_blob_not_larger_worktree_file(repo: Path) -> None:
+    target = repo / "apps/new_feature.py"
+    target.parent.mkdir()
+    staged = "\n".join(f"VALUE_{i} = {i}" for i in range(240)) + "\n"
+    target.write_text(staged, encoding="utf-8")
+    _git(repo, "add", "apps/new_feature.py")
+    working = "\n".join(f"VALUE_{i} = {i}" for i in range(360)) + "\n"
+    target.write_text(working, encoding="utf-8")
+    _stage_report(repo, text=VALID_GATE.replace("new_source: split", "new_source: small"))
 
     assert not [item for item in evaluate_cached(GitIndex(repo)) if item.severity == "error"]
 
