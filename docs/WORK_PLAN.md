@@ -27,14 +27,13 @@
 
 ## Current Slice
 
-- AHRI batch compact label and token usage cleanup, pending explicit approval.
-- HSPF2 A2 is capacity-only at the UI boundary and v3 source values are mapped
-  to the stable measured/calculated/not-provided display contract.
+- AHRI batch headers and HSPF2 batch source labels are compact, with AHRI batch
+  column widths owned by layout tokens.
+- AHRI calculator main/batch implementation is ready for lifecycle closeout.
 
 ## Next Actions
 
-1. Perform AHRI batch compact label and token usage cleanup as a separately
-   approved slice.
+1. Perform AHRI calculator lifecycle closeout as a separately approved slice.
 
 ## Active Blockers / Open Decisions
 
@@ -48,7 +47,7 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to AHRI batch label/token cleanup; do not mix notebook
+- Keep the next slice to AHRI calculator lifecycle closeout; do not mix notebook
   allocation sync or unrelated calculator implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.

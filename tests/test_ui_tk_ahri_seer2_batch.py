@@ -20,6 +20,10 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
     AhriSeer2BatchDialog,
     AhriSeer2BatchSnapshot,
 )
+from apps.calculator.ui.layout_constants import (
+    AHRI_BATCH_POINT_WIDTH_CHARS,
+    AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS,
+)
 
 
 VALID_CASE = {
@@ -64,12 +68,16 @@ def test_seer2_batch_spec_has_exact_two_row_matrix_contract() -> None:
         "F_Low",
     )
     assert tuple(point.label for point in spec.measurement_points) == (
-        "A_Full (35.0°C)",
-        "B_Full (27.8°C)",
-        "B_Low (27.8°C)",
-        "E_Int (23.9°C)",
-        "F_Low (17.2°C)",
+        "A_Full",
+        "B_Full",
+        "B_Low",
+        "E_Int",
+        "F_Low",
     )
+    assert {point.width_chars for point in spec.measurement_points} == {
+        AHRI_BATCH_POINT_WIDTH_CHARS
+    }
+    assert spec.result_metrics[0][2] == AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS
     assert spec.input_keys == tuple(VALID_CASE)
     assert spec.result_keys == ("seer2",)
     assert spec.resolve_cell((0, 2)).input_key == "capacity_A_Full"
@@ -151,11 +159,11 @@ def test_seer2_batch_dialog_autocalculates_and_reuses_actions(tk_root) -> None:
     assert headers == (
         "Case",
         "Row Type",
-        "A_Full (35.0°C)",
-        "B_Full (27.8°C)",
-        "B_Low (27.8°C)",
-        "E_Int (23.9°C)",
-        "F_Low (17.2°C)",
+        "A_Full",
+        "B_Full",
+        "B_Low",
+        "E_Int",
+        "F_Low",
         "SEER2",
     )
     button_texts = {

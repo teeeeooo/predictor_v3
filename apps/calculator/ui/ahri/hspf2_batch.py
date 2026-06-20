@@ -8,7 +8,6 @@ from typing import Mapping
 
 from apps.calculator.ui.ahri.hspf2_adapter import (
     AHRI_HSPF2_POINT_ORDER,
-    AHRI_HSPF2_TEMPERATURES_C,
     AhriHspf2Adapter,
     AhriHspf2Options,
 )
@@ -18,6 +17,11 @@ from apps.calculator.ui.batch.matrix_models import (
     MatrixPhysicalRowType,
 )
 from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.layout_constants import (
+    AHRI_BATCH_POINT_WIDTH_CHARS,
+    AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
+    AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+)
 
 _PHYSICAL_ROWS = (MatrixPhysicalRowType.CAPACITY, MatrixPhysicalRowType.POWER)
 _ROW_LABELS = MappingProxyType(
@@ -26,6 +30,20 @@ _ROW_LABELS = MappingProxyType(
         MatrixPhysicalRowType.POWER: "Power",
     }
 )
+_BATCH_SOURCE_LABELS = MappingProxyType(
+    {
+        "measured": "meas.",
+        "calculated": "calc.",
+        "not provided": "n/a",
+    }
+)
+
+
+def _compact_source_label(source: str) -> str:
+    try:
+        return _BATCH_SOURCE_LABELS[source]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported HSPF2 source label: {source}") from exc
 
 
 @dataclass(frozen=True)
@@ -68,7 +86,7 @@ def build_ahri_hspf2_batch_spec(
                     MatrixPhysicalRowType.POWER: None,
                 }
             ),
-            width_chars=12,
+            width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
         )
     ]
     for point in AHRI_HSPF2_POINT_ORDER:
@@ -76,7 +94,7 @@ def build_ahri_hspf2_batch_spec(
         points.append(
             MatrixMeasurementPointSpec(
                 key=point,
-                label=f"{point} ({AHRI_HSPF2_TEMPERATURES_C[point]:.1f}°C)",
+                label=point,
                 input_keys_by_row_type=MappingProxyType(
                     {
                         MatrixPhysicalRowType.CAPACITY: (
@@ -87,7 +105,7 @@ def build_ahri_hspf2_batch_spec(
                         ),
                     }
                 ),
-                width_chars=17,
+                width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
             )
         )
     return BatchMatrixSpec(
@@ -97,10 +115,10 @@ def build_ahri_hspf2_batch_spec(
         row_type_labels=_ROW_LABELS,
         measurement_points=tuple(points),
         result_metrics=(
-            ("hspf2", "HSPF2", 9),
-            ("h12_source", "H12", 12),
-            ("h22_source", "H22", 12),
-            ("h42_source", "H42", 12),
+            ("hspf2", "HSPF2", AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS),
+            ("h12_source", "H12", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
+            ("h22_source", "H22", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
+            ("h42_source", "H42", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
         ),
     )
 
@@ -139,9 +157,9 @@ class AhriHspf2BatchHandler:
             return AhriHspf2BatchResult(
                 values={
                     "hspf2": f"{summary.hspf2:.3f}",
-                    "h12_source": summary.h12_source,
-                    "h22_source": summary.h22_source,
-                    "h42_source": summary.h42_source,
+                    "h12_source": _compact_source_label(summary.h12_source),
+                    "h22_source": _compact_source_label(summary.h22_source),
+                    "h42_source": _compact_source_label(summary.h42_source),
                 },
                 state=BatchRowState.OK,
             )

@@ -8,7 +8,6 @@ from typing import Mapping
 
 from apps.calculator.ui.ahri.seer2_adapter import (
     AHRI_SEER2_POINT_ORDER,
-    AHRI_SEER2_TEMPERATURES_C,
     AhriSeer2Adapter,
 )
 from apps.calculator.ui.batch.matrix_models import (
@@ -17,6 +16,10 @@ from apps.calculator.ui.batch.matrix_models import (
     MatrixPhysicalRowType,
 )
 from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.layout_constants import (
+    AHRI_BATCH_POINT_WIDTH_CHARS,
+    AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS,
+)
 
 __all__ = [
     "AHRI_SEER2_BATCH_SPEC",
@@ -40,14 +43,14 @@ _ROW_TYPE_LABELS = MappingProxyType(
 def _measurement_point(point: str) -> MatrixMeasurementPointSpec:
     return MatrixMeasurementPointSpec(
         key=point,
-        label=f"{point} ({AHRI_SEER2_TEMPERATURES_C[point]:.1f}°C)",
+        label=point,
         input_keys_by_row_type=MappingProxyType(
             {
                 MatrixPhysicalRowType.CAPACITY: f"capacity_{point}",
                 MatrixPhysicalRowType.POWER: f"power_{point}",
             }
         ),
-        width_chars=18,
+        width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
     )
 
 
@@ -59,7 +62,9 @@ AHRI_SEER2_BATCH_SPEC = BatchMatrixSpec(
     measurement_points=tuple(
         _measurement_point(point) for point in AHRI_SEER2_POINT_ORDER
     ),
-    result_metrics=(("seer2", "SEER2", 10),),
+    result_metrics=(
+        ("seer2", "SEER2", AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS),
+    ),
 )
 
 

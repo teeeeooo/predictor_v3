@@ -19,6 +19,11 @@ from apps.calculator.ui.ahri.hspf2_batch_session import (
 from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
 from apps.calculator.ui.batch.matrix_models import MatrixCellKind, MatrixPhysicalRowType
 from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.layout_constants import (
+    AHRI_BATCH_POINT_WIDTH_CHARS,
+    AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
+    AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+)
 
 
 VALID_CASE = dict(HSPF2_DEV_SAMPLE_VALUES)
@@ -67,9 +72,16 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
         "A2", "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
     )
     assert tuple(point.label for point in spec.measurement_points) == (
-        "A2", "H01 (16.7°C)", "H11 (8.3°C)", "H1N (8.3°C)",
-        "H2Int (1.7°C)", "H32 (-8.3°C)", "H42 (-15.0°C)",
-        "H12 (8.3°C)", "H22 (1.7°C)",
+        "A2", "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
+    )
+    assert {point.width_chars for point in spec.measurement_points} == {
+        AHRI_BATCH_POINT_WIDTH_CHARS
+    }
+    assert tuple(metric[2] for metric in spec.result_metrics) == (
+        AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
+        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
     )
     assert spec.result_keys == ("hspf2", "h12_source", "h22_source", "h42_source")
     assert spec.resolve_cell((0, 2)).input_key == "a2_capacity"
@@ -90,9 +102,9 @@ def test_hspf2_batch_handler_omits_disabled_points_and_maps_sources() -> None:
     assert result.state is BatchRowState.OK
     assert result.values == {
         "hspf2": "9.876",
-        "h12_source": "not provided",
-        "h22_source": "calculated",
-        "h42_source": "measured",
+        "h12_source": "n/a",
+        "h22_source": "calc.",
+        "h42_source": "meas.",
     }
     values, options = adapter.calls[0]
     assert "a2_power" not in values
