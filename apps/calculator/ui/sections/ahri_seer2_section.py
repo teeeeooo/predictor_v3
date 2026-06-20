@@ -131,8 +131,12 @@ class AhriSeer2Section:
             (
                 ResultSummary(
                     title="SEER2",
-                    fields=(("SEER2", f"{summary.seer2:.3f}"),),
-                    status="",
+                    fields=(
+                        ("SEER2", f"{summary.seer2:.3f}"),
+                        ("Total Cooling [kBtu]", f"{summary.total_cooling_kbtu:.3f}"),
+                        ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+                    ),
+                    status="자동 계산 완료",
                 ),
             )
         )

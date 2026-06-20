@@ -40,7 +40,11 @@ class FakeSeer2Calculator:
     ):
         self.points = test_points
         self.system_type = system_type
-        return {"SEER2": 13.677}
+        return {
+            "SEER2": 13.677,
+            "total_cooling_Btu": 11961.491,
+            "total_energy_Wh": 874.552,
+        }
 
 
 def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
@@ -54,6 +58,8 @@ def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
     assert calculator.system_type == "AC"
     assert summary is not None
     assert summary.seer2 == 13.677
+    assert summary.total_cooling_kbtu == pytest.approx(11.961491)
+    assert summary.total_energy_kwh == pytest.approx(0.874552)
     assert summary.eer2_by_point["A_Full"] == 12.0
 
 
@@ -120,8 +126,14 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     assert section.input_table.static_cell_labels[("eer2", "A_Full")].cget(
         "text"
     ) == "12.00"
-    assert section.result_panel.summary_value_labels["SEER2"][0].cget("text") == (
-        "13.677"
+    result_values = section.result_panel.summary_value_labels["SEER2"]
+    assert [label.cget("text") for label in result_values] == [
+        "13.677",
+        "11.961",
+        "0.875",
+    ]
+    assert section.result_panel.summary_status_labels["SEER2"].cget("text") == (
+        "자동 계산 완료"
     )
 
 

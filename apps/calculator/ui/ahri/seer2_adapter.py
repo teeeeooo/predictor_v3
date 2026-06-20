@@ -39,6 +39,8 @@ class AhriSeer2InputError(ValueError):
 @dataclass(frozen=True)
 class AhriSeer2Summary:
     seer2: float
+    total_cooling_kbtu: float
+    total_energy_kwh: float
     eer2_by_point: Mapping[str, float]
 
 
@@ -97,6 +99,8 @@ class AhriSeer2Adapter:
         )
         return AhriSeer2Summary(
             seer2=float(result["SEER2"]),
+            total_cooling_kbtu=float(result["total_cooling_Btu"]) / 1000.0,
+            total_energy_kwh=float(result["total_energy_Wh"]) / 1000.0,
             eer2_by_point={
                 point: points[point][0] / points[point][1]
                 for point in AHRI_SEER2_POINT_ORDER
