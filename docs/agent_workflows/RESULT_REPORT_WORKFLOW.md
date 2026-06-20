@@ -146,6 +146,31 @@ the active report count policy or the commit/push wording policy.
   information in report bodies. The report is a task artifact, not a personal
   attribution document. Git commit metadata already tracks authorship.
 
+## Verification Budget And Order
+
+Applicable focused pytest, structure guard, code-map check, and cached gate
+commands have a default budget of one execution each per task.
+
+Rerun a command only when:
+
+- its previous execution failed; or
+- source, test, report, or gate evidence relevant to that command changed after
+  the previous execution.
+
+Do not rerun a focused suite when a final superset already includes the same
+tests. Prefer static inspection before final verification when implementation
+is still changing.
+
+Use this default order:
+
+1. Complete implementation, documentation sync, and the active report.
+2. Check `git diff --numstat` or otherwise confirm the hotspot delta.
+3. Run the focused pytest selection once when applicable.
+4. Run the structure guard once when applicable.
+5. Run the code-map check once and record the check/regenerate judgment.
+6. Run the cached gate once against the final staged task scope.
+7. Commit, push, and verify the remote SHA match.
+
 ## Terminal Output
 
 For report-backed work, keep terminal/final output short. Detailed results
@@ -177,10 +202,23 @@ pre-existing unrelated dirty files.
   the terminal/final response.
 - Do not leave `pending` commit/push wording in a completed report when no
   follow-up report update is planned.
+- A completed push report must include `local_head`, `remote_main`, and
+  `match: OK/NG`. Resolve `remote_main` from the remote repository, not only
+  the local `origin/main` tracking ref.
+- A push is complete only when `local_head == remote_main`. If they differ,
+  report `match: NG` and do not claim push completion.
+- Preferred publication verification:
+
+  ```bash
+  local_head=$(git rev-parse HEAD)
+  remote_main=$(git ls-remote --heads origin refs/heads/main | awk '{print $1}')
+  test "$local_head" = "$remote_main"
+  ```
+
 - For a user-requested commit/push-only follow-up after validation already ran
   and no files changed since, do not repeat validation. Use one compact
-  commit/push command sequence and one short final line with hash, push status,
-  and clean/dirty status.
+  commit/push command sequence and one short final publication result with
+  `local_head`, `remote_main`, `match`, and clean/dirty status.
 - When the user requested commit/push for a report-backed task, check the
   active report count before final output. If `result_reports/active/` has
   more than 10 reports, do not run lifecycle maintenance automatically; add a

@@ -224,6 +224,9 @@ is never sufficient evidence.
 
 ## Staged Change Gate
 
+Execution order and rerun budget are owned by
+`docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`.
+
 The future command surfaces are:
 
 ```bash
