@@ -42,14 +42,16 @@ Goal:
 - Complete EN14825 calculator usability across main UI and batch mode without
   reopening stable core, schema, region-config, fixture, or golden contracts.
 
+Status: complete.
+
 Milestones:
 
-- Main SEER/SCOP calculation UI: mostly complete.
+- Main SEER/SCOP calculation UI: complete.
 - EN14825 config ownership and SEER/SCOP point contract: complete.
 - SEER batch mode and dialog wiring: complete.
 - SCOP batch profile-local rebuild/snapshot policy: complete.
 - SCOP batch parent-section access: complete.
-- EN14825 calculator smoke / lifecycle closeout: in progress.
+- EN14825 calculator smoke / lifecycle closeout: complete.
 
 Current near-term slice:
 
@@ -69,9 +71,8 @@ Goal:
 
 Status:
 
-- Candidate next arc after EN14825 completion.
-- Exact milestone list should be confirmed by an AHRI readiness audit before
-  implementation.
+- In progress at the readiness-audit stage.
+- Exact milestone list will be confirmed by the audit before implementation.
 
 Candidate milestones:
 

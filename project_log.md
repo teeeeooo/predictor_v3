@@ -630,3 +630,20 @@
 - `AGENTS.md`, `AGENT_TASK_ROUTER.md`, `ACTIVE_DOCUMENTS.md`는 owner로 이동하는 최소 link만 유지하고 세부 정책을 복제하지 않음.
 - `tools/check_agent_change_gate.py --cached`가 index blob, staged active report association, literal-path manifest, source/hotspot/code-map gate를 검증하도록 구현됨.
 - 다음 workflow slice는 cached checker를 pre-commit/commit-msg hook에 연결하는 작업으로 제한함.
+
+---
+
+## 2026-06-20 — EN14825 calculator completion and AHRI readiness transition
+
+### Decision
+- EN14825 main SEER/SCOP UI, config/point contracts, SEER/SCOP batch workflows,
+  SCOP parent access, snapshot handoff, and parent/dialog cleanup lifecycle을
+  현재 범위에서 완료로 판정함.
+- 실제 Tk/Toplevel lifecycle smoke에서 SEER/SCOP batch open, duplicate-dialog
+  prevention, close snapshot, reopen restore, clean shutdown을 확인하고 EN14825
+  focused superset 81 tests가 통과함.
+- Computer Use의 Tk accessibility 한계로 pointer-click 시각 spot-check는
+  weaker-verified로 남지만 제품 blocker로 분류하지 않음.
+- 다음 Arc는 AHRI 210/240 readiness audit로 시작하며, audit 전에
+  implementation이나 batch requirement를 임의로 확정하지 않음.
+- 참조: Summary 404, Summary 416, report 422, report 424.
