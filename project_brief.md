@@ -40,3 +40,23 @@
 - `project_log.md`: milestone decision, failure, lesson 기록.
 - `ACTIVE_DOCUMENTS.md`: active 문서 owner/inbound/outbound map.
 - `result_reports/`: task detail, lifecycle summary, completed report archive.
+
+## 4. Next Session Entry
+
+Status: ready for a new implementation session. Updated: 2026-06-20.
+
+Read first:
+
+1. `AGENTS.md` - apply the lite work contract, routing, report, and validation
+   rules before reading task-specific files.
+2. `docs/WORK_PLAN.md` - use `Session Handoff` for the current pointers and its
+   single Next Action; do not reconstruct priority from report history.
+3. `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+   - recover the accepted SCOP rebuild/snapshot boundary without reading the
+   archived source reports.
+
+Active blocker / open decision: none. The parent-section slice has no open
+schema, calculator, region-config, result-contract, or ownership decision.
+
+Next Action: wire the EN14825 SCOP batch dialog into its parent section as a
+thin lifecycle and snapshot-handoff slice.

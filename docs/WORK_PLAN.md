@@ -69,3 +69,58 @@
   `result_reports/active/417_agent_change_gate_manifest_index_hardening.md`.
 - Milestone decisions and detailed completed history belong in
   `project_log.md` and the result-report lifecycle directories.
+
+## Session Handoff
+
+### Status
+
+Ready for the next implementation session.
+
+### Updated
+
+2026-06-20.
+
+### Reason
+
+User-requested session handoff after closing the EN14825 batch foundation and
+hardening the manually invoked cached agent change gate.
+
+### Read First
+
+- `AGENTS.md` - apply the repository work contract and route before task reads.
+- `project_brief.md` section `4. Next Session Entry` - confirm stable current
+  state, blocker status, and the single execution target.
+- `AGENT_TASK_ROUTER.md` sections for Coding Work, UI Modification, and Result
+  Report Workflow - load only the rules needed for this wiring slice.
+
+### Task-Specific Pointers
+
+- `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+  sections `Closed Results` and `Next Actions` - accepted SCOP batch ownership
+  and the boundary left for parent wiring.
+- `apps/calculator/ui/sections/en14825_scop_section.py`, class
+  `En14825ScopSection` - target parent section; use
+  `en14825_seer_section.py` methods `_open_batch_dialog()` and
+  `_clear_batch_dialog()` as the established thin lifecycle/snapshot reference.
+- `apps/calculator/ui/batch_dialogs/profiles/en14825_scop_dialog.py` and
+  `profiles/en14825_scop.py` - existing dialog wrapper and profile-local dynamic
+  rebuild/snapshot implementation to reuse unchanged where possible.
+- `tests/test_apps_calculator_ui_en14825_batch.py` - focused batch contract
+  tests; add parent/dialog lifecycle coverage without broad test reorganization.
+
+### Active Blocker / Open Decision
+
+None. Do not reopen schema, calculator, region-config, result-contract, or SCOP
+profile-state ownership decisions for the thin parent-section wiring slice.
+
+### Next Action
+
+Wire the EN14825 SCOP batch dialog into `En14825ScopSection` as a thin dialog
+lifecycle and snapshot-handoff slice.
+
+### Do Not Read Unless Needed
+
+- Archived reports 405-415; Summary 416 is their compact replacement.
+- `core/`, region config, golden/fixture files, and broad test suites; the next
+  slice does not change calculation or data contracts.
+- Full workflow documents outside the routed Coding/UI/Result Report sections.
