@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+message_file=${1:?commit message file is required}
+
+awk '
+  /^[[:space:]]*Agent-Report-Exemption/ {
+    count += 1
+    if ($0 !~ /^Agent-Report-Exemption: (none|user-approved-docs-only|user-approved-formatting-only|commit-push-only|status-only)$/) {
+      invalid = 1
+    }
+  }
+  END {
+    if (count > 1) {
+      print "commit-msg: Agent-Report-Exemption trailer must appear at most once" > "/dev/stderr"
+      exit 1
+    }
+    if (invalid) {
+      print "commit-msg: invalid Agent-Report-Exemption trailer or value" > "/dev/stderr"
+      exit 1
+    }
+  }
+' "$message_file"

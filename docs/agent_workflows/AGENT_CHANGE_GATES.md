@@ -216,10 +216,11 @@ Local manifests are not available to CI. A locally exempted commit must carry:
 Agent-Report-Exemption: user-approved-formatting-only
 ```
 
-A future `commit-msg` hook must validate the trailer against the local manifest
-and reject unsupported or behavior-changing exemptions. Branch-diff CI must
-recognize only the same allowlisted trailer values and independently verify
-that the diff is eligible. The trailer alone is never sufficient evidence.
+A `commit-msg` hook validates the trailer format and allowlisted value. The
+cached checker remains responsible for staged-diff and local-manifest
+eligibility. Branch-diff CI must recognize only the same allowlisted trailer
+values and independently verify that the diff is eligible. The trailer alone
+is never sufficient evidence.
 
 ## Staged Change Gate
 
@@ -267,7 +268,7 @@ owner/commonization changes, and source splits or merges.
 
 ## Hook And CI Policy
 
-Future `.githooks/pre-commit`:
+`.githooks/pre-commit` runs:
 
 ```bash
 git diff --cached --check
@@ -276,8 +277,15 @@ python3 -B tools/check_agent_change_gate.py --cached
 
 Do not run pytest or regenerate the code map in pre-commit.
 
-Future `.githooks/commit-msg` validates exemption trailers against the local
-manifest. Pre-push may run `check_code_structure.py` and code-map `--check`
+`.githooks/commit-msg` validates exemption trailer format, uniqueness, and
+allowlisted values. Enable both repository hooks locally with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Hook activation is an explicit per-clone setup step and is not forced by the
+repository. Pre-push may run `check_code_structure.py` and code-map `--check`
 after the staged gate is stable; it must not run full pytest by default.
 
 CI must rerun branch-diff gates because hooks can be bypassed. It must handle
@@ -291,14 +299,14 @@ Current status after this owner document lands:
 - policy owner: implemented;
 - router links: implemented;
 - `check_agent_change_gate.py --cached`: implemented and focused-tested;
-- pre-commit/commit-msg hooks: pending;
+- pre-commit/commit-msg hooks: implemented and focused-tested;
 - pre-push and CI branch mode: pending.
 
 Implementation order:
 
-1. Run `python3 -B tools/check_agent_change_gate.py --cached` against staged changes.
-2. Add pre-commit and commit-msg hooks.
-3. Add branch-diff mode and CI/pre-push integration after the cached gate is
-   stable.
+1. Enable the repository hooks per clone with
+   `git config core.hooksPath .githooks`.
+2. Add branch-diff mode and CI/pre-push integration in a separately approved
+   slice.
 
 Do not duplicate this policy text into routing documents.
