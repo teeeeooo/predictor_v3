@@ -64,6 +64,8 @@ class AhriHspf2Options:
 @dataclass(frozen=True)
 class AhriHspf2Summary:
     hspf2: float
+    total_heating_kbtu: float
+    total_energy_kwh: float
 
 
 class AhriHspf2Adapter:
@@ -134,7 +136,46 @@ class AhriHspf2Adapter:
             minimum_speed_limited=options.minimum_speed_limited,
             **AHRI_HSPF2_HIDDEN_DEFAULTS,
         )
-        return AhriHspf2Summary(hspf2=self._required_float(result, "HSPF2"))
+        return AhriHspf2Summary(
+            hspf2=self._required_float(result, "HSPF2"),
+            total_heating_kbtu=(
+                self._required_float(result, "total_heating_btu") / 1000.0
+            ),
+            total_energy_kwh=(
+                self._required_float(result, "total_energy_wh") / 1000.0
+            ),
+        )
+
+    def compute_display_cops(
+        self,
+        text_values: Mapping[str, str],
+        *,
+        options: AhriHspf2Options,
+    ) -> dict[str, float]:
+        """Return valid display-only COP values without changing core input."""
+        enabled_optional = {
+            "H42": options.measured_h42,
+            "H12": options.measured_h12,
+            "H22": options.measured_h22,
+        }
+        pairs = {"A2": ("a2_capacity", "a2_power")}
+        pairs.update(
+            {
+                point: (f"capacity_{point}", f"power_{point}")
+                for point in AHRI_HSPF2_POINT_ORDER
+                if enabled_optional.get(point, True)
+            }
+        )
+        cops: dict[str, float] = {}
+        for point, (capacity_key, power_key) in pairs.items():
+            try:
+                capacity = parse_numeric_cell(str(text_values.get(capacity_key, "")))
+                power = parse_numeric_cell(str(text_values.get(power_key, "")))
+            except ValueError:
+                continue
+            if capacity > 0 and power > 0:
+                cops[point] = capacity / power
+        return cops
 
     @staticmethod
     def _celsius_to_fahrenheit(value: float) -> float:

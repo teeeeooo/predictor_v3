@@ -49,7 +49,11 @@ def complete_values() -> dict[str, str]:
 
 class FakeHspf2Calculator:
     def __init__(self, result=None) -> None:
-        self.result = result or {"HSPF2": 9.875}
+        self.result = result or {
+            "HSPF2": 9.875,
+            "total_heating_btu": 22500.0,
+            "total_energy_wh": 2278.481,
+        }
         self.points = None
         self.kwargs = None
 
@@ -67,7 +71,11 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
 
     summary = adapter.calculate(values, options=AhriHspf2Options())
 
-    assert summary == AhriHspf2Summary(hspf2=9.875)
+    assert summary == AhriHspf2Summary(
+        hspf2=9.875,
+        total_heating_kbtu=22.5,
+        total_energy_kwh=2.278481,
+    )
     assert tuple(calculator.points) == (
         "H01",
         "H11",
@@ -87,6 +95,12 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
     assert calculator.kwargs["minimum_speed_limited"] is True
     for key, value in AHRI_HSPF2_HIDDEN_DEFAULTS.items():
         assert calculator.kwargs[key] == value
+
+    cops = adapter.compute_display_cops(values, options=AhriHspf2Options())
+    assert cops["A2"] == pytest.approx(9.6)
+    assert cops["H01"] == pytest.approx(12500 / 980)
+    assert "H12" not in cops
+    assert "H22" not in cops
 
 
 def test_hspf2_adapter_includes_enabled_optional_points_and_flags() -> None:
@@ -116,6 +130,8 @@ def test_hspf2_adapter_blanks_incomplete_and_marks_invalid_active_input() -> Non
 
     invalid = complete_values()
     invalid["power_H42"] = "bad"
+    cops = adapter.compute_display_cops(invalid, options=AhriHspf2Options())
+    assert "H42" not in cops
     with pytest.raises(AhriHspf2InputError) as exc_info:
         adapter.calculate(invalid, options=AhriHspf2Options())
     assert exc_info.value.field_errors == {"power_H42": "숫자 입력 필요"}
@@ -172,6 +188,18 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
         AHRI_HSPF2_POINT_ORDER
     )
     assert "A2" not in tuple(key for key, _label in section.heating_table.columns)
+    assert section.a2_table.columns == (("A2", "A2"),)
+    assert section.a2_table.rows == (
+        ("capacity", "Capacity [Btu/h]"),
+        ("power", "Power [W]"),
+        ("cop", "COP"),
+    )
+    assert section.heating_table.rows == (
+        ("condition_temp", "Condition / Temp"),
+        ("capacity", "Capacity [Btu/h]"),
+        ("power", "Power [W]"),
+        ("cop", "COP"),
+    )
     for point in AHRI_HSPF2_POINT_ORDER:
         label = section.heating_table.static_cell_labels[("condition_temp", point)]
         assert label.cget("text").endswith(
@@ -184,7 +212,21 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     assert section.a2_table.get_text_values()["a2_capacity"] == (
         HSPF2_DEV_SAMPLE_VALUES["a2_capacity"]
     )
-    assert section.result_panel.summary_value_labels["HSPF2"][0].cget("text")
+    assert section.a2_table.static_cell_labels[("cop", "A2")].cget("text") == "9.60"
+    assert section.heating_table.static_cell_labels[("cop", "H01")].cget(
+        "text"
+    ) == "12.76"
+    assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
+        "text"
+    ) == ""
+    result_values = section.result_panel.summary_value_labels["HSPF2"]
+    assert len(result_values) == 3
+    assert all(label.cget("text") for label in result_values)
+    assert section.result_panel._summary_shapes["HSPF2"][1] == (
+        "HSPF2",
+        "Total Heating [kBtu]",
+        "Total Energy [kWh]",
+    )
     assert section.result_panel.summary_status_labels["HSPF2"].cget("text") == (
         "자동 계산 완료"
     )
@@ -209,6 +251,9 @@ def test_hspf2_optional_toggle_restores_editability_and_calculates(tk_root) -> N
     assert section.heating_table.get_text_values()["capacity_H12"] == (
         HSPF2_DEV_SAMPLE_VALUES["capacity_H12"]
     )
+    assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
+        "text"
+    ) == "10.91"
     assert section.result_panel.summary_value_labels["HSPF2"][0].cget("text")
 
 

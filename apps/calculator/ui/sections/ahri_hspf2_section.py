@@ -6,7 +6,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.ahri.hspf2_adapter import (
-    AHRI_HSPF2_OPTIONAL_POINTS,
     AHRI_HSPF2_POINT_ORDER,
     AHRI_HSPF2_TEMPERATURES_C,
     AhriHspf2Adapter,
@@ -26,10 +25,7 @@ class AhriHspf2Section:
     """Compose HSPF2 options, anchor, heating points, and result."""
 
     def __init__(
-        self,
-        parent: tk.Widget,
-        *,
-        adapter: AhriHspf2Adapter | None = None,
+        self, parent: tk.Widget, *, adapter: AhriHspf2Adapter | None = None
     ) -> None:
         self.adapter = adapter or AhriHspf2Adapter()
         self._frame = ttk.LabelFrame(parent, text="HSPF2")
@@ -44,11 +40,8 @@ class AhriHspf2Section:
 
         self.result_panel = ResultPanel(self._frame, title="AHRI 210/240 HSPF2 결과")
         self.result_panel.grid(
-            row=4,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
+            row=4, column=0, sticky="w", padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP)
         )
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         for table in self._tables:
@@ -116,8 +109,12 @@ class AhriHspf2Section:
     def _build_a2_table(self) -> MetricInputTable:
         table = MetricInputTable(
             self._frame,
-            columns=(("A2", "A2 Cooling Anchor"),),
-            rows=(("capacity", "A2 Cap [Btu/h]"), ("power", "A2 Pow [W]")),
+            columns=(("A2", "A2"),),
+            rows=(
+                ("capacity", "Capacity [Btu/h]"),
+                ("power", "Power [W]"),
+                ("cop", "COP"),
+            ),
             editable_cells={
                 ("capacity", "A2"): "a2_capacity",
                 ("power", "A2"): "a2_power",
@@ -139,8 +136,9 @@ class AhriHspf2Section:
             columns=tuple((point, point) for point in AHRI_HSPF2_POINT_ORDER),
             rows=(
                 ("condition_temp", "Condition / Temp"),
-                ("capacity", "Cap [Btu/h]"),
-                ("power", "Pow [W]"),
+                ("capacity", "Capacity [Btu/h]"),
+                ("power", "Power [W]"),
+                ("cop", "COP"),
             ),
             editable_cells=editable,
             row_header_chars=18,
@@ -207,8 +205,12 @@ class AhriHspf2Section:
         for table in self._tables:
             values.update(table.get_text_values())
             table.clear_invalid_fields()
+        options = self._options()
+        self._update_cop_rows(
+            self.adapter.compute_display_cops(values, options=options)
+        )
         try:
-            summary = self.adapter.calculate(values, options=self._options())
+            summary = self.adapter.calculate(values, options=options)
         except AhriHspf2InputError as exc:
             for table in self._tables:
                 errors = {key: value for key, value in exc.field_errors.items() if key in table.field_order}
@@ -222,9 +224,23 @@ class AhriHspf2Section:
         if summary is None:
             self.result_panel.clear()
             return
-        self.result_panel.set_summaries(
-            (ResultSummary("HSPF2", (("HSPF2", f"{summary.hspf2:.3f}"),), "자동 계산 완료"),)
+        fields = (
+            ("HSPF2", f"{summary.hspf2:.3f}"),
+            ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
+            ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
         )
+        self.result_panel.set_summaries(
+            (ResultSummary("HSPF2", fields, "자동 계산 완료"),)
+        )
+
+    def _update_cop_rows(self, cops: dict[str, float]) -> None:
+        self.a2_table.static_cell_labels[("cop", "A2")].configure(
+            text=f"{cops['A2']:.2f}" if "A2" in cops else ""
+        )
+        for point in AHRI_HSPF2_POINT_ORDER:
+            self.heating_table.static_cell_labels[("cop", point)].configure(
+                text=f"{cops[point]:.2f}" if point in cops else ""
+            )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
