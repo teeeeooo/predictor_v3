@@ -156,17 +156,21 @@ class TkVisibleContentMeasurement:
         tab_widths = tuple(
             notebook.nametowidget(tab_id).winfo_reqwidth() for tab_id in tabs
         )
+        tab_heights = tuple(
+            notebook.nametowidget(tab_id).winfo_reqheight() for tab_id in tabs
+        )
         widest_tab_width = max((current_tab_width, *tab_widths), default=current_tab_width)
+        tallest_tab_height = max(
+            (current_tab_height, *tab_heights), default=current_tab_height
+        )
         notebook_height = notebook.winfo_reqheight()
         notebook_width = notebook.winfo_reqwidth()
 
-        # Estimate tab bar chrome height once, when we first see a nested notebook.
-        # At first visit, notebook_height should equal tab_bar + current_tab,
-        # so notebook_height - current_tab_height gives the chrome (tab bar) height.
-        # This cached chrome is used to replace notebook_height with
-        # chrome + current_tab_height even when notebook_height is sticky.
+        # Tk notebook requested height can already be sticky at a taller hidden
+        # tab. Subtract the tallest known tab so sibling height is not cached as
+        # tab-bar chrome for a shorter current tab.
         if self._chrome_height_estimate is None:
-            self._chrome_height_estimate = max(0, notebook_height - current_tab_height)
+            self._chrome_height_estimate = max(0, notebook_height - tallest_tab_height)
 
         # Estimate tab border/padding chrome width once. Tk notebook requested
         # width can already be sticky at a hidden wide tab, so subtract the
@@ -176,7 +180,7 @@ class TkVisibleContentMeasurement:
 
         return NestedNotebookMeasurement(
             max_tab_width=current_tab_width,
-            max_tab_height=current_tab_height,
+            max_tab_height=tallest_tab_height,
             widest_tab_width=widest_tab_width,
             current_tab_width=current_tab_width,
             current_tab_height=current_tab_height,

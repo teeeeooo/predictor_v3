@@ -27,21 +27,20 @@
 
 ## Current Slice
 
-- Common visible-content notebook measurement design, pending explicit
-  approval.
-- The staged UI magic-literal/token gate foundation is implemented; AHRI sizing
-  remains an owner-design problem rather than a local literal adjustment.
+- HSPF2 A2 capacity-only and source mapping polish, pending explicit approval.
+- Common notebook chrome height now uses the tallest requested child; final
+  AHRI/EN/ISO geometry acceptance remains a manual smoke item.
 
 ## Next Actions
 
-1. Design the common visible-content notebook measurement correction as a
-   separately approved slice.
+1. Implement HSPF2 A2 capacity-only and source mapping polish as a separately
+   approved slice.
 
 ## Active Blockers / Open Decisions
 
-- AHRI lower white space remains unresolved: the profile-local wrapper-removal
-  hypothesis did not improve the 365px nested height gap. Any common
-  measurement-owner correction requires a separately approved design slice.
+- No implementation blocker is recorded. If manual smoke still shows lower
+  white space or unacceptable scrolling, selected-child allocation sync needs
+  a separate design slice.
 - No AHRI main/batch layout or optional-point design decision remains open for
   the approved implementation slices.
 
@@ -49,8 +48,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to common notebook measurement design; do not mix token
-  migration, A2/source polish, or calculator implementation.
+- Keep the next slice to HSPF2 A2/source polish; do not mix notebook allocation
+  sync, token migration, or unrelated calculator implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

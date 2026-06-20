@@ -30,6 +30,7 @@ def _collect(label, app, tab) -> dict[str, object]:
             diagnostics["nested_notebook_width"],
             notebook_height,
         ),
+        "nested_tallest_tab_height": diagnostics["nested_max_tab_height"],
         "nested_height_gap": notebook_height - current_height,
         "chrome_estimate": (
             diagnostics["chrome_width_estimate"],
@@ -64,7 +65,15 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         root.update_idletasks()
         en = app.en14825_tab
         ahri = app.ahri210240_tab
+        iso = app.iso_tab
+        app.notebook.select(iso)
+        iso._mode_combo.set("Hong Kong")
+        iso._on_mode_changed()
+        root.update_idletasks()
         rows = [
+            _select_fit(app, iso, iso._metric_notebook, 0, "ISO HK CSPF"),
+            _select_fit(app, iso, iso._metric_notebook, 1, "ISO HK HSPF"),
+            _select_fit(app, iso, iso._metric_notebook, 0, "ISO HK CSPF return"),
             _select_fit(app, en, en._standard_notebook, 0, "EN SEER"),
             _select_fit(app, en, en._standard_notebook, 1, "EN SCOP"),
             _select_fit(app, en, en._standard_notebook, 0, "EN SEER return"),
@@ -92,6 +101,9 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         assert by_label["EN SEER"]["snapshot_preferred_size"] == (
             by_label["EN SEER return"]["snapshot_preferred_size"]
         )
+        assert by_label["ISO HK CSPF"]["snapshot_preferred_size"] == (
+            by_label["ISO HK CSPF return"]["snapshot_preferred_size"]
+        )
         assert by_label["AHRI SEER2"]["snapshot_preferred_size"] == (
             by_label["AHRI SEER2 return"]["snapshot_preferred_size"]
         )
@@ -106,6 +118,15 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         )
         assert by_label["AHRI SEER2"]["nested_height_gap"] == (
             by_label["AHRI SEER2 return"]["nested_height_gap"]
+        )
+        for label in ("ISO HK CSPF", "EN SEER", "AHRI SEER2"):
+            row = by_label[label]
+            assert row["chrome_estimate"][1] == (
+                row["nested_notebook_size"][1]
+                - row["nested_tallest_tab_height"]
+            )
+        assert by_label["AHRI SEER2"]["chrome_estimate"][1] < (
+            by_label["AHRI SEER2"]["nested_height_gap"]
         )
         assert by_label["AHRI HSPF2 batch open"]["root_geometry"] == (
             by_label["AHRI HSPF2 batch close"]["root_geometry"]

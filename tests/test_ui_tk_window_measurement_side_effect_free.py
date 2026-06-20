@@ -125,7 +125,32 @@ class TestSideEffectFreeMeasurement:
         assert diagnostics["nested_current_tab_width"] == 300
         assert diagnostics["nested_current_tab_height"] == 200
         assert diagnostics["nested_max_tab_width"] == 300
-        assert diagnostics["nested_max_tab_height"] == 200
+        assert diagnostics["nested_max_tab_height"] == 250
+
+    def test_chrome_height_uses_tallest_tab_when_notebook_request_is_sticky(
+        self,
+    ) -> None:
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
+
+        short_tab = FakeWidget(width=300, height=200)
+        tall_tab = FakeWidget(width=500, height=500)
+        notebook = FakeNotebook(
+            {"short": short_tab, "tall": tall_tab}, "short"
+        )
+        notebook._notebook_height = 525
+        measurement = TkVisibleContentMeasurement(
+            content=FakeContent(width=500, height=525),
+            scrollbar=FakeScrollbar(),
+            overflow_source=FakeOverflow(),
+            nested_notebook=notebook,
+            nested_notebook_active=lambda: True,
+        )
+
+        snapshot = measurement.snapshot()
+
+        assert snapshot.diagnostics["nested_max_tab_height"] == 500
+        assert snapshot.diagnostics["chrome_height_estimate"] == 25
+        assert snapshot.preferred_size[1] == 236
 
     def test_width_shrinks_when_switching_to_narrow_tab(self) -> None:
         from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
