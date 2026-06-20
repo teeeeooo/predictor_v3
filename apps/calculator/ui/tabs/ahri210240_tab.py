@@ -1,4 +1,4 @@
-"""AHRI 210/240 tab containing the SEER2 main metric surface."""
+"""AHRI 210/240 tab containing SEER2 and HSPF2 metric surfaces."""
 
 from __future__ import annotations
 
@@ -7,13 +7,14 @@ from tkinter import ttk
 
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.sections.ahri_seer2_section import AhriSeer2Section
+from apps.calculator.ui.sections.ahri_hspf2_section import AhriHspf2Section
 from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
 from apps.calculator.ui.window_shell import TkContentHuggingShell
 
 
 class Ahri210240Tab(ttk.Frame):
-    """Top-level AHRI navigation with the approved SEER2-only first slice."""
+    """Top-level AHRI metric navigation."""
 
     def __init__(self, parent: tk.Widget) -> None:
         super().__init__(parent)
@@ -29,9 +30,13 @@ class Ahri210240Tab(ttk.Frame):
         self.metric_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.metric_notebook.bind("<<NotebookTabChanged>>", self._on_metric_changed)
         self.seer2_frame = ttk.Frame(self.metric_notebook)
+        self.hspf2_frame = ttk.Frame(self.metric_notebook)
         self.metric_notebook.add(self.seer2_frame, text="SEER2")
+        self.metric_notebook.add(self.hspf2_frame, text="HSPF2")
         self.seer2_section = AhriSeer2Section(self.seer2_frame)
         self.seer2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.hspf2_section = AhriHspf2Section(self.hspf2_frame)
+        self.hspf2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.result_panel = self.seer2_section.result_panel
 
         self._measurement = TkVisibleContentMeasurement(

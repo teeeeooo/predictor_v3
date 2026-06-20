@@ -168,7 +168,7 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     )
 
 
-def test_calculator_app_registers_ahri_tab_and_seer2_metric_only(tk_root) -> None:
+def test_calculator_app_registers_ahri_metric_tabs(tk_root) -> None:
     from apps.calculator.ui.calculator_app import CalculatorTkApp
 
     app = CalculatorTkApp(root=tk_root)
@@ -181,4 +181,4 @@ def test_calculator_app_registers_ahri_tab_and_seer2_metric_only(tk_root) -> Non
     ]
 
     assert tab_names == ["ISO 16358", "EN14825", "AHRI 210/240"]
-    assert metric_names == ["SEER2"]
+    assert metric_names == ["SEER2", "HSPF2"]
