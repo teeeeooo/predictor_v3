@@ -515,7 +515,15 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
     path_parts = relpath.split("/")
     if len(path_parts) >= 5 and path_parts[0:3] == ["apps", "calculator", "ui"]:
         subdir = path_parts[3]
-        allowed_packages = {"batch", "batch_dialogs", "en14825", "sections", "table", "tabs"}
+        allowed_packages = {
+            "ahri",
+            "batch",
+            "batch_dialogs",
+            "en14825",
+            "sections",
+            "table",
+            "tabs",
+        }
         if subdir not in allowed_packages:
             findings.append(
                 Finding(

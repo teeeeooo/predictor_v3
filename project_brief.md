@@ -71,13 +71,14 @@ Goal:
 
 Status:
 
-- Design complete; implementation begins with the SEER2 main UI foundation.
+- Design and SEER2 main UI foundation complete; SEER2 batch is the next
+  separately approved implementation slice.
 
 Milestones:
 
 - AHRI UI/Batch design specification: complete.
-- SEER2 main UI foundation: next.
-- SEER2 batch: pending.
+- SEER2 main UI foundation: complete.
+- SEER2 batch: next.
 - HSPF2 main UI foundation: pending.
 - HSPF2 batch: pending.
 - Focused regression and lifecycle closeout: pending.

@@ -1,0 +1,141 @@
+"""Focused tests for the AHRI 210/240 SEER2 main UI foundation."""
+
+from __future__ import annotations
+
+import pytest
+
+from apps.calculator.ui.ahri import (
+    AHRI_SEER2_POINT_ORDER,
+    AHRI_SEER2_TEMPERATURES_C,
+    AhriSeer2Adapter,
+    AhriSeer2InputError,
+)
+
+
+SAMPLE_VALUES = {
+    "capacity_A_Full": "36000",
+    "power_A_Full": "3000",
+    "capacity_B_Full": "30000",
+    "power_B_Full": "2200",
+    "capacity_B_Low": "18000",
+    "power_B_Low": "1200",
+    "capacity_E_Int": "24000",
+    "power_E_Int": "1700",
+    "capacity_F_Low": "12000",
+    "power_F_Low": "900",
+}
+
+
+class FakeSeer2Calculator:
+    def __init__(self) -> None:
+        self.points = None
+        self.system_type = None
+
+    def calculate_seer2(
+        self,
+        test_points,
+        system_type="HP",
+        p_w_off=0.0,
+        cd_low=None,
+    ):
+        self.points = test_points
+        self.system_type = system_type
+        return {"SEER2": 13.677}
+
+
+def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
+    calculator = FakeSeer2Calculator()
+    summary = AhriSeer2Adapter(calculator).calculate(
+        SAMPLE_VALUES,
+        system_type="AC",
+    )
+
+    assert tuple(calculator.points) == AHRI_SEER2_POINT_ORDER
+    assert calculator.system_type == "AC"
+    assert summary is not None
+    assert summary.seer2 == 13.677
+    assert summary.eer2_by_point["A_Full"] == 12.0
+
+
+def test_seer2_adapter_keeps_incomplete_blank_and_rejects_invalid() -> None:
+    adapter = AhriSeer2Adapter(FakeSeer2Calculator())
+    incomplete = dict(SAMPLE_VALUES)
+    incomplete["power_F_Low"] = ""
+    assert adapter.calculate(incomplete, system_type="HP") is None
+
+    invalid = dict(SAMPLE_VALUES)
+    invalid["power_A_Full"] = "bad"
+    with pytest.raises(AhriSeer2InputError) as exc_info:
+        adapter.calculate(invalid, system_type="HP")
+    assert exc_info.value.field_errors == {"power_A_Full": "숫자 입력 필요"}
+
+
+@pytest.fixture
+def tk_root():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    root.withdraw()
+    try:
+        yield root
+    finally:
+        root.destroy()
+
+
+def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
+    from apps.calculator.ui.sections.ahri_seer2_section import AhriSeer2Section
+    from apps.calculator.ui.table.roles import CellRole
+
+    calculator = FakeSeer2Calculator()
+    section = AhriSeer2Section(
+        tk_root,
+        adapter=AhriSeer2Adapter(calculator),
+    )
+    section.pack()
+    tk_root.update_idletasks()
+
+    assert section.type_var.get() == "HP"
+    assert tuple(section.type_selector.cget("values")) == ("HP", "AC")
+    assert tuple(key for key, _label in section.input_table.columns) == (
+        AHRI_SEER2_POINT_ORDER
+    )
+    assert section.input_table.cell_role((0, 0)) == CellRole.READONLY
+    assert section.input_table.cell_role((1, 0)) == CellRole.EDITABLE
+    assert section.input_table.cell_role((3, 0)) == CellRole.READONLY
+    for point in AHRI_SEER2_POINT_ORDER:
+        condition = section.input_table.static_cell_labels[("condition_temp", point)]
+        assert condition.cget("text").endswith(
+            f"{AHRI_SEER2_TEMPERATURES_C[point]:.1f} °C"
+        )
+        assert section.input_table.static_cell_labels[("eer2", point)].cget(
+            "text"
+        ) == ""
+
+    section.input_table.set_values_batch(SAMPLE_VALUES)
+    section._auto_calc.flush_now()
+
+    assert calculator.system_type == "HP"
+    assert section.input_table.static_cell_labels[("eer2", "A_Full")].cget(
+        "text"
+    ) == "12.00"
+    assert section.result_panel.summary_value_labels["SEER2"][0].cget("text") == (
+        "13.677"
+    )
+
+
+def test_calculator_app_registers_ahri_tab_and_seer2_metric_only(tk_root) -> None:
+    from apps.calculator.ui.calculator_app import CalculatorTkApp
+
+    app = CalculatorTkApp(root=tk_root)
+    tab_names = [
+        app.notebook.tab(tab_id, "text") for tab_id in app.notebook.tabs()
+    ]
+    metric_names = [
+        app.ahri210240_tab.metric_notebook.tab(tab_id, "text")
+        for tab_id in app.ahri210240_tab.metric_notebook.tabs()
+    ]
+
+    assert tab_names == ["ISO 16358", "EN14825", "AHRI 210/240"]
+    assert metric_names == ["SEER2"]
