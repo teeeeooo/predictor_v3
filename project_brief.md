@@ -48,8 +48,8 @@ Milestones:
 - EN14825 config ownership and SEER/SCOP point contract: complete.
 - SEER batch mode and dialog wiring: complete.
 - SCOP batch profile-local rebuild/snapshot policy: complete.
-- SCOP batch parent-section access: in progress.
-- EN14825 calculator smoke / lifecycle closeout: pending after SCOP parent wiring.
+- SCOP batch parent-section access: complete.
+- EN14825 calculator smoke / lifecycle closeout: in progress.
 
 Current near-term slice:
 

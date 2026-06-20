@@ -27,14 +27,13 @@
 
 ## Current Slice
 
-- EN14825 SCOP batch parent-section wiring.
-- Expose the implemented SCOP batch dialog through `En14825ScopSection` without
-  moving profile-local rebuild/snapshot ownership.
+- EN14825 calculator smoke / lifecycle closeout after SCOP batch parent wiring.
+- Confirm the completed SEER/SCOP batch access and cleanup path without
+  reopening calculator or data contracts.
 
 ## Next Actions
 
-1. Wire the EN14825 SCOP batch dialog into its parent section as a thin lifecycle
-   and snapshot-handoff slice.
+1. Run the focused EN14825 calculator smoke / lifecycle closeout.
 
 ## Active Blockers / Open Decisions
 
@@ -44,19 +43,14 @@
 
 ## Active Constraints
 
-- Parent section owns only dialog lifecycle and snapshot handoff.
 - SCOP dynamic rebuild/snapshot state remains profile-local.
 - Preserve current calculator, schema, region-config, fixture, golden, and result
   behavior unless a separate approved task changes them.
-- Apply the Design First Gate if the slice expands beyond thin lifecycle wiring.
 - Use focused verification rather than full pytest by default.
-- Run the cached agent change gate manually for structure-impacting source work
-  until hook integration is complete.
+- Run the cached agent change gate for structure-impacting source work.
 
 ## Deferred / Hold
 
-- Pre-commit and commit-msg hook integration for the cached agent change gate is
-  a separate workflow follow-up.
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
 - ML / predictor continuation remains after calculator workflows and result
   boundaries are stable enough for the next approved slice.
@@ -68,8 +62,8 @@
 - Active Arc / Milestone map: `project_brief.md`.
 - Last closed EN14825 batch/workflow summary:
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
-- Current workflow evidence:
-  `result_reports/active/417_agent_change_gate_manifest_index_hardening.md`.
+- Current product evidence:
+  `result_reports/active/422_wire-en14825-scop-batch-parent-section.md`.
 - Handoff creation report:
   `result_reports/active/419_next_session_scop_batch_parent_wiring_handoff.md`.
 - Milestone decisions and detailed completed history belong in `project_log.md`

@@ -14,6 +14,10 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
+    En14825ScopBatchDialog,
+)
+from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
@@ -52,6 +56,8 @@ class En14825ScopSection:
         )
         self.adapter = ScopAdapter()
         self._current_table_models: dict[str, ScopTableModel] = {}
+        self._batch_dialog: En14825ScopBatchDialog | None = None
+        self._batch_snapshot: En14825ScopBatchSnapshot | None = None
 
         self._frame = ttk.LabelFrame(parent, text="SCOP")
         self._frame.columnconfigure(0, weight=1)
@@ -267,6 +273,15 @@ class En14825ScopSection:
         # Compatibility text model for existing non-layout tests.
         self.result_panel = ResultPanel(self._frame, title="SCOP 결과")
 
+        action_row = ttk.Frame(self._frame)
+        action_row.grid(
+            row=5, column=0, sticky="w", padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.batch_button = ttk.Button(action_row, text="SCOP Batch", command=self._open_batch_dialog)
+        self.batch_button.surface_role = "en14825_scop_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
+
         # 4. Debounced auto-calc scheduler
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         
@@ -305,6 +320,24 @@ class En14825ScopSection:
 
     def schedule_recalculate(self) -> None:
         self._auto_calc.schedule()
+
+    def _open_batch_dialog(self) -> None:
+        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
+            self._batch_dialog.focus()
+            return
+        self._batch_dialog = En14825ScopBatchDialog(
+            self._frame.winfo_toplevel(),
+            initial_snapshot=self._batch_snapshot,
+            on_close=self._clear_batch_dialog,
+        )
+
+    def _clear_batch_dialog(
+        self,
+        snapshot: En14825ScopBatchSnapshot | None = None,
+    ) -> None:
+        if snapshot is not None:
+            self._batch_snapshot = snapshot
+        self._batch_dialog = None
 
     def _climate_aux_values(self, climate: str) -> dict[str, str]:
         return {
@@ -568,3 +601,6 @@ class En14825ScopSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            if self._batch_dialog is not None:
+                self._batch_dialog.close()
+                self._batch_dialog = None

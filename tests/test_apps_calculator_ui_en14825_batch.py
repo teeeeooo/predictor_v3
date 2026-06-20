@@ -23,6 +23,7 @@ from apps.calculator.ui.en14825.scop_batch import (
     En14825ScopBatchHandler,
     build_en14825_scop_batch_spec,
 )
+from apps.calculator.ui.sections import en14825_scop_section
 
 
 VALID_CASE = {
@@ -393,3 +394,65 @@ def test_scop_batch_handler_returns_error_for_adapter_failure() -> None:
 
     assert result.state is BatchRowState.ERROR
     assert result.values == {"scop": "", "qh_kwh": ""}
+
+
+def test_scop_parent_reuses_dialog_and_preserves_close_snapshot(monkeypatch) -> None:
+    dialogs = []
+
+    class FakeDialog:
+        def __init__(self, parent, *, initial_snapshot, on_close) -> None:
+            self.parent = parent
+            self.initial_snapshot = initial_snapshot
+            self.on_close = on_close
+            self.window = SimpleNamespace(winfo_exists=lambda: True)
+            self.focus_calls = 0
+            dialogs.append(self)
+
+        def focus(self) -> None:
+            self.focus_calls += 1
+
+    monkeypatch.setattr(en14825_scop_section, "En14825ScopBatchDialog", FakeDialog)
+    section = en14825_scop_section.En14825ScopSection.__new__(
+        en14825_scop_section.En14825ScopSection
+    )
+    initial_snapshot = object()
+    section._frame = SimpleNamespace(winfo_toplevel=lambda: "root")
+    section._batch_dialog = None
+    section._batch_snapshot = initial_snapshot
+
+    section._open_batch_dialog()
+    section._open_batch_dialog()
+
+    assert len(dialogs) == 1
+    assert dialogs[0].parent == "root"
+    assert dialogs[0].initial_snapshot is initial_snapshot
+    assert dialogs[0].focus_calls == 1
+
+    closed_snapshot = object()
+    dialogs[0].on_close(closed_snapshot)
+    assert section._batch_snapshot is closed_snapshot
+    assert section._batch_dialog is None
+
+
+def test_scop_parent_destroy_closes_open_batch_dialog() -> None:
+    section = en14825_scop_section.En14825ScopSection.__new__(
+        en14825_scop_section.En14825ScopSection
+    )
+    frame = object()
+    auto_calc = SimpleNamespace(dispose_calls=0)
+    auto_calc.dispose = lambda: setattr(
+        auto_calc,
+        "dispose_calls",
+        auto_calc.dispose_calls + 1,
+    )
+    dialog = SimpleNamespace(close_calls=0)
+    dialog.close = lambda: setattr(dialog, "close_calls", dialog.close_calls + 1)
+    section._frame = frame
+    section._auto_calc = auto_calc
+    section._batch_dialog = dialog
+
+    section._on_destroy(SimpleNamespace(widget=frame))
+
+    assert auto_calc.dispose_calls == 1
+    assert dialog.close_calls == 1
+    assert section._batch_dialog is None
