@@ -72,6 +72,8 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
         "H12 (8.3°C)", "H22 (1.7°C)",
     )
     assert spec.result_keys == ("hspf2", "h12_source", "h22_source", "h42_source")
+    assert spec.resolve_cell((0, 2)).input_key == "a2_capacity"
+    assert spec.resolve_cell((1, 2)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 8)).input_key == "capacity_H42"
     assert spec.resolve_cell((0, 9)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 10)).kind is MatrixCellKind.NOT_APPLICABLE
@@ -93,6 +95,7 @@ def test_hspf2_batch_handler_omits_disabled_points_and_maps_sources() -> None:
         "h42_source": "measured",
     }
     values, options = adapter.calls[0]
+    assert "a2_power" not in values
     assert "capacity_H12" not in values and "capacity_H22" not in values
     assert options.measured_h42 is True
     assert options.measured_h12 is options.measured_h22 is False
@@ -113,7 +116,7 @@ def test_hspf2_batch_handler_blanks_incomplete_and_invalid_rows() -> None:
 def test_hspf2_batch_session_preserves_hidden_superset_without_results() -> None:
     session = AhriHspf2BatchSessionState(
         AhriHspf2BatchActiveOptions(),
-        ({**VALID_CASE, "hspf2": "9.9", "h12_source": "measured"},),
+        ({**VALID_CASE, "a2_power": "legacy", "hspf2": "9.9", "h12_source": "measured"},),
     )
     default_spec = build_ahri_hspf2_batch_spec(session.active_options)
     assert "capacity_H12" not in session.visible_cases(default_spec)[0]
@@ -128,6 +131,7 @@ def test_hspf2_batch_session_preserves_hidden_superset_without_results() -> None
     snapshot = session.snapshot({"h12_enabled": "1"})
     assert "hspf2" not in snapshot.cases[0]
     assert "h12_source" not in snapshot.cases[0]
+    assert "a2_power" not in snapshot.cases[0]
 
 
 @pytest.fixture
@@ -158,6 +162,7 @@ def test_hspf2_batch_dialog_rebuild_restores_hidden_input_and_actions(tk_root) -
     section = dialog.section
     assert section is not None
     assert section.table.text_at_position((0, 9)) == ""
+    assert section.table.text_at_position((1, 2)) == ""
     section._vars["h12_enabled"].set("1")
     section._apply_options()
     assert section.table.cases[0]["capacity_H12"] == VALID_CASE["capacity_H12"]

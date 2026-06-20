@@ -17,7 +17,6 @@ from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
 
 TEST_MEASUREMENTS = {
     "a2_capacity": "24000",
-    "a2_power": "2500",
     "capacity_H01": "12500",
     "power_H01": "980",
     "capacity_H11": "12000",
@@ -73,6 +72,7 @@ class FakeHspf2Calculator:
 def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> None:
     calculator = FakeHspf2Calculator()
     values = complete_values()
+    values["a2_power"] = "invalid legacy input is ignored"
     values["capacity_H12"] = "invalid but inactive"
     adapter = AhriHspf2Adapter(calculator)
 
@@ -97,6 +97,7 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
     )
     assert "H12" not in calculator.points
     assert "H22" not in calculator.points
+    assert calculator.points["A2"] == (24000.0, 1.0)
     assert calculator.kwargs["t_off"] == pytest.approx(14.0)
     assert calculator.kwargs["t_on"] == pytest.approx(23.0)
     assert calculator.kwargs["c_d_heating"] == 0.25
@@ -107,10 +108,59 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
         assert calculator.kwargs[key] == value
 
     cops = adapter.compute_display_cops(values, options=AhriHspf2Options())
-    assert cops["A2"] == pytest.approx(9.6)
     assert cops["H01"] == pytest.approx(12500 / 980)
     assert "H12" not in cops
     assert "H22" not in cops
+
+
+@pytest.mark.parametrize(
+    ("h12_source", "h22_source", "h42_source", "expected"),
+    (
+        (
+            "tested",
+            "eq_11_44_11_50",
+            "provided",
+            ("measured", "calculated", "measured"),
+        ),
+        (
+            "eq_11_183",
+            "tested",
+            "not_provided",
+            ("calculated", "measured", "not provided"),
+        ),
+        (
+            "eq_11_185",
+            "eq_11_44_11_50",
+            "provided",
+            ("calculated", "calculated", "measured"),
+        ),
+    ),
+)
+def test_hspf2_adapter_maps_v3_source_contract(
+    h12_source: str,
+    h22_source: str,
+    h42_source: str,
+    expected: tuple[str, str, str],
+) -> None:
+    result = {
+        "HSPF2": 9.875,
+        "total_heating_btu": 22500.0,
+        "total_energy_wh": 2278.481,
+        "summary": {
+            "metadata": {
+                "h12_source": h12_source,
+                "h22_source": h22_source,
+            }
+        },
+        "h42_source": h42_source,
+    }
+
+    summary = AhriHspf2Adapter(FakeHspf2Calculator(result)).calculate(
+        complete_values(), options=AhriHspf2Options()
+    )
+
+    assert summary is not None
+    assert (summary.h12_source, summary.h22_source, summary.h42_source) == expected
 
 
 def test_hspf2_adapter_includes_enabled_optional_points_and_flags() -> None:
@@ -199,11 +249,7 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     )
     assert "A2" not in tuple(key for key, _label in section.heating_table.columns)
     assert section.a2_table.columns == (("A2", "A2"),)
-    assert section.a2_table.rows == (
-        ("capacity", "Capacity [Btu/h]"),
-        ("power", "Power [W]"),
-        ("cop", "COP"),
-    )
+    assert section.a2_table.rows == (("capacity", "Capacity [Btu/h]"),)
     assert section.heating_table.rows == (
         ("condition_temp", "Condition / Temp"),
         ("capacity", "Capacity [Btu/h]"),
@@ -222,7 +268,7 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     assert section.a2_table.get_text_values()["a2_capacity"] == (
         HSPF2_DEV_SAMPLE_VALUES["a2_capacity"]
     )
-    assert section.a2_table.static_cell_labels[("cop", "A2")].cget("text") == "9.60"
+    assert "a2_power" not in section.a2_table.field_order
     assert section.heating_table.static_cell_labels[("cop", "H01")].cget(
         "text"
     ) == "12.76"

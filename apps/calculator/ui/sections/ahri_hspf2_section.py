@@ -111,15 +111,8 @@ class AhriHspf2Section:
         table = MetricInputTable(
             self._frame,
             columns=(("A2", "A2"),),
-            rows=(
-                ("capacity", "Capacity [Btu/h]"),
-                ("power", "Power [W]"),
-                ("cop", "COP"),
-            ),
-            editable_cells={
-                ("capacity", "A2"): "a2_capacity",
-                ("power", "A2"): "a2_power",
-            },
+            rows=(("capacity", "Capacity [Btu/h]"),),
+            editable_cells={("capacity", "A2"): "a2_capacity"},
             row_header_chars=18,
             data_column_chars=18,
         )
@@ -235,9 +228,6 @@ class AhriHspf2Section:
         )
 
     def _update_cop_rows(self, cops: dict[str, float]) -> None:
-        self.a2_table.static_cell_labels[("cop", "A2")].configure(
-            text=f"{cops['A2']:.2f}" if "A2" in cops else ""
-        )
         for point in AHRI_HSPF2_POINT_ORDER:
             self.heating_table.static_cell_labels[("cop", point)].configure(
                 text=f"{cops[point]:.2f}" if point in cops else ""

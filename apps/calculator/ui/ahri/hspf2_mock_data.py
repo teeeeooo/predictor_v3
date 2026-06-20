@@ -2,7 +2,6 @@
 
 HSPF2_DEV_SAMPLE_VALUES = {
     "a2_capacity": "24000",
-    "a2_power": "2500",
     "capacity_H01": "12500",
     "power_H01": "980",
     "capacity_H11": "12000",

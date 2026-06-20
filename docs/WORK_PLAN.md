@@ -27,13 +27,13 @@
 
 ## Current Slice
 
-- HSPF2 A2 capacity-only and source mapping polish, pending explicit approval.
-- Common notebook chrome height now uses the tallest requested child; final
-  AHRI/EN/ISO geometry acceptance remains a manual smoke item.
+- AHRI batch compact label and token usage cleanup, pending explicit approval.
+- HSPF2 A2 is capacity-only at the UI boundary and v3 source values are mapped
+  to the stable measured/calculated/not-provided display contract.
 
 ## Next Actions
 
-1. Implement HSPF2 A2 capacity-only and source mapping polish as a separately
+1. Perform AHRI batch compact label and token usage cleanup as a separately
    approved slice.
 
 ## Active Blockers / Open Decisions
@@ -48,8 +48,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to HSPF2 A2/source polish; do not mix notebook allocation
-  sync, token migration, or unrelated calculator implementation.
+- Keep the next slice to AHRI batch label/token cleanup; do not mix notebook
+  allocation sync or unrelated calculator implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

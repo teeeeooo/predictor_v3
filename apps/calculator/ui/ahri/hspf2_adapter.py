@@ -33,6 +33,9 @@ AHRI_HSPF2_HIDDEN_DEFAULTS = {
     "defrost_t_test_minutes": 90.0,
     "defrost_t_max_minutes": 720.0,
 }
+# A2 power is not used by the HSPF2 formula. This positive placeholder only
+# satisfies the current core point-tuple validation contract.
+_A2_CORE_POWER_PLACEHOLDER = 1.0
 
 
 class _Hspf2Calculator(Protocol):
@@ -95,7 +98,7 @@ class AhriHspf2Adapter:
             "H12": options.measured_h12,
             "H22": options.measured_h22,
         }
-        required_fields = [*self._NUMERIC_KEYS, "a2_capacity", "a2_power"]
+        required_fields = [*self._NUMERIC_KEYS, "a2_capacity"]
         active_points: list[str] = []
         for point in AHRI_HSPF2_POINT_ORDER:
             if point in active_optional and not active_optional[point]:
@@ -128,7 +131,7 @@ class AhriHspf2Adapter:
             point: (numeric[f"capacity_{point}"], numeric[f"power_{point}"])
             for point in active_points
         }
-        points["A2"] = (numeric["a2_capacity"], numeric["a2_power"])
+        points["A2"] = (numeric["a2_capacity"], _A2_CORE_POWER_PLACEHOLDER)
         result = self._calculator.calculate_hspf2(
             points,
             t_off=self._celsius_to_fahrenheit(numeric["cut_out_c"]),
@@ -167,14 +170,11 @@ class AhriHspf2Adapter:
             "H12": options.measured_h12,
             "H22": options.measured_h22,
         }
-        pairs = {"A2": ("a2_capacity", "a2_power")}
-        pairs.update(
-            {
-                point: (f"capacity_{point}", f"power_{point}")
-                for point in AHRI_HSPF2_POINT_ORDER
-                if enabled_optional.get(point, True)
-            }
-        )
+        pairs = {
+            point: (f"capacity_{point}", f"power_{point}")
+            for point in AHRI_HSPF2_POINT_ORDER
+            if enabled_optional.get(point, True)
+        }
         cops: dict[str, float] = {}
         for point, (capacity_key, power_key) in pairs.items():
             try:

@@ -22,7 +22,7 @@ class AhriHspf2BatchSessionState:
 
     _POINTS = ("H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22")
     _INPUT_KEYS = frozenset(
-        {"a2_capacity", "a2_power"}
+        {"a2_capacity"}
         | {
             f"{measurement}_{point}"
             for point in _POINTS

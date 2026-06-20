@@ -65,7 +65,7 @@ def build_ahri_hspf2_batch_spec(
             input_keys_by_row_type=MappingProxyType(
                 {
                     MatrixPhysicalRowType.CAPACITY: "a2_capacity",
-                    MatrixPhysicalRowType.POWER: "a2_power",
+                    MatrixPhysicalRowType.POWER: None,
                 }
             ),
             width_chars=12,
