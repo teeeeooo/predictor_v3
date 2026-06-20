@@ -140,6 +140,20 @@ implementation 범위/제외 범위를 남긴다. Implementation slice는 승인
   `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md`를 따른다.
 - 애매하면 자동 수정하지 말고 update 필요성을 보고한다.
 
+### Session Handoff Gate
+
+사용자가 handoff, 다음 세션 인계, context handoff, next-agent read pointer,
+또는 인계를 위한 문서 업데이트를 명시적으로 요청할 때만 실행한다.
+
+- 상세 owner는
+  `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`다.
+- `project_brief.md`와 `docs/WORK_PLAN.md`를 확인하고, active blocker나
+  unfinished decision이 있을 때만 `result_reports/active/`를 pointer
+  후보로 확인한다.
+- ordinary `WORK_PLAN.md` update, 일반 작업 종료 report, 작은 bugfix/micro
+  task closeout은 trigger가 아니다.
+- Router에는 handoff template을 두지 않는다.
+
 ### UI Surface Workflow Gate
 
 상세 owner는 `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`다.

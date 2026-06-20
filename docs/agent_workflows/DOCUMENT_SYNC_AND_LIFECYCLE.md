@@ -49,6 +49,48 @@ not individual rows in `ACTIVE_DOCUMENTS.md`.
 Use `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` for project log update
 judgment and read limits.
 
+## Session Handoff Workflow
+
+Run this workflow only when the user explicitly requests a handoff,
+next-session handover, context handoff, or next-agent read plan.
+
+Ordinary `WORK_PLAN.md` maintenance, routine result-report closeout, and small
+bugfix or micro-task completion do not create or update a handoff.
+
+When triggered:
+
+1. Update `project_brief.md` to the stable current project state.
+2. Update the normal execution-board sections in `docs/WORK_PLAN.md`.
+3. Create or fully replace the `Session Handoff` section in
+   `docs/WORK_PLAN.md`; never append a new handoff to an old one.
+
+Ownership remains split:
+
+- `project_brief.md`: stable current-state session handoff;
+- `docs/WORK_PLAN.md`: active execution board and temporary handoff pointers;
+- `project_log.md`: milestone history and durable decisions.
+
+If an existing handoff conflicts with current state after ordinary work, do
+not silently refresh it. Remove it or mark it stale. A fresh handoff requires
+an explicit user trigger.
+
+Use this compact `Session Handoff` shape:
+
+- Status
+- Updated
+- Reason
+- Read First
+- Task-Specific Pointers
+- Active Blocker / Open Decision
+- Next Action
+- Do Not Read Unless Needed
+
+Keep the combined Read First and task-specific pointer set to about 3-7 items.
+Each pointer includes a one-line Why and, where possible, a file plus heading,
+function, or report pointer. Do not put archive/report originals in Read First
+by default. Include exactly one Next Action and do not reproduce completed
+report history.
+
 ## Output
 
 For commit/git tasks, include a short documentation sync judgment:

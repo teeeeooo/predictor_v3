@@ -1,20 +1,42 @@
 # Project Brief
-이 문서는 새 대화창 시작 시 현재 상태를 빠르게 파악하기 위한 요약 문서입니다.
 
-## 1. 현재 상태 및 마일스톤
-- **테스트 및 검증:** Validation smoke/golden 안정화 및 KS oracle cycling consistency(H-2b) 검증이 완료되었습니다. ISO16358-2 HSPF official exact 16-case golden은 원문 audit + 099 `-7_ext` default factor fix (`2°C frost → 2°C non-frost → -7°C` 2-step) 이후 기준으로 정리되어 16/16 case 모두 pass합니다. `XFAIL_CASE_IDS`는 비워졌습니다 (100 참고).
-- **보호망 확보:** Phase 1 범위에서 KS C 9306, ISO T1, SASO T3, Hong Kong, India ISEER, AHRI, EN14825 규격에 대한 Regression 보호망을 확보했습니다. ISO HSPF는 Formula micro golden 및 KS shared-formula oracle로 이중 보호 중입니다.
-- **Hong Kong HSPF 상태:** core/config/test + profile resolve 완료. `core/calculator_profiles.py`의 `hong_kong_hspf` profile이 `hong_kong_cspf`와 같은 `data/region_configs/hong_kong.json`을 공유하면서 `metric=HSPF` / `mode=heating`으로 등록되어 있고, dispatcher는 `calculator_id=iso16358` 기존 경로로 `calculate_hspf`를 호출합니다 (103 참고). ISO HSPF UI surface는 아직 없습니다.
-- **실행 로드맵:** 현재 우선순위와 상세 실행 순서는 `docs/WORK_PLAN.md`를 따른다.
-- **ISO16358-2 HSPF / AS/NZS 경계:** ISO16358-2 HSPF는 Track A common ISO path와 Track B AS/NZS workbook compatibility calculator(Energy Rating SEER Excel workbook reference)로 분리합니다. AS/NZS current workbook snapshot exact-match는 HSPF/CSPF 모두 별도 compatibility path에서만 다루며, historical case3 full-dump 재현은 계속 Z-phase입니다.
-- **Calculator UI / ML adapter 경계:** PyQt calculator-only source(`ui/calc_window.py`, `ui/calculators_2point.py`, `ui/calculator_errors.py`)는 은퇴(retired)되었습니다. current calculator entrypoint는 `app_calculator.py` → `apps.calculator.app:main` → `apps/calculator/ui/`입니다. Train/Predict PyQt path(`ui/train_window.py`, `ui/predict_window.py`)는 future rewrite 전까지 유지됩니다. ML / inverse-search 복귀 전 calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 기준으로 하며, AHRI SEER2 input/result envelope 첫 slice (`core/calculator_input_adapter.py`, `core/calculator_result_adapter.py`)와 schema boundary 가드(`tests/test_calculator_schema_boundaries.py`)가 적용되어 있습니다.
-- **Audit 5 이후 adapter 상태:** `PredictedPointsEnvelope` validator/helper와 `RankingCandidateEnvelope` 최소 smoke가 구현되어 있으며, 첫 지원 범위는 `ahri_usa_seer2` profile입니다. 단위 변환은 adapter chain 밖 caller 책임으로 유지합니다.
+이 문서는 새 세션 또는 작업 재개 시 읽는 compact current-state handoff다.
+현재 실행 순서나 task-specific pointer 목록은 소유하지 않는다.
 
-## 2. 문서 가이드
-- **`AGENTS.md`**: 매 작업 시작 시 확인하는 얇은(Lite) 규칙 문서입니다.
-- **`project_brief.md`**: 새 세션 또는 작업 재개 시의 현재 상태 요약입니다. (현재 문서)
-- **`docs/WORK_PLAN.md`**: 현재 우선순위와 다음 실행 순서를 관리하는 실행판 문서입니다.
-- **`docs/REFACTOR_PLAN.md`**: 리팩토링 후보, 구조 분리 트리거, guardrails를 관리하는 문서입니다.
-- **`PROJECT_CHARTER.md`**: 프로젝트의 최종 목표와 장기 방향을 정의하는 헌장입니다.
-- **`project_log.md`**: 작업 기록, 결정 사항, 실패, 교훈을 보존하는 로그입니다.
-- **`docs/designs/*`**: 아키텍처 및 구현 관련 큰 설계 결정문입니다.
+## 1. Current State
+
+- 프로젝트는 계산 엔진과 주요 규격 regression 보호망을 기반으로 Tkinter
+  calculator profile/UI를 확장하는 단계다. KS C 9306, ISO T1, SASO T3,
+  Hong Kong, India ISEER, AHRI, EN14825의 focused smoke/golden 보호망이 있다.
+- current calculator entrypoint는 `app_calculator.py` →
+  `apps.calculator.app:main` → `apps/calculator/ui/`다. Train/Predict 경로는
+  calculator shell과 분리된 상태로 유지한다.
+- calculator core, profile/config, UI, result envelope/ML adapter의 책임
+  경계가 분리되어 있다. ML / inverse-search 재개 시
+  `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 경계
+  기준으로 사용한다.
+- EN14825 SEER/SCOP config와 point contract, batch headless handlers, SEER
+  dialog, SCOP rebuild/snapshot policy가 구현되어 있다. 현재 실행 우선순위는
+  SCOP batch parent-section wiring이며 상세 순서는 `docs/WORK_PLAN.md`가
+  소유한다.
+- 최근 닫힌 calculator/workflow arc의 compact anchor는
+  `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`다.
+
+## 2. Session Start
+
+1. `project_brief.md`에서 stable current state를 확인한다.
+2. `docs/WORK_PLAN.md`에서 현재 focus와 정확히 하나의 next action을 확인한다.
+3. `docs/WORK_PLAN.md`에 명시 요청으로 작성된 `Session Handoff`가 있을
+   때만 그 pointer를 우선 따른다.
+
+## 3. Document Guide
+
+- `AGENTS.md`: 매 작업 시작 시 확인하는 lite rule entrypoint.
+- `AGENT_TASK_ROUTER.md`: task route와 compact gate map.
+- `PROJECT_CHARTER.md`: 프로젝트 목적과 장기 Phase 1~5 방향.
+- `project_brief.md`: 새 세션을 위한 stable current-state handoff.
+- `docs/WORK_PLAN.md`: 현재 focus, next action, blockers, constraints, hold를
+  관리하는 execution board.
+- `project_log.md`: milestone decision, failure, lesson 기록.
+- `ACTIVE_DOCUMENTS.md`: active 문서 owner/inbound/outbound map.
+- `result_reports/`: task detail, lifecycle summary, completed report archive.

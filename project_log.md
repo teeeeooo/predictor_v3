@@ -22,6 +22,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-20 — Current execution board and session handoff ownership
+
+### Decision
+
+- `docs/WORK_PLAN.md` is the current execution board; completed history belongs
+  in result summaries/archive and `project_log.md`.
+- `project_brief.md` owns the stable current-state session handoff, while
+  `ACTIVE_DOCUMENTS.md` remains the active document owner map.
+- Only an explicit user handoff request updates `project_brief.md` for handoff
+  and creates or fully replaces `WORK_PLAN.md`'s `Session Handoff`. Ordinary
+  work plan maintenance does not update that section.
+
+### Lesson
+
+- Keep stable state, active execution, temporary handoff pointers, and history
+  in separate owner documents; do not rebuild a report index inside the work
+  plan.
+
 ## 2026-06-18 — EN14825 unified config and SCOP point contract milestone
 
 ### Decision
