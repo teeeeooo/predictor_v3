@@ -34,11 +34,13 @@ not individual rows in `ACTIVE_DOCUMENTS.md`.
 
 ## Document-specific Rules
 
-- `docs/WORK_PLAN.md`: update only when current priority, next action, phase,
-  or execution order changes.
+- `docs/WORK_PLAN.md`: update only when current slice, next action, active
+  blockers/open decisions, execution order, active constraints, or hold status
+  changes.
 - `docs/REFACTOR_PLAN.md`: update only when refactor candidates, split
   strategy, or structural guardrails change.
-- `project_brief.md`: update only when the new-session handoff state changes.
+- `project_brief.md`: update only when Phase / Arc / Milestone position or broad
+  project-state map changes.
 - standards/dev notes: update only for reusable specification interpretation,
   calculation rationale, or schema meaning.
 - `docs/archive/`: report archive candidates; do not move/delete without
@@ -59,16 +61,24 @@ bugfix or micro-task completion do not create or update a handoff.
 
 When triggered:
 
-1. Update `project_brief.md` to the stable current project state.
-2. Update the normal execution-board sections in `docs/WORK_PLAN.md`.
+1. Check `project_brief.md` for Phase / Arc / Milestone accuracy and update it
+   only when the broad project-state map is stale.
+2. Update the normal execution-board sections in `docs/WORK_PLAN.md` when the
+   current slice, next action, blockers/open decisions, constraints, or hold
+   status changed.
 3. Create or fully replace the `Session Handoff` section in
    `docs/WORK_PLAN.md`; never append a new handoff to an old one.
 
 Ownership remains split:
 
-- `project_brief.md`: stable current-state session handoff;
-- `docs/WORK_PLAN.md`: active execution board and temporary handoff pointers;
-- `project_log.md`: milestone history and durable decisions.
+- `project_brief.md`: Phase / Arc / Milestone map and broad project-state
+  orientation;
+- `docs/WORK_PLAN.md`: current slice, next action, blockers/open decisions,
+  constraints, hold items, and temporary handoff pointers;
+- `project_log.md`: completed milestone decisions, durable failures, and
+  lessons;
+- `result_reports/summaries/`: completed report-group summaries and evidence
+  anchors.
 
 If an existing handoff conflicts with current state after ordinary work, do
 not silently refresh it. Remove it or mark it stale. A fresh handoff requires
@@ -90,6 +100,10 @@ Each pointer includes a one-line Why and, where possible, a file plus heading,
 function, or report pointer. Do not put archive/report originals in Read First
 by default. Include exactly one Next Action and do not reproduce completed
 report history.
+
+Do not place task-specific code pointers, focused test pointers, or next-session
+read lists in `project_brief.md`. Those belong in `docs/WORK_PLAN.md` under the
+explicitly requested `Session Handoff` section.
 
 ## Output
 

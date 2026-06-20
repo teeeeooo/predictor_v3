@@ -2,73 +2,78 @@
 
 ## Purpose
 
-- Maintain the current focus, next action, active blockers/open decisions,
+- Maintain the current slice, next action, active blockers/open decisions,
   active constraints, and deferred/hold items.
-- Keep completed work history in `project_log.md`,
-  `result_reports/summaries/`, and `result_reports/archive/`.
+- Keep Phase / Arc / Milestone direction in `project_brief.md`.
 - Keep long-term goals and Phase 1~5 direction in `PROJECT_CHARTER.md`.
+- Keep completed work history in `project_log.md`, `result_reports/summaries/`,
+  and `result_reports/archive/`.
 - Keep refactor candidates and structural triggers in `docs/REFACTOR_PLAN.md`.
 
 ## Work Plan Update Rule
 
-- `WORK_PLAN.md` is the current execution board, not a task or report index.
-- Replace closed-arc checkpoints with at most a compact reference anchor.
-- Update only when current focus, execution order, active constraints,
-  blockers/open decisions, or hold status changes.
+- `WORK_PLAN.md` is the near-term execution board, not a roadmap, task log, or
+  report index.
+- Update only when current slice, next action, execution order, active
+  constraints, blockers/open decisions, or hold status changes.
 - Do not append completed report lists, full report content, terminal output, or
   repeated next-action history.
+- Arc and milestone status belong to `project_brief.md`; only reference them here
+  when they directly constrain the current slice.
 - Ordinary work plan maintenance does not create or update `Session Handoff`.
   That section exists only when the user explicitly requests a session or
   next-agent handoff, following
   `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`.
 
-## Current Focus
+## Current Slice
 
-- Product arc: expose the implemented EN14825 SCOP batch profile through its
-  parent section without moving profile-local rebuild/snapshot ownership.
-- Workflow follow-up: the cached agent change gate is hardened and remains
-  manually invoked until hook integration is handled as a separate slice.
+- EN14825 SCOP batch parent-section wiring.
+- Expose the implemented SCOP batch dialog through `En14825ScopSection` without
+  moving profile-local rebuild/snapshot ownership.
 
 ## Next Actions
 
-1. Wire the EN14825 SCOP batch dialog into its parent section as a thin
-   lifecycle slice.
+1. Wire the EN14825 SCOP batch dialog into its parent section as a thin lifecycle
+   and snapshot-handoff slice.
 
 ## Active Blockers / Open Decisions
 
 - No active blocker is recorded.
-- No schema, calculator, region-config, or result-contract decision is open for
-  the parent-section wiring slice.
+- No schema, calculator, region-config, fixture, golden, result-contract, or
+  SCOP profile-state ownership decision is open for this slice.
 
 ## Active Constraints
 
-- Keep SCOP dynamic rebuild/snapshot state profile-local; the parent section
-  owns only dialog lifecycle and snapshot handoff.
-- Preserve current calculator, schema, region-config, fixture, and golden
+- Parent section owns only dialog lifecycle and snapshot handoff.
+- SCOP dynamic rebuild/snapshot state remains profile-local.
+- Preserve current calculator, schema, region-config, fixture, golden, and result
   behavior unless a separate approved task changes them.
-- Apply the Design First Gate if the slice expands beyond thin lifecycle
-  wiring, and use focused verification rather than full pytest by default.
+- Apply the Design First Gate if the slice expands beyond thin lifecycle wiring.
+- Use focused verification rather than full pytest by default.
 - Run the cached agent change gate manually for structure-impacting source work
   until hook integration is complete.
 
 ## Deferred / Hold
 
-- Pre-commit and commit-msg hook integration for the cached agent change gate
-  is a separate workflow follow-up.
+- Pre-commit and commit-msg hook integration for the cached agent change gate is
+  a separate workflow follow-up.
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- ML / inverse-search continuation remains after the calculator result-envelope
-  and adapter boundary is ready for the next approved slice.
+- ML / predictor continuation remains after calculator workflows and result
+  boundaries are stable enough for the next approved slice.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.
 
 ## Reference Anchors
 
-- Last closed arc:
+- Active Arc / Milestone map: `project_brief.md`.
+- Last closed EN14825 batch/workflow summary:
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
 - Current workflow evidence:
   `result_reports/active/417_agent_change_gate_manifest_index_hardening.md`.
-- Milestone decisions and detailed completed history belong in
-  `project_log.md` and the result-report lifecycle directories.
+- Handoff creation report:
+  `result_reports/active/419_next_session_scop_batch_parent_wiring_handoff.md`.
+- Milestone decisions and detailed completed history belong in `project_log.md`
+  and the result-report lifecycle directories.
 
 ## Session Handoff
 
@@ -87,9 +92,10 @@ hardening the manually invoked cached agent change gate.
 
 ### Read First
 
-- `AGENTS.md` - apply the repository work contract and route before task reads.
-- `project_brief.md` section `4. Next Session Entry` - confirm stable current
-  state, blocker status, and the single execution target.
+- `AGENTS.md` - apply the repository work contract and routing rules before
+  task-specific reads.
+- `project_brief.md` - confirm current Phase, active Arc, and Milestone position;
+  do not use it for task-specific code pointers.
 - `AGENT_TASK_ROUTER.md` sections for Coding Work, UI Modification, and Result
   Report Workflow - load only the rules needed for this wiring slice.
 
@@ -99,19 +105,21 @@ hardening the manually invoked cached agent change gate.
   sections `Closed Results` and `Next Actions` - accepted SCOP batch ownership
   and the boundary left for parent wiring.
 - `apps/calculator/ui/sections/en14825_scop_section.py`, class
-  `En14825ScopSection` - target parent section; use
-  `en14825_seer_section.py` methods `_open_batch_dialog()` and
-  `_clear_batch_dialog()` as the established thin lifecycle/snapshot reference.
+  `En14825ScopSection` - target parent section; use `en14825_seer_section.py`
+  methods `_open_batch_dialog()` and `_clear_batch_dialog()` as the established
+  thin lifecycle/snapshot reference.
 - `apps/calculator/ui/batch_dialogs/profiles/en14825_scop_dialog.py` and
-  `profiles/en14825_scop.py` - existing dialog wrapper and profile-local dynamic
-  rebuild/snapshot implementation to reuse unchanged where possible.
-- `tests/test_apps_calculator_ui_en14825_batch.py` - focused batch contract
-  tests; add parent/dialog lifecycle coverage without broad test reorganization.
+  `apps/calculator/ui/batch_dialogs/profiles/en14825_scop.py` - existing dialog
+  wrapper and profile-local dynamic rebuild/snapshot implementation to reuse
+  unchanged where possible.
+- `tests/test_apps_calculator_ui_en14825_batch.py` - focused batch contract tests;
+  add parent/dialog lifecycle coverage without broad test reorganization.
 
 ### Active Blocker / Open Decision
 
-None. Do not reopen schema, calculator, region-config, result-contract, or SCOP
-profile-state ownership decisions for the thin parent-section wiring slice.
+None. Do not reopen schema, calculator, region-config, fixture, golden,
+result-contract, or SCOP profile-state ownership decisions for the thin
+parent-section wiring slice.
 
 ### Next Action
 

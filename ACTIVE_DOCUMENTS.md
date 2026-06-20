@@ -26,7 +26,7 @@
 | `AGENT_TASK_ROUTER.md` | Task routing index and gate map | `AGENTS.md`, agent workflow | task-specific docs, agent workflow owner docs |
 | `README.md` | Repository public entrypoint | repo root | `project_brief.md`, `project_log.md`, `ACTIVE_DOCUMENTS.md`, docs map |
 | `ACTIVE_DOCUMENTS.md` | Active document inventory | `README.md`, `AGENT_TASK_ROUTER.md` | all active docs by owner relationship |
-| `project_brief.md` | Current state handoff | `README.md`, new sessions | `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md`, `project_log.md` |
+| `project_brief.md` | Phase / Arc / Milestone map | `README.md`, new sessions, planning tasks | `docs/WORK_PLAN.md`, `PROJECT_CHARTER.md`, `project_log.md` |
 | `project_log.md` | Decision/history log | task reports, lifecycle summaries | project docs, historical decisions |
 | `PROJECT_CHARTER.md` | Long-term project charter | planning tasks | `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md` |
 
@@ -53,7 +53,7 @@
 | `docs/DOCS_GUIDELINES.md` | Standard documentation rules | `AGENTS.md`, `docs/README.md` | template, evidence rules |
 | `docs/STANDARD_DOC_TEMPLATE.md` | Standard doc template | `docs/README.md`, new standard docs | notes/dev/design/glossary shape |
 | `docs/FORMULA_REFERENCE_GUIDE.md` | Formula notation guide | `docs/README.md`, formula doc tasks | formula/variable formatting |
-| `docs/WORK_PLAN.md` | Current execution order | `project_brief.md`, planning tasks | `PROJECT_CHARTER.md`, `docs/REFACTOR_PLAN.md` |
+| `docs/WORK_PLAN.md` | Current slice and near-term execution board | `project_brief.md`, planning tasks, explicit handoff requests | current next action, active blockers/constraints, optional `Session Handoff` |
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |

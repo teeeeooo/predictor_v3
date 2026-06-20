@@ -147,6 +147,8 @@ implementation 범위/제외 범위를 남긴다. Implementation slice는 승인
 
 - 상세 owner는
   `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md`다.
+- `project_brief.md`는 Phase / Arc / Milestone 위치 확인에만 사용하고,
+  task-specific read pointer는 `docs/WORK_PLAN.md > Session Handoff`에 둔다.
 - `project_brief.md`와 `docs/WORK_PLAN.md`를 확인하고, active blocker나
   unfinished decision이 있을 때만 `result_reports/active/`를 pointer
   후보로 확인한다.

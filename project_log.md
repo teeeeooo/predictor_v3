@@ -22,6 +22,22 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-20 — Project brief arc/milestone ownership correction
+
+### Decision
+
+- `project_brief.md` owns the Phase / Arc / Milestone map, not task-specific
+  handoff pointers.
+- `docs/WORK_PLAN.md` owns the current slice, next action, and explicit
+  `Session Handoff` pointers.
+- The duplicated next-session read list and Next Action were removed from the
+  brief; this corrects the earlier broad handoff ownership split.
+
+### Lesson
+
+- Arc and milestone must remain larger than implementation slices; otherwise
+  the brief becomes a second work plan.
+
 ## 2026-06-20 — Current execution board and session handoff ownership
 
 ### Decision

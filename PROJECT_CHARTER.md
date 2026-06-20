@@ -75,9 +75,10 @@
 
 - 규칙은 `AGENTS.md`에 둔다.
 - 상세 작업 라우팅은 `AGENT_TASK_ROUTER.md`에 둔다.
-- 장기 방향은 `PROJECT_CHARTER.md`에 둔다.
-- 현재 상태 요약은 `project_brief.md`에 둔다.
-- 작업 기록과 try/fail/success는 `project_log.md`에 둔다.
-- 앞으로 할 일과 현재 우선순위는 `docs/WORK_PLAN.md`에 둔다.
+- 장기 방향과 Phase 1~5는 `PROJECT_CHARTER.md`에 둔다.
+- Phase / Arc / Milestone 지도는 `project_brief.md`에 둔다.
+- 현재 slice, 다음 action, blocker, active constraints, hold 상태는 `docs/WORK_PLAN.md`에 둔다.
+- 명시적으로 요청된 다음 세션 handoff pointer는 `docs/WORK_PLAN.md`의 `Session Handoff`에 둔다.
+- 작업 기록과 try/fail/success, milestone decision과 lesson은 `project_log.md`에 둔다.
 - 리팩토링 후보와 구조 분리 기준은 `docs/REFACTOR_PLAN.md`에 둔다.
 - 같은 내용을 여러 문서에 중복으로 길게 기록하지 않는다.

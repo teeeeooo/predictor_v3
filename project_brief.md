@@ -1,62 +1,144 @@
 # Project Brief
 
-이 문서는 새 세션 또는 작업 재개 시 읽는 compact current-state handoff다.
-현재 실행 순서나 task-specific pointer 목록은 소유하지 않는다.
+This document owns the compact Phase / Arc / Milestone map for `predictor_v3`.
+It is the first project-state document to read when starting a new session or
+resuming work.
 
-## 1. Current State
+It does not own task-specific read pointers, code file pointers, or the exact
+next implementation action. Current slice, next action, blockers, constraints,
+and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
-- 프로젝트는 계산 엔진과 주요 규격 regression 보호망을 기반으로 Tkinter
-  calculator profile/UI를 확장하는 단계다. KS C 9306, ISO T1, SASO T3,
-  Hong Kong, India ISEER, AHRI, EN14825의 focused smoke/golden 보호망이 있다.
-- current calculator entrypoint는 `app_calculator.py` →
-  `apps.calculator.app:main` → `apps/calculator/ui/`다. Train/Predict 경로는
-  calculator shell과 분리된 상태로 유지한다.
-- calculator core, profile/config, UI, result envelope/ML adapter의 책임
-  경계가 분리되어 있다. ML / inverse-search 재개 시
-  `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 경계
-  기준으로 사용한다.
-- EN14825 SEER/SCOP config와 point contract, batch headless handlers, SEER
-  dialog, SCOP rebuild/snapshot policy가 구현되어 있다. 현재 실행 우선순위는
-  SCOP batch parent-section wiring이며 상세 순서는 `docs/WORK_PLAN.md`가
-  소유한다.
-- 최근 닫힌 calculator/workflow arc의 compact anchor는
-  `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`다.
+## 1. Current Phase
 
-## 2. Session Start
+Current phase: Calculator UI / workflow completion before ML / predictor
+continuation.
 
-1. `project_brief.md`에서 stable current state를 확인한다.
-2. `docs/WORK_PLAN.md`에서 현재 focus와 정확히 하나의 next action을 확인한다.
-3. `docs/WORK_PLAN.md`에 명시 요청으로 작성된 `Session Handoff`가 있을
-   때만 그 pointer를 우선 따른다.
+Project direction remains aligned with `PROJECT_CHARTER.md`:
 
-## 3. Document Guide
+1. stabilize calculator formulas and regression protection;
+2. complete calculator UI/workflow surfaces for the active standards;
+3. stabilize calculator result boundaries;
+4. return to ML / predictor integration after calculator outputs are reliable.
 
-- `AGENTS.md`: 매 작업 시작 시 확인하는 lite rule entrypoint.
-- `AGENT_TASK_ROUTER.md`: task route와 compact gate map.
-- `PROJECT_CHARTER.md`: 프로젝트 목적과 장기 Phase 1~5 방향.
-- `project_brief.md`: 새 세션을 위한 stable current-state handoff.
-- `docs/WORK_PLAN.md`: 현재 focus, next action, blockers, constraints, hold를
-  관리하는 execution board.
-- `project_log.md`: milestone decision, failure, lesson 기록.
-- `ACTIVE_DOCUMENTS.md`: active 문서 owner/inbound/outbound map.
-- `result_reports/`: task detail, lifecycle summary, completed report archive.
+## 2. Current Architecture State
 
-## 4. Next Session Entry
+- Calculator entrypoints are rooted at `app_calculator.py` and
+  `apps.calculator.app:main`, with UI code under `apps/calculator/ui/`.
+- Train/Predict paths remain separate from the calculator shell.
+- Calculator core, profile/config, UI, result envelope, and ML adapter concerns
+  should stay separated.
+- Region config, HW candidate input, ML feature schema, calculator result schema,
+  and UI table schema must not be mixed.
+- For later calculator-to-ML boundary work, use
+  `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` as the
+  starting design reference.
 
-Status: ready for a new implementation session. Updated: 2026-06-20.
+## 3. Arc / Milestone Map
 
-Read first:
+### Arc 1 — EN14825 Calculator Completion
 
-1. `AGENTS.md` - apply the lite work contract, routing, report, and validation
-   rules before reading task-specific files.
-2. `docs/WORK_PLAN.md` - use `Session Handoff` for the current pointers and its
-   single Next Action; do not reconstruct priority from report history.
-3. `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
-   - recover the accepted SCOP rebuild/snapshot boundary without reading the
-   archived source reports.
+Goal:
 
-Active blocker / open decision: none. The parent-section slice has no open
-schema, calculator, region-config, result-contract, or ownership decision.
+- Complete EN14825 calculator usability across main UI and batch mode without
+  reopening stable core, schema, region-config, fixture, or golden contracts.
 
-Next Action: wire the EN14825 SCOP batch dialog into its parent section as a
-thin lifecycle and snapshot-handoff slice.
+Milestones:
+
+- Main SEER/SCOP calculation UI: mostly complete.
+- EN14825 config ownership and SEER/SCOP point contract: complete.
+- SEER batch mode and dialog wiring: complete.
+- SCOP batch profile-local rebuild/snapshot policy: complete.
+- SCOP batch parent-section access: in progress.
+- EN14825 calculator smoke / lifecycle closeout: pending after SCOP parent wiring.
+
+Current near-term slice:
+
+- Owned by `docs/WORK_PLAN.md`.
+
+Reference anchors:
+
+- `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
+- `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+
+### Arc 2 — AHRI 210/240 Calculator Completion
+
+Goal:
+
+- Complete AHRI 210/240 calculator usability across the required main and batch
+  workflows after EN14825 closeout.
+
+Status:
+
+- Candidate next arc after EN14825 completion.
+- Exact milestone list should be confirmed by an AHRI readiness audit before
+  implementation.
+
+Candidate milestones:
+
+- AHRI current capability audit.
+- Main UI readiness / correction if needed.
+- Batch workflow requirement decision.
+- Focused regression and smoke closeout.
+
+### Arc 3 — Calculator Workflow / Result Boundary Stabilization
+
+Goal:
+
+- Stabilize calculator outputs, result envelopes, and adapter boundaries needed
+  before returning to ML / predictor work.
+
+Status:
+
+- Later arc; do not start while active standard-calculator completion work is in
+  progress unless explicitly approved.
+
+Candidate reference:
+
+- `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`
+
+### Arc 4 — ML / Predictor Continuation
+
+Goal:
+
+- Resume ML / predictor integration after calculator workflows and result
+  boundaries are stable enough to serve as reliable downstream inputs.
+
+Status:
+
+- Later phase; not the current implementation focus.
+
+## 4. Deferred / Hold Areas
+
+- AS/NZS Excel compatibility Z-phase remains deferred.
+- Internal formula trace remains on hold unless a separate core/data contract is
+  approved.
+- Broad code-quality refactors belong in `docs/REFACTOR_PLAN.md`, not in this
+  brief.
+- Packaging and hook-integration work should remain separate workflow arcs unless
+  explicitly promoted.
+
+## 5. Session Start Rule
+
+1. Read `project_brief.md` to understand the current Phase, active Arc, and
+   Milestone position.
+2. Read `docs/WORK_PLAN.md` to identify the current slice, next action,
+   blockers/open decisions, and constraints.
+3. If `docs/WORK_PLAN.md` contains a user-requested `Session Handoff`, follow its
+   `Read First` and `Task-Specific Pointers` before broader reads.
+4. Use `AGENT_TASK_ROUTER.md` only for the sections required by the current task
+   type.
+5. Do not reconstruct current priority from archived reports or long report
+   histories.
+
+## 6. Document Guide
+
+- `AGENTS.md`: lite rule entrypoint for each agent task.
+- `AGENT_TASK_ROUTER.md`: task route and compact gate map.
+- `PROJECT_CHARTER.md`: long-term purpose, Phase 1~5, and project principles.
+- `project_brief.md`: Phase / Arc / Milestone map.
+- `docs/WORK_PLAN.md`: current slice, next action, blocker/open decision,
+  constraints, deferred/hold items, and explicit Session Handoff.
+- `project_log.md`: milestone decision, failure, and lesson history.
+- `ACTIVE_DOCUMENTS.md`: active document owner/inbound/outbound map.
+- `result_reports/`: task detail, lifecycle summaries, completed report archive,
+  and memory staging.
