@@ -107,6 +107,7 @@ def test_domain_constant_and_calculation_test_are_not_blocked(
     ("source", "expected"),
     (
         ("min_size = (1180, 420)\n", "window min_size"),
+        ("Dialog(parent, min_size=(1180, 420))\n", "window min_size"),
         (
             "class Dialog:\n"
             "    @property\n"

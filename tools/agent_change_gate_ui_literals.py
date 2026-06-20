@@ -62,6 +62,9 @@ def _literal_findings(tree: ast.AST) -> list[tuple[int, str]]:
         if isinstance(node, ast.keyword) and node.arg in _TABLE_SIZE_KEYWORDS:
             if _is_number(node.value):
                 found.add((node.value.lineno, node.arg))
+        elif isinstance(node, ast.keyword) and node.arg == "min_size":
+            if _is_numeric_pair(node.value):
+                found.add((node.value.lineno, "window min_size"))
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             value = node.value
             targets = node.targets if isinstance(node, ast.Assign) else (node.target,)

@@ -297,7 +297,8 @@ Phase 1 checks only newly added staged lines in production UI Python under
 `apps/calculator/ui/`, `ui/`, and `ui_tk/`. It rejects:
 
 - numeric `row_header_chars=` and `data_column_chars=` keyword values;
-- numeric-pair `min_size = (...)` assignments and `min_size` property returns;
+- numeric-pair `min_size=(...)` keyword arguments, assignments, and `min_size`
+  property returns;
 - literal `geometry("<width>x<height>")` calls;
 - `#RRGGBB` string literals.
 
