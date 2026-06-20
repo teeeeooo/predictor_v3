@@ -180,6 +180,10 @@ When the user does not require a fixed long output schema, use at most six short
 lines: `modified`, `created/report` when relevant, `validation`, `commit`,
 `push`, and `next`. Do not repeat report sections in terminal output.
 
+Required publication/status fields (`local_head`, `remote_main`, `match`,
+`status`, and `active_report_count`) are exempt from the six-line guideline.
+Keep any remaining terminal output compact.
+
 Use this final shape:
 
 - `task N: OK/NG - short summary`
