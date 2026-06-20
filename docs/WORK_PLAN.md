@@ -27,13 +27,15 @@
 
 ## Current Slice
 
-- AHRI calculator lifecycle closeout, pending explicit approval.
-- The SEER2 and HSPF2 main/batch implementation slices are complete under the
-  approved AHRI UI/Batch design contract.
+- AHRI HSPF2 A2 capacity-only and source mapping polish, pending explicit
+  approval.
+- AHRI visible-content refit now follows the selected-surface lifecycle; the
+  remaining polish is a separate calculator-contract slice.
 
 ## Next Actions
 
-1. Perform AHRI calculator lifecycle closeout as a separately approved slice.
+1. Perform AHRI HSPF2 A2 capacity-only and source mapping polish as a
+   separately approved slice.
 
 ## Active Blockers / Open Decisions
 
@@ -45,7 +47,7 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to AHRI calculator smoke/lifecycle closeout only.
+- Keep the next slice to HSPF2 A2 capacity-only and source mapping polish only.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

@@ -44,7 +44,7 @@ class Ahri210240Tab(ttk.Frame):
             scrollbar=self._scrollable.scrollbar,
             overflow_source=self._scrollable,
             nested_notebook=self.metric_notebook,
-            nested_notebook_active=lambda: True,
+            nested_notebook_active=self._is_visible_surface,
             suppress_measurement=self._refit_scheduler.suppress_requests,
         )
         shell = TkContentHuggingShell(self.winfo_toplevel())
@@ -65,4 +65,18 @@ class Ahri210240Tab(ttk.Frame):
         self.update_idletasks()
 
     def _on_metric_changed(self, _event: tk.Event | None = None) -> None:
-        self._refit_scheduler.request_refit()
+        if self._is_visible_surface():
+            self._request_visible_lifecycle_refit(settle_cycles=2)
+
+    def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
+        """Fit only after the selected AHRI metric surface has settled."""
+
+        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+
+    def _is_visible_surface(self) -> bool:
+        parent = self.master
+        if isinstance(parent, ttk.Notebook):
+            return self in tuple(parent.nametowidget(tab) for tab in parent.tabs()) and (
+                parent.select() == str(self)
+            )
+        return bool(self.winfo_ismapped())
