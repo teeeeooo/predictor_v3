@@ -71,15 +71,16 @@ Goal:
 
 Status:
 
-- In progress at the readiness-audit stage.
-- Exact milestone list will be confirmed by the audit before implementation.
+- Design complete; implementation begins with the SEER2 main UI foundation.
 
-Candidate milestones:
+Milestones:
 
-- AHRI current capability audit.
-- Main UI readiness / correction if needed.
-- Batch workflow requirement decision.
-- Focused regression and smoke closeout.
+- AHRI UI/Batch design specification: complete.
+- SEER2 main UI foundation: next.
+- SEER2 batch: pending.
+- HSPF2 main UI foundation: pending.
+- HSPF2 batch: pending.
+- Focused regression and lifecycle closeout: pending.
 
 ### Arc 3 — Calculator Workflow / Result Boundary Stabilization
 

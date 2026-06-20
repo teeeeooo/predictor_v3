@@ -27,25 +27,27 @@
 
 ## Current Slice
 
-- AHRI 210/240 readiness audit.
-- Inventory current main UI, calculation, and batch capabilities before fixing
-  the Arc 2 milestone list or starting implementation.
+- AHRI SEER2 main UI foundation.
+- Implement only the first coding slice fixed by the AHRI UI/Batch design
+  contract; batch and HSPF2 remain later slices.
 
 ## Next Actions
 
-1. Audit current AHRI 210/240 calculator capabilities and identify the smallest
-   approved implementation slice.
+1. Implement the AHRI SEER2 main UI foundation.
 
 ## Active Blockers / Open Decisions
 
 - No active blocker is recorded.
-- AHRI batch workflow requirements and the exact Arc 2 milestone list remain
-  open pending the readiness audit.
+- No AHRI main/batch layout or optional-point design decision remains open for
+  the approved implementation slices.
 
 ## Active Constraints
 
-- Treat the readiness audit as read-only; do not begin AHRI implementation or
-  alter calculator/data contracts without an approved follow-up slice.
+- Follow
+  `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
+- Keep the next slice to SEER2 main UI only; do not combine batch or HSPF2.
+- Preserve calculator, schema, config, fixture, golden, and public result
+  contracts.
 - Use focused verification rather than full pytest by default.
 
 ## Deferred / Hold
@@ -63,5 +65,7 @@
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
 - EN14825 lifecycle closeout evidence:
   `result_reports/active/424_close-en14825-calculator-lifecycle.md`.
+- AHRI implementation contract:
+  `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
 - Milestone decisions and detailed completed history belong in `project_log.md`
   and the result-report lifecycle directories.
