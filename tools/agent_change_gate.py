@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 from tools.agent_change_gate_git import GitIndex, StagedChange
+from tools.agent_change_gate_ui_literals import check_ui_magic_literals
 from tools.agent_change_gate_models import (
     ChangeGate,
     Finding,
@@ -41,6 +42,7 @@ def evaluate_cached(index: GitIndex) -> list[Finding]:
         change for change in changes if change.path.startswith(ACTIVE_REPORT_ROOT)
     )
     gate = _associated_gate(index, relevant, report_changes, manifest, findings)
+    findings.extend(check_ui_magic_literals(index, changes, gate))
 
     structural = False
     for change in changes:

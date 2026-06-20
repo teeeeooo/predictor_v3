@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 import subprocess
 
 
@@ -67,6 +68,26 @@ class GitIndex:
             check=False,
         )
         return result.stdout.strip() if result.returncode else ""
+
+    def added_line_numbers(self, path: str) -> frozenset[int]:
+        """Return line numbers added to the staged/index version of ``path``."""
+        output = self._run(
+            "diff", "--cached", "--unified=0", "--no-color", "--", path
+        )
+        added: set[int] = set()
+        current = 0
+        for line in output.splitlines():
+            match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+            if match:
+                current = int(match.group(1))
+            elif line.startswith("+") and not line.startswith("+++"):
+                added.add(current)
+                current += 1
+            elif line.startswith("-") and not line.startswith("---"):
+                continue
+            elif current and not line.startswith("\\"):
+                current += 1
+        return frozenset(added)
 
     def manifest_path(self) -> Path:
         path = self._run("rev-parse", "--git-path", "agent_task_manifest.yml").strip()

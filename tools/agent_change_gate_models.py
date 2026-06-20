@@ -13,6 +13,7 @@ _HOTSPOT_VALUES = {
     "split-required",
 }
 _CODE_MAP_VALUES = {"not_required", "checked", "skipped", "regenerated", "no-change"}
+_UI_LITERAL_EXEMPTION_VALUES = {"none", "approved-for-slice"}
 _EXEMPTION_VALUES = {
     "none",
     "user-approved-docs-only",
@@ -35,6 +36,7 @@ class ChangeGate:
     new_source: str
     hotspot_delta: str
     code_map_check: str
+    ui_literal_exemption: str
     report_exemption: str
     read_ledger: str
 
@@ -54,6 +56,7 @@ def parse_change_gate(source: str) -> ChangeGate:
         "new_source",
         "hotspot_delta",
         "code_map_check",
+        "ui_literal_exemption",
         "report_exemption",
         "read_ledger",
     }
@@ -64,6 +67,11 @@ def parse_change_gate(source: str) -> ChangeGate:
         (gate.new_source, _NEW_SOURCE_VALUES, "new_source"),
         (gate.hotspot_delta, _HOTSPOT_VALUES, "hotspot_delta"),
         (gate.code_map_check, _CODE_MAP_VALUES, "code_map_check"),
+        (
+            gate.ui_literal_exemption,
+            _UI_LITERAL_EXEMPTION_VALUES,
+            "ui_literal_exemption",
+        ),
         (gate.report_exemption, _EXEMPTION_VALUES, "report_exemption"),
         (gate.read_ledger, _LEDGER_VALUES, "read_ledger"),
     )

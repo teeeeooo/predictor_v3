@@ -27,13 +27,14 @@
 
 ## Current Slice
 
-- Project-wide magic literal/token gate foundation, pending explicit approval.
-- AHRI direct metric surface sizing was tested and rejected; report 436 keeps
-  the unresolved measurement-owner decision explicit.
+- Common visible-content notebook measurement design, pending explicit
+  approval.
+- The staged UI magic-literal/token gate foundation is implemented; AHRI sizing
+  remains an owner-design problem rather than a local literal adjustment.
 
 ## Next Actions
 
-1. Design/implement the project-wide magic literal/token gate foundation as a
+1. Design the common visible-content notebook measurement correction as a
    separately approved slice.
 
 ## Active Blockers / Open Decisions
@@ -48,8 +49,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to the magic literal/token gate foundation; do not mix
-  AHRI sizing, A2/source polish, or calculator implementation.
+- Keep the next slice to common notebook measurement design; do not mix token
+  migration, A2/source polish, or calculator implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

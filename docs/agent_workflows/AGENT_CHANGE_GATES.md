@@ -13,8 +13,8 @@ This document owns change-focused agent gates for:
 It complements `DIFF_READ_BUDGET.md`, `RESULT_REPORT_WORKFLOW.md`, and
 `check_code_structure.py`. It does not replace their owner responsibilities.
 
-The owner policy is active. The automated gate tool and hooks described below
-are not implemented yet and must be added in separate slices.
+The owner policy, staged checker, and local hooks are active. Branch-diff,
+pre-push, and CI enforcement remain separate future slices.
 
 ## Applicability
 
@@ -112,6 +112,7 @@ change_gate:
   new_source: none
   hotspot_delta: none
   code_map_check: not_required
+  ui_literal_exemption: none
   report_exemption: none
   read_ledger: not_required
 ```
@@ -123,6 +124,15 @@ Allowed `code_map_check` values:
 - `skipped`
 - `regenerated`
 - `no-change`
+
+Allowed `ui_literal_exemption` values:
+
+- `none`
+- `approved-for-slice`
+
+`approved-for-slice` requires a short report reason naming the literal, owner,
+and why a token is not appropriate in that slice. Ordinary prose, a manifest,
+or a commit trailer cannot grant this exemption.
 
 Allowed `report_exemption` values:
 
@@ -269,6 +279,38 @@ delta between the base/index blobs, not raw diff additions, for the +40 rule.
 Structural changes include new/moved/deleted source, new helpers or surfaces,
 owner/commonization changes, and source splits or merges.
 
+### UI Magic Literal And Token Policy
+
+UI table sizing, colors, fonts, spacing, and window sizing are presentation
+policy. New reusable values must come from a token owner such as
+`apps/calculator/ui/layout_constants.py` or a feature-appropriate
+`*token*.py` module. Do not place a repeated raw presentation value directly in
+a section, dialog, profile, table, or window surface.
+
+Domain/regulation constants are different: temperatures, test-point values,
+bin data, conversion factors, and standard-defined defaults remain with their
+calculator/config/schema owner. The UI literal gate does not scan core,
+configuration, fixtures, or calculation tests merely because they contain
+numbers.
+
+Phase 1 checks only newly added staged lines in production UI Python under
+`apps/calculator/ui/`, `ui/`, and `ui_tk/`. It rejects:
+
+- numeric `row_header_chars=` and `data_column_chars=` keyword values;
+- numeric-pair `min_size = (...)` assignments and `min_size` property returns;
+- literal `geometry("<width>x<height>")` calls;
+- `#RRGGBB` string literals.
+
+`apps/calculator/ui/layout_constants.py` and UI files whose basename contains
+`token` are token owners and are exempt from these detections. Tests are not
+production UI and are outside this Phase 1 scan.
+
+Legacy is grandfathered by staged-line scope: existing raw literals do not fail
+until a change adds them as new lines. This is not permission to copy a legacy
+literal into new code. The checker reads index blobs and index diff hunks, so a
+partially staged clean token change cannot be failed by an unstaged worktree
+literal.
+
 ## Hook And CI Policy
 
 `.githooks/pre-commit` runs:
@@ -277,6 +319,9 @@ owner/commonization changes, and source splits or merges.
 git diff --cached --check
 python3 -B tools/check_agent_change_gate.py --cached
 ```
+
+The cached command includes the Phase 1 UI literal check; the hook must not
+invoke a second checker process.
 
 Do not run pytest or regenerate the code map in pre-commit.
 
@@ -302,6 +347,7 @@ Current status after this owner document lands:
 - policy owner: implemented;
 - router links: implemented;
 - `check_agent_change_gate.py --cached`: implemented and focused-tested;
+- staged UI magic-literal Phase 1 gate: implemented and focused-tested;
 - pre-commit/commit-msg hooks: implemented and focused-tested;
 - pre-push and CI branch mode: pending.
 

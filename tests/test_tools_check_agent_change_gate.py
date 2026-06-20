@@ -17,6 +17,7 @@ change_gate:
   new_source: split
   hotspot_delta: accepted-for-slice
   code_map_check: regenerated
+  ui_literal_exemption: none
   report_exemption: none
   read_ledger: included
 """
