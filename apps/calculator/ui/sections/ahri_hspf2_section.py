@@ -12,6 +12,7 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
     AhriHspf2InputError,
     AhriHspf2Options,
 )
+from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
 from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
@@ -24,9 +25,7 @@ from apps.calculator.ui.table.controller import TkTableController
 class AhriHspf2Section:
     """Compose HSPF2 options, anchor, heating points, and result."""
 
-    def __init__(
-        self, parent: tk.Widget, *, adapter: AhriHspf2Adapter | None = None
-    ) -> None:
+    def __init__(self, parent: tk.Widget, *, adapter: AhriHspf2Adapter | None = None) -> None:
         self.adapter = adapter or AhriHspf2Adapter()
         self._frame = ttk.LabelFrame(parent, text="HSPF2")
         self._frame.columnconfigure(0, weight=1)
@@ -43,6 +42,8 @@ class AhriHspf2Section:
             row=4, column=0, sticky="w", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP)
         )
+        self._batch_access = AhriHspf2BatchAccess(self._frame, row=5)
+        self.batch_button = self._batch_access.button
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         for table in self._tables:
             table.set_values_changed_callback(self.schedule_recalculate)
@@ -245,3 +246,4 @@ class AhriHspf2Section:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            self._batch_access.dispose()

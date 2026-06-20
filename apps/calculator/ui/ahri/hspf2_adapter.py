@@ -66,6 +66,9 @@ class AhriHspf2Summary:
     hspf2: float
     total_heating_kbtu: float
     total_energy_kwh: float
+    h12_source: str
+    h22_source: str
+    h42_source: str
 
 
 class AhriHspf2Adapter:
@@ -136,6 +139,9 @@ class AhriHspf2Adapter:
             minimum_speed_limited=options.minimum_speed_limited,
             **AHRI_HSPF2_HIDDEN_DEFAULTS,
         )
+        metadata = self._required_mapping(
+            self._required_mapping(result, "summary"), "metadata"
+        )
         return AhriHspf2Summary(
             hspf2=self._required_float(result, "HSPF2"),
             total_heating_kbtu=(
@@ -144,6 +150,9 @@ class AhriHspf2Adapter:
             total_energy_kwh=(
                 self._required_float(result, "total_energy_wh") / 1000.0
             ),
+            h12_source=self._calculated_source(metadata, "h12_source"),
+            h22_source=self._calculated_source(metadata, "h22_source"),
+            h42_source=self._h42_source(result),
         )
 
     def compute_display_cops(
@@ -187,3 +196,30 @@ class AhriHspf2Adapter:
             return float(result[key])
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"Invalid AHRI HSPF2 core result: {key}") from exc
+
+    @staticmethod
+    def _required_mapping(
+        result: Mapping[str, object], key: str
+    ) -> Mapping[str, object]:
+        value = result.get(key)
+        if not isinstance(value, Mapping):
+            raise ValueError(f"Invalid AHRI HSPF2 core result: {key}")
+        return value
+
+    @staticmethod
+    def _calculated_source(metadata: Mapping[str, object], key: str) -> str:
+        value = metadata.get(key)
+        if value == "tested":
+            return "measured"
+        if isinstance(value, str) and value:
+            return "calculated"
+        raise ValueError(f"Invalid AHRI HSPF2 core result: {key}")
+
+    @staticmethod
+    def _h42_source(result: Mapping[str, object]) -> str:
+        value = result.get("h42_source")
+        if value == "provided":
+            return "measured"
+        if value == "not_provided":
+            return "not provided"
+        raise ValueError("Invalid AHRI HSPF2 core result: h42_source")

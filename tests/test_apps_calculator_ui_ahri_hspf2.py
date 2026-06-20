@@ -53,6 +53,13 @@ class FakeHspf2Calculator:
             "HSPF2": 9.875,
             "total_heating_btu": 22500.0,
             "total_energy_wh": 2278.481,
+            "summary": {
+                "metadata": {
+                    "h12_source": "tested",
+                    "h22_source": "calculated from H2Int and H32",
+                }
+            },
+            "h42_source": "provided",
         }
         self.points = None
         self.kwargs = None
@@ -75,6 +82,9 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
         hspf2=9.875,
         total_heating_kbtu=22.5,
         total_energy_kwh=2.278481,
+        h12_source="measured",
+        h22_source="calculated",
+        h42_source="measured",
     )
     assert tuple(calculator.points) == (
         "H01",
