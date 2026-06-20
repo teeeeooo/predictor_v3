@@ -14,6 +14,10 @@ from apps.calculator.ui.batch.matrix_models import (
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
 from apps.calculator.ui.en14825.seer_models import SeerPointInput
+from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
+)
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 
 __all__ = [
@@ -67,8 +71,8 @@ EN14825_SEER_BATCH_SPEC = BatchMatrixSpec(
         _measurement_point("d", "D (20°C)", "d_capacity", "d_power"),
     ),
     result_metrics=(
-        ("seer", "SEER", 9),
-        ("qc_kwh", "QC [kWh]", 11),
+        ("seer", "SEER", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+        ("qc_kwh", "QC [kWh]", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
     ),
 )
 

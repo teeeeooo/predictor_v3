@@ -20,9 +20,9 @@ from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
 from apps.calculator.ui.batch.matrix_models import MatrixCellKind, MatrixPhysicalRowType
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
-    AHRI_BATCH_POINT_WIDTH_CHARS,
-    AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
-    AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+    BATCH_MATRIX_POINT_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
 )
 
 
@@ -75,13 +75,13 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
         "A2", "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
     )
     assert {point.width_chars for point in spec.measurement_points} == {
-        AHRI_BATCH_POINT_WIDTH_CHARS
+        BATCH_MATRIX_POINT_WIDTH_CHARS
     }
     assert tuple(metric[2] for metric in spec.result_metrics) == (
-        AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
-        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
-        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
-        AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
     )
     assert spec.result_keys == ("hspf2", "h12_source", "h22_source", "h42_source")
     assert spec.resolve_cell((0, 2)).input_key == "a2_capacity"

@@ -2,8 +2,12 @@ from apps.calculator.ui.batch.viewport import BatchTableViewport
 
 
 class _FakeWidget:
-    def __init__(self, master=None):
+    def __init__(self, master=None, *, reqwidth=1):
         self.master = master
+        self._reqwidth = reqwidth
+
+    def winfo_reqwidth(self):
+        return self._reqwidth
 
 
 class _FakeCanvas:
@@ -11,6 +15,7 @@ class _FakeCanvas:
         self._bbox = bbox
         self._height = height
         self.scroll_calls = []
+        self.itemconfigure_calls = []
 
     def bbox(self, _tag):
         return self._bbox
@@ -20,6 +25,9 @@ class _FakeCanvas:
 
     def yview_scroll(self, units, mode):
         self.scroll_calls.append((units, mode))
+
+    def itemconfigure(self, item, **kwargs):
+        self.itemconfigure_calls.append((item, kwargs))
 
 
 class _FakeToplevel:
@@ -34,6 +42,7 @@ def _make_viewport(*, bbox=(0, 0, 100, 200), height=50):
     viewport = object.__new__(BatchTableViewport)
     viewport.canvas = _FakeCanvas(bbox=bbox, height=height)
     viewport.content = _FakeWidget(master=viewport)
+    viewport._content_window = "content-window"
     viewport._mousewheel_toplevel = _FakeToplevel()
     viewport._mousewheel_bindings = (
         ("<MouseWheel>", "mousewheel-id"),
@@ -41,6 +50,19 @@ def _make_viewport(*, bbox=(0, 0, 100, 200), height=50):
         ("<Button-5>", "button5-id"),
     )
     return viewport
+
+
+def test_batch_table_viewport_preserves_requested_content_width():
+    viewport = _make_viewport()
+    viewport.content = _FakeWidget(master=viewport, reqwidth=640)
+
+    viewport._sync_content_width(480)
+    viewport._sync_content_width(800)
+
+    assert viewport.canvas.itemconfigure_calls == [
+        ("content-window", {"width": 640}),
+        ("content-window", {"width": 800}),
+    ]
 
 
 def test_batch_table_viewport_routes_entry_and_label_wheel_to_canvas():

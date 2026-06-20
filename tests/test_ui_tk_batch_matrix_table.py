@@ -13,6 +13,10 @@ from apps.calculator.ui.batch.matrix_models import (
     MatrixCellKind,
 )
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
+from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
+    BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
+)
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
 
@@ -68,6 +72,21 @@ def test_row_type_displays_spec_labels(table):
     assert table.text_at_position((0, 1)) == "Capacity"
     assert table.text_at_position((1, 1)) == "Power"
     assert table.text_at_position((2, 1)) == "Capacity"
+
+
+def test_leading_columns_use_common_minimum_width_policy(table):
+    assert table._header_width(0) == max(
+        BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
+        len("Case"),
+    )
+    assert table._header_width(1) == max(
+        BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
+        len("Row Type"),
+        len("Capacity"),
+        len("Power"),
+    )
+    assert int(table.cell_widget((0, 0)).cget("width")) == table._header_width(0)
+    assert int(table.cell_widget((0, 1)).cget("width")) == table._header_width(1)
 
 
 def test_result_first_row_displays_values_second_row_blank(table):

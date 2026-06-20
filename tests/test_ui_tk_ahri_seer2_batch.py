@@ -21,8 +21,8 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
     AhriSeer2BatchSnapshot,
 )
 from apps.calculator.ui.layout_constants import (
-    AHRI_BATCH_POINT_WIDTH_CHARS,
-    AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS,
+    BATCH_MATRIX_POINT_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
 )
 
 
@@ -75,9 +75,9 @@ def test_seer2_batch_spec_has_exact_two_row_matrix_contract() -> None:
         "F_Low",
     )
     assert {point.width_chars for point in spec.measurement_points} == {
-        AHRI_BATCH_POINT_WIDTH_CHARS
+        BATCH_MATRIX_POINT_WIDTH_CHARS
     }
-    assert spec.result_metrics[0][2] == AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS
+    assert spec.result_metrics[0][2] == BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS
     assert spec.input_keys == tuple(VALID_CASE)
     assert spec.result_keys == ("seer2",)
     assert spec.resolve_cell((0, 2)).input_key == "capacity_A_Full"

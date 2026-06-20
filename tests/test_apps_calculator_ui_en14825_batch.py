@@ -23,6 +23,10 @@ from apps.calculator.ui.en14825.scop_batch import (
     En14825ScopBatchHandler,
     build_en14825_scop_batch_spec,
 )
+from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
+)
 from apps.calculator.ui.sections import en14825_scop_section
 
 
@@ -140,6 +144,10 @@ def test_seer_batch_spec_shape_and_keys() -> None:
     )
     assert spec.input_keys == tuple(VALID_CASE)
     assert spec.result_keys == ("seer", "qc_kwh")
+    assert tuple(metric[2] for metric in spec.result_metrics) == (
+        BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
+    )
 
 
 def test_seer_batch_spec_cell_roles() -> None:
@@ -272,6 +280,10 @@ def test_scop_batch_spec_uses_adapter_required_points() -> None:
         "c_power",
         "d_capacity",
         "d_power",
+    )
+    assert tuple(metric[2] for metric in spec.result_metrics) == (
+        BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+        BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
     )
     assert spec.result_keys == ("scop", "qh_kwh")
     assert spec.resolve_cell((1, 2)).kind is MatrixCellKind.NOT_APPLICABLE

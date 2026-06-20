@@ -14,6 +14,10 @@ from apps.calculator.ui.batch.matrix_models import (
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.en14825.scop_adapter import ScopAdapter
 from apps.calculator.ui.en14825.scop_models import ScopPointInput
+from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
+)
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 
 __all__ = [
@@ -94,8 +98,8 @@ def build_en14825_scop_batch_spec(
         row_type_labels=_ROW_TYPE_LABELS,
         measurement_points=tuple(points),
         result_metrics=(
-            ("scop", "SCOP", 9),
-            ("qh_kwh", "QH [kWh]", 11),
+            ("scop", "SCOP", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+            ("qh_kwh", "QH [kWh]", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
         ),
     )
 

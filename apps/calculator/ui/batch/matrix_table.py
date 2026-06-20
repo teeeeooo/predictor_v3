@@ -9,6 +9,8 @@ from tkinter import ttk
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec, MatrixCellKind
 from apps.calculator.ui.batch.viewport import BatchTableViewport
 from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
+    BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
@@ -23,7 +25,6 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.table.roles import CellRole
 
 ValuesChangedCallback = Callable[[], None]
-CASE_COLUMN_WIDTH_CHARS = 4
 
 
 class BatchMatrixTable(ttk.Frame):
@@ -281,7 +282,10 @@ class BatchMatrixTable(ttk.Frame):
         # column headers (no separate row-header corner cell; Case is column 0)
         for column_index in range(self.spec.column_count):
             grid_column = column_index
-            self.table_frame.columnconfigure(grid_column, weight=1)
+            self.table_frame.columnconfigure(
+                grid_column,
+                weight=0 if column_index < self.spec.measurement_start_column else 1,
+            )
             cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
             cell.grid(row=0, column=grid_column, sticky="nsew", padx=(0, 1), pady=(0, 1))
             cell.surface_role = "header_cell"
@@ -308,9 +312,13 @@ class BatchMatrixTable(ttk.Frame):
 
     def _header_width(self, column_index: int) -> int:
         if column_index == 0:
-            return CASE_COLUMN_WIDTH_CHARS
+            return max(BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS, len("Case"))
         if column_index == 1:
-            return max(len(label) for label in self.spec.row_type_labels.values())
+            return max(
+                BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
+                len("Row Type"),
+                *(len(label) for label in self.spec.row_type_labels.values()),
+            )
         if column_index < self.spec.result_start_column:
             point = self.spec.measurement_points[column_index - self.spec.measurement_start_column]
             return point.width_chars

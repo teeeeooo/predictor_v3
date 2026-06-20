@@ -98,12 +98,17 @@ class BatchTableViewport(ttk.Frame):
 
     def _on_content_configured(self, _event: tk.Event | None = None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self._sync_content_width(self.canvas.winfo_width())
         self._sync_scrollbar_visibility()
 
     def _on_canvas_configured(self, event: tk.Event | None = None) -> None:
         if event is not None:
-            self.canvas.itemconfigure(self._content_window, width=event.width)
+            self._sync_content_width(event.width)
         self._sync_scrollbar_visibility()
+
+    def _sync_content_width(self, viewport_width: int) -> None:
+        content_width = max(viewport_width, self.content.winfo_reqwidth())
+        self.canvas.itemconfigure(self._content_window, width=content_width)
 
     def _sync_scrollbar_visibility(self) -> None:
         bbox = self.canvas.bbox("all")

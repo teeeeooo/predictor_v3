@@ -27,13 +27,14 @@
 
 ## Current Slice
 
-- AHRI batch headers and HSPF2 batch source labels are compact, with AHRI batch
-  column widths owned by layout tokens.
-- AHRI calculator main/batch implementation is ready for lifecycle closeout.
+- BatchMatrix leading columns now use common minimum-width tokens, and the
+  vertical viewport preserves the table's requested width.
+- AHRI HSPF2 Batch needs a visual readability recheck before lifecycle closeout.
 
 ## Next Actions
 
-1. Perform AHRI calculator lifecycle closeout as a separately approved slice.
+1. Recheck AHRI HSPF2 Batch leading-column readability locally.
+2. Perform AHRI calculator lifecycle closeout if the visual recheck passes.
 
 ## Active Blockers / Open Decisions
 
@@ -47,8 +48,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to AHRI calculator lifecycle closeout; do not mix notebook
-  allocation sync or unrelated calculator implementation.
+- Keep the next action to AHRI HSPF2 Batch visual recheck and lifecycle
+  closeout; do not mix notebook allocation sync or unrelated implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

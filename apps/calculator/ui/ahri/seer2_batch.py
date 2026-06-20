@@ -17,8 +17,8 @@ from apps.calculator.ui.batch.matrix_models import (
 )
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
-    AHRI_BATCH_POINT_WIDTH_CHARS,
-    AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS,
+    BATCH_MATRIX_POINT_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
 )
 
 __all__ = [
@@ -50,7 +50,7 @@ def _measurement_point(point: str) -> MatrixMeasurementPointSpec:
                 MatrixPhysicalRowType.POWER: f"power_{point}",
             }
         ),
-        width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
+        width_chars=BATCH_MATRIX_POINT_WIDTH_CHARS,
     )
 
 
@@ -63,7 +63,7 @@ AHRI_SEER2_BATCH_SPEC = BatchMatrixSpec(
         _measurement_point(point) for point in AHRI_SEER2_POINT_ORDER
     ),
     result_metrics=(
-        ("seer2", "SEER2", AHRI_SEER2_BATCH_RESULT_WIDTH_CHARS),
+        ("seer2", "SEER2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
     ),
 )
 

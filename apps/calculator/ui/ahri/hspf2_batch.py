@@ -18,9 +18,9 @@ from apps.calculator.ui.batch.matrix_models import (
 )
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
-    AHRI_BATCH_POINT_WIDTH_CHARS,
-    AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS,
-    AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS,
+    BATCH_MATRIX_POINT_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
 )
 
 _PHYSICAL_ROWS = (MatrixPhysicalRowType.CAPACITY, MatrixPhysicalRowType.POWER)
@@ -86,7 +86,7 @@ def build_ahri_hspf2_batch_spec(
                     MatrixPhysicalRowType.POWER: None,
                 }
             ),
-            width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
+            width_chars=BATCH_MATRIX_POINT_WIDTH_CHARS,
         )
     ]
     for point in AHRI_HSPF2_POINT_ORDER:
@@ -105,7 +105,7 @@ def build_ahri_hspf2_batch_spec(
                         ),
                     }
                 ),
-                width_chars=AHRI_BATCH_POINT_WIDTH_CHARS,
+                width_chars=BATCH_MATRIX_POINT_WIDTH_CHARS,
             )
         )
     return BatchMatrixSpec(
@@ -115,10 +115,10 @@ def build_ahri_hspf2_batch_spec(
         row_type_labels=_ROW_LABELS,
         measurement_points=tuple(points),
         result_metrics=(
-            ("hspf2", "HSPF2", AHRI_HSPF2_BATCH_RESULT_WIDTH_CHARS),
-            ("h12_source", "H12", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
-            ("h22_source", "H22", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
-            ("h42_source", "H42", AHRI_HSPF2_BATCH_SOURCE_WIDTH_CHARS),
+            ("hspf2", "HSPF2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+            ("h12_source", "H12", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
+            ("h22_source", "H22", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
+            ("h42_source", "H42", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
         ),
     )
 
