@@ -76,6 +76,37 @@ def test_seer2_adapter_keeps_incomplete_blank_and_rejects_invalid() -> None:
     assert exc_info.value.field_errors == {"power_A_Full": "숫자 입력 필요"}
 
 
+@pytest.mark.parametrize(
+    ("result", "invalid_key"),
+    (
+        ({"SEER2": 13.677, "total_energy_Wh": 874.552}, "total_cooling_Btu"),
+        (
+            {
+                "SEER2": 13.677,
+                "total_cooling_Btu": 11961.491,
+                "total_energy_Wh": "invalid",
+            },
+            "total_energy_Wh",
+        ),
+    ),
+)
+def test_seer2_adapter_rejects_missing_or_invalid_required_core_result(
+    result,
+    invalid_key,
+) -> None:
+    class ContractMismatchCalculator(FakeSeer2Calculator):
+        def calculate_seer2(self, *args, **kwargs):
+            return result
+
+    adapter = AhriSeer2Adapter(ContractMismatchCalculator())
+
+    with pytest.raises(
+        ValueError,
+        match=f"Invalid AHRI SEER2 core result: {invalid_key}",
+    ):
+        adapter.calculate(SAMPLE_VALUES, system_type="HP")
+
+
 @pytest.fixture
 def tk_root():
     tk = pytest.importorskip("tkinter")
