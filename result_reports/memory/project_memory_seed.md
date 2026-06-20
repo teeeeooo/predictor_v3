@@ -38,6 +38,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/364_summary-pyqt-retirement-en14825-seer-owner-guard.md` (covered reports `347-363`)
 - `result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md` (covered reports `365-384`)
 - `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md` (covered reports `386-403`)
+- `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md` (covered reports `405-415`)
 
 ## Scope and Non-goals
 
@@ -821,6 +822,32 @@ entries:
       - UI adapter boundary
     assertionStatus: verified
     source: result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md (covered reports 398, 401-402)
+
+  - type: decision
+    topic: EN14825 SCOP batch rebuild and snapshot state policy
+    content: SCOP batch profile state separates draft common values, last valid active conditions, and case values. Invalid Apply preserves the active matrix while retaining the draft for correction; reopen builds the matrix from active conditions, restores visible case keys, and preserves hidden point values across condition-driven rebuilds. Parent section wiring remains a separate thin lifecycle slice.
+    keywords:
+      - predictor_v3
+      - EN14825
+      - SCOP batch
+      - active conditions
+      - dynamic matrix
+      - snapshot restoration
+    assertionStatus: verified
+    source: result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md (covered reports 409, 412)
+
+  - type: procedure
+    topic: staged agent change gate evidence policy
+    content: Structure-impacting staged work is checked through tools/check_agent_change_gate.py --cached. Only staged active reports may supply the closed change_gate block, report selection is explicit when multiple reports are staged, local no-report exemptions require a literal allowed_paths manifest, and source size, hotspot growth, class count, whitespace, and code-map judgment are evaluated from Git index blobs rather than the working tree.
+    keywords:
+      - predictor_v3
+      - agent change gate
+      - staged report
+      - Git index blob
+      - task manifest
+      - code map
+    assertionStatus: verified
+    source: result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md (covered reports 413-415)
 ```
 
 ## Known Gaps

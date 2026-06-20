@@ -111,24 +111,10 @@
   hardening, unified config ownership, SCOP point contract/UI presentation, and
   lifecycle closeout are summarized in
   [Summary 404](../result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md).
-- 405: EN14825 SCOP UI point availability manual smoke completion was
-  user-confirmed; batch integration preflight is now unblocked.
-- 406: EN14825 batch integration preflight completed; existing batch
-  matrix/dialog foundation will be reused, and implementation starts with the
-  SEER headless spec/handler slice.
-- 407: EN14825 SEER batch headless foundation completed; the tested-only matrix
-  spec and adapter-backed row handler now have focused contract tests.
-- 408: EN14825 SEER batch partial-row UX and point labels corrected; incomplete
-  rows remain pending during entry and point headers use explicit °C notation.
-- 409: EN14825 SCOP batch headless foundation completed; the dynamic matrix spec
-  follows adapter-resolved point availability and the tested-only row handler
-  keeps `Pdesignh` case-local.
-- 410: EN14825 SEER batch dialog wiring completed; the reusable shell/profile
-  path now owns dialog-local common inputs, matrix auto-calculation, compact
-  status, copy/export, and combined common/case snapshot restoration.
-- 412: EN14825 SCOP batch profile-local rebuild/snapshot slice completed;
-  draft common values, active matrix conditions, and hidden-point case inputs
-  now have separate preservation contracts without changing generic shell/table APIs.
+- 405-415: EN14825 batch preflight, SEER/SCOP headless handlers, SEER dialog,
+  SCOP rebuild/snapshot policy, validation deduplication, and agent change-gate
+  automation are summarized in
+  [Summary 416](../result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md).
 
 ## Next Actions
 

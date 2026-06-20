@@ -594,4 +594,5 @@
 ### Decision
 - 구조 영향 source 작업의 pre-write boundary, Read Ledger, staged report association, no-report exemption, future hook/CI 정책을 `docs/agent_workflows/AGENT_CHANGE_GATES.md`로 단일 owner화함.
 - `AGENTS.md`, `AGENT_TASK_ROUTER.md`, `ACTIVE_DOCUMENTS.md`는 owner로 이동하는 최소 link만 유지하고 세부 정책을 복제하지 않음.
-- policy owner와 routing은 활성이지만 staged gate tool과 hooks는 미구현이며, 다음 slice에서 `check_agent_change_gate.py --cached`를 별도 구현하기로 함.
+- `tools/check_agent_change_gate.py --cached`가 index blob, staged active report association, literal-path manifest, source/hotspot/code-map gate를 검증하도록 구현됨.
+- 다음 workflow slice는 cached checker를 pre-commit/commit-msg hook에 연결하는 작업으로 제한함.
