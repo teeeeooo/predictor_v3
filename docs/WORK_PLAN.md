@@ -27,19 +27,20 @@
 
 ## Current Slice
 
-- AHRI visible-content sizing correction implementation, pending explicit
-  approval.
-- Diagnostics confirmed that the nested notebook requested height contaminates
-  the cached chrome estimate; report 435 owns the evidence and proposal.
+- Project-wide magic literal/token gate foundation, pending explicit approval.
+- AHRI direct metric surface sizing was tested and rejected; report 436 keeps
+  the unresolved measurement-owner decision explicit.
 
 ## Next Actions
 
-1. Implement the approved AHRI sizing correction from report 435 as a separate
-   slice.
+1. Design/implement the project-wide magic literal/token gate foundation as a
+   separately approved slice.
 
 ## Active Blockers / Open Decisions
 
-- No active blocker is recorded.
+- AHRI lower white space remains unresolved: the profile-local wrapper-removal
+  hypothesis did not improve the 365px nested height gap. Any common
+  measurement-owner correction requires a separately approved design slice.
 - No AHRI main/batch layout or optional-point design decision remains open for
   the approved implementation slices.
 
@@ -47,8 +48,8 @@
 
 - Follow
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next slice to AHRI sizing correction only; do not mix A2/source
-  polish or project-wide literal/token gates.
+- Keep the next slice to the magic literal/token gate foundation; do not mix
+  AHRI sizing, A2/source polish, or calculator implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

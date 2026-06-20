@@ -11,6 +11,8 @@ def _collect(label, app, tab) -> dict[str, object]:
     snapshot = tab._measurement.snapshot()
     diagnostics = snapshot.diagnostics
     canvas = tab._scrollable.canvas
+    current_height = diagnostics["nested_current_tab_height"]
+    notebook_height = diagnostics["nested_notebook_height"]
     return {
         "label": label,
         "root_geometry": app.root.geometry(),
@@ -26,8 +28,9 @@ def _collect(label, app, tab) -> dict[str, object]:
         ),
         "nested_notebook_size": (
             diagnostics["nested_notebook_width"],
-            diagnostics["nested_notebook_height"],
+            notebook_height,
         ),
+        "nested_height_gap": notebook_height - current_height,
         "chrome_estimate": (
             diagnostics["chrome_width_estimate"],
             diagnostics["chrome_height_estimate"],
@@ -97,6 +100,12 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         )
         assert by_label["AHRI SEER2"]["nested_current_tab_size"][1] < (
             by_label["AHRI HSPF2"]["nested_current_tab_size"][1]
+        )
+        assert by_label["AHRI SEER2"]["nested_height_gap"] > (
+            by_label["EN SEER"]["nested_height_gap"]
+        )
+        assert by_label["AHRI SEER2"]["nested_height_gap"] == (
+            by_label["AHRI SEER2 return"]["nested_height_gap"]
         )
         assert by_label["AHRI HSPF2 batch open"]["root_geometry"] == (
             by_label["AHRI HSPF2 batch close"]["root_geometry"]
