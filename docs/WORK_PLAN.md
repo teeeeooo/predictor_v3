@@ -27,22 +27,22 @@
 
 ## Current Slice
 
-- ISO16358, EN14825, and AHRI210240 lifecycle assembly has been audited against
-  the active window/profile policy.
-- Shared measurement, scheduler, shell, and geometry primitives are sound, but
-  their repeated profile-local construction is recorded as structural debt.
-- Evidence-based nested activation and settle-cycle differences remain valid
-  controller configuration inputs rather than profile-local owner machinery.
+- The common profile visible-content lifecycle controller contract is fixed in
+  a feature-owned `apps/calculator/ui/lifecycle/` package design.
+- The controller will compose existing measurement, scheduler, and shell owners;
+  profile tabs retain view composition, predicates, and event forwarding.
+- EN14825 is the first migration, followed by AHRI and ISO, then a hard source
+  gate after all production tabs are compliant.
 
 ## Next Actions
 
-1. Finalize the common profile visible-content lifecycle controller design.
-2. Implement the controller foundation and migrate EN14825.
+1. Implement the controller foundation and migrate EN14825.
+2. Migrate AHRI210240 and ISO16358 without changing profile behavior.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; task 2 must freeze the common
-  controller contract before production migration begins.
+- No active implementation blocker is recorded; implementation must preserve
+  the design's named triggers, injected predicates, and compatibility methods.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 

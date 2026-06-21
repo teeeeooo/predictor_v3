@@ -216,6 +216,20 @@
 
 ---
 
+## 2026-06-21 — Profile visible-content lifecycle controller boundary
+
+### Decision
+- Repeated calculator profile measurement/scheduler/shell assembly will move to
+  `apps/calculator/ui/lifecycle/ProfileVisibleContentLifecycleController`.
+- Profile tabs remain widget-composition views and provide nested notebooks,
+  active predicates, and evidence-based settle-cycle configuration.
+- Migration order is EN14825, AHRI210240, ISO16358; a structure hard gate is
+  enabled only after all production tabs migrate.
+- Existing measurement, refit scheduler, content-hugging shell, and geometry
+  primitive owners remain unchanged and are composed rather than merged.
+
+---
+
 ## 2026-06-05 — Content-hugging shell/form contract direction
 
 ### Decision

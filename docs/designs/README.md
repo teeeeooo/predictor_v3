@@ -59,6 +59,7 @@ the title, purpose/decision/status, and necessary surrounding range.
 | `2026-06-21-calculator-sample-data-empty-state-policy.md` | active reference | Keep standard/option defaults, remove product demo performance values only after required detail surfaces exist. | profile UI owners plus future EN14825/AHRI detail design | Planning detail views, sample removal, or calculator empty-state behavior. |
 | `2026-06-21-en14825-ahri-detail-view-design.md` | active reference | Define bin-detail ownership, schema direction, and implementation order for EN14825/AHRI profiles. | profile UI/core owners plus result/detail UI contracts | Implementing or reviewing EN14825/AHRI detail surfaces. |
 | `2026-06-21-calculator-window-profile-lifecycle-audit.md` | active reference | Classify repeated profile-local lifecycle assembly as structural debt while preserving evidence-based profile predicates and settle policies. | window/viewport policy plus upcoming common lifecycle controller design | Designing or migrating calculator profile visible-content lifecycle ownership. |
+| `2026-06-21-profile-visible-content-lifecycle-controller-design.md` | active reference | Centralize profile measurement/shell/scheduler composition in a feature-owned controller with injected predicates and settle policies. | this implementation contract plus window/architecture owners | Implementing or enforcing calculator profile lifecycle ownership. |
 
 ## Update Triggers
 
