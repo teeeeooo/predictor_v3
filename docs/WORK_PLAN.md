@@ -27,20 +27,21 @@
 
 ## Current Slice
 
-- The lifecycle package is registered as an approved calculator UI owner.
-- The structure guard now rejects direct measurement, shell, scheduler, and
-  content-form assembly in production profile tabs.
-- All current ISO/EN/AHRI tabs pass the enforced common-controller boundary.
+- AHRI SEER2 now preserves required core bin details in its adapter summary and
+  renders them through the shared single-source detail panel.
+- SEER2 input-waiting, invalid, calculation-error, and successful detail states
+  are explicit and stale rows are cleared before recalculation.
+- SEER2 and HSPF2 detail visibility both use the common AHRI lifecycle controller.
 
 ## Next Actions
 
-1. Implement AHRI SEER2 detail through the common controller path.
-2. Close the completed EN/AHRI detail and lifecycle arc.
+1. Close the completed EN/AHRI detail and lifecycle arc.
+2. Remove calculator sample performance prefills and implement empty states.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; the next slice must use the
-  named detail trigger and must not reintroduce profile-local lifecycle assembly.
+- No active implementation blocker is recorded; task 7 owns report lifecycle
+  cleanup before sample/default behavior changes begin.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 

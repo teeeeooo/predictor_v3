@@ -45,6 +45,38 @@ class FakeSeer2Calculator:
             "SEER2": 13.677,
             "total_cooling_Btu": 11961.491,
             "total_energy_Wh": 874.552,
+            "bin_details": [
+                {
+                    "bin": 1,
+                    "temp_F": 67.0,
+                    "BL": 1200.0,
+                    "q_Low": 13000.0,
+                    "q_Int": 18000.0,
+                    "q_Full": 30000.0,
+                    "EER_Low": 14.0,
+                    "EER_Int": 13.0,
+                    "EER_Full": 12.0,
+                    "EER_IntBin": 13.5,
+                    "case": 1,
+                    "q_j": 158400.0,
+                    "E_j": 10930.0,
+                },
+                {
+                    "bin": 2,
+                    "temp_F": 72.0,
+                    "BL": 2400.0,
+                    "q_Low": 13200.0,
+                    "q_Int": 18500.0,
+                    "q_Full": 30500.0,
+                    "EER_Low": 13.8,
+                    "EER_Int": 12.8,
+                    "EER_Full": 11.8,
+                    "EER_IntBin": 13.2,
+                    "case": 2.1,
+                    "q_j": 172800.0,
+                    "E_j": 12700.0,
+                },
+            ],
         }
 
 
@@ -62,6 +94,7 @@ def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
     assert summary.total_cooling_kbtu == pytest.approx(11961.491)
     assert summary.total_energy_kwh == pytest.approx(874.552)
     assert summary.eer2_by_point["A_Full"] == 12.0
+    assert summary.bin_details[0]["bin"] == 1
 
 
 def test_seer2_adapter_keeps_incomplete_blank_and_rejects_invalid() -> None:
@@ -106,6 +139,24 @@ def test_seer2_adapter_rejects_missing_or_invalid_required_core_result(
         match=f"Invalid AHRI SEER2 core result: {invalid_key}",
     ):
         adapter.calculate(SAMPLE_VALUES, system_type="HP")
+
+
+@pytest.mark.parametrize("bin_details", (None, ["invalid-row"]))
+def test_seer2_adapter_rejects_invalid_bin_details(bin_details) -> None:
+    class ContractMismatchCalculator(FakeSeer2Calculator):
+        def calculate_seer2(self, *args, **kwargs):
+            result = dict(super().calculate_seer2(*args, **kwargs))
+            result["bin_details"] = bin_details
+            return result
+
+    with pytest.raises(
+        ValueError,
+        match="Invalid AHRI SEER2 core result: bin_details",
+    ):
+        AhriSeer2Adapter(ContractMismatchCalculator()).calculate(
+            SAMPLE_VALUES,
+            system_type="HP",
+        )
 
 
 @pytest.mark.parametrize(

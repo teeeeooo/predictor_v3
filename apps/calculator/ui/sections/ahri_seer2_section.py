@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
 
@@ -20,6 +21,9 @@ from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTI
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.sections.ahri_seer2_detail import format_seer2_bin_details
+from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.bin_detail_schema import AHRI_SEER2_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.table.controller import TkTableController
 
 
@@ -31,8 +35,12 @@ class AhriSeer2Section:
         parent: tk.Widget,
         *,
         adapter: AhriSeer2Adapter | None = None,
+        on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
         self.adapter = adapter or AhriSeer2Adapter()
+        self._on_detail_visibility_changed = on_trace_visibility_changed
+        self._detail_visible = False
+        self._detail_status = "입력 대기"
         self._batch_dialog: AhriSeer2BatchDialog | None = None
         self._batch_snapshot: AhriSeer2BatchSnapshot | None = None
         self._frame = ttk.LabelFrame(parent, text="SEER2")
@@ -114,9 +122,33 @@ class AhriSeer2Section:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
+        detail_action_row = ttk.Frame(self._frame)
+        detail_action_row.grid(
+            row=4,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.detail_toggle = ttk.Button(
+            detail_action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "ahri_seer2_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT)
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("SEER2",),
+            default_source="SEER2",
+            csv_filename="ahri_seer2_bin_detail.csv",
+            show_source_selector=False,
+            schema=AHRI_SEER2_BIN_DETAIL_SCHEMA,
+        )
+
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
-        self.input_table.set_values_changed_callback(self.schedule_recalculate)
-        self.type_var.trace_add("write", lambda *_args: self.schedule_recalculate())
+        self.input_table.set_values_changed_callback(self._on_input_changed)
+        self.type_var.trace_add("write", lambda *_args: self._on_input_changed())
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self.recalculate_now()
 
@@ -125,6 +157,10 @@ class AhriSeer2Section:
 
     def schedule_recalculate(self) -> None:
         self._auto_calc.schedule()
+
+    def _on_input_changed(self) -> None:
+        self._clear_detail("입력 대기")
+        self.schedule_recalculate()
 
     def _open_batch_dialog(self) -> None:
         if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
@@ -152,15 +188,15 @@ class AhriSeer2Section:
             )
         except AhriSeer2InputError as exc:
             self.input_table.set_invalid_fields(exc.field_errors)
-            self._clear_results()
+            self._clear_results("입력 오류: 숫자 입력을 확인하세요.")
             return
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
-            self._clear_results()
+            self._clear_results("계산 오류")
             return
 
         self.input_table.clear_invalid_fields()
         if summary is None:
-            self._clear_results()
+            self._clear_results("입력 대기")
             return
         for point, eer2 in summary.eer2_by_point.items():
             self._set_static_cell(("eer2", point), f"{eer2:.2f}")
@@ -177,11 +213,44 @@ class AhriSeer2Section:
                 ),
             )
         )
+        rows = format_seer2_bin_details(summary.bin_details)
+        if rows:
+            self._detail_status = "상세 데이터 없음"
+            self.detail_panel.set_sources(
+                {"SEER2": BinDetailSource(rows=rows)},
+                source_order=("SEER2",),
+                panel_status=self._detail_status,
+            )
+        else:
+            self._clear_detail("상세 데이터 없음")
 
-    def _clear_results(self) -> None:
+    def _clear_results(self, detail_status: str = "입력 대기") -> None:
         for point in AHRI_SEER2_POINT_ORDER:
             self._set_static_cell(("eer2", point), "")
         self.result_panel.clear()
+        self._clear_detail(detail_status)
+
+    def _clear_detail(self, status: str) -> None:
+        self._detail_status = status
+        if hasattr(self, "detail_panel"):
+            self.detail_panel.set_status(status)
+
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self.detail_panel.grid(
+                row=5,
+                column=0,
+                sticky="ew",
+                padx=0,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
+        else:
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
     def _set_static_cell(self, address: tuple[str, str], value: str) -> None:
         label = self.input_table.static_cell_labels.get(address)

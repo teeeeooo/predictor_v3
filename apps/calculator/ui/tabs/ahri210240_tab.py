@@ -37,7 +37,10 @@ class Ahri210240Tab(ttk.Frame):
         )
         self._measurement = self._lifecycle.measurement
         self._refit_scheduler = self._lifecycle.scheduler
-        self.seer2_section = AhriSeer2Section(self.seer2_frame)
+        self.seer2_section = AhriSeer2Section(
+            self.seer2_frame,
+            on_trace_visibility_changed=self._lifecycle.on_detail_visibility_changed,
+        )
         self.seer2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.hspf2_section = AhriHspf2Section(
             self.hspf2_frame,

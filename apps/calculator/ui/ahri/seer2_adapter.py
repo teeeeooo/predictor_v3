@@ -44,6 +44,7 @@ class AhriSeer2Summary:
     total_cooling_kbtu: float
     total_energy_kwh: float
     eer2_by_point: Mapping[str, float]
+    bin_details: tuple[Mapping[str, object], ...] = ()
 
 
 class AhriSeer2Adapter:
@@ -116,6 +117,7 @@ class AhriSeer2Adapter:
                 point: points[point][0] / points[point][1]
                 for point in AHRI_SEER2_POINT_ORDER
             },
+            bin_details=self._required_bin_details(result),
         )
 
     def _cooling_season_hours(self) -> float:
@@ -139,3 +141,14 @@ class AhriSeer2Adapter:
             return float(result[key])
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"Invalid AHRI SEER2 core result: {key}") from exc
+
+    @staticmethod
+    def _required_bin_details(
+        result: Mapping[str, object],
+    ) -> tuple[Mapping[str, object], ...]:
+        rows = result.get("bin_details")
+        if not isinstance(rows, (list, tuple)):
+            raise ValueError("Invalid AHRI SEER2 core result: bin_details")
+        if any(not isinstance(row, Mapping) for row in rows):
+            raise ValueError("Invalid AHRI SEER2 core result: bin_details")
+        return tuple(dict(row) for row in rows)
