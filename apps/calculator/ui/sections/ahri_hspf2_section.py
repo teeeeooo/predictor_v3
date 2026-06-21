@@ -17,6 +17,9 @@ from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import (
     CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
+    CONTROL_COMPACT_GAP,
+    CONTROL_GROUP_GAP,
+    CONTROL_ROW_PADY,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
     METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
@@ -105,34 +108,54 @@ class AhriHspf2Section:
 
     def _build_option_bar(self) -> None:
         frame = ttk.LabelFrame(self._frame, text="Options")
-        frame.grid(row=0, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(8, 6))
+        frame.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(ISO_SECTION_BLOCK_GAP, CONTROL_ROW_PADY),
+        )
         self.region_var = tk.StringVar(value="IV")
         self.h42_var = tk.BooleanVar(value=True)
         self.h12_var = tk.BooleanVar(value=False)
         self.h22_var = tk.BooleanVar(value=False)
         self.h1n_same_speed_var = tk.BooleanVar(value=False)
         self.minimum_speed_var = tk.BooleanVar(value=True)
-        ttk.Label(frame, text="Region:").pack(side=tk.LEFT, padx=(6, 3), pady=6)
+        ttk.Label(frame, text="Region:").pack(
+            side=tk.LEFT,
+            padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
         ttk.Combobox(
             frame,
             textvariable=self.region_var,
             values=("IV",),
             state="readonly",
             width=CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
-        ).pack(side=tk.LEFT, padx=(0, 10), pady=6)
-        ttk.Label(frame, text="Measured:").pack(side=tk.LEFT, padx=(0, 3))
+        ).pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_GROUP_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
+        ttk.Label(frame, text="Measured:").pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_COMPACT_GAP),
+        )
         for label, variable in (
             ("H42", self.h42_var),
             ("H12", self.h12_var),
             ("H22", self.h22_var),
         ):
             ttk.Checkbutton(frame, text=label, variable=variable).pack(side=tk.LEFT)
-        ttk.Label(frame, text="Flags:").pack(side=tk.LEFT, padx=(10, 3))
+        ttk.Label(frame, text="Flags:").pack(
+            side=tk.LEFT,
+            padx=(CONTROL_GROUP_GAP, CONTROL_COMPACT_GAP),
+        )
         ttk.Checkbutton(
             frame, text="H1N=H32 Hz", variable=self.h1n_same_speed_var
         ).pack(side=tk.LEFT)
         ttk.Checkbutton(frame, text="MinSpd", variable=self.minimum_speed_var).pack(
-            side=tk.LEFT, padx=(0, 6)
+            side=tk.LEFT, padx=(0, CONTROL_ROW_PADY)
         )
 
     def _build_numeric_table(self) -> MetricInputTable:

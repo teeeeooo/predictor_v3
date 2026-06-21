@@ -43,7 +43,7 @@ state values that require owner review before migration.
 | Numeric height assignments | 9 | Not covered by Phase 1 | ISO/SASO result tables, result/detail panels, viewport/scrollable helpers | Separate row-count semantics from pixel presentation and runtime allocation. |
 | Hex colors outside token owner | 0 | Phase 1 blocks new `#RRGGBB` | none | Centralization is already complete for scanned hex colors. |
 | Hex colors in `layout_constants.py` | 14 | Token owner exempt | common table/result palette | Existing shared palette; do not duplicate per profile. |
-| Named colors outside token owner | 1 | Not covered by Phase 1 | bin detail graph canvas `background="white"` | Migrate to a semantic graph/canvas background token in the color/spacing slice. |
+| Named colors outside token owner | 0 | Not covered by Phase 1 | none in audited graph/detail surfaces | Bin detail graph canvas, border, axis/grid, and series colors now have semantic tokens with appearance preserved. |
 | Raw font tuples outside token owner | 0 | Not covered by Phase 1 | none found | Existing table fonts are centralized; preserve owner. |
 
 ## Hotspot Interpretation
@@ -80,6 +80,9 @@ state values that require owner review before migration.
 - Canvas/viewport `width=0/1` and related height sentinels are runtime geometry
   state, not presentation tokens. They are excluded unless an audit shows a
   stable visual policy meaning.
+- Shared option-row vertical rhythm and label/group gaps now use control-role
+  spacing tokens in EN14825/AHRI main surfaces. Profile card/table spacing that
+  only happens to share a number remains local.
 
 ## Token Taxonomy
 

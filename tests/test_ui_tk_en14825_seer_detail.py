@@ -49,6 +49,10 @@ def test_seer_detail_formatter_uses_compact_schema() -> None:
 
 def test_seer_detail_panel_tracks_completed_sources_and_visibility(tk_root) -> None:
     from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
+    from apps.calculator.ui.layout_constants import (
+        DETAIL_GRAPH_BG,
+        DETAIL_GRAPH_BORDER_COLOR,
+    )
 
     refit_calls: list[str] = []
     section = En14825SeerSection(
@@ -59,6 +63,10 @@ def test_seer_detail_panel_tracks_completed_sources_and_visibility(tk_root) -> N
     section.input_table.set_values_batch(EN14825_SEER_SAMPLE_VALUES)
     section.recalculate_now()
 
+    assert section.detail_panel.graph.canvas.cget("background") == DETAIL_GRAPH_BG
+    assert section.detail_panel.graph.canvas.cget("highlightbackground") == (
+        DETAIL_GRAPH_BORDER_COLOR
+    )
     assert tuple(section._detail_sources) == ("Declared", "Tested")
     assert section._detail_sources["Declared"].rows
     assert not section.detail_panel.is_visible()

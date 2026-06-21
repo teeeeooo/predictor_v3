@@ -19,6 +19,8 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
 )
 from apps.calculator.ui.layout_constants import (
     CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
+    CONTROL_LABEL_GAP,
+    CONTROL_ROW_PADY,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
     METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
@@ -58,9 +60,13 @@ class AhriSeer2Section:
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
-            pady=(8, ISO_SECTION_BLOCK_GAP),
+            pady=(ISO_SECTION_BLOCK_GAP, ISO_SECTION_BLOCK_GAP),
         )
-        ttk.Label(option_frame, text="Type").pack(side=tk.LEFT, padx=(6, 4), pady=6)
+        ttk.Label(option_frame, text="Type").pack(
+            side=tk.LEFT,
+            padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
         self.type_var = tk.StringVar(value="HP")
         self.type_selector = ttk.Combobox(
             option_frame,
@@ -69,7 +75,11 @@ class AhriSeer2Section:
             state="readonly",
             width=CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
         )
-        self.type_selector.pack(side=tk.LEFT, padx=(0, 6), pady=6)
+        self.type_selector.pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_ROW_PADY),
+            pady=CONTROL_ROW_PADY,
+        )
 
         editable_cells = {
             (row, point): f"{row}_{point}"

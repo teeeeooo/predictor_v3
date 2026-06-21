@@ -11,6 +11,11 @@ from tkinter import ttk
 from apps.calculator.ui import table_csv_export
 from apps.calculator.ui.layout_constants import (
     CONTROL_DETAIL_SERIES_SELECTOR_WIDTH_CHARS,
+    DETAIL_GRAPH_AXIS_FG,
+    DETAIL_GRAPH_BG,
+    DETAIL_GRAPH_BORDER_COLOR,
+    DETAIL_GRAPH_GRID_FG,
+    DETAIL_GRAPH_SERIES_FG,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -265,9 +270,9 @@ class BinDetailGraph:
         self.canvas = tk.Canvas(
             parent,
             height=190,
-            background="white",
+            background=DETAIL_GRAPH_BG,
             highlightthickness=1,
-            highlightbackground="gray80",
+            highlightbackground=DETAIL_GRAPH_BORDER_COLOR,
         )
         self.canvas.surface_role = "bin_detail_graph"
         self.canvas.bind("<Configure>", lambda _event: self._draw())
@@ -306,11 +311,11 @@ class BinDetailGraph:
                 width / 2,
                 height / 2,
                 text="상세 데이터 없음",
-                fill="gray35",
+                fill=DETAIL_GRAPH_GRID_FG,
             )
             return
 
-        axis_color = "gray25"
+        axis_color = DETAIL_GRAPH_AXIS_FG
         canvas.create_line(
             margin_left,
             margin_top,
@@ -330,20 +335,20 @@ class BinDetailGraph:
             margin_left + plot_width / 2,
             height - 10,
             text=x_axis_label,
-            fill="gray25",
+            fill=DETAIL_GRAPH_AXIS_FG,
         )
         if x_min is not None and x_max is not None:
             canvas.create_text(
                 margin_left,
                 baseline_y + 14,
                 text=_tick_text(x_min),
-                fill="gray35",
+                fill=DETAIL_GRAPH_GRID_FG,
             )
             canvas.create_text(
                 margin_left + plot_width,
                 baseline_y + 14,
                 text=_tick_text(x_max),
-                fill="gray35",
+                fill=DETAIL_GRAPH_GRID_FG,
             )
         if y_min is not None and y_max is not None:
             canvas.create_text(
@@ -351,24 +356,36 @@ class BinDetailGraph:
                 margin_top,
                 anchor="e",
                 text=_scale_value_text(self._series_key, y_max),
-                fill="gray35",
+                fill=DETAIL_GRAPH_GRID_FG,
             )
             canvas.create_text(
                 margin_left - 6,
                 baseline_y,
                 anchor="e",
                 text=_scale_value_text(self._series_key, y_min),
-                fill="gray35",
+                fill=DETAIL_GRAPH_GRID_FG,
             )
-        canvas.create_line(*_flatten(points), fill="blue", width=2, smooth=False)
+        canvas.create_line(
+            *_flatten(points),
+            fill=DETAIL_GRAPH_SERIES_FG,
+            width=2,
+            smooth=False,
+        )
         for x, y in points:
-            canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="blue", outline="")
+            canvas.create_oval(
+                x - 2,
+                y - 2,
+                x + 2,
+                y + 2,
+                fill=DETAIL_GRAPH_SERIES_FG,
+                outline="",
+            )
         canvas.create_text(
             margin_left,
             margin_top - 12,
             anchor="w",
             text=self._series_scale_label(y_min, y_max),
-            fill="gray25",
+            fill=DETAIL_GRAPH_AXIS_FG,
         )
 
     def _plot_points(

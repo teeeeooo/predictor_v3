@@ -32,6 +32,9 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
 from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSurface
 from apps.calculator.ui.layout_constants import (
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+    CONTROL_GROUP_GAP,
+    CONTROL_LABEL_GAP,
+    CONTROL_ROW_PADY,
     METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
     METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
     METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
@@ -81,12 +84,12 @@ class En14825ScopSection:
             column=0,
             sticky="ew",
             padx=ISO_SECTION_PADX,
-            pady=(8, ISO_SECTION_BLOCK_GAP),
+            pady=(ISO_SECTION_BLOCK_GAP, ISO_SECTION_BLOCK_GAP),
         )
 
         # Specs Frame (Cd)
         specs_frame = ttk.LabelFrame(aux_frame, text="설계 사양")
-        specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        specs_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, CONTROL_GROUP_GAP))
         specs_frame.columnconfigure(0, weight=0)
         self.cd_table = MetricInputTable(
             specs_frame,
@@ -97,12 +100,16 @@ class En14825ScopSection:
             data_column_chars=METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
         )
-        self.cd_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
+        self.cd_table.grid(
+            row=0, column=0, sticky="w",
+            padx=CONTROL_ROW_PADY, pady=CONTROL_ROW_PADY,
+        )
         self.cd_table.set_values({"cd": self._cd_var.get()})
         self.cd_controller = TkTableController(self.cd_table)
         self.appliance_type_label = ttk.Label(specs_frame, text="Type")
         self.appliance_type_label.grid(
-            row=0, column=1, sticky="w", padx=(10, 4), pady=6
+            row=0, column=1, sticky="w",
+            padx=(CONTROL_GROUP_GAP, CONTROL_LABEL_GAP), pady=CONTROL_ROW_PADY,
         )
         self.appliance_type_selector = ttk.Combobox(
             specs_frame,
@@ -112,7 +119,8 @@ class En14825ScopSection:
             state="readonly",
         )
         self.appliance_type_selector.grid(
-            row=0, column=2, sticky="w", padx=(0, 6), pady=6
+            row=0, column=2, sticky="w",
+            padx=(0, CONTROL_ROW_PADY), pady=CONTROL_ROW_PADY,
         )
 
         # 2. Stacked Climate Cards

@@ -30,6 +30,9 @@ from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_deta
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+    CONTROL_GROUP_GAP,
+    CONTROL_LABEL_GAP,
+    CONTROL_ROW_PADY,
     METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
     METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
     ISO_SECTION_BLOCK_GAP,
@@ -86,12 +89,12 @@ class En14825SeerSection:
             column=0,
             sticky="ew",
             padx=ISO_SECTION_PADX,
-            pady=(8, ISO_SECTION_BLOCK_GAP),
+            pady=(ISO_SECTION_BLOCK_GAP, ISO_SECTION_BLOCK_GAP),
         )
 
         # Design Specs Frame (Pdesignc, Tdesignc, Cd)
         design_frame = ttk.LabelFrame(aux_frame, text="설계 사양 (Design Specs)")
-        design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        design_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, CONTROL_GROUP_GAP))
         design_frame.columnconfigure(0, weight=0)
         self.design_table = MetricInputTable(
             design_frame,
@@ -110,7 +113,10 @@ class En14825SeerSection:
             data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
         )
-        self.design_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
+        self.design_table.grid(
+            row=0, column=0, sticky="w",
+            padx=CONTROL_ROW_PADY, pady=CONTROL_ROW_PADY,
+        )
         self.design_table.set_values(self._design_input_values())
         self.design_table.set_values_changed_callback(
             self._on_design_table_values_changed
@@ -118,7 +124,8 @@ class En14825SeerSection:
         self.design_controller = TkTableController(self.design_table)
         self.appliance_type_label = ttk.Label(design_frame, text="Type")
         self.appliance_type_label.grid(
-            row=0, column=1, sticky="w", padx=(10, 4), pady=6
+            row=0, column=1, sticky="w",
+            padx=(CONTROL_GROUP_GAP, CONTROL_LABEL_GAP), pady=CONTROL_ROW_PADY,
         )
         self.appliance_type_selector = ttk.Combobox(
             design_frame,
@@ -128,7 +135,8 @@ class En14825SeerSection:
             state="readonly",
         )
         self.appliance_type_selector.grid(
-            row=0, column=2, sticky="w", padx=(0, 6), pady=6
+            row=0, column=2, sticky="w",
+            padx=(0, CONTROL_ROW_PADY), pady=CONTROL_ROW_PADY,
         )
 
         # 2. Main Matrix Table
