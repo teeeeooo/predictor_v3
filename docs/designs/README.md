@@ -55,6 +55,7 @@ the title, purpose/decision/status, and necessary surrounding range.
 | `2026-05-30-tkinter-excel-like-table-contract-recovery.md` | absorbed by owner docs | Tkinter table-like surfaces must recover Excel-like behavior expectations. | `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` | Table UX recovery archaeology. |
 | `2026-05-30-tkinter-result-surface-export-boundary.md` | absorbed by owner docs | Keep result/export responsibilities small and section-local until reuse is justified. | `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`, table export helpers | Result/export boundary context. |
 | `2026-06-20-ahri-210-240-ui-batch-design-specification.md` | active reference | Fix AHRI SEER2/HSPF2 main and two-row batch contracts before implementation. | this implementation contract plus UI/UX and architecture owner docs | AHRI 210/240 main UI, batch, optional-point, or lifecycle work. |
+| `2026-06-21-ui-magic-literal-legacy-inventory.md` | active reference | Classify grandfathered UI presentation literals and split migration into bounded semantic-token slices. | `docs/agent_workflows/AGENT_CHANGE_GATES.md`, `apps/calculator/ui/layout_constants.py` | Planning UI literal cleanup or expanding the staged literal gate. |
 
 ## Update Triggers
 

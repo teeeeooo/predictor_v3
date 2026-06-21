@@ -27,13 +27,14 @@
 
 ## Current Slice
 
-- AHRI 210/240 calculator main/batch arc is closed after user-confirmed visual
-  smoke and report lifecycle cleanup.
-- The current workflow slice is UI magic literal legacy inventory formalization.
+- UI magic literal legacy inventory and semantic token taxonomy are formalized
+  without production migration.
+- The current audit slice is calculator DEV/sample data inventory and
+  empty-state policy.
 
 ## Next Actions
 
-1. Formalize the project-wide UI magic literal legacy inventory.
+1. Inventory calculator DEV/sample data and define the empty-state policy.
 
 ## Active Blockers / Open Decisions
 
@@ -44,8 +45,8 @@
 
 ## Active Constraints
 
-- Keep the next slice inventory/documentation-first; do not mix broad literal
-  replacement or unrelated UI implementation.
+- Keep the next slice inventory/policy-only; do not remove sample data or change
+  calculator initial-state behavior without a separately approved implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
@@ -65,6 +66,8 @@
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
 - AHRI calculator and supporting UI/workflow closeout:
   `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
+- UI literal legacy inventory and cleanup plan:
+  `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - AHRI implementation contract:
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
 - Milestone decisions and detailed completed history belong in `project_log.md`
