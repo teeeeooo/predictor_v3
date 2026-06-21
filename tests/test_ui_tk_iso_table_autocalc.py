@@ -320,6 +320,16 @@ def test_iso_iseer_2point_mode_renders_explicit_sample_summaries(tk_root):
         "CSEC [kWh]",
     )
     assert table.row_labels == ("ISO 16358-1", "India ISEER")
+    from apps.calculator.ui.layout_constants import (
+        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
+        RESULT_PROFILE_COLUMN_WIDTH_PX,
+    )
+    assert int(table.table.column("EER Full", "width")) == (
+        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX
+    )
+    assert int(table.table.column("Region/Profile", "width")) == (
+        RESULT_PROFILE_COLUMN_WIDTH_PX
+    )
     rows = _two_point_tree_values(tab)
     assert len(rows) == 2
     assert {row[0] for row in rows} == {"ISO 16358-1", "India ISEER"}
@@ -630,6 +640,16 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert table.row_labels == (
         "With 35 Min (4-point)",
         "Required only (3-point)",
+    )
+    from apps.calculator.ui.layout_constants import (
+        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
+        RESULT_SCENARIO_COLUMN_WIDTH_PX,
+    )
+    assert int(table.table.column("EER 46 Full", "width")) == (
+        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX
+    )
+    assert int(table.table.column("Scenario", "width")) == (
+        RESULT_SCENARIO_COLUMN_WIDTH_PX
     )
 
     text = _saso_text(tab)

@@ -50,13 +50,13 @@ state values that require owner review before migration.
 
 ### Main metric tables
 
-- AHRI HSPF2 uses distinct widths for numeric options, A2, and heating-point
-  matrices. These are different roles; migration should use names such as
-  option-row label, compact anchor data, and heating-point data width rather
-  than replacing all values with `TABLE_*` defaults.
-- EN14825 SEER/SCOP repeat compact label/data widths across main and climate
-  tables. Shared tokens are appropriate only where the same table role and
-  font/padding contract is present.
+- AHRI option, point, A2 anchor, and heating matrices now use distinct semantic
+  row/data width tokens rather than a universal table width.
+- EN14825 SEER/SCOP compact label/data roles now share tokens only where the
+  same table font, padding, and content role are present.
+- ISO/ISEER and SASO comparison result columns use pixel tokens separated into
+  value, profile-label, and scenario-label roles; result schema/export order is
+  unchanged.
 
 ### Batch and dialog surfaces
 

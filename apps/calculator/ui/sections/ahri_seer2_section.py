@@ -21,6 +21,8 @@ from apps.calculator.ui.layout_constants import (
     CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
+    METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
+    METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
@@ -84,8 +86,8 @@ class AhriSeer2Section:
                 ("eer2", "EER2"),
             ),
             editable_cells=editable_cells,
-            row_header_chars=18,
-            data_column_chars=14,
+            row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
             values_changed_callback=self.schedule_recalculate,
         )

@@ -19,6 +19,11 @@ from apps.calculator.ui.layout_constants import (
     CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
+    METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
+    METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+    METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
+    METRIC_TABLE_HEATING_DATA_COLUMN_CHARS,
+    METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
@@ -144,8 +149,8 @@ class AhriHspf2Section:
                 ("value", key): key
                 for key in ("cd", "defrost_credit", "cut_out_c", "cut_in_c")
             },
-            row_header_chars=8,
-            data_column_chars=14,
+            row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
         )
         table.grid(row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -156,8 +161,8 @@ class AhriHspf2Section:
             columns=(("A2", "A2"),),
             rows=(("capacity", "Capacity [Btu/h]"),),
             editable_cells={("capacity", "A2"): "a2_capacity"},
-            row_header_chars=18,
-            data_column_chars=18,
+            row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
         )
         table.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -178,8 +183,8 @@ class AhriHspf2Section:
                 ("cop", "COP"),
             ),
             editable_cells=editable,
-            row_header_chars=18,
-            data_column_chars=12,
+            row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_HEATING_DATA_COLUMN_CHARS,
         )
         table.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 8))
         for point in AHRI_HSPF2_POINT_ORDER:

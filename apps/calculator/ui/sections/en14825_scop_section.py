@@ -32,6 +32,9 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
 from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSurface
 from apps.calculator.ui.layout_constants import (
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+    METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+    METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
+    METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -90,8 +93,8 @@ class En14825ScopSection:
             columns=(("cd", "Cd"),),
             rows=(("design", "입력값"),),
             editable_cells={("design", "cd"): "cd"},
-            row_header_chars=8,
-            data_column_chars=8,
+            row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
         )
         self.cd_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
@@ -201,8 +204,8 @@ class En14825ScopSection:
                     ("design", "tbiv"): "tbiv",
                     ("design", "tol"): "tol",
                 },
-                row_header_chars=8,
-                data_column_chars=10,
+                row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+                data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
                 layout_policy="content_hug",
             )
             climate_table.grid(row=0, column=0, sticky="w", padx=(6, 10))

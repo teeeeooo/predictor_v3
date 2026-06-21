@@ -30,6 +30,8 @@ from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_deta
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+    METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+    METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -104,8 +106,8 @@ class En14825SeerSection:
                 ("design", "t_design_c"): "t_design_c",
                 ("design", "cd"): "cd",
             },
-            row_header_chars=8,
-            data_column_chars=10,
+            row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
+            data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
         )
         self.design_table.grid(row=0, column=0, sticky="w", padx=6, pady=6)

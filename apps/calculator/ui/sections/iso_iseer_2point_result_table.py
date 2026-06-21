@@ -7,11 +7,14 @@ from tkinter import ttk
 
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 from apps.calculator.ui.layout_constants import (
+    RESULT_COMPARISON_VALUE_COLUMN_MIN_WIDTH_PX,
+    RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
+    RESULT_PROFILE_COLUMN_MIN_WIDTH_PX,
+    RESULT_PROFILE_COLUMN_WIDTH_PX,
     RESULT_STATUS_FG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
-    TABLE_DATA_COLUMN_CHARS,
 )
 
 TWO_POINT_RESULT_COLUMNS: tuple[str, ...] = (
@@ -52,15 +55,15 @@ class IsoIseer2PointResultTable:
             self.table.column(
                 column,
                 anchor=tk.CENTER,
-                width=TABLE_DATA_COLUMN_CHARS * 9,
-                minwidth=80,
+                width=RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
+                minwidth=RESULT_COMPARISON_VALUE_COLUMN_MIN_WIDTH_PX,
                 stretch=False,
             )
         self.table.column(
             "Region/Profile",
             anchor=tk.W,
-            width=150,
-            minwidth=120,
+            width=RESULT_PROFILE_COLUMN_WIDTH_PX,
+            minwidth=RESULT_PROFILE_COLUMN_MIN_WIDTH_PX,
             stretch=False,
         )
         self.table.bind("<Control-c>", self.copy)
