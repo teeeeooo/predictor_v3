@@ -270,6 +270,8 @@ def test_scop_adapter_fallback_scenarios():
     assert summary_dec.tested_scop is None
     assert summary_dec.scop_percent is None
     assert summary_dec.scop_percent_state == "unavailable"
+    assert summary_dec.declared_bin_details
+    assert summary_dec.tested_bin_details == ()
 
     # Case 2: Tested-only
     summary_test = adapter.calculate(make_inputs(["tested"]), p_design_h_w=3000.0, climate="average")
@@ -277,6 +279,8 @@ def test_scop_adapter_fallback_scenarios():
     assert summary_test.tested_scop is not None
     assert summary_dec.declared_scop is not None
     assert summary_test.declared_scop is None
+    assert summary_test.declared_bin_details == ()
+    assert summary_test.tested_bin_details
 
     # Case 3: Both Declared + Tested
     summary_both = adapter.calculate(make_inputs(["declared", "tested"]), p_design_h_w=3000.0, climate="average")
@@ -285,6 +289,8 @@ def test_scop_adapter_fallback_scenarios():
     assert summary_both.tested_scop is not None
     assert summary_both.scop_percent is not None
     assert summary_both.scop_percent_state in ("pass", "invalid")
+    assert summary_both.declared_bin_details
+    assert summary_both.tested_bin_details
 
 
 def test_scop_adapter_validation_failures():

@@ -8,6 +8,7 @@ from tkinter import ttk
 
 from apps.calculator.ui.en14825 import (
     ScopAdapter,
+    ScopResultSummary,
     ScopTableModel,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
@@ -19,6 +20,11 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
 )
 from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.bin_detail_schema import (
+    EN14825_SCOP_BIN_DETAIL_SCHEMA,
+)
+from apps.calculator.ui.sections.en14825_scop_detail import format_scop_bin_details
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
     format_scop_climate_error_summary,
@@ -58,6 +64,9 @@ class En14825ScopSection:
         self._current_table_models: dict[str, ScopTableModel] = {}
         self._batch_dialog: En14825ScopBatchDialog | None = None
         self._batch_snapshot: En14825ScopBatchSnapshot | None = None
+        self._detail_visible = False
+        self._detail_sources: dict[str, BinDetailSource] = {}
+        self._detail_status = "입력 대기"
 
         self._frame = ttk.LabelFrame(parent, text="SCOP")
         self._frame.columnconfigure(0, weight=1)
@@ -281,6 +290,25 @@ class En14825ScopSection:
         self.batch_button = ttk.Button(action_row, text="SCOP Batch", command=self._open_batch_dialog)
         self.batch_button.surface_role = "en14825_scop_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "en14825_scop_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(ISO_SECTION_BLOCK_GAP, 0))
+        source_labels = tuple(
+            f"{climate.capitalize()} {dataset}"
+            for climate in self.climates
+            for dataset in ("Declared", "Tested")
+        )
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=source_labels,
+            default_source=source_labels[0],
+            csv_filename="en14825_scop_bin_detail.csv",
+            schema=EN14825_SCOP_BIN_DETAIL_SCHEMA,
+        )
 
         # 4. Debounced auto-calc scheduler
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
@@ -416,6 +444,8 @@ class En14825ScopSection:
         appliance_type = self._appliance_type_var.get()
 
         summaries = []
+        detail_sources: dict[str, BinDetailSource] = {}
+        detail_errors: list[str] = []
 
         for clm in self.climates:
             table = self.input_tables[clm]
@@ -447,6 +477,7 @@ class En14825ScopSection:
                     table.set_invalid_fields(input_mapping.invalid_fields)
                     self._clear_computed_rows(clm)
                     self._clear_result_card(clm)
+                    detail_errors.append("입력 오류: 숫자 입력을 확인하세요.")
                     continue
                 else:
                     table.clear_invalid_fields()
@@ -454,6 +485,7 @@ class En14825ScopSection:
             except Exception:
                 self._clear_computed_rows(clm)
                 self._clear_result_card(clm)
+                detail_errors.append("입력 대기: 기류/설정을 확인하세요.")
                 continue
 
             inputs = input_mapping.inputs
@@ -503,11 +535,64 @@ class En14825ScopSection:
             # Add to result summary list
             self._update_result_card(clm, summary)
             summaries.append(format_scop_result_summary(summary, clm))
+            self._collect_detail_sources(detail_sources, clm, summary)
+            if summary.status_code != "complete" and summary.message:
+                detail_errors.append(summary.message)
 
         if not summaries:
             self.result_panel.clear()
         else:
             self.result_panel.set_summaries(summaries)
+        self._set_detail_state(detail_sources, detail_errors)
+
+    def _collect_detail_sources(
+        self,
+        sources: dict[str, BinDetailSource],
+        climate: str,
+        summary: ScopResultSummary,
+    ) -> None:
+        for dataset, rows in (
+            ("Declared", summary.declared_bin_details),
+            ("Tested", summary.tested_bin_details),
+        ):
+            formatted_rows = format_scop_bin_details(rows)
+            if formatted_rows:
+                label = f"{climate.capitalize()} {dataset}"
+                sources[label] = BinDetailSource(rows=formatted_rows)
+
+    def _set_detail_state(
+        self,
+        sources: dict[str, BinDetailSource],
+        errors: list[str],
+    ) -> None:
+        self._detail_sources = dict(sources)
+        if sources:
+            self._detail_status = "상세 데이터 없음"
+            self.detail_panel.set_sources(
+                sources,
+                source_order=tuple(sources),
+                panel_status=self._detail_status,
+            )
+            return
+        self._detail_status = errors[0] if errors else "입력 대기"
+        self.detail_panel.set_status(self._detail_status)
+
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self.detail_panel.grid(
+                row=6,
+                column=0,
+                sticky="ew",
+                padx=0,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
+        else:
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
     def _format_t_design_h(self, climate: str) -> str:
         try:

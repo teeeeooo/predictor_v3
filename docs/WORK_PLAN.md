@@ -27,25 +27,27 @@
 
 ## Current Slice
 
-- Calculator option/standard defaults and removable DEV/sample performance data
-  are inventoried under an explicit empty-state policy.
-- EN14825/AHRI detail view design is the prerequisite next slice before their
-  sample performance values can be removed.
+- EN14825 SCOP preserves declared/tested core bin details through an additive
+  UI model boundary and exposes completed climate/source details through the
+  shared detail panel.
+- Local GUI visual smoke remains before the SCOP detail slice is closed.
 
 ## Next Actions
 
-1. Design EN14825/AHRI detail views and trace/export ownership.
+1. Run EN14825 SCOP detail visual smoke.
+2. Implement the EN14825 SEER detail view in a separate slice.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded.
+- No active implementation blocker is recorded; SCOP detail geometry and
+  source-switch behavior still require local GUI confirmation.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
-  EN14825/AHRI detail-view prerequisite is implemented.
+  remaining EN14825/AHRI detail-view prerequisites are implemented.
 
 ## Active Constraints
 
-- Keep the next slice design-only; do not remove sample data or change result
-  contracts while defining EN14825/AHRI detail ownership.
+- Do not remove calculator sample/default data during detail-view slices.
+- Keep EN14825 SEER and AHRI detail implementations separate from SCOP.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

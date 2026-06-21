@@ -107,3 +107,42 @@ HEATING_HSPF_BIN_DETAIL_SCHEMA = BinDetailSchema(
     ),
     table_title="난방 상세 표",
 )
+
+
+# EN14825 SCOP uses profile-specific normalized keys; raw core diagnostics are
+# converted by the SCOP detail formatter before reaching the shared panel.
+EN14825_SCOP_BIN_DETAIL_SCHEMA = BinDetailSchema(
+    column_labels=(
+        "Tj [°C]",
+        "Hours",
+        "Heating Load Ph [kW]",
+        "HP Capacity Pdh [kW]",
+        "COPpl",
+        "Equivalent Power [kW]",
+        "Backup/ELBU [kW]",
+        "Operating Case",
+        "Capacity Source",
+        "COP Source",
+    ),
+    column_keys=(
+        "tj",
+        "hours",
+        "heating_load",
+        "heat_pump_capacity",
+        "cop_pl",
+        "equivalent_power",
+        "backup_load",
+        "operating_case",
+        "capacity_source",
+        "cop_source",
+    ),
+    graph_series=(
+        ("Bin Hours [h]", "hours"),
+        ("Heating Load Ph [kW]", "heating_load"),
+        ("HP Capacity Pdh [kW]", "heat_pump_capacity"),
+        ("Equivalent Power [kW]", "equivalent_power"),
+        ("Backup/ELBU [kW]", "backup_load"),
+        ("COPpl", "cop_pl"),
+    ),
+    table_title="EN14825 SCOP Bin Detail",
+)

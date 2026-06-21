@@ -1,5 +1,6 @@
 """Data models representing inputs, computed fields, and results for EN14825 SCOP."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Optional
 
@@ -50,6 +51,10 @@ class ScopResultSummary:
     # Annual total energy consumption
     declared_total_kwh: Optional[float] = None
     tested_total_kwh: Optional[float] = None
+
+    # Additive UI diagnostics preserved from each completed core calculation.
+    declared_bin_details: tuple[Mapping[str, object], ...] = ()
+    tested_bin_details: tuple[Mapping[str, object], ...] = ()
 
     # Result state tinting: "neutral", "pass", "invalid", "unavailable"
     declared_scop_state: str = "neutral"

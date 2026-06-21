@@ -1,5 +1,6 @@
 """Adapter layer translating UI inputs (W, °C) to core calculator inputs (kW, °C) and parsing results for SCOP."""
 
+from collections.abc import Mapping
 from typing import Dict, Optional, Tuple
 from core.calculator_en14825 import EN14825Calculator
 from apps.calculator.ui.en14825.scop_models import (
@@ -330,6 +331,7 @@ class ScopAdapter:
                 summary.declared_scop = dec_res["scop"]
                 summary.declared_qh_kwh = dec_res["qh_kwh"]
                 summary.declared_total_kwh = dec_res["total_kwh"]
+                summary.declared_bin_details = _preserve_bin_details(dec_res)
                 summary.declared_scop_state = "neutral"
                 summary.declared_qh_state = "neutral"
             except Exception as exc:
@@ -364,6 +366,7 @@ class ScopAdapter:
                 summary.tested_scop = test_res["scop"]
                 summary.tested_qh_kwh = test_res["qh_kwh"]
                 summary.tested_total_kwh = test_res["total_kwh"]
+                summary.tested_bin_details = _preserve_bin_details(test_res)
                 summary.tested_scop_state = "neutral"
                 summary.tested_qh_state = "neutral"
             except Exception as exc:
@@ -388,3 +391,15 @@ class ScopAdapter:
         summary.status_code = "complete"
         summary.message = "Calculation completed successfully"
         return summary
+
+
+def _preserve_bin_details(
+    result: Mapping[str, object],
+) -> tuple[Mapping[str, object], ...]:
+    """Copy valid core bin rows into the additive UI result payload."""
+    rows = result.get("bin_details")
+    return (
+        tuple(dict(row) for row in rows if isinstance(row, Mapping))
+        if isinstance(rows, (list, tuple))
+        else ()
+    )
