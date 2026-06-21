@@ -2,8 +2,8 @@
 
 ## Status
 
-Active reference for staged cleanup planning. This is an audit/design record,
-not a token migration and not an active policy owner.
+Formalized legacy disposition record. This is an audit/design record, not the
+active gate policy owner.
 
 Active policy remains in
 `docs/agent_workflows/AGENT_CHANGE_GATES.md`; shared Tkinter tokens currently
@@ -123,7 +123,25 @@ named colors, and semantic misuse of an existing token. Gate expansion must be
 warning-first or pattern-focused with false-positive tests; do not turn this
 inventory into an all-numeric linter.
 
-## Proposed Cleanup Slices
+## Final Exception and Exclusion Ledger
+
+| Owner | Remaining value family | Disposition and reason | Revisit trigger |
+| --- | --- | --- | --- |
+| Hong Kong CSPF legacy batch spec | seven `BatchColumnSpec.width_chars` values | Profile-schema exception: this row-per-case schema has vocabulary and column roles different from `BatchMatrixSpec`; copying common matrix tokens would couple models. | Deliberate migration of this profile to a common batch model. |
+| ISO profile/mode selectors | selector widths for long profile and region labels | Profile vocabulary exception: character widths are derived from the registered display labels, not compact code selectors. | Shared long-label selector component with a second consumer. |
+| EN14825 common-input tab table | local 8/8 row/data widths | Profile composition exception: the sole top-level standby/off-mode input surface has a unique one-row/four-column density and no second consumer with the same role. | A second top-level common-input table with the same font/padding/resize contract. |
+| EN14825 SCOP batch/common labels | auxiliary numeric entry, fixed appliance label, and Tdesign label widths | Profile vocabulary exception: widths are tied to this profile's condition labels and fixed option text. | Vocabulary expansion or reuse in another profile. |
+| ISO/ISEER and SASO result tables | hidden copy-buffer text widths/heights | Non-visible implementation state: Treeview presentation now uses result tokens; hidden text dimensions do not size the visible surface. | The text buffer becomes visible UI. |
+| Common ResultPanel fallback text | local text width/height | Owner-local single-use fallback presentation, not a repeated cross-surface role. | A second fallback text surface with identical behavior. |
+| Bin detail graph | stroke width, point radius, margins, canvas height | Visualization geometry exception: these values jointly define one compact graph and are not spacing/palette tokens. | A second graph implementation or a graph sizing policy redesign. |
+| Viewport/scroll helpers | zero/one widths and dynamic heights | Runtime allocation state, not presentation policy. | Evidence that a value controls stable visual appearance rather than widget state. |
+| Remaining asymmetric `padx`/`pady` | profile card, table, and action composition | Composition-local exception: numeric equality alone does not prove a shared rhythm. | Two consumers with the same role, unit, font, and resize assumptions. |
+
+This ledger is the grandfathering disposition for the audited scope. It does
+not authorize copying any listed literal into new staged code; new use still
+requires a semantic owner or an approved gate exemption.
+
+## Completed Cleanup Slices
 
 ### Slice 1 — Batch dialog minimum-size audit
 
@@ -169,14 +187,13 @@ inventory into an all-numeric linter.
 - Verify: profile-focused tests and a final inventory delta; remaining literals
   must be explicitly classified, not merely unscanned.
 
-## Recommended Order and Exit Criteria
+## Exit Criteria Result
 
-Run slices in the order above. Each slice owns one literal family and must leave
-calculation, schema, point order, export content, and public API unchanged. The
-inventory is complete when every grandfathered match is one of: migrated to a
-semantic owner, classified as runtime geometry state, or documented as a
-profile-specific exception with focused verification.
+The five slices completed in order without changing calculation, schema, point
+order, export content, or public API. Every remaining audited match is now
+classified as runtime/hidden state, owner-local single use, or a documented
+profile/composition exception with a revisit trigger.
 
 ## Next Action
 
-Calculator DEV/sample data inventory and empty-state policy.
+Detail formatting helper structure audit.

@@ -31,14 +31,16 @@
   closeout are complete.
 - Canonical launch, empty batch inputs, and semantic EN14825 cell backgrounds
   are manually confirmed.
-- The approved legacy UI token cleanup now proceeds as small owner-specific
-  slices using the formal inventory.
+- The five approved legacy UI token cleanup slices are complete, with remaining
+  values classified in the formal exception/exclusion ledger.
+- Structure-improvement candidates now proceed as audit-only decisions; no
+  production refactor is authorized in the audit arc.
 
 ## Next Actions
 
-1. Audit batch dialog minimum sizes against natural content fitting.
-2. Continue the approved token cleanup slices without broad mechanical
-   literal replacement.
+1. Audit whether repeated detail number/text formatting warrants a common
+   helper while keeping profile field mapping local.
+2. Continue the remaining structure audits without production refactors.
 
 ## Active Blockers / Open Decisions
 
