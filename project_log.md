@@ -33,7 +33,12 @@
 - Shared BatchMatrix leading-column tokens and natural-content dialog fitting
   are the durable sizing policy; fixed geometry and profile min-size inflation
   are not the correction mechanism.
-- The next workflow action is UI magic literal legacy inventory formalization.
+- Calculator launch policy keeps standard/option defaults but removes product
+  performance demo values only after the required diagnostic surface exists.
+- EN14825 SEER/SCOP and AHRI SEER2/HSPF2 detail-view design/implementation must
+  precede their sample-removal slices; Hong Kong detail ownership is reference
+  evidence rather than a schema to copy.
+- The next action is EN14825/AHRI detail view design.
 
 ### Reference
 

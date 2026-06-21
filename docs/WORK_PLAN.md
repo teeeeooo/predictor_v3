@@ -27,26 +27,25 @@
 
 ## Current Slice
 
-- UI magic literal legacy inventory and semantic token taxonomy are formalized
-  without production migration.
-- The current audit slice is calculator DEV/sample data inventory and
-  empty-state policy.
+- Calculator option/standard defaults and removable DEV/sample performance data
+  are inventoried under an explicit empty-state policy.
+- EN14825/AHRI detail view design is the prerequisite next slice before their
+  sample performance values can be removed.
 
 ## Next Actions
 
-1. Inventory calculator DEV/sample data and define the empty-state policy.
+1. Design EN14825/AHRI detail views and trace/export ownership.
 
 ## Active Blockers / Open Decisions
 
 - No active implementation blocker is recorded.
-- HSPF2 DEV sample values remain isolated in their explicit mock-data owner.
-  Removing initial sample population is a separate product/empty-state decision,
-  not an AHRI lifecycle blocker.
+- HSPF2 DEV sample values remain isolated and intentionally retained until the
+  EN14825/AHRI detail-view prerequisite is implemented.
 
 ## Active Constraints
 
-- Keep the next slice inventory/policy-only; do not remove sample data or change
-  calculator initial-state behavior without a separately approved implementation.
+- Keep the next slice design-only; do not remove sample data or change result
+  contracts while defining EN14825/AHRI detail ownership.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
@@ -68,6 +67,8 @@
   `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
+- Calculator sample/default inventory and empty-state policy:
+  `docs/designs/2026-06-21-calculator-sample-data-empty-state-policy.md`.
 - AHRI implementation contract:
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
 - Milestone decisions and detailed completed history belong in `project_log.md`
