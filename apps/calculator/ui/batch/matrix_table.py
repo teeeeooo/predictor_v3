@@ -245,6 +245,10 @@ class BatchMatrixTable(ttk.Frame):
     def scrollbar_visible(self) -> bool:
         return self.viewport_frame.scrollbar_visible
 
+    def preferred_content_size(self) -> tuple[int, int]:
+        """Return the matrix's natural table size for dialog initial fitting."""
+        return self.viewport_frame.preferred_content_size()
+
     def scroll_to_bottom(self) -> None:
         self.viewport_frame.sync(self._visible_rows_height())
         self.viewport_frame.scroll_to_bottom()

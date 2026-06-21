@@ -89,6 +89,13 @@ def test_leading_columns_use_common_minimum_width_policy(table):
     assert int(table.cell_widget((0, 1)).cget("width")) == table._header_width(1)
 
 
+def test_matrix_exposes_natural_table_size_for_dialog_fitting(table):
+    assert table.preferred_content_size() == (
+        table.table_frame.winfo_reqwidth(),
+        table.table_frame.winfo_reqheight(),
+    )
+
+
 def test_result_first_row_displays_values_second_row_blank(table):
     table.set_result(0, {CSPF: "4.939", CSEC: "729.0"})
     table.update_idletasks()

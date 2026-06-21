@@ -9,6 +9,12 @@ class _FakeWidget:
     def winfo_reqwidth(self):
         return self._reqwidth
 
+    def winfo_reqheight(self):
+        return 240
+
+    def update_idletasks(self):
+        return None
+
 
 class _FakeCanvas:
     def __init__(self, *, bbox=(0, 0, 100, 200), height=50):
@@ -63,6 +69,13 @@ def test_batch_table_viewport_preserves_requested_content_width():
         ("content-window", {"width": 640}),
         ("content-window", {"width": 800}),
     ]
+
+
+def test_batch_table_viewport_reports_natural_content_size():
+    viewport = _make_viewport()
+    viewport.content = _FakeWidget(master=viewport, reqwidth=640)
+
+    assert viewport.preferred_content_size() == (640, 240)
 
 
 def test_batch_table_viewport_routes_entry_and_label_wheel_to_canvas():

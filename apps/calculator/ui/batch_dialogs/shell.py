@@ -64,14 +64,47 @@ class BatchDialogShell:
         self.window.update_idletasks()
         min_size = self._adapter.min_size
         self.window.minsize(*min_size)
+        requested_size = (
+            self.window.winfo_reqwidth(),
+            self.window.winfo_reqheight(),
+        )
+        preferred_size = self._preferred_content_size(requested_size)
+        self._initial_requested_size = requested_size
+        self._initial_preferred_size = preferred_size
         geometry = parent_centered_content_geometry(
             parent_toplevel.geometry(),
-            (self.window.winfo_reqwidth(), self.window.winfo_reqheight()),
+            preferred_size,
             self.window.winfo_screenwidth(),
             self.window.winfo_screenheight(),
             min_size,
         )
         self.window.geometry(geometry)
+
+    def _preferred_content_size(
+        self,
+        requested_size: tuple[int, int],
+    ) -> tuple[int, int]:
+        width_delta = 0
+        height_delta = 0
+        pending = [self.content_widget]
+        while pending:
+            widget = pending.pop()
+            provider = getattr(widget, "preferred_content_size", None)
+            if callable(provider):
+                preferred_width, preferred_height = provider()
+                width_delta = max(
+                    width_delta,
+                    preferred_width - widget.winfo_reqwidth(),
+                )
+                height_delta = max(
+                    height_delta,
+                    preferred_height - widget.winfo_reqheight(),
+                )
+            pending.extend(widget.winfo_children())
+        return (
+            requested_size[0] + max(0, width_delta),
+            requested_size[1] + max(0, height_delta),
+        )
 
     def snapshot(self) -> list[dict[str, str]]:
         return self._adapter.snapshot()

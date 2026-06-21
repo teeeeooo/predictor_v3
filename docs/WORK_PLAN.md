@@ -27,8 +27,8 @@
 
 ## Current Slice
 
-- BatchMatrix leading columns now use common minimum-width tokens, and the
-  vertical viewport preserves the table's requested width.
+- Batch dialogs now propagate BatchMatrix natural width/height into their
+  screen-capped, parent-centered initial geometry.
 - AHRI HSPF2 Batch needs a visual readability recheck before lifecycle closeout.
 
 ## Next Actions

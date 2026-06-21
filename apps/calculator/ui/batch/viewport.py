@@ -76,9 +76,16 @@ class BatchTableViewport(ttk.Frame):
     def scrollbar_visible(self) -> bool:
         return self._scrollbar_visible
 
+    def preferred_content_size(self) -> tuple[int, int]:
+        """Return the table surface's natural size before viewport allocation."""
+        self.content.update_idletasks()
+        return (self.content.winfo_reqwidth(), self.content.winfo_reqheight())
+
     def sync(self, max_visible_height: int) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        content_height = self.content.winfo_reqheight()
+        content_width, content_height = self.preferred_content_size()
+        if content_width > 1:
+            self.canvas.configure(width=content_width)
         if content_height > 1:
             self.canvas.configure(height=min(content_height, max_visible_height))
         self._sync_scrollbar_visibility()
