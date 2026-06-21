@@ -875,6 +875,19 @@ entries:
       - design tokens
     assertionStatus: verified
     source: result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md (covered reports 437-443)
+
+  - type: decision
+    topic: calculator profile lifecycle and EN14825/AHRI detail ownership
+    content: ISO16358, EN14825, and AHRI210240 profile tabs delegate visible-content measurement, scheduler, shell fit, suppression, named detail/nested/parent triggers, and scroll reset to ProfileVisibleContentLifecycleController. EN14825 SCOP/SEER and AHRI HSPF2/SEER2 detail rows are adapter-preserved, profile-formatted schemas rendered by the shared BinDetailPanel; production tabs are structure-gated against direct lifecycle primitive assembly.
+    keywords:
+      - predictor_v3
+      - profile lifecycle controller
+      - EN14825 detail
+      - AHRI detail
+      - BinDetailPanel
+      - structure gate
+    assertionStatus: verified
+    source: result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md (covered reports 449-461)
 ```
 
 ## Known Gaps

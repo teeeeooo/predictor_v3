@@ -27,21 +27,22 @@
 
 ## Current Slice
 
-- AHRI SEER2 now preserves required core bin details in its adapter summary and
-  renders them through the shared single-source detail panel.
-- SEER2 input-waiting, invalid, calculation-error, and successful detail states
-  are explicit and stale rows are cleared before recalculation.
-- SEER2 and HSPF2 detail visibility both use the common AHRI lifecycle controller.
+- The EN14825/AHRI detail implementation and common profile lifecycle arc is
+  closed in summary 461.
+- Covered active reports 449–461 are archived; the sample/empty-state policy
+  record remains active because it directly owns the next implementation slice.
+- All calculator profiles now have the diagnostic detail prerequisites required
+  before product performance sample removal.
 
 ## Next Actions
 
-1. Close the completed EN/AHRI detail and lifecycle arc.
-2. Remove calculator sample performance prefills and implement empty states.
+1. Remove calculator sample performance prefills and implement empty states.
+2. Audit the legacy calculator entrypoint after empty-state completion.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; task 7 owns report lifecycle
-  cleanup before sample/default behavior changes begin.
+- No active implementation blocker is recorded; retain standard/option defaults
+  while removing only product performance demo values.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 

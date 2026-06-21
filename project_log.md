@@ -22,6 +22,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-21 — EN14825/AHRI detail and profile lifecycle closeout
+
+### Decision
+
+- EN14825 SCOP/SEER and AHRI HSPF2/SEER2 bin-detail surfaces are complete on the
+  shared schema-driven detail panel.
+- ISO, EN14825, and AHRI profile tabs now delegate visible-content lifecycle
+  assembly to `ProfileVisibleContentLifecycleController`; a structure gate
+  prevents direct primitive assembly in production profile tabs.
+- Detail/profile/nested refits use named controller triggers with injected
+  profile predicates and settle policy rather than local geometry patches.
+- The completed reports are covered by summary 461; the next action is product
+  performance sample removal under the empty-state policy.
+
+### Reference
+
+- `result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md`
+
 ## 2026-06-21 — AHRI calculator UI/batch lifecycle closeout
 
 ### Decision
