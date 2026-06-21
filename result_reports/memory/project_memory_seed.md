@@ -39,6 +39,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/385_summary-en14825-ui-correction-lifecycle-closeout.md` (covered reports `365-384`)
 - `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md` (covered reports `386-403`)
 - `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md` (covered reports `405-415`)
+- `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md` (covered reports `417-444`)
 
 ## Scope and Non-goals
 
@@ -848,6 +849,32 @@ entries:
       - code map
     assertionStatus: verified
     source: result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md (covered reports 413-415)
+
+  - type: decision
+    topic: AHRI 210/240 calculator UI and batch contract
+    content: AHRI 210/240 exposes separate SEER2 and HSPF2 main/batch surfaces. HSPF2 A2 is capacity-only at the UI boundary, optional H42/H12/H22 state uses draft options plus last-valid active options and a superset case store, source normalization remains a main-UI contract, and HSPF2 batch exports only the primary HSPF2 result.
+    keywords:
+      - predictor_v3
+      - AHRI 210/240
+      - SEER2
+      - HSPF2
+      - batch
+      - A2 capacity-only
+    assertionStatus: verified
+    source: result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md (covered reports 425-444)
+
+  - type: decision
+    topic: UI literal gate and BatchMatrix natural sizing policy
+    content: New staged production UI width, min-size, geometry, and color literals are constrained by the UI magic-literal gate and semantic token owners. BatchMatrix leading columns use common tokens, vertical viewports preserve natural requested width, and batch dialog initial geometry derives from natural content with screen caps and parent centering rather than fixed geometry or profile min-size inflation.
+    keywords:
+      - predictor_v3
+      - UI magic literal
+      - BatchMatrix
+      - natural content size
+      - dialog geometry
+      - design tokens
+    assertionStatus: verified
+    source: result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md (covered reports 437-443)
 ```
 
 ## Known Gaps

@@ -22,6 +22,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-21 — AHRI calculator UI/batch lifecycle closeout
+
+### Decision
+
+- AHRI 210/240 SEER2/HSPF2 main UI and two-row batch workflows are complete;
+  user visual smoke confirms the final HSPF2 batch readability/sizing state.
+- HSPF2 A2 is capacity-only at the UI boundary, optional heating points retain
+  draft/active/superset snapshot behavior, and batch output is HSPF2-only.
+- Shared BatchMatrix leading-column tokens and natural-content dialog fitting
+  are the durable sizing policy; fixed geometry and profile min-size inflation
+  are not the correction mechanism.
+- The next workflow action is UI magic literal legacy inventory formalization.
+
+### Reference
+
+- `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
+
 ## 2026-06-20 — Project brief arc/milestone ownership correction
 
 ### Decision

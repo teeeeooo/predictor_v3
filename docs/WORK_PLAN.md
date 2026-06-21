@@ -27,31 +27,25 @@
 
 ## Current Slice
 
-- Batch dialogs now propagate BatchMatrix natural width/height into their
-  screen-capped, parent-centered initial geometry.
-- AHRI HSPF2 Batch exposes only the primary HSPF2 result column; source display
-  remains a main-UI-only contract.
-- AHRI HSPF2 Batch needs a visual readability recheck before lifecycle closeout.
+- AHRI 210/240 calculator main/batch arc is closed after user-confirmed visual
+  smoke and report lifecycle cleanup.
+- The current workflow slice is UI magic literal legacy inventory formalization.
 
 ## Next Actions
 
-1. Recheck AHRI HSPF2 Batch leading-column readability locally.
-2. Perform AHRI calculator lifecycle closeout if the visual recheck passes.
+1. Formalize the project-wide UI magic literal legacy inventory.
 
 ## Active Blockers / Open Decisions
 
-- No implementation blocker is recorded. If manual smoke still shows lower
-  white space or unacceptable scrolling, selected-child allocation sync needs
-  a separate design slice.
-- No AHRI main/batch layout or optional-point design decision remains open for
-  the approved implementation slices.
+- No active implementation blocker is recorded.
+- HSPF2 DEV sample values remain isolated in their explicit mock-data owner.
+  Removing initial sample population is a separate product/empty-state decision,
+  not an AHRI lifecycle blocker.
 
 ## Active Constraints
 
-- Follow
-  `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
-- Keep the next action to AHRI HSPF2 Batch visual recheck and lifecycle
-  closeout; do not mix notebook allocation sync or unrelated implementation.
+- Keep the next slice inventory/documentation-first; do not mix broad literal
+  replacement or unrelated UI implementation.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
@@ -69,8 +63,8 @@
 - Active Arc / Milestone map: `project_brief.md`.
 - Last closed EN14825 batch/workflow summary:
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
-- EN14825 lifecycle closeout evidence:
-  `result_reports/active/424_close-en14825-calculator-lifecycle.md`.
+- AHRI calculator and supporting UI/workflow closeout:
+  `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
 - AHRI implementation contract:
   `docs/designs/2026-06-20-ahri-210-240-ui-batch-design-specification.md`.
 - Milestone decisions and detailed completed history belong in `project_log.md`

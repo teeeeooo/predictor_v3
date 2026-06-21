@@ -71,17 +71,21 @@ Goal:
 
 Status:
 
-- Design and SEER2 main UI foundation complete; SEER2 batch is the next
-  separately approved implementation slice.
+- Complete.
 
 Milestones:
 
 - AHRI UI/Batch design specification: complete.
 - SEER2 main UI foundation: complete.
-- SEER2 batch: next.
-- HSPF2 main UI foundation: pending.
-- HSPF2 batch: pending.
-- Focused regression and lifecycle closeout: pending.
+- SEER2 batch: complete.
+- HSPF2 main UI and capacity-only A2 boundary: complete.
+- HSPF2 batch and optional-point snapshot/rebuild lifecycle: complete.
+- Visible-content and batch natural-size corrections: complete.
+- Focused regression, user visual smoke, and lifecycle closeout: complete.
+
+Reference anchor:
+
+- `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
 
 ### Arc 3 — Calculator Workflow / Result Boundary Stabilization
 
@@ -92,8 +96,8 @@ Goal:
 
 Status:
 
-- Later arc; do not start while active standard-calculator completion work is in
-  progress unless explicitly approved.
+- Preparation is unblocked after AHRI closeout. The immediate workflow action is
+  UI magic literal legacy inventory formalization, owned by `docs/WORK_PLAN.md`.
 
 Candidate reference:
 
