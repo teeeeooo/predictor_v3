@@ -35,6 +35,25 @@ TEST_MEASUREMENTS = {
     "power_H22": "2160",
 }
 
+TEST_BIN_DETAIL = {
+    "bin_no": 1,
+    "temp_F": 62.0,
+    "hours": 132.0,
+    "operating_case": "Case I",
+    "building_load": 1200.0,
+    "q_low": 12500.0,
+    "q_int": 13000.0,
+    "q_full": 22000.0,
+    "COP_bin": 4.25,
+    "q_comp": 158400.0,
+    "e_comp": 10930.0,
+    "q_aux": 0.0,
+    "e_aux": 0.0,
+    "q_j": 158400.0,
+    "E_j": 10930.0,
+    "debug_info": {"not_for_ui": True},
+}
+
 
 def complete_values() -> dict[str, str]:
     return {
@@ -59,7 +78,9 @@ class FakeHspf2Calculator:
                 }
             },
             "h42_source": "provided",
+            "bin_details": [TEST_BIN_DETAIL],
         }
+        self.result.setdefault("bin_details", [TEST_BIN_DETAIL])
         self.points = None
         self.kwargs = None
 
@@ -85,6 +106,7 @@ def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> No
         h12_source="measured",
         h22_source="calculated",
         h42_source="measured",
+        bin_details=(TEST_BIN_DETAIL,),
     )
     assert tuple(calculator.points) == (
         "H01",

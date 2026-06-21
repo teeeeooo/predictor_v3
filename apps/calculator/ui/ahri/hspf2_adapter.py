@@ -72,6 +72,7 @@ class AhriHspf2Summary:
     h12_source: str
     h22_source: str
     h42_source: str
+    bin_details: tuple[Mapping[str, object], ...] = ()
 
 
 class AhriHspf2Adapter:
@@ -156,6 +157,7 @@ class AhriHspf2Adapter:
             h12_source=self._calculated_source(metadata, "h12_source"),
             h22_source=self._calculated_source(metadata, "h22_source"),
             h42_source=self._h42_source(result),
+            bin_details=self._required_bin_details(result),
         )
 
     def compute_display_cops(
@@ -205,6 +207,17 @@ class AhriHspf2Adapter:
         if not isinstance(value, Mapping):
             raise ValueError(f"Invalid AHRI HSPF2 core result: {key}")
         return value
+
+    @staticmethod
+    def _required_bin_details(
+        result: Mapping[str, object],
+    ) -> tuple[Mapping[str, object], ...]:
+        rows = result.get("bin_details")
+        if not isinstance(rows, (list, tuple)):
+            raise ValueError("Invalid AHRI HSPF2 core result: bin_details")
+        if any(not isinstance(row, Mapping) for row in rows):
+            raise ValueError("Invalid AHRI HSPF2 core result: bin_details")
+        return tuple(dict(row) for row in rows)
 
     @staticmethod
     def _calculated_source(metadata: Mapping[str, object], key: str) -> str:

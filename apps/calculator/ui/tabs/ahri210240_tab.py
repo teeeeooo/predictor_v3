@@ -35,7 +35,10 @@ class Ahri210240Tab(ttk.Frame):
         self.metric_notebook.add(self.hspf2_frame, text="HSPF2")
         self.seer2_section = AhriSeer2Section(self.seer2_frame)
         self.seer2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-        self.hspf2_section = AhriHspf2Section(self.hspf2_frame)
+        self.hspf2_section = AhriHspf2Section(
+            self.hspf2_frame,
+            on_trace_visibility_changed=self._request_visible_lifecycle_refit,
+        )
         self.hspf2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.result_panel = self.seer2_section.result_panel
 

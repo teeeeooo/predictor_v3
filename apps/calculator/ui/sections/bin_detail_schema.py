@@ -173,3 +173,47 @@ EN14825_SEER_BIN_DETAIL_SCHEMA = BinDetailSchema(
     ),
     table_title="EN14825 SEER Bin Detail",
 )
+
+
+AHRI_HSPF2_BIN_DETAIL_SCHEMA = BinDetailSchema(
+    column_labels=(
+        "Tj [°F]",
+        "Hours",
+        "Case",
+        "Building Load [Btu/h]",
+        "Low Cap [Btu/h]",
+        "Int Cap [Btu/h]",
+        "Full Cap [Btu/h]",
+        "COPbin",
+        "Comp Heat [Btu]",
+        "Comp Energy [Wh]",
+        "Aux Heat [Btu]",
+        "Aux Energy [Wh]",
+        "Total Heat [Btu]",
+        "Total Energy [Wh]",
+    ),
+    column_keys=(
+        "tj",
+        "hours",
+        "operating_case",
+        "building_load",
+        "q_low",
+        "q_int",
+        "q_full",
+        "cop_bin",
+        "q_comp",
+        "e_comp",
+        "q_aux",
+        "e_aux",
+        "q_total",
+        "e_total",
+    ),
+    graph_series=(
+        ("Bin Hours [h]", "hours"),
+        ("Building Load [Btu/h]", "building_load"),
+        ("Total Heat [Btu]", "q_total"),
+        ("Total Energy [Wh]", "e_total"),
+        ("COPbin", "cop_bin"),
+    ),
+    table_title="AHRI HSPF2 Bin Detail",
+)
