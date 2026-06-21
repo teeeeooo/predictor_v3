@@ -17,7 +17,11 @@ from apps.calculator.ui.batch.matrix_models import (
 )
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.batch.models import BatchRowState
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    BATCH_DIALOG_SAFETY_MIN_SIZE,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.result_formatting import kwh_value, metric_value
 from apps.calculator.ui.table.controller import TkTableController
@@ -371,7 +375,7 @@ class SasoT3BatchAdapter:
 
     @property
     def min_size(self) -> tuple[int, int]:
-        return (1180, 320)
+        return BATCH_DIALOG_SAFETY_MIN_SIZE
 
     def build_content(self, parent: tk.Widget) -> tk.Widget:
         self.section = SasoT3BatchSection(

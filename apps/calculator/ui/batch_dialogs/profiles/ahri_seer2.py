@@ -16,7 +16,11 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    BATCH_DIALOG_SAFETY_MIN_SIZE,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 
@@ -163,7 +167,7 @@ class AhriSeer2BatchAdapter:
 
     @property
     def min_size(self) -> tuple[int, int]:
-        return (1050, 360)
+        return BATCH_DIALOG_SAFETY_MIN_SIZE
 
     def build_content(self, parent: tk.Widget) -> tk.Widget:
         self.section = AhriSeer2BatchSection(

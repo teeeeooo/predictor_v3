@@ -7,17 +7,29 @@ import tkinter as tk
 import pytest
 
 from apps.calculator.ui.batch_dialogs.profiles.ahri_hspf2_dialog import (
+    AhriHspf2BatchAdapter,
     AhriHspf2BatchDialog,
 )
 from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
+    AhriSeer2BatchAdapter,
     AhriSeer2BatchDialog,
 )
 from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
+    En14825ScopBatchAdapter,
     En14825ScopBatchDialog,
 )
 from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
+    En14825SeerBatchAdapter,
     En14825SeerBatchDialog,
 )
+from apps.calculator.ui.batch_dialogs.profiles.hong_kong_cspf import (
+    HongKongCspfBatchAdapter,
+)
+from apps.calculator.ui.batch_dialogs.profiles.iso_iseer_2point import (
+    IsoIseer2PointBatchAdapter,
+)
+from apps.calculator.ui.batch_dialogs.profiles.saso_t3 import SasoT3BatchAdapter
+from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE
 from apps.calculator.ui.window_geometry import (
     capped_window_size,
     parent_centered_content_geometry,
@@ -87,3 +99,16 @@ def test_hspf2_batch_fits_natural_matrix_width_when_below_screen_cap(tk_root) ->
     if capped_width == natural_width:
         assert fitted_width >= natural_width
     dialog.close()
+
+
+def test_batch_profiles_share_shell_safety_floor() -> None:
+    adapters = (
+        AhriHspf2BatchAdapter(),
+        AhriSeer2BatchAdapter(),
+        En14825SeerBatchAdapter(),
+        En14825ScopBatchAdapter(),
+        HongKongCspfBatchAdapter("Hong Kong"),
+        IsoIseer2PointBatchAdapter(),
+        SasoT3BatchAdapter(),
+    )
+    assert all(adapter.min_size == BATCH_DIALOG_SAFETY_MIN_SIZE for adapter in adapters)

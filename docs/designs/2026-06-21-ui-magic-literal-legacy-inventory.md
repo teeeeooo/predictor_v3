@@ -64,9 +64,10 @@ state values that require owner review before migration.
 - Hong Kong CSPF's older `BatchColumnSpec.width_chars` declarations remain a
   profile-schema exception until its owner is deliberately migrated; copying
   those values into common BatchMatrix tokens would conflate table models.
-- Seven dialog `min_size` pairs predate or accompany natural-content fitting.
-  They must be tested for redundancy. Moving all seven pairs unchanged into a
-  token file would hide, not resolve, the ownership question.
+- The seven former profile-specific dialog `min_size` pairs were audited
+  against requested/preferred content size. Their width and initial-height
+  roles were redundant with natural-content fitting, so they now share one
+  shell-role safety floor; initial geometry remains content-owned.
 
 ### Controls, results, and detail surfaces
 

@@ -10,6 +10,7 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_scop import (
 )
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
+from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE
 
 __all__ = ["En14825ScopBatchDialog"]
 
@@ -28,7 +29,7 @@ class En14825ScopBatchAdapter:
 
     @property
     def min_size(self) -> tuple[int, int]:
-        return (1100, 410)
+        return BATCH_DIALOG_SAFETY_MIN_SIZE
 
     def build_content(self, parent: tk.Widget) -> tk.Widget:
         self.section = En14825ScopBatchSection(

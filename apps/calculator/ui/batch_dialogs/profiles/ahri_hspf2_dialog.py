@@ -8,6 +8,7 @@ import tkinter as tk
 from apps.calculator.ui.ahri.hspf2_batch_session import AhriHspf2BatchSnapshot
 from apps.calculator.ui.batch_dialogs.profiles.ahri_hspf2 import AhriHspf2BatchSection
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
+from apps.calculator.ui.layout_constants import BATCH_DIALOG_SAFETY_MIN_SIZE
 
 
 class AhriHspf2BatchAdapter:
@@ -22,7 +23,7 @@ class AhriHspf2BatchAdapter:
 
     @property
     def min_size(self) -> tuple[int, int]:
-        return (1180, 420)
+        return BATCH_DIALOG_SAFETY_MIN_SIZE
 
     def build_content(self, parent: tk.Widget) -> tk.Widget:
         self.section = AhriHspf2BatchSection(parent, initial_snapshot=self.initial_snapshot)
