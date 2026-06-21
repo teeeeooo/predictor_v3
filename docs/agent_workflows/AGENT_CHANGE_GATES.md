@@ -350,7 +350,14 @@ Current status after this owner document lands:
 - `check_agent_change_gate.py --cached`: implemented and focused-tested;
 - staged UI magic-literal Phase 1 gate: implemented and focused-tested;
 - pre-commit/commit-msg hooks: implemented and focused-tested;
+- profile-tab lifecycle ownership structure gate: implemented and focused-tested;
 - pre-push and CI branch mode: pending.
+
+The structure gate rejects direct construction/calls to
+`TkVisibleContentMeasurement`, `TkContentHuggingShell`,
+`DynamicContentRefitScheduler`, and `register_content` in production
+`apps/calculator/ui/tabs/*.py`. The allowed assembly owner is
+`apps/calculator/ui/lifecycle/`; tests remain outside the production scan.
 
 Implementation order:
 

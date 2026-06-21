@@ -354,8 +354,47 @@ def test_check_ui_package_registry():
     # Good examples (registered package)
     assert guard.check_ui_package_registry("apps/calculator/ui/en14825/seer_adapter.py") == []
     assert guard.check_ui_package_registry("apps/calculator/ui/batch/models.py") == []
+    assert guard.check_ui_package_registry("apps/calculator/ui/lifecycle/controller.py") == []
     # Flat file (registry check is only for packages under ui/, meaning depth >= 5)
     assert guard.check_ui_package_registry("apps/calculator/ui/result_panel.py") == []
+
+
+@pytest.mark.parametrize(
+    "call_source",
+    [
+        "TkVisibleContentMeasurement(content=content)",
+        "TkContentHuggingShell(root)",
+        "DynamicContentRefitScheduler(tab, fit)",
+        "shell.register_content(content=content)",
+    ],
+)
+def test_profile_tab_rejects_direct_lifecycle_assembly(call_source):
+    findings = guard.check_profile_tab_lifecycle_owner(
+        f"value = {call_source}\n",
+        "apps/calculator/ui/tabs/example_tab.py",
+    )
+
+    assert len(findings) == 1
+    assert findings[0].severity == "error"
+    assert "ProfileVisibleContentLifecycleController" in findings[0].message
+
+
+def test_lifecycle_controller_owner_allows_primitive_assembly():
+    source = "value = TkVisibleContentMeasurement(content=content)\n"
+
+    assert guard.check_profile_tab_lifecycle_owner(
+        source,
+        "apps/calculator/ui/lifecycle/controller.py",
+    ) == []
+
+
+def test_profile_tab_allows_common_controller_construction():
+    source = "value = ProfileVisibleContentLifecycleController(owner=self)\n"
+
+    assert guard.check_profile_tab_lifecycle_owner(
+        source,
+        "apps/calculator/ui/tabs/example_tab.py",
+    ) == []
 
 
 # ---------------------------------------------------------------------------

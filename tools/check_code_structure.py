@@ -106,6 +106,12 @@ UI_VISUAL_OWNER_PATHS: Set[str] = {
     "ui_common/visual_tokens.py",
 }
 UI_VISUAL_ALLOWLIST_PATHS: Set[str] = set()
+PROFILE_TAB_LIFECYCLE_FORBIDDEN_CALLS: Set[str] = {
+    "DynamicContentRefitScheduler",
+    "TkContentHuggingShell",
+    "TkVisibleContentMeasurement",
+    "register_content",
+}
 RAW_HEX_COLOR_PATTERN = re.compile(
     r"^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?(?:[0-9A-Fa-f]{2})?$"
 )
@@ -520,6 +526,7 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
             "batch",
             "batch_dialogs",
             "en14825",
+            "lifecycle",
             "sections",
             "table",
             "tabs",
@@ -535,6 +542,45 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
                     ),
                 )
             )
+    return findings
+
+
+def check_profile_tab_lifecycle_owner(source: str, relpath: str) -> List[Finding]:
+    """Reject direct lifecycle primitive assembly in production profile tabs."""
+
+    path_parts = relpath.split("/")
+    if path_parts[:4] != ["apps", "calculator", "ui", "tabs"]:
+        return []
+    if len(path_parts) != 5 or not path_parts[-1].endswith(".py"):
+        return []
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    findings: List[Finding] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if isinstance(node.func, ast.Name):
+            call_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            call_name = node.func.attr
+        else:
+            continue
+        if call_name not in PROFILE_TAB_LIFECYCLE_FORBIDDEN_CALLS:
+            continue
+        findings.append(
+            Finding(
+                severity="error",
+                path=relpath,
+                message=(
+                    f"Profile tab must not call {call_name} directly; "
+                    "delegate visible-content lifecycle assembly to "
+                    "ProfileVisibleContentLifecycleController."
+                ),
+            )
+        )
     return findings
 
 
@@ -628,6 +674,7 @@ def run_checks(repo_root: Path) -> List[Finding]:
         findings.extend(check_ui_root_flat_feature_file(relpath))
         findings.extend(check_sections_flat_model_adapter_table(relpath))
         findings.extend(check_ui_package_registry(relpath))
+        findings.extend(check_profile_tab_lifecycle_owner(source, relpath))
 
     # 3. app_*.py thin entrypoint
     for path in _iter_app_entrypoints(repo_root):

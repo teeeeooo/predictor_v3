@@ -108,6 +108,9 @@ behavior, dynamic profile/page surface, or nested surface lifecycle:
   `update()`/`update_idletasks()` flooding, or local settle-cycle patches;
 - keep scheduling, measurement, shell geometry, and view composition boundaries
   separate when the owner already exists.
+- calculator profile tabs must route visible-content lifecycle assembly through
+  `apps/calculator/ui/lifecycle/`; direct measurement/shell/scheduler construction
+  in production `tabs/*.py` is a structure-gate error.
 
 ## Result / Input / Export Surface Gate
 
