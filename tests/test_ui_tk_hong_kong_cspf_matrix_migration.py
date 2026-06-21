@@ -20,6 +20,7 @@ from apps.calculator.ui.sections.hong_kong_cspf_batch_spec import (
 from apps.calculator.ui.batch_dialogs.profiles.hong_kong_cspf import (
     HongKongCspfMatrixController,
 )
+from tests.calculator_ui_sample_values import HONG_KONG_CSPF_SAMPLE_VALUES
 
 
 class _HeadlessMatrixTable:
@@ -28,7 +29,9 @@ class _HeadlessMatrixTable:
     def __init__(self, cases: list[dict[str, str]] | None = None) -> None:
         self.spec = HONG_KONG_CSPF_MATRIX_SPEC
         self.cases: list[dict[str, str]] = (
-            [dict(c) for c in cases] if cases else [dict(c) for c in spec_default_cases()]
+            [dict(c) for c in cases]
+            if cases is not None
+            else [dict(c) for c in self.spec.default_cases]
         )
         self._results: dict[int, dict[str, str]] = {}
 
@@ -38,8 +41,8 @@ class _HeadlessMatrixTable:
             self.cases[logical_index].update(values)
 
 
-def spec_default_cases() -> list[dict[str, str]]:
-    return [dict(c) for c in HONG_KONG_CSPF_MATRIX_SPEC.default_cases]
+def _sample_cases() -> list[dict[str, str]]:
+    return [dict(HONG_KONG_CSPF_SAMPLE_VALUES), {}, {}, {}, {}]
 
 
 def test_matrix_adapter_input_keys_match_existing_batch_contract():
@@ -51,7 +54,7 @@ def test_matrix_adapter_result_keys_match_existing_batch_contract():
 
 
 def test_matrix_controller_calculates_each_logical_case():
-    table = _HeadlessMatrixTable()
+    table = _HeadlessMatrixTable(_sample_cases())
     handler = HongKongCspfBatchHandler("Hong Kong")
     controller = HongKongCspfMatrixController(table, handler)
 
@@ -63,7 +66,7 @@ def test_matrix_controller_calculates_each_logical_case():
 
 
 def test_matrix_controller_result_matches_handler_direct_call():
-    table = _HeadlessMatrixTable()
+    table = _HeadlessMatrixTable(_sample_cases())
     handler = HongKongCspfBatchHandler("Hong Kong")
     controller = HongKongCspfMatrixController(table, handler)
 
@@ -73,6 +76,12 @@ def test_matrix_controller_result_matches_handler_direct_call():
     assert table._results[0][CSPF] == direct_result.values[CSPF]
     assert table._results[0][CSEC] == direct_result.values[CSEC]
     assert direct_result.values[CSPF] == "4.939"
+
+
+def test_matrix_default_cases_are_empty():
+    table = _HeadlessMatrixTable()
+    assert len(table.cases) == 5
+    assert all(not case for case in table.cases)
 
 
 def test_matrix_controller_blank_cases_produce_blank_results():

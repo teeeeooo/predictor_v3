@@ -281,13 +281,7 @@ HONG_KONG_CSPF_MATRIX_SPEC = BatchMatrixSpec(
     ),
     result_metrics=((CSPF, "CSPF", 9), (CSEC, "CSEC", 10)),
     default_cases=(
-        {
-            DECLARED_CAPACITY: "3500",
-            FULL_CAPACITY: "3600",
-            FULL_POWER: "900",
-            HALF_CAPACITY: "1700",
-            HALF_POWER: "380",
-        },
+        {},
         {},
         {},
         {},

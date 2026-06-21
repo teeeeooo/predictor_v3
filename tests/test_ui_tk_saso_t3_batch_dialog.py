@@ -39,6 +39,11 @@ def test_saso_t3_batch_dialog_opens_and_closes(tk_root):
     assert dialog is not None
     assert dialog.window.winfo_exists()
     assert dialog.adapter.title == "SASO T3 Batch"
+    assert all(
+        not case.get(key, "")
+        for case in dialog.section.table.cases
+        for key in SASO_T3_MATRIX_SPEC.input_keys
+    )
     
     # Re-click to focus
     section.batch_button.invoke()
@@ -186,3 +191,5 @@ def test_saso_t3_batch_spec_properties():
     assert all("Req" not in label for label in labels)
     assert any("3pt" in label for label in labels)
     assert any("4pt" in label for label in labels)
+    assert len(spec.default_cases) == 5
+    assert all(not case for case in spec.default_cases)

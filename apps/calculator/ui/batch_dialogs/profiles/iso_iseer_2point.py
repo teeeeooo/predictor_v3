@@ -69,12 +69,7 @@ ISO_ISEER_2POINT_MATRIX_SPEC = BatchMatrixSpec(
         ("iseer_csec", "ISEER CSEC", 10),
     ),
     default_cases=(
-        {
-            "full_capacity": "3600",
-            "full_power": "900",
-            "half_capacity": "1700",
-            "half_power": "380",
-        },
+        {},
         {},
         {},
         {},

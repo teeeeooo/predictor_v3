@@ -19,6 +19,7 @@ from apps.calculator.ui.layout_constants import (
 )
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
+from tests.calculator_ui_sample_values import HONG_KONG_CSPF_SAMPLE_VALUES
 
 tk_mod = pytest.importorskip("tkinter")
 
@@ -44,15 +45,31 @@ def root():
 @pytest.fixture
 def table(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    _restore_sample(t)
     t.update_idletasks()
     yield t
     t.destroy()
+
+
+def _sample_cases():
+    return [dict(HONG_KONG_CSPF_SAMPLE_VALUES), {}, {}, {}, {}]
+
+
+def _restore_sample(table):
+    table.restore_snapshot(_sample_cases())
 
 
 def test_matrix_table_constructs_with_hong_kong_spec(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
     assert t.spec is HONG_KONG_CSPF_MATRIX_SPEC
     assert t.row_count() == 10  # 5 default cases * 2 physical rows
+    t.destroy()
+
+
+def test_matrix_table_defaults_to_empty_performance_cases(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    assert len(t.cases) == 5
+    assert all(not case for case in t.cases)
     t.destroy()
 
 
@@ -141,6 +158,7 @@ def test_paste_through_controller_updates_editable_input_cells_only(root):
 
 def test_clear_through_controller_clears_editable_input_cells_only(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    _restore_sample(t)
     controller = TkTableController(t)
     controller.select((0, 0))
     controller.select((1, 6), extend=True)
@@ -159,6 +177,7 @@ def test_clear_through_controller_clears_editable_input_cells_only(root):
 
 def test_copy_keeps_physical_rectangular_grid_shape(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    _restore_sample(t)
     t.set_result(0, {CSPF: "4.939", CSEC: "729.0"})
     controller = TkTableController(t)
     controller.select((0, 0))
@@ -194,6 +213,7 @@ def test_remove_case_removes_logical_pair_and_preserves_minimum_one(root):
 
 def test_snapshot_restore_is_logical_case_based(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    _restore_sample(t)
     original = dict(t.cases[0])
     snapshot = t.snapshot()
     t.cases[0][DECLARED_CAPACITY] = "9999"
@@ -253,6 +273,7 @@ def test_table_export_data_includes_result_first_row_only(root):
 
 def test_copy_all_puts_physical_grid_on_clipboard(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    _restore_sample(t)
     t.set_result(0, {CSPF: "4.939", CSEC: "729.0"})
     t.copy_all()
     clipboard = t.clipboard_get()

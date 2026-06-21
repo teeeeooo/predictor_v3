@@ -39,6 +39,11 @@ def test_iso_iseer_2point_batch_dialog_opens_and_closes(tk_root):
     assert dialog is not None
     assert dialog.window.winfo_exists()
     assert dialog.adapter.title == "ISO / India ISEER 2-point Batch"
+    assert all(
+        not case.get(key, "")
+        for case in dialog.section.table.cases
+        for key in ISO_ISEER_2POINT_MATRIX_SPEC.input_keys
+    )
     
     # Re-click to focus
     section.batch_button.invoke()
@@ -110,3 +115,5 @@ def test_iso_iseer_2point_batch_spec_properties():
     assert spec.profile_key == "iso_iseer_2point"
     assert "iso_cspf" in spec.result_keys
     assert "iseer" in spec.result_keys
+    assert len(spec.default_cases) == 5
+    assert all(not case for case in spec.default_cases)

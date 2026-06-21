@@ -90,16 +90,7 @@ SASO_T3_MATRIX_SPEC = BatchMatrixSpec(
         ("req_csec", "3pt CSEC", 10),
     ),
     default_cases=(
-        {
-            "full_46_capacity": "5000",
-            "full_46_power": "1500",
-            "full_35_capacity": "6000",
-            "full_35_power": "1500",
-            "half_35_capacity": "3000",
-            "half_35_power": "680",
-            "min_35_capacity": "1200",
-            "min_35_power": "300",
-        },
+        {},
         {},
         {},
         {},
