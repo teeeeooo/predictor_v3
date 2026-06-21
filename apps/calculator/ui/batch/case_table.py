@@ -18,14 +18,13 @@ from apps.calculator.ui.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
-    TABLE_EDITABLE_BG,
     TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
-    TABLE_STATIC_BG,
     TABLE_STATIC_FG,
 )
+from apps.calculator.ui.table.cell_background import cell_background
 
 ValuesChangedCallback = Callable[[], None]
 ROW_HEADER_WIDTH_CHARS = 4
@@ -83,7 +82,7 @@ class BatchCaseTable(ttk.Frame):
 
     def default_cell_background(self, position: GridAddress) -> str:
         role = self.model.spec.columns[position[1]].role
-        return TABLE_EDITABLE_BG if role is BatchColumnRole.INPUT else TABLE_STATIC_BG
+        return cell_background(editable=role is BatchColumnRole.INPUT)
 
     def set_values_changed_callback(
         self, callback: ValuesChangedCallback | None
@@ -268,7 +267,7 @@ class BatchCaseTable(ttk.Frame):
             variable = tk.StringVar(master=self, value=row.get(column.key, ""))
             variables[column.key] = variable
             is_input = column.role is BatchColumnRole.INPUT
-            background = TABLE_EDITABLE_BG if is_input else TABLE_STATIC_BG
+            background = cell_background(editable=is_input)
             cell = tk.Frame(self.table_frame, background=background, takefocus=1)
             cell.grid(
                 row=row_index + 1,
@@ -329,7 +328,7 @@ class BatchCaseTable(ttk.Frame):
             relief=tk.FLAT,
             borderwidth=0,
             highlightthickness=0,
-            background=TABLE_EDITABLE_BG,
+            background=cell_background(editable=True),
             font=TABLE_BODY_FONT,
             justify="center",
         )

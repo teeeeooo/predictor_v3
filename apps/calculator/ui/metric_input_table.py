@@ -16,20 +16,18 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_DATA_COLUMN_CHARS,
     TABLE_DATA_COLUMN_WEIGHT,
-    TABLE_EDITABLE_BG,
     TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
     TABLE_HEADER_FG,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
-    TABLE_INVALID_BG,
     TABLE_ROW_HEADER_CHARS,
     TABLE_ROW_HEADER_WEIGHT,
-    TABLE_STATIC_BG,
     TABLE_STATIC_FG,
     TABLE_SECTION_BREAK_GAP,
 )
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
+from apps.calculator.ui.table.cell_background import cell_background
 from apps.calculator.ui.table.roles import CellRole
 
 __all__ = ["MetricInputTable"]
@@ -188,7 +186,11 @@ class MetricInputTable(ttk.Frame):
         self, *, row: int, column: int, address: CellAddress
     ) -> None:
         cell = self._make_cell_frame(
-            row=row, column=column, role="static_cell", background=TABLE_STATIC_BG, row_key=address[0]
+            row=row,
+            column=column,
+            role="static_cell",
+            background=cell_background(editable=False),
+            row_key=address[0],
         )
         cell.surface_address = address
         self.cell_frames[address] = cell
@@ -197,7 +199,7 @@ class MetricInputTable(ttk.Frame):
             cell,
             text="-",
             width=self.data_column_chars,
-            background=TABLE_STATIC_BG,
+            background=cell_background(editable=False),
             foreground=TABLE_STATIC_FG,
             font=TABLE_BODY_FONT,
         )
@@ -211,7 +213,7 @@ class MetricInputTable(ttk.Frame):
             row=row,
             column=column,
             role="editable_cell",
-            background=TABLE_EDITABLE_BG,
+            background=cell_background(editable=True),
             row_key=address[0],
         )
         cell.surface_address = address
@@ -230,7 +232,7 @@ class MetricInputTable(ttk.Frame):
             borderwidth=0,
             highlightthickness=0,
             justify=tk.CENTER,
-            background=TABLE_EDITABLE_BG,
+            background=cell_background(editable=True),
             font=TABLE_BODY_FONT,
         )
         entry.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
@@ -243,7 +245,7 @@ class MetricInputTable(ttk.Frame):
             cell,
             text="",
             width=self.data_column_chars,
-            background=TABLE_STATIC_BG,
+            background=cell_background(editable=False),
             foreground=TABLE_STATIC_FG,
             font=TABLE_BODY_FONT,
         )
@@ -479,11 +481,10 @@ class MetricInputTable(ttk.Frame):
     def role_cell_background(
         self, position: tuple[int, int], *, invalid: bool = False
     ) -> str:
-        if invalid:
-            return TABLE_INVALID_BG
-        if self.cell_role(position) is CellRole.EDITABLE:
-            return TABLE_EDITABLE_BG
-        return TABLE_STATIC_BG
+        return cell_background(
+            editable=self.cell_role(position) is CellRole.EDITABLE,
+            invalid=invalid,
+        )
 
     def ensure_row_count(self, count: int) -> None:
         # Fixed-row surface: no-op.  Main tables never dynamically add rows.
@@ -534,10 +535,12 @@ class MetricInputTable(ttk.Frame):
     def _apply_field_visual_state(self, field_key: str) -> None:
         """Set entry background for one field based on invalid state."""
         entry = self.editable_entries[field_key]
-        if field_key in self._invalid_fields:
-            entry.configure(background=TABLE_INVALID_BG)
-        else:
-            entry.configure(background=TABLE_EDITABLE_BG)
+        entry.configure(
+            background=cell_background(
+                editable=True,
+                invalid=field_key in self._invalid_fields,
+            )
+        )
 
     def _apply_all_visual_states(self) -> None:
         """Apply visual state to all editable entries."""
@@ -556,7 +559,10 @@ class MetricInputTable(ttk.Frame):
         cell = self.editable_cell_frames[field_key]
         if readonly:
             previous_text = readonly_label.cget("text")
-            readonly_label.configure(text=display_value, background=TABLE_STATIC_BG)
+            readonly_label.configure(
+                text=display_value,
+                background=cell_background(editable=False),
+            )
             entry.configure(state=tk.NORMAL)
             if entry.winfo_manager():
                 entry.pack_forget()
@@ -567,7 +573,7 @@ class MetricInputTable(ttk.Frame):
                     padx=TABLE_CELL_PADX,
                     pady=TABLE_CELL_PADY,
                 )
-            cell.configure(background=TABLE_STATIC_BG)
+            cell.configure(background=cell_background(editable=False))
             return previous_text != display_value
 
         was_readonly_visible = bool(readonly_label.winfo_manager())
@@ -583,9 +589,10 @@ class MetricInputTable(ttk.Frame):
         entry.configure(state=tk.NORMAL)
         self._apply_field_visual_state(field_key)
         cell.configure(
-            background=TABLE_INVALID_BG
-            if field_key in self._invalid_fields
-            else TABLE_EDITABLE_BG
+            background=cell_background(
+                editable=True,
+                invalid=field_key in self._invalid_fields,
+            )
         )
         return was_readonly_visible
 

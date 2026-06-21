@@ -14,15 +14,14 @@ from apps.calculator.ui.layout_constants import (
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
-    TABLE_EDITABLE_BG,
     TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
     TABLE_HEADER_FONT,
     TABLE_HEADER_PADY,
-    TABLE_STATIC_BG,
     TABLE_STATIC_FG,
 )
 from apps.calculator.ui.table.roles import CellRole
+from apps.calculator.ui.table.cell_background import cell_background
 
 ValuesChangedCallback = Callable[[], None]
 
@@ -168,7 +167,7 @@ class BatchMatrixTable(ttk.Frame):
         return self._cell_frames[position]
 
     def default_cell_background(self, position: tuple[int, int]) -> str:
-        return TABLE_EDITABLE_BG if self.spec.is_editable(position) else TABLE_STATIC_BG
+        return cell_background(editable=self.spec.is_editable(position))
 
     def ensure_row_count(self, count: int) -> None:
         physical_rows_per_case = len(self.spec.physical_rows)
@@ -348,7 +347,7 @@ class BatchMatrixTable(ttk.Frame):
             position = (physical_row, column_index)
             cell = self.spec.resolve_cell(position)
             is_editable = cell.editable and cell.input_key is not None
-            background = TABLE_EDITABLE_BG if is_editable else TABLE_STATIC_BG
+            background = cell_background(editable=is_editable)
 
             cell_frame = tk.Frame(self.table_frame, background=background, takefocus=1)
             cell_frame.grid(
@@ -405,7 +404,7 @@ class BatchMatrixTable(ttk.Frame):
             relief=tk.FLAT,
             borderwidth=0,
             highlightthickness=0,
-            background=TABLE_EDITABLE_BG,
+            background=cell_background(editable=True),
             font=TABLE_BODY_FONT,
             justify="center",
         )
