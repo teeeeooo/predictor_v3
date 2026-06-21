@@ -29,6 +29,8 @@
 
 - EN14825 SEER now exposes additive Declared/Tested bin details through the
   shared detail panel without changing the existing SEER result keys.
+- The shared bin-detail table now keeps vertical scrolling and exposes an
+  always-visible horizontal scrollbar for wide detail schemas.
 - Local GUI visual smoke remains before the SEER detail slice is closed.
 
 ## Next Actions

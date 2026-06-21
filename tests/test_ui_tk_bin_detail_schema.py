@@ -82,6 +82,24 @@ class TestBinTraceTableDefaultSchema:
         table = BinTraceTable(tk_root)
         assert table.title_label.cget("text") == COOLING_BIN_DETAIL_SCHEMA.table_title
 
+    def test_vertical_and_horizontal_scrollbars_are_always_connected(
+        self, tk_root
+    ) -> None:
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
+
+        table = BinTraceTable(tk_root)
+
+        assert str(table.scrollbar.cget("orient")) == "vertical"
+        assert str(table.horizontal_scrollbar.cget("orient")) == "horizontal"
+        assert table.table.cget("yscrollcommand")
+        assert table.table.cget("xscrollcommand")
+        assert table.scrollbar.cget("command")
+        assert table.horizontal_scrollbar.cget("command")
+        assert table.scrollbar.winfo_manager() == "grid"
+        assert table.horizontal_scrollbar.winfo_manager() == "grid"
+        assert table.scrollbar.grid_info()["row"] == 0
+        assert table.horizontal_scrollbar.grid_info()["row"] == 1
+
     def test_default_table_export_data_with_rows(self, tk_root) -> None:
         from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 

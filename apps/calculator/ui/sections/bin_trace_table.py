@@ -46,6 +46,8 @@ class BinTraceTable:
 
         self._table_frame = ttk.Frame(self._frame)
         self._table_frame.pack(side=tk.TOP, anchor="w")
+        self._table_frame.columnconfigure(0, weight=1)
+        self._table_frame.rowconfigure(0, weight=1)
         self.table = ttk.Treeview(
             self._table_frame,
             columns=self.column_labels,
@@ -57,9 +59,18 @@ class BinTraceTable:
         self.scrollbar = ttk.Scrollbar(
             self._table_frame, orient=tk.VERTICAL, command=self.table.yview
         )
-        self.table.configure(yscrollcommand=self.scrollbar.set)
-        self.table.pack(side=tk.LEFT)
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.horizontal_scrollbar = ttk.Scrollbar(
+            self._table_frame,
+            orient=tk.HORIZONTAL,
+            command=self.table.xview,
+        )
+        self.table.configure(
+            yscrollcommand=self.scrollbar.set,
+            xscrollcommand=self.horizontal_scrollbar.set,
+        )
+        self.table.grid(row=0, column=0, sticky="nsew")
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.horizontal_scrollbar.grid(row=1, column=0, sticky="ew")
         for column in self.column_labels:
             self.table.heading(column, text=column)
             self.table.column(
