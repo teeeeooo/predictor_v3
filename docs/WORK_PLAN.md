@@ -33,14 +33,15 @@
   are manually confirmed.
 - The five approved legacy UI token cleanup slices are complete, with remaining
   values classified in the formal exception/exclusion ledger.
-- Structure-improvement candidates now proceed as audit-only decisions; no
-  production refactor is authorized in the audit arc.
+- The four structure audits are complete. Detail formatting and matrix
+  controller candidates are implementation-ready; dialog handle and detail
+  toggle candidates require the recorded design/guard boundaries.
 
 ## Next Actions
 
-1. Audit whether repeated detail number/text formatting warrants a common
-   helper while keeping profile field mapping local.
-2. Continue the remaining structure audits without production refactors.
+1. Implement the small pure detail formatting coercion helper while keeping all
+   profile field maps and precision choices local.
+2. Reassess the matrix controller candidate only after that bounded slice.
 
 ## Active Blockers / Open Decisions
 
