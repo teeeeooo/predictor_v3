@@ -10,6 +10,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
 from apps.calculator.ui.profile_resolver import (
     MODE_HONG_KONG,
     MODE_ISO_ISEER_2POINT,
@@ -23,9 +24,6 @@ from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSecti
 from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from apps.calculator.ui.sections.iso_saso_t3_section import IsoSasoT3Section
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
-from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
-from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
-from apps.calculator.ui.window_shell import TkContentHuggingShell
 
 
 _SECTION_FACTORIES = {
@@ -71,10 +69,6 @@ class Iso16358Tab(ttk.Frame):
         self._saso_t3_frame = ttk.Frame(self._content)
         self._two_point_section = None
         self._saso_t3_section = None
-        self._refit_scheduler = DynamicContentRefitScheduler(
-            self,
-            self._fit_toplevel_to_current_content,
-        )
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -95,19 +89,15 @@ class Iso16358Tab(ttk.Frame):
         self._metric_notebook.bind(
             "<<NotebookTabChanged>>", self._on_metric_tab_changed
         )
-        self._measurement = TkVisibleContentMeasurement(
+        self._lifecycle = ProfileVisibleContentLifecycleController(
+            owner=self,
             content=self._content,
-            scrollbar=self._scrollbar,
-            overflow_source=self._scrollable,
+            scrollable=self._scrollable,
             nested_notebook=self._metric_notebook,
             nested_notebook_active=lambda: self._current_mode() == MODE_HONG_KONG,
-            suppress_measurement=self._refit_scheduler.suppress_requests,
         )
-        self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
-        self._content_form = self._content_shell.register_content(
-            snapshot_provider=self._measurement.snapshot,
-            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
-        )
+        self._measurement = self._lifecycle.measurement
+        self._refit_scheduler = self._lifecycle.scheduler
 
         self.sections = {}
         # Compatibility alias for callers that only check panel availability.
@@ -143,10 +133,10 @@ class Iso16358Tab(ttk.Frame):
     # -- Metric size helpers --------------------------------------------------
 
     def vertical_overflow_delta(self) -> int:
-        return self._measurement.vertical_overflow_delta()
+        return self._lifecycle.vertical_overflow_delta()
 
     def preferred_initial_size(self) -> tuple[int, int]:
-        return self._measurement.preferred_size()
+        return self._lifecycle.preferred_initial_size()
 
     # -- Calculation mode handling -------------------------------------------
 
@@ -165,24 +155,19 @@ class Iso16358Tab(ttk.Frame):
     def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
         """Run visible-surface settle -> snapshot measure -> shell fit later."""
 
-        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+        self._lifecycle.request_visible_lifecycle_refit(settle_cycles=settle_cycles)
 
     def _schedule_toplevel_refit(self, *, settle_cycles: int = 1) -> None:
         self._request_visible_lifecycle_refit(settle_cycles=settle_cycles)
 
-    def _fit_toplevel_to_current_content(self) -> None:
-        self.update_idletasks()
-        self._content_form.fit()
-        self.update_idletasks()
-
     def fit_toplevel_to_current_content_once(self) -> None:
-        self._fit_toplevel_to_current_content()
+        self._lifecycle.fit_toplevel_to_current_content_once()
 
     def _on_trace_visibility_changed(self) -> None:
-        self._request_visible_lifecycle_refit()
+        self._lifecycle.on_detail_visibility_changed()
 
     def _on_metric_tab_changed(self, _event=None) -> None:
-        self._request_visible_lifecycle_refit()
+        self._lifecycle.on_nested_tab_changed()
 
     def _render_mode(self, mode_label: str) -> None:
         self._cancel_hong_kong_pending()

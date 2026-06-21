@@ -993,7 +993,6 @@ def test_iso_refit_scheduler_uses_settled_after_idle(tk_root, monkeypatch):
         return f"idle-{len(callbacks)}"
 
     monkeypatch.setattr(tab, "after_idle", fake_after_idle)
-    monkeypatch.setattr(tab, "_fit_toplevel_to_current_content", lambda: fit_calls.append("fit"))
     monkeypatch.setattr(tab._refit_scheduler, "_refit_callback", lambda: fit_calls.append("fit"))
 
     tab._schedule_toplevel_refit()
@@ -1011,26 +1010,24 @@ def test_iso_refit_scheduler_uses_settled_after_idle(tk_root, monkeypatch):
     assert tab._refit_scheduler.is_pending is False
 
 
-def test_metric_tab_change_refit_is_disabled_until_common_owner(tk_root, monkeypatch):
+def test_metric_tab_change_uses_common_lifecycle_owner(tk_root, monkeypatch):
     tab = _make_hong_kong_tab(tk_root)
     calls = []
-    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
+    monkeypatch.setattr(
+        tab._lifecycle,
+        "on_nested_tab_changed",
+        lambda: calls.append("nested") or True,
+    )
 
     tab._on_metric_tab_changed()
 
-    assert calls == []
+    assert calls == ["nested"]
 
 
 def test_metric_tab_measurement_suppresses_refit(tk_root, monkeypatch):
     tab = _make_hong_kong_tab(tk_root)
-    calls = []
-    monkeypatch.setattr(tab, "_schedule_toplevel_refit", lambda: calls.append("fit"))
 
-    with tab._refit_scheduler.suppress_requests():
-        tab._on_metric_tab_changed()
-    tab._on_metric_tab_changed()
-
-    assert calls == []
+    assert tab._measurement._suppress_measurement.__self__ is tab._refit_scheduler
 
 
 def test_refit_scheduler_blocks_reentrant_requests_during_fit(tk_root, monkeypatch):
@@ -1047,7 +1044,6 @@ def test_refit_scheduler_blocks_reentrant_requests_during_fit(tk_root, monkeypat
         tab._schedule_toplevel_refit()
 
     monkeypatch.setattr(tab, "after_idle", fake_after_idle)
-    monkeypatch.setattr(tab, "_fit_toplevel_to_current_content", fit_and_reschedule)
     monkeypatch.setattr(tab._refit_scheduler, "_refit_callback", fit_and_reschedule)
 
     tab._schedule_toplevel_refit()
@@ -1063,9 +1059,14 @@ def test_profile_and_detail_paths_share_refit_scheduler(tk_root, monkeypatch):
     tab = _make_tab(tk_root)
     calls = []
     monkeypatch.setattr(
-        tab,
-        "_request_visible_lifecycle_refit",
-        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)),
+        tab._lifecycle,
+        "on_detail_visibility_changed",
+        lambda: calls.append(1) or True,
+    )
+    monkeypatch.setattr(
+        tab._lifecycle,
+        "request_visible_lifecycle_refit",
+        lambda **kwargs: calls.append(kwargs.get("settle_cycles", 1)) or True,
     )
 
     tab._on_trace_visibility_changed()

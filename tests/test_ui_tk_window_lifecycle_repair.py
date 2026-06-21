@@ -170,7 +170,7 @@ class TestMetricTabChangeRefitScheduling:
         # ISO/ISEER 2-point is the default mode
         assert tab._two_point_section is not None
         # The section should have received the callback during construction
-        assert tab._two_point_section._on_trace_visibility_changed is not None
+        assert tab._two_point_section._on_detail_visibility_changed is not None
 
     def test_saso_section_receives_visibility_callback(self, tk_root) -> None:
         from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
@@ -181,7 +181,7 @@ class TestMetricTabChangeRefitScheduling:
         tab._on_mode_changed()
         tk_root.update_idletasks()
         assert tab._saso_t3_section is not None
-        assert tab._saso_t3_section._on_trace_visibility_changed is not None
+        assert tab._saso_t3_section._on_detail_visibility_changed is not None
 
     def test_hong_kong_cspf_receives_visibility_callback(self, tk_root) -> None:
         from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab

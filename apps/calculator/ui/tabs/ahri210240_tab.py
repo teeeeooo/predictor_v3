@@ -5,12 +5,10 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.sections.ahri_seer2_section import AhriSeer2Section
 from apps.calculator.ui.sections.ahri_hspf2_section import AhriHspf2Section
-from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
-from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
-from apps.calculator.ui.window_shell import TkContentHuggingShell
 
 
 class Ahri210240Tab(ttk.Frame):
@@ -21,10 +19,6 @@ class Ahri210240Tab(ttk.Frame):
         self._scrollable = ScrollableFrame(self)
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
-        self._refit_scheduler = DynamicContentRefitScheduler(
-            self,
-            self._fit_toplevel_to_current_content,
-        )
 
         self.metric_notebook = ttk.Notebook(self._content)
         self.metric_notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
@@ -33,48 +27,39 @@ class Ahri210240Tab(ttk.Frame):
         self.hspf2_frame = ttk.Frame(self.metric_notebook)
         self.metric_notebook.add(self.seer2_frame, text="SEER2")
         self.metric_notebook.add(self.hspf2_frame, text="HSPF2")
+        self._lifecycle = ProfileVisibleContentLifecycleController(
+            owner=self,
+            content=self._content,
+            scrollable=self._scrollable,
+            nested_notebook=self.metric_notebook,
+            nested_notebook_active=self._is_visible_surface,
+            nested_tab_settle_cycles=2,
+        )
+        self._measurement = self._lifecycle.measurement
+        self._refit_scheduler = self._lifecycle.scheduler
         self.seer2_section = AhriSeer2Section(self.seer2_frame)
         self.seer2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.hspf2_section = AhriHspf2Section(
             self.hspf2_frame,
-            on_trace_visibility_changed=self._request_visible_lifecycle_refit,
+            on_trace_visibility_changed=self._lifecycle.on_detail_visibility_changed,
         )
         self.hspf2_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.result_panel = self.seer2_section.result_panel
 
-        self._measurement = TkVisibleContentMeasurement(
-            content=self._content,
-            scrollbar=self._scrollable.scrollbar,
-            overflow_source=self._scrollable,
-            nested_notebook=self.metric_notebook,
-            nested_notebook_active=self._is_visible_surface,
-            suppress_measurement=self._refit_scheduler.suppress_requests,
-        )
-        shell = TkContentHuggingShell(self.winfo_toplevel())
-        self._content_form = shell.register_content(
-            snapshot_provider=self._measurement.snapshot,
-            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
-        )
-
     def preferred_initial_size(self) -> tuple[int, int]:
-        return self._measurement.preferred_size()
+        return self._lifecycle.preferred_initial_size()
 
     def fit_toplevel_to_current_content_once(self) -> None:
-        self._fit_toplevel_to_current_content()
-
-    def _fit_toplevel_to_current_content(self) -> None:
-        self.update_idletasks()
-        self._content_form.fit()
-        self.update_idletasks()
+        self._lifecycle.fit_toplevel_to_current_content_once()
 
     def _on_metric_changed(self, _event: tk.Event | None = None) -> None:
         if self._is_visible_surface():
-            self._request_visible_lifecycle_refit(settle_cycles=2)
+            self._lifecycle.on_nested_tab_changed()
 
     def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
         """Fit only after the selected AHRI metric surface has settled."""
 
-        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+        self._lifecycle.request_visible_lifecycle_refit(settle_cycles=settle_cycles)
 
     def _is_visible_surface(self) -> bool:
         parent = self.master

@@ -34,14 +34,10 @@ class TestHongKongHspfSectionDefaults:
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
         tk_root.update_idletasks()
-        summaries = section.result_panel.summaries()
-        assert len(summaries) == 1
-        assert summaries[0].title == "HSPF"
+        summary = dict(section._detail_summary)
+        assert "HSPF" in summary
         # Default inputs should produce the known MVP value ~3.643
-        hspf_field = next(
-            (label, value) for label, value in summaries[0].fields if label == "HSPF"
-        )
-        assert float(hspf_field[1]) == pytest.approx(3.643, abs=0.001)
+        assert float(summary["HSPF"]) == pytest.approx(3.643, abs=0.001)
 
 
 class TestHongKongHspfDetailPanel:

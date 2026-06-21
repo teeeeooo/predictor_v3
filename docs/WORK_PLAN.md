@@ -27,22 +27,22 @@
 
 ## Current Slice
 
-- The common lifecycle package and controller foundation are implemented.
-- EN14825 now delegates measurement, shell registration, scheduler ownership,
-  preferred size, immediate fit, parent selection, nested changes, and detail
-  visibility triggers to the controller.
-- EN14825 public tab methods and SEER/SCOP lifecycle behavior remain compatible.
+- EN14825, AHRI210240, and ISO16358 now share the common profile visible-content
+  lifecycle controller.
+- AHRI retains its visible-only two-cycle metric refit; ISO retains Hong Kong-only
+  nested measurement and first-entry mode settling through injected policy.
+- Production profile tabs no longer construct measurement, shell/form, or
+  scheduler primitives directly.
 
 ## Next Actions
 
-1. Migrate AHRI210240 and ISO16358 without changing profile behavior.
-2. Add the lifecycle ownership hard gate after all profile tabs comply.
+1. Add the lifecycle ownership hard gate and register the lifecycle package.
+2. Implement AHRI SEER2 detail through the common controller path.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; the new package registry
-  warning is intentionally deferred to task 5, whose scope owns structure-gate
-  registration and enforcement.
+- No active implementation blocker is recorded; task 5 owns the pending package
+  registry warning and direct-primitive-construction enforcement.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 
