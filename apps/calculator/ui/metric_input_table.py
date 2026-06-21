@@ -470,11 +470,18 @@ class MetricInputTable(ttk.Frame):
         return self.cell_widget(position)
 
     def default_cell_background(self, position: tuple[int, int]) -> str:
-        role = self.cell_role(position)
-        if role is CellRole.EDITABLE:
-            field_key = self._field_key_at_position(position)
-            if field_key is not None and field_key in self._invalid_fields:
-                return TABLE_INVALID_BG
+        field_key = self._field_key_at_position(position)
+        return self.role_cell_background(
+            position,
+            invalid=field_key is not None and field_key in self._invalid_fields,
+        )
+
+    def role_cell_background(
+        self, position: tuple[int, int], *, invalid: bool = False
+    ) -> str:
+        if invalid:
+            return TABLE_INVALID_BG
+        if self.cell_role(position) is CellRole.EDITABLE:
             return TABLE_EDITABLE_BG
         return TABLE_STATIC_BG
 

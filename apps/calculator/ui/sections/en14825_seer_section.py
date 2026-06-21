@@ -15,7 +15,6 @@ from apps.calculator.ui.en14825 import (
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
-from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
     En14825SeerBatchDialog,
@@ -32,10 +31,6 @@ from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
-    TABLE_INVALID_BG,
-    TABLE_STATIC_BG,
-    TABLE_EDITABLE_BG,
-    TABLE_PASS_BG,
 )
 
 STATUS_MAPPINGS = {
@@ -467,15 +462,10 @@ class En14825SeerSection:
         else:
             state = "neutral"
 
-        is_editable = self.input_table.cell_role(position) == CellRole.EDITABLE
-        if state == "invalid":
-            return TABLE_INVALID_BG
-        elif state == "pass":
-            return TABLE_PASS_BG
-        elif state == "unavailable":
-            return TABLE_STATIC_BG
-        else:
-            return TABLE_EDITABLE_BG if is_editable else TABLE_STATIC_BG
+        return self.input_table.role_cell_background(
+            position,
+            invalid=state == "invalid",
+        )
 
     def _update_result_summary(self, summary: SeerResultSummary) -> None:
         status_text = STATUS_MAPPINGS.get(summary.status_code, "계산 완료")

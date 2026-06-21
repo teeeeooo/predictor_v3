@@ -13,7 +13,6 @@ from apps.calculator.ui.en14825 import (
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.table.controller import TkTableController
-from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
     En14825ScopBatchDialog,
@@ -34,10 +33,6 @@ from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSu
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
-    TABLE_INVALID_BG,
-    TABLE_STATIC_BG,
-    TABLE_EDITABLE_BG,
-    TABLE_PASS_BG,
 )
 
 
@@ -643,15 +638,10 @@ class En14825ScopSection:
         else:
             state = "neutral"
 
-        is_editable = table.cell_role(position) == CellRole.EDITABLE
-        if state == "invalid":
-            return TABLE_INVALID_BG
-        elif state == "pass":
-            return TABLE_PASS_BG
-        elif state == "unavailable":
-            return TABLE_STATIC_BG
-        else:
-            return TABLE_EDITABLE_BG if is_editable else TABLE_STATIC_BG
+        return table.role_cell_background(
+            position,
+            invalid=state == "invalid",
+        )
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:

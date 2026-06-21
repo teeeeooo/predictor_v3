@@ -879,6 +879,54 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         root.destroy()
 
 
+def test_en14825_scop_cell_background_follows_editable_role_contract():
+    import tkinter as tk
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter is not available in this environment")
+
+    try:
+        root.withdraw()
+        from apps.calculator.ui.layout_constants import (
+            TABLE_EDITABLE_BG,
+            TABLE_INVALID_BG,
+            TABLE_STATIC_BG,
+        )
+        from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+        from apps.calculator.ui.table.roles import CellRole
+
+        section = En14825ScopSection(root)
+        table = section.input_tables["average"]
+        col_idx = ScopTableModel.COL_KEYS.index("A")
+        editable_pos = (
+            ScopTableModel.ROW_KEYS.index("declared_capacity"),
+            col_idx,
+        )
+        computed_pos = (ScopTableModel.ROW_KEYS.index("cop_percent"), col_idx)
+
+        assert table.cell_role(editable_pos) is CellRole.EDITABLE
+        assert table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert table.cell_role(computed_pos) is CellRole.READONLY
+        assert table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
+
+        _populate_average_sample(section)
+        section._auto_calc.flush_now()
+        assert table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert table.cell_widget(computed_pos).cget("background") == TABLE_STATIC_BG
+
+        table.set_value("tested_power_A", "0")
+        section._auto_calc.flush_now()
+        invalid_pos = (ScopTableModel.ROW_KEYS.index("tested_power"), col_idx)
+        assert table.cell_frame(invalid_pos).cget("background") == TABLE_INVALID_BG
+        assert table.cell_widget(invalid_pos).cget("background") == TABLE_INVALID_BG
+    finally:
+        root.destroy()
+
+
 def test_scop_auxiliary_inputs_use_table_controller_undo():
     """SCOP Cd and climate auxiliary inputs use table controller undo semantics."""
     import tkinter as tk

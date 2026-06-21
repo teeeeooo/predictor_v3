@@ -458,8 +458,8 @@ def test_en14825_gui_integration():
         root.destroy()
 
 
-def test_en14825_static_cell_tint():
-    """Verify that static computed cells expose their Label as widget and get correctly tinted."""
+def test_en14825_seer_cell_background_follows_editable_role_contract():
+    """Editable cells stay white while computed and invalid cells stay distinct."""
     import tkinter as tk
     from tkinter import ttk
     try:
@@ -470,30 +470,35 @@ def test_en14825_static_cell_tint():
     try:
         root.withdraw()
         from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
-        from apps.calculator.ui.layout_constants import TABLE_PASS_BG, TABLE_INVALID_BG
+        from apps.calculator.ui.layout_constants import (
+            TABLE_EDITABLE_BG,
+            TABLE_INVALID_BG,
+            TABLE_STATIC_BG,
+        )
         from apps.calculator.ui.table.roles import CellRole
         from apps.calculator.ui.en14825 import SeerTableModel
 
         section = En14825SeerSection(root)
-        _populate_seer_sample(section)
-
-        row_idx = SeerTableModel.ROW_KEYS.index("eer_percent")
         col_idx = SeerTableModel.COL_KEYS.index("A")
-        position = (row_idx, col_idx)
+        editable_pos = (
+            SeerTableModel.ROW_KEYS.index("declared_capacity"),
+            col_idx,
+        )
+        computed_pos = (SeerTableModel.ROW_KEYS.index("eer_percent"), col_idx)
 
-        # Verify role is READONLY
-        assert section.input_table.cell_role(position) == CellRole.READONLY
+        assert section.input_table.cell_role(editable_pos) == CellRole.EDITABLE
+        assert section.input_table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert section.input_table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert section.input_table.cell_role(computed_pos) == CellRole.READONLY
+        assert isinstance(section.input_table.cell_widget(computed_pos), tk.Label)
+        assert section.input_table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
 
-        # Get widget
-        widget = section.input_table.cell_widget(position)
-        assert isinstance(widget, tk.Label)
-
-        # Repaint and verify background colors
+        _populate_seer_sample(section)
         section._auto_calc.flush_now()
-
-        frame = section.input_table.cell_frame(position)
-        assert frame.cget("background") == TABLE_PASS_BG
-        assert widget.cget("background") == TABLE_PASS_BG
+        assert section.input_table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert section.input_table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
+        assert section.input_table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
+        assert section.input_table.cell_widget(computed_pos).cget("background") == TABLE_STATIC_BG
 
         # Now set invalid input to tested_power to trigger invalid state/recalculate
         section.input_table.set_value("tested_power_A", "0")
@@ -503,6 +508,7 @@ def test_en14825_static_cell_tint():
         power_row_idx = SeerTableModel.ROW_KEYS.index("tested_power")
         power_pos = (power_row_idx, col_idx)
         power_widget = section.input_table.cell_widget(power_pos)
+        assert section.input_table.cell_frame(power_pos).cget("background") == TABLE_INVALID_BG
         assert power_widget.cget("background") == TABLE_INVALID_BG
 
     finally:
