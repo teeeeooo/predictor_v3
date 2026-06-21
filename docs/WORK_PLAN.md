@@ -27,25 +27,26 @@
 
 ## Current Slice
 
-- The EN14825/AHRI detail-view design record is tracked and indexed.
-- EN14825 SCOP detail implementation is complete; local GUI visual smoke
-  remains an acceptance check rather than a separate implementation slice.
+- EN14825 SEER now exposes additive Declared/Tested bin details through the
+  shared detail panel without changing the existing SEER result keys.
+- Local GUI visual smoke remains before the SEER detail slice is closed.
 
 ## Next Actions
 
-1. Implement the EN14825 SEER detail view in a separate slice.
+1. Run EN14825 SEER detail visual smoke.
+2. Implement the AHRI HSPF2 detail view in a separate slice.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; SCOP detail geometry and
-  source-switch behavior still require local GUI confirmation.
+- No active implementation blocker is recorded; SEER detail geometry and
+  Declared/Tested source switching still require local GUI confirmation.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 
 ## Active Constraints
 
 - Do not remove calculator sample/default data during detail-view slices.
-- Keep EN14825 SEER and AHRI detail implementations separate from SCOP.
+- Keep AHRI detail implementations separate from EN14825 detail behavior.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

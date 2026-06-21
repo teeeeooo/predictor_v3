@@ -23,6 +23,11 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
 )
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_models import ResultSummary
+from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.bin_detail_schema import (
+    EN14825_SEER_BIN_DETAIL_SCHEMA,
+)
+from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
@@ -63,6 +68,9 @@ class En14825SeerSection:
         self._current_table_model: SeerTableModel | None = None
         self._batch_dialog: En14825SeerBatchDialog | None = None
         self._batch_snapshot: En14825SeerBatchSnapshot | None = None
+        self._detail_visible = False
+        self._detail_sources: dict[str, BinDetailSource] = {}
+        self._detail_status = "입력 대기"
 
         self._frame = ttk.LabelFrame(parent, text="SEER")
         self._frame.columnconfigure(0, weight=1)
@@ -218,6 +226,20 @@ class En14825SeerSection:
         )
         self.batch_button.surface_role = "en14825_seer_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "en14825_seer_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(ISO_SECTION_BLOCK_GAP, 0))
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("Declared", "Tested"),
+            default_source="Declared",
+            csv_filename="en14825_seer_bin_detail.csv",
+            schema=EN14825_SEER_BIN_DETAIL_SCHEMA,
+        )
 
         # 4. Debounced auto-calc scheduler
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
@@ -315,6 +337,7 @@ class En14825SeerSection:
                 self.input_table.set_invalid_fields(invalid_fields)
                 self.result_panel.clear()
                 self._clear_computed_rows()
+                self._clear_detail("입력 오류: 숫자 입력을 확인하세요.")
                 return
             else:
                 self.input_table.clear_invalid_fields()
@@ -333,6 +356,7 @@ class En14825SeerSection:
         except Exception:
             self.result_panel.clear()
             self._clear_computed_rows()
+            self._clear_detail("입력 대기: 설계 조건을 확인하세요.")
             return
 
         # 2. Build point inputs
@@ -378,6 +402,51 @@ class En14825SeerSection:
 
         # 6. Update result summaries
         self._update_result_summary(summary)
+        self._update_detail(summary)
+
+    def _update_detail(self, summary: SeerResultSummary) -> None:
+        sources: dict[str, BinDetailSource] = {}
+        for label, rows in (
+            ("Declared", summary.declared_bin_details),
+            ("Tested", summary.tested_bin_details),
+        ):
+            formatted_rows = format_seer_bin_details(rows)
+            if formatted_rows:
+                sources[label] = BinDetailSource(rows=formatted_rows)
+        self._detail_sources = sources
+        if sources:
+            self._detail_status = "상세 데이터 없음"
+            self.detail_panel.set_sources(
+                sources,
+                source_order=tuple(sources),
+                panel_status=self._detail_status,
+            )
+            return
+        self._clear_detail(
+            STATUS_MAPPINGS.get(summary.status_code, "상세 데이터 없음")
+        )
+
+    def _clear_detail(self, status: str) -> None:
+        self._detail_sources = {}
+        self._detail_status = status
+        self.detail_panel.set_status(status)
+
+    def _toggle_detail(self) -> None:
+        self._detail_visible = not self._detail_visible
+        if self._detail_visible:
+            self.detail_panel.grid(
+                row=6,
+                column=0,
+                sticky="ew",
+                padx=0,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+            self.detail_toggle.configure(text="상세 닫기 ↑")
+        else:
+            self.detail_panel.grid_remove()
+            self.detail_toggle.configure(text="상세 보기 ↓")
+        if self._on_detail_visibility_changed is not None:
+            self._on_detail_visibility_changed()
 
     def _parse_float_safe(self, text: str, default: float) -> float:
         try:

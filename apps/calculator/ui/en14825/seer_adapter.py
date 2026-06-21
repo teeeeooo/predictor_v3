@@ -1,5 +1,6 @@
 """Adapter layer translating UI inputs (W) to core calculator inputs (kW) and parsing results for SEER."""
 
+from collections.abc import Mapping
 from typing import Dict, Optional, Tuple
 from core.calculator_en14825 import EN14825Calculator
 from apps.calculator.ui.en14825.seer_models import (
@@ -13,6 +14,14 @@ class SeerAdapter:
 
     def __init__(self, calculator: Optional[EN14825Calculator] = None) -> None:
         self.calculator = calculator or EN14825Calculator()
+
+    def _calculate_core(self, **kwargs) -> Mapping[str, object]:
+        calculate = getattr(
+            self.calculator,
+            "calculate_seer_with_details",
+            self.calculator.calculate_seer,
+        )
+        return calculate(**kwargs)
 
     @staticmethod
     def get_part_load_info(tj: float, p_design_c_w: float, t_design_c: float) -> Tuple[float, float]:
@@ -209,7 +218,7 @@ class SeerAdapter:
                 core_declared_points[key] = (inp.declared_capacity / 1000.0, comp.declared_power_w_for_core / 1000.0)
 
             try:
-                dec_res = self.calculator.calculate_seer(
+                dec_res = self._calculate_core(
                     test_points=core_declared_points,
                     p_to=p_to_kw,
                     p_sb=p_sb_kw,
@@ -222,6 +231,7 @@ class SeerAdapter:
                 )
                 summary.declared_seer = dec_res["seer"]
                 summary.declared_qc_kwh = dec_res["qc_kwh"]
+                summary.declared_bin_details = _preserve_bin_details(dec_res)
                 summary.declared_seer_state = "neutral"
                 summary.declared_qc_state = "neutral"
             except Exception as exc:
@@ -238,7 +248,7 @@ class SeerAdapter:
                 core_tested_points[key] = (inp.tested_capacity / 1000.0, inp.tested_power / 1000.0)
 
             try:
-                test_res = self.calculator.calculate_seer(
+                test_res = self._calculate_core(
                     test_points=core_tested_points,
                     p_to=p_to_kw,
                     p_sb=p_sb_kw,
@@ -251,6 +261,7 @@ class SeerAdapter:
                 )
                 summary.tested_seer = test_res["seer"]
                 summary.tested_qc_kwh = test_res["qc_kwh"]
+                summary.tested_bin_details = _preserve_bin_details(test_res)
                 summary.tested_seer_state = "neutral"
                 summary.tested_qc_state = "neutral"
             except Exception as exc:
@@ -275,3 +286,14 @@ class SeerAdapter:
         summary.status_code = "complete"
         summary.message = "Calculation completed successfully"
         return summary
+
+
+def _preserve_bin_details(
+    result: Mapping[str, object],
+) -> tuple[Mapping[str, object], ...]:
+    rows = result.get("bin_details")
+    return (
+        tuple(dict(row) for row in rows if isinstance(row, Mapping))
+        if isinstance(rows, (list, tuple))
+        else ()
+    )

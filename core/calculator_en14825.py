@@ -215,6 +215,8 @@ class EN14825Calculator:
         p_design_c: float,
         t_design_c: float,
         cd: float,
+        *,
+        bin_details: list[dict] | None = None,
     ) -> float:
         """
         SEERon 계산 (규격 식 3)
@@ -229,7 +231,7 @@ class EN14825Calculator:
                 continue
 
             pc = self._cooling_load_at_temp(float(tj), p_design_c, t_design_c)
-            eer_pl, _ = self._interpolate_from_points(float(tj), eer_points)
+            eer_pl, source = self._interpolate_from_points(float(tj), eer_points)
 
             if pc <= 0:
                 continue
@@ -237,8 +239,22 @@ class EN14825Calculator:
             if eer_pl <= 0:
                 raise ValueError(f"Calculated EERpl is <= 0 at Tj={tj}")
 
-            numerator   += hj * pc
-            denominator += hj * (pc / eer_pl)
+            numerator_contribution = hj * pc
+            energy_contribution = hj * (pc / eer_pl)
+            numerator += numerator_contribution
+            denominator += energy_contribution
+            if bin_details is not None:
+                bin_details.append(
+                    {
+                        "temp_c": float(tj),
+                        "hours": float(hj),
+                        "pc": pc,
+                        "eer_pl": eer_pl,
+                        "numerator_contribution": numerator_contribution,
+                        "energy_contribution": energy_contribution,
+                        "interpolation": source,
+                    }
+                )
 
         if denominator == 0:
             raise ValueError("SEERon 계산 오류: 분모가 0입니다. test_points 값을 확인하세요.")
@@ -296,6 +312,51 @@ class EN14825Calculator:
             "seer_on":  round(seer_on, 3),
             "qc_kwh":   round(qc_kwh, 2),
         }
+
+    def calculate_seer_with_details(
+        self,
+        test_points: dict,
+        p_to: float,
+        p_sb: float,
+        p_ck: float,
+        p_off: float,
+        p_design_c: float,
+        t_design_c: float = None,
+        cd: float = None,
+        *,
+        appliance_type: str = None,
+    ) -> dict:
+        """Return the compatible SEER result plus additive bin diagnostics."""
+        result = self.calculate_seer(
+            test_points=test_points,
+            p_to=p_to,
+            p_sb=p_sb,
+            p_ck=p_ck,
+            p_off=p_off,
+            p_design_c=p_design_c,
+            t_design_c=t_design_c,
+            cd=cd,
+            appliance_type=appliance_type,
+        )
+        effective_t_design_c = (
+            self._get_seer_design_value("t_design_c")
+            if t_design_c is None
+            else t_design_c
+        )
+        effective_cd = (
+            self._get_seer_default_value("degradation_coefficient")
+            if cd is None
+            else cd
+        )
+        bin_details: list[dict] = []
+        self._calculate_seer_on(
+            test_points,
+            p_design_c,
+            effective_t_design_c,
+            effective_cd,
+            bin_details=bin_details,
+        )
+        return {**result, "bin_details": bin_details}
 
     def _normalize_climate(self, climate: str) -> str:
         if not isinstance(climate, str):

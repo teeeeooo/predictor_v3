@@ -146,3 +146,30 @@ EN14825_SCOP_BIN_DETAIL_SCHEMA = BinDetailSchema(
     ),
     table_title="EN14825 SCOP Bin Detail",
 )
+
+
+EN14825_SEER_BIN_DETAIL_SCHEMA = BinDetailSchema(
+    column_labels=(
+        "Tj [°C]",
+        "Hours",
+        "Cooling Load Pc [kW]",
+        "EERpl",
+        "Energy Contribution [kWh]",
+        "Source",
+    ),
+    column_keys=(
+        "tj",
+        "hours",
+        "cooling_load",
+        "eer_pl",
+        "energy_contribution",
+        "source",
+    ),
+    graph_series=(
+        ("Bin Hours [h]", "hours"),
+        ("Cooling Load Pc [kW]", "cooling_load"),
+        ("EERpl", "eer_pl"),
+        ("Energy Contribution [kWh]", "energy_contribution"),
+    ),
+    table_title="EN14825 SEER Bin Detail",
+)

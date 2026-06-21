@@ -203,6 +203,8 @@ def test_seer_adapter_calculate_declared_only():
     assert summary.tested_seer is None
     assert summary.seer_percent is None
     assert summary.seer_percent_state == "unavailable"
+    assert summary.declared_bin_details
+    assert summary.tested_bin_details == ()
 
 
 def test_seer_adapter_calculate_tested_only():
@@ -227,6 +229,8 @@ def test_seer_adapter_calculate_tested_only():
     assert summary.tested_seer is not None
     assert summary.declared_seer is None
     assert summary.seer_percent is None
+    assert summary.declared_bin_details == ()
+    assert summary.tested_bin_details
 
 
 def test_point_level_threshold_pass_fail():

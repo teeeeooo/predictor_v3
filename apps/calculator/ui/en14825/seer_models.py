@@ -1,7 +1,8 @@
 """Data models representing inputs, computed fields, and results for EN14825 SEER."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional
 
 @dataclass
 class SeerPointInput:
@@ -42,6 +43,10 @@ class SeerResultSummary:
     tested_seer: Optional[float] = None
     tested_qc_kwh: Optional[float] = None
     seer_percent: Optional[float] = None
+
+    # Additive UI diagnostics preserved from each completed core calculation.
+    declared_bin_details: tuple[Mapping[str, object], ...] = ()
+    tested_bin_details: tuple[Mapping[str, object], ...] = ()
 
     # Result state tinting: "neutral", "pass", "invalid", "unavailable"
     declared_seer_state: str = "neutral"
