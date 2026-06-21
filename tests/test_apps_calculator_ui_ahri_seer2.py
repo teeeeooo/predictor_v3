@@ -204,6 +204,12 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
 
     assert section.type_var.get() == "HP"
     assert tuple(section.type_selector.cget("values")) == ("HP", "AC")
+    from apps.calculator.ui.layout_constants import (
+        CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
+    )
+    assert int(section.type_selector.cget("width")) == (
+        CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS
+    )
     assert tuple(key for key, _label in section.input_table.columns) == (
         AHRI_SEER2_POINT_ORDER
     )

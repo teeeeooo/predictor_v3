@@ -71,9 +71,10 @@ state values that require owner review before migration.
 
 ### Controls, results, and detail surfaces
 
-- Repeated entry widths `10` and selectors around `5`, `6`, and `12` indicate
-  common input/control roles, but label vocabulary and platform font metrics
-  must be checked before consolidation.
+- Repeated numeric entry, appliance/equipment type selector, short region-code
+  selector, and detail-series selector widths now use semantic control-role
+  tokens. Wider profile/region label selectors and profile-local auxiliary
+  widths remain inventory items because their vocabulary differs.
 - ISO/SASO result Treeview column pixels and result text widths are comparison
   schema/presentation values. They need result-surface tokens, not batch tokens.
 - Canvas/viewport `width=0/1` and related height sentinels are runtime geometry

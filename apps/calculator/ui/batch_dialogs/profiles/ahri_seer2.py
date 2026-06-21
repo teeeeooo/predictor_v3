@@ -18,6 +18,7 @@ from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 from apps.calculator.ui.layout_constants import (
     BATCH_DIALOG_SAFETY_MIN_SIZE,
+    CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -90,7 +91,7 @@ class AhriSeer2BatchSection:
             textvariable=self.type_var,
             values=("HP", "AC"),
             state="readonly",
-            width=6,
+            width=CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
         )
         self.type_selector.pack(side=tk.LEFT, padx=(0, 6), pady=6)
 

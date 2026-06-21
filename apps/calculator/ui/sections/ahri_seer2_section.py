@@ -17,7 +17,11 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
     AhriSeer2BatchDialog,
     AhriSeer2BatchSnapshot,
 )
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
@@ -61,7 +65,7 @@ class AhriSeer2Section:
             textvariable=self.type_var,
             values=("HP", "AC"),
             state="readonly",
-            width=6,
+            width=CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
         )
         self.type_selector.pack(side=tk.LEFT, padx=(0, 6), pady=6)
 

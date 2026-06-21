@@ -15,7 +15,11 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
 )
 from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
@@ -105,7 +109,11 @@ class AhriHspf2Section:
         self.minimum_speed_var = tk.BooleanVar(value=True)
         ttk.Label(frame, text="Region:").pack(side=tk.LEFT, padx=(6, 3), pady=6)
         ttk.Combobox(
-            frame, textvariable=self.region_var, values=("IV",), state="readonly", width=4
+            frame,
+            textvariable=self.region_var,
+            values=("IV",),
+            state="readonly",
+            width=CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
         ).pack(side=tk.LEFT, padx=(0, 10), pady=6)
         ttk.Label(frame, text="Measured:").pack(side=tk.LEFT, padx=(0, 3))
         for label, variable in (

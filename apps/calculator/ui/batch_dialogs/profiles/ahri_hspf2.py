@@ -19,7 +19,12 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.batch.models import BatchRowState
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
+    CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 
@@ -89,8 +94,13 @@ class AhriHspf2BatchSection:
         frame.grid(row=0, column=0, sticky="ew", padx=ISO_SECTION_PADX,
                    pady=(ISO_SECTION_BLOCK_GAP, 0))
         ttk.Label(frame, text="Region").grid(row=0, column=0, padx=3, pady=(4, 2))
-        ttk.Combobox(frame, textvariable=self._vars["region"], values=("IV",),
-                     state="readonly", width=5).grid(row=1, column=0, padx=3, pady=(0, 4))
+        ttk.Combobox(
+            frame,
+            textvariable=self._vars["region"],
+            values=("IV",),
+            state="readonly",
+            width=CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
+        ).grid(row=1, column=0, padx=3, pady=(0, 4))
         column = 1
         for key, label in (
             ("h42_enabled", "H42"), ("h12_enabled", "H12"),
@@ -108,7 +118,11 @@ class AhriHspf2BatchSection:
         column += 1
         for key, label in _NUMERIC_FIELDS:
             ttk.Label(frame, text=label).grid(row=0, column=column, padx=3, pady=(4, 2))
-            ttk.Entry(frame, textvariable=self._vars[key], width=10).grid(
+            ttk.Entry(
+                frame,
+                textvariable=self._vars[key],
+                width=CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
+            ).grid(
                 row=1, column=column, padx=3, pady=(0, 4)
             )
             column += 1

@@ -29,6 +29,7 @@ from apps.calculator.ui.sections.bin_detail_schema import (
 from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
+    CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -121,7 +122,7 @@ class En14825SeerSection:
             design_frame,
             textvariable=self._appliance_type_var,
             values=("reversible", "cooling_only"),
-            width=12,
+            width=CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
             state="readonly",
         )
         self.appliance_type_selector.grid(

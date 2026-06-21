@@ -647,6 +647,13 @@ def test_scop_gui_integration_basics():
         # 1. En14825ScopSection 생성 시 average card가 active이고 warmer/colder는 inactive인지 확인
         section = En14825ScopSection(root)
 
+        from apps.calculator.ui.layout_constants import (
+            CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+        )
+        assert int(section.appliance_type_selector.cget("width")) == (
+            CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS
+        )
+
         assert section._frame.cget("text") == "SCOP"
         assert "Comparison (EN 14825)" not in section._frame.cget("text")
         assert section.climate_cards["average"].cget("text") == "Average 조건"

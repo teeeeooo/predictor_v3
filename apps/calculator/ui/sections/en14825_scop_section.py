@@ -31,6 +31,7 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
 )
 from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSurface
 from apps.calculator.ui.layout_constants import (
+    CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -104,7 +105,7 @@ class En14825ScopSection:
             specs_frame,
             textvariable=self._appliance_type_var,
             values=("reversible", "heating_only"),
-            width=12,
+            width=CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
             state="readonly",
         )
         self.appliance_type_selector.grid(

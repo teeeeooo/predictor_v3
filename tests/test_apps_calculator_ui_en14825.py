@@ -396,6 +396,12 @@ def test_en14825_gui_integration():
         assert section._t_design_var.get() == str(defaults["t_design_c"])
         assert section._cd_var.get() == str(defaults["degradation_coefficient"])
         assert section._appliance_type_var.get() == defaults["appliance_type"]
+        from apps.calculator.ui.layout_constants import (
+            CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+        )
+        assert int(section.appliance_type_selector.cget("width")) == (
+            CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS
+        )
         row_keys = section.input_table.rows
         row_names = [r[0] for r in row_keys]
         assert "declared_power" not in row_names

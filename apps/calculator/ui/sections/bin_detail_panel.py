@@ -9,7 +9,11 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui import table_csv_export
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    CONTROL_DETAIL_SERIES_SELECTOR_WIDTH_CHARS,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 from apps.calculator.ui.sections.bin_detail_schema import (
     BinDetailSchema,
@@ -110,7 +114,7 @@ class BinDetailPanel:
             self._graph_row,
             values=[label for label, _key in self._schema.graph_series],
             state="readonly",
-            width=18,
+            width=CONTROL_DETAIL_SERIES_SELECTOR_WIDTH_CHARS,
         )
         self.graph_combo.set(self._schema.graph_series[0][0])
         self.graph_combo.pack(side=tk.LEFT)

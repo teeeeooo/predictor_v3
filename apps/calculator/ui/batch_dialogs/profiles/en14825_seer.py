@@ -19,6 +19,8 @@ from apps.calculator.ui.en14825.seer_batch import (
 )
 from apps.calculator.ui.layout_constants import (
     BATCH_DIALOG_SAFETY_MIN_SIZE,
+    CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+    CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -110,7 +112,11 @@ class En14825SeerBatchSection:
         )
         for column, (key, label) in enumerate(_COMMON_FIELDS):
             ttk.Label(frame, text=label).grid(row=0, column=column, padx=3, pady=(4, 2))
-            ttk.Entry(frame, textvariable=self._vars[key], width=10).grid(
+            ttk.Entry(
+                frame,
+                textvariable=self._vars[key],
+                width=CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
+            ).grid(
                 row=1, column=column, padx=3, pady=(0, 4)
             )
         type_column = len(_COMMON_FIELDS)
@@ -120,7 +126,7 @@ class En14825SeerBatchSection:
             textvariable=self._vars["appliance_type"],
             values=("reversible", "cooling_only"),
             state="readonly",
-            width=12,
+            width=CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
         ).grid(row=1, column=type_column, padx=3, pady=(0, 4))
 
     def _build_actions(self) -> None:

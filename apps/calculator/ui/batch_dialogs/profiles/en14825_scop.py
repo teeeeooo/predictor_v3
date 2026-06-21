@@ -20,7 +20,11 @@ from apps.calculator.ui.en14825.scop_batch_session import (
     En14825ScopBatchSessionState,
     En14825ScopBatchSnapshot,
 )
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
@@ -113,10 +117,14 @@ class En14825ScopBatchSection:
                     textvariable=self._vars[key],
                     values=("average", "warmer", "colder"),
                     state="readonly",
-                    width=10,
+                    width=CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
                 )
             else:
-                widget = ttk.Entry(frame, textvariable=self._vars[key], width=10)
+                widget = ttk.Entry(
+                    frame,
+                    textvariable=self._vars[key],
+                    width=CONTROL_NUMERIC_ENTRY_WIDTH_CHARS,
+                )
             widget.grid(row=1, column=column, padx=3, pady=(0, 4))
         ttk.Button(
             frame,
