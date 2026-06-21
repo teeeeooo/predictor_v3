@@ -27,16 +27,18 @@
 
 ## Current Slice
 
-- The nine-task calculator lifecycle/detail/empty-state sequence is complete.
-- `app_calculator.py` and `apps.calculator.app:main` remain canonical.
-- The deprecated calculator Tk compatibility shim has been removed after its
-  live guide and test consumers migrated to the canonical entrypoint.
+- Calculator lifecycle/detail/empty-state implementation and manual smoke
+  closeout are complete.
+- Canonical launch, empty batch inputs, and semantic EN14825 cell backgrounds
+  are manually confirmed.
+- The approved legacy UI token cleanup now proceeds as small owner-specific
+  slices using the formal inventory.
 
 ## Next Actions
 
-1. Complete the calculator manual smoke closeout for batch empty state,
-   EN14825 cell colors, and canonical launch.
-2. Then plan the approved legacy UI token cleanup as small owner-specific slices.
+1. Audit batch dialog minimum sizes against natural content fitting.
+2. Continue the approved token cleanup slices without broad mechanical
+   literal replacement.
 
 ## Active Blockers / Open Decisions
 
