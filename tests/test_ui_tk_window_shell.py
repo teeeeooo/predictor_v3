@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from apps.calculator.ui.window_geometry import capped_window_size
+from apps.calculator.ui.window_geometry import capped_window_size, parse_window_geometry
 from dataclasses import dataclass
 
 from apps.calculator.ui.window_shell import TkContentHuggingShell, visible_content_fit_geometry
@@ -87,6 +87,20 @@ def test_visible_content_fit_geometry_clamps_to_screen_policy():
         screen_width=screen_width,
         screen_height=screen_height,
     ) == f"{expected_w}x{expected_h}+100+64"
+
+
+def test_visible_content_fit_geometry_clamps_negative_preferred_size():
+    geometry = visible_content_fit_geometry(
+        current_geometry="800x600+285+100",
+        preferred_content_size=(411, -80),
+        screen_width=1600,
+        screen_height=1000,
+    )
+
+    width, height, x, y = parse_window_geometry(geometry)
+    assert width > 0
+    assert height > 0
+    assert (x, y) == (285, 100)
 
 
 def test_tk_content_hugging_shell_applies_geometry_once():

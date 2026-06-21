@@ -53,6 +53,7 @@ class En14825Tab(ttk.Frame):
         self._create_common_input_panel(self._seer_frame)
         self.seer_section = En14825SeerSection(
             self._seer_frame,
+            on_trace_visibility_changed=self._request_visible_lifecycle_refit,
             common_input_values=self._common_input_values,
         )
         self.seer_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)

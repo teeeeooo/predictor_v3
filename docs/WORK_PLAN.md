@@ -27,21 +27,22 @@
 
 ## Current Slice
 
-- AHRI HSPF2 now preserves core bin details through its adapter summary and
-  exposes a single-source shared detail panel.
-- The shared bin-detail table now keeps vertical scrolling and exposes an
-  always-visible horizontal scrollbar for wide detail schemas.
-- Local GUI visual smoke remains before the HSPF2 detail slice is closed.
+- EN14825 profile switching now guards transient nested-notebook measurement
+  underflow before producing a top-level geometry string.
+- The common geometry cap enforces positive minimum visible dimensions, and
+  EN14825 SEER detail visibility now requests the existing lifecycle refit.
+- Local GUI profile-switch smoke remains before the sizing correction closes.
 
 ## Next Actions
 
-1. Run AHRI HSPF2 detail visual smoke.
+1. Run EN14825 profile-switch visual smoke.
 2. Implement the AHRI SEER2 detail view in a separate slice.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; HSPF2 wide-table scrolling,
-  detail geometry, and optional-point invalidation require local GUI confirmation.
+- No active implementation blocker is recorded; EN14825 profile switching,
+  nested SEER/SCOP selection, and detail-toggle geometry require local GUI
+  confirmation.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 

@@ -83,8 +83,14 @@ def capped_window_size(
     max_width = min(screen_width - margin_x, int(screen_width * APP_WINDOW_MAX_WIDTH_RATIO))
     max_height = _max_auto_fit_height(screen_height)
     return (
-        min(requested_width, max_width),
-        min(requested_height, max_height),
+        max(
+            APP_WINDOW_MIN_VISIBLE_WIDTH,
+            min(requested_width, max_width),
+        ),
+        max(
+            APP_WINDOW_MIN_VISIBLE_HEIGHT,
+            min(requested_height, max_height),
+        ),
     )
 
 

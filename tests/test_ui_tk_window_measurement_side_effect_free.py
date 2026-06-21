@@ -232,6 +232,33 @@ class TestSideEffectFreeMeasurement:
         assert snapshot2.preferred_size[1] == 225 + 11
         assert snapshot2.preferred_size[1] < snapshot1.preferred_size[1]
 
+    def test_transient_negative_nested_adjustment_uses_positive_raw_fallback(
+        self,
+    ) -> None:
+        from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
+
+        current = FakeWidget(width=1, height=1)
+        hidden = FakeWidget(width=500, height=500)
+        notebook = FakeNotebook({"current": current, "hidden": hidden}, "current")
+        notebook._notebook_width = 525
+        notebook._notebook_height = 525
+        measurement = TkVisibleContentMeasurement(
+            content=FakeContent(width=100, height=100),
+            scrollbar=FakeScrollbar(),
+            overflow_source=FakeOverflow(),
+            nested_notebook=notebook,
+            nested_notebook_active=lambda: True,
+        )
+
+        snapshot = measurement.snapshot()
+
+        assert snapshot.diagnostics["adjusted_content_width"] < 0
+        assert snapshot.diagnostics["adjusted_content_height"] < 0
+        assert snapshot.diagnostics["effective_content_width"] == 100
+        assert snapshot.diagnostics["effective_content_height"] == 100
+        assert snapshot.preferred_size[0] > 0
+        assert snapshot.preferred_size[1] > 0
+
     def test_chrome_height_estimate_computed_once(self) -> None:
         from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 

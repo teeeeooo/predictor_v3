@@ -83,8 +83,10 @@ class TkVisibleContentMeasurement:
         self._content.update_idletasks()
         nested = self._measure_nested_notebook()
 
-        content_width = self._content.winfo_reqwidth()
-        content_height = self._content.winfo_reqheight()
+        raw_content_width = self._content.winfo_reqwidth()
+        raw_content_height = self._content.winfo_reqheight()
+        content_width = raw_content_width
+        content_height = raw_content_height
 
         if nested.notebook_width > 0 and self._chrome_width_estimate is not None:
             # Replace the notebook's full width contribution with chrome + current tab.
@@ -112,6 +114,21 @@ class TkVisibleContentMeasurement:
                 + nested.current_tab_height
             )
 
+        adjusted_content_width = content_width
+        adjusted_content_height = content_height
+        if content_width <= 0:
+            content_width = max(
+                1,
+                raw_content_width,
+                (self._chrome_width_estimate or 0) + nested.current_tab_width,
+            )
+        if content_height <= 0:
+            content_height = max(
+                1,
+                raw_content_height,
+                (self._chrome_height_estimate or 0) + nested.current_tab_height,
+            )
+
         margin = self._horizontal_margin_ratio
         vertical_margin = min(int(content_height * margin), self._vertical_margin_cap)
         preferred_size = (
@@ -120,8 +137,12 @@ class TkVisibleContentMeasurement:
         )
         overflow_delta = self._overflow_source.vertical_overflow_delta()
         diagnostics = {
-            "content_reqwidth": self._content.winfo_reqwidth(),
-            "content_reqheight": self._content.winfo_reqheight(),
+            "content_reqwidth": raw_content_width,
+            "content_reqheight": raw_content_height,
+            "adjusted_content_width": adjusted_content_width,
+            "adjusted_content_height": adjusted_content_height,
+            "effective_content_width": content_width,
+            "effective_content_height": content_height,
             "nested_max_tab_width": nested.max_tab_width,
             "nested_max_tab_height": nested.max_tab_height,
             "nested_widest_tab_width": nested.widest_tab_width,
