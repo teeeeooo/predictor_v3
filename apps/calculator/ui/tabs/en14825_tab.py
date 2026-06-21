@@ -7,13 +7,11 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
 from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.table.controller import TkTableController
-from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
-from apps.calculator.ui.window_refit import DynamicContentRefitScheduler
-from apps.calculator.ui.window_shell import TkContentHuggingShell
 
 
 class En14825Tab(ttk.Frame):
@@ -25,11 +23,6 @@ class En14825Tab(ttk.Frame):
         self._scrollable = ScrollableFrame(self)
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
-
-        self._refit_scheduler = DynamicContentRefitScheduler(
-            self,
-            self._fit_toplevel_to_current_content,
-        )
 
         self._p_to_var = tk.StringVar(value="0")
         self._p_sb_var = tk.StringVar(value="0")
@@ -44,6 +37,17 @@ class En14825Tab(ttk.Frame):
         self._standard_notebook.bind(
             "<<NotebookTabChanged>>", self._on_standard_tab_changed
         )
+        self._lifecycle = ProfileVisibleContentLifecycleController(
+            owner=self,
+            content=self._content,
+            scrollable=self._scrollable,
+            nested_notebook=self._standard_notebook,
+            nested_notebook_active=lambda: True,
+            parent_selected_settle_cycles=2,
+        )
+        # Temporary private compatibility aliases for focused diagnostics.
+        self._measurement = self._lifecycle.measurement
+        self._refit_scheduler = self._lifecycle.scheduler
 
         self._seer_frame = ttk.Frame(self._standard_notebook)
         self._scop_frame = ttk.Frame(self._standard_notebook)
@@ -76,20 +80,6 @@ class En14825Tab(ttk.Frame):
         # Alias for result panel validation compatibility.
         self.result_panel = self.seer_section.result_panel
 
-        self._measurement = TkVisibleContentMeasurement(
-            content=self._content,
-            scrollbar=self._scrollbar,
-            overflow_source=self._scrollable,
-            nested_notebook=self._standard_notebook,
-            nested_notebook_active=lambda: True,
-            suppress_measurement=self._refit_scheduler.suppress_requests,
-        )
-        self._content_shell = TkContentHuggingShell(self.winfo_toplevel())
-        self._content_form = self._content_shell.register_content(
-            snapshot_provider=self._measurement.snapshot,
-            after_fit=lambda _result: self._scrollable.reset_scroll_position(),
-        )
-
     @property
     def _canvas(self) -> tk.Canvas:
         return self._scrollable.canvas
@@ -109,28 +99,23 @@ class En14825Tab(ttk.Frame):
         return self._scrollable._on_mousewheel(event)
 
     def vertical_overflow_delta(self) -> int:
-        return self._measurement.vertical_overflow_delta()
+        return self._lifecycle.vertical_overflow_delta()
 
     def preferred_initial_size(self) -> tuple[int, int]:
-        return self._measurement.preferred_size()
-
-    def _fit_toplevel_to_current_content(self) -> None:
-        self.update_idletasks()
-        self._content_form.fit()
-        self.update_idletasks()
+        return self._lifecycle.preferred_initial_size()
 
     def fit_toplevel_to_current_content_once(self) -> None:
-        self._fit_toplevel_to_current_content()
+        self._lifecycle.fit_toplevel_to_current_content_once()
 
     def on_parent_tab_selected(self) -> None:
         """Refit again after the top-level profile switch has settled."""
-        self._request_visible_lifecycle_refit(settle_cycles=2)
+        self._lifecycle.on_parent_tab_selected()
 
     def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
-        self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
+        self._lifecycle.request_visible_lifecycle_refit(settle_cycles=settle_cycles)
 
     def _on_standard_tab_changed(self, _event=None) -> None:
-        self._request_visible_lifecycle_refit()
+        self._lifecycle.on_nested_tab_changed()
 
     def _common_input_values(self) -> dict[str, str]:
         return {

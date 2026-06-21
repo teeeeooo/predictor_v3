@@ -27,22 +27,22 @@
 
 ## Current Slice
 
-- The common profile visible-content lifecycle controller contract is fixed in
-  a feature-owned `apps/calculator/ui/lifecycle/` package design.
-- The controller will compose existing measurement, scheduler, and shell owners;
-  profile tabs retain view composition, predicates, and event forwarding.
-- EN14825 is the first migration, followed by AHRI and ISO, then a hard source
-  gate after all production tabs are compliant.
+- The common lifecycle package and controller foundation are implemented.
+- EN14825 now delegates measurement, shell registration, scheduler ownership,
+  preferred size, immediate fit, parent selection, nested changes, and detail
+  visibility triggers to the controller.
+- EN14825 public tab methods and SEER/SCOP lifecycle behavior remain compatible.
 
 ## Next Actions
 
-1. Implement the controller foundation and migrate EN14825.
-2. Migrate AHRI210240 and ISO16358 without changing profile behavior.
+1. Migrate AHRI210240 and ISO16358 without changing profile behavior.
+2. Add the lifecycle ownership hard gate after all profile tabs comply.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; implementation must preserve
-  the design's named triggers, injected predicates, and compatibility methods.
+- No active implementation blocker is recorded; the new package registry
+  warning is intentionally deferred to task 5, whose scope owns structure-gate
+  registration and enforcement.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 
