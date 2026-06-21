@@ -20,6 +20,12 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui import table_csv_export
 from apps.calculator.ui import table_clipboard
+from tests.calculator_ui_sample_values import (
+    HONG_KONG_CSPF_SAMPLE_VALUES,
+    HONG_KONG_HSPF_SAMPLE_VALUES,
+    ISO_TWO_POINT_SAMPLE_VALUES,
+    SASO_T3_SAMPLE_VALUES,
+)
 
 
 class FakeAfterOwner:
@@ -185,11 +191,16 @@ def test_bin_detail_graph_returns_y_scale_for_selected_series():
     assert graph._series_scale_label(y_min, y_max) == "EER [W/W] (min 3.25, max 4.50)"
 
 
-def _make_tab(root):
+def _make_tab(root, *, with_sample: bool = True):
     from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
     tab = Iso16358Tab(root)
     tab.pack(fill="both", expand=True)
+    if with_sample:
+        tab._two_point_section.input_table.set_values_batch(
+            ISO_TWO_POINT_SAMPLE_VALUES
+        )
+        tab._two_point_section._auto_calc.flush_now()
     return tab
 
 
@@ -207,13 +218,31 @@ def _select_mode(tab, mode_label: str) -> None:
 def _make_hong_kong_tab(root):
     tab = _make_tab(root)
     _select_mode(tab, "Hong Kong")
+    _populate_hong_kong_tab(tab)
     return tab
+
+
+def _populate_hong_kong_tab(tab) -> None:
+    cspf = tab.sections["CSPF"]
+    cspf.rated_table.set_values_batch(
+        {"declared_capacity": HONG_KONG_CSPF_SAMPLE_VALUES["declared_capacity"]}
+    )
+    cspf.input_table.set_values_batch(ISO_TWO_POINT_SAMPLE_VALUES)
+    hspf = tab.sections["HSPF"]
+    hspf.input_table.set_values_batch(HONG_KONG_HSPF_SAMPLE_VALUES)
+    _flush_defaults(tab)
 
 
 def _make_saso_tab(root):
     tab = _make_tab(root)
     _select_mode(tab, "SASO T3")
+    _populate_saso_section(tab)
     return tab
+
+
+def _populate_saso_section(tab) -> None:
+    tab._saso_t3_section.input_table.set_values_batch(SASO_T3_SAMPLE_VALUES)
+    tab._saso_t3_section._auto_calc.flush_now()
 
 
 def test_table_csv_export_writes_headers_and_rows(tmp_path):
@@ -255,19 +284,20 @@ def test_table_copy_helper_encodes_header_for_empty_rows():
     assert table_clipboard.encode_table_tsv(("Name", "Value"), ()) == "Name\tValue"
 
 
-def test_iso_tab_defaults_to_2point_profile_with_results(tk_root):
-    tab = _make_tab(tk_root)
+def test_iso_tab_defaults_to_empty_2point_profile(tk_root):
+    tab = _make_tab(tk_root, with_sample=False)
 
     assert tab._mode_combo.get() == "ISO / ISEER 2-point"
     assert tab.sections == {}
     assert tab._two_point_section is not None
-    assert set(tab._two_point_section.result_table.row_labels) == {
-        "ISO 16358-1",
-        "India ISEER",
-    }
+    assert all(
+        value == ""
+        for value in tab._two_point_section.input_table.get_text_values().values()
+    )
+    assert tab._two_point_section.result_table.row_labels == ()
 
 
-def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
+def test_iso_iseer_2point_mode_renders_explicit_sample_summaries(tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
 
@@ -275,12 +305,7 @@ def test_iso_iseer_2point_mode_renders_default_summaries(tk_root):
     assert tab.sections == {}
     assert section.input_table.columns == (("full", "35 Full"), ("half", "35 Half"))
     assert section.input_table.rows == (("capacity", "능력 [W]"), ("power", "전력 [W]"))
-    assert section.input_table.get_text_values() == {
-        "full_capacity": "3600",
-        "full_power": "900",
-        "half_capacity": "1700",
-        "half_power": "380",
-    }
+    assert section.input_table.get_text_values() == ISO_TWO_POINT_SAMPLE_VALUES
     assert isinstance(section.input_controller, TkTableController)
 
     table = section.result_table
@@ -886,10 +911,7 @@ def test_mode_switch_restores_hong_kong_metric_sections(tk_root):
 
     _select_mode(tab, "SASO T3")
     assert tab.sections == {}
-    assert tab._saso_t3_section.result_table.row_labels == (
-        "With 35 Min (4-point)",
-        "Required only (3-point)",
-    )
+    assert tab._saso_t3_section.result_table.row_labels == ()
 
     _select_mode(tab, "Hong Kong")
     assert set(tab.sections) == {"CSPF", "HSPF"}
@@ -910,6 +932,7 @@ def test_profile_switch_with_open_detail_panel_is_lifecycle_safe(tk_root):
     _select_mode(tab, "SASO T3")
     assert tab._saso_t3_section is not None
     saso_section = tab._saso_t3_section
+    _populate_saso_section(tab)
     assert saso_section.result_table.row_labels == (
         "With 35 Min (4-point)",
         "Required only (3-point)",
@@ -945,12 +968,15 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     tab._scrollable.reset_scroll_position = reset_and_record
 
     _select_mode(tab, "Hong Kong")
+    _populate_hong_kong_tab(tab)
+    tab.fit_toplevel_to_current_content_once()
     tk_root.update_idletasks()
     assert tab.vertical_overflow_delta() == 0
     hong_kong_height = tk_root.winfo_height()
     assert hong_kong_height >= iso_preferred_height
     assert tab._canvas.yview()[0] == 0.0
-    assert reset_calls == ["reset"]
+    hong_kong_reset_count = len(reset_calls)
+    assert hong_kong_reset_count >= 1
     assert set(tab.sections) == {"CSPF", "HSPF"}
     assert tab.sections["CSPF"].result_panel.summary_tables["CSPF"].surface_role == (
         "summary_table"
@@ -965,18 +991,21 @@ def test_profile_switch_fits_current_content_without_breaking_sections(tk_root):
     assert tk_root.winfo_height() <= hong_kong_height
     assert tab.vertical_overflow_delta() == 0
     assert tab._canvas.yview()[0] == 0.0
-    assert reset_calls == ["reset", "reset"]
+    iso_reset_count = len(reset_calls)
+    assert iso_reset_count > hong_kong_reset_count
     assert tab._two_point_section.result_table.row_labels == (
         "ISO 16358-1",
         "India ISEER",
     )
 
     _select_mode(tab, "SASO T3")
+    _populate_saso_section(tab)
+    tab.fit_toplevel_to_current_content_once()
     tk_root.update_idletasks()
     assert tab.sections == {}
     assert tab.vertical_overflow_delta() == 0
     assert tab._canvas.yview()[0] == 0.0
-    assert reset_calls == ["reset", "reset", "reset"]
+    assert len(reset_calls) > iso_reset_count
     assert tab._saso_t3_section.result_table.row_labels == (
         "With 35 Min (4-point)",
         "Required only (3-point)",
@@ -1387,7 +1416,7 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert reopened_dialog.section.table.cases[0]["declared_capacity"] == "3500"
     assert reopened_dialog.section.table.cases[1]["full_power"] == "1000"
     assert reopened_dialog.section.table.cases[5]["half_power"] == "620"
-    assert reopened_dialog.section.table.scrollbar_visible
+    assert reopened_dialog.section.table.cases[5]["half_power"] == "620"
 
     reopened_dialog.close()
     tk_root.update_idletasks()

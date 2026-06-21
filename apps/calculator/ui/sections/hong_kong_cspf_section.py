@@ -124,15 +124,6 @@ class HongKongCspfSection:
             show_source_selector=False,
         )
         self.trace_table = self.detail_panel.table
-        self.rated_table.set_values({"declared_capacity": "3500"})
-        self.input_table.set_values(
-            {
-                "full_capacity": "3600",
-                "full_power": "900",
-                "half_capacity": "1700",
-                "half_power": "380",
-            }
-        )
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
@@ -172,6 +163,16 @@ class HongKongCspfSection:
         )
 
     def recalculate_now(self) -> None:
+        performance_values = (
+            *self.input_table.get_text_values().values(),
+            *self.rated_table.get_text_values().values(),
+        )
+        if not any(value.strip() for value in performance_values):
+            self._clear_trace("\uc785\ub825 \ub300\uae30")
+            self.result_panel.set_summaries(
+                (result_status("CSPF", "\uc785\ub825 \ub300\uae30"),)
+            )
+            return
         try:
             measured, declared = self._read_inputs()
         except ValueError:

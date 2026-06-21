@@ -41,18 +41,6 @@ _POINTS: tuple[tuple[str, str, str], ...] = (
     ("35_min", "min_35", "35 Min"),
 )
 
-_DEFAULT_VALUES: Mapping[str, str] = {
-    "full_46_capacity": "5000",
-    "full_46_power": "1500",
-    "full_35_capacity": "6000",
-    "full_35_power": "1500",
-    "half_35_capacity": "3000",
-    "half_35_power": "680",
-    "min_35_capacity": "1200",
-    "min_35_power": "300",
-}
-
-
 class IsoSasoT3Section:
     """SASO T3 input, optional 35 Min toggle, and scenario comparison."""
 
@@ -141,7 +129,6 @@ class IsoSasoT3Section:
         self.trace_table = self.detail_panel.table
         self.trace_profile_combo = self.detail_panel.source_combo
 
-        self.input_table.set_values(_DEFAULT_VALUES)
         self.input_controller = TkTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
@@ -156,6 +143,11 @@ class IsoSasoT3Section:
         self._auto_calc.cancel()
 
     def recalculate_now(self) -> None:
+        required_values = self.input_table.get_text_values()
+        if not any(required_values[field].strip() for field in _REQUIRED_FIELDS):
+            self._clear_trace("\uc785\ub825 \ub300\uae30")
+            self.result_table.set_rows((), status="\uc785\ub825 \ub300\uae30")
+            return
         required_measured, required_error = self._read_required_inputs()
         if required_error is not None:
             self._clear_trace(required_error)

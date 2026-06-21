@@ -9,6 +9,14 @@ from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SCOP_BIN_DETAIL_SCHEMA,
 )
 from apps.calculator.ui.sections.en14825_scop_detail import format_scop_bin_details
+from tests.calculator_ui_sample_values import EN14825_SCOP_SAMPLE_VALUES
+
+
+def _populate_average_sample(section) -> None:
+    section.climate_input_tables["average"].set_values_batch(
+        {"p_design_h": "3000"}
+    )
+    section.input_tables["average"].set_values_batch(EN14825_SCOP_SAMPLE_VALUES)
 
 
 @pytest.fixture
@@ -60,6 +68,7 @@ def test_scop_detail_panel_tracks_completed_sources_and_visibility(
         tk_root,
         on_trace_visibility_changed=lambda: refit_calls.append("changed"),
     )
+    _populate_average_sample(section)
     section.recalculate_now()
 
     assert tuple(section._detail_sources) == (
@@ -80,6 +89,7 @@ def test_scop_detail_invalid_input_clears_stale_rows(tk_root) -> None:
     from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 
     section = En14825ScopSection(tk_root)
+    _populate_average_sample(section)
     section.recalculate_now()
     assert section._detail_sources
 
@@ -101,6 +111,7 @@ def test_scop_detail_calculation_error_clears_sources(monkeypatch, tk_root) -> N
     from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 
     section = En14825ScopSection(tk_root)
+    _populate_average_sample(section)
     section.recalculate_now()
     assert section._detail_sources
 
@@ -124,6 +135,7 @@ def test_scop_detail_source_invalidation_falls_back_to_waiting(tk_root) -> None:
     from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 
     section = En14825ScopSection(tk_root)
+    _populate_average_sample(section)
     section.recalculate_now()
     section.climate_active_vars["average"].set(False)
     section._on_climate_toggle()

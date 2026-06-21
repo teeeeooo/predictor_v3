@@ -13,6 +13,17 @@ from __future__ import annotations
 
 import pytest
 
+from tests.calculator_ui_sample_values import HONG_KONG_HSPF_SAMPLE_VALUES
+
+
+def _section_with_sample(tk_root):
+    from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
+
+    section = HongKongHspfSection(tk_root, "Hong Kong")
+    section.input_table.set_values_batch(HONG_KONG_HSPF_SAMPLE_VALUES)
+    section.recalculate_now()
+    return section
+
 
 @pytest.fixture
 def tk_root():
@@ -29,10 +40,12 @@ def tk_root():
 
 
 class TestHongKongHspfSectionDefaults:
-    def test_section_defaults_calculate_hspf_summary(self, tk_root) -> None:
+    def test_explicit_sample_calculates_hspf_summary(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
         section = HongKongHspfSection(tk_root, "Hong Kong")
+        section.input_table.set_values_batch(HONG_KONG_HSPF_SAMPLE_VALUES)
+        section.recalculate_now()
         tk_root.update_idletasks()
         summary = dict(section._detail_summary)
         assert "HSPF" in summary
@@ -51,7 +64,7 @@ class TestHongKongHspfDetailPanel:
     def test_detail_toggle_opens_detail_panel(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         assert section.detail_toggle.cget("text") == "상세 보기 ↓"
         section.detail_toggle.invoke()
@@ -62,7 +75,7 @@ class TestHongKongHspfDetailPanel:
     def test_detail_toggle_closes_detail_panel(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         section.detail_toggle.invoke()
         tk_root.update_idletasks()
         assert section.detail_panel.is_visible()
@@ -75,7 +88,7 @@ class TestHongKongHspfDetailPanel:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
         from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         expected_labels = [
             label for label, _key in HEATING_HSPF_BIN_DETAIL_SCHEMA.graph_series
@@ -86,7 +99,7 @@ class TestHongKongHspfDetailPanel:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
         from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         section.detail_toggle.invoke()
         tk_root.update_idletasks()
@@ -95,7 +108,7 @@ class TestHongKongHspfDetailPanel:
     def test_detail_rows_populated_from_bin_details(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         section.detail_toggle.invoke()
         tk_root.update_idletasks()
@@ -109,7 +122,7 @@ class TestHongKongHspfDetailPanel:
     def test_detail_copy_button_uses_header_included_tsv(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         section.detail_toggle.invoke()
         tk_root.update_idletasks()
@@ -133,7 +146,7 @@ class TestHongKongHspfDetailPanel:
             "apps.calculator.ui.table_csv_export.export_table_to_csv", _fake_export
         )
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         section.detail_toggle.invoke()
         tk_root.update_idletasks()
@@ -151,7 +164,7 @@ class TestHongKongHspfInvalidInput:
     def test_invalid_input_clears_stale_rows(self, tk_root) -> None:
         from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
 
-        section = HongKongHspfSection(tk_root, "Hong Kong")
+        section = _section_with_sample(tk_root)
         tk_root.update_idletasks()
         # First, ensure detail panel has data by opening it
         section.detail_toggle.invoke()

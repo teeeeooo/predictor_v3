@@ -16,7 +16,7 @@ from apps.calculator.ui.ahri.hspf2_batch_session import (
     AhriHspf2BatchSessionState,
     AhriHspf2BatchSnapshot,
 )
-from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
+from tests.calculator_ui_sample_values import HSPF2_SAMPLE_VALUES
 from apps.calculator.ui.batch.matrix_models import MatrixCellKind, MatrixPhysicalRowType
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
@@ -25,7 +25,7 @@ from apps.calculator.ui.layout_constants import (
 )
 
 
-VALID_CASE = dict(HSPF2_DEV_SAMPLE_VALUES)
+VALID_CASE = dict(HSPF2_SAMPLE_VALUES)
 COMMON_NUMERIC = {
     "cd": "0.25",
     "defrost_credit": "1.0",

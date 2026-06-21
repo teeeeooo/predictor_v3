@@ -9,6 +9,12 @@ from apps.calculator.ui.en14825 import (
     SeerTableModel,
 )
 from core.calculator_en14825 import EN14825Calculator
+from tests.calculator_ui_sample_values import EN14825_SEER_SAMPLE_VALUES
+
+
+def _populate_seer_sample(section) -> None:
+    section.design_table.set_values_batch({"p_design_c": "3000"})
+    section.input_table.set_values_batch(EN14825_SEER_SAMPLE_VALUES)
 
 
 class FakeCalculator:
@@ -396,7 +402,9 @@ def test_en14825_gui_integration():
         assert "declared_power_w_for_core" not in row_names
         assert "derived_power" not in row_names
 
-        # 2. default/prefill 값으로 initial recalculate가 crash 없이 수행되는지 확인한다.
+        # 2. Explicit test sample로 recalculate가 crash 없이 수행되는지 확인한다.
+        _populate_seer_sample(section)
+        section.recalculate_now()
         summary_widget = section.result_panel
         summary_text = summary_widget._text.get("1.0", tk.END)
         assert "Declared SEER" in summary_text
@@ -467,6 +475,7 @@ def test_en14825_static_cell_tint():
         from apps.calculator.ui.en14825 import SeerTableModel
 
         section = En14825SeerSection(root)
+        _populate_seer_sample(section)
 
         row_idx = SeerTableModel.ROW_KEYS.index("eer_percent")
         col_idx = SeerTableModel.COL_KEYS.index("A")
@@ -607,6 +616,14 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         tab._p_off_var.set("1")
         tab.seer_section._appliance_type_var.set("cooling_only")
         tab.scop_section._appliance_type_var.set("heating_only")
+        tab.scop_section.climate_input_tables["average"].set_values_batch(
+            {"p_design_h": "3000"}
+        )
+        from tests.calculator_ui_sample_values import EN14825_SCOP_SAMPLE_VALUES
+
+        tab.scop_section.input_tables["average"].set_values_batch(
+            EN14825_SCOP_SAMPLE_VALUES
+        )
 
         tab.scop_section._auto_calc.flush_now()
         summary_text = tab.scop_section.result_panel._text.get("1.0", tk.END)
@@ -651,6 +668,7 @@ def test_seer_section_uses_en14825_common_auxiliary_inputs():
         from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 
         section = En14825SeerSection(root, common_input_values=lambda: common_values)
+        _populate_seer_sample(section)
         fake_core = FakeCalculator()
         section.adapter = SeerAdapter(calculator=fake_core)
 

@@ -76,7 +76,7 @@ class En14825SeerSection:
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Auxiliary Parameters Frame
-        self._p_design_var = tk.StringVar(value="3000")
+        self._p_design_var = tk.StringVar(value="")
         self._t_design_var = tk.StringVar(value=str(self._seer_defaults["t_design_c"]))
         self._cd_var = tk.StringVar(value=str(self._seer_defaults["degradation_coefficient"]))
         self._appliance_type_var = tk.StringVar(value=self._seer_defaults["appliance_type"])
@@ -176,28 +176,6 @@ class En14825SeerSection:
 
         # Hook dynamic background colors for cells based on their status
         self.input_table.default_cell_background = self._resolve_cell_bg
-
-        # Prefill default values
-        self.input_table.set_values(
-            {
-                "declared_capacity_A": "3600",
-                "declared_capacity_B": "2650",
-                "declared_capacity_C": "1700",
-                "declared_capacity_D": "1200",
-                "declared_eer_A": "4.00",
-                "declared_eer_B": "4.60",
-                "declared_eer_C": "5.40",
-                "declared_eer_D": "6.20",
-                "tested_capacity_A": "3600",
-                "tested_capacity_B": "2650",
-                "tested_capacity_C": "1700",
-                "tested_capacity_D": "1200",
-                "tested_power_A": "900",
-                "tested_power_B": "576",
-                "tested_power_C": "315",
-                "tested_power_D": "194",
-            }
-        )
 
         self.input_controller = TkTableController(self.input_table)
 
@@ -321,6 +299,15 @@ class En14825SeerSection:
         try:
             # 1. Read and validate text values from input matrix
             text_vals = self.input_table.get_text_values()
+            if (
+                not self._p_design_var.get().strip()
+                and not any(value.strip() for value in text_vals.values())
+            ):
+                self.input_table.clear_invalid_fields()
+                self.result_panel.clear()
+                self._clear_computed_rows()
+                self._clear_detail("\uc785\ub825 \ub300\uae30")
+                return
             invalid_fields = {}
             parsed_vals = {}
             for field_key, raw_val in text_vals.items():

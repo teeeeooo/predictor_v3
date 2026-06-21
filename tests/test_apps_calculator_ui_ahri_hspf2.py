@@ -13,7 +13,10 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
     AhriHspf2Options,
     AhriHspf2Summary,
 )
-from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
+from tests.calculator_ui_sample_values import (
+    HSPF2_HEATING_SAMPLE_VALUES,
+    HSPF2_SAMPLE_VALUES,
+)
 
 TEST_MEASUREMENTS = {
     "a2_capacity": "24000",
@@ -287,27 +290,16 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     assert section.heating_table.cell_role((1, 6)) is CellRole.READONLY
     assert section.heating_table.cell_role((1, 7)) is CellRole.READONLY
     assert section.heating_table.cell_widget((1, 6)).cget("text") == ""
-    assert section.a2_table.get_text_values()["a2_capacity"] == (
-        HSPF2_DEV_SAMPLE_VALUES["a2_capacity"]
-    )
+    assert section.a2_table.get_text_values()["a2_capacity"] == ""
     assert "a2_power" not in section.a2_table.field_order
     assert section.heating_table.static_cell_labels[("cop", "H01")].cget(
         "text"
-    ) == "12.76"
+    ) == ""
     assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
         "text"
     ) == ""
-    result_values = section.result_panel.summary_value_labels["HSPF2"]
-    assert len(result_values) == 3
-    assert all(label.cget("text") for label in result_values)
-    assert section.result_panel._summary_shapes["HSPF2"][1] == (
-        "HSPF2",
-        "Total Heating [kBtu]",
-        "Total Energy [kWh]",
-    )
-    assert section.result_panel.summary_status_labels["HSPF2"].cget("text") == (
-        "자동 계산 완료"
-    )
+    assert section.result_panel.summary_tables == {}
+    assert section._detail_status == "입력 대기"
     visible_fields = {
         *section.numeric_table.field_order,
         *section.a2_table.field_order,
@@ -323,11 +315,15 @@ def test_hspf2_optional_toggle_restores_editability_and_calculates(tk_root) -> N
 
     section = AhriHspf2Section(tk_root)
     section.h12_var.set(True)
+    section.a2_table.set_values_batch(
+        {"a2_capacity": HSPF2_SAMPLE_VALUES["a2_capacity"]}
+    )
+    section.heating_table.set_values_batch(HSPF2_HEATING_SAMPLE_VALUES)
     section._auto_calc.flush_now()
 
     assert section.heating_table.cell_role((1, 6)) is CellRole.EDITABLE
     assert section.heating_table.get_text_values()["capacity_H12"] == (
-        HSPF2_DEV_SAMPLE_VALUES["capacity_H12"]
+        HSPF2_SAMPLE_VALUES["capacity_H12"]
     )
     assert section.heating_table.static_cell_labels[("cop", "H12")].cget(
         "text"

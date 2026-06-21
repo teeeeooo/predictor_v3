@@ -9,6 +9,7 @@ from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SEER_BIN_DETAIL_SCHEMA,
 )
 from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
+from tests.calculator_ui_sample_values import EN14825_SEER_SAMPLE_VALUES
 
 
 @pytest.fixture
@@ -54,6 +55,8 @@ def test_seer_detail_panel_tracks_completed_sources_and_visibility(tk_root) -> N
         tk_root,
         on_trace_visibility_changed=lambda: refit_calls.append("changed"),
     )
+    section.design_table.set_values_batch({"p_design_c": "3000"})
+    section.input_table.set_values_batch(EN14825_SEER_SAMPLE_VALUES)
     section.recalculate_now()
 
     assert tuple(section._detail_sources) == ("Declared", "Tested")
@@ -70,6 +73,9 @@ def test_seer_detail_invalid_input_clears_stale_rows(tk_root) -> None:
     from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 
     section = En14825SeerSection(tk_root)
+    section.design_table.set_values_batch({"p_design_c": "3000"})
+    section.input_table.set_values_batch(EN14825_SEER_SAMPLE_VALUES)
+    section.recalculate_now()
     assert section._detail_sources
     section.input_table.set_values_batch(
         {"declared_capacity_A": "bad", "tested_capacity_A": "bad"}
@@ -87,6 +93,9 @@ def test_seer_detail_calculation_error_clears_sources(monkeypatch, tk_root) -> N
     from apps.calculator.ui.sections.en14825_seer_section import En14825SeerSection
 
     section = En14825SeerSection(tk_root)
+    section.design_table.set_values_batch({"p_design_c": "3000"})
+    section.input_table.set_values_batch(EN14825_SEER_SAMPLE_VALUES)
+    section.recalculate_now()
     assert section._detail_sources
     monkeypatch.setattr(
         section.adapter,

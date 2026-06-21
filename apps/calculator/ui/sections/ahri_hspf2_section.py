@@ -14,7 +14,6 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
     AhriHspf2Options,
 )
 from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
-from apps.calculator.ui.ahri.hspf2_mock_data import HSPF2_DEV_SAMPLE_VALUES
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
 from apps.calculator.ui.metric_input_table import MetricInputTable
@@ -185,14 +184,6 @@ class AhriHspf2Section:
         self.numeric_table.set_values(
             {"cd": "0.25", "defrost_credit": "1.0", "cut_out_c": "-40.0", "cut_in_c": "-40.0"}
         )
-        for table in (self.a2_table, self.heating_table):
-            table.set_values(
-                {
-                    key: HSPF2_DEV_SAMPLE_VALUES[key]
-                    for key in table.field_order
-                    if key in HSPF2_DEV_SAMPLE_VALUES
-                }
-            )
 
     def pack(self, **kwargs: object) -> None:
         self._frame.pack(**kwargs)

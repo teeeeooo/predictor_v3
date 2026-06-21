@@ -27,29 +27,31 @@
 
 ## Current Slice
 
-- The EN14825/AHRI detail implementation and common profile lifecycle arc is
-  closed in summary 461.
-- Covered active reports 449–461 are archived; the sample/empty-state policy
-  record remains active because it directly owns the next implementation slice.
-- All calculator profiles now have the diagnostic detail prerequisites required
-  before product performance sample removal.
+- Calculator product-performance sample prefills have been removed across
+  EN14825, AHRI, ISO/ISEER, Hong Kong, and SASO profile sections.
+- Standard, option, and calculation-condition defaults remain; focused tests now
+  own explicit calculation samples instead of production UI modules.
+- Blank profiles render input-waiting result/detail states without creating demo
+  results.
 
 ## Next Actions
 
-1. Remove calculator sample performance prefills and implement empty states.
-2. Audit the legacy calculator entrypoint after empty-state completion.
+1. Audit the legacy `app_calculator_tk.py` entrypoint and remove it only if the
+   canonical application path and repository references prove it unused.
+2. Run the task-sequence final validation and publish all nine local commits once.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; retain standard/option defaults
-  while removing only product performance demo values.
-- HSPF2 DEV sample values remain isolated and intentionally retained until the
-  remaining EN14825/AHRI detail-view prerequisites are implemented.
+- No active implementation blocker is recorded.
+- A future explicit DEV/demo sample loader remains optional and is not part of
+  the production empty-state contract.
 
 ## Active Constraints
 
-- Do not remove calculator sample/default data during detail-view slices.
-- Keep AHRI detail implementations separate from EN14825 detail behavior.
+- Do not restore production performance prefills; focused tests own any samples
+  needed for calculation and detail regression coverage.
+- Preserve standard/option/calculation-condition defaults when auditing the
+  legacy entrypoint.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

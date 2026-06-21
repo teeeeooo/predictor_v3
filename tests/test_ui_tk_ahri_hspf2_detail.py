@@ -6,6 +6,10 @@ import pytest
 
 from apps.calculator.ui.sections.ahri_hspf2_detail import format_hspf2_bin_details
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_HSPF2_BIN_DETAIL_SCHEMA
+from tests.calculator_ui_sample_values import (
+    HSPF2_HEATING_SAMPLE_VALUES,
+    HSPF2_SAMPLE_VALUES,
+)
 
 TEST_BIN_DETAIL = {
     "temp_F": 62.0,
@@ -57,6 +61,11 @@ def test_hspf2_detail_panel_is_single_source_and_refits(tk_root) -> None:
         tk_root,
         on_trace_visibility_changed=lambda: refit_calls.append("changed"),
     )
+    section.a2_table.set_values_batch(
+        {"a2_capacity": HSPF2_SAMPLE_VALUES["a2_capacity"]}
+    )
+    section.heating_table.set_values_batch(HSPF2_HEATING_SAMPLE_VALUES)
+    section.recalculate_now()
 
     assert section.detail_panel.source_combo.winfo_manager() == ""
     assert section.detail_panel.table.table_rows()
@@ -86,6 +95,11 @@ def test_hspf2_invalid_input_clears_stale_detail(tk_root) -> None:
     from apps.calculator.ui.sections.ahri_hspf2_section import AhriHspf2Section
 
     section = AhriHspf2Section(tk_root)
+    section.a2_table.set_values_batch(
+        {"a2_capacity": HSPF2_SAMPLE_VALUES["a2_capacity"]}
+    )
+    section.heating_table.set_values_batch(HSPF2_HEATING_SAMPLE_VALUES)
+    section.recalculate_now()
     assert section.detail_panel.table.table_rows()
     section.heating_table.set_values_batch({"power_H42": "bad"})
     section.recalculate_now()
@@ -101,6 +115,11 @@ def test_hspf2_optional_change_clears_before_recalculation(tk_root) -> None:
     from apps.calculator.ui.sections.ahri_hspf2_section import AhriHspf2Section
 
     section = AhriHspf2Section(tk_root)
+    section.a2_table.set_values_batch(
+        {"a2_capacity": HSPF2_SAMPLE_VALUES["a2_capacity"]}
+    )
+    section.heating_table.set_values_batch(HSPF2_HEATING_SAMPLE_VALUES)
+    section.recalculate_now()
     assert section.detail_panel.table.table_rows()
     section.h42_var.set(False)
 

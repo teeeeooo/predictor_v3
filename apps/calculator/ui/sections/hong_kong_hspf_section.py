@@ -106,14 +106,6 @@ class HongKongHspfSection:
             show_source_selector=False,
             schema=HEATING_HSPF_BIN_DETAIL_SCHEMA,
         )
-        self.input_table.set_values(
-            {
-                "full_capacity": "6300",
-                "full_power": "1500",
-                "half_capacity": "3200",
-                "half_power": "800",
-            }
-        )
         self.input_controller = TkTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
@@ -133,6 +125,14 @@ class HongKongHspfSection:
         )
 
     def recalculate_now(self) -> None:
+        if not any(
+            value.strip() for value in self.input_table.get_text_values().values()
+        ):
+            self._clear_trace("\uc785\ub825 \ub300\uae30")
+            self.result_panel.set_summaries(
+                (result_status("HSPF", "\uc785\ub825 \ub300\uae30"),)
+            )
+            return
         try:
             measured = self._read_inputs()
         except ValueError:

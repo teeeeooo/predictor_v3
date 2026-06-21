@@ -15,6 +15,14 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
     format_scop_climate_error_summary,
     format_scop_result_summary,
 )
+from tests.calculator_ui_sample_values import EN14825_SCOP_SAMPLE_VALUES
+
+
+def _populate_average_sample(section) -> None:
+    section.climate_input_tables["average"].set_values_batch(
+        {"p_design_h": "3000"}
+    )
+    section.input_tables["average"].set_values_batch(EN14825_SCOP_SAMPLE_VALUES)
 
 
 class FakeHeatingCalculator:
@@ -678,7 +686,8 @@ def test_scop_gui_integration_basics():
         assert "declared_power_w_for_core" not in row_keys
         assert "derived_power" not in row_keys
 
-        # 3. 기본/prefill 상태에서 recalculate가 crash 없이 수행되는지 확인
+        # 3. Explicit test sample로 recalculate가 crash 없이 수행되는지 확인
+        _populate_average_sample(section)
         section._auto_calc.flush_now()
         summary_widget = section.result_panel
         summary_text = summary_widget._text.get("1.0", tk.END)
@@ -847,6 +856,7 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
 
         section = En14825ScopSection(root, common_input_values=lambda: common_values)
+        _populate_average_sample(section)
         assert tuple(section.appliance_type_selector.cget("values")) == (
             "reversible",
             "heating_only",

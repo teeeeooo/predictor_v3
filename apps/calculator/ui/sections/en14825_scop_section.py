@@ -125,9 +125,9 @@ class En14825ScopSection:
 
         # Climate-specific vars
         self.p_design_h_vars: dict[str, tk.StringVar] = {
-            "average": tk.StringVar(value="3000"),
-            "warmer": tk.StringVar(value="3000"),
-            "colder": tk.StringVar(value="3000"),
+            "average": tk.StringVar(value=""),
+            "warmer": tk.StringVar(value=""),
+            "colder": tk.StringVar(value=""),
         }
         self.tbiv_vars: dict[str, tk.StringVar] = {
             "average": tk.StringVar(value="-10"),
@@ -240,36 +240,6 @@ class En14825ScopSection:
             table.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 6))
             table.default_cell_background = lambda pos, c=clm: self._resolve_cell_bg(pos, c)
             self.input_tables[clm] = table
-
-            # Prefill sensible default values
-            table.set_values(
-                {
-                    "declared_capacity_A": "3000",
-                    "declared_capacity_B": "3000",
-                    "declared_capacity_C": "3000",
-                    "declared_capacity_D": "3000",
-                    "declared_capacity_TOL": "3000",
-                    "declared_capacity_Tbiv": "3000",
-                    "declared_cop_A": "2.80",
-                    "declared_cop_B": "3.20",
-                    "declared_cop_C": "3.60",
-                    "declared_cop_D": "4.00",
-                    "declared_cop_TOL": "2.20",
-                    "declared_cop_Tbiv": "2.80",
-                    "tested_capacity_A": "3000",
-                    "tested_capacity_B": "3000",
-                    "tested_capacity_C": "3000",
-                    "tested_capacity_D": "3000",
-                    "tested_capacity_TOL": "3000",
-                    "tested_capacity_Tbiv": "3000",
-                    "tested_power_A": "1070",
-                    "tested_power_B": "938",
-                    "tested_power_C": "833",
-                    "tested_power_D": "750",
-                    "tested_power_TOL": "1360",
-                    "tested_power_Tbiv": "1070",
-                }
-            )
 
             self.table_controllers[clm] = TkTableController(table)
 
