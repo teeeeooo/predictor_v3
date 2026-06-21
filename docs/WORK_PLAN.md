@@ -27,11 +27,11 @@
 
 ## Current Slice
 
-- EN14825 profile switching now guards transient nested-notebook measurement
-  underflow before producing a top-level geometry string.
-- The common geometry cap enforces positive minimum visible dimensions, and
-  EN14825 SEER detail visibility now requests the existing lifecycle refit.
-- Local GUI profile-switch smoke remains before the sizing correction closes.
+- Top-level profile switching now preserves its immediate fit and invokes an
+  optional selected-tab visibility hook afterward.
+- EN14825 uses that hook to request a coalesced two-cycle settled refit, so a
+  transient positive-but-undermeasured size does not remain final geometry.
+- Local GUI profile-switch smoke remains before the lifecycle correction closes.
 
 ## Next Actions
 

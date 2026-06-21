@@ -122,6 +122,10 @@ class En14825Tab(ttk.Frame):
     def fit_toplevel_to_current_content_once(self) -> None:
         self._fit_toplevel_to_current_content()
 
+    def on_parent_tab_selected(self) -> None:
+        """Refit again after the top-level profile switch has settled."""
+        self._request_visible_lifecycle_refit(settle_cycles=2)
+
     def _request_visible_lifecycle_refit(self, *, settle_cycles: int = 1) -> None:
         self._refit_scheduler.request_refit(settle_cycles=settle_cycles)
 

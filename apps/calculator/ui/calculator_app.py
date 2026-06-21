@@ -80,6 +80,9 @@ class CalculatorTkApp:
             self._set_notebook_content_size(selected_tab.preferred_initial_size())
         if hasattr(selected_tab, "fit_toplevel_to_current_content_once"):
             selected_tab.fit_toplevel_to_current_content_once()
+        on_parent_tab_selected = getattr(selected_tab, "on_parent_tab_selected", None)
+        if callable(on_parent_tab_selected):
+            on_parent_tab_selected()
 
     def _set_notebook_content_size(self, size: tuple[int, int]) -> None:
         width, height = size
