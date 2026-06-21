@@ -27,31 +27,31 @@
 
 ## Current Slice
 
-- Calculator product-performance sample prefills have been removed across
-  EN14825, AHRI, ISO/ISEER, Hong Kong, and SASO profile sections.
-- Standard, option, and calculation-condition defaults remain; focused tests now
-  own explicit calculation samples instead of production UI modules.
-- Blank profiles render input-waiting result/detail states without creating demo
-  results.
+- The nine-task calculator lifecycle/detail/empty-state sequence is complete.
+- `app_calculator.py` and `apps.calculator.app:main` remain canonical.
+- Deprecated `app_calculator_tk.py` is retained as a thin compatibility shim
+  because active smoke/packaging guides and a focused delegation test still use
+  that external command; it contains no independent application behavior.
 
 ## Next Actions
 
-1. Audit the legacy `app_calculator_tk.py` entrypoint and remove it only if the
-   canonical application path and repository references prove it unused.
-2. Run the task-sequence final validation and publish all nine local commits once.
+1. Plan and execute the approved legacy UI token cleanup as small owner-specific
+   slices, starting from the formal inventory.
 
 ## Active Blockers / Open Decisions
 
 - No active implementation blocker is recorded.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
+- Retire `app_calculator_tk.py` only after its active external guide commands and
+  compatibility test are migrated or explicitly deprecated.
 
 ## Active Constraints
 
 - Do not restore production performance prefills; focused tests own any samples
   needed for calculation and detail regression coverage.
-- Preserve standard/option/calculation-condition defaults when auditing the
-  legacy entrypoint.
+- Preserve canonical calculator entrypoint delegation while the compatibility
+  shim remains.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.
