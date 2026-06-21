@@ -57,6 +57,7 @@ the title, purpose/decision/status, and necessary surrounding range.
 | `2026-06-20-ahri-210-240-ui-batch-design-specification.md` | active reference | Fix AHRI SEER2/HSPF2 main and two-row batch contracts before implementation. | this implementation contract plus UI/UX and architecture owner docs | AHRI 210/240 main UI, batch, optional-point, or lifecycle work. |
 | `2026-06-21-ui-magic-literal-legacy-inventory.md` | active reference | Classify grandfathered UI presentation literals and split migration into bounded semantic-token slices. | `docs/agent_workflows/AGENT_CHANGE_GATES.md`, `apps/calculator/ui/layout_constants.py` | Planning UI literal cleanup or expanding the staged literal gate. |
 | `2026-06-21-calculator-sample-data-empty-state-policy.md` | active reference | Keep standard/option defaults, remove product demo performance values only after required detail surfaces exist. | profile UI owners plus future EN14825/AHRI detail design | Planning detail views, sample removal, or calculator empty-state behavior. |
+| `2026-06-21-en14825-ahri-detail-view-design.md` | active reference | Define bin-detail ownership, schema direction, and implementation order for EN14825/AHRI profiles. | profile UI/core owners plus result/detail UI contracts | Implementing or reviewing EN14825/AHRI detail surfaces. |
 
 ## Update Triggers
 

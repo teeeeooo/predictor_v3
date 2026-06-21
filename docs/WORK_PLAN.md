@@ -27,15 +27,13 @@
 
 ## Current Slice
 
-- EN14825 SCOP preserves declared/tested core bin details through an additive
-  UI model boundary and exposes completed climate/source details through the
-  shared detail panel.
-- Local GUI visual smoke remains before the SCOP detail slice is closed.
+- The EN14825/AHRI detail-view design record is tracked and indexed.
+- EN14825 SCOP detail implementation is complete; local GUI visual smoke
+  remains an acceptance check rather than a separate implementation slice.
 
 ## Next Actions
 
-1. Run EN14825 SCOP detail visual smoke.
-2. Implement the EN14825 SEER detail view in a separate slice.
+1. Implement the EN14825 SEER detail view in a separate slice.
 
 ## Active Blockers / Open Decisions
 
