@@ -110,9 +110,9 @@ terminal output is expected on the happy path.
 
 ## Manual checklist
 
-Default inputs are pre-filled by `ui_tk/sections/iso_cspf_section.py`
-and `ui_tk/sections/iso_hspf_section.py`. Run each step in order
-without changing inputs unless the step says so.
+Product-performance inputs intentionally open empty. Option and regulation
+defaults may remain selected. Run each step in order and enter focused test
+values only where a calculation result must be checked.
 
 1. **App launch** — Run the launch command. Confirm the Tk window
    appears with the title `Calculator (Tkinter)`.
@@ -120,28 +120,23 @@ without changing inputs unless the step says so.
    inside the visible screen with the title bar reachable.
    Confirm the initial window height fits inside the screen and lower
    CSPF/HSPF tables are either visible or reachable by vertical scroll.
-2. **Single standard tab** — The window shows exactly one tab
-   labeled `ISO 16358`. No other top-level tabs (`EN 14825`, `AHRI
-   210/240`, `KS C 9306`) appear yet — they are out of scope for the
-   MVP.
-3. **Region selector** — Inside the ISO 16358 tab, a `지역` combobox
-   labeled with `Hong Kong` is visible at the top. The combobox is
-   read-only (cannot be edited by typing).
+2. **Standard tabs** — The window shows the current `ISO 16358`, `EN14825`,
+   and `AHRI 210/240` top-level tabs.
+3. **Profile selector** — Inside the ISO 16358 tab, the profile selector is
+   read-only and can select the supported ISO/ISEER, Hong Kong, and SASO
+   surfaces.
 4. **CSPF + HSPF sections together** — Below the region row, both
    `CSPF 입력 (Hong Kong)` and `HSPF 입력 (Hong Kong)` sections are visible
    at the same time. Within the page the visible order is `CSPF 입력` →
    `CSPF 결과` → `HSPF 입력` → `HSPF 결과`. `profile_id`,
    `calculator_id`, and `config_path` are not displayed anywhere in
    the UI.
-5. **CSPF table default values** — In the CSPF input section:
+5. **CSPF empty state** — In the CSPF input section:
    - A separate compact `정격 표기치` surface contains `능력 [W]` = `3500`
      only; it contains no `전력 [W]` row or cell.
    - The trial-input matrix has only `35 Full` and `35 Half` columns, with
      `능력 [W]` and `전력 [W]` rows.
-   - `35 Full` / `능력 [W]` = `3600`
-   - `35 Full` / `전력 [W]` = `900`
-   - `35 Half` / `능력 [W]` = `1700`
-   - `35 Half` / `전력 [W]` = `380`
+   - Declared, capacity, and power performance cells open empty.
    - Cells appear as compact bordered matrices and numeric values are centered.
    - The `정격 표기치`, trial-input, and CSPF result tables have the same
      left edge and visual width with regular vertical spacing.
@@ -150,30 +145,28 @@ without changing inputs unless the step says so.
    - Numeric/header text is comfortably readable and row padding remains
      compact rather than oversized.
    - No `CSPF 계산` button is shown.
-6. **CSPF auto-calc** — Without changing inputs, wait briefly for
-   auto-calc. A compact bordered result table should show a distinct header
-   row, value row, and small status line:
+6. **CSPF auto-calc** — The initial result remains in an input-waiting state.
+   After entering the focused smoke values, a compact bordered result table
+   should show a distinct header row, value row, and small status line:
    ```
    CSPF | CSTL [kWh] | CSEC [kWh]
    4.939 | 1769.6 | 358.3
    ```
    No `None` value is visible.
-7. **HSPF table default values** — In the HSPF input section:
+7. **HSPF empty state** — In the HSPF input section:
    - A separate compact `정격 표기치` surface contains `능력 [W]` = `6300`
      only; it contains no `전력 [W]` row or cell.
    - The trial-input matrix has only `7 Full` and `7 Half` columns, with
      `능력 [W]` and `전력 [W]` rows.
-   - `7 Full` / `능력 [W]` = `6300`
-   - `7 Full` / `전력 [W]` = `1500`
-   - `7 Half` / `능력 [W]` = `3200`
-   - `7 Half` / `전력 [W]` = `800`
+   - Declared, capacity, and power performance cells open empty.
    - Numeric values are centered in the bordered cells.
    - The `정격 표기치`, trial-input, and HSPF result tables have the same
      left edge and visual width with the same spacing rhythm as CSPF.
    - After resizing, these three surfaces expand together and remain aligned.
    - No `HSPF 계산` button is shown.
-8. **HSPF auto-calc** — After the initial auto-calc, the result
-   surface directly below HSPF input should contain a compact bordered table:
+8. **HSPF auto-calc** — The initial result remains in an input-waiting state.
+   After entering the focused smoke values, the result surface directly below
+   HSPF input should contain a compact bordered table:
    ```
    HSPF | HSTL [kWh] | HSEC [kWh]
    3.643 | 273.2 | 75.0
@@ -236,23 +229,23 @@ without changing inputs unless the step says so.
 11. **Invalid input surface** — Type a non-number in one CSPF trial cell.
     The CSPF result changes to a clear input-error status line only. No gray
     header/value block, `None`, raw dictionary, long float, or traceback is
-    displayed. Restore the default value and verify the normal summary returns.
+    displayed. Restore a valid value and verify the normal summary returns.
 12. **No bottom result actions** — There is no shared bottom result region and
     no visible `결과 복사` or `결과 지우기` button.
 13. **Region re-selection does not corrupt the tab** — Click the
     region combobox. Re-select `Hong Kong` (currently the only
     option). The CSPF and HSPF sections re-render without
-    duplication and auto-calc repopulates the result panel with
-    CSPF `4.939` and HSPF `3.643`.
+    duplication and preserves the empty/input-waiting state until performance
+    inputs are supplied.
 14. **PyQt5 stays unloaded** — Optional verification. With the app
     still running, open a second terminal at the repo root and run:
     ```bash
-    python3 -B -c "import ui_tk.calculator_app, sys; \
+    python3 -B -c "import apps.calculator.ui.calculator_app, sys; \
       print([m for m in sys.modules if m.startswith('PyQt5')])"
     ```
     The printed list must be empty (`[]`). This mirrors the
-    `tests/test_ui_tk_calculator_foundation.py::test_pyqt5_not_
-    imported_via_ui_tk_calculator_app` assertion.
+    calculator foundation assertion that the canonical UI shell does not load
+    PyQt5.
 15. **Clean shutdown** — Close the window via the macOS window close
     button. The Python process exits with no error.
 
@@ -260,11 +253,11 @@ without changing inputs unless the step says so.
 
 | Item | Expected |
 | --- | --- |
-| Hong Kong CSPF (defaults) | **4.939** |
-| Hong Kong HSPF (defaults) | **3.643** |
+| Hong Kong CSPF (focused smoke inputs) | **4.939** |
+| Hong Kong HSPF (focused smoke inputs) | **3.643** |
 | CSPF summary seasonal values | CSTL `1769.6 kWh`, CSEC `358.3 kWh` |
 | HSPF summary seasonal values | HSTL `273.2 kWh`, HSEC `75.0 kWh` |
-| Top-level tabs | exactly 1 (`ISO 16358`) |
+| Top-level tabs | `ISO 16358`, `EN14825`, `AHRI 210/240` |
 | Hong Kong metric sections | CSPF and HSPF, same screen |
 | `profile_id` exposed in UI | NO |
 | PyQt5 loaded into `sys.modules` | NO |
@@ -284,16 +277,16 @@ Copy this block into the run notes / report; mark each step
 
 ```
 - App launch: OK/NG
-- Single ISO 16358 tab: OK/NG
+- ISO 16358 / EN14825 / AHRI 210/240 tabs present: OK/NG
 - Initial window appears centered or fully inside visible screen: OK/NG
 - Lower CSPF/HSPF tables visible or reachable by vertical scroll: OK/NG
 - Region selector shows "Hong Kong": OK/NG
 - CSPF + HSPF sections together: OK/NG
-- CSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
+- CSPF separate rated surface / empty trial matrix / centered values: OK/NG
 - CSPF rated / trial / result left edge, width, and spacing alignment: OK/NG
 - CSPF responsive resize / readable font / compact row density: OK/NG
 - CSPF compact result table = 4.939 / 1769.6 / 358.3: OK/NG
-- HSPF separate rated surface / trial matrix / centered values / defaults: OK/NG
+- HSPF separate rated surface / empty trial matrix / centered values: OK/NG
 - HSPF rated / trial / result left edge, width, and spacing alignment: OK/NG
 - HSPF responsive resize / readable font / compact row density: OK/NG
 - HSPF compact result table = 3.643 / 273.2 / 75.0: OK/NG

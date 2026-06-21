@@ -6,7 +6,7 @@
 > claim measured sizes. Any number that has not been observed locally
 > stays labeled `not measured`.
 >
-> Current project note: Windows `calculator_tk` packaged size has been
+> Current project note: Windows calculator packaged size has been
 > observed at approximately 11 MB and is acceptable for the current
 > deployment candidate; see the active 198-c report for the closeout.
 
@@ -57,7 +57,7 @@ pyinstaller --noconfirm --clean --noconsole --onefile ^
 
 ```cmd
 python -m pip install --upgrade pyinstaller
-pyinstaller --noconfirm --clean --noconsole --name app_calculator_tk ^
+pyinstaller --noconfirm --clean --noconsole --name app_calculator ^
     --add-data "data;data" ^
     app_calculator.py
 ```
@@ -71,7 +71,7 @@ does not contain `PyQt5` / `Qt5*.dll` after the spike build.
 
 ```cmd
 pyinstaller --noconfirm --clean --noconsole --onefile ^
-    --name app_calculator_tk_onefile ^
+    --name app_calculator_onefile ^
     --add-data "data;data" ^
     app_calculator.py
 ```
@@ -98,7 +98,7 @@ Get-ChildItem -Path dist\app_calculator_pyqt -Recurse |
     Measure-Object -Property Length -Sum |
     Select-Object @{Name="MB";Expression={[math]::Round($_.Sum / 1MB, 1)}}
 
-Get-ChildItem -Path dist\app_calculator_tk -Recurse |
+Get-ChildItem -Path dist\app_calculator -Recurse |
     Measure-Object -Property Length -Sum |
     Select-Object @{Name="MB";Expression={[math]::Round($_.Sum / 1MB, 1)}}
 ```
@@ -107,24 +107,24 @@ Get-ChildItem -Path dist\app_calculator_tk -Recurse |
 
 ```bash
 du -sh dist/app_calculator_pyqt
-du -sh dist/app_calculator_tk
+du -sh dist/app_calculator
 ```
 
 ### macOS / Linux (informational only)
 
 ```bash
-du -sh dist/app_calculator_pyqt dist/app_calculator_tk
+du -sh dist/app_calculator_pyqt dist/app_calculator
 ```
 
 ## One-file exe size measurement
 
 ```powershell
 (Get-Item dist\app_calculator_pyqt_onefile.exe).Length / 1MB
-(Get-Item dist\app_calculator_tk_onefile.exe).Length / 1MB
+(Get-Item dist\app_calculator_onefile.exe).Length / 1MB
 ```
 
 ```bash
-ls -lh dist/app_calculator_pyqt_onefile.exe dist/app_calculator_tk_onefile.exe
+ls -lh dist/app_calculator_pyqt_onefile.exe dist/app_calculator_onefile.exe
 ```
 
 ## Windows-specific verification checklist
@@ -138,10 +138,10 @@ After each build:
    (open the app, run a CSPF calculation, confirm
    `CSPF ≈ 4.939` for `35_full = (3600, 900)` /
    `35_half = (1700, 380)` / `declared = 3500`).
-3. For the Tkinter bundle: confirm `dist/app_calculator_tk/`
+3. For the Tkinter bundle: confirm `dist/app_calculator/`
    contains `tcl86*.dll` / `tk86*.dll` and a `tcl/` script folder.
    Absence of those means Tk will fail at runtime on a clean host.
-4. For the Tkinter bundle: confirm `dist/app_calculator_tk/` does
+4. For the Tkinter bundle: confirm `dist/app_calculator/` does
    **not** contain `PyQt5`, `Qt5Core.dll`, `Qt5Gui.dll`,
    `Qt5Widgets.dll`, or a `PyQt5/Qt5/plugins/` tree.
 5. For the PyQt bundle: capture (with `dir`/`du`) which top-level
