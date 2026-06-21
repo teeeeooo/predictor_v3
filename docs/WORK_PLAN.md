@@ -27,22 +27,22 @@
 
 ## Current Slice
 
-- Top-level profile switching now preserves its immediate fit and invokes an
-  optional selected-tab visibility hook afterward.
-- EN14825 uses that hook to request a coalesced two-cycle settled refit, so a
-  transient positive-but-undermeasured size does not remain final geometry.
-- Local GUI profile-switch smoke remains before the lifecycle correction closes.
+- ISO16358, EN14825, and AHRI210240 lifecycle assembly has been audited against
+  the active window/profile policy.
+- Shared measurement, scheduler, shell, and geometry primitives are sound, but
+  their repeated profile-local construction is recorded as structural debt.
+- Evidence-based nested activation and settle-cycle differences remain valid
+  controller configuration inputs rather than profile-local owner machinery.
 
 ## Next Actions
 
-1. Run EN14825 profile-switch visual smoke.
-2. Implement the AHRI SEER2 detail view in a separate slice.
+1. Finalize the common profile visible-content lifecycle controller design.
+2. Implement the controller foundation and migrate EN14825.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded; EN14825 profile switching,
-  nested SEER/SCOP selection, and detail-toggle geometry require local GUI
-  confirmation.
+- No active implementation blocker is recorded; task 2 must freeze the common
+  controller contract before production migration begins.
 - HSPF2 DEV sample values remain isolated and intentionally retained until the
   remaining EN14825/AHRI detail-view prerequisites are implemented.
 

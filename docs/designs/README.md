@@ -58,6 +58,7 @@ the title, purpose/decision/status, and necessary surrounding range.
 | `2026-06-21-ui-magic-literal-legacy-inventory.md` | active reference | Classify grandfathered UI presentation literals and split migration into bounded semantic-token slices. | `docs/agent_workflows/AGENT_CHANGE_GATES.md`, `apps/calculator/ui/layout_constants.py` | Planning UI literal cleanup or expanding the staged literal gate. |
 | `2026-06-21-calculator-sample-data-empty-state-policy.md` | active reference | Keep standard/option defaults, remove product demo performance values only after required detail surfaces exist. | profile UI owners plus future EN14825/AHRI detail design | Planning detail views, sample removal, or calculator empty-state behavior. |
 | `2026-06-21-en14825-ahri-detail-view-design.md` | active reference | Define bin-detail ownership, schema direction, and implementation order for EN14825/AHRI profiles. | profile UI/core owners plus result/detail UI contracts | Implementing or reviewing EN14825/AHRI detail surfaces. |
+| `2026-06-21-calculator-window-profile-lifecycle-audit.md` | active reference | Classify repeated profile-local lifecycle assembly as structural debt while preserving evidence-based profile predicates and settle policies. | window/viewport policy plus upcoming common lifecycle controller design | Designing or migrating calculator profile visible-content lifecycle ownership. |
 
 ## Update Triggers
 
