@@ -20,7 +20,6 @@ from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_POINT_WIDTH_CHARS,
     BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
-    BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
 )
 
 _PHYSICAL_ROWS = (MatrixPhysicalRowType.CAPACITY, MatrixPhysicalRowType.POWER)
@@ -30,22 +29,6 @@ _ROW_LABELS = MappingProxyType(
         MatrixPhysicalRowType.POWER: "Power",
     }
 )
-_BATCH_SOURCE_LABELS = MappingProxyType(
-    {
-        "measured": "meas.",
-        "calculated": "calc.",
-        "not provided": "n/a",
-    }
-)
-
-
-def _compact_source_label(source: str) -> str:
-    try:
-        return _BATCH_SOURCE_LABELS[source]
-    except KeyError as exc:
-        raise ValueError(f"Unsupported HSPF2 source label: {source}") from exc
-
-
 @dataclass(frozen=True)
 class AhriHspf2BatchActiveOptions:
     region: str = "IV"
@@ -116,9 +99,6 @@ def build_ahri_hspf2_batch_spec(
         measurement_points=tuple(points),
         result_metrics=(
             ("hspf2", "HSPF2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
-            ("h12_source", "H12", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
-            ("h22_source", "H22", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
-            ("h42_source", "H42", BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS),
         ),
     )
 
@@ -155,12 +135,7 @@ class AhriHspf2BatchHandler:
             if summary is None:
                 return self._blank(BatchRowState.PENDING)
             return AhriHspf2BatchResult(
-                values={
-                    "hspf2": f"{summary.hspf2:.3f}",
-                    "h12_source": _compact_source_label(summary.h12_source),
-                    "h22_source": _compact_source_label(summary.h22_source),
-                    "h42_source": _compact_source_label(summary.h42_source),
-                },
+                values={"hspf2": f"{summary.hspf2:.3f}"},
                 state=BatchRowState.OK,
             )
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
@@ -168,7 +143,4 @@ class AhriHspf2BatchHandler:
 
     @staticmethod
     def _blank(state: BatchRowState) -> AhriHspf2BatchResult:
-        return AhriHspf2BatchResult(
-            values={key: "" for key in ("hspf2", "h12_source", "h22_source", "h42_source")},
-            state=state,
-        )
+        return AhriHspf2BatchResult(values={"hspf2": ""}, state=state)

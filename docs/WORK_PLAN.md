@@ -29,6 +29,8 @@
 
 - Batch dialogs now propagate BatchMatrix natural width/height into their
   screen-capped, parent-centered initial geometry.
+- AHRI HSPF2 Batch exposes only the primary HSPF2 result column; source display
+  remains a main-UI-only contract.
 - AHRI HSPF2 Batch needs a visual readability recheck before lifecycle closeout.
 
 ## Next Actions

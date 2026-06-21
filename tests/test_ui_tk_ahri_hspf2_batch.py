@@ -22,7 +22,6 @@ from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_POINT_WIDTH_CHARS,
     BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
-    BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
 )
 
 
@@ -79,18 +78,15 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
     }
     assert tuple(metric[2] for metric in spec.result_metrics) == (
         BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
-        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
-        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
-        BATCH_MATRIX_RESULT_SOURCE_WIDTH_CHARS,
     )
-    assert spec.result_keys == ("hspf2", "h12_source", "h22_source", "h42_source")
+    assert spec.result_keys == ("hspf2",)
     assert spec.resolve_cell((0, 2)).input_key == "a2_capacity"
     assert spec.resolve_cell((1, 2)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 8)).input_key == "capacity_H42"
     assert spec.resolve_cell((0, 9)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 10)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 11)).kind is MatrixCellKind.RESULT
-    assert spec.resolve_cell((1, 14)).kind is MatrixCellKind.BLANK_READ_ONLY
+    assert spec.resolve_cell((1, 11)).kind is MatrixCellKind.BLANK_READ_ONLY
 
 
 def test_hspf2_batch_handler_omits_disabled_points_and_maps_sources() -> None:
@@ -100,12 +96,7 @@ def test_hspf2_batch_handler_omits_disabled_points_and_maps_sources() -> None:
     result = handler.calculate_row(VALID_CASE)
 
     assert result.state is BatchRowState.OK
-    assert result.values == {
-        "hspf2": "9.876",
-        "h12_source": "n/a",
-        "h22_source": "calc.",
-        "h42_source": "meas.",
-    }
+    assert result.values == {"hspf2": "9.876"}
     values, options = adapter.calls[0]
     assert "a2_power" not in values
     assert "capacity_H12" not in values and "capacity_H22" not in values
@@ -181,7 +172,7 @@ def test_hspf2_batch_dialog_rebuild_restores_hidden_input_and_actions(tk_root) -
     assert float(section.table.cases[0]["hspf2"]) > 0.0
     assert section.table.text_at_position((1, 11)) == ""
     headers, _rows = section.table.table_export_data()
-    assert headers[-4:] == ("HSPF2", "H12", "H22", "H42")
+    assert headers[-1:] == ("HSPF2",)
     button_texts = {
         child.cget("text")
         for frame in section._frame.winfo_children()
