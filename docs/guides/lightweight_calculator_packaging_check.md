@@ -15,7 +15,10 @@
 Compare PyInstaller bundle size for:
 
 - **Baseline**: `app_calculator.py` (PyQt5 calculator UI shell).
-- **Spike**: `app_calculator_tk.py` (Tkinter calculator-only spike).
+- **Current Tkinter source**: `app_calculator.py` (canonical wrapper).
+
+The PyQt baseline commands below are retained as historical measurement
+provenance. Current calculator packaging must use the canonical Tkinter source.
 
 The comparison answers the *Decision criteria* section of the
 feasibility design doc.
@@ -56,7 +59,7 @@ pyinstaller --noconfirm --clean --noconsole --onefile ^
 python -m pip install --upgrade pyinstaller
 pyinstaller --noconfirm --clean --noconsole --name app_calculator_tk ^
     --add-data "data;data" ^
-    app_calculator_tk.py
+    app_calculator.py
 ```
 
 `pyqt5` does **not** need to be installed in the Tkinter venv. If it
@@ -70,7 +73,7 @@ does not contain `PyQt5` / `Qt5*.dll` after the spike build.
 pyinstaller --noconfirm --clean --noconsole --onefile ^
     --name app_calculator_tk_onefile ^
     --add-data "data;data" ^
-    app_calculator_tk.py
+    app_calculator.py
 ```
 
 Notes:

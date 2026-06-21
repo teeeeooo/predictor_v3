@@ -29,29 +29,27 @@
 
 - The nine-task calculator lifecycle/detail/empty-state sequence is complete.
 - `app_calculator.py` and `apps.calculator.app:main` remain canonical.
-- Deprecated `app_calculator_tk.py` is retained as a thin compatibility shim
-  because active smoke/packaging guides and a focused delegation test still use
-  that external command; it contains no independent application behavior.
+- The deprecated calculator Tk compatibility shim has been removed after its
+  live guide and test consumers migrated to the canonical entrypoint.
 
 ## Next Actions
 
-1. Plan and execute the approved legacy UI token cleanup as small owner-specific
-   slices, starting from the formal inventory.
+1. Complete the calculator manual smoke closeout for batch empty state,
+   EN14825 cell colors, and canonical launch.
+2. Then plan the approved legacy UI token cleanup as small owner-specific slices.
 
 ## Active Blockers / Open Decisions
 
 - No active implementation blocker is recorded.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
-- Retire `app_calculator_tk.py` only after its active external guide commands and
-  compatibility test are migrated or explicitly deprecated.
 
 ## Active Constraints
 
 - Do not restore production performance prefills; focused tests own any samples
   needed for calculation and detail regression coverage.
-- Preserve canonical calculator entrypoint delegation while the compatibility
-  shim remains.
+- Preserve `app_calculator.py` → `apps.calculator.app:main` as the canonical
+  calculator launch boundary.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Use focused verification rather than full pytest by default.

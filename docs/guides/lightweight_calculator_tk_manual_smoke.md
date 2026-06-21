@@ -25,10 +25,9 @@ Tkinter direction has a verified behaviour baseline.
 ## Scope
 
 - Manual GUI verification on macOS only.
-- Targets the current Tkinter MVP: `app_calculator_tk.py` →
-  `ui_tk.calculator_app.CalculatorTkApp` → `ui_tk.tabs.iso16358_tab.
-  Iso16358Tab` with Hong Kong CSPF / HSPF sections (118 clean
-  foundation reset).
+- Targets the current Tkinter calculator: `app_calculator.py` →
+  `apps.calculator.app:main` →
+  `apps.calculator.ui.calculator_app.CalculatorTkApp`.
 - Pre-launch static checks (compile, structure guard, targeted
   pytest) included as optional commands.
 
@@ -41,8 +40,7 @@ Tkinter direction has a verified behaviour baseline.
 - Graph/detail surface verification; that is a later lightweight design phase,
   not part of this summary-surface smoke.
 - New helper scripts under `tools/` or `scripts/`.
-- Touching the PyQt calculator UI (`app_calculator.py`,
-  `ui/calc_window.py`, etc.).
+- Touching retired PyQt calculator UI sources.
 - Resolving the macOS Python 3.14 + PyQt5 fatal-abort issue in 4
   PyQt clipboard / table tests (tracked separately; see Known
   Issue Separation below).
@@ -59,7 +57,7 @@ calculator core tests pass.
 - Tkinter / Tcl/Tk: bundled with the Python.org installer.
 - No PyQt5 dependency for the Tkinter path (PyQt5 may still be
   installed for the PyQt UI but must not be loaded by
-  `app_calculator_tk.py`).
+  `app_calculator.py`).
 
 Verify the Python interpreter from the repo root:
 
@@ -76,17 +74,9 @@ for the manual smoke but catch obvious regressions in seconds.
 ```bash
 # 1. Byte-compile every Tkinter MVP module.
 python3 -B -m py_compile \
-  app_calculator_tk.py \
-  ui_tk/__init__.py \
-  ui_tk/calculator_app.py \
-  ui_tk/profile_resolver.py \
-  ui_tk/result_panel.py \
-  ui_tk/input_widgets.py \
-  ui_tk/tabs/__init__.py \
-  ui_tk/tabs/iso16358_tab.py \
-  ui_tk/sections/__init__.py \
-  ui_tk/sections/iso_cspf_section.py \
-  ui_tk/sections/iso_hspf_section.py
+  app_calculator.py \
+  apps/calculator/app.py \
+  apps/calculator/ui/calculator_app.py
 
 # 2. Layer-boundary structure guard.
 python3 -B tools/check_code_structure.py
@@ -112,7 +102,7 @@ Expected (current branch):
 From the repo root:
 
 ```bash
-python3 -B app_calculator_tk.py
+python3 -B app_calculator.py
 ```
 
 A Tk window titled `Calculator (Tkinter)` should appear. No

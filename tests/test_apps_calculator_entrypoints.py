@@ -6,11 +6,9 @@ def test_entrypoint_imports_do_not_run_gui():
     # Importing these should be a side-effect-free import
     import apps.calculator.app
     import app_calculator
-    import app_calculator_tk
 
     assert apps.calculator.app is not None
     assert app_calculator is not None
-    assert app_calculator_tk is not None
 
 
 def test_apps_calculator_app_main_delegation(monkeypatch):
@@ -36,11 +34,3 @@ def test_app_calculator_delegates_to_canonical_main():
     import apps.calculator.app
 
     assert app_calculator.main is apps.calculator.app.main
-
-
-def test_app_calculator_tk_delegates_to_canonical_main():
-    """Verify that app_calculator_tk.main is the canonical main function."""
-    import app_calculator_tk
-    import apps.calculator.app
-
-    assert app_calculator_tk.main is apps.calculator.app.main
