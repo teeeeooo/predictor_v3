@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any
 import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import HONG_KONG_CSPF_MATRIX_SPEC
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
-from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.layout_constants import (
     BATCH_DIALOG_SAFETY_MIN_SIZE,
     ISO_SECTION_BLOCK_GAP,
@@ -21,42 +20,6 @@ from apps.calculator.ui.sections.hong_kong_cspf_batch_spec import HongKongCspfBa
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
-
-
-@dataclass(frozen=True)
-class _MatrixCalculationSummary:
-    valid_rows: int
-    blank_rows: int
-    error_rows: int
-
-
-class HongKongCspfMatrixController:
-    """Batch matrix calculation adapter for Hong Kong CSPF.
-
-    Bridges BatchMatrixTable logical cases with the existing
-    HongKongCspfBatchHandler row-per-case calculation path.
-    """
-
-    def __init__(
-        self, table: BatchMatrixTable, handler: HongKongCspfBatchHandler
-    ) -> None:
-        self._table = table
-        self._handler = handler
-
-    def recalculate(self) -> _MatrixCalculationSummary:
-        valid = 0
-        blank = 0
-        error = 0
-        for index, case in enumerate(self._table.cases):
-            result = self._handler.calculate_row(case)
-            self._table.set_result(index, result.values)
-            if result.state is BatchRowState.OK:
-                valid += 1
-            elif result.state is BatchRowState.ERROR:
-                error += 1
-            else:
-                blank += 1
-        return _MatrixCalculationSummary(valid, blank, error)
 
 
 class HongKongCspfBatchSection:
@@ -84,7 +47,7 @@ class HongKongCspfBatchSection:
             pady=(ISO_SECTION_BLOCK_GAP, 6),
         )
         self.table.interaction_controller = TkTableController(self.table)
-        self.controller = HongKongCspfMatrixController(
+        self.controller = BatchMatrixCalculationController(
             self.table,
             HongKongCspfBatchHandler(region_label),
         )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Protocol
 
 from dataclasses import dataclass
@@ -49,6 +50,50 @@ class BatchCalculationController:
 
     def run_batch(self) -> BatchCalculationSummary:
         """Compatibility alias; UI entry now uses auto-calc."""
+        return self.recalculate()
+
+    def clear_results(self) -> None:
+        self._table.clear_results()
+
+
+class BatchMatrixTableProtocol(Protocol):
+    cases: list[dict[str, str]]
+
+    def set_result(
+        self, logical_case_index: int, result_data: Mapping[str, str]
+    ) -> None:
+        ...
+
+    def clear_results(self) -> None:
+        ...
+
+
+class BatchMatrixCalculationController:
+    """Controller for two-row matrix batch recalculation."""
+
+    def __init__(
+        self, table: BatchMatrixTableProtocol, handler: BatchRowHandler
+    ) -> None:
+        self._table = table
+        self._handler = handler
+
+    def recalculate(self) -> BatchCalculationSummary:
+        valid = 0
+        blank = 0
+        error = 0
+        for index, case in enumerate(self._table.cases):
+            result = self._handler.calculate_row(case)
+            self._table.set_result(index, result.values)
+            if result.state is BatchRowState.OK:
+                valid += 1
+            elif result.state is BatchRowState.ERROR:
+                error += 1
+            else:
+                blank += 1
+        return BatchCalculationSummary(valid, blank, error)
+
+    def run_batch(self) -> BatchCalculationSummary:
+        """Compatibility alias for batch surfaces that expose a run action."""
         return self.recalculate()
 
     def clear_results(self) -> None:

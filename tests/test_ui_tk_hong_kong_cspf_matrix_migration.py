@@ -13,12 +13,10 @@ from apps.calculator.ui.batch.matrix_models import (
     HONG_KONG_CSPF_MATRIX_SPEC,
 )
 from apps.calculator.ui.batch.models import BatchRowState
+from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.sections.hong_kong_cspf_batch_spec import (
     HONG_KONG_CSPF_BATCH_SPEC,
     HongKongCspfBatchHandler,
-)
-from apps.calculator.ui.batch_dialogs.profiles.hong_kong_cspf import (
-    HongKongCspfMatrixController,
 )
 from tests.calculator_ui_sample_values import HONG_KONG_CSPF_SAMPLE_VALUES
 
@@ -56,7 +54,7 @@ def test_matrix_adapter_result_keys_match_existing_batch_contract():
 def test_matrix_controller_calculates_each_logical_case():
     table = _HeadlessMatrixTable(_sample_cases())
     handler = HongKongCspfBatchHandler("Hong Kong")
-    controller = HongKongCspfMatrixController(table, handler)
+    controller = BatchMatrixCalculationController(table, handler)
 
     summary = controller.recalculate()
 
@@ -68,7 +66,7 @@ def test_matrix_controller_calculates_each_logical_case():
 def test_matrix_controller_result_matches_handler_direct_call():
     table = _HeadlessMatrixTable(_sample_cases())
     handler = HongKongCspfBatchHandler("Hong Kong")
-    controller = HongKongCspfMatrixController(table, handler)
+    controller = BatchMatrixCalculationController(table, handler)
 
     controller.recalculate()
 
@@ -87,7 +85,7 @@ def test_matrix_default_cases_are_empty():
 def test_matrix_controller_blank_cases_produce_blank_results():
     table = _HeadlessMatrixTable([{}, {}, {}])
     handler = HongKongCspfBatchHandler("Hong Kong")
-    controller = HongKongCspfMatrixController(table, handler)
+    controller = BatchMatrixCalculationController(table, handler)
 
     summary = controller.recalculate()
 
@@ -109,7 +107,7 @@ def test_matrix_controller_invalid_input_produces_error_state():
         }
     ])
     handler = HongKongCspfBatchHandler("Hong Kong")
-    controller = HongKongCspfMatrixController(table, handler)
+    controller = BatchMatrixCalculationController(table, handler)
 
     summary = controller.recalculate()
 
@@ -137,7 +135,7 @@ def test_matrix_controller_multiple_cases_with_mixed_states():
         },
     ])
     handler = HongKongCspfBatchHandler("Hong Kong")
-    controller = HongKongCspfMatrixController(table, handler)
+    controller = BatchMatrixCalculationController(table, handler)
 
     summary = controller.recalculate()
 

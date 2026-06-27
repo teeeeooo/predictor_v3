@@ -10,6 +10,7 @@ from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import (
     BatchMatrixSpec,
     MatrixMeasurementPointSpec,
@@ -101,13 +102,6 @@ SASO_T3_MATRIX_SPEC = BatchMatrixSpec(
         {},
     ),
 )
-
-
-@dataclass(frozen=True)
-class _MatrixCalculationSummary:
-    valid_rows: int
-    blank_rows: int
-    error_rows: int
 
 
 @dataclass(frozen=True)
@@ -263,29 +257,6 @@ class SasoT3BatchHandler:
         )
 
 
-class SasoT3MatrixController:
-    """Batch matrix calculation adapter for SASO T3."""
-
-    def __init__(self, table: BatchMatrixTable, handler: SasoT3BatchHandler) -> None:
-        self._table = table
-        self._handler = handler
-
-    def recalculate(self) -> _MatrixCalculationSummary:
-        valid = 0
-        blank = 0
-        error = 0
-        for index, case in enumerate(self._table.cases):
-            result = self._handler.calculate_row(case)
-            self._table.set_result(index, result.values)
-            if result.state is BatchRowState.OK:
-                valid += 1
-            elif result.state is BatchRowState.ERROR:
-                error += 1
-            else:
-                blank += 1
-        return _MatrixCalculationSummary(valid, blank, error)
-
-
 class SasoT3BatchSection:
     """Two-row matrix batch surface for SASO T3 cases."""
 
@@ -310,7 +281,7 @@ class SasoT3BatchSection:
             pady=(ISO_SECTION_BLOCK_GAP, 6),
         )
         self.table.interaction_controller = TkTableController(self.table)
-        self.controller = SasoT3MatrixController(
+        self.controller = BatchMatrixCalculationController(
             self.table,
             SasoT3BatchHandler(),
         )
