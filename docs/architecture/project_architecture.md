@@ -4,22 +4,19 @@
 
 ## 1. 파일 구조 (File Structure)
 
-프로젝트는 기능별 분리를 지향하지만, 현재 `core/` root에는 ML pipeline,
-calculator engines, shared utilities, constants/schema가 flat하게 공존하는
-공개 표면이 남아 있습니다. 이 flat 구조는 current compatibility surface로
-수용하되 final target이 아닙니다. Architecture SSOT update의 source input은
+프로젝트는 기능별 분리를 지향하며, Arc 8.5 이후 ML, predictor schema, mapping,
+common paths, calculator 구현 owner는 package boundary 아래에 있습니다.
+Architecture SSOT update의 source input은
 `docs/architecture/project_wide_architecture_restructuring_plan.md`입니다.
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
-  - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
-  - `calculator_*.py`: 규격별 효율 계산 엔진의 root compatibility public surface. 현재 구현 owner는 `core/calculators/`, `core/calculators/adapters/`, `core/calculators/standards/`이며, root 파일은 transition safety wrapper입니다. 신규 규격이나 헬퍼 파일들을 core root에 flat하게 추가하는 것은 별도의 owner/package 설계 심사 없이 보류/금지됩니다.
-  - `predictor.py`: 순방향 ML 예측 로직
-  - `trainer.py`: 모델 학습 및 로그 관리
-- **Project-wide architecture reset note**: `core/calculator_*.py`, ML pipeline
-  files, shared utilities, constants, and schemas must not be moved ad hoc.
-  The target package structure is defined below. Any no-behavior-change package
-  boundary foundation must preserve existing imports through wrappers until
-  callers are explicitly migrated.
+  - `ml/`: 순방향 ML 예측, 학습, 전처리, feature/target, registry, artifact path owner.
+  - `predictor_schema/`: `COLUMNS`, dropdown/column grouping, predictor table schema owner.
+  - `mapping/`: mapping path/repository/update/autofill owner.
+  - `common/`: shared pure helpers and cross-domain paths such as `LOG_DIR`.
+  - `calculators/`: profile/dispatcher, calculator adapters, standard engines, result/ranking adapters owner.
+- **Project-wide architecture reset note**: root compatibility wrappers were
+  retired in Arc 8.5. New active code should import package owner paths directly.
 - **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
   - 기존 `app_train.py`와 `app_predict.py`가 사용하는 레거시 Train/Predict 화면 경로이며, 신규/유지 대상이 아니라 PySide6 재작성 전환 중 reference-only / legacy path로 취급합니다.
   - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
@@ -39,9 +36,8 @@ calculator engines, shared utilities, constants/schema가 flat하게 공존하�
 
 ### 1.1 Project-wide target package boundary
 
-The final target is real package-boundary separation, not a permanent wrapper
-layer. Compatibility wrappers are migration safety devices only; after caller
-migration, wrapper retirement must be explicitly planned.
+The final target is real package-boundary separation. Arc 8.5 retired the root
+compatibility wrapper files after active caller migration.
 
 Long-term target:
 
@@ -92,23 +88,19 @@ core/
 Migration principles:
 
 - Split migration into no-behavior-change slices.
-- Keep current root files as compatibility public surface until callers are
-  migrated.
-- Do not treat root wrappers as final architecture.
 - After package boundary foundation exists, new production code should import
-  from approved package owner paths, not deeper flat-root compatibility paths.
+  from approved package owner paths.
 - Arc 7 owns ML, predictor schema, and mapping package restructure:
   `core/ml`, `core/predictor_schema`, and `core/mapping`.
 - Arc 8 owns the calculator package restructure:
   `core/calculators`, `core/calculators/adapters`, and
   `core/calculators/standards`.
-- Calculator engines now live under `core/calculators/standards/`; root
-  `core/calculator_*` modules are compatibility wrappers.
-- ML pipeline ownership moves toward `core/ml/`.
-- `core/constants.py` responsibilities split toward predictor schema, ML
-  feature/artifact, and mapping owners.
-- Mapping update pure logic moves toward `core/mapping/`; UI/file-dialog
-  wrappers stay outside core.
+- Calculator engines live under `core/calculators/standards/`.
+- ML pipeline ownership lives under `core/ml/`.
+- Former `core/constants.py` responsibilities live under predictor schema, ML
+  feature/artifact, mapping, and common owners.
+- Mapping update pure logic lives under `core/mapping/`; UI/file-dialog
+  script wrappers stay outside core.
 - Detailed implementation steps belong to `docs/WORK_PLAN.md` and future
   approved migration prompts.
 
@@ -120,7 +112,7 @@ Migration principles:
 
 ### Data Leakage 주의사항
 - CSPF, HSPF 등 계산 결과값은 피처 풀에서 제외합니다.
-- 특정 모델(예: 전력) 학습 시 다른 타겟(예: 냉매량)이 입력으로 포함되지 않도록 `core/models.py`에서 타겟별 Leakage 리스트를 엄격히 관리합니다.
+- 특정 모델(예: 전력) 학습 시 다른 타겟(예: 냉매량)이 입력으로 포함되지 않도록 `core/ml/registry.py`에서 타겟별 Leakage 리스트를 엄격히 관리합니다.
 
 ### 전처리 전략
 - **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는 ML 입력 전 `ui/base_model.py`에서 실시간으로 One-hot 피처로 변환됩니다.
@@ -128,14 +120,14 @@ Migration principles:
   - 모델 예측/학습 시 DataFrame 직접 전달을 유지하여 피처 이름을 보존해야 하며, `.values` 변환으로 인해 `feature_names_in_` 속성을 잃지 않도록 주의합니다.
 
 ### ML 학습 및 모델 artifact 가드레일
-- **기본 artifact 계약**: 현재 기본 모델 artifact는 `core/constants.py`의 `MODEL_FILE`이 가리키는 `model.pkl` 단일 artifact 계약을 따른다. target별 또는 모델별 artifact 분리는 별도 설계 없이 임의로 도입하지 않는다.
+- **기본 artifact 계약**: 현재 기본 모델 artifact는 `core/ml/artifacts.py`의 `MODEL_FILE`이 가리키는 `model.pkl` 단일 artifact 계약을 따른다. target별 또는 모델별 artifact 분리는 별도 설계 없이 임의로 도입하지 않는다.
 - **전처리 호환성 guard**: 학습/예측 전처리 호환성 확인을 위해 `preprocess_version` 또는 동등한 전처리 버전 검증 guard를 유지한다. 이 항목은 architecture contract이며, 현재 구현 완료 범위를 과장하지 않는다.
-- **Train/Predict runtime boundary**: `core/trainer.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/trainer.py`와 `core/predictor.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
+- **Train/Predict runtime boundary**: `core/ml/training.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/ml/training.py`와 `core/ml/inference.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
 - **Train/Predict PySide6 rewrite boundary**: `app_predict.py`는 Predict 전용 thin entrypoint, `app_train.py`는 Predict workspace + Train / Model + Data Mapping을 제공하는 관리자/개발자용 thin entrypoint로 전환한다. `PredictWorkspace`는 `apps.predict`에서 정의하고 `apps.train`의 Predict tab에서 재사용한다. Governing architecture contract는 `docs/architecture/pyside6_train_predict_architecture.md`이며, 설계 결정 기록은 `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`를 따른다.
 - **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
 
 ### MODEL_REGISTRY 확장성 패턴
-- **SSOT**: target별 mandatory, excluded, leakage, RFE 사용 여부, result key는 `core/models.py`의 `MODEL_REGISTRY`를 기준으로 관리한다.
+- **SSOT**: target별 mandatory, excluded, leakage, RFE 사용 여부, result key는 `core/ml/registry.py`의 `MODEL_REGISTRY`를 기준으로 관리한다.
 - **확장 규칙**: 새 모델 target 추가 시 trainer, predictor, feature tests에 하드코딩 분기를 반복하지 않고 registry entry를 통해 순회 가능하게 유지한다.
 - **단일 artifact**: V2에서 target별 artifact를 분리했다가 버전 불일치 위험이 커졌으므로, 기본 저장 단위는 `model.pkl` 단일 artifact 계약을 유지한다.
 - **호환성 주의**: pkl 저장 구조를 단순 dict로 바꾸면 SHAP 등 외부 라이브러리 호환성이 깨질 수 있다. 모델 dict value는 `OptimalModel` 같은 wrapper object로 유지하고, save-data root에 metadata를 추가하는 방향을 우선한다.
@@ -144,7 +136,7 @@ Migration principles:
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
-UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크게 세 그룹으로 나뉩니다.
+UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUMNS`이며, 크게 세 그룹으로 나뉩니다.
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
@@ -152,9 +144,9 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 ### 3.2 COLUMNS 자동완성 구조
 - **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계 매핑은 `ui/base_model.py`에서 전담합니다.
 - **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 4단계 복합 캐스케이딩 및 그에 따른 면적/체적 매핑 로직은 단순 매핑과 분리되어 `ui/predict_window.py`가 전담합니다.
-- **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 `Dict[int, list[int]]` 형태로 `core/constants.py`에서 관리한다.
+- **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 `Dict[int, list[int]]` 형태로 `core/predictor_schema/columns.py`에서 관리한다.
 - **안전한 target lookup**: target column 조회는 직접 인덱싱보다 `.get(col, [])`를 사용해 매핑 없는 열의 `KeyError`를 방지한다.
-- **ML feature name mapping**: UI 표시 header와 ML feature name이 다를 수 있으므로 `COLUMNS`에는 `ml_feature` 같은 명시적 mapping key를 둔다. `predictor.py`에 header 보정 dict를 하드코딩하지 않는다.
+- **ML feature name mapping**: UI 표시 header와 ML feature name이 다를 수 있으므로 `COLUMNS`에는 `ml_feature` 같은 명시적 mapping key를 둔다. `core/ml/inference.py`에 header 보정 dict를 하드코딩하지 않는다.
 - **Cascading autofill 단계**: 계층형 자동완성은 데이터 조회, signal-blocked value write, UI 상태/rendering update의 3단계를 분리한다.
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
@@ -179,7 +171,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 
 ## 4. 로그 시스템
 - 학습 로그는 `logs/train_log/YYYYMMDD_HHMM/` 구조로 저장됩니다 (`summary.xlsx` 포함).
-- 로그 경로 및 관련 상수는 `core/constants.py`에서 관리하며, 실제 로그 처리 및 폴더 생성 유틸리티는 `core/utils.py`에서 담당합니다.
+- 로그 경로 및 관련 상수는 `core/common/paths.py`에서 관리하며, 실제 로그 처리 및 폴더 생성 유틸리티는 `core/utils.py`에서 담당합니다.
 - 파일 I/O에 의한 부작용(side effect)을 방지하기 위해 `constants.py`에는 순수 상수만 선언하는 원칙을 따릅니다.
 
 ## 5. Calculator profile resolver and inverse-search architecture
@@ -255,16 +247,16 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
 
 계산기 모듈은 세 축으로 분리한다. resolver는 `calculator_id`를 통해 세 모듈을 명시적으로 구분해야 하며, 한 모듈에 다른 규격의 책임을 합치지 않는다. `data/region_configs/`의 JSON은 어느 한 calculator의 전용 저장소가 아니며, 아래 boundary가 어떤 JSON을 어떤 calculator가 직접 해석하는지를 정한다.
 
-- `core/calculators/standards/iso16358.py` — ISO 16358 전용 계산기. `core/calculator_iso16358.py`는 compatibility wrapper이다.
+- `core/calculators/standards/iso16358.py` — ISO 16358 전용 계산기.
   - ISO16358-1 CSPF, ISO16358-2 HSPF를 담당한다.
   - Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile을 region config (`data/region_configs/hong_kong.json`, `india_iseer.json`, `saso.json`, `iso_t1_default_2point.json` 등)로 구현하는 대표 사례이다.
   - resolver에서는 `calculator_id=iso16358`로 식별한다.
-- `core/calculators/standards/ks_c9306.py` — KS C 9306 전용 special calculator. `core/calculator_ks_c9306.py`는 compatibility wrapper이다.
+- `core/calculators/standards/ks_c9306.py` — KS C 9306 전용 special calculator.
   - KS CSPF, KS HSPF를 담당한다.
   - AHRI / EN14825처럼 ISO common path와 분리된 special calculator로 취급한다.
   - `data/region_configs/korea.json`을 사용할 수 있으나, 해당 config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 한다. ISO16358 common path와 KS region config 해석을 섞지 않는다.
   - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
-- `core/calculators/standards/asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. `core/calculator_asnzs_hspf_excel.py`는 compatibility wrapper이다.
+- `core/calculators/standards/asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용.
   - ISO common HSPF/CSPF expected와 분리된 explicit opt-in compatibility calculator이다.
   - AS/NZS workbook oracle convention을 ISO common path에 섞지 않으며, 자체 compatibility config로 opt-in 한다.
   - Current workbook HSPF/CSPF snapshot exact-match는 `ASNZS_EXCEL_COMPAT` fixture namespace에서만 다룬다. Historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
@@ -304,7 +296,7 @@ config_path=data/region_configs/asnzs_excel_hspf.json
 enabled=false
 ```
 
-`enabled=false`는 구현과 golden guard가 완료되기 전 UI/배포 대상이 아님을 뜻한다. 실제 구현 후보는 `core/calculator_asnzs_hspf_excel.py` 같은 별도 compatibility module이며, `calculator_iso16358.py` common path에 Excel workbook helper cell convention을 추가하지 않는다.
+`enabled=false`는 구현과 golden guard가 완료되기 전 UI/배포 대상이 아님을 뜻한다. 실제 구현 후보는 `core/calculators/standards/asnzs_hspf_excel.py` 같은 별도 compatibility module이며, ISO common path에 Excel workbook helper cell convention을 추가하지 않는다.
 
 Compatibility profile 선택은 opt-in이어야 한다. `region=au_nz` 또는 `standard=ASNZS` 같은 일반 metadata만으로 compatibility mode를 자동 활성화하지 않으며, common ISO calculator가 `reference_type=ASNZS_EXCEL_COMPAT`를 읽고 내부 분기하는 구조도 금지한다.
 
@@ -339,7 +331,7 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 ### Forbidden coupling
 
 - region config에 HW candidate input 또는 ML prediction 값을 넣지 않는다.
-- calculator engine이 `core/constants.py`의 `COLUMNS`나 `core/models.py`의 `MODEL_REGISTRY`에 직접 의존하지 않는다.
+- calculator engine이 `core/predictor_schema/columns.py`의 `COLUMNS`나 `core/ml/registry.py`의 `MODEL_REGISTRY`에 직접 의존하지 않는다.
 - ML feature/result schema를 calculator result schema로 재사용하지 않는다.
 - nested region config를 production calculator에 직접 전달하지 않는다.
 - AHRI SEER2/cooling `usa.json`과 AHRI HSPF2/heating `usa_hspf2.json`을 단순 병합하지 않는다.

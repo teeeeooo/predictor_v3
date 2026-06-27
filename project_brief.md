@@ -44,11 +44,12 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
 - Current PySide6 foundation work is production foundation, but it still has a
   schema/mapping recovery gap against the existing ML pipeline and broader
   core ownership.
-- The current `core/` root remains an accepted compatibility public surface,
-  not the final target package structure. Arc 7 moved ML/schema/mapping
+- The current `core/` root is no longer the active implementation surface for
+  ML/schema/mapping/calculator owners. Arc 7 moved ML/schema/mapping
   implementation ownership under `core/ml`, `core/predictor_schema`, and
   `core/mapping`; Arc 8 moved calculator implementation ownership under
-  `core/calculators`. Root compatibility wrappers remain transition safety.
+  `core/calculators`; Arc 8.5 retired root compatibility wrappers and migrated
+  active callers to package owner paths.
 - Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
   until a later explicit retirement slice.
 - `app_predict.py` is the Predict-only application entrypoint.
@@ -56,8 +57,8 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   Model and Data Mapping capabilities while reusing the Predict workspace.
 - `PredictWorkspace` is owned by the Predict package and reused by the Train
   app's Predict tab.
-- `core.predictor`, `core.trainer`, `core.data_pipeline`, `core.models`, and
-  `core.constants` remain UI-toolkit independent.
+- `core.ml`, `core.predictor_schema`, `core.mapping`, `core.common`, and
+  `core.calculators` remain UI-toolkit independent.
 - Region config, HW candidate input, ML feature schema, calculator result
   schema, and UI table schema must not be mixed.
 
@@ -196,8 +197,8 @@ Status:
 Target milestones:
 
 - Define the approved package boundary target for ML, calculators, common
-  utilities, constants/schema, and wrappers.
-- Record what remains public compatibility surface during migration.
+  utilities, and constants/schema.
+- Record the temporary public compatibility surface during migration.
 - Record that compatibility wrappers are transition safety only, not final
   architecture.
 - Keep detailed implementation slices in `docs/WORK_PLAN.md`, not this brief.
@@ -207,12 +208,12 @@ Target milestones:
 Goal:
 
 - Move ML, predictor schema, and mapping responsibilities under real package
-  owners with no behavior change while preserving root compatibility wrappers.
+  owners with no behavior change.
 
 Status:
 
-- Complete as no-behavior-change package restructure. Root compatibility
-  wrappers remain for existing callers.
+- Complete as no-behavior-change package restructure. Arc 8.5 later retired
+  root compatibility wrappers after active caller migration.
 
 Target milestones:
 
@@ -221,7 +222,7 @@ Target milestones:
 - Move ML implementation ownership to `core/ml/`.
 - Move predictor column/schema ownership to `core/predictor_schema/`.
 - Move mapping path/repository/update pure logic ownership to `core/mapping/`.
-- Preserve existing root imports through compatibility wrappers.
+- Preserve existing behavior through focused import migration and smoke checks.
 - Verify import policy, smoke checks, and no-behavior-change closeout.
 - Do not move calculator engines, dispatcher, profiles, or calculator adapters
   in this arc.

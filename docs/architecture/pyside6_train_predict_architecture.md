@@ -233,7 +233,7 @@ Responsibility:
 
 Must not:
 
-- Call `core.predictor.predict_row` directly.
+- Call `core.ml.inference.predict_row` directly.
 - Own table data.
 - Own training behavior.
 
@@ -248,7 +248,7 @@ Responsibility:
 
 Must not:
 
-- Call `core.trainer.train_all_models` directly.
+- Call `core.ml.training.train_all_models` directly.
 - Own Predict table data.
 - Duplicate Predict workspace implementation.
 
@@ -259,10 +259,10 @@ Must not:
 Allowed:
 
 - `apps.predict` imports PySide6.
-- `apps.predict` imports `core.predictor`, `core.constants`, `core.models`, `core.data_pipeline`, `core.utils` through services/adapters where possible.
+- `apps.predict` imports `core.ml.inference`, `core.predictor_schema.columns`, `core.ml.registry`, `core.ml.preprocessing`, `core.utils` through services/adapters where possible.
 - `apps.train` imports PySide6.
 - `apps.train` imports `apps.predict.ui.workspace.PredictWorkspace`.
-- `apps.train` imports `core.trainer` through `training_service` or `train_worker`.
+- `apps.train` imports `core.ml.training` through `training_service` or `train_worker`.
 - `apps.train` imports `scripts.update_mapping` only through `mapping_service`.
 
 ### 5.2 Forbidden imports
@@ -271,7 +271,7 @@ Forbidden:
 
 - `core` importing PySide6.
 - `core` importing `apps`.
-- `core.predictor` importing `core.trainer`.
+- `core.ml.inference` importing `core.ml.training`.
 - `apps.predict` importing `apps.train`.
 - new `apps.predict` or `apps.train` production code importing legacy `ui.*`.
 - calculator UI importing predict/train UI.
@@ -320,7 +320,7 @@ Button responsibilities:
 
 - Buttons emit signals or call controller methods.
 - Buttons do not mutate `PredictSession` directly.
-- Buttons do not call `core.predictor` directly.
+- Buttons do not call `core.ml.inference` directly.
 
 ### 6.4 Main workspace
 
@@ -362,7 +362,7 @@ Auto-filled columns:
 - `Comp EER`
 - `Comp cc`
 
-Column names may be sourced from `core.constants.COLUMNS` through a column schema adapter.
+Column names may be sourced from `core.predictor_schema.columns.COLUMNS` through a column schema adapter.
 
 Do not hard-code UI header-to-ML feature conversion in table model classes.
 
@@ -579,8 +579,8 @@ Responsibility:
 
 Must not:
 
-- call `core.predictor`
-- call `core.trainer`
+- call `core.ml.inference`
+- call `core.ml.training`
 - own model artifact loading
 - hard-code model result keys
 
@@ -631,7 +631,7 @@ File:
 
 Responsibility:
 
-- read column metadata from `core.constants.COLUMNS`
+- read column metadata from `core.predictor_schema.columns.COLUMNS`
 - classify columns into input, auto-filled, and result groups
 - expose UI column descriptors for table models
 
@@ -668,7 +668,7 @@ File:
 
 Responsibility:
 
-- convert `core.predictor.predict_row()` result dict to `ResultRow`
+- convert `core.ml.inference.predict_row()` result dict to `ResultRow`
 - map model target keys to UI result fields
 - handle missing target predictions
 - produce warning/error status for partial results
@@ -718,7 +718,7 @@ File:
 Responsibility:
 
 - load `model.pkl`
-- call `core.predictor.load_model`
+- call `core.ml.inference.load_model`
 - expose model status
 - expose preprocess version compatibility status
 
@@ -730,7 +730,7 @@ File:
 
 Responsibility:
 
-- call `core.predictor.predict_row`
+- call `core.ml.inference.predict_row`
 - accept ML input dict and loaded model data
 - return raw prediction dict or structured service result
 
@@ -763,7 +763,7 @@ File:
 
 Responsibility:
 
-- wrap `core.trainer.train_all_models`
+- wrap `core.ml.training.train_all_models`
 - own training configuration object
 - provide a clean call boundary for worker/controller
 
@@ -783,7 +783,7 @@ Responsibility:
 Must not:
 
 - contain ML training algorithms
-- duplicate `core.trainer` logic
+- duplicate `core.ml.training` logic
 
 ### 11.6 Mapping service
 
@@ -971,7 +971,7 @@ Allowed:
 
 Forbidden:
 
-- calling `core.predictor.predict_row`
+- calling `core.ml.inference.predict_row`
 - training logic
 - calculator integration
 
@@ -1016,7 +1016,7 @@ Allowed:
 
 Forbidden:
 
-- changing `core.trainer` algorithm
+- changing `core.ml.training` algorithm
 - changing Optuna/RFECV settings unless explicitly scoped
 - changing model artifact schema
 

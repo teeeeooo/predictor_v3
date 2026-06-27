@@ -40,17 +40,19 @@
 - Architecture SSOT is updated from
   `docs/architecture/project_wide_architecture_restructuring_plan.md`: final
   target package owners are `core/common`, `core/predictor_schema`,
-  `core/mapping`, `core/ml`, and `core/calculators`; compatibility wrappers are
-  transitional safety only.
+  `core/mapping`, `core/ml`, and `core/calculators`.
 - Arc 7 Core ML / Schema / Mapping Package Restructure is complete:
   `core/ml`, `core/predictor_schema`, and `core/mapping` are the package owners
   for ML implementation, predictor schema, and mapping path/repository/update
-  logic; root modules remain compatibility wrappers.
+  logic.
 - Arc 8 Calculator Engine Package Restructure is complete:
   `core/calculators`, `core/calculators/adapters`, and
   `core/calculators/standards` are the implementation owners for calculator
-  profiles/dispatcher, calculator adapters, and standard engines; root
-  `core/calculator_*` modules remain compatibility wrappers.
+  profiles/dispatcher, calculator adapters, standard engines, and calculator
+  result/ranking adapters.
+- Arc 8.5 Root Wrapper Retirement is complete: active production code and
+  tests use package owner paths, and root ML/constants/calculator compatibility
+  wrapper files have been deleted.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
@@ -62,8 +64,6 @@
 
 ## Active Blockers / Open Decisions
 
-- Compatibility wrappers are transition safety, not final architecture; caller
-  migration and wrapper retirement require later approved migration slices.
 - Current PySide6 Predictor schema/mapping path remains blocked until
   Arc 9 recovery is explicitly approved.
 - Real model prediction success smoke is not complete in this checkout because
