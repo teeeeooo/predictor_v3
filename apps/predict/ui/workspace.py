@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import PredictionController
+from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.input_table_model import InputTableModel
@@ -38,9 +40,17 @@ class PredictWorkspace(QWidget):
         self.session = session or PredictSession()
         if len(self.session.case_store) == 0 and initial_empty_rows > 0:
             self.session.case_store.append_empty_rows(initial_empty_rows)
+        self.mapping_repository = PredictMappingRepository()
+        self.input_edit_controller = InputEditController(
+            self.session,
+            mapping_repository=self.mapping_repository,
+        )
         self.prediction_controller = PredictionController(self.session)
 
-        self.input_model = InputTableModel(self.session)
+        self.input_model = InputTableModel(
+            self.session,
+            edit_callback=self._handle_input_cell_edited,
+        )
         self.result_model = ResultTableModel(self.session)
         self.input_table = InputTableView(self)
         self.result_table = ResultTableView(self)
@@ -166,6 +176,10 @@ class PredictWorkspace(QWidget):
 
     def _refresh_result_row(self, result: ResultRow) -> None:
         self.result_model.refresh_case_id(result.case_id)
+
+    def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
+        self.input_edit_controller.handle_cell_edited(case_id, changed_key)
+        self.result_model.refresh_case_id(case_id)
 
     def _selected_input_rows(self) -> list[int]:
         return sorted(

@@ -1,5 +1,6 @@
 """Input Cases table model for the Predict workspace."""
 
+from collections.abc import Callable
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
@@ -11,6 +12,8 @@ from apps.predict.schema.column_schema_adapter import (
 )
 from apps.predict.state.predict_session import PredictSession
 
+InputEditCallback = Callable[[str, str], None]
+
 
 class InputTableModel(QAbstractTableModel):
     """Editable input/autofill model backed by PredictSession."""
@@ -19,10 +22,12 @@ class InputTableModel(QAbstractTableModel):
         self,
         session: PredictSession | None = None,
         columns: tuple[PredictColumn, ...] | None = None,
+        edit_callback: InputEditCallback | None = None,
     ) -> None:
         super().__init__()
         self._session = session or PredictSession()
         self._columns = columns or build_input_column_schema()
+        self._edit_callback = edit_callback
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
@@ -60,7 +65,11 @@ class InputTableModel(QAbstractTableModel):
             return False
         case = self._session.case_store.get_case_at(index.row())
         self._session.case_store.update_cell_value(case.case_id, column.key, value)
-        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        if self._edit_callback is not None:
+            self._edit_callback(case.case_id, column.key)
+        left = self.index(index.row(), 0)
+        right = self.index(index.row(), self.columnCount() - 1)
+        self.dataChanged.emit(left, right, [Qt.DisplayRole, Qt.EditRole])
         return True
 
     def headerData(
