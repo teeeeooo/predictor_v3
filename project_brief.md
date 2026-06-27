@@ -95,18 +95,18 @@ Reference anchors:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
 - `docs/architecture/pyside6_train_predict_architecture.md`
-- `result_reports/active/493_pyside6-train-predict-doc-alignment.md`
+- `result_reports/summaries/506_summary-pyside6-train-predict-arc3-closeout.md`
 
-### Arc 2 — PySide6 App Skeleton and Package Boundary
+### Arc 2 — PySide6 App Foundation and Package Boundary
 
 Goal:
 
-- Establish `apps/predict/` and `apps/train/` package skeletons without moving
+- Establish `apps/predict/` and `apps/train/` package foundations without moving
   or deleting legacy PyQt5 `ui/` files.
 
 Target milestones:
 
-- Add `apps/predict` and `apps/train` skeleton packages.
+- Add `apps/predict` and `apps/train` foundation packages.
 - Convert `app_predict.py` and `app_train.py` to thin wrappers after the new
   packages exist.
 - Add minimal PySide6 shell windows and Trainer tab shell.
@@ -191,7 +191,7 @@ Target milestones:
 - Expand calculator input adapters only through approved boundaries.
 - Calculate seasonal metrics from prediction output in a later approved slice.
 - Keep ranking/recommendation preparation separate from Train/Predict UI
-  skeleton work.
+  foundation work.
 
 ## 5. Deferred / Hold Areas
 

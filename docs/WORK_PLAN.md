@@ -29,7 +29,7 @@
 
 - Calculator closeout is complete with no remaining implementation blocker in
   the recently closed helper/batch/detail/token/manual-smoke scope.
-- Train/Predict Arc 3 PredictWorkspace UI skeleton is implemented:
+- Train/Predict Arc 3 PredictWorkspace UI foundation is implemented:
   PredictSession / CaseStore own variable-size case order, Input Cases and
   Prediction Results use split QTableView/QAbstractTableModel surfaces, and the
   Train app reuses PredictWorkspace in its Predict tab.
@@ -38,7 +38,7 @@
 
 ## Next Actions
 
-1. Start Arc 4: prediction execution and result mapping skeleton.
+1. Start Arc 4: prediction execution and result mapping foundation.
 2. Keep training execution, mapping updates, calculator integration, and
    paste/export deferred until their approved slices.
 

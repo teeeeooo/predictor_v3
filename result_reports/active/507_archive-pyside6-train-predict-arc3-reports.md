@@ -57,7 +57,7 @@ Summary `506` covers:
 - key files created/updated;
 - focused validation summary;
 - known risks and spreadsheet table parity gaps;
-- next action: Arc 4 prediction execution and result mapping skeleton.
+- next action: Arc 4 prediction execution and result mapping foundation.
 
 ## Verification
 
@@ -80,7 +80,7 @@ recorded in summary `506`.
 ## Work Plan
 
 Not updated. `docs/WORK_PLAN.md` already points to Arc 4 prediction execution
-and result mapping skeleton.
+and result mapping foundation.
 
 ## Known Risks
 

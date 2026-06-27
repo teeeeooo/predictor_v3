@@ -36,6 +36,13 @@ the short routing gate.
   `docs/architecture/pyside6_train_predict_architecture.md`; design decision
   record:
   `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
+- Train/Predict UI surface work also applies
+  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md` and relevant `docs/ui_ux/`
+  owners. Table surfaces use
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`; input/result surfaces use
+  `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`. If no PySide6 table
+  adapter exists yet, report the adapter gap and use the toolkit-neutral table
+  contract as the acceptance contract.
 - Project-wide responsibility boundaries:
   `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
 
@@ -47,7 +54,10 @@ the short routing gate.
    monotonicity before editing.
 4. Keep ML feature schema separate from calculator core, region config, and UI
    table schemas.
-5. Run focused model/feature tests or import smoke for the changed owner.
+5. For `apps/predict/ui`, `apps/train/ui`, table, input/result/detail/export,
+   or user-facing surface changes, apply the UI Surface Workflow and UI/UX owner
+   docs alongside the architecture contract.
+6. Run focused model/feature tests or import smoke for the changed owner.
 
 ## Forbidden Evidence Use
 

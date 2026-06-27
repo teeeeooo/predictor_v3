@@ -323,6 +323,7 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 조건부:
 - feature/constraint/data/leakage/extrapolation: relevant knowledge heading
 - schema/calculator boundary: architecture owner heading
+- UI surface/table/input-result 변경: UI Surface Workflow Gate도 적용
 
 금지: knowledge docs를 calculator formula/golden/config 근거로 사용, calculator core와
 ML feature schema 혼합, target leakage, unrelated refactor.

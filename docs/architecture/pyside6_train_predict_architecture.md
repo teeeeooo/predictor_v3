@@ -20,6 +20,21 @@ Preserve the broad Predict split-workspace and Trainer tab intent; resolve
 specific sizing, tokens, states, and behavior through this architecture contract
 and active UI/UX owner documents.
 
+Boundary note:
+
+- This document owns package, dependency, state, controller, service, adapter,
+  worker, and entrypoint boundaries.
+- User-facing UI/UX behavior, spreadsheet table parity, terminology, and
+  input/result surface acceptance are owned by `docs/ui_ux/` and the UI Surface
+  Workflow.
+- This architecture contract does not replace the UI/UX contracts. When a
+  table-shaped or input/result surface is created or modified, apply
+  `docs/agent_workflows/UI_SURFACE_WORKFLOW.md`,
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`, and
+  `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a
+  PySide6 table adapter does not exist yet, record that adapter gap in the
+  report and use the toolkit-neutral table contract as the acceptance contract.
+
 ## 2. Implementation Principle
 
 The new Train/Predict UI is a rewrite, not an in-place migration.
@@ -113,9 +128,9 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
             __init__.py
             train_worker.py
 
-### 3.2 First skeleton structure
+### 3.2 First production foundation structure
 
-The first implementation slice may use this smaller structure:
+The first production foundation slices may use this smaller structure:
 
     predictor_v3/
       app_predict.py
@@ -289,7 +304,7 @@ Initial button set:
 - `결과 복사`
 - `Export CSV`
 
-First skeleton may implement buttons as disabled placeholders except for actions in scope.
+First production foundation may implement buttons as disabled placeholders except for actions in scope.
 
 Button responsibilities:
 
@@ -728,7 +743,7 @@ Responsibility:
 - support finished signal
 - support cancellation when implemented
 
-First implementation may defer worker and run synchronously for small skeleton smoke only, but production batch prediction should use worker execution.
+First production foundation may defer worker and run synchronously for small smoke only, but production batch prediction should use worker execution.
 
 ### 11.4 Training service
 
@@ -808,7 +823,7 @@ Responsibility:
 - update `CaseStore`
 - preserve table model responsibility boundaries
 
-First skeleton may defer this file until paste/row operations are implemented.
+First production foundation may defer this file until paste/row operations are implemented.
 
 ### 12.3 Train controller
 
@@ -891,11 +906,11 @@ Verification:
 - link/path sanity check
 - git diff check
 
-### Slice 2: PySide6 package skeleton
+### Slice 2: PySide6 package foundation
 
 Allowed:
 
-- add `apps/predict` and `apps/train` skeleton packages
+- add `apps/predict` and `apps/train` foundation packages
 - add thin entrypoint wrappers
 - add empty shell windows
 - add tab shell in Trainer
@@ -914,7 +929,7 @@ Verification:
 - structure guard
 - manual launch smoke if environment supports GUI
 
-### Slice 3: Predict workspace skeleton
+### Slice 3: Predict workspace foundation
 
 Allowed:
 
