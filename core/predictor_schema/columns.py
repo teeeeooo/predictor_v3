@@ -5,8 +5,8 @@
 # =============================================================================
 COLUMNS = [
     # INPUT_COLS (인덱스 0~10, 11개)
-    {"key": "cooling_capa", "header": "냉방능력", "width": 90, "group": "input", "bg_color": "#FFFFFF"},
-    {"key": "heating_capa", "header": "난방능력", "width": 90, "group": "input", "bg_color": "#FFFFFF"},
+    {"key": "cooling_capa", "header": "냉방능력", "width": 90, "group": "input", "ml_feature": "Cooling Capa", "bg_color": "#FFFFFF"},
+    {"key": "heating_capa", "header": "난방능력", "width": 90, "group": "input", "ml_feature": "Heating Capa", "bg_color": "#FFFFFF"},
     {"key": "idu", "header": "실내기", "width": 120, "group": "input", "type": "dropdown", "mapping": "idu", "bg_color": "#FFFFFF"},
     {"key": "evap_index", "header": "증발기", "width": 100, "group": "input", "type": "dropdown", "mapping": "evap_index", "bg_color": "#FFFFFF"},
     {"key": "odu", "header": "실외기", "width": 120, "group": "input", "type": "dropdown", "mapping": "odu", "bg_color": "#FFFFFF"},
@@ -44,15 +44,15 @@ COLUMNS = [
 
 
     # RESULT_COLS (인덱스 19~27, 9개)
-    {"key": "cooling_power", "header": "냉방 소비전력", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
+    {"key": "cooling_power", "header": "냉방 소비전력", "width": 100, "group": "result", "readonly": True, "ml_target": "Cooling Power", "bg_color": "#E6F3E6"},
     {"key": "eer", "header": "EER (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "cspf", "header": "CSPF", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "heating_power", "header": "난방 소비전력", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
+    {"key": "heating_power", "header": "난방 소비전력", "width": 100, "group": "result", "readonly": True, "ml_target": "Heating Power", "bg_color": "#E6F3E6"},
     {"key": "cop", "header": "COP (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "hspf2", "header": "HSPF2", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "ref_qty", "header": "냉매량", "width": 80, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "cooling_hz", "header": "냉방 주파수", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "heating_hz", "header": "난방 주파수", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
+    {"key": "ref_qty", "header": "냉매량", "width": 80, "group": "result", "readonly": True, "ml_target": "Ref Qty", "bg_color": "#E6F3E6"},
+    {"key": "cooling_hz", "header": "냉방 주파수", "width": 100, "group": "result", "readonly": True, "ml_target": "Cooling Hz", "bg_color": "#E6F3E6"},
+    {"key": "heating_hz", "header": "난방 주파수", "width": 100, "group": "result", "readonly": True, "ml_target": "Heating Hz", "bg_color": "#E6F3E6"},
 ]
 
 # =============================================================================
