@@ -1,0 +1,1 @@
+"""Calculator adapter owner boundary."""
