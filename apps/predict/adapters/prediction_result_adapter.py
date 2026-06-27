@@ -3,22 +3,24 @@
 from math import isfinite
 from typing import Any
 
-from apps.predict.services.prediction_service import PredictionServiceResult
+from apps.predict.schema.column_schema_adapter import (
+    PredictColumn,
+    build_result_column_schema,
+)
 from apps.predict.state.result_row import ResultRow
+from core.ml.features import TARGETS
 
 
 class PredictionResultAdapter:
     """Map service results to user-facing ResultRow values."""
 
-    _TARGET_TO_RESULT_KEY = {
-        "Cooling Power": "cooling_power",
-        "Heating Power": "heating_power",
-        "Ref Qty": "ref_qty",
-        "Cooling Hz": "cooling_hz",
-        "Heating Hz": "heating_hz",
-    }
+    def __init__(self, columns: tuple[PredictColumn, ...] | None = None) -> None:
+        self._columns = columns or build_result_column_schema()
+        self._target_to_result_key = {
+            column.ml_target: column.key for column in self._columns if column.ml_target
+        }
 
-    def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
+    def from_service_result(self, result: Any) -> ResultRow:
         """Convert one service result into a ResultRow."""
         if result.status != "complete":
             return ResultRow(
@@ -27,15 +29,26 @@ class PredictionResultAdapter:
                 message=self._clean_message(result.message),
             )
 
+        missing_targets = [
+            target
+            for target in TARGETS
+            if target in self._target_to_result_key and target not in result.predictions
+        ]
         values = {
             result_key: self._format_number(result.predictions.get(target))
-            for target, result_key in self._TARGET_TO_RESULT_KEY.items()
+            for target, result_key in self._target_to_result_key.items()
         }
+        status = "partial" if missing_targets else "complete"
+        message = (
+            f"Missing prediction target(s): {', '.join(missing_targets)}"
+            if missing_targets
+            else result.message
+        )
         return ResultRow(
             case_id=result.case_id,
-            status="complete",
+            status=status,
             result_values=values,
-            message=self._clean_message(result.message),
+            message=self._clean_message(message),
         )
 
     def invalid_result(self, case_id: str, message: str) -> ResultRow:
@@ -65,3 +78,8 @@ class PredictionResultAdapter:
         if not first_line:
             return ""
         return first_line[:160]
+
+
+def apply_prediction_result(result: Any) -> ResultRow:
+    """Convert one prediction service result with the default adapter."""
+    return PredictionResultAdapter().from_service_result(result)

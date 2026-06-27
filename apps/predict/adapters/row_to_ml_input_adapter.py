@@ -3,6 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from apps.predict.schema.column_schema_adapter import (
+    PredictColumn,
+    build_input_column_schema,
+)
 from apps.predict.state.case_row import CaseRow
 
 
@@ -32,27 +36,11 @@ class RowInputOutcome:
 class RowToMlInputAdapter:
     """Build core predictor input dictionaries without importing Qt."""
 
-    _FIELD_TO_FEATURE = {
-        "capacity": "Cooling Capa",
-        "heating_capacity": "Heating Capa",
-        "mapped_volume": "ID Volume",
-        "evap_area": "Evap Area",
-        "evap_volume": "Evap Volume",
-        "od_volume": "OD Volume",
-        "cond_area": "Cond Area",
-        "cond_volume": "Cond Volume",
-        "comp_eer": "Comp EER",
-        "comp_cc": "Comp cc",
-    }
-    _REFRIGERANT_FEATURES = {
-        "R410A": "R410A",
-        "R32": "R32",
-        "R290": "R290",
-    }
-    _EXPANSION_FEATURES = {
-        "EEV": "EEV",
-        "Capi": "Capi",
-    }
+    _REFRIGERANT_FEATURES = ("R410A", "R32", "R290")
+    _EXPANSION_FEATURES = ("EEV", "Capi")
+
+    def __init__(self, columns: tuple[PredictColumn, ...] | None = None) -> None:
+        self._columns = columns or build_input_column_schema()
 
     def build_request(self, case: CaseRow) -> RowInputOutcome:
         """Return a structured request or row-level validation errors."""
@@ -61,27 +49,30 @@ class RowToMlInputAdapter:
         row_input: dict[str, Any] = {}
         values = {**case.autofill_values, **case.input_values}
 
-        capacity = values.get("capacity")
+        capacity = values.get("cooling_capa")
         if self._is_blank(capacity):
-            errors.append("Cooling capacity is required.")
+            errors.append("cooling_capa is required.")
 
-        for key, feature in self._FIELD_TO_FEATURE.items():
-            value = values.get(key)
+        for column in self._columns:
+            if not column.ml_feature:
+                continue
+            value = values.get(column.key)
             if self._is_blank(value):
                 continue
-            try:
-                row_input[feature] = float(value)
-            except (TypeError, ValueError):
-                errors.append(f"{key} must be numeric.")
+            converted = self._safe_float(value)
+            if converted is None:
+                errors.append(f"{column.key} must be numeric.")
+                continue
+            row_input[column.ml_feature] = converted
 
         self._apply_one_hot(
-            values.get("refrigerant"),
+            values.get("ref_type"),
             self._REFRIGERANT_FEATURES,
             row_input,
             warnings,
         )
         self._apply_one_hot(
-            values.get("expansion_device"),
+            values.get("exp_type"),
             self._EXPANSION_FEATURES,
             row_input,
             warnings,
@@ -106,19 +97,30 @@ class RowToMlInputAdapter:
     def _apply_one_hot(
         self,
         raw_value: Any,
-        mapping: dict[str, str],
+        features: tuple[str, ...],
         row_input: dict[str, Any],
         warnings: list[str],
     ) -> None:
+        for feature in features:
+            row_input[feature] = 0.0
         if self._is_blank(raw_value):
             return
         selected = str(raw_value).strip()
-        for feature in mapping.values():
-            row_input[feature] = 0
-        if selected in mapping:
-            row_input[mapping[selected]] = 1
+        if selected in features:
+            row_input[selected] = 1.0
         else:
             warnings.append(f"Unsupported option ignored: {selected}")
 
     def _is_blank(self, value: Any) -> bool:
         return value is None or str(value).strip() == ""
+
+    def _safe_float(self, value: Any) -> float | None:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+
+def build_prediction_input_request(case: CaseRow) -> RowInputOutcome:
+    """Build one prediction input request with the default adapter."""
+    return RowToMlInputAdapter().build_request(case)
