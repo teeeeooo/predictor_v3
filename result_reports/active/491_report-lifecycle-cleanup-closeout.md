@@ -60,9 +60,11 @@ Skipped:
 
 ## Commit / Push
 
-Pending final validation, commit, push, and publication verification.
+Completed in commit `cce65c2`
+(`cce65c230062818b32866356bf791af69853ffae`) and pushed to `origin/main`.
+Publication verification matched local HEAD and remote `main` at closeout.
 
 ## Next Action
 
-Calculator final closeout audit, or select the next approved calculator
-detail/manual-smoke or empty-state slice.
+Calculator final closeout audit is recorded in report `492`; next selection now
+belongs to `docs/WORK_PLAN.md`.

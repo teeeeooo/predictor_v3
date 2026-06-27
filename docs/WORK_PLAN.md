@@ -42,15 +42,16 @@
   and close/reopen snapshot retention.
 - Report lifecycle cleanup for the completed calculator helper/batch/detail and
   manual-smoke reports is complete.
+- Calculator final closeout audit found no remaining implementation blocker in
+  the recently closed helper/batch/detail/token/manual-smoke scope.
 - Agent gate/workflow hardening now requires report-backed structural source
   changes to record reuse/commonization decisions and warns on Phase 2 UI
   presentation literal candidates.
 
 ## Next Actions
 
-1. Run a calculator final closeout audit.
-2. Or select the next approved calculator detail/manual-smoke or empty-state
-   slice.
+1. Select the next approved calculator detail/manual-smoke or empty-state slice.
+2. Or choose the next non-calculator approved workstream.
 
 ## Active Blockers / Open Decisions
 
