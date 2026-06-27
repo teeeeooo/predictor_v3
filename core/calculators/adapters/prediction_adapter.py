@@ -1,7 +1,7 @@
 """Adapter-owned PredictedPointsEnvelope helpers.
 
 This module is the upstream counterpart to
-``core.calculator_input_adapter``. It validates a
+``core.calculators.adapters.input_adapter``. It validates a
 ``PredictedPointsEnvelope`` (shape defined in
 ``docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md``) and
 converts it into a ``CalculatorInputEnvelope`` ready for the calculator
@@ -17,7 +17,7 @@ It is intentionally narrow:
   capacity and power in W (ML canonical); ``manual_candidate`` /
   ``fixture`` require profile-native units (AHRI SEER2: capacity
   Btu/h, power W). Conversion runs through
-  ``core.calculator_unit_adapter`` only when source is
+  ``core.calculators.adapters.unit_adapter`` only when source is
   ``ml_prediction``.
 
 ML / inverse-search callers should produce a

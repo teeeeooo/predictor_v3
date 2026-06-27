@@ -15,8 +15,8 @@ class EN14825Calculator:
 
     def __init__(self, config_path: str = None):
         if config_path is None:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            config_path = os.path.join(base_dir, "data", "region_configs", "en14825.json")
+            repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            config_path = os.path.join(repo_root, "data", "region_configs", "en14825.json")
 
         self.config_path = config_path
         loaded_config = self._load_config(config_path)
