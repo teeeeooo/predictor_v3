@@ -27,8 +27,8 @@ class PredictWorkspace(QWidget):
 
     def __init__(
         self,
-        session: PredictSession | None = None,
         parent: QWidget | None = None,
+        session: PredictSession | None = None,
         initial_empty_rows: int = DEFAULT_INITIAL_ROWS,
     ) -> None:
         super().__init__(parent)

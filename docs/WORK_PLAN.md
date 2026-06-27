@@ -29,18 +29,18 @@
 
 - Calculator closeout is complete with no remaining implementation blocker in
   the recently closed helper/batch/detail/token/manual-smoke scope.
-- Train/Predict Arc 2 package boundary is implemented: `app_predict.py` is the
-  Predict-only thin entrypoint, `app_train.py` is the administrator/developer
-  thin entrypoint, and the PySide6 shell skeleton lives under `apps/predict/`
-  and `apps/train/`.
+- Train/Predict Arc 3 PredictWorkspace UI skeleton is implemented:
+  PredictSession / CaseStore own variable-size case order, Input Cases and
+  Prediction Results use split QTableView/QAbstractTableModel surfaces, and the
+  Train app reuses PredictWorkspace in its Predict tab.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Start Arc 3: PredictWorkspace variable-size batch UI skeleton.
-2. Keep prediction execution, training execution, and data-mapping updates
-   deferred until their approved slices.
+1. Start Arc 4: prediction execution and result mapping skeleton.
+2. Keep training execution, mapping updates, calculator integration, and
+   paste/export deferred until their approved slices.
 
 ## Active Blockers / Open Decisions
 
@@ -64,8 +64,9 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Broad ML / predictor algorithm work remains deferred until the PySide6
-  Train/Predict shell/workspace boundary is established.
+- Broad ML / predictor algorithm work remains deferred; Arc 4 should wire only
+  approved prediction execution/result-mapping boundaries without changing core
+  ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.
 
