@@ -1,5 +1,24 @@
-"""Target owner for mapping data repository loading.
+"""Mapping data repository loading."""
 
-Actual JSON load behavior is moved here in a later Arc 7 slice without changing
-missing-file or invalid-json behavior.
-"""
+import json
+import os
+
+
+def load_mapping_data(filepath: str = "data/mapping.json") -> dict:
+    """
+    JSON 매핑 데이터를 안전하게 로드하여 반환합니다.
+    UI 초기화 시점이나 업데이트가 필요할 때 명시적으로 호출하여 사용합니다.
+    """
+    if not os.path.exists(filepath):
+        print(f"⚠️ 매핑 파일이 없습니다. 기본 UI만 구성됩니다: {filepath}")
+        return {}
+
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"❌ 오류: '{filepath}' 파일의 JSON 형식이 잘못되었습니다.")
+        return {}
+    except Exception as e:
+        print(f"❌ 매핑 파일을 읽는 중 알 수 없는 오류 발생: {e}")
+        return {}

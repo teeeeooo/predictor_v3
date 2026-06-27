@@ -4,15 +4,13 @@ import os
 
 from core.ml.artifacts import BASE_DIR, DATA_DIR, MODEL_DIR, MODEL_FILE, TRAIN_DATA_FILE
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
+from core.mapping.paths import MAPPING_JSON_FILE
 
 # =============================================================================
 # 경로 및 파일 상수
 # =============================================================================
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
-
-# V3 통합 모델 파일 (단일 파일)
-MAPPING_JSON_FILE = os.path.join(DATA_DIR, "mapping.json")
 
 from core.predictor_schema.columns import (
     AUTO_COLS,

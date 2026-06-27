@@ -1,5 +1,7 @@
-"""Target owner for mapping data paths.
+"""Mapping data paths."""
 
-Actual mapping path constants are moved here in a later Arc 7 slice while
-`core.constants` remains compatible.
-"""
+import os
+
+from core.ml.artifacts import DATA_DIR
+
+MAPPING_JSON_FILE = os.path.join(DATA_DIR, "mapping.json")

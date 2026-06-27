@@ -12,11 +12,12 @@ core/utils.py - 공통 유틸리티 및 헬퍼 함수 모음
 
 import sys
 import traceback
-import json
 import os
 from typing import Optional, Union
 import datetime
 import pandas as pd
+
+from core.mapping.repository import load_mapping_data
 
 # =============================================================================
 # 1. 수학 및 연산 안전장치
@@ -61,30 +62,6 @@ def get_mapping_value(mapping_dict: dict, key: str, fallback: any = None) -> any
     if not key or key not in mapping_dict:
         return fallback
     return mapping_dict[key]
-
-
-# =============================================================================
-# 3. 외부 정적 데이터(JSON) 로드
-# =============================================================================
-
-def load_mapping_data(filepath: str = "data/mapping.json") -> dict:
-    """
-    JSON 매핑 데이터를 안전하게 로드하여 반환합니다.
-    UI 초기화 시점이나 업데이트가 필요할 때 명시적으로 호출하여 사용합니다.
-    """
-    if not os.path.exists(filepath):
-        print(f"⚠️ 매핑 파일이 없습니다. 기본 UI만 구성됩니다: {filepath}")
-        return {}
-        
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        print(f"❌ 오류: '{filepath}' 파일의 JSON 형식이 잘못되었습니다.")
-        return {}
-    except Exception as e:
-        print(f"❌ 매핑 파일을 읽는 중 알 수 없는 오류 발생: {e}")
-        return {}
 
 
 # =============================================================================
@@ -156,4 +133,3 @@ def celsius_to_fahrenheit(c: float) -> float:
 def fahrenheit_to_celsius(f: float) -> float:
     """°F → °C 변환"""
     return (f - 32.0) * 5.0 / 9.0
-
