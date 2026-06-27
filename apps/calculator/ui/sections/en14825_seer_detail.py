@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 
+from apps.calculator.ui.sections.detail_formatting import (
+    optional_fixed_number,
+    optional_text,
+)
+
 
 def format_seer_bin_details(
     rows: Iterable[Mapping[str, object]],
@@ -11,27 +16,14 @@ def format_seer_bin_details(
     """Normalize core SEER diagnostics into the UI schema and rounding policy."""
     return tuple(
         {
-            "tj": _number(row.get("temp_c"), 1),
-            "hours": _number(row.get("hours"), 1),
-            "cooling_load": _number(row.get("pc"), 3),
-            "eer_pl": _number(row.get("eer_pl"), 3),
-            "energy_contribution": _number(
+            "tj": optional_fixed_number(row.get("temp_c"), 1),
+            "hours": optional_fixed_number(row.get("hours"), 1),
+            "cooling_load": optional_fixed_number(row.get("pc"), 3),
+            "eer_pl": optional_fixed_number(row.get("eer_pl"), 3),
+            "energy_contribution": optional_fixed_number(
                 row.get("energy_contribution"), 3
             ),
-            "source": _text(row.get("interpolation")),
+            "source": optional_text(row.get("interpolation")),
         }
         for row in rows
     )
-
-
-def _number(value: object, precision: int) -> str:
-    if value is None:
-        return ""
-    try:
-        return f"{float(value):.{precision}f}"
-    except (TypeError, ValueError):
-        return ""
-
-
-def _text(value: object) -> str:
-    return "" if value is None else str(value)

@@ -8,6 +8,10 @@ from apps.calculator.ui.en14825 import SeerResultSummary
 from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SEER_BIN_DETAIL_SCHEMA,
 )
+from apps.calculator.ui.sections.detail_formatting import (
+    optional_fixed_number,
+    optional_text,
+)
 from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
 from tests.calculator_ui_sample_values import EN14825_SEER_SAMPLE_VALUES
 
@@ -45,6 +49,14 @@ def test_seer_detail_formatter_uses_compact_schema() -> None:
     assert rows[0]["tj"] == "24.9"
     assert rows[0]["cooling_load"] == "1.235"
     assert "raw_debug_only" not in rows[0]
+
+
+def test_detail_formatting_coercion_handles_missing_and_invalid_values() -> None:
+    assert optional_fixed_number(None, 1) == ""
+    assert optional_fixed_number("bad", 1) == ""
+    assert optional_fixed_number("1.234", 2) == "1.23"
+    assert optional_text(None) == ""
+    assert optional_text("linear") == "linear"
 
 
 def test_seer_detail_panel_tracks_completed_sources_and_visibility(tk_root) -> None:

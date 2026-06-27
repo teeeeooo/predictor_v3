@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 
+from apps.calculator.ui.sections.detail_formatting import (
+    optional_fixed_number,
+    optional_text,
+)
+
 
 def format_scop_bin_details(
     rows: Iterable[Mapping[str, object]],
@@ -11,29 +16,16 @@ def format_scop_bin_details(
     """Normalize core SCOP diagnostics into the UI schema and rounding policy."""
     return tuple(
         {
-            "tj": _number(row.get("temp_c"), 1),
-            "hours": _number(row.get("hours"), 1),
-            "heating_load": _number(row.get("ph"), 3),
-            "heat_pump_capacity": _number(row.get("pdh"), 3),
-            "cop_pl": _number(row.get("cop_pl"), 3),
-            "equivalent_power": _number(row.get("equivalent_power"), 3),
-            "backup_load": _number(row.get("elbu"), 3),
-            "operating_case": _text(row.get("operating_case")),
-            "capacity_source": _text(row.get("capacity_source")),
-            "cop_source": _text(row.get("cop_source")),
+            "tj": optional_fixed_number(row.get("temp_c"), 1),
+            "hours": optional_fixed_number(row.get("hours"), 1),
+            "heating_load": optional_fixed_number(row.get("ph"), 3),
+            "heat_pump_capacity": optional_fixed_number(row.get("pdh"), 3),
+            "cop_pl": optional_fixed_number(row.get("cop_pl"), 3),
+            "equivalent_power": optional_fixed_number(row.get("equivalent_power"), 3),
+            "backup_load": optional_fixed_number(row.get("elbu"), 3),
+            "operating_case": optional_text(row.get("operating_case")),
+            "capacity_source": optional_text(row.get("capacity_source")),
+            "cop_source": optional_text(row.get("cop_source")),
         }
         for row in rows
     )
-
-
-def _number(value: object, precision: int) -> str:
-    if value is None:
-        return ""
-    try:
-        return f"{float(value):.{precision}f}"
-    except (TypeError, ValueError):
-        return ""
-
-
-def _text(value: object) -> str:
-    return "" if value is None else str(value)
