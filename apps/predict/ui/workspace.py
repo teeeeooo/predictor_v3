@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.state.predict_session import PredictSession
+from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.input_table_model import InputTableModel
 from apps.predict.ui.tables.input_table_view import InputTableView
 from apps.predict.ui.tables.result_table_model import ResultTableModel
@@ -36,6 +38,7 @@ class PredictWorkspace(QWidget):
         self.session = session or PredictSession()
         if len(self.session.case_store) == 0 and initial_empty_rows > 0:
             self.session.case_store.append_empty_rows(initial_empty_rows)
+        self.prediction_controller = PredictionController(self.session)
 
         self.input_model = InputTableModel(self.session)
         self.result_model = ResultTableModel(self.session)
@@ -50,11 +53,11 @@ class PredictWorkspace(QWidget):
         title.setObjectName("PredictWorkspaceTitle")
 
         self.run_button = QPushButton("예측 실행")
-        self.run_button.setEnabled(False)
         self.reset_button = QPushButton("초기화")
         self.add_row_button = QPushButton("행 추가")
         self.delete_row_button = QPushButton("행 삭제")
 
+        self.run_button.clicked.connect(self._run_prediction)
         self.reset_button.clicked.connect(self._reset_rows)
         self.add_row_button.clicked.connect(self._append_row)
         self.delete_row_button.clicked.connect(self._delete_selected_or_last_row)
@@ -130,10 +133,39 @@ class PredictWorkspace(QWidget):
         self.table_sync.sync_row_heights()
         counts = self.session.summary_counts()
         self.status_label.setText(
-            "전체 {total}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 변경됨 {dirty}건".format(
+            "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
                 **counts
             )
         )
+
+    def _run_prediction(self) -> None:
+        self.run_button.setEnabled(False)
+        self.status_label.setText("예측 실행 중...")
+        try:
+            summary = self.prediction_controller.run_all(
+                status_callback=self._set_status_text,
+                result_callback=self._refresh_result_row,
+            )
+        except Exception as exc:
+            self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
+            return
+        finally:
+            self.run_button.setEnabled(True)
+        self._refresh_after_row_change()
+        self.status_label.setText(
+            "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | 입력 확인 {invalid}건".format(
+                total=summary.total,
+                complete=summary.complete,
+                error=summary.error,
+                invalid=summary.invalid,
+            )
+        )
+
+    def _set_status_text(self, message: str) -> None:
+        self.status_label.setText(message)
+
+    def _refresh_result_row(self, result: ResultRow) -> None:
+        self.result_model.refresh_case_id(result.case_id)
 
     def _selected_input_rows(self) -> list[int]:
         return sorted(
