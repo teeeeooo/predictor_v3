@@ -7,7 +7,7 @@ callers prove the next envelope slice.
 
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from core.calculator_profiles import resolve_calculator_profile
+from core.calculators.profiles import resolve_calculator_profile
 
 
 _RESULT_CONTRACTS = {

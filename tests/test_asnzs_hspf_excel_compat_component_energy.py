@@ -1,6 +1,6 @@
 import pytest
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
-import core.calculator_iso16358 as iso
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
+import core.calculators.standards.iso16358 as iso
 import inspect
 
 def test_component_power_from_load_and_cop():

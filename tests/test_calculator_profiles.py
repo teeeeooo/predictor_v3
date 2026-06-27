@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from core.calculator_profiles import (
+from core.calculators.profiles import (
     list_calculator_profiles,
     resolve_calculator_profile,
 )

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 
 ROOT = Path(__file__).resolve().parents[1]

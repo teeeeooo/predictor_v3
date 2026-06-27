@@ -1,7 +1,7 @@
 import pytest
 import inspect
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
-import core.calculator_iso16358 as iso
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
+import core.calculators.standards.iso16358 as iso
 
 def test_reconstruct_helper_cops_from_row():
     calc = ASNZSExcelHSPFCompatibilityCalculator()

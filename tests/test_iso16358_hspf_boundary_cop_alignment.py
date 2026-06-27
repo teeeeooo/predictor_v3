@@ -23,7 +23,7 @@ def test_boundary_point_helper_returns_consistent_cop(tmp_path):
     load = 1900.0
     measured = iso_points_with_extended(rated_heating_capacity=load)
 
-    from core.calculator_iso16358 import ISO16358Calculator
+    from core.calculators.standards.iso16358 import ISO16358Calculator
 
     assert isinstance(calculator, ISO16358Calculator)
 

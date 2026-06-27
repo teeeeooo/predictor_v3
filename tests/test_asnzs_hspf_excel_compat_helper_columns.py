@@ -1,6 +1,6 @@
 import pytest
-from core.calculator_asnzs_hspf_excel import WORKBOOK_HELPER_COLUMNS, get_workbook_helper_column_map
-import core.calculator_iso16358 as iso
+from core.calculators.standards.asnzs_hspf_excel import WORKBOOK_HELPER_COLUMNS, get_workbook_helper_column_map
+import core.calculators.standards.iso16358 as iso
 import inspect
 
 def test_workbook_helper_column_map_contains_expected_anchors():
@@ -20,7 +20,7 @@ def test_workbook_helper_column_map_marks_uncertain_columns_for_implementation_c
         assert WORKBOOK_HELPER_COLUMNS[k]["status"] == "implementation_check_required"
 
 def test_workbook_helper_column_map_is_compatibility_only():
-    from core.calculator_asnzs_hspf_excel import REFERENCE_TYPE
+    from core.calculators.standards.asnzs_hspf_excel import REFERENCE_TYPE
     assert REFERENCE_TYPE == "ASNZS_EXCEL_COMPAT"
     # Ensure no reference to common ISO logic
     for k, v in WORKBOOK_HELPER_COLUMNS.items():

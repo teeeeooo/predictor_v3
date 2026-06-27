@@ -15,7 +15,7 @@ import textwrap
 
 import pytest
 
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.profile_resolver import resolve_profile_id
 from apps.calculator.ui.window_geometry import (
     apply_overflow_correction,

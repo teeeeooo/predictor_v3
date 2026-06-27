@@ -1,6 +1,6 @@
 import pytest
 
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from core.calculator_ranking_adapter import build_ranking_candidate_envelope
 from core.calculator_result_adapter import wrap_calculator_result_envelope
 

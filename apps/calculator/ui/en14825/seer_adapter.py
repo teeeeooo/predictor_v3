@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from typing import Dict, Optional, Tuple
-from core.calculator_en14825 import EN14825Calculator
+from core.calculators.standards.en14825 import EN14825Calculator
 from apps.calculator.ui.en14825.seer_models import (
     SeerPointInput,
     SeerPointComputed,

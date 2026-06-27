@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.batch.models import (
     BatchColumnRole,
     BatchColumnSpec,

@@ -89,7 +89,7 @@ def test_apps_calculator_ui_layer_rejects_ui_import():
 
 def test_apps_calculator_ui_layer_allows_tkinter_and_core_dispatcher():
     findings = guard.check_banned_imports(
-        "import tkinter as tk\nfrom core.calculator_dispatcher import "
+        "import tkinter as tk\nfrom core.calculators.dispatcher import "
         "create_calculator_for_profile\n",
         "apps/calculator/ui/something.py",
         "apps.calculator.ui",

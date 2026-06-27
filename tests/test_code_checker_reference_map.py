@@ -197,11 +197,11 @@ def test_import_edge_shows_module_prefix() -> None:
             top_level_functions=[],
             methods=[],
             constants=[],
-            imports=["core.calculator_profiles.resolve_calculator_profile"],
+            imports=["core.calculators.profiles.resolve_calculator_profile"],
         )
         edges = compute_import_edges([fi], root)
         assert any(
-            e.source == "app.py" and e.target == "core.calculator_profiles.resolve_calculator_profile"
+            e.source == "app.py" and e.target == "core.calculators.profiles.resolve_calculator_profile"
             for e in edges
         )
 

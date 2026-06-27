@@ -216,8 +216,8 @@ calc_window.py
     │     ui.calculator_errors  (InputValidationError, get_float_val, styling)
     │     ui.calculator_recompute  (DebouncedRecompute)      [β]
     │     ui.calculator_result_panel.CalculatorResultPanel   [γ]
-    │     core.calculator_dispatcher.create_calculator_for_profile
-    │     core.calculator_profiles
+    │     core.calculators.dispatcher.create_calculator_for_profile
+    │     core.calculators.profiles
     │                                              │
     └────────────────────────────────────────────  │
                                                    │

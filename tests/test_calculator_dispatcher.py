@@ -1,11 +1,11 @@
 import pytest
 
-from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
-from core.calculator_ahri_seer2 import AHRICalculator
-from core.calculator_en14825 import EN14825Calculator
-from core.calculator_iso16358 import ISO16358Calculator
-from core.calculator_dispatcher import create_calculator_for_profile
-from core.calculator_ks_c9306 import KSC9306Calculator
+from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculators.standards.ahri_seer2 import AHRICalculator
+from core.calculators.standards.en14825 import EN14825Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
+from core.calculators.dispatcher import create_calculator_for_profile
+from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
 
 def test_dispatcher_returns_ks_calculator_for_ks_cspf_profile_id():

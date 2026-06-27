@@ -1,6 +1,6 @@
 import pytest
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
-import core.calculator_asnzs_hspf_excel as mod
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
+import core.calculators.standards.asnzs_hspf_excel as mod
 import inspect
 
 def test_cop_from_capacity_power():
@@ -47,9 +47,9 @@ def test_boundary_cop_from_point():
 
 def test_helper_cop_reconstruction_stays_in_asnzs_module():
     # Structural guard: ensure logic is in the compatibility module
-    import core.calculator_asnzs_hspf_excel as mod
+    import core.calculators.standards.asnzs_hspf_excel as mod
     assert hasattr(mod.ASNZSExcelHSPFCompatibilityCalculator, "_cop_from_capacity_power")
     
     # Check common path does not have these
-    import core.calculator_iso16358 as iso
+    import core.calculators.standards.iso16358 as iso
     assert not hasattr(iso.ISO16358Calculator, "_cop_from_capacity_power")

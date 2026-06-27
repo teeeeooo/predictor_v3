@@ -1,7 +1,7 @@
 import pytest
 import json
 from pathlib import Path
-from core.calculator_asnzs_hspf_excel import REFERENCE_TYPE
+from core.calculators.standards.asnzs_hspf_excel import REFERENCE_TYPE
 
 CASE3_FIXTURE = Path("tests/fixtures/asnzs_excel_hspf_compat/case3.json")
 PACKET_FIXTURE = Path("tests/fixtures/asnzs_excel_hspf_compat/case3_packet.json")

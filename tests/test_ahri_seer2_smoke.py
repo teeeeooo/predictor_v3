@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from core.calculator_ahri_seer2 import (
+from core.calculators.standards.ahri_seer2 import (
     AHRICalculator,
     get_default_ahri_seer2_config,
 )

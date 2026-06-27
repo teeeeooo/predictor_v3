@@ -1,6 +1,6 @@
 import json
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 
 TOLERANCE = 1e-9

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 
 FULL_CAPACITY = 1700.0

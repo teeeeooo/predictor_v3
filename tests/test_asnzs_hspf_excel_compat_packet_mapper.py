@@ -1,5 +1,5 @@
 import pytest
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE
 import json
 from pathlib import Path
 

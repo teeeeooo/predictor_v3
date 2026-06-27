@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (

@@ -1,7 +1,7 @@
 import pytest
 import inspect
 import json
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 def get_base_input():
     return {

@@ -1,4 +1,4 @@
-from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
 
 
 def row_at_temp(result, temp_f):

@@ -1,6 +1,6 @@
 import pytest
 
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
 
 
 def workbook_current_cooling_fixture():

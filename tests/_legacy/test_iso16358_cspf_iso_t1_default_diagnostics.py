@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from core._legacy.calculator_iso16358_legacy import ISO16358Calculator
-from core.calculator_ks_c9306 import KSC9306Calculator
+from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
 
 FIXTURE_PATH = (

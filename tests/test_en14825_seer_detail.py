@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from core.calculator_en14825 import EN14825Calculator
+from core.calculators.standards.en14825 import EN14825Calculator
 
 
 _POINTS = {

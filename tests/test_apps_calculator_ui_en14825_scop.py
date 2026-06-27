@@ -8,7 +8,7 @@ from apps.calculator.ui.en14825 import (
     ScopAdapter,
     ScopTableModel,
 )
-from core.calculator_en14825 import EN14825Calculator
+from core.calculators.standards.en14825 import EN14825Calculator
 from apps.calculator.ui.sections.en14825_scop_input_mapper import build_scop_point_inputs
 from apps.calculator.ui.sections.en14825_scop_result_formatter import (
     format_scop_compact_rows,

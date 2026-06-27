@@ -1,4 +1,4 @@
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.profile_resolver import resolve_profile_id
 from apps.calculator.ui.sections.hong_kong_cspf_batch_spec import (
     CSEC,

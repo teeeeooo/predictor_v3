@@ -256,7 +256,7 @@ Example:
     not preferred for new code:
     from core.ml.inference import predict_row
     from core.predictor_schema.columns import COLUMNS
-    from core.calculator_dispatcher import create_calculator_for_profile
+    from core.calculators.dispatcher import create_calculator_for_profile
 
 ### Principle 5 — Move implementation in focused slices
 

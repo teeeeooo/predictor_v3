@@ -8,7 +8,7 @@ from types import MappingProxyType
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import (

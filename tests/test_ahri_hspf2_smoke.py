@@ -1,4 +1,4 @@
-from core.calculator_ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
 
 
 def test_hspf2_v2_legacy_smoke_result():

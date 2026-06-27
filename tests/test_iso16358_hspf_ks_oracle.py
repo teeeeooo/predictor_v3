@@ -1,6 +1,6 @@
 import pytest
-from core.calculator_iso16358 import ISO16358Calculator
-from core.calculator_ks_c9306 import KSC9306Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
+from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
 # This test is a test-only shared-formula oracle probe. 
 # It does not define ISO official expected values.

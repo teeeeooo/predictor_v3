@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Mapping, Protocol
 
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
-from core.calculator_dispatcher import create_calculator_for_profile
+from core.calculators.dispatcher import create_calculator_for_profile
 
 AHRI_SEER2_POINT_ORDER = ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low")
 AHRI_SEER2_TEMPERATURES_C = {

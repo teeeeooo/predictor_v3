@@ -1,13 +1,13 @@
 import pytest
 
-from core.calculator_dispatcher import create_calculator_for_profile
-from core.calculator_input_adapter import measured_inputs_as_test_points
-from core.calculator_prediction_adapter import (
+from core.calculators.dispatcher import create_calculator_for_profile
+from core.calculators.adapters.input_adapter import measured_inputs_as_test_points
+from core.calculators.adapters.prediction_adapter import (
     ALLOWED_MODEL_TARGETS,
     build_predicted_points_envelope,
     predicted_points_to_calculator_input_envelope,
 )
-from core.calculator_unit_adapter import W_TO_BTU_PER_HOUR
+from core.calculators.adapters.unit_adapter import W_TO_BTU_PER_HOUR
 
 
 def _full_predicted_points():

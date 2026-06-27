@@ -1,6 +1,6 @@
 import pytest
 import json
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 def create_calc(tmp_path, profile, selection, bin_hours):
     config = {

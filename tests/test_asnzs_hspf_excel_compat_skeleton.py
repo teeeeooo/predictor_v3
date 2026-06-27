@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from core.calculator_asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE, CALCULATOR_ID
+from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator, REFERENCE_TYPE, CALCULATOR_ID
 
 def test_asnzs_excel_hspf_skeleton_identity():
     assert REFERENCE_TYPE == "ASNZS_EXCEL_COMPAT"
@@ -11,7 +11,7 @@ def test_asnzs_excel_hspf_production_region_config_not_created():
     assert not path.exists()
 
 def test_asnzs_skeleton_does_not_import_iso_common_calculator():
-    import core.calculator_asnzs_hspf_excel as mod
+    import core.calculators.standards.asnzs_hspf_excel as mod
     import sys
-    assert "core.calculator_iso16358" not in sys.modules or \
+    assert "core.calculators.standards.iso16358" not in sys.modules or \
            "ISO16358Calculator" not in vars(mod)

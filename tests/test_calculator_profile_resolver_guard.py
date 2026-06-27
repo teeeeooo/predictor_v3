@@ -1,6 +1,6 @@
 import pytest
-from core.calculator_profiles import CalculatorProfile, resolve_calculator_profile, list_calculator_profiles
-import core.calculator_profiles as cp
+from core.calculators.profiles import CalculatorProfile, resolve_calculator_profile, list_calculator_profiles
+import core.calculators.profiles as cp
 
 # Helper to build a test-local registry
 def get_mock_registry(profiles):

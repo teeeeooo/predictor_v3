@@ -1,6 +1,6 @@
 import pytest
 
-from core.calculator_unit_adapter import (
+from core.calculators.adapters.unit_adapter import (
     ALLOWED_SOURCE_VALUES,
     W_TO_BTU_PER_HOUR,
     expected_source_units,

@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from core.calculator_iso16358 import ISO16358Calculator
-from core.calculator_ks_c9306 import KSC9306Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
+from core.calculators.standards.ks_c9306 import KSC9306Calculator
 from tests.helpers.iso16358_hspf_samples import (
     OFFICIAL_GOLDEN_SAMPLE,
     make_ks_phase1_calculator,

@@ -1,7 +1,7 @@
 import pytest
 
-from core.calculator_dispatcher import create_calculator_for_profile
-from core.calculator_input_adapter import (
+from core.calculators.dispatcher import create_calculator_for_profile
+from core.calculators.adapters.input_adapter import (
     ALLOWED_SOURCE_VALUES,
     build_calculator_input_envelope,
     measured_inputs_as_test_points,

@@ -3,7 +3,7 @@
 This module is pure Python: it imports neither Tkinter nor PyQt. It is
 the single place where the Tkinter shell maps user-visible mode,
 region, metric, and profile labels to the internal ``profile_id`` that
-``core.calculator_dispatcher.create_calculator_for_profile`` expects.
+``core.calculators.dispatcher.create_calculator_for_profile`` expects.
 ``profile_id`` / ``calculator_id`` / ``config_path`` are never exposed
 in the UI; they live only here.
 """

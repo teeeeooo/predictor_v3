@@ -351,7 +351,7 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 
 본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `apps/calculator/ui/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
 
-- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculator_dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `PyQt5`, `tkinter`를 import하지 않는다.
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculators.dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `PyQt5`, `tkinter`를 import하지 않는다.
 - Tkinter shell 독립성: `apps/calculator/ui/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
 - Thin entrypoint: `app_*.py` 는 import + 한 두 줄 entrypoint 함수만 둔다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하). 실제 책임은 layer 모듈에 둔다.
 - Multi-responsibility 한 파일 금지: shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다. 새 작업에서 3개 이상 신규 책임 영역이 발생하면 skeleton/interface 작업과 구현 작업을 분리한다.

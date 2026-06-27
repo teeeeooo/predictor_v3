@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from core.calculator_iso16358 import ISO16358Calculator
+from core.calculators.standards.iso16358 import ISO16358Calculator
 
 
 FIXTURE_PATH = Path("tests/fixtures/iso16358_hspf_official_exact_cases.json")

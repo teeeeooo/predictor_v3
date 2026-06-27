@@ -1,7 +1,7 @@
 import pytest
 import inspect
-from core.calculator_asnzs_hspf_excel import WORKBOOK_OUTPUT_ANCHORS, get_workbook_output_anchor_map
-import core.calculator_iso16358 as iso
+from core.calculators.standards.asnzs_hspf_excel import WORKBOOK_OUTPUT_ANCHORS, get_workbook_output_anchor_map
+import core.calculators.standards.iso16358 as iso
 
 def test_workbook_helper_column_map_contains_expected_anchors():
     keys = ["CG", "CH", "CH48"]

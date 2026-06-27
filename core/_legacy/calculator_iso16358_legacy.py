@@ -4,7 +4,7 @@ import json
 import os
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 
-from core.calculator_ks_c9306 import KSC9306Calculator
+from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
 class ISO16358Calculator:
     """
