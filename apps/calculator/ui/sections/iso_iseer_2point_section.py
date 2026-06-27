@@ -11,6 +11,7 @@ from core.calculator_dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -97,7 +98,7 @@ class IsoIseer2PointSection:
         )
         self.batch_button = ttk.Button(
             self.action_row,
-            text="Multi 입력",
+            text=BATCH_INPUT_BUTTON_TEXT,
             command=self._open_batch_dialog,
         )
         self.batch_button.surface_role = "iso_iseer_2point_batch_open"
@@ -109,7 +110,6 @@ class IsoIseer2PointSection:
         )
         self.detail_toggle.surface_role = "two_point_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
-        self._detail_visible = False
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=tuple(two_point_profile_labels()),

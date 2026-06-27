@@ -31,6 +31,7 @@ from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
     CONTROL_GROUP_GAP,
     CONTROL_LABEL_GAP,
@@ -72,7 +73,6 @@ class En14825SeerSection:
         self._batch_handle: BatchDialogHandle[
             En14825SeerBatchSnapshot, En14825SeerBatchDialog
         ] = BatchDialogHandle()
-        self._detail_visible = False
         self._detail_sources: dict[str, BinDetailSource] = {}
         self._detail_status = "입력 대기"
 
@@ -208,7 +208,7 @@ class En14825SeerSection:
         )
         self.batch_button = ttk.Button(
             action_row,
-            text="SEER Batch",
+            text=BATCH_INPUT_BUTTON_TEXT,
             command=self._open_batch_dialog,
         )
         self.batch_button.surface_role = "en14825_seer_batch_open"

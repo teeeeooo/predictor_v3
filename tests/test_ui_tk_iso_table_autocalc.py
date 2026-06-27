@@ -1290,7 +1290,7 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert "HSPF 계산" not in buttons
     assert "결과 복사" not in buttons
     assert "결과 지우기" not in buttons
-    assert "Multi 입력" in buttons
+    assert layout_constants.BATCH_INPUT_BUTTON_TEXT in buttons
     for label in ("정격 표기치", "35 Full", "35 Half", "7 Full", "7 Half"):
         assert label in labels
     assert "정격" not in labels

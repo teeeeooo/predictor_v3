@@ -50,7 +50,6 @@ class AhriHspf2Section:
     ) -> None:
         self.adapter = adapter or AhriHspf2Adapter()
         self._on_detail_visibility_changed = on_trace_visibility_changed
-        self._detail_visible = False
         self._detail_status = "입력 대기"
         self._frame = ttk.LabelFrame(parent, text="HSPF2")
         self._frame.columnconfigure(0, weight=1)

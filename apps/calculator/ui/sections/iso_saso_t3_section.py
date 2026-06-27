@@ -10,7 +10,11 @@ from tkinter import ttk
 from core.calculator_dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
@@ -110,7 +114,7 @@ class IsoSasoT3Section:
         )
         self.batch_button = ttk.Button(
             self.action_row,
-            text="Multi 입력",
+            text=BATCH_INPUT_BUTTON_TEXT,
             command=self._open_batch_dialog,
         )
         self.batch_button.surface_role = "saso_t3_batch_open"
@@ -122,7 +126,6 @@ class IsoSasoT3Section:
         )
         self.detail_toggle.surface_role = "saso_t3_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
-        self._detail_visible = False
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),

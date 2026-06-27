@@ -10,7 +10,11 @@ from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.ahri_hspf2_dialog import (
     AhriHspf2BatchDialog,
 )
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 
 
 class AhriHspf2BatchAccess:
@@ -21,7 +25,7 @@ class AhriHspf2BatchAccess:
         self._handle: BatchDialogHandle[
             AhriHspf2BatchSnapshot, AhriHspf2BatchDialog
         ] = BatchDialogHandle()
-        self.button = ttk.Button(parent, text="HSPF2 Batch", command=self.open)
+        self.button = ttk.Button(parent, text=BATCH_INPUT_BUTTON_TEXT, command=self.open)
         self.button.grid(
             row=row,
             column=0,

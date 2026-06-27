@@ -33,6 +33,7 @@ from apps.calculator.ui.sections.en14825_scop_result_formatter import (
 )
 from apps.calculator.ui.sections.en14825_scop_result_surface import ScopResultSurface
 from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
     CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
     CONTROL_GROUP_GAP,
     CONTROL_LABEL_GAP,
@@ -69,7 +70,6 @@ class En14825ScopSection:
         self._batch_handle: BatchDialogHandle[
             En14825ScopBatchSnapshot, En14825ScopBatchDialog
         ] = BatchDialogHandle()
-        self._detail_visible = False
         self._detail_sources: dict[str, BinDetailSource] = {}
         self._detail_status = "입력 대기"
 
@@ -267,7 +267,11 @@ class En14825ScopSection:
             row=5, column=0, sticky="w", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.batch_button = ttk.Button(action_row, text="SCOP Batch", command=self._open_batch_dialog)
+        self.batch_button = ttk.Button(
+            action_row,
+            text=BATCH_INPUT_BUTTON_TEXT,
+            command=self._open_batch_dialog,
+        )
         self.batch_button.surface_role = "en14825_scop_batch_open"
         self.batch_button.pack(side=tk.LEFT)
         self.detail_toggle = ttk.Button(

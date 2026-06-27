@@ -19,6 +19,7 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
 )
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
     CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
     CONTROL_LABEL_GAP,
     CONTROL_ROW_PADY,
@@ -49,7 +50,6 @@ class AhriSeer2Section:
     ) -> None:
         self.adapter = adapter or AhriSeer2Adapter()
         self._on_detail_visibility_changed = on_trace_visibility_changed
-        self._detail_visible = False
         self._detail_status = "입력 대기"
         self._batch_handle: BatchDialogHandle[
             AhriSeer2BatchSnapshot, AhriSeer2BatchDialog
@@ -130,7 +130,7 @@ class AhriSeer2Section:
 
         self.batch_button = ttk.Button(
             self._frame,
-            text="SEER2 Batch",
+            text=BATCH_INPUT_BUTTON_TEXT,
             command=self._open_batch_dialog,
         )
         self.batch_button.grid(

@@ -44,7 +44,6 @@ class HongKongHspfSection:
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
-        self._detail_visible = False
         self._frame = ttk.LabelFrame(parent, text=f"HSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
