@@ -1,17 +1,15 @@
-"""Minimal Predict workspace placeholder."""
+"""Minimal Train / Model placeholder panel."""
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
-class PredictWorkspace(QWidget):
-    """Placeholder for the variable-size batch prediction workspace."""
+class TrainModelPanel(QWidget):
+    """Placeholder panel for future training and model management controls."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setObjectName("PredictWorkspace")
-
-        label = QLabel("Predict workspace skeleton")
+        label = QLabel("Train / Model skeleton")
         label.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout(self)

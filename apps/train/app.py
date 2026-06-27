@@ -1,19 +1,24 @@
 """Trainer application bootstrap for the PySide6 rewrite."""
 
+import sys
+
+from PySide6.QtWidgets import QApplication
+
 from apps.train.ui.shell import TrainShell
 
 
 def create_shell() -> TrainShell:
-    """Create the minimal Trainer shell placeholder."""
+    """Create the minimal Trainer shell."""
     return TrainShell()
 
 
 def main() -> int:
-    """Run the Trainer application.
-
-    The executable PySide6 window is added in a later skeleton slice.
-    """
-    raise RuntimeError("Trainer PySide6 shell launch is not implemented yet.")
+    """Run the Trainer application."""
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    window = create_shell()
+    window.show()
+    return app.exec()
 
 
 if __name__ == "__main__":
