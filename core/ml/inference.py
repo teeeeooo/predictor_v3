@@ -54,11 +54,6 @@ def build_input_df(row_dict):
     return df_processed
 
 
-    # 3. 파생 피처 계산 (safe_divide 및 벡터 연산 적용됨)
-    df_processed = calculate_derived_features(df)
-
-    return df_processed
-
 def predict_row(model_data, row_dict):
     """
     로드된 모델 데이터와 입력 딕셔너리를 사용하여 모든 타겟에 대한 예측을 수행합니다.
