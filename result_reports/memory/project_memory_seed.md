@@ -43,6 +43,8 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md` (covered reports `449-461`)
 - `result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md` (covered reports `448`, `462-475`, with `476-479` kept active as next-decision evidence)
 - `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md` (covered reports `476-479`, `481-489`)
+- `result_reports/summaries/516_summary-architecture-reset-pyside6-foundation-closeout.md` (covered reports `491-492`, `507-515`)
+- `result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md` (covered reports `517-535`)
 
 ## Scope and Non-goals
 
@@ -920,6 +922,20 @@ entries:
     assertionStatus: verified
     source: result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md (covered reports 476-479, 481-489)
     supersedes: result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md active reports 476-479 retained status
+
+  - type: decision
+    topic: core package owner paths and root wrapper retirement
+    content: Arc 7 and Arc 8 moved ML, predictor schema, mapping, common paths, calculator routing/adapters, and calculator standard engines under package owner paths; Arc 8.5 retired root compatibility wrappers and migrated active production code, legacy-reference imports, and tests to the owner paths directly.
+    keywords:
+      - predictor_v3
+      - core owners
+      - wrapper retirement
+      - core/ml
+      - core/predictor_schema
+      - core/mapping
+      - core/calculators
+    assertionStatus: verified
+    source: result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md (covered reports 517-535)
 ```
 
 ## Known Gaps
