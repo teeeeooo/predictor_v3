@@ -10,121 +10,202 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Calculator UI / workflow completion before ML / predictor
-continuation.
+Current phase: ML / Predictor Continuation — PySide6 Train/Predict Rewrite.
+
+The calculator UI/workflow stabilization phase is complete enough to resume the
+ML / predictor path. The first current workstream is the approved PySide6
+Train/Predict rewrite, not an in-place PyQt5 migration.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
-1. stabilize calculator formulas and regression protection;
-2. complete calculator UI/workflow surfaces for the active standards;
-3. stabilize calculator result boundaries;
-4. return to ML / predictor integration after calculator outputs are reliable.
+1. keep completed calculator formula/UI/workflow contracts stable;
+2. establish the PySide6 Train/Predict app boundary and reusable Predict
+   workspace;
+3. stabilize ML feature, model artifact, preprocessing, and result mapping
+   contracts;
+4. reconnect predictor outputs to calculator inputs and later
+   ranking/recommendation workflows.
 
 ## 2. Current Architecture State
 
-- Calculator entrypoints are rooted at `app_calculator.py` and
-  `apps.calculator.app:main`, with UI code under `apps/calculator/ui/`.
-- Train/Predict paths remain separate from the calculator shell.
-- Calculator core, profile/config, UI, result envelope, and ML adapter concerns
-  should stay separated.
-- Region config, HW candidate input, ML feature schema, calculator result schema,
-  and UI table schema must not be mixed.
-- For later calculator-to-ML boundary work, use
-  `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md` as the
-  starting design reference.
+- Calculator UI/workflow closeout is complete for the current phase. Detailed
+  completed calculator history belongs in lifecycle summaries and reports, not
+  in this brief.
+- Calculator entrypoints remain rooted at `app_calculator.py` and
+  `apps.calculator.app:main`, with current calculator UI code under
+  `apps/calculator/ui/`.
+- Train/Predict paths remain separate from the calculator shell and the
+  Tkinter calculator path.
+- Train/Predict is a new PySide6 implementation, not a PyQt5 migration.
+- New Train/Predict package boundaries are `apps/predict/` and `apps/train/`.
+- Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
+  until a later explicit retirement slice.
+- `app_predict.py` is the Predict-only application entrypoint.
+- `app_train.py` is the administrator/developer entrypoint that adds Train /
+  Model and Data Mapping capabilities while reusing the Predict workspace.
+- `PredictWorkspace` is owned by the Predict package and reused by the Train
+  app's Predict tab.
+- `core.predictor`, `core.trainer`, `core.data_pipeline`, `core.models`, and
+  `core.constants` remain UI-toolkit independent.
+- Region config, HW candidate input, ML feature schema, calculator result
+  schema, and UI table schema must not be mixed.
 
-## 3. Arc / Milestone Map
+## 3. Previous Completed Phase
 
-### Arc 1 — EN14825 Calculator Completion
+### Calculator UI / Workflow Stabilization
+
+Status: complete for current phase.
+
+Summary anchors:
+
+- EN14825 config, point contract, UI workflow closeout:
+  `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
+- EN14825 batch and agent change-gate closeout:
+  `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+- AHRI calculator UI/batch lifecycle closeout:
+  `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
+- Calculator helper/batch/detail lifecycle closeout:
+  `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`
+
+Detailed EN14825, AHRI, helper, batch, detail, token, and manual-smoke
+milestones are intentionally not repeated here.
+
+## 4. Current Arc / Milestone Map
+
+### Arc 1 — PySide6 Train/Predict Rewrite Design Alignment
 
 Goal:
 
-- Complete EN14825 calculator usability across main UI and batch mode without
-  reopening stable core, schema, region-config, fixture, or golden contracts.
+- Make the PySide6 Train/Predict rewrite decision, package boundary, and visual
+  reference path discoverable from active project docs.
 
-Status: complete.
+Status:
+
+- Complete / closing in the current local checkout.
 
 Milestones:
 
-- Main SEER/SCOP calculation UI: complete.
-- EN14825 config ownership and SEER/SCOP point contract: complete.
-- SEER batch mode and dialog wiring: complete.
-- SCOP batch profile-local rebuild/snapshot policy: complete.
-- SCOP batch parent-section access: complete.
-- EN14825 calculator smoke / lifecycle closeout: complete.
-
-Current near-term slice:
-
-- Owned by `docs/WORK_PLAN.md`.
+- Design gate and implementation spec added.
+- Non-binding visual reference assets added.
+- Charter, architecture, workflow, design index, and work plan references
+  aligned.
+- Legacy PyQt5 `ui/` path classified as reference-only, not immediate deletion.
 
 Reference anchors:
 
-- `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
-- `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+- `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
+- `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`
+- `result_reports/active/493_pyside6-train-predict-doc-alignment.md`
 
-### Arc 2 — AHRI 210/240 Calculator Completion
-
-Goal:
-
-- Complete AHRI 210/240 calculator usability across the required main and batch
-  workflows after EN14825 closeout.
-
-Status:
-
-- Complete.
-
-Milestones:
-
-- AHRI UI/Batch design specification: complete.
-- SEER2 main UI foundation: complete.
-- SEER2 batch: complete.
-- HSPF2 main UI and capacity-only A2 boundary: complete.
-- HSPF2 batch and optional-point snapshot/rebuild lifecycle: complete.
-- Visible-content and batch natural-size corrections: complete.
-- Focused regression, user visual smoke, and lifecycle closeout: complete.
-
-Reference anchor:
-
-- `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
-
-### Arc 3 — Calculator Workflow / Result Boundary Stabilization
+### Arc 2 — PySide6 App Skeleton and Package Boundary
 
 Goal:
 
-- Stabilize calculator outputs, result envelopes, and adapter boundaries needed
-  before returning to ML / predictor work.
+- Establish `apps/predict/` and `apps/train/` package skeletons without moving
+  or deleting legacy PyQt5 `ui/` files.
 
-Status:
+Target milestones:
 
-- Preparation is unblocked after AHRI closeout. The immediate workflow action is
-  UI magic literal legacy inventory formalization, owned by `docs/WORK_PLAN.md`.
+- Add `apps/predict` and `apps/train` skeleton packages.
+- Convert `app_predict.py` and `app_train.py` to thin wrappers after the new
+  packages exist.
+- Add minimal PySide6 shell windows and Trainer tab shell.
+- Verify PySide6 import smoke and entrypoint import/compile smoke.
 
-Candidate reference:
-
-- `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`
-
-### Arc 4 — ML / Predictor Continuation
+### Arc 3 — PredictWorkspace Variable-size Batch UI
 
 Goal:
 
-- Resume ML / predictor integration after calculator workflows and result
-  boundaries are stable enough to serve as reliable downstream inputs.
+- Build the reusable Predict workspace around variable-size batch prediction
+  rather than fixed row counts.
 
-Status:
+Target milestones:
 
-- Later phase; not the current implementation focus.
+- Add editable `Input Cases` table.
+- Add read-only `Prediction Results` table.
+- Keep input/result rows synchronized by `case_id` and `case_order`.
+- Introduce `CaseStore` / `PredictSession` state ownership.
+- Preserve selection and scroll synchronization between input and result
+  surfaces.
+- Forbid fixed UI row-count assumptions.
 
-## 4. Deferred / Hold Areas
+### Arc 4 — Prediction Execution and Result Mapping
+
+Goal:
+
+- Connect PredictWorkspace rows to the existing prediction path through
+  adapters/services without changing ML algorithms.
+
+Target milestones:
+
+- Add UI-row to ML-input adapter.
+- Add prediction service wrapper around the existing predictor path.
+- Add prediction result adapter for result-table display.
+- Support all-case, selected-case, and changed-case prediction scopes as
+  approved slices.
+- Keep progress/cancel behavior behind worker boundaries.
+
+### Arc 5 — Trainer Admin App
+
+Goal:
+
+- Make `app_train.py` the administrator/developer app with Predict, Train /
+  Model, and Data Mapping tabs.
+
+Target milestones:
+
+- Reuse `PredictWorkspace` in the Train app's Predict tab.
+- Add Train / Model panel.
+- Add Data Mapping panel.
+- Add training worker boundary and progress/log status.
+- Add model artifact/status visibility.
+- Keep mapping update behavior behind a service/adapter boundary.
+
+### Arc 6 — ML Pipeline Stabilization
+
+Goal:
+
+- Stabilize ML feature, leakage, model artifact, preprocessing, and result-key
+  contracts after the UI shell boundary is established.
+
+Target milestones:
+
+- Review `MODEL_REGISTRY`, `BASE_FEATURES`, `TARGETS`, and target leakage
+  rules.
+- Preserve single-artifact and preprocessing compatibility contracts unless a
+  later design explicitly changes them.
+- Align one-hot option and result-key SSOT ownership.
+- Add focused ML tests around feature names, leakage, and prediction/training
+  boundary behavior.
+
+### Arc 7 — Calculator to Predictor Integration
+
+Goal:
+
+- Prepare predictor outputs for calculator input adapters and later
+  ranking/recommendation workflows.
+
+Target milestones:
+
+- Define a predicted-points/result envelope for calculator handoff.
+- Expand calculator input adapters only through approved boundaries.
+- Calculate seasonal metrics from prediction output in a later approved slice.
+- Keep ranking/recommendation preparation separate from Train/Predict UI
+  skeleton work.
+
+## 5. Deferred / Hold Areas
 
 - AS/NZS Excel compatibility Z-phase remains deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.
 - Broad code-quality refactors belong in `docs/REFACTOR_PLAN.md`, not in this
   brief.
-- Packaging and hook-integration work should remain separate workflow arcs unless
-  explicitly promoted.
+- Packaging and hook-integration work should remain separate workflow arcs
+  unless explicitly promoted.
+- Legacy PyQt5 `ui/` retirement remains deferred until the PySide6 Predict/Train
+  apps have import smoke and minimum manual GUI smoke evidence.
 
-## 5. Session Start Rule
+## 6. Session Start Rule
 
 1. Read `project_brief.md` to understand the current Phase, active Arc, and
    Milestone position.
@@ -137,7 +218,7 @@ Status:
 5. Do not reconstruct current priority from archived reports or long report
    histories.
 
-## 6. Document Guide
+## 7. Document Guide
 
 - `AGENTS.md`: lite rule entrypoint for each agent task.
 - `AGENT_TASK_ROUTER.md`: task route and compact gate map.

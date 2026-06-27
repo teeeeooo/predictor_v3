@@ -13,8 +13,12 @@
 
 ## 1. Default policy
 
-- **New** desktop UI with editable, table-heavy screens uses
-  **PyQt5** as the default toolkit.
+- **New** desktop UI with editable, table-heavy screens uses the approved
+  toolkit for that application. If no project-specific design gate exists,
+  **PyQt5** remains the historical default.
+- `predictor_v3` Train/Predict is an approved exception: new Train/Predict UI
+  work targets PySide6 under `apps/predict/` and `apps/train/`, while legacy
+  PyQt5 `ui/` code remains reference-only until a later retirement slice.
 - **Existing** Tkinter apps stay on Tkinter and follow
   `adapters/TKINTER_TABLE_ADAPTER.md` for table-shaped surfaces.
 - Within a single application, do **not** mix Tkinter and PyQt5
@@ -26,7 +30,8 @@
 ## 2. Choose PyQt5 when
 
 PyQt5 is the right default if **any** of the following apply to the
-new app or new screen:
+new app or new screen and there is no project-specific approved toolkit
+decision:
 
 - The screen is dominated by an editable, spreadsheet-like table
   (multi-row, multi-column, with copy / paste / undo / navigation).
@@ -41,7 +46,8 @@ new app or new screen:
 - The app is starting fresh and there is no installed Tkinter user
   base to disrupt.
 
-When the answer is yes to any of these, use PyQt5 and follow
+When the answer is yes to any of these and no newer design gate supersedes it,
+use PyQt5 and follow
 `adapters/PYQT_TABLE_IMPLEMENTATION.md` for table-shaped surfaces.
 
 ## 3. Keep or choose Tkinter when

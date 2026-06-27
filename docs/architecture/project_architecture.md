@@ -12,7 +12,7 @@
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
 - **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
-  - `app_train.py`와 `app_predict.py`가 공유하는 레거시 Train/Predict 화면 경로입니다.
+  - 기존 `app_train.py`와 `app_predict.py`가 사용하는 레거시 Train/Predict 화면 경로이며, 신규/유지 대상이 아니라 PySide6 재작성 전환 중 reference-only / legacy path로 취급합니다.
   - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
 - **`apps/` (애플리케이션 패키지 경계)**:
   - 장기적으로 `apps/{calculator,train,predict}/` 구조를 가집니다.
@@ -22,7 +22,7 @@
       - **Reusable UI / Common Shell**: `metric_input_table.py`, `result_panel.py` 등 공용 재사용 컴포넌트와 윈도우 쉘 파일들이 위치합니다.
       - **Feature Packages**: `en14825/`, `batch/` 등 특정 계산 규격/피처 전용 패키지로, 피처별 model, adapter, table model, helper 파일들을 캡슐화하여 둡니다.
       - **`sections/`**: 개별 계산 섹션을 조립하는 thin glue 및 registration/routing 성격의 코드로 역할을 제한하며, 피처 전용 model, adapter, table model 파일들을 흩뿌려 두는 dumping ground로 사용하지 않습니다.
-  - **`apps/train/` 및 `apps/predict/`**: 현 시점에서는 물리적 폴더를 생성하지 않고, 향후 PySide6 재작성 시점에 생성할 reserved boundary로 문서상 선언합니다.
+  - **`apps/train/` 및 `apps/predict/`**: PySide6 Train/Predict rewrite의 승인된 신규 package boundary입니다. 물리적 폴더 생성은 skeleton slice에서 수행하며, 새 Train/Predict PySide6 production code는 legacy `ui/`가 아니라 이 경계 아래에 둡니다.
 - **`data/`**: 규격 설정(JSON) 및 학습 데이터
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
 - **`tests/`**: 테스트 코드 영역으로, 소스 코드 소유주(source owner) 및 패키지 경계를 그대로 반영한 focused tests 구성을 최우선으로 합니다. (예: `test_apps_calculator_ui_en14825.py`)
@@ -47,6 +47,7 @@
 - **기본 artifact 계약**: 현재 기본 모델 artifact는 `core/constants.py`의 `MODEL_FILE`이 가리키는 `model.pkl` 단일 artifact 계약을 따른다. target별 또는 모델별 artifact 분리는 별도 설계 없이 임의로 도입하지 않는다.
 - **전처리 호환성 guard**: 학습/예측 전처리 호환성 확인을 위해 `preprocess_version` 또는 동등한 전처리 버전 검증 guard를 유지한다. 이 항목은 architecture contract이며, 현재 구현 완료 범위를 과장하지 않는다.
 - **Train/Predict runtime boundary**: `core/trainer.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/trainer.py`와 `core/predictor.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
+- **Train/Predict PySide6 rewrite boundary**: `app_predict.py`는 Predict 전용 thin entrypoint, `app_train.py`는 Predict workspace + Train / Model + Data Mapping을 제공하는 관리자/개발자용 thin entrypoint로 전환한다. `PredictWorkspace`는 `apps.predict`에서 정의하고 `apps.train`의 Predict tab에서 재사용한다. 설계 기준은 `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`와 `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`를 따른다.
 - **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
 
 ### MODEL_REGISTRY 확장성 패턴
@@ -76,7 +77,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/constants.py`의 `COLUMNS`이며, 크�
 ### 3.3 UI Model/View Guardrails (PyQt Legacy UI 전용)
 
 > [!NOTE]
-> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)에 적용되는 규칙입니다. 신규 Tkinter 기반 계산기 UI(`apps/calculator/ui/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
+> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)를 읽을 때의 reference 규칙입니다. 신규 Train/Predict 구현은 PySide6 rewrite design/spec를 따르며, 신규 Tkinter 기반 계산기 UI(`apps/calculator/ui/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
 
 - **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
@@ -240,7 +241,7 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 **Current state**:
 - Current calculator UI: `apps/calculator/ui/`
 - Retained shared PyQt utility: `ui/spreadsheet_table.py`, `ui/theme.py` (quarantine/hold)
-- Retained Train/Predict PyQt: `ui/train_window.py`, `ui/predict_window.py`, `ui/base_model.py`, `ui/base_view.py`
+- Legacy/reference Train/Predict PyQt5: `ui/train_window.py`, `ui/predict_window.py`, `ui/base_model.py`, `ui/base_view.py`
 
 
 ### Result schema boundary

@@ -27,31 +27,21 @@
 
 ## Current Slice
 
-- Calculator lifecycle/detail/empty-state implementation, helper/batch cleanup,
-  Hong Kong HSPF batch work, and manual smoke closeout are complete.
-- Canonical launch, empty batch inputs, and semantic EN14825 cell backgrounds
-  are manually confirmed.
-- The five approved legacy UI token cleanup slices are complete, with remaining
-  values classified in the formal exception/exclusion ledger.
-- The four structure audits and their approved helper implementation bundle are
-  complete: UI literal sentinel hotfix, detail formatting coercion helper,
-  batch matrix controller, batch dialog handle, and detail visibility helper.
-- Calculator small cleanup and Hong Kong HSPF batch implementation are complete.
-- Hong Kong HSPF batch visual smoke is manually confirmed: `일괄 입력`
-  button, dialog open, 7 Full / 7 Half edits, HSPF/HSTL/HSEC result display,
-  and close/reopen snapshot retention.
-- Report lifecycle cleanup for the completed calculator helper/batch/detail and
-  manual-smoke reports is complete.
-- Calculator final closeout audit found no remaining implementation blocker in
+- Calculator closeout is complete with no remaining implementation blocker in
   the recently closed helper/batch/detail/token/manual-smoke scope.
-- Agent gate/workflow hardening now requires report-backed structural source
-  changes to record reuse/commonization decisions and warns on Phase 2 UI
-  presentation literal candidates.
+- Train/Predict is the next approved non-calculator workstream. The current
+  decision is a PySide6 rewrite, not PyQt5 migration: `app_predict.py` remains
+  Predict-only, `app_train.py` becomes the administrator/developer app with
+  Predict, Train / Model, and Data Mapping tabs, and new code belongs under
+  `apps/predict/` and `apps/train/`.
+- Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
+  explicit retirement slice.
 
 ## Next Actions
 
-1. Select the next approved calculator detail/manual-smoke or empty-state slice.
-2. Or choose the next non-calculator approved workstream.
+1. Run PySide6 Train/Predict rewrite implementation preflight.
+2. Then start the PySide6 package skeleton slice if preflight confirms the
+   boundary and verification plan.
 
 ## Active Blockers / Open Decisions
 
@@ -67,13 +57,16 @@
   calculator launch boundary.
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
+- Keep Train/Predict rewrite separate from the Tkinter calculator path.
+- Do not delete or move legacy PyQt5 `ui/` Train/Predict files during the first
+  PySide6 skeleton slice.
 - Use focused verification rather than full pytest by default.
 
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- ML / predictor continuation remains after calculator workflows and result
-  boundaries are stable enough for the next approved slice.
+- Broad ML / predictor algorithm work remains deferred until the PySide6
+  Train/Predict shell/workspace boundary is established.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.
 
@@ -86,6 +79,10 @@
   `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
 - Calculator helper/batch/detail lifecycle closeout:
   `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`.
+- PySide6 Train/Predict rewrite design gate:
+  `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
+- PySide6 Train/Predict implementation spec:
+  `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - Calculator sample/default inventory and empty-state policy:
