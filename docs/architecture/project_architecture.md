@@ -97,6 +97,11 @@ Migration principles:
 - Do not treat root wrappers as final architecture.
 - After package boundary foundation exists, new production code should import
   from approved package owner paths, not deeper flat-root compatibility paths.
+- Arc 7 owns ML, predictor schema, and mapping package restructure:
+  `core/ml`, `core/predictor_schema`, and `core/mapping`.
+- Calculator engine/package movement is separate Arc 8 work because calculator
+  engines, dispatcher/profiles, adapters, tests, and golden behavior require a
+  separate focused migration boundary.
 - Calculator engines move toward `core/calculators/standards/`.
 - ML pipeline ownership moves toward `core/ml/`.
 - `core/constants.py` responsibilities split toward predictor schema, ML

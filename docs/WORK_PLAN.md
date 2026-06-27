@@ -47,19 +47,20 @@
 
 ## Next Actions
 
-1. Core package boundary foundation planning or implementation slice.
-2. ML implementation move.
-3. Predictor schema / mapping move.
-4. Calculator implementation move.
-5. PySide6 Predictor schema/mapping recovery.
-6. Prediction worker/progress and real-model smoke readiness.
-7. Trainer app foundation.
+1. Arc 7 - Core ML / Schema / Mapping Package Restructure.
+2. Arc 8 - Calculator Engine Package Restructure.
+3. Arc 9 - PySide6 Predictor schema/mapping recovery.
+4. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+5. Arc 11 - Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
 - Next code work must establish package boundaries without behavior change.
 - Compatibility wrappers are transition safety, not final architecture; physical
   implementation moves are later approved migration slices.
+- Arc 7 combines core package boundary foundation, ML implementation move,
+  predictor schema move, and mapping move. Calculator engine movement is
+  excluded from Arc 7 and belongs to Arc 8.
 - Current PySide6 Predictor schema/mapping path remains blocked until
   `core/predictor_schema`, `core/mapping`, and `core/ml` boundaries are
   introduced and recovery is explicitly approved.

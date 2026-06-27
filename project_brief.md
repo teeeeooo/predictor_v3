@@ -205,79 +205,57 @@ Target milestones:
   architecture.
 - Keep detailed implementation slices in `docs/WORK_PLAN.md`, not this brief.
 
-### Arc 7 — Core Package Boundary Foundation
+### Arc 7 — Core ML / Schema / Mapping Package Restructure
 
 Goal:
 
-- Establish target package paths with no behavior change using temporary
-  compatibility wrappers.
+- Move ML, predictor schema, and mapping responsibilities under real package
+  owners with no behavior change while preserving root compatibility wrappers.
 
 Target milestones:
 
-- Preserve existing imports while new owner packages are introduced.
-- Use compatibility wrappers until callers are explicitly migrated.
-- Verify with focused tests and import smoke.
-- Do not change calculator behavior, ML algorithms, schemas, fixtures, golden
-  data, or public APIs.
+- Add package shell / boundary imports for `core/ml`,
+  `core/predictor_schema`, and `core/mapping`.
+- Move ML implementation ownership to `core/ml/`.
+- Move predictor column/schema ownership to `core/predictor_schema/`.
+- Move mapping path/repository/update pure logic ownership to `core/mapping/`.
+- Preserve existing root imports through compatibility wrappers.
+- Verify import policy, smoke checks, and no-behavior-change closeout.
+- Do not move calculator engines, dispatcher, profiles, or calculator adapters
+  in this arc.
 
-### Arc 8 — ML Implementation Move
+### Arc 8 — Calculator Engine Package Restructure
 
 Goal:
 
-- Move actual ML implementation ownership under `core/ml/`.
+- Move calculator implementation ownership under `core/calculators/` after Arc
+  7 closes.
 
 Target milestones:
 
-- Move inference, training, registry, preprocessing, features, artifacts, and
-  logging ownership toward `core/ml/`.
-- Keep root files as compatibility wrappers during caller migration.
-- Preserve ML algorithms, artifact format, feature names, target names, and
-  preprocessing behavior.
-
-### Arc 9 — Predictor Schema / Mapping Move
-
-Goal:
-
-- Separate predictor schema and mapping responsibilities from flat constants,
-  utils, and scripts.
-
-Target milestones:
-
-- Move predictor columns/result/dropdown ownership toward
-  `core/predictor_schema/`.
-- Move mapping paths, repository, autofill, and pure update logic toward
-  `core/mapping/`.
-- Keep UI/file-dialog wrappers out of core mapping logic.
-
-### Arc 10 — Calculator Implementation Move
-
-Goal:
-
-- Move calculator implementation ownership under `core/calculators/`.
-
-Target milestones:
-
-- Move profiles/dispatcher toward `core/calculators/`.
-- Move calculator engines toward `core/calculators/standards/`.
+- Add calculators package shell.
+- Move dispatcher and profiles toward `core/calculators/`.
 - Move calculator adapters toward `core/calculators/adapters/`.
-- Preserve calculator formulas, result contracts, focused tests, and golden
-  behavior.
+- Move calculator engines toward `core/calculators/standards/`.
+- Preserve calculator formulas, config, public result contracts, focused tests,
+  and golden behavior.
 
-### Arc 11 — PySide6 Predictor Schema/Mapping Recovery
+### Arc 9 — PySide6 Predictor Schema / Mapping Recovery
 
 Goal:
 
-- Recover the PySide6 Predictor schema/mapping path after project-wide
-  architecture ownership is reset.
+- Recover the PySide6 Predictor schema/mapping path after Arc 7 package owners
+  exist.
 
 Target milestones:
 
-- Align PySide6 row/input adapters with the approved ML pipeline contract.
+- Align PySide6 row/input adapters with `core/ml`, `core/predictor_schema`, and
+  `core/mapping`.
 - Remove or isolate local schema/mapping drift.
 - Preserve existing model artifact and prediction behavior unless a later
   design explicitly authorizes changes.
 
-### Arc 12 — Prediction Worker/Progress
+### Arc 10 — Prediction Worker/Progress
 
 Goal:
 
@@ -290,7 +268,7 @@ Target milestones:
 - Add progress/cancel UI behavior without changing core prediction semantics.
 - Complete real-model smoke readiness when a valid model artifact is available.
 
-### Arc 13 — Trainer Admin App Foundation
+### Arc 11 — Trainer Admin App Foundation
 
 Goal:
 
@@ -306,7 +284,7 @@ Target milestones:
 - Add model artifact/status visibility.
 - Keep mapping update behavior behind a service/adapter boundary.
 
-### Arc 14 — ML Pipeline Stabilization
+### Arc 12 — ML Pipeline Stabilization
 
 Goal:
 
@@ -323,7 +301,7 @@ Target milestones:
 - Add focused ML tests around feature names, leakage, and prediction/training
   boundary behavior.
 
-### Arc 15 — Calculator to Predictor Integration
+### Arc 13 — Calculator to Predictor Integration
 
 Goal:
 
