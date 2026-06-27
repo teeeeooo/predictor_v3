@@ -1,6 +1,6 @@
 """Adapter-owned RankingCandidateEnvelope helpers.
 
-This is the downstream counterpart to ``core.calculator_result_adapter``.
+This is the downstream counterpart to ``core.calculators.adapters.result_adapter``.
 It accepts a validated ``CalculatorResultEnvelope`` and produces a
 ``RankingCandidateEnvelope`` that a ranking / inverse-search layer can
 consume without ever touching raw calculator return dicts directly.

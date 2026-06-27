@@ -45,11 +45,11 @@ ADAPTER_ONLY_TERMS = {
     "ranking_features",
 }
 ADAPTER_MODULES = {
-    Path("core/calculator_result_adapter.py"),
-    Path("core/calculator_input_adapter.py"),
-    Path("core/calculator_prediction_adapter.py"),
-    Path("core/calculator_ranking_adapter.py"),
-    Path("core/calculator_unit_adapter.py"),
+    Path("core/calculators/adapters/result_adapter.py"),
+    Path("core/calculators/adapters/input_adapter.py"),
+    Path("core/calculators/adapters/prediction_adapter.py"),
+    Path("core/calculators/adapters/ranking_adapter.py"),
+    Path("core/calculators/adapters/unit_adapter.py"),
 }
 
 

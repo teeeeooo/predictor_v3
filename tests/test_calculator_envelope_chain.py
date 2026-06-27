@@ -22,8 +22,8 @@ from core.calculators.adapters.prediction_adapter import (
     build_predicted_points_envelope,
     predicted_points_to_calculator_input_envelope,
 )
-from core.calculator_ranking_adapter import build_ranking_candidate_envelope
-from core.calculator_result_adapter import wrap_calculator_result_envelope
+from core.calculators.adapters.ranking_adapter import build_ranking_candidate_envelope
+from core.calculators.adapters.result_adapter import wrap_calculator_result_envelope
 from core.calculators.adapters.unit_adapter import W_TO_BTU_PER_HOUR
 
 

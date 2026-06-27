@@ -120,7 +120,7 @@ layer carries the same vocabulary without re-asserting ownership of it.
 
 ## Migration / Refactor Path
 
-1. Add an adapter module candidate such as `core/calculator_result_adapter.py` or `core/calculator_adapter.py` with pure conversion helpers only.
+1. Add an adapter module candidate such as `core/calculators/adapters/result_adapter.py` or `core/calculator_adapter.py` with pure conversion helpers only.
 2. Wrap existing calculator outputs into `CalculatorResultEnvelope` without changing calculator public APIs.
 3. Add ML/inverse-search caller code that consumes envelopes and keeps raw calculator output available under `raw_result`.
 4. After callers migrate, consider whether any calculator return dict cleanup is still needed as a separate, approved schema migration.
@@ -145,7 +145,7 @@ layer carries the same vocabulary without re-asserting ownership of it.
 ## Implementation Status (as of 2026-05-17 audit_5 task 2)
 
 - `CalculatorResultEnvelope` first slice landed for `ahri_usa_seer2` in
-  `core/calculator_result_adapter.py` (see report 065 / 071).
+  `core/calculators/adapters/result_adapter.py` (see report 065 / 071).
 - `CalculatorInputEnvelope` first slice now matches the design shape above:
   `{calculator_profile_id, standard, region, mode, metric, measured_inputs,
   options}`, with `options` carrying `units` and `source`.

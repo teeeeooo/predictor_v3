@@ -1,8 +1,8 @@
 import pytest
 
 from core.calculators.dispatcher import create_calculator_for_profile
-from core.calculator_ranking_adapter import build_ranking_candidate_envelope
-from core.calculator_result_adapter import wrap_calculator_result_envelope
+from core.calculators.adapters.ranking_adapter import build_ranking_candidate_envelope
+from core.calculators.adapters.result_adapter import wrap_calculator_result_envelope
 
 
 AHRI_SEER2_SAMPLE_POINTS = {
