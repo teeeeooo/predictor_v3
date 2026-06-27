@@ -29,19 +29,18 @@
 
 - Calculator closeout is complete with no remaining implementation blocker in
   the recently closed helper/batch/detail/token/manual-smoke scope.
-- Train/Predict is the next approved non-calculator workstream. The current
-  decision is a PySide6 rewrite, not PyQt5 migration: `app_predict.py` remains
-  Predict-only, `app_train.py` becomes the administrator/developer app with
-  Predict, Train / Model, and Data Mapping tabs, and new code belongs under
-  `apps/predict/` and `apps/train/`.
+- Train/Predict Arc 2 package boundary is implemented: `app_predict.py` is the
+  Predict-only thin entrypoint, `app_train.py` is the administrator/developer
+  thin entrypoint, and the PySide6 shell skeleton lives under `apps/predict/`
+  and `apps/train/`.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Run PySide6 Train/Predict rewrite implementation preflight.
-2. Then start the PySide6 package skeleton slice if preflight confirms the
-   boundary and verification plan.
+1. Start Arc 3: PredictWorkspace variable-size batch UI skeleton.
+2. Keep prediction execution, training execution, and data-mapping updates
+   deferred until their approved slices.
 
 ## Active Blockers / Open Decisions
 
@@ -58,8 +57,8 @@
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Keep Train/Predict rewrite separate from the Tkinter calculator path.
-- Do not delete or move legacy PyQt5 `ui/` Train/Predict files during the first
-  PySide6 skeleton slice.
+- Do not delete or move legacy PyQt5 `ui/` Train/Predict files without a later
+  explicit retirement slice.
 - Use focused verification rather than full pytest by default.
 
 ## Deferred / Hold
