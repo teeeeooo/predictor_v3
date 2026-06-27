@@ -42,28 +42,29 @@
   target package owners are `core/common`, `core/predictor_schema`,
   `core/mapping`, `core/ml`, and `core/calculators`; compatibility wrappers are
   transitional safety only.
+- Arc 7 Core ML / Schema / Mapping Package Restructure is complete:
+  `core/ml`, `core/predictor_schema`, and `core/mapping` are the package owners
+  for ML implementation, predictor schema, and mapping path/repository/update
+  logic; root modules remain compatibility wrappers.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Arc 7 - Core ML / Schema / Mapping Package Restructure.
-2. Arc 8 - Calculator Engine Package Restructure.
-3. Arc 9 - PySide6 Predictor schema/mapping recovery.
-4. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-5. Arc 11 - Trainer app foundation.
+1. Arc 8 - Calculator Engine Package Restructure.
+2. Arc 9 - PySide6 Predictor schema/mapping recovery.
+3. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+4. Arc 11 - Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
-- Next code work must establish package boundaries without behavior change.
+- Next code work must keep calculator behavior unchanged while establishing
+  calculator package boundaries.
 - Compatibility wrappers are transition safety, not final architecture; physical
   implementation moves are later approved migration slices.
-- Arc 7 combines core package boundary foundation, ML implementation move,
-  predictor schema move, and mapping move. Calculator engine movement is
-  excluded from Arc 7 and belongs to Arc 8.
+- Calculator engine movement is excluded from Arc 7 and belongs to Arc 8.
 - Current PySide6 Predictor schema/mapping path remains blocked until
-  `core/predictor_schema`, `core/mapping`, and `core/ml` boundaries are
-  introduced and recovery is explicitly approved.
+  Arc 9 recovery is explicitly approved.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction

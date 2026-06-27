@@ -212,6 +212,11 @@ Goal:
 - Move ML, predictor schema, and mapping responsibilities under real package
   owners with no behavior change while preserving root compatibility wrappers.
 
+Status:
+
+- Complete as no-behavior-change package restructure. Root compatibility
+  wrappers remain for existing callers.
+
 Target milestones:
 
 - Add package shell / boundary imports for `core/ml`,
