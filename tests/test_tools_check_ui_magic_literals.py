@@ -106,6 +106,18 @@ def test_phase_two_ui_literal_is_warning_only(repo: Path) -> None:
     assert any("padx" in warning for warning in warnings)
 
 
+def test_phase_two_runtime_sentinel_values_do_not_warn(repo: Path) -> None:
+    _stage(
+        repo,
+        "apps/calculator/ui/view.py",
+        "button.configure(width=0, height=1, padx=0, pady=1)\n",
+    )
+    _stage_report(repo)
+
+    assert not _errors(repo)
+    assert not _warnings(repo)
+
+
 def test_phase_two_named_color_is_warning_only(repo: Path) -> None:
     _stage(repo, "apps/calculator/ui/view.py", 'label.configure(background="white")\n')
     _stage_report(repo)

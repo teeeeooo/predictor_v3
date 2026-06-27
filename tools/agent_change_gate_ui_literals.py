@@ -80,7 +80,7 @@ def _literal_findings(tree: ast.AST) -> list[tuple[str, int, str]]:
             if _is_numeric_pair(node.value):
                 found.add(("error", node.value.lineno, "window min_size"))
         elif isinstance(node, ast.keyword) and node.arg in _PHASE2_SIZE_KEYWORDS:
-            if _is_number(node.value) and node.value not in {0, 1}:
+            if _is_number(node.value) and not _is_runtime_sentinel_number(node.value):
                 found.add(("warning", node.value.lineno, node.arg))
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             value = node.value
@@ -106,6 +106,10 @@ def _literal_findings(tree: ast.AST) -> list[tuple[str, int, str]]:
 
 def _is_number(node: ast.AST) -> bool:
     return isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
+
+
+def _is_runtime_sentinel_number(node: ast.AST) -> bool:
+    return isinstance(node, ast.Constant) and node.value in {0, 1}
 
 
 def _is_numeric_pair(node: ast.AST) -> bool:
