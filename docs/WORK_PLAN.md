@@ -33,10 +33,10 @@
   implemented: row input conversion, Qt-free prediction service/controller,
   case_id-based result mapping, and PredictWorkspace run-button integration are
   in place without changing core ML behavior.
-- ML / Predictor continuation is paused for a project-wide architecture reset:
-  the current PySide6 Predictor schema/mapping path is not aligned enough with
-  the existing ML pipeline and broader core ownership to continue recovery
-  directly.
+- Arc 9 PySide6 Predictor Schema / Mapping Recovery is complete: the Predict
+  schema adapter, table models, mapping/autofill flow, row-to-ML adapter, and
+  prediction result adapter now use the `core/predictor_schema`, `core/mapping`,
+  and `core/ml` package owners directly.
 - Architecture SSOT is updated from
   `docs/architecture/project_wide_architecture_restructuring_plan.md`: final
   target package owners are `core/common`, `core/predictor_schema`,
@@ -58,14 +58,11 @@
 
 ## Next Actions
 
-1. Arc 9 - PySide6 Predictor Schema / Mapping Recovery.
-2. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-3. Arc 11 - Trainer app foundation.
+1. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+2. Arc 11 - Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
-- Current PySide6 Predictor schema/mapping path remains blocked until
-  Arc 9 recovery is explicitly approved.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction

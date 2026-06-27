@@ -34,12 +34,12 @@ Boundary note:
   `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a
   PySide6 table adapter does not exist yet, record that adapter gap in the
   report and use the toolkit-neutral table contract as the acceptance contract.
-- PySide6 Predictor schema/mapping recovery depends on the project-wide
+- PySide6 Predictor schema/mapping recovery follows the project-wide
   architecture SSOT in `docs/architecture/project_architecture.md` and the
   restructuring plan in
   `docs/architecture/project_wide_architecture_restructuring_plan.md`.
-  Recovery starts after `core/predictor_schema`, `core/mapping`, and `core/ml`
-  package boundaries are introduced.
+  The recovered Predict path imports `core/predictor_schema`, `core/mapping`,
+  and `core/ml` package owners directly.
 - PySide6 Train/Predict follows the project-wide target package boundary. New
   PySide6 code must not deepen dependency on the current flat `core/` root
   beyond approved adapters. Current local schemas/mappings/adapters in PySide6

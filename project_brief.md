@@ -10,12 +10,12 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 9 ready - PySide6 Predictor Schema / Mapping Recovery.
+Current phase: Arc 10 ready - Prediction Worker/Progress.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
-exists. Further PySide6 Predictor schema/mapping recovery can proceed from the
-approved core package boundary foundation.
+exists. PySide6 Predictor schema/mapping recovery is complete enough to proceed
+to worker/progress and real-model smoke readiness.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -41,9 +41,9 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   Tkinter calculator path.
 - Train/Predict is a new PySide6 implementation, not a PyQt5 migration.
 - New Train/Predict package boundaries are `apps/predict/` and `apps/train/`.
-- Current PySide6 foundation work is production foundation, but it still has a
-  schema/mapping recovery gap against the existing ML pipeline and broader
-  core ownership.
+- Current PySide6 foundation work is production foundation. Arc 9 recovered the
+  schema/mapping path against the existing ML pipeline and broader core
+  ownership; worker/progress remains deferred to Arc 10.
 - The current `core/` root is no longer the active implementation surface for
   ML/schema/mapping/calculator owners. Arc 7 moved ML/schema/mapping
   implementation ownership under `core/ml`, `core/predictor_schema`, and
@@ -164,8 +164,8 @@ Completed milestones:
 
 Remaining gap:
 
-- PySide6 Predictor schema/mapping is not yet aligned with the existing ML
-  pipeline and project-wide core ownership.
+- Worker/progress/cancel and real-model success smoke remain deferred until
+  after schema/mapping recovery.
 
 ### Arc 5 — Project-wide Architecture Audit / Restructuring Plan
 
@@ -252,11 +252,19 @@ Goal:
 
 Target milestones:
 
-- Align PySide6 row/input adapters with `core/ml`, `core/predictor_schema`, and
-  `core/mapping`.
-- Remove or isolate local schema/mapping drift.
-- Preserve existing model artifact and prediction behavior unless a later
-  design explicitly authorizes changes.
+Status:
+
+- Complete.
+
+Completed milestones:
+
+- Aligned PySide6 schema adapter and table models with
+  `core/predictor_schema`.
+- Recovered mapping/autofill flow through `core/mapping` and app-side
+  controller boundaries.
+- Aligned row-to-ML and prediction result adapters with `core/ml`,
+  `core/predictor_schema`, and `core/mapping`.
+- Preserved existing model artifact and prediction behavior.
 
 ### Arc 10 — Prediction Worker/Progress
 
