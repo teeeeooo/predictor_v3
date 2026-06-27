@@ -53,14 +53,15 @@
 - Arc 8.5 Root Wrapper Retirement is complete: active production code and
   tests use package owner paths, and root ML/constants/calculator compatibility
   wrapper files have been deleted.
-- Arc 9.1 legacy `ui/` retirement is in progress: harvestable UX ideas have
-  been documented and `ui_common.visual_tokens` is the active toolkit-neutral
-  token owner for upcoming visual parity work.
+- Arc 9.1 legacy `ui/` retirement is complete: harvestable UX ideas have been
+  documented and `ui_common.visual_tokens` is the active toolkit-neutral token
+  owner for upcoming visual parity work.
 
 ## Next Actions
 
-1. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-2. Arc 11 - Trainer app foundation.
+1. Arc 9.5 - Predict / Train Visual UI Parity from Design Assets.
+2. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+3. Arc 11 - Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 

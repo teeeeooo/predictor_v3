@@ -10,12 +10,14 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 ready - Prediction Worker/Progress.
+Current phase: Arc 9.5 ready - Predict / Train Visual UI Parity from Design
+Assets.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
-exists. PySide6 Predictor schema/mapping recovery is complete enough to proceed
-to worker/progress and real-model smoke readiness.
+exists. PySide6 Predictor schema/mapping recovery and legacy `ui/` retirement
+are complete enough to proceed to visual parity from the approved design
+assets.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -265,6 +267,44 @@ Completed milestones:
 - Aligned row-to-ML and prediction result adapters with `core/ml`,
   `core/predictor_schema`, and `core/mapping`.
 - Preserved existing model artifact and prediction behavior.
+
+### Arc 9.1 — Legacy UI Retirement and ui_common Adoption
+
+Goal:
+
+- Retire the legacy `ui/` path and preserve useful visual/table ideas before
+  Predict/Train visual parity work.
+
+Status:
+
+- Complete.
+
+Completed milestones:
+
+- Harvested legacy dropdown, spreadsheet, and visual-token ideas into active
+  UI/UX docs.
+- Adopted `ui_common.visual_tokens` as the active toolkit-neutral visual token
+  owner for Arc 9.5.
+- Deleted the legacy `ui/` folder and legacy tests.
+- Removed active PyQt dependency wording from active code/docs while preserving
+  archive/history.
+
+### Arc 9.5 — Predict / Train Visual UI Parity from Design Assets
+
+Goal:
+
+- Bring the PySide6 Predict and Train surfaces visually closer to the approved
+  design reference assets without changing ML, mapping schema, calculator, or
+  worker/progress behavior.
+
+Target milestones:
+
+- Apply visual tokens from `ui_common.visual_tokens`.
+- Use `docs/designs/assets/predict_ref_img.png` and
+  `docs/designs/assets/train_ref_img.png` as non-pixel-perfect layout
+  references.
+- Improve Predict/Train surface hierarchy, spacing, table visual states, and
+  command/status presentation.
 
 ### Arc 10 — Prediction Worker/Progress
 
