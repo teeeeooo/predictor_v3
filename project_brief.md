@@ -10,20 +10,25 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: ML / Predictor Continuation — PySide6 Train/Predict Rewrite.
+Current phase: Project-wide Architecture Reset before PySide6 Predictor
+recovery.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
-ML / predictor path. The first current workstream is the approved PySide6
-Train/Predict rewrite, not an in-place PyQt5 migration.
+ML / predictor path, and the approved PySide6 Train/Predict foundation now
+exists. Further PySide6 Predictor schema/mapping recovery is paused until a
+project-wide architecture audit resolves broader core/package boundary
+questions.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
 1. keep completed calculator formula/UI/workflow contracts stable;
-2. establish the PySide6 Train/Predict app boundary and reusable Predict
-   workspace;
-3. stabilize ML feature, model artifact, preprocessing, and result mapping
+2. audit and reset the project-wide architecture before deeper Train/Predict
+   recovery;
+3. establish no-behavior-change core package boundaries through compatibility
+   wrappers;
+4. stabilize ML feature, model artifact, preprocessing, and result mapping
    contracts;
-4. reconnect predictor outputs to calculator inputs and later
+5. reconnect predictor outputs to calculator inputs and later
    ranking/recommendation workflows.
 
 ## 2. Current Architecture State
@@ -38,6 +43,13 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   Tkinter calculator path.
 - Train/Predict is a new PySide6 implementation, not a PyQt5 migration.
 - New Train/Predict package boundaries are `apps/predict/` and `apps/train/`.
+- Current PySide6 foundation work is production foundation, but it still has a
+  schema/mapping recovery gap against the existing ML pipeline and broader
+  core ownership.
+- The current `core/` root remains an accepted public surface, not the final
+  target package structure. Calculator engines, ML pipeline files, shared
+  utilities, constants, and schemas must not be moved ad hoc before the
+  project-wide architecture audit.
 - Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
   until a later explicit retirement slice.
 - `app_predict.py` is the Predict-only application entrypoint.
@@ -129,23 +141,105 @@ Target milestones:
   surfaces.
 - Forbid fixed UI row-count assumptions.
 
-### Arc 4 — Prediction Execution and Result Mapping
+### Arc 4 — Prediction Execution and Result Mapping Foundation
 
 Goal:
 
 - Connect PredictWorkspace rows to the existing prediction path through
-  adapters/services without changing ML algorithms.
+  adapters/services without changing ML algorithms, while keeping later
+  schema/mapping recovery explicit.
 
-Target milestones:
+Status:
+
+- Complete as production foundation, with schema/mapping recovery deferred
+  until the project-wide architecture reset.
+
+Completed milestones:
 
 - Add UI-row to ML-input adapter.
 - Add prediction service wrapper around the existing predictor path.
 - Add prediction result adapter for result-table display.
-- Support all-case, selected-case, and changed-case prediction scopes as
-  approved slices.
-- Keep progress/cancel behavior behind worker boundaries.
+- Add controller/workspace run-button integration.
+- Keep result lookup by internal `case_id`.
 
-### Arc 5 — Trainer Admin App
+Remaining gap:
+
+- PySide6 Predictor schema/mapping is not yet aligned with the existing ML
+  pipeline and project-wide core ownership.
+
+### Arc 5 — Project-wide Architecture Audit / Restructuring Plan
+
+Goal:
+
+- Audit the current project-wide architecture before deeper PySide6 Predictor
+  recovery.
+
+Target milestones:
+
+- Classify current `core/` flat public surface across ML pipeline, calculator
+  engines, shared utilities, constants, and schemas.
+- Decide owner boundaries and migration constraints for package restructuring.
+- Identify compatibility wrapper strategy and required import-smoke coverage.
+- Leave physical moves and target folder tree finalization to the approved
+  architecture SSOT update.
+
+### Arc 6 — Architecture SSOT Update
+
+Goal:
+
+- Update architecture owner docs with the audited target structure and
+  migration contract.
+
+Target milestones:
+
+- Define the approved package boundary target for ML, calculators, common
+  utilities, constants/schema, and wrappers.
+- Record what remains public compatibility surface during migration.
+- Keep detailed implementation slices in `docs/WORK_PLAN.md`, not this brief.
+
+### Arc 7 — Core Package Boundary Foundation
+
+Goal:
+
+- Establish no-behavior-change core package boundaries using compatibility
+  wrappers.
+
+Target milestones:
+
+- Preserve existing imports while new owner packages are introduced.
+- Use compatibility wrappers until callers are explicitly migrated.
+- Verify with focused tests and import smoke.
+- Do not change calculator behavior, ML algorithms, schemas, fixtures, golden
+  data, or public APIs.
+
+### Arc 8 — PySide6 Predictor Schema/Mapping Recovery
+
+Goal:
+
+- Recover the PySide6 Predictor schema/mapping path after project-wide
+  architecture ownership is reset.
+
+Target milestones:
+
+- Align PySide6 row/input adapters with the approved ML pipeline contract.
+- Remove or isolate local schema/mapping drift.
+- Preserve existing model artifact and prediction behavior unless a later
+  design explicitly authorizes changes.
+
+### Arc 9 — Prediction Worker/Progress
+
+Goal:
+
+- Move large-batch prediction execution behind approved worker/progress/cancel
+  boundaries.
+
+Target milestones:
+
+- Add worker boundary after schema/mapping recovery is stable.
+- Add progress/cancel UI behavior without changing core prediction semantics.
+- Complete real-model smoke readiness when a valid model artifact is available.
+
+### Arc 10 — Trainer Admin App Foundation
 
 Goal:
 
@@ -161,7 +255,7 @@ Target milestones:
 - Add model artifact/status visibility.
 - Keep mapping update behavior behind a service/adapter boundary.
 
-### Arc 6 — ML Pipeline Stabilization
+### Arc 11 — ML Pipeline Stabilization
 
 Goal:
 
@@ -178,7 +272,7 @@ Target milestones:
 - Add focused ML tests around feature names, leakage, and prediction/training
   boundary behavior.
 
-### Arc 7 — Calculator to Predictor Integration
+### Arc 12 — Calculator to Predictor Integration
 
 Goal:
 

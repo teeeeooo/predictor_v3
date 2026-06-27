@@ -34,6 +34,11 @@ Boundary note:
   `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` as applicable. If a
   PySide6 table adapter does not exist yet, record that adapter gap in the
   report and use the toolkit-neutral table contract as the acceptance contract.
+- PySide6 Predictor schema/mapping recovery depends on the project-wide
+  architecture audit and core package boundary decision. PySide6 apps must not
+  deepen dependency on the current flat `core/` layout beyond approved adapters.
+  Current local schemas/mappings in PySide6 are recovery targets; recovery
+  implementation starts after the project-wide architecture reset.
 
 ## 2. Implementation Principle
 

@@ -33,22 +33,34 @@
   implemented: row input conversion, Qt-free prediction service/controller,
   case_id-based result mapping, and PredictWorkspace run-button integration are
   in place without changing core ML behavior.
+- ML / Predictor continuation is paused for a project-wide architecture reset:
+  the current PySide6 Predictor schema/mapping path is not aligned enough with
+  the existing ML pipeline and broader core ownership to continue recovery
+  directly.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Resolve Arc 4 follow-up: prediction worker/progress boundary and real-model
-   smoke readiness.
-2. Then start Arc 5: Trainer Admin App foundation.
+1. Project-wide architecture audit / restructuring plan.
+2. Architecture SSOT update.
+3. Core package boundary foundation with no behavior change, compatibility
+   wrappers, and focused tests/import smoke.
+4. PySide6 Predictor schema/mapping recovery.
+5. Prediction worker/progress and real-model smoke readiness.
+6. Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
+- Current PySide6 Predictor schema/mapping path is not aligned with the existing
+  ML pipeline and project-wide core ownership.
+- Project-wide architecture audit must decide the core package boundary and
+  compatibility wrapper strategy before further PySide6 recovery.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
   execution is foundation-only and should not be treated as final large-batch
-  behavior.
+  behavior. This follows the architecture reset and schema/mapping recovery.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

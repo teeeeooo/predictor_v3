@@ -4,13 +4,24 @@
 
 ## 1. 파일 구조 (File Structure)
 
-프로젝트는 기능별로 엄격히 분리된 구조를 가집니다.
+프로젝트는 기능별 분리를 지향하지만, 현재 `core/` root에는 ML pipeline,
+calculator engines, shared utilities, constants/schema가 flat하게 공존하는
+공개 표면이 남아 있습니다. 이 flat 구조는 현재 호환 표면으로 수용하되
+최종 목표 구조로 확정하지 않습니다.
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
   - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등). 현재 core root에 존재하는 flat calculator 파일들은 레거시 및 현재 공개 인터페이스(public surface)입니다. 신규 규격이나 헬퍼 파일들을 core root에 flat하게 추가하는 것은 별도의 owner/package 설계 심사 없이 보류/금지됩니다. (핵심 구조의 물리적 폴더 분류는 이번 작업에서 수행하지 않고 유지합니다.)
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
+- **Project-wide architecture reset note**: `core/calculator_*.py`, ML pipeline
+  files, shared utilities, constants, and schemas must not be moved ad hoc. A
+  project-wide architecture audit will decide the target package structure for
+  calculators, ML, common utilities, constants/schema, and compatibility
+  wrappers. Any no-behavior-change package boundary foundation must preserve
+  existing imports through wrappers until callers are explicitly migrated. The
+  detailed target folder tree is deferred to the Architecture SSOT update after
+  that audit.
 - **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
   - 기존 `app_train.py`와 `app_predict.py`가 사용하는 레거시 Train/Predict 화면 경로이며, 신규/유지 대상이 아니라 PySide6 재작성 전환 중 reference-only / legacy path로 취급합니다.
   - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
@@ -22,7 +33,7 @@
       - **Reusable UI / Common Shell**: `metric_input_table.py`, `result_panel.py` 등 공용 재사용 컴포넌트와 윈도우 쉘 파일들이 위치합니다.
       - **Feature Packages**: `en14825/`, `batch/` 등 특정 계산 규격/피처 전용 패키지로, 피처별 model, adapter, table model, helper 파일들을 캡슐화하여 둡니다.
       - **`sections/`**: 개별 계산 섹션을 조립하는 thin glue 및 registration/routing 성격의 코드로 역할을 제한하며, 피처 전용 model, adapter, table model 파일들을 흩뿌려 두는 dumping ground로 사용하지 않습니다.
-  - **`apps/train/` 및 `apps/predict/`**: PySide6 Train/Predict rewrite의 승인된 신규 package boundary입니다. 물리적 폴더 생성은 skeleton slice에서 수행하며, 새 Train/Predict PySide6 production code는 legacy `ui/`가 아니라 이 경계 아래에 둡니다.
+  - **`apps/train/` 및 `apps/predict/`**: PySide6 Train/Predict rewrite의 승인된 신규 package boundary입니다. 물리적 폴더 생성은 foundation slice에서 수행되었으며, 새 Train/Predict PySide6 production code는 legacy `ui/`가 아니라 이 경계 아래에 둡니다.
 - **`data/`**: 규격 설정(JSON) 및 학습 데이터
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
 - **`tests/`**: 테스트 코드 영역으로, 소스 코드 소유주(source owner) 및 패키지 경계를 그대로 반영한 focused tests 구성을 최우선으로 합니다. (예: `test_apps_calculator_ui_en14825.py`)
