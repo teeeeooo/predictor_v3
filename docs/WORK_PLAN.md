@@ -46,23 +46,24 @@
   `core/ml`, `core/predictor_schema`, and `core/mapping` are the package owners
   for ML implementation, predictor schema, and mapping path/repository/update
   logic; root modules remain compatibility wrappers.
+- Arc 8 Calculator Engine Package Restructure is complete:
+  `core/calculators`, `core/calculators/adapters`, and
+  `core/calculators/standards` are the implementation owners for calculator
+  profiles/dispatcher, calculator adapters, and standard engines; root
+  `core/calculator_*` modules remain compatibility wrappers.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Arc 8 - Calculator Engine Package Restructure.
-2. Arc 9 - PySide6 Predictor schema/mapping recovery.
-3. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-4. Arc 11 - Trainer app foundation.
+1. Arc 9 - PySide6 Predictor Schema / Mapping Recovery.
+2. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+3. Arc 11 - Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
-- Next code work must keep calculator behavior unchanged while establishing
-  calculator package boundaries.
-- Compatibility wrappers are transition safety, not final architecture; physical
-  implementation moves are later approved migration slices.
-- Calculator engine movement is excluded from Arc 7 and belongs to Arc 8.
+- Compatibility wrappers are transition safety, not final architecture; caller
+  migration and wrapper retirement require later approved migration slices.
 - Current PySide6 Predictor schema/mapping path remains blocked until
   Arc 9 recovery is explicitly approved.
 - Real model prediction success smoke is not complete in this checkout because

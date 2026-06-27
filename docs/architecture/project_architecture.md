@@ -12,7 +12,7 @@ calculator engines, shared utilities, constants/schema가 flat하게 공존하�
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
-  - `calculator_*.py`: 규격별 효율 계산 엔진 (ISO16358, KS C 9306, AHRI, EN14825, AS/NZS compatibility 등). 현재 core root에 존재하는 flat calculator 파일들은 레거시 및 현재 공개 인터페이스(public surface)입니다. 신규 규격이나 헬퍼 파일들을 core root에 flat하게 추가하는 것은 별도의 owner/package 설계 심사 없이 보류/금지됩니다. (핵심 구조의 물리적 폴더 분류는 이번 작업에서 수행하지 않고 유지합니다.)
+  - `calculator_*.py`: 규격별 효율 계산 엔진의 root compatibility public surface. 현재 구현 owner는 `core/calculators/`, `core/calculators/adapters/`, `core/calculators/standards/`이며, root 파일은 transition safety wrapper입니다. 신규 규격이나 헬퍼 파일들을 core root에 flat하게 추가하는 것은 별도의 owner/package 설계 심사 없이 보류/금지됩니다.
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
 - **Project-wide architecture reset note**: `core/calculator_*.py`, ML pipeline
@@ -99,10 +99,11 @@ Migration principles:
   from approved package owner paths, not deeper flat-root compatibility paths.
 - Arc 7 owns ML, predictor schema, and mapping package restructure:
   `core/ml`, `core/predictor_schema`, and `core/mapping`.
-- Calculator engine/package movement is separate Arc 8 work because calculator
-  engines, dispatcher/profiles, adapters, tests, and golden behavior require a
-  separate focused migration boundary.
-- Calculator engines move toward `core/calculators/standards/`.
+- Arc 8 owns the calculator package restructure:
+  `core/calculators`, `core/calculators/adapters`, and
+  `core/calculators/standards`.
+- Calculator engines now live under `core/calculators/standards/`; root
+  `core/calculator_*` modules are compatibility wrappers.
 - ML pipeline ownership moves toward `core/ml/`.
 - `core/constants.py` responsibilities split toward predictor schema, ML
   feature/artifact, and mapping owners.
@@ -254,23 +255,23 @@ resolver는 explicit selector/manifest/registry contract를 우선한다. filena
 
 계산기 모듈은 세 축으로 분리한다. resolver는 `calculator_id`를 통해 세 모듈을 명시적으로 구분해야 하며, 한 모듈에 다른 규격의 책임을 합치지 않는다. `data/region_configs/`의 JSON은 어느 한 calculator의 전용 저장소가 아니며, 아래 boundary가 어떤 JSON을 어떤 calculator가 직접 해석하는지를 정한다.
 
-- `core/calculator_iso16358.py` — ISO 16358 전용 계산기.
+- `core/calculators/standards/iso16358.py` — ISO 16358 전용 계산기. `core/calculator_iso16358.py`는 compatibility wrapper이다.
   - ISO16358-1 CSPF, ISO16358-2 HSPF를 담당한다.
   - Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile을 region config (`data/region_configs/hong_kong.json`, `india_iseer.json`, `saso.json`, `iso_t1_default_2point.json` 등)로 구현하는 대표 사례이다.
   - resolver에서는 `calculator_id=iso16358`로 식별한다.
-- `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator.
+- `core/calculators/standards/ks_c9306.py` — KS C 9306 전용 special calculator. `core/calculator_ks_c9306.py`는 compatibility wrapper이다.
   - KS CSPF, KS HSPF를 담당한다.
   - AHRI / EN14825처럼 ISO common path와 분리된 special calculator로 취급한다.
   - `data/region_configs/korea.json`을 사용할 수 있으나, 해당 config는 ISO common path가 아니라 `KSC9306Calculator`가 직접 해석해야 한다. ISO16358 common path와 KS region config 해석을 섞지 않는다.
   - resolver에서는 `calculator_id=ks_c9306`으로 식별한다.
-- `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용.
+- `core/calculators/standards/asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. `core/calculator_asnzs_hspf_excel.py`는 compatibility wrapper이다.
   - ISO common HSPF/CSPF expected와 분리된 explicit opt-in compatibility calculator이다.
   - AS/NZS workbook oracle convention을 ISO common path에 섞지 않으며, 자체 compatibility config로 opt-in 한다.
   - Current workbook HSPF/CSPF snapshot exact-match는 `ASNZS_EXCEL_COMPAT` fixture namespace에서만 다룬다. Historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
   - resolver에서는 `calculator_id=asnzs_excel_hspf`로 식별한다.
 
 AHRI 등 다른 special calculator도 동일 원칙을 따른다. AHRI calculator는 `data/region_configs/usa.json`(SEER2/cooling)과 `data/region_configs/usa_hspf2.json`(HSPF2/heating)을 사용할 수 있으며, 이 JSON들은 ISO common path가 아니라 AHRI calculator가 해석한다.
-EN14825 calculator는 `data/region_configs/en14825_scop.json`(SCOP/heating)을 사용할 수 있으며, resolver에서는 `calculator_id=en14825`로 식별한다.
+EN14825 calculator는 `data/region_configs/en14825.json`을 사용할 수 있으며, resolver에서는 `calculator_id=en14825`로 식별한다.
 
 resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고, `region` 또는 `standard` metadata만으로 KS C 9306 또는 AS/NZS Excel compatibility를 자동 활성화하지 않는다.
 
@@ -279,9 +280,9 @@ resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고,
 위 boundary는 목표 구조이며, 2026-05-17 series reset 작업에서 기존 ISO 구현은 legacy/reference로 격하되고 새 파일들이 이 책임 경계에 맞춰 재작성되고 있다.
 
 - 기존 혼재 구현은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
-- 새 `core/calculator_iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
-- `core/calculator_ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
-- `core/calculator_asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook HSPF/CSPF snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
+- `core/calculators/standards/iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
+- `core/calculators/standards/ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
+- `core/calculators/standards/asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook HSPF/CSPF snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
 - `data/region_configs/`는 ISO 전용이 아닌 다중 calculator 공유 정적 standard/region config 저장소이며, 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - tests 정책: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator 기준으로 이전하고, diagnostic/workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리한다. (자세한 실행 순서는 `docs/WORK_PLAN.md`와 `docs/REFACTOR_PLAN.md` 참조.)
 - profile / dispatcher / UI 연결은 새 calculator series boundary를 유지한 상태에서만 확장한다.

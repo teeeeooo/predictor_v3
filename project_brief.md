@@ -10,20 +10,18 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Project-wide Architecture Reset before PySide6 Predictor
-recovery.
+Current phase: Arc 9 ready - PySide6 Predictor Schema / Mapping Recovery.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
-exists. Further PySide6 Predictor schema/mapping recovery is paused until a
-project-wide architecture audit resolves broader core/package boundary
-questions.
+exists. Further PySide6 Predictor schema/mapping recovery can proceed from the
+approved core package boundary foundation.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
 1. keep completed calculator formula/UI/workflow contracts stable;
-2. audit and reset the project-wide architecture before deeper Train/Predict
-   recovery;
+2. keep the project-wide architecture reset boundaries stable during deeper
+   Train/Predict recovery;
 3. establish no-behavior-change core package boundaries through compatibility
    wrappers;
 4. stabilize ML feature, model artifact, preprocessing, and result mapping
@@ -46,12 +44,11 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
 - Current PySide6 foundation work is production foundation, but it still has a
   schema/mapping recovery gap against the existing ML pipeline and broader
   core ownership.
-- The current `core/` root remains an accepted public surface, not the final
-  target package structure. Calculator engines, ML pipeline files, shared
-  utilities, constants, and schemas must not be moved ad hoc. The target
-  package direction is now owned by `docs/architecture/project_architecture.md`
-  using `docs/architecture/project_wide_architecture_restructuring_plan.md` as
-  source input.
+- The current `core/` root remains an accepted compatibility public surface,
+  not the final target package structure. Arc 7 moved ML/schema/mapping
+  implementation ownership under `core/ml`, `core/predictor_schema`, and
+  `core/mapping`; Arc 8 moved calculator implementation ownership under
+  `core/calculators`. Root compatibility wrappers remain transition safety.
 - Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
   until a later explicit retirement slice.
 - `app_predict.py` is the Predict-only application entrypoint.
@@ -233,24 +230,24 @@ Target milestones:
 
 Goal:
 
-- Move calculator implementation ownership under `core/calculators/` after Arc
-  7 closes.
+- Calculator implementation ownership now lives under `core/calculators/`
+  after Arc 7 closeout.
 
 Target milestones:
 
-- Add calculators package shell.
-- Move dispatcher and profiles toward `core/calculators/`.
-- Move calculator adapters toward `core/calculators/adapters/`.
-- Move calculator engines toward `core/calculators/standards/`.
-- Preserve calculator formulas, config, public result contracts, focused tests,
-  and golden behavior.
+- Completed: calculators package shell.
+- Completed: dispatcher and profiles moved to `core/calculators/`.
+- Completed: calculator adapters moved to `core/calculators/adapters/`.
+- Completed: calculator engines moved to `core/calculators/standards/`.
+- Completed: calculator formulas, config, public result contracts, focused
+  tests, and golden behavior preserved.
 
 ### Arc 9 — PySide6 Predictor Schema / Mapping Recovery
 
 Goal:
 
-- Recover the PySide6 Predictor schema/mapping path after Arc 7 package owners
-  exist.
+- Recover the PySide6 Predictor schema/mapping path after Arc 7 and Arc 8
+  package owners exist.
 
 Target milestones:
 
