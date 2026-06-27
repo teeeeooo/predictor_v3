@@ -52,6 +52,10 @@
   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
   warning-first workflow와 checklist를 참고하여 preflight 및 regenerate/report
   필요 여부를 판단한다.
+- report-backed source 구조 변경은 `AGENT_CHANGE_GATES.md`의
+  reuse/commonization decision을 남긴다. 반복 helper, local hotfix, mapping,
+  formatting, lifecycle, routing, sizing/style 정책이 sibling surface에
+  반복될 가능성을 먼저 확인한다.
 - public API, diagnostics schema, JSON key, 함수명은 사용자 승인 없이 변경하지
   않는다.
 - 계산기 workflow owner: `docs/agent_workflows/CALCULATOR_WORKFLOW.md`.
@@ -165,6 +169,10 @@ content-hugging shell, input/result/detail/export surface 중 하나를 만들�
 수정하면 matching gate와 `docs/ui_ux/` owner 문서만 확인한다. Router에는 owner
 routing만 둔다.
 
+반복 UI policy/helper 후보는 UI owner 문서와 `AGENT_CHANGE_GATES.md`의
+reuse/commonization decision으로 처리한다. Calculator 전용 규칙으로 박지
+말고 project-wide source boundary로 판단한다.
+
 ### 1. Commit / Git 정리
 
 읽을 문서:
@@ -221,6 +229,8 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 6. 새 source/surface 또는 hotspot 책임 추가는
    `docs/agent_workflows/AGENT_CHANGE_GATES.md`의 pre-write boundary와
    structured report contract를 따른다.
+7. 기존 owner/helper를 재사용하지 않는 경우 no-reuse reason을 report에
+   남기고, 공통화가 별도 설계가 필요하면 implementation에 섞지 않는다.
 
 ### 4. Smoke / Golden / Validation test 추가
 

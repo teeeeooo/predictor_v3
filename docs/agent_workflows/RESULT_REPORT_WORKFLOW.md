@@ -108,6 +108,13 @@ component is created or an existing stable path is replaced/extended, include a
 short reference parity section: whether an existing reference was checked, why it
 was or was not reused, and any unresolved parity gaps.
 
+For report-backed source structure changes, include a compact
+reuse/commonization decision matching the structured `change_gate` value:
+checked sibling surfaces or owners, reuse outcome, repeated local-policy risk,
+and no-reuse or design-deferred reason. The report does not need a broad
+duplicate inventory; the goal is to make local hotfix and helper repetition
+visible before it hardens into a pattern.
+
 For structure-impacting source changes, include a compact code map judgment from
 `docs/agent_workflows/DIFF_READ_BUDGET.md`:
 

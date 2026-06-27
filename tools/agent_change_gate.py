@@ -50,6 +50,16 @@ def evaluate_cached(index: GitIndex) -> list[Finding]:
             structural = _check_source(index, change, gate, findings) or structural
     if structural and (gate is None or gate.code_map_check == "not_required"):
         findings.append(Finding("error", CODE_MAP_PATH, "structural source change requires code_map_check judgment"))
+    if structural and (
+        gate is None or gate.reuse_commonization == "not_required"
+    ):
+        findings.append(
+            Finding(
+                "error",
+                "change_gate",
+                "structural source change requires reuse_commonization decision",
+            )
+        )
     return findings
 
 

@@ -18,6 +18,7 @@ change_gate:
   hotspot_delta: accepted-for-slice
   code_map_check: regenerated
   ui_literal_exemption: none
+  reuse_commonization: checked
   report_exemption: none
   read_ledger: included
 """
@@ -57,6 +58,13 @@ def _stage_report(repo: Path, name: str = "500_gate.md", text: str = VALID_GATE)
 
 def _messages(repo: Path) -> list[str]:
     return [item.message for item in evaluate_cached(GitIndex(repo))]
+
+
+def _findings(repo: Path) -> list[tuple[str, str]]:
+    return [
+        (item.severity, item.message)
+        for item in evaluate_cached(GitIndex(repo))
+    ]
 
 
 def test_change_gate_and_manifest_parsers_validate_closed_schemas() -> None:
@@ -215,3 +223,29 @@ def test_hotspot_growth_requires_explicit_decision(repo: Path) -> None:
     _stage_report(repo, text=VALID_GATE.replace("accepted-for-slice", "none"))
 
     assert any("hotspot net +40 LOC" in message for message in _messages(repo))
+
+
+def test_structural_source_requires_reuse_commonization_decision(repo: Path) -> None:
+    target = repo / "tools" / "new_helper.py"
+    target.write_text("def helper():\n    return 1\n", encoding="utf-8")
+    _git(repo, "add", "tools/new_helper.py")
+    _stage_report(
+        repo,
+        text=VALID_GATE.replace(
+            "reuse_commonization: checked",
+            "reuse_commonization: not_required",
+        ),
+    )
+
+    assert any(
+        "requires reuse_commonization decision" in message for message in _messages(repo)
+    )
+
+
+def test_docs_only_change_does_not_require_reuse_commonization_decision(repo: Path) -> None:
+    docs = repo / "docs" / "note.md"
+    docs.parent.mkdir()
+    docs.write_text("docs only\n", encoding="utf-8")
+    _git(repo, "add", "docs/note.md")
+
+    assert not _findings(repo)

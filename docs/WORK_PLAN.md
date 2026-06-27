@@ -38,6 +38,9 @@
   toggle candidates require the recorded design/guard boundaries.
 - Report lifecycle cleanup is complete; active reports now retain only the
   near-term implementation decision reports and unresolved design-gate evidence.
+- Agent gate/workflow hardening now requires report-backed structural source
+  changes to record reuse/commonization decisions and warns on Phase 2 UI
+  presentation literal candidates.
 
 ## Next Actions
 

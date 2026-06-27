@@ -113,6 +113,7 @@ change_gate:
   hotspot_delta: none
   code_map_check: not_required
   ui_literal_exemption: none
+  reuse_commonization: not_required
   report_exemption: none
   read_ledger: not_required
 ```
@@ -134,6 +135,20 @@ Allowed `ui_literal_exemption` values:
 and why a token is not appropriate in that slice. Ordinary prose, a manifest,
 or a commit trailer cannot grant this exemption.
 
+Allowed `reuse_commonization` values:
+
+- `not_required`
+- `checked`
+- `reused-existing-owner`
+- `local-with-reason`
+- `design-deferred`
+
+Structural source changes cannot use `not_required`. Use `checked` when a
+bounded sibling/owner search found no reuse candidate, `reused-existing-owner`
+when an existing owner or helper is used, `local-with-reason` when local logic
+is deliberately retained, and `design-deferred` when commonization is plausible
+but belongs in a separate design/report slice.
+
 Allowed `report_exemption` values:
 
 - `none`
@@ -151,7 +166,8 @@ Allowed `read_ledger` values:
 The future gate tool must parse only this structured block for pass/fail. It
 must not infer gate state from ordinary report prose. Add one short reason for
 `new_source: justified`, nontrivial hotspot decisions, `code_map_check:
-skipped`, non-`none` exemptions, and `read_ledger: skipped`.
+skipped`, non-`not_required` `reuse_commonization` values, non-`none`
+exemptions, and `read_ledger: skipped`.
 
 ## Staged Report Association
 
@@ -266,6 +282,7 @@ Minimum staged checks:
 | Existing hotspot with net +40 LOC or more | Require an accepted hotspot decision. |
 | Relevant change without associated staged report | Fail unless valid exemption. |
 | Structural source change without code-map judgment | Fail. |
+| Structural source change without reuse/commonization decision | Fail. |
 | Staged path outside manifest `allowed_paths` | Fail. |
 
 Production source roots are `core/`, `ui/`, `apps/`, and `scripts/`. Tool source
@@ -278,6 +295,25 @@ delta between the base/index blobs, not raw diff additions, for the +40 rule.
 
 Structural changes include new/moved/deleted source, new helpers or surfaces,
 owner/commonization changes, and source splits or merges.
+
+### Reuse / Commonization Decision
+
+This gate is project-wide, not calculator-specific. Before report-backed source
+structure changes, check whether the change repeats local logic that should be
+owned by an existing helper, adapter, controller, policy, or sibling surface.
+
+The report should record the minimum decision evidence:
+
+- sibling surfaces or existing owner/helper checked;
+- whether an existing owner/helper was reused;
+- whether the change repeats mapping, formatting, routing, lifecycle, sizing,
+  validation, I/O, or orchestration policy;
+- no-reuse reason when local implementation remains appropriate;
+- whether a design/report slice is required before commonization.
+
+The staged checker validates only the structured value. It does not judge
+whether the architecture decision is correct; that remains a human review and
+report-quality responsibility.
 
 ### UI Magic Literal And Token Policy
 
@@ -301,6 +337,18 @@ Phase 1 checks only newly added staged lines in production UI Python under
   property returns;
 - literal `geometry("<width>x<height>")` calls;
 - `#RRGGBB` string literals.
+
+Phase 2 is warning-first only. It flags newly added staged UI source lines that
+introduce likely presentation literals such as numeric `width=`, `height=`,
+`padx=`, or `pady=` keyword values, plus simple named colors like `white`,
+`gray`, or `red`. Runtime sentinels `0` and `1`, token owners, approved
+exemptions, tests, core/domain/config paths, and existing grandfathered lines
+remain outside the hard-fail policy.
+
+Phase 2 warnings should prompt a report decision: use an existing token/helper,
+add a meaningful token owner when the value is reusable, or record why local
+presentation policy is acceptable for the slice. They do not block commits by
+themselves.
 
 `apps/calculator/ui/layout_constants.py` and UI files whose basename contains
 `token` are token owners and are exempt from these detections. Tests are not
@@ -349,6 +397,8 @@ Current status after this owner document lands:
 - router links: implemented;
 - `check_agent_change_gate.py --cached`: implemented and focused-tested;
 - staged UI magic-literal Phase 1 gate: implemented and focused-tested;
+- staged UI literal Phase 2 warnings: implemented and focused-tested;
+- reuse/commonization decision gate: implemented and focused-tested;
 - pre-commit/commit-msg hooks: implemented and focused-tested;
 - profile-tab lifecycle ownership structure gate: implemented and focused-tested;
 - pre-push and CI branch mode: pending.

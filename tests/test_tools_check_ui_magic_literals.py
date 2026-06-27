@@ -16,6 +16,7 @@ change_gate:
   hotspot_delta: none
   code_map_check: regenerated
   ui_literal_exemption: none
+  reuse_commonization: checked
   report_exemption: none
   read_ledger: included
 """
@@ -58,6 +59,14 @@ def _errors(repo: Path) -> list[str]:
     ]
 
 
+def _warnings(repo: Path) -> list[str]:
+    return [
+        f"{item.path}: {item.message}"
+        for item in evaluate_cached(GitIndex(repo))
+        if item.severity == "warning"
+    ]
+
+
 def test_row_header_literal_in_production_ui_is_rejected(repo: Path) -> None:
     _stage(
         repo,
@@ -85,6 +94,24 @@ def test_color_literal_in_production_ui_is_rejected(repo: Path) -> None:
     _stage_report(repo)
 
     assert any("color" in error for error in _errors(repo))
+
+
+def test_phase_two_ui_literal_is_warning_only(repo: Path) -> None:
+    _stage(repo, "apps/calculator/ui/view.py", "button.configure(width=20, padx=4)\n")
+    _stage_report(repo)
+
+    assert not _errors(repo)
+    warnings = _warnings(repo)
+    assert any("width" in warning for warning in warnings)
+    assert any("padx" in warning for warning in warnings)
+
+
+def test_phase_two_named_color_is_warning_only(repo: Path) -> None:
+    _stage(repo, "apps/calculator/ui/view.py", 'label.configure(background="white")\n')
+    _stage_report(repo)
+
+    assert not _errors(repo)
+    assert any("named color" in warning for warning in _warnings(repo))
 
 
 @pytest.mark.parametrize(

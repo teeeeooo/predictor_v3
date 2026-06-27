@@ -42,6 +42,8 @@ Before editing UI surface code:
 
 - check the target owner file size (`wc -l`) when adding a new UI
   responsibility or helper-like behavior;
+- check sibling surfaces before adding local lifecycle, mapping, formatting,
+  sizing, style, copy/export, or validation logic that is likely to repeat;
 - treat soft LOC limits, including 400 LOC warnings, as preflight triggers,
   not automatic hard failures or automatic extraction requirements;
 - if the owner file is near or over a soft limit, first decide whether the new
@@ -51,6 +53,11 @@ Before editing UI surface code:
   split code only to satisfy a line-count number;
 - for structure-impacting UI work, `python3 -B tools/check_code_structure.py`
   can be used as a preflight guard, not only as a commit-time validator.
+
+For report-backed UI source changes, record the reuse/commonization decision
+expected by `AGENT_CHANGE_GATES.md`: checked sibling surfaces, reuse outcome,
+and the no-reuse or design-deferred reason. This is warning-first evidence, not
+permission to start a broad refactor inside a narrow UI slice.
 
 ## Post-implementation Soft Warning Triage
 
@@ -126,6 +133,11 @@ status/error handling, copy, or export:
 - keep domain result schemas separate from UI table/export schemas;
 - prefer existing copy/export helpers and report gaps before adding new export
   paths.
+
+If two or more profile/result/detail/export surfaces repeat the same coercion,
+mapping, summary, status, or lifecycle policy, pause for a bounded owner
+decision. Keep profile-specific field maps, labels, precision, and schema
+contracts local unless the repeated policy itself has a clear common owner.
 
 ## Boundary Gate
 

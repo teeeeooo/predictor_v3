@@ -14,6 +14,13 @@ _HOTSPOT_VALUES = {
 }
 _CODE_MAP_VALUES = {"not_required", "checked", "skipped", "regenerated", "no-change"}
 _UI_LITERAL_EXEMPTION_VALUES = {"none", "approved-for-slice"}
+_REUSE_COMMONIZATION_VALUES = {
+    "not_required",
+    "checked",
+    "reused-existing-owner",
+    "local-with-reason",
+    "design-deferred",
+}
 _EXEMPTION_VALUES = {
     "none",
     "user-approved-docs-only",
@@ -37,6 +44,7 @@ class ChangeGate:
     hotspot_delta: str
     code_map_check: str
     ui_literal_exemption: str
+    reuse_commonization: str
     report_exemption: str
     read_ledger: str
 
@@ -57,6 +65,7 @@ def parse_change_gate(source: str) -> ChangeGate:
         "hotspot_delta",
         "code_map_check",
         "ui_literal_exemption",
+        "reuse_commonization",
         "report_exemption",
         "read_ledger",
     }
@@ -71,6 +80,11 @@ def parse_change_gate(source: str) -> ChangeGate:
             gate.ui_literal_exemption,
             _UI_LITERAL_EXEMPTION_VALUES,
             "ui_literal_exemption",
+        ),
+        (
+            gate.reuse_commonization,
+            _REUSE_COMMONIZATION_VALUES,
+            "reuse_commonization",
         ),
         (gate.report_exemption, _EXEMPTION_VALUES, "report_exemption"),
         (gate.read_ledger, _LEDGER_VALUES, "read_ledger"),
