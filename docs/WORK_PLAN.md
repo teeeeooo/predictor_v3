@@ -27,8 +27,8 @@
 
 ## Current Slice
 
-- Calculator lifecycle/detail/empty-state implementation and manual smoke
-  closeout are complete.
+- Calculator lifecycle/detail/empty-state implementation, helper/batch cleanup,
+  Hong Kong HSPF batch work, and manual smoke closeout are complete.
 - Canonical launch, empty batch inputs, and semantic EN14825 cell backgrounds
   are manually confirmed.
 - The five approved legacy UI token cleanup slices are complete, with remaining
@@ -40,18 +40,17 @@
 - Hong Kong HSPF batch visual smoke is manually confirmed: `일괄 입력`
   button, dialog open, 7 Full / 7 Half edits, HSPF/HSTL/HSEC result display,
   and close/reopen snapshot retention.
-- Report lifecycle cleanup is complete; active reports now retain only the
-  near-term implementation decision reports and unresolved design-gate evidence.
+- Report lifecycle cleanup for the completed calculator helper/batch/detail and
+  manual-smoke reports is complete.
 - Agent gate/workflow hardening now requires report-backed structural source
   changes to record reuse/commonization decisions and warns on Phase 2 UI
   presentation literal candidates.
 
 ## Next Actions
 
-1. Run report lifecycle cleanup for completed calculator helper/batch/detail
-   reports.
-2. Select the next approved calculator detail/manual-smoke or empty-state slice
-   after active reports are reduced.
+1. Run a calculator final closeout audit.
+2. Or select the next approved calculator detail/manual-smoke or empty-state
+   slice.
 
 ## Active Blockers / Open Decisions
 
@@ -84,6 +83,8 @@
   `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
 - AHRI calculator and supporting UI/workflow closeout:
   `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
+- Calculator helper/batch/detail lifecycle closeout:
+  `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - Calculator sample/default inventory and empty-state policy:

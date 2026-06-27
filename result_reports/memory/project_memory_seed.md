@@ -42,6 +42,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md` (covered reports `417-444`)
 - `result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md` (covered reports `449-461`)
 - `result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md` (covered reports `448`, `462-475`, with `476-479` kept active as next-decision evidence)
+- `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md` (covered reports `476-479`, `481-489`)
 
 ## Scope and Non-goals
 
@@ -904,6 +905,21 @@ entries:
       - detail toggle
     assertionStatus: verified
     source: result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md (covered reports 448, 462-475; active reports 476-479 retained)
+
+  - type: decision
+    topic: calculator helper batch detail lifecycle closeout
+    content: The post-closeout calculator helper bundle is implemented and lifecycle-closed: detail formatting uses pure display coercion helpers while profile mapping and precision remain local; matrix batch recalculation uses BatchMatrixCalculationController; batch dialog state uses BatchDialogHandle; detail show/hide mechanics use DetailPanelVisibility; batch open buttons use `일괄 입력`; Hong Kong HSPF batch is implemented and visually smoked with HSPF/HSTL/HSEC results; the duplicate empty-state line was not present.
+    keywords:
+      - predictor_v3
+      - detail formatting helper
+      - BatchMatrixCalculationController
+      - BatchDialogHandle
+      - DetailPanelVisibility
+      - Hong Kong HSPF
+      - batch smoke
+    assertionStatus: verified
+    source: result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md (covered reports 476-479, 481-489)
+    supersedes: result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md active reports 476-479 retained status
 ```
 
 ## Known Gaps
