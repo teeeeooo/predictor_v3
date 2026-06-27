@@ -13,8 +13,13 @@ from tkinter import ttk
 
 from core.calculator_dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
+from apps.calculator.ui.batch_dialogs.profiles.hong_kong_hspf import (
+    HongKongHspfBatchDialog,
+)
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
@@ -44,6 +49,9 @@ class HongKongHspfSection:
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
+        self._batch_handle: BatchDialogHandle[
+            list[dict[str, str]], HongKongHspfBatchDialog
+        ] = BatchDialogHandle()
         self._frame = ttk.LabelFrame(parent, text=f"HSPF 입력 ({region_label})")
         self._frame.columnconfigure(0, weight=1)
 
@@ -91,13 +99,20 @@ class HongKongHspfSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.batch_button = ttk.Button(
+            self.action_row,
+            text=BATCH_INPUT_BUTTON_TEXT,
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "hong_kong_hspf_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
         self.detail_toggle = ttk.Button(
             self.action_row,
             text="상세 보기 ↓",
             command=self._toggle_detail,
         )
         self.detail_toggle.surface_role = "hong_kong_hspf_detail_toggle"
-        self.detail_toggle.pack(side=tk.LEFT)
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("Hong Kong HSPF",),
@@ -129,6 +144,35 @@ class HongKongHspfSection:
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)
+
+    @property
+    def _batch_dialog(self) -> HongKongHspfBatchDialog | None:
+        return self._batch_handle.dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: HongKongHspfBatchDialog | None) -> None:
+        self._batch_handle.dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> list[dict[str, str]] | None:
+        return self._batch_handle.snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: list[dict[str, str]] | None) -> None:
+        self._batch_handle.snapshot = snapshot
+
+    def _open_batch_dialog(self) -> None:
+        self._batch_handle.open_or_focus(
+            lambda: HongKongHspfBatchDialog(
+                self._frame.winfo_toplevel(),
+                self._region_label,
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
+        )
+
+    def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
+        self._batch_handle.clear(snapshot)
 
     def _read_inputs(self) -> Mapping[str, object]:
         values = self.input_table.get_numeric_values()
@@ -198,6 +242,7 @@ class HongKongHspfSection:
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
+            self._batch_handle.dispose()
             self._auto_calc.dispose()
 
 

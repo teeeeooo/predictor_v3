@@ -7,6 +7,11 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Mapping
 
+from apps.calculator.ui.layout_constants import (
+    BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+    BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,
+)
+
 CellAddress = tuple[int, int]
 
 
@@ -232,6 +237,9 @@ HALF_CAPACITY = "half_capacity"
 HALF_POWER = "half_power"
 CSPF = "cspf"
 CSEC = "csec"
+HSPF = "hspf"
+HSTL = "hstl"
+HSEC = "hsec"
 
 
 HONG_KONG_CSPF_MATRIX_SPEC = BatchMatrixSpec(
@@ -280,6 +288,56 @@ HONG_KONG_CSPF_MATRIX_SPEC = BatchMatrixSpec(
         ),
     ),
     result_metrics=((CSPF, "CSPF", 9), (CSEC, "CSEC", 10)),
+    default_cases=(
+        {},
+        {},
+        {},
+        {},
+        {},
+    ),
+)
+
+
+HONG_KONG_HSPF_MATRIX_SPEC = BatchMatrixSpec(
+    profile_key="hong_kong_hspf",
+    title="Hong Kong HSPF Batch Matrix",
+    physical_rows=(
+        MatrixPhysicalRowType.CAPACITY,
+        MatrixPhysicalRowType.POWER,
+    ),
+    row_type_labels=MappingProxyType(
+        {
+            MatrixPhysicalRowType.CAPACITY: "Capacity",
+            MatrixPhysicalRowType.POWER: "Power",
+        }
+    ),
+    measurement_points=(
+        MatrixMeasurementPointSpec(
+            "7_full",
+            "7 Full",
+            MappingProxyType(
+                {
+                    MatrixPhysicalRowType.CAPACITY: FULL_CAPACITY,
+                    MatrixPhysicalRowType.POWER: FULL_POWER,
+                }
+            ),
+        ),
+        MatrixMeasurementPointSpec(
+            "7_half",
+            "7 Half",
+            MappingProxyType(
+                {
+                    MatrixPhysicalRowType.CAPACITY: HALF_CAPACITY,
+                    MatrixPhysicalRowType.POWER: HALF_POWER,
+                }
+            ),
+        ),
+    ),
+    result_metrics=(
+        (HSPF, "HSPF", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+        (HSTL, "HSTL", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
+        (HSEC, "HSEC", BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS),
+    ),
     default_cases=(
         {},
         {},

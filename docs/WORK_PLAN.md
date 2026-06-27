@@ -36,6 +36,8 @@
 - The four structure audits and their approved helper implementation bundle are
   complete: UI literal sentinel hotfix, detail formatting coercion helper,
   batch matrix controller, batch dialog handle, and detail visibility helper.
+- Calculator small cleanup and Hong Kong HSPF batch implementation are complete
+  pending final validation/push.
 - Report lifecycle cleanup is complete; active reports now retain only the
   near-term implementation decision reports and unresolved design-gate evidence.
 - Agent gate/workflow hardening now requires report-backed structural source
@@ -44,9 +46,9 @@
 
 ## Next Actions
 
-1. Complete the final validation/push for the calculator helper implementation
-   bundle.
-2. Select the next approved calculator detail/manual-smoke or empty-state slice.
+1. Complete final validation/push for the Hong Kong HSPF batch slice.
+2. Run Hong Kong HSPF batch visual smoke, then select the next approved
+   calculator detail/manual-smoke or empty-state slice.
 
 ## Active Blockers / Open Decisions
 
