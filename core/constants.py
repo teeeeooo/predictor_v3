@@ -1,19 +1,17 @@
-# V3 constants.py — SINGLE SOURCE OF TRUTH
+# V3 constants.py — compatibility surface for constants and predictor schema.
 
 import os
+
+from core.ml.artifacts import BASE_DIR, DATA_DIR, MODEL_DIR, MODEL_FILE, TRAIN_DATA_FILE
+from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 
 # =============================================================================
 # 경로 및 파일 상수
 # =============================================================================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_DIR = os.path.join(BASE_DIR, "model")
-DATA_DIR = os.path.join(BASE_DIR, "data")
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 
 # V3 통합 모델 파일 (단일 파일)
-MODEL_FILE = os.path.join(MODEL_DIR, "model.pkl")
-TRAIN_DATA_FILE = os.path.join(DATA_DIR, "Practice_4.csv")
 MAPPING_JSON_FILE = os.path.join(DATA_DIR, "mapping.json")
 
 # =============================================================================
@@ -120,21 +118,4 @@ DROPDOWN_TARGET = {k: k for k in DROPDOWN_COLS}
 
 NUM_ROWS = 10 
 
-# =============================================================================
-# 머신러닝 피처 및 타겟 설정
-# =============================================================================
-BASE_FEATURES = [
-    "Cooling Capa", "Heating Capa", "ID Volume", "Evap Area", "Evap Volume",
-    "OD Volume", "Cond Area", "Cond Volume", "Comp EER", "Comp cc",
-    "R410A", "R32", "R290", "EEV", "Capi", "Ref Qty",
-    "Cooling Power", "Heating Power", "Cooling Hz", "Heating Hz"
-]
-
-DERIVED_FEATURES = [
-    "Cool_Capa_per_EER", "Cool_Capa_per_CondArea",
-    "Cool_Capa_per_EvapArea", "Cool_Capa_per_cc",
-    "Heat_Capa_per_EER", "Heat_Capa_per_CondArea",
-    "Heat_Capa_per_EvapArea", "Heat_Capa_per_cc"
-]
-
-TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
+# ML feature, target, and artifact constants are imported from `core.ml`.

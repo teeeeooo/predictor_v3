@@ -1,5 +1,10 @@
-"""Target owner for ML artifact and training data paths.
+"""ML artifact and training data paths."""
 
-Actual path constants are moved here in a later Arc 7 slice while root imports
-remain compatible for existing callers.
-"""
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+MODEL_FILE = os.path.join(MODEL_DIR, "model.pkl")
+TRAIN_DATA_FILE = os.path.join(DATA_DIR, "Practice_4.csv")
