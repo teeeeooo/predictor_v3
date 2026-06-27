@@ -1,38 +1,28 @@
 """Prediction Results table model for the Predict workspace."""
 
-from dataclasses import dataclass
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtGui import QColor
 
-from apps.predict.state.predict_session import PredictSession
-
-
-@dataclass(frozen=True)
-class ResultColumn:
-    """Local skeleton column definition for result display."""
-
-    key: str
-    label: str
-
-
-RESULT_COLUMNS: tuple[ResultColumn, ...] = (
-    ResultColumn("status", "Status"),
-    ResultColumn("cooling_power", "Cooling Power"),
-    ResultColumn("heating_power", "Heating Power"),
-    ResultColumn("ref_qty", "Ref Qty"),
-    ResultColumn("cooling_hz", "Cooling Hz"),
-    ResultColumn("heating_hz", "Heating Hz"),
-    ResultColumn("message", "Message"),
+from apps.predict.schema.column_schema_adapter import (
+    PredictColumn,
+    build_result_column_schema,
 )
+from apps.predict.state.predict_session import PredictSession
 
 
 class ResultTableModel(QAbstractTableModel):
     """Read-only result model backed by PredictSession case order."""
 
-    def __init__(self, session: PredictSession) -> None:
+    def __init__(
+        self,
+        session: PredictSession | None = None,
+        columns: tuple[PredictColumn, ...] | None = None,
+    ) -> None:
         super().__init__()
-        self._session = session
+        self._session = session or PredictSession()
+        self._columns = columns or build_result_column_schema()
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
@@ -42,18 +32,18 @@ class ResultTableModel(QAbstractTableModel):
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
             return 0
-        return len(RESULT_COLUMNS)
+        return len(self._columns)
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if not index.isValid() or role != Qt.DisplayRole:
+        if not index.isValid():
             return None
-        column = RESULT_COLUMNS[index.column()]
+        column = self._columns[index.column()]
+        if role == Qt.BackgroundRole and column.bg_color:
+            return QColor(column.bg_color)
+        if role != Qt.DisplayRole:
+            return None
         case_id = self._session.case_order[index.row()]
         result = self._session.result_for_case(case_id)
-        if column.key == "status":
-            return result.status
-        if column.key == "message":
-            return result.message
         value = result.result_values.get(column.key, "")
         return "" if value is None else value
 
@@ -66,7 +56,7 @@ class ResultTableModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            return RESULT_COLUMNS[section].label
+            return self._columns[section].header
         return section + 1
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:

@@ -1,38 +1,28 @@
 """Input Cases table model for the Predict workspace."""
 
-from dataclasses import dataclass
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtGui import QColor
 
-from apps.predict.state.predict_session import PredictSession
-
-
-@dataclass(frozen=True)
-class InputColumn:
-    """Local skeleton column definition for input/autofill display."""
-
-    key: str
-    label: str
-    editable: bool = True
-    autofill: bool = False
-
-
-INPUT_COLUMNS: tuple[InputColumn, ...] = (
-    InputColumn("capacity", "Capacity"),
-    InputColumn("indoor_model", "Indoor Model"),
-    InputColumn("outdoor_model", "Outdoor Model"),
-    InputColumn("refrigerant", "Refrigerant"),
-    InputColumn("mapped_volume", "Mapped Volume", editable=False, autofill=True),
+from apps.predict.schema.column_schema_adapter import (
+    PredictColumn,
+    build_input_column_schema,
 )
+from apps.predict.state.predict_session import PredictSession
 
 
 class InputTableModel(QAbstractTableModel):
     """Editable input/autofill model backed by PredictSession."""
 
-    def __init__(self, session: PredictSession) -> None:
+    def __init__(
+        self,
+        session: PredictSession | None = None,
+        columns: tuple[PredictColumn, ...] | None = None,
+    ) -> None:
         super().__init__()
-        self._session = session
+        self._session = session or PredictSession()
+        self._columns = columns or build_input_column_schema()
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
@@ -42,14 +32,18 @@ class InputTableModel(QAbstractTableModel):
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
             return 0
-        return len(INPUT_COLUMNS)
+        return len(self._columns)
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
+        if not index.isValid():
             return None
-        column = INPUT_COLUMNS[index.column()]
+        column = self._columns[index.column()]
+        if role == Qt.BackgroundRole and column.bg_color:
+            return QColor(column.bg_color)
+        if role not in (Qt.DisplayRole, Qt.EditRole):
+            return None
         case = self._session.case_store.get_case_at(index.row())
-        if column.autofill:
+        if column.is_auto:
             return case.autofill_values.get(column.key, "")
         return case.input_values.get(column.key, "")
 
@@ -61,8 +55,8 @@ class InputTableModel(QAbstractTableModel):
     ) -> bool:
         if not index.isValid() or role != Qt.EditRole:
             return False
-        column = INPUT_COLUMNS[index.column()]
-        if not column.editable or column.autofill:
+        column = self._columns[index.column()]
+        if not column.editable or column.is_auto:
             return False
         case = self._session.case_store.get_case_at(index.row())
         self._session.case_store.update_cell_value(case.case_id, column.key, value)
@@ -78,15 +72,15 @@ class InputTableModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            return INPUT_COLUMNS[section].label
+            return self._columns[section].header
         return section + 1
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
             return Qt.NoItemFlags
         flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        column = INPUT_COLUMNS[index.column()]
-        if column.editable and not column.autofill:
+        column = self._columns[index.column()]
+        if column.editable and not column.is_auto:
             flags |= Qt.ItemIsEditable
         return flags
 

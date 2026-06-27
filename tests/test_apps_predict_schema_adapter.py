@@ -1,5 +1,6 @@
 """Predict app schema adapter contract tests."""
 
+import subprocess
 import sys
 
 from apps.predict.schema.column_schema_adapter import (
@@ -54,5 +55,11 @@ def test_predict_column_schema_exposes_ml_feature_and_target_metadata():
 
 
 def test_predict_schema_adapter_is_qt_free():
-    assert "PySide6" not in sys.modules
-    assert "PyQt5" not in sys.modules
+    code = (
+        "import sys; "
+        "from apps.predict.schema.column_schema_adapter import build_predict_column_schema; "
+        "assert build_predict_column_schema(); "
+        "assert 'PySide6' not in sys.modules; "
+        "assert 'PyQt5' not in sys.modules"
+    )
+    subprocess.run([sys.executable, "-B", "-c", code], check=True)
