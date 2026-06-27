@@ -17,6 +17,7 @@ from apps.calculator.ui.batch_dialogs.profiles.ahri_seer2 import (
     AhriSeer2BatchDialog,
     AhriSeer2BatchSnapshot,
 )
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.layout_constants import (
     CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
     CONTROL_LABEL_GAP,
@@ -49,8 +50,9 @@ class AhriSeer2Section:
         self._on_detail_visibility_changed = on_trace_visibility_changed
         self._detail_visible = False
         self._detail_status = "입력 대기"
-        self._batch_dialog: AhriSeer2BatchDialog | None = None
-        self._batch_snapshot: AhriSeer2BatchSnapshot | None = None
+        self._batch_handle: BatchDialogHandle[
+            AhriSeer2BatchSnapshot, AhriSeer2BatchDialog
+        ] = BatchDialogHandle()
         self._frame = ttk.LabelFrame(parent, text="SEER2")
         self._frame.columnconfigure(0, weight=1)
 
@@ -178,23 +180,36 @@ class AhriSeer2Section:
         self._clear_detail("입력 대기")
         self.schedule_recalculate()
 
+    @property
+    def _batch_dialog(self) -> AhriSeer2BatchDialog | None:
+        return self._batch_handle.dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: AhriSeer2BatchDialog | None) -> None:
+        self._batch_handle.dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> AhriSeer2BatchSnapshot | None:
+        return self._batch_handle.snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: AhriSeer2BatchSnapshot | None) -> None:
+        self._batch_handle.snapshot = snapshot
+
     def _open_batch_dialog(self) -> None:
-        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
-            self._batch_dialog.focus()
-            return
-        self._batch_dialog = AhriSeer2BatchDialog(
-            self._frame.winfo_toplevel(),
-            initial_snapshot=self._batch_snapshot,
-            on_close=self._clear_batch_dialog,
+        self._batch_handle.open_or_focus(
+            lambda: AhriSeer2BatchDialog(
+                self._frame.winfo_toplevel(),
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
         )
 
     def _clear_batch_dialog(
         self,
         snapshot: AhriSeer2BatchSnapshot | None = None,
     ) -> None:
-        if snapshot is not None:
-            self._batch_snapshot = snapshot
-        self._batch_dialog = None
+        self._batch_handle.clear(snapshot)
 
     def recalculate_now(self) -> None:
         try:
@@ -276,6 +291,4 @@ class AhriSeer2Section:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
-            if self._batch_dialog is not None:
-                self._batch_dialog.close()
-                self._batch_dialog = None
+            self._batch_handle.dispose()

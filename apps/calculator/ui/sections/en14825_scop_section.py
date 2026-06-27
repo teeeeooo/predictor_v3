@@ -17,6 +17,7 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
     En14825ScopBatchDialog,
 )
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
@@ -64,8 +65,9 @@ class En14825ScopSection:
         )
         self.adapter = ScopAdapter()
         self._current_table_models: dict[str, ScopTableModel] = {}
-        self._batch_dialog: En14825ScopBatchDialog | None = None
-        self._batch_snapshot: En14825ScopBatchSnapshot | None = None
+        self._batch_handle: BatchDialogHandle[
+            En14825ScopBatchSnapshot, En14825ScopBatchDialog
+        ] = BatchDialogHandle()
         self._detail_visible = False
         self._detail_sources: dict[str, BinDetailSource] = {}
         self._detail_status = "입력 대기"
@@ -326,23 +328,43 @@ class En14825ScopSection:
     def schedule_recalculate(self) -> None:
         self._auto_calc.schedule()
 
+    @property
+    def _batch_dialog(self) -> En14825ScopBatchDialog | None:
+        return self._ensure_batch_handle().dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: En14825ScopBatchDialog | None) -> None:
+        self._ensure_batch_handle().dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> En14825ScopBatchSnapshot | None:
+        return self._ensure_batch_handle().snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: En14825ScopBatchSnapshot | None) -> None:
+        self._ensure_batch_handle().snapshot = snapshot
+
+    def _ensure_batch_handle(
+        self,
+    ) -> BatchDialogHandle[En14825ScopBatchSnapshot, En14825ScopBatchDialog]:
+        if not hasattr(self, "_batch_handle"):
+            self._batch_handle = BatchDialogHandle()
+        return self._batch_handle
+
     def _open_batch_dialog(self) -> None:
-        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
-            self._batch_dialog.focus()
-            return
-        self._batch_dialog = En14825ScopBatchDialog(
-            self._frame.winfo_toplevel(),
-            initial_snapshot=self._batch_snapshot,
-            on_close=self._clear_batch_dialog,
+        self._batch_handle.open_or_focus(
+            lambda: En14825ScopBatchDialog(
+                self._frame.winfo_toplevel(),
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
         )
 
     def _clear_batch_dialog(
         self,
         snapshot: En14825ScopBatchSnapshot | None = None,
     ) -> None:
-        if snapshot is not None:
-            self._batch_snapshot = snapshot
-        self._batch_dialog = None
+        self._batch_handle.clear(snapshot)
 
     def _climate_aux_values(self, climate: str) -> dict[str, str]:
         return {
@@ -658,6 +680,4 @@ class En14825ScopSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
-            if self._batch_dialog is not None:
-                self._batch_dialog.close()
-                self._batch_dialog = None
+            self._batch_handle.dispose()

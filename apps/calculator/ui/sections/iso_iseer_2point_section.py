@@ -24,6 +24,7 @@ from apps.calculator.ui.sections.result_formatting import bin_details, metric_va
 from apps.calculator.ui.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.iso_iseer_2point import IsoIseer2PointBatchDialog
 
 
@@ -40,8 +41,9 @@ class IsoIseer2PointSection:
         self._trace_results: dict[str, list[dict]] = {}
         self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
         self._trace_status: str | None = "상세 데이터 없음"
-        self._batch_dialog: IsoIseer2PointBatchDialog | None = None
-        self._batch_snapshot: list[dict[str, str]] | None = None
+        self._batch_handle: BatchDialogHandle[
+            list[dict[str, str]], IsoIseer2PointBatchDialog
+        ] = BatchDialogHandle()
         self._frame = ttk.LabelFrame(parent, text="ISO / ISEER 2-point 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -182,19 +184,32 @@ class IsoIseer2PointSection:
         self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
 
     def _open_batch_dialog(self) -> None:
-        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
-            self._batch_dialog.focus()
-            return
-        self._batch_dialog = IsoIseer2PointBatchDialog(
-            self._frame.winfo_toplevel(),
-            initial_snapshot=self._batch_snapshot,
-            on_close=self._clear_batch_dialog,
+        self._batch_handle.open_or_focus(
+            lambda: IsoIseer2PointBatchDialog(
+                self._frame.winfo_toplevel(),
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
         )
 
     def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
-        if snapshot is not None:
-            self._batch_snapshot = snapshot
-        self._batch_dialog = None
+        self._batch_handle.clear(snapshot)
+
+    @property
+    def _batch_dialog(self) -> IsoIseer2PointBatchDialog | None:
+        return self._batch_handle.dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: IsoIseer2PointBatchDialog | None) -> None:
+        self._batch_handle.dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> list[dict[str, str]] | None:
+        return self._batch_handle.snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: list[dict[str, str]] | None) -> None:
+        self._batch_handle.snapshot = snapshot
 
     def _toggle_detail(self) -> None:
         self._detail_visible = not self._detail_visible
@@ -243,9 +258,7 @@ class IsoIseer2PointSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
-            if self._batch_dialog is not None:
-                self._batch_dialog.close()
-                self._batch_dialog = None
+            self._batch_handle.dispose()
 
 
 def _two_point_result_row(

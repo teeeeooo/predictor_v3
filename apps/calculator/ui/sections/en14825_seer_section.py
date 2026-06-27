@@ -20,6 +20,7 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
     En14825SeerBatchDialog,
     En14825SeerBatchSnapshot,
 )
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
@@ -67,8 +68,9 @@ class En14825SeerSection:
         self.adapter = SeerAdapter()
         self._seer_defaults = self.adapter.get_seer_defaults()
         self._current_table_model: SeerTableModel | None = None
-        self._batch_dialog: En14825SeerBatchDialog | None = None
-        self._batch_snapshot: En14825SeerBatchSnapshot | None = None
+        self._batch_handle: BatchDialogHandle[
+            En14825SeerBatchSnapshot, En14825SeerBatchDialog
+        ] = BatchDialogHandle()
         self._detail_visible = False
         self._detail_sources: dict[str, BinDetailSource] = {}
         self._detail_status = "입력 대기"
@@ -252,23 +254,36 @@ class En14825SeerSection:
     def schedule_recalculate(self) -> None:
         self._auto_calc.schedule()
 
+    @property
+    def _batch_dialog(self) -> En14825SeerBatchDialog | None:
+        return self._batch_handle.dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: En14825SeerBatchDialog | None) -> None:
+        self._batch_handle.dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> En14825SeerBatchSnapshot | None:
+        return self._batch_handle.snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: En14825SeerBatchSnapshot | None) -> None:
+        self._batch_handle.snapshot = snapshot
+
     def _open_batch_dialog(self) -> None:
-        if self._batch_dialog is not None and self._batch_dialog.window.winfo_exists():
-            self._batch_dialog.focus()
-            return
-        self._batch_dialog = En14825SeerBatchDialog(
-            self._frame.winfo_toplevel(),
-            initial_snapshot=self._batch_snapshot,
-            on_close=self._clear_batch_dialog,
+        self._batch_handle.open_or_focus(
+            lambda: En14825SeerBatchDialog(
+                self._frame.winfo_toplevel(),
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
         )
 
     def _clear_batch_dialog(
         self,
         snapshot: En14825SeerBatchSnapshot | None = None,
     ) -> None:
-        if snapshot is not None:
-            self._batch_snapshot = snapshot
-        self._batch_dialog = None
+        self._batch_handle.clear(snapshot)
 
     def _design_input_values(self) -> dict[str, str]:
         return {
@@ -502,6 +517,4 @@ class En14825SeerSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
-            if self._batch_dialog is not None:
-                self._batch_dialog.close()
-                self._batch_dialog = None
+            self._batch_handle.dispose()
