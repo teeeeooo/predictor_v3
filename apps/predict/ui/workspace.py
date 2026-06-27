@@ -16,6 +16,7 @@ from apps.predict.ui.tables.input_table_model import InputTableModel
 from apps.predict.ui.tables.input_table_view import InputTableView
 from apps.predict.ui.tables.result_table_model import ResultTableModel
 from apps.predict.ui.tables.result_table_view import ResultTableView
+from apps.predict.ui.tables.table_sync import TableSelectionScrollSync
 
 
 DEFAULT_INITIAL_ROWS = 3
@@ -43,6 +44,7 @@ class PredictWorkspace(QWidget):
         self.input_table.setModel(self.input_model)
         self.result_table.setModel(self.result_model)
         self._configure_tables()
+        self.table_sync = TableSelectionScrollSync(self.input_table, self.result_table)
 
         title = QLabel("Predict workspace")
         title.setObjectName("PredictWorkspaceTitle")
@@ -126,6 +128,7 @@ class PredictWorkspace(QWidget):
     def _refresh(self) -> None:
         self.input_model.refresh()
         self.result_model.refresh()
+        self.table_sync.sync_row_heights()
         counts = self.session.summary_counts()
         self.status_label.setText(
             "전체 {total}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 변경됨 {dirty}건".format(
