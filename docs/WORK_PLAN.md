@@ -53,8 +53,9 @@
 - Arc 8.5 Root Wrapper Retirement is complete: active production code and
   tests use package owner paths, and root ML/constants/calculator compatibility
   wrapper files have been deleted.
-- Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
-  explicit retirement slice.
+- Arc 9.1 legacy `ui/` retirement is in progress: harvestable UX ideas have
+  been documented and `ui_common.visual_tokens` is the active toolkit-neutral
+  token owner for upcoming visual parity work.
 
 ## Next Actions
 
@@ -80,8 +81,8 @@
 - Preserve calculator, schema, config, fixture, golden, and public result
   contracts.
 - Keep Train/Predict rewrite separate from the Tkinter calculator path.
-- Do not delete or move legacy PyQt5 `ui/` Train/Predict files without a later
-  explicit retirement slice.
+- Do not recreate the retired legacy `ui/` Train/Predict path; PySide6
+  Predict/Train work belongs under `apps/predict/` and `apps/train/`.
 - Use focused verification rather than full pytest by default.
 
 ## Deferred / Hold

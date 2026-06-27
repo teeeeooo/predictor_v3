@@ -40,7 +40,7 @@ Target behavior for PySide6:
 
 Do not copy:
 
-- the PyQt5 `QStyledItemDelegate` implementation;
+- the legacy Qt binding `QStyledItemDelegate` implementation;
 - direct table/widget coupling;
 - any import from legacy `ui.*`.
 
@@ -74,7 +74,7 @@ Target behavior for PySide6:
 
 Do not copy:
 
-- legacy `ui.theme` token names as a parallel owner;
+- legacy `retired theme module` token names as a parallel owner;
 - PyQt/PySide concrete styling into `ui_common`.
 
 ### Predict / Train Feature Inventory

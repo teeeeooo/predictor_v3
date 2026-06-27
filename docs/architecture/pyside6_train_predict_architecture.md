@@ -51,7 +51,8 @@ The new Train/Predict UI is a rewrite, not an in-place migration.
 
 Use PySide6 for new Train/Predict UI code.
 
-Do not add new PySide6 Train/Predict production code under the legacy `ui/` package.
+Do not add new PySide6 Train/Predict production code under the retired legacy
+`ui/` package.
 
 Do not change core ML behavior unless a later slice explicitly authorizes it.
 
@@ -194,7 +195,7 @@ Responsibility:
 - Thin compatibility entrypoint.
 - Imports and calls `apps.predict.app.main`.
 - Must not create widgets directly.
-- Must not import legacy `ui.predict_window`.
+- Must not import retired legacy `retired Predict window module`.
 - Must not load the ML model directly.
 
 Expected shape:
@@ -211,7 +212,7 @@ Responsibility:
 - Thin compatibility entrypoint.
 - Imports and calls `apps.train.app.main`.
 - Must not create widgets directly.
-- Must not import legacy `ui.train_window`.
+- Must not import retired legacy `retired Train window module`.
 - Must not run training directly.
 
 Expected shape:
@@ -273,7 +274,8 @@ Forbidden:
 - `core` importing `apps`.
 - `core.ml.inference` importing `core.ml.training`.
 - `apps.predict` importing `apps.train`.
-- new `apps.predict` or `apps.train` production code importing legacy `ui.*`.
+- new `apps.predict` or `apps.train` production code importing retired legacy
+  `ui.*`.
 - calculator UI importing predict/train UI.
 - predict/train UI importing calculator UI without a later approved adapter design.
 
@@ -908,7 +910,7 @@ Forbidden:
 
 - production code changes
 - dependency changes
-- PyQt5 deletion
+- legacy Qt binding deletion
 
 Verification:
 

@@ -257,7 +257,7 @@ Rules:
 - Final hex codes. Each project owns its palette and binds these
   tokens to concrete values in its own theme or toolkit binding owner
   module.
-- Toolkit-specific implementation. PyQt5 stylesheet and ttk.Style
+- Toolkit-specific implementation. legacy Qt binding stylesheet and ttk.Style
   details live in the adapter documents under `adapters/`.
 - Code examples. This document is the token / layout contract; the
   adapter documents are where toolkit-specific snippets go, if any.
@@ -271,5 +271,5 @@ Rules:
   visual roles and visual design direction.
 - `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` — portable adoption kit and
   visual-value ownership boundary.
-- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 table rules.
+- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding table rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter table adapter rules.

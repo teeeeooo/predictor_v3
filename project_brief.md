@@ -50,8 +50,8 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   `core/mapping`; Arc 8 moved calculator implementation ownership under
   `core/calculators`; Arc 8.5 retired root compatibility wrappers and migrated
   active callers to package owner paths.
-- Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
-  until a later explicit retirement slice.
+- Legacy Train/Predict `ui/` files are retired in Arc 9.1 after harvesting
+  useful visual/table ideas into active UI/UX docs.
 - `app_predict.py` is the Predict-only application entrypoint.
 - `app_train.py` is the administrator/developer entrypoint that adds Train /
   Model and Data Mapping capabilities while reusing the Predict workspace.
@@ -101,7 +101,7 @@ Milestones:
 - Non-binding visual reference assets added.
 - Charter, architecture, workflow, design index, and work plan references
   aligned.
-- Legacy PyQt5 `ui/` path classified as reference-only, not immediate deletion.
+- Legacy `ui/` path classified as reference-only before Arc 9.1 retirement.
 
 Reference anchors:
 
@@ -113,8 +113,8 @@ Reference anchors:
 
 Goal:
 
-- Establish `apps/predict/` and `apps/train/` package foundations without moving
-  or deleting legacy PyQt5 `ui/` files.
+- Establish `apps/predict/` and `apps/train/` package foundations before later
+  legacy `ui/` retirement.
 
 Target milestones:
 
@@ -336,8 +336,8 @@ Target milestones:
   brief.
 - Packaging and hook-integration work should remain separate workflow arcs
   unless explicitly promoted.
-- Legacy PyQt5 `ui/` retirement remains deferred until the PySide6 Predict/Train
-  apps have import smoke and minimum manual GUI smoke evidence.
+- Arc 9.1 retires the legacy `ui/` folder after harvesting useful UX ideas and
+  adopting `ui_common.visual_tokens` for visual parity work.
 
 ## 6. Session Start Rule
 

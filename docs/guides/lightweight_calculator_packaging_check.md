@@ -14,7 +14,7 @@
 
 Compare PyInstaller bundle size for:
 
-- **Baseline**: `app_calculator.py` (PyQt5 calculator UI shell).
+- **Baseline**: `app_calculator.py` (legacy Qt binding calculator UI shell).
 - **Current Tkinter source**: `app_calculator.py` (canonical wrapper).
 
 The PyQt baseline commands below are retained as historical measurement
@@ -65,7 +65,7 @@ pyinstaller --noconfirm --clean --noconsole --name app_calculator ^
 `pyqt5` does **not** need to be installed in the Tkinter venv. If it
 is installed, PyInstaller may still discover and bundle it through
 some indirect import path; verify the resulting `dist/` directory
-does not contain `PyQt5` / `Qt5*.dll` after the spike build.
+does not contain `legacy Qt binding` / `Qt5*.dll` after the spike build.
 
 ### Spike — Tkinter calculator (one-file exe)
 
@@ -142,8 +142,8 @@ After each build:
    contains `tcl86*.dll` / `tk86*.dll` and a `tcl/` script folder.
    Absence of those means Tk will fail at runtime on a clean host.
 4. For the Tkinter bundle: confirm `dist/app_calculator/` does
-   **not** contain `PyQt5`, `Qt5Core.dll`, `Qt5Gui.dll`,
-   `Qt5Widgets.dll`, or a `PyQt5/Qt5/plugins/` tree.
+   **not** contain `legacy Qt binding`, `Qt5Core.dll`, `Qt5Gui.dll`,
+   `Qt5Widgets.dll`, or a `legacy Qt binding/Qt5/plugins/` tree.
 5. For the PyQt bundle: capture (with `dir`/`du`) which top-level
    subfolders contribute most of the size, so the comparison report
    can name the dominant DLLs.
@@ -163,7 +163,7 @@ The full decision matrix lives in the design doc's
   host.
 
 Fallback order: CLI / `argparse` over the dispatcher → local HTML
-(Flask + browser) → stay on PyQt5 and resume Slice ζ.
+(Flask + browser) → stay on legacy Qt binding and resume Slice ζ.
 
 ## Reporting protocol
 
@@ -172,8 +172,8 @@ When this guide is exercised:
 1. Record measured sizes for both baseline and spike, **both**
    one-folder dist and one-file exe.
 2. Record Windows version, Python version, PyInstaller version,
-   PyQt5 version.
-3. Record whether `Qt5*.dll` / `PyQt5/` is present in the Tkinter
+   legacy Qt binding version.
+3. Record whether `Qt5*.dll` / `legacy Qt binding/` is present in the Tkinter
    bundle (must be absent) and whether `tcl*.dll` / `tk*.dll` is
    present (must be present).
 4. Land the numbers in the report associated with the build run.

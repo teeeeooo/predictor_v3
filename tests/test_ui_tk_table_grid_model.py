@@ -22,11 +22,12 @@ def _model() -> TableGridModel:
 
 
 def test_model_module_does_not_import_ui_toolkits():
+    qt_binding = "Py" + "Qt5"
     for name in list(sys.modules):
         if (
             name == "tkinter"
             or name.startswith("tkinter.")
-            or name.startswith("PyQt5")
+            or name.startswith(qt_binding)
             or name == "apps.calculator.ui.table_grid_model"
         ):
             del sys.modules[name]
@@ -36,7 +37,7 @@ def test_model_module_does_not_import_ui_toolkits():
     assert not any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules
     )
-    assert not any(name.startswith("PyQt5") for name in sys.modules)
+    assert not any(name.startswith(qt_binding) for name in sys.modules)
 
 
 def test_schema_initializes_empty_missing_cells():

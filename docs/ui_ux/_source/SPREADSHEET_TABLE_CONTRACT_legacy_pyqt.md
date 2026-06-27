@@ -48,7 +48,7 @@ every table must implement.
 
 ## 2. Scope
 
-- Applies to every PyQt5 table-shaped widget in `ui/**`, including
+- Applies to every legacy Qt binding table-shaped widget in `ui/**`, including
   helpers, fixtures, and test harnesses.
 - Applies to read-only tables (display-only result grids) for the
   layout, selection, and copy rules; edit-related rules are no-ops

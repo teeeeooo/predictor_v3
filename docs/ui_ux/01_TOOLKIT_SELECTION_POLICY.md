@@ -15,21 +15,21 @@
 
 - **New** desktop UI with editable, table-heavy screens uses the approved
   toolkit for that application. If no project-specific design gate exists,
-  **PyQt5** remains the historical default.
+  **legacy Qt binding** remains the historical default.
 - `predictor_v3` Train/Predict is an approved exception: new Train/Predict UI
   work targets PySide6 under `apps/predict/` and `apps/train/`, while legacy
-  PyQt5 `ui/` code remains reference-only until a later retirement slice.
+  legacy Qt binding `ui/` code remains reference-only until a later retirement slice.
 - **Existing** Tkinter apps stay on Tkinter and follow
   `adapters/TKINTER_TABLE_ADAPTER.md` for table-shaped surfaces.
-- Within a single application, do **not** mix Tkinter and PyQt5
+- Within a single application, do **not** mix Tkinter and legacy Qt binding
   widgets. Pick one toolkit per app.
 - Switching an existing app from one toolkit to another is an
   architectural change that requires its own design gate and
   migration plan (§4). It is not a routine UI polish task.
 
-## 2. Choose PyQt5 when
+## 2. Choose legacy Qt binding when
 
-PyQt5 is the right default if **any** of the following apply to the
+legacy Qt binding is the right default if **any** of the following apply to the
 new app or new screen and there is no project-specific approved toolkit
 decision:
 
@@ -47,7 +47,7 @@ decision:
   base to disrupt.
 
 When the answer is yes to any of these and no newer design gate supersedes it,
-use PyQt5 and follow
+use legacy Qt binding and follow
 `adapters/PYQT_TABLE_IMPLEMENTATION.md` for table-shaped surfaces.
 
 ## 3. Keep or choose Tkinter when
@@ -68,7 +68,7 @@ table-shaped surface.
 
 ## 4. Toolkit-change design gate
 
-Switching an existing app from Tkinter to PyQt5 (or vice versa) is
+Switching an existing app from Tkinter to legacy Qt binding (or vice versa) is
 **not** an ordinary UI task. Before any code is moved, the change
 requires:
 
@@ -78,7 +78,7 @@ requires:
   - The plan for keeping the app shippable during the migration.
   - The rollback path if the migration stalls.
 - Explicit user approval of that design note.
-- A migration plan that does not require running Tkinter and PyQt5
+- A migration plan that does not require running Tkinter and legacy Qt binding
   side-by-side inside the same process.
 
 Polish, theming, or wanting "a more modern look" is **not** a
@@ -88,14 +88,14 @@ that the current toolkit cannot meet through its adapter.
 
 ## 5. Forbidden patterns
 
-- "All projects must use PyQt5." This document does **not** say
+- "All projects must use legacy Qt binding." This document does **not** say
   that. Existing Tkinter apps are not forced to migrate.
 - "Tkinter is banned." This document does **not** say that. Tkinter
   remains the supported toolkit for existing Tkinter apps under the
   adapter.
-- Mixing Tkinter and PyQt5 widgets in the same process to "try out"
+- Mixing Tkinter and legacy Qt binding widgets in the same process to "try out"
   the other toolkit. Pick one.
-- Using PyQt5 just because the developer prefers it, when the
+- Using legacy Qt binding just because the developer prefers it, when the
   existing Tkinter app already satisfies the user requirements.
 - Migrating an app's toolkit as a side effect of a feature or bug-fix
   task. The migration must be the explicit task.
@@ -105,5 +105,5 @@ that the current toolkit cannot meet through its adapter.
 - `00_UI_UX_SYSTEM.md` — common UX principles.
 - `02_DESIGN_TOKENS_AND_LAYOUT.md` — visual tokens and layout.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
-- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 table rules.
+- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding table rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter table adapter rules.

@@ -41,7 +41,7 @@ Tkinter direction has a verified behaviour baseline.
   not part of this summary-surface smoke.
 - New helper scripts under `tools/` or `scripts/`.
 - Touching retired PyQt calculator UI sources.
-- Resolving the macOS Python 3.14 + PyQt5 fatal-abort issue in 4
+- Resolving the macOS Python 3.14 + legacy Qt binding fatal-abort issue in 4
   PyQt clipboard / table tests (tracked separately; see Known
   Issue Separation below).
 
@@ -55,7 +55,7 @@ calculator core tests pass.
 - Python: `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3`
   (Python 3.14.x). Other Python 3.10+ versions are fine.
 - Tkinter / Tcl/Tk: bundled with the Python.org installer.
-- No PyQt5 dependency for the Tkinter path (PyQt5 may still be
+- No legacy Qt binding dependency for the Tkinter path (legacy Qt binding may still be
   installed for the PyQt UI but must not be loaded by
   `app_calculator.py`).
 
@@ -237,15 +237,15 @@ values only where a calculation result must be checked.
     option). The CSPF and HSPF sections re-render without
     duplication and preserves the empty/input-waiting state until performance
     inputs are supplied.
-14. **PyQt5 stays unloaded** — Optional verification. With the app
+14. **legacy Qt binding stays unloaded** — Optional verification. With the app
     still running, open a second terminal at the repo root and run:
     ```bash
     python3 -B -c "import apps.calculator.ui.calculator_app, sys; \
-      print([m for m in sys.modules if m.startswith('PyQt5')])"
+      print([m for m in sys.modules if m.startswith('legacy Qt binding')])"
     ```
     The printed list must be empty (`[]`). This mirrors the
     calculator foundation assertion that the canonical UI shell does not load
-    PyQt5.
+    legacy Qt binding.
 15. **Clean shutdown** — Close the window via the macOS window close
     button. The Python process exits with no error.
 
@@ -260,7 +260,7 @@ values only where a calculation result must be checked.
 | Top-level tabs | `ISO 16358`, `EN14825`, `AHRI 210/240` |
 | Hong Kong metric sections | CSPF and HSPF, same screen |
 | `profile_id` exposed in UI | NO |
-| PyQt5 loaded into `sys.modules` | NO |
+| legacy Qt binding loaded into `sys.modules` | NO |
 | Window title | `Calculator (Tkinter)` |
 | Result panel buttons | none |
 
@@ -318,7 +318,7 @@ Copy this block into the run notes / report; mark each step
 - Invalid input renders status only without gray block/raw output: OK/NG
 - No bottom copy/clear result buttons: OK/NG
 - Region re-selection re-renders cleanly: OK/NG
-- PyQt5 not imported: OK/NG
+- legacy Qt binding not imported: OK/NG
 - Clean shutdown: OK/NG
 ```
 
@@ -329,7 +329,7 @@ that baseline measurement.
 
 ## Known macOS / PyQt issue separation
 
-This checklist is **independent of** the macOS + Python 3.14 + PyQt5
+This checklist is **independent of** the macOS + Python 3.14 + legacy Qt binding
 fatal-abort behaviour observed in the following PyQt clipboard /
 table tests:
 
@@ -339,8 +339,8 @@ table tests:
 - `tests/test_spreadsheet_table_view.py`
 
 Those tests exercise the PyQt calculator UI (`ui/calc_window.py` and
-friends) and crash on the current macOS + PyQt5 combination. The
-Tkinter MVP does not import PyQt5 and is not affected. Do not try to
+friends) and crash on the current macOS + legacy Qt binding combination. The
+Tkinter MVP does not import legacy Qt binding and is not affected. Do not try to
 resolve the PyQt crash as part of this checklist; the PyQt
 calculator UI workstream is on hold (see WORK_PLAN 4c–4g and the
 4z pivot note).

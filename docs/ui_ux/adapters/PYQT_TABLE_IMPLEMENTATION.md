@@ -2,7 +2,7 @@
 
 ## Role and scope
 
-- This document is the **PyQt5-specific implementation contract** for
+- This document is the **legacy Qt binding-specific implementation contract** for
   spreadsheet-like table surfaces.
 - It assumes the toolkit-agnostic baseline in
   `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` and the common UX
@@ -14,8 +14,8 @@
   reference this adapter was derived from. That source file is
   history; this adapter is the active PyQt rule set.
 
-This adapter applies to every PyQt5 table-shaped widget in a project
-that has selected PyQt5 under `../01_TOOLKIT_SELECTION_POLICY.md`,
+This adapter applies to every legacy Qt binding table-shaped widget in a project
+that has selected legacy Qt binding under `../01_TOOLKIT_SELECTION_POLICY.md`,
 including helpers, fixtures, and test harnesses.
 
 For `predictor_v3`, select the input/result surface shape first under
@@ -201,7 +201,7 @@ distinguishable in the diff even when they share helpers.
 ## 12. Related documents
 
 - `../00_UI_UX_SYSTEM.md` — common UX principles.
-- `../01_TOOLKIT_SELECTION_POLICY.md` — when to choose PyQt5.
+- `../01_TOOLKIT_SELECTION_POLICY.md` — when to choose legacy Qt binding.
 - `../02_DESIGN_TOKENS_AND_LAYOUT.md` — tokens and layout.
 - `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
 - `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — project-wide

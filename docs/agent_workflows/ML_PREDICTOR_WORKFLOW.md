@@ -12,8 +12,8 @@ the short routing gate.
   Predict-only thin entrypoint and `app_train.py` as the administrator/developer
   thin entrypoint for Predict + Train / Model + Data Mapping.
 - New Train/Predict UI code targets PySide6 under `apps/predict/` and
-  `apps/train/`; legacy PyQt5 `ui/` code is reference-only until a later
-  retirement slice.
+  `apps/train/`; the legacy `ui/` path is retired and must not be imported by
+  production Train/Predict code.
 - Do not import `optuna`, `sklearn`, `shap`, or `matplotlib` from
   `core/predictor.py`.
 - Until package-boundary migration changes the approved owner, keep `COLUMNS`

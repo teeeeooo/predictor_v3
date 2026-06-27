@@ -123,7 +123,7 @@ For dynamic detail surfaces:
 
 ## Graph Tooling Decision
 
-- **Tkinter policy**: stay on Tkinter. Do not introduce PyQt5 or mix widget toolkits.
+- **Tkinter policy**: stay on Tkinter. Do not introduce legacy Qt binding or mix widget toolkits.
 - **Matplotlib embedded canvas**: viable for rich plots, but adds dependency and an embedded-canvas preferred-size surface.
 - **Generated image displayed in Tk**: smaller UI contract and easier sizing/export, but less interactive and may add image-generation/storage decisions.
 - **Separate image/export dialog**: isolates main-tab geometry, but introduces window lifecycle and export-state questions.

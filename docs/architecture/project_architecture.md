@@ -17,9 +17,10 @@ Architecture SSOT update의 source input은
   - `calculators/`: profile/dispatcher, calculator adapters, standard engines, result/ranking adapters owner.
 - **Project-wide architecture reset note**: root compatibility wrappers were
   retired in Arc 8.5. New active code should import package owner paths directly.
-- **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
-  - 기존 `app_train.py`와 `app_predict.py`가 사용하는 레거시 Train/Predict 화면 경로이며, 신규/유지 대상이 아니라 PySide6 재작성 전환 중 reference-only / legacy path로 취급합니다.
-  - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
+- **Retired legacy `ui/` path**: the former Train/Predict GUI files were
+  harvested for UX ideas and retired in Arc 9.1. New Train/Predict production
+  code must live under `apps/predict/` and `apps/train/`; visual tokens live in
+  `ui_common.visual_tokens`.
 - **`apps/` (애플리케이션 패키지 경계)**:
   - 장기적으로 `apps/{calculator,train,predict}/` 구조를 가집니다.
   - **`apps/calculator/`**: 활성 마이그레이션된 계산기 애플리케이션 영역입니다.
@@ -115,7 +116,8 @@ Migration principles:
 - 특정 모델(예: 전력) 학습 시 다른 타겟(예: 냉매량)이 입력으로 포함되지 않도록 `core/ml/registry.py`에서 타겟별 Leakage 리스트를 엄격히 관리합니다.
 
 ### 전처리 전략
-- **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는 ML 입력 전 `ui/base_model.py`에서 실시간으로 One-hot 피처로 변환됩니다.
+- **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는
+  PySide6 Predict adapter 경계에서 ML 입력 전 one-hot 피처로 변환됩니다.
   - 관련 키: `R410A`, `R32`, `R290` (냉매), `EEV`, `Capi` (팽창장치)
   - 모델 예측/학습 시 DataFrame 직접 전달을 유지하여 피처 이름을 보존해야 하며, `.values` 변환으로 인해 `feature_names_in_` 속성을 잃지 않도록 주의합니다.
 
@@ -142,20 +144,31 @@ UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUM
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
 
 ### 3.2 COLUMNS 자동완성 구조
-- **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계 매핑은 `ui/base_model.py`에서 전담합니다.
-- **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 4단계 복합 캐스케이딩 및 그에 따른 면적/체적 매핑 로직은 단순 매핑과 분리되어 `ui/predict_window.py`가 전담합니다.
+- **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계
+  매핑은 `core/mapping/autofill.py`와 PySide6 app-side controller 경계에서
+  처리합니다.
+- **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 복합
+  캐스케이딩 및 면적/체적 매핑은 `core/mapping/autofill.py`의 pure logic과
+  PySide6 controller/state 경계에서 처리합니다.
 - **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 `Dict[int, list[int]]` 형태로 `core/predictor_schema/columns.py`에서 관리한다.
 - **안전한 target lookup**: target column 조회는 직접 인덱싱보다 `.get(col, [])`를 사용해 매핑 없는 열의 `KeyError`를 방지한다.
 - **ML feature name mapping**: UI 표시 header와 ML feature name이 다를 수 있으므로 `COLUMNS`에는 `ml_feature` 같은 명시적 mapping key를 둔다. `core/ml/inference.py`에 header 보정 dict를 하드코딩하지 않는다.
 - **Cascading autofill 단계**: 계층형 자동완성은 데이터 조회, signal-blocked value write, UI 상태/rendering update의 3단계를 분리한다.
 - **단방향 상태 원칙**: AUTO_COLS editable/read-only 상태는 마스터 드롭다운 값, 특히 `직접 입력` 여부를 기준으로만 바꾼다. Delete/paste 같은 다른 경로에서도 먼저 마스터 상태를 확인한다.
 
-### 3.3 UI Model/View Guardrails (PyQt Legacy UI 전용)
+### 3.3 UI Model/View Guardrails
 
 > [!NOTE]
-> 아래 Guardrail은 legacy PyQt5 기반 UI(`ui/` 패키지 하위의 train/predict 화면)를 읽을 때의 reference 규칙입니다. 신규 Train/Predict 구현은 PySide6 rewrite architecture contract를 따르며, 신규 Tkinter 기반 계산기 UI(`apps/calculator/ui/`)는 별도의 Tkinter-specific 구현 방식과 `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md` 등의 규칙을 따릅니다.
+> Legacy Train/Predict `ui/` files are retired. Current Train/Predict UI
+> implementation follows the PySide6 rewrite architecture contract. Current
+> calculator UI follows `apps/calculator/ui/` and the relevant UI/UX adapter
+> rules.
 
-- **Spreadsheet behavior owner**: PyQt table UI의 spreadsheet-like UX, copy/paste (TSV), multi-cell paste, Delete clear, Ctrl+Z undo, Tab/Enter navigation, numeric validation, paste path isolation, 1-click editor lifecycle 상세 규칙은 `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`(UX contract)와 `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`(PyQt 구현 adapter)를 단일 owner로 한다. 전체 UI/UX 기준은 `docs/ui_ux/00_UI_UX_SYSTEM.md`를 따른다. 본 architecture 문서는 background color convention, calculator boundary, cascade autofill state machine 규칙을 owner로 유지하고, spreadsheet-behavior 상세는 위 UI/UX SSOT를 참조한다.
+- **Spreadsheet behavior owner**: spreadsheet-like UX, copy/paste (TSV),
+  multi-cell paste, Delete clear, undo, Tab/Enter navigation, numeric
+  validation, paste path isolation, and dropdown/editor lifecycle details are
+  owned by `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and applicable
+  toolkit adapters.
 - **View Pattern**: `QTableWidget` 사용을 금지하고, 반드시 `QTableView` + `QAbstractTableModel` 구조를 유지한다.
 - **Component Injection**: 테이블 셀 내부에 위젯을 직접 삽입하는 `setCellWidget` 사용을 금지한다. 셀 내부 콤보박스나 커스텀 상호작용은 `QStyledItemDelegate`의 `paint` 및 `editorEvent`를 활용하여 구현한다.
 - **State Rendering**: 상태별 배경색을 통해 시각적 일관성을 확보한다.
@@ -166,7 +179,8 @@ UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUM
 - **1-click editor UX**: 드롭다운 editor를 한 번의 클릭으로 열어야 할 때는 `QStyledItemDelegate`의 editor lifecycle 안에서 `QTimer.singleShot(0, editor.showPopup)` 패턴을 사용한다. `time.sleep`으로 UI event timing을 제어하지 않는다.
 - **Paste path isolation**: 붙여넣기는 dropdown change event와 다른 경로로 들어오므로 `on_paste_complete()` 같은 별도 처리 흐름에서 값 검증과 자동입력 상태 복구를 수행한다.
 - **Handler naming stability**: dropdown 변경 handler 이름을 `_apply_mapping()` / `on_dropdown_changed()`처럼 섞지 않는다. 이벤트 wiring 이름이 바뀌면 AttributeError가 paste/autofill 경로에서 늦게 드러날 수 있다.
-- **Deprecated V2 example**: 과거 `QTableWidget` 기반 delegate 예제는 active architecture가 아니라 V2 시행착오 보존 자료로만 취급한다. 원본 패턴은 `docs/archive/skills_v2_patterns.md`에 보존되어 있다.
+- **Deprecated examples**: old widget/delegate examples are historical evidence
+  only and must not be copied into current PySide6 production code.
 - **Calculator Boundary**: UI 구현의 편의를 이유로 core calculator의 validation 정책을 약화하거나 우회하지 않는다. Train/Predict UI와 Calculator UI는 프로젝트 헌장(`PROJECT_CHARTER.md`)의 원칙에 따라 철저히 분리된다.
 
 ## 4. 로그 시스템
@@ -305,7 +319,9 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 ### PyQt Legacy Calculator Reference (Retired)
 
 > [!NOTE]
-> `ui/calc_window.py`, `ui/calculators_2point.py`, `ui/calculator_errors.py`는 은퇴(retired)되었습니다. current calculator UI는 `apps/calculator/ui/`입니다. `app_calculator.py`는 `apps.calculator.app:main` wrapper입니다.
+> The retired legacy `ui/` folder is no longer an active implementation path.
+> Current calculator UI is `apps/calculator/ui/`. `app_calculator.py` is the
+> `apps.calculator.app:main` wrapper.
 
 이 섹션은 PyQt calculator-only source retirement(Report 353) 이전의 routing contract와 module boundary 설계 결정을 historical record로 보존합니다. 아래 내용은 더 이상 current implementation 설명이 아닙니다.
 
@@ -316,8 +332,8 @@ ISO16358-2 common HSPF path(Track A)와 AS/NZS Excel compatibility path(Track B)
 
 **Current state**:
 - Current calculator UI: `apps/calculator/ui/`
-- Retained shared PyQt utility: `ui/spreadsheet_table.py`, `ui/theme.py` (quarantine/hold)
-- Legacy/reference Train/Predict PyQt5: `ui/train_window.py`, `ui/predict_window.py`, `ui/base_model.py`, `ui/base_view.py`
+- Current Train/Predict UI: `apps/predict/`, `apps/train/`
+- Current toolkit-neutral visual tokens: `ui_common/visual_tokens.py`
 
 
 ### Result schema boundary
@@ -343,8 +359,10 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 
 본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `apps/calculator/ui/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
 
-- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculators.dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `PyQt5`, `tkinter`를 import하지 않는다.
-- Tkinter shell 독립성: `apps/calculator/ui/`는 `PyQt5`, PyQt `ui` package를 import하지 않는다. PyQt와 Tkinter는 동일 core 위에 올라간 별도 deployment surface다.
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculators.dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `legacy Qt binding`, `tkinter`를 import하지 않는다.
+- Tkinter shell 독립성: `apps/calculator/ui/`는 retired legacy `ui` package를
+  import하지 않는다. Calculator and Train/Predict remain separate deployment
+  surfaces over shared core owners.
 - Thin entrypoint: `app_*.py` 는 import + 한 두 줄 entrypoint 함수만 둔다 (class 정의 금지, module-level 함수 3개 이하, 80 LOC 이하). 실제 책임은 layer 모듈에 둔다.
 - Multi-responsibility 한 파일 금지: shell / orchestration / business logic / data transform / formatting / I/O를 한 파일에 섞지 않는다. 새 작업에서 3개 이상 신규 책임 영역이 발생하면 skeleton/interface 작업과 구현 작업을 분리한다.
 - Hard-coded 값 격리: region, profile, metric, result key, default 값은 SSOT (config, constants, resolver, token module) 한 곳에서만 정의한다. 2곳 이상 반복되는 literal/mapping/formatting은 helper/registry 후보로 본다.

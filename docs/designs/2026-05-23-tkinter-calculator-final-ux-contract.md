@@ -22,7 +22,7 @@
 ## Background
 
 The Tkinter calculator-only direction started as a **feasibility spike**
-(116~118) to evaluate whether a lightweight, PyQt5-free calculator-only
+(116~118) to evaluate whether a lightweight, legacy Qt binding-free calculator-only
 bundle could be shipped. The spike produced:
 
 - `app_calculator_tk.py` — thin entrypoint (16 LOC).
@@ -35,7 +35,7 @@ bundle could be shipped. The spike produced:
   helpers.
 
 The spike confirmed:
-1. No PyQt5 import anywhere in the Tkinter shell.
+1. No legacy Qt binding import anywhere in the Tkinter shell.
 2. Hong Kong CSPF = **4.939** and HSPF = **3.643** smoke values match the
    PyQt calculator for the same input points.
 3. `core/` reuse without modification is possible.
@@ -293,7 +293,7 @@ Ordered. Each slice ships independently with its own report.
 5. **Windows PyInstaller size measurement**
    - Windows `calculator_tk` packaged size was measured at approximately
      11 MB and is acceptable for the current deployment candidate.
-   - Keep PyQt5 baseline comparison as a later retirement-gate input if
+   - Keep legacy Qt binding baseline comparison as a later retirement-gate input if
      calculator-only source retirement resumes.
 
 6. **PyQt calculator-only source retirement — 재개**

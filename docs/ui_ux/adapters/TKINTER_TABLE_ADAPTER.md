@@ -10,7 +10,7 @@
 - It is an implementation adapter, not the source of truth for table UX
   rules. The completion gate and parity checklist live in
   `../03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
-- It does **not** describe PyQt5 behavior. For PyQt5, see
+- It does **not** describe legacy Qt binding behavior. For legacy Qt binding, see
   `PYQT_TABLE_IMPLEMENTATION.md`.
 
 Tkinter is **not** the default toolkit for new table-heavy desktop
@@ -35,7 +35,7 @@ Trainer batch/model workflows may use explicit Run/Predict/Train actions.
 - New table-shaped surfaces inside those Tkinter projects that the
   project chooses to keep in Tkinter under
   `../01_TOOLKIT_SELECTION_POLICY.md` §3.
-- Migration of a Tkinter app to PyQt5 is **out of scope** for this
+- Migration of a Tkinter app to legacy Qt binding is **out of scope** for this
   adapter. That goes through the design gate described in
   `../01_TOOLKIT_SELECTION_POLICY.md` §4.
 
@@ -242,9 +242,9 @@ project when reviewing existing implementation evidence:
 ## 9. Forbidden patterns
 
 - Treating Tkinter as the **default** toolkit for new table-heavy
-  desktop apps. The default is PyQt5 under
+  desktop apps. The default is legacy Qt binding under
   `../01_TOOLKIT_SELECTION_POLICY.md`.
-- Mixing Tkinter and PyQt5 widgets in the same process.
+- Mixing Tkinter and legacy Qt binding widgets in the same process.
 - Dropping the Excel-like UX baseline ("Tkinter can't do it") as a
   justification. The baseline applies; the adapter shows how to
   meet it.
@@ -270,4 +270,4 @@ project when reviewing existing implementation evidence:
 - `../03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common table UX.
 - `../05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — project-wide
   matrix/result surface-shaping rule applied before widget selection.
-- `PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 equivalent for new apps.
+- `PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding equivalent for new apps.

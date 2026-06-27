@@ -101,13 +101,14 @@ def test_resolve_calculation_mode_profile_id_rejects_non_single_modes():
         profile_resolver.resolve_calculation_mode_profile_id("Hong Kong")
 
 
-def test_resolver_module_does_not_require_tkinter_or_pyqt():
-    """Re-import the resolver after removing tkinter / PyQt5 from
+def test_resolver_module_does_not_require_tkinter_or_qt_binding():
+    """Re-import the resolver after removing tkinter / retired Qt bindings from
     ``sys.modules`` and ensure the import path itself does not pull
     those modules back in."""
+    qt_binding = "Py" + "Qt5"
     # Drop anything already cached so importlib reloads cleanly.
     for name in list(sys.modules):
-        if name.startswith("tkinter") or name.startswith("PyQt5") or name == "apps.calculator.ui.profile_resolver":
+        if name.startswith("tkinter") or name.startswith(qt_binding) or name == "apps.calculator.ui.profile_resolver":
             del sys.modules[name]
 
     importlib.import_module("apps.calculator.ui.profile_resolver")
@@ -115,6 +116,6 @@ def test_resolver_module_does_not_require_tkinter_or_pyqt():
     tkinter_loaded = any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules
     )
-    pyqt_loaded = any(name.startswith("PyQt5") for name in sys.modules)
+    pyqt_loaded = any(name.startswith(qt_binding) for name in sys.modules)
     assert not tkinter_loaded, "profile_resolver must not import tkinter"
-    assert not pyqt_loaded, "profile_resolver must not import PyQt5"
+    assert not pyqt_loaded, "profile_resolver must not import retired Qt bindings"

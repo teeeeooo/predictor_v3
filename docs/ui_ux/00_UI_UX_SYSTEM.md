@@ -5,7 +5,7 @@
 - This document is the **common UI/UX SSOT** shared by every desktop
   project in this organization (SPOT, predictor_v3, and any future
   desktop tool).
-- It describes UI/UX principles that are **toolkit-agnostic**. PyQt5
+- It describes UI/UX principles that are **toolkit-agnostic**. legacy Qt binding
   vs Tkinter implementation details do **not** belong here.
 - For toolkit choice, see `01_TOOLKIT_SELECTION_POLICY.md`.
 - For visual tokens and layout, see `02_DESIGN_TOKENS_AND_LAYOUT.md`.
@@ -186,7 +186,7 @@ inside the project, not by editing this file.
 
 ## 11. Related documents
 
-- `01_TOOLKIT_SELECTION_POLICY.md` — when to choose PyQt5 vs Tkinter.
+- `01_TOOLKIT_SELECTION_POLICY.md` — when to choose legacy Qt binding vs Tkinter.
 - `02_DESIGN_TOKENS_AND_LAYOUT.md` — color, spacing, typography,
   layout rules.
 - `03_SPREADSHEET_TABLE_UX_CONTRACT.md` — common spreadsheet-like
@@ -197,7 +197,7 @@ inside the project, not by editing this file.
   project-wide repeated-input matrix and result-summary surface rules.
 - `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md` — portable adoption kit and
   visual-value ownership boundary.
-- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 implementation
+- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding implementation
   rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter adapter rules for
   existing apps.

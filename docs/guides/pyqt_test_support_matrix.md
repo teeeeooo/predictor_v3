@@ -66,18 +66,18 @@ Known bad:
 
 - macOS arm64
 - Python 3.14.x
-- PyQt5/Qt installed
+- legacy Qt binding/Qt installed
 
 Observed local tuple:
 
 - macOS 15.7.3 arm64
 - Python 3.14.4
-- PyQt5 5.15.11
+- legacy Qt binding 5.15.11
 - Qt 5.15.14
 
 Observed behavior:
 
-- PyQt5 import succeeds.
+- legacy Qt binding import succeeds.
 - Offscreen `QApplication` creation succeeds.
 - Plain `QTableView` creation can succeed.
 - In pytest context, `QTableView` subclass construction can native
@@ -90,12 +90,12 @@ construction.
 
 | Host | Policy | Notes |
 | --- | --- | --- |
-| macOS arm64 + Python 3.14.x + PyQt5 | skipped | Known-bad. PyQt widget tests are skipped by `tests.helpers.pyqt_env.macos_python314_pyqt5_known_bad_skip_mark()`. |
-| macOS + Python 3.12/3.11 + PyQt5 | pending validation | Should be tested in a dedicated venv before being treated as supported. |
-| Windows + Python 3.12/3.11 + PyQt5 | pending validation / preferred future validation host | Good candidate for future PyQt and packaging-host checks, but not yet verified by this guide. |
-| Linux + Python 3.14 + PyQt5 | not classified as known-bad | The current guard does not skip Linux. Run the PyQt tests if a Qt-capable host is available. |
-| No PyQt5 installed | skipped | Existing `pytest.importorskip("PyQt5")` behavior applies. |
-| Tkinter-only paths | unaffected | Tkinter tests and app paths do not depend on PyQt5 and are not controlled by this policy. |
+| macOS arm64 + Python 3.14.x + legacy Qt binding | skipped | Known-bad. PyQt widget tests are skipped by `tests.helpers.pyqt_env.macos_python314_pyqt5_known_bad_skip_mark()`. |
+| macOS + Python 3.12/3.11 + legacy Qt binding | pending validation | Should be tested in a dedicated venv before being treated as supported. |
+| Windows + Python 3.12/3.11 + legacy Qt binding | pending validation / preferred future validation host | Good candidate for future PyQt and packaging-host checks, but not yet verified by this guide. |
+| Linux + Python 3.14 + legacy Qt binding | not classified as known-bad | The current guard does not skip Linux. Run the PyQt tests if a Qt-capable host is available. |
+| No legacy Qt binding installed | skipped | Existing `pytest.importorskip("legacy Qt binding")` behavior applies. |
+| Tkinter-only paths | unaffected | Tkinter tests and app paths do not depend on legacy Qt binding and are not controlled by this policy. |
 
 Python 3.15+ is not skipped by the current guard. Extend the guard only
 after a separate audit confirms the same native abort risk.
@@ -132,22 +132,22 @@ python3 -B -m pytest -q -rxXs
 A skip with a reason like:
 
 ```text
-known-bad PyQt widget test environment: Darwin Python 3.14.4 PyQt5 5.15.11 Qt 5.15.14 can native-abort during pytest QTableView subclass construction
+known-bad PyQt widget test environment: Darwin Python 3.14.4 legacy Qt binding 5.15.11 Qt 5.15.14 can native-abort during pytest QTableView subclass construction
 ```
 
 means the host matches the known-bad environment policy. It does not
 mean the remaining PyQt tests are deleted or retired.
 
-If PyQt5 is not installed, skips come from the existing
-`pytest.importorskip("PyQt5")` policy.
+If legacy Qt binding is not installed, skips come from the existing
+`pytest.importorskip("legacy Qt binding")` policy.
 
 ## When To Revalidate
 
 Revalidate PyQt widget tests when:
 
-- A Python 3.12 or 3.11 venv with PyQt5 is available.
-- A Windows host with PyQt5 is available.
-- PyQt5 / Qt versions change.
+- A Python 3.12 or 3.11 venv with legacy Qt binding is available.
+- A Windows host with legacy Qt binding is available.
+- legacy Qt binding / Qt versions change.
 - Python 3.15+ becomes part of local or supported test usage.
 - PyQt table widgets, clipboard behavior, or shared utility source
   (`ui/spreadsheet_table.py`) are modified.

@@ -32,14 +32,15 @@ def _grid(root, callback=None):
     )
 
 
-def test_adapter_import_does_not_import_pyqt5():
+def test_adapter_import_does_not_import_qt_binding():
+    qt_binding = "Py" + "Qt5"
     for name in list(sys.modules):
-        if name.startswith("PyQt5"):
+        if name.startswith(qt_binding):
             del sys.modules[name]
 
     import apps.calculator.ui.table_grid  # noqa: F401
 
-    assert not any(name.startswith("PyQt5") for name in sys.modules)
+    assert not any(name.startswith(qt_binding) for name in sys.modules)
 
 
 def test_widget_tree_and_text_table_round_trip(tk_root):

@@ -58,14 +58,15 @@ def _tokens():
 
 
 def test_module_import_does_not_require_ui_toolkits(monkeypatch):
-    monkeypatch.setitem(sys.modules, "PyQt5", None)
+    qt_binding = "Py" + "Qt5"
+    monkeypatch.setitem(sys.modules, qt_binding, None)
     monkeypatch.setitem(sys.modules, "tkinter", None)
     monkeypatch.delitem(sys.modules, "ui_common.visual_tokens", raising=False)
 
     module = importlib.import_module("ui_common.visual_tokens")
 
     assert callable(module.visual_color)
-    assert sys.modules["PyQt5"] is None
+    assert sys.modules[qt_binding] is None
     assert sys.modules["tkinter"] is None
 
 

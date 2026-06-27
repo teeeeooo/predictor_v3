@@ -4,7 +4,7 @@
 
 This document records the design decision for the next Train/Predict workstream in `predictor_v3`.
 
-The decision is to stop treating the existing PyQt5 Train/Predict UI as the long-term implementation target and to create a new PySide6-based Train/Predict application structure.
+The decision is to stop treating the existing legacy Qt binding Train/Predict UI as the long-term implementation target and to create a new PySide6-based Train/Predict application structure.
 
 This is a design gate document. It records the decision, scope, non-goals, and architectural direction. The governing architecture contract is:
 
@@ -12,7 +12,7 @@ This is a design gate document. It records the decision, scope, non-goals, and a
 
 ## 2. Background
 
-The current repository has two legacy PyQt5 entrypoints:
+The current repository has two legacy legacy Qt binding entrypoints:
 
 - `app_predict.py`: launches the existing Predict UI.
 - `app_train.py`: launches the existing Train UI.
@@ -26,13 +26,13 @@ The existing `app_train.py` is not aligned with the intended product contract. T
 
 The current `app_train.py` is closer to a separate training-only utility. It does not include the predictor workspace as the main reusable workflow.
 
-Separately, PyQt5 is no longer an acceptable long-term toolkit choice because of licensing direction. Therefore, a direct PyQt5-to-PySide6 migration of the existing files would preserve an incorrect application structure.
+Separately, legacy Qt binding is no longer an acceptable long-term toolkit choice because of licensing direction. Therefore, a direct legacy Qt binding-to-PySide6 migration of the existing files would preserve an incorrect application structure.
 
 ## 3. Decision Summary
 
 ### 3.1 Primary decision
 
-Do not migrate the existing PyQt5 Train/Predict UI in place.
+Do not migrate the existing legacy Qt binding Train/Predict UI in place.
 
 Instead, create a new PySide6 Train/Predict UI under new application package boundaries:
 
@@ -60,13 +60,13 @@ Final product meaning:
 
 ## 4. Superseded Prior Contract
 
-Previous project documents described the Train/Predict PyQt5 path as retained until a future rewrite.
+Previous project documents described the Train/Predict legacy Qt binding path as retained until a future rewrite.
 
 That statement is now stale.
 
 The new direction is:
 
-- Existing Train/Predict PyQt5 code is legacy/reference-only.
+- Existing Train/Predict legacy Qt binding code is legacy/reference-only.
 - New Train/Predict implementation targets PySide6.
 - PyQt6 migration remains out of scope and is not the selected path.
 - Calculator UI remains separate and continues on its current Tkinter calculator path.
@@ -208,7 +208,7 @@ The rewrite is a UI/application-shell rewrite, not an ML algorithm rewrite.
 
 ### 7.1 Reuse
 
-Reusable concepts from the existing PyQt5 Predict UI:
+Reusable concepts from the existing legacy Qt binding Predict UI:
 
 - spreadsheet-like batch input
 - hardware selection dropdowns
@@ -226,7 +226,7 @@ Reusable core behavior:
 
 ### 7.2 Reference-only legacy code
 
-The following legacy PyQt5 package can be read for behavior reference during design and migration, but new PySide6 code must not depend on it:
+The following legacy legacy Qt binding package can be read for behavior reference during design and migration, but new PySide6 code must not depend on it:
 
 - `ui/predict_window.py`
 - `ui/train_window.py`
@@ -283,7 +283,7 @@ The following are out of scope for the first design/implementation sequence unle
 - changing region config semantics
 - implementing calculator ↔ predictor seasonal metric integration
 - implementing inverse search
-- deleting legacy PyQt5 UI immediately
+- deleting legacy legacy Qt binding UI immediately
 - migrating calculator UI to PySide6
 - large refactor of `core/trainer.py` or `core/predictor.py`
 - replacing Optuna/RFECV training strategy
@@ -333,7 +333,7 @@ These should remain explicit follow-up decisions:
 
 7. Legacy retirement audit
    - Confirm new apps cover required behavior.
-   - Decide whether to delete, move, or archive legacy PyQt5 UI.
+   - Decide whether to delete, move, or archive legacy legacy Qt binding UI.
 
 ## 12. Result Report Expectations
 

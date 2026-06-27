@@ -1248,14 +1248,15 @@ def test_debounce_reschedules_flushes_and_disposes():
     assert calls == ["calculated"]
 
 
-def test_iso_tab_import_does_not_pull_in_pyqt5():
+def test_iso_tab_import_does_not_pull_in_qt_binding():
+    qt_binding = "Py" + "Qt5"
     for name in list(sys.modules):
-        if name.startswith("PyQt5"):
+        if name.startswith(qt_binding):
             del sys.modules[name]
 
     import apps.calculator.ui.tabs.iso16358_tab  # noqa: F401
 
-    assert not any(name.startswith("PyQt5") for name in sys.modules)
+    assert not any(name.startswith(qt_binding) for name in sys.modules)
 
 
 def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_root):

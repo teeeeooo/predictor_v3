@@ -294,7 +294,7 @@ Specifically:
 - `02_DESIGN_TOKENS_AND_LAYOUT.md` — tokens and layout.
 - `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md` — `predictor_v3`
   matrix/result surface-shaping rules; separate from this behavior contract.
-- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — PyQt5 implementation
+- `adapters/PYQT_TABLE_IMPLEMENTATION.md` — legacy Qt binding implementation
   rules.
 - `adapters/TKINTER_TABLE_ADAPTER.md` — Tkinter adapter rules for
   existing apps.

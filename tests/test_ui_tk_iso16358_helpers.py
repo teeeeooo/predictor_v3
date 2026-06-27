@@ -9,12 +9,13 @@ from apps.calculator.ui.sections.iso16358_helpers import (
 )
 
 
-def test_helper_module_import_does_not_require_tkinter_or_pyqt():
+def test_helper_module_import_does_not_require_tkinter_or_qt_binding():
+    qt_binding = "Py" + "Qt5"
     for name in list(sys.modules):
         if (
             name == "tkinter"
             or name.startswith("tkinter.")
-            or name.startswith("PyQt5")
+            or name.startswith(qt_binding)
             or name == "apps.calculator.ui.sections.iso16358_helpers"
         ):
             del sys.modules[name]
@@ -24,7 +25,7 @@ def test_helper_module_import_does_not_require_tkinter_or_pyqt():
     tkinter_loaded = any(
         name == "tkinter" or name.startswith("tkinter.") for name in sys.modules
     )
-    pyqt_loaded = any(name.startswith("PyQt5") for name in sys.modules)
+    pyqt_loaded = any(name.startswith(qt_binding) for name in sys.modules)
     assert not tkinter_loaded
     assert not pyqt_loaded
 

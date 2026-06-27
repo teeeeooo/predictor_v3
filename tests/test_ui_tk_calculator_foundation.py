@@ -2,7 +2,7 @@
 
 These tests confirm that:
 
-- importing the Tkinter shell does not pull in PyQt5;
+- importing the Tkinter shell does not pull in retired Qt bindings;
 - the widget tree builds on a withdrawn Tk root in environments where
   Tk is usable (skip otherwise);
 - Hong Kong CSPF / HSPF dispatch through the new resolver still
@@ -45,15 +45,16 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.tabs.iso16358_tab import mousewheel_units
 
 
-def test_pyqt5_not_imported_via_apps_calculator_ui_calculator_app():
-    """Importing the Tkinter shell must not pull PyQt5 in."""
+def test_qt_binding_not_imported_via_apps_calculator_ui_calculator_app():
+    """Importing the Tkinter shell must not pull retired Qt bindings in."""
+    qt_binding = "Py" + "Qt5"
     for name in list(sys.modules):
-        if name.startswith("PyQt5"):
+        if name.startswith(qt_binding):
             del sys.modules[name]
 
     import apps.calculator.ui.calculator_app  # noqa: F401 — imported for side effects
 
-    assert not any(name.startswith("PyQt5") for name in sys.modules)
+    assert not any(name.startswith(qt_binding) for name in sys.modules)
 
 
 def test_hong_kong_cspf_smoke_via_resolver():

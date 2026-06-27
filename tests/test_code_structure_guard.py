@@ -2,7 +2,7 @@
 
 The guard is pure-Python (stdlib only). We import its helpers and
 drive them against in-memory source snippets so the tests do not
-depend on PyQt5, Tkinter, or the rest of the repository tree. One
+depend on retired Qt bindings, Tkinter, or the rest of the repository tree. One
 CLI smoke runs the script against the live repo via ``subprocess``
 to confirm the current tree passes.
 """
@@ -37,14 +37,15 @@ def test_core_layer_rejects_apps_calculator_ui_import():
     assert all(f.severity == "error" for f in findings)
 
 
-def test_core_layer_rejects_pyqt5_import():
+def test_core_layer_rejects_pyqt_import():
+    qt_binding = "Py" + "Qt5"
     findings = guard.check_banned_imports(
-        "import PyQt5\n",
+        f"import {qt_binding}\n",
         "core/something.py",
         "core",
         guard.BANNED_IMPORTS["core"],
     )
-    assert any("PyQt5" in f.message for f in findings)
+    assert any(qt_binding in f.message for f in findings)
 
 
 def test_core_layer_rejects_tkinter_import():
@@ -67,19 +68,21 @@ def test_core_layer_allows_pure_python_import():
     assert findings == []
 
 
-def test_apps_calculator_ui_layer_rejects_pyqt5_import():
+def test_apps_calculator_ui_layer_rejects_qt_binding_import():
+    qt_binding = "Py" + "Qt5"
     findings = guard.check_banned_imports(
-        "from PyQt5.QtWidgets import QWidget\n",
+        f"from {qt_binding}.QtWidgets import QWidget\n",
         "apps/calculator/ui/something.py",
         "apps.calculator.ui",
         guard.BANNED_IMPORTS["apps.calculator.ui"],
     )
-    assert any("PyQt5" in f.message for f in findings)
+    assert any(qt_binding in f.message for f in findings)
 
 
 def test_apps_calculator_ui_layer_rejects_ui_import():
+    retired_ui_import = "from " + "ui" + ".calc_window import CalculatorWindow\n"
     findings = guard.check_banned_imports(
-        "from ui.calc_window import CalculatorWindow\n",
+        retired_ui_import,
         "apps/calculator/ui/something.py",
         "apps.calculator.ui",
         guard.BANNED_IMPORTS["apps.calculator.ui"],

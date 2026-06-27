@@ -107,7 +107,7 @@ def get_float_val(widget, field_name, *, allow_empty=False, allow_zero=False) ->
 ```
 
 - No PyQt object types are imposed beyond `QLineEdit` for `widget`.
-- Error styling uses `ui.theme` tokens (no inline hex).
+- Error styling uses `retired theme module` tokens (no inline hex).
 
 ### `ui/calculator_en_tab.py`
 
@@ -211,8 +211,8 @@ calc_window.py
     ├──> calculator_ahri_tab.AHRITab             ──┤
     │                                              │
     │   per-tab modules import:                    │
-    │     ui.spreadsheet_table  (model/view/factories)
-    │     ui.theme              (tokens)
+    │     retired spreadsheet table module  (model/view/factories)
+    │     retired theme module              (tokens)
     │     ui.calculator_errors  (InputValidationError, get_float_val, styling)
     │     ui.calculator_recompute  (DebouncedRecompute)      [β]
     │     ui.calculator_result_panel.CalculatorResultPanel   [γ]
@@ -246,7 +246,7 @@ reads in one line.
   the error styling string (already token-bound in 108), and a small
   `parse_number` helper.
 - `calc_window.py` imports the helpers. No behavioral change.
-- Verification: full pytest. PyQt5-bearing CI runs UI smoke; existing
+- Verification: full pytest. legacy Qt binding-bearing CI runs UI smoke; existing
   `_get_float_val` callers (`calculate_ahri`, `_build_hspf2_v3_input`,
   `_read_en_table_points_kw`, EN/AHRI input read) keep working through
   the import alias.
@@ -259,7 +259,7 @@ reads in one line.
   delegates `calculate_en()` → `self.tab_en.calculate()`.
 - `EN14825Tab` exposes `values_changed` (forwarded from its
   `SpreadsheetTableModel` instances), preparing the Slice β wiring.
-- Verification: full pytest. PyQt5 CI runs `tests/test_app_calculator_
+- Verification: full pytest. legacy Qt binding CI runs `tests/test_app_calculator_
   ui_smoke.py` EN smoke (9 tests including 109's standby-position
   smoke). Public attributes touched by smoke (`window.en_seer_group`,
   `window.en_scop_group`, `window.en_standby_group`,
@@ -278,7 +278,7 @@ reads in one line.
   `window.ahri_hspf2_model` / `window.input_widgets_ahri` /
   `window.input_widgets_hspf2` / `window.radio_hp` / `window.radio_ac`
   stay reachable.
-- Verification: full pytest. PyQt5 CI runs `tests/test_app_calculator_
+- Verification: full pytest. legacy Qt binding CI runs `tests/test_app_calculator_
   ui_smoke.py` AHRI smoke (button click + HSPF2 required validation).
 
 ### Slice β (now downstream of ε/ζ/η) — AHRI/EN auto-recompute wiring
@@ -322,7 +322,7 @@ reads in one line.
 ## Test strategy
 
 - Each extraction slice ships green against
-  `tests/test_app_calculator_ui_smoke.py` (PyQt5 environment) and
+  `tests/test_app_calculator_ui_smoke.py` (legacy Qt binding environment) and
   `tests/test_calculator_schema_boundaries.py`.
 - ε: pure helper. New unit tests in `tests/test_calculator_errors.py`
   for `get_float_val` / `parse_number` boundary cases; existing

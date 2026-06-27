@@ -22,7 +22,7 @@
 
 ## Background
 
-`app_calculator.py` is a thin PyQt5 entrypoint over
+`app_calculator.py` is a thin legacy Qt binding entrypoint over
 `ui/calc_window.py` (~834 LOC of `CalculatorWindow` shell + AHRI / EN
 tabs + helper plumbing). It already shares core calculator logic
 through:
@@ -42,8 +42,8 @@ Calculator core (`core/calculator_*.py`) is pure Python with no
 `numpy` / `pandas` (AGENTS rule). Heavy weight in the deployed
 `app_calculator.exe` is the **GUI shell**, not the engine.
 
-A PyInstaller build of `app_calculator.py` carries PyQt5 + Qt
-runtime + Qt plugins. Hands-on estimates for similar PyQt5 console
+A PyInstaller build of `app_calculator.py` carries legacy Qt binding + Qt
+runtime + Qt plugins. Hands-on estimates for similar legacy Qt binding console
 apps land in the **~100–150 MB** range for either one-folder dist or
 one-file exe (this is an order-of-magnitude estimate, not a measured
 value — see `docs/guides/lightweight_calculator_packaging_check.md`
@@ -55,7 +55,7 @@ bundle on Windows / macOS / Linux Python installs). A PyInstaller
 build of a Tkinter app pulls in `tcl86.dll` / `tk86.dll` and the Tcl
 script library, but **does not** pull in Qt, Qt plugins,
 `QtWebEngine`, or platform-style assets. Field reports for small
-Tkinter calculator-shaped apps frequently land below the PyQt5
+Tkinter calculator-shaped apps frequently land below the legacy Qt binding
 baseline by a noticeable margin, but the actual delta depends on
 included DLLs and must be measured locally before any decision is
 locked in.
@@ -69,7 +69,7 @@ on a lightweight Tkinter UI shell while:
    profile / dispatcher / region-config / unit-adapter assets
    unchanged.
 2. Producing a PyInstaller bundle that is measurably smaller than the
-   PyQt5 `app_calculator` bundle on the same host.
+   legacy Qt binding `app_calculator` bundle on the same host.
 3. Preserving the user-visible calculation semantics (numbers, keys,
    region selection) of the PyQt calculator UI for the profile(s) the
    MVP supports.
@@ -102,7 +102,7 @@ on a lightweight Tkinter UI shell while:
 
 Plain **Tkinter** (CPython stdlib). Optional `ttk` widgets for
 slightly nicer default styling on Windows. No external GUI
-dependency. No `numpy`, no `pandas`. No PyQt5 import anywhere in the
+dependency. No `numpy`, no `pandas`. No legacy Qt binding import anywhere in the
 Tkinter shell.
 
 Why Tkinter over alternatives, for an MVP only:
@@ -176,7 +176,7 @@ Deliberately small. Anything not listed here is out of scope for
 the spike.
 
 - Runnable Tkinter app (`python3 -m app_calculator_tk`).
-- No PyQt5 import anywhere in the Tkinter shell.
+- No legacy Qt binding import anywhere in the Tkinter shell.
 - Single standard tab in the MVP: **ISO 16358**.
 - Region selector inside the ISO 16358 tab. MVP wires only one
   region: **Hong Kong**.
@@ -243,7 +243,7 @@ Detailed commands live in
 `docs/guides/lightweight_calculator_packaging_check.md`. Summary of
 what gets measured:
 
-- PyInstaller one-folder dist size for `app_calculator.py` (PyQt5
+- PyInstaller one-folder dist size for `app_calculator.py` (legacy Qt binding
   baseline) on Windows (target deployment platform).
 - PyInstaller one-folder dist size for `app_calculator_tk.py`
   (Tkinter MVP) on the same Windows host with the same Python
@@ -290,7 +290,7 @@ shared base class.
 Trigger to **continue Tkinter direction** (all must hold):
 
 1. Measured Tkinter one-folder dist on Windows is **at least 40 %
-   smaller** than the PyQt5 baseline on the same host with the same
+   smaller** than the legacy Qt binding baseline on the same host with the same
    Python build (i.e. ≥ 40 MB absolute reduction if the PyQt baseline
    lands near 100 MB).
 2. Hong Kong CSPF + HSPF calculation results from the Tkinter MVP
@@ -321,7 +321,7 @@ Trigger to **fall back** (any one is enough):
 Fallback options, in order:
 - CLI / `argparse` entrypoint over the same dispatcher.
 - Local HTML / browser-driven UI (Flask + browser).
-- Stay on PyQt5 and resume the Calculator UI module boundary
+- Stay on legacy Qt binding and resume the Calculator UI module boundary
   workstream from Slice ζ.
 
 ## Next implementation slice
