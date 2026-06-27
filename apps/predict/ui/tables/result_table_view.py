@@ -9,5 +9,5 @@ class ResultTableView(QTableView):
     def __init__(self, parent: QTableView | None = None) -> None:
         super().__init__(parent)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)

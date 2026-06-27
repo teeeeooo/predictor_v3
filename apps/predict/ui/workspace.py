@@ -101,33 +101,32 @@ class PredictWorkspace(QWidget):
         return panel
 
     def _append_row(self) -> None:
+        row_index = len(self.session.case_store)
+        self._begin_insert_rows(row_index, row_index)
         self.session.case_store.append_empty_rows(1)
-        self._refresh()
+        self._end_insert_rows()
+        self._refresh_after_row_change()
 
     def _delete_selected_or_last_row(self) -> None:
-        selected = self.input_table.selectionModel().selectedRows()
-        if selected:
-            removed = self.session.case_store.remove_row_indexes(
-                index.row() for index in selected
-            )
-        elif len(self.session.case_store) > 0:
-            removed = self.session.case_store.remove_row_indexes(
-                [len(self.session.case_store) - 1]
-            )
-        else:
-            removed = []
-        self.session.remove_results_for_cases(removed)
-        self._refresh()
+        rows = self._selected_input_rows()
+        if not rows and len(self.session.case_store) > 0:
+            rows = [len(self.session.case_store) - 1]
+        self._remove_row_indexes(rows)
 
     def _reset_rows(self) -> None:
+        self._begin_reset_models()
         removed = self.session.case_store.remove_rows(self.session.case_order)
         self.session.remove_results_for_cases(removed)
         self.session.case_store.append_empty_rows(DEFAULT_INITIAL_ROWS)
-        self._refresh()
+        self._end_reset_models()
+        self._refresh_after_row_change()
 
     def _refresh(self) -> None:
         self.input_model.refresh()
         self.result_model.refresh()
+        self._refresh_after_row_change()
+
+    def _refresh_after_row_change(self) -> None:
         self.table_sync.sync_row_heights()
         counts = self.session.summary_counts()
         self.status_label.setText(
@@ -135,3 +134,56 @@ class PredictWorkspace(QWidget):
                 **counts
             )
         )
+
+    def _selected_input_rows(self) -> list[int]:
+        return sorted(
+            {index.row() for index in self.input_table.selectionModel().selectedRows()}
+        )
+
+    def _remove_row_indexes(self, rows: list[int]) -> None:
+        valid_rows = sorted(
+            {row for row in rows if 0 <= row < len(self.session.case_store)},
+            reverse=True,
+        )
+        for group in self._contiguous_descending_groups(valid_rows):
+            first_row = group[-1]
+            last_row = group[0]
+            case_ids = [self.session.case_order[row] for row in range(first_row, last_row + 1)]
+            self._begin_remove_rows(first_row, last_row)
+            removed = self.session.case_store.remove_rows(case_ids)
+            self.session.remove_results_for_cases(removed)
+            self._end_remove_rows()
+        self._refresh_after_row_change()
+
+    def _contiguous_descending_groups(self, rows: list[int]) -> list[list[int]]:
+        groups: list[list[int]] = []
+        for row in rows:
+            if not groups or groups[-1][-1] - 1 != row:
+                groups.append([row])
+            else:
+                groups[-1].append(row)
+        return groups
+
+    def _begin_insert_rows(self, first_row: int, last_row: int) -> None:
+        self.input_model.begin_insert_rows(first_row, last_row)
+        self.result_model.begin_insert_rows(first_row, last_row)
+
+    def _end_insert_rows(self) -> None:
+        self.result_model.end_insert_rows()
+        self.input_model.end_insert_rows()
+
+    def _begin_remove_rows(self, first_row: int, last_row: int) -> None:
+        self.input_model.begin_remove_rows(first_row, last_row)
+        self.result_model.begin_remove_rows(first_row, last_row)
+
+    def _end_remove_rows(self) -> None:
+        self.result_model.end_remove_rows()
+        self.input_model.end_remove_rows()
+
+    def _begin_reset_models(self) -> None:
+        self.input_model.begin_reset_model()
+        self.result_model.begin_reset_model()
+
+    def _end_reset_models(self) -> None:
+        self.result_model.end_reset_model()
+        self.input_model.end_reset_model()

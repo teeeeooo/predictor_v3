@@ -17,7 +17,6 @@ class ResultColumn:
 
 
 RESULT_COLUMNS: tuple[ResultColumn, ...] = (
-    ResultColumn("case_id", "Case ID"),
     ResultColumn("status", "Status"),
     ResultColumn("power", "Power"),
     ResultColumn("eer", "EER"),
@@ -48,8 +47,6 @@ class ResultTableModel(QAbstractTableModel):
         column = RESULT_COLUMNS[index.column()]
         case_id = self._session.case_order[index.row()]
         result = self._session.result_for_case(case_id)
-        if column.key == "case_id":
-            return case_id
         if column.key == "status":
             return result.status
         if column.key == "message":
@@ -74,5 +71,33 @@ class ResultTableModel(QAbstractTableModel):
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def refresh(self) -> None:
-        """Notify views that the session order or values changed."""
-        self.layoutChanged.emit()
+        """Notify views that existing values may have changed."""
+        if self.rowCount() == 0 or self.columnCount() == 0:
+            return
+        top_left = self.index(0, 0)
+        bottom_right = self.index(self.rowCount() - 1, self.columnCount() - 1)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
+
+    def begin_insert_rows(self, first_row: int, last_row: int) -> None:
+        """Notify views that rows are about to be inserted."""
+        self.beginInsertRows(QModelIndex(), first_row, last_row)
+
+    def end_insert_rows(self) -> None:
+        """Notify views that row insertion finished."""
+        self.endInsertRows()
+
+    def begin_remove_rows(self, first_row: int, last_row: int) -> None:
+        """Notify views that rows are about to be removed."""
+        self.beginRemoveRows(QModelIndex(), first_row, last_row)
+
+    def end_remove_rows(self) -> None:
+        """Notify views that row removal finished."""
+        self.endRemoveRows()
+
+    def begin_reset_model(self) -> None:
+        """Notify views that the model is about to reset."""
+        self.beginResetModel()
+
+    def end_reset_model(self) -> None:
+        """Notify views that model reset finished."""
+        self.endResetModel()

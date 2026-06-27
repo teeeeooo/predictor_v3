@@ -19,7 +19,6 @@ class InputColumn:
 
 
 INPUT_COLUMNS: tuple[InputColumn, ...] = (
-    InputColumn("case_id", "Case ID", editable=False),
     InputColumn("capacity", "Capacity"),
     InputColumn("indoor_model", "Indoor Model"),
     InputColumn("outdoor_model", "Outdoor Model"),
@@ -50,8 +49,6 @@ class InputTableModel(QAbstractTableModel):
             return None
         column = INPUT_COLUMNS[index.column()]
         case = self._session.case_store.get_case_at(index.row())
-        if column.key == "case_id":
-            return case.case_id
         if column.autofill:
             return case.autofill_values.get(column.key, "")
         return case.input_values.get(column.key, "")
@@ -94,5 +91,33 @@ class InputTableModel(QAbstractTableModel):
         return flags
 
     def refresh(self) -> None:
-        """Notify views that the session order or values changed."""
-        self.layoutChanged.emit()
+        """Notify views that existing values may have changed."""
+        if self.rowCount() == 0 or self.columnCount() == 0:
+            return
+        top_left = self.index(0, 0)
+        bottom_right = self.index(self.rowCount() - 1, self.columnCount() - 1)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
+
+    def begin_insert_rows(self, first_row: int, last_row: int) -> None:
+        """Notify views that rows are about to be inserted."""
+        self.beginInsertRows(QModelIndex(), first_row, last_row)
+
+    def end_insert_rows(self) -> None:
+        """Notify views that row insertion finished."""
+        self.endInsertRows()
+
+    def begin_remove_rows(self, first_row: int, last_row: int) -> None:
+        """Notify views that rows are about to be removed."""
+        self.beginRemoveRows(QModelIndex(), first_row, last_row)
+
+    def end_remove_rows(self) -> None:
+        """Notify views that row removal finished."""
+        self.endRemoveRows()
+
+    def begin_reset_model(self) -> None:
+        """Notify views that the model is about to reset."""
+        self.beginResetModel()
+
+    def end_reset_model(self) -> None:
+        """Notify views that model reset finished."""
+        self.endResetModel()

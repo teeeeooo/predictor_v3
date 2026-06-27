@@ -82,8 +82,9 @@ class TableSelectionScrollSync:
     def _apply_row_selection(self, target: QTableView, selected: QItemSelection) -> None:
         selection_model = target.selectionModel()
         selection_model.clearSelection()
-        for source_index in selected.indexes():
-            target_index = target.model().index(source_index.row(), 0)
+        selected_rows = sorted({source_index.row() for source_index in selected.indexes()})
+        for row in selected_rows:
+            target_index = target.model().index(row, 0)
             selection_model.select(
                 target_index,
                 QItemSelectionModel.Select | QItemSelectionModel.Rows,
