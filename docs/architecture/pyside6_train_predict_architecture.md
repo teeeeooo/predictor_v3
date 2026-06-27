@@ -1,12 +1,12 @@
-# PySide6 Train/Predict UI Implementation Spec
+# PySide6 Train/Predict Architecture Contract
 
 ## 1. Purpose
 
-This document is the implementation-facing specification for the new PySide6 Train/Predict UI in `predictor_v3`.
+This document is the governing architecture contract for the new PySide6 Train/Predict UI in `predictor_v3`.
 
 It is intended for Codex/agent implementation work. It defines the target package structure, file responsibilities, dependency boundaries, state model, UI layout, workflow, and verification expectations.
 
-The design decision behind this spec is recorded in:
+The design decision behind this architecture contract is recorded in:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
 
@@ -17,8 +17,8 @@ Non-binding visual references:
 
 These images are layout references, not pixel-perfect implementation targets.
 Preserve the broad Predict split-workspace and Trainer tab intent; resolve
-specific sizing, tokens, states, and behavior through this spec and active UI/UX
-owner documents.
+specific sizing, tokens, states, and behavior through this architecture contract
+and active UI/UX owner documents.
 
 ## 2. Implementation Principle
 
@@ -875,7 +875,7 @@ Do not hard-code example counts such as 300. Counts shown in mockups are example
 Allowed:
 
 - add design gate document
-- add implementation spec document
+- add architecture contract document
 - update charter/architecture/work plan active references
 - add result report
 

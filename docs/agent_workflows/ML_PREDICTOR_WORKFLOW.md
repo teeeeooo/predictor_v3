@@ -32,9 +32,10 @@ the short routing gate.
   `docs/knowledge/README.md` and relevant knowledge docs.
 - ML schema/feature boundary or calculator input/output boundary:
   `docs/architecture/project_architecture.md`.
-- Train/Predict PySide6 rewrite design/spec:
-  `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md` and
-  `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`.
+- Train/Predict PySide6 rewrite architecture contract:
+  `docs/architecture/pyside6_train_predict_architecture.md`; design decision
+  record:
+  `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
 - Project-wide responsibility boundaries:
   `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
 

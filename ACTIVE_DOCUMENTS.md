@@ -57,6 +57,7 @@
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
+| `docs/architecture/pyside6_train_predict_architecture.md` | Governing architecture contract for the PySide6 Train/Predict rewrite | ML/Predictor workflow, design gate, work plan, Train/Predict implementation tasks | `app_predict.py`, `app_train.py`, `apps/predict/`, `apps/train/`, PredictWorkspace, state/controller/service/adapter/worker boundaries |
 | `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` | Codebase-wide Clean Architecture / MVC boundary owner | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture-sensitive tasks | Model/Controller/Shell/View/Policy responsibility triage across interfaces, domain logic, model operations, batch, file I/O, and adapters |
 | `docs/ui_ux/00_UI_UX_SYSTEM.md` | UI/UX SSOT root | UI/UX tasks, `AGENTS.md`, `AGENT_TASK_ROUTER.md`, architecture doc | toolkit policy, design tokens, table UX contract, visual architecture, input matrix/result surface rules, portable adoption guide, adapters |
 | `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md` | Toolkit selection policy | UI/UX root, toolkit decisions | adapter docs |

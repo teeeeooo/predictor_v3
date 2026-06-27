@@ -85,7 +85,7 @@ Status:
 
 Milestones:
 
-- Design gate and implementation spec added.
+- Design gate and architecture contract added.
 - Non-binding visual reference assets added.
 - Charter, architecture, workflow, design index, and work plan references
   aligned.
@@ -94,7 +94,7 @@ Milestones:
 Reference anchors:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
-- `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`
+- `docs/architecture/pyside6_train_predict_architecture.md`
 - `result_reports/active/493_pyside6-train-predict-doc-alignment.md`
 
 ### Arc 2 — PySide6 App Skeleton and Package Boundary

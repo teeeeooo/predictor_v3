@@ -3,8 +3,8 @@
 ## Goal
 
 Align project documentation with the approved PySide6 Train/Predict rewrite
-decision and make the new design gate/spec discoverable without starting
-implementation.
+decision and make the new design gate and architecture contract discoverable
+without starting implementation.
 
 ## Scope
 
@@ -24,13 +24,13 @@ implementation.
 - `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md`
 - `docs/designs/README.md`
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
-- `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`
+- `docs/architecture/pyside6_train_predict_architecture.md`
 - `result_reports/active/493_pyside6-train-predict-doc-alignment.md`
 
 ## Changes
 
-- Registered the PySide6 Train/Predict design gate and implementation spec in
-  `docs/designs/README.md`.
+- Registered the PySide6 Train/Predict design gate and architecture contract in
+  active routing docs.
 - Updated charter, brief, architecture, ML workflow, and toolkit policy wording
   so Train/Predict is a PySide6 rewrite, not a PyQt5 migration or deferred
   placeholder path.
@@ -80,8 +80,8 @@ Read Ledger:
   record index update rule.
 - `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`: compact report rules.
 - `docs/designs/README.md`: design record index owner.
-- new PySide6 design gate/spec: decision, implementation slices, and visual
-  reference placement.
+- new PySide6 design gate/architecture contract: decision, implementation
+  slices, and visual reference placement.
 - targeted `rg` search across active docs for PyQt5/PySide6/app boundary stale
   wording.
 

@@ -81,8 +81,8 @@
   `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`.
 - PySide6 Train/Predict rewrite design gate:
   `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
-- PySide6 Train/Predict implementation spec:
-  `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`.
+- PySide6 Train/Predict governing architecture contract:
+  `docs/architecture/pyside6_train_predict_architecture.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - Calculator sample/default inventory and empty-state policy:

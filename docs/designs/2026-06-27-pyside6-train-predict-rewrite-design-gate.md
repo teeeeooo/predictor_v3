@@ -6,9 +6,9 @@ This document records the design decision for the next Train/Predict workstream 
 
 The decision is to stop treating the existing PyQt5 Train/Predict UI as the long-term implementation target and to create a new PySide6-based Train/Predict application structure.
 
-This is a design gate document. It records the decision, scope, non-goals, and architectural direction. Detailed implementation rules are defined in:
+This is a design gate document. It records the decision, scope, non-goals, and architectural direction. The governing architecture contract is:
 
-- `docs/designs/2026-06-27-pyside6-train-predict-ui-implementation-spec.md`
+- `docs/architecture/pyside6_train_predict_architecture.md`
 
 ## 2. Background
 
@@ -76,7 +76,7 @@ This design gate should be reflected later in:
 - `PROJECT_CHARTER.md`
 - `docs/architecture/project_architecture.md`
 - `docs/WORK_PLAN.md`
-- `ACTIVE_DOCUMENTS.md` if the active-document index needs a direct pointer to this design/spec pair.
+- `ACTIVE_DOCUMENTS.md` if the active-document index needs a direct pointer to the architecture contract and this design decision record.
 
 `project_memory_seed.md` should not be edited as part of ordinary implementation work unless a later explicit memory seed sync task is approved.
 
@@ -89,7 +89,7 @@ Visual reference assets are available as non-binding layout references:
 
 They are not pixel-perfect requirements. Use them only to preserve the broad
 workspace layout, split-table intent, and Trainer tab composition while applying
-the implementation spec and active UI/UX owner documents.
+the architecture contract and active UI/UX owner documents.
 
 ### 5.1 Predict app UX
 
@@ -304,7 +304,7 @@ These should remain explicit follow-up decisions:
 
 1. Docs alignment slice
    - Add this design gate.
-   - Add implementation spec.
+   - Add the Train/Predict architecture contract.
    - Update charter/architecture/work plan references.
    - No production code changes.
 
