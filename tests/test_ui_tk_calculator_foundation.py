@@ -556,7 +556,7 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
     try:
-        from apps.calculator.ui.tabs import iso16358_tab
+        from apps.calculator.ui.lifecycle import controller as lifecycle_controller
         from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
         calls = []
@@ -599,12 +599,12 @@ def test_iso_fit_path_uses_content_hugging_shell(monkeypatch):
 
                 return FakeForm()
 
-        monkeypatch.setattr(iso16358_tab, "TkContentHuggingShell", FakeShell)
+        monkeypatch.setattr(lifecycle_controller, "TkContentHuggingShell", FakeShell)
         tab = Iso16358Tab(root)
         tab.pack(fill="both", expand=True)
         root.update_idletasks()
 
-        tab._fit_toplevel_to_current_content()
+        tab.fit_toplevel_to_current_content_once()
 
         assert len(registered) == 1
         (
