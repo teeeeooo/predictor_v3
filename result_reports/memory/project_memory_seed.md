@@ -40,6 +40,8 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md` (covered reports `386-403`)
 - `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md` (covered reports `405-415`)
 - `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md` (covered reports `417-444`)
+- `result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md` (covered reports `449-461`)
+- `result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md` (covered reports `448`, `462-475`, with `476-479` kept active as next-decision evidence)
 
 ## Scope and Non-goals
 
@@ -888,6 +890,20 @@ entries:
       - structure gate
     assertionStatus: verified
     source: result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md (covered reports 449-461)
+
+  - type: decision
+    topic: calculator closeout token cleanup and structure helper boundaries
+    content: Calculator production profiles launch without product-performance demo prefills, live docs/tests use app_calculator.py as the canonical launch wrapper, calculator cell backgrounds and cleaned-up UI presentation values route through semantic owners, and the next implementation is limited to a pure detail formatting coercion helper. Profile field mapping and precision remain profile-local; the matrix controller, batch dialog handle, and detail toggle candidates remain separate later decisions with their recorded design boundaries.
+    keywords:
+      - predictor_v3
+      - calculator empty state
+      - UI tokens
+      - detail formatting helper
+      - matrix controller
+      - dialog handle
+      - detail toggle
+    assertionStatus: verified
+    source: result_reports/summaries/480_summary-calculator-closeout-token-cleanup-structure-audit.md (covered reports 448, 462-475; active reports 476-479 retained)
 ```
 
 ## Known Gaps

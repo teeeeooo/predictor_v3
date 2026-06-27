@@ -36,11 +36,13 @@
 - The four structure audits are complete. Detail formatting and matrix
   controller candidates are implementation-ready; dialog handle and detail
   toggle candidates require the recorded design/guard boundaries.
+- Report lifecycle cleanup is complete; active reports now retain only the
+  near-term implementation decision reports and unresolved design-gate evidence.
 
 ## Next Actions
 
-1. Implement the small pure detail formatting coercion helper while keeping all
-   profile field maps and precision choices local.
+1. Implement pure detail formatting coercion helper while keeping all profile
+   field maps and precision choices local.
 2. Reassess the matrix controller candidate only after that bounded slice.
 
 ## Active Blockers / Open Decisions
