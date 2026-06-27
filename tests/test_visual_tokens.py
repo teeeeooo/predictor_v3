@@ -10,9 +10,12 @@ import pytest
 
 
 REQUIRED_COLOR_ROLES = {
+    "action.primary",
+    "surface.header",
     "surface.default",
     "surface.panel",
     "text.default",
+    "text.disabled",
     "text.muted",
     "border.default",
     "border.focus",
@@ -28,9 +31,26 @@ REQUIRED_COLOR_ROLES = {
     "result.warning",
     "result.error",
 }
-REQUIRED_SPACING_ROLES = {"space.xs", "space.sm", "space.md", "space.lg"}
+REQUIRED_SPACING_ROLES = {
+    "space.xs",
+    "space.sm",
+    "space.md",
+    "space.lg",
+    "space.outer",
+    "space.panel",
+    "space.row",
+    "space.cell",
+}
 REQUIRED_RADIUS_ROLES = {"radius.cell", "radius.panel", "radius.pill"}
-REQUIRED_FONT_ROLES = {"font.body", "font.label", "font.mono_label"}
+REQUIRED_FONT_ROLES = {
+    "font.body",
+    "font.label",
+    "font.window_title",
+    "font.panel_title",
+    "font.table.header",
+    "font.table.cell",
+    "font.mono_label",
+}
 
 
 def _tokens():

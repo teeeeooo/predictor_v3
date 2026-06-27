@@ -22,10 +22,13 @@ __all__ = [
 _COLORS: Mapping[str, str] = {
     "surface.default": "#F7F7F6",
     "surface.panel": "#FFFFFF",
+    "surface.header": "#F5F5F5",
     "text.default": "#181818",
     "text.muted": "#626262",
+    "text.disabled": "#8A94A3",
     "border.default": "#D6D6D3",
     "border.focus": "#343434",
+    "action.primary": "#2F6F9F",
     "table.header": "#EDEDEB",
     "table.input": "#FFFFFF",
     "table.fixed": "#F1F2F2",
@@ -44,6 +47,10 @@ _SPACING: Mapping[str, int] = {
     "space.sm": 8,
     "space.md": 16,
     "space.lg": 24,
+    "space.outer": 15,
+    "space.panel": 12,
+    "space.row": 6,
+    "space.cell": 6,
 }
 
 _RADII: Mapping[str, int] = {
@@ -64,6 +71,30 @@ _FONTS: Mapping[str, Mapping[str, object]] = {
         "size": 11,
         "weight": "medium",
         "role": "label",
+    },
+    "font.window_title": {
+        "family": None,
+        "size": 16,
+        "weight": "bold",
+        "role": "window_title",
+    },
+    "font.panel_title": {
+        "family": None,
+        "size": 14,
+        "weight": "bold",
+        "role": "panel_title",
+    },
+    "font.table.header": {
+        "family": None,
+        "size": 11,
+        "weight": "bold",
+        "role": "table_header",
+    },
+    "font.table.cell": {
+        "family": None,
+        "size": 11,
+        "weight": "normal",
+        "role": "table_cell",
     },
     "font.mono_label": {
         "family": "monospace",

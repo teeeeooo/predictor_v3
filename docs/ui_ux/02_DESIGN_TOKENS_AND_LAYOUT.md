@@ -14,9 +14,10 @@
   neutral-first visual philosophy, see
   `04_VISUAL_DESIGN_ARCHITECTURE.md`; this document continues to own
   token and layout naming.
-- `ui_common/visual_tokens.py` is the toolkit-neutral semantic token
-  code foundation for later adapters; it does not replace existing
-  theme modules or apply styles to current UI.
+- For `predictor_v3`, `ui_common/visual_tokens.py` is the active
+  toolkit-neutral semantic token owner for upcoming PySide6 Predict/Train
+  visual parity work. It does not apply styles by itself; concrete PySide6
+  styling belongs in a later adapter/surface slice.
 
 ## 1. Color tokens
 
