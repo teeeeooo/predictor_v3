@@ -27,6 +27,7 @@ from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDeta
 from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SEER_BIN_DETAIL_SCHEMA,
 )
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.en14825_seer_detail import format_seer_bin_details
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.layout_constants import (
@@ -225,6 +226,20 @@ class En14825SeerSection:
             default_source="Declared",
             csv_filename="en14825_seer_bin_detail.csv",
             schema=EN14825_SEER_BIN_DETAIL_SCHEMA,
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 6,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
         )
 
         # 4. Debounced auto-calc scheduler
@@ -440,21 +455,7 @@ class En14825SeerSection:
         self.detail_panel.set_status(status)
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self.detail_panel.grid(
-                row=6,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _parse_float_safe(self, text: str, default: float) -> float:
         try:

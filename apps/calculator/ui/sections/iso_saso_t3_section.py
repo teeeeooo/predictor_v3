@@ -14,6 +14,7 @@ from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTI
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.result_formatting import bin_details, metric_value, kwh_value
 from apps.calculator.ui.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
@@ -127,6 +128,21 @@ class IsoSasoT3Section:
             source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
             default_source=_OPTIONAL_TRACE_LABEL,
             csv_filename="saso_t3_bin_detail.csv",
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 5,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            before_show=self._update_detail_panel,
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
         )
         self.trace_table = self.detail_panel.table
         self.trace_profile_combo = self.detail_panel.source_combo
@@ -320,22 +336,7 @@ class IsoSasoT3Section:
         self._batch_handle.snapshot = snapshot
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self._update_detail_panel()
-            self.detail_panel.grid(
-                row=5,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _update_detail_panel(self) -> None:
         if self._trace_status is not None:

@@ -20,6 +20,7 @@ from apps.calculator.ui.profile_resolver import (
     two_point_profile_labels,
 )
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.result_formatting import bin_details, metric_value, kwh_value
 from apps.calculator.ui.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
@@ -114,6 +115,21 @@ class IsoIseer2PointSection:
             source_labels=tuple(two_point_profile_labels()),
             default_source=two_point_profile_labels()[0],
             csv_filename="iso_iseer_bin_detail.csv",
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 4,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            before_show=self._update_detail_panel,
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
         )
         self.trace_table = self.detail_panel.table
         self.trace_profile_combo = self.detail_panel.source_combo
@@ -212,22 +228,7 @@ class IsoIseer2PointSection:
         self._batch_handle.snapshot = snapshot
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self._update_detail_panel()
-            self.detail_panel.grid(
-                row=4,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _update_detail_panel(self) -> None:
         if self._trace_status is not None:

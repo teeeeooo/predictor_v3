@@ -23,6 +23,7 @@ from apps.calculator.ui.profile_resolver import resolve_profile_id
 from apps.calculator.ui.result_models import result_status
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.hong_kong_cspf import HongKongCspfBatchDialog
 from apps.calculator.ui.sections.iso16358_helpers import build_cspf_input
@@ -125,6 +126,21 @@ class HongKongCspfSection:
             csv_filename="hong_kong_cspf_bin_detail.csv",
             show_source_selector=False,
         )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 5,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            before_show=self._update_detail_panel,
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
+        )
         self.trace_table = self.detail_panel.table
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
@@ -213,22 +229,7 @@ class HongKongCspfSection:
         self.result_panel.set_summaries((summarize_cspf_result(result),))
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self._update_detail_panel()
-            self.detail_panel.grid(
-                row=5,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _update_detail_panel(self) -> None:
         if self._trace_status is not None:

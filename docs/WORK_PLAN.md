@@ -33,9 +33,9 @@
   are manually confirmed.
 - The five approved legacy UI token cleanup slices are complete, with remaining
   values classified in the formal exception/exclusion ledger.
-- The four structure audits are complete. Detail formatting and matrix
-  controller candidates are implementation-ready; dialog handle and detail
-  toggle candidates require the recorded design/guard boundaries.
+- The four structure audits and their approved helper implementation bundle are
+  complete: UI literal sentinel hotfix, detail formatting coercion helper,
+  batch matrix controller, batch dialog handle, and detail visibility helper.
 - Report lifecycle cleanup is complete; active reports now retain only the
   near-term implementation decision reports and unresolved design-gate evidence.
 - Agent gate/workflow hardening now requires report-backed structural source
@@ -44,9 +44,9 @@
 
 ## Next Actions
 
-1. Implement pure detail formatting coercion helper while keeping all profile
-   field maps and precision choices local.
-2. Reassess the matrix controller candidate only after that bounded slice.
+1. Complete the final validation/push for the calculator helper implementation
+   bundle.
+2. Select the next approved calculator detail/manual-smoke or empty-state slice.
 
 ## Active Blockers / Open Decisions
 

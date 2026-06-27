@@ -34,6 +34,7 @@ from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.ahri_hspf2_detail import format_hspf2_bin_details
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_HSPF2_BIN_DETAIL_SCHEMA
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
 
 
@@ -90,6 +91,20 @@ class AhriHspf2Section:
             csv_filename="ahri_hspf2_bin_detail.csv",
             show_source_selector=False,
             schema=AHRI_HSPF2_BIN_DETAIL_SCHEMA,
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 7,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
         )
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         for table in self._tables:
@@ -314,21 +329,7 @@ class AhriHspf2Section:
             self.detail_panel.set_status(status)
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self.detail_panel.grid(
-                row=7,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _update_cop_rows(self, cops: dict[str, float]) -> None:
         for point in AHRI_HSPF2_POINT_ORDER:

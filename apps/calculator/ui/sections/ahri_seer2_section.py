@@ -33,6 +33,7 @@ from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.ahri_seer2_detail import format_seer2_bin_details
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_SEER2_BIN_DETAIL_SCHEMA
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
 
 
@@ -163,6 +164,20 @@ class AhriSeer2Section:
             show_source_selector=False,
             schema=AHRI_SEER2_BIN_DETAIL_SCHEMA,
         )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 5,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
+        )
 
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.input_table.set_values_changed_callback(self._on_input_changed)
@@ -267,21 +282,7 @@ class AhriSeer2Section:
             self.detail_panel.set_status(status)
 
     def _toggle_detail(self) -> None:
-        self._detail_visible = not self._detail_visible
-        if self._detail_visible:
-            self.detail_panel.grid(
-                row=5,
-                column=0,
-                sticky="ew",
-                padx=0,
-                pady=(0, ISO_SECTION_BLOCK_GAP),
-            )
-            self.detail_toggle.configure(text="상세 닫기 ↑")
-        else:
-            self.detail_panel.grid_remove()
-            self.detail_toggle.configure(text="상세 보기 ↓")
-        if self._on_detail_visibility_changed is not None:
-            self._on_detail_visibility_changed()
+        self._detail_visibility.toggle()
 
     def _set_static_cell(self, address: tuple[str, str], value: str) -> None:
         label = self.input_table.static_cell_labels.get(address)
