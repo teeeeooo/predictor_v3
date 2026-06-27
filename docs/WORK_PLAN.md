@@ -29,22 +29,26 @@
 
 - Calculator closeout is complete with no remaining implementation blocker in
   the recently closed helper/batch/detail/token/manual-smoke scope.
-- Train/Predict Arc 3 PredictWorkspace UI foundation is implemented:
-  PredictSession / CaseStore own variable-size case order, Input Cases and
-  Prediction Results use split QTableView/QAbstractTableModel surfaces, and the
-  Train app reuses PredictWorkspace in its Predict tab.
+- Train/Predict Arc 4 prediction execution/result mapping foundation is
+  implemented: row input conversion, Qt-free prediction service/controller,
+  case_id-based result mapping, and PredictWorkspace run-button integration are
+  in place without changing core ML behavior.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Start Arc 4: prediction execution and result mapping foundation.
-2. Keep training execution, mapping updates, calculator integration, and
-   paste/export deferred until their approved slices.
+1. Resolve Arc 4 follow-up: prediction worker/progress boundary and real-model
+   smoke readiness.
+2. Then start Arc 5: Trainer Admin App foundation.
 
 ## Active Blockers / Open Decisions
 
-- No active implementation blocker is recorded.
+- Real model prediction success smoke is not complete in this checkout because
+  `model/model.pkl` is absent.
+- Worker/progress/cancel UI is not implemented; synchronous prediction
+  execution is foundation-only and should not be treated as final large-batch
+  behavior.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
@@ -64,9 +68,8 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Broad ML / predictor algorithm work remains deferred; Arc 4 should wire only
-  approved prediction execution/result-mapping boundaries without changing core
-  ML behavior.
+- Broad ML / predictor algorithm work remains deferred; follow-up prediction
+  execution work must preserve core ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.
 
