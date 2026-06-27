@@ -25,6 +25,19 @@ class PredictSession:
         self.case_store.get_case(result.case_id)
         self.results_by_case_id[result.case_id] = result
 
+    def set_results(self, results: list[ResultRow]) -> None:
+        """Attach several result states by case_id."""
+        for result in results:
+            self.set_result(result)
+
+    def clear_result(self, case_id: str) -> None:
+        """Clear result state for one case."""
+        self.results_by_case_id.pop(case_id, None)
+
+    def clear_all_results(self) -> None:
+        """Clear every result state."""
+        self.results_by_case_id.clear()
+
     def remove_results_for_cases(self, case_ids: list[str]) -> None:
         """Drop result state for removed cases."""
         for case_id in case_ids:
@@ -39,6 +52,12 @@ class PredictSession:
         errors = sum(
             1 for result in self.results_by_case_id.values() if result.status == "error"
         )
+        running = sum(
+            1 for result in self.results_by_case_id.values() if result.status == "running"
+        )
+        invalid = sum(
+            1 for result in self.results_by_case_id.values() if result.status == "invalid"
+        )
         dirty = sum(
             1 for case_id in self.case_order if self.case_store.get_case(case_id).is_dirty
         )
@@ -46,5 +65,7 @@ class PredictSession:
             "total": total,
             "completed": completed,
             "errors": errors,
+            "running": running,
+            "invalid": invalid,
             "dirty": dirty,
         }
