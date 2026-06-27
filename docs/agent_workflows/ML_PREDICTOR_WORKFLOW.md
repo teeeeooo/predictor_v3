@@ -16,8 +16,10 @@ the short routing gate.
   retirement slice.
 - Do not import `optuna`, `sklearn`, `shap`, or `matplotlib` from
   `core/predictor.py`.
-- Keep `COLUMNS` in `core/constants.py`.
-- Keep `MODEL_REGISTRY` in `core/models.py`.
+- Until package-boundary migration changes the approved owner, keep `COLUMNS`
+  in `core/constants.py` and `MODEL_REGISTRY` in `core/models.py`.
+- After the core package boundary foundation exists, new ML/Predictor code must
+  follow the approved package owner paths from `docs/architecture/project_architecture.md`.
 - Preserve `feature_names_in_`; do not add `.values` conversion before
   `model.fit()`.
 - Cooling and Heating models remain independent; do not combine them with
@@ -32,6 +34,8 @@ the short routing gate.
   `docs/knowledge/README.md` and relevant knowledge docs.
 - ML schema/feature boundary or calculator input/output boundary:
   `docs/architecture/project_architecture.md`.
+- Project-wide architecture restructuring source input:
+  `docs/architecture/project_wide_architecture_restructuring_plan.md`.
 - Train/Predict PySide6 rewrite architecture contract:
   `docs/architecture/pyside6_train_predict_architecture.md`; design decision
   record:

@@ -48,8 +48,10 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   core ownership.
 - The current `core/` root remains an accepted public surface, not the final
   target package structure. Calculator engines, ML pipeline files, shared
-  utilities, constants, and schemas must not be moved ad hoc before the
-  project-wide architecture audit.
+  utilities, constants, and schemas must not be moved ad hoc. The target
+  package direction is now owned by `docs/architecture/project_architecture.md`
+  using `docs/architecture/project_wide_architecture_restructuring_plan.md` as
+  source input.
 - Existing PyQt5 `ui/` Train/Predict files remain a reference-only legacy path
   until a later explicit retirement slice.
 - `app_predict.py` is the Predict-only application entrypoint.
@@ -190,19 +192,25 @@ Goal:
 - Update architecture owner docs with the audited target structure and
   migration contract.
 
+Status:
+
+- Current documentation update arc.
+
 Target milestones:
 
 - Define the approved package boundary target for ML, calculators, common
   utilities, constants/schema, and wrappers.
 - Record what remains public compatibility surface during migration.
+- Record that compatibility wrappers are transition safety only, not final
+  architecture.
 - Keep detailed implementation slices in `docs/WORK_PLAN.md`, not this brief.
 
 ### Arc 7 — Core Package Boundary Foundation
 
 Goal:
 
-- Establish no-behavior-change core package boundaries using compatibility
-  wrappers.
+- Establish target package paths with no behavior change using temporary
+  compatibility wrappers.
 
 Target milestones:
 
@@ -212,7 +220,50 @@ Target milestones:
 - Do not change calculator behavior, ML algorithms, schemas, fixtures, golden
   data, or public APIs.
 
-### Arc 8 — PySide6 Predictor Schema/Mapping Recovery
+### Arc 8 — ML Implementation Move
+
+Goal:
+
+- Move actual ML implementation ownership under `core/ml/`.
+
+Target milestones:
+
+- Move inference, training, registry, preprocessing, features, artifacts, and
+  logging ownership toward `core/ml/`.
+- Keep root files as compatibility wrappers during caller migration.
+- Preserve ML algorithms, artifact format, feature names, target names, and
+  preprocessing behavior.
+
+### Arc 9 — Predictor Schema / Mapping Move
+
+Goal:
+
+- Separate predictor schema and mapping responsibilities from flat constants,
+  utils, and scripts.
+
+Target milestones:
+
+- Move predictor columns/result/dropdown ownership toward
+  `core/predictor_schema/`.
+- Move mapping paths, repository, autofill, and pure update logic toward
+  `core/mapping/`.
+- Keep UI/file-dialog wrappers out of core mapping logic.
+
+### Arc 10 — Calculator Implementation Move
+
+Goal:
+
+- Move calculator implementation ownership under `core/calculators/`.
+
+Target milestones:
+
+- Move profiles/dispatcher toward `core/calculators/`.
+- Move calculator engines toward `core/calculators/standards/`.
+- Move calculator adapters toward `core/calculators/adapters/`.
+- Preserve calculator formulas, result contracts, focused tests, and golden
+  behavior.
+
+### Arc 11 — PySide6 Predictor Schema/Mapping Recovery
 
 Goal:
 
@@ -226,7 +277,7 @@ Target milestones:
 - Preserve existing model artifact and prediction behavior unless a later
   design explicitly authorizes changes.
 
-### Arc 9 — Prediction Worker/Progress
+### Arc 12 — Prediction Worker/Progress
 
 Goal:
 
@@ -239,7 +290,7 @@ Target milestones:
 - Add progress/cancel UI behavior without changing core prediction semantics.
 - Complete real-model smoke readiness when a valid model artifact is available.
 
-### Arc 10 — Trainer Admin App Foundation
+### Arc 13 — Trainer Admin App Foundation
 
 Goal:
 
@@ -255,7 +306,7 @@ Target milestones:
 - Add model artifact/status visibility.
 - Keep mapping update behavior behind a service/adapter boundary.
 
-### Arc 11 — ML Pipeline Stabilization
+### Arc 14 — ML Pipeline Stabilization
 
 Goal:
 
@@ -272,7 +323,7 @@ Target milestones:
 - Add focused ML tests around feature names, leakage, and prediction/training
   boundary behavior.
 
-### Arc 12 — Calculator to Predictor Integration
+### Arc 15 — Calculator to Predictor Integration
 
 Goal:
 

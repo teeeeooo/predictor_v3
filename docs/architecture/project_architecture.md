@@ -6,8 +6,9 @@
 
 프로젝트는 기능별 분리를 지향하지만, 현재 `core/` root에는 ML pipeline,
 calculator engines, shared utilities, constants/schema가 flat하게 공존하는
-공개 표면이 남아 있습니다. 이 flat 구조는 현재 호환 표면으로 수용하되
-최종 목표 구조로 확정하지 않습니다.
+공개 표면이 남아 있습니다. 이 flat 구조는 current compatibility surface로
+수용하되 final target이 아닙니다. Architecture SSOT update의 source input은
+`docs/architecture/project_wide_architecture_restructuring_plan.md`입니다.
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `constants.py`: `COLUMNS`, 경로, 피처 상수 등 모든 설정의 단일 소스 (SSOT)
@@ -15,13 +16,10 @@ calculator engines, shared utilities, constants/schema가 flat하게 공존하�
   - `predictor.py`: 순방향 ML 예측 로직
   - `trainer.py`: 모델 학습 및 로그 관리
 - **Project-wide architecture reset note**: `core/calculator_*.py`, ML pipeline
-  files, shared utilities, constants, and schemas must not be moved ad hoc. A
-  project-wide architecture audit will decide the target package structure for
-  calculators, ML, common utilities, constants/schema, and compatibility
-  wrappers. Any no-behavior-change package boundary foundation must preserve
-  existing imports through wrappers until callers are explicitly migrated. The
-  detailed target folder tree is deferred to the Architecture SSOT update after
-  that audit.
+  files, shared utilities, constants, and schemas must not be moved ad hoc.
+  The target package structure is defined below. Any no-behavior-change package
+  boundary foundation must preserve existing imports through wrappers until
+  callers are explicitly migrated.
 - **`ui/`**: legacy PyQt5 기반 GUI 구성 요소
   - 기존 `app_train.py`와 `app_predict.py`가 사용하는 레거시 Train/Predict 화면 경로이며, 신규/유지 대상이 아니라 PySide6 재작성 전환 중 reference-only / legacy path로 취급합니다.
   - PyQt calculator-only source(`calc_window.py`, `calculators_2point.py`, `calculator_errors.py`)는 은퇴(retired)되었습니다. `ui/spreadsheet_table.py`와 `ui/theme.py`는 shared utility로 quarantine/hold 상태입니다.
@@ -38,6 +36,75 @@ calculator engines, shared utilities, constants/schema가 flat하게 공존하�
 - **`scripts/`**: 데이터 변환 및 전처리 유틸리티
 - **`tests/`**: 테스트 코드 영역으로, 소스 코드 소유주(source owner) 및 패키지 경계를 그대로 반영한 focused tests 구성을 최우선으로 합니다. (예: `test_apps_calculator_ui_en14825.py`)
 - **`tools/`**: standalone 형태의 관리 및 코드 정적 분석/검사 툴만 제한적으로 허용합니다. (예: `check_code_structure.py`)
+
+### 1.1 Project-wide target package boundary
+
+The final target is real package-boundary separation, not a permanent wrapper
+layer. Compatibility wrappers are migration safety devices only; after caller
+migration, wrapper retirement must be explicitly planned.
+
+Long-term target:
+
+```text
+core/
+  common/
+    numeric.py
+    units.py
+    paths.py
+    errors.py
+
+  predictor_schema/
+    columns.py
+    dropdowns.py
+    result_columns.py
+
+  mapping/
+    paths.py
+    repository.py
+    autofill.py
+    update.py
+
+  ml/
+    artifacts.py
+    features.py
+    registry.py
+    preprocessing.py
+    inference.py
+    training.py
+    logging.py
+
+  calculators/
+    profiles.py
+    dispatcher.py
+    adapters/
+      input_adapter.py
+      prediction_adapter.py
+      unit_adapter.py
+    standards/
+      iso16358.py
+      ks_c9306.py
+      en14825.py
+      ahri_seer2.py
+      ahri_hspf2.py
+      asnzs_hspf_excel.py
+```
+
+Migration principles:
+
+- Split migration into no-behavior-change slices.
+- Keep current root files as compatibility public surface until callers are
+  migrated.
+- Do not treat root wrappers as final architecture.
+- After package boundary foundation exists, new production code should import
+  from approved package owner paths, not deeper flat-root compatibility paths.
+- Calculator engines move toward `core/calculators/standards/`.
+- ML pipeline ownership moves toward `core/ml/`.
+- `core/constants.py` responsibilities split toward predictor schema, ML
+  feature/artifact, and mapping owners.
+- Mapping update pure logic moves toward `core/mapping/`; UI/file-dialog
+  wrappers stay outside core.
+- Detailed implementation steps belong to `docs/WORK_PLAN.md` and future
+  approved migration prompts.
 
 ## 2. ML 피처 및 데이터 구조
 

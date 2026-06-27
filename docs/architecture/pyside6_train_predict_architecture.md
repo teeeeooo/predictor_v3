@@ -35,10 +35,15 @@ Boundary note:
   PySide6 table adapter does not exist yet, record that adapter gap in the
   report and use the toolkit-neutral table contract as the acceptance contract.
 - PySide6 Predictor schema/mapping recovery depends on the project-wide
-  architecture audit and core package boundary decision. PySide6 apps must not
-  deepen dependency on the current flat `core/` layout beyond approved adapters.
-  Current local schemas/mappings in PySide6 are recovery targets; recovery
-  implementation starts after the project-wide architecture reset.
+  architecture SSOT in `docs/architecture/project_architecture.md` and the
+  restructuring plan in
+  `docs/architecture/project_wide_architecture_restructuring_plan.md`.
+  Recovery starts after `core/predictor_schema`, `core/mapping`, and `core/ml`
+  package boundaries are introduced.
+- PySide6 Train/Predict follows the project-wide target package boundary. New
+  PySide6 code must not deepen dependency on the current flat `core/` root
+  beyond approved adapters. Current local schemas/mappings/adapters in PySide6
+  are recovery targets.
 
 ## 2. Implementation Principle
 

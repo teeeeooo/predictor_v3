@@ -37,25 +37,32 @@
   the current PySide6 Predictor schema/mapping path is not aligned enough with
   the existing ML pipeline and broader core ownership to continue recovery
   directly.
+- Architecture SSOT is updated from
+  `docs/architecture/project_wide_architecture_restructuring_plan.md`: final
+  target package owners are `core/common`, `core/predictor_schema`,
+  `core/mapping`, `core/ml`, and `core/calculators`; compatibility wrappers are
+  transitional safety only.
 - Legacy PyQt5 `ui/` Train/Predict code remains reference-only until a later
   explicit retirement slice.
 
 ## Next Actions
 
-1. Project-wide architecture audit / restructuring plan.
-2. Architecture SSOT update.
-3. Core package boundary foundation with no behavior change, compatibility
-   wrappers, and focused tests/import smoke.
-4. PySide6 Predictor schema/mapping recovery.
-5. Prediction worker/progress and real-model smoke readiness.
-6. Trainer app foundation.
+1. Core package boundary foundation planning or implementation slice.
+2. ML implementation move.
+3. Predictor schema / mapping move.
+4. Calculator implementation move.
+5. PySide6 Predictor schema/mapping recovery.
+6. Prediction worker/progress and real-model smoke readiness.
+7. Trainer app foundation.
 
 ## Active Blockers / Open Decisions
 
-- Current PySide6 Predictor schema/mapping path is not aligned with the existing
-  ML pipeline and project-wide core ownership.
-- Project-wide architecture audit must decide the core package boundary and
-  compatibility wrapper strategy before further PySide6 recovery.
+- Next code work must establish package boundaries without behavior change.
+- Compatibility wrappers are transition safety, not final architecture; physical
+  implementation moves are later approved migration slices.
+- Current PySide6 Predictor schema/mapping path remains blocked until
+  `core/predictor_schema`, `core/mapping`, and `core/ml` boundaries are
+  introduced and recovery is explicitly approved.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
