@@ -91,7 +91,7 @@ def setup_global_exception_handler():
 # =============================================================================
 def get_timestamp_dir(log_type: str) -> str:
     """YYMMDD_HHMM 형식의 타임스탬프 폴더를 생성하고 경로를 반환합니다."""
-    from core.constants import LOG_DIR
+    from core.common.paths import LOG_DIR
     now = datetime.datetime.now().strftime("%y%m%d_%H%M")
     path = os.path.join(LOG_DIR, log_type, now)
     os.makedirs(path, exist_ok=True)

@@ -3,7 +3,7 @@ from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex
 from PyQt5.QtGui import QColor
 
 # 프로젝트 상수 및 유틸리티 임포트
-from core.constants import COLUMNS, DROPDOWN_TARGET
+from core.predictor_schema.columns import COLUMNS, DROPDOWN_TARGET
 from core.utils import safe_float_convert
 
 class HVACTableModel(QAbstractTableModel):
@@ -141,4 +141,3 @@ class HVACTableModel(QAbstractTableModel):
                     ml_dict[e] = 1.0 if val == e else 0.0
 
         return ml_dict
-

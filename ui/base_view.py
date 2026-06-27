@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QStyleOptionComboBox, QApplication, QAbstractItemView
 )
 from PyQt5.QtCore import Qt, QEvent, QTimer
-from core.constants import COLUMNS
+from core.predictor_schema.columns import COLUMNS
 
 class DropdownDelegate(QStyledItemDelegate):
     """
@@ -129,4 +129,3 @@ class HVACTableView(QTableView):
         """
         if self.delegate is not None:
             self.delegate.update_items(col_index, new_items)
-

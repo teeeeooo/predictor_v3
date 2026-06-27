@@ -3,8 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from core.constants import MODEL_FILE
-from core.predictor import load_model, predict_row
+from core.ml.artifacts import MODEL_FILE
+from core.ml.inference import load_model, predict_row
 
 from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
 

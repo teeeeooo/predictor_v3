@@ -5,9 +5,27 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from core.constants import *
+from core.mapping.paths import MAPPING_JSON_FILE
+from core.ml.artifacts import MODEL_FILE
+from core.ml.inference import load_model, predict_row
+from core.predictor_schema.columns import (
+    COL_COND_AREA,
+    COL_COND_VOLUME,
+    COL_COOLING_CAPA,
+    COL_COOLING_HZ,
+    COL_COOLING_POWER,
+    COL_CSPF,
+    COL_FIN_TYPE,
+    COL_HEATING_HZ,
+    COL_HEATING_POWER,
+    COL_HSPF2,
+    COL_ODU,
+    COL_PI,
+    COL_REF_QTY,
+    COL_ROW,
+    NUM_ROWS,
+)
 from core.utils import load_mapping_data
-from core.predictor import load_model, predict_row
 from ui.base_model import HVACTableModel
 from ui.base_view import HVACTableView
 

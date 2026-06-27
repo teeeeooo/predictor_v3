@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
-from core.constants import TRAIN_DATA_FILE
-from core.trainer import train_all_models # 모델 학습 메인 함수 (가정)
+from core.ml.artifacts import TRAIN_DATA_FILE
+from core.ml.training import train_all_models # 모델 학습 메인 함수 (가정)
 from scripts.update_mapping import select_excel_file, update_mapping_to_json
 
 class TrainWorker(QThread):
@@ -146,4 +146,3 @@ class TrainWindow(QMainWindow):
         self.btn_start_train.setEnabled(True)
         self.btn_start_train.setText("⚙️ 머신러닝 모델 학습 시작 (Train All Models)")
         self.worker = None # 스레드 객체 정리
-
