@@ -45,6 +45,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md` (covered reports `476-479`, `481-489`)
 - `result_reports/summaries/516_summary-architecture-reset-pyside6-foundation-closeout.md` (covered reports `491-492`, `507-515`)
 - `result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md` (covered reports `517-535`)
+- `result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md` (covered reports `537-553`)
 
 ## Scope and Non-goals
 
@@ -936,6 +937,43 @@ entries:
       - core/calculators
     assertionStatus: verified
     source: result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md (covered reports 517-535)
+
+  - type: decision
+    topic: PySide6 Predict schema mapping recovery
+    content: Arc 9 recovered the PySide6 Predict path against package owners: schema/table models use `core/predictor_schema`, mapping/autofill uses `core/mapping` with app-side repository/controller boundaries, and row-to-ML/result adapters use schema metadata plus `core/ml` targets without changing ML behavior.
+    keywords:
+      - predictor_v3
+      - PySide6
+      - core/predictor_schema
+      - core/mapping
+      - core/ml
+      - PredictWorkspace
+    assertionStatus: verified
+    source: result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md (covered reports 537-553)
+
+  - type: decision
+    topic: legacy Train Predict ui retirement and token ownership
+    content: Arc 9.1 retired the legacy Train/Predict `ui/` path and legacy PyQt tests; `ui_common.visual_tokens` is the active toolkit-neutral token owner for upcoming PySide6 visual parity work.
+    keywords:
+      - predictor_v3
+      - legacy ui retirement
+      - ui_common.visual_tokens
+      - PySide6 visual parity
+    assertionStatus: verified
+    source: result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md (covered reports 537-553)
+
+  - type: decision
+    topic: PySide6 visual table parity harvest location
+    content: Arc 9.2 moved the project-specific PySide6 visual/table parity harvest from `docs/ui_ux/` to `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`; `docs/ui_ux/` remains the portable UI/UX rule set, while the moved harvest is an Arc 9.5 design/acceptance reference.
+    keywords:
+      - predictor_v3
+      - PySide6
+      - visual table parity
+      - docs/designs
+      - docs/ui_ux
+      - Arc 9.5
+    assertionStatus: verified
+    source: result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md (covered reports 537-553)
 ```
 
 ## Known Gaps
