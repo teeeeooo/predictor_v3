@@ -34,7 +34,8 @@
 - **실행 순서**: Arc 12로 분리한다. Slice 0은 audit formalization이고,
   Slice 1은 calculator application boundary foundation이다. 첫 구현 대상은
   ISO/ISEER 2-point single usecase이며, 다음 slice에서 matching batch handler
-  reuse를 적용한다.
+  reuse를 적용한다. 이 first-pattern extraction은 완료되었고, 다음 추천 대상은
+  SASO T3 usecase extraction이다.
 - **지켜야 할 guard**: calculator formulas, config semantics, profile IDs,
   fixtures/golden expected, and public result dict contracts remain unchanged.
 

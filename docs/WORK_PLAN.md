@@ -27,7 +27,15 @@
 
 ## Current Slice
 
-- Arc 12 Slice 3 reuses the ISO/ISEER 2-point application usecase from the
+- Arc 12 first-pattern extraction is complete for automated scope: ISO/ISEER
+  2-point single and batch now reuse an application usecase boundary.
+- Remaining calculator extraction candidates are SASO T3 config mutation,
+  Hong Kong CSPF/HSPF direct orchestration, EN14825 UI-local adapters, and AHRI
+  UI-local adapters.
+- Recommended next calculator action is Arc 12 follow-up - SASO T3 usecase
+  extraction. Arc 13 remains on hold unless the user explicitly accepts
+  deferring remaining calculator debt.
+- Arc 12 Slice 3 reused the ISO/ISEER 2-point application usecase from the
   matching batch handler.
 - Arc 12 Slice 2 extracted the ISO/ISEER 2-point single calculation
   orchestration into an application usecase.
@@ -66,7 +74,7 @@
 
 ## Next Actions
 
-1. Arc 12 Slice 4 - Closeout / Next Extraction Decision.
+1. Arc 12 follow-up - SASO T3 usecase extraction.
 
 ## Active Blockers / Open Decisions
 
@@ -74,7 +82,8 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Calculator usecase boundary correction is the next architecture correction.
+- Calculator usecase boundary correction first-pattern is complete; remaining
+  calculator extraction candidates need user sequencing decision before Arc 13.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

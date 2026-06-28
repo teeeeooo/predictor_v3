@@ -484,11 +484,13 @@ Target milestones:
 
 Status:
 
-- Slice 0 audit formalization is active.
-- Next implementation action is Slice 1 - Calculator Application Boundary
-  Foundation.
-- Arc 12 starts with ISO/ISEER 2-point single usecase extraction, then matching
-  batch reuse.
+- First-pattern extraction is complete for automated scope.
+- ISO/ISEER 2-point single UI and matching batch handler now reuse an
+  application usecase boundary.
+- Recommended next calculator target is SASO T3 usecase extraction because the
+  remaining UI-owned config mutation is the strongest smell.
+- Arc 13 remains on hold unless the user explicitly accepts deferring remaining
+  calculator debt.
 - Calculator formula/config/golden/public result contracts remain protected.
 
 ### Arc 13 — ML Pipeline Stabilization
@@ -510,7 +512,8 @@ Target milestones:
 
 Status:
 
-- On hold until Arc 11 and Arc 12 architecture corrections are complete.
+- On hold until the user explicitly accepts remaining calculator debt as
+  deferred or finishes the next calculator extraction target.
 
 ### Later — Calculator to Predictor Integration
 

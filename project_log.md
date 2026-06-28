@@ -902,3 +902,18 @@
   after the first ISO/ISEER pattern lands.
 - Calculator formulas, config semantics, profile IDs, fixtures/golden expected,
   and public result dict contracts remain protected.
+
+## 2026-06-28 — Arc 12 ISO/ISEER usecase boundary closeout
+
+### Decision
+- `apps.calculator.application` and `apps.calculator.adapters` now own the
+  calculator application resolver and app-side dispatcher boundary.
+- ISO/ISEER 2-point single UI no longer imports the core dispatcher or calls
+  `calculate_cspf`; it renders `IsoIseer2PointUseCase` output.
+- ISO/ISEER 2-point batch handler reuses the same usecase and preserves its
+  existing result keys and pending/error behavior.
+- No calculator formulas, config semantics, profile IDs, fixtures/golden
+  expected, or public result dict contracts changed.
+- Recommended next calculator target is SASO T3 usecase extraction; Arc 13
+  remains on hold unless the user explicitly accepts deferring remaining
+  calculator debt.
