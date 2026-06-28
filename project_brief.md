@@ -396,8 +396,9 @@ Target milestones:
   brief.
 - Packaging and hook-integration work should remain separate workflow arcs
   unless explicitly promoted.
-- Arc 9.1 retires the legacy `ui/` folder after harvesting useful UX ideas and
-  adopting `ui_common.visual_tokens` for visual parity work.
+- Arc 9.1/9.2 retired the legacy `ui/` folder, adopted
+  `ui_common.visual_tokens`, and moved project-specific harvest evidence under
+  `docs/designs/` for visual parity work.
 
 ## 6. Session Start Rule
 
