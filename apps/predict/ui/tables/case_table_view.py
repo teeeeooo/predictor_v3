@@ -3,8 +3,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
+from PySide6.QtCore import QItemSelectionModel
 
 from apps.predict.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
+from apps.predict.ui.tables.undo import CellChange, TableUndoStack
 
 
 class CaseTableView(QTableView):
@@ -19,6 +21,7 @@ class CaseTableView(QTableView):
             | QAbstractItemView.EditKeyPressed
             | QAbstractItemView.SelectedClicked
         )
+        self._undo_stack = TableUndoStack()
 
     def copy_selection_tsv(self) -> str:
         """Return selected visible cells as TSV."""
@@ -47,9 +50,10 @@ class CaseTableView(QTableView):
         grid = parse_tsv(text)
         if not grid:
             return 0
-        top, left = anchor
-        changed = 0
+        grid = self._expand_grid_for_selection(grid)
+        changes: list[CellChange] = []
         for r_offset, row_values in enumerate(grid):
+            top, left = anchor
             row = top + r_offset
             if row >= model.rowCount():
                 continue
@@ -60,25 +64,63 @@ class CaseTableView(QTableView):
                 index = model.index(row, col)
                 if not (model.flags(index) & Qt.ItemIsEditable):
                     continue
+                old_value = model.cell_value(row, col)
+                if str(old_value or "") == str(value):
+                    continue
                 if model.setData(index, value, Qt.EditRole):
-                    changed += 1
-        return changed
+                    changes.append(CellChange(row, col, old_value, value))
+        self._undo_stack.push(changes)
+        return len(changes)
 
     def clear_selection(self) -> int:
         """Clear selected editable cells."""
         model = self.model()
         if model is None or not hasattr(model, "setData"):
             return 0
-        changed = 0
+        changes: list[CellChange] = []
         for row, col in self._selected_cells():
             index = model.index(row, col)
             if not (model.flags(index) & Qt.ItemIsEditable):
                 continue
-            if str(model.cell_value(row, col) or "") == "":
+            old_value = model.cell_value(row, col)
+            if str(old_value or "") == "":
                 continue
             if model.setData(index, "", Qt.EditRole):
-                changed += 1
-        return changed
+                changes.append(CellChange(row, col, old_value, ""))
+        self._undo_stack.push(changes)
+        return len(changes)
+
+    def replace_current_cell(self, text: str) -> bool:
+        """Replace the active editable cell with text as one undoable edit."""
+        model = self.model()
+        index = self.currentIndex()
+        if model is None or not index.isValid():
+            return False
+        if not (model.flags(index) & Qt.ItemIsEditable):
+            return False
+        old_value = model.cell_value(index.row(), index.column())
+        if str(old_value or "") == text:
+            return True
+        if not model.setData(index, text, Qt.EditRole):
+            return False
+        self._undo_stack.push(
+            [CellChange(index.row(), index.column(), old_value, text)]
+        )
+        self.edit(index)
+        return True
+
+    def undo(self) -> int:
+        """Undo the most recent grouped edit/paste/clear action."""
+        model = self.model()
+        if model is None:
+            return 0
+        changes = self._undo_stack.pop()
+        undone = 0
+        for change in reversed(changes):
+            index = model.index(change.row, change.col)
+            if model.setData(index, change.old_value, Qt.EditRole):
+                undone += 1
+        return undone
 
     def keyPressEvent(self, event):  # noqa: ANN001
         """Handle spreadsheet-like clipboard and clear shortcuts."""
@@ -94,6 +136,28 @@ class CaseTableView(QTableView):
             self.clear_selection()
             event.accept()
             return
+        if event.matches(QKeySequence.Undo):
+            self.undo()
+            event.accept()
+            return
+        if event.key() in (Qt.Key_Tab, Qt.Key_Backtab):
+            self._move_current_horizontal(backward=event.key() == Qt.Key_Backtab)
+            event.accept()
+            return
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self._move_current_vertical(backward=bool(event.modifiers() & Qt.ShiftModifier))
+            event.accept()
+            return
+        if event.key() == Qt.Key_F2:
+            index = self.currentIndex()
+            if index.isValid():
+                self.edit(index)
+                event.accept()
+                return
+        if self._is_printable_replace_event(event):
+            if self.replace_current_cell(event.text()):
+                event.accept()
+                return
         super().keyPressEvent(event)
 
     def _selected_cells(self) -> list[tuple[int, int]]:
@@ -112,3 +176,64 @@ class CaseTableView(QTableView):
         if current.isValid():
             return current.row(), current.column()
         return None
+
+    def _expand_grid_for_selection(self, grid: list[list[str]]) -> list[list[str]]:
+        cells = self._selected_cells()
+        bounds = rectangular_bounds(cells)
+        if bounds is None:
+            return grid
+        top, left, bottom, right = bounds
+        selected_rows = bottom - top + 1
+        selected_cols = right - left + 1
+        if len(grid) == 1 and len(grid[0]) == 1:
+            return [[grid[0][0] for _col in range(selected_cols)] for _row in range(selected_rows)]
+        if len(grid) == 1 and len(grid[0]) == selected_cols and selected_rows > 1:
+            return [list(grid[0]) for _row in range(selected_rows)]
+        return grid
+
+    def _move_current_horizontal(self, backward: bool = False) -> None:
+        model = self.model()
+        if model is None or model.rowCount() == 0 or model.columnCount() == 0:
+            return
+        current = self.currentIndex()
+        row = current.row() if current.isValid() else 0
+        col = current.column() if current.isValid() else 0
+        step = -1 if backward else 1
+        col += step
+        if col >= model.columnCount():
+            col = 0
+            row = (row + 1) % model.rowCount()
+        elif col < 0:
+            col = model.columnCount() - 1
+            row = (row - 1) % model.rowCount()
+        self.selectionModel().setCurrentIndex(
+            model.index(row, col),
+            QItemSelectionModel.ClearAndSelect,
+        )
+
+    def _move_current_vertical(self, backward: bool = False) -> None:
+        model = self.model()
+        if model is None or model.rowCount() == 0 or model.columnCount() == 0:
+            return
+        current = self.currentIndex()
+        row = current.row() if current.isValid() else 0
+        col = current.column() if current.isValid() else 0
+        step = -1 if backward else 1
+        row += step
+        if row >= model.rowCount():
+            row = 0
+            col = (col + 1) % model.columnCount()
+        elif row < 0:
+            row = model.rowCount() - 1
+            col = (col - 1) % model.columnCount()
+        self.selectionModel().setCurrentIndex(
+            model.index(row, col),
+            QItemSelectionModel.ClearAndSelect,
+        )
+
+    def _is_printable_replace_event(self, event) -> bool:  # noqa: ANN001
+        text = event.text()
+        if not text or not text.isprintable():
+            return False
+        blocked_modifiers = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
+        return not bool(event.modifiers() & blocked_modifiers)
