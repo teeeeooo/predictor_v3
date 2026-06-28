@@ -15,14 +15,14 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QProgressBar,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
+    QTableView,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from apps.common.ui import style
+from apps.train.ui.models.static_table_model import StaticTableModel
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
@@ -232,18 +232,17 @@ def _metric_tile(label: str, value: str, detail: str, kind: str) -> QFrame:
     return tile
 
 
-def _summary_table() -> QTableWidget:
-    table = QTableWidget(len(TARGETS), 5)
-    table.setHorizontalHeaderLabels(("#", "Target", "Status", "CV Mean", "Time"))
+def _summary_table() -> QTableView:
+    rows = tuple(
+        (str(row + 1), target, "대기 중", "-", "-")
+        for row, target in enumerate(TARGETS)
+    )
+    table = QTableView()
+    table.setModel(StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows))
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
     table.setSelectionMode(QAbstractItemView.SingleSelection)
     table.setMinimumHeight(230)
-    for row, target in enumerate(TARGETS):
-        for column, value in enumerate((str(row + 1), target, "대기 중", "-", "-")):
-            item = QTableWidgetItem(value)
-            item.setTextAlignment(Qt.AlignCenter)
-            table.setItem(row, column, item)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
     return table
 

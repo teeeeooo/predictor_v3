@@ -4,7 +4,8 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtWidgets import QApplication, QLabel, QProgressBar, QPushButton, QTableWidget, QTextEdit
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QLabel, QProgressBar, QPushButton, QTableView, QTextEdit
 
 from apps.predict.ui.shell import PredictShell
 from apps.predict.ui.workspace import PredictWorkspace
@@ -71,7 +72,10 @@ def test_train_model_panel_is_visual_only_with_log_area():
     assert log is not None
     assert "deferred" in log.toPlainText()
     assert panel.findChild(QProgressBar) is not None
-    assert panel.findChild(QTableWidget) is not None
+    table = panel.findChild(QTableView)
+    assert table is not None
+    assert table.model().rowCount() == 5
+    assert table.model().headerData(1, Qt.Horizontal, Qt.DisplayRole) == "Target"
 
     buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
     for text in ("학습 데이터 선택", "학습 실행", "중지", "모델 열기", "로그 저장"):
@@ -86,7 +90,10 @@ def test_data_mapping_panel_is_visual_only_with_log_area():
     log = panel.findChild(QTextEdit, "MappingLog")
     assert log is not None
     assert "deferred" in log.toPlainText()
-    assert panel.findChild(QTableWidget) is not None
+    table = panel.findChild(QTableView)
+    assert table is not None
+    assert table.model().rowCount() == 3
+    assert table.model().data(table.model().index(1, 1)) == "deferred"
 
     buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
     for text in ("매핑 Excel 선택", "매핑 업데이트", "상태 새로고침"):
@@ -112,3 +119,15 @@ def test_train_ui_widgets_do_not_import_execution_foundations():
     for source in sources:
         text = source.read_text(encoding="utf-8")
         assert not any(token in text for token in forbidden)
+
+
+def test_train_ui_uses_model_views_not_qtablewidget():
+    sources = (
+        Path("apps/train/ui/train_model_panel.py"),
+        Path("apps/train/ui/data_mapping_panel.py"),
+    )
+
+    for source in sources:
+        text = source.read_text(encoding="utf-8")
+        assert "QTableWidget" not in text
+        assert "QTableWidgetItem" not in text

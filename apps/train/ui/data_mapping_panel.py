@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
@@ -13,14 +12,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
+    QTableView,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from apps.common.ui import style
+from apps.train.ui.models.static_table_model import StaticTableModel
 from core.mapping.paths import MAPPING_JSON_FILE
 
 
@@ -127,23 +126,18 @@ def _disabled_button(text: str, primary: bool = False) -> QPushButton:
     return button
 
 
-def _mapping_table() -> QTableWidget:
+def _mapping_table() -> QTableView:
     exists = Path(MAPPING_JSON_FILE).exists()
     rows = (
         ("mapping.json", "found" if exists else "missing", "현재 JSON read-only 사용"),
         ("Excel update", "deferred", "실행 foundation은 후속 Arc"),
         ("Per-row dropdown", "active owner", "Predict mapping repository 사용"),
     )
-    table = QTableWidget(len(rows), 3)
-    table.setHorizontalHeaderLabels(("Item", "Status", "Notes"))
+    table = QTableView()
+    table.setModel(StaticTableModel(("Item", "Status", "Notes"), rows))
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
     table.setSelectionMode(QAbstractItemView.SingleSelection)
     table.setMinimumHeight(180)
-    for row, values in enumerate(rows):
-        for column, value in enumerate(values):
-            item = QTableWidgetItem(value)
-            item.setTextAlignment(Qt.AlignCenter)
-            table.setItem(row, column, item)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
     return table
