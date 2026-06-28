@@ -27,57 +27,42 @@
 
 ## Current Slice
 
-- Calculator closeout is complete with no remaining implementation blocker in
-  the recently closed helper/batch/detail/token/manual-smoke scope.
-- Train/Predict Arc 4 prediction execution/result mapping foundation is
-  implemented: row input conversion, Qt-free prediction service/controller,
-  case_id-based result mapping, and PredictWorkspace run-button integration are
-  in place without changing core ML behavior.
-- Arc 9 PySide6 Predictor Schema / Mapping Recovery is complete: the Predict
-  schema adapter, table models, mapping/autofill flow, row-to-ML adapter, and
-  prediction result adapter now use the `core/predictor_schema`, `core/mapping`,
-  and `core/ml` package owners directly.
-- Architecture SSOT is updated from
-  `docs/architecture/project_wide_architecture_restructuring_plan.md`: final
-  target package owners are `core/common`, `core/predictor_schema`,
-  `core/mapping`, `core/ml`, and `core/calculators`.
-- Arc 7 Core ML / Schema / Mapping Package Restructure is complete:
-  `core/ml`, `core/predictor_schema`, and `core/mapping` are the package owners
-  for ML implementation, predictor schema, and mapping path/repository/update
-  logic.
-- Arc 8 Calculator Engine Package Restructure is complete:
-  `core/calculators`, `core/calculators/adapters`, and
-  `core/calculators/standards` are the implementation owners for calculator
-  profiles/dispatcher, calculator adapters, standard engines, and calculator
-  result/ranking adapters.
-- Arc 8.5 Root Wrapper Retirement is complete: active production code and
-  tests use package owner paths, and root ML/constants/calculator compatibility
-  wrapper files have been deleted.
-- Arc 9.1 legacy `ui/` retirement is complete: the retired `ui/` path has been
-  removed and `ui_common.visual_tokens` is the active toolkit-neutral token
-  owner for upcoming visual parity work.
-- Arc 9.2 harvest location/detail recovery is complete in the current local
-  arc: project-specific legacy visual/table evidence now routes through
-  `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` before Arc
-  9.5 implementation.
-- Arc 9.5 Predict / Train Visual UI Parity is complete: Predict now has
-  token-backed status/command/table/result surfaces, spreadsheet copy/paste/
-  clear basics, dropdown affordance, validation/result status rendering, and
-  Train now has visual Train Model / Data Mapping admin panels without
-  execution wiring.
+- Arc 9.5 is reopened as `Arc 9.5 Reopen -- Unified Case Table Visual /
+  Table UX Parity Correction`.
+- The previous Arc 9.5 closeout is preserved as implementation history, but it
+  is not accepted as final completion by the user.
+- The local `docs/designs/assets/predict_ref_img.png` has been replaced by the
+  user and is now the B-option unified case table visual reference.
+- The split input/result table structure is not accepted as the final Predict
+  case-table UX because one visible row must represent one prediction case for
+  visible-as-selected copy/paste behavior.
+- Arc 9.5 completion requires unified case table visual parity and spreadsheet
+  UX baseline completion before Arc 10 starts.
+- The following are Arc 9.5 completion blockers, not deferred polish:
+  grouped undo; Tab / Shift+Tab / Enter / Shift+Enter navigation;
+  click/type replace-on-type; mapping-backed per-row dropdown option updates.
 
 ## Next Actions
 
-1. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-2. Arc 11 - Trainer app execution foundation.
+1. Arc 9.5 Reopen Slice 2 - Unified Case Table Design Contract.
+2. Arc 9.5 Reopen Slice 3 - Unified Case Column Adapter.
+3. Arc 10 - Prediction worker/progress and real-model smoke readiness after
+   Arc 9.5 final acceptance.
 
 ## Active Blockers / Open Decisions
 
+- The previous Arc 9.5 closeout recorded incomplete spreadsheet baseline items
+  as deferred; user review rejected that as final completion.
+- Current code uses split `InputTableView` / `ResultTableView` surfaces; this
+  must be corrected to a unified case table before Arc 10.
+- The updated local `predict_ref_img.png` is the B-option visual reference for
+  the correction arc.
+- Split input/result table UX and hidden joined-copy behavior are not accepted
+  as final visual/table parity.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution remains the current foundation and should not be treated as final
-  large-batch behavior. This follows the Arc 9.5 visual closeout.
+  execution remains the current foundation and stays on hold until Arc 10.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
@@ -97,6 +82,8 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
+- Arc 10 worker/progress/cancel remains on hold until Arc 9.5 final acceptance.
+- Arc 11 Trainer execution foundation remains on hold.
 - Broad ML / predictor algorithm work remains deferred; follow-up prediction
   execution work must preserve core ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their
@@ -117,6 +104,12 @@
   `docs/architecture/pyside6_train_predict_architecture.md`.
 - PySide6 Train/Predict visual/table parity harvest:
   `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`.
+- B-option unified case table visual reference:
+  `docs/designs/assets/predict_ref_img.png`.
+- Spreadsheet table UX baseline:
+  `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md`.
+- Input/result surface shaping:
+  `docs/ui_ux/05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - Calculator sample/default inventory and empty-state policy:

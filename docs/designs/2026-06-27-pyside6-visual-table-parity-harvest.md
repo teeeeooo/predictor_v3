@@ -74,6 +74,15 @@ Legacy files inspected from pre-retirement ref
 - Table model/view code must not own prediction, mapping repository, training,
   or calculator business logic.
 
+The following items are Arc 9.5 completion blockers and must not be deferred
+again in final closeout:
+
+- grouped undo for edit/paste/clear
+- Tab / Shift+Tab / Enter / Shift+Enter navigation
+- click/type replace-on-type state machine
+- mapping-backed per-row dropdown option updates
+- read-only result/status cell copy with mutation prevention
+
 ### C. Mapping / Autofill Parity
 
 - Legacy `DROPDOWN_TARGET` section relation is evidence for mapping-driven
@@ -110,9 +119,19 @@ Legacy files inspected from pre-retirement ref
 
 - Top status area should make model, mapping, and preprocessing state visible.
 - Command bar should group prediction, clear/reset, row operations, and future
-  import/export actions without crowding the tables.
-- Predict workspace remains an input/result split surface.
-- Result status, row errors, and warnings need a dedicated surface.
+  import/export actions without crowding the table.
+- Predict workspace target is now a unified case table based on the updated
+  local `docs/designs/assets/predict_ref_img.png`.
+- One visible row represents one prediction case.
+- Input, auto-fill/calculated, prediction result, and status/warning columns
+  appear in one spreadsheet-like table with clear column-group hierarchy.
+- Result and status columns are read-only but selectable and copyable.
+- Internal `case_id` remains hidden; row headers remain the user-facing row
+  identity.
+- Split input/result panes and hidden joined-copy behavior are not accepted as
+  the final Arc 9.5 UX.
+- Result status, row errors, and warnings need a visible row-level surface
+  inside or immediately adjacent to the unified table.
 - Bottom or side status summary should support large-batch scanning.
 - Variable-size batch prediction remains the target; do not assume fixed row
   count as the user-facing model.
@@ -142,13 +161,32 @@ Legacy files inspected from pre-retirement ref
 - Avoid raw scattered colors when a semantic token exists.
 - Legacy `ui/theme.py` is evidence only.
 
+### H. Unified Case Table Acceptance
+
+- One table is the final Predict case surface.
+- One row equals one prediction case.
+- Input, auto-fill/calculated, prediction results, and status/warning are
+  column groups in the same table.
+- Full-row drag-select and Ctrl+C must copy the visible case row as displayed.
+- Result/status cells must be read-only, selectable, and copyable.
+- Paste/delete/edit paths must skip read-only result/status cells.
+- `case_id` remains an internal identity and must not return as a visible
+  column.
+- Split table synchronization and hidden joined-copy behavior are not accepted
+  as final visual/table parity.
+- The local `docs/designs/assets/predict_ref_img.png` is the B-option
+  reference for this correction arc.
+
 ## Deferred Items By Target Arc
 
 ### Arc 9.5
 
-- Visual parity from `predict_ref_img.png` and `train_ref_img.png`.
-- Predict table visual/interaction parity.
-- Spreadsheet table UX parity where explicitly scoped.
+- Unified Predict case table visual and interaction parity.
+- Spreadsheet table UX baseline completion.
+- Mapping-backed per-row dropdown option updates.
+- Predict visual correction against the updated local B-option
+  `predict_ref_img.png`.
+- Trainer visual correction while preserving PredictWorkspace reuse.
 - PySide6 visual token adapter or equivalent semantic style binding.
 
 ### Arc 10
@@ -165,7 +203,7 @@ Legacy files inspected from pre-retirement ref
 ### Later
 
 - Export/import polish.
-- Additional spreadsheet conveniences not selected for Arc 9.5.
+- Additional spreadsheet conveniences beyond the baseline selected for Arc 9.5.
 
 ## Anti-Patterns To Avoid
 

@@ -10,13 +10,23 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 ready - Prediction Worker / Progress.
+Current phase: Arc 9.5 Reopen - Unified Case Table Visual / Table UX
+Parity Correction.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
-exists. PySide6 Predictor schema/mapping recovery, legacy `ui` retirement, and
-Predict / Train visual parity are complete enough to proceed to worker/progress
-readiness.
+exists. PySide6 Predictor schema/mapping recovery and legacy `ui` retirement
+remain complete, but the project is not yet Arc 10 ready. The previous Arc 9.5
+closeout is preserved as implementation history and is reopened by user review
+because spreadsheet baseline items were deferred and the split input/result
+table structure does not satisfy the desired case-row workflow.
+
+Arc 9.5 now targets the updated local B-option reference at
+`docs/designs/assets/predict_ref_img.png`: one unified case table where one
+visible row is one prediction case and input, auto-fill/calculated, prediction
+result, and status/warning columns are grouped in the same spreadsheet-like
+table. Arc 10 Prediction Worker / Progress remains the next major arc after
+Arc 9.5 final acceptance.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -316,7 +326,18 @@ Goal:
 
 Status:
 
-- Complete.
+- Reopened / correction required.
+
+Reopen decision:
+
+- The prior Arc 9.5 closeout implemented useful visual foundation work, but it
+  deferred grouped undo, Tab/Enter navigation, click/type replace-on-type, and
+  mapping-backed per-row dropdown updates.
+- Those deferred items are baseline spreadsheet UX requirements and must be
+  completed before final Arc 9.5 closeout.
+- The split input/result table structure is replaced as the target by a
+  unified case table structure based on the updated local
+  `docs/designs/assets/predict_ref_img.png`.
 
 Completed milestones:
 
@@ -334,6 +355,19 @@ Completed milestones:
 - Add Train Model and Data Mapping visual admin panels while keeping execution
   deferred.
 
+Correction milestones:
+
+- Update architecture and design acceptance documents for the unified case
+  table.
+- Add an app-side unified case column adapter without changing core schema.
+- Add unified case table model and view.
+- Complete spreadsheet UX baseline, including grouped undo, Tab/Enter
+  navigation, click/type replace-on-type, and read-only mutation prevention.
+- Complete mapping-backed per-row dropdown option updates.
+- Integrate result/status columns into the unified table.
+- Correct Predict and Trainer visual parity.
+- Close Arc 9.5 only with no baseline UX blockers deferred.
+
 ### Arc 10 — Prediction Worker/Progress
 
 Goal:
@@ -346,6 +380,10 @@ Target milestones:
 - Add worker boundary after schema/mapping recovery is stable.
 - Add progress/cancel UI behavior without changing core prediction semantics.
 - Complete real-model smoke readiness when a valid model artifact is available.
+
+Status:
+
+- Pending after Arc 9.5 final acceptance.
 
 ### Arc 11 — Trainer Admin App Foundation
 
