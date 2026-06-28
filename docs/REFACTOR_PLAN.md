@@ -31,8 +31,12 @@
 ### 0b. Calculator usecase boundary correction
 - **왜 후보인지**: Calculator UI still contains application orchestration that
   should be reusable outside a specific UI section.
-- **실행 순서**: Arc 12로 분리한다. Arc 11은 routing decision만 기록하고
-  calculator correction을 구현하지 않는다.
+- **실행 순서**: Arc 12로 분리한다. Slice 0은 audit formalization이고,
+  Slice 1은 calculator application boundary foundation이다. 첫 구현 대상은
+  ISO/ISEER 2-point single usecase이며, 다음 slice에서 matching batch handler
+  reuse를 적용한다.
+- **지켜야 할 guard**: calculator formulas, config semantics, profile IDs,
+  fixtures/golden expected, and public result dict contracts remain unchanged.
 
 ### 1. Calculator series reset: 기존 ISO 파일 legacy 격하 + 새 calculator 3종 작성
 - **왜 후보인지**: 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임. 037~043 사이클의 점진 cleanup으로는 boundary 책임이 정렬되지 않는다는 것이 확인되었다.

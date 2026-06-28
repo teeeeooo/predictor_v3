@@ -890,3 +890,15 @@
 - Production UI Train execution remains owned by `QProcessTrainingRunner` and
   `apps/train/jobs/train_job.py`.
 - Arc 12 Calculator UI/Application Boundary Audit remains the next action.
+
+## 2026-06-28 — Arc 12 calculator usecase boundary audit formalized
+
+### Decision
+- Arc 12 is a narrow Calculator UI/Application Boundary Correction, not a full
+  calculator rewrite.
+- The first implementation target is ISO/ISEER 2-point single application
+  usecase extraction, followed by matching batch handler reuse.
+- SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI remain follow-up candidates
+  after the first ISO/ISEER pattern lands.
+- Calculator formulas, config semantics, profile IDs, fixtures/golden expected,
+  and public result dict contracts remain protected.

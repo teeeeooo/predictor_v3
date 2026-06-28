@@ -10,8 +10,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, Arc 11 reopened for
-Predict/Train hexagonal boundary correction.
+Current phase: Machine Learning / Predictor Phase, Arc 12 Calculator UseCase
+Boundary Correction.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -484,8 +484,12 @@ Target milestones:
 
 Status:
 
-- Next active architecture correction after Arc 11 closeout.
-- Not implemented in Arc 11.
+- Slice 0 audit formalization is active.
+- Next implementation action is Slice 1 - Calculator Application Boundary
+  Foundation.
+- Arc 12 starts with ISO/ISEER 2-point single usecase extraction, then matching
+  batch reuse.
+- Calculator formula/config/golden/public result contracts remain protected.
 
 ### Arc 13 — ML Pipeline Stabilization
 

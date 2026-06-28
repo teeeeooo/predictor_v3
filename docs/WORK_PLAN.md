@@ -27,6 +27,11 @@
 
 ## Current Slice
 
+- Arc 12 Slice 0 formalizes the Calculator UI/Application Boundary Audit.
+- Arc 12 first implementation target is the ISO/ISEER 2-point single
+  application usecase, followed by matching batch reuse.
+- Calculator formulas, configs, fixtures, golden expected values, profile IDs,
+  and public result dict contracts are protected throughout Arc 12.
 - Arc 11 Reopen / Correction is complete for automated closeout scope.
 - Train production UI execution now flows through an explicit execution port and
   killable process runner adapter; the legacy direct Train worker path has been
@@ -55,7 +60,7 @@
 
 ## Next Actions
 
-1. Arc 12 Slice 0 - Calculator UI/Application Boundary Audit.
+1. Arc 12 Slice 1 - Calculator Application Boundary Foundation.
 
 ## Active Blockers / Open Decisions
 
