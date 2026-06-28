@@ -74,9 +74,9 @@ Covered:
 
 Observed asset note:
 
-- `predict_ref_img.png` visually shows the Trainer/Train Model screen and
-  `train_ref_img.png` visually shows the Predictor screen. Paths were left
-  unchanged and the visual content was used by screen type.
+- Asset filenames now match their visual screen type: `predict_ref_img.png`
+  shows the Predictor screen and `train_ref_img.png` shows the Trainer /
+  Train Model screen.
 
 ## Excluded Scope
 

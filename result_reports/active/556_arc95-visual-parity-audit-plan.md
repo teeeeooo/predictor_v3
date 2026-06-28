@@ -27,14 +27,12 @@ then fix the Arc 9.5 implementation slice plan.
 Both assets exist and were visually inspected:
 
 - `docs/designs/assets/predict_ref_img.png`: 1672 x 941 PNG; visually shows an
-  HVAC V3 Trainer / Train Model style screen.
-- `docs/designs/assets/train_ref_img.png`: 1672 x 941 PNG; visually shows an
   HVAC V3 Predictor screen.
+- `docs/designs/assets/train_ref_img.png`: 1672 x 941 PNG; visually shows an
+  HVAC V3 Trainer / Train Model style screen.
 
-The filenames appear swapped relative to the window titles. This arc will keep
-the repository paths unchanged and use the visual content as the acceptance
-reference by screen type. The target is layout density, hierarchy, grouping,
-and interaction parity, not pixel-perfect replication.
+The target is layout density, hierarchy, grouping, and interaction parity, not
+pixel-perfect replication.
 
 ## Current Implementation Audit
 
