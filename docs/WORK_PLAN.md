@@ -48,7 +48,7 @@
 
 ## Next Actions
 
-1. Arc 11 Slice 5 — Train UI Integration.
+1. Arc 11 Slice 6 — Train E2E Smoke with Mock Bundle.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 

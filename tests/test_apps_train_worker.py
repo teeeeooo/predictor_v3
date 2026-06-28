@@ -1,8 +1,9 @@
 """TrainWorker headless behavior tests."""
 
+import os
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 from apps.train.services.training_service import TrainingService
 from apps.train.state.training_run_state import TrainingRequest
@@ -11,8 +12,9 @@ from tools.dev.mock_smoke.dev_training_backend import DevFastTrainingBackend
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
 
-def _app() -> QCoreApplication:
-    return QCoreApplication.instance() or QCoreApplication([])
+def _app() -> QApplication:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return QApplication.instance() or QApplication([])
 
 
 def _request(tmp_path, run_id: str = "run-worker") -> TrainingRequest:  # noqa: ANN001

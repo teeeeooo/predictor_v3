@@ -1,9 +1,11 @@
 """TrainController worker orchestration tests."""
 
+import os
 from threading import Event
 
 import pytest
-from PySide6.QtCore import QCoreApplication, QEventLoop, QTimer
+from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.train_controller import TrainController
 from apps.train.services.training_service import TrainingService
@@ -16,8 +18,9 @@ from tools.dev.mock_smoke.dev_training_backend import DevFastTrainingBackend
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
 
-def _app() -> QCoreApplication:
-    return QCoreApplication.instance() or QCoreApplication([])
+def _app() -> QApplication:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return QApplication.instance() or QApplication([])
 
 
 def _wait_until(predicate, timeout_ms: int = 1500) -> None:  # noqa: ANN001

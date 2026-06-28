@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from uuid import uuid4
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -22,6 +25,8 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.train.controllers.train_controller import TrainController
+from apps.train.state.training_run_state import TrainingLogEvent, TrainingProgress, TrainingRequest, TrainingResult
 from apps.train.ui.models.static_table_model import StaticTableModel
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
@@ -30,11 +35,18 @@ TARGETS = ("Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating H
 
 
 class TrainModelPanel(QWidget):
-    """Visual Train / Model admin surface without execution wiring."""
+    """Train / Model admin surface wired to TrainController."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        controller: TrainController | None = None,
+        on_model_status_changed: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("TrainModelPanel")
+        self.training_controller = controller or TrainController()
+        self._on_model_status_changed = on_model_status_changed
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -58,6 +70,7 @@ class TrainModelPanel(QWidget):
         content.setColumnStretch(2, 2)
         content.setRowStretch(1, 1)
         layout.addLayout(content, 1)
+        self._update_control_state()
 
     def _build_command_bar(self) -> QFrame:
         panel = QFrame(self)
@@ -71,12 +84,22 @@ class TrainModelPanel(QWidget):
             style.spacing("space.sm"),
         )
         layout.setSpacing(style.spacing("space.md"))
+        self.select_button = _command_button("학습 데이터 선택")
+        self.run_button = _command_button("학습 실행", primary=True)
+        self.cancel_button = _command_button("중지")
+        self.open_model_button = _command_button("모델 열기")
+        self.save_log_button = _command_button("로그 저장")
+        self.select_button.clicked.connect(self._select_training_data)
+        self.run_button.clicked.connect(self._run_training)
+        self.cancel_button.clicked.connect(self._cancel_training)
+        self.open_model_button.setEnabled(False)
+        self.save_log_button.setEnabled(False)
         for button in (
-            _disabled_button("학습 데이터 선택"),
-            _disabled_button("학습 실행", primary=True),
-            _disabled_button("중지"),
-            _disabled_button("모델 열기"),
-            _disabled_button("로그 저장"),
+            self.select_button,
+            self.run_button,
+            self.cancel_button,
+            self.open_model_button,
+            self.save_log_button,
         ):
             layout.addWidget(button)
         layout.addStretch(1)
@@ -85,9 +108,11 @@ class TrainModelPanel(QWidget):
     def _build_training_config_panel(self) -> QFrame:
         panel, body = _panel("학습 설정")
         body.addWidget(QLabel("데이터 파일 경로"))
-        body.addWidget(_readonly_line(TRAIN_DATA_FILE))
+        self.data_path_line = _readonly_line(TRAIN_DATA_FILE)
+        body.addWidget(self.data_path_line)
         body.addWidget(QLabel("model.pkl 저장 위치"))
-        body.addWidget(_readonly_line(MODEL_FILE))
+        self.model_path_line = _readonly_line(MODEL_FILE)
+        body.addWidget(self.model_path_line)
         body.addWidget(QLabel("preprocess version"))
         body.addWidget(_readonly_line("v1.0"))
         body.addWidget(QLabel(f"모델/타겟 목록 ({len(TARGETS)})"))
@@ -103,8 +128,10 @@ class TrainModelPanel(QWidget):
         progress.setRange(0, 100)
         progress.setValue(0)
         progress.setFormat("0%")
+        self.progress_bar = progress
         body.addWidget(progress)
-        body.addWidget(_status_label("현재 단계", "Trainer execution deferred", "missing"))
+        self.status_label = _status_label("현재 단계", "대기", "neutral")
+        body.addWidget(self.status_label)
         cards = QHBoxLayout()
         cards.addWidget(_metric_tile("완료", "0", "targets", "ready"))
         cards.addWidget(_metric_tile("진행 중", "0", "target", "running"))
@@ -115,7 +142,8 @@ class TrainModelPanel(QWidget):
 
     def _build_summary_panel(self) -> QFrame:
         panel, body = _panel("Training Summary")
-        body.addWidget(_summary_table())
+        self.summary_table = _summary_table()
+        body.addWidget(self.summary_table)
         return panel
 
     def _build_log_panel(self) -> QFrame:
@@ -123,10 +151,8 @@ class TrainModelPanel(QWidget):
         log = QTextEdit()
         log.setObjectName("TrainingLog")
         log.setReadOnly(True)
-        log.setPlainText(
-            "Trainer execution is intentionally deferred.\n"
-            "This surface reserves command, progress, summary, and log areas for Arc 11."
-        )
+        log.setPlainText("Training execution ready.")
+        self.log = log
         body.addWidget(log)
         return panel
 
@@ -135,18 +161,131 @@ class TrainModelPanel(QWidget):
         grid = QGridLayout()
         grid.setSpacing(style.spacing("space.sm"))
         values = (
-            ("총 데이터 행 수", "0"),
-            ("특성 수", "0"),
-            ("타겟 수", str(len(TARGETS))),
-            ("CV 폴드 수", "5"),
-            ("Optuna Trials", "30"),
-            ("예상 남은 시간", "--:--"),
+            ("총 데이터 행 수", "0"), ("특성 수", "0"), ("타겟 수", str(len(TARGETS))),
+            ("CV 폴드 수", "5"), ("Optuna Trials", "30"), ("예상 남은 시간", "--:--"),
         )
         for index, (label, value) in enumerate(values):
             grid.addWidget(_metric_tile(label, value, "", "neutral"), index // 3, index % 3)
         body.addLayout(grid)
         body.addStretch(1)
         return panel
+
+    def set_data_path(self, data_path: str) -> None:
+        """Set training data path without depending on a file dialog."""
+        self.data_path_line.setText(data_path)
+        self._update_control_state()
+
+    def _select_training_data(self) -> None:
+        selected, _ = QFileDialog.getOpenFileName(
+            self, "학습 데이터 선택", str(Path(self.data_path_line.text()).parent),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if selected:
+            self.set_data_path(selected)
+
+    def _run_training(self) -> None:
+        request = TrainingRequest(
+            run_id=f"train-ui-{uuid4().hex}",
+            data_path=self.data_path_line.text(),
+            model_output_path=self.model_path_line.text(),
+        )
+        self._set_running(True)
+        self.log.clear()
+        self._append_log_text("Training run starting.")
+        self._set_summary_state("진행 중")
+        try:
+            self.training_controller.start(
+                request,
+                status_callback=self._set_status_text,
+                log_callback=self._handle_log_event,
+                progress_callback=self._handle_progress,
+                finished_callback=self._handle_finished,
+                failed_callback=self._handle_failed,
+                cancelled_callback=self._handle_cancelled,
+            )
+        except RuntimeError as exc:
+            self._handle_failed(TrainingResult(
+                run_id=request.run_id,
+                status="error",
+                model_path=request.model_output_path,
+                message=str(exc),
+            )
+            )
+
+    def _cancel_training(self) -> None:
+        if self.training_controller.cancel():
+            self._set_status_text("Cancellation requested.")
+
+    def _handle_log_event(self, event: TrainingLogEvent) -> None:
+        self._append_log_text(event.message)
+
+    def _handle_progress(self, progress: TrainingProgress) -> None:
+        if progress.indeterminate:
+            self.progress_bar.setRange(0, 0)
+        else:
+            total = max(progress.total, 1)
+            self.progress_bar.setRange(0, total)
+            self.progress_bar.setValue(min(progress.completed, total))
+            self.progress_bar.setFormat(f"{progress.completed} / {total}")
+        if progress.message:
+            self._set_status_text(progress.message)
+
+    def _handle_finished(self, result: TrainingResult) -> None:
+        self._set_terminal_result(result, "완료", "Training complete.", 100)
+
+    def _handle_failed(self, result: TrainingResult) -> None:
+        message = result.message or "Training failed."
+        self._set_terminal_result(result, "오류", message, 0)
+
+    def _handle_cancelled(self, result: TrainingResult) -> None:
+        message = result.message or "Training cancelled."
+        self._set_terminal_result(result, "취소", message, 0)
+
+    def _set_terminal_result(self, result: TrainingResult, status: str, message: str, progress_value: int) -> None:
+        self._set_running(False)
+        self._set_status_text(message)
+        if result.summary:
+            self._append_log_text(result.summary)
+        if result.message:
+            self._append_log_text(result.message)
+        self._set_summary_state(status)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(progress_value)
+        self.progress_bar.setFormat(f"{progress_value}%")
+        if self._on_model_status_changed is not None:
+            self._on_model_status_changed()
+
+    def _set_running(self, running: bool) -> None:
+        self.run_button.setEnabled(False)
+        self.cancel_button.setEnabled(running)
+        self.select_button.setEnabled(not running)
+        if not running:
+            self._update_control_state()
+
+    def _update_control_state(self) -> None:
+        running = self.training_controller.is_running
+        data_exists = Path(self.data_path_line.text()).exists()
+        self.run_button.setEnabled(data_exists and not running)
+        self.cancel_button.setEnabled(running)
+        self.select_button.setEnabled(not running)
+
+    def _set_status_text(self, message: str) -> None:
+        self.status_label.setText(f"현재 단계: {message}")
+        kind = "running" if self.training_controller.is_running else "neutral"
+        self.status_label.setStyleSheet(style.status_badge_stylesheet(kind))
+
+    def _append_log_text(self, message: str) -> None:
+        if message:
+            self.log.append(message)
+
+    def _set_summary_state(self, status: str) -> None:
+        rows = tuple(
+            (str(row + 1), target, status, "-", "-") for row, target in enumerate(TARGETS)
+        )
+        self.summary_table.setModel(
+            StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows)
+        )
+        self.summary_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 
 def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:
@@ -174,12 +313,10 @@ def _readonly_line(value: str) -> QLineEdit:
     return line
 
 
-def _disabled_button(text: str, primary: bool = False) -> QPushButton:
+def _command_button(text: str, primary: bool = False) -> QPushButton:
     button = QPushButton(text)
     if primary:
         button.setObjectName("PrimaryButton")
-    button.setEnabled(False)
-    button.setToolTip("Trainer execution foundation은 후속 Arc에서 구현됩니다.")
     return button
 
 
@@ -233,10 +370,7 @@ def _metric_tile(label: str, value: str, detail: str, kind: str) -> QFrame:
 
 
 def _summary_table() -> QTableView:
-    rows = tuple(
-        (str(row + 1), target, "대기 중", "-", "-")
-        for row, target in enumerate(TARGETS)
-    )
+    rows = tuple((str(row + 1), target, "대기 중", "-", "-") for row, target in enumerate(TARGETS))
     table = QTableView()
     table.setModel(StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows))
     table.verticalHeader().setVisible(False)

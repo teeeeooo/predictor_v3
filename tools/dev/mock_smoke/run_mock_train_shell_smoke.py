@@ -57,14 +57,21 @@ def main() -> int:
     for expected_text in ("model.pkl loaded", "학습 데이터: found", "mapping: loaded"):
         if expected_text not in status_text:
             raise RuntimeError(f"Train status strip missing: {expected_text}")
-    for tab_index in (1, 2):
-        for button in shell.tabs.widget(tab_index).findChildren(QPushButton):
-            if button.isEnabled():
-                raise RuntimeError(
-                    f"deferred Train/Data Mapping button is enabled: {button.text()}"
-                )
-    print("train shell smoke: tabs/status/deferred controls OK")
-    print("trainer execution: deferred")
+    train_buttons = {
+        button.text(): button
+        for button in shell.tabs.widget(1).findChildren(QPushButton)
+    }
+    for text in ("학습 데이터 선택", "학습 실행"):
+        if not train_buttons[text].isEnabled():
+            raise RuntimeError(f"Train control is disabled: {text}")
+    for text in ("중지", "모델 열기", "로그 저장"):
+        if train_buttons[text].isEnabled():
+            raise RuntimeError(f"Train control should be disabled: {text}")
+    for button in shell.tabs.widget(2).findChildren(QPushButton):
+        if button.isEnabled():
+            raise RuntimeError(f"deferred Data Mapping button is enabled: {button.text()}")
+    print("train shell smoke: tabs/status/train controls/data mapping deferred OK")
+    print("trainer execution: controller-ready")
     if args.cleanup:
         removed = cleanup_from_manifest(
             paths["manifest"],
