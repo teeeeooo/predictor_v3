@@ -17,6 +17,7 @@ temporary_info.md
 .mock_smoke/
 predictor_v3_mock_smoke/
 mock_smoke_*.csv
+mock_smoke_*.tsv
 mock_smoke_*.xlsx
 mock_smoke_*.pkl
 mock_smoke_*.json

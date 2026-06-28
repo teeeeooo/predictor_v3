@@ -4,26 +4,41 @@ from __future__ import annotations
 
 import shutil
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.dummy import DummyRegressor
 
+from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.artifacts import MODEL_FILE
+from core.ml.artifacts import TRAIN_DATA_FILE
 from core.ml.features import BASE_FEATURES, TARGETS
 from core.ml.preprocessing import prepare_pipeline
 from core.ml.registry import MODEL_REGISTRY, get_model_config
+from core.predictor_schema.columns import INPUT_COLS
+from tools.dev.mock_smoke.models import SlowDummyRegressor
 
 DEFAULT_OUTPUT_DIR_NAME = "predictor_v3_mock_smoke"
 DEFAULT_ROWS = 24
 DEFAULT_SEED = 42
 PREDICTION_ARTIFACT_NAME = "mock_smoke_model.pkl"
 TRAINING_DATA_NAME = "mock_smoke_training_data.csv"
+MAPPING_NAME = "mock_smoke_mapping.json"
+CASE_INPUT_NAME = "mock_smoke_case_input.tsv"
 MANIFEST_NAME = "mock_smoke_manifest.json"
 PREPROCESS_VERSION = "v1.0"
+MOCK_IDU = "MOCK_IDU_A"
+MOCK_EVAP = "MOCK_EVAP_A"
+MOCK_ODU = "MOCK_ODU_A"
+MOCK_COMPRESSOR = "MOCK_COMP_A"
+MOCK_FIN_TYPE = "F&T"
+MOCK_PI = "7"
+MOCK_ROW = "1"
+MOCK_REF_TYPE = "R32"
+MOCK_EXP_TYPE = "EEV"
 
 
 def repo_root() -> Path:
@@ -72,6 +87,96 @@ def generate_mock_training_frame(rows: int = DEFAULT_ROWS, seed: int = DEFAULT_S
     return pd.DataFrame({column: data[column] for column in dict.fromkeys(BASE_FEATURES + TARGETS)})
 
 
+def mock_mapping_data() -> dict[str, object]:
+    cond_key = f"{MOCK_ODU} {MOCK_FIN_TYPE} {MOCK_PI} {MOCK_ROW}"
+    return {
+        "idu": {MOCK_IDU: {"ID Volume": 0.015}},
+        "evap_index": {MOCK_EVAP: {"Evap Area": 12.5, "Evap Volume": 0.002}},
+        "odu": {MOCK_ODU: {"OD Volume": 0.045}},
+        "compressor": {MOCK_COMPRESSOR: {"Comp EER": 3.5, "Comp cc": 10.5}},
+        "fin_type": {MOCK_FIN_TYPE: {}},
+        "pi": {MOCK_PI: {}},
+        "row": {MOCK_ROW: {}},
+        "odu_cascade": {
+            MOCK_ODU: {
+                "Available_Fins": [MOCK_FIN_TYPE],
+                "Available_Pis": [MOCK_PI],
+                "Available_Rows": [MOCK_ROW],
+            }
+        },
+        "cond_specs": {cond_key: {"Cond Area": 25.0, "Cond Volume": 0.005}},
+    }
+
+
+def mock_case_input_rows(rows: int = 12) -> list[dict[str, object]]:
+    if rows < 1:
+        raise ValueError("mock smoke case input requires at least 1 row")
+    case_rows: list[dict[str, object]] = []
+    for index in range(rows):
+        case_rows.append(
+            {
+                "cooling_capa": 3500 + index * 25,
+                "heating_capa": 3900 + index * 25,
+                "idu": MOCK_IDU,
+                "evap_index": MOCK_EVAP,
+                "odu": MOCK_ODU,
+                "fin_type": MOCK_FIN_TYPE,
+                "pi": MOCK_PI,
+                "row": MOCK_ROW,
+                "compressor": MOCK_COMPRESSOR,
+                "ref_type": MOCK_REF_TYPE,
+                "exp_type": MOCK_EXP_TYPE,
+            }
+        )
+    return case_rows
+
+
+def write_mock_mapping(
+    output_dir: str | Path | None = None,
+    *,
+    write_manifest: bool = False,
+) -> Path:
+    target_dir = resolve_output_dir(output_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    output_path = target_dir / MAPPING_NAME
+    output_path.write_text(
+        json.dumps(mock_mapping_data(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    if write_manifest:
+        update_mock_smoke_manifest(
+            target_dir,
+            "mapping",
+            output_path,
+            purpose="predict autofill mapping smoke",
+        )
+    return output_path
+
+
+def write_mock_case_input(
+    output_dir: str | Path | None = None,
+    rows: int = 12,
+    *,
+    write_manifest: bool = False,
+) -> Path:
+    target_dir = resolve_output_dir(output_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    output_path = target_dir / CASE_INPUT_NAME
+    lines = []
+    for row in mock_case_input_rows(rows):
+        lines.append("\t".join(str(row.get(column, "")) for column in INPUT_COLS))
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if write_manifest:
+        update_mock_smoke_manifest(
+            target_dir,
+            "case_input",
+            output_path,
+            rows=rows,
+            purpose="paste-ready unified table input smoke",
+        )
+    return output_path
+
+
 def write_mock_training_data(
     output_dir: str | Path | None = None,
     rows: int = DEFAULT_ROWS,
@@ -84,7 +189,14 @@ def write_mock_training_data(
     output_path = target_dir / TRAINING_DATA_NAME
     generate_mock_training_frame(rows=rows, seed=seed).to_csv(output_path, index=False)
     if write_manifest:
-        update_mock_smoke_manifest(target_dir, "training_data", output_path, rows=rows, seed=seed)
+        update_mock_smoke_manifest(
+            target_dir,
+            "training_data",
+            output_path,
+            rows=rows,
+            seed=seed,
+            purpose="training data smoke",
+        )
     return output_path
 
 
@@ -108,6 +220,7 @@ def _target_feature_frame(df: pd.DataFrame, target: str) -> pd.DataFrame:
 def build_mock_prediction_artifact(
     rows: int = DEFAULT_ROWS,
     seed: int = DEFAULT_SEED,
+    predict_delay_ms: int = 0,
 ) -> dict[str, object]:
     """Create an inference-compatible deterministic mock model artifact."""
     df = generate_mock_training_frame(rows=rows, seed=seed)
@@ -123,7 +236,7 @@ def build_mock_prediction_artifact(
 
     for target in TARGETS:
         x_target = _target_feature_frame(df, target)
-        model = DummyRegressor(strategy="mean")
+        model = SlowDummyRegressor(delay_ms=predict_delay_ms, strategy="mean")
         model.fit(x_target, df[target])
         models[target] = model
         features[target] = list(x_target.columns)
@@ -135,13 +248,21 @@ def write_mock_prediction_artifact(
     output_dir: str | Path | None = None,
     rows: int = DEFAULT_ROWS,
     seed: int = DEFAULT_SEED,
+    predict_delay_ms: int = 0,
     *,
     write_manifest: bool = False,
 ) -> Path:
     target_dir = resolve_output_dir(output_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     output_path = target_dir / PREDICTION_ARTIFACT_NAME
-    joblib.dump(build_mock_prediction_artifact(rows=rows, seed=seed), output_path)
+    joblib.dump(
+        build_mock_prediction_artifact(
+            rows=rows,
+            seed=seed,
+            predict_delay_ms=predict_delay_ms,
+        ),
+        output_path,
+    )
     if write_manifest:
         update_mock_smoke_manifest(
             target_dir,
@@ -149,6 +270,8 @@ def write_mock_prediction_artifact(
             output_path,
             rows=rows,
             seed=seed,
+            predict_delay_ms=predict_delay_ms,
+            purpose="prediction model smoke",
         )
     return output_path
 
@@ -157,13 +280,24 @@ def _utc_now_text() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def sha256_file(path: str | Path) -> str:
+    hasher = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
 def update_mock_smoke_manifest(
     output_dir: str | Path,
     entry_name: str,
     output_path: str | Path,
     *,
-    rows: int,
-    seed: int,
+    rows: int | None = None,
+    seed: int | None = None,
+    predict_delay_ms: int | None = None,
+    purpose: str = "DEV-only mock smoke output",
+    installed_path: str | Path | None = None,
 ) -> Path:
     """Upsert one generated-output entry in the DEV smoke manifest."""
     target_dir = Path(output_dir).resolve()
@@ -180,17 +314,45 @@ def update_mock_smoke_manifest(
 
     created_at = _utc_now_text()
     manifest["updated_at"] = created_at
-    manifest.setdefault("entries", {})[entry_name] = {
+    output = Path(output_path).resolve()
+    entry = {
         "path": str(Path(output_path).resolve()),
-        "seed": seed,
-        "rows": rows,
+        "sha256": sha256_file(output),
         "created_at": created_at,
+        "purpose": purpose,
     }
+    if rows is not None:
+        entry["rows"] = rows
+    if seed is not None:
+        entry["seed"] = seed
+    if predict_delay_ms is not None:
+        entry["predict_delay_ms"] = predict_delay_ms
+    if installed_path is not None:
+        installed = Path(installed_path).resolve()
+        entry["installed_path"] = str(installed)
+        entry["installed_sha256"] = sha256_file(installed)
+    manifest.setdefault("entries", {})[entry_name] = entry
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     return manifest_path
+
+
+def install_generated_file(
+    source_path: str | Path,
+    destination_path: str | Path,
+    *,
+    force: bool = False,
+) -> Path:
+    destination = Path(destination_path)
+    if destination.exists() and not force:
+        raise FileExistsError(
+            f"{destination} already exists. Use --force only for DEV mock smoke replacement."
+        )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(Path(source_path), destination)
+    return destination
 
 
 def install_local_model(
@@ -199,11 +361,126 @@ def install_local_model(
     *,
     force: bool = False,
 ) -> Path:
-    destination = Path(model_file)
-    if destination.exists() and not force:
-        raise FileExistsError(
-            f"{destination} already exists. Use --force only for DEV mock smoke replacement."
+    return install_generated_file(artifact_path, model_file, force=force)
+
+
+def install_local_mapping(mapping_path: str | Path, *, force: bool = False) -> Path:
+    return install_generated_file(mapping_path, MAPPING_JSON_FILE, force=force)
+
+
+def install_local_train_data(csv_path: str | Path, *, force: bool = False) -> Path:
+    return install_generated_file(csv_path, TRAIN_DATA_FILE, force=force)
+
+
+def generate_mock_smoke_bundle(
+    output_dir: str | Path | None = None,
+    rows: int = 12,
+    seed: int = DEFAULT_SEED,
+    predict_delay_ms: int = 0,
+    *,
+    write_manifest: bool = True,
+    install_model: bool = False,
+    install_mapping: bool = False,
+    install_train_data: bool = False,
+    force: bool = False,
+) -> dict[str, Path]:
+    target_dir = resolve_output_dir(output_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "prediction_artifact": write_mock_prediction_artifact(
+            target_dir,
+            rows=max(rows, 5),
+            seed=seed,
+            predict_delay_ms=predict_delay_ms,
+            write_manifest=write_manifest,
+        ),
+        "mapping": write_mock_mapping(target_dir, write_manifest=write_manifest),
+        "case_input": write_mock_case_input(target_dir, rows=rows, write_manifest=write_manifest),
+        "training_data": write_mock_training_data(
+            target_dir,
+            rows=max(rows, 5),
+            seed=seed,
+            write_manifest=write_manifest,
+        ),
+    }
+    if install_model:
+        installed = install_local_model(paths["prediction_artifact"], force=force)
+        if write_manifest:
+            update_mock_smoke_manifest(
+                target_dir,
+                "prediction_artifact",
+                paths["prediction_artifact"],
+                rows=max(rows, 5),
+                seed=seed,
+                predict_delay_ms=predict_delay_ms,
+                purpose="prediction model smoke",
+                installed_path=installed,
+            )
+    if install_mapping:
+        installed = install_local_mapping(paths["mapping"], force=force)
+        if write_manifest:
+            update_mock_smoke_manifest(
+                target_dir,
+                "mapping",
+                paths["mapping"],
+                purpose="predict autofill mapping smoke",
+                installed_path=installed,
+            )
+    if install_train_data:
+        installed = install_local_train_data(paths["training_data"], force=force)
+        if write_manifest:
+            update_mock_smoke_manifest(
+                target_dir,
+                "training_data",
+                paths["training_data"],
+                rows=max(rows, 5),
+                seed=seed,
+                purpose="training data smoke",
+                installed_path=installed,
+            )
+    paths["manifest"] = target_dir / MANIFEST_NAME
+    return paths
+
+
+def cleanup_from_manifest(
+    manifest_path: str | Path,
+    *,
+    remove_local_model: bool = False,
+    remove_local_mapping: bool = False,
+    remove_local_train_data: bool = False,
+) -> list[Path]:
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    removed: list[Path] = []
+    for entry_name, entry in manifest.get("entries", {}).items():
+        path = Path(entry.get("path", ""))
+        _remove_manifest_path(path, entry.get("sha256", ""), removed)
+        installed_path = Path(entry.get("installed_path", "")) if entry.get("installed_path") else None
+        if installed_path is None:
+            continue
+        allow = (
+            entry_name == "prediction_artifact" and remove_local_model
+            or entry_name == "mapping" and remove_local_mapping
+            or entry_name == "training_data" and remove_local_train_data
         )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(Path(artifact_path), destination)
-    return destination
+        if allow:
+            _remove_manifest_path(installed_path, entry.get("installed_sha256", ""), removed)
+    manifest_file = Path(manifest_path)
+    if manifest_file.exists():
+        manifest_file.unlink()
+        removed.append(manifest_file)
+    return removed
+
+
+def _remove_manifest_path(path: Path, expected_sha256: str, removed: list[Path]) -> None:
+    if not path.exists():
+        return
+    if not path.name.startswith("mock_smoke_") and path.name not in {
+        "model.pkl",
+        "mapping.json",
+        "Practice_4.csv",
+    }:
+        raise RuntimeError(f"refusing to remove non-mock-smoke path: {path}")
+    if expected_sha256 and sha256_file(path) != expected_sha256:
+        raise RuntimeError(f"refusing to remove sha mismatch: {path}")
+    path.unlink()
+    removed.append(path)

@@ -1,0 +1,81 @@
+"""Run offscreen DEV-only Train shell/status smoke using a mock bundle."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton  # noqa: E402
+
+from apps.predict.ui.workspace import PredictWorkspace  # noqa: E402
+from apps.train.ui.shell import TrainShell  # noqa: E402
+from tools.dev.mock_smoke.generators import (  # noqa: E402
+    cleanup_from_manifest,
+    generate_mock_smoke_bundle,
+    resolve_output_dir,
+)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", help="Mock output directory. Defaults outside the repo.")
+    parser.add_argument("--cleanup", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    output_dir = resolve_output_dir(args.output_dir)
+    paths = generate_mock_smoke_bundle(
+        output_dir,
+        write_manifest=True,
+        install_model=True,
+        install_mapping=True,
+        install_train_data=True,
+        force=args.force,
+    )
+    app = QApplication.instance() or QApplication([])
+    shell = TrainShell()
+    app.processEvents()
+    tabs = [shell.tabs.tabText(index) for index in range(shell.tabs.count())]
+    expected = ["Predict", "Train / Model", "Data Mapping"]
+    if tabs != expected:
+        raise RuntimeError(f"unexpected Train tabs: {tabs}")
+    if not isinstance(shell.tabs.widget(0), PredictWorkspace):
+        raise RuntimeError("Predict tab is not an embedded PredictWorkspace")
+    if shell.tabs.widget(0).title_label is not None:
+        raise RuntimeError("embedded Predict workspace title is visible")
+    status_text = "\n".join(label.text() for label in shell.findChildren(QLabel))
+    for expected_text in ("model.pkl loaded", "학습 데이터: found", "mapping: loaded"):
+        if expected_text not in status_text:
+            raise RuntimeError(f"Train status strip missing: {expected_text}")
+    for tab_index in (1, 2):
+        for button in shell.tabs.widget(tab_index).findChildren(QPushButton):
+            if button.isEnabled():
+                raise RuntimeError(
+                    f"deferred Train/Data Mapping button is enabled: {button.text()}"
+                )
+    print("train shell smoke: tabs/status/deferred controls OK")
+    print("trainer execution: deferred")
+    if args.cleanup:
+        removed = cleanup_from_manifest(
+            paths["manifest"],
+            remove_local_model=True,
+            remove_local_mapping=True,
+            remove_local_train_data=True,
+        )
+        for path in removed:
+            print(f"removed: {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

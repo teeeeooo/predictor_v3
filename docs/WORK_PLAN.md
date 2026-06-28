@@ -39,12 +39,13 @@
   boundaries, cleaned up Predict model/mapping resource status ownership, and
   kept real-model smoke readiness explicit without changing ML, mapping,
   calculator, or unified table contracts.
-- Arc 10.5 DEV-only mock smoke foundation is available to run local/cloud smoke
-  checks without committing generated mock data or model artifacts.
+- Arc 10.5b DEV-only isolated mock bundle and smoke runners are available to
+  verify Predict E2E and Train shell/status smoke without committing generated
+  mock data, mapping, model artifacts, or output.
 
 ## Next Actions
 
-1. Arc 10 manual smoke with DEV-only mock artifact.
+1. Arc 11 Trainer execution boundary design using mock bundle.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
@@ -54,7 +55,9 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Trainer execution foundation remains intentionally deferred to Arc 11.
+- Trainer execution foundation remains intentionally deferred to Arc 11; current
+  Train smoke covers shell/status/tab construction and disabled execution
+  controls only.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

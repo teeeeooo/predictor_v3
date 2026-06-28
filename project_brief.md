@@ -10,9 +10,9 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 Prediction Worker / Progress implementation complete
-for automated coverage, with Arc 10.5 DEV-only mock smoke foundation preparing
-manual smoke before the Arc 11 decision.
+Current phase: Arc 10 Prediction Worker / Progress and Arc 10.5b isolated mock
+bundle smoke foundation complete, preparing Arc 11 Trainer execution boundary
+design using the same mock bundle.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -33,8 +33,8 @@ complete, and the user has accepted the corrected manual smoke. Arc 10
 Prediction Worker / Progress implementation has since been completed through
 worker, controller, progress/cancel UI, resource-status cleanup, and focused
 automated coverage. Manual GUI smoke and real-model success smoke remain
-pending; mock smoke can exercise workflow readiness without production model
-quality claims.
+pending; mock bundle smoke can exercise Predict E2E and Train shell/status
+readiness without production model quality claims.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 

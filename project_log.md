@@ -809,3 +809,20 @@
   quality.
 - Next action remains Arc 10 manual smoke with mock artifact, followed by the
   Arc 11 decision.
+
+---
+
+## 2026-06-28 — Arc 10.5b isolated mock bundle smoke verification
+
+### Decision
+- The DEV-only mock smoke tooling now creates a full isolated bundle:
+  prediction artifact, mapping JSON, paste-ready case TSV, training CSV, and
+  manifest.
+- Offscreen Predict smoke verifies paste/autofill, prediction completion,
+  slow-model cancel behavior, result/copy basics, and cleanup without modifying
+  production app code.
+- Offscreen Train smoke verifies shell/status/tab construction and disabled
+  Train/Data Mapping execution controls only; Trainer execution remains
+  deferred to Arc 11.
+- Next action is Arc 11 Trainer execution boundary design using the same mock
+  bundle.

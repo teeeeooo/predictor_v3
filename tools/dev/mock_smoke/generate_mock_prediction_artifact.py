@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", help="Mock output directory. Defaults outside the repo.")
     parser.add_argument("--rows", type=int, default=DEFAULT_ROWS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument("--predict-delay-ms", type=int, default=0)
     parser.add_argument(
         "--manifest",
         action="store_true",
@@ -46,6 +47,7 @@ def main() -> int:
         output_dir=args.output_dir,
         rows=args.rows,
         seed=args.seed,
+        predict_delay_ms=args.predict_delay_ms,
         write_manifest=args.manifest,
     )
     print(f"mock prediction artifact: {artifact_path}")
