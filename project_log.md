@@ -760,3 +760,19 @@
 - 다음 Arc는 AHRI 210/240 readiness audit로 시작하며, audit 전에
   implementation이나 batch requirement를 임의로 확정하지 않음.
 - 참조: Summary 404, Summary 416, report 422, report 424.
+
+---
+
+## 2026-06-28 — Arc 9.5 accepted and Arc 10 started
+
+### Decision
+- Arc 9.5 unified case table second correction is accepted after focused
+  automated coverage and user manual-smoke acceptance.
+- Completed Arc 9.5 visual parity, reopen, manual-smoke audit, and second
+  correction reports were summarized into
+  `result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md`
+  and moved to archive.
+- Arc 10 Prediction Worker / Progress is active. The next implementation action
+  is Slice 1 - Worker/Progress Boundary Design Alignment.
+- Real-model prediction success smoke remains blocked by absent
+  `model/model.pkl`; Arc 11 Trainer execution remains deferred.

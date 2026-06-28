@@ -10,25 +10,26 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 9.5 second correction awaiting manual-smoke acceptance.
+Current phase: Arc 10 Prediction Worker / Progress starting after accepted
+Arc 9.5 second correction manual smoke.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
 exists. PySide6 Predictor schema/mapping recovery, legacy `ui` retirement, and
 Arc 9.5 unified case table parity correction now have focused automated
-coverage and remain pending user manual smoke.
+coverage and user manual-smoke acceptance.
 
 Arc 9.5 was reopened after user review because spreadsheet baseline items were
 deferred and the split input/result table structure did not satisfy the desired
-case-row workflow. The closeout now targets and reflects the updated local
+case-row workflow. The accepted closeout targets and reflects the updated local
 B-option reference at `docs/designs/assets/predict_ref_img.png`: one unified
 case table where one visible row is one prediction case and input,
 auto-fill/calculated, prediction result, and status/warning columns are grouped
 in the same spreadsheet-like table. A later manual smoke rejected the prior
 Arc 9.5 final closeout because structural table, dropdown, Train embedding, and
 Trainer table-surface issues remained. The automated correction slices are now
-complete, but Arc 10 Prediction Worker / Progress remains on hold until user
-manual smoke accepts the corrected Arc 9.5 surface.
+complete, and the user has accepted the corrected manual smoke, so Arc 10
+Prediction Worker / Progress is active.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -328,7 +329,8 @@ Goal:
 
 Status:
 
-- Automated second correction complete; awaiting user manual-smoke acceptance.
+- Complete / accepted after second-correction automated coverage and user
+  manual-smoke acceptance.
 
 Reopen decision:
 
@@ -375,8 +377,8 @@ Completed correction milestones:
 - Correct table-linked group header geometry, editable dropdown/autocomplete,
   mapping option boundary, embedded Train/Predict header ownership, Trainer
   model/view table compliance, and workspace row command boundary.
-- Close Arc 9.5 only after manual-smoke correction slices pass with no baseline
-  UX blockers deferred.
+- Manual-smoke correction slices passed automated coverage and were accepted by
+  the user, so Arc 9.5 is closed for the current scope.
 
 ### Arc 10 — Prediction Worker/Progress
 
@@ -393,7 +395,16 @@ Target milestones:
 
 Status:
 
-- On hold until Arc 9.5 second correction is manually accepted.
+- Active / starting.
+
+Current target:
+
+- Move prediction execution behind worker/progress/cancel boundaries without
+  changing core ML behavior.
+- Clean up Predict model/mapping resource status ownership through service,
+  controller, adapter, or repository boundaries.
+- Keep real-model success smoke ready but blocked until a valid
+  `model/model.pkl` artifact is available.
 
 ### Arc 11 — Trainer Admin App Foundation
 

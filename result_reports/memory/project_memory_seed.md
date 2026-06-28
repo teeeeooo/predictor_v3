@@ -46,6 +46,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/516_summary-architecture-reset-pyside6-foundation-closeout.md` (covered reports `491-492`, `507-515`)
 - `result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md` (covered reports `517-535`)
 - `result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md` (covered reports `537-553`)
+- `result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md` (covered reports `555-581`)
 
 ## Scope and Non-goals
 
@@ -974,6 +975,19 @@ entries:
       - Arc 9.5
     assertionStatus: verified
     source: result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md (covered reports 537-553)
+
+  - type: decision
+    topic: Arc 9.5 unified case table acceptance and Arc 10 start
+    content: Arc 9.5 is accepted after the unified case table second correction and user manual-smoke acceptance; Arc 10 Prediction Worker / Progress is active, with real-model success smoke still blocked until `model/model.pkl` exists and Arc 11 Trainer execution still deferred.
+    keywords:
+      - predictor_v3
+      - Arc 9.5
+      - unified case table
+      - manual smoke
+      - Arc 10
+      - prediction worker
+    assertionStatus: verified
+    source: result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md (covered reports 555-581)
 ```
 
 ## Known Gaps

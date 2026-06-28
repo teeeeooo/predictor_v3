@@ -27,30 +27,22 @@
 
 ## Current Slice
 
-- Arc 9.5 second correction implementation is complete for automated coverage
-  after manual smoke rejected the prior final closeout.
-- The local `docs/designs/assets/predict_ref_img.png` remains the B-option
-  unified case table visual reference.
-- Predict now uses one visible row per prediction case, with input,
-  auto-fill/calculated, prediction result, and status/warning columns grouped
-  in one unified spreadsheet-like table.
-- The prior Arc 9.5 closeout is superseded by manual-smoke findings: detached
-  group header geometry, non-editable dropdown/autocomplete behavior,
-  Train/Predict duplicated status ownership, UI-level mapping option lookup,
-  and forbidden `QTableWidget` usage in Trainer visual panels.
-- The correction slices now have focused automated coverage; user manual smoke
-  acceptance is still pending.
-- Arc 10 Prediction Worker / Progress is on hold until Arc 9.5 correction is
-  manually accepted.
+- Arc 9.5 second correction is accepted after focused automated coverage and
+  user manual-smoke acceptance.
+- The accepted Predict target remains the B-option unified case table from
+  `docs/designs/assets/predict_ref_img.png`: one visible row per prediction
+  case, with input, auto-fill/calculated, prediction result, and status/warning
+  columns grouped in one spreadsheet-like table.
+- Arc 10 Prediction Worker / Progress is now active.
+- Arc 10 target: move batch prediction execution behind worker/progress/cancel
+  boundaries, clean up Predict model/mapping resource status ownership, and
+  keep real-model smoke readiness explicit without changing ML, mapping,
+  calculator, or unified table contracts.
 
 ## Next Actions
 
-1. Run user manual smoke for Arc 9.5 second correction, focusing on table group
-   header scroll/resize, editable dropdown/autocomplete, Train embedded Predict
-   header ownership, and Trainer table surfaces.
-2. Move Arc 10 - Prediction Worker / Progress back to active only after Arc 9.5
-   manual-smoke correction is accepted.
-3. Complete real-model prediction success smoke when a valid `model/model.pkl`
+1. Slice 1 - Worker/Progress Boundary Design Alignment.
+2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
 ## Active Blockers / Open Decisions
@@ -58,7 +50,8 @@
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution remains the current foundation and Arc 10 remains on hold.
+  execution remains the current foundation until Arc 10 implementation slices
+  replace the run path.
 - Trainer execution foundation remains intentionally deferred to Arc 11.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
