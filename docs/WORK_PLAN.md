@@ -27,8 +27,8 @@
 
 ## Current Slice
 
-- Arc 9.5 second correction is active after manual smoke rejected the prior
-  final closeout.
+- Arc 9.5 second correction implementation is complete for automated coverage
+  after manual smoke rejected the prior final closeout.
 - The local `docs/designs/assets/predict_ref_img.png` remains the B-option
   unified case table visual reference.
 - Predict now uses one visible row per prediction case, with input,
@@ -38,15 +38,16 @@
   group header geometry, non-editable dropdown/autocomplete behavior,
   Train/Predict duplicated status ownership, UI-level mapping option lookup,
   and forbidden `QTableWidget` usage in Trainer visual panels.
-- Arc 10 Prediction Worker / Progress is on hold until Arc 9.5 correction
-  slices pass.
+- The correction slices now have focused automated coverage; user manual smoke
+  acceptance is still pending.
+- Arc 10 Prediction Worker / Progress is on hold until Arc 9.5 correction is
+  manually accepted.
 
 ## Next Actions
 
-1. Complete Arc 9.5 second correction slices from the manual-smoke audit:
-   table-linked group header, editable dropdown/autocomplete, mapping option
-   boundary, embedded Predict header ownership, Trainer table MVC correction,
-   workspace command/state cleanup, and final adequacy closeout.
+1. Run user manual smoke for Arc 9.5 second correction, focusing on table group
+   header scroll/resize, editable dropdown/autocomplete, Train embedded Predict
+   header ownership, and Trainer table surfaces.
 2. Move Arc 10 - Prediction Worker / Progress back to active only after Arc 9.5
    manual-smoke correction is accepted.
 3. Complete real-model prediction success smoke when a valid `model/model.pkl`

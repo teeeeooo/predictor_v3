@@ -10,12 +10,13 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 9.5 second correction after manual-smoke rejection.
+Current phase: Arc 9.5 second correction awaiting manual-smoke acceptance.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
 exists. PySide6 Predictor schema/mapping recovery, legacy `ui` retirement, and
-Arc 9.5 unified case table parity remain the current correction focus.
+Arc 9.5 unified case table parity correction now have focused automated
+coverage and remain pending user manual smoke.
 
 Arc 9.5 was reopened after user review because spreadsheet baseline items were
 deferred and the split input/result table structure did not satisfy the desired
@@ -25,8 +26,9 @@ case table where one visible row is one prediction case and input,
 auto-fill/calculated, prediction result, and status/warning columns are grouped
 in the same spreadsheet-like table. A later manual smoke rejected the prior
 Arc 9.5 final closeout because structural table, dropdown, Train embedding, and
-Trainer table-surface issues remain. Arc 10 Prediction Worker / Progress is on
-hold until those Arc 9.5 correction slices pass.
+Trainer table-surface issues remained. The automated correction slices are now
+complete, but Arc 10 Prediction Worker / Progress remains on hold until user
+manual smoke accepts the corrected Arc 9.5 surface.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -326,7 +328,7 @@ Goal:
 
 Status:
 
-- Reopened for second correction after manual-smoke rejection.
+- Automated second correction complete; awaiting user manual-smoke acceptance.
 
 Reopen decision:
 
@@ -370,6 +372,9 @@ Completed correction milestones:
 - Complete mapping-backed per-row dropdown option updates.
 - Integrate result/status columns into the unified table.
 - Correct Predict and Trainer visual parity.
+- Correct table-linked group header geometry, editable dropdown/autocomplete,
+  mapping option boundary, embedded Train/Predict header ownership, Trainer
+  model/view table compliance, and workspace row command boundary.
 - Close Arc 9.5 only after manual-smoke correction slices pass with no baseline
   UX blockers deferred.
 
@@ -388,7 +393,7 @@ Target milestones:
 
 Status:
 
-- On hold until Arc 9.5 second correction is accepted.
+- On hold until Arc 9.5 second correction is manually accepted.
 
 ### Arc 11 — Trainer Admin App Foundation
 

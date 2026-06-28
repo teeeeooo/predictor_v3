@@ -22,6 +22,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-28 — Arc 9.5 second correction automated closeout
+
+### Decision
+
+- Arc 9.5 second correction implementation is complete for focused automated
+  coverage after the manual-smoke rejection.
+- The corrected scope covers the source-confirmed failure classes: table-linked
+  group header geometry, editable dropdown/autocomplete commit path, mapping
+  option adapter boundary, Train embedded Predict header ownership, Trainer
+  `QTableView + QAbstractTableModel` compliance, workspace row command
+  controller boundary, and reset undo clearing.
+- Arc 10 Prediction Worker / Progress remains on hold until the user manually
+  accepts the corrected Arc 9.5 surface.
+
+### Reference
+
+- `result_reports/active/581_arc95-second-correction-closeout.md`
+
 ## 2026-06-28 — Arc 9.5 final closeout superseded by manual smoke
 
 ### Decision
