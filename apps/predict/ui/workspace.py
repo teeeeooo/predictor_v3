@@ -1,4 +1,4 @@
-"""Predict workspace split-table surface."""
+"""Predict workspace unified case-table surface."""
 
 from pathlib import Path
 
@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QFrame,
-    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -25,11 +24,8 @@ from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.command_bar import PredictCommandBar
 from apps.predict.ui.tables.delegates import DropdownDelegate
 from apps.predict.ui.status_widgets import StatusBadge, StatusStrip
-from apps.predict.ui.tables.input_table_model import InputTableModel
-from apps.predict.ui.tables.input_table_view import InputTableView
-from apps.predict.ui.tables.result_table_model import ResultTableModel
-from apps.predict.ui.tables.result_table_view import ResultTableView
-from apps.predict.ui.tables.table_sync import TableSelectionScrollSync
+from apps.predict.ui.tables.case_table_model import CaseTableModel
+from apps.predict.ui.tables.case_table_view import CaseTableView
 
 
 DEFAULT_INITIAL_ROWS = 3
@@ -56,17 +52,13 @@ class PredictWorkspace(QWidget):
         )
         self.prediction_controller = PredictionController(self.session)
 
-        self.input_model = InputTableModel(
+        self.case_model = CaseTableModel(
             self.session,
             edit_callback=self._handle_input_cell_edited,
         )
-        self.result_model = ResultTableModel(self.session)
-        self.input_table = InputTableView(self)
-        self.result_table = ResultTableView(self)
-        self.input_table.setModel(self.input_model)
-        self.result_table.setModel(self.result_model)
+        self.case_table = CaseTableView(self)
+        self.case_table.setModel(self.case_model)
         self._configure_tables()
-        self.table_sync = TableSelectionScrollSync(self.input_table, self.result_table)
 
         title = QLabel("Predict")
         title.setObjectName("PredictWorkspaceTitle")
@@ -99,18 +91,13 @@ class PredictWorkspace(QWidget):
         )
         self.command_bar.paste_button.clicked.connect(self._paste_from_clipboard)
         self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
+        self.command_bar.copy_results_button.setText("선택 복사")
 
         title_layout = QHBoxLayout()
         title_layout.addWidget(title)
         title_layout.addStretch(1)
 
-        input_panel = self._build_table_panel("Input Cases", self.input_table)
-        result_panel = self._build_table_panel("Prediction Results", self.result_table)
-        splitter = QSplitter(Qt.Horizontal, self)
-        splitter.addWidget(input_panel)
-        splitter.addWidget(result_panel)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 2)
+        table_panel = self._build_table_panel("Unified Case Table", self.case_table)
 
         self.status_label = QLabel()
         self.status_label.setObjectName("PredictWorkspaceStatus")
@@ -132,22 +119,20 @@ class PredictWorkspace(QWidget):
         layout.addLayout(title_layout)
         layout.addWidget(status_strip)
         layout.addWidget(self.command_bar)
-        layout.addWidget(splitter, 1)
+        layout.addWidget(table_panel, 1)
         layout.addWidget(self.bottom_status)
         self._refresh()
 
     def _configure_tables(self) -> None:
-        for table in (self.input_table, self.result_table):
-            table.setAlternatingRowColors(True)
-            table.setSortingEnabled(False)
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-            table.horizontalHeader().setStretchLastSection(False)
-            table.verticalHeader().setDefaultSectionSize(34)
-            table.setStyleSheet("")
-        for column_index, column in enumerate(self.input_model.columns):
-            self.input_table.setColumnWidth(column_index, max(56, min(column.width, 140)))
-        for column_index, column in enumerate(self.result_model.columns):
-            self.result_table.setColumnWidth(column_index, max(64, min(column.width, 150)))
+        self.case_table.setAlternatingRowColors(True)
+        self.case_table.setSortingEnabled(False)
+        self.case_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.case_table.horizontalHeader().setStretchLastSection(False)
+        self.case_table.verticalHeader().setDefaultSectionSize(34)
+        self.case_table.setStyleSheet("")
+        for column_index, column in enumerate(self.case_model.columns):
+            width = max(56, min(column.width, 150))
+            self.case_table.setColumnWidth(column_index, width)
         self._configure_dropdown_delegate()
 
     def _configure_dropdown_delegate(self) -> None:
@@ -157,13 +142,13 @@ class PredictWorkspace(QWidget):
         }
         items_by_column = {
             column_index: fallback_options.get(column.key, ())
-            for column_index, column in enumerate(self.input_model.columns)
+            for column_index, column in enumerate(self.case_model.columns)
             if column.dropdown
         }
         if items_by_column:
-            delegate = DropdownDelegate(items_by_column, self.input_table)
-            self.input_table.setItemDelegate(delegate)
-            self.input_table.dropdown_delegate = delegate
+            delegate = DropdownDelegate(items_by_column, self.case_table)
+            self.case_table.setItemDelegate(delegate)
+            self.case_table.dropdown_delegate = delegate
 
     def _build_table_panel(self, title: str, table: QWidget) -> QWidget:
         panel = QFrame(self)
@@ -181,8 +166,29 @@ class PredictWorkspace(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(label)
+        layout.addWidget(self._build_group_band())
         layout.addWidget(table)
         return panel
+
+    def _build_group_band(self) -> QFrame:
+        band = QFrame(self)
+        band.setObjectName("ColumnGroupBand")
+        layout = QHBoxLayout(band)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(style.spacing("space.sm"))
+        groups = (
+            "Input",
+            "Auto-fill / Calculated",
+            "Prediction Results",
+            "Status / Warning",
+        )
+        for text in groups:
+            label = QLabel(text, band)
+            label.setObjectName("ColumnGroupBandLabel")
+            label.setFont(style.qfont("font.caption"))
+            label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(label, 1)
+        return band
 
     def _build_bottom_status(self) -> QFrame:
         panel = QFrame(self)
@@ -210,7 +216,7 @@ class PredictWorkspace(QWidget):
         self._refresh_after_row_change()
 
     def _delete_selected_or_last_row(self) -> None:
-        rows = self._selected_input_rows()
+        rows = self._selected_case_rows()
         if not rows and len(self.session.case_store) > 0:
             rows = [len(self.session.case_store) - 1]
         self._remove_row_indexes(rows)
@@ -224,12 +230,10 @@ class PredictWorkspace(QWidget):
         self._refresh_after_row_change()
 
     def _refresh(self) -> None:
-        self.input_model.refresh()
-        self.result_model.refresh()
+        self.case_model.refresh()
         self._refresh_after_row_change()
 
     def _refresh_after_row_change(self) -> None:
-        self.table_sync.sync_row_heights()
         counts = self.session.summary_counts()
         self.summary_label.setText(
             "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
@@ -279,30 +283,30 @@ class PredictWorkspace(QWidget):
         self.status_label.setText(message)
 
     def _refresh_result_row(self, result: ResultRow) -> None:
-        self.result_model.refresh_case_id(result.case_id)
+        self.case_model.refresh_case_id(result.case_id)
 
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
-        self.result_model.refresh_case_id(case_id)
+        self.case_model.refresh_case_id(case_id)
         if not Path(self.mapping_repository.mapping_file).exists():
             self.status_label.setText("입력이 변경되었습니다. mapping 파일이 없어 autofill은 제한됩니다.")
         else:
             self.status_label.setText("입력이 변경되었습니다.")
 
     def _paste_from_clipboard(self) -> None:
-        changed = self.input_table.paste_tsv_at_selection(QApplication.clipboard().text())
+        changed = self.case_table.paste_tsv_at_selection(QApplication.clipboard().text())
         self.status_label.setText(f"붙여넣기 완료: {changed}개 셀")
         self._refresh_after_row_change()
 
     def _copy_results_selection(self) -> None:
-        text = self.result_table.copy_selection_tsv()
+        text = self.case_table.copy_selection_tsv()
         QApplication.clipboard().setText(text)
-        copied = "선택 결과 복사 완료" if text else "복사할 결과 셀을 선택하세요"
+        copied = "선택 셀 복사 완료" if text else "복사할 셀을 선택하세요"
         self.status_label.setText(copied)
 
-    def _selected_input_rows(self) -> list[int]:
+    def _selected_case_rows(self) -> list[int]:
         return sorted(
-            {index.row() for index in self.input_table.selectionModel().selectedIndexes()}
+            {index.row() for index in self.case_table.selectionModel().selectedIndexes()}
         )
 
     def _remove_row_indexes(self, rows: list[int]) -> None:
@@ -330,28 +334,22 @@ class PredictWorkspace(QWidget):
         return groups
 
     def _begin_insert_rows(self, first_row: int, last_row: int) -> None:
-        self.input_model.begin_insert_rows(first_row, last_row)
-        self.result_model.begin_insert_rows(first_row, last_row)
+        self.case_model.begin_insert_rows(first_row, last_row)
 
     def _end_insert_rows(self) -> None:
-        self.result_model.end_insert_rows()
-        self.input_model.end_insert_rows()
+        self.case_model.end_insert_rows()
 
     def _begin_remove_rows(self, first_row: int, last_row: int) -> None:
-        self.input_model.begin_remove_rows(first_row, last_row)
-        self.result_model.begin_remove_rows(first_row, last_row)
+        self.case_model.begin_remove_rows(first_row, last_row)
 
     def _end_remove_rows(self) -> None:
-        self.result_model.end_remove_rows()
-        self.input_model.end_remove_rows()
+        self.case_model.end_remove_rows()
 
     def _begin_reset_models(self) -> None:
-        self.input_model.begin_reset_model()
-        self.result_model.begin_reset_model()
+        self.case_model.begin_reset_model()
 
     def _end_reset_models(self) -> None:
-        self.result_model.end_reset_model()
-        self.input_model.end_reset_model()
+        self.case_model.end_reset_model()
 
     def _model_status_text(self) -> str:
         return "model.pkl loaded" if Path(MODEL_FILE).exists() else "model.pkl missing"

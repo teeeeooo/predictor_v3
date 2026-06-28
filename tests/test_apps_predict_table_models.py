@@ -9,6 +9,7 @@ from apps.predict.schema.column_schema_adapter import (
     build_input_column_schema,
     build_result_column_schema,
 )
+from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.input_table_model import InputTableModel
@@ -77,16 +78,15 @@ def test_predict_workspace_schema_smoke_and_row_lifecycle():
     workspace = PredictWorkspace()
     assert app is not None
 
-    initial_rows = workspace.input_model.rowCount()
-    assert workspace.input_model.columnCount() == len(INPUT_COLS) + len(AUTO_COLS)
-    assert workspace.result_model.columnCount() == len(RESULT_COLS)
+    initial_rows = workspace.case_model.rowCount()
+    assert workspace.case_model.columnCount() == len(build_case_table_column_schema())
 
     workspace._append_row()
-    assert workspace.input_model.rowCount() == initial_rows + 1
+    assert workspace.case_model.rowCount() == initial_rows + 1
     workspace._delete_selected_or_last_row()
-    assert workspace.input_model.rowCount() == initial_rows
+    assert workspace.case_model.rowCount() == initial_rows
     workspace._reset_rows()
-    assert workspace.input_model.rowCount() == 3
+    assert workspace.case_model.rowCount() == 3
 
 
 def test_predict_workspace_result_badge_reflects_error_state():
