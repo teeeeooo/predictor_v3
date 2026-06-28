@@ -97,9 +97,11 @@ When project log sync judgment is needed:
 ## Reference Evidence Gate
 
 The code_checker reference map (`docs/code_map/CODEBASE_REFERENCE_MAP.md`) is a
-conditional pre-write warning-first evidence gate, not a default hard gate. It serves
-as a helper to prevent unintended code duplication or architecture bypasses, rather
-than a semantic linter. Hard structure rules are enforced by tools like
+conditional pre-write warning-first evidence gate, not a default hard gate. Its
+first purpose is to make existing helpers, adapters, formatters, resolvers,
+workflow scripts, and owner surfaces easier to find before adding another one.
+It also helps prevent unintended architecture bypasses, but it is not a
+semantic linter. Hard structure rules are enforced by tools like
 `tools/check_code_structure.py`.
 
 Use `tools/check_code_structure.py` as a final guard for structure-impacting
@@ -116,6 +118,38 @@ Before editing code, briefly check the following items:
 4. **Hotspot Expansion**: Does it add responsibility to already bloated hotspot files?
 
 If the answer to all of the above is **No**, the agent can skip a detailed architecture preflight and proceed directly with the scoped task.
+
+### Code Map Reuse Gate
+
+Run this gate before creating or materially changing a helper, adapter,
+formatter, resolver, controller, workflow script, reusable UI surface, or owner
+boundary.
+
+1. Pick 2-4 stable keywords from the planned responsibility, such as the helper
+   verb, noun, owner package, or public concept (`format`, `normalize`,
+   `resolve`, `mapping`, `status`, `worker`, `table`, `batch`).
+2. Query the map narrowly:
+   `rg -n "<keyword>" docs/code_map/CODEBASE_REFERENCE_MAP.md`.
+3. Inspect only the matching 30-80 line range around:
+   - Keyword Hit Groups;
+   - Duplicate Symbols;
+   - Active Hotspots;
+   - Import Edges.
+4. Use `rg` in the candidate owner files to confirm whether a reusable helper
+   or surface actually exists. The map points to candidates; source decides.
+5. Decide one of:
+   - `reused-existing-owner`: reused or extended an existing owner/helper;
+   - `checked`: no useful reuse candidate found in bounded search;
+   - `local-with-reason`: local implementation is intentionally better for
+     scope or ownership;
+   - `design-deferred`: reuse/commonization looks plausible but needs a
+     separate design slice.
+6. Record the decision in the active report's `reuse_commonization` field. If
+   the user explicitly approved no-report docs/tooling work, record the same
+   decision in the final output instead.
+
+Do not treat a keyword hit as proof of reusable code. It is only a candidate
+that should make the agent look before writing.
 
 ### When to Run
 
@@ -147,6 +181,8 @@ Skip for work that does not change structure or surface inventory:
 - Do **not** read the entire map by default.
 - Use `rg -n "<keyword>" docs/code_map/CODEBASE_REFERENCE_MAP.md` first.
 - Read only the matched 30–80 line range.
+- Prefer keyword groups, duplicate symbols, hotspot entries, and import edges
+  over broad prose reads when searching for reuse candidates.
 - Broad map reads require a stated blocker.
 
 ### Map Regenerate Policy

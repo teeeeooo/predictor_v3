@@ -50,8 +50,9 @@
   따른다.
 - structure-impacting helper/adapter/surface/script 작업은
   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
-  warning-first workflow와 checklist를 참고하여 preflight 및 regenerate/report
-  필요 여부를 판단한다.
+  Code Map Reuse Gate와 warning-first checklist를 사용하여 기존 helper,
+  adapter, formatter, resolver, workflow script 재사용 후보를 먼저 확인하고
+  preflight 및 regenerate/report 필요 여부를 판단한다.
 - report-backed source 구조 변경은 `AGENT_CHANGE_GATES.md`의
   reuse/commonization decision을 남긴다. 반복 helper, local hotfix, mapping,
   formatting, lifecycle, routing, sizing/style 정책이 sibling surface에
@@ -224,13 +225,16 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 3. explicit registry/manifest/selector contract를 filename scanning보다 우선한다.
 4. compatibility layer는 얇게 두고 local one-off conditional로 구조 문제를 덮지 않는다.
 5. 새 helper/adapter/surface를 만들거나 기존 파일을 split/move할 때는
-   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
-   참고하고 code_map check/regenerate 판단을 report에 남긴다.
+   `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate의
+   Code Map Reuse Gate를 먼저 통과한다. 관련 keyword group, duplicate
+   symbols, hotspot, import edge 단서를 확인하고 기존 owner/helper
+   재사용/확장/비재사용 판단을 남긴다.
 6. 새 source/surface 또는 hotspot 책임 추가는
    `docs/agent_workflows/AGENT_CHANGE_GATES.md`의 pre-write boundary와
    structured report contract를 따른다.
-7. 기존 owner/helper를 재사용하지 않는 경우 no-reuse reason을 report에
-   남기고, 공통화가 별도 설계가 필요하면 implementation에 섞지 않는다.
+7. 기존 owner/helper를 재사용하지 않는 경우 no-reuse reason을 report 또는
+   no-report 최종 출력에 남기고, 공통화가 별도 설계가 필요하면
+   implementation에 섞지 않는다.
 
 ### 4. Smoke / Golden / Validation test 추가
 
