@@ -122,6 +122,7 @@ def test_worker_cancel_after_row_stops_future_rows():
     assert service.calls == ["case-0001"]
     assert cancelled[0].complete == 1
     assert cancelled[0].cancelled == 2
+    assert cancelled[0].cancelled_case_ids == ("case-0002", "case-0003")
     assert finished == []
 
 

@@ -97,6 +97,28 @@ def test_summary_counts_and_workspace_badge_include_partial_warnings():
     assert "경고" in workspace.result_badge.text()
 
 
+def test_cancelled_status_counts_and_renders_as_warning():
+    _app()
+    session = _session_with_rows()
+    session.set_result(
+        ResultRow(
+            case_id=session.case_order[0],
+            status="cancelled",
+            message="Prediction cancelled.",
+        )
+    )
+    model = CaseTableModel(session)
+    workspace = PredictWorkspace(session=session)
+    status_col = _column_index(model, "status")
+
+    workspace._refresh_after_row_change()
+
+    assert session.summary_counts()["cancelled"] == 1
+    assert session.summary_counts()["warnings"] == 1
+    assert model.data(model.index(0, status_col), Qt.BackgroundRole).isValid()
+    assert "취소 1건" in workspace.summary_label.text()
+
+
 def test_copy_includes_selected_result_status_values_and_mutation_is_blocked():
     _app()
     session = _session_with_rows()

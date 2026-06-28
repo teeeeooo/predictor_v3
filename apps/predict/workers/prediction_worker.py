@@ -37,6 +37,7 @@ class PredictionWorkerSummary:
     complete: int = 0
     error: int = 0
     cancelled: int = 0
+    cancelled_case_ids: tuple[str, ...] = ()
 
 
 class PredictionWorker(QObject):
@@ -110,6 +111,7 @@ class PredictionWorker(QObject):
         self._cancel_requested = True
 
     def _emit_cancelled(self, complete: int, error: int, processed: int) -> None:
+        cancelled_requests = self._job.requests[processed:]
         remaining = max(self._job.total - processed, 0)
         self.cancelled.emit(
             PredictionWorkerSummary(
@@ -118,5 +120,8 @@ class PredictionWorker(QObject):
                 complete=complete,
                 error=error,
                 cancelled=remaining,
+                cancelled_case_ids=tuple(
+                    request.case_id for request in cancelled_requests
+                ),
             )
         )

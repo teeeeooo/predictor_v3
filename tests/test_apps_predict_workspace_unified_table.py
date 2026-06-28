@@ -170,6 +170,20 @@ def test_workspace_command_bar_running_state_disables_row_mutation():
     assert workspace.command_bar.add_row_button.isEnabled()
 
 
+def test_workspace_row_mutation_commands_are_guarded_while_controller_running():
+    _app()
+    workspace = PredictWorkspace()
+    workspace.prediction_controller._is_running = True
+    initial_rows = workspace.case_model.rowCount()
+
+    workspace._append_row()
+    workspace._delete_selected_or_last_row()
+    workspace._reset_rows()
+
+    assert workspace.case_model.rowCount() == initial_rows
+    assert "행 변경" in workspace.status_label.text()
+
+
 def test_workspace_progress_and_finished_callbacks_update_status():
     _app()
     workspace = PredictWorkspace()

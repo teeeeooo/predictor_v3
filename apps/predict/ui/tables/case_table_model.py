@@ -196,7 +196,7 @@ class CaseTableModel(QAbstractTableModel):
         result = self._session.result_for_case(case_id)
         if result.status in {"error", "invalid"}:
             return style.table_background_role("invalid")
-        if result.status in {"partial", "warning"}:
+        if result.status in {"partial", "warning", "cancelled"}:
             return style.table_background_role("warning")
         if column.is_auto:
             return style.table_background_role("calculated")

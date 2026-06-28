@@ -271,6 +271,7 @@ class PredictionController:
             lambda summary: self._handle_worker_cancelled(
                 summary,
                 status_callback,
+                result_callback,
                 finished_callback,
             )
         )
@@ -323,8 +324,14 @@ class PredictionController:
         self,
         summary: PredictionWorkerSummary,
         status_callback: StatusCallback | None,
+        result_callback: ResultCallback | None,
         finished_callback: SummaryCallback | None,
     ) -> None:
+        for case_id in summary.cancelled_case_ids:
+            self._record_result(
+                self._result_adapter.cancelled_result(case_id),
+                result_callback,
+            )
         run_summary = self._run_summary_from_worker(summary)
         self._is_running = False
         self._notify(status_callback, "Prediction run cancelled.")

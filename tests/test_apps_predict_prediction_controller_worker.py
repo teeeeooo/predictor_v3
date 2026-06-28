@@ -82,6 +82,16 @@ class BlockingPredictionService(FakePredictionService):
         return super().predict_one(request)
 
 
+class MissingModelService(FakePredictionService):
+    def predict_one(self, request):
+        self.calls.append(request.case_id)
+        return PredictionServiceResult(
+            case_id=request.case_id,
+            status="error",
+            message="모델 파일을 찾을 수 없습니다",
+        )
+
+
 def test_controller_worker_run_updates_session_rows():
     _app()
     session = _session_with_cases("3500", "3600")
@@ -153,6 +163,7 @@ def test_controller_cancel_requests_worker_cancel():
     assert summaries[0].complete == 1
     assert summaries[0].cancelled == 1
     assert service.calls == [session.case_order[0]]
+    assert session.result_for_case(session.case_order[1]).status == "cancelled"
 
 
 def test_controller_worker_error_result_continues_to_summary():
@@ -170,3 +181,19 @@ def test_controller_worker_error_result_continues_to_summary():
     assert session.result_for_case(second).status == "complete"
     assert summaries[0].error == 1
     assert summaries[0].complete == 1
+
+
+def test_controller_model_missing_becomes_controlled_row_errors():
+    _app()
+    session = _session_with_cases("3500", "3600")
+    service = MissingModelService()
+    controller = PredictionController(session=session, service=service)
+    summaries = []
+
+    controller.start_all(finished_callback=summaries.append)
+    _wait_until(lambda: summaries and controller._thread is None)
+
+    assert summaries[0].error == 2
+    for case_id in session.case_order:
+        assert session.result_for_case(case_id).status == "error"
+        assert "모델 파일" in session.result_for_case(case_id).message

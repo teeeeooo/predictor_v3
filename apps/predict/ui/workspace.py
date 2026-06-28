@@ -265,7 +265,7 @@ class PredictWorkspace(QWidget):
     def _refresh_after_row_change(self) -> None:
         counts = self.session.summary_counts()
         self.summary_label.setText(
-            "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 경고 {warnings}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
+            "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 경고 {warnings}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 취소 {cancelled}건 | 변경됨 {dirty}건".format(
                 **counts
             )
         )
@@ -278,6 +278,8 @@ class PredictWorkspace(QWidget):
             self.result_badge.set_status(f"오류 {counts['errors']}건", "error")
         elif counts["invalid"]:
             self.result_badge.set_status(f"입력 확인 {counts['invalid']}건", "warning")
+        elif counts["cancelled"]:
+            self.result_badge.set_status(f"취소 {counts['cancelled']}건", "warning")
         elif counts["warnings"]:
             self.result_badge.set_status(f"경고 {counts['warnings']}건", "warning")
         elif counts["running"]:
