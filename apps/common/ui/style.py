@@ -100,6 +100,11 @@ def app_stylesheet() -> str:
         color: #FFFFFF;
         font-weight: 700;
     }}
+    QPushButton#PrimaryButton:disabled {{
+        color: {color("text.disabled")};
+        background: {color("table.fixed")};
+        border-color: {color("border.default")};
+    }}
     """
 
 
