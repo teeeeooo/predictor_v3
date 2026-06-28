@@ -270,18 +270,24 @@ class PredictWorkspace(QWidget):
             self.result_badge.set_status("대기", "neutral")
 
     def _run_prediction(self) -> None:
+        if self.prediction_controller.is_running:
+            self.status_label.setText("예측이 이미 실행 중입니다.")
+            return
         self.command_bar.run_button.setEnabled(False)
         self.status_label.setText("예측 실행 중...")
         try:
-            summary = self.prediction_controller.run_all(
+            self.prediction_controller.start_all(
                 status_callback=self._set_status_text,
                 result_callback=self._refresh_result_row,
+                finished_callback=self._handle_prediction_finished,
             )
         except Exception as exc:
+            self.command_bar.run_button.setEnabled(True)
             self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
             return
-        finally:
-            self.command_bar.run_button.setEnabled(True)
+
+    def _handle_prediction_finished(self, summary) -> None:  # noqa: ANN001
+        self.command_bar.run_button.setEnabled(True)
         self._refresh_after_row_change()
         self.status_label.setText(
             "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | 입력 확인 {invalid}건".format(
