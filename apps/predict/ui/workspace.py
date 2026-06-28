@@ -1,21 +1,28 @@
-"""Predict workspace split-table skeleton."""
+"""Predict workspace split-table surface."""
+
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QPushButton,
+    QFrame,
     QSplitter,
     QVBoxLayout,
     QWidget,
 )
 
+from core.ml.artifacts import MODEL_FILE
+
+from apps.common.ui import style
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
+from apps.predict.ui.command_bar import PredictCommandBar
+from apps.predict.ui.status_widgets import StatusBadge, StatusStrip
 from apps.predict.ui.tables.input_table_model import InputTableModel
 from apps.predict.ui.tables.input_table_view import InputTableView
 from apps.predict.ui.tables.result_table_model import ResultTableModel
@@ -27,7 +34,7 @@ DEFAULT_INITIAL_ROWS = 3
 
 
 class PredictWorkspace(QWidget):
-    """Variable-size batch prediction workspace skeleton."""
+    """Variable-size batch prediction workspace."""
 
     def __init__(
         self,
@@ -59,26 +66,39 @@ class PredictWorkspace(QWidget):
         self._configure_tables()
         self.table_sync = TableSelectionScrollSync(self.input_table, self.result_table)
 
-        title = QLabel("Predict workspace")
+        title = QLabel("Predict")
         title.setObjectName("PredictWorkspaceTitle")
+        title.setFont(style.qfont("font.window_title"))
 
-        self.run_button = QPushButton("예측 실행")
-        self.reset_button = QPushButton("초기화")
-        self.add_row_button = QPushButton("행 추가")
-        self.delete_row_button = QPushButton("행 삭제")
+        self.model_badge = StatusBadge("모델 상태", self._model_status_text(), self._model_status_kind())
+        self.mapping_badge = StatusBadge(
+            "mapping",
+            self._mapping_status_text(),
+            self._mapping_status_kind(),
+        )
+        self.preprocess_badge = StatusBadge("preprocess", "v1.0", "ready")
+        self.schema_badge = StatusBadge("schema", "ready", "ready")
+        status_strip = StatusStrip(
+            (
+                self.model_badge,
+                self.mapping_badge,
+                self.preprocess_badge,
+                self.schema_badge,
+            ),
+            self,
+        )
 
-        self.run_button.clicked.connect(self._run_prediction)
-        self.reset_button.clicked.connect(self._reset_rows)
-        self.add_row_button.clicked.connect(self._append_row)
-        self.delete_row_button.clicked.connect(self._delete_selected_or_last_row)
+        self.command_bar = PredictCommandBar(self)
+        self.command_bar.run_button.clicked.connect(self._run_prediction)
+        self.command_bar.reset_button.clicked.connect(self._reset_rows)
+        self.command_bar.add_row_button.clicked.connect(self._append_row)
+        self.command_bar.delete_row_button.clicked.connect(
+            self._delete_selected_or_last_row
+        )
 
-        command_layout = QHBoxLayout()
-        command_layout.addWidget(title)
-        command_layout.addStretch(1)
-        command_layout.addWidget(self.run_button)
-        command_layout.addWidget(self.reset_button)
-        command_layout.addWidget(self.add_row_button)
-        command_layout.addWidget(self.delete_row_button)
+        title_layout = QHBoxLayout()
+        title_layout.addWidget(title)
+        title_layout.addStretch(1)
 
         input_panel = self._build_table_panel("Input Cases", self.input_table)
         result_panel = self._build_table_panel("Prediction Results", self.result_table)
@@ -90,11 +110,25 @@ class PredictWorkspace(QWidget):
 
         self.status_label = QLabel()
         self.status_label.setObjectName("PredictWorkspaceStatus")
+        self.status_label.setFont(style.qfont("font.caption"))
+        self.summary_label = QLabel()
+        self.summary_label.setObjectName("PredictWorkspaceSummary")
+        self.summary_label.setFont(style.qfont("font.caption"))
+        self.bottom_status = self._build_bottom_status()
 
         layout = QVBoxLayout(self)
-        layout.addLayout(command_layout)
+        layout.setContentsMargins(
+            style.spacing("space.outer"),
+            style.spacing("space.outer"),
+            style.spacing("space.outer"),
+            style.spacing("space.sm"),
+        )
+        layout.setSpacing(style.spacing("space.sm"))
+        layout.addLayout(title_layout)
+        layout.addWidget(status_strip)
+        layout.addWidget(self.command_bar)
         layout.addWidget(splitter, 1)
-        layout.addWidget(self.status_label)
+        layout.addWidget(self.bottom_status)
         self._refresh()
 
     def _configure_tables(self) -> None:
@@ -103,14 +137,43 @@ class PredictWorkspace(QWidget):
             table.setSortingEnabled(False)
             table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             table.horizontalHeader().setStretchLastSection(True)
+            table.verticalHeader().setDefaultSectionSize(34)
+            table.setStyleSheet("")
 
     def _build_table_panel(self, title: str, table: QWidget) -> QWidget:
-        panel = QWidget(self)
+        panel = QFrame(self)
+        panel.setObjectName("Panel")
+        panel.setStyleSheet(style.panel_stylesheet())
         label = QLabel(title)
-        label.setObjectName(f"{title.replace(' ', '')}Title")
+        label.setObjectName("PanelTitle")
+        label.setFont(style.qfont("font.panel_title"))
         layout = QVBoxLayout(panel)
+        layout.setContentsMargins(
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
+        )
+        layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(label)
         layout.addWidget(table)
+        return panel
+
+    def _build_bottom_status(self) -> QFrame:
+        panel = QFrame(self)
+        panel.setObjectName("Panel")
+        panel.setStyleSheet(style.panel_stylesheet())
+        layout = QHBoxLayout(panel)
+        layout.setContentsMargins(
+            style.spacing("space.panel"),
+            style.spacing("space.sm"),
+            style.spacing("space.panel"),
+            style.spacing("space.sm"),
+        )
+        layout.setSpacing(style.spacing("space.md"))
+        layout.addWidget(self.summary_label)
+        layout.addStretch(1)
+        layout.addWidget(self.status_label)
         return panel
 
     def _append_row(self) -> None:
@@ -142,14 +205,16 @@ class PredictWorkspace(QWidget):
     def _refresh_after_row_change(self) -> None:
         self.table_sync.sync_row_heights()
         counts = self.session.summary_counts()
-        self.status_label.setText(
+        self.summary_label.setText(
             "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
                 **counts
             )
         )
+        if not self.status_label.text():
+            self.status_label.setText("대기 중")
 
     def _run_prediction(self) -> None:
-        self.run_button.setEnabled(False)
+        self.command_bar.run_button.setEnabled(False)
         self.status_label.setText("예측 실행 중...")
         try:
             summary = self.prediction_controller.run_all(
@@ -160,7 +225,7 @@ class PredictWorkspace(QWidget):
             self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
             return
         finally:
-            self.run_button.setEnabled(True)
+            self.command_bar.run_button.setEnabled(True)
         self._refresh_after_row_change()
         self.status_label.setText(
             "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | 입력 확인 {invalid}건".format(
@@ -180,6 +245,7 @@ class PredictWorkspace(QWidget):
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
         self.result_model.refresh_case_id(case_id)
+        self.status_label.setText("입력이 변경되었습니다.")
 
     def _selected_input_rows(self) -> list[int]:
         return sorted(
@@ -233,3 +299,15 @@ class PredictWorkspace(QWidget):
     def _end_reset_models(self) -> None:
         self.result_model.end_reset_model()
         self.input_model.end_reset_model()
+
+    def _model_status_text(self) -> str:
+        return "model.pkl loaded" if Path(MODEL_FILE).exists() else "model.pkl missing"
+
+    def _model_status_kind(self) -> str:
+        return "ready" if Path(MODEL_FILE).exists() else "missing"
+
+    def _mapping_status_text(self) -> str:
+        return "loaded" if Path(self.mapping_repository.mapping_file).exists() else "missing"
+
+    def _mapping_status_kind(self) -> str:
+        return "ready" if Path(self.mapping_repository.mapping_file).exists() else "missing"

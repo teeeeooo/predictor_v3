@@ -2,6 +2,7 @@
 
 from PySide6.QtWidgets import QMainWindow
 
+from apps.common.ui.style import app_stylesheet
 from apps.predict.ui.workspace import PredictWorkspace
 
 
@@ -12,5 +13,6 @@ class PredictShell(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("HVAC V3 Predictor")
         self.resize(1200, 760)
+        self.setStyleSheet(app_stylesheet())
         self.workspace = PredictWorkspace(self)
         self.setCentralWidget(self.workspace)

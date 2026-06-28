@@ -55,6 +55,7 @@ REQUIRED_FONT_ROLES = {
     "font.panel_title",
     "font.table.header",
     "font.table.cell",
+    "font.caption",
     "font.mono_label",
 }
 

@@ -106,9 +106,11 @@ def app_stylesheet() -> str:
 def panel_stylesheet() -> str:
     """Return a focused panel/card stylesheet."""
     return (
+        "QFrame#Panel, QWidget#Panel {"
         f"background: {color('surface.panel')};"
         f"border: 1px solid {color('border.default')};"
         f"border-radius: {radius('radius.panel')}px;"
+        "}"
     )
 
 

@@ -102,6 +102,12 @@ _FONTS: Mapping[str, Mapping[str, object]] = {
         "weight": "normal",
         "role": "table_cell",
     },
+    "font.caption": {
+        "family": None,
+        "size": 10,
+        "weight": "normal",
+        "role": "caption",
+    },
     "font.mono_label": {
         "family": "monospace",
         "size": 10,
