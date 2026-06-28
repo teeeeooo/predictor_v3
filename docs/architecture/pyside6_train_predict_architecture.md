@@ -9,6 +9,7 @@ It is intended for Codex/agent implementation work. It defines the target packag
 The design decision behind this architecture contract is recorded in:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
+- `docs/designs/2026-06-28-arc10-prediction-worker-progress-design.md`
 
 Non-binding visual references:
 
@@ -556,6 +557,10 @@ The tab may call existing mapping update functionality through `MappingService`.
 
 Do not call `scripts.update_mapping` directly from a QWidget.
 
+Predict dropdown/status wording should describe the current app adapter and
+core mapping owners, such as `DropdownOptionAdapter` plus `core.mapping`, rather
+than raw UI/repository ownership.
+
 ## 8. State Model
 
 ### 8.1 `CaseRow`
@@ -818,11 +823,15 @@ Responsibility:
 - call `core.ml.inference.predict_row`
 - accept ML input dict and loaded model data
 - return raw prediction dict or structured service result
+- expose lightweight model status for UI/controller display without requiring
+  widgets or eager model load unless explicitly requested
 
 Must not:
 
 - own PySide6 widgets
 - mutate `PredictSession` directly
+- import `PySide6`
+- know progress bars, command buttons, or table models
 
 ### 11.3 Prediction worker
 
@@ -832,13 +841,27 @@ File:
 
 Responsibility:
 
-- execute prediction for many case IDs without freezing UI
-- support progress signal
-- support row success/failure signal
-- support finished signal
-- support cancellation when implemented
+- execute prediction for valid case requests without freezing UI
+- receive immutable job data such as `PredictionJob(run_id, requests, total)`
+- call `PredictionService.predict_one()` or equivalent per request
+- emit row result payloads for completed/error service results
+- emit progress payloads after each processed row
+- emit finished summary payloads
+- support cooperative cancellation between rows
 
-First production foundation may defer worker and run synchronously for small smoke only, but production batch prediction should use worker execution.
+Recommended payloads:
+
+- `PredictionProgress(run_id, completed, total, current_case_id, message)`
+- `PredictionWorkerSummary(run_id, total, complete, error, cancelled)`
+
+Signals may use `Signal(object)` with dataclass payloads.
+
+Must not:
+
+- own or mutate `PredictSession`
+- own or mutate widgets, table models, or selection state
+- contain ML algorithms or row-to-ML mapping logic
+- use thread kill/terminate patterns for cancellation
 
 ### 11.4 Training service
 
@@ -888,23 +911,36 @@ Responsibility:
 
 File:
 
-- `apps/predict/controllers/predict_controller.py`
+- `apps/predict/controllers/prediction_controller.py`
 
 Responsibility:
 
 - handle command bar actions
 - choose prediction scope
 - coordinate session, adapters, services, and worker
-- apply result updates to session
-- request table model refresh
+- build requests from `PredictSession` using row adapters on the UI thread
+- apply invalid and running result rows on the UI thread before worker start
+- start and own the QThread / worker lifecycle
+- receive worker row/progress/finish/cancel/failure events on the UI thread
+- apply result updates to `PredictSession` on the UI thread
+- request table model refresh through callbacks or signals
+- expose model/run status to the workspace without making the workspace inspect
+  raw model artifact paths
 
 Initial public methods may include:
 
-- `predict_all()`
-- `predict_selected()`
-- `predict_dirty()`
-- `cancel_prediction()`
+- `start_all()`
+- `start_case_ids()`
+- `cancel()`
+- `is_running`
 - `clear_results()`
+
+Must not:
+
+- become a QWidget
+- put ML algorithms in the controller
+- let the worker mutate `PredictSession` directly
+- leave orphan worker threads after finish/cancel/failure
 
 ### 12.2 Table edit controller
 
@@ -985,6 +1021,25 @@ UI must remain usable for small and large case counts.
 Do not design around a fixed 10-row table.
 
 Do not hard-code example counts such as 300. Counts shown in mockups are examples only.
+
+### 13.5 Progress, cancel, and resource status
+
+The workspace owns UI rendering only:
+
+- run/cancel button state
+- progress text or percentage
+- row refresh and summary labels
+- model/mapping/preprocess/schema badges
+
+The workspace must not call core ML directly and should not own direct
+`MODEL_FILE` / raw model-path existence checks after Arc 10 cleanup. Model
+status should come through `PredictionService` or `PredictionController`.
+Mapping status should come through the mapping repository, adapter, or
+controller boundary.
+
+While prediction is running, row mutation commands should initially be disabled
+unless a later explicit design protects running case IDs with equivalent
+coverage.
 
 ## 14. Implementation Slices
 

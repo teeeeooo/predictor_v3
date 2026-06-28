@@ -41,7 +41,7 @@
 
 ## Next Actions
 
-1. Slice 1 - Worker/Progress Boundary Design Alignment.
+1. Slice 2 - Prediction job/result contracts and service status foundation.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
