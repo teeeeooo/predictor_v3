@@ -176,6 +176,10 @@ again in final closeout:
   as final visual/table parity.
 - The local `docs/designs/assets/predict_ref_img.png` is the B-option
   reference for this correction arc.
+- The active architecture contract is
+  `docs/architecture/pyside6_train_predict_architecture.md`; this harvest
+  document supplies acceptance evidence rather than model/view/controller
+  implementation ownership.
 
 ## Deferred Items By Target Arc
 

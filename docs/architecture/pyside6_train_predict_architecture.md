@@ -16,9 +16,16 @@ Non-binding visual references:
 - `docs/designs/assets/train_ref_img.png`
 
 These images are layout references, not pixel-perfect implementation targets.
-Preserve the broad Predict split-workspace and Trainer tab intent; resolve
+Preserve the broad Predict batch-workspace and Trainer tab intent; resolve
 specific sizing, tokens, states, and behavior through this architecture contract
 and active UI/UX owner documents.
+
+Arc 9.5 Reopen replaces the earlier split input/result table target with a
+unified case table target. The local `docs/designs/assets/predict_ref_img.png`
+is the B-option reference for this correction arc: one visible row is one
+prediction case, and input, auto-fill/calculated, prediction result, and
+status/warning fields are grouped inside one spreadsheet-like table. The
+earlier split table foundation remains implementation history only.
 
 Arc 9.1 retired the legacy `ui/` path. Arc 9.2 moved the project-specific
 legacy visual/table harvest to
@@ -84,6 +91,9 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
 
             tables/
               __init__.py
+              case_table_model.py
+              case_table_view.py
+              group_header.py
               input_table_model.py
               input_table_view.py
               result_table_model.py
@@ -94,7 +104,12 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
           controllers/
             __init__.py
             predict_controller.py
+            input_edit_controller.py
             table_edit_controller.py
+
+          schema/
+            __init__.py
+            case_table_schema_adapter.py
 
           services/
             __init__.py
@@ -103,7 +118,6 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
 
           adapters/
             __init__.py
-            column_schema_adapter.py
             row_to_ml_input_adapter.py
             prediction_result_adapter.py
             mapping_adapter.py
@@ -163,9 +177,14 @@ The first production foundation slices may use this smaller structure:
             workspace.py
             tables/
               __init__.py
+              case_table_model.py
+              case_table_view.py
               input_table_model.py
               result_table_model.py
               table_sync.py
+          schema/
+            __init__.py
+            case_table_schema_adapter.py
           state/
             __init__.py
             predict_session.py
@@ -297,7 +316,7 @@ Primary regions:
 
 - Header/status line.
 - Command bar.
-- Main split workspace.
+- Main unified case table workspace.
 - Bottom status bar.
 
 ### 6.2 Header/status line
@@ -332,18 +351,37 @@ Button responsibilities:
 
 ### 6.4 Main workspace
 
-Use two synchronized panes:
+Target:
 
-- Left: `Input Cases`
-- Right: `Prediction Results`
+- Predict uses one unified case table.
+- One visible row represents one prediction case.
+- Input, auto-fill/calculated, prediction result, and status/warning fields are
+  presented as column groups in the same table.
+- The table is spreadsheet-like and supports visible-as-selected copy/paste
+  behavior.
+- The user should be able to drag-select across input, auto-fill, result, and
+  status columns and copy the selected visible rectangle as TSV.
+- Result and status cells are read-only but selectable and copyable.
+- Write paths such as edit, paste, clear, and undo target only editable input
+  cells.
+- Internal `case_id` remains hidden and is used only for state/result lookup.
+- Row headers remain the user-facing case identity.
 
-Input table is editable.
+Historical note:
 
-Result table is read-only.
+- The earlier PySide6 foundation used split input/result tables to keep result
+  visibility while scrolling input columns.
+- Arc 9.5 Reopen replaces that final UX target with a unified case table
+  because the split design conflicts with Excel-like full-case row
+  selection/copy and would require hidden joined-copy behavior.
 
-The result table should remain visible while the input table scrolls horizontally.
+### 6.5 Unified Case Table columns
 
-### 6.5 Input Cases columns
+Column groups:
+
+1. Input
+   - user-editable or dropdown-selected values
+   - sourced from `CaseRow.input_values`
 
 Input/user-editable or user-selected columns:
 
@@ -359,6 +397,11 @@ Input/user-editable or user-selected columns:
 - `냉매종류`
 - `팽창장치`
 
+2. Auto-fill / Calculated
+   - mapping/autofill values
+   - sourced from `CaseRow.autofill_values`
+   - read-only by default
+
 Auto-filled columns:
 
 - `ID Volume`
@@ -370,15 +413,13 @@ Auto-filled columns:
 - `Comp EER`
 - `Comp cc`
 
-Column names may be sourced from `core.predictor_schema.columns.COLUMNS` through a column schema adapter.
+3. Prediction Results
+   - model/rule result display values
+   - sourced from `ResultRow.result_values`
+   - read-only, selectable, copyable
 
-Do not hard-code UI header-to-ML feature conversion in table model classes.
+Prediction result columns:
 
-### 6.6 Prediction Results columns
-
-Read-only result columns:
-
-- `상태`
 - `냉방 소비전력`
 - `EER`
 - `CSPF`
@@ -388,7 +429,23 @@ Read-only result columns:
 - `냉매량`
 - `냉방 Hz`
 - `난방 Hz`
+
+4. Status / Warning
+   - row status and user-facing message
+   - sourced from `ResultRow.status` and `ResultRow.message`
+   - read-only, selectable, copyable
+   - app-side virtual display columns, not core schema additions
+
+Status/warning columns:
+
+- `상태`
 - `오류/경고`
+
+Column names may be sourced from `core.predictor_schema.columns.COLUMNS`
+through the app-side unified case table schema adapter. Status/warning columns
+are virtual display columns owned by the app-side adapter.
+
+Do not hard-code UI header-to-ML feature conversion in table model classes.
 
 Initial implementation may leave CSPF/HSPF2 blank or status-only if calculator integration is not in scope.
 
@@ -570,83 +627,103 @@ No direct PySide6 widget ownership.
 
 ## 9. Table Model Specification
 
-### 9.1 Input table model
+### 9.1 Unified case table model
 
 File:
 
-- `apps/predict/ui/tables/input_table_model.py`
+- `apps/predict/ui/tables/case_table_model.py`
 
 Responsibility:
 
 - subclass PySide6 `QAbstractTableModel`
-- expose case rows from `PredictSession`
-- support editable input cells
-- expose auto-filled cells as read-only or controlled cells
-- mark dirty on user edits
-- report validation states for rendering
+- expose one row per `PredictSession.case_order`
+- expose unified column descriptors from the app-side schema adapter
+- read input values from `CaseRow.input_values`
+- read auto-fill values from `CaseRow.autofill_values`
+- read prediction results from `ResultRow.result_values`
+- read row status/message from `ResultRow.status` and `ResultRow.message`
+- support editable input cells only
+- keep auto/result/status cells read-only but selectable/copyable
+- report validation/status states for rendering
+- notify views when one case row changes
 
 Must not:
 
 - call `core.ml.inference`
-- call `core.ml.training`
+- call prediction service
+- call mapping repository
+- call training execution
+- call calculator APIs
 - own model artifact loading
-- hard-code model result keys
+- hard-code core result behavior beyond display schema adaptation
+- restore visible `case_id` columns
 
-### 9.2 Result table model
+### 9.2 Unified case table view
 
 File:
 
-- `apps/predict/ui/tables/result_table_model.py`
+- `apps/predict/ui/tables/case_table_view.py`
 
 Responsibility:
 
-- subclass PySide6 `QAbstractTableModel`
-- expose read-only result rows from `PredictSession`
-- align row count/order with input table through session case order
-- show pending/running/success/warning/error status
-- show error/warning message
+- provide spreadsheet-like selection, copy/paste, clear, undo, navigation, and
+  edit/replace behavior
+- copy selected visible rectangle as TSV
+- paste TSV to editable cells while skipping read-only cells
+- keep result/status cells selectable/copyable but mutation-protected
+- implement grouped undo for edit/paste/clear
+- implement Tab/Enter and shifted navigation
+- implement click/type replace-on-type behavior
+- provide or coordinate grouped column header visual affordance
 
 Must not:
 
-- mutate input case values
+- call mapping repository directly
 - call prediction service directly
-- implement export logic directly
+- call training execution
+- call calculator APIs
+- implement hidden joined-copy behavior across separate tables
 
-### 9.3 Table sync
+### 9.3 Historical split table foundation
 
-File:
+Files:
 
+- `apps/predict/ui/tables/input_table_model.py`
+- `apps/predict/ui/tables/result_table_model.py`
 - `apps/predict/ui/tables/table_sync.py`
 
-Responsibility:
+These files may remain during migration for compatibility and rollback
+evidence, but they are not the current Arc 9.5 final UX target. The final
+workspace must not depend on split table synchronization or hidden joined-copy
+behavior.
 
-- synchronize vertical scroll between input and result views
-- synchronize row selection
-- synchronize row height if needed
-- avoid infinite signal loops
-
-Initial sort/filter behavior:
-
-- Sorting and filtering should be disabled in the first table sync slice unless both tables share the same proxy model/order.
+If still present, split table sync must stay local to legacy/foundation paths
+and must not become the active workspace interaction contract.
 
 ## 10. Adapter Specification
 
-### 10.1 Column schema adapter
+### 10.1 Unified case table schema adapter
 
 File:
 
-- `apps/predict/adapters/column_schema_adapter.py`
+- `apps/predict/schema/case_table_schema_adapter.py`
 
 Responsibility:
 
-- read column metadata from `core.predictor_schema.columns.COLUMNS`
-- classify columns into input, auto-filled, and result groups
-- expose UI column descriptors for table models
+- build app-side unified table display schema from
+  `core.predictor_schema.columns.COLUMNS`
+- preserve core schema order for input/auto/result columns
+- add app-side virtual status/message columns
+- classify columns into input, auto-fill/calculated, prediction result, and
+  status/warning groups
+- expose editability, copyability, dropdown capability, width, and rendering
+  role metadata
 
 Must not:
 
-- mutate `COLUMNS`
-- add model-specific behavior
+- mutate `core.predictor_schema.columns.COLUMNS`
+- add core schema keys for app-only status columns
+- encode ML or calculator behavior
 
 ### 10.2 Row-to-ML input adapter
 
@@ -833,13 +910,15 @@ Initial public methods may include:
 
 File:
 
-- `apps/predict/controllers/table_edit_controller.py`
+- `apps/predict/controllers/input_edit_controller.py`
 
 Responsibility:
 
 - handle paste/clear/row insert/row delete behavior
 - update `CaseStore`
 - preserve table model responsibility boundaries
+- own mapping/autofill updates and dependent value clearing through state
+  boundaries, not direct mapping repository calls from table model/view
 
 First production foundation may defer this file until paste/row operations are implemented.
 
@@ -889,9 +968,15 @@ Do not scatter hard-coded color literals across many files. If color tokens are 
 
 ### 13.3 Result visibility
 
-Prediction results must remain visible while the user navigates wide input cases.
+Predict input/result/status surface is table-first and unified.
 
-The split table structure is a core UX requirement.
+Split table synchronization is not the final UX target.
+
+Result visibility should be achieved through table layout, grouped columns,
+horizontal scrolling inside the table, and optional frozen/result-column
+strategy in a later explicit slice if needed.
+
+Do not reintroduce hidden joined-copy behavior.
 
 ### 13.4 Variable-size batch behavior
 
