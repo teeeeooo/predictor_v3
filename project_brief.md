@@ -438,11 +438,11 @@ Target milestones:
 
 Status:
 
-- Reopened for Predict/Train hexagonal boundary correction.
-- Previous automated Train/Predict implementation exists, but final architecture
-  acceptance is not complete.
-- Train production execution is not behind a killable outbound process adapter.
-- Predict execution orchestration remains PySide6/QThread-bound.
+- Complete for automated closeout scope.
+- Train production UI execution runs through an explicit execution port and
+  killable process runner adapter.
+- Predict execution orchestration has a UI/runtime-neutral usecase/port, with
+  QThread lifecycle isolated in the PySide runner adapter.
 - Calculator boundary issue exists but is moved to Arc 12.
 
 Completed milestones:
@@ -454,6 +454,11 @@ Completed milestones:
 - Connected Train / Model UI controls, progress, log, summary, and model status
   refresh to the controller boundary.
 - Added DEV-only Train execution smoke and Predict-after-Train smoke.
+- Reopened and corrected production Train execution through a killable process
+  runner adapter.
+- Extracted Predict request/result orchestration into a UI/runtime-neutral
+  usecase and execution port.
+- Re-ran Train/Predict automated smoke gate for closeout.
 - Kept Data Mapping update execution deferred.
 
 ### Arc 12 — Calculator UseCase Boundary Correction
@@ -473,7 +478,7 @@ Target milestones:
 
 Status:
 
-- Planned after Arc 11 correction.
+- Next active architecture correction after Arc 11 closeout.
 - Not implemented in Arc 11.
 
 ### Arc 13 — ML Pipeline Stabilization

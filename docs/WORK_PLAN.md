@@ -27,16 +27,12 @@
 
 ## Current Slice
 
-- Arc 11 Reopen - Slice 2: Predict Execution UseCase / Execution Port
-  Correction is implemented and awaiting commit.
-- Arc 11 final architecture acceptance is reopened. Previous automated
-  Train/Predict implementation exists, but final hexagonal acceptance is not
-  complete.
-- Production Train hard stop is missing because training is not yet behind a
-  killable outbound process adapter.
-- Predict execution orchestration remains PySide6/QThread-bound and needs a
-  UI/runtime-neutral usecase/port boundary.
-- Calculator usecase boundary correction is acknowledged but moved to Arc 12.
+- Arc 11 Reopen / Correction is complete for automated closeout scope.
+- Train production UI execution now flows through an explicit execution port and
+  killable process runner adapter.
+- Predict execution orchestration now has a UI/runtime-neutral usecase/port,
+  with QThread lifecycle isolated in the PySide runner adapter.
+- Calculator usecase boundary correction is acknowledged and moved to Arc 12.
 - Former Arc 12 ML Pipeline Stabilization is now Arc 13 and on hold until Arc
   11 and Arc 12 architecture corrections are complete.
 - Arc 9.5 second correction is accepted after focused automated coverage and
@@ -57,18 +53,15 @@
 
 ## Next Actions
 
-1. Arc 11 Slice 3 - Re-closeout / Train-Predict Manual Smoke Gate.
+1. Arc 12 Slice 0 - Calculator UI/Application Boundary Audit.
 
 ## Active Blockers / Open Decisions
 
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
-- Arc 11 manual smoke is on hold until the reopened Train/Predict boundary
-  correction slices are complete.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Arc 11 re-closeout and manual smoke gate confirmation remain before Arc 11
-  closeout.
+- Calculator usecase boundary correction is the next architecture correction.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

@@ -1017,6 +1017,21 @@ entries:
       - Data Mapping
     assertionStatus: verified
     source: result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md (covered reports 583-601)
+
+  - type: decision
+    topic: Arc 11 hexagonal boundary correction closeout
+    content: Arc 11 Predict/Train hexagonal boundary correction supersedes the earlier trainer execution foundation acceptance: Train production UI execution now runs through an execution port and killable process runner adapter, and Predict execution has a UI/runtime-neutral usecase/port with QThread lifecycle isolated in the PySide runner adapter. Calculator usecase boundary correction moves to Arc 12, while ML Pipeline Stabilization remains Arc 13 on hold.
+    keywords:
+      - predictor_v3
+      - Arc 11
+      - Train execution
+      - Predict execution
+      - hexagonal boundary
+      - QProcess
+      - usecase port
+    assertionStatus: verified
+    supersedes: Arc 11 trainer execution foundation closeout
+    source: result_reports/active/607_arc11-hexagonal-boundary-correction-closeout.md
 ```
 
 ## Known Gaps

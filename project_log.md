@@ -856,3 +856,16 @@
 - Calculator correction is routed to Arc 12 without Arc 11 implementation.
 - Former Arc 12 ML Pipeline Stabilization is moved to Arc 13 and held until Arc
   11 and Arc 12 architecture corrections complete.
+
+## 2026-06-28 — Arc 11 hexagonal boundary correction closeout
+
+### Decision
+- Arc 11 Predict/Train hexagonal boundary correction is complete for automated
+  closeout scope.
+- Train production UI execution now runs through an execution port and
+  killable process runner adapter; cancel terminates/kills the child process and
+  avoids partial final model artifacts.
+- Predict execution now has a UI/runtime-neutral usecase/port, with QThread
+  lifecycle isolated in the PySide runner adapter.
+- Calculator usecase boundary correction is the next architecture correction in
+  Arc 12; Arc 13 ML Pipeline Stabilization remains on hold.
