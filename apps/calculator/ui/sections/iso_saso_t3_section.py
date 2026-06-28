@@ -16,7 +16,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.ui.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
+from apps.calculator.application.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.result_formatting import bin_details, metric_value, kwh_value

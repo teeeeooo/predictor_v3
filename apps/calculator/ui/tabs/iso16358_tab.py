@@ -1,7 +1,7 @@
 """ISO 16358 standard tab — region selector + metric sections.
 
 Composition only. Region/metric → profile_id is delegated to
-``apps.calculator.ui.profile_resolver``; each metric section owns the result shown
+``apps.calculator.application.profile_resolver``; each metric section owns the result shown
 immediately below its inputs.
 """
 
@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
-from apps.calculator.ui.profile_resolver import (
+from apps.calculator.application.profile_resolver import (
     MODE_HONG_KONG,
     MODE_ISO_ISEER_2POINT,
     MODE_SASO_T3,

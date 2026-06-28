@@ -24,7 +24,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.ui.profile_resolver import resolve_profile_id
+from apps.calculator.application.profile_resolver import resolve_profile_id
 from apps.calculator.ui.result_models import result_status
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource

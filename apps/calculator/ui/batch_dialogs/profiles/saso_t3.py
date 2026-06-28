@@ -23,7 +23,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
-from apps.calculator.ui.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
+from apps.calculator.application.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.result_formatting import kwh_value, metric_value
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv

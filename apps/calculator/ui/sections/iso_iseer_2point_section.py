@@ -16,7 +16,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.ui.profile_resolver import (
+from apps.calculator.application.profile_resolver import (
     resolve_two_point_profile_id,
     two_point_profile_labels,
 )

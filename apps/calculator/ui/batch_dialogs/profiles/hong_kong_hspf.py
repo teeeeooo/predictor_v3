@@ -28,7 +28,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
-from apps.calculator.ui.profile_resolver import resolve_profile_id
+from apps.calculator.application.profile_resolver import resolve_profile_id
 from apps.calculator.ui.sections.iso16358_helpers import build_hspf_input
 from apps.calculator.ui.sections.result_formatting import summarize_hspf_result
 from apps.calculator.ui.table.controller import TkTableController

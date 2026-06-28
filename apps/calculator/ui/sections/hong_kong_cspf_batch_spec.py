@@ -12,7 +12,7 @@ from apps.calculator.ui.batch.models import (
     BatchProfileSpec,
     BatchRowState,
 )
-from apps.calculator.ui.profile_resolver import resolve_profile_id
+from apps.calculator.application.profile_resolver import resolve_profile_id
 from apps.calculator.ui.sections.iso16358_helpers import build_cspf_input
 from apps.calculator.ui.sections.result_formatting import summarize_cspf_result
 from apps.calculator.ui.table_grid_model import parse_numeric_cell
