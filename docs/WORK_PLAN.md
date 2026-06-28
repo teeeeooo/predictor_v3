@@ -27,7 +27,9 @@
 
 ## Current Slice
 
-- Arc 12 Slice 1 adds the Calculator application boundary foundation:
+- Arc 12 Slice 2 extracts the ISO/ISEER 2-point single calculation
+  orchestration into an application usecase.
+- Arc 12 Slice 1 added the Calculator application boundary foundation:
   application-owned profile resolver and app-side core dispatcher adapter.
 - Arc 12 Slice 0 formalized the Calculator UI/Application Boundary Audit.
 - Arc 12 first implementation target is the ISO/ISEER 2-point single
@@ -62,7 +64,7 @@
 
 ## Next Actions
 
-1. Arc 12 Slice 2 - ISO/ISEER 2-point UseCase Extraction.
+1. Arc 12 Slice 3 - ISO/ISEER 2-point Batch Reuse.
 
 ## Active Blockers / Open Decisions
 

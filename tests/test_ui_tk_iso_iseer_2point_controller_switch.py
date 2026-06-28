@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from apps.calculator.ui.table.controller import TkTableController
+from tests.calculator_ui_sample_values import ISO_TWO_POINT_SAMPLE_VALUES
 
 
 @pytest.fixture
@@ -99,6 +100,7 @@ class TestUndoBehavior:
 
     def test_undo_restores_original_value(self, section) -> None:
         ctrl = section.input_controller
+        section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
         # Focus and enter edit mode on cell (0, 0)
         ctrl.select((0, 0))
         ctrl._enter_edit_mode((0, 0))

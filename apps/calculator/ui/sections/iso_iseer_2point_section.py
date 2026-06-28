@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (
@@ -16,13 +15,10 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.application.profile_resolver import (
-    resolve_two_point_profile_id,
-    two_point_profile_labels,
-)
+from apps.calculator.application.iso_iseer_2point.usecase import IsoIseer2PointUseCase
+from apps.calculator.application.profile_resolver import two_point_profile_labels
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
-from apps.calculator.ui.sections.result_formatting import bin_details, metric_value, kwh_value
 from apps.calculator.ui.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
@@ -43,6 +39,7 @@ class IsoIseer2PointSection:
         self._trace_results: dict[str, list[dict]] = {}
         self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
         self._trace_status: str | None = "상세 데이터 없음"
+        self._usecase = IsoIseer2PointUseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], IsoIseer2PointBatchDialog
         ] = BatchDialogHandle()
@@ -145,59 +142,25 @@ class IsoIseer2PointSection:
     def cancel_pending(self) -> None:
         self._auto_calc.cancel()
 
-    def _read_inputs(self) -> Mapping[str, Mapping[str, float]]:
-        values = self.input_table.get_numeric_values()
-        return {
-            "35_full": {
-                "capacity": values["full_capacity"],
-                "power": values["full_power"],
-            },
-            "35_half": {
-                "capacity": values["half_capacity"],
-                "power": values["half_power"],
-            },
-        }
-
     def recalculate_now(self) -> None:
-        if not any(
-            value.strip() for value in self.input_table.get_text_values().values()
-        ):
-            self._clear_trace("\uc785\ub825 \ub300\uae30")
-            self.result_table.set_rows((), status="\uc785\ub825 \ub300\uae30")
+        result = self._usecase.calculate(self.input_table.get_text_values())
+        if result.status == "empty":
+            self._clear_trace(result.detail_status or result.status_text)
+            self.result_table.set_rows((), status=result.status_text)
             return
-        try:
-            measured = self._read_inputs()
-        except ValueError:
-            self._clear_trace("입력 오류: 숫자 입력을 확인하세요.")
-            self.result_table.set_status("입력 오류: 숫자 입력을 확인하세요.")
+        if not result.is_ok:
+            self._clear_trace(result.detail_status or result.status_text)
+            self.result_table.set_status(result.status_text)
             return
-
-        rows = []
-        trace_results = {}
-        detail_summaries = {}
-        errors = []
-        for profile_label in two_point_profile_labels():
-            try:
-                profile_id = resolve_two_point_profile_id(profile_label)
-                calc = create_calculator_for_profile(profile_id=profile_id)
-                result = calc.calculate_cspf(measured)
-                row = _two_point_result_row(profile_label, measured, result)
-                rows.append(row)
-                trace_results[profile_label] = bin_details(result)
-                detail_summaries[profile_label] = _summary_from_row(row)
-            except Exception as exc:
-                errors.append(f"{profile_label}: {type(exc).__name__}: {exc}")
-        if errors:
-            self._clear_trace("계산 오류")
-            self.result_table.set_status("오류: " + " / ".join(errors))
-            return
-        self._trace_results = trace_results
-        self._detail_summaries = detail_summaries
-        self._trace_status = None
+        self._trace_results = {
+            label: list(rows) for label, rows in (result.detail_sources or {}).items()
+        }
+        self._detail_summaries = dict(result.detail_summaries or {})
+        self._trace_status = result.detail_status
         if self.detail_panel.selected_source() not in self._trace_results:
             self.trace_profile_combo.set(two_point_profile_labels()[0])
         self._update_detail_panel()
-        self.result_table.set_rows(tuple(rows), status="자동 계산 완료")
+        self.result_table.set_rows(tuple(result.rows), status=result.status_text)
 
     def _open_batch_dialog(self) -> None:
         self._batch_handle.open_or_focus(
@@ -260,35 +223,3 @@ class IsoIseer2PointSection:
         if event.widget is self._frame:
             self._auto_calc.dispose()
             self._batch_handle.dispose()
-
-
-def _two_point_result_row(
-    title: str,
-    measured: Mapping[str, Mapping[str, float]],
-    result: Mapping[str, object],
-) -> tuple[str, ...]:
-    return (
-        title,
-        _eer_value(measured, "35_full"),
-        _eer_value(measured, "35_half"),
-        metric_value(result, "cspf"),
-        kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
-        kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
-    )
-
-
-def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
-    return (
-        ("CSPF/ISEER", row[3]),
-        ("CSTL [kWh]", row[4]),
-        ("CSEC [kWh]", row[5]),
-    )
-
-
-def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:
-    point = measured.get(point_key, {})
-    capacity = point.get("capacity")
-    power = point.get("power")
-    if capacity is None or power is None or power <= 0:
-        return "-"
-    return f"{capacity / power:.2f}"
