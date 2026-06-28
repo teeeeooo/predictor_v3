@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -26,6 +25,7 @@ from apps.predict.ui.tables.delegates import DropdownDelegate
 from apps.predict.ui.status_widgets import StatusBadge, StatusStrip
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 
 
 DEFAULT_INITIAL_ROWS = 3
@@ -196,30 +196,14 @@ class PredictWorkspace(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(label)
-        layout.addWidget(self._build_group_band())
+        self.group_header = TableLinkedGroupHeader(
+            self.case_table,
+            self.case_model.columns,
+            panel,
+        )
+        layout.addWidget(self.group_header)
         layout.addWidget(table)
         return panel
-
-    def _build_group_band(self) -> QFrame:
-        band = QFrame(self)
-        band.setObjectName("ColumnGroupBand")
-        layout = QHBoxLayout(band)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        groups = (("Input", "input"), ("Auto-fill / Calculated", "auto"), ("Prediction Results", "result"), ("Status / Warning", "status"))
-        widths = {
-            group: sum(max(56, min(column.width, 150)) for column in self.case_model.columns if column.group == group)
-            for _, group in groups
-        }
-        layout.addSpacing(28)
-        for text, group in groups:
-            label = QLabel(text, band)
-            label.setObjectName("ColumnGroupBandLabel")
-            label.setFont(style.qfont("font.caption"))
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet(style.table_group_label_stylesheet(group))
-            layout.addWidget(label, max(1, widths[group]))
-        return band
 
     def _build_bottom_status(self) -> QFrame:
         panel = QFrame(self)

@@ -1,14 +1,16 @@
 """Predict workspace unified case table integration tests."""
 
 import os
+from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QItemSelectionModel, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFrame
 
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_view import CaseTableView
+from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 from apps.predict.ui.tables.input_table_view import InputTableView
 from apps.predict.ui.tables.result_table_view import ResultTableView
 from apps.predict.ui.workspace import PredictWorkspace
@@ -98,3 +100,46 @@ def test_workspace_row_lifecycle_updates_unified_model():
     assert workspace.case_model.rowCount() == initial_rows
     workspace._reset_rows()
     assert workspace.case_model.rowCount() == 3
+
+
+def test_unified_group_header_is_table_linked_not_detached_band():
+    _app()
+    workspace = PredictWorkspace()
+
+    assert isinstance(workspace.group_header, TableLinkedGroupHeader)
+    assert workspace.findChildren(QFrame, "ColumnGroupBand") == []
+
+    source = Path("apps/predict/ui/workspace.py").read_text(encoding="utf-8")
+    assert "ColumnGroupBand" not in source
+
+
+def test_unified_group_header_tracks_horizontal_scroll():
+    app = _app()
+    workspace = PredictWorkspace()
+    workspace.resize(640, 420)
+    workspace.show()
+    app.processEvents()
+
+    scroll_bar = workspace.case_table.horizontalScrollBar()
+    assert scroll_bar.maximum() > 0
+    before = workspace.group_header.group_rects()["auto"].x()
+
+    scroll_bar.setValue(scroll_bar.maximum())
+    app.processEvents()
+
+    assert workspace.group_header.group_rects()["auto"].x() < before
+
+
+def test_unified_group_header_tracks_section_resize():
+    app = _app()
+    workspace = PredictWorkspace()
+    workspace.resize(900, 420)
+    workspace.show()
+    app.processEvents()
+
+    input_width = workspace.group_header.group_column_rects()["input"].width()
+    column_width = workspace.case_table.columnWidth(0)
+    workspace.case_table.setColumnWidth(0, column_width + 40)
+    app.processEvents()
+
+    assert workspace.group_header.group_column_rects()["input"].width() == input_width + 40
