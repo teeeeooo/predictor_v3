@@ -11,7 +11,13 @@
 - No production source changes in Slice 4.
 
 ## Verification
-- pending final validation: compile, focused pytest, code-map check, structure guard, diff check, status
+- OK: compileall for app_calculator.py, apps/calculator, core/calculators
+- OK: focused pytest, 32 passed / 1354 deselected
+- OK: batch focused pytest, 5 passed / 1381 deselected
+- OK: code map check FRESH
+- OK with pre-existing soft warnings: structure guard
+- OK: git diff --check
+- OK: push completed
 
 ## Acceptance Checklist
 - OK: `app_calculator.py` and `apps.calculator.app` remain thin.
@@ -39,8 +45,8 @@
 - Arc 12 follow-up - SASO T3 usecase extraction.
 
 ## Commit / Push
-- commit: pending
-- push: pending final Arc 12 push
+- commit: 4832024 docs(calculator): close arc12 usecase boundary slice
+- push: OK, main -> origin/main
 
 ## Project Memory Delta
 - none
