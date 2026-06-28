@@ -169,8 +169,25 @@ python3 -B tools/dev/mock_smoke/run_mock_train_shell_smoke.py \
   --force
 ```
 
-Train execution is intentionally not tested here. Arc11 must implement Trainer
-execution before training E2E can be claimed.
+The shell/status runner checks construction and controller-ready controls only;
+use the Train execution runner below for E2E execution.
+
+Train execution E2E smoke:
+
+```bash
+python3 -B tools/dev/mock_smoke/run_mock_train_execution_smoke.py \
+  --output-dir /tmp/predictor_v3_mock_smoke \
+  --rows 12 \
+  --cleanup \
+  --force
+```
+
+This runner injects the DEV-only fast training backend through the Train
+controller boundary, writes a local inference-compatible `model/model.pkl`, and
+then runs Predict smoke against that trained output. The optional
+`--with-real-core-training` flag exercises the production core training service
+directly, but remains off by default because it is expensive and its metrics are
+meaningless for mock data.
 
 ## Manual Smoke Guide
 
@@ -220,8 +237,10 @@ Only do this when the files are generated DEV smoke artifacts.
 - worker/progress/cancel smoke;
 - `app_train` Predict-tab construction;
 - `app_train` shell/status/tab construction smoke;
-- deferred Train / Model and Data Mapping controls;
-- future training-flow data availability smoke.
+- Train / Model controller-ready controls;
+- DEV-only Train execution E2E through service/worker/controller/UI;
+- Predict smoke after DEV Train output;
+- deferred Data Mapping controls.
 
 ## What This Cannot Verify
 
@@ -230,3 +249,4 @@ Only do this when the files are generated DEV smoke artifacts.
 - trustworthy feature importance;
 - real HVAC design decisions;
 - production model quality.
+- Data Mapping Excel update execution.

@@ -331,6 +331,32 @@ def test_train_shell_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
     assert not (tmp_path / MANIFEST_NAME).exists()
 
 
+def test_train_execution_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-B",
+            "tools/dev/mock_smoke/run_mock_train_execution_smoke.py",
+            "--output-dir",
+            str(tmp_path),
+            "--rows",
+            "6",
+            "--cleanup",
+            "--force",
+        ],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "optional real core training smoke: skipped" in result.stdout
+    assert "train execution smoke complete model:" in result.stdout
+    assert "predict after train rows: 6" in result.stdout
+    assert not (tmp_path / MANIFEST_NAME).exists()
+
+
 def test_repo_local_mock_outputs_are_gitignored():
     repo_root = Path(__file__).resolve().parents[1]
     checks = subprocess.run(

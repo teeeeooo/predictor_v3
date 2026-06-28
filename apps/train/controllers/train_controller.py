@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from uuid import uuid4
 
-from PySide6.QtCore import QThread, QTimer
+from PySide6.QtCore import QObject, QThread, Slot
 
 from apps.train.services.training_service import TrainingService
 from apps.train.state.training_run_state import (
@@ -25,20 +25,28 @@ ProgressCallback = Callable[[TrainingProgress], None]
 ResultCallback = Callable[[TrainingResult], None]
 
 
-class TrainController:
+class TrainController(QObject):
     """Coordinate Train service, worker, and thread lifecycle."""
 
     def __init__(
         self,
         service: TrainingService | None = None,
         worker_cls: type[TrainWorker] = TrainWorker,
+        parent: QObject | None = None,
     ) -> None:
+        super().__init__(parent)
         self._service = service or TrainingService()
         self._worker_cls = worker_cls
         self._is_running = False
         self._thread: QThread | None = None
         self._worker: TrainWorker | None = None
         self._last_result: TrainingResult | None = None
+        self._status_callback: StatusCallback | None = None
+        self._log_callback: LogCallback | None = None
+        self._progress_callback: ProgressCallback | None = None
+        self._finished_callback: ResultCallback | None = None
+        self._failed_callback: ResultCallback | None = None
+        self._cancelled_callback: ResultCallback | None = None
 
     @property
     def is_running(self) -> bool:
@@ -85,15 +93,13 @@ class TrainController:
             return invalid
 
         self._notify(status_callback, "Training run starting.")
-        self._start_worker(
-            training_request,
-            status_callback=status_callback,
-            log_callback=log_callback,
-            progress_callback=progress_callback,
-            finished_callback=finished_callback,
-            failed_callback=failed_callback,
-            cancelled_callback=cancelled_callback,
-        )
+        self._status_callback = status_callback
+        self._log_callback = log_callback
+        self._progress_callback = progress_callback
+        self._finished_callback = finished_callback
+        self._failed_callback = failed_callback
+        self._cancelled_callback = cancelled_callback
+        self._start_worker(training_request)
         return None
 
     def cancel(self) -> bool:
@@ -118,112 +124,59 @@ class TrainController:
             model_output_path=str(model_output_path or MODEL_FILE),
         )
 
-    def _start_worker(
-        self,
-        request: TrainingRequest,
-        *,
-        status_callback: StatusCallback | None,
-        log_callback: LogCallback | None,
-        progress_callback: ProgressCallback | None,
-        finished_callback: ResultCallback | None,
-        failed_callback: ResultCallback | None,
-        cancelled_callback: ResultCallback | None,
-    ) -> None:
+    def _start_worker(self, request: TrainingRequest) -> None:
         self._is_running = True
         self._thread = QThread()
         self._worker = self._worker_cls(request, service=self._service)
         self._worker.moveToThread(self._thread)
 
         self._thread.started.connect(self._worker.run)
-        self._worker.log_event.connect(lambda event: self._handle_log(event, log_callback))
-        self._worker.progress.connect(
-            lambda progress: self._handle_progress(
-                progress,
-                status_callback,
-                progress_callback,
-            )
-        )
-        self._worker.finished.connect(
-            lambda result: self._handle_finished(
-                result,
-                status_callback,
-                finished_callback,
-            )
-        )
-        self._worker.failed.connect(
-            lambda result: self._handle_failed(
-                result,
-                status_callback,
-                failed_callback,
-            )
-        )
-        self._worker.cancelled.connect(
-            lambda result: self._handle_cancelled(
-                result,
-                status_callback,
-                cancelled_callback,
-            )
-        )
+        self._worker.log_event.connect(self._handle_log)
+        self._worker.progress.connect(self._handle_progress)
+        self._worker.finished.connect(self._handle_finished)
+        self._worker.failed.connect(self._handle_failed)
+        self._worker.cancelled.connect(self._handle_cancelled)
         self._worker.finished.connect(self._thread.quit)
         self._worker.failed.connect(self._thread.quit)
         self._worker.cancelled.connect(self._thread.quit)
-        self._thread.finished.connect(lambda: QTimer.singleShot(0, self._clear_worker_thread))
+        self._thread.finished.connect(self._clear_worker_thread)
         self._thread.start()
 
-    def _handle_log(
-        self,
-        event: TrainingLogEvent,
-        log_callback: LogCallback | None,
-    ) -> None:
-        if log_callback is not None:
-            log_callback(event)
+    @Slot(object)
+    def _handle_log(self, event: TrainingLogEvent) -> None:
+        if self._log_callback is not None:
+            self._log_callback(event)
 
-    def _handle_progress(
-        self,
-        progress: TrainingProgress,
-        status_callback: StatusCallback | None,
-        progress_callback: ProgressCallback | None,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(progress)
+    @Slot(object)
+    def _handle_progress(self, progress: TrainingProgress) -> None:
+        if self._progress_callback is not None:
+            self._progress_callback(progress)
         if progress.message:
-            self._notify(status_callback, progress.message)
+            self._notify(self._status_callback, progress.message)
 
-    def _handle_finished(
-        self,
-        result: TrainingResult,
-        status_callback: StatusCallback | None,
-        finished_callback: ResultCallback | None,
-    ) -> None:
+    @Slot(object)
+    def _handle_finished(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
-        self._notify(status_callback, "Training run finished.")
-        if finished_callback is not None:
-            finished_callback(result)
+        self._notify(self._status_callback, "Training run finished.")
+        if self._finished_callback is not None:
+            self._finished_callback(result)
 
-    def _handle_failed(
-        self,
-        result: TrainingResult,
-        status_callback: StatusCallback | None,
-        failed_callback: ResultCallback | None,
-    ) -> None:
+    @Slot(object)
+    def _handle_failed(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
-        self._notify(status_callback, f"Training run failed: {result.message}")
-        if failed_callback is not None:
-            failed_callback(result)
+        self._notify(self._status_callback, f"Training run failed: {result.message}")
+        if self._failed_callback is not None:
+            self._failed_callback(result)
 
-    def _handle_cancelled(
-        self,
-        result: TrainingResult,
-        status_callback: StatusCallback | None,
-        cancelled_callback: ResultCallback | None,
-    ) -> None:
+    @Slot(object)
+    def _handle_cancelled(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
-        self._notify(status_callback, "Training run cancelled.")
-        if cancelled_callback is not None:
-            cancelled_callback(result)
+        self._notify(self._status_callback, "Training run cancelled.")
+        if self._cancelled_callback is not None:
+            self._cancelled_callback(result)
 
     def _notify(self, callback: StatusCallback | None, message: str) -> None:
         if callback is not None:
@@ -232,3 +185,9 @@ class TrainController:
     def _clear_worker_thread(self) -> None:
         self._thread = None
         self._worker = None
+        self._status_callback = None
+        self._log_callback = None
+        self._progress_callback = None
+        self._finished_callback = None
+        self._failed_callback = None
+        self._cancelled_callback = None
