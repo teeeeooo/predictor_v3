@@ -27,6 +27,9 @@
 
 ## Current Slice
 
+- Arc 11 Train Execution Boundary Design is active.
+- Arc 11 uses the Arc 10.5b mock bundle as the fixed Train execution E2E smoke
+  fixture contract.
 - Arc 9.5 second correction is accepted after focused automated coverage and
   user manual-smoke acceptance.
 - The accepted Predict target remains the B-option unified case table from
@@ -45,7 +48,7 @@
 
 ## Next Actions
 
-1. Arc 11 Trainer execution boundary design using mock bundle.
+1. Arc 11 Slice 2 — Training Service Contracts.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
@@ -55,8 +58,8 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Trainer execution foundation remains intentionally deferred to Arc 11; current
-  Train smoke covers shell/status/tab construction and disabled execution
+- Trainer execution foundation is now in Arc 11. Until Slice 5/6 land, current
+  Train smoke still covers shell/status/tab construction and disabled execution
   controls only.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
@@ -77,7 +80,8 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Arc 11 Trainer execution foundation remains on hold.
+- Data Mapping update execution remains deferred and is not part of Arc 11
+  Train execution.
 - Broad ML / predictor algorithm work remains deferred; follow-up prediction
   execution work must preserve core ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their

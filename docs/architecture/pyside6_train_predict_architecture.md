@@ -206,6 +206,12 @@ The first production foundation slices may use this smaller structure:
             shell.py
             train_model_panel.py
             data_mapping_panel.py
+          controllers/
+            __init__.py
+            train_controller.py
+          services/
+            __init__.py
+            training_service.py
           workers/
             __init__.py
             train_worker.py
@@ -874,6 +880,19 @@ Responsibility:
 - wrap `core.ml.training.train_all_models`
 - own training configuration object
 - provide a clean call boundary for worker/controller
+- remain Qt-free
+- validate the training data path before execution
+- return structured request/log/progress/result/resource-status contracts
+- keep production training as the default path
+
+Production service must not change core ML algorithms, preprocessing,
+`MODEL_REGISTRY`, target behavior, or the single `model/model.pkl` artifact
+contract. It may translate exceptions into structured error results.
+
+DEV-only fast training smoke belongs under `tools/dev/mock_smoke/`, not under
+production `apps/` or `core/`. The DEV backend may create an
+inference-compatible mock model artifact by reusing the existing mock artifact
+generator, and it must not claim real training quality or metrics.
 
 ### 11.5 Train worker
 
@@ -887,11 +906,16 @@ Responsibility:
 - emit log lines
 - emit progress updates if available
 - emit finished status
+- receive immutable training requests
+- call the training service boundary
+- support cooperative cancellation without `terminate()` or thread kill
 
 Must not:
 
 - contain ML training algorithms
 - duplicate `core.ml.training` logic
+- mutate Train / Model widgets directly
+- leave orphan threads after finish, error, or cancel
 
 ### 11.6 Mapping service
 
@@ -969,6 +993,14 @@ Responsibility:
 - handle training command actions
 - coordinate train worker/service
 - update Train / Model panel state
+- expose `start(...)`, `cancel()`, `is_running`, and resource status
+- reject double start
+- validate training data path before worker start
+- own QThread/worker lifecycle and cleanup
+- forward log/progress/result events to the panel through callbacks or signals
+
+Must not become a QWidget, call core training internals directly, write logs
+directly to QTextEdit, or own Data Mapping update execution.
 
 ### 12.4 Mapping controller
 
@@ -1036,6 +1068,12 @@ The workspace must not call core ML directly and should not own direct
 status should come through `PredictionService` or `PredictionController`.
 Mapping status should come through the mapping repository, adapter, or
 controller boundary.
+
+The Train / Model tab follows the same separation. It renders training controls,
+paths, progress, log output, target summary, and result state, but production
+training execution must flow through `TrainingService`, `TrainWorker`, and
+`TrainController`. Data Mapping update controls remain deferred until their
+own service/controller boundary is explicitly scoped.
 
 While prediction is running, row mutation commands should initially be disabled
 unless a later explicit design protects running case IDs with equivalent
