@@ -29,6 +29,10 @@ from apps.predict.ui.tables.case_table_view import CaseTableView
 
 
 DEFAULT_INITIAL_ROWS = 3
+FALLBACK_DROPDOWN_OPTIONS = {
+    "ref_type": ("R410A", "R32", "R290"),
+    "exp_type": ("EEV", "Capi"),
+}
 
 
 class PredictWorkspace(QWidget):
@@ -39,13 +43,14 @@ class PredictWorkspace(QWidget):
         parent: QWidget | None = None,
         session: PredictSession | None = None,
         initial_empty_rows: int = DEFAULT_INITIAL_ROWS,
+        mapping_repository: PredictMappingRepository | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("PredictWorkspace")
         self.session = session or PredictSession()
         if len(self.session.case_store) == 0 and initial_empty_rows > 0:
             self.session.case_store.append_empty_rows(initial_empty_rows)
-        self.mapping_repository = PredictMappingRepository()
+        self.mapping_repository = mapping_repository or PredictMappingRepository()
         self.input_edit_controller = InputEditController(
             self.session,
             mapping_repository=self.mapping_repository,
@@ -136,19 +141,49 @@ class PredictWorkspace(QWidget):
         self._configure_dropdown_delegate()
 
     def _configure_dropdown_delegate(self) -> None:
-        fallback_options = {
-            "ref_type": ("R410A", "R32", "R290"),
-            "exp_type": ("EEV", "Capi"),
-        }
         items_by_column = {
-            column_index: fallback_options.get(column.key, ())
+            column_index: FALLBACK_DROPDOWN_OPTIONS.get(column.key, ())
             for column_index, column in enumerate(self.case_model.columns)
             if column.dropdown
         }
         if items_by_column:
-            delegate = DropdownDelegate(items_by_column, self.case_table)
+            delegate = DropdownDelegate(
+                items_by_column,
+                self.case_table,
+                option_provider=self._dropdown_options_for_index,
+            )
             self.case_table.setItemDelegate(delegate)
             self.case_table.dropdown_delegate = delegate
+
+    def _dropdown_options_for_index(self, index) -> tuple[str, ...]:  # noqa: ANN001
+        if not index.isValid():
+            return ()
+        column = self.case_model.columns[index.column()]
+        if not column.dropdown:
+            return ()
+        case_id = self.session.case_order[index.row()]
+        row_options = self.input_edit_controller.dropdown_options_for_case(
+            case_id,
+            column.key,
+        )
+        if row_options:
+            return row_options
+        return self._base_dropdown_options(column.key)
+
+    def _base_dropdown_options(self, key: str) -> tuple[str, ...]:
+        if key in FALLBACK_DROPDOWN_OPTIONS:
+            return FALLBACK_DROPDOWN_OPTIONS[key]
+        column = next((column for column in self.case_model.columns if column.key == key), None)
+        if column is None:
+            return ()
+        section_name = column.dropdown_target or column.mapping
+        if not section_name:
+            return ()
+        mapping_data = self.mapping_repository.load()
+        section = mapping_data.get(section_name, {})
+        if not isinstance(section, dict):
+            return ()
+        return tuple(sorted(str(option) for option in section.keys()))
 
     def _build_table_panel(self, title: str, table: QWidget) -> QWidget:
         panel = QFrame(self)

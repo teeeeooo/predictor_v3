@@ -2,6 +2,7 @@
 
 import os
 
+import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
@@ -21,6 +22,18 @@ from core.predictor_schema.columns import AUTO_COLS, INPUT_COLS, RESULT_COLS
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_qt_widgets():
+    yield
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in QApplication.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
 
 
 def _session_with_rows(count: int = 2) -> PredictSession:

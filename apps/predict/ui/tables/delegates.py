@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import QEvent, QTimer, Qt
+from PySide6.QtCore import QModelIndex
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -20,9 +23,11 @@ class DropdownDelegate(QStyledItemDelegate):
         self,
         items_by_column: dict[int, tuple[str, ...]],
         parent: QAbstractItemView | None = None,
+        option_provider: Callable[[QModelIndex], tuple[str, ...]] | None = None,
     ) -> None:
         super().__init__(parent)
         self._items_by_column = items_by_column
+        self._option_provider = option_provider
 
     def paint(self, painter, option, index):  # noqa: ANN001
         """Paint default cell plus a dropdown arrow affordance."""
@@ -41,7 +46,7 @@ class DropdownDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):  # noqa: ANN001
         """Create a combo box for dropdown-capable columns."""
-        items = self._items_by_column.get(index.column())
+        items = self._items_for_index(index)
         if items is None:
             return super().createEditor(parent, option, index)
         combo = QComboBox(parent)
@@ -76,3 +81,12 @@ class DropdownDelegate(QStyledItemDelegate):
             self.parent().edit(index)
             return True
         return super().editorEvent(event, model, option, index)
+
+    def _items_for_index(self, index: QModelIndex) -> tuple[str, ...] | None:
+        if index.column() not in self._items_by_column:
+            return None
+        if self._option_provider is not None:
+            provided = self._option_provider(index)
+            if provided:
+                return provided
+        return self._items_by_column.get(index.column(), ())

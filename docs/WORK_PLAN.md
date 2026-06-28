@@ -44,8 +44,8 @@
 
 ## Next Actions
 
-1. Arc 9.5 Reopen Slice 7 - Mapping-backed Dropdown / Per-row Option Update.
-2. Arc 9.5 Reopen Slice 8 - Unified Result / Status Integration.
+1. Arc 9.5 Reopen Slice 8 - Unified Result / Status Integration.
+2. Arc 9.5 Reopen Slice 9 - Predict Visual Asset Parity Correction.
 3. Arc 10 - Prediction worker/progress and real-model smoke readiness after
    Arc 9.5 final acceptance.
 

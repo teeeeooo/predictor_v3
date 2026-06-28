@@ -2,6 +2,7 @@
 
 import os
 
+import pytest
 from PySide6.QtCore import QEvent, QItemSelectionModel, Qt
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import QApplication
@@ -15,6 +16,18 @@ from apps.predict.ui.tables.case_table_view import CaseTableView
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_qt_widgets():
+    yield
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in QApplication.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
 
 
 def _table() -> tuple[PredictSession, CaseTableModel, CaseTableView]:

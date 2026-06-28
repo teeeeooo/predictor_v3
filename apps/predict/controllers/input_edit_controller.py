@@ -18,11 +18,16 @@ class InputEditController:
         self._session = session
         self._mapping_repository = mapping_repository or PredictMappingRepository()
         self._dropdown_options: dict[str, tuple[str, ...]] = {}
+        self._dropdown_options_by_case_id: dict[str, dict[str, tuple[str, ...]]] = {}
 
     @property
     def dropdown_options(self) -> dict[str, tuple[str, ...]]:
         """Return latest dependent dropdown option updates."""
         return self._dropdown_options
+
+    def dropdown_options_for_case(self, case_id: str, key: str) -> tuple[str, ...]:
+        """Return latest row-specific dropdown options for a column."""
+        return self._dropdown_options_by_case_id.get(case_id, {}).get(key, ())
 
     def handle_cell_edited(self, case_id: str, changed_key: str) -> None:
         """Apply autofill updates after one case input cell changes."""
@@ -42,3 +47,6 @@ class InputEditController:
         if result.updates:
             self._session.clear_result(case_id)
         self._dropdown_options.update(result.dropdown_options)
+        if result.dropdown_options:
+            row_options = self._dropdown_options_by_case_id.setdefault(case_id, {})
+            row_options.update(result.dropdown_options)

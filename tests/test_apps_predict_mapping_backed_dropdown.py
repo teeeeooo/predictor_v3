@@ -1,0 +1,140 @@
+"""Mapping-backed dropdown option tests for the unified Predict table."""
+
+import inspect
+import os
+from pathlib import Path
+
+from PySide6.QtWidgets import QApplication
+
+from apps.predict.controllers.input_edit_controller import InputEditController
+from apps.predict.mapping.mapping_repository import PredictMappingRepository
+from apps.predict.state.predict_session import PredictSession
+from apps.predict.ui.tables import case_table_model, case_table_view, delegates
+from apps.predict.ui.workspace import PredictWorkspace
+
+
+class FakeMappingRepository:
+    def __init__(self, mapping_data: dict) -> None:
+        self._mapping_data = mapping_data
+        self.mapping_file = "/tmp/predict-mapping-test.json"
+
+    def load(self) -> dict:
+        return self._mapping_data
+
+
+SAMPLE_MAPPING = {
+    "idu": {"IDU-B": {}, "IDU-A": {}},
+    "odu": {"ODU-A": {}, "ODU-B": {}},
+    "compressor": {"CMP-A": {}},
+    "odu_cascade": {
+        "ODU-A": {
+            "Available_Fins": ["F&T"],
+            "Available_Pis": ["7"],
+            "Available_Rows": ["1"],
+        },
+        "ODU-B": {
+            "Available_Fins": ["Blue"],
+            "Available_Pis": ["9"],
+            "Available_Rows": ["2"],
+        },
+    },
+    "cond_specs": {
+        "ODU-A F&T 7 1": {
+            "Cond Area": 3.5,
+            "Cond Volume": 4.5,
+        }
+    },
+}
+
+
+def _app() -> QApplication:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return QApplication.instance() or QApplication([])
+
+
+def _session_with_case() -> PredictSession:
+    session = PredictSession()
+    session.case_store.append_empty_rows(1)
+    return session
+
+
+def _column_index(workspace: PredictWorkspace, key: str) -> int:
+    return next(
+        index for index, column in enumerate(workspace.case_model.columns) if column.key == key
+    )
+
+
+def _dispose_workspace(workspace: PredictWorkspace) -> None:
+    workspace.close()
+    workspace.deleteLater()
+    QApplication.processEvents()
+
+
+def test_table_model_view_delegate_do_not_import_mapping_repository():
+    for module in (case_table_model, case_table_view, delegates):
+        source = inspect.getsource(module)
+        assert "PredictMappingRepository" not in source
+        assert "apps.predict.mapping" not in source
+        assert "core.mapping" not in source
+
+
+def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {
+            "odu": "ODU-A",
+            "fin_type": "old",
+            "pi": "old",
+            "row": "old",
+        }
+    )
+    case.autofill_values.update({"cond_area": "old-area", "cond_volume": "old-volume"})
+    controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
+
+    controller.handle_cell_edited(case.case_id, "odu")
+
+    assert controller.dropdown_options_for_case(case.case_id, "fin_type") == ("F&T",)
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ("7",)
+    assert controller.dropdown_options_for_case(case.case_id, "row") == ("1",)
+    assert case.input_values["fin_type"] == ""
+    assert case.input_values["pi"] == ""
+    assert case.input_values["row"] == ""
+    assert case.autofill_values["cond_area"] == ""
+    assert case.autofill_values["cond_volume"] == ""
+
+
+def test_workspace_provider_returns_mapping_keys_and_row_specific_options():
+    _app()
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values["odu"] = "ODU-A"
+    workspace = PredictWorkspace(
+        session=session,
+        mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
+    )
+    try:
+        workspace.input_edit_controller.handle_cell_edited(case.case_id, "odu")
+
+        idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
+        fin_index = workspace.case_model.index(0, _column_index(workspace, "fin_type"))
+
+        assert workspace._dropdown_options_for_index(idu_index) == ("IDU-A", "IDU-B")
+        assert workspace._dropdown_options_for_index(fin_index) == ("F&T",)
+    finally:
+        _dispose_workspace(workspace)
+
+
+def test_missing_mapping_keeps_controlled_status_and_fallback_options(tmp_path: Path):
+    _app()
+    repo = PredictMappingRepository(mapping_file=str(tmp_path / "missing.json"))
+    workspace = PredictWorkspace(mapping_repository=repo)
+    try:
+        ref_index = workspace.case_model.index(0, _column_index(workspace, "ref_type"))
+        idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
+
+        assert workspace._mapping_status_text() == "missing"
+        assert workspace._dropdown_options_for_index(ref_index) == ("R410A", "R32", "R290")
+        assert workspace._dropdown_options_for_index(idu_index) == ()
+    finally:
+        _dispose_workspace(workspace)

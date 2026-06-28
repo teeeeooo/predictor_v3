@@ -106,7 +106,8 @@ class CaseTableView(QTableView):
         self._undo_stack.push(
             [CellChange(index.row(), index.column(), old_value, text)]
         )
-        self.edit(index)
+        if self.isVisible():
+            self.edit(index)
         return True
 
     def undo(self) -> int:
