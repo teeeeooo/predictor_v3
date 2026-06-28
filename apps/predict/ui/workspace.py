@@ -4,6 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -22,6 +23,7 @@ from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.command_bar import PredictCommandBar
+from apps.predict.ui.tables.delegates import DropdownDelegate
 from apps.predict.ui.status_widgets import StatusBadge, StatusStrip
 from apps.predict.ui.tables.input_table_model import InputTableModel
 from apps.predict.ui.tables.input_table_view import InputTableView
@@ -95,6 +97,8 @@ class PredictWorkspace(QWidget):
         self.command_bar.delete_row_button.clicked.connect(
             self._delete_selected_or_last_row
         )
+        self.command_bar.paste_button.clicked.connect(self._paste_from_clipboard)
+        self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
 
         title_layout = QHBoxLayout()
         title_layout.addWidget(title)
@@ -135,10 +139,30 @@ class PredictWorkspace(QWidget):
         for table in (self.input_table, self.result_table):
             table.setAlternatingRowColors(True)
             table.setSortingEnabled(False)
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            table.horizontalHeader().setStretchLastSection(True)
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+            table.horizontalHeader().setStretchLastSection(False)
             table.verticalHeader().setDefaultSectionSize(34)
             table.setStyleSheet("")
+        for column_index, column in enumerate(self.input_model.columns):
+            self.input_table.setColumnWidth(column_index, max(56, min(column.width, 140)))
+        for column_index, column in enumerate(self.result_model.columns):
+            self.result_table.setColumnWidth(column_index, max(64, min(column.width, 150)))
+        self._configure_dropdown_delegate()
+
+    def _configure_dropdown_delegate(self) -> None:
+        fallback_options = {
+            "ref_type": ("R410A", "R32", "R290"),
+            "exp_type": ("EEV", "Capi"),
+        }
+        items_by_column = {
+            column_index: fallback_options.get(column.key, ())
+            for column_index, column in enumerate(self.input_model.columns)
+            if column.dropdown
+        }
+        if items_by_column:
+            delegate = DropdownDelegate(items_by_column, self.input_table)
+            self.input_table.setItemDelegate(delegate)
+            self.input_table.dropdown_delegate = delegate
 
     def _build_table_panel(self, title: str, table: QWidget) -> QWidget:
         panel = QFrame(self)
@@ -247,9 +271,20 @@ class PredictWorkspace(QWidget):
         self.result_model.refresh_case_id(case_id)
         self.status_label.setText("입력이 변경되었습니다.")
 
+    def _paste_from_clipboard(self) -> None:
+        changed = self.input_table.paste_tsv_at_selection(QApplication.clipboard().text())
+        self.status_label.setText(f"붙여넣기 완료: {changed}개 셀")
+        self._refresh_after_row_change()
+
+    def _copy_results_selection(self) -> None:
+        text = self.result_table.copy_selection_tsv()
+        QApplication.clipboard().setText(text)
+        copied = "선택 결과 복사 완료" if text else "복사할 결과 셀을 선택하세요"
+        self.status_label.setText(copied)
+
     def _selected_input_rows(self) -> list[int]:
         return sorted(
-            {index.row() for index in self.input_table.selectionModel().selectedRows()}
+            {index.row() for index in self.input_table.selectionModel().selectedIndexes()}
         )
 
     def _remove_row_indexes(self, rows: list[int]) -> None:

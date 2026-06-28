@@ -5,6 +5,8 @@ from typing import Any
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QColor
 
+from apps.common.ui import style
+
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_result_column_schema,
@@ -38,8 +40,10 @@ class ResultTableModel(QAbstractTableModel):
         if not index.isValid():
             return None
         column = self._columns[index.column()]
-        if role == Qt.BackgroundRole and column.bg_color:
-            return QColor(column.bg_color)
+        if role == Qt.BackgroundRole:
+            if column.bg_color:
+                return QColor(column.bg_color)
+            return style.table_background_role("result")
         if role != Qt.DisplayRole:
             return None
         case_id = self._session.case_order[index.row()]
@@ -63,6 +67,15 @@ class ResultTableModel(QAbstractTableModel):
         if not index.isValid():
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    @property
+    def columns(self) -> tuple[PredictColumn, ...]:
+        """Return result table column descriptors."""
+        return self._columns
+
+    def cell_value(self, row: int, col: int) -> Any:
+        """Return display value for a cell by row/column."""
+        return self.data(self.index(row, col), Qt.DisplayRole)
 
     def refresh(self) -> None:
         """Notify views that existing values may have changed."""

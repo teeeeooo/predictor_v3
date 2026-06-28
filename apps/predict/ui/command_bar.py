@@ -24,13 +24,8 @@ class PredictCommandBar(QFrame):
         self.copy_results_button = QPushButton("결과 복사", self)
         self.export_button = QPushButton("Export CSV", self)
 
-        for button in (
-            self.paste_button,
-            self.copy_results_button,
-            self.export_button,
-        ):
-            button.setEnabled(False)
-            button.setToolTip("후속 table/export UX slice에서 활성화됩니다.")
+        self.export_button.setEnabled(False)
+        self.export_button.setToolTip("후속 export UX slice에서 활성화됩니다.")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(

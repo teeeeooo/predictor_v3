@@ -6,6 +6,8 @@ from typing import Any
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QColor
 
+from apps.common.ui import style
+
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_input_column_schema,
@@ -43,8 +45,17 @@ class InputTableModel(QAbstractTableModel):
         if not index.isValid():
             return None
         column = self._columns[index.column()]
-        if role == Qt.BackgroundRole and column.bg_color:
-            return QColor(column.bg_color)
+        if role == Qt.BackgroundRole:
+            if self.is_invalid(index.row(), index.column()):
+                return style.table_background_role("invalid")
+            if column.is_auto:
+                return style.table_background_role("calculated")
+            if column.editable:
+                return style.table_background_role("input")
+            if column.bg_color:
+                return QColor(column.bg_color)
+        if role == Qt.ToolTipRole and self.is_invalid(index.row(), index.column()):
+            return f"{column.header} must be numeric."
         if role not in (Qt.DisplayRole, Qt.EditRole):
             return None
         case = self._session.case_store.get_case_at(index.row())
@@ -64,6 +75,10 @@ class InputTableModel(QAbstractTableModel):
         if not column.editable or column.is_auto:
             return False
         case = self._session.case_store.get_case_at(index.row())
+        current_value = case.input_values.get(column.key, "")
+        new_value = "" if value is None else str(value)
+        if str(current_value) == new_value:
+            return True
         self._session.case_store.update_cell_value(case.case_id, column.key, value)
         if self._edit_callback is not None:
             self._edit_callback(case.case_id, column.key)
@@ -92,6 +107,50 @@ class InputTableModel(QAbstractTableModel):
         if column.editable and not column.is_auto:
             flags |= Qt.ItemIsEditable
         return flags
+
+    @property
+    def columns(self) -> tuple[PredictColumn, ...]:
+        """Return input table column descriptors."""
+        return self._columns
+
+    def cell_value(self, row: int, col: int) -> Any:
+        """Return display value for a cell by row/column."""
+        return self.data(self.index(row, col), Qt.DisplayRole)
+
+    def is_editable_cell(self, row: int, col: int) -> bool:
+        """Return whether a row/column can be edited by the user."""
+        if not (0 <= row < self.rowCount() and 0 <= col < self.columnCount()):
+            return False
+        column = self._columns[col]
+        return column.editable and not column.is_auto
+
+    def is_invalid(self, row: int, col: int) -> bool:
+        """Return whether a numeric ML feature cell contains invalid text."""
+        if not (0 <= row < self.rowCount() and 0 <= col < self.columnCount()):
+            return False
+        column = self._columns[col]
+        if not column.ml_feature:
+            return False
+        value = self.cell_value(row, col)
+        if value is None or str(value).strip() == "":
+            return False
+        try:
+            float(value)
+        except (TypeError, ValueError):
+            return True
+        return False
+
+    def clear_cells(self, cells: list[tuple[int, int]]) -> int:
+        """Clear editable cells and return the number changed."""
+        changed = 0
+        for row, col in cells:
+            if not self.is_editable_cell(row, col):
+                continue
+            if str(self.cell_value(row, col) or "") == "":
+                continue
+            if self.setData(self.index(row, col), "", Qt.EditRole):
+                changed += 1
+        return changed
 
     def refresh(self) -> None:
         """Notify views that existing values may have changed."""
