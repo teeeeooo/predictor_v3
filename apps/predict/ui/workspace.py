@@ -118,6 +118,7 @@ class PredictWorkspace(QWidget):
         self.summary_label = QLabel()
         self.summary_label.setObjectName("PredictWorkspaceSummary")
         self.summary_label.setFont(style.qfont("font.caption"))
+        self.result_badge = StatusBadge("결과", "대기", "neutral")
         self.bottom_status = self._build_bottom_status()
 
         layout = QVBoxLayout(self)
@@ -196,6 +197,7 @@ class PredictWorkspace(QWidget):
         )
         layout.setSpacing(style.spacing("space.md"))
         layout.addWidget(self.summary_label)
+        layout.addWidget(self.result_badge)
         layout.addStretch(1)
         layout.addWidget(self.status_label)
         return panel
@@ -234,8 +236,21 @@ class PredictWorkspace(QWidget):
                 **counts
             )
         )
+        self._refresh_result_badge(counts)
         if not self.status_label.text():
             self.status_label.setText("대기 중")
+
+    def _refresh_result_badge(self, counts: dict[str, int]) -> None:
+        if counts["errors"]:
+            self.result_badge.set_status(f"오류 {counts['errors']}건", "error")
+        elif counts["invalid"]:
+            self.result_badge.set_status(f"입력 확인 {counts['invalid']}건", "warning")
+        elif counts["running"]:
+            self.result_badge.set_status(f"실행 중 {counts['running']}건", "running")
+        elif counts["completed"]:
+            self.result_badge.set_status(f"완료 {counts['completed']}건", "ready")
+        else:
+            self.result_badge.set_status("대기", "neutral")
 
     def _run_prediction(self) -> None:
         self.command_bar.run_button.setEnabled(False)
@@ -269,7 +284,10 @@ class PredictWorkspace(QWidget):
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
         self.result_model.refresh_case_id(case_id)
-        self.status_label.setText("입력이 변경되었습니다.")
+        if not Path(self.mapping_repository.mapping_file).exists():
+            self.status_label.setText("입력이 변경되었습니다. mapping 파일이 없어 autofill은 제한됩니다.")
+        else:
+            self.status_label.setText("입력이 변경되었습니다.")
 
     def _paste_from_clipboard(self) -> None:
         changed = self.input_table.paste_tsv_at_selection(QApplication.clipboard().text())

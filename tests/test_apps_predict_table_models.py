@@ -87,3 +87,14 @@ def test_predict_workspace_schema_smoke_and_row_lifecycle():
     assert workspace.input_model.rowCount() == initial_rows
     workspace._reset_rows()
     assert workspace.input_model.rowCount() == 3
+
+
+def test_predict_workspace_result_badge_reflects_error_state():
+    _app()
+    workspace = PredictWorkspace()
+    case_id = workspace.session.case_order[0]
+    workspace.session.set_result(ResultRow(case_id=case_id, status="error", message="x"))
+
+    workspace._refresh_after_row_change()
+
+    assert "오류" in workspace.result_badge.text()

@@ -40,14 +40,22 @@ class ResultTableModel(QAbstractTableModel):
         if not index.isValid():
             return None
         column = self._columns[index.column()]
+        case_id = self._session.case_order[index.row()]
+        result = self._session.result_for_case(case_id)
         if role == Qt.BackgroundRole:
+            if result.status in {"error", "invalid"}:
+                return style.table_background_role("invalid")
+            if result.status in {"partial"}:
+                return style.table_background_role("warning")
+            if result.status in {"complete"}:
+                return style.table_background_role("result")
             if column.bg_color:
                 return QColor(column.bg_color)
             return style.table_background_role("result")
+        if role == Qt.ToolTipRole and result.message:
+            return result.message
         if role != Qt.DisplayRole:
             return None
-        case_id = self._session.case_order[index.row()]
-        result = self._session.result_for_case(case_id)
         value = result.result_values.get(column.key, "")
         return "" if value is None else value
 

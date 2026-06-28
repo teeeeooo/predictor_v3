@@ -124,3 +124,20 @@ def test_result_view_copies_selected_cells():
     view.selectionModel().select(model.index(0, 1), QItemSelectionModel.Select)
 
     assert view.copy_selection_tsv() == "2.1\t3.4\n"
+
+
+def test_result_model_renders_error_status_tooltip_and_background():
+    _app()
+    session = _session_with_rows()
+    first_case_id = session.case_order[0]
+    session.set_result(
+        ResultRow(
+            case_id=first_case_id,
+            status="error",
+            message="model missing",
+        )
+    )
+    model = ResultTableModel(session)
+
+    assert model.data(model.index(0, 0), Qt.ToolTipRole) == "model missing"
+    assert model.data(model.index(0, 0), Qt.BackgroundRole).isValid()
