@@ -27,8 +27,8 @@
 
 ## Current Slice
 
-- Arc 11 Reopen - Slice 0: Acceptance Reset / Hexagonal Boundary
-  Formalization.
+- Arc 11 Reopen - Slice 1: Train Execution Port + QProcess Hard Stop is
+  implemented and awaiting commit.
 - Arc 11 final architecture acceptance is reopened. Previous automated
   Train/Predict implementation exists, but final hexagonal acceptance is not
   complete.
@@ -57,9 +57,8 @@
 
 ## Next Actions
 
-1. Arc 11 Slice 1 - Train Execution Port + QProcess Hard Stop.
-2. Arc 11 Slice 2 - Predict Execution UseCase / Execution Port Correction.
-3. Arc 11 Slice 3 - Re-closeout / Train-Predict Manual Smoke Gate.
+1. Arc 11 Slice 2 - Predict Execution UseCase / Execution Port Correction.
+2. Arc 11 Slice 3 - Re-closeout / Train-Predict Manual Smoke Gate.
 
 ## Active Blockers / Open Decisions
 
@@ -69,8 +68,8 @@
   correction slices are complete.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Production Train hard stop and Predict UI/runtime-neutral execution boundary
-  are required before Arc 11 closeout.
+- Predict UI/runtime-neutral execution boundary is required before Arc 11
+  closeout.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

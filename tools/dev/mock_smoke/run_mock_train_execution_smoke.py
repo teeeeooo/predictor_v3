@@ -15,13 +15,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner  # noqa: E402
 from apps.train.controllers.train_controller import TrainController  # noqa: E402
 from apps.train.services.training_service import TrainingService  # noqa: E402
 from apps.train.state.training_run_state import TrainingRequest  # noqa: E402
 from apps.train.ui.shell import TrainShell  # noqa: E402
 from core.ml.artifacts import MODEL_FILE  # noqa: E402
 from core.ml.inference import load_model  # noqa: E402
-from tools.dev.mock_smoke.dev_training_backend import DevFastTrainingBackend  # noqa: E402
 from tools.dev.mock_smoke.generators import (  # noqa: E402
     CASE_INPUT_NAME,
     cleanup_from_manifest,
@@ -62,8 +62,16 @@ def _wait_until(app: QApplication, predicate, timeout_ms: int = 8000) -> bool:  
 def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
     app = QApplication.instance() or QApplication([])
     shell = TrainShell()
-    backend = DevFastTrainingBackend(rows=rows, predict_delay_ms=predict_delay_ms)
-    controller = TrainController(service=TrainingService(backend=backend))
+    runner = QProcessTrainingRunner(
+        extra_args=(
+            "--dev-fast",
+            "--dev-rows",
+            str(rows),
+            "--dev-predict-delay-ms",
+            str(predict_delay_ms),
+        )
+    )
+    controller = TrainController(runner=runner)
     panel = shell.train_model_panel
     panel.training_controller = controller
     panel._update_control_state()
@@ -76,7 +84,7 @@ def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
         app,
         lambda: controller.last_result is not None
         and not controller.is_running
-        and controller._thread is None,
+        and controller._runner is None,
     ):
         raise RuntimeError("Train execution smoke did not finish before timeout.")
     result = controller.last_result

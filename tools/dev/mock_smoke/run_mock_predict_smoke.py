@@ -83,7 +83,11 @@ def _run_workspace(rows: int, case_tsv: str, *, cancel: bool) -> PredictWorkspac
     workspace._run_prediction()
     if cancel:
         QTimer.singleShot(80, workspace._cancel_prediction)
-    if not _wait_until(app, lambda: not workspace.prediction_controller.is_running):
+    if not _wait_until(
+        app,
+        lambda: not workspace.prediction_controller.is_running
+        and workspace.prediction_controller._thread is None,
+    ):
         raise RuntimeError("prediction worker did not finish before timeout")
 
     counts = workspace.session.summary_counts()

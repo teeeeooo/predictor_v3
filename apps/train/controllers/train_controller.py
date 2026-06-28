@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from uuid import uuid4
 
-from PySide6.QtCore import QObject, QThread, Slot
+from PySide6.QtCore import QObject, Slot
 
+from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
 from apps.train.services.training_service import TrainingService
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
@@ -15,7 +16,6 @@ from apps.train.state.training_run_state import (
     TrainingResourceStatus,
     TrainingResult,
 )
-from apps.train.workers.train_worker import TrainWorker
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
@@ -31,15 +31,15 @@ class TrainController(QObject):
     def __init__(
         self,
         service: TrainingService | None = None,
-        worker_cls: type[TrainWorker] = TrainWorker,
+        runner: QProcessTrainingRunner | None = None,
+        runner_cls: type[QProcessTrainingRunner] = QProcessTrainingRunner,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._service = service or TrainingService()
-        self._worker_cls = worker_cls
+        self._runner = runner
+        self._runner_cls = runner_cls
         self._is_running = False
-        self._thread: QThread | None = None
-        self._worker: TrainWorker | None = None
         self._last_result: TrainingResult | None = None
         self._status_callback: StatusCallback | None = None
         self._log_callback: LogCallback | None = None
@@ -103,11 +103,10 @@ class TrainController(QObject):
         return None
 
     def cancel(self) -> bool:
-        """Request cooperative cancellation for the active worker."""
-        if self._worker is None:
-            return False
-        self._worker.cancel()
-        return True
+        """Hard-cancel the active training runner when possible."""
+        if self._runner is not None:
+            return self._runner.cancel()
+        return False
 
     def _coerce_request(
         self,
@@ -126,21 +125,17 @@ class TrainController(QObject):
 
     def _start_worker(self, request: TrainingRequest) -> None:
         self._is_running = True
-        self._thread = QThread()
-        self._worker = self._worker_cls(request, service=self._service)
-        self._worker.moveToThread(self._thread)
-
-        self._thread.started.connect(self._worker.run)
-        self._worker.log_event.connect(self._handle_log)
-        self._worker.progress.connect(self._handle_progress)
-        self._worker.finished.connect(self._handle_finished)
-        self._worker.failed.connect(self._handle_failed)
-        self._worker.cancelled.connect(self._handle_cancelled)
-        self._worker.finished.connect(self._thread.quit)
-        self._worker.failed.connect(self._thread.quit)
-        self._worker.cancelled.connect(self._thread.quit)
-        self._thread.finished.connect(self._clear_worker_thread)
-        self._thread.start()
+        runner = self._runner or self._runner_cls()
+        self._runner = runner
+        runner.log_event.connect(self._handle_log)
+        runner.progress.connect(self._handle_progress)
+        runner.finished.connect(self._handle_finished)
+        runner.failed.connect(self._handle_failed)
+        runner.cancelled.connect(self._handle_cancelled)
+        runner.finished.connect(self._clear_runner)
+        runner.failed.connect(self._clear_runner)
+        runner.cancelled.connect(self._clear_runner)
+        runner.start(request)
 
     @Slot(object)
     def _handle_log(self, event: TrainingLogEvent) -> None:
@@ -182,9 +177,13 @@ class TrainController(QObject):
         if callback is not None:
             callback(message)
 
-    def _clear_worker_thread(self) -> None:
-        self._thread = None
-        self._worker = None
+    def _clear_runner(self) -> None:
+        if self._runner is not None:
+            self._runner.deleteLater()
+        self._runner = None
+        self._clear_callbacks()
+
+    def _clear_callbacks(self) -> None:
         self._status_callback = None
         self._log_callback = None
         self._progress_callback = None

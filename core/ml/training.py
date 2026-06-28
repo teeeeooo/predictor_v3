@@ -92,7 +92,7 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
 
     return final_model, selected_cols, cv_r2, cv_rmse, feature_ranking
 
-def train_all_models(data_path=None, log_callback=None):
+def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     def custom_log(msg):
         if log_callback: log_callback(msg)
         else: print(msg)
@@ -153,8 +153,10 @@ def train_all_models(data_path=None, log_callback=None):
                 "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
-    if not os.path.exists(MODEL_DIR): os.makedirs(MODEL_DIR)
-    joblib.dump(model_data, MODEL_FILE)
+    output_path = model_output_path or MODEL_FILE
+    output_dir = os.path.dirname(output_path) or MODEL_DIR
+    if not os.path.exists(output_dir): os.makedirs(output_dir)
+    joblib.dump(model_data, output_path)
     saved_path = save_train_log_to_excel(all_results_for_excel)
     custom_log(f"💾 학습 로그 저장 완료: {saved_path}")
     custom_log(f"\n🎉 모든 모델 학습이 완료되었습니다!")
