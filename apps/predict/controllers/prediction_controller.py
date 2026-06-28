@@ -5,7 +5,10 @@ from dataclasses import dataclass
 
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
-from apps.predict.services.prediction_service import PredictionService
+from apps.predict.services.prediction_service import (
+    PredictionModelStatus,
+    PredictionService,
+)
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 
@@ -38,6 +41,16 @@ class PredictionController:
         self._input_adapter = input_adapter or RowToMlInputAdapter()
         self._service = service or PredictionService()
         self._result_adapter = result_adapter or PredictionResultAdapter()
+        self._is_running = False
+
+    @property
+    def is_running(self) -> bool:
+        """Return whether a prediction run is active."""
+        return self._is_running
+
+    def model_status(self) -> PredictionModelStatus:
+        """Return Qt-free model status through the service boundary."""
+        return self._service.model_status()
 
     def run_all(
         self,

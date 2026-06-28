@@ -59,6 +59,18 @@ class PredictionResultAdapter:
         """Build a row-level running result."""
         return ResultRow(case_id=case_id, status="running")
 
+    def cancelled_result(
+        self,
+        case_id: str,
+        message: str = "Prediction cancelled.",
+    ) -> ResultRow:
+        """Build a row-level cancelled result."""
+        return ResultRow(
+            case_id=case_id,
+            status="cancelled",
+            message=self._clean_message(message),
+        )
+
     def _format_number(self, value: Any) -> str:
         if value is None:
             return ""

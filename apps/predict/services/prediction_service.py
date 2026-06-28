@@ -1,6 +1,7 @@
 """Qt-free service boundary for core prediction calls."""
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from core.ml.artifacts import MODEL_FILE
@@ -19,6 +20,15 @@ class PredictionServiceResult:
     message: str = ""
 
 
+@dataclass(frozen=True)
+class PredictionModelStatus:
+    """Qt-free model artifact status for controller/UI display."""
+
+    model_path: str
+    status: str
+    message: str = ""
+
+
 class PredictionService:
     """Wrap existing core predictor route without changing core behavior."""
 
@@ -26,6 +36,34 @@ class PredictionService:
         self._model_file = model_file
         self._model_data: Any | None = None
         self._load_error: str = ""
+
+    def model_status(self) -> PredictionModelStatus:
+        """Return model artifact status without loading the model."""
+        model_path = Path(self._model_file)
+        path_text = str(model_path)
+        if self._model_data is not None:
+            return PredictionModelStatus(
+                model_path=path_text,
+                status="loaded",
+                message="Model is loaded.",
+            )
+        if self._load_error:
+            return PredictionModelStatus(
+                model_path=path_text,
+                status="load-error",
+                message=self._load_error,
+            )
+        if not model_path.exists():
+            return PredictionModelStatus(
+                model_path=path_text,
+                status="missing",
+                message="Model artifact is missing.",
+            )
+        return PredictionModelStatus(
+            model_path=path_text,
+            status="exists",
+            message="Model artifact exists.",
+        )
 
     def predict_many(
         self,
