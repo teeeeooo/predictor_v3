@@ -1,4 +1,4 @@
-"""Qt-free service boundary for model training execution."""
+"""Qt-free status and validation boundary for Train resources."""
 
 from __future__ import annotations
 
@@ -6,10 +6,6 @@ from pathlib import Path
 
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 from apps.train.state.training_run_state import (
-    TrainingLogCallback,
-    TrainingLogEvent,
-    TrainingProgress,
-    TrainingProgressCallback,
     TrainingRequest,
     TrainingResourceStatus,
     TrainingResult,
@@ -17,10 +13,7 @@ from apps.train.state.training_run_state import (
 
 
 class TrainingService:
-    """Validate Train resources and host explicitly injected test backends."""
-
-    def __init__(self, backend=None) -> None:  # noqa: ANN001
-        self._backend = backend
+    """Expose Train resource status and request validation only."""
 
     def resource_status(
         self,
@@ -63,74 +56,3 @@ class TrainingService:
                 message=f"Training data is not a file: {data_path}",
             )
         return None
-
-    def train(
-        self,
-        request: TrainingRequest,
-        log_callback: TrainingLogCallback | None = None,
-        progress_callback: TrainingProgressCallback | None = None,
-    ) -> TrainingResult:
-        """Run an explicitly injected backend for tests/dev helpers only."""
-        invalid = self.validate_request(request)
-        if invalid is not None:
-            self._emit_log(log_callback, request.run_id, invalid.message, "error")
-            return invalid
-        if self._backend is None:
-            message = (
-                "Direct TrainingService.train execution is disabled; use "
-                "QProcessTrainingRunner for production UI training."
-            )
-            self._emit_log(log_callback, request.run_id, message, "error")
-            return TrainingResult(
-                run_id=request.run_id,
-                status="error",
-                model_path=request.model_output_path,
-                message=message,
-            )
-        try:
-            self._emit_progress(
-                progress_callback,
-                TrainingProgress(
-                    run_id=request.run_id,
-                    completed=0,
-                    total=0,
-                    message="Training started.",
-                    indeterminate=True,
-                ),
-            )
-            return self._backend(request, log_callback, progress_callback)
-        except Exception as exc:  # pragma: no cover - defensive service boundary
-            message = str(exc).splitlines()[0]
-            self._emit_log(log_callback, request.run_id, message, "error")
-            return TrainingResult(
-                run_id=request.run_id,
-                status="error",
-                model_path=request.model_output_path,
-                message=message,
-            )
-
-    def cancel(self) -> bool:
-        """Request cooperative backend cancellation when supported."""
-        cancel = getattr(self._backend, "cancel", None)
-        if not callable(cancel):
-            return False
-        cancel()
-        return True
-
-    def _emit_log(
-        self,
-        callback: TrainingLogCallback | None,
-        run_id: str,
-        message: str,
-        level: str = "info",
-    ) -> None:
-        if callback is not None:
-            callback(TrainingLogEvent(run_id=run_id, message=message, level=level))
-
-    def _emit_progress(
-        self,
-        callback: TrainingProgressCallback | None,
-        progress: TrainingProgress,
-    ) -> None:
-        if callback is not None:
-            callback(progress)

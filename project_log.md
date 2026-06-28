@@ -880,3 +880,13 @@
   `TrainingService.train()` production execution was disabled.
 - Optional real-core Train smoke now uses the QProcess train job path.
 - Arc 12 Calculator UI/Application Boundary Audit remains the next action.
+
+## 2026-06-28 — TrainingService validation-only cleanup
+
+### Decision
+- `TrainingService` is reduced to Train resource status and request validation
+  only.
+- DEV/test backend execution moved to `tools/dev/mock_smoke/dev_training_runner.py`.
+- Production UI Train execution remains owned by `QProcessTrainingRunner` and
+  `apps/train/jobs/train_job.py`.
+- Arc 12 Calculator UI/Application Boundary Audit remains the next action.

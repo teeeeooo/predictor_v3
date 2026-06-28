@@ -30,7 +30,7 @@
 - Arc 11 Reopen / Correction is complete for automated closeout scope.
 - Train production UI execution now flows through an explicit execution port and
   killable process runner adapter; the legacy direct Train worker path has been
-  removed.
+  removed, and `TrainingService` is validation/status only.
 - Predict execution orchestration now has a UI/runtime-neutral usecase/port,
   with QThread lifecycle isolated in the PySide runner adapter and PySide runner
   creation owned by the PySide workspace composition layer.

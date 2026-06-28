@@ -462,8 +462,8 @@ Completed milestones:
   usecase and execution port.
 - Finalized Train/Predict execution boundaries by removing
   `PredictionController`'s concrete PySide runner dependency, deleting the
-  legacy direct `TrainWorker`, and disabling default direct
-  `TrainingService.train()` production execution.
+  legacy direct `TrainWorker`, and reducing `TrainingService` to
+  validation/status ownership.
 - Re-ran Train/Predict automated smoke gate for closeout.
 - Kept Data Mapping update execution deferred.
 
