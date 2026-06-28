@@ -36,7 +36,10 @@ class TrainShell(QMainWindow):
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_status_strip())
         tabs = QTabWidget(self)
-        tabs.addTab(PredictWorkspace(tabs), self.tab_names[0])
+        tabs.addTab(
+            PredictWorkspace(tabs, show_title=False, show_status_strip=False),
+            self.tab_names[0],
+        )
         tabs.addTab(TrainModelPanel(tabs), self.tab_names[1])
         tabs.addTab(DataMappingPanel(tabs), self.tab_names[2])
         layout.addWidget(tabs, 1)

@@ -41,6 +41,8 @@ class PredictWorkspace(QWidget):
         session: PredictSession | None = None,
         initial_empty_rows: int = DEFAULT_INITIAL_ROWS,
         mapping_repository: PredictMappingRepository | None = None,
+        show_title: bool = True,
+        show_status_strip: bool = True,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("PredictWorkspace")
@@ -66,9 +68,8 @@ class PredictWorkspace(QWidget):
         )
         self._configure_tables()
 
-        title = QLabel("HVAC V3 Predictor")
-        title.setObjectName("PredictWorkspaceTitle")
-        title.setFont(style.qfont("font.window_title"))
+        self.show_title = show_title
+        self.show_status_strip = show_status_strip
 
         self.model_badge = StatusBadge("모델 상태", self._model_status_text(), self._model_status_kind())
         self.mapping_badge = StatusBadge(
@@ -78,7 +79,7 @@ class PredictWorkspace(QWidget):
         )
         self.preprocess_badge = StatusBadge("preprocess", "v1.0", "ready")
         self.schema_badge = StatusBadge("schema", "ready", "ready")
-        status_strip = StatusStrip(
+        self.status_strip = StatusStrip(
             (self.model_badge, self.mapping_badge, self.preprocess_badge, self.schema_badge),
             self,
         )
@@ -93,10 +94,6 @@ class PredictWorkspace(QWidget):
         self.command_bar.paste_button.clicked.connect(self._paste_from_clipboard)
         self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
         self.command_bar.copy_results_button.setText("선택 복사")
-
-        title_layout = QHBoxLayout()
-        title_layout.addWidget(title)
-        title_layout.addStretch(1)
 
         table_panel = self._build_table_panel("Unified Case Table", self.case_table)
 
@@ -117,8 +114,20 @@ class PredictWorkspace(QWidget):
             style.spacing("space.sm"),
         )
         layout.setSpacing(style.spacing("space.sm"))
-        layout.addLayout(title_layout)
-        layout.addWidget(status_strip)
+        if show_title:
+            self.title_label = QLabel("HVAC V3 Predictor")
+            self.title_label.setObjectName("PredictWorkspaceTitle")
+            self.title_label.setFont(style.qfont("font.window_title"))
+            title_layout = QHBoxLayout()
+            title_layout.addWidget(self.title_label)
+            title_layout.addStretch(1)
+            layout.addLayout(title_layout)
+        else:
+            self.title_label = None
+        if show_status_strip:
+            layout.addWidget(self.status_strip)
+        else:
+            self.status_strip.setParent(None)
         layout.addWidget(self.command_bar)
         layout.addWidget(table_panel, 1)
         layout.addWidget(self.bottom_status)

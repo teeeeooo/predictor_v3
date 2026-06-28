@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtWidgets import QApplication, QProgressBar, QPushButton, QTableWidget, QTextEdit
+from PySide6.QtWidgets import QApplication, QLabel, QProgressBar, QPushButton, QTableWidget, QTextEdit
 
+from apps.predict.ui.shell import PredictShell
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.shell import TrainShell
@@ -40,6 +41,25 @@ def test_train_shell_tabs_and_predict_workspace_reuse():
         "Data Mapping",
     ]
     assert isinstance(shell.tabs.widget(0), PredictWorkspace)
+
+
+def test_predict_shell_keeps_standalone_title_and_status_strip():
+    _app()
+    shell = PredictShell()
+    workspace = shell.workspace
+
+    assert workspace.findChild(QLabel, "PredictWorkspaceTitle") is not None
+    assert workspace.status_strip.parent() is workspace
+
+
+def test_train_embedded_predict_workspace_hides_duplicate_title_and_status_strip():
+    _app()
+    shell = TrainShell()
+    workspace = shell.tabs.widget(0)
+
+    assert isinstance(workspace, PredictWorkspace)
+    assert workspace.findChild(QLabel, "PredictWorkspaceTitle") is None
+    assert workspace.status_strip.parent() is None
 
 
 def test_train_model_panel_is_visual_only_with_log_area():
