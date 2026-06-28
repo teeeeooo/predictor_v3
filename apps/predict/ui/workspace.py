@@ -18,6 +18,7 @@ from apps.common.ui import style
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import PredictionController
+from apps.predict.controllers.table_edit_controller import TableEditController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
@@ -47,8 +48,8 @@ class PredictWorkspace(QWidget):
         super().__init__(parent)
         self.setObjectName("PredictWorkspace")
         self.session = session or PredictSession()
-        if len(self.session.case_store) == 0 and initial_empty_rows > 0:
-            self.session.case_store.append_empty_rows(initial_empty_rows)
+        self.table_edit_controller = TableEditController(self.session)
+        self.table_edit_controller.ensure_initial_rows(initial_empty_rows)
         self.mapping_repository = mapping_repository or PredictMappingRepository()
         self.input_edit_controller = InputEditController(
             self.session,
@@ -217,9 +218,12 @@ class PredictWorkspace(QWidget):
         return panel
 
     def _append_row(self) -> None:
-        row_index = len(self.session.case_store)
-        self._begin_insert_rows(row_index, row_index)
-        self.session.case_store.append_empty_rows(1)
+        inserted = self.table_edit_controller.append_row_span(1)
+        if inserted is None:
+            return
+        first_row, last_row = inserted
+        self._begin_insert_rows(first_row, last_row)
+        self.table_edit_controller.append_empty_rows(1)
         self._end_insert_rows()
         self._refresh_after_row_change()
 
@@ -231,10 +235,9 @@ class PredictWorkspace(QWidget):
 
     def _reset_rows(self) -> None:
         self._begin_reset_models()
-        removed = self.session.case_store.remove_rows(self.session.case_order)
-        self.session.remove_results_for_cases(removed)
-        self.session.case_store.append_empty_rows(DEFAULT_INITIAL_ROWS)
+        self.table_edit_controller.reset_rows(DEFAULT_INITIAL_ROWS)
         self._end_reset_models()
+        self.case_table.clear_undo_history()
         self._refresh_after_row_change()
 
     def _refresh(self) -> None:
@@ -320,28 +323,11 @@ class PredictWorkspace(QWidget):
         )
 
     def _remove_row_indexes(self, rows: list[int]) -> None:
-        valid_rows = sorted(
-            {row for row in rows if 0 <= row < len(self.session.case_store)},
-            reverse=True,
-        )
-        for group in self._contiguous_descending_groups(valid_rows):
-            first_row = group[-1]
-            last_row = group[0]
-            case_ids = [self.session.case_order[row] for row in range(first_row, last_row + 1)]
-            self._begin_remove_rows(first_row, last_row)
-            removed = self.session.case_store.remove_rows(case_ids)
-            self.session.remove_results_for_cases(removed)
+        for group in self.table_edit_controller.removal_groups_for_indexes(rows):
+            self._begin_remove_rows(group.first_row, group.last_row)
+            self.table_edit_controller.remove_case_ids(group.case_ids)
             self._end_remove_rows()
         self._refresh_after_row_change()
-
-    def _contiguous_descending_groups(self, rows: list[int]) -> list[list[int]]:
-        groups: list[list[int]] = []
-        for row in rows:
-            if not groups or groups[-1][-1] - 1 != row:
-                groups.append([row])
-            else:
-                groups[-1].append(row)
-        return groups
 
     def _begin_insert_rows(self, first_row: int, last_row: int) -> None:
         self.case_model.begin_insert_rows(first_row, last_row)

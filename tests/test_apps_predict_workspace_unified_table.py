@@ -8,6 +8,8 @@ from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtWidgets import QApplication, QFrame
 
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
+from apps.predict.controllers.table_edit_controller import TableEditController
+from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
@@ -100,6 +102,50 @@ def test_workspace_row_lifecycle_updates_unified_model():
     assert workspace.case_model.rowCount() == initial_rows
     workspace._reset_rows()
     assert workspace.case_model.rowCount() == 3
+
+
+def test_table_edit_controller_owns_row_lifecycle_and_result_clearing():
+    session = PredictSession()
+    controller = TableEditController(session)
+    controller.ensure_initial_rows(2)
+    case_id = session.case_order[0]
+    session.set_result(ResultRow(case_id=case_id, status="complete"))
+
+    assert controller.append_row_span(1) == (2, 2)
+    controller.append_empty_rows(1)
+    assert len(session.case_store) == 3
+
+    group = controller.removal_groups_for_indexes([0])[0]
+    assert group.first_row == 0
+    assert group.last_row == 0
+    assert group.case_ids == (case_id,)
+    assert controller.remove_case_ids(group.case_ids) == [case_id]
+    assert session.result_for_case(case_id).status == "pending"
+
+
+def test_workspace_does_not_directly_mutate_case_store_rows():
+    source = Path("apps/predict/ui/workspace.py").read_text(encoding="utf-8")
+
+    assert "case_store.append_empty_rows" not in source
+    assert "case_store.remove_rows" not in source
+
+
+def test_workspace_reset_clears_table_undo_history():
+    _app()
+    workspace = PredictWorkspace()
+    cooling = _column_index(workspace, "cooling_capa")
+    index = workspace.case_model.index(0, cooling)
+    workspace.case_table.selectionModel().setCurrentIndex(
+        index,
+        QItemSelectionModel.ClearAndSelect,
+    )
+
+    assert workspace.case_table.replace_current_cell("7.1")
+    assert workspace.case_model.cell_value(0, cooling) == "7.1"
+    workspace._reset_rows()
+
+    assert workspace.case_table.undo() == 0
+    assert workspace.case_model.cell_value(0, cooling) == ""
 
 
 def test_unified_group_header_is_table_linked_not_detached_band():

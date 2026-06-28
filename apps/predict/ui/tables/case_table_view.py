@@ -123,6 +123,10 @@ class CaseTableView(QTableView):
                 undone += 1
         return undone
 
+    def clear_undo_history(self) -> None:
+        """Clear table-local undo history after a data context reset."""
+        self._undo_stack.clear()
+
     def keyPressEvent(self, event):  # noqa: ANN001
         """Handle spreadsheet-like clipboard and clear shortcuts."""
         if event.matches(QKeySequence.Copy):
