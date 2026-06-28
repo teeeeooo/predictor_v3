@@ -47,6 +47,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md` (covered reports `517-535`)
 - `result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md` (covered reports `537-553`)
 - `result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md` (covered reports `555-581`)
+- `result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md` (covered reports `583-601`)
 
 ## Scope and Non-goals
 
@@ -1001,7 +1002,21 @@ entries:
       - model status
       - mapping status
     assertionStatus: verified
-    source: result_reports/active/590_arc10-prediction-worker-progress-closeout.md
+    source: result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md (covered reports 583-601; Arc 10 section)
+
+  - type: decision
+    topic: Arc 11 trainer execution foundation closeout
+    content: Arc 11 trainer execution foundation is complete for the current automated scope: Train execution runs through Qt-free service contracts, a cooperative worker, controller-owned QThread lifecycle, and Train UI wiring; DEV-only Train E2E smoke uses the mock bundle and verifies Predict against the Train-produced model artifact. Manual GUI smoke, optional expensive real-core training smoke, and Data Mapping update execution remain follow-up work.
+    keywords:
+      - predictor_v3
+      - Arc 11
+      - Train execution
+      - TrainController
+      - TrainWorker
+      - mock smoke
+      - Data Mapping
+    assertionStatus: verified
+    source: result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md (covered reports 583-601)
 ```
 
 ## Known Gaps

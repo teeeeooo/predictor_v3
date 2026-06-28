@@ -68,4 +68,5 @@ Arc11 manual smoke.
 ## Commit / Push
 
 - Commit: included in Slice 7 commit
-- Push: pending final push
+- Push: completed; final publication status was reported in the terminal
+  response for the Slice 7 closeout.
