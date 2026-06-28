@@ -862,6 +862,11 @@ Recommended payloads:
 
 Signals may use `Signal(object)` with dataclass payloads.
 
+Arc 11 correction: the QThread worker is a PySide adapter implementation, not
+the final UI/runtime-neutral application-usecase boundary. Future non-PySide
+interfaces must reuse prediction orchestration through a usecase/execution port
+without importing PySide6.
+
 Must not:
 
 - own or mutate `PredictSession`
@@ -889,6 +894,12 @@ Production service must not change core ML algorithms, preprocessing,
 `MODEL_REGISTRY`, target behavior, or the single `model/model.pkl` artifact
 contract. It may translate exceptions into structured error results.
 
+Arc 11 correction: production Train execution must not be accepted as a direct
+in-process `train_all_models()` call behind QThread. Production training must
+flow through an execution port and killable process runner adapter. The visible
+`중지` action must stop the running process, and cancelled/error runs must not
+leave partial final model artifacts.
+
 DEV-only fast training smoke belongs under `tools/dev/mock_smoke/`, not under
 production `apps/` or `core/`. The DEV backend may create an
 inference-compatible mock model artifact by reusing the existing mock artifact
@@ -909,6 +920,8 @@ Responsibility:
 - receive immutable training requests
 - call the training service boundary
 - support cooperative cancellation without `terminate()` or thread kill
+- remain a PySide adapter or compatibility layer after the production execution
+  port/process runner exists
 
 Must not:
 
@@ -1261,7 +1274,8 @@ Verification:
 - train worker import smoke
 - train service boundary test
 - log signal smoke if feasible
-- no UI-thread direct `train_all_models` call in QWidgets
+- no UI-thread or QThread direct `train_all_models` call accepted as production
+  Train execution
 
 ### Manual smoke candidates
 

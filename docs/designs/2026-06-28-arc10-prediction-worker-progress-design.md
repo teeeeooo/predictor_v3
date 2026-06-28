@@ -8,6 +8,13 @@ Fix the Arc 10 owner boundary before implementation so prediction execution can
 move off the UI thread without changing ML behavior, mapping schema,
 calculator contracts, or the accepted Arc 9.5 unified case table UX.
 
+## Arc 11 Correction Note
+
+This record remains valid for the PySide prediction worker/progress adapter
+implementation. It is not the final UI/runtime-neutral application-usecase
+boundary. Arc 11 Slice 2 owns the future correction through a prediction
+usecase and execution port.
+
 ## Current Flow
 
 - `PredictWorkspace._run_prediction()` disables the run button and calls

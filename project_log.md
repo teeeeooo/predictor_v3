@@ -844,3 +844,15 @@
 - Production real-core training smoke remains optional because it is expensive
   and mock-data metrics are meaningless. Manual GUI smoke remains the next
   action.
+
+## 2026-06-28 — Arc 11 hexagonal boundary acceptance reopened
+
+### Decision
+- Arc 11 final architecture acceptance is reopened after hexagonal boundary
+  review.
+- Train/Predict correction remains in Arc 11 slices: Train production execution
+  must move behind a killable process adapter, and Predict execution must move
+  behind a UI/runtime-neutral usecase/port.
+- Calculator correction is routed to Arc 12 without Arc 11 implementation.
+- Former Arc 12 ML Pipeline Stabilization is moved to Arc 13 and held until Arc
+  11 and Arc 12 architecture corrections complete.

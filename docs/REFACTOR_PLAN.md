@@ -16,6 +16,24 @@
 
 ## Active refactor candidates
 
+### 0. Predict/Train application-usecase and execution port boundary correction
+- **왜 후보인지**: Arc 11 architecture review reopened final acceptance because
+  production Train execution is not behind a killable outbound process adapter
+  and Predict orchestration remains PySide6/QThread-bound.
+- **목표 boundary**:
+  - Train: `TrainingExecutionPort` plus process runner adapter so `중지` can
+    hard-stop the running training process and clean temporary artifacts.
+  - Predict: UI/runtime-neutral prediction usecase and execution port, with the
+    existing QThread worker retained only as a PySide adapter implementation.
+- **범위 제한**: ML algorithm, preprocessing, target registry, feature schema,
+  artifact schema, mapping schema, and calculator formulas remain unchanged.
+
+### 0b. Calculator usecase boundary correction
+- **왜 후보인지**: Calculator UI still contains application orchestration that
+  should be reusable outside a specific UI section.
+- **실행 순서**: Arc 12로 분리한다. Arc 11은 routing decision만 기록하고
+  calculator correction을 구현하지 않는다.
+
 ### 1. Calculator series reset: 기존 ISO 파일 legacy 격하 + 새 calculator 3종 작성
 - **왜 후보인지**: 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임. 037~043 사이클의 점진 cleanup으로는 boundary 책임이 정렬되지 않는다는 것이 확인되었다.
 - **방향 전환 (2026-05-17)**: “기존 `core/calculator_iso16358.py`를 부분 cleanup으로 계속 살리는 방향”은 종료한다. 기존 파일은 legacy/reference로 격하하고, 새 ISO / KS / ASNZS calculator 3개 파일을 명확한 책임으로 재작성한다.

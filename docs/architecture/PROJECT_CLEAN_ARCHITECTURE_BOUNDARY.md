@@ -73,6 +73,23 @@ Does not own:
 - domain decision rules;
 - long widget-manipulation sequences;
 - interface-framework-specific measurement or rendering policy.
+- killable process lifecycle, stdout/stderr parsing, external tool execution,
+  or artifact promotion/cleanup for long-running jobs.
+
+Controller/service split is not sufficient if an application service directly
+owns infrastructure execution that must vary by runtime. Long-running
+execution, killable jobs, process lifecycle, stdout/stderr event parsing,
+external tool execution, and artifact promotion/cleanup belong behind explicit
+ports/protocols and outbound adapters.
+
+Examples:
+
+- Train production execution: `TrainingExecutionPort` -> process runner adapter
+  such as `QProcessTrainingRunner`.
+- Predict execution: `PredictionExecutionPort` -> PySide/QThread runner or
+  another runtime runner.
+- Calculator execution: `CalculatorUseCase` -> core calculator dispatcher
+  adapter, not direct orchestration inside UI sections.
 
 ### Shell / Adapter / Infrastructure
 

@@ -126,6 +126,12 @@ Migration principles:
 - **전처리 호환성 guard**: 학습/예측 전처리 호환성 확인을 위해 `preprocess_version` 또는 동등한 전처리 버전 검증 guard를 유지한다. 이 항목은 architecture contract이며, 현재 구현 완료 범위를 과장하지 않는다.
 - **Train/Predict runtime boundary**: `core/ml/training.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/ml/training.py`와 `core/ml/inference.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
 - **Train/Predict PySide6 rewrite boundary**: `app_predict.py`는 Predict 전용 thin entrypoint, `app_train.py`는 Predict workspace + Train / Model + Data Mapping을 제공하는 관리자/개발자용 thin entrypoint로 전환한다. `PredictWorkspace`는 `apps.predict`에서 정의하고 `apps.train`의 Predict tab에서 재사용한다. Governing architecture contract는 `docs/architecture/pyside6_train_predict_architecture.md`이며, 설계 결정 기록은 `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`를 따른다.
+- **Application-usecase portability boundary**: core package separation alone is
+  not sufficient for reusable Train/Predict workflows. Predict execution,
+  Train execution, and future Calculator execution corrections need explicit
+  UI/runtime-neutral usecase or port boundaries when the same workflow may run
+  under PySide6, Tkinter, another GUI toolkit, Web UI, CLI smoke runner, remote
+  worker, or automation shell.
 - **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
 
 ### MODEL_REGISTRY 확장성 패턴

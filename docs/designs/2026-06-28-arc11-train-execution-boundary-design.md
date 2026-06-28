@@ -1,5 +1,13 @@
 # Arc 11 Train Execution Boundary Design
 
+## Arc 11 Reopen Correction Note
+
+This historical record is superseded for production execution acceptance. It
+allowed QThread-backed direct production `train_all_models()` execution and
+cooperative cancellation, but the Arc 11 architecture review rejected that as
+insufficient hexagonal architecture. Production Train execution must use an
+execution port and killable process adapter.
+
 ## Goal
 
 Define the Train execution boundary before implementation so Arc 11 can add

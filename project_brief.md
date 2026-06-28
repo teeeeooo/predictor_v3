@@ -10,8 +10,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 11 Trainer execution foundation complete for automated
-coverage, with manual smoke and real-model success smoke still pending.
+Current phase: Machine Learning / Predictor Phase, Arc 11 reopened for
+Predict/Train hexagonal boundary correction.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -32,9 +32,12 @@ complete, and the user has accepted the corrected manual smoke. Arc 10
 Prediction Worker / Progress implementation has since been completed through
 worker, controller, progress/cancel UI, resource-status cleanup, and focused
 automated coverage. Arc 11 now adds Train execution service/worker/controller/UI
-wiring and DEV-only Train E2E smoke. Manual GUI smoke and real-model success
-smoke remain pending; mock bundle smoke can exercise Predict E2E and Train
-execution readiness without production model quality claims.
+wiring and DEV-only Train E2E smoke. Arc 11 final architecture acceptance is
+reopened because Train production execution is not yet behind a killable
+outbound process adapter and Predict execution orchestration remains
+PySide6/QThread-bound. Calculator boundary correction is real but routed to Arc
+12, not mixed into Arc 11. Manual GUI smoke and real-model success smoke remain
+pending until the reopened correction slices close.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -63,8 +66,8 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
 - Current PySide6 foundation work is production foundation. Arc 9 recovered the
   schema/mapping path against the existing ML pipeline and broader core
   ownership; Arc 10 added Predict worker/progress/cancel execution boundaries,
-  and Arc 11 added Train execution service/worker/controller/UI boundaries
-  without changing ML behavior.
+  and Arc 11 is reopened to correct Train/Predict application-usecase and
+  execution adapter boundaries before manual closeout.
 - The current `core/` root is no longer the active implementation surface for
   ML/schema/mapping/calculator owners. Arc 7 moved ML/schema/mapping
   implementation ownership under `core/ml`, `core/predictor_schema`, and
@@ -417,30 +420,30 @@ Completed milestones:
   row-level cancelled state, running-state mutation guards, and Train shell
   construction with focused automated tests.
 
-### Arc 11 — Trainer Admin App Foundation
+### Arc 11 — Predict / Train Hexagonal Boundary Recovery
 
 Goal:
 
-- Make `app_train.py` the administrator/developer app with Predict, Train /
-  Model, and Data Mapping tabs.
+- Correct Predict/Train application-usecase and execution boundaries so future
+  UI/runtime replacements can reuse core and application-level logic.
+- Fix production Train execution so the visible `중지` button hard-stops the
+  running training process.
 
 Target milestones:
 
-- Reuse `PredictWorkspace` in the Train app's Predict tab.
-- Add Train / Model panel.
-- Add Data Mapping panel.
-- Add training worker boundary and progress/log status.
-- Add model artifact/status visibility.
-- Keep mapping update behavior behind a service/adapter boundary.
+- Slice 0 - Architecture acceptance reset.
+- Slice 1 - Train execution port + QProcess hard stop.
+- Slice 2 - Predict usecase / execution port.
+- Slice 3 - Re-closeout / manual smoke gate.
 
 Status:
 
-- Implementation complete for automated coverage; awaiting manual smoke.
-- DEV-only Train execution E2E passes using the Arc 10.5b mock bundle and then
-  runs Predict smoke against the Train-produced model artifact.
-- Production `TrainingService` wraps `core.ml.training.train_all_models`, but
-  optional real-core training smoke is not part of ordinary validation because
-  it is expensive and mock metrics are meaningless.
+- Reopened for Predict/Train hexagonal boundary correction.
+- Previous automated Train/Predict implementation exists, but final architecture
+  acceptance is not complete.
+- Train production execution is not behind a killable outbound process adapter.
+- Predict execution orchestration remains PySide6/QThread-bound.
+- Calculator boundary issue exists but is moved to Arc 12.
 
 Completed milestones:
 
@@ -453,12 +456,32 @@ Completed milestones:
 - Added DEV-only Train execution smoke and Predict-after-Train smoke.
 - Kept Data Mapping update execution deferred.
 
-### Arc 12 — ML Pipeline Stabilization
+### Arc 12 — Calculator UseCase Boundary Correction
+
+Goal:
+
+- Extract or define a calculator application-usecase boundary so future
+  UI/runtime surfaces and predictor-calculator integration do not copy Tk
+  UI-section orchestration.
+
+Target milestones:
+
+- Calculator UI/Application Boundary Audit.
+- CalculatorUseCase Target Design.
+- First narrow usecase extraction.
+- Calculator regression / smoke / closeout.
+
+Status:
+
+- Planned after Arc 11 correction.
+- Not implemented in Arc 11.
+
+### Arc 13 — ML Pipeline Stabilization
 
 Goal:
 
 - Stabilize ML feature, leakage, model artifact, preprocessing, and result-key
-  contracts after the UI shell boundary is established.
+  contracts after Arc 11 and Arc 12 architecture corrections are complete.
 
 Target milestones:
 
@@ -470,7 +493,11 @@ Target milestones:
 - Add focused ML tests around feature names, leakage, and prediction/training
   boundary behavior.
 
-### Arc 13 — Calculator to Predictor Integration
+Status:
+
+- On hold until Arc 11 and Arc 12 architecture corrections are complete.
+
+### Later — Calculator to Predictor Integration
 
 Goal:
 
