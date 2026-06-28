@@ -44,8 +44,8 @@
 
 ## Next Actions
 
-1. Arc 9.5 Reopen Slice 4 - Unified Case Table Model.
-2. Arc 9.5 Reopen Slice 5 - Unified Case Table View / Workspace Integration.
+1. Arc 9.5 Reopen Slice 5 - Unified Case Table View / Workspace Integration.
+2. Arc 9.5 Reopen Slice 6 - Spreadsheet UX Completion.
 3. Arc 10 - Prediction worker/progress and real-model smoke readiness after
    Arc 9.5 final acceptance.
 
