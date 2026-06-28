@@ -3,9 +3,9 @@
 import os
 
 import pytest
-from PySide6.QtCore import QEvent, QItemSelectionModel, Qt
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QEvent, QItemSelectionModel, QPointF, Qt
+from PySide6.QtGui import QKeyEvent, QMouseEvent
+from PySide6.QtWidgets import QApplication, QAbstractItemView
 
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
@@ -58,6 +58,31 @@ def _select(view: CaseTableView, model: CaseTableModel, *cells: tuple[int, int])
 def _send_key(view: CaseTableView, key: int, text: str = "", modifiers=Qt.NoModifier) -> None:
     event = QKeyEvent(QEvent.KeyPress, key, modifiers, text)
     QApplication.sendEvent(view, event)
+
+
+def _send_mouse_click(view: CaseTableView, row: int, col: int) -> None:
+    index = view.model().index(row, col)
+    point = view.visualRect(index).center()
+    local = QPointF(point)
+    global_pos = QPointF(view.viewport().mapToGlobal(point))
+    press = QMouseEvent(
+        QEvent.MouseButtonPress,
+        local,
+        global_pos,
+        Qt.LeftButton,
+        Qt.LeftButton,
+        Qt.NoModifier,
+    )
+    release = QMouseEvent(
+        QEvent.MouseButtonRelease,
+        local,
+        global_pos,
+        Qt.LeftButton,
+        Qt.LeftButton,
+        Qt.NoModifier,
+    )
+    QApplication.sendEvent(view.viewport(), press)
+    QApplication.sendEvent(view.viewport(), release)
 
 
 def test_undo_edit_restores_previous_value():
@@ -120,6 +145,24 @@ def test_type_replace_overwrites_active_cell_whole_value():
     assert model.cell_value(0, 0) == "9"
     assert view.undo() == 1
     assert model.cell_value(0, 0) == "123"
+
+
+def test_first_click_selects_and_same_cell_click_enters_edit_mode():
+    app = _app()
+    _session, model, view = _table()
+    cooling = _column_index(model, "cooling_capa")
+    view.resize(800, 240)
+    view.show()
+    app.processEvents()
+
+    _send_mouse_click(view, 0, cooling)
+    app.processEvents()
+    assert view.currentIndex() == model.index(0, cooling)
+    assert view.state() != QAbstractItemView.EditingState
+
+    _send_mouse_click(view, 0, cooling)
+    app.processEvents()
+    assert view.state() == QAbstractItemView.EditingState
 
 
 def test_selected_range_fill_paste_and_readonly_skip():

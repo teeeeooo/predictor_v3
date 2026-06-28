@@ -4,7 +4,8 @@ import inspect
 import os
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QComboBox, QStyleOptionViewItem
 
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
@@ -120,6 +121,60 @@ def test_workspace_provider_returns_mapping_keys_and_row_specific_options():
         fin_index = workspace.case_model.index(0, _column_index(workspace, "fin_type"))
 
         assert workspace._dropdown_options_for_index(idu_index) == ("IDU-A", "IDU-B")
+        assert workspace._dropdown_options_for_index(fin_index) == ("F&T",)
+    finally:
+        _dispose_workspace(workspace)
+
+
+def test_dropdown_delegate_creates_editable_combobox_with_completer():
+    _app()
+    workspace = PredictWorkspace(
+        session=_session_with_case(),
+        mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
+    )
+    try:
+        idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
+        editor = workspace.case_table.itemDelegate().createEditor(
+            workspace.case_table,
+            QStyleOptionViewItem(),
+            idu_index,
+        )
+
+        assert isinstance(editor, QComboBox)
+        assert editor.isEditable()
+        assert editor.completer() is not None
+        assert editor.completer().caseSensitivity() == Qt.CaseInsensitive
+    finally:
+        _dispose_workspace(workspace)
+
+
+def test_typed_dropdown_value_commits_and_triggers_autofill_options():
+    _app()
+    session = _session_with_case()
+    workspace = PredictWorkspace(
+        session=session,
+        mapping_repository=FakeMappingRepository(SAMPLE_MAPPING),
+    )
+    try:
+        odu_index = workspace.case_model.index(0, _column_index(workspace, "odu"))
+        editor = workspace.case_table.itemDelegate().createEditor(
+            workspace.case_table,
+            QStyleOptionViewItem(),
+            odu_index,
+        )
+        assert isinstance(editor, QComboBox)
+        editor.setEditText("ODU-A")
+
+        workspace.case_table.itemDelegate().setModelData(
+            editor,
+            workspace.case_model,
+            odu_index,
+        )
+
+        case_id = session.case_order[0]
+        case = session.case_store.get_case(case_id)
+        fin_index = workspace.case_model.index(0, _column_index(workspace, "fin_type"))
+        assert case.input_values["odu"] == "ODU-A"
         assert workspace._dropdown_options_for_index(fin_index) == ("F&T",)
     finally:
         _dispose_workspace(workspace)

@@ -19,9 +19,9 @@ class CaseTableView(QTableView):
         self.setEditTriggers(
             QAbstractItemView.DoubleClicked
             | QAbstractItemView.EditKeyPressed
-            | QAbstractItemView.SelectedClicked
         )
         self._undo_stack = TableUndoStack()
+        self._press_started_on_selected_current = False
 
     def copy_selection_tsv(self) -> str:
         """Return selected visible cells as TSV."""
@@ -160,6 +160,33 @@ class CaseTableView(QTableView):
                 event.accept()
                 return
         super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):  # noqa: ANN001
+        """Remember whether a click began on the already active selected cell."""
+        index = self.indexAt(event.position().toPoint())
+        self._press_started_on_selected_current = (
+            index.isValid()
+            and index == self.currentIndex()
+            and self.selectionModel() is not None
+            and self.selectionModel().isSelected(index)
+        )
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):  # noqa: ANN001
+        """Keep first click as selection and same-cell click as edit entry."""
+        index = self.indexAt(event.position().toPoint())
+        should_edit = self._press_started_on_selected_current
+        self._press_started_on_selected_current = False
+        super().mouseReleaseEvent(event)
+        if (
+            event.button() == Qt.LeftButton
+            and should_edit
+            and index.isValid()
+            and self.model() is not None
+            and self.model().flags(index) & Qt.ItemIsEditable
+        ):
+            self.edit(index)
+            event.accept()
 
     def _selected_cells(self) -> list[tuple[int, int]]:
         indexes = self.selectionModel().selectedIndexes() if self.selectionModel() else []

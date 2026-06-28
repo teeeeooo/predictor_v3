@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QEvent, QTimer, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtCore import QModelIndex
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
+    QCompleter,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionComboBox,
@@ -17,7 +18,7 @@ from PySide6.QtWidgets import (
 
 
 class DropdownDelegate(QStyledItemDelegate):
-    """Render dropdown affordance and open a combo box in one click."""
+    """Render dropdown affordance and provide editable combo editors."""
 
     def __init__(
         self,
@@ -50,8 +51,13 @@ class DropdownDelegate(QStyledItemDelegate):
         if items is None:
             return super().createEditor(parent, option, index)
         combo = QComboBox(parent)
+        combo.setEditable(True)
+        combo.setInsertPolicy(QComboBox.NoInsert)
         combo.addItems(items)
-        QTimer.singleShot(0, combo.showPopup)
+        completer = QCompleter(list(items), combo)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.PopupCompletion)
+        combo.setCompleter(completer)
         return combo
 
     def setEditorData(self, editor, index):  # noqa: ANN001
@@ -61,6 +67,8 @@ class DropdownDelegate(QStyledItemDelegate):
             found = editor.findText(current)
             if found >= 0:
                 editor.setCurrentIndex(found)
+            else:
+                editor.setEditText(current)
             return
         super().setEditorData(editor, index)
 
@@ -70,17 +78,6 @@ class DropdownDelegate(QStyledItemDelegate):
             model.setData(index, editor.currentText(), Qt.EditRole)
             return
         super().setModelData(editor, model, index)
-
-    def editorEvent(self, event, model, option, index):  # noqa: ANN001
-        """Enter edit mode on one click for dropdown cells."""
-        if (
-            index.column() in self._items_by_column
-            and event.type() == QEvent.MouseButtonRelease
-            and isinstance(self.parent(), QAbstractItemView)
-        ):
-            self.parent().edit(index)
-            return True
-        return super().editorEvent(event, model, option, index)
 
     def _items_for_index(self, index: QModelIndex) -> tuple[str, ...] | None:
         if index.column() not in self._items_by_column:
