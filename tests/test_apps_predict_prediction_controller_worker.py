@@ -104,7 +104,7 @@ def test_controller_worker_run_updates_session_rows():
         progress_callback=progress.append,
         finished_callback=summaries.append,
     )
-    _wait_until(lambda: summaries and controller._thread is None)
+    _wait_until(lambda: summaries and controller._runner is None)
 
     assert [item.completed for item in progress] == [1, 2]
     assert summaries[0].complete == 2
@@ -127,7 +127,7 @@ def test_controller_rejects_double_start_while_running():
         controller.start_all()
 
     service.release.set()
-    _wait_until(lambda: summaries and controller._thread is None)
+    _wait_until(lambda: summaries and controller._runner is None)
 
 
 def test_controller_applies_invalid_rows_without_worker_call():
@@ -158,7 +158,7 @@ def test_controller_cancel_requests_worker_cancel():
     assert service.started.wait(1)
     controller.cancel()
     service.release.set()
-    _wait_until(lambda: summaries and controller._thread is None)
+    _wait_until(lambda: summaries and controller._runner is None)
 
     assert summaries[0].complete == 1
     assert summaries[0].cancelled == 1
@@ -174,7 +174,7 @@ def test_controller_worker_error_result_continues_to_summary():
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
-    _wait_until(lambda: summaries and controller._thread is None)
+    _wait_until(lambda: summaries and controller._runner is None)
 
     first, second = session.case_order
     assert session.result_for_case(first).status == "error"
@@ -191,7 +191,7 @@ def test_controller_model_missing_becomes_controlled_row_errors():
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
-    _wait_until(lambda: summaries and controller._thread is None)
+    _wait_until(lambda: summaries and controller._runner is None)
 
     assert summaries[0].error == 2
     for case_id in session.case_order:

@@ -152,7 +152,7 @@ def main() -> int:
     case_tsv = (output_dir / CASE_INPUT_NAME).read_text(encoding="utf-8")
     workspace = _run_workspace(args.rows, case_tsv, cancel=False)
     app = QApplication.instance() or QApplication([])
-    _wait_until(app, lambda: workspace.prediction_controller._thread is None, timeout_ms=1000)
+    _wait_until(app, lambda: workspace.prediction_controller._runner is None, timeout_ms=1000)
     print(f"train execution smoke complete model: {MODEL_FILE}")
     print(f"predict after train rows: {workspace.session.summary_counts()['completed']}")
     if args.cleanup:

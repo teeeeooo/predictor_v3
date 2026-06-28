@@ -86,7 +86,7 @@ def _run_workspace(rows: int, case_tsv: str, *, cancel: bool) -> PredictWorkspac
     if not _wait_until(
         app,
         lambda: not workspace.prediction_controller.is_running
-        and workspace.prediction_controller._thread is None,
+        and workspace.prediction_controller._runner is None,
     ):
         raise RuntimeError("prediction worker did not finish before timeout")
 
