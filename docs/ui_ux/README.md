@@ -16,9 +16,6 @@ adoption guide; it does not replace any owner document.
 - `04_VISUAL_DESIGN_ARCHITECTURE.md`: portable visual design architecture.
 - `05_INPUT_MATRIX_AND_RESULT_SURFACE_RULES.md`: portable repeated-input and
   result-surface shaping rules.
-- `06_PYSIDE6_VISUAL_AND_TABLE_PARITY_HARVEST.md`: predictor_v3-specific
-  harvest of legacy Train/Predict visual and table UX ideas for PySide6
-  reimplementation; reference only, not a portable owner contract.
 - `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`: how to bind the common rules into a
   concrete project.
 - `07_WINDOW_GEOMETRY_AND_VIEWPORT_POLICY.md`: portable window/dialog geometry,
@@ -34,6 +31,8 @@ owner document explicitly says so.
 
 Adapter documents are allowed to keep specific toolkit names because their job
 is to map portable contracts to a concrete implementation framework.
+
+Project-specific harvest and design references live under `docs/designs/`.
 
 When adopting this folder into another project, use `06_PORTABLE_UI_UX_ADOPTION_GUIDE.md`
 to create the project binding, token owner, adapter decisions, and verification

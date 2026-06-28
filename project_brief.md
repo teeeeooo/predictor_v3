@@ -52,8 +52,8 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   `core/mapping`; Arc 8 moved calculator implementation ownership under
   `core/calculators`; Arc 8.5 retired root compatibility wrappers and migrated
   active callers to package owner paths.
-- Legacy Train/Predict `ui/` files are retired in Arc 9.1 after harvesting
-  useful visual/table ideas into active UI/UX docs.
+- Legacy Train/Predict `ui/` files are retired in Arc 9.1; Arc 9.2 preserves
+  project-specific visual/table harvest evidence under `docs/designs/`.
 - `app_predict.py` is the Predict-only application entrypoint.
 - `app_train.py` is the administrator/developer entrypoint that adds Train /
   Model and Data Mapping capabilities while reusing the Predict workspace.
@@ -281,13 +281,31 @@ Status:
 
 Completed milestones:
 
-- Harvested legacy dropdown, spreadsheet, and visual-token ideas into active
-  UI/UX docs.
+- Harvested legacy dropdown, spreadsheet, and visual-token ideas before
+  retiring the legacy path.
 - Adopted `ui_common.visual_tokens` as the active toolkit-neutral visual token
   owner for Arc 9.5.
 - Deleted the legacy `ui/` folder and legacy tests.
 - Removed active PyQt dependency wording from active code/docs while preserving
   archive/history.
+
+### Arc 9.2 — Legacy UI Harvest Location Correction and Detail Recovery
+
+Goal:
+
+- Move project-specific legacy visual/table evidence out of portable UI/UX
+  contracts and into design references for Arc 9.5.
+
+Status:
+
+- Complete in the current local arc.
+
+Completed milestones:
+
+- Recovered detailed legacy `ui/` behavior from Git history.
+- Moved the PySide6 visual/table parity harvest to
+  `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`.
+- Kept `docs/ui_ux/` as the portable UI/UX rule set.
 
 ### Arc 9.5 — Predict / Train Visual UI Parity from Design Assets
 
@@ -303,6 +321,8 @@ Target milestones:
 - Use `docs/designs/assets/predict_ref_img.png` and
   `docs/designs/assets/train_ref_img.png` as non-pixel-perfect layout
   references.
+- Use `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` as the
+  Arc 9.5 project-specific acceptance reference.
 - Improve Predict/Train surface hierarchy, spacing, table visual states, and
   command/status presentation.
 

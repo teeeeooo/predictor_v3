@@ -20,9 +20,11 @@ Preserve the broad Predict split-workspace and Trainer tab intent; resolve
 specific sizing, tokens, states, and behavior through this architecture contract
 and active UI/UX owner documents.
 
-Arc 9.1 retired the legacy `ui/` path. Reusable ideas are preserved in
-`docs/ui_ux/06_PYSIDE6_VISUAL_AND_TABLE_PARITY_HARVEST.md`; visual token
-ownership for Arc 9.5 belongs to `ui_common.visual_tokens`.
+Arc 9.1 retired the legacy `ui/` path. Arc 9.2 moved the project-specific
+legacy visual/table harvest to
+`docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` as the Arc 9.5
+design reference. Visual token ownership for Arc 9.5 belongs to
+`ui_common.visual_tokens`.
 
 Boundary note:
 

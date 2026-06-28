@@ -53,9 +53,13 @@
 - Arc 8.5 Root Wrapper Retirement is complete: active production code and
   tests use package owner paths, and root ML/constants/calculator compatibility
   wrapper files have been deleted.
-- Arc 9.1 legacy `ui/` retirement is complete: harvestable UX ideas have been
-  documented and `ui_common.visual_tokens` is the active toolkit-neutral token
+- Arc 9.1 legacy `ui/` retirement is complete: the retired `ui/` path has been
+  removed and `ui_common.visual_tokens` is the active toolkit-neutral token
   owner for upcoming visual parity work.
+- Arc 9.2 harvest location/detail recovery is complete in the current local
+  arc: project-specific legacy visual/table evidence now routes through
+  `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` before Arc
+  9.5 implementation.
 
 ## Next Actions
 
@@ -107,6 +111,8 @@
   `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
 - PySide6 Train/Predict governing architecture contract:
   `docs/architecture/pyside6_train_predict_architecture.md`.
+- PySide6 Train/Predict visual/table parity harvest:
+  `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`.
 - UI literal legacy inventory and cleanup plan:
   `docs/designs/2026-06-21-ui-magic-literal-legacy-inventory.md`.
 - Calculator sample/default inventory and empty-state policy:
