@@ -27,41 +27,33 @@
 
 ## Current Slice
 
-- Arc 9.5 is reopened as `Arc 9.5 Reopen -- Unified Case Table Visual /
-  Table UX Parity Correction`.
-- The previous Arc 9.5 closeout is preserved as implementation history, but it
-  is not accepted as final completion by the user.
-- The local `docs/designs/assets/predict_ref_img.png` has been replaced by the
-  user and is now the B-option unified case table visual reference.
-- The split input/result table structure is not accepted as the final Predict
-  case-table UX because one visible row must represent one prediction case for
-  visible-as-selected copy/paste behavior.
-- Arc 9.5 completion requires unified case table visual parity and spreadsheet
-  UX baseline completion before Arc 10 starts.
-- The following are Arc 9.5 completion blockers, not deferred polish:
+- Arc 9.5 Reopen -- Unified Case Table Visual / Table UX Parity Correction is
+  complete for current acceptance.
+- The local `docs/designs/assets/predict_ref_img.png` remains the B-option
+  unified case table visual reference.
+- Predict now uses one visible row per prediction case, with input,
+  auto-fill/calculated, prediction result, and status/warning columns grouped
+  in one unified spreadsheet-like table.
+- Spreadsheet UX baseline blockers from the reopen review are complete:
   grouped undo; Tab / Shift+Tab / Enter / Shift+Enter navigation;
-  click/type replace-on-type; mapping-backed per-row dropdown option updates.
+  click/type replace-on-type; read-only mutation prevention; and
+  mapping-backed per-row dropdown option updates.
+- Arc 10 Prediction Worker / Progress is the next active arc.
 
 ## Next Actions
 
-1. Arc 9.5 Reopen Slice 11 - Final Acceptance / Closeout.
-2. Arc 10 - Prediction worker/progress and real-model smoke readiness after
-   Arc 9.5 final acceptance.
+1. Arc 10 - Prediction Worker / Progress.
+2. Complete real-model prediction success smoke when a valid `model/model.pkl`
+   artifact is available.
 
 ## Active Blockers / Open Decisions
 
-- The previous Arc 9.5 closeout recorded incomplete spreadsheet baseline items
-  as deferred; user review rejected that as final completion.
-- Current code uses split `InputTableView` / `ResultTableView` surfaces; this
-  must be corrected to a unified case table before Arc 10.
-- The updated local `predict_ref_img.png` is the B-option visual reference for
-  the correction arc.
-- Split input/result table UX and hidden joined-copy behavior are not accepted
-  as final visual/table parity.
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution remains the current foundation and stays on hold until Arc 10.
+  execution remains the current foundation until Arc 10 implements the worker
+  boundary.
+- Trainer execution foundation remains intentionally deferred to Arc 11.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
@@ -81,7 +73,6 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Arc 10 worker/progress/cancel remains on hold until Arc 9.5 final acceptance.
 - Arc 11 Trainer execution foundation remains on hold.
 - Broad ML / predictor algorithm work remains deferred; follow-up prediction
   execution work must preserve core ML behavior.

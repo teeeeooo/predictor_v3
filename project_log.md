@@ -22,6 +22,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-28 — Arc 9.5 unified case table parity closeout
+
+### Decision
+
+- Arc 9.5 Reopen is accepted for current scope with a B-option unified Predict
+  case table: one visible row per prediction case, grouped input/auto/result/
+  status columns, hidden `case_id`, and selectable/copyable read-only
+  result/status cells.
+- Spreadsheet UX baseline items from the reopen review are no longer deferred:
+  rectangular selection, TSV copy/paste, selected-range fill, clear,
+  grouped undo, Tab/Enter navigation, click/type replace-on-type, and
+  read-only mutation prevention are covered by focused tests.
+- Mapping-backed per-row dropdown option updates are complete without changing
+  the mapping JSON schema.
+- Trainer visual hierarchy is corrected while Trainer execution remains
+  intentionally deferred to Arc 11.
+- Arc 10 Prediction Worker / Progress is the next active arc; real-model
+  prediction success smoke still requires a valid `model/model.pkl` artifact.
+
+### Reference
+
+- `result_reports/active/573_arc95-final-acceptance-closeout.md`
+
 ## 2026-06-21 — EN14825/AHRI detail and profile lifecycle closeout
 
 ### Decision
