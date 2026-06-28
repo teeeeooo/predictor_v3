@@ -793,3 +793,19 @@
 - Manual GUI smoke remains the next action. Real-model success smoke remains
   blocked until a valid `model/model.pkl` artifact exists.
 - Arc 11 Trainer execution remains deferred and was not started in this arc.
+
+---
+
+## 2026-06-28 — Arc 10.5 DEV-only mock smoke foundation
+
+### Decision
+- A DEV-only mock smoke package under `tools/dev/mock_smoke/` can generate an
+  inference-compatible mock prediction artifact and synthetic training CSV
+  without requiring real data or a real `model/model.pkl`.
+- Generated mock CSV/PKL/log/output files are isolated outside the repo by
+  default, with repo-local fallback limited to ignored directories.
+- The mock foundation is workflow-smoke evidence only; it does not validate
+  prediction accuracy, physical trends, feature importance, or production model
+  quality.
+- Next action remains Arc 10 manual smoke with mock artifact, followed by the
+  Arc 11 decision.
