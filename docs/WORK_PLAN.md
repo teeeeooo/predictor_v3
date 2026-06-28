@@ -27,23 +27,29 @@
 
 ## Current Slice
 
-- Arc 9.5 Reopen -- Unified Case Table Visual / Table UX Parity Correction is
-  complete for current acceptance.
+- Arc 9.5 second correction is active after manual smoke rejected the prior
+  final closeout.
 - The local `docs/designs/assets/predict_ref_img.png` remains the B-option
   unified case table visual reference.
 - Predict now uses one visible row per prediction case, with input,
   auto-fill/calculated, prediction result, and status/warning columns grouped
   in one unified spreadsheet-like table.
-- Spreadsheet UX baseline blockers from the reopen review are complete:
-  grouped undo; Tab / Shift+Tab / Enter / Shift+Enter navigation;
-  click/type replace-on-type; read-only mutation prevention; and
-  mapping-backed per-row dropdown option updates.
-- Arc 10 Prediction Worker / Progress is the next active arc.
+- The prior Arc 9.5 closeout is superseded by manual-smoke findings: detached
+  group header geometry, non-editable dropdown/autocomplete behavior,
+  Train/Predict duplicated status ownership, UI-level mapping option lookup,
+  and forbidden `QTableWidget` usage in Trainer visual panels.
+- Arc 10 Prediction Worker / Progress is on hold until Arc 9.5 correction
+  slices pass.
 
 ## Next Actions
 
-1. Arc 10 - Prediction Worker / Progress.
-2. Complete real-model prediction success smoke when a valid `model/model.pkl`
+1. Complete Arc 9.5 second correction slices from the manual-smoke audit:
+   table-linked group header, editable dropdown/autocomplete, mapping option
+   boundary, embedded Predict header ownership, Trainer table MVC correction,
+   workspace command/state cleanup, and final adequacy closeout.
+2. Move Arc 10 - Prediction Worker / Progress back to active only after Arc 9.5
+   manual-smoke correction is accepted.
+3. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
 ## Active Blockers / Open Decisions
@@ -51,8 +57,7 @@
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution remains the current foundation until Arc 10 implements the worker
-  boundary.
+  execution remains the current foundation and Arc 10 remains on hold.
 - Trainer execution foundation remains intentionally deferred to Arc 11.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.

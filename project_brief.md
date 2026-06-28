@@ -10,13 +10,12 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 - Prediction Worker / Progress.
+Current phase: Arc 9.5 second correction after manual-smoke rejection.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
 exists. PySide6 Predictor schema/mapping recovery, legacy `ui` retirement, and
-Arc 9.5 unified case table parity are complete for the current acceptance
-scope.
+Arc 9.5 unified case table parity remain the current correction focus.
 
 Arc 9.5 was reopened after user review because spreadsheet baseline items were
 deferred and the split input/result table structure did not satisfy the desired
@@ -24,8 +23,10 @@ case-row workflow. The closeout now targets and reflects the updated local
 B-option reference at `docs/designs/assets/predict_ref_img.png`: one unified
 case table where one visible row is one prediction case and input,
 auto-fill/calculated, prediction result, and status/warning columns are grouped
-in the same spreadsheet-like table. Arc 10 Prediction Worker / Progress is the
-next major arc.
+in the same spreadsheet-like table. A later manual smoke rejected the prior
+Arc 9.5 final closeout because structural table, dropdown, Train embedding, and
+Trainer table-surface issues remain. Arc 10 Prediction Worker / Progress is on
+hold until those Arc 9.5 correction slices pass.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -325,7 +326,7 @@ Goal:
 
 Status:
 
-- Complete.
+- Reopened for second correction after manual-smoke rejection.
 
 Reopen decision:
 
@@ -337,6 +338,10 @@ Reopen decision:
 - The split input/result table structure is replaced as the target by a
   unified case table structure based on the updated local
   `docs/designs/assets/predict_ref_img.png`.
+- The later final closeout is superseded by manual-smoke findings covering the
+  detached group header, non-editable dropdown/autocomplete behavior, duplicated
+  Train/Predict status ownership, UI-level mapping option lookup, and Trainer
+  `QTableWidget` usage.
 
 Completed milestones:
 
@@ -365,7 +370,8 @@ Completed correction milestones:
 - Complete mapping-backed per-row dropdown option updates.
 - Integrate result/status columns into the unified table.
 - Correct Predict and Trainer visual parity.
-- Close Arc 9.5 with no baseline UX blockers deferred.
+- Close Arc 9.5 only after manual-smoke correction slices pass with no baseline
+  UX blockers deferred.
 
 ### Arc 10 — Prediction Worker/Progress
 
@@ -382,7 +388,7 @@ Target milestones:
 
 Status:
 
-- Next active arc after Arc 9.5 final acceptance.
+- On hold until Arc 9.5 second correction is accepted.
 
 ### Arc 11 — Trainer Admin App Foundation
 

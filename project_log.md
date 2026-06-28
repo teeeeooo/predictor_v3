@@ -22,6 +22,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-06-28 — Arc 9.5 final closeout superseded by manual smoke
+
+### Decision
+
+- The previous Arc 9.5 final closeout is not accepted for project-state
+  purposes because user manual smoke found source-confirmed baseline failures.
+- Arc 9.5 remains active for second correction; Arc 10 Prediction Worker /
+  Progress is on hold until the correction slices pass.
+- The correction scope is limited to the manual-smoke audit findings: unified
+  table group header geometry, editable dropdown/autocomplete behavior,
+  mapping option boundary, Train/Predict embedded header ownership, Trainer
+  table MVC compliance, workspace command/state boundary cleanup, and focused
+  regression coverage.
+
+### Reference
+
+- `result_reports/active/574_arc95-full-audit-after-manual-smoke.md`
+
 ## 2026-06-28 — Arc 9.5 unified case table parity closeout
 
 ### Decision
