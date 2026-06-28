@@ -56,8 +56,16 @@ def test_service_adapter_contract_modules_do_not_import_pyside():
         "apps/predict/services/prediction_service.py",
         "apps/predict/adapters/row_to_ml_input_adapter.py",
         "apps/predict/adapters/prediction_result_adapter.py",
-        "apps/predict/workers/prediction_worker.py",
     )
 
     for path in paths:
         assert "PySide6" not in Path(path).read_text(encoding="utf-8")
+
+
+def test_worker_contract_module_does_not_import_widgets_or_session():
+    source = Path("apps/predict/workers/prediction_worker.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "QtWidgets" not in source
+    assert "PredictSession" not in source

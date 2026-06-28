@@ -41,7 +41,7 @@
 
 ## Next Actions
 
-1. Slice 3 - Prediction Worker Implementation.
+1. Slice 4 - Controller Worker Orchestration.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
