@@ -97,6 +97,14 @@ class TrainingService:
                 message=message,
             )
 
+    def cancel(self) -> bool:
+        """Request cooperative backend cancellation when supported."""
+        cancel = getattr(self._backend, "cancel", None)
+        if not callable(cancel):
+            return False
+        cancel()
+        return True
+
     def _run_production_training(
         self,
         request: TrainingRequest,

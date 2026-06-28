@@ -48,7 +48,7 @@
 
 ## Next Actions
 
-1. Arc 11 Slice 3 — Train Worker.
+1. Arc 11 Slice 4 — Train Controller.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
