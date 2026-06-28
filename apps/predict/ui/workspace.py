@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from core.ml.artifacts import MODEL_FILE
 
 from apps.common.ui import style
+from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
@@ -29,10 +30,6 @@ from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 
 
 DEFAULT_INITIAL_ROWS = 3
-FALLBACK_DROPDOWN_OPTIONS = {
-    "ref_type": ("R410A", "R32", "R290"),
-    "exp_type": ("EEV", "Capi"),
-}
 
 
 class PredictWorkspace(QWidget):
@@ -63,6 +60,10 @@ class PredictWorkspace(QWidget):
         )
         self.case_table = CaseTableView(self)
         self.case_table.setModel(self.case_model)
+        self.dropdown_option_adapter = DropdownOptionAdapter(
+            self.mapping_repository,
+            self.case_model.columns,
+        )
         self._configure_tables()
 
         title = QLabel("HVAC V3 Predictor")
@@ -137,7 +138,7 @@ class PredictWorkspace(QWidget):
 
     def _configure_dropdown_delegate(self) -> None:
         items_by_column = {
-            column_index: FALLBACK_DROPDOWN_OPTIONS.get(column.key, ())
+            column_index: self.dropdown_option_adapter.base_options_for_key(column.key)
             for column_index, column in enumerate(self.case_model.columns)
             if column.dropdown
         }
@@ -161,24 +162,7 @@ class PredictWorkspace(QWidget):
             case_id,
             column.key,
         )
-        if row_options:
-            return row_options
-        return self._base_dropdown_options(column.key)
-
-    def _base_dropdown_options(self, key: str) -> tuple[str, ...]:
-        if key in FALLBACK_DROPDOWN_OPTIONS:
-            return FALLBACK_DROPDOWN_OPTIONS[key]
-        column = next((column for column in self.case_model.columns if column.key == key), None)
-        if column is None:
-            return ()
-        section_name = column.dropdown_target or column.mapping
-        if not section_name:
-            return ()
-        mapping_data = self.mapping_repository.load()
-        section = mapping_data.get(section_name, {})
-        if not isinstance(section, dict):
-            return ()
-        return tuple(sorted(str(option) for option in section.keys()))
+        return self.dropdown_option_adapter.options_for_key(column.key, row_options)
 
     def _build_table_panel(self, title: str, table: QWidget) -> QWidget:
         panel = QFrame(self)

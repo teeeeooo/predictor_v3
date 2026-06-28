@@ -7,8 +7,10 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QStyleOptionViewItem
 
+from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
+from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.ui.tables import case_table_model, case_table_view, delegates
 from apps.predict.ui.workspace import PredictWorkspace
@@ -77,6 +79,36 @@ def test_table_model_view_delegate_do_not_import_mapping_repository():
         assert "PredictMappingRepository" not in source
         assert "apps.predict.mapping" not in source
         assert "core.mapping" not in source
+
+
+def test_workspace_does_not_parse_raw_mapping_options():
+    source = inspect.getsource(PredictWorkspace)
+
+    assert ".mapping_repository.load()" not in source
+    assert "mapping_data.get" not in source
+    assert "section.keys()" not in source
+
+
+def test_dropdown_option_adapter_returns_base_and_fallback_options():
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository(SAMPLE_MAPPING),
+        build_case_table_column_schema(),
+    )
+
+    assert adapter.base_options_for_key("idu") == ("IDU-A", "IDU-B")
+    assert adapter.base_options_for_key("odu") == ("ODU-A", "ODU-B")
+    assert adapter.base_options_for_key("compressor") == ("CMP-A",)
+    assert adapter.base_options_for_key("ref_type") == ("R410A", "R32", "R290")
+    assert adapter.base_options_for_key("missing") == ()
+
+
+def test_dropdown_option_adapter_prefers_row_specific_options():
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository(SAMPLE_MAPPING),
+        build_case_table_column_schema(),
+    )
+
+    assert adapter.options_for_key("fin_type", ("F&T",)) == ("F&T",)
 
 
 def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
