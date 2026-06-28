@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+
+from .scanner import discover_python_files
+
+
+SCHEMA_VERSION = "1.1.0"
 
 
 def get_git_info(repo_root: Path) -> dict[str, str | bool]:
@@ -39,15 +45,35 @@ def get_git_info(repo_root: Path) -> dict[str, str | bool]:
     return info
 
 
+def compute_source_fingerprint(
+    repo_root: Path,
+    input_paths: list[Path] | None = None,
+) -> str:
+    """Hash deterministic code map inputs, excluding generated metadata."""
+    root = repo_root.resolve()
+    paths = input_paths if input_paths is not None else discover_python_files(root)
+    hasher = hashlib.sha256()
+    for path in sorted(p.resolve() for p in paths):
+        if not path.is_file():
+            continue
+        relpath = path.relative_to(root).as_posix()
+        hasher.update(relpath.encode("utf-8"))
+        hasher.update(b"\0")
+        hasher.update(hashlib.sha256(path.read_bytes()).hexdigest().encode("ascii"))
+        hasher.update(b"\n")
+    return hasher.hexdigest()
+
+
 def generate_metadata(repo_root: Path) -> dict[str, str | bool]:
     """Generate compact metadata for the reference map."""
     git_info = get_git_info(repo_root)
     return {
         "generator": "code_checker",
-        "schema_version": "1.0.0",
+        "schema_version": SCHEMA_VERSION,
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "git_commit_short": git_info["commit"],
         "git_dirty": git_info["dirty"],
+        "source_fingerprint": compute_source_fingerprint(repo_root),
     }
 
 
@@ -77,16 +103,19 @@ def parse_metadata_from_map(map_content: str) -> dict[str, str | bool] | None:
 
 
 def evaluate_freshness(map_path: Path, repo_root: Path) -> dict[str, str | bool | None]:
-    """Compare reference map metadata with current HEAD status (warning-first)."""
+    """Compare stored source fingerprint with current code map inputs."""
     current_git = get_git_info(repo_root)
     current_commit = current_git["commit"]
     is_current_dirty = current_git["dirty"]
+    current_fingerprint = compute_source_fingerprint(repo_root)
 
     result = {
         "status": "unknown",
         "message": "",
         "map_commit": None,
         "map_dirty": None,
+        "map_source_fingerprint": None,
+        "current_source_fingerprint": current_fingerprint,
         "current_commit": current_commit,
         "current_dirty": is_current_dirty,
     }
@@ -114,27 +143,37 @@ def evaluate_freshness(map_path: Path, repo_root: Path) -> dict[str, str | bool 
 
     map_commit = meta.get("git_commit_short", "unknown")
     map_dirty = meta.get("git_dirty", False)
+    map_fingerprint = meta.get("source_fingerprint")
 
     result["map_commit"] = map_commit
     result["map_dirty"] = map_dirty
+    result["map_source_fingerprint"] = map_fingerprint
 
-    if map_commit == "unknown" or current_commit == "unknown":
-        result["status"] = "unknown"
-        result["message"] = "Cannot determine freshness due to missing git context."
+    if not isinstance(map_fingerprint, str) or not map_fingerprint:
+        result["status"] = "metadata_legacy"
+        result["message"] = (
+            "Reference map metadata is legacy and lacks source_fingerprint. "
+            "Regenerate the map with python3 -B tools/code_checker/build_reference_map.py."
+        )
         return result
 
-    if map_commit != current_commit:
+    if map_fingerprint != current_fingerprint:
         result["status"] = "stale"
         result["message"] = (
             f"Reference map is stale. "
-            f"Map commit ({map_commit}) != Current HEAD ({current_commit})."
+            f"Map source fingerprint ({map_fingerprint}) != "
+            f"Current source fingerprint ({current_fingerprint})."
         )
     else:
         result["status"] = "fresh"
-        result["message"] = "Reference map matches the current commit."
+        result["message"] = "Reference map matches the current source fingerprint."
 
-    # Additional warnings about dirty working tree
     warnings = []
+    if map_commit != current_commit:
+        warnings.append(
+            f"Map commit ({map_commit}) differs from current HEAD ({current_commit}); "
+            "commit hash is informational only."
+        )
     if is_current_dirty:
         warnings.append("Current working directory has uncommitted changes.")
     if map_dirty:

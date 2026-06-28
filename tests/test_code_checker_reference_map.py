@@ -201,7 +201,7 @@ def test_import_edge_shows_module_prefix() -> None:
         )
         edges = compute_import_edges([fi], root)
         assert any(
-            e.source == "app.py" and e.target == "core.calculators.profiles.resolve_calculator_profile"
+            e.source == "app.py" and e.target == "core.calculators.profiles"
             for e in edges
         )
 
@@ -256,6 +256,7 @@ def test_renderer_long_function_not_self_hotspot() -> None:
 
 from code_checker.metadata import (
     get_git_info,
+    compute_source_fingerprint,
     generate_metadata,
     render_metadata_comment,
     parse_metadata_from_map,
@@ -266,13 +267,15 @@ def test_metadata_generation_and_rendering() -> None:
     # 1. generate_metadata works safely even in a temp directory (fallback)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
+        (tmp_path / "sample.py").write_text("VALUE = 1\n", encoding="utf-8")
         meta = generate_metadata(tmp_path)
         assert meta["generator"] == "code_checker"
-        assert meta["schema_version"] == "1.0.0"
+        assert meta["schema_version"] == "1.1.0"
         assert "generated_at_utc" in meta
         # Since it's a new empty dir, commit might fallback to "unknown"
         assert "git_commit_short" in meta
         assert "git_dirty" in meta
+        assert "source_fingerprint" in meta
 
     # 2. renderer incorporates metadata as HTML comment at the top
     result = AnalysisResult(
@@ -289,11 +292,29 @@ def test_metadata_generation_and_rendering() -> None:
         "generated_at_utc": "2026-06-10 00:00 UTC",
         "git_commit_short": "abc1234",
         "git_dirty": False,
+        "source_fingerprint": "fingerprint123",
     }
     md = render_compact_map(result, metadata=fake_meta)
     expected_comment = render_metadata_comment(fake_meta)
     assert md.startswith(expected_comment)
     assert "abc1234" in md
+
+
+def test_source_fingerprint_is_deterministic_and_content_sensitive() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        first = tmp_path / "b.py"
+        second = tmp_path / "a.py"
+        first.write_text("VALUE = 1\n", encoding="utf-8")
+        second.write_text("VALUE = 2\n", encoding="utf-8")
+
+        ordered = compute_source_fingerprint(tmp_path, [first, second])
+        reordered = compute_source_fingerprint(tmp_path, [second, first])
+        assert ordered == reordered
+
+        second.write_text("VALUE = 3\n", encoding="utf-8")
+        changed = compute_source_fingerprint(tmp_path, [first, second])
+        assert changed != ordered
 
 
 def test_metadata_parsing_and_freshness_evaluation() -> None:
@@ -304,6 +325,7 @@ def test_metadata_parsing_and_freshness_evaluation() -> None:
         "generated_at_utc": "2026-06-10 00:00 UTC",
         "git_commit_short": "abc1234",
         "git_dirty": False,
+        "source_fingerprint": "fingerprint123",
     }
     comment = render_metadata_comment(fake_meta)
     parsed = parse_metadata_from_map(comment)
@@ -323,41 +345,53 @@ def test_metadata_parsing_and_freshness_evaluation() -> None:
         res_no_meta = evaluate_freshness(map_file, tmp_path)
         assert res_no_meta["status"] == "metadata_missing"
 
-        # Scenario C: Map has metadata, evaluate freshness based on commit match
-        # Since git_commit_short of tmpdir will likely be "unknown"
-        # We write a map matching the current commit
-        current_git = get_git_info(tmp_path)
-        current_commit = current_git["commit"]
+        source_file = tmp_path / "sample.py"
+        source_file.write_text("VALUE = 1\n", encoding="utf-8")
+        current_fingerprint = compute_source_fingerprint(tmp_path)
 
-        matching_meta = {
-            "generator": "code_checker",
-            "schema_version": "1.0.0",
-            "generated_at_utc": "2026-06-10 00:00 UTC",
-            "git_commit_short": current_commit,
-            "git_dirty": False,
-        }
-        comment_match = render_metadata_comment(matching_meta)
-        map_file.write_text(f"{comment_match}\n# Map content", encoding="utf-8")
-
-        res_fresh = evaluate_freshness(map_file, tmp_path)
-        if current_commit == "unknown":
-            assert res_fresh["status"] == "unknown"
-        else:
-            assert res_fresh["status"] == "fresh"
-
-        # Scenario D: Stale commit
-        stale_meta = {
+        # Scenario C: legacy metadata requires regeneration
+        legacy_meta = {
             "generator": "code_checker",
             "schema_version": "1.0.0",
             "generated_at_utc": "2026-06-10 00:00 UTC",
             "git_commit_short": "stale123",
             "git_dirty": False,
         }
+        comment_legacy = render_metadata_comment(legacy_meta)
+        map_file.write_text(f"{comment_legacy}\n# Map content", encoding="utf-8")
+        res_legacy = evaluate_freshness(map_file, tmp_path)
+        assert res_legacy["status"] == "metadata_legacy"
+        assert "source_fingerprint" in res_legacy["message"]
+
+        # Scenario D: commit hash mismatch is informational when fingerprint matches
+        matching_meta = {
+            "generator": "code_checker",
+            "schema_version": "1.1.0",
+            "generated_at_utc": "2026-06-10 00:00 UTC",
+            "git_commit_short": "stale123",
+            "git_dirty": False,
+            "source_fingerprint": current_fingerprint,
+        }
+        comment_match = render_metadata_comment(matching_meta)
+        map_file.write_text(f"{comment_match}\n# Map content", encoding="utf-8")
+
+        res_fresh = evaluate_freshness(map_file, tmp_path)
+        assert res_fresh["status"] == "fresh"
+        assert "informational only" in res_fresh["message"]
+
+        # Scenario E: source content change makes the map stale
+        source_file.write_text("VALUE = 2\n", encoding="utf-8")
+        stale_meta = {
+            "generator": "code_checker",
+            "schema_version": "1.1.0",
+            "generated_at_utc": "2026-06-10 00:00 UTC",
+            "git_commit_short": get_git_info(tmp_path)["commit"],
+            "git_dirty": False,
+            "source_fingerprint": current_fingerprint,
+        }
         comment_stale = render_metadata_comment(stale_meta)
         map_file.write_text(f"{comment_stale}\n# Map content", encoding="utf-8")
 
         res_stale = evaluate_freshness(map_file, tmp_path)
-        if current_commit == "unknown":
-            assert res_stale["status"] == "unknown"
-        else:
-            assert res_stale["status"] == "stale"
+        assert res_stale["status"] == "stale"
+        assert "source fingerprint" in res_stale["message"]
