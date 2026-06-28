@@ -36,7 +36,9 @@ Do not commit generated CSV, XLSX, PKL, logs, or smoke outputs.
 Generate a smoke artifact:
 
 ```bash
-python3 -B tools/dev/mock_smoke/generate_mock_prediction_artifact.py --output-dir /tmp/predictor_v3_mock_smoke
+python3 -B tools/dev/mock_smoke/generate_mock_prediction_artifact.py \
+  --output-dir /tmp/predictor_v3_mock_smoke \
+  --manifest
 ```
 
 For an app smoke that needs `model/model.pkl`, install explicitly:
@@ -62,11 +64,27 @@ python3 -B tools/dev/mock_smoke/generate_mock_prediction_artifact.py \
 Generate synthetic CSV data:
 
 ```bash
-python3 -B tools/dev/mock_smoke/generate_mock_training_data.py --output-dir /tmp/predictor_v3_mock_smoke
+python3 -B tools/dev/mock_smoke/generate_mock_training_data.py \
+  --output-dir /tmp/predictor_v3_mock_smoke \
+  --manifest
 ```
 
 The CSV includes the current ML base features and targets. It is useful for
 future training-flow smoke preparation only; its metrics are meaningless.
+
+## Reproducibility Manifest
+
+Pass `--manifest` to either generator to create or update:
+
+```text
+mock_smoke_manifest.json
+```
+
+The manifest records generated output paths, seed, row count, and UTC
+`created_at` timestamps. If both generators use the same output directory, the
+manifest keeps both `prediction_artifact` and `training_data` entries.
+
+The manifest is a generated smoke output and must not be committed.
 
 ## Manual Smoke Guide
 

@@ -23,6 +23,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rows", type=int, default=DEFAULT_ROWS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
+        "--manifest",
+        action="store_true",
+        help="Write or update mock_smoke_manifest.json in the output directory.",
+    )
+    parser.add_argument(
         "--install-local-model",
         action="store_true",
         help="Copy the generated artifact to model/model.pkl for DEV smoke only.",
@@ -41,6 +46,7 @@ def main() -> int:
         output_dir=args.output_dir,
         rows=args.rows,
         seed=args.seed,
+        write_manifest=args.manifest,
     )
     print(f"mock prediction artifact: {artifact_path}")
     if args.install_local_model:

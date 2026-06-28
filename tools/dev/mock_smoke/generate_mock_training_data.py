@@ -21,6 +21,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", help="Mock output directory. Defaults outside the repo.")
     parser.add_argument("--rows", type=int, default=DEFAULT_ROWS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument(
+        "--manifest",
+        action="store_true",
+        help="Write or update mock_smoke_manifest.json in the output directory.",
+    )
     return parser.parse_args()
 
 
@@ -30,6 +35,7 @@ def main() -> int:
         output_dir=args.output_dir,
         rows=args.rows,
         seed=args.seed,
+        write_manifest=args.manifest,
     )
     print(f"mock training data: {output_path}")
     return 0

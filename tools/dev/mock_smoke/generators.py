@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import shutil
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
@@ -20,6 +22,7 @@ DEFAULT_ROWS = 24
 DEFAULT_SEED = 42
 PREDICTION_ARTIFACT_NAME = "mock_smoke_model.pkl"
 TRAINING_DATA_NAME = "mock_smoke_training_data.csv"
+MANIFEST_NAME = "mock_smoke_manifest.json"
 PREPROCESS_VERSION = "v1.0"
 
 
@@ -73,11 +76,15 @@ def write_mock_training_data(
     output_dir: str | Path | None = None,
     rows: int = DEFAULT_ROWS,
     seed: int = DEFAULT_SEED,
+    *,
+    write_manifest: bool = False,
 ) -> Path:
     target_dir = resolve_output_dir(output_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     output_path = target_dir / TRAINING_DATA_NAME
     generate_mock_training_frame(rows=rows, seed=seed).to_csv(output_path, index=False)
+    if write_manifest:
+        update_mock_smoke_manifest(target_dir, "training_data", output_path, rows=rows, seed=seed)
     return output_path
 
 
@@ -128,12 +135,62 @@ def write_mock_prediction_artifact(
     output_dir: str | Path | None = None,
     rows: int = DEFAULT_ROWS,
     seed: int = DEFAULT_SEED,
+    *,
+    write_manifest: bool = False,
 ) -> Path:
     target_dir = resolve_output_dir(output_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     output_path = target_dir / PREDICTION_ARTIFACT_NAME
     joblib.dump(build_mock_prediction_artifact(rows=rows, seed=seed), output_path)
+    if write_manifest:
+        update_mock_smoke_manifest(
+            target_dir,
+            "prediction_artifact",
+            output_path,
+            rows=rows,
+            seed=seed,
+        )
     return output_path
+
+
+def _utc_now_text() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def update_mock_smoke_manifest(
+    output_dir: str | Path,
+    entry_name: str,
+    output_path: str | Path,
+    *,
+    rows: int,
+    seed: int,
+) -> Path:
+    """Upsert one generated-output entry in the DEV smoke manifest."""
+    target_dir = Path(output_dir).resolve()
+    manifest_path = target_dir / MANIFEST_NAME
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    else:
+        manifest = {
+            "schema_version": "1.0",
+            "purpose": "DEV-only mock smoke reproducibility",
+            "output_dir": str(target_dir),
+            "entries": {},
+        }
+
+    created_at = _utc_now_text()
+    manifest["updated_at"] = created_at
+    manifest.setdefault("entries", {})[entry_name] = {
+        "path": str(Path(output_path).resolve()),
+        "seed": seed,
+        "rows": rows,
+        "created_at": created_at,
+    }
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return manifest_path
 
 
 def install_local_model(
