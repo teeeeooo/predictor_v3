@@ -78,12 +78,7 @@ class PredictWorkspace(QWidget):
         self.preprocess_badge = StatusBadge("preprocess", "v1.0", "ready")
         self.schema_badge = StatusBadge("schema", "ready", "ready")
         status_strip = StatusStrip(
-            (
-                self.model_badge,
-                self.mapping_badge,
-                self.preprocess_badge,
-                self.schema_badge,
-            ),
+            (self.model_badge, self.mapping_badge, self.preprocess_badge, self.schema_badge),
             self,
         )
 
@@ -271,7 +266,7 @@ class PredictWorkspace(QWidget):
     def _refresh_after_row_change(self) -> None:
         counts = self.session.summary_counts()
         self.summary_label.setText(
-            "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
+            "전체 {total}건 | 실행 중 {running}건 | 예측 완료 {completed}건 | 경고 {warnings}건 | 오류 {errors}건 | 입력 확인 {invalid}건 | 변경됨 {dirty}건".format(
                 **counts
             )
         )
@@ -284,6 +279,8 @@ class PredictWorkspace(QWidget):
             self.result_badge.set_status(f"오류 {counts['errors']}건", "error")
         elif counts["invalid"]:
             self.result_badge.set_status(f"입력 확인 {counts['invalid']}건", "warning")
+        elif counts["warnings"]:
+            self.result_badge.set_status(f"경고 {counts['warnings']}건", "warning")
         elif counts["running"]:
             self.result_badge.set_status(f"실행 중 {counts['running']}건", "running")
         elif counts["completed"]:

@@ -58,6 +58,11 @@ class PredictSession:
         invalid = sum(
             1 for result in self.results_by_case_id.values() if result.status == "invalid"
         )
+        warnings = sum(
+            1
+            for result in self.results_by_case_id.values()
+            if result.status in {"partial", "warning"}
+        )
         dirty = sum(
             1 for case_id in self.case_order if self.case_store.get_case(case_id).is_dirty
         )
@@ -67,5 +72,6 @@ class PredictSession:
             "errors": errors,
             "running": running,
             "invalid": invalid,
+            "warnings": warnings,
             "dirty": dirty,
         }

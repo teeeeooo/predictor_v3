@@ -153,7 +153,7 @@ class CaseTableModel(QAbstractTableModel):
             return
         top_left = self.index(0, 0)
         bottom_right = self.index(self.rowCount() - 1, self.columnCount() - 1)
-        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole, Qt.EditRole])
+        self.dataChanged.emit(top_left, bottom_right, _REFRESH_ROLES)
 
     def refresh_case_id(self, case_id: str) -> None:
         """Notify views that one unified case row changed."""
@@ -163,7 +163,7 @@ class CaseTableModel(QAbstractTableModel):
             return
         top_left = self.index(row, 0)
         bottom_right = self.index(row, self.columnCount() - 1)
-        self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole, Qt.EditRole])
+        self.dataChanged.emit(top_left, bottom_right, _REFRESH_ROLES)
 
     def begin_insert_rows(self, first_row: int, last_row: int) -> None:
         """Notify views that rows are about to be inserted."""
@@ -212,3 +212,6 @@ class CaseTableModel(QAbstractTableModel):
         case_id = self._session.case_order[row]
         result = self._session.result_for_case(case_id)
         return result.message
+
+
+_REFRESH_ROLES = [Qt.DisplayRole, Qt.EditRole, Qt.BackgroundRole, Qt.ToolTipRole]
