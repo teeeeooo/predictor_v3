@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from html import escape
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
@@ -22,11 +24,17 @@ class StatusBadge(QLabel):
         self._label = label
         self.setObjectName("StatusBadge")
         self.setAlignment(Qt.AlignCenter)
+        self.setTextFormat(Qt.RichText)
         self.set_status(value, kind)
 
     def set_status(self, value: str, kind: str = "neutral") -> None:
         """Update badge text and visual status kind."""
-        self.setText(f"{self._label}: {value}")
+        resolved = style.status_style(kind)
+        text = f"{escape(self._label)}: {escape(value)}"
+        self.setText(
+            f"<span style='color:{resolved.foreground};'>●</span> "
+            f"<span style='color:{style.color('text.default')};'>{text}</span>"
+        )
         self.setStyleSheet(style.status_badge_stylesheet(kind))
 
 

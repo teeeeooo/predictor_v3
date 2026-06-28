@@ -65,7 +65,7 @@ class PredictWorkspace(QWidget):
         self.case_table.setModel(self.case_model)
         self._configure_tables()
 
-        title = QLabel("Predict")
+        title = QLabel("HVAC V3 Predictor")
         title.setObjectName("PredictWorkspaceTitle")
         title.setFont(style.qfont("font.window_title"))
 
@@ -205,19 +205,20 @@ class PredictWorkspace(QWidget):
         band.setObjectName("ColumnGroupBand")
         layout = QHBoxLayout(band)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(style.spacing("space.sm"))
-        groups = (
-            "Input",
-            "Auto-fill / Calculated",
-            "Prediction Results",
-            "Status / Warning",
-        )
-        for text in groups:
+        layout.setSpacing(0)
+        groups = (("Input", "input"), ("Auto-fill / Calculated", "auto"), ("Prediction Results", "result"), ("Status / Warning", "status"))
+        widths = {
+            group: sum(max(56, min(column.width, 150)) for column in self.case_model.columns if column.group == group)
+            for _, group in groups
+        }
+        layout.addSpacing(28)
+        for text, group in groups:
             label = QLabel(text, band)
             label.setObjectName("ColumnGroupBandLabel")
             label.setFont(style.qfont("font.caption"))
             label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(label, 1)
+            label.setStyleSheet(style.table_group_label_stylesheet(group))
+            layout.addWidget(label, max(1, widths[group]))
         return band
 
     def _build_bottom_status(self) -> QFrame:

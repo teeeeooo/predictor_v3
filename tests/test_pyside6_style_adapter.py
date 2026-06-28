@@ -33,3 +33,10 @@ def test_table_background_role_returns_qcolor():
 
     assert isinstance(value, QColor)
     assert value.isValid()
+
+
+def test_table_group_label_stylesheet_uses_subtle_group_roles():
+    sheet = style.table_group_label_stylesheet("result")
+
+    assert "background" in sheet
+    assert "border" in sheet

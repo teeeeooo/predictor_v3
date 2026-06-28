@@ -70,10 +70,12 @@ def app_stylesheet() -> str:
     }}
     QTableView {{
         background: {color("surface.panel")};
+        alternate-background-color: {color("surface.header")};
         gridline-color: {color("border.default")};
         selection-background-color: {color("table.selected")};
         selection-color: {color("text.default")};
         border: 1px solid {color("border.default")};
+        font-size: {visual_font("font.table.cell")["size"]}pt;
     }}
     QHeaderView::section {{
         background: {color("table.header")};
@@ -81,7 +83,8 @@ def app_stylesheet() -> str:
         border: 0;
         border-right: 1px solid {color("border.default")};
         border-bottom: 1px solid {color("border.default")};
-        padding: {spacing("space.cell")}px;
+        padding: {spacing("space.xs")}px;
+        font-size: {visual_font("font.table.header")["size"]}pt;
         font-weight: 700;
     }}
     QPushButton {{
@@ -89,6 +92,7 @@ def app_stylesheet() -> str:
         border: 1px solid {color("border.default")};
         border-radius: {radius("radius.cell")}px;
         padding: {spacing("space.xs")}px {spacing("space.sm")}px;
+        min-height: 28px;
     }}
     QPushButton:disabled {{
         color: {color("text.disabled")};
@@ -143,10 +147,10 @@ def status_badge_stylesheet(kind: str) -> str:
     resolved = status_style(kind)
     return (
         f"color: {resolved.foreground};"
-        f"background: {resolved.background};"
-        f"border: 1px solid {resolved.border};"
+        "background: transparent;"
+        "border: 0 solid transparent;"
         f"border-radius: {radius('radius.cell')}px;"
-        f"padding: {spacing('space.xs')}px {spacing('space.sm')}px;"
+        f"padding: 3px {spacing('space.sm')}px;"
     )
 
 
@@ -164,9 +168,27 @@ def table_background_role(kind: str) -> QColor:
     return qcolor(role)
 
 
+def table_group_label_stylesheet(kind: str) -> str:
+    """Return a subtle stylesheet for unified table group labels."""
+    role = {
+        "input": "table.input",
+        "auto": "table.calculated",
+        "result": "table.result",
+        "status": "table.warning",
+    }.get(kind, "table.header")
+    return (
+        f"background: {color(role)};"
+        f"border: 1px solid {color('border.default')};"
+        f"border-bottom: 0;"
+        f"border-radius: {radius('radius.cell')}px {radius('radius.cell')}px 0 0;"
+        f"padding: {spacing('space.xs')}px;"
+        f"color: {color('text.default')};"
+    )
+
+
 def _tint(hex_color: str) -> str:
     """Return a light tint for badge backgrounds."""
     q = QColor(hex_color)
     if not q.isValid():
         return color("surface.panel")
-    return q.lighter(185).name()
+    return q.lighter(235).name()
