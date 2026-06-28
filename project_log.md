@@ -826,3 +826,21 @@
   deferred to Arc 11.
 - Next action is Arc 11 Trainer execution boundary design using the same mock
   bundle.
+
+---
+
+## 2026-06-28 — Arc 11 Trainer execution foundation closeout
+
+### Decision
+- Arc 11 Trainer execution foundation is complete for automated coverage:
+  Train execution now flows through Qt-free service/state contracts,
+  `TrainWorker`, `TrainController`, and Train / Model UI callbacks.
+- The production default service wraps `core.ml.training.train_all_models`
+  without changing core ML algorithms, preprocessing, registry, artifact
+  schema, calculator behavior, or Data Mapping execution.
+- DEV-only Train execution E2E uses the Arc 10.5b mock bundle and fast backend,
+  creates an inference-compatible local model artifact, then runs Predict smoke
+  against that Train output with cleanup.
+- Production real-core training smoke remains optional because it is expensive
+  and mock-data metrics are meaningless. Manual GUI smoke remains the next
+  action.

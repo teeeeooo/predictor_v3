@@ -27,9 +27,10 @@
 
 ## Current Slice
 
-- Arc 11 Train Execution Boundary Design is active.
+- Arc 11 Trainer execution foundation is complete for automated coverage.
 - Arc 11 uses the Arc 10.5b mock bundle as the fixed Train execution E2E smoke
-  fixture contract.
+  fixture contract: service, worker, controller, UI wiring, DEV Train E2E, and
+  Predict-after-Train smoke are covered without production model quality claims.
 - Arc 9.5 second correction is accepted after focused automated coverage and
   user manual-smoke acceptance.
 - The accepted Predict target remains the B-option unified case table from
@@ -42,13 +43,13 @@
   boundaries, cleaned up Predict model/mapping resource status ownership, and
   kept real-model smoke readiness explicit without changing ML, mapping,
   calculator, or unified table contracts.
-- Arc 10.5b DEV-only isolated mock bundle and smoke runners are available to
-  verify Predict E2E and Train shell/status smoke without committing generated
-  mock data, mapping, model artifacts, or output.
+- Arc 10.5b/Arc 11 DEV-only isolated mock bundle and smoke runners are
+  available to verify Predict E2E, Train shell/status, and Train execution E2E
+  without committing generated mock data, mapping, model artifacts, or output.
 
 ## Next Actions
 
-1. Arc 11 Slice 7 — Arc11 Closeout.
+1. Arc11 manual smoke.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
@@ -58,9 +59,8 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Trainer execution foundation is now in Arc 11. Until Slice 5/6 land, current
-  Train smoke still covers shell/status/tab construction and disabled execution
-  controls only.
+- Production core training smoke remains optional because it is expensive and
+  mock-data metrics are meaningless.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

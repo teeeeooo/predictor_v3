@@ -10,9 +10,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 Prediction Worker / Progress and Arc 10.5b isolated mock
-bundle smoke foundation complete, preparing Arc 11 Trainer execution boundary
-design using the same mock bundle.
+Current phase: Arc 11 Trainer execution foundation complete for automated
+coverage, with manual smoke and real-model success smoke still pending.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -32,9 +31,10 @@ Trainer table-surface issues remained. The automated correction slices are now
 complete, and the user has accepted the corrected manual smoke. Arc 10
 Prediction Worker / Progress implementation has since been completed through
 worker, controller, progress/cancel UI, resource-status cleanup, and focused
-automated coverage. Manual GUI smoke and real-model success smoke remain
-pending; mock bundle smoke can exercise Predict E2E and Train shell/status
-readiness without production model quality claims.
+automated coverage. Arc 11 now adds Train execution service/worker/controller/UI
+wiring and DEV-only Train E2E smoke. Manual GUI smoke and real-model success
+smoke remain pending; mock bundle smoke can exercise Predict E2E and Train
+execution readiness without production model quality claims.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -62,8 +62,9 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
 - New Train/Predict package boundaries are `apps/predict/` and `apps/train/`.
 - Current PySide6 foundation work is production foundation. Arc 9 recovered the
   schema/mapping path against the existing ML pipeline and broader core
-  ownership; Arc 10 added worker/progress/cancel execution boundaries without
-  changing ML behavior.
+  ownership; Arc 10 added Predict worker/progress/cancel execution boundaries,
+  and Arc 11 added Train execution service/worker/controller/UI boundaries
+  without changing ML behavior.
 - The current `core/` root is no longer the active implementation surface for
   ML/schema/mapping/calculator owners. Arc 7 moved ML/schema/mapping
   implementation ownership under `core/ml`, `core/predictor_schema`, and
@@ -431,6 +432,26 @@ Target milestones:
 - Add training worker boundary and progress/log status.
 - Add model artifact/status visibility.
 - Keep mapping update behavior behind a service/adapter boundary.
+
+Status:
+
+- Implementation complete for automated coverage; awaiting manual smoke.
+- DEV-only Train execution E2E passes using the Arc 10.5b mock bundle and then
+  runs Predict smoke against the Train-produced model artifact.
+- Production `TrainingService` wraps `core.ml.training.train_all_models`, but
+  optional real-core training smoke is not part of ordinary validation because
+  it is expensive and mock metrics are meaningless.
+
+Completed milestones:
+
+- Added Train execution boundary design and architecture contract updates.
+- Added Qt-free training service/state contracts.
+- Added worker-backed training execution and cooperative cancellation.
+- Added TrainController QThread lifecycle orchestration.
+- Connected Train / Model UI controls, progress, log, summary, and model status
+  refresh to the controller boundary.
+- Added DEV-only Train execution smoke and Predict-after-Train smoke.
+- Kept Data Mapping update execution deferred.
 
 ### Arc 12 — ML Pipeline Stabilization
 
