@@ -988,6 +988,20 @@ entries:
       - prediction worker
     assertionStatus: verified
     source: result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md (covered reports 555-581)
+
+  - type: decision
+    topic: Arc 10 prediction worker progress implementation closeout
+    content: Arc 10 implementation moved prediction execution behind worker/progress/cancel boundaries, kept ML behavior unchanged, moved Predict model/mapping resource status out of direct workspace file checks, and covered invalid rows, model-missing errors, partial result states, cancellation, and Train-shell construction with focused automated tests. Manual GUI smoke is the next action; real-model success smoke remains blocked until `model/model.pkl` exists, and Arc 11 Trainer execution remains deferred.
+    keywords:
+      - predictor_v3
+      - Arc 10
+      - prediction worker
+      - progress
+      - cancel
+      - model status
+      - mapping status
+    assertionStatus: verified
+    source: result_reports/active/590_arc10-prediction-worker-progress-closeout.md
 ```
 
 ## Known Gaps

@@ -10,8 +10,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 10 Prediction Worker / Progress starting after accepted
-Arc 9.5 second correction manual smoke.
+Current phase: Arc 10 Prediction Worker / Progress implementation complete
+for automated coverage and awaiting manual smoke.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -28,8 +28,11 @@ auto-fill/calculated, prediction result, and status/warning columns are grouped
 in the same spreadsheet-like table. A later manual smoke rejected the prior
 Arc 9.5 final closeout because structural table, dropdown, Train embedding, and
 Trainer table-surface issues remained. The automated correction slices are now
-complete, and the user has accepted the corrected manual smoke, so Arc 10
-Prediction Worker / Progress is active.
+complete, and the user has accepted the corrected manual smoke. Arc 10
+Prediction Worker / Progress implementation has since been completed through
+worker, controller, progress/cancel UI, resource-status cleanup, and focused
+automated coverage. Manual GUI smoke and real-model success smoke remain
+pending.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -57,7 +60,8 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
 - New Train/Predict package boundaries are `apps/predict/` and `apps/train/`.
 - Current PySide6 foundation work is production foundation. Arc 9 recovered the
   schema/mapping path against the existing ML pipeline and broader core
-  ownership; worker/progress remains deferred to Arc 10.
+  ownership; Arc 10 added worker/progress/cancel execution boundaries without
+  changing ML behavior.
 - The current `core/` root is no longer the active implementation surface for
   ML/schema/mapping/calculator owners. Arc 7 moved ML/schema/mapping
   implementation ownership under `core/ml`, `core/predictor_schema`, and
@@ -178,8 +182,8 @@ Completed milestones:
 
 Remaining gap:
 
-- Worker/progress/cancel and real-model success smoke remain deferred until
-  after schema/mapping recovery.
+- Worker/progress/cancel execution moved to Arc 10. Real-model success smoke
+  remains pending until a valid model artifact is available.
 
 ### Arc 5 — Project-wide Architecture Audit / Restructuring Plan
 
@@ -395,9 +399,10 @@ Target milestones:
 
 Status:
 
-- Active / starting.
+- Implementation complete for automated coverage; awaiting manual smoke and
+  real-model success smoke when a valid `model/model.pkl` is available.
 
-Current target:
+Completed milestones:
 
 - Move prediction execution behind worker/progress/cancel boundaries without
   changing core ML behavior.
@@ -405,6 +410,9 @@ Current target:
   controller, adapter, or repository boundaries.
 - Keep real-model success smoke ready but blocked until a valid
   `model/model.pkl` artifact is available.
+- Cover invalid rows, model-missing errors, partial success/error, cancellation,
+  row-level cancelled state, running-state mutation guards, and Train shell
+  construction with focused automated tests.
 
 ### Arc 11 — Trainer Admin App Foundation
 

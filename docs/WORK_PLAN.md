@@ -33,15 +33,16 @@
   `docs/designs/assets/predict_ref_img.png`: one visible row per prediction
   case, with input, auto-fill/calculated, prediction result, and status/warning
   columns grouped in one spreadsheet-like table.
-- Arc 10 Prediction Worker / Progress is now active.
-- Arc 10 target: move batch prediction execution behind worker/progress/cancel
-  boundaries, clean up Predict model/mapping resource status ownership, and
-  keep real-model smoke readiness explicit without changing ML, mapping,
+- Arc 10 Prediction Worker / Progress implementation is complete for automated
+  coverage and awaiting manual smoke.
+- Arc 10 moved batch prediction execution behind worker/progress/cancel
+  boundaries, cleaned up Predict model/mapping resource status ownership, and
+  kept real-model smoke readiness explicit without changing ML, mapping,
   calculator, or unified table contracts.
 
 ## Next Actions
 
-1. Slice 7 - Arc 10 Closeout.
+1. Arc 10 manual smoke.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 
@@ -49,9 +50,6 @@
 
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
-- Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution remains the current foundation until Arc 10 implementation slices
-  replace the run path.
 - Trainer execution foundation remains intentionally deferred to Arc 11.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.

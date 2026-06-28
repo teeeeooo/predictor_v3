@@ -776,3 +776,20 @@
   is Slice 1 - Worker/Progress Boundary Design Alignment.
 - Real-model prediction success smoke remains blocked by absent
   `model/model.pkl`; Arc 11 Trainer execution remains deferred.
+
+---
+
+## 2026-06-28 — Arc 10 prediction worker progress implementation closeout
+
+### Decision
+- Arc 10 Prediction Worker / Progress implementation is complete for automated
+  coverage: batch prediction execution now runs through worker/progress/cancel
+  boundaries, row-level progress/results are reported, cancellation marks
+  not-yet-run rows, and Predict model/mapping status ownership no longer lives
+  in direct workspace file checks.
+- Focused and final validation passed for Predict/Train/table/mapping/schema/
+  worker/progress coverage, py_compile, structure guard, code-map freshness,
+  and whitespace checks.
+- Manual GUI smoke remains the next action. Real-model success smoke remains
+  blocked until a valid `model/model.pkl` artifact exists.
+- Arc 11 Trainer execution remains deferred and was not started in this arc.
