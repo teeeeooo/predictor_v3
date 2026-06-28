@@ -60,20 +60,24 @@
   arc: project-specific legacy visual/table evidence now routes through
   `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` before Arc
   9.5 implementation.
+- Arc 9.5 Predict / Train Visual UI Parity is complete: Predict now has
+  token-backed status/command/table/result surfaces, spreadsheet copy/paste/
+  clear basics, dropdown affordance, validation/result status rendering, and
+  Train now has visual Train Model / Data Mapping admin panels without
+  execution wiring.
 
 ## Next Actions
 
-1. Arc 9.5 - Predict / Train Visual UI Parity from Design Assets.
-2. Arc 10 - Prediction worker/progress and real-model smoke readiness.
-3. Arc 11 - Trainer app foundation.
+1. Arc 10 - Prediction worker/progress and real-model smoke readiness.
+2. Arc 11 - Trainer app execution foundation.
 
 ## Active Blockers / Open Decisions
 
 - Real model prediction success smoke is not complete in this checkout because
   `model/model.pkl` is absent.
 - Worker/progress/cancel UI is not implemented; synchronous prediction
-  execution is foundation-only and should not be treated as final large-batch
-  behavior. This follows the architecture reset and schema/mapping recovery.
+  execution remains the current foundation and should not be treated as final
+  large-batch behavior. This follows the Arc 9.5 visual closeout.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

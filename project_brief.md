@@ -10,14 +10,13 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Arc 9.5 ready - Predict / Train Visual UI Parity from Design
-Assets.
+Current phase: Arc 10 ready - Prediction Worker / Progress.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
-exists. PySide6 Predictor schema/mapping recovery and legacy `ui/` retirement
-are complete enough to proceed to visual parity from the approved design
-assets.
+exists. PySide6 Predictor schema/mapping recovery, legacy `ui` retirement, and
+Predict / Train visual parity are complete enough to proceed to worker/progress
+readiness.
 
 Project direction remains aligned with `PROJECT_CHARTER.md`:
 
@@ -315,7 +314,11 @@ Goal:
   design reference assets without changing ML, mapping schema, calculator, or
   worker/progress behavior.
 
-Target milestones:
+Status:
+
+- Complete.
+
+Completed milestones:
 
 - Apply visual tokens from `ui_common.visual_tokens`.
 - Use `docs/designs/assets/predict_ref_img.png` and
@@ -325,6 +328,11 @@ Target milestones:
   Arc 9.5 project-specific acceptance reference.
 - Improve Predict/Train surface hierarchy, spacing, table visual states, and
   command/status presentation.
+- Add PySide6 style adapter under `apps/common/ui/style.py`.
+- Add Predict status strip, command bar, table clipboard basics, dropdown
+  affordance, validation/result status rendering, and result summary badge.
+- Add Train Model and Data Mapping visual admin panels while keeping execution
+  deferred.
 
 ### Arc 10 — Prediction Worker/Progress
 
