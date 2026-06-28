@@ -1,14 +1,17 @@
 """Minimal Trainer shell."""
 
+from html import escape
 from pathlib import Path
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+
 from apps.common.ui import style
-from core.mapping.paths import MAPPING_JSON_FILE
-from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.train_model_panel import TrainModelPanel
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+from core.mapping.paths import MAPPING_JSON_FILE
+from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
 class TrainShell(QMainWindow):
@@ -61,7 +64,12 @@ class TrainShell(QMainWindow):
 
 
 def _badge(label: str, value: str, kind: str) -> QLabel:
-    badge = QLabel(f"{label}: {value}")
+    resolved = style.status_style(kind)
+    badge = QLabel(
+        f"<span style='color:{resolved.foreground};'>●</span> "
+        f"<span style='color:{style.color('text.default')};'>{escape(label)}: {escape(value)}</span>"
+    )
     badge.setObjectName("StatusBadge")
+    badge.setTextFormat(Qt.RichText)
     badge.setStyleSheet(style.status_badge_stylesheet(kind))
     return badge

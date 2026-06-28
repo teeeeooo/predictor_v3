@@ -1,8 +1,10 @@
 """Train shell visual foundation tests."""
 
 import os
+from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QPushButton, QTextEdit
+import pytest
+from PySide6.QtWidgets import QApplication, QProgressBar, QPushButton, QTableWidget, QTextEdit
 
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.ui.data_mapping_panel import DataMappingPanel
@@ -13,6 +15,18 @@ from apps.train.ui.train_model_panel import TrainModelPanel
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_qt_widgets():
+    yield
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in QApplication.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
 
 
 def test_train_shell_tabs_and_predict_workspace_reuse():
@@ -36,10 +50,12 @@ def test_train_model_panel_is_visual_only_with_log_area():
     log = panel.findChild(QTextEdit, "TrainingLog")
     assert log is not None
     assert "deferred" in log.toPlainText()
-    train_button = next(
-        button for button in panel.findChildren(QPushButton) if button.text() == "학습 실행"
-    )
-    assert not train_button.isEnabled()
+    assert panel.findChild(QProgressBar) is not None
+    assert panel.findChild(QTableWidget) is not None
+
+    buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
+    for text in ("학습 데이터 선택", "학습 실행", "중지", "모델 열기", "로그 저장"):
+        assert not buttons[text].isEnabled()
 
 
 def test_data_mapping_panel_is_visual_only_with_log_area():
@@ -50,7 +66,29 @@ def test_data_mapping_panel_is_visual_only_with_log_area():
     log = panel.findChild(QTextEdit, "MappingLog")
     assert log is not None
     assert "deferred" in log.toPlainText()
-    update_button = next(
-        button for button in panel.findChildren(QPushButton) if button.text() == "매핑 업데이트"
+    assert panel.findChild(QTableWidget) is not None
+
+    buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
+    for text in ("매핑 Excel 선택", "매핑 업데이트", "상태 새로고침"):
+        assert not buttons[text].isEnabled()
+
+
+def test_train_ui_widgets_do_not_import_execution_foundations():
+    sources = (
+        Path("apps/train/ui/shell.py"),
+        Path("apps/train/ui/train_model_panel.py"),
+        Path("apps/train/ui/data_mapping_panel.py"),
     )
-    assert not update_button.isEnabled()
+    forbidden = (
+        "from core.training",
+        "from apps.train.services",
+        "import optuna",
+        "import sklearn",
+        "import subprocess",
+        ".fit(",
+        "load_workbook",
+    )
+
+    for source in sources:
+        text = source.read_text(encoding="utf-8")
+        assert not any(token in text for token in forbidden)

@@ -68,7 +68,23 @@ def app_stylesheet() -> str:
         font-weight: 700;
         color: {color("text.default")};
     }}
-    QTableView {{
+    QTabWidget::pane {{
+        border: 1px solid {color("border.default")};
+        background: {color("surface.panel")};
+        top: -1px;
+    }}
+    QTabBar::tab {{
+        background: {color("surface.header")};
+        border: 1px solid {color("border.default")};
+        padding: {spacing("space.sm")}px {spacing("space.lg")}px;
+        min-width: 112px;
+    }}
+    QTabBar::tab:selected {{
+        background: {color("surface.panel")};
+        color: {color("accent.primary")};
+        font-weight: 700;
+    }}
+    QTableView, QTableWidget {{
         background: {color("surface.panel")};
         alternate-background-color: {color("surface.header")};
         gridline-color: {color("border.default")};
@@ -108,6 +124,28 @@ def app_stylesheet() -> str:
         color: {color("text.disabled")};
         background: {color("table.fixed")};
         border-color: {color("border.default")};
+    }}
+    QLineEdit, QTextEdit {{
+        background: {color("surface.panel")};
+        border: 1px solid {color("border.default")};
+        border-radius: {radius("radius.cell")}px;
+        padding: {spacing("space.xs")}px;
+    }}
+    QLineEdit:read-only, QTextEdit:read-only {{
+        background: {color("surface.header")};
+        color: {color("text.muted")};
+    }}
+    QProgressBar {{
+        background: {color("table.fixed")};
+        border: 0;
+        border-radius: {radius("radius.cell")}px;
+        color: {color("accent.primary")};
+        min-height: 12px;
+        text-align: right;
+    }}
+    QProgressBar::chunk {{
+        background: {color("accent.primary")};
+        border-radius: {radius("radius.cell")}px;
     }}
     """
 

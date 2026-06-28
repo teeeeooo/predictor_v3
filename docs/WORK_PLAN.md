@@ -44,9 +44,8 @@
 
 ## Next Actions
 
-1. Arc 9.5 Reopen Slice 10 - Trainer Visual Asset Parity Correction.
-2. Arc 9.5 Reopen Slice 11 - Final Acceptance / Closeout.
-3. Arc 10 - Prediction worker/progress and real-model smoke readiness after
+1. Arc 9.5 Reopen Slice 11 - Final Acceptance / Closeout.
+2. Arc 10 - Prediction worker/progress and real-model smoke readiness after
    Arc 9.5 final acceptance.
 
 ## Active Blockers / Open Decisions
