@@ -74,7 +74,7 @@ class DataMappingPanel(QWidget):
         body.addWidget(QLabel("Excel source"))
         body.addWidget(_readonly_line("후속 Arc에서 선택"))
         body.addWidget(QLabel("Predict dropdown owner"))
-        body.addWidget(_readonly_line("current core mapping owner"))
+        body.addWidget(_readonly_line("DropdownOptionAdapter / core mapping owner"))
         body.addStretch(1)
         return panel
 
@@ -86,7 +86,7 @@ class DataMappingPanel(QWidget):
         log.setReadOnly(True)
         log.setPlainText(
             "Mapping update execution is intentionally deferred.\n"
-            "Predict dropdown/autofill uses the current core mapping owner."
+            "Predict dropdown/autofill uses DropdownOptionAdapter and the current core mapping owner."
         )
         body.addWidget(log, 1)
         return panel
@@ -131,7 +131,11 @@ def _mapping_table() -> QTableView:
     rows = (
         ("mapping.json", "found" if exists else "missing", "현재 JSON read-only 사용"),
         ("Excel update", "deferred", "실행 foundation은 후속 Arc"),
-        ("Per-row dropdown", "active owner", "Predict mapping repository 사용"),
+        (
+            "Per-row dropdown",
+            "active owner",
+            "DropdownOptionAdapter / core mapping owner",
+        ),
     )
     table = QTableView()
     table.setModel(StaticTableModel(("Item", "Status", "Notes"), rows))

@@ -111,6 +111,19 @@ def test_dropdown_option_adapter_prefers_row_specific_options():
     assert adapter.options_for_key("fin_type", ("F&T",)) == ("F&T",)
 
 
+def test_dropdown_option_adapter_reports_mapping_status(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text("{}", encoding="utf-8")
+    repository = FakeMappingRepository(SAMPLE_MAPPING)
+    repository.mapping_file = str(mapping_file)
+    adapter = DropdownOptionAdapter(repository, build_case_table_column_schema())
+
+    status = adapter.mapping_status()
+
+    assert status.status == "loaded"
+    assert status.mapping_path == str(mapping_file)
+
+
 def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
     session = _session_with_case()
     case = session.case_store.get_case_at(0)
@@ -220,7 +233,7 @@ def test_missing_mapping_keeps_controlled_status_and_fallback_options(tmp_path: 
         ref_index = workspace.case_model.index(0, _column_index(workspace, "ref_type"))
         idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
 
-        assert workspace._mapping_status_text() == "missing"
+        assert workspace.dropdown_option_adapter.mapping_status().status == "missing"
         assert workspace._dropdown_options_for_index(ref_index) == ("R410A", "R32", "R290")
         assert workspace._dropdown_options_for_index(idu_index) == ()
     finally:

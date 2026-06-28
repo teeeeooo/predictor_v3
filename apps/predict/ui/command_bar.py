@@ -17,6 +17,7 @@ class PredictCommandBar(QFrame):
 
         self.run_button = QPushButton("예측 실행", self)
         self.run_button.setObjectName("PrimaryButton")
+        self.cancel_button = QPushButton("취소", self)
         self.reset_button = QPushButton("초기화", self)
         self.add_row_button = QPushButton("행 추가", self)
         self.delete_row_button = QPushButton("행 삭제", self)
@@ -26,6 +27,7 @@ class PredictCommandBar(QFrame):
 
         self.export_button.setEnabled(False)
         self.export_button.setToolTip("후속 export UX slice에서 활성화됩니다.")
+        self.cancel_button.setEnabled(False)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(
@@ -36,6 +38,7 @@ class PredictCommandBar(QFrame):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self.run_button)
+        layout.addWidget(self.cancel_button)
         layout.addWidget(self.reset_button)
         layout.addSpacing(style.spacing("space.md"))
         layout.addWidget(self.add_row_button)
@@ -45,3 +48,12 @@ class PredictCommandBar(QFrame):
         layout.addWidget(self.copy_results_button)
         layout.addWidget(self.export_button)
         layout.addStretch(1)
+
+    def set_running(self, running: bool) -> None:
+        """Update command availability for a running prediction job."""
+        self.run_button.setEnabled(not running)
+        self.cancel_button.setEnabled(running)
+        self.reset_button.setEnabled(not running)
+        self.add_row_button.setEnabled(not running)
+        self.delete_row_button.setEnabled(not running)
+        self.paste_button.setEnabled(not running)

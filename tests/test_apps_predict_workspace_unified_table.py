@@ -9,8 +9,10 @@ from PySide6.QtWidgets import QApplication, QFrame
 
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.controllers.table_edit_controller import TableEditController
+from apps.predict.controllers.prediction_controller import PredictionRunSummary
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
+from apps.predict.workers.prediction_worker import PredictionProgress
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
 from apps.predict.ui.tables.input_table_view import InputTableView
@@ -146,6 +148,59 @@ def test_workspace_reset_clears_table_undo_history():
 
     assert workspace.case_table.undo() == 0
     assert workspace.case_model.cell_value(0, cooling) == ""
+
+
+def test_workspace_command_bar_running_state_disables_row_mutation():
+    _app()
+    workspace = PredictWorkspace()
+
+    workspace._set_running_state(True)
+
+    assert not workspace.command_bar.run_button.isEnabled()
+    assert workspace.command_bar.cancel_button.isEnabled()
+    assert not workspace.command_bar.reset_button.isEnabled()
+    assert not workspace.command_bar.add_row_button.isEnabled()
+    assert not workspace.command_bar.delete_row_button.isEnabled()
+    assert not workspace.command_bar.paste_button.isEnabled()
+
+    workspace._set_running_state(False)
+
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
+    assert workspace.command_bar.add_row_button.isEnabled()
+
+
+def test_workspace_progress_and_finished_callbacks_update_status():
+    _app()
+    workspace = PredictWorkspace()
+    workspace._set_running_state(True)
+
+    workspace._handle_prediction_progress(
+        PredictionProgress(
+            run_id="run-1",
+            completed=1,
+            total=4,
+            current_case_id="case-0001",
+        )
+    )
+
+    assert "1/4" in workspace.status_label.text()
+    assert "25%" in workspace.status_label.text()
+
+    workspace._handle_prediction_finished(
+        PredictionRunSummary(total=4, complete=1, error=0, invalid=0, cancelled=3)
+    )
+
+    assert workspace.command_bar.run_button.isEnabled()
+    assert not workspace.command_bar.cancel_button.isEnabled()
+    assert "취소 3건" in workspace.status_label.text()
+
+
+def test_workspace_no_direct_model_file_status_owner():
+    source = Path("apps/predict/ui/workspace.py").read_text(encoding="utf-8")
+
+    assert "MODEL_FILE" not in source
+    assert "core.ml.artifacts" not in source
 
 
 def test_unified_group_header_is_table_linked_not_detached_band():

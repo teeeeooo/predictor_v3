@@ -94,6 +94,11 @@ def test_data_mapping_panel_is_visual_only_with_log_area():
     assert table is not None
     assert table.model().rowCount() == 3
     assert table.model().data(table.model().index(1, 1)) == "deferred"
+    assert (
+        table.model().data(table.model().index(2, 2))
+        == "DropdownOptionAdapter / core mapping owner"
+    )
+    assert "DropdownOptionAdapter" in log.toPlainText()
 
     buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
     for text in ("매핑 Excel 선택", "매핑 업데이트", "상태 새로고침"):

@@ -41,7 +41,7 @@
 
 ## Next Actions
 
-1. Slice 5 - Progress/Cancel UI and Resource Status Cleanup.
+1. Slice 6 - Error/Partial/Cancelled Handling and Test Adequacy.
 2. Complete real-model prediction success smoke when a valid `model/model.pkl`
    artifact is available.
 

@@ -60,3 +60,47 @@ class StatusStrip(QFrame):
         for badge in badges:
             layout.addWidget(badge)
         layout.addStretch(1)
+
+
+def model_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
+    """Return badge text/kind for PredictionModelStatus-like objects."""
+    if status.status == "loaded":
+        return "model.pkl loaded", "ready"
+    if status.status == "exists":
+        return "model.pkl exists", "ready"
+    if status.status == "load-error":
+        return "model load error", "error"
+    return "model.pkl missing", "missing"
+
+
+def mapping_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
+    """Return badge text/kind for MappingResourceStatus-like objects."""
+    if status.status == "loaded":
+        return "loaded", "ready"
+    if status.status == "exists":
+        return "available", "ready"
+    return "missing", "missing"
+
+
+def prediction_summary_text(summary) -> str:  # noqa: ANN001
+    """Return final prediction status text for workspace display."""
+    if summary.cancelled:
+        return (
+            "예측 취소: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | "
+            "입력 확인 {invalid}건 | 취소 {cancelled}건"
+        ).format(
+            total=summary.total,
+            complete=summary.complete,
+            error=summary.error,
+            invalid=summary.invalid,
+            cancelled=summary.cancelled,
+        )
+    return (
+        "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | "
+        "입력 확인 {invalid}건"
+    ).format(
+        total=summary.total,
+        complete=summary.complete,
+        error=summary.error,
+        invalid=summary.invalid,
+    )

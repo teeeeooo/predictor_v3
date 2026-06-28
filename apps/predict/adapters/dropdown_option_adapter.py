@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
 
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.schema.case_table_schema_adapter import UnifiedCaseColumn
@@ -12,6 +14,15 @@ FALLBACK_DROPDOWN_OPTIONS = {
     "ref_type": ("R410A", "R32", "R290"),
     "exp_type": ("EEV", "Capi"),
 }
+
+
+@dataclass(frozen=True)
+class MappingResourceStatus:
+    """Qt-free mapping resource status for Predict UI display."""
+
+    mapping_path: str
+    status: str
+    message: str = ""
 
 
 class DropdownOptionAdapter:
@@ -49,6 +60,29 @@ class DropdownOptionAdapter:
         if not isinstance(section, dict):
             return ()
         return tuple(sorted(str(option) for option in section.keys()))
+
+    def mapping_status(self) -> MappingResourceStatus:
+        """Return mapping file/cache status without exposing raw checks to widgets."""
+        mapping_path = getattr(self._mapping_repository, "mapping_file", "")
+        if mapping_path and not Path(mapping_path).exists():
+            return MappingResourceStatus(
+                mapping_path=str(mapping_path),
+                status="missing",
+                message="Mapping file is missing.",
+            )
+        if getattr(self._mapping_repository, "_mapping_data", None) is not None:
+            return MappingResourceStatus(
+                mapping_path=str(mapping_path),
+                status="loaded",
+                message="Mapping data is loaded.",
+            )
+        if mapping_path and Path(mapping_path).exists():
+            return MappingResourceStatus(
+                mapping_path=str(mapping_path),
+                status="exists",
+                message="Mapping file exists.",
+            )
+        return MappingResourceStatus(mapping_path="", status="missing", message="")
 
     def _mapping_section(self, section_name: str) -> object:
         mapping_data = self._mapping_repository.load()

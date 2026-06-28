@@ -1,7 +1,5 @@
 """Predict workspace unified case-table surface."""
 
-from pathlib import Path
-
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -12,19 +10,26 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.ml.artifacts import MODEL_FILE
-
 from apps.common.ui import style
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
 from apps.predict.controllers.input_edit_controller import InputEditController
-from apps.predict.controllers.prediction_controller import PredictionController
+from apps.predict.controllers.prediction_controller import (
+    PredictionController,
+    PredictionRunSummary,
+)
 from apps.predict.controllers.table_edit_controller import TableEditController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.command_bar import PredictCommandBar
 from apps.predict.ui.tables.delegates import DropdownDelegate
-from apps.predict.ui.status_widgets import StatusBadge, StatusStrip
+from apps.predict.ui.status_widgets import (
+    StatusBadge,
+    StatusStrip,
+    mapping_status_badge_state,
+    model_status_badge_state,
+    prediction_summary_text,
+)
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
@@ -72,11 +77,17 @@ class PredictWorkspace(QWidget):
         self.show_title = show_title
         self.show_status_strip = show_status_strip
 
-        self.model_badge = StatusBadge("모델 상태", self._model_status_text(), self._model_status_kind())
+        model_text, model_kind = model_status_badge_state(
+            self.prediction_controller.model_status()
+        )
+        mapping_text, mapping_kind = mapping_status_badge_state(
+            self.dropdown_option_adapter.mapping_status()
+        )
+        self.model_badge = StatusBadge("모델 상태", model_text, model_kind)
         self.mapping_badge = StatusBadge(
             "mapping",
-            self._mapping_status_text(),
-            self._mapping_status_kind(),
+            mapping_text,
+            mapping_kind,
         )
         self.preprocess_badge = StatusBadge("preprocess", "v1.0", "ready")
         self.schema_badge = StatusBadge("schema", "ready", "ready")
@@ -87,6 +98,7 @@ class PredictWorkspace(QWidget):
 
         self.command_bar = PredictCommandBar(self)
         self.command_bar.run_button.clicked.connect(self._run_prediction)
+        self.command_bar.cancel_button.clicked.connect(self._cancel_prediction)
         self.command_bar.reset_button.clicked.connect(self._reset_rows)
         self.command_bar.add_row_button.clicked.connect(self._append_row)
         self.command_bar.delete_row_button.clicked.connect(
@@ -218,6 +230,8 @@ class PredictWorkspace(QWidget):
         return panel
 
     def _append_row(self) -> None:
+        if not self._can_mutate_rows():
+            return
         inserted = self.table_edit_controller.append_row_span(1)
         if inserted is None:
             return
@@ -228,12 +242,16 @@ class PredictWorkspace(QWidget):
         self._refresh_after_row_change()
 
     def _delete_selected_or_last_row(self) -> None:
+        if not self._can_mutate_rows():
+            return
         rows = self._selected_case_rows()
         if not rows and len(self.session.case_store) > 0:
             rows = [len(self.session.case_store) - 1]
         self._remove_row_indexes(rows)
 
     def _reset_rows(self) -> None:
+        if not self._can_mutate_rows():
+            return
         self._begin_reset_models()
         self.table_edit_controller.reset_rows(DEFAULT_INITIAL_ROWS)
         self._end_reset_models()
@@ -273,33 +291,36 @@ class PredictWorkspace(QWidget):
         if self.prediction_controller.is_running:
             self.status_label.setText("예측이 이미 실행 중입니다.")
             return
-        self.command_bar.run_button.setEnabled(False)
+        self._set_running_state(True)
         self.status_label.setText("예측 실행 중...")
         try:
             self.prediction_controller.start_all(
-                status_callback=self._set_status_text,
                 result_callback=self._refresh_result_row,
+                progress_callback=self._handle_prediction_progress,
                 finished_callback=self._handle_prediction_finished,
             )
         except Exception as exc:
-            self.command_bar.run_button.setEnabled(True)
+            self._set_running_state(False)
             self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
             return
 
-    def _handle_prediction_finished(self, summary) -> None:  # noqa: ANN001
-        self.command_bar.run_button.setEnabled(True)
-        self._refresh_after_row_change()
+    def _cancel_prediction(self) -> None:
+        self.prediction_controller.cancel()
+        self.command_bar.cancel_button.setEnabled(False)
+        self.status_label.setText("예측 취소 요청 중...")
+
+    def _handle_prediction_progress(self, progress) -> None:  # noqa: ANN001
+        percent = (
+            int((progress.completed / progress.total) * 100) if progress.total else 0
+        )
         self.status_label.setText(
-            "예측 완료: 전체 {total}건 | 완료 {complete}건 | 오류 {error}건 | 입력 확인 {invalid}건".format(
-                total=summary.total,
-                complete=summary.complete,
-                error=summary.error,
-                invalid=summary.invalid,
-            )
+            f"예측 진행: {progress.completed}/{progress.total} ({percent}%)"
         )
 
-    def _set_status_text(self, message: str) -> None:
-        self.status_label.setText(message)
+    def _handle_prediction_finished(self, summary: PredictionRunSummary) -> None:
+        self._set_running_state(False)
+        self._refresh_after_row_change()
+        self.status_label.setText(prediction_summary_text(summary))
 
     def _refresh_result_row(self, result: ResultRow) -> None:
         self.case_model.refresh_case_id(result.case_id)
@@ -307,12 +328,14 @@ class PredictWorkspace(QWidget):
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
         self.case_model.refresh_case_id(case_id)
-        if not Path(self.mapping_repository.mapping_file).exists():
+        if self.dropdown_option_adapter.mapping_status().status == "missing":
             self.status_label.setText("입력이 변경되었습니다. mapping 파일이 없어 autofill은 제한됩니다.")
         else:
             self.status_label.setText("입력이 변경되었습니다.")
 
     def _paste_from_clipboard(self) -> None:
+        if not self._can_mutate_rows():
+            return
         changed = self.case_table.paste_tsv_at_selection(QApplication.clipboard().text())
         self.status_label.setText(f"붙여넣기 완료: {changed}개 셀")
         self._refresh_after_row_change()
@@ -353,14 +376,11 @@ class PredictWorkspace(QWidget):
     def _end_reset_models(self) -> None:
         self.case_model.end_reset_model()
 
-    def _model_status_text(self) -> str:
-        return "model.pkl loaded" if Path(MODEL_FILE).exists() else "model.pkl missing"
+    def _set_running_state(self, running: bool) -> None:
+        self.command_bar.set_running(running)
 
-    def _model_status_kind(self) -> str:
-        return "ready" if Path(MODEL_FILE).exists() else "missing"
-
-    def _mapping_status_text(self) -> str:
-        return "loaded" if Path(self.mapping_repository.mapping_file).exists() else "missing"
-
-    def _mapping_status_kind(self) -> str:
-        return "ready" if Path(self.mapping_repository.mapping_file).exists() else "missing"
+    def _can_mutate_rows(self) -> bool:
+        if self.prediction_controller.is_running:
+            self.status_label.setText("예측 실행 중에는 행 변경을 할 수 없습니다.")
+            return False
+        return True
