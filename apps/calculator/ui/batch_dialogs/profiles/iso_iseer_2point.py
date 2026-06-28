@@ -8,7 +8,7 @@ from types import MappingProxyType
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.iso_iseer_2point.usecase import IsoIseer2PointUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import (
@@ -23,10 +23,8 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
-from apps.calculator.ui.sections.result_formatting import kwh_value, metric_value
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
-from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 
 
@@ -94,54 +92,34 @@ class IsoIseer2PointBatchHandler:
 
     spec = ISO_ISEER_2POINT_MATRIX_SPEC
 
+    def __init__(self, usecase: IsoIseer2PointUseCase | None = None) -> None:
+        self._usecase = usecase or IsoIseer2PointUseCase()
+
     def calculate_row(self, row: Mapping[str, str]) -> BatchCalculationResult:
         required_keys = ("full_capacity", "full_power", "half_capacity", "half_power")
         if not all(str(row.get(k, "")).strip() for k in required_keys):
             return self._blank_result(BatchRowState.PENDING)
-        try:
-            full_cap = parse_numeric_cell(str(row.get("full_capacity", "")))
-            full_pw = parse_numeric_cell(str(row.get("full_power", "")))
-            half_cap = parse_numeric_cell(str(row.get("half_capacity", "")))
-            half_pw = parse_numeric_cell(str(row.get("half_power", "")))
 
-            measured = {
-                "35_full": {
-                    "capacity": full_cap,
-                    "power": full_pw,
-                },
-                "35_half": {
-                    "capacity": half_cap,
-                    "power": half_pw,
-                },
-            }
-
-            # Calculate for ISO
-            iso_calc = create_calculator_for_profile(profile_id="iso_t1_default_2point_cspf")
-            iso_res = iso_calc.calculate_cspf(measured)
-            iso_cspf_val = metric_value(iso_res, "cspf")
-            iso_cstl_val = kwh_value(iso_res, ("annual_cooling_kwh", "cstl_kwh", "cstl"))
-            iso_csec_val = kwh_value(iso_res, ("annual_power_kwh", "csec_kwh", "csec"))
-
-            # Calculate for India ISEER
-            iseer_calc = create_calculator_for_profile(profile_id="india_iseer_cspf")
-            iseer_res = iseer_calc.calculate_cspf(measured)
-            iseer_cspf_val = metric_value(iseer_res, "cspf")
-            iseer_cstl_val = kwh_value(iseer_res, ("annual_cooling_kwh", "cstl_kwh", "cstl"))
-            iseer_csec_val = kwh_value(iseer_res, ("annual_power_kwh", "csec_kwh", "csec"))
-
-            return BatchCalculationResult(
-                values={
-                    "iso_cspf": iso_cspf_val,
-                    "iso_cstl": iso_cstl_val,
-                    "iso_csec": iso_csec_val,
-                    "iseer": iseer_cspf_val,
-                    "iseer_cstl": iseer_cstl_val,
-                    "iseer_csec": iseer_csec_val,
-                },
-                state=BatchRowState.OK,
-            )
-        except Exception:
+        result = self._usecase.calculate(
+            {key: str(row.get(key, "")) for key in required_keys}
+        )
+        if not result.is_ok:
             return self._blank_result(BatchRowState.ERROR)
+
+        rows_by_label = {values[0]: values for values in result.rows}
+        iso_row = rows_by_label["ISO 16358-1"]
+        iseer_row = rows_by_label["India ISEER"]
+        return BatchCalculationResult(
+            values={
+                "iso_cspf": iso_row[3],
+                "iso_cstl": iso_row[4],
+                "iso_csec": iso_row[5],
+                "iseer": iseer_row[3],
+                "iseer_cstl": iseer_row[4],
+                "iseer_csec": iseer_row[5],
+            },
+            state=BatchRowState.OK,
+        )
 
     def _blank_result(self, state: BatchRowState) -> BatchCalculationResult:
         return BatchCalculationResult(

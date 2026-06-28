@@ -27,7 +27,9 @@
 
 ## Current Slice
 
-- Arc 12 Slice 2 extracts the ISO/ISEER 2-point single calculation
+- Arc 12 Slice 3 reuses the ISO/ISEER 2-point application usecase from the
+  matching batch handler.
+- Arc 12 Slice 2 extracted the ISO/ISEER 2-point single calculation
   orchestration into an application usecase.
 - Arc 12 Slice 1 added the Calculator application boundary foundation:
   application-owned profile resolver and app-side core dispatcher adapter.
@@ -64,7 +66,7 @@
 
 ## Next Actions
 
-1. Arc 12 Slice 3 - ISO/ISEER 2-point Batch Reuse.
+1. Arc 12 Slice 4 - Closeout / Next Extraction Decision.
 
 ## Active Blockers / Open Decisions
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import tkinter as tk
 import pytest
 
@@ -91,8 +92,14 @@ def test_iso_iseer_2point_batch_handler_calculates_valid_cases():
     }
     result = handler.calculate_row(row)
     assert result.state is BatchRowState.OK
-    assert result.values["iso_cspf"] == "5.188"
-    assert result.values["iseer"] == "4.560"
+    assert result.values == {
+        "iso_cspf": "5.188",
+        "iso_cstl": "2639.3",
+        "iso_csec": "508.7",
+        "iseer": "4.560",
+        "iseer_cstl": "2786.7",
+        "iseer_csec": "611.1",
+    }
     
     # Empty row case
     empty_result = handler.calculate_row({})
@@ -108,6 +115,16 @@ def test_iso_iseer_2point_batch_handler_calculates_valid_cases():
     })
     assert invalid_result.state is BatchRowState.ERROR
     assert invalid_result.values["iso_cspf"] == ""
+
+
+def test_iso_iseer_2point_batch_handler_no_longer_imports_core_dispatcher():
+    source = Path(
+        "apps/calculator/ui/batch_dialogs/profiles/iso_iseer_2point.py"
+    ).read_text(encoding="utf-8")
+
+    assert "core.calculators.dispatcher" not in source
+    assert "create_calculator_for_profile" not in source
+    assert "calculate_cspf" not in source
 
 
 def test_iso_iseer_2point_batch_spec_properties():
