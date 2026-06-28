@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 from apps.common.ui import style
 from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
+from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunner
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.controllers.prediction_controller import (
     PredictionController,
@@ -60,7 +61,10 @@ class PredictWorkspace(QWidget):
             self.session,
             mapping_repository=self.mapping_repository,
         )
-        self.prediction_controller = PredictionController(self.session)
+        self.prediction_controller = PredictionController(
+            self.session,
+            runner_factory=lambda service: PySidePredictionRunner(service=service),
+        )
 
         self.case_model = CaseTableModel(
             self.session,

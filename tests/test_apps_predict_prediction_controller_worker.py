@@ -1,11 +1,13 @@
 """PredictionController worker orchestration tests."""
 
-from threading import Event
-
 import pytest
-from PySide6.QtCore import QCoreApplication, QEventLoop, QTimer
+from PySide6.QtCore import QCoreApplication, QEventLoop, QObject, QTimer, Signal
 
 from apps.predict.controllers.prediction_controller import PredictionController
+from apps.predict.ports.prediction_execution_port import (
+    PredictionProgress,
+    PredictionWorkerSummary,
+)
 from apps.predict.services.prediction_service import PredictionServiceResult
 from apps.predict.state.predict_session import PredictSession
 from core.ml.features import TARGETS
@@ -68,20 +70,6 @@ class FakePredictionService:
         )
 
 
-class BlockingPredictionService(FakePredictionService):
-    """Service double that lets tests observe the running state."""
-
-    def __init__(self) -> None:
-        super().__init__(("complete",))
-        self.started = Event()
-        self.release = Event()
-
-    def predict_one(self, request):
-        self.started.set()
-        assert self.release.wait(1)
-        return super().predict_one(request)
-
-
 class MissingModelService(FakePredictionService):
     def predict_one(self, request):
         self.calls.append(request.case_id)
@@ -92,11 +80,109 @@ class MissingModelService(FakePredictionService):
         )
 
 
+class FakePredictionRunner(QObject):
+    """Runner double used through the controller factory boundary."""
+
+    progress = Signal(object)
+    row_result = Signal(object)
+    finished = Signal(object)
+    cancelled = Signal(object)
+    failed = Signal(object)
+
+    def __init__(self, service, *, auto_finish: bool = True):  # noqa: ANN001
+        super().__init__()
+        self._service = service
+        self.auto_finish = auto_finish
+        self.job = None
+        self.cancel_called = False
+        self.is_running = False
+
+    def start(self, job) -> None:  # noqa: ANN001
+        self.job = job
+        self.is_running = True
+        if self.auto_finish:
+            QTimer.singleShot(0, self.complete)
+
+    def cancel(self) -> None:
+        self.cancel_called = True
+        if self.job is None:
+            return
+        first = self.job.requests[0]
+        result = self._service.predict_one(first)
+        self.row_result.emit(result)
+        self.progress.emit(
+            PredictionProgress(
+                run_id=self.job.run_id,
+                completed=1,
+                total=self.job.total,
+                current_case_id=first.case_id,
+                message=f"1 / {self.job.total}",
+            )
+        )
+        self.is_running = False
+        self.cancelled.emit(
+            PredictionWorkerSummary(
+                run_id=self.job.run_id,
+                total=self.job.total,
+                complete=1 if result.status == "complete" else 0,
+                error=1 if result.status == "error" else 0,
+                cancelled=max(self.job.total - 1, 0),
+                cancelled_case_ids=tuple(
+                    request.case_id for request in self.job.requests[1:]
+                ),
+            )
+        )
+
+    def complete(self) -> None:
+        complete = 0
+        error = 0
+        for index, request in enumerate(self.job.requests, start=1):
+            result = self._service.predict_one(request)
+            self.row_result.emit(result)
+            if result.status == "complete":
+                complete += 1
+            elif result.status == "error":
+                error += 1
+            self.progress.emit(
+                PredictionProgress(
+                    run_id=self.job.run_id,
+                    completed=index,
+                    total=self.job.total,
+                    current_case_id=request.case_id,
+                    message=f"{index} / {self.job.total}",
+                )
+            )
+        self.is_running = False
+        self.finished.emit(
+            PredictionWorkerSummary(
+                run_id=self.job.run_id,
+                total=self.job.total,
+                complete=complete,
+                error=error,
+            )
+        )
+
+
+def _controller(session, service, *, auto_finish: bool = True):  # noqa: ANN001
+    runners = []
+
+    def _factory(factory_service):  # noqa: ANN001
+        runner = FakePredictionRunner(factory_service, auto_finish=auto_finish)
+        runners.append(runner)
+        return runner
+
+    return PredictionController(
+        session=session,
+        service=service,
+        runner_factory=_factory,
+    ), runners
+
+
 def test_controller_worker_run_updates_session_rows():
     _app()
     session = _session_with_cases("3500", "3600")
     service = FakePredictionService(("complete", "complete"))
-    controller = PredictionController(session=session, service=service)
+    controller, _runners = _controller(session, service)
     summaries = []
     progress = []
 
@@ -116,17 +202,17 @@ def test_controller_worker_run_updates_session_rows():
 def test_controller_rejects_double_start_while_running():
     _app()
     session = _session_with_cases("3500")
-    service = BlockingPredictionService()
-    controller = PredictionController(session=session, service=service)
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
-    assert service.started.wait(1)
+    assert runners[0].is_running
     assert controller.is_running
     with pytest.raises(RuntimeError, match="already in progress"):
         controller.start_all()
 
-    service.release.set()
+    runners[0].complete()
     _wait_until(lambda: summaries and controller._runner is None)
 
 
@@ -134,7 +220,7 @@ def test_controller_applies_invalid_rows_without_worker_call():
     _app()
     session = _session_with_cases("")
     service = FakePredictionService()
-    controller = PredictionController(session=session, service=service)
+    controller, _runners = _controller(session, service)
     summaries = []
 
     initial = controller.start_all(finished_callback=summaries.append)
@@ -150,16 +236,16 @@ def test_controller_applies_invalid_rows_without_worker_call():
 def test_controller_cancel_requests_worker_cancel():
     _app()
     session = _session_with_cases("3500", "3600")
-    service = BlockingPredictionService()
-    controller = PredictionController(session=session, service=service)
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
-    assert service.started.wait(1)
+    assert runners[0].is_running
     controller.cancel()
-    service.release.set()
     _wait_until(lambda: summaries and controller._runner is None)
 
+    assert runners[0].cancel_called
     assert summaries[0].complete == 1
     assert summaries[0].cancelled == 1
     assert service.calls == [session.case_order[0]]
@@ -170,7 +256,7 @@ def test_controller_worker_error_result_continues_to_summary():
     _app()
     session = _session_with_cases("3500", "3600")
     service = FakePredictionService(("error", "complete"))
-    controller = PredictionController(session=session, service=service)
+    controller, _runners = _controller(session, service)
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
@@ -187,7 +273,7 @@ def test_controller_model_missing_becomes_controlled_row_errors():
     _app()
     session = _session_with_cases("3500", "3600")
     service = MissingModelService()
-    controller = PredictionController(session=session, service=service)
+    controller, _runners = _controller(session, service)
     summaries = []
 
     controller.start_all(finished_callback=summaries.append)
@@ -197,3 +283,10 @@ def test_controller_model_missing_becomes_controlled_row_errors():
     for case_id in session.case_order:
         assert session.result_for_case(case_id).status == "error"
         assert "모델 파일" in session.result_for_case(case_id).message
+
+
+def test_controller_source_does_not_import_pyside_runner_concrete():
+    source = open("apps/predict/controllers/prediction_controller.py", encoding="utf-8").read()
+
+    assert "PySidePredictionRunner" not in source
+    assert "pyside_prediction_runner" not in source

@@ -17,7 +17,6 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner  # noqa: E402
 from apps.train.controllers.train_controller import TrainController  # noqa: E402
-from apps.train.services.training_service import TrainingService  # noqa: E402
 from apps.train.state.training_run_state import TrainingRequest  # noqa: E402
 from apps.train.ui.shell import TrainShell  # noqa: E402
 from core.ml.artifacts import MODEL_FILE  # noqa: E402
@@ -106,14 +105,24 @@ def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
 
 def _run_optional_real_core_training(data_path: Path) -> None:
     print("optional real core training smoke: running; metrics are meaningless")
-    service = TrainingService()
-    result = service.train(
+    app = QApplication.instance() or QApplication([])
+    runner = QProcessTrainingRunner()
+    results = []
+    failures = []
+    runner.finished.connect(results.append)
+    runner.failed.connect(failures.append)
+    runner.cancelled.connect(failures.append)
+    runner.start(
         TrainingRequest(
             run_id="real-core-training-smoke",
             data_path=str(data_path),
             model_output_path=MODEL_FILE,
         )
     )
+    if not _wait_until(app, lambda: results or failures, timeout_ms=120000):
+        runner.cancel()
+        raise RuntimeError("real core training smoke timed out")
+    result = (results or failures)[0]
     if result.status != "complete":
         raise RuntimeError(f"real core training smoke failed: {result.message}")
 

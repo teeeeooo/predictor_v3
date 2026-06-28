@@ -95,3 +95,7 @@ def test_dev_fast_training_backend_is_not_production_default(tmp_path):
 
     assert service.validate_request(request) is None
     assert not model_path.exists()
+    result = service.train(request)
+    assert result.status == "error"
+    assert "QProcessTrainingRunner" in result.message
+    assert not model_path.exists()

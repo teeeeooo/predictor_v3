@@ -17,10 +17,10 @@ from apps.train.state.training_run_state import (
 
 
 class TrainingService:
-    """Wrap core training without importing Qt or mutating widgets."""
+    """Validate Train resources and host explicitly injected test backends."""
 
     def __init__(self, backend=None) -> None:  # noqa: ANN001
-        self._backend = backend or self._run_production_training
+        self._backend = backend
 
     def resource_status(
         self,
@@ -70,11 +70,23 @@ class TrainingService:
         log_callback: TrainingLogCallback | None = None,
         progress_callback: TrainingProgressCallback | None = None,
     ) -> TrainingResult:
-        """Run training through the configured backend."""
+        """Run an explicitly injected backend for tests/dev helpers only."""
         invalid = self.validate_request(request)
         if invalid is not None:
             self._emit_log(log_callback, request.run_id, invalid.message, "error")
             return invalid
+        if self._backend is None:
+            message = (
+                "Direct TrainingService.train execution is disabled; use "
+                "QProcessTrainingRunner for production UI training."
+            )
+            self._emit_log(log_callback, request.run_id, message, "error")
+            return TrainingResult(
+                run_id=request.run_id,
+                status="error",
+                model_path=request.model_output_path,
+                message=message,
+            )
         try:
             self._emit_progress(
                 progress_callback,
@@ -104,48 +116,6 @@ class TrainingService:
             return False
         cancel()
         return True
-
-    def _run_production_training(
-        self,
-        request: TrainingRequest,
-        log_callback: TrainingLogCallback | None = None,
-        progress_callback: TrainingProgressCallback | None = None,
-    ) -> TrainingResult:
-        """Call the existing core training route without changing it."""
-        log_path = ""
-
-        def _core_log(message: str) -> None:
-            nonlocal log_path
-            text = str(message)
-            marker = "학습 로그 저장 완료:"
-            if marker in text:
-                log_path = text.split(marker, 1)[1].strip()
-            self._emit_log(log_callback, request.run_id, text)
-
-        from core.ml.training import train_all_models
-
-        summary = train_all_models(
-            data_path=request.data_path,
-            log_callback=_core_log,
-        )
-        self._emit_progress(
-            progress_callback,
-            TrainingProgress(
-                run_id=request.run_id,
-                completed=1,
-                total=1,
-                message="Training finished.",
-                indeterminate=False,
-            ),
-        )
-        return TrainingResult(
-            run_id=request.run_id,
-            status="complete",
-            summary=summary,
-            model_path=request.model_output_path,
-            log_path=log_path,
-            message="Training completed.",
-        )
 
     def _emit_log(
         self,

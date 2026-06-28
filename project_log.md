@@ -869,3 +869,14 @@
   lifecycle isolated in the PySide runner adapter.
 - Calculator usecase boundary correction is the next architecture correction in
   Arc 12; Arc 13 ML Pipeline Stabilization remains on hold.
+
+## 2026-06-28 — Arc 11 final Train/Predict boundary cleanup
+
+### Decision
+- `PredictionController` no longer imports or creates the concrete
+  `PySidePredictionRunner`; PySide runner creation is owned by the PySide
+  workspace composition layer.
+- The legacy direct `TrainWorker` path was deleted, and default direct
+  `TrainingService.train()` production execution was disabled.
+- Optional real-core Train smoke now uses the QProcess train job path.
+- Arc 12 Calculator UI/Application Boundary Audit remains the next action.

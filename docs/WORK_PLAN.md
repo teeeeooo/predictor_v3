@@ -29,9 +29,11 @@
 
 - Arc 11 Reopen / Correction is complete for automated closeout scope.
 - Train production UI execution now flows through an explicit execution port and
-  killable process runner adapter.
+  killable process runner adapter; the legacy direct Train worker path has been
+  removed.
 - Predict execution orchestration now has a UI/runtime-neutral usecase/port,
-  with QThread lifecycle isolated in the PySide runner adapter.
+  with QThread lifecycle isolated in the PySide runner adapter and PySide runner
+  creation owned by the PySide workspace composition layer.
 - Calculator usecase boundary correction is acknowledged and moved to Arc 12.
 - Former Arc 12 ML Pipeline Stabilization is now Arc 13 and on hold until Arc
   11 and Arc 12 architecture corrections are complete.

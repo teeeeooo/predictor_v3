@@ -82,7 +82,7 @@ def _run_workspace(rows: int, case_tsv: str, *, cancel: bool) -> PredictWorkspac
 
     workspace._run_prediction()
     if cancel:
-        QTimer.singleShot(80, workspace._cancel_prediction)
+        QTimer.singleShot(10, workspace._cancel_prediction)
     if not _wait_until(
         app,
         lambda: not workspace.prediction_controller.is_running

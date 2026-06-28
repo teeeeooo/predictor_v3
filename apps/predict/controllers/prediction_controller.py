@@ -1,7 +1,7 @@
 """Prediction execution controller foundation."""
 
 from collections.abc import Callable
-from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunner
+from typing import Any
 
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
@@ -26,6 +26,7 @@ StatusCallback = Callable[[str], None]
 ResultCallback = Callable[[ResultRow], None]
 ProgressCallback = Callable[[PredictionProgress], None]
 SummaryCallback = Callable[["PredictionRunSummary"], None]
+PredictionRunnerFactory = Callable[[PredictionService], Any]
 
 
 class PredictionController:
@@ -37,8 +38,8 @@ class PredictionController:
         input_adapter: RowToMlInputAdapter | None = None,
         service: PredictionService | None = None,
         result_adapter: PredictionResultAdapter | None = None,
-        runner: PySidePredictionRunner | None = None,
-        runner_cls: type[PySidePredictionRunner] = PySidePredictionRunner,
+        runner=None,  # noqa: ANN001
+        runner_factory: PredictionRunnerFactory | None = None,
     ) -> None:
         self._session = session
         self._service = service or PredictionService()
@@ -48,7 +49,7 @@ class PredictionController:
             result_adapter=result_adapter,
         )
         self._runner = runner
-        self._runner_cls = runner_cls
+        self._runner_factory = runner_factory
         self._is_running = False
         self._active_total = 0
         self._active_invalid = 0
@@ -180,7 +181,11 @@ class PredictionController:
         self._is_running = True
         self._active_total = job.total + invalid_count
         self._active_invalid = invalid_count
-        runner = self._runner or self._runner_cls(service=self._service)
+        runner = self._runner
+        if runner is None:
+            if self._runner_factory is None:
+                raise RuntimeError("Prediction runner factory is not configured.")
+            runner = self._runner_factory(self._service)
         self._runner = runner
         runner.row_result.connect(
             lambda service_result: self._handle_worker_row_result(

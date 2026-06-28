@@ -440,9 +440,11 @@ Status:
 
 - Complete for automated closeout scope.
 - Train production UI execution runs through an explicit execution port and
-  killable process runner adapter.
+  killable process runner adapter; the legacy direct Train worker path is
+  removed.
 - Predict execution orchestration has a UI/runtime-neutral usecase/port, with
-  QThread lifecycle isolated in the PySide runner adapter.
+  QThread lifecycle isolated in the PySide runner adapter and PySide runner
+  creation owned by the PySide workspace composition layer.
 - Calculator boundary issue exists but is moved to Arc 12.
 
 Completed milestones:
@@ -458,6 +460,10 @@ Completed milestones:
   runner adapter.
 - Extracted Predict request/result orchestration into a UI/runtime-neutral
   usecase and execution port.
+- Finalized Train/Predict execution boundaries by removing
+  `PredictionController`'s concrete PySide runner dependency, deleting the
+  legacy direct `TrainWorker`, and disabling default direct
+  `TrainingService.train()` production execution.
 - Re-ran Train/Predict automated smoke gate for closeout.
 - Kept Data Mapping update execution deferred.
 

@@ -1,5 +1,5 @@
-"""Train worker contracts and implementation."""
+"""Train workers package retained for compatibility.
 
-from apps.train.workers.train_worker import TrainWorker
-
-__all__ = ["TrainWorker"]
+Production Train execution is owned by the QProcess runner adapter under
+`apps.train.adapters`.
+"""
