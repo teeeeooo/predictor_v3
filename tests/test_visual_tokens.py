@@ -19,10 +19,12 @@ REQUIRED_COLOR_ROLES = {
     "text.muted",
     "border.default",
     "border.focus",
+    "accent.primary",
     "table.header",
     "table.input",
     "table.fixed",
     "table.calculated",
+    "table.result",
     "table.invalid",
     "table.warning",
     "table.selected",
@@ -30,6 +32,10 @@ REQUIRED_COLOR_ROLES = {
     "result.good",
     "result.warning",
     "result.error",
+    "status.neutral",
+    "status.ready",
+    "status.missing",
+    "status.running",
 }
 REQUIRED_SPACING_ROLES = {
     "space.xs",

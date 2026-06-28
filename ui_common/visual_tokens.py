@@ -28,11 +28,13 @@ _COLORS: Mapping[str, str] = {
     "text.disabled": "#8A94A3",
     "border.default": "#D6D6D3",
     "border.focus": "#343434",
+    "accent.primary": "#2F6F9F",
     "action.primary": "#2F6F9F",
     "table.header": "#EDEDEB",
     "table.input": "#FFFFFF",
     "table.fixed": "#F1F2F2",
     "table.calculated": "#EEF2F4",
+    "table.result": "#EAF5EA",
     "table.invalid": "#FDEDEC",
     "table.warning": "#FFF4DC",
     "table.selected": "#E5EDF2",
@@ -40,6 +42,10 @@ _COLORS: Mapping[str, str] = {
     "result.good": "#2E7D32",
     "result.warning": "#B26A00",
     "result.error": "#C0392B",
+    "status.neutral": "#526071",
+    "status.ready": "#2E7D32",
+    "status.missing": "#B26A00",
+    "status.running": "#2F6F9F",
 }
 
 _SPACING: Mapping[str, int] = {
