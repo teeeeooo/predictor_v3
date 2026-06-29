@@ -5,13 +5,12 @@ Defaults mirror the feasibility MVP so Hong Kong CSPF = 4.939 is preserved.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import Tuple
+from collections.abc import Callable
 
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.hong_kong_cspf import HongKongCspfUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (
@@ -20,15 +19,13 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.application.profile_resolver import resolve_profile_id
+from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_models import result_status
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.hong_kong_cspf import HongKongCspfBatchDialog
-from apps.calculator.ui.sections.iso16358_helpers import build_cspf_input
-from apps.calculator.ui.sections.result_formatting import summarize_cspf_result, bin_details
 
 
 class HongKongCspfSection:
@@ -46,6 +43,7 @@ class HongKongCspfSection:
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
+        self._usecase = HongKongCspfUseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], HongKongCspfBatchDialog
         ] = BatchDialogHandle()
@@ -182,51 +180,48 @@ class HongKongCspfSection:
     def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
         self._batch_handle.clear(snapshot)
 
-    def _read_inputs(self) -> Tuple[Mapping[str, Mapping[str, float]], float]:
-        values = self.input_table.get_numeric_values()
-        rated_values = self.rated_table.get_numeric_values()
-        return build_cspf_input(
-            full_capacity=values["full_capacity"],
-            full_power=values["full_power"],
-            half_capacity=values["half_capacity"],
-            half_power=values["half_power"],
-            declared_capacity=rated_values["declared_capacity"],
-        )
-
     def recalculate_now(self) -> None:
-        performance_values = (
-            *self.input_table.get_text_values().values(),
-            *self.rated_table.get_text_values().values(),
+        raw_values = {
+            **self.input_table.get_text_values(),
+            **self.rated_table.get_text_values(),
+        }
+        result = self._usecase.calculate(
+            raw_values,
+            region_label=self._region_label,
         )
-        if not any(value.strip() for value in performance_values):
-            self._clear_trace("\uc785\ub825 \ub300\uae30")
+        self.input_table.clear_invalid_fields()
+        self.rated_table.clear_invalid_fields()
+        if result.invalid_fields:
+            input_invalid = {
+                key: value
+                for key, value in result.invalid_fields.items()
+                if key != "declared_capacity"
+            }
+            if input_invalid:
+                self.input_table.set_invalid_fields(input_invalid)
+            if "declared_capacity" in result.invalid_fields:
+                self.rated_table.set_invalid_fields(
+                    {"declared_capacity": result.invalid_fields["declared_capacity"]}
+                )
+        if result.detail_status is not None:
+            self._clear_trace(result.detail_status)
             self.result_panel.set_summaries(
-                (result_status("CSPF", "\uc785\ub825 \ub300\uae30"),)
+                (result_status(result.summary_title, result.status_text),)
             )
             return
-        try:
-            measured, declared = self._read_inputs()
-        except ValueError:
-            self._clear_trace("입력 오류: 숫자 입력을 확인하세요.")
-            self.result_panel.set_summaries(
-                (result_status("CSPF", "입력 오류: 숫자 입력을 확인하세요."),)
-            )
-            return
-        try:
-            profile_id = resolve_profile_id(self._region_label, "CSPF")
-            calc = create_calculator_for_profile(profile_id=profile_id)
-            result = calc.calculate_cspf(measured, declared_capacity=declared)
-        except Exception as exc:
-            self._clear_trace("계산 오류")
-            self.result_panel.set_summaries(
-                (result_status("CSPF", f"오류: {type(exc).__name__}: {exc}"),)
-            )
-            return
-        self._trace_rows = bin_details(result)
-        self._detail_summary = _summary_from_result(result)
+        self._trace_rows = list(result.detail_rows)
+        self._detail_summary = result.detail_summary
         self._trace_status = None
         self._update_detail_panel()
-        self.result_panel.set_summaries((summarize_cspf_result(result),))
+        self.result_panel.set_summaries(
+            (
+                ResultSummary(
+                    title=result.summary_title,
+                    fields=result.summary_fields,
+                    status=result.status_text,
+                ),
+            )
+        )
 
     def _toggle_detail(self) -> None:
         self._detail_visibility.toggle()
@@ -256,28 +251,3 @@ class HongKongCspfSection:
         if event.widget is self._frame:
             self._auto_calc.dispose()
             self._batch_handle.dispose()
-
-
-def _summary_from_result(result: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
-    return (
-        ("CSPF", _number_text(result.get("cspf"), 3)),
-        ("CSTL [kWh]", _number_text(_first_value(result, ("annual_cooling_kwh",)), 1)),
-        ("CSEC [kWh]", _number_text(_first_value(result, ("annual_power_kwh",)), 1)),
-    )
-
-
-def _first_value(result: Mapping[str, object], keys: tuple[str, ...]) -> object:
-    for key in keys:
-        value = result.get(key)
-        if value is not None:
-            return value
-    return None
-
-
-def _number_text(value: object, decimals: int) -> str:
-    if value is None:
-        return "-"
-    try:
-        return f"{float(value):.{decimals}f}"
-    except (TypeError, ValueError):
-        return str(value)
