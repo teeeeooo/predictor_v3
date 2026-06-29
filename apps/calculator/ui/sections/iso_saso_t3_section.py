@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.saso_t3 import SasoT3UseCase
+from apps.calculator.application.saso_t3.usecase import (
+    OPTIONAL_TRACE_LABEL as _OPTIONAL_TRACE_LABEL,
+    REQUIRED_TRACE_LABEL as _REQUIRED_TRACE_LABEL,
+)
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.layout_constants import (
@@ -16,29 +20,11 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.application.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
-from apps.calculator.ui.sections.result_formatting import bin_details, metric_value, kwh_value
 from apps.calculator.ui.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.saso_t3 import SasoT3BatchDialog
-
-_REQUIRED_TRACE_LABEL = "Required only (3-point)"
-_OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
-
-_REQUIRED_FIELDS = (
-    "full_46_capacity",
-    "full_46_power",
-    "full_35_capacity",
-    "full_35_power",
-    "half_35_capacity",
-    "half_35_power",
-)
-_OPTIONAL_FIELDS = (
-    "min_35_capacity",
-    "min_35_power",
-)
 
 _POINTS: tuple[tuple[str, str, str], ...] = (
     ("46_full", "full_46", "46 Full"),
@@ -61,6 +47,7 @@ class IsoSasoT3Section:
         self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
         self._detail_statuses: dict[str, str] = {}
         self._trace_status: str | None = "상세 데이터 없음"
+        self._usecase = SasoT3UseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], SasoT3BatchDialog
         ] = BatchDialogHandle()
@@ -164,138 +151,24 @@ class IsoSasoT3Section:
         self._auto_calc.cancel()
 
     def recalculate_now(self) -> None:
-        required_values = self.input_table.get_text_values()
-        if not any(required_values[field].strip() for field in _REQUIRED_FIELDS):
-            self._clear_trace("\uc785\ub825 \ub300\uae30")
-            self.result_table.set_rows((), status="\uc785\ub825 \ub300\uae30")
-            return
-        required_measured, required_error = self._read_required_inputs()
-        if required_error is not None:
-            self._clear_trace(required_error)
-            self.result_table.set_status(required_error)
-            return
-
-        required_row, required_trace, required_error = self._calculate_required_row(
-            required_measured
-        )
-        if required_error is not None:
-            self._clear_trace(required_error)
-            self.result_table.set_status(required_error)
-            return
-
-        trace_results = {_REQUIRED_TRACE_LABEL: required_trace}
-        detail_summaries = {_REQUIRED_TRACE_LABEL: _summary_from_row(required_row)}
-        detail_statuses: dict[str, str] = {}
-        status = "자동 계산 완료"
-        optional_measured, optional_error = self._read_optional_inputs(required_measured)
-        if optional_error is None:
-            optional_row, optional_trace, optional_error = self._calculate_optional_row(
-                optional_measured
-            )
+        result = self._usecase.calculate(self.input_table.get_text_values())
+        self.input_table.clear_invalid_fields()
+        if result.invalid_fields:
+            self.input_table.set_invalid_fields(result.invalid_fields)
+        if result.detail_status is not None:
+            self._clear_trace(result.detail_status)
         else:
-            optional_row = ()
-            optional_trace = []
-        if optional_error is not None:
-            rows = [_optional_error_row(optional_error), required_row]
-            detail_statuses[_OPTIONAL_TRACE_LABEL] = (
-                "상세 데이터 없음: 35 Min 숫자 입력을 확인하세요."
-            )
-            status = "4-point 입력 오류: 35 Min 숫자 입력을 확인하세요."
-        else:
-            rows = [optional_row, required_row]
-            trace_results[_OPTIONAL_TRACE_LABEL] = optional_trace
-            detail_summaries[_OPTIONAL_TRACE_LABEL] = _summary_from_row(optional_row)
-        self._trace_results = trace_results
-        self._detail_summaries = detail_summaries
-        self._detail_statuses = detail_statuses
-        self._trace_status = None
-        self._update_detail_panel()
-        self.result_table.set_rows(tuple(rows), status=status)
-
-    def _read_required_inputs(
-        self,
-    ) -> tuple[dict[str, dict[str, float]], str | None]:
-        try:
-            numeric = self.input_table.get_numeric_values(_REQUIRED_FIELDS)
-            invalid: dict[str, str] = {}
-            for field in _REQUIRED_FIELDS:
-                if numeric[field] <= 0:
-                    invalid[field] = "양수 입력 필요"
-            if invalid:
-                current_invalid = self.input_table.invalid_fields()
-                current_invalid.update(invalid)
-                self.input_table.set_invalid_fields(current_invalid)
-                raise ValueError("positivity check failed")
-            return {
-                "46_full": {
-                    "capacity": numeric["full_46_capacity"],
-                    "power": numeric["full_46_power"],
-                },
-                "35_full": {
-                    "capacity": numeric["full_35_capacity"],
-                    "power": numeric["full_35_power"],
-                },
-                "35_half": {
-                    "capacity": numeric["half_35_capacity"],
-                    "power": numeric["half_35_power"],
-                },
-            }, None
-        except ValueError:
-            return {}, "입력 오류: 숫자 입력을 확인하세요."
-
-    def _read_optional_inputs(
-        self,
-        required_measured: Mapping[str, Mapping[str, float]],
-    ) -> tuple[dict[str, dict[str, float]], str | None]:
-        try:
-            numeric = self.input_table.get_numeric_values(_OPTIONAL_FIELDS)
-            invalid: dict[str, str] = {}
-            for field in _OPTIONAL_FIELDS:
-                if numeric[field] <= 0:
-                    invalid[field] = "양수 입력 필요"
-            if invalid:
-                current_invalid = self.input_table.invalid_fields()
-                current_invalid.update(invalid)
-                self.input_table.set_invalid_fields(current_invalid)
-                raise ValueError("positivity check failed")
-            measured = {key: dict(value) for key, value in required_measured.items()}
-            measured["35_min"] = {
-                "capacity": numeric["min_35_capacity"],
-                "power": numeric["min_35_power"],
+            self._trace_results = {
+                label: list(rows) for label, rows in (result.detail_sources or {}).items()
             }
-            return measured, None
-        except ValueError:
-            return {}, "입력 오류"
-
-    def _calculate_required_row(
-        self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], list[dict], str | None]:
-        try:
-            calc = create_calculator_for_profile(
-                profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
-            )
-            calc.config["cspf_test_profile"]["test_selection"] = "required_only"
-            result = calc.calculate_cspf(measured)
-            return _saso_result_row(
-                "Required only (3-point)", measured, result, include_min=False
-            ), bin_details(result), None
-        except Exception:
-            return (), [], "계산 오류: SASO T3 required-only 결과를 계산할 수 없습니다."
-
-    def _calculate_optional_row(
-        self, measured: Mapping[str, Mapping[str, float]]
-    ) -> tuple[tuple[str, ...], list[dict], str | None]:
-        try:
-            calc = create_calculator_for_profile(
-                profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
-            )
-            calc.config["cspf_test_profile"]["test_selection"] = "with_optional_test"
-            result = calc.calculate_cspf(measured)
-            return _saso_result_row(
-                "With 35 Min (4-point)", measured, result, include_min=True
-            ), bin_details(result), None
-        except Exception:
-            return (), [], "계산 오류"
+            self._detail_summaries = dict(result.detail_summaries or {})
+            self._detail_statuses = dict(result.detail_statuses or {})
+            self._trace_status = None
+            self._update_detail_panel()
+        if result.rows:
+            self.result_table.set_rows(result.rows, status=result.status_text)
+        else:
+            self.result_table.set_rows((), status=result.status_text)
 
     def _on_optional_min_toggled(self) -> None:
         self._sync_optional_min_state()
@@ -374,44 +247,3 @@ class IsoSasoT3Section:
         if event.widget is self._frame:
             self._auto_calc.dispose()
             self._batch_handle.dispose()
-
-
-
-def _saso_result_row(
-    title: str,
-    measured: Mapping[str, Mapping[str, float]],
-    result: Mapping[str, object],
-    *,
-    include_min: bool,
-) -> tuple[str, ...]:
-    return (
-        title,
-        _eer_value(measured, "46_full"),
-        _eer_value(measured, "35_full"),
-        _eer_value(measured, "35_half"),
-        _eer_value(measured, "35_min") if include_min else "-",
-        metric_value(result, "cspf"),
-        kwh_value(result, ("annual_cooling_kwh", "cstl_kwh", "cstl")),
-        kwh_value(result, ("annual_power_kwh", "csec_kwh", "csec")),
-    )
-
-
-def _optional_error_row(message: str) -> tuple[str, ...]:
-    return ("With 35 Min (4-point)", "-", "-", "-", message, "-", "-", "-")
-
-
-def _summary_from_row(row: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
-    return (
-        ("CSPF", row[5]),
-        ("CSTL [kWh]", row[6]),
-        ("CSEC [kWh]", row[7]),
-    )
-
-
-def _eer_value(measured: Mapping[str, Mapping[str, float]], point_key: str) -> str:
-    point = measured.get(point_key, {})
-    capacity = point.get("capacity")
-    power = point.get("power")
-    if capacity is None or power is None or power <= 0:
-        return "-"
-    return f"{capacity / power:.2f}"

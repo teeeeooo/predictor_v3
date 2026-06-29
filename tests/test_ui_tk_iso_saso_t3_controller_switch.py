@@ -217,7 +217,8 @@ class TestUndoBehavior:
 
     def test_undo_restores_original_value(self, section) -> None:
         ctrl = section.input_controller
-        # Select cell (0, 0) - full_46 capacity (default: "5000")
+        section.input_table.set_values({"full_46_capacity": "5000"})
+        # Select cell (0, 0) - full_46 capacity.
         ctrl.select((0, 0))
         ctrl._enter_edit_mode((0, 0))
         section.input_table.update_idletasks()
