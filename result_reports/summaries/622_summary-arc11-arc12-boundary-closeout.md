@@ -182,3 +182,65 @@ Known risk:
 Next action:
 
 - Arc 13 - ML Pipeline Stabilization.
+
+## Slice 13 Diagnostic Addendum - EN14825 Tk Selector Stall
+
+Reproduced:
+
+- Yes. `python3 -B -m pytest tests -k "en14825"` and faulthandler-backed
+  `pytest -vv -s -o faulthandler_timeout=20 tests -k "en14825"` both stopped
+  at
+  `tests/test_ui_tk_en14825_profile_switch_fit.py::test_profile_switch_to_en14825_seer_keeps_positive_geometry`.
+
+Minimal reproducer:
+
+- `python3 -B -m pytest -vv -s tests/test_ui_tk_calculator_empty_state.py tests/test_ui_tk_en14825_profile_switch_fit.py`
+- Narrower reproducer:
+  `python3 -B -m pytest -vv -s tests/test_ui_tk_calculator_empty_state.py::test_en14825_profiles_keep_options_but_start_without_performance_data tests/test_ui_tk_en14825_profile_switch_fit.py`
+- A plain local probe also reproduced the stall with: create and destroy one
+  `tk.Tk()` root, then create a second withdrawn root, build
+  `CalculatorTkApp(root=second_root)`, and call `second_root.update()`.
+
+Likely cause:
+
+- Classification: C. Tk environment / headless test isolation issue.
+- The stalled frame is `tkinter.__init__.py:update`, reached from
+  `test_profile_switch_to_en14825_seer_keeps_positive_geometry` line 28.
+- `tests/test_ui_tk_en14825_profile_switch_fit.py` passes by itself and each
+  individual test passes by itself.
+- The previous/next file check shows the preceding empty-state Tk test file is
+  sufficient to trigger the stall, while running the profile-switch file before
+  the SCOP batch dialog file passes.
+- Local probes showed the issue is not EN formula/config behavior and not a
+  specific EN section callback: even an empty prior `Tk()` root followed by a
+  second withdrawn root with `CalculatorTkApp` can stall on `update()`.
+- Reusing one root with a destroyed `Toplevel` instead of destroying one `Tk()`
+  root and creating another avoids the stall.
+
+Affected files:
+
+- `tests/test_ui_tk_calculator_empty_state.py`
+- `tests/test_ui_tk_en14825_profile_switch_fit.py`
+- `apps/calculator/ui/calculator_app.py`
+- `apps/calculator/ui/auto_calc.py`
+- `apps/calculator/ui/window_refit.py`
+
+Fix needed:
+
+- Yes, but not in Slice 13. The fix should target Tk test isolation / pending
+  event draining, not calculator formulas, config, profile IDs, golden expected
+  values, public result contracts, or production calculation behavior.
+
+Validation commands run:
+
+- `python3 -B -m pytest tests --collect-only -q -k "en14825"`: OK, 123 selected.
+- `python3 -B -m pytest -vv -s tests/test_ui_tk_en14825_profile_switch_fit.py`: OK.
+- Four individual profile-switch tests: OK.
+- `PYTHONFAULTHANDLER=1 python3 -B -m pytest -vv -s -o faulthandler_timeout=20 tests -k "en14825"`: reproduced stall and captured stack in `tkinter.update`.
+- Previous/profile/next file combinations: previous empty-state file plus
+  profile-switch file reproduced; profile-switch plus next SCOP batch dialog
+  file passed.
+
+Next action:
+
+- Arc 12 Slice 14 - EN Tk Headless Test Isolation.

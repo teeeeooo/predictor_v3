@@ -34,6 +34,9 @@
   batch paths where applicable.
 - Arc 12 Slice 12 hardened remaining calculator outbound construction/config
   concerns behind focused `apps/calculator/adapters/` gateways.
+- Arc 12 Slice 13 diagnosed the EN14825 broad selector stall as a Tk
+  headless/test-isolation issue around sequential destroyed `Tk()` roots and
+  `CalculatorTkApp` withdrawn-root `update()`.
 - Arc 13 ML Pipeline Stabilization is the next recommended arc.
 - Arc 12 Slice 3 reused the ISO/ISEER 2-point application usecase from the
   matching batch handler.
@@ -85,6 +88,8 @@
 - Calculator usecase boundary correction is complete for automated Arc 12
   scope; Slice 12 outbound adapter hardening is complete, and no remaining
   calculator extraction blocker is holding Arc 13.
+- EN14825 broad selector remains blocked by Tk test isolation; use focused EN
+  groups until Arc 12 Slice 14 - EN Tk Headless Test Isolation is handled.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
