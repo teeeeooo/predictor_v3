@@ -1,19 +1,29 @@
 """Adapter layer translating UI inputs (W) to core calculator inputs (kW) and parsing results for SEER."""
 
 from collections.abc import Mapping
-from typing import Dict, Optional, Tuple
-from core.calculators.standards.en14825 import EN14825Calculator
+from typing import Dict, Optional, Protocol, Tuple
+
+from apps.calculator.adapters.en14825_calculator_factory import (
+    create_en14825_calculator,
+)
 from apps.calculator.application.en14825.seer_models import (
     SeerPointInput,
     SeerPointComputed,
     SeerResultSummary,
 )
 
+
+class _SeerCalculator(Protocol):
+    seer_config: Mapping[str, object]
+
+    def calculate_seer(self, **kwargs: object) -> Mapping[str, object]: ...
+
+
 class SeerAdapter:
     """Adapter to compute intermediate values and coordinate with the core calculator."""
 
-    def __init__(self, calculator: Optional[EN14825Calculator] = None) -> None:
-        self.calculator = calculator or EN14825Calculator()
+    def __init__(self, calculator: Optional[_SeerCalculator] = None) -> None:
+        self.calculator = calculator or create_en14825_calculator()
 
     def _calculate_core(self, **kwargs) -> Mapping[str, object]:
         calculate = getattr(

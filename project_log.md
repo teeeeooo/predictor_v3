@@ -898,7 +898,7 @@
   calculator rewrite.
 - The first implementation target is ISO/ISEER 2-point single application
   usecase extraction, followed by matching batch handler reuse.
-- SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI remain follow-up candidates
+- SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI remain candidates
   after the first ISO/ISEER pattern lands.
 - Calculator formulas, config semantics, profile IDs, fixtures/golden expected,
   and public result dict contracts remain protected.
@@ -933,3 +933,18 @@
 - No calculator formulas, config semantics, profile IDs, fixtures/golden
   expected, or public result dict contracts changed.
 - Arc 13 ML Pipeline Stabilization is unblocked as the next recommended arc.
+
+## 2026-06-29 — Arc 12 Slice 12 calculator outbound adapter hardening
+
+### Decision
+- Remaining calculator outbound construction/config concerns now live behind
+  focused `apps/calculator/adapters/` gateways:
+  AHRI calculator construction, EN14825 concrete calculator creation, and SASO
+  T3 test-selection config override.
+- Calculator application code no longer imports the core dispatcher, EN14825
+  application adapters no longer import the concrete EN14825 core class, and
+  `SasoT3UseCase` no longer mutates core calculator config shape directly.
+- No calculator formulas, config semantics, profile IDs, fixtures/golden
+  expected, public result dict contracts, Tk layout, batch table UX, or
+  copy/export behavior changed.
+- Arc 13 ML Pipeline Stabilization remains the next recommended arc.

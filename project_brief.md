@@ -488,6 +488,9 @@ Status:
 - ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
   SEER2/HSPF2 now have application boundary treatment or thin UI shims that
   delegate to application-owned adapters/usecases.
+- Slice 12 also moves the remaining AHRI dispatcher calls, EN14825 concrete
+  calculator creation, and SASO T3 config override concern behind focused
+  outbound gateways under `apps/calculator/adapters/`.
 - Matching batch paths reuse application usecases/adapters where applicable.
 - Arc 13 is unblocked as the next recommended arc.
 - Calculator formula/config/golden/public result contracts remain protected.

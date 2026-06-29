@@ -17,6 +17,8 @@ def test_ahri_application_package_does_not_import_ui_package():
         assert "apps.calculator.ui" not in source
         assert "tkinter" not in source
         assert "PySide6" not in source
+        assert "core.calculators.dispatcher" not in source
+        assert "apps.calculator.adapters.ahri_calculator_factory" in source
 
 
 def test_ahri_ui_adapter_paths_are_shims():

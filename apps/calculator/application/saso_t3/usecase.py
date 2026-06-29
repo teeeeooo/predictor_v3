@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from apps.calculator.adapters.core_calculator_dispatcher import (
-    create_calculator_for_profile,
+from apps.calculator.adapters.saso_t3_calculator import (
+    calculate_saso_t3_cspf,
 )
 from apps.calculator.application.profile_resolver import (
     MODE_SASO_T3,
@@ -19,7 +19,7 @@ from apps.calculator.application.saso_t3.models import (
 )
 
 
-CalculatorFactory = Callable[..., object]
+SasoT3CalculatorGateway = Callable[..., Mapping[str, object]]
 
 REQUIRED_TRACE_LABEL = "Required only (3-point)"
 OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
@@ -45,8 +45,11 @@ _AUTO_CALC_DONE_STATUS = "자동 계산 완료"
 class SasoT3UseCase:
     """Calculate SASO T3 required-only and optional-test comparison rows."""
 
-    def __init__(self, calculator_factory: CalculatorFactory = create_calculator_for_profile):
-        self._calculator_factory = calculator_factory
+    def __init__(
+        self,
+        calculator_gateway: SasoT3CalculatorGateway = calculate_saso_t3_cspf,
+    ):
+        self._calculator_gateway = calculator_gateway
 
     def calculate(self, raw_values: Mapping[str, str]) -> SasoT3UseCaseResult:
         """Calculate SASO T3 rows from raw input-table text values."""
@@ -197,11 +200,11 @@ class SasoT3UseCase:
         measured: MeasuredPoints,
         test_selection: str,
     ) -> Mapping[str, object]:
-        calculator = self._calculator_factory(
-            profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
+        return self._calculator_gateway(
+            measured,
+            profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3),
+            test_selection=test_selection,
         )
-        calculator.config["cspf_test_profile"]["test_selection"] = test_selection
-        return calculator.calculate_cspf(measured)
 
 
 def _parse_required_inputs(

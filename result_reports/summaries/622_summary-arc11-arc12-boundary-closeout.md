@@ -2,7 +2,7 @@
 
 ## Goal
 
-Compress the completed Arc 11 boundary correction follow-up and Arc 12
+Compress the completed Arc 11 boundary correction continuation and Arc 12
 calculator application-boundary reports into one lifecycle summary so current
 work can rely on owner docs, focused tests, and this summary instead of active
 intermediate reports.
@@ -103,7 +103,7 @@ stalled in the EN Tk segment.
 All covered reports are completed history or intermediate implementation
 evidence now represented by this summary, current project state docs, focused
 tests, and source. No covered report needs to remain active for Arc 13 start or
-future manual-smoke follow-up.
+future manual-smoke evidence.
 
 ## Project Memory Seed Sync Judgment
 
@@ -116,3 +116,69 @@ are backfilled.
 
 Arc 13 - ML Pipeline Stabilization, unless the user asks for manual GUI smoke or
 dedicated memory seed maintenance first.
+
+## Slice 12 Addendum - Calculator Outbound Adapter Boundary Hardening
+
+Goal:
+
+- Harden the remaining calculator outbound construction/config boundary after
+  Arc 12 closeout without reopening the full Arc 12 audit.
+
+Changed files:
+
+- `apps/calculator/adapters/ahri_calculator_factory.py`
+- `apps/calculator/adapters/en14825_calculator_factory.py`
+- `apps/calculator/adapters/saso_t3_calculator.py`
+- `apps/calculator/application/ahri/seer2_adapter.py`
+- `apps/calculator/application/ahri/hspf2_adapter.py`
+- `apps/calculator/application/en14825/seer_adapter.py`
+- `apps/calculator/application/en14825/scop_adapter.py`
+- `apps/calculator/application/saso_t3/usecase.py`
+- `tests/test_calculator_application_boundary.py`
+- `tests/test_calculator_ahri_application_boundary.py`
+- `tests/test_calculator_en14825_application_boundary.py`
+- `tests/test_calculator_saso_t3_usecase.py`
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md`
+- `docs/WORK_PLAN.md`
+- `project_brief.md`
+- `project_log.md`
+- `result_reports/memory/project_memory_seed.md`
+
+Boundary decision:
+
+- Calculator application code may parse UI-ready inputs, call application-level
+  workflows, and interpret calculator outputs, but core calculator construction,
+  concrete EN14825 creation, dispatcher calls, and SASO T3 config override live
+  behind `apps/calculator/adapters/` outbound gateways.
+- No universal calculator abstraction was added. Slice 12 uses focused AHRI,
+  EN14825, and SASO T3 gateways only.
+- Stub calculator injection remains available in AHRI and EN14825 application
+  adapters so focused tests do not need concrete core construction.
+
+Verification:
+
+- `python3 -B -m compileall -q app_calculator.py apps/calculator core/calculators`: OK.
+- `python3 -B -m pytest tests --collect-only -q -k "calculator_application or saso or en14825 or ahri"`: OK, selected scope reviewed.
+- `python3 -B -m pytest tests -k "calculator_application"`: OK.
+- `python3 -B -m pytest tests -k "saso"`: OK.
+- EN14825 focused file group: OK.
+- AHRI focused file group: OK.
+- `python3 -B -m pytest tests -k "ahri or seer2 or hspf2"`: OK.
+- `python3 -B -m pytest tests -k "en14825"`: stopped after the known EN Tk
+  profile-switch segment stopped producing progress; EN acceptance uses the
+  completed focused file group above.
+- `python3 -B tools/code_checker/build_reference_map.py --check`: STALE, then regenerated once.
+- `python3 -B tools/code_checker/build_reference_map.py --check`: OK after regeneration.
+- `python3 -B tools/check_code_structure.py`: OK with existing soft warnings.
+
+Known risk:
+
+- EN14825 application adapters still contain the established UI-to-core
+  translation logic and remain above the soft LOC threshold; Slice 12 only moved
+  outbound construction behind adapters.
+- The broad EN14825 selector still has the known Tk profile-switch progress
+  stall; focused EN groups passed.
+
+Next action:
+
+- Arc 13 - ML Pipeline Stabilization.

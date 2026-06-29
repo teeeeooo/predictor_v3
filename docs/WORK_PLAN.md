@@ -32,6 +32,8 @@
 - ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
   SEER2/HSPF2 now have application boundary treatment for single and matching
   batch paths where applicable.
+- Arc 12 Slice 12 hardened remaining calculator outbound construction/config
+  concerns behind focused `apps/calculator/adapters/` gateways.
 - Arc 13 ML Pipeline Stabilization is the next recommended arc.
 - Arc 12 Slice 3 reused the ISO/ISEER 2-point application usecase from the
   matching batch handler.
@@ -81,7 +83,8 @@
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
 - Calculator usecase boundary correction is complete for automated Arc 12
-  scope; no remaining calculator extraction blocker is holding Arc 13.
+  scope; Slice 12 outbound adapter hardening is complete, and no remaining
+  calculator extraction blocker is holding Arc 13.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
@@ -103,7 +106,7 @@
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
 - Data Mapping update execution remains deferred and is not part of Arc 11
   Train execution.
-- Broad ML / predictor algorithm work remains deferred; follow-up prediction
+- Broad ML / predictor algorithm work remains deferred; later prediction
   execution work must preserve core ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.

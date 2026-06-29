@@ -1036,12 +1036,13 @@ entries:
 
   - type: decision
     topic: Arc 12 calculator application boundary closeout
-    content: Arc 12 calculator UI/application boundary correction is complete for the automated scope: targeted ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI calculator UI/batch orchestration now routes through application usecases/adapters or thin UI shims, while calculator formulas, configuration semantics, profile IDs, fixture/golden expected values, and public result contracts remain unchanged. Arc 13 ML Pipeline Stabilization is unblocked as a separate arc.
+    content: Arc 12 calculator UI/application boundary correction is complete for the automated scope: targeted ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI calculator UI/batch orchestration now routes through application usecases/adapters or thin UI shims, and Slice 12 hardens remaining outbound construction/config concerns behind focused apps/calculator/adapters gateways. Calculator formulas, configuration semantics, profile IDs, fixture/golden expected values, and public result contracts remain unchanged. Arc 13 ML Pipeline Stabilization is unblocked as a separate arc.
     keywords:
       - predictor_v3
       - Arc 12
       - calculator application boundary
       - usecase adapter
+      - outbound adapter
       - Arc 13
       - ML Pipeline Stabilization
     assertionStatus: verified

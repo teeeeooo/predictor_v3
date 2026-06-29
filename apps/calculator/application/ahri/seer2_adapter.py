@@ -6,7 +6,9 @@ from dataclasses import dataclass
 import math
 from typing import Mapping, Protocol
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.adapters.ahri_calculator_factory import (
+    create_ahri_seer2_calculator,
+)
 
 AHRI_SEER2_POINT_ORDER = ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low")
 AHRI_SEER2_TEMPERATURES_C = {
@@ -65,9 +67,7 @@ class AhriSeer2Adapter:
     """Parse the UI matrix and call the existing SEER2 calculator contract."""
 
     def __init__(self, calculator: _Seer2Calculator | None = None) -> None:
-        self._calculator = calculator or create_calculator_for_profile(
-            profile_id="ahri_usa_seer2"
-        )
+        self._calculator = calculator or create_ahri_seer2_calculator()
 
     def calculate(
         self,

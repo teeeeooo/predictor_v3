@@ -1,13 +1,22 @@
 """Adapter layer translating UI inputs (W, °C) to core calculator inputs (kW, °C) and parsing results for SCOP."""
 
 from collections.abc import Mapping
-from typing import Dict, Optional, Tuple
-from core.calculators.standards.en14825 import EN14825Calculator
+from typing import Dict, Optional, Protocol, Tuple
+
+from apps.calculator.adapters.en14825_calculator_factory import (
+    create_en14825_calculator,
+)
 from apps.calculator.application.en14825.scop_models import (
     ScopPointInput,
     ScopPointComputed,
     ScopResultSummary,
 )
+
+
+class _ScopCalculator(Protocol):
+    scop_config: Mapping[str, object]
+
+    def calculate_scop(self, **kwargs: object) -> Mapping[str, object]: ...
 
 
 class ScopAdapter:
@@ -21,8 +30,8 @@ class ScopAdapter:
         "colder": {"tbiv": -15.0, "tol": -22.0},
     }
 
-    def __init__(self, calculator: Optional[EN14825Calculator] = None) -> None:
-        self.calculator = calculator or EN14825Calculator()
+    def __init__(self, calculator: Optional[_ScopCalculator] = None) -> None:
+        self.calculator = calculator or create_en14825_calculator()
 
     def get_climate_data(self, climate: str) -> dict:
         """Fetch climate-specific configuration data from the core calculator config."""

@@ -40,6 +40,9 @@ def test_application_profile_resolver_matches_ui_compatibility_shim():
         "apps.calculator.application.profile_resolver",
         "apps.calculator.adapters",
         "apps.calculator.adapters.core_calculator_dispatcher",
+        "apps.calculator.adapters.ahri_calculator_factory",
+        "apps.calculator.adapters.en14825_calculator_factory",
+        "apps.calculator.adapters.saso_t3_calculator",
     ],
 )
 def test_application_boundary_modules_do_not_import_ui_runtimes(module_name):
@@ -134,3 +137,19 @@ def test_arc12_application_packages_do_not_import_ui_packages_or_runtimes():
         assert "apps.calculator.ui" not in source, path
         assert "tkinter" not in source, path
         assert "PySide6" not in source, path
+
+
+def test_arc12_application_packages_use_outbound_calculator_adapters():
+    for path in Path("apps/calculator/application").rglob("*.py"):
+        source = path.read_text(encoding="utf-8")
+        assert "core.calculators.dispatcher" not in source, path
+
+    for path in Path("apps/calculator/application/en14825").rglob("*.py"):
+        source = path.read_text(encoding="utf-8")
+        assert "core.calculators.standards.en14825" not in source, path
+
+    saso_source = Path("apps/calculator/application/saso_t3/usecase.py").read_text(
+        encoding="utf-8"
+    )
+    assert ".config[" not in saso_source
+    assert "calculate_saso_t3_cspf" in saso_source

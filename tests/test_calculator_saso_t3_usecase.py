@@ -113,3 +113,43 @@ def test_saso_t3_section_no_longer_imports_core_dispatcher_or_mutates_config():
     assert "create_calculator_for_profile" not in source
     assert "calculate_cspf" not in source
     assert ".config[" not in source
+
+
+def test_saso_t3_usecase_uses_outbound_gateway_for_selection_override():
+    calls = []
+
+    def fake_gateway(measured, *, profile_id, test_selection):
+        calls.append(
+            {
+                "measured": measured,
+                "profile_id": profile_id,
+                "test_selection": test_selection,
+            }
+        )
+        return {
+            "CSPF": 1.2345,
+            "CSTL": 12.0,
+            "CSEC": 3.0,
+            "bin_details": [],
+        }
+
+    result = SasoT3UseCase(calculator_gateway=fake_gateway).calculate(
+        SASO_T3_SAMPLE_VALUES
+    )
+
+    assert result.status == "ok"
+    assert [call["test_selection"] for call in calls] == [
+        "required_only",
+        "with_optional_test",
+    ]
+    assert {call["profile_id"] for call in calls} == {"saso_t3_cspf"}
+
+
+def test_saso_t3_usecase_does_not_mutate_core_config_shape():
+    source = Path("apps/calculator/application/saso_t3/usecase.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "core.calculators.dispatcher" not in source
+    assert "create_calculator_for_profile" not in source
+    assert ".config[" not in source
