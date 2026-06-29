@@ -917,3 +917,19 @@
 - Recommended next calculator target is SASO T3 usecase extraction; Arc 13
   remains on hold unless the user explicitly accepts deferring remaining
   calculator debt.
+
+## 2026-06-29 — Arc 12 calculator application boundary closeout
+
+### Decision
+- Arc 12 Calculator UI/Application Boundary Correction is complete for
+  automated scope.
+- ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
+  SEER2/HSPF2 now route calculation orchestration through
+  `apps.calculator.application` / `apps.calculator.adapters` boundaries or thin
+  UI shims.
+- Matching batch paths reuse application usecases/adapters where applicable,
+  and guard tests now prevent completed UI/batch surfaces from importing the
+  core dispatcher or mutating calculator config.
+- No calculator formulas, config semantics, profile IDs, fixtures/golden
+  expected, or public result dict contracts changed.
+- Arc 13 ML Pipeline Stabilization is unblocked as the next recommended arc.

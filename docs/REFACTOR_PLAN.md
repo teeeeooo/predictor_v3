@@ -31,11 +31,11 @@
 ### 0b. Calculator usecase boundary correction
 - **왜 후보인지**: Calculator UI still contains application orchestration that
   should be reusable outside a specific UI section.
-- **실행 순서**: Arc 12로 분리한다. Slice 0은 audit formalization이고,
-  Slice 1은 calculator application boundary foundation이다. 첫 구현 대상은
-  ISO/ISEER 2-point single usecase이며, 다음 slice에서 matching batch handler
-  reuse를 적용한다. 이 first-pattern extraction은 완료되었고, 다음 추천 대상은
-  SASO T3 usecase extraction이다.
+- **실행 상태**: Arc 12로 분리해 완료했다. ISO/ISEER, SASO T3, Hong Kong
+  CSPF/HSPF, EN14825 SEER/SCOP, and AHRI SEER2/HSPF2는 application
+  boundary treatment 또는 thin UI shim을 통해 calculator orchestration을 UI
+  section/batch code에서 분리했다. Arc 13 ML Pipeline Stabilization이 다음
+  추천 arc다.
 - **지켜야 할 guard**: calculator formulas, config semantics, profile IDs,
   fixtures/golden expected, and public result dict contracts remain unchanged.
 

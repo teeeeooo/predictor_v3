@@ -27,14 +27,12 @@
 
 ## Current Slice
 
-- Arc 12 first-pattern extraction is complete for automated scope: ISO/ISEER
-  2-point single and batch now reuse an application usecase boundary.
-- Remaining calculator extraction candidates are SASO T3 config mutation,
-  Hong Kong CSPF/HSPF direct orchestration, EN14825 UI-local adapters, and AHRI
-  UI-local adapters.
-- Recommended next calculator action is Arc 12 follow-up - SASO T3 usecase
-  extraction. Arc 13 remains on hold unless the user explicitly accepts
-  deferring remaining calculator debt.
+- Arc 12 Calculator UI/Application Boundary Correction is complete for
+  automated scope.
+- ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
+  SEER2/HSPF2 now have application boundary treatment for single and matching
+  batch paths where applicable.
+- Arc 13 ML Pipeline Stabilization is the next recommended arc.
 - Arc 12 Slice 3 reused the ISO/ISEER 2-point application usecase from the
   matching batch handler.
 - Arc 12 Slice 2 extracted the ISO/ISEER 2-point single calculation
@@ -42,8 +40,8 @@
 - Arc 12 Slice 1 added the Calculator application boundary foundation:
   application-owned profile resolver and app-side core dispatcher adapter.
 - Arc 12 Slice 0 formalized the Calculator UI/Application Boundary Audit.
-- Arc 12 first implementation target is the ISO/ISEER 2-point single
-  application usecase, followed by matching batch reuse.
+- Arc 12 final consistency audit added guards against completed UI/batch
+  surfaces importing the core dispatcher or mutating calculator config.
 - Calculator formulas, configs, fixtures, golden expected values, profile IDs,
   and public result dict contracts are protected throughout Arc 12.
 - Arc 11 Reopen / Correction is complete for automated closeout scope.
@@ -74,7 +72,7 @@
 
 ## Next Actions
 
-1. Arc 12 follow-up - SASO T3 usecase extraction.
+1. Arc 13 - ML Pipeline Stabilization.
 
 ## Active Blockers / Open Decisions
 
@@ -82,8 +80,8 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Calculator usecase boundary correction first-pattern is complete; remaining
-  calculator extraction candidates need user sequencing decision before Arc 13.
+- Calculator usecase boundary correction is complete for automated Arc 12
+  scope; no remaining calculator extraction blocker is holding Arc 13.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 

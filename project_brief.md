@@ -10,8 +10,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, Arc 12 Calculator UseCase
-Boundary Correction.
+Current phase: Machine Learning / Predictor Phase, Arc 13 ML Pipeline
+Stabilization.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -484,13 +484,12 @@ Target milestones:
 
 Status:
 
-- First-pattern extraction is complete for automated scope.
-- ISO/ISEER 2-point single UI and matching batch handler now reuse an
-  application usecase boundary.
-- Recommended next calculator target is SASO T3 usecase extraction because the
-  remaining UI-owned config mutation is the strongest smell.
-- Arc 13 remains on hold unless the user explicitly accepts deferring remaining
-  calculator debt.
+- Arc 12 is complete for automated scope.
+- ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
+  SEER2/HSPF2 now have application boundary treatment or thin UI shims that
+  delegate to application-owned adapters/usecases.
+- Matching batch paths reuse application usecases/adapters where applicable.
+- Arc 13 is unblocked as the next recommended arc.
 - Calculator formula/config/golden/public result contracts remain protected.
 
 ### Arc 13 — ML Pipeline Stabilization
@@ -512,8 +511,7 @@ Target milestones:
 
 Status:
 
-- On hold until the user explicitly accepts remaining calculator debt as
-  deferred or finishes the next calculator extraction target.
+- Unblocked after Arc 12 calculator application boundary closeout.
 
 ### Later — Calculator to Predictor Integration
 
