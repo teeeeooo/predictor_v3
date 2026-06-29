@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import pytest
 
+from tests.helpers.tk import (
+    cancel_pending_after_callbacks,
+    destroy_tk_root,
+    drain_tk_events,
+    make_hidden_root,
+)
 from apps.calculator.ui.window_geometry import parse_window_geometry
 
 
@@ -11,27 +17,28 @@ from apps.calculator.ui.window_geometry import parse_window_geometry
 def tk_root():
     tk = pytest.importorskip("tkinter")
     try:
-        root = tk.Tk()
+        root = make_hidden_root()
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
-    root.withdraw()
     try:
         yield root
     finally:
-        root.destroy()
+        destroy_tk_root(root)
 
 
 def test_profile_switch_to_en14825_seer_keeps_positive_geometry(tk_root) -> None:
     from apps.calculator.ui.calculator_app import CalculatorTkApp
 
     app = CalculatorTkApp(root=tk_root)
-    tk_root.update()
+    cancel_pending_after_callbacks(tk_root)
+    drain_tk_events(tk_root)
+    app._apply_initial_iso_fit()
     app._ignore_initial_tab_changed = False
     app.en14825_tab._standard_notebook.select(app.en14825_tab._seer_frame)
     app.notebook.select(app.ahri210240_tab)
-    tk_root.update_idletasks()
+    drain_tk_events(tk_root)
     app.notebook.select(app.en14825_tab)
-    tk_root.update_idletasks()
+    drain_tk_events(tk_root)
 
     app.en14825_tab.fit_toplevel_to_current_content_once()
 

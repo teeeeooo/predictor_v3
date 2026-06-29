@@ -244,3 +244,52 @@ Validation commands run:
 Next action:
 
 - Arc 12 Slice 14 - EN Tk Headless Test Isolation.
+
+## Slice 14 Addendum - EN Tk Headless Test Isolation
+
+Fixed issue:
+
+- `python3 -B -m pytest tests -k "en14825"` no longer stalls at
+  `tests/test_ui_tk_en14825_profile_switch_fit.py::test_profile_switch_to_en14825_seer_keeps_positive_geometry`.
+
+Minimal reproducer before fix:
+
+- `python3 -B -m pytest -vv -s tests/test_ui_tk_calculator_empty_state.py::test_en14825_profiles_keep_options_but_start_without_performance_data tests/test_ui_tk_en14825_profile_switch_fit.py`
+
+Fix strategy:
+
+- Added `tests/helpers/tk.py` with test-only hidden root, idletask drain,
+  pending `after` cancellation, and safe destroy helpers.
+- Updated the affected empty-state and EN profile-switch tests to use the
+  shared helper instead of hand-rolled `tk.Tk()` teardown.
+- Replaced the headless-sensitive full `tk_root.update()` in the profile-switch
+  geometry test with explicit test-only callback cleanup, idletask drain, and
+  direct initial fit invocation.
+- Production calculator UI, scheduler, formulas, configs, profile IDs, golden
+  expected values, and public result contracts were not changed.
+
+Touched tests/helpers:
+
+- `tests/helpers/tk.py`
+- `tests/test_ui_tk_calculator_empty_state.py`
+- `tests/test_ui_tk_en14825_profile_switch_fit.py`
+
+Validation result:
+
+- Minimal reproducer: OK.
+- `python3 -B -m pytest -vv -s tests/test_ui_tk_en14825_profile_switch_fit.py`: OK.
+- `python3 -B -m pytest tests -k "en14825"`: OK, 123 passed.
+- `python3 -B -m compileall -q app_calculator.py apps/calculator core/calculators tests`: OK.
+- `python3 -B -m pytest tests -k "calculator_application"`: OK.
+- `python3 -B tools/code_checker/build_reference_map.py --check`: OK, no regeneration needed.
+- `python3 -B tools/check_code_structure.py`: OK with existing soft warnings.
+
+Remaining risk:
+
+- The new helper is applied to the minimal affected Tk tests. Other Tk tests may
+  still have direct local `tk.Tk()` fixtures, but the EN broad selector blocker
+  is resolved without changing production behavior.
+
+Next action:
+
+- Arc 12 closeout recheck or Arc 13 readiness decision.

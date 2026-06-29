@@ -4,19 +4,20 @@ from __future__ import annotations
 
 import pytest
 
+from tests.helpers.tk import destroy_tk_root, make_hidden_root
+
 
 @pytest.fixture
 def tk_root():
     tk = pytest.importorskip("tkinter")
     try:
-        root = tk.Tk()
+        root = make_hidden_root()
     except tk.TclError as exc:
         pytest.skip(f"Tk not available: {exc}")
-    root.withdraw()
     try:
         yield root
     finally:
-        root.destroy()
+        destroy_tk_root(root)
 
 
 def _assert_blank(values: dict[str, str]) -> None:
