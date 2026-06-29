@@ -14,6 +14,7 @@ from apps.calculator.application.profile_resolver import (
 from apps.calculator.application.saso_t3.models import (
     MeasuredPoints,
     ResultRow,
+    SasoT3BatchUseCaseResult,
     SasoT3UseCaseResult,
 )
 
@@ -117,6 +118,53 @@ class SasoT3UseCase:
             detail_status=None,
             invalid_fields=invalid_fields,
         )
+
+    def calculate_batch_row(self, raw_values: Mapping[str, str]) -> SasoT3BatchUseCaseResult:
+        """Calculate SASO T3 batch values with batch-specific optional semantics."""
+        required_measured, required_invalid = _parse_required_inputs(raw_values)
+        if required_invalid:
+            return _blank_batch_result("error")
+
+        required_row, _required_trace, required_error = self._calculate_required_row(
+            required_measured
+        )
+        if required_error is not None:
+            return _blank_batch_result("error")
+
+        values = {
+            "req_cspf": required_row[5],
+            "req_cstl": required_row[6],
+            "req_csec": required_row[7],
+            "opt_cspf": "",
+            "opt_cstl": "",
+            "opt_csec": "",
+        }
+        opt_cap = str(raw_values.get("min_35_capacity", "")).strip()
+        opt_power = str(raw_values.get("min_35_power", "")).strip()
+        if not opt_cap and not opt_power:
+            return SasoT3BatchUseCaseResult(values=values, status="ok")
+        if not opt_cap or not opt_power:
+            return SasoT3BatchUseCaseResult(values=values, status="error")
+
+        optional_measured, optional_invalid = _parse_optional_inputs(
+            raw_values,
+            required_measured,
+        )
+        if optional_invalid:
+            return SasoT3BatchUseCaseResult(values=values, status="error")
+        optional_row, _optional_trace, optional_error = self._calculate_optional_row(
+            optional_measured
+        )
+        if optional_error is not None:
+            return SasoT3BatchUseCaseResult(values=values, status="error")
+        values.update(
+            {
+                "opt_cspf": optional_row[5],
+                "opt_cstl": optional_row[6],
+                "opt_csec": optional_row[7],
+            }
+        )
+        return SasoT3BatchUseCaseResult(values=values, status="ok")
 
     def _calculate_required_row(
         self, measured: MeasuredPoints
@@ -275,3 +323,17 @@ def _value(result: Mapping[str, object], aliases: tuple[str, ...]) -> float | No
         if raw_value is not None:
             return float(raw_value)
     return None
+
+
+def _blank_batch_result(status: str) -> SasoT3BatchUseCaseResult:
+    return SasoT3BatchUseCaseResult(
+        values={
+            "req_cspf": "",
+            "req_cstl": "",
+            "req_csec": "",
+            "opt_cspf": "",
+            "opt_cstl": "",
+            "opt_csec": "",
+        },
+        status=status,
+    )

@@ -8,7 +8,7 @@ from types import MappingProxyType
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.saso_t3 import SasoT3UseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import (
@@ -23,11 +23,8 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
-from apps.calculator.application.profile_resolver import MODE_SASO_T3, resolve_calculation_mode_profile_id
-from apps.calculator.ui.sections.result_formatting import kwh_value, metric_value
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
-from apps.calculator.ui.table_grid_model import parse_numeric_cell
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
 
 
@@ -115,6 +112,9 @@ class SasoT3BatchHandler:
 
     spec = SASO_T3_MATRIX_SPEC
 
+    def __init__(self) -> None:
+        self._usecase = SasoT3UseCase()
+
     def calculate_row(self, row: Mapping[str, str]) -> BatchCalculationResult:
         required_keys = (
             "full_46_capacity",
@@ -128,115 +128,10 @@ class SasoT3BatchHandler:
             return self._blank_result(BatchRowState.PENDING)
 
         try:
-            full_46_cap = parse_numeric_cell(str(row.get("full_46_capacity", "")))
-            full_46_pw = parse_numeric_cell(str(row.get("full_46_power", "")))
-            full_35_cap = parse_numeric_cell(str(row.get("full_35_capacity", "")))
-            full_35_pw = parse_numeric_cell(str(row.get("full_35_power", "")))
-            half_35_cap = parse_numeric_cell(str(row.get("half_35_capacity", "")))
-            half_35_pw = parse_numeric_cell(str(row.get("half_35_power", "")))
-
-            # Positivity check
-            for val in (full_46_cap, full_46_pw, full_35_cap, full_35_pw, half_35_cap, half_35_pw):
-                if val <= 0:
-                    raise ValueError("positivity check failed")
-
-            required_measured = {
-                "46_full": {
-                    "capacity": full_46_cap,
-                    "power": full_46_pw,
-                },
-                "35_full": {
-                    "capacity": full_35_cap,
-                    "power": full_35_pw,
-                },
-                "35_half": {
-                    "capacity": half_35_cap,
-                    "power": half_35_pw,
-                },
-            }
-
-            # Calculate Required-only (3-point)
-            calc = create_calculator_for_profile(
-                profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
-            )
-            calc.config["cspf_test_profile"]["test_selection"] = "required_only"
-            req_res = calc.calculate_cspf(required_measured)
-            req_cspf_val = metric_value(req_res, "cspf")
-            req_cstl_val = kwh_value(req_res, ("annual_cooling_kwh", "cstl_kwh", "cstl"))
-            req_csec_val = kwh_value(req_res, ("annual_power_kwh", "csec_kwh", "csec"))
-
-            # Check optional inputs
-            opt_cap_str = str(row.get("min_35_capacity", "")).strip()
-            opt_pw_str = str(row.get("min_35_power", "")).strip()
-
-            opt_cspf_val = ""
-            opt_cstl_val = ""
-            opt_csec_val = ""
-            has_optional_error = False
-            has_optional = False
-
-            if not opt_cap_str and not opt_pw_str:
-                # Both blank: OK, no optional calculation
-                pass
-            elif opt_cap_str and opt_pw_str:
-                # Both present: try calculating 4pt
-                has_optional = True
-            else:
-                # One present, one blank: error
-                has_optional_error = True
-
-            if has_optional and not has_optional_error:
-                try:
-                    min_35_cap = parse_numeric_cell(opt_cap_str)
-                    min_35_pw = parse_numeric_cell(opt_pw_str)
-
-                    if min_35_cap <= 0 or min_35_pw <= 0:
-                        raise ValueError("positivity check failed")
-
-                    optional_measured = {
-                        "46_full": {
-                            "capacity": full_46_cap,
-                            "power": full_46_pw,
-                        },
-                        "35_full": {
-                            "capacity": full_35_cap,
-                            "power": full_35_pw,
-                        },
-                        "35_half": {
-                            "capacity": half_35_cap,
-                            "power": half_35_pw,
-                        },
-                        "35_min": {
-                            "capacity": min_35_cap,
-                            "power": min_35_pw,
-                        },
-                    }
-
-                    # Calculate With 35 Min (4-point)
-                    opt_calc = create_calculator_for_profile(
-                        profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3)
-                    )
-                    opt_calc.config["cspf_test_profile"]["test_selection"] = "with_optional_test"
-                    opt_res = opt_calc.calculate_cspf(optional_measured)
-                    opt_cspf_val = metric_value(opt_res, "cspf")
-                    opt_cstl_val = kwh_value(opt_res, ("annual_cooling_kwh", "cstl_kwh", "cstl"))
-                    opt_csec_val = kwh_value(opt_res, ("annual_power_kwh", "csec_kwh", "csec"))
-                except Exception:
-                    has_optional_error = True
-
-            state = BatchRowState.OK
-            if has_optional_error:
-                state = BatchRowState.ERROR
-
+            result = self._usecase.calculate_batch_row(row)
+            state = BatchRowState.OK if result.status == "ok" else BatchRowState.ERROR
             return BatchCalculationResult(
-                values={
-                    "req_cspf": req_cspf_val,
-                    "req_cstl": req_cstl_val,
-                    "req_csec": req_csec_val,
-                    "opt_cspf": opt_cspf_val,
-                    "opt_cstl": opt_cstl_val,
-                    "opt_csec": opt_csec_val,
-                },
+                values=dict(result.values),
                 state=state,
             )
 

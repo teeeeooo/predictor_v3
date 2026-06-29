@@ -5,17 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.hong_kong_cspf import HongKongCspfUseCase
 from apps.calculator.ui.batch.models import (
     BatchColumnRole,
     BatchColumnSpec,
     BatchProfileSpec,
     BatchRowState,
 )
-from apps.calculator.application.profile_resolver import resolve_profile_id
-from apps.calculator.ui.sections.iso16358_helpers import build_cspf_input
-from apps.calculator.ui.sections.result_formatting import summarize_cspf_result
-from apps.calculator.ui.table_grid_model import parse_numeric_cell
 
 
 CASE = "case"
@@ -69,22 +65,19 @@ class HongKongCspfBatchHandler:
 
     def __init__(self, region_label: str = "Hong Kong") -> None:
         self._region_label = region_label
+        self._usecase = HongKongCspfUseCase()
 
     def calculate_row(self, row: Mapping[str, str]) -> BatchCalculationResult:
         if not _has_complete_required_inputs(row):
             return _blank_result()
         try:
-            measured, declared = build_cspf_input(
-                full_capacity=_required_number(row, FULL_CAPACITY, "35 Full Cap"),
-                full_power=_required_number(row, FULL_POWER, "35 Full Power"),
-                half_capacity=_required_number(row, HALF_CAPACITY, "35 Half Cap"),
-                half_power=_required_number(row, HALF_POWER, "35 Half Power"),
-                declared_capacity=_required_number(row, DECLARED, "Declared"),
+            result = self._usecase.calculate(
+                row,
+                region_label=self._region_label,
             )
-            profile_id = resolve_profile_id(self._region_label, "CSPF")
-            calc = create_calculator_for_profile(profile_id=profile_id)
-            result = calc.calculate_cspf(measured, declared_capacity=declared)
-            fields = dict(summarize_cspf_result(result).fields)
+            if not result.is_ok:
+                return _blank_result(BatchRowState.ERROR)
+            fields = dict(result.summary_fields)
             return BatchCalculationResult(
                 values={
                     CSPF: fields.get("CSPF", "-"),
@@ -94,13 +87,6 @@ class HongKongCspfBatchHandler:
             )
         except Exception:
             return _blank_result(BatchRowState.ERROR)
-
-
-def _required_number(row: Mapping[str, str], key: str, label: str) -> float:
-    try:
-        return parse_numeric_cell(str(row.get(key, "")))
-    except ValueError as exc:
-        raise ValueError(f"{label}: {exc}") from exc
 
 
 def _has_complete_required_inputs(row: Mapping[str, str]) -> bool:

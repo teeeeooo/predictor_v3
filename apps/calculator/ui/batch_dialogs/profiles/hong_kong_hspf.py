@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.hong_kong_hspf import HongKongHspfUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.controller import BatchMatrixCalculationController
 from apps.calculator.ui.batch.matrix_models import (
@@ -28,12 +28,8 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
 )
-from apps.calculator.application.profile_resolver import resolve_profile_id
-from apps.calculator.ui.sections.iso16358_helpers import build_hspf_input
-from apps.calculator.ui.sections.result_formatting import summarize_hspf_result
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
-from apps.calculator.ui.table_grid_model import parse_numeric_cell
 
 _REQUIRED_INPUT_KEYS = (FULL_CAPACITY, FULL_POWER, HALF_CAPACITY, HALF_POWER)
 
@@ -51,21 +47,19 @@ class HongKongHspfBatchHandler:
 
     def __init__(self, region_label: str = "Hong Kong") -> None:
         self._region_label = region_label
+        self._usecase = HongKongHspfUseCase()
 
     def calculate_row(self, row: Mapping[str, str]) -> HongKongHspfBatchResult:
         if not _has_complete_required_inputs(row):
             return _blank_result()
         try:
-            measured = build_hspf_input(
-                full_capacity=_required_number(row, FULL_CAPACITY, "7 Full Capacity"),
-                full_power=_required_number(row, FULL_POWER, "7 Full Power"),
-                half_capacity=_required_number(row, HALF_CAPACITY, "7 Half Capacity"),
-                half_power=_required_number(row, HALF_POWER, "7 Half Power"),
+            result = self._usecase.calculate(
+                row,
+                region_label=self._region_label,
             )
-            profile_id = resolve_profile_id(self._region_label, "HSPF")
-            calc = create_calculator_for_profile(profile_id=profile_id)
-            result = calc.calculate_hspf(measured)
-            fields = dict(summarize_hspf_result(result).fields)
+            if not result.is_ok:
+                return _blank_result(BatchRowState.ERROR)
+            fields = dict(result.summary_fields)
             return HongKongHspfBatchResult(
                 values={
                     HSPF: fields.get("HSPF", "-"),
@@ -222,13 +216,6 @@ class HongKongHspfBatchDialog:
 
     def focus(self) -> None:
         self._shell.focus()
-
-
-def _required_number(row: Mapping[str, str], key: str, label: str) -> float:
-    try:
-        return parse_numeric_cell(str(row.get(key, "")))
-    except ValueError as exc:
-        raise ValueError(f"{label}: {exc}") from exc
 
 
 def _has_complete_required_inputs(row: Mapping[str, str]) -> bool:

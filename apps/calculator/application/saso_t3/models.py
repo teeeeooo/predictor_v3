@@ -28,3 +28,11 @@ class SasoT3UseCaseResult:
     @property
     def is_ok(self) -> bool:
         return self.status == "ok"
+
+
+@dataclass(frozen=True)
+class SasoT3BatchUseCaseResult:
+    """UI-neutral SASO T3 batch row calculation result."""
+
+    values: Mapping[str, str]
+    status: str

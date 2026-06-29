@@ -1,4 +1,5 @@
 import importlib
+from pathlib import Path
 import sys
 
 import pytest
@@ -100,3 +101,36 @@ def test_core_calculator_dispatcher_adapter_delegates_to_core_dispatcher(monkeyp
             "mode": "cooling",
         }
     ]
+
+
+def test_arc12_completed_ui_surfaces_do_not_own_core_dispatcher_or_config_mutation():
+    paths = [
+        Path("apps/calculator/ui/sections/iso_iseer_2point_section.py"),
+        Path("apps/calculator/ui/batch_dialogs/profiles/iso_iseer_2point.py"),
+        Path("apps/calculator/ui/sections/iso_saso_t3_section.py"),
+        Path("apps/calculator/ui/batch_dialogs/profiles/saso_t3.py"),
+        Path("apps/calculator/ui/sections/hong_kong_cspf_section.py"),
+        Path("apps/calculator/ui/sections/hong_kong_cspf_batch_spec.py"),
+        Path("apps/calculator/ui/sections/hong_kong_hspf_section.py"),
+        Path("apps/calculator/ui/batch_dialogs/profiles/hong_kong_hspf.py"),
+        Path("apps/calculator/ui/sections/en14825_seer_section.py"),
+        Path("apps/calculator/ui/sections/en14825_scop_section.py"),
+        Path("apps/calculator/ui/sections/ahri_seer2_section.py"),
+        Path("apps/calculator/ui/sections/ahri_hspf2_section.py"),
+    ]
+
+    for path in paths:
+        source = path.read_text(encoding="utf-8")
+        assert "core.calculators.dispatcher" not in source, path
+        assert "create_calculator_for_profile" not in source, path
+        assert "calculate_cspf" not in source, path
+        assert "calculate_hspf" not in source, path
+        assert ".config[" not in source, path
+
+
+def test_arc12_application_packages_do_not_import_ui_packages_or_runtimes():
+    for path in Path("apps/calculator/application").rglob("*.py"):
+        source = path.read_text(encoding="utf-8")
+        assert "apps.calculator.ui" not in source, path
+        assert "tkinter" not in source, path
+        assert "PySide6" not in source, path
