@@ -1,7 +1,10 @@
 """Headless table model containing SEER row/column structure, cell values, and state metadata."""
 
 from typing import Dict, Tuple
-from apps.calculator.ui.en14825.seer_models import SeerPointInput, SeerPointComputed
+from apps.calculator.application.en14825.seer_models import (
+    SeerPointComputed,
+    SeerPointInput,
+)
 from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
 
 class SeerTableModel:

@@ -1,7 +1,10 @@
 """Headless table model containing SCOP row/column structure, cell values, and state metadata."""
 
 from typing import Dict, Tuple
-from apps.calculator.ui.en14825.scop_models import ScopPointInput, ScopPointComputed
+from apps.calculator.application.en14825.scop_models import (
+    ScopPointComputed,
+    ScopPointInput,
+)
 from apps.calculator.ui.en14825.scop_adapter import ScopAdapter
 
 

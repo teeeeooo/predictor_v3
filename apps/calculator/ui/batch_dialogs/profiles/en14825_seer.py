@@ -11,7 +11,7 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.batch_dialogs.shell import BatchDialogShell
-from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
+from apps.calculator.application.en14825 import SeerAdapter
 from apps.calculator.ui.en14825.seer_batch import (
     EN14825_SEER_BATCH_SPEC,
     En14825SeerBatchCommonInputs,

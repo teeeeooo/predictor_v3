@@ -13,7 +13,7 @@ from apps.calculator.ui.batch.matrix_models import (
 )
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.en14825.scop_adapter import ScopAdapter
-from apps.calculator.ui.en14825.scop_models import ScopPointInput
+from apps.calculator.application.en14825.scop_models import ScopPointInput
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
     BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,

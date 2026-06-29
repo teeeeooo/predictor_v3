@@ -9,7 +9,7 @@ from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.batch.models import BatchRowState
-from apps.calculator.ui.en14825.scop_adapter import ScopAdapter
+from apps.calculator.application.en14825 import ScopAdapter
 from apps.calculator.ui.en14825.scop_batch import (
     En14825ScopBatchCommonInputs,
     En14825ScopBatchHandler,

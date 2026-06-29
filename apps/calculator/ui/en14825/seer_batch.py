@@ -13,7 +13,7 @@ from apps.calculator.ui.batch.matrix_models import (
 )
 from apps.calculator.ui.batch.models import BatchRowState
 from apps.calculator.ui.en14825.seer_adapter import SeerAdapter
-from apps.calculator.ui.en14825.seer_models import SeerPointInput
+from apps.calculator.application.en14825.seer_models import SeerPointInput
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
     BATCH_MATRIX_RESULT_SECONDARY_WIDTH_CHARS,

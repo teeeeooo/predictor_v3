@@ -6,9 +6,11 @@ from collections.abc import Callable, Mapping
 import tkinter as tk
 from tkinter import ttk
 
-from apps.calculator.ui.en14825 import (
-    ScopAdapter,
+from apps.calculator.application.en14825 import ScopAdapter
+from apps.calculator.application.en14825.scop_models import (
     ScopResultSummary,
+)
+from apps.calculator.ui.en14825 import (
     ScopTableModel,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
