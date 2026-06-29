@@ -98,13 +98,14 @@ class TestUndoBehavior:
 
     def test_undo_restores_original_value(self, section) -> None:
         ctrl = section.input_controller
+        section.input_table.set_values({"full_capacity": "6300"})
         # Focus and enter edit mode on cell (0, 0)
         ctrl.select((0, 0))
         ctrl._enter_edit_mode((0, 0))
         section.input_table.update_idletasks()
         
         # Simulate invalid edit
-        # First check the current value (default full_capacity: "6300")
+        # First check the current value.
         assert ctrl.table.text_at_position((0, 0)) == "6300"
         
         # Mutate value by triggering entry edit and focus out

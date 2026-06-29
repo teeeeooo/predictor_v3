@@ -6,12 +6,11 @@ Defaults mirror the feasibility MVP so Hong Kong HSPF = 3.643 is preserved.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Mapping
 
 import tkinter as tk
 from tkinter import ttk
 
-from core.calculators.dispatcher import create_calculator_for_profile
+from apps.calculator.application.hong_kong_hspf import HongKongHspfUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.hong_kong_hspf import (
@@ -24,14 +23,12 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.application.profile_resolver import resolve_profile_id
+from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_models import result_status
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
-from apps.calculator.ui.sections.iso16358_helpers import build_hspf_input
-from apps.calculator.ui.sections.result_formatting import summarize_hspf_result
 
 
 class HongKongHspfSection:
@@ -49,6 +46,7 @@ class HongKongHspfSection:
         self._trace_rows: list[dict] = []
         self._detail_summary: tuple[tuple[str, str], ...] = ()
         self._trace_status: str | None = "상세 데이터 없음"
+        self._usecase = HongKongHspfUseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], HongKongHspfBatchDialog
         ] = BatchDialogHandle()
@@ -174,47 +172,33 @@ class HongKongHspfSection:
     def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
         self._batch_handle.clear(snapshot)
 
-    def _read_inputs(self) -> Mapping[str, object]:
-        values = self.input_table.get_numeric_values()
-        return build_hspf_input(
-            full_capacity=values["full_capacity"],
-            full_power=values["full_power"],
-            half_capacity=values["half_capacity"],
-            half_power=values["half_power"],
-        )
-
     def recalculate_now(self) -> None:
-        if not any(
-            value.strip() for value in self.input_table.get_text_values().values()
-        ):
-            self._clear_trace("\uc785\ub825 \ub300\uae30")
+        result = self._usecase.calculate(
+            self.input_table.get_text_values(),
+            region_label=self._region_label,
+        )
+        self.input_table.clear_invalid_fields()
+        if result.invalid_fields:
+            self.input_table.set_invalid_fields(result.invalid_fields)
+        if result.detail_status is not None:
+            self._clear_trace(result.detail_status)
             self.result_panel.set_summaries(
-                (result_status("HSPF", "\uc785\ub825 \ub300\uae30"),)
+                (result_status(result.summary_title, result.status_text),)
             )
             return
-        try:
-            measured = self._read_inputs()
-        except ValueError:
-            self._clear_trace("입력 오류: 숫자 입력을 확인하세요.")
-            self.result_panel.set_summaries(
-                (result_status("HSPF", "입력 오류: 숫자 입력을 확인하세요."),)
-            )
-            return
-        try:
-            profile_id = resolve_profile_id(self._region_label, "HSPF")
-            calc = create_calculator_for_profile(profile_id=profile_id)
-            result = calc.calculate_hspf(measured)
-        except Exception as exc:
-            self._clear_trace("계산 오류")
-            self.result_panel.set_summaries(
-                (result_status("HSPF", f"오류: {type(exc).__name__}: {exc}"),)
-            )
-            return
-        self._trace_rows = _hspf_bin_details(result)
-        self._detail_summary = _hspf_summary_from_result(result)
+        self._trace_rows = list(result.detail_rows)
+        self._detail_summary = result.detail_summary
         self._trace_status = None
         self._update_detail_panel()
-        self.result_panel.set_summaries((summarize_hspf_result(result),))
+        self.result_panel.set_summaries(
+            (
+                ResultSummary(
+                    title=result.summary_title,
+                    fields=result.summary_fields,
+                    status=result.status_text,
+                ),
+            )
+        )
 
     def _toggle_detail(self) -> None:
         self._detail_visibility.toggle()
@@ -244,34 +228,3 @@ class HongKongHspfSection:
         if event.widget is self._frame:
             self._batch_handle.dispose()
             self._auto_calc.dispose()
-
-
-def _hspf_bin_details(result: Mapping[str, object]) -> list[dict]:
-    raw = result.get("bin_details")
-    if not isinstance(raw, list):
-        return []
-    return [dict(item) for item in raw if isinstance(item, Mapping)]
-
-
-def _hspf_summary_from_result(result: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
-    hspf = result.get("hspf")
-    hspf_text = "-" if hspf is None else f"{float(hspf):.3f}"
-    hstl = result.get("hstl_wh", result.get("hstl"))
-    hstl_text = "-"
-    if hstl is not None:
-        try:
-            hstl_text = f"{float(hstl) / 1000.0:.1f}"
-        except (TypeError, ValueError):
-            hstl_text = str(hstl)
-    hsec = result.get("hsec_wh", result.get("hsec"))
-    hsec_text = "-"
-    if hsec is not None:
-        try:
-            hsec_text = f"{float(hsec) / 1000.0:.1f}"
-        except (TypeError, ValueError):
-            hsec_text = str(hsec)
-    return (
-        ("HSPF", hspf_text),
-        ("HSTL [kWh]", hstl_text),
-        ("HSEC [kWh]", hsec_text),
-    )
