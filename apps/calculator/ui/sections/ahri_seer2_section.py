@@ -6,7 +6,7 @@ from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
 
-from apps.calculator.ui.ahri import (
+from apps.calculator.application.ahri import (
     AHRI_SEER2_POINT_ORDER,
     AHRI_SEER2_TEMPERATURES_C,
     AhriSeer2Adapter,

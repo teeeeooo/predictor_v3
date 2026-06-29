@@ -1,6 +1,6 @@
 """AHRI 210/240 UI adapters."""
 
-from apps.calculator.ui.ahri.seer2_adapter import (
+from apps.calculator.application.ahri import (
     AHRI_SEER2_POINT_ORDER,
     AHRI_SEER2_TEMPERATURES_C,
     AhriSeer2Adapter,

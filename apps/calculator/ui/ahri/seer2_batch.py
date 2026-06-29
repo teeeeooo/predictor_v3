@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
-from apps.calculator.ui.ahri.seer2_adapter import (
+from apps.calculator.application.ahri import (
     AHRI_SEER2_POINT_ORDER,
     AhriSeer2Adapter,
 )

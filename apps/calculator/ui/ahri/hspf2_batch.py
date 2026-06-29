@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
-from apps.calculator.ui.ahri.hspf2_adapter import (
+from apps.calculator.application.ahri import (
     AHRI_HSPF2_POINT_ORDER,
     AhriHspf2Adapter,
     AhriHspf2Options,

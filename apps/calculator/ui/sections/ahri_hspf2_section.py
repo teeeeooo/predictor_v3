@@ -6,7 +6,7 @@ from collections.abc import Callable
 import tkinter as tk
 from tkinter import ttk
 
-from apps.calculator.ui.ahri.hspf2_adapter import (
+from apps.calculator.application.ahri import (
     AHRI_HSPF2_POINT_ORDER,
     AHRI_HSPF2_TEMPERATURES_C,
     AhriHspf2Adapter,
