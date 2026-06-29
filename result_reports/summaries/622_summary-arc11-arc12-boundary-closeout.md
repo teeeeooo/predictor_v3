@@ -1,0 +1,118 @@
+# 622 Summary - Arc 11 / Arc 12 Boundary Closeout
+
+## Goal
+
+Compress the completed Arc 11 boundary correction follow-up and Arc 12
+calculator application-boundary reports into one lifecycle summary so current
+work can rely on owner docs, focused tests, and this summary instead of active
+intermediate reports.
+
+## Covered Reports
+
+- `result_reports/archive/603_active-report-lifecycle-cleanup-arc10-arc11.md`
+- `result_reports/archive/604_arc11-hexagonal-boundary-reopen.md`
+- `result_reports/archive/605_train-execution-process-adapter.md`
+- `result_reports/archive/606_predict-execution-usecase-port.md`
+- `result_reports/archive/607_arc11-hexagonal-boundary-correction-closeout.md`
+- `result_reports/archive/608_arc11-boundary-cleanup.md`
+- `result_reports/archive/609_training-service-validation-only.md`
+- `result_reports/archive/610_arc12-calculator-boundary-audit.md`
+- `result_reports/archive/611_calculator-application-boundary-foundation.md`
+- `result_reports/archive/612_iso-iseer-2point-usecase-extraction.md`
+- `result_reports/archive/613_iso-iseer-2point-batch-usecase-reuse.md`
+- `result_reports/archive/614_arc12-calculator-usecase-boundary-closeout.md`
+- `result_reports/archive/615_arc12-saso-t3-usecase-extraction.md`
+- `result_reports/archive/616_arc12-hong-kong-cspf-usecase-extraction.md`
+- `result_reports/archive/617_arc12-hong-kong-hspf-usecase-extraction.md`
+- `result_reports/archive/618_arc12-en14825-boundary-correction.md`
+- `result_reports/archive/619_arc12-ahri-boundary-correction.md`
+- `result_reports/archive/620_arc12-boundary-consistency-audit.md`
+- `result_reports/archive/621_arc12-calculator-boundary-final-closeout.md`
+
+## Consolidated Result
+
+Arc 11 was reopened after the initial trainer execution foundation to correct
+the Train/Predict hexagonal boundary. Production Train execution now runs
+through an execution port and killable process runner adapter, with terminate
+then kill fallback and cleanup that prevents partial final model promotion on
+cancel/error. Predict execution orchestration is behind a UI/runtime-neutral
+usecase and execution port, while the PySide QThread worker remains an adapter
+implementation. `TrainingService` was reduced back to resource status and
+request validation; DEV/test backend execution moved to mock-smoke tooling.
+
+Arc 12 completed the calculator UI/application boundary correction for the
+automated scope. ISO/ISEER 2-point single and batch established the first
+application usecase pattern. SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI
+paths were then moved to application-owned usecases/adapters or thin UI shims
+that delegate orchestration. Completed UI sections and matching batch paths no
+longer directly own core dispatcher orchestration or calculator config mutation
+where targeted by Arc 12.
+
+Calculator formulas, configuration semantics, profile IDs, fixture/golden
+expected values, public result contracts, ML algorithms, preprocessing, feature
+registries, and generated mock artifacts remained out of scope for the covered
+work.
+
+## Durable Decisions
+
+- Arc 11 Predict/Train correction supersedes the earlier trainer execution
+  foundation acceptance: execution orchestration belongs behind application
+  usecases/ports, while PySide/QProcess/QThread details belong to adapters.
+- `TrainingService` owns Train resource status and request validation only; it
+  is not a production training execution owner.
+- Arc 12 calculator UI/batch orchestration for the targeted standards belongs
+  behind application usecases/adapters or thin UI shims, not direct UI-owned
+  dispatcher/config mutation.
+- Matching calculator batch paths should reuse the corresponding application
+  usecases/adapters where applicable.
+- Arc 13 ML Pipeline Stabilization is unblocked after Arc 12, but remains a
+  separate arc and should not be mixed into calculator boundary cleanup.
+
+## Verification Evidence
+
+The covered reports recorded focused automated evidence for:
+
+- Train process runner, cancellation, temp artifact cleanup, service boundary,
+  DEV mock Train execution, and Predict-after-Train smoke behavior.
+- Predict usecase/port behavior and PySide runner adapter boundary.
+- ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI calculator
+  application-boundary behavior across single/detail/batch paths where covered.
+- Compile checks, focused pytest selections, code-map freshness checks,
+  structure guard runs, and `git diff --check`.
+
+The final Arc 12 closeout recorded focused calculator application/usecase tests
+as passing, code-map check as fresh, structure guard as passing with known soft
+warnings, and Slice 10 split evidence for EN/AHRI where the broad selector had
+stalled in the EN Tk segment.
+
+## Known Risks / Open Items
+
+- Manual GUI smoke remains user-run for the covered Train/Predict and
+  calculator UI paths.
+- Real production model quality, accuracy, physical trends, and feature
+  importance were not validated by DEV mock smoke.
+- Existing structure soft warnings remain in known core/EN hotspots.
+- EN/AHRI broad focused selector had a known stall in the EN Tk segment during
+  Slice 10; split focused groups were used as acceptance evidence.
+- Memory seed size exceeds the dedicated maintenance threshold; this lifecycle
+  cleanup only performs the required summary registration and minimal durable
+  entry update.
+
+## Archive Decision
+
+All covered reports are completed history or intermediate implementation
+evidence now represented by this summary, current project state docs, focused
+tests, and source. No covered report needs to remain active for Arc 13 start or
+future manual-smoke follow-up.
+
+## Project Memory Seed Sync Judgment
+
+The memory seed is updated with this summary under Source Summaries, the prior
+Arc 11 correction source is repointed from an active report to this summary, and
+one compact Arc 12 durable decision is added. No individual report-level entries
+are backfilled.
+
+## Next Action
+
+Arc 13 - ML Pipeline Stabilization, unless the user asks for manual GUI smoke or
+dedicated memory seed maintenance first.

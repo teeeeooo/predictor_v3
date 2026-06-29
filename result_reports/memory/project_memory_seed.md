@@ -48,6 +48,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md` (covered reports `537-553`)
 - `result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md` (covered reports `555-581`)
 - `result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md` (covered reports `583-601`)
+- `result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md` (covered reports `603-621`)
 
 ## Scope and Non-goals
 
@@ -1031,7 +1032,20 @@ entries:
       - usecase port
     assertionStatus: verified
     supersedes: Arc 11 trainer execution foundation closeout
-    source: result_reports/active/607_arc11-hexagonal-boundary-correction-closeout.md
+    source: result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md (covered reports 603-621; Arc 11 section)
+
+  - type: decision
+    topic: Arc 12 calculator application boundary closeout
+    content: Arc 12 calculator UI/application boundary correction is complete for the automated scope: targeted ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825, and AHRI calculator UI/batch orchestration now routes through application usecases/adapters or thin UI shims, while calculator formulas, configuration semantics, profile IDs, fixture/golden expected values, and public result contracts remain unchanged. Arc 13 ML Pipeline Stabilization is unblocked as a separate arc.
+    keywords:
+      - predictor_v3
+      - Arc 12
+      - calculator application boundary
+      - usecase adapter
+      - Arc 13
+      - ML Pipeline Stabilization
+    assertionStatus: verified
+    source: result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md (covered reports 603-621; Arc 12 section)
 ```
 
 ## Known Gaps
