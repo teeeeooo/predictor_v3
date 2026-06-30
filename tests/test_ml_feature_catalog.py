@@ -7,6 +7,7 @@ import csv
 from pathlib import Path
 
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+import core.ml.feature_catalog as feature_catalog_module
 from core.ml.feature_catalog import (
     REQUIRED_HEADERS,
     FeatureCatalog,
@@ -18,6 +19,9 @@ from core.ml.feature_catalog import (
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
+
+
+CANONICAL_TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
 
 
 def test_feature_catalog_loads_default_draft_without_validation_errors():
@@ -33,6 +37,23 @@ def test_feature_catalog_feature_projection_matches_current_constants():
     assert catalog.base_features() == BASE_FEATURES
     assert catalog.derived_features() == DERIVED_FEATURES
     assert catalog.targets() == TARGETS
+
+
+def test_feature_catalog_targets_use_canonical_result_row_order():
+    catalog = load_feature_catalog()
+    result_row_order = [
+        row.ml_name
+        for row in catalog.active_rows
+        if row.role == "result"
+    ]
+
+    assert result_row_order == CANONICAL_TARGETS
+    assert catalog.targets() == CANONICAL_TARGETS
+    assert TARGETS == CANONICAL_TARGETS
+
+
+def test_target_compat_order_has_been_removed():
+    assert not hasattr(feature_catalog_module, "TARGET_COMPAT_ORDER")
 
 
 def test_feature_catalog_predictor_input_auto_projection_matches_schema():

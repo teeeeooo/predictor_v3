@@ -37,7 +37,7 @@ MODE_MISSING_ALLOWED_FEATURES = frozenset(
 SEASONAL_OUTPUT_NAMES = frozenset({"CSPF", "HSPF", "CSEC", "HSEC", "HSPF2"})
 BASE_FEATURE_ROLES = frozenset({"input", "auto", "one_hot", "result", "hidden"})
 UI_VISIBLE_ROLES = frozenset({"input", "auto", "result"})
-TARGET_COMPAT_ORDER = ("Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz")
+BASE_FEATURE_RESULT_ORDER = ("Ref Qty", "Cooling Power", "Heating Power", "Cooling Hz", "Heating Hz")
 
 @dataclass(frozen=True)
 class FeatureCatalogRow:
@@ -69,24 +69,27 @@ class FeatureCatalog:
         return tuple(row for row in self.rows if row.active)
 
     def base_features(self) -> list[str]:
-        return [
+        base_rows = [
             row.ml_name
             for row in self.active_rows
-            if row.role in BASE_FEATURE_ROLES and row.ml_name
+            if row.role in BASE_FEATURE_ROLES - {"result"} and row.ml_name
         ]
+        results_by_name = {row.ml_name: row for row in self.active_rows if row.role == "result"}
+        ordered_results = [
+            name for name in BASE_FEATURE_RESULT_ORDER if name in results_by_name
+        ]
+        remaining_results = [
+            row.ml_name
+            for row in self.active_rows
+            if row.role == "result" and row.ml_name not in BASE_FEATURE_RESULT_ORDER
+        ]
+        return base_rows + ordered_results + remaining_results
 
     def derived_features(self) -> list[str]:
         return [row.ml_name for row in self.active_rows if row.role == "derived" and row.ml_name]
 
     def targets(self) -> list[str]:
-        rows_by_name = {row.ml_name: row for row in self.active_rows if row.role == "result"}
-        ordered = [name for name in TARGET_COMPAT_ORDER if name in rows_by_name]
-        remaining = [
-            row.ml_name
-            for row in self.active_rows
-            if row.role == "result" and row.ml_name not in TARGET_COMPAT_ORDER
-        ]
-        return ordered + remaining
+        return [row.ml_name for row in self.active_rows if row.role == "result" and row.ml_name]
 
     def predictor_rows(self) -> tuple[FeatureCatalogRow, ...]:
         return tuple(row for row in self.active_rows if row.role in UI_VISIBLE_ROLES and row.ui_key)

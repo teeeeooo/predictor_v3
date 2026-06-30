@@ -1,17 +1,19 @@
-"""ML feature and target constants."""
+"""ML feature and target constants projected from the feature catalog."""
 
-BASE_FEATURES = [
-    "Cooling Capa", "Heating Capa", "ID Volume", "Evap Area", "Evap Volume",
-    "OD Volume", "Cond Area", "Cond Volume", "Comp EER", "Comp cc",
-    "R410A", "R32", "R290", "EEV", "Capi", "Ref Qty",
-    "Cooling Power", "Heating Power", "Cooling Hz", "Heating Hz"
-]
+from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 
-DERIVED_FEATURES = [
-    "Cool_Capa_per_EER", "Cool_Capa_per_CondArea",
-    "Cool_Capa_per_EvapArea", "Cool_Capa_per_cc",
-    "Heat_Capa_per_EER", "Heat_Capa_per_CondArea",
-    "Heat_Capa_per_EvapArea", "Heat_Capa_per_cc"
-]
 
-TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
+def _load_validated_catalog():
+    catalog = load_feature_catalog()
+    errors = validate_feature_catalog(catalog)
+    if errors:
+        joined = "; ".join(errors)
+        raise RuntimeError(f"invalid ML feature catalog: {joined}")
+    return catalog
+
+
+_CATALOG = _load_validated_catalog()
+
+BASE_FEATURES = _CATALOG.base_features()
+DERIVED_FEATURES = _CATALOG.derived_features()
+TARGETS = _CATALOG.targets()

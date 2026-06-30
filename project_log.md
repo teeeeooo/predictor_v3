@@ -977,3 +977,17 @@
 - Current `BASE_FEATURES` and `TARGETS` orders conflict for result-like names,
   so catalog `targets()` keeps an explicit compatibility order until projection
   migration resolves the ordering contract.
+
+## 2026-06-30 — Arc 13 Slice 2 ML features projection from catalog
+
+### Decision
+- `core/ml/features.py` now exports `BASE_FEATURES`, `DERIVED_FEATURES`, and
+  `TARGETS` from the validated feature catalog projection.
+- `config/ml/features.csv` result rows were reordered to the canonical
+  `TARGETS` order: Cooling Power, Heating Power, Ref Qty, Cooling Hz,
+  Heating Hz.
+- `TARGET_COMPAT_ORDER` was removed because result row order now owns target
+  projection order.
+- `BASE_FEATURES` still needs a separate legacy result-order projection because
+  existing base-feature order places `Ref Qty` before power and frequency
+  target-like names.

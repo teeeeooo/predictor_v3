@@ -27,6 +27,9 @@
 
 ## Current Slice
 
+- Arc 13 Slice 2 converted `core/ml/features.py` exports to catalog projection
+  while preserving `BASE_FEATURES`, `DERIVED_FEATURES`, and canonical `TARGETS`
+  order. `TARGET_COMPAT_ORDER` was removed after result rows were reordered.
 - Arc 13 Slice 1 added the non-runtime feature catalog draft plus
   `core/ml/feature_catalog.py` loader/validator and focused parity tests
   against current constants, predictor schema, registry references, one-hot
@@ -88,7 +91,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 2 - ML Features Projection from Catalog.
+1. Arc 13 Slice 3 - Predictor Schema Projection from Catalog.
 
 ## Active Blockers / Open Decisions
 
