@@ -27,6 +27,8 @@
 
 ## Current Slice
 
+- Arc 13 Slice 6 hardened catalog/registry/resource guards and added the
+  user-facing ML feature catalog workflow.
 - Arc 13 Slice 5 connected feature catalog runtime guards: training data
   headers must match `features.csv` `ml_name` values before training, and
   inference missing-feature zero fill is limited by `zero_fill_policy`.
@@ -108,7 +110,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 6 - Catalog Guard / Packaging / Workflow Hardening.
+1. Arc 13 Slice 7 - Arc 13 Final Closeout.
 
 ## Active Blockers / Open Decisions
 

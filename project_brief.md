@@ -527,7 +527,8 @@ Status:
   catalog projection while preserving current UI schema exports. Slice 3.5
   split predictor UI-only compatibility columns into their own schema owner.
   Slice 4 moved Predict one-hot group ownership to catalog projection. Slice 5
-  connected training header and inference zero-fill runtime guards.
+  connected training header and inference zero-fill runtime guards. Slice 6
+  hardened registry/resource guards and documented the feature edit workflow.
 
 ### Later — Calculator to Predictor Integration
 

@@ -81,13 +81,26 @@ def validate_registry_references(catalog, model_registry: dict) -> list[str]:
     """Return errors for MODEL_REGISTRY references missing from the catalog."""
     errors: list[str] = []
     catalog_names = {row.ml_name for row in catalog.active_rows if row.ml_name}
+    result_names = {
+        row.ml_name
+        for row in catalog.active_rows
+        if row.role == "result" and row.ml_name
+    }
     for model_key, config in model_registry.items():
         for target in config.get("targets", ()):
             if target not in catalog_names:
                 errors.append(f"{model_key}: target '{target}' is missing from catalog")
+            elif target not in result_names:
+                errors.append(
+                    f"{model_key}: target '{target}' is not an active result catalog row"
+                )
         for target, rules in config.get("target_rules", {}).items():
             if target not in catalog_names:
                 errors.append(f"{model_key}: target rule '{target}' is missing from catalog")
+            elif target not in result_names:
+                errors.append(
+                    f"{model_key}: target rule '{target}' is not an active result catalog row"
+                )
             for rule_name in ("exclude", "allowed"):
                 for feature_name in rules.get(rule_name, ()):
                     if feature_name not in catalog_names:

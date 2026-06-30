@@ -1053,3 +1053,16 @@
   Cooling Capa, Cooling Power, Heating Capa, and Heating Power.
 - Other missing ML feature names now fail fast with a message listing the
   missing feature names and the catalog zero-fill policy boundary.
+
+## 2026-06-30 — Arc 13 Slice 6 catalog guard and workflow hardening
+
+### Decision
+- Registry/catalog validation now requires registry targets and target-rule
+  keys to be active catalog `result` rows, not merely names present somewhere
+  in the catalog.
+- Focused tests guard registry leakage behavior after catalog projection:
+  global targets stay out of feature matrices, exclude rules remove forbidden
+  features, and allowed rules constrain the target feature set.
+- `docs/workflows/ml_feature_catalog_workflow.md` documents the user workflow:
+  edit `features.csv`, align training headers to `ml_name`, keep UI
+  presentation code-owned, and respect the four-feature zero-fill policy.

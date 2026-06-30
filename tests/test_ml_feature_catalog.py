@@ -26,7 +26,8 @@ from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
 from core.ml.feature_catalog_projection import one_hot_group, predictor_columns_projection
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.inference import build_input_df
-from core.ml.registry import MODEL_REGISTRY
+from core.ml.preprocessing import prepare_pipeline
+from core.ml.registry import MODEL_REGISTRY, get_model_config
 from core.ml.training import validate_training_input_headers
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
 from core.predictor_schema.columns import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
@@ -283,6 +284,76 @@ def test_feature_catalog_registry_references_exist_in_catalog():
     catalog = load_feature_catalog()
 
     assert validate_registry_references(catalog, MODEL_REGISTRY) == []
+
+
+def test_feature_catalog_registry_targets_are_active_result_rows():
+    catalog = load_feature_catalog()
+    result_names = {
+        row.ml_name
+        for row in catalog.active_rows
+        if row.role == "result"
+    }
+
+    for config in MODEL_REGISTRY.values():
+        assert set(config["targets"]).issubset(result_names)
+        assert set(config.get("target_rules", {})).issubset(result_names)
+
+
+def test_model_registry_rules_still_apply_after_catalog_projection():
+    df = pd.DataFrame([_complete_base_row() for _index in range(5)])
+
+    for model_key in MODEL_REGISTRY:
+        config = get_model_config(model_key)
+        x_full, y_full = prepare_pipeline(df, config)
+        assert y_full is not None
+        assert set(config["targets"]).issubset(y_full.columns)
+        assert set(TARGETS).isdisjoint(x_full.columns)
+
+        for rules in config.get("target_rules", {}).values():
+            x_target = x_full.copy()
+            if "exclude" in rules:
+                x_target = x_target.drop(
+                    columns=[
+                        column for column in rules["exclude"]
+                        if column in x_target.columns
+                    ]
+                )
+                assert set(rules["exclude"]).isdisjoint(x_target.columns)
+            if "allowed" in rules:
+                x_target = x_target[
+                    [column for column in x_target.columns if column in rules["allowed"]]
+                ]
+                assert set(x_target.columns).issubset(set(rules["allowed"]))
+
+
+def test_feature_catalog_registry_validator_rejects_non_result_target():
+    non_result_target = FeatureCatalogRow(
+        order=1,
+        feature_id="not_result",
+        ml_name="Cooling Capa",
+        role="input",
+        ui_key="cooling_capa",
+        label="Cooling Capa",
+        source="",
+        mapping_key="",
+        one_hot_group="",
+        zero_fill_policy="mode_missing_allowed",
+        active=True,
+    )
+    catalog = FeatureCatalog(rows=(non_result_target,))
+
+    errors = validate_registry_references(
+        catalog,
+        {"bad_model": {"targets": ["Cooling Capa"], "target_rules": {}}},
+    )
+
+    assert "bad_model: target 'Cooling Capa' is not an active result catalog row" in errors
+
+
+def test_default_catalog_path_is_packaging_required_resource():
+    assert DEFAULT_CATALOG_PATH == Path.cwd() / "config" / "ml" / "features.csv"
+    assert DEFAULT_CATALOG_PATH.is_file()
+    assert load_feature_catalog(DEFAULT_CATALOG_PATH).path == DEFAULT_CATALOG_PATH
 
 
 def test_feature_catalog_inactive_rows_are_excluded_from_projections():
