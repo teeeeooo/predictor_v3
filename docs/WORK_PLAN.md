@@ -27,6 +27,10 @@
 
 ## Current Slice
 
+- Arc 13 Slice 1 added the non-runtime feature catalog draft plus
+  `core/ml/feature_catalog.py` loader/validator and focused parity tests
+  against current constants, predictor schema, registry references, one-hot
+  tuples, zero-fill policy, and Train panel target tuple.
 - Arc 13 Slice 0 formalized the ML Feature Manifest Minimal Design Gate:
   current feature owners were audited, the single-file
   `config/ml/features.csv` target schema was proposed, and runtime connection
@@ -84,7 +88,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 1 - Feature Catalog Loader / Validator Foundation.
+1. Arc 13 Slice 2 - ML Features Projection from Catalog.
 
 ## Active Blockers / Open Decisions
 

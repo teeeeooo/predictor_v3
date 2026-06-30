@@ -963,3 +963,17 @@
 - Broad `build_input_df()` zero-fill behavior is documented as compatibility
   behavior; the target policy allows mode-missing zero fill only for cooling
   and heating capacity/power features after separate tests and confirmation.
+
+## 2026-06-30 — Arc 13 Slice 1 feature catalog loader and validator
+
+### Decision
+- `config/ml/features.csv` is introduced as a non-runtime catalog draft for the
+  current ML feature contract.
+- `core/ml/feature_catalog.py` can load, validate, and project catalog rows
+  without import-time file I/O, while existing runtime exports remain unchanged.
+- Focused tests verify parity with current `BASE_FEATURES`, `DERIVED_FEATURES`,
+  `TARGETS`, predictor schema mappings, one-hot tuples, registry references,
+  zero-fill policy, and the Train panel target tuple.
+- Current `BASE_FEATURES` and `TARGETS` orders conflict for result-like names,
+  so catalog `targets()` keeps an explicit compatibility order until projection
+  migration resolves the ordering contract.

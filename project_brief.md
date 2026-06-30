@@ -519,8 +519,9 @@ Target milestones:
 
 Status:
 
-- Active. Slice 0 created the ML Feature Manifest Minimal Design Gate; Slice 1
-  is the Feature Catalog Loader / Validator Foundation with no runtime use.
+- Active. Slice 0 created the ML Feature Manifest Minimal Design Gate. Slice 1
+  added the non-runtime catalog draft, loader/validator, and parity tests.
+  Slice 2 is ML Features Projection from Catalog.
 
 ### Later — Calculator to Predictor Integration
 
