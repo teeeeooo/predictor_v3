@@ -1,5 +1,7 @@
 """Predict row-to-ML and result adapter recovery tests."""
 
+import pytest
+
 from apps.predict.adapters.prediction_result_adapter import (
     PredictionResultAdapter,
     apply_prediction_result,
@@ -59,6 +61,54 @@ def test_row_to_ml_adapter_one_hot_parity():
     assert row_input["R290"] == 1.0
     assert row_input["EEV"] == 0.0
     assert row_input["Capi"] == 1.0
+    assert [
+        key for key in row_input if key in {"R410A", "R32", "R290", "EEV", "Capi"}
+    ] == ["R410A", "R32", "R290", "EEV", "Capi"]
+
+
+def test_row_to_ml_adapter_one_hot_unknown_selection_behavior_is_preserved():
+    outcome = build_prediction_input_request(
+        _case(cooling_capa="3500", ref_type="UnknownRef", exp_type="UnknownExp")
+    )
+
+    assert outcome.request is not None
+    row_input = outcome.request.row_input
+    assert row_input["R410A"] == 0.0
+    assert row_input["R32"] == 0.0
+    assert row_input["R290"] == 0.0
+    assert row_input["EEV"] == 0.0
+    assert row_input["Capi"] == 0.0
+    assert outcome.warnings == (
+        "Unsupported option ignored: UnknownRef",
+        "Unsupported option ignored: UnknownExp",
+    )
+
+
+def test_row_to_ml_adapter_one_hot_groups_can_be_injected_for_tests():
+    adapter = RowToMlInputAdapter(
+        one_hot_groups={
+            "refrigerant": ("R410A", "R32", "R290"),
+            "expansion_device": ("EEV", "Capi"),
+        }
+    )
+
+    outcome = adapter.build_request(
+        _case(cooling_capa="3500", ref_type="R410A", exp_type="EEV")
+    )
+
+    assert outcome.request is not None
+    assert outcome.request.row_input["R410A"] == 1.0
+    assert outcome.request.row_input["EEV"] == 1.0
+
+
+def test_row_to_ml_adapter_missing_one_hot_group_error_is_clear():
+    with pytest.raises(
+        ValueError,
+        match="missing one-hot group 'expansion_device' in feature catalog",
+    ):
+        RowToMlInputAdapter(
+            one_hot_groups={"refrigerant": ("R410A", "R32", "R290")}
+        )
 
 
 def test_row_to_ml_adapter_validation_errors_are_controlled():

@@ -21,7 +21,7 @@ from core.ml.feature_catalog import (
     validate_registry_references,
 )
 from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
-from core.ml.feature_catalog_projection import predictor_columns_projection
+from core.ml.feature_catalog_projection import one_hot_group, predictor_columns_projection
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
@@ -233,13 +233,30 @@ def test_predictor_columns_projection_uses_catalog_role_and_order():
     assert "cool_capa_per_eer" not in {column["key"] for column in projected}
 
 
-def test_feature_catalog_one_hot_groups_match_current_adapter_tuples():
+def test_feature_catalog_one_hot_groups_are_adapter_projection_source():
     catalog = load_feature_catalog()
 
     assert catalog.one_hot_groups() == {
-        "refrigerant": RowToMlInputAdapter._REFRIGERANT_FEATURES,
-        "expansion_device": RowToMlInputAdapter._EXPANSION_FEATURES,
+        "refrigerant": ("R410A", "R32", "R290"),
+        "expansion_device": ("EEV", "Capi"),
     }
+    assert one_hot_group(catalog.rows, "refrigerant") == ("R410A", "R32", "R290")
+    assert one_hot_group(catalog.rows, "expansion_device") == ("EEV", "Capi")
+    assert not hasattr(RowToMlInputAdapter, "_REFRIGERANT_FEATURES")
+    assert not hasattr(RowToMlInputAdapter, "_EXPANSION_FEATURES")
+
+
+def test_feature_catalog_one_hot_group_missing_error_is_clear():
+    catalog = FeatureCatalog(rows=())
+
+    try:
+        one_hot_group(catalog.rows, "refrigerant")
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing one-hot group ValueError")
+
+    assert "missing one-hot group 'refrigerant' in feature catalog" in message
 
 
 def test_feature_catalog_zero_fill_policy_is_limited_to_mode_features():

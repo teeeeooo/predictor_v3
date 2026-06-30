@@ -112,6 +112,17 @@ def one_hot_groups(rows) -> dict[str, tuple[str, ...]]:
     return {group: tuple(names) for group, names in grouped.items()}
 
 
+def one_hot_group(rows, group_name: str) -> tuple[str, ...]:
+    """Return a named one-hot group with a clear missing-group error."""
+    groups = one_hot_groups(rows)
+    try:
+        return groups[group_name]
+    except KeyError as exc:
+        raise ValueError(
+            f"missing one-hot group '{group_name}' in feature catalog"
+        ) from exc
+
+
 def zero_fill_policies(rows) -> dict[str, str]:
     """Return active ML names mapped to zero-fill policy."""
     return {

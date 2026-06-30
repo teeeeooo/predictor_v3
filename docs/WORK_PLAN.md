@@ -27,6 +27,9 @@
 
 ## Current Slice
 
+- Arc 13 Slice 4 moved Predict one-hot feature group ownership from
+  `RowToMlInputAdapter` hard-coded tuples to feature catalog projection while
+  preserving prediction input dict behavior.
 - Arc 13 Slice 3.5 split predictor UI-only compatibility columns into
   `core/predictor_schema/ui_columns.py`; `columns.py` now assembles
   catalog-projected ML columns with UI-only inserts and keeps the existing
@@ -102,7 +105,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 4 - One-hot Adapter Projection from Catalog.
+1. Arc 13 Slice 5 - Training Header Runtime Guard.
 
 ## Active Blockers / Open Decisions
 

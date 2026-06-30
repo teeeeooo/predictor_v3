@@ -1,5 +1,6 @@
 """Convert Predict session rows into core predictor inputs."""
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -8,6 +9,8 @@ from apps.predict.schema.column_schema_adapter import (
     build_input_column_schema,
 )
 from apps.predict.state.case_row import CaseRow
+from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
+from core.ml.feature_catalog_projection import one_hot_group
 
 
 @dataclass(frozen=True)
@@ -36,11 +39,22 @@ class RowInputOutcome:
 class RowToMlInputAdapter:
     """Build core predictor input dictionaries without importing Qt."""
 
-    _REFRIGERANT_FEATURES = ("R410A", "R32", "R290")
-    _EXPANSION_FEATURES = ("EEV", "Capi")
+    _ONE_HOT_INPUT_GROUPS = {
+        "ref_type": "refrigerant",
+        "exp_type": "expansion_device",
+    }
 
-    def __init__(self, columns: tuple[PredictColumn, ...] | None = None) -> None:
+    def __init__(
+        self,
+        columns: tuple[PredictColumn, ...] | None = None,
+        one_hot_groups: Mapping[str, Sequence[str]] | None = None,
+    ) -> None:
         self._columns = columns or build_input_column_schema()
+        self._one_hot_groups = (
+            self._normalize_one_hot_groups(one_hot_groups)
+            if one_hot_groups is not None
+            else self._load_default_one_hot_groups()
+        )
 
     def build_request(self, case: CaseRow) -> RowInputOutcome:
         """Return a structured request or row-level validation errors."""
@@ -65,18 +79,13 @@ class RowToMlInputAdapter:
                 continue
             row_input[column.ml_feature] = converted
 
-        self._apply_one_hot(
-            values.get("ref_type"),
-            self._REFRIGERANT_FEATURES,
-            row_input,
-            warnings,
-        )
-        self._apply_one_hot(
-            values.get("exp_type"),
-            self._EXPANSION_FEATURES,
-            row_input,
-            warnings,
-        )
+        for input_key, group_name in self._ONE_HOT_INPUT_GROUPS.items():
+            self._apply_one_hot(
+                values.get(input_key),
+                self._one_hot_groups[group_name],
+                row_input,
+                warnings,
+            )
 
         if errors:
             return RowInputOutcome(
@@ -110,6 +119,36 @@ class RowToMlInputAdapter:
             row_input[selected] = 1.0
         else:
             warnings.append(f"Unsupported option ignored: {selected}")
+
+    def _load_default_one_hot_groups(self) -> dict[str, tuple[str, ...]]:
+        catalog = load_feature_catalog()
+        errors = validate_feature_catalog(catalog)
+        if errors:
+            joined = "; ".join(errors)
+            raise RuntimeError(f"invalid predictor one-hot feature catalog: {joined}")
+        return {
+            group_name: one_hot_group(catalog.rows, group_name)
+            for group_name in self._ONE_HOT_INPUT_GROUPS.values()
+        }
+
+    def _normalize_one_hot_groups(
+        self,
+        groups: Mapping[str, Sequence[str]],
+    ) -> dict[str, tuple[str, ...]]:
+        normalized: dict[str, tuple[str, ...]] = {}
+        for group_name in self._ONE_HOT_INPUT_GROUPS.values():
+            try:
+                features = tuple(groups[group_name])
+            except KeyError as exc:
+                raise ValueError(
+                    f"missing one-hot group '{group_name}' in feature catalog"
+                ) from exc
+            if not features:
+                raise ValueError(
+                    f"missing one-hot feature(s) for group '{group_name}'"
+                )
+            normalized[group_name] = features
+        return normalized
 
     def _is_blank(self, value: Any) -> bool:
         return value is None or str(value).strip() == ""

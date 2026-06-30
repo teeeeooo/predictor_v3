@@ -1029,3 +1029,15 @@
   inserts and preserves the existing schema constants.
 - One-hot adapter projection and training runtime guards remain separate Arc 13
   work and were not mixed into this owner split.
+
+## 2026-06-30 — Arc 13 Slice 4 one-hot adapter projection from catalog
+
+### Decision
+- Predict one-hot feature lists for refrigerant and expansion device are now
+  projected from the feature catalog instead of hard-coded on
+  `RowToMlInputAdapter`.
+- `RowToMlInputAdapter` still owns the UI input key to catalog group mapping
+  (`ref_type` -> `refrigerant`, `exp_type` -> `expansion_device`) and preserves
+  existing one-hot output keys, values, ordering, and unsupported-option
+  warnings.
+- Training header runtime guards remain separate Arc 13 work.
