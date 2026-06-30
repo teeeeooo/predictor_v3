@@ -27,6 +27,10 @@
 
 ## Current Slice
 
+- Arc 13 Slice 3.5 split predictor UI-only compatibility columns into
+  `core/predictor_schema/ui_columns.py`; `columns.py` now assembles
+  catalog-projected ML columns with UI-only inserts and keeps the existing
+  schema exports.
 - Arc 13 Slice 3 moved predictor schema ML-visible input/auto/result columns to
   catalog projection while preserving existing `COLUMNS`, `INPUT_COLS`,
   `AUTO_COLS`, `RESULT_COLS`, dropdown-only input columns, and rule-only result
@@ -98,8 +102,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 4 - One-hot Adapter Projection from Catalog or Training Header
-   Runtime Guard.
+1. Arc 13 Slice 4 - One-hot Adapter Projection from Catalog.
 
 ## Active Blockers / Open Decisions
 

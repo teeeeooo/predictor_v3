@@ -2,6 +2,11 @@
 
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 from core.ml.feature_catalog_projection import predictor_columns_projection
+from core.predictor_schema.ui_columns import (
+    INPUT_INSERT_AFTER,
+    RESULT_INSERT_AFTER,
+    insert_columns_after,
+)
 
 
 ROLE_PRESENTATION_DEFAULTS = {
@@ -16,35 +21,6 @@ WIDTH_OVERRIDES = {
     "ref_qty": 80,
 }
 
-LEGACY_INPUT_COLUMNS = [
-    {"key": "idu", "header": "실내기", "width": 120, "group": "input", "type": "dropdown", "mapping": "idu", "bg_color": "#FFFFFF"},
-    {"key": "evap_index", "header": "증발기", "width": 100, "group": "input", "type": "dropdown", "mapping": "evap_index", "bg_color": "#FFFFFF"},
-    {"key": "odu", "header": "실외기", "width": 120, "group": "input", "type": "dropdown", "mapping": "odu", "bg_color": "#FFFFFF"},
-    {"key": "fin_type", "header": "FIN종류", "width": 80, "group": "input", "type": "dropdown", "mapping": "fin_type", "bg_color": "#FFFFFF"},
-    {"key": "pi", "header": "PI", "width": 60, "group": "input", "type": "dropdown", "mapping": "pi", "bg_color": "#FFFFFF"},
-    {"key": "row", "header": "ROW", "width": 60, "group": "input", "type": "dropdown", "mapping": "row", "bg_color": "#FFFFFF"},
-    {"key": "compressor", "header": "압축기", "width": 120, "group": "input", "type": "dropdown", "mapping": "compressor", "bg_color": "#FFFFFF"},
-    {"key": "ref_type", "header": "냉매종류", "width": 80, "group": "input", "type": "dropdown", "mapping": "ref_type", "bg_color": "#FFFFFF"},
-    {"key": "exp_type", "header": "팽창장치", "width": 80, "group": "input", "type": "dropdown", "mapping": "exp_type", "bg_color": "#FFFFFF"},
-]
-
-LEGACY_RULE_RESULT_COLUMNS = [
-    {"key": "eer", "header": "EER (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "cspf", "header": "CSPF", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "cop", "header": "COP (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "hspf2", "header": "HSPF2", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-]
-
-LEGACY_INPUT_INSERT_AFTER = {
-    "heating_capa": LEGACY_INPUT_COLUMNS,
-}
-
-LEGACY_RESULT_INSERT_AFTER = {
-    "cooling_power": LEGACY_RULE_RESULT_COLUMNS[:2],
-    "heating_power": LEGACY_RULE_RESULT_COLUMNS[2:],
-}
-
-
 def _load_validated_catalog():
     catalog = load_feature_catalog()
     errors = validate_feature_catalog(catalog)
@@ -52,14 +28,6 @@ def _load_validated_catalog():
         joined = "; ".join(errors)
         raise RuntimeError(f"invalid predictor schema feature catalog: {joined}")
     return catalog
-
-
-def _with_insertions(projected_columns, insert_after):
-    columns = []
-    for column in projected_columns:
-        columns.append(column)
-        columns.extend(insert_after.get(column["key"], ()))
-    return columns
 
 
 def _build_columns():
@@ -73,9 +41,9 @@ def _build_columns():
     auto_columns = [column for column in projected if column["group"] == "auto"]
     result_columns = [column for column in projected if column["group"] == "result"]
     return (
-        _with_insertions(input_columns, LEGACY_INPUT_INSERT_AFTER)
+        insert_columns_after(input_columns, INPUT_INSERT_AFTER)
         + auto_columns
-        + _with_insertions(result_columns, LEGACY_RESULT_INSERT_AFTER)
+        + insert_columns_after(result_columns, RESULT_INSERT_AFTER)
     )
 
 

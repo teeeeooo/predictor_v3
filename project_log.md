@@ -1018,3 +1018,14 @@
   compatibility inserts because they are not ML feature contract rows.
 - Width/color remain code-derived through role defaults plus narrow
   compatibility width overrides needed to preserve the existing schema.
+
+## 2026-06-30 — Arc 13 Slice 3.5 predictor UI-only column owner split
+
+### Decision
+- `core/predictor_schema/ui_columns.py` owns dropdown-only input columns,
+  rule-only result columns, and their insertion rules for the predictor table.
+- `core/predictor_schema/columns.py` remains the final schema assembly/export
+  owner: it combines catalog-projected ML columns with UI-only compatibility
+  inserts and preserves the existing schema constants.
+- One-hot adapter projection and training runtime guards remain separate Arc 13
+  work and were not mixed into this owner split.

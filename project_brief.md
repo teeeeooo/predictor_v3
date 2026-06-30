@@ -524,7 +524,8 @@ Status:
   Slice 2 moved `core/ml/features.py` exports to catalog projection. Slice 2.5
   clarified the `ml_name` training-header contract and split catalog
   responsibilities. Slice 3 moved predictor schema ML-visible columns to
-  catalog projection while preserving current UI schema exports.
+  catalog projection while preserving current UI schema exports. Slice 3.5
+  split predictor UI-only compatibility columns into their own schema owner.
 
 ### Later — Calculator to Predictor Integration
 

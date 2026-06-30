@@ -9,6 +9,7 @@ from pathlib import Path
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 import core.ml.feature_catalog as feature_catalog_module
 import core.ml.features as features_module
+import core.predictor_schema.columns as predictor_columns_module
 from core.ml.feature_catalog import (
     DEFAULT_CATALOG_PATH,
     REQUIRED_HEADERS,
@@ -25,6 +26,13 @@ from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
 from core.predictor_schema.columns import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
+from core.predictor_schema.ui_columns import (
+    DROPDOWN_INPUT_COLUMNS,
+    INPUT_INSERT_AFTER,
+    RESULT_INSERT_AFTER,
+    RULE_RESULT_COLUMNS,
+    insert_columns_after,
+)
 
 
 CANONICAL_TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
@@ -40,6 +48,11 @@ EXPECTED_RESULT_COLS = [
     "cooling_power", "eer", "cspf", "heating_power", "cop", "hspf2",
     "ref_qty", "cooling_hz", "heating_hz",
 ]
+EXPECTED_DROPDOWN_INPUT_COLS = [
+    "idu", "evap_index", "odu", "fin_type", "pi", "row",
+    "compressor", "ref_type", "exp_type",
+]
+EXPECTED_RULE_RESULT_COLS = ["eer", "cspf", "cop", "hspf2"]
 
 
 def test_feature_catalog_loads_default_draft_without_validation_errors():
@@ -129,6 +142,49 @@ def test_predictor_schema_exports_preserve_current_key_groups():
     assert INPUT_COLS == EXPECTED_INPUT_COLS
     assert AUTO_COLS == EXPECTED_AUTO_COLS
     assert RESULT_COLS == EXPECTED_RESULT_COLS
+    assert [column["key"] for column in COLUMNS] == (
+        EXPECTED_INPUT_COLS + EXPECTED_AUTO_COLS + EXPECTED_RESULT_COLS
+    )
+
+
+def test_predictor_ui_only_columns_are_owned_by_ui_columns_module():
+    assert [column["key"] for column in DROPDOWN_INPUT_COLUMNS] == EXPECTED_DROPDOWN_INPUT_COLS
+    assert [column["key"] for column in RULE_RESULT_COLUMNS] == EXPECTED_RULE_RESULT_COLS
+    assert INPUT_INSERT_AFTER == {"heating_capa": DROPDOWN_INPUT_COLUMNS}
+    assert RESULT_INSERT_AFTER == {
+        "cooling_power": RULE_RESULT_COLUMNS[:2],
+        "heating_power": RULE_RESULT_COLUMNS[2:],
+    }
+
+    assert not hasattr(predictor_columns_module, "LEGACY_INPUT_COLUMNS")
+    assert not hasattr(predictor_columns_module, "LEGACY_RULE_RESULT_COLUMNS")
+    assert not hasattr(predictor_columns_module, "LEGACY_INPUT_INSERT_AFTER")
+    assert not hasattr(predictor_columns_module, "LEGACY_RESULT_INSERT_AFTER")
+
+
+def test_ui_columns_insert_helper_preserves_projected_order():
+    projected = [{"key": "first"}, {"key": "second"}]
+    inserted = [{"key": "inserted"}]
+
+    assert insert_columns_after(projected, {"first": inserted}) == [
+        {"key": "first"},
+        {"key": "inserted"},
+        {"key": "second"},
+    ]
+
+
+def test_predictor_schema_combines_catalog_projection_with_ui_only_columns():
+    catalog = load_feature_catalog()
+    catalog_columns = predictor_columns_projection(
+        catalog.rows,
+        ROLE_PRESENTATION_DEFAULTS,
+        WIDTH_OVERRIDES,
+    )
+    catalog_keys = {column["key"] for column in catalog_columns}
+    ui_only_keys = set(EXPECTED_DROPDOWN_INPUT_COLS + EXPECTED_RULE_RESULT_COLS)
+
+    assert catalog_keys.isdisjoint(ui_only_keys)
+    assert ui_only_keys.issubset({column["key"] for column in COLUMNS})
     assert [column["key"] for column in COLUMNS] == (
         EXPECTED_INPUT_COLS + EXPECTED_AUTO_COLS + EXPECTED_RESULT_COLS
     )
