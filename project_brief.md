@@ -11,7 +11,7 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 ## 1. Current Phase
 
 Current phase: Machine Learning / Predictor Phase, Arc 13 ML Pipeline
-Stabilization.
+Stabilization, starting with ML Feature Manifest SSOT Foundation.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -500,12 +500,17 @@ Status:
 Goal:
 
 - Stabilize ML feature, leakage, model artifact, preprocessing, and result-key
-  contracts after Arc 11 and Arc 12 architecture corrections are complete.
+  contracts after Arc 11 and Arc 12 architecture corrections are complete,
+  starting with a minimal ML feature manifest design and validation foundation.
 
 Target milestones:
 
+- Establish a user-managed single-file feature manifest boundary for
+  `config/ml/features.csv` without immediately connecting it to runtime.
 - Review `MODEL_REGISTRY`, `BASE_FEATURES`, `TARGETS`, and target leakage
   rules.
+- Separate user-managed feature contract fields from code-derived UI
+  presentation, model policy, derived formulas, and artifact schema.
 - Preserve single-artifact and preprocessing compatibility contracts unless a
   later design explicitly changes them.
 - Align one-hot option and result-key SSOT ownership.
@@ -514,7 +519,8 @@ Target milestones:
 
 Status:
 
-- Unblocked after Arc 12 calculator application boundary closeout.
+- Active. Slice 0 created the ML Feature Manifest Minimal Design Gate; Slice 1
+  is the Feature Catalog Loader / Validator Foundation with no runtime use.
 
 ### Later — Calculator to Predictor Integration
 

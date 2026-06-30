@@ -27,6 +27,10 @@
 
 ## Current Slice
 
+- Arc 13 Slice 0 formalized the ML Feature Manifest Minimal Design Gate:
+  current feature owners were audited, the single-file
+  `config/ml/features.csv` target schema was proposed, and runtime connection
+  was explicitly deferred to implementation slices.
 - Arc 12 Calculator UI/Application Boundary Correction is complete for
   automated scope.
 - ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
@@ -39,7 +43,8 @@
   `CalculatorTkApp` withdrawn-root `update()`.
 - Arc 12 Slice 14 fixed the EN Tk headless test isolation issue with a
   test-only Tk helper and restored `tests -k "en14825"` completion.
-- Arc 13 ML Pipeline Stabilization is the next recommended arc.
+- Arc 13 ML Pipeline Stabilization is active, with the first entry point
+  narrowed to ML Feature Manifest SSOT Foundation.
 - Arc 12 Slice 3 reused the ISO/ISEER 2-point application usecase from the
   matching batch handler.
 - Arc 12 Slice 2 extracted the ISO/ISEER 2-point single calculation
@@ -79,7 +84,7 @@
 
 ## Next Actions
 
-1. Arc 13 - ML Pipeline Stabilization.
+1. Arc 13 Slice 1 - Feature Catalog Loader / Validator Foundation.
 
 ## Active Blockers / Open Decisions
 

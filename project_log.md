@@ -948,3 +948,18 @@
   expected, public result dict contracts, Tk layout, batch table UX, or
   copy/export behavior changed.
 - Arc 13 ML Pipeline Stabilization remains the next recommended arc.
+
+## 2026-06-30 — Arc 13 Slice 0 ML feature manifest design gate
+
+### Decision
+- Arc 13 starts with ML Feature Manifest SSOT Foundation rather than a broad
+  ML Pipeline Stabilization implementation.
+- Slice 0 is design/audit only: no production behavior changes, no runtime
+  manifest connection, and no conversion of `core/ml/features.py`,
+  `core/ml/registry.py`, or `core/predictor_schema/columns.py`.
+- The initial manifest target is a single user-managed feature contract file,
+  while UI presentation, model policy, derived formulas, and artifact schema
+  remain code-owned.
+- Broad `build_input_df()` zero-fill behavior is documented as compatibility
+  behavior; the target policy allows mode-missing zero fill only for cooling
+  and heating capacity/power features after separate tests and confirmation.
