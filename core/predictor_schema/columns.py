@@ -1,12 +1,22 @@
 """Predictor table column schema and column grouping constants."""
 
-# =============================================================================
-# UI 컬럼 구조 (COLUMNS) - 인덱스 0~27 (총 28개)
-# =============================================================================
-COLUMNS = [
-    # INPUT_COLS (인덱스 0~10, 11개)
-    {"key": "cooling_capa", "header": "냉방능력", "width": 90, "group": "input", "ml_feature": "Cooling Capa", "bg_color": "#FFFFFF"},
-    {"key": "heating_capa", "header": "난방능력", "width": 90, "group": "input", "ml_feature": "Heating Capa", "bg_color": "#FFFFFF"},
+from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
+from core.ml.feature_catalog_projection import predictor_columns_projection
+
+
+ROLE_PRESENTATION_DEFAULTS = {
+    "input": {"width": 90, "bg_color": "#FFFFFF"},
+    "auto": {"width": 90, "bg_color": "#F2F2F2"},
+    "result": {"width": 100, "bg_color": "#E6F3E6"},
+}
+
+WIDTH_OVERRIDES = {
+    "comp_eer": 80,
+    "comp_cc": 80,
+    "ref_qty": 80,
+}
+
+LEGACY_INPUT_COLUMNS = [
     {"key": "idu", "header": "실내기", "width": 120, "group": "input", "type": "dropdown", "mapping": "idu", "bg_color": "#FFFFFF"},
     {"key": "evap_index", "header": "증발기", "width": 100, "group": "input", "type": "dropdown", "mapping": "evap_index", "bg_color": "#FFFFFF"},
     {"key": "odu", "header": "실외기", "width": 120, "group": "input", "type": "dropdown", "mapping": "odu", "bg_color": "#FFFFFF"},
@@ -16,44 +26,60 @@ COLUMNS = [
     {"key": "compressor", "header": "압축기", "width": 120, "group": "input", "type": "dropdown", "mapping": "compressor", "bg_color": "#FFFFFF"},
     {"key": "ref_type", "header": "냉매종류", "width": 80, "group": "input", "type": "dropdown", "mapping": "ref_type", "bg_color": "#FFFFFF"},
     {"key": "exp_type", "header": "팽창장치", "width": 80, "group": "input", "type": "dropdown", "mapping": "exp_type", "bg_color": "#FFFFFF"},
+]
 
-    # AUTO_COLS (인덱스 11~18, 전략 A 적용 수정)
-    {"key": "id_volume", "header": "ID Volume", "width": 90, "group": "auto", "ml_feature": "ID Volume", "bg_color": "#F2F2F2",
-     "source": "idu", "mapping_key": "ID Volume"},
-
-    {"key": "evap_area", "header": "Evap Area", "width": 90, "group": "auto", "ml_feature": "Evap Area", "bg_color": "#F2F2F2",
-     "source": "evap_index", "mapping_key": "Evap Area"},
-
-    {"key": "evap_volume", "header": "Evap Volume", "width": 90, "group": "auto", "ml_feature": "Evap Volume", "bg_color": "#F2F2F2",
-     "source": "evap_index", "mapping_key": "Evap Volume"},
-
-    {"key": "od_volume", "header": "OD Volume", "width": 90, "group": "auto", "ml_feature": "OD Volume", "bg_color": "#F2F2F2",
-     "source": "odu", "mapping_key": "OD Volume"},
-
-    {"key": "cond_area", "header": "Cond Area", "width": 90, "group": "auto", "ml_feature": "Cond Area", "bg_color": "#F2F2F2",
-     "source": "odu", "mapping_key": "Cond Area"},
-
-    {"key": "cond_volume", "header": "Cond Volume", "width": 90, "group": "auto", "ml_feature": "Cond Volume", "bg_color": "#F2F2F2",
-     "source": "odu", "mapping_key": "Cond Volume"},
-
-    {"key": "comp_eer", "header": "Comp EER", "width": 80, "group": "auto", "ml_feature": "Comp EER", "bg_color": "#F2F2F2",
-     "source": "compressor", "mapping_key": "Comp EER"},
-
-    {"key": "comp_cc", "header": "Comp cc", "width": 80, "group": "auto", "ml_feature": "Comp cc", "bg_color": "#F2F2F2",
-     "source": "compressor", "mapping_key": "Comp cc"},
-
-
-    # RESULT_COLS (인덱스 19~27, 9개)
-    {"key": "cooling_power", "header": "냉방 소비전력", "width": 100, "group": "result", "readonly": True, "ml_target": "Cooling Power", "bg_color": "#E6F3E6"},
+LEGACY_RULE_RESULT_COLUMNS = [
     {"key": "eer", "header": "EER (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "cspf", "header": "CSPF", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "heating_power", "header": "난방 소비전력", "width": 100, "group": "result", "readonly": True, "ml_target": "Heating Power", "bg_color": "#E6F3E6"},
     {"key": "cop", "header": "COP (rule)", "width": 100, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
     {"key": "hspf2", "header": "HSPF2", "width": 110, "group": "result", "readonly": True, "bg_color": "#E6F3E6"},
-    {"key": "ref_qty", "header": "냉매량", "width": 80, "group": "result", "readonly": True, "ml_target": "Ref Qty", "bg_color": "#E6F3E6"},
-    {"key": "cooling_hz", "header": "냉방 주파수", "width": 100, "group": "result", "readonly": True, "ml_target": "Cooling Hz", "bg_color": "#E6F3E6"},
-    {"key": "heating_hz", "header": "난방 주파수", "width": 100, "group": "result", "readonly": True, "ml_target": "Heating Hz", "bg_color": "#E6F3E6"},
 ]
+
+LEGACY_INPUT_INSERT_AFTER = {
+    "heating_capa": LEGACY_INPUT_COLUMNS,
+}
+
+LEGACY_RESULT_INSERT_AFTER = {
+    "cooling_power": LEGACY_RULE_RESULT_COLUMNS[:2],
+    "heating_power": LEGACY_RULE_RESULT_COLUMNS[2:],
+}
+
+
+def _load_validated_catalog():
+    catalog = load_feature_catalog()
+    errors = validate_feature_catalog(catalog)
+    if errors:
+        joined = "; ".join(errors)
+        raise RuntimeError(f"invalid predictor schema feature catalog: {joined}")
+    return catalog
+
+
+def _with_insertions(projected_columns, insert_after):
+    columns = []
+    for column in projected_columns:
+        columns.append(column)
+        columns.extend(insert_after.get(column["key"], ()))
+    return columns
+
+
+def _build_columns():
+    catalog = _load_validated_catalog()
+    projected = predictor_columns_projection(
+        catalog.rows,
+        ROLE_PRESENTATION_DEFAULTS,
+        WIDTH_OVERRIDES,
+    )
+    input_columns = [column for column in projected if column["group"] == "input"]
+    auto_columns = [column for column in projected if column["group"] == "auto"]
+    result_columns = [column for column in projected if column["group"] == "result"]
+    return (
+        _with_insertions(input_columns, LEGACY_INPUT_INSERT_AFTER)
+        + auto_columns
+        + _with_insertions(result_columns, LEGACY_RESULT_INSERT_AFTER)
+    )
+
+
+COLUMNS = _build_columns()
 
 # =============================================================================
 # 컬럼 인덱스 상수 (동적 추출)

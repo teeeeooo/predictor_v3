@@ -1005,3 +1005,16 @@
   validation, and projection modules before the owner grows further.
 - Training header validation helpers exist for guard tests but are not wired
   into the training runtime in this slice.
+
+## 2026-06-30 — Arc 13 Slice 3 predictor schema projection from catalog
+
+### Decision
+- `core/predictor_schema/columns.py` now builds ML-visible input, auto, and
+  result columns from catalog projection while preserving `COLUMNS`,
+  `INPUT_COLS`, `AUTO_COLS`, and `RESULT_COLS` exports.
+- Catalog projection orders UI-visible ML columns by role group
+  (`input` -> `auto` -> `result`) and catalog `order` inside each group.
+- Dropdown-only input columns and rule-only result columns remain code-owned
+  compatibility inserts because they are not ML feature contract rows.
+- Width/color remain code-derived through role defaults plus narrow
+  compatibility width overrides needed to preserve the existing schema.

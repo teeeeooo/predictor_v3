@@ -8,6 +8,7 @@ from collections.abc import Iterable
 BASE_FEATURE_ROLES = frozenset({"input", "auto", "one_hot", "result", "hidden"})
 RAW_TRAINING_HEADER_ROLES = frozenset({"input", "auto", "one_hot", "result"})
 UI_VISIBLE_ROLES = frozenset({"input", "auto", "result"})
+PREDICTOR_GROUP_ORDER = ("input", "auto", "result")
 
 # Legacy deterministic export order for result-like names inside BASE_FEATURES.
 # TARGETS order is owned by result row order in the catalog.
@@ -57,11 +58,48 @@ def targets(rows) -> list[str]:
 
 def predictor_rows(rows) -> tuple:
     """Return active rows that can project to predictor schema columns."""
+    rows_by_group = {
+        role: [
+            row
+            for row in active_rows(rows)
+            if row.role == role and row.ui_key
+        ]
+        for role in PREDICTOR_GROUP_ORDER
+    }
     return tuple(
         row
-        for row in active_rows(rows)
-        if row.role in UI_VISIBLE_ROLES and row.ui_key
+        for role in PREDICTOR_GROUP_ORDER
+        for row in rows_by_group[role]
     )
+
+
+def predictor_columns_projection(
+    rows,
+    role_defaults: dict[str, dict],
+    width_overrides: dict[str, int] | None = None,
+) -> list[dict]:
+    """Project catalog rows into predictor column metadata."""
+    width_overrides = width_overrides or {}
+    columns: list[dict] = []
+    for row in predictor_rows(rows):
+        metadata = {
+            "key": row.ui_key,
+            "header": row.label,
+            "group": row.role,
+            **role_defaults[row.role],
+        }
+        if row.ui_key in width_overrides:
+            metadata["width"] = width_overrides[row.ui_key]
+        if row.role in {"input", "auto"}:
+            metadata["ml_feature"] = row.ml_name
+        if row.role == "auto":
+            metadata["source"] = row.source
+            metadata["mapping_key"] = row.mapping_key
+        if row.role == "result":
+            metadata["readonly"] = True
+            metadata["ml_target"] = row.ml_name
+        columns.append(metadata)
+    return columns
 
 
 def one_hot_groups(rows) -> dict[str, tuple[str, ...]]:

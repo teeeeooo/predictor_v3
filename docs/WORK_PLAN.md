@@ -27,6 +27,10 @@
 
 ## Current Slice
 
+- Arc 13 Slice 3 moved predictor schema ML-visible input/auto/result columns to
+  catalog projection while preserving existing `COLUMNS`, `INPUT_COLS`,
+  `AUTO_COLS`, `RESULT_COLS`, dropdown-only input columns, and rule-only result
+  columns.
 - Arc 13 Slice 2.5 clarified the feature catalog contract: `ml_name` is the
   raw training header and internal ML name, alias/header mapping is out of
   scope, and catalog loader/validation/projection responsibilities are split.
@@ -94,7 +98,8 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 3 - Predictor Schema Projection from Catalog.
+1. Arc 13 Slice 4 - One-hot Adapter Projection from Catalog or Training Header
+   Runtime Guard.
 
 ## Active Blockers / Open Decisions
 

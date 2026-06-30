@@ -20,12 +20,26 @@ from core.ml.feature_catalog import (
     validate_registry_references,
 )
 from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
+from core.ml.feature_catalog_projection import predictor_columns_projection
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
+from core.predictor_schema.columns import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
 
 
 CANONICAL_TARGETS = ["Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz"]
+EXPECTED_INPUT_COLS = [
+    "cooling_capa", "heating_capa", "idu", "evap_index", "odu",
+    "fin_type", "pi", "row", "compressor", "ref_type", "exp_type",
+]
+EXPECTED_AUTO_COLS = [
+    "id_volume", "evap_area", "evap_volume", "od_volume", "cond_area",
+    "cond_volume", "comp_eer", "comp_cc",
+]
+EXPECTED_RESULT_COLS = [
+    "cooling_power", "eer", "cspf", "heating_power", "cop", "hspf2",
+    "ref_qty", "cooling_hz", "heating_hz",
+]
 
 
 def test_feature_catalog_loads_default_draft_without_validation_errors():
@@ -109,6 +123,58 @@ def test_feature_catalog_result_projection_matches_predictor_schema():
     }
 
     assert actual == expected
+
+
+def test_predictor_schema_exports_preserve_current_key_groups():
+    assert INPUT_COLS == EXPECTED_INPUT_COLS
+    assert AUTO_COLS == EXPECTED_AUTO_COLS
+    assert RESULT_COLS == EXPECTED_RESULT_COLS
+    assert [column["key"] for column in COLUMNS] == (
+        EXPECTED_INPUT_COLS + EXPECTED_AUTO_COLS + EXPECTED_RESULT_COLS
+    )
+
+
+def test_predictor_schema_metadata_preserves_current_contract():
+    by_key = {column["key"]: column for column in COLUMNS}
+
+    assert by_key["cooling_capa"]["header"] == "냉방능력"
+    assert by_key["cooling_capa"]["ml_feature"] == "Cooling Capa"
+    assert by_key["id_volume"]["source"] == "idu"
+    assert by_key["id_volume"]["mapping_key"] == "ID Volume"
+    assert by_key["cooling_power"]["ml_target"] == "Cooling Power"
+    assert by_key["ref_qty"]["ml_target"] == "Ref Qty"
+
+
+def test_predictor_schema_role_presentation_defaults_preserve_width_and_color():
+    by_key = {column["key"]: column for column in COLUMNS}
+
+    assert by_key["cooling_capa"]["width"] == 90
+    assert by_key["cooling_capa"]["bg_color"] == "#FFFFFF"
+    assert by_key["id_volume"]["width"] == 90
+    assert by_key["id_volume"]["bg_color"] == "#F2F2F2"
+    assert by_key["comp_eer"]["width"] == 80
+    assert by_key["cooling_power"]["width"] == 100
+    assert by_key["cooling_power"]["bg_color"] == "#E6F3E6"
+    assert by_key["ref_qty"]["width"] == 80
+
+
+def test_predictor_columns_projection_uses_catalog_role_and_order():
+    catalog = load_feature_catalog()
+    projected = predictor_columns_projection(
+        catalog.rows,
+        ROLE_PRESENTATION_DEFAULTS,
+        WIDTH_OVERRIDES,
+    )
+
+    assert [column["key"] for column in projected] == [
+        "cooling_capa", "heating_capa",
+        "id_volume", "evap_area", "evap_volume", "od_volume",
+        "cond_area", "cond_volume", "comp_eer", "comp_cc",
+        "cooling_power", "heating_power", "ref_qty", "cooling_hz", "heating_hz",
+    ]
+    assert all(column["group"] != "one_hot" for column in projected)
+    assert "r32" not in {column["key"] for column in projected}
+    assert "cool_capa_per_eer" not in {column["key"] for column in projected}
 
 
 def test_feature_catalog_one_hot_groups_match_current_adapter_tuples():
