@@ -521,8 +521,9 @@ Status:
 
 - Active. Slice 0 created the ML Feature Manifest Minimal Design Gate. Slice 1
   added the non-runtime catalog draft, loader/validator, and parity tests.
-  Slice 2 moved `core/ml/features.py` exports to catalog projection. Slice 3 is
-  Predictor Schema Projection from Catalog.
+  Slice 2 moved `core/ml/features.py` exports to catalog projection. Slice 2.5
+  clarified the `ml_name` training-header contract and split catalog
+  responsibilities. Slice 3 is Predictor Schema Projection from Catalog.
 
 ### Later — Calculator to Predictor Integration
 

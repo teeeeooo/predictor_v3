@@ -8,14 +8,18 @@ from pathlib import Path
 
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 import core.ml.feature_catalog as feature_catalog_module
+import core.ml.features as features_module
 from core.ml.feature_catalog import (
+    DEFAULT_CATALOG_PATH,
     REQUIRED_HEADERS,
     FeatureCatalog,
     FeatureCatalogRow,
     load_feature_catalog,
+    validate_training_headers,
     validate_feature_catalog,
     validate_registry_references,
 )
+from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
@@ -34,12 +38,20 @@ def test_feature_catalog_loads_default_draft_without_validation_errors():
 def test_feature_catalog_feature_projection_matches_current_constants():
     catalog = load_feature_catalog()
 
+    assert set(catalog.base_features()) == set(BASE_FEATURES)
+    assert set(catalog.derived_features()) == set(DERIVED_FEATURES)
+    assert set(catalog.targets()) == set(TARGETS)
+
+
+def test_feature_catalog_exports_keep_deterministic_legacy_order():
+    catalog = load_feature_catalog()
+
     assert catalog.base_features() == BASE_FEATURES
     assert catalog.derived_features() == DERIVED_FEATURES
     assert catalog.targets() == TARGETS
 
 
-def test_feature_catalog_targets_use_canonical_result_row_order():
+def test_feature_catalog_targets_use_stable_result_row_order():
     catalog = load_feature_catalog()
     result_row_order = [
         row.ml_name
@@ -54,6 +66,17 @@ def test_feature_catalog_targets_use_canonical_result_row_order():
 
 def test_target_compat_order_has_been_removed():
     assert not hasattr(feature_catalog_module, "TARGET_COMPAT_ORDER")
+
+
+def test_base_feature_result_order_is_legacy_export_policy_only():
+    assert BASE_FEATURE_RESULT_EXPORT_ORDER == (
+        "Ref Qty",
+        "Cooling Power",
+        "Heating Power",
+        "Cooling Hz",
+        "Heating Hz",
+    )
+    assert list(BASE_FEATURE_RESULT_EXPORT_ORDER) != CANONICAL_TARGETS
 
 
 def test_feature_catalog_predictor_input_auto_projection_matches_schema():
@@ -138,6 +161,7 @@ def test_feature_catalog_inactive_rows_are_excluded_from_projections():
     assert catalog.base_features() == []
     assert catalog.predictor_rows() == ()
     assert catalog.zero_fill_policies() == {}
+    assert catalog.training_headers() == []
 
 
 def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
@@ -211,6 +235,92 @@ def test_feature_catalog_header_policy_rejects_unknown_header(tmp_path):
     errors = validate_feature_catalog(load_feature_catalog(catalog_path))
 
     assert "unknown header(s): width" in errors
+
+
+def test_feature_catalog_training_headers_match_raw_ml_name_contract():
+    catalog = load_feature_catalog()
+    expected = [
+        row.ml_name
+        for row in catalog.active_rows
+        if row.role in {"input", "auto", "one_hot", "result"}
+    ]
+
+    assert catalog.training_headers() == expected
+    assert "Cool_Capa_per_EER" not in catalog.training_headers()
+    assert set(catalog.training_headers()) == set(BASE_FEATURES)
+
+
+def test_validate_training_headers_accepts_catalog_headers_without_aliases():
+    catalog = load_feature_catalog()
+
+    assert validate_training_headers(catalog.training_headers(), catalog) == []
+    assert catalog.validate_training_headers(catalog.training_headers()) == []
+
+
+def test_validate_training_headers_reports_unknown_and_missing_names():
+    catalog = load_feature_catalog()
+    headers = [
+        header
+        for header in catalog.training_headers()
+        if header != "Cooling Capa"
+    ]
+    headers.append("Cooling Capacity Alias")
+
+    errors = validate_training_headers(headers, catalog)
+
+    assert "unknown training header(s): Cooling Capacity Alias" in errors
+    assert "missing required training header(s): Cooling Capa" in errors
+
+
+def test_default_catalog_path_exists_for_runtime_import():
+    assert DEFAULT_CATALOG_PATH.exists()
+
+
+def test_features_import_error_for_missing_catalog_includes_path(tmp_path):
+    missing = tmp_path / "missing_features.csv"
+
+    try:
+        features_module._load_validated_catalog(missing)
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing catalog RuntimeError")
+
+    assert str(missing) in message
+    assert "ML feature catalog not found" in message
+
+
+def test_features_import_error_for_invalid_catalog_includes_validation_message(tmp_path):
+    catalog_path = tmp_path / "invalid_features.csv"
+    _write_catalog(
+        catalog_path,
+        [
+            {
+                "order": "10",
+                "feature_id": "bad_zero",
+                "ml_name": "ID Volume",
+                "role": "auto",
+                "ui_key": "id_volume",
+                "label": "ID Volume",
+                "source": "",
+                "mapping_key": "",
+                "one_hot_group": "",
+                "zero_fill_policy": "mode_missing_allowed",
+                "active": "true",
+                "notes": "",
+            }
+        ],
+    )
+
+    try:
+        features_module._load_validated_catalog(catalog_path)
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected invalid catalog RuntimeError")
+
+    assert "invalid ML feature catalog" in message
+    assert "mode_missing_allowed is not allowed for 'ID Volume'" in message
 
 
 def test_train_panel_target_tuple_matches_catalog_targets_without_importing_ui():

@@ -48,7 +48,7 @@ User-managed fields:
 | --- | --- | --- |
 | `order` | Stable ordering for projections and review. | Required for active rows. |
 | `feature_id` | Stable identifier that survives label/name edits. | Unique. Required. |
-| `ml_name` | Runtime ML feature or target name. | Unique among active rows. Required for ML-visible roles. |
+| `ml_name` | Training data header name and internal ML feature or target name. | Unique among active rows. Required for ML-visible roles. No train-header alias/mapping column is planned. |
 | `role` | Feature classification. | Enum: `input`, `auto`, `result`, `derived`, `one_hot`, `hidden`. |
 | `ui_key` | Predictor schema key when UI-visible. | Required for `input`, `auto`, `result`; unique among UI-visible active rows. |
 | `label` | User-facing header/label. | Required for `input`, `auto`, `result`. |
@@ -68,6 +68,19 @@ Code-derived or developer-managed fields excluded from CSV:
 | Derived feature formulas | `core/ml/preprocessing.py`. |
 | Artifact schema, model wrapper metadata, selected-feature snapshots | ML artifact/training owners. |
 | Calculator seasonal outputs such as CSPF/HSPF as model inputs | Forbidden by ML/calculator boundary; result-only classification needs explicit review. |
+
+Feature addition flow:
+
+1. Add a feature row to `config/ml/features.csv`.
+2. Set role and required metadata such as `source`, `mapping_key`, or
+   `one_hot_group`.
+3. Align the raw training CSV/Excel header to the row's `ml_name`.
+4. Run catalog validator and parity tests before training.
+
+`BASE_FEATURES` and `TARGETS` are ML feature/target name exports, not UI column
+order contracts. Predictor UI order is owned by predictor schema projection:
+group order is `input` -> `auto` -> `result`, and rows inside each group follow
+catalog `order`. Width and color remain role-based code-derived defaults.
 
 ## Minimal Manifest Schema Proposal
 
@@ -171,6 +184,7 @@ Candidate projection helpers:
 | `predictor_columns()` | Active `input`, `auto`, and `result` rows with role-based width/color defaults. |
 | `one_hot_groups()` | Mapping of stable group name to ordered `ml_name` tuple. |
 | `zero_fill_policies()` | Mapping of `ml_name` to policy enum. |
+| `training_headers()` | Active raw-training header names from `input`, `auto`, `one_hot`, and `result` rows; derived rows are excluded because formulas are code-owned. |
 
 ## Validation Requirements
 
@@ -202,14 +216,18 @@ Minimum validator requirements for implementation:
    runtime use. Include parity assertions against current constants and schema.
 2. Slice 2: derive `core/ml/features.py` exports from catalog projections after
    parity tests cover `BASE_FEATURES`, `DERIVED_FEATURES`, and `TARGETS`.
-3. Slice 3: derive predictor schema columns from catalog projections with
+3. Slice 2.5: split catalog loader, validation, and projection responsibilities;
+   clarify that `ml_name` is the raw training header contract; add
+   training-header validation helpers without connecting them to training
+   runtime.
+4. Slice 3: derive predictor schema columns from catalog projections with
    parity tests for order, keys, `ml_feature`, `ml_target`, and role-based
    width/color defaults.
-4. Slice 4: move one-hot group ownership from hard-coded adapter tuples to a
+5. Slice 4: move one-hot group ownership from hard-coded adapter tuples to a
    catalog projection while preserving current warnings and encoded output.
-5. Slice 5: tighten `build_input_df()` zero-fill behavior from
+6. Slice 5: tighten `build_input_df()` zero-fill behavior from
    `zero_fill_policy` only after focused tests and user confirmation.
-6. Slice 6: recheck ML pipeline leakage, artifact, and selected-feature guard
+7. Slice 6: recheck ML pipeline leakage, artifact, and selected-feature guard
    behavior after catalog-backed projections are stable.
 
 ## Risks And Open Questions

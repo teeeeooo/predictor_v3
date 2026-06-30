@@ -27,8 +27,11 @@
 
 ## Current Slice
 
+- Arc 13 Slice 2.5 clarified the feature catalog contract: `ml_name` is the
+  raw training header and internal ML name, alias/header mapping is out of
+  scope, and catalog loader/validation/projection responsibilities are split.
 - Arc 13 Slice 2 converted `core/ml/features.py` exports to catalog projection
-  while preserving `BASE_FEATURES`, `DERIVED_FEATURES`, and canonical `TARGETS`
+  while preserving `BASE_FEATURES`, `DERIVED_FEATURES`, and stable `TARGETS`
   order. `TARGET_COMPAT_ORDER` was removed after result rows were reordered.
 - Arc 13 Slice 1 added the non-runtime feature catalog draft plus
   `core/ml/feature_catalog.py` loader/validator and focused parity tests

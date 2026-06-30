@@ -991,3 +991,17 @@
 - `BASE_FEATURES` still needs a separate legacy result-order projection because
   existing base-feature order places `Ref Qty` before power and frequency
   target-like names.
+
+## 2026-06-30 — Arc 13 Slice 2.5 feature catalog contract cleanup
+
+### Decision
+- `ml_name` is the raw training data header and internal ML feature/target name.
+  Training data must match the catalog; no train-header alias or mapping column
+  is introduced.
+- `BASE_FEATURES` and `TARGETS` are feature/target name exports, not UI column
+  order contracts. Predictor UI order remains a later schema projection concern
+  based on role group and catalog order.
+- Feature catalog responsibilities are split into loader/data model,
+  validation, and projection modules before the owner grows further.
+- Training header validation helpers exist for guard tests but are not wired
+  into the training runtime in this slice.
