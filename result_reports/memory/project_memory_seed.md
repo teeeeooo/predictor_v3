@@ -49,6 +49,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md` (covered reports `555-581`)
 - `result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md` (covered reports `583-601`)
 - `result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md` (covered reports `603-621`)
+- `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md` (covered reports `624-632`)
 
 ## Scope and Non-goals
 
@@ -1047,6 +1048,20 @@ entries:
       - ML Pipeline Stabilization
     assertionStatus: verified
     source: result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md (covered reports 603-621; Arc 12 section)
+
+  - type: decision
+    topic: Arc 13 ML feature catalog closeout
+    content: Arc 13 completed the ML feature catalog migration: `config/ml/features.csv` is the ML feature contract, `ml_name` is both raw training header and internal ML name, no train-header alias layer exists, ML feature constants and predictor ML-visible columns project from the catalog, UI-only predictor columns remain in `core/predictor_schema/ui_columns.py`, one-hot lists come from catalog groups, training header mismatches fail before fitting, and inference zero-fill is limited to catalog `mode_missing_allowed` features.
+    keywords:
+      - predictor_v3
+      - Arc 13
+      - feature catalog
+      - ml_name
+      - training headers
+      - zero fill
+      - predictor schema
+    assertionStatus: verified
+    source: result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md (covered reports 624-632)
 ```
 
 ## Known Gaps

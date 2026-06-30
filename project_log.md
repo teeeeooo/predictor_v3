@@ -1066,3 +1066,16 @@
 - `docs/workflows/ml_feature_catalog_workflow.md` documents the user workflow:
   edit `features.csv`, align training headers to `ml_name`, keep UI
   presentation code-owned, and respect the four-feature zero-fill policy.
+
+## 2026-06-30 — Arc 13 feature catalog closeout
+
+### Decision
+- Arc 13 is complete for automated scope. `config/ml/features.csv` is the ML
+  feature contract; `ml_name` is the raw training header and internal ML name.
+- ML feature exports, predictor ML-visible columns, one-hot lists, training
+  header runtime guard, inference zero-fill policy, and registry/catalog
+  consistency guards now share the catalog contract.
+- Arc 13 reports 624-632 are covered by
+  `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md` and
+  archived.
+- Next recommended work is an ML catalog-aligned real dataset readiness audit.

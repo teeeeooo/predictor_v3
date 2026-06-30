@@ -519,7 +519,8 @@ Target milestones:
 
 Status:
 
-- Active. Slice 0 created the ML Feature Manifest Minimal Design Gate. Slice 1
+- Complete for automated Arc 13 scope. Slice 0 created the ML Feature Manifest
+  Minimal Design Gate. Slice 1
   added the non-runtime catalog draft, loader/validator, and parity tests.
   Slice 2 moved `core/ml/features.py` exports to catalog projection. Slice 2.5
   clarified the `ml_name` training-header contract and split catalog
@@ -529,6 +530,7 @@ Status:
   Slice 4 moved Predict one-hot group ownership to catalog projection. Slice 5
   connected training header and inference zero-fill runtime guards. Slice 6
   hardened registry/resource guards and documented the feature edit workflow.
+  Slice 7 closed Arc 13 with summary/archive lifecycle cleanup.
 
 ### Later — Calculator to Predictor Integration
 

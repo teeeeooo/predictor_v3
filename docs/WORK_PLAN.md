@@ -27,6 +27,8 @@
 
 ## Current Slice
 
+- Arc 13 is complete for the automated feature catalog migration scope. The
+  summary is `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md`.
 - Arc 13 Slice 6 hardened catalog/registry/resource guards and added the
   user-facing ML feature catalog workflow.
 - Arc 13 Slice 5 connected feature catalog runtime guards: training data
@@ -110,7 +112,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 7 - Arc 13 Final Closeout.
+1. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
 
 ## Active Blockers / Open Decisions
 
