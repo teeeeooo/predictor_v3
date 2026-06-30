@@ -11,6 +11,8 @@ from sklearn.feature_selection import RFECV
 from sklearn.metrics import mean_squared_error, r2_score
 
 from core.ml.artifacts import TRAIN_DATA_FILE, MODEL_FILE, MODEL_DIR
+from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
+from core.ml.feature_catalog_projection import validate_training_headers
 from core.ml.registry import MODEL_REGISTRY, get_model_config
 from core.ml.preprocessing import load_and_preprocess, prepare_pipeline
 from core.utils import save_train_log_to_excel
@@ -100,6 +102,7 @@ def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     file = data_path or TRAIN_DATA_FILE
     custom_log(f"📦 데이터 로드 및 전처리 시작... ({os.path.basename(file)})")
     df = load_and_preprocess(file)
+    validate_training_input_headers(df.columns)
 
     model_data = {"models": {}, "features": {}, "preprocess_version": "v1.0"}
     summary_report = "📊 [최종 학습 모델 성능 요약]\n\n"
@@ -162,3 +165,20 @@ def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     custom_log(f"\n🎉 모든 모델 학습이 완료되었습니다!")
 
     return summary_report
+
+
+def validate_training_input_headers(headers):
+    """Fail fast when raw training columns do not match catalog ml_name values."""
+    catalog = load_feature_catalog()
+    catalog_errors = validate_feature_catalog(catalog)
+    if catalog_errors:
+        joined = "; ".join(catalog_errors)
+        raise ValueError(f"invalid ML feature catalog for training: {joined}")
+    header_errors = validate_training_headers(headers, catalog)
+    if header_errors:
+        joined = "; ".join(header_errors)
+        raise ValueError(
+            "Training data header contract violation: columns must match "
+            "config/ml/features.csv ml_name values; "
+            f"{joined}"
+        )

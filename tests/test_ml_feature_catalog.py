@@ -6,6 +6,8 @@ import ast
 import csv
 from pathlib import Path
 
+import pandas as pd
+
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 import core.ml.feature_catalog as feature_catalog_module
 import core.ml.features as features_module
@@ -23,7 +25,9 @@ from core.ml.feature_catalog import (
 from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
 from core.ml.feature_catalog_projection import one_hot_group, predictor_columns_projection
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
+from core.ml.inference import build_input_df
 from core.ml.registry import MODEL_REGISTRY
+from core.ml.training import validate_training_input_headers
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
 from core.predictor_schema.columns import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
 from core.predictor_schema.ui_columns import (
@@ -411,6 +415,107 @@ def test_validate_training_headers_reports_unknown_and_missing_names():
     assert "missing required training header(s): Cooling Capa" in errors
 
 
+def test_training_input_header_guard_accepts_catalog_headers_without_derived():
+    catalog = load_feature_catalog()
+    headers = catalog.training_headers()
+
+    validate_training_input_headers(pd.Index(headers))
+
+    for derived in DERIVED_FEATURES:
+        assert derived not in headers
+
+
+def test_training_input_header_guard_reports_unknown_header():
+    catalog = load_feature_catalog()
+    headers = list(catalog.training_headers())
+    headers.append("Cooling Capacity Alias")
+
+    try:
+        validate_training_input_headers(headers)
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected unknown training header ValueError")
+
+    assert "Training data header contract violation" in message
+    assert "config/ml/features.csv ml_name" in message
+    assert "unknown training header(s): Cooling Capacity Alias" in message
+
+
+def test_training_input_header_guard_reports_missing_header():
+    headers = [
+        header
+        for header in load_feature_catalog().training_headers()
+        if header != "Cooling Capa"
+    ]
+
+    try:
+        validate_training_input_headers(headers)
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing training header ValueError")
+
+    assert "Training data header contract violation" in message
+    assert "missing required training header(s): Cooling Capa" in message
+
+
+def test_build_input_df_allows_mode_missing_zero_fill_only_for_mode_features():
+    row = _complete_base_row()
+    for feature in ("Cooling Capa", "Heating Capa", "Cooling Power", "Heating Power"):
+        row.pop(feature)
+
+    df = build_input_df(row)
+
+    assert df.loc[0, "Cooling Capa"] == 0.0
+    assert df.loc[0, "Heating Capa"] == 0.0
+    assert df.loc[0, "Cooling Power"] == 0.0
+    assert df.loc[0, "Heating Power"] == 0.0
+
+
+def test_build_input_df_rejects_missing_feature_without_zero_fill_policy():
+    row = _complete_base_row()
+    row.pop("ID Volume")
+
+    try:
+        build_input_df(row)
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing feature ValueError")
+
+    assert "zero_fill_policy" in message
+    assert "ID Volume" in message
+
+
+def test_build_input_df_required_features_do_not_require_unused_base_names():
+    row = _complete_base_row()
+    for feature in ("Ref Qty", "Cooling Hz", "Heating Hz"):
+        row.pop(feature)
+
+    df = build_input_df(
+        row,
+        required_features=["Cooling Capa", "ID Volume", "Cool_Capa_per_EER"],
+    )
+
+    assert df.loc[0, "Cooling Capa"] == 3500.0
+    assert "Cool_Capa_per_EER" in df.columns
+
+
+def test_build_input_df_required_derived_feature_checks_raw_dependencies():
+    row = _complete_base_row()
+    row.pop("Comp EER")
+
+    try:
+        build_input_df(row, required_features=["Cool_Capa_per_EER"])
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing derived dependency ValueError")
+
+    assert "Comp EER" in message
+
+
 def test_default_catalog_path_exists_for_runtime_import():
     assert DEFAULT_CATALOG_PATH.exists()
 
@@ -480,3 +585,28 @@ def _write_catalog(path: Path, rows: list[dict[str, str]]) -> None:
         writer = csv.DictWriter(csv_file, fieldnames=REQUIRED_HEADERS)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _complete_base_row() -> dict[str, float]:
+    return {
+        "Cooling Capa": 3500.0,
+        "Heating Capa": 4000.0,
+        "ID Volume": 1.0,
+        "Evap Area": 2.0,
+        "Evap Volume": 3.0,
+        "OD Volume": 4.0,
+        "Cond Area": 5.0,
+        "Cond Volume": 6.0,
+        "Comp EER": 7.0,
+        "Comp cc": 8.0,
+        "R410A": 0.0,
+        "R32": 1.0,
+        "R290": 0.0,
+        "EEV": 1.0,
+        "Capi": 0.0,
+        "Ref Qty": 1.0,
+        "Cooling Power": 1200.0,
+        "Heating Power": 1300.0,
+        "Cooling Hz": 58.0,
+        "Heating Hz": 59.0,
+    }

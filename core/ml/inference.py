@@ -1,15 +1,29 @@
 # core/ml/inference.py — 순방향 예측 엔진 (Inference Only)
 import os
+from functools import lru_cache
+
 import joblib
 import pandas as pd
 import numpy as np
 
 # 데이터 전처리 로직 재사용 (sklearn 의존성 없음)
 from core.ml.preprocessing import calculate_derived_features
-from core.ml.features import TARGETS, BASE_FEATURES
+from core.ml.features import TARGETS, BASE_FEATURES, DERIVED_FEATURES
+from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 
 # 현재 시스템의 전처리 버전 (Lite 안전장치 v1.0)
 CURRENT_PREPROCESS_VERSION = "v1.0"
+ZERO_FILL_ALLOWED_POLICY = "mode_missing_allowed"
+DERIVED_FEATURE_DEPENDENCIES = frozenset(
+    {
+        "Cooling Capa",
+        "Heating Capa",
+        "Comp EER",
+        "Cond Area",
+        "Evap Area",
+        "Comp cc",
+    }
+)
 
 def load_model(model_file):
     """
@@ -33,20 +47,30 @@ def load_model(model_file):
 
     return model_data
 
-def build_input_df(row_dict):
+def build_input_df(row_dict, required_features=None):
     """
     UI에서 전달된 딕셔너리를 바탕으로 파생 피처가 포함된 DataFrame을 생성합니다.
     row_dict: {"Cooling Capa": 3500, "R32": 1, ...} 형태 (ml_feature 기준)
     """
     # 1. 딕셔너리를 단일 행 DataFrame으로 변환
     df = pd.DataFrame([row_dict])
+    zero_fill_policies = _load_zero_fill_policies()
+    missing_required = []
+    required_base_features = _required_base_features(required_features)
 
-    # 2. 누락된 기본 피처가 있는지 확인 (백그라운드 피처 포함)
-    for feature in BASE_FEATURES:
+    # 2. 누락된 기본 피처가 있는지 확인
+    for feature in required_base_features:
         if feature not in df.columns:
-            # TODO: ID/OD 온도 변수 (데이터 축적 후 추가 예정)
-            # 현재는 0으로 채우며, BASE_FEATURES에 없으므로 실제로 실행 되지 않음
-            df[feature] = 0.0
+            if zero_fill_policies.get(feature) == ZERO_FILL_ALLOWED_POLICY:
+                df[feature] = 0.0
+            else:
+                missing_required.append(feature)
+    if missing_required:
+        missing_text = ", ".join(missing_required)
+        raise ValueError(
+            "Prediction input is missing required ML feature(s) not allowed "
+            f"by config/ml/features.csv zero_fill_policy: {missing_text}"
+        )
 
     # 3. 파생 피처 계산 (safe_divide 및 벡터 연산 적용됨)
     df_processed = calculate_derived_features(df)
@@ -54,12 +78,36 @@ def build_input_df(row_dict):
     return df_processed
 
 
+@lru_cache(maxsize=1)
+def _load_zero_fill_policies():
+    catalog = load_feature_catalog()
+    errors = validate_feature_catalog(catalog)
+    if errors:
+        joined = "; ".join(errors)
+        raise RuntimeError(f"invalid ML feature catalog for inference: {joined}")
+    return catalog.zero_fill_policies()
+
+
+def _required_base_features(required_features):
+    if required_features is None:
+        return BASE_FEATURES
+    required = set(required_features)
+    if required.intersection(DERIVED_FEATURES):
+        required.update(DERIVED_FEATURE_DEPENDENCIES)
+    return [feature for feature in BASE_FEATURES if feature in required]
+
+
 def predict_row(model_data, row_dict):
     """
     로드된 모델 데이터와 입력 딕셔너리를 사용하여 모든 타겟에 대한 예측을 수행합니다.
     """
     # 1. 입력 데이터 가공
-    input_df = build_input_df(row_dict)
+    required_input_features = []
+    for target in TARGETS:
+        required_features = model_data["features"].get(target)
+        if required_features:
+            required_input_features.extend(required_features)
+    input_df = build_input_df(row_dict, required_input_features or None)
 
     results = {}
 

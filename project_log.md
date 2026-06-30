@@ -1041,3 +1041,15 @@
   existing one-hot output keys, values, ordering, and unsupported-option
   warnings.
 - Training header runtime guards remain separate Arc 13 work.
+
+## 2026-06-30 — Arc 13 Slice 5 training/input contract runtime guard
+
+### Decision
+- Training now fails before model fitting when raw data headers do not match
+  `config/ml/features.csv` `ml_name` values. Derived features remain generated
+  by code and are not required as raw training headers.
+- Inference no longer fills every missing `BASE_FEATURES` name with `0.0`.
+  Only features marked `zero_fill_policy=mode_missing_allowed` may be filled:
+  Cooling Capa, Cooling Power, Heating Capa, and Heating Power.
+- Other missing ML feature names now fail fast with a message listing the
+  missing feature names and the catalog zero-fill policy boundary.

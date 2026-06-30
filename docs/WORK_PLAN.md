@@ -27,6 +27,9 @@
 
 ## Current Slice
 
+- Arc 13 Slice 5 connected feature catalog runtime guards: training data
+  headers must match `features.csv` `ml_name` values before training, and
+  inference missing-feature zero fill is limited by `zero_fill_policy`.
 - Arc 13 Slice 4 moved Predict one-hot feature group ownership from
   `RowToMlInputAdapter` hard-coded tuples to feature catalog projection while
   preserving prediction input dict behavior.
@@ -105,7 +108,7 @@
 
 ## Next Actions
 
-1. Arc 13 Slice 5 - Training Header Runtime Guard.
+1. Arc 13 Slice 6 - Catalog Guard / Packaging / Workflow Hardening.
 
 ## Active Blockers / Open Decisions
 

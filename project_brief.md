@@ -526,7 +526,8 @@ Status:
   responsibilities. Slice 3 moved predictor schema ML-visible columns to
   catalog projection while preserving current UI schema exports. Slice 3.5
   split predictor UI-only compatibility columns into their own schema owner.
-  Slice 4 moved Predict one-hot group ownership to catalog projection.
+  Slice 4 moved Predict one-hot group ownership to catalog projection. Slice 5
+  connected training header and inference zero-fill runtime guards.
 
 ### Later — Calculator to Predictor Integration
 
