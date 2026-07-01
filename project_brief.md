@@ -10,8 +10,10 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, Arc 13 ML Pipeline
-Stabilization, starting with ML Feature Manifest SSOT Foundation.
+Current phase: Machine Learning / Predictor Phase, post-Arc 13 planning. Arc
+13 ML Feature Catalog migration is complete for automated scope; current
+near-term execution runs the Calculator Sub-Arc - KOREA Notebook Entry before
+Arc 13.5 Feature Catalog Editor work.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -531,6 +533,61 @@ Status:
   connected training header and inference zero-fill runtime guards. Slice 6
   hardened registry/resource guards and documented the feature edit workflow.
   Slice 7 closed Arc 13 with summary/archive lifecycle cleanup.
+
+### Calculator Sub-Arc — KOREA Notebook Entry
+
+Goal:
+
+- Add the KOREA notebook entry as a bounded calculator sub-arc before resuming
+  the ML catalog UI workflow.
+
+Status:
+
+- Next near-term action before Arc 13.5.
+
+Scope boundary:
+
+- Preserve calculator formula/config/golden/public result contracts and keep
+  the notebook entry separate from Arc 13.5 Train/Admin catalog editor work.
+
+### Arc 13.5 — Feature Catalog Editor Bridge
+
+Goal:
+
+- Move the feature catalog user workflow from direct CSV editing toward an
+  `app_train.py` Train/Admin Feature Catalog table editor.
+
+Target milestones:
+
+- Slice 0: Feature Catalog Editor Design Gate.
+- Slice 1: read-only catalog viewer with validate and CSV export.
+- Slice 2: editable catalog table with save.
+
+Direction:
+
+- `config/ml/features.csv` remains the storage and contract file.
+- Direct CSV editing is no longer the default user workflow.
+- CSV export remains available for storage, sharing, and Excel/Numbers review.
+- UI implementation should route Train UI actions through
+  controller/service/usecase boundaries to catalog loader/validator/writer
+  ownership rather than making the UI own raw CSV parsing or writing.
+- `config/ml/README.md` and workflow document updates are deferred to the Arc
+  13.5 implementation slices.
+
+Status:
+
+- Planned bridge arc after the Calculator Sub-Arc and before Arc 14.
+
+### Arc 14 — ML Catalog-Aligned Real Dataset Readiness Audit
+
+Goal:
+
+- Audit real dataset readiness against the Arc 13 catalog contract and Arc 13.5
+  editor workflow.
+
+Status:
+
+- Deferred until after Calculator Sub-Arc and Arc 13.5.
 
 ### Later — Calculator to Predictor Integration
 

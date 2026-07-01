@@ -1079,3 +1079,20 @@
   `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md` and
   archived.
 - Next recommended work is an ML catalog-aligned real dataset readiness audit.
+
+## 2026-07-01 — Arc 13.5 feature catalog editor direction
+
+### Decision
+- After Arc 13 closeout, practical review found that opening `features.csv` in
+  Excel can display Korean labels incorrectly because Excel may not
+  automatically detect UTF-8 CSV encoding.
+- The preferred user workflow is not direct CSV editing in Excel or Numbers.
+  Arc 13.5 should design the feature catalog workflow around an
+  `app_train.py` Feature Catalog viewer/editor surface.
+- CSV export remains useful for storage, sharing, and Excel/Numbers review, and
+  the implementation design should evaluate an export encoding policy such as
+  UTF-8-SIG.
+- Arc 14, the real catalog-aligned dataset readiness audit, is deferred until
+  after Arc 13.5 viewer/editor/export/save work.
+- The Calculator Sub-Arc - KOREA Notebook Entry is the next action before Arc
+  13.5 starts.
