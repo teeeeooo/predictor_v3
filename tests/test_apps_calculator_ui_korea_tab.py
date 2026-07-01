@@ -55,6 +55,10 @@ def test_korea_tab_contains_cspf_hspf_metric_notebook(tk_root) -> None:
     assert korea.hspf_frame.master is korea.metric_notebook
     assert korea.cspf_section.result_panel is not None
     assert korea.hspf_section.result_panel is not None
+    assert korea.cspf_section.detail_toggle.cget("text") == "상세 보기 ↓"
+    assert korea.hspf_section.detail_toggle.cget("text") == "상세 보기 ↓"
+    assert not korea.cspf_section.detail_panel.is_visible()
+    assert not korea.hspf_section.detail_panel.is_visible()
     assert korea.cspf_section.guide_table.text_at_address(("current_tc", "value")) == (
         "입력 대기"
     )

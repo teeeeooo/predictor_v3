@@ -19,6 +19,9 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary, result_status
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
 
 
@@ -40,6 +43,9 @@ class KoreaHspfSection:
         on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
         self._on_detail_visibility_changed = on_trace_visibility_changed
+        self._trace_rows: list[dict] = []
+        self._detail_summary: tuple[tuple[str, str], ...] = ()
+        self._trace_status: str | None = "상세 데이터 없음"
         self._usecase = KoreaHspfUseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], KoreaHspfBatchDialog
@@ -132,6 +138,37 @@ class KoreaHspfSection:
         )
         self.batch_button.surface_role = "korea_hspf_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "korea_hspf_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("KOREA HSPF",),
+            default_source="KOREA HSPF",
+            csv_filename="korea_hspf_bin_detail.csv",
+            show_source_selector=False,
+            schema=HEATING_HSPF_BIN_DETAIL_SCHEMA,
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 6,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            before_show=self._update_detail_panel,
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
+        )
+        self.trace_table = self.detail_panel.table
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
         self.guide_controller = TkTableController(self.guide_table)
@@ -200,10 +237,15 @@ class KoreaHspfSection:
         if result.guide_status and not result.guide_fields:
             self._set_guide_status(result.guide_status)
         if not result.is_ok:
+            self._clear_trace(result.detail_status or result.status_text)
             self.result_panel.set_summaries(
                 (result_status(result.summary_title, result.status_text),)
             )
             return
+        self._trace_rows = list(result.detail_rows)
+        self._detail_summary = result.detail_summary
+        self._trace_status = None
+        self._update_detail_panel()
         self.result_panel.set_summaries(
             (
                 ResultSummary(
@@ -243,6 +285,30 @@ class KoreaHspfSection:
                 ("recommended_mid_capacity", "value"): "-",
             },
         )
+
+    def _toggle_detail(self) -> None:
+        self._detail_visibility.toggle()
+
+    def _update_detail_panel(self) -> None:
+        if self._trace_status is not None:
+            self.detail_panel.set_status(self._trace_status)
+            return
+        self.detail_panel.set_sources(
+            {
+                "KOREA HSPF": BinDetailSource(
+                    rows=tuple(self._trace_rows),
+                    summary=self._detail_summary,
+                )
+            },
+            source_order=("KOREA HSPF",),
+            panel_status="상세 데이터 없음",
+        )
+
+    def _clear_trace(self, status: str) -> None:
+        self._trace_rows = []
+        self._detail_summary = ()
+        self._trace_status = status
+        self._update_detail_panel()
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
