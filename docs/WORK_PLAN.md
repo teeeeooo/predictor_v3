@@ -30,8 +30,9 @@
 - Arc 13 is complete for the automated feature catalog migration scope. The
   closeout summary is
   `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md`.
-- Current next action is not Arc 14 yet. First run the Calculator Sub-Arc -
-  KOREA Notebook Entry, then use Arc 13.5 to design and implement the
+- Current next action is not Arc 14 yet. Run the Calculator Sub-Arc - KOREA
+  Notebook Entry first. Slice 0 design readiness is active, followed by Slice 1
+  top-level tab skeleton, then use Arc 13.5 to design and implement the
   `app_train.py` Feature Catalog table editor workflow.
 - Arc 13.5 should treat `config/ml/features.csv` as the storage/contract file,
   not as the default direct user editing surface.
@@ -41,6 +42,8 @@
 ## Next Actions
 
 1. Calculator Sub-Arc - KOREA Notebook Entry.
+   - Active slice: Slice 0 - Sub-Arc Design Spec & Readiness Audit.
+   - Next implementation slice: Slice 1 - KOREA Top-level Tab Skeleton.
 2. Arc 13.5 Slice 0 - Feature Catalog Editor Design Gate.
 3. Arc 13.5 Slice 1 - Feature Catalog Viewer / Validate / Export.
 4. Arc 13.5 Slice 2 - Editable Catalog Table / Save.
@@ -100,6 +103,8 @@
   `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`.
 - Arc 13.5 Feature Catalog editor design gate:
   `docs/designs/2026-07-01-arc13-5-feature-catalog-editor-design-gate.md`.
+- KOREA calculator notebook entry sub-arc:
+  `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
 - B-option unified case table visual reference:
   `docs/designs/assets/predict_ref_img.png`.
 - Spreadsheet table UX baseline:
