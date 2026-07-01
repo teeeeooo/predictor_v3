@@ -57,7 +57,7 @@ def test_korea_hspf_usecase_valid_sample_outputs_and_guide():
     assert result.guide_fields == (
         ("current_tc", "3.8 °C"),
         ("recommended_tc", "3.6 °C"),
-        ("recommended_mid_capacity", "2216 W"),
+        ("recommended_mid_capacity", "2450 W"),
     )
     assert result.detail_summary == result.summary_fields
     assert result.detail_rows
@@ -73,4 +73,4 @@ def test_hspf_midpoint_guide_uses_7c_inputs_only():
 
     assert round(guide.current_tc, 1) == 3.8
     assert round(guide.recommended_tc, 1) == 3.6
-    assert round(guide.recommended_mid_capacity) == 2216
+    assert round(guide.recommended_mid_capacity) == 2450

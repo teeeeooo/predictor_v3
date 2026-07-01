@@ -53,7 +53,7 @@ def test_korea_cspf_usecase_valid_sample_outputs_and_guide():
     assert result.guide_fields == (
         ("current_tc", "29.3 °C"),
         ("recommended_tc", "30.7 °C"),
-        ("recommended_mid_capacity", "2258 W"),
+        ("recommended_mid_capacity", "2141 W"),
     )
     assert result.detail_summary == result.summary_fields
     assert result.detail_rows
@@ -69,4 +69,17 @@ def test_cspf_midpoint_guide_uses_input_load_line_without_core_result_keys():
 
     assert round(guide.current_tc, 1) == 29.3
     assert round(guide.recommended_tc, 1) == 30.7
-    assert round(guide.recommended_mid_capacity) == 2258
+    assert round(guide.recommended_mid_capacity) == 2141
+
+
+def test_cspf_midpoint_guide_recommends_35c_mid_capacity_input():
+    guide = calculate_cspf_midpoint_guide(
+        declared_capacity=6000.0,
+        full_capacity=5870.0,
+        half_capacity=3407.0,
+        min_capacity=1853.0,
+    )
+
+    assert round(guide.current_tc, 6) == 30.231029
+    assert round(guide.recommended_tc, 6) == 30.788534
+    assert round(guide.recommended_mid_capacity, 1) == 3694.6

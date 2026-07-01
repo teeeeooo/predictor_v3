@@ -77,7 +77,15 @@ def calculate_cspf_midpoint_guide(
     tb = _intersection_temperature(full_line, load_line)
     current_tc = _intersection_temperature(half_line, load_line)
     recommended_tc = (ta + tb) / 2.0
-    recommended_mid_capacity = _value_at(load_line, recommended_tc)
+    recommended_mid_capacity = _value_at(load_line, recommended_tc) / _value_at(
+        _line_from_points(
+            cfg.min_test_temp,
+            cfg.half_capacity_factor_35_to_29,
+            cfg.full_test_temp,
+            1.0,
+        ),
+        recommended_tc,
+    )
     return MidpointGuide(
         current_tc=current_tc,
         recommended_tc=recommended_tc,
@@ -109,7 +117,10 @@ def calculate_hspf_midpoint_guide(
     tb = _intersection_temperature(full_line, load_line)
     current_tc = _intersection_temperature(half_line, load_line)
     recommended_tc = (ta + tb) / 2.0
-    recommended_mid_capacity = _value_at(load_line, recommended_tc)
+    recommended_mid_capacity = _value_at(load_line, recommended_tc) / _value_at(
+        _heating_capacity_line(1.0, cfg),
+        recommended_tc,
+    )
     return MidpointGuide(
         current_tc=current_tc,
         recommended_tc=recommended_tc,
