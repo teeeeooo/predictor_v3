@@ -1096,3 +1096,14 @@
   after Arc 13.5 viewer/editor/export/save work.
 - The Calculator Sub-Arc - KOREA Notebook Entry is the next action before Arc
   13.5 starts.
+
+## 2026-07-01 — Calculator Sub-Arc KOREA notebook entry closeout
+
+### Decision
+- Completed the bounded KOREA calculator notebook sub-arc before Arc 13.5.
+- KOREA is now a top-level calculator tab with CSPF/HSPF single calculation,
+  midpoint guide tables, batch table dialogs, and official-result detail views.
+- KS C 9306 core formula/config/profile/public result contracts and golden
+  expected values were preserved.
+- Next near-term action returns to Arc 13.5 Slice 0 Feature Catalog Editor
+  Design Gate.

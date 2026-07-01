@@ -11,9 +11,9 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 ## 1. Current Phase
 
 Current phase: Machine Learning / Predictor Phase, post-Arc 13 planning. Arc
-13 ML Feature Catalog migration is complete for automated scope; current
-near-term execution runs the Calculator Sub-Arc - KOREA Notebook Entry before
-Arc 13.5 Feature Catalog Editor work.
+13 ML Feature Catalog migration is complete for automated scope; Calculator
+Sub-Arc - KOREA Notebook Entry is complete; current near-term execution moves
+to Arc 13.5 Feature Catalog Editor work.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -543,7 +543,8 @@ Goal:
 
 Status:
 
-- Next near-term action before Arc 13.5.
+- Complete. KOREA is registered as a top-level calculator notebook tab with
+  CSPF/HSPF single calculation, midpoint guide, batch, and detail surfaces.
 
 Scope boundary:
 

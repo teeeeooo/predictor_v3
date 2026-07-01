@@ -30,10 +30,9 @@
 - Arc 13 is complete for the automated feature catalog migration scope. The
   closeout summary is
   `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md`.
-- Current next action is not Arc 14 yet. Run the Calculator Sub-Arc - KOREA
-  Notebook Entry first. Slice 0 design readiness is active, followed by Slice 1
-  top-level tab skeleton, then use Arc 13.5 to design and implement the
-  `app_train.py` Feature Catalog table editor workflow.
+- Current next action is not Arc 14 yet. Calculator Sub-Arc - KOREA Notebook
+  Entry is complete; use Arc 13.5 to design and implement the `app_train.py`
+  Feature Catalog table editor workflow.
 - Arc 13.5 should treat `config/ml/features.csv` as the storage/contract file,
   not as the default direct user editing surface.
 - Arc 14 remains deferred until after Arc 13.5, when the project is ready for a
@@ -41,13 +40,10 @@
 
 ## Next Actions
 
-1. Calculator Sub-Arc - KOREA Notebook Entry.
-   - Active slice: Slice 0 - Sub-Arc Design Spec & Readiness Audit.
-   - Next implementation slice: Slice 1 - KOREA Top-level Tab Skeleton.
-2. Arc 13.5 Slice 0 - Feature Catalog Editor Design Gate.
-3. Arc 13.5 Slice 1 - Feature Catalog Viewer / Validate / Export.
-4. Arc 13.5 Slice 2 - Editable Catalog Table / Save.
-5. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
+1. Arc 13.5 Slice 0 - Feature Catalog Editor Design Gate.
+2. Arc 13.5 Slice 1 - Feature Catalog Viewer / Validate / Export.
+3. Arc 13.5 Slice 2 - Editable Catalog Table / Save.
+4. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
 
 ## Active Blockers / Open Decisions
 
@@ -55,7 +51,6 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- KOREA notebook entry is a calculator sub-arc prerequisite before Arc 13.5.
 - Arc 13.5 needs a design gate for the `app_train.py` Feature Catalog table
   editor direction before implementation.
 - Excel Korean label corruption is treated as a UTF-8 CSV auto-detection issue;
