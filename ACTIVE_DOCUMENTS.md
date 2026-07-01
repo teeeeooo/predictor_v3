@@ -132,6 +132,10 @@
 | --- | --- | --- | --- |
 | `result_reports/memory/project_memory_seed.md` | Backend-neutral `Project Memory Delta` seed/staging document; preserves traceable source summaries/reports rather than replacing original report text | `AGENT_TASK_ROUTER.md`, `result_reports/summaries/*.md`, `Project Memory Delta` workflow | future local index, memory backend import, agent session recall |
 
+`result_reports/memory/archive/` stores retired, stale, superseded, or resolved
+memory seed entries with source traces preserved. Individual archive files are
+not active memory staging documents.
+
 ## Historical Archive Docs
 
 | Document | Role | Primary inbound | Primary outbound |
