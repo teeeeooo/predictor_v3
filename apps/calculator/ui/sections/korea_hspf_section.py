@@ -9,7 +9,13 @@ from tkinter import ttk
 
 from apps.calculator.application.korea import KoreaHspfUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
-from apps.calculator.ui.layout_constants import ISO_SECTION_BLOCK_GAP, ISO_SECTION_PADX
+from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
+from apps.calculator.ui.batch_dialogs.profiles.korea_hspf import KoreaHspfBatchDialog
+from apps.calculator.ui.layout_constants import (
+    BATCH_INPUT_BUTTON_TEXT,
+    ISO_SECTION_BLOCK_GAP,
+    ISO_SECTION_PADX,
+)
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary, result_status
 from apps.calculator.ui.result_panel import ResultPanel
@@ -35,6 +41,9 @@ class KoreaHspfSection:
     ) -> None:
         self._on_detail_visibility_changed = on_trace_visibility_changed
         self._usecase = KoreaHspfUseCase()
+        self._batch_handle: BatchDialogHandle[
+            list[dict[str, str]], KoreaHspfBatchDialog
+        ] = BatchDialogHandle()
         self._frame = ttk.LabelFrame(parent, text="KS C 9306 HSPF 입력")
         self._frame.columnconfigure(0, weight=1)
 
@@ -108,6 +117,21 @@ class KoreaHspfSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self.action_row = ttk.Frame(self._frame)
+        self.action_row.grid(
+            row=5,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
+        )
+        self.batch_button = ttk.Button(
+            self.action_row,
+            text=BATCH_INPUT_BUTTON_TEXT,
+            command=self._open_batch_dialog,
+        )
+        self.batch_button.surface_role = "korea_hspf_batch_open"
+        self.batch_button.pack(side=tk.LEFT)
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
         self.guide_controller = TkTableController(self.guide_table)
@@ -119,6 +143,34 @@ class KoreaHspfSection:
 
     def pack(self, **kwargs) -> None:
         self._frame.pack(**kwargs)
+
+    @property
+    def _batch_dialog(self) -> KoreaHspfBatchDialog | None:
+        return self._batch_handle.dialog
+
+    @_batch_dialog.setter
+    def _batch_dialog(self, dialog: KoreaHspfBatchDialog | None) -> None:
+        self._batch_handle.dialog = dialog
+
+    @property
+    def _batch_snapshot(self) -> list[dict[str, str]] | None:
+        return self._batch_handle.snapshot
+
+    @_batch_snapshot.setter
+    def _batch_snapshot(self, snapshot: list[dict[str, str]] | None) -> None:
+        self._batch_handle.snapshot = snapshot
+
+    def _open_batch_dialog(self) -> None:
+        self._batch_handle.open_or_focus(
+            lambda: KoreaHspfBatchDialog(
+                self._frame.winfo_toplevel(),
+                initial_snapshot=self._batch_handle.snapshot,
+                on_close=self._clear_batch_dialog,
+            )
+        )
+
+    def _clear_batch_dialog(self, snapshot: list[dict[str, str]] | None = None) -> None:
+        self._batch_handle.clear(snapshot)
 
     def recalculate_now(self) -> None:
         raw_values = {
@@ -195,3 +247,4 @@ class KoreaHspfSection:
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self._frame:
             self._auto_calc.dispose()
+            self._batch_handle.dispose()
