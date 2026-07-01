@@ -28,3 +28,23 @@ class KoreaCspfUseCaseResult:
     @property
     def is_ok(self) -> bool:
         return self.status == "ok"
+
+
+@dataclass(frozen=True)
+class KoreaHspfUseCaseResult:
+    """Result returned by the KOREA HSPF application usecase."""
+
+    status: str
+    status_text: str
+    summary_title: str = "HSPF"
+    summary_fields: SummaryFields = ()
+    detail_rows: DetailRows = ()
+    detail_summary: SummaryFields = ()
+    detail_status: str | None = None
+    invalid_fields: Mapping[str, str] | None = None
+    guide_fields: SummaryFields = ()
+    guide_status: str | None = None
+
+    @property
+    def is_ok(self) -> bool:
+        return self.status == "ok"

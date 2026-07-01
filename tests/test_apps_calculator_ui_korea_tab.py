@@ -54,6 +54,10 @@ def test_korea_tab_contains_cspf_hspf_metric_notebook(tk_root) -> None:
     assert korea.cspf_frame.master is korea.metric_notebook
     assert korea.hspf_frame.master is korea.metric_notebook
     assert korea.cspf_section.result_panel is not None
+    assert korea.hspf_section.result_panel is not None
     assert korea.cspf_section.guide_table.text_at_address(("current_tc", "value")) == (
+        "입력 대기"
+    )
+    assert korea.hspf_section.guide_table.text_at_address(("current_tc", "value")) == (
         "입력 대기"
     )

@@ -8,6 +8,7 @@ from tkinter import ttk
 from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
 from apps.calculator.ui.sections.korea_cspf_section import KoreaCspfSection
+from apps.calculator.ui.sections.korea_hspf_section import KoreaHspfSection
 
 
 class KoreaTab(ttk.Frame):
@@ -42,6 +43,11 @@ class KoreaTab(ttk.Frame):
             on_trace_visibility_changed=self._lifecycle.on_detail_visibility_changed,
         )
         self.cspf_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.hspf_section = KoreaHspfSection(
+            self.hspf_frame,
+            on_trace_visibility_changed=self._lifecycle.on_detail_visibility_changed,
+        )
+        self.hspf_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
     def preferred_initial_size(self) -> tuple[int, int]:
         return self._lifecycle.preferred_initial_size()

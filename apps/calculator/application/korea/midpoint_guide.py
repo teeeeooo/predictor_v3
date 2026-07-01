@@ -27,6 +27,18 @@ class CspfGuideConfig:
     min_capacity_factor_29_to_35: float = 0.9285
 
 
+@dataclass(frozen=True)
+class HspfGuideConfig:
+    """KS C 9306 HSPF guide constants isolated from the Tk view."""
+
+    low_test_temp: float = -7.0
+    rated_test_temp: float = 7.0
+    zero_load_temp: float = 16.0
+    full_load_temp: float = 0.0
+    rated_capacity_factor: float = 0.82
+    capacity_factor_7_to_minus7: float = 0.601
+
+
 def calculate_cspf_midpoint_guide(
     *,
     declared_capacity: float,
@@ -70,6 +82,50 @@ def calculate_cspf_midpoint_guide(
         current_tc=current_tc,
         recommended_tc=recommended_tc,
         recommended_mid_capacity=recommended_mid_capacity,
+    )
+
+
+def calculate_hspf_midpoint_guide(
+    *,
+    rated_cooling_capacity: float,
+    full_capacity: float,
+    half_capacity: float,
+    min_capacity: float,
+    config: HspfGuideConfig | None = None,
+) -> MidpointGuide:
+    """Calculate HSPF midpoint guide values from 7°C heating inputs."""
+    cfg = config or HspfGuideConfig()
+    full_load_at_zero = rated_cooling_capacity * cfg.rated_capacity_factor
+    load_line = _line_from_points(
+        cfg.zero_load_temp,
+        0.0,
+        cfg.full_load_temp,
+        full_load_at_zero,
+    )
+    full_line = _heating_capacity_line(full_capacity, cfg)
+    half_line = _heating_capacity_line(half_capacity, cfg)
+    min_line = _heating_capacity_line(min_capacity, cfg)
+    ta = _intersection_temperature(min_line, load_line)
+    tb = _intersection_temperature(full_line, load_line)
+    current_tc = _intersection_temperature(half_line, load_line)
+    recommended_tc = (ta + tb) / 2.0
+    recommended_mid_capacity = _value_at(load_line, recommended_tc)
+    return MidpointGuide(
+        current_tc=current_tc,
+        recommended_tc=recommended_tc,
+        recommended_mid_capacity=recommended_mid_capacity,
+    )
+
+
+def _heating_capacity_line(
+    capacity_at_7: float,
+    config: HspfGuideConfig,
+) -> tuple[float, float]:
+    return _line_from_points(
+        config.low_test_temp,
+        capacity_at_7 * config.capacity_factor_7_to_minus7,
+        config.rated_test_temp,
+        capacity_at_7,
     )
 
 
