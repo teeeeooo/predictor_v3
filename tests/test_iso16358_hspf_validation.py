@@ -6,6 +6,7 @@ import pytest
 from core.calculators.standards.iso16358 import ISO16358Calculator
 from core.calculators.standards.ks_c9306 import KSC9306Calculator
 from tests.helpers.iso16358_hspf_samples import (
+    GOLDEN_EXPECTED,
     OFFICIAL_GOLDEN_SAMPLE,
     make_ks_phase1_calculator,
 )
@@ -336,6 +337,25 @@ def test_ks_c9306_hspf_config_load_line_with_cooling_capacity_passes(tmp_path):
 
     assert result["HSPF"] > 0
     assert result["bin_details"][0]["bin_load"] == pytest.approx(2952.0)
+
+
+def test_ks_c9306_hspf_official_golden_uses_korea_config_full_bins():
+    calculator = KSC9306Calculator.from_config_path("data/region_configs/korea.json")
+    data = schema_completeness_fixture_not_expected_tuning()
+    data["rated_cooling_capacity"] = 3600.0
+
+    result = calculator.calculate_hspf(data)
+
+    assert result["HSPF"] == pytest.approx(GOLDEN_EXPECTED["hspf"], abs=0.001)
+    assert result["HSTL"] == pytest.approx(GOLDEN_EXPECTED["hstl"], abs=1.0)
+    assert result["HSEC"] == pytest.approx(GOLDEN_EXPECTED["hsec"], abs=1.0)
+    assert result["heat_pump_energy"] == pytest.approx(
+        GOLDEN_EXPECTED["heat_pump_energy"], abs=1.0
+    )
+    assert result["auxiliary_energy"] == pytest.approx(
+        GOLDEN_EXPECTED["auxiliary_energy"], abs=1.0
+    )
+    assert all(row["load_line_used"] for row in result["bin_details"])
 
 
 
