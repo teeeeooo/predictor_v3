@@ -50,6 +50,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 - `result_reports/summaries/602_summary-arc10-arc11-worker-train-execution-closeout.md` (covered reports `583-601`)
 - `result_reports/summaries/622_summary-arc11-arc12-boundary-closeout.md` (covered reports `603-621`)
 - `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md` (covered reports `624-632`)
+- `result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md` (covered reports `636-643`)
 
 ## Scope and Non-goals
 
@@ -1062,6 +1063,19 @@ entries:
       - predictor schema
     assertionStatus: verified
     source: result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md (covered reports 624-632)
+
+  - type: decision
+    topic: KOREA calculator notebook sub-arc closeout
+    content: KOREA is a top-level Tk calculator tab with CSPF/HSPF single calculation, midpoint guide tables, batch dialogs, and official-result detail views; midpoint guide values are UI design helpers and are not part of official result dicts, batch outputs, or detail views, while KS C 9306 core formula/config/profile/public result contracts remain unchanged.
+    keywords:
+      - predictor_v3
+      - KOREA calculator
+      - KS C 9306
+      - midpoint guide
+      - batch
+      - detail
+    assertionStatus: verified
+    source: result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md (covered reports 636-643)
 ```
 
 ## Known Gaps
