@@ -42,6 +42,7 @@ from apps.calculator.ui.layout_constants import (
     CONTROL_ROW_PADY,
     METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
     METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
+    METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
     METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
@@ -247,6 +248,7 @@ class En14825ScopSection:
                     for row_key in ScopTableModel.ROW_KEYS
                 ),
                 editable_cells=editable_cells,
+                row_header_chars=METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
                 section_break_before_rows=ScopTableModel.SECTION_BREAK_BEFORE_ROWS,
             )
             table.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 6))

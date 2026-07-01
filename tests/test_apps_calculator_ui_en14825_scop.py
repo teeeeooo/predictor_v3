@@ -678,6 +678,13 @@ def test_scop_gui_integration_basics():
         assert section.appliance_type_label.cget("text") == "Type"
         assert section.climate_input_tables["average"].layout_policy == "content_hug"
         assert section.input_tables["average"].layout_policy == "content_hug"
+        from apps.calculator.ui.layout_constants import (
+            METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
+        )
+
+        assert section.input_tables["average"].row_header_chars == (
+            METRIC_TABLE_EN14825_ROW_HEADER_CHARS
+        )
         assert section.input_tables["average"].grid_info()["sticky"] == "w"
         assert section._result_surfaces["average"].layout_policy == "content_hug"
         assert section._result_cards["average"].layout_policy == "content_hug"

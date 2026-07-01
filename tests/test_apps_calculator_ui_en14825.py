@@ -377,6 +377,7 @@ def test_seer_table_model_behavior():
 def test_en14825_gui_integration():
     """Verify EN14825 SEER section and app integration."""
     import tkinter as tk
+    from tkinter import font as tk_font
     from tkinter import ttk
     try:
         root = tk.Tk()
@@ -398,10 +399,30 @@ def test_en14825_gui_integration():
         assert section._appliance_type_var.get() == defaults["appliance_type"]
         from apps.calculator.ui.layout_constants import (
             CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS,
+            METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
+            TABLE_BODY_FONT,
+            TABLE_FONT_SIZE,
+            TABLE_HEADER_FONT,
         )
+        assert TABLE_FONT_SIZE == 10
+        assert TABLE_BODY_FONT[1] == TABLE_FONT_SIZE
+        assert TABLE_HEADER_FONT[1] == TABLE_FONT_SIZE
         assert int(section.appliance_type_selector.cget("width")) == (
             CONTROL_APPLIANCE_TYPE_SELECTOR_WIDTH_CHARS
         )
+        assert section.input_table.row_header_chars == (
+            METRIC_TABLE_EN14825_ROW_HEADER_CHARS
+        )
+        assert METRIC_TABLE_EN14825_ROW_HEADER_CHARS >= len("Declared capacity [W]")
+        declared_header = section.input_table.row_header_cells[
+            "declared_capacity"
+        ].winfo_children()[0]
+        assert int(declared_header.cget("width")) == (
+            METRIC_TABLE_EN14825_ROW_HEADER_CHARS
+        )
+        assert tk_font.Font(root=root, font=declared_header.cget("font")).cget(
+            "size"
+        ) == TABLE_FONT_SIZE
         row_keys = section.input_table.rows
         row_names = [r[0] for r in row_keys]
         assert "declared_power" not in row_names
