@@ -25,6 +25,7 @@ from tkinter import ttk
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 from apps.calculator.ui.tabs.ahri210240_tab import Ahri210240Tab
+from apps.calculator.ui.tabs.korea_tab import KoreaTab
 from apps.calculator.ui.window_geometry import (
     apply_overflow_correction,
     center_window,
@@ -55,6 +56,9 @@ class CalculatorTkApp:
 
         self.ahri210240_tab = Ahri210240Tab(self.notebook)
         self.notebook.add(self.ahri210240_tab, text="AHRI 210/240")
+
+        self.korea_tab = KoreaTab(self.notebook)
+        self.notebook.add(self.korea_tab, text="KOREA")
 
         self._ignore_initial_tab_changed = True
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
