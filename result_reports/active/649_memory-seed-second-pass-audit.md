@@ -54,8 +54,8 @@ Apply the active seed `Next Maintenance Rule` and reduce `result_reports/memory/
 - Active seed line count checked.
 - Active seed forbidden active-rule string scan checked clean.
 - Active seed `assertionStatus: superseded` / `assertionStatus: stale` scan checked clean.
-- `git diff --check` will be run before commit.
-- `git status --short` reviewed for allowed file scope.
+- `git diff --check` completed clean before commit.
+- `git status --short` reviewed for allowed file scope before commit.
 - `pytest`, `py_compile`, and structure guard were intentionally not run because this is a docs/lifecycle-only cleanup.
 - `rg` is unavailable in this environment, so equivalent `grep` checks were used for the requested pattern scans.
 
@@ -66,5 +66,5 @@ Apply the active seed `Next Maintenance Rule` and reduce `result_reports/memory/
 
 ## Commit / Push
 
-- Commit after validation with message `Compact project memory seed index`.
-- Push after commit and verify local HEAD matches `origin/main`.
+- Validation, commit, and push completed.
+- Final publication verification was reported in terminal output to avoid a self-referential report hash update loop.
