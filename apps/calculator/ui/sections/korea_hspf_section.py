@@ -22,15 +22,10 @@ from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
-from apps.calculator.ui.table.controller import TkTableController
-
-
-_GUIDE_ROWS = (
-    ("current_tc", "현재 tc"),
-    ("recommended_tc", "권장 tc"),
-    ("recommended_mid_capacity", "권장 Mid capacity"),
+from apps.calculator.ui.sections.korea_midpoint_guide_table import (
+    KoreaMidpointGuideTable,
 )
-_GUIDE_ADDRESSES = tuple((row_key, "value") for row_key, _label in _GUIDE_ROWS)
+from apps.calculator.ui.table.controller import TkTableController
 
 
 class KoreaHspfSection:
@@ -99,16 +94,9 @@ class KoreaHspfSection:
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-        self.guide_table = MetricInputTable(
-            self._frame,
-            columns=(("value", "값"),),
-            rows=_GUIDE_ROWS,
-            editable_cells={address: address[0] for address in _GUIDE_ADDRESSES},
-            row_header_chars=20,
-            data_column_chars=14,
-        )
-        self.guide_table.set_readonly_addresses(_GUIDE_ADDRESSES)
-        self.guide_table.grid(
+        self._guide = KoreaMidpointGuideTable(self._frame)
+        self.guide_table = self._guide.table
+        self._guide.grid(
             row=3,
             column=0,
             sticky="w",
@@ -171,7 +159,7 @@ class KoreaHspfSection:
         self.trace_table = self.detail_panel.table
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
-        self.guide_controller = TkTableController(self.guide_table)
+        self.guide_controller = self._guide.controller
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.rated_table.set_values_changed_callback(self._auto_calc.schedule)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)
@@ -233,9 +221,9 @@ class KoreaHspfSection:
                         ]
                     }
                 )
-        self._set_guide_values(result.guide_fields)
+        self._guide.set_values(result.guide_fields)
         if result.guide_status and not result.guide_fields:
-            self._set_guide_status(result.guide_status)
+            self._guide.set_status(result.guide_status)
         if not result.is_ok:
             self._clear_trace(result.detail_status or result.status_text)
             self.result_panel.set_summaries(
@@ -254,36 +242,6 @@ class KoreaHspfSection:
                     status=result.status_text,
                 ),
             )
-        )
-
-    def _set_guide_values(self, fields: tuple[tuple[str, str], ...]) -> None:
-        values = {key: value for key, value in fields}
-        self.guide_table.set_values_batch(
-            {row_key: values.get(row_key, "-") for row_key, _label in _GUIDE_ROWS}
-        )
-        self.guide_table.set_readonly_addresses(
-            _GUIDE_ADDRESSES,
-            display_values={
-                (row_key, "value"): values.get(row_key, "-")
-                for row_key, _label in _GUIDE_ROWS
-            },
-        )
-
-    def _set_guide_status(self, status: str) -> None:
-        self.guide_table.set_values_batch(
-            {
-                "current_tc": status,
-                "recommended_tc": "-",
-                "recommended_mid_capacity": "-",
-            }
-        )
-        self.guide_table.set_readonly_addresses(
-            _GUIDE_ADDRESSES,
-            display_values={
-                ("current_tc", "value"): status,
-                ("recommended_tc", "value"): "-",
-                ("recommended_mid_capacity", "value"): "-",
-            },
         )
 
     def _toggle_detail(self) -> None:
