@@ -13,6 +13,7 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
     AhriHspf2Options,
     AhriHspf2Summary,
 )
+from apps.calculator.ui.ahri.hspf2_batch import AHRI_HSPF2_UI_POINT_ORDER
 from tests.calculator_ui_sample_values import (
     HSPF2_HEATING_SAMPLE_VALUES,
     HSPF2_SAMPLE_VALUES,
@@ -270,9 +271,23 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
         "cut_in_c": "-40.0",
     }
     assert tuple(key for key, _label in section.heating_table.columns) == (
-        AHRI_HSPF2_POINT_ORDER
+        AHRI_HSPF2_UI_POINT_ORDER
+    )
+    assert tuple(label for _key, label in section.heating_table.columns) == (
+        "H01",
+        "H11",
+        "H2v",
+        "H32",
+        "H42",
+        "H1N(STD)",
+        "H12",
+        "H22",
     )
     assert "A2" not in tuple(key for key, _label in section.heating_table.columns)
+    assert "capacity_H2Int" in section.heating_table.field_order
+    assert "power_H2Int" in section.heating_table.field_order
+    assert "capacity_H1N" in section.heating_table.field_order
+    assert "power_H1N" in section.heating_table.field_order
     assert section.a2_table.columns == (("A2", "A2"),)
     assert section.a2_table.rows == (("capacity", "Capacity [Btu/h]"),)
     assert section.heating_table.rows == (
@@ -281,11 +296,15 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
         ("power", "Power [W]"),
         ("cop", "COP"),
     )
-    for point in AHRI_HSPF2_POINT_ORDER:
+    for point in AHRI_HSPF2_UI_POINT_ORDER:
         label = section.heating_table.static_cell_labels[("condition_temp", point)]
         assert label.cget("text").endswith(
             f"{AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C"
         )
+    assert section.batch_button.master is section.detail_toggle.master
+    assert section.batch_button.winfo_manager() == "pack"
+    assert section.detail_toggle.winfo_manager() == "pack"
+    assert section.heating_table.cell_role((1, 4)) is CellRole.EDITABLE
     assert section.heating_table.cell_role((1, 5)) is CellRole.EDITABLE
     assert section.heating_table.cell_role((1, 6)) is CellRole.READONLY
     assert section.heating_table.cell_role((1, 7)) is CellRole.READONLY

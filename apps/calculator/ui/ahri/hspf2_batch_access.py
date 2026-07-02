@@ -10,34 +10,29 @@ from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.ahri_hspf2_dialog import (
     AhriHspf2BatchDialog,
 )
-from apps.calculator.ui.layout_constants import (
-    BATCH_INPUT_BUTTON_TEXT,
-    ISO_SECTION_BLOCK_GAP,
-    ISO_SECTION_PADX,
-)
+from apps.calculator.ui.layout_constants import BATCH_INPUT_BUTTON_TEXT
 
 
 class AhriHspf2BatchAccess:
     """Keep batch dialog state out of the already-large main section."""
 
-    def __init__(self, parent: tk.Widget, *, row: int) -> None:
-        self._parent = parent
+    def __init__(
+        self,
+        parent: tk.Widget,
+        *,
+        shell_parent: tk.Widget | None = None,
+    ) -> None:
+        self._shell_parent = shell_parent or parent
         self._handle: BatchDialogHandle[
             AhriHspf2BatchSnapshot, AhriHspf2BatchDialog
         ] = BatchDialogHandle()
         self.button = ttk.Button(parent, text=BATCH_INPUT_BUTTON_TEXT, command=self.open)
-        self.button.grid(
-            row=row,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
-        )
+        self.button.pack(side=tk.LEFT)
 
     def open(self) -> None:
         self._handle.open_or_focus(
             lambda: AhriHspf2BatchDialog(
-                self._parent.winfo_toplevel(),
+                self._shell_parent.winfo_toplevel(),
                 initial_snapshot=self._handle.snapshot,
                 on_close=self._clear,
             )

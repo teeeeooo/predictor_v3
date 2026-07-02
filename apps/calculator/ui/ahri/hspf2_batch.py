@@ -7,7 +7,6 @@ from types import MappingProxyType
 from typing import Mapping
 
 from apps.calculator.application.ahri import (
-    AHRI_HSPF2_POINT_ORDER,
     AhriHspf2Adapter,
     AhriHspf2Options,
 )
@@ -29,6 +28,28 @@ _ROW_LABELS = MappingProxyType(
         MatrixPhysicalRowType.POWER: "Power",
     }
 )
+AHRI_HSPF2_UI_POINT_ORDER = (
+    "H01",
+    "H11",
+    "H2Int",
+    "H32",
+    "H42",
+    "H1N",
+    "H12",
+    "H22",
+)
+AHRI_HSPF2_UI_POINT_LABELS = MappingProxyType(
+    {
+        "H2Int": "H2v",
+        "H1N": "H1N(STD)",
+    }
+)
+
+
+def ahri_hspf2_ui_point_label(point: str) -> str:
+    return AHRI_HSPF2_UI_POINT_LABELS.get(point, point)
+
+
 @dataclass(frozen=True)
 class AhriHspf2BatchActiveOptions:
     region: str = "IV"
@@ -72,12 +93,12 @@ def build_ahri_hspf2_batch_spec(
             width_chars=BATCH_MATRIX_POINT_WIDTH_CHARS,
         )
     ]
-    for point in AHRI_HSPF2_POINT_ORDER:
+    for point in AHRI_HSPF2_UI_POINT_ORDER:
         is_enabled = enabled.get(point, True)
         points.append(
             MatrixMeasurementPointSpec(
                 key=point,
-                label=point,
+                label=ahri_hspf2_ui_point_label(point),
                 input_keys_by_row_type=MappingProxyType(
                     {
                         MatrixPhysicalRowType.CAPACITY: (

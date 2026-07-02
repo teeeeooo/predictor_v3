@@ -68,11 +68,15 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
         MatrixPhysicalRowType.POWER,
     )
     assert tuple(point.key for point in spec.measurement_points) == (
-        "A2", "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
+        "A2", "H01", "H11", "H2Int", "H32", "H42", "H1N", "H12", "H22",
     )
     assert tuple(point.label for point in spec.measurement_points) == (
-        "A2", "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
+        "A2", "H01", "H11", "H2v", "H32", "H42", "H1N(STD)", "H12", "H22",
     )
+    assert "capacity_H2Int" in spec.input_keys
+    assert "power_H2Int" in spec.input_keys
+    assert "capacity_H1N" in spec.input_keys
+    assert "power_H1N" in spec.input_keys
     assert {point.width_chars for point in spec.measurement_points} == {
         BATCH_MATRIX_POINT_WIDTH_CHARS
     }
@@ -82,7 +86,9 @@ def test_hspf2_batch_spec_has_two_rows_optional_roles_and_results() -> None:
     assert spec.result_keys == ("hspf2",)
     assert spec.resolve_cell((0, 2)).input_key == "a2_capacity"
     assert spec.resolve_cell((1, 2)).kind is MatrixCellKind.NOT_APPLICABLE
-    assert spec.resolve_cell((0, 8)).input_key == "capacity_H42"
+    assert spec.resolve_cell((0, 5)).input_key == "capacity_H2Int"
+    assert spec.resolve_cell((0, 7)).input_key == "capacity_H42"
+    assert spec.resolve_cell((0, 8)).input_key == "capacity_H1N"
     assert spec.resolve_cell((0, 9)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 10)).kind is MatrixCellKind.NOT_APPLICABLE
     assert spec.resolve_cell((0, 11)).kind is MatrixCellKind.RESULT

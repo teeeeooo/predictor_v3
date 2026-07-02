@@ -213,6 +213,9 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     assert tuple(key for key, _label in section.input_table.columns) == (
         AHRI_SEER2_POINT_ORDER
     )
+    assert section.batch_button.master is section.detail_toggle.master
+    assert section.batch_button.winfo_manager() == "pack"
+    assert section.detail_toggle.winfo_manager() == "pack"
     assert section.input_table.cell_role((0, 0)) == CellRole.READONLY
     assert section.input_table.cell_role((1, 0)) == CellRole.EDITABLE
     assert section.input_table.cell_role((3, 0)) == CellRole.READONLY

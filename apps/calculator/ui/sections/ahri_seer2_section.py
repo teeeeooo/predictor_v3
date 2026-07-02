@@ -128,34 +128,27 @@ class AhriSeer2Section:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
 
-        self.batch_button = ttk.Button(
-            self._frame,
-            text=BATCH_INPUT_BUTTON_TEXT,
-            command=self._open_batch_dialog,
-        )
-        self.batch_button.grid(
+        action_row = ttk.Frame(self._frame)
+        action_row.grid(
             row=3,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
-
-        detail_action_row = ttk.Frame(self._frame)
-        detail_action_row.grid(
-            row=4,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP),
+        self.batch_button = ttk.Button(
+            action_row,
+            text=BATCH_INPUT_BUTTON_TEXT,
+            command=self._open_batch_dialog,
         )
+        self.batch_button.pack(side=tk.LEFT)
         self.detail_toggle = ttk.Button(
-            detail_action_row,
+            action_row,
             text="상세 보기 ↓",
             command=self._toggle_detail,
         )
         self.detail_toggle.surface_role = "ahri_seer2_detail_toggle"
-        self.detail_toggle.pack(side=tk.LEFT)
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("SEER2",),
@@ -168,7 +161,7 @@ class AhriSeer2Section:
             panel=self.detail_panel,
             button=self.detail_toggle,
             grid_options={
-                "row": 5,
+                "row": 4,
                 "column": 0,
                 "sticky": "ew",
                 "padx": 0,

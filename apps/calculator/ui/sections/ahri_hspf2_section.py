@@ -7,11 +7,14 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.application.ahri import (
-    AHRI_HSPF2_POINT_ORDER,
     AHRI_HSPF2_TEMPERATURES_C,
     AhriHspf2Adapter,
     AhriHspf2InputError,
     AhriHspf2Options,
+)
+from apps.calculator.ui.ahri.hspf2_batch import (
+    AHRI_HSPF2_UI_POINT_ORDER,
+    ahri_hspf2_ui_point_label,
 )
 from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
@@ -66,23 +69,23 @@ class AhriHspf2Section:
             row=4, column=0, sticky="w", padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP)
         )
-        self._batch_access = AhriHspf2BatchAccess(self._frame, row=5)
-        self.batch_button = self._batch_access.button
-        detail_action_row = ttk.Frame(self._frame)
-        detail_action_row.grid(
-            row=6,
+        action_row = ttk.Frame(self._frame)
+        action_row.grid(
+            row=5,
             column=0,
             sticky="w",
             padx=ISO_SECTION_PADX,
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
+        self._batch_access = AhriHspf2BatchAccess(action_row, shell_parent=self._frame)
+        self.batch_button = self._batch_access.button
         self.detail_toggle = ttk.Button(
-            detail_action_row,
+            action_row,
             text="상세 보기 ↓",
             command=self._toggle_detail,
         )
         self.detail_toggle.surface_role = "ahri_hspf2_detail_toggle"
-        self.detail_toggle.pack(side=tk.LEFT)
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("HSPF2",),
@@ -95,7 +98,7 @@ class AhriHspf2Section:
             panel=self.detail_panel,
             button=self.detail_toggle,
             grid_options={
-                "row": 7,
+                "row": 6,
                 "column": 0,
                 "sticky": "ew",
                 "padx": 0,
@@ -207,12 +210,15 @@ class AhriHspf2Section:
     def _build_heating_table(self) -> MetricInputTable:
         editable = {
             (row, point): f"{row}_{point}"
-            for point in AHRI_HSPF2_POINT_ORDER
+            for point in AHRI_HSPF2_UI_POINT_ORDER
             for row in ("capacity", "power")
         }
         table = MetricInputTable(
             self._frame,
-            columns=tuple((point, point) for point in AHRI_HSPF2_POINT_ORDER),
+            columns=tuple(
+                (point, ahri_hspf2_ui_point_label(point))
+                for point in AHRI_HSPF2_UI_POINT_ORDER
+            ),
             rows=(
                 ("condition_temp", "Condition / Temp"),
                 ("capacity", "Capacity [Btu/h]"),
@@ -224,7 +230,7 @@ class AhriHspf2Section:
             data_column_chars=METRIC_TABLE_HEATING_DATA_COLUMN_CHARS,
         )
         table.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 8))
-        for point in AHRI_HSPF2_POINT_ORDER:
+        for point in AHRI_HSPF2_UI_POINT_ORDER:
             table.static_cell_labels[("condition_temp", point)].configure(
                 text=f"Heating / {AHRI_HSPF2_TEMPERATURES_C[point]:.1f} °C"
             )
@@ -331,7 +337,7 @@ class AhriHspf2Section:
         self._detail_visibility.toggle()
 
     def _update_cop_rows(self, cops: dict[str, float]) -> None:
-        for point in AHRI_HSPF2_POINT_ORDER:
+        for point in AHRI_HSPF2_UI_POINT_ORDER:
             self.heating_table.static_cell_labels[("cop", point)].configure(
                 text=f"{cops[point]:.2f}" if point in cops else ""
             )
