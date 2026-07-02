@@ -10,11 +10,12 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, post-Arc 13 planning. Arc
-13 ML Feature Catalog migration is complete for automated scope; Calculator
-Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF official oracle correction
-are complete; a small calculator UI micro-polish pass is complete; current
-near-term execution returns to Arc 13.5 Feature Catalog Editor work.
+Current phase: Machine Learning / Predictor Phase, post-Arc 13.5 planning. Arc
+13 ML Feature Catalog migration and Arc 13.5 Feature Catalog Editor Bridge are
+complete for automated scope; Calculator Sub-Arc - KOREA Notebook Entry and KS
+C 9306 HSPF official oracle correction are complete; a small calculator UI
+micro-polish pass is complete; current near-term execution moves to Arc 14 real
+dataset readiness audit.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -585,8 +586,10 @@ Goal:
 Target milestones:
 
 - Slice 0: Feature Catalog Editor Design Gate.
-- Slice 1: read-only catalog viewer with validate and CSV export.
-- Slice 2: editable catalog table with save.
+- Slice 1: read-only catalog viewer with validation.
+- Slice 2: Excel-safe CSV export.
+- Slice 3: editable catalog table with validation-gated canonical save.
+- Slice 4: closeout, docs sync, final validation, and push.
 
 Direction:
 
@@ -596,12 +599,12 @@ Direction:
 - UI implementation should route Train UI actions through
   controller/service/usecase boundaries to catalog loader/validator/writer
   ownership rather than making the UI own raw CSV parsing or writing.
-- `config/ml/README.md` and workflow document updates are deferred to the Arc
-  13.5 implementation slices.
+- `docs/workflows/ml_feature_catalog_workflow.md` reflects the Train/Admin
+  Feature Catalog tab as the default user editing workflow.
 
 Status:
 
-- Planned bridge arc after KOREA closeout and before Arc 14.
+- Complete for automated scope. Real desktop GUI manual smoke remains pending.
 
 ### Arc 14 — ML Catalog-Aligned Real Dataset Readiness Audit
 
@@ -612,7 +615,7 @@ Goal:
 
 Status:
 
-- Deferred until after Calculator Sub-Arc and Arc 13.5.
+- Next recommended arc after Arc 13.5 closeout.
 
 ### Later — Calculator to Predictor Integration
 

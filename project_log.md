@@ -24,6 +24,21 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-02 — Arc 13.5 feature catalog editor closeout
+
+### Decision
+- Completed Arc 13.5 Feature Catalog Editor Bridge for automated scope.
+- `app_train.py` now exposes a top-level `Feature Catalog` Train/Admin tab with
+  catalog/project consistency validation, read-only review, Excel-safe
+  UTF-8-SIG export, whitelisted edit fields, validation-gated save, and
+  canonical UTF-8 without BOM safe-write.
+- Direct `config/ml/features.csv` editing is no longer the default user
+  workflow; it remains an advanced/developer fallback for row add/delete or
+  recovery work.
+- Arc 14 real dataset readiness audit is the next recommended arc.
+- Real desktop GUI manual smoke remains pending; automated Qt validation used
+  offscreen mode.
+
 ## 2026-07-01 — Calculator Sub-Arc KOREA notebook entry closeout
 
 ### Decision
