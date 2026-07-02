@@ -385,6 +385,8 @@ Do not do:
 - Schema live refresh yet.
 - Model hash yet.
 
+Status note (2026-07-02): Slice 1 implementation added user-friendly table headers, DTO-provided dropdown options, Help dialog, current-table export, and baseline-diff dirty state.
+
 ### Slice 2: Add / Delete / Duplicate feature rows
 
 Goal:
@@ -401,6 +403,8 @@ Do not do:
 - New one-hot group UI unless explicitly scoped.
 - Model artifact compatibility implementation.
 
+Status note (2026-07-02): Slice 2 implementation added Add Feature dialog, Duplicate, Delete with confirmation, generated `order`/`ui_key`, and draft-state validation-gated save.
+
 ### Slice 3: Schema refresh and apply behavior
 
 Goal:
@@ -413,6 +417,8 @@ Do not do:
 
 - Broad Predict UI rewrite.
 - Unrelated table UX changes.
+
+Status note (2026-07-02): Slice 3 implementation chose the restart-required path and surfaces the post-save schema apply message.
 
 ### Slice 4: Model compatibility guard
 
@@ -428,6 +434,8 @@ Do not do:
 - ML algorithm changes.
 - Training quality/tuning changes.
 
+Status note (2026-07-02): Slice 4 implementation stores Feature Catalog fingerprint metadata in real and DEV artifacts and blocks missing/mismatched artifacts at model load.
+
 ### Slice 5: Common table helper cleanup
 
 Goal:
@@ -438,6 +446,8 @@ Goal:
 Do not do:
 
 - Feature Manager behavior changes in this slice.
+
+Status note (2026-07-02): Slice 5 moved generic clipboard/undo table helpers to `apps.common.ui.tables` and updated Train/Predict imports.
 
 ### Closeout
 
@@ -475,6 +485,6 @@ Manual smoke should cover:
 
 ## 17. Recommended Next Action
 
-Next: Arc 13.5A Slice 1 — Feature Manager UX foundation.
+Next: Arc 13.5A complete; run manual desktop smoke on a local GUI session when available, then choose the next project slice.
 
-Proceed with the UX foundation slice only: user-friendly headers, dropdown/help planning, export-current-state behavior, and dirty-state baseline work. Do not mix this with add/delete/duplicate feature row implementation.
+Completed implementation covered Slice 1 through Slice 5 in sequence. Remaining open questions are product/design decisions for later work, not blockers for this correction arc.

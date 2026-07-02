@@ -5,10 +5,11 @@
 Arc 13 makes `config/ml/features.csv` the operating contract for ML feature,
 target, and one-hot feature names.
 
-Arc 13.5 adds the default user editing surface: use `app_train.py` and the
-Train/Admin `Feature Catalog` tab for validation, Excel-safe export, whitelisted
-edits, and canonical save. Direct CSV editing remains an advanced fallback for
-automation or recovery work.
+Arc 13.5A adds the default Feature Catalog Manager surface: use `app_train.py`
+and the Train/Admin `Feature Catalog` tab for validation, Excel-safe export,
+allowlist-aided edits, add/duplicate/delete draft rows, Help, and canonical
+save. Direct CSV editing remains an advanced fallback for automation or
+recovery work.
 
 The central rule is:
 
@@ -25,15 +26,21 @@ When adding or changing an ML feature through the Train/Admin editor:
 
 1. Open `app_train.py` and select the `Feature Catalog` tab.
 2. Review catalog and project consistency validation status.
-3. Use CSV export when an Excel/Numbers review copy is needed; export uses
-   UTF-8-SIG and does not mutate the canonical catalog.
-4. Edit only the whitelisted fields: `label`, `notes`, `active`,
+3. Use Help when field roles, required values, or validation errors are unclear.
+4. Use Add, Duplicate, or Delete for draft row changes. These actions update the
+   table draft only; `features.csv` changes only after Save.
+5. Use CSV export when an Excel/Numbers review copy is needed; export uses
+   UTF-8-SIG, includes current unsaved table edits, and does not mutate the
+   canonical catalog.
+6. Edit whitelisted fields in the table: `label`, `notes`, `active`,
    `zero_fill_policy`, `source`, `mapping_key`, and `one_hot_group`.
-5. Save only after validation passes; canonical save writes
+7. Save only after validation passes; canonical save writes
    `config/ml/features.csv` as UTF-8 without BOM and reloads the catalog.
-6. Align the training CSV or Excel export header to the catalog `ml_name`.
-7. Run the focused catalog and ML guard tests before training.
-8. Train only after the guard tests pass.
+8. Restart the app after saving when table schema changes need to apply to
+   already-open Predict/Train surfaces.
+9. Align the training CSV or Excel export header to the catalog `ml_name`.
+10. Run the focused catalog and ML guard tests before training.
+11. Train only after the guard tests pass.
 
 When adding a new feature row outside the current editor scope, use a bounded
 developer workflow:
@@ -154,6 +161,16 @@ features are calculated by preprocessing code.
 If a training CSV or Excel export has headers that are not catalog `ml_name`
 values, training fails before fitting. If required catalog headers are missing,
 training also fails before fitting.
+
+## Model Compatibility
+
+Training artifacts store a Feature Catalog fingerprint. Prediction model load
+compares that fingerprint with the current catalog.
+
+- If the artifact fingerprint is missing, retrain the model.
+- If the artifact fingerprint differs from the current catalog, retrain the model.
+- Changing feature rows, targets, one-hot groups, active state, or zero-fill
+  policy can make an existing model artifact incompatible.
 
 ## CSV Editing Notes
 
