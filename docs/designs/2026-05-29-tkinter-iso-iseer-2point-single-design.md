@@ -43,7 +43,7 @@ Relevant owner: `ui/calculators_2point.py`.
 
 Core profile/config evidence:
 
-- `core/calculator_profiles.py` already enables
+- `core/calculators/profiles.py` already enables
   `iso_t1_default_2point_cspf` and `india_iseer_cspf`.
 - `data/region_configs/iso_t1_default_2point.json` and
   `data/region_configs/india_iseer.json` both use measured
@@ -186,7 +186,7 @@ Candidate source files for 187-b:
 
 Avoid touching:
 
-- `core/calculator_profiles.py`
+- `core/calculators/profiles.py`
 - `data/region_configs/*.json`
 - calculator core
 - golden fixtures

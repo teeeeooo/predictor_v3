@@ -101,7 +101,7 @@ implementation in this slice.
 - `ml_prediction` source PredictedPointsEnvelope payloads are
   interpreted as W canonical regardless of target profile.
 - Unit conversion happens in a future adapter (e.g. a
-  `core/calculator_unit_adapter.py`); calculator core, UI table model,
+  `core/calculators/adapters/unit_adapter.py`); calculator core, UI table model,
   and ML callers do not perform unit conversion.
 - Adapter envelopes will eventually carry a
   `units_trace = {source_units, target_units, conversion_applied}`
@@ -232,13 +232,13 @@ profile-specific cutover is shipped.
    replaced by model-based reads.
 6. **Wire the unit adapter.** After the table input migrations are
    complete (or in parallel as an independent adapter-only slice),
-   introduce `core/calculator_unit_adapter.py` with profile-aware
+   introduce `core/calculators/adapters/unit_adapter.py` with profile-aware
    conversion driven by the source vocabulary
    (`ml_prediction` / `manual_candidate` / `fixture`).
 
 ## Non-goals
 
-- No `core/calculator_unit_adapter.py` implementation in this slice.
+- No `core/calculators/adapters/unit_adapter.py` implementation in this slice.
 - No `CalculatorInputEnvelope` field change in this slice.
 - No ML caller wiring in this slice.
 - No UI implementation, no `app_calculator.py` redesign.
@@ -264,7 +264,7 @@ profile-specific cutover is shipped.
    instance, same model base.
 4. **Slice D — EN14825 SEER table input.** Profile-specific column
    set.
-5. **Slice E — Unit adapter.** New `core/calculator_unit_adapter.py`
+5. **Slice E — Unit adapter.** New `core/calculators/adapters/unit_adapter.py`
    that takes a PredictedPointsEnvelope and emits a
    profile-native CalculatorInputEnvelope, with a `units_trace`
    metadata block.

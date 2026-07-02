@@ -27,18 +27,18 @@
 tabs + helper plumbing). It already shares core calculator logic
 through:
 
-- `core/calculator_profiles.py` — profile manifest
+- `core/calculators/profiles.py` — profile manifest
   (`hong_kong_cspf`, `hong_kong_hspf`, `iso_t1_default_2point_cspf`,
   `ks_c9306_*`, `en14825_*`, `ahri_usa_seer2`, `ahri_usa_hspf2`,
   `saso_t3_cspf`, …).
-- `core/calculator_dispatcher.create_calculator_for_profile()` —
+- `core.calculators.dispatcher.create_calculator_for_profile()` —
   thin profile → calculator-instance dispatch.
-- `core/calculator_iso16358.ISO16358Calculator` — common engine for
+- `core.calculators.standards.iso16358.ISO16358Calculator` — common engine for
   ISO 16358-1 CSPF and ISO 16358-2 HSPF (Hong Kong CSPF / HSPF share
   the same `data/region_configs/hong_kong.json`).
-- `core/calculator_unit_adapter.py` — ML-W ↔ AHRI Btu/h boundary.
+- `core/calculators/adapters/unit_adapter.py` — ML-W ↔ AHRI Btu/h boundary.
 
-Calculator core (`core/calculator_*.py`) is pure Python with no
+Calculator core (`core/calculators/standards/*.py`) is pure Python with no
 `numpy` / `pandas` (AGENTS rule). Heavy weight in the deployed
 `app_calculator.exe` is the **GUI shell**, not the engine.
 
@@ -161,7 +161,7 @@ Rejected alternatives (kept here so future readers don't relitigate):
   nested tab pattern is hard to read in Tkinter and increases click
   depth.
 - **KS C 9306 merged into the ISO 16358 tab as a "Korea" option**:
-  rejected. `core/calculator_ks_c9306.py` is a separate calculator
+  rejected. `core/calculators/standards/ks_c9306.py` is a separate calculator
   (not the ISO common engine); silently merging would blur the
   calculator boundary. KS C 9306 stays in its **own tab** if/when
   added.
@@ -226,7 +226,7 @@ What MVP intentionally does **not** include:
   inside one screen.
 
 Both profiles are already enabled in
-`core/calculator_profiles.py` and are reachable via
+`core/calculators/profiles.py` and are reachable via
 `create_calculator_for_profile(profile_id=...)`.
 
 Out of scope for the spike's profile list:
@@ -257,12 +257,12 @@ what gets measured:
 
 What the Tkinter MVP **reuses unchanged**:
 
-- `core/calculator_profiles.py` — profile manifest and
+- `core/calculators/profiles.py` — profile manifest and
   `resolve_calculator_profile()`.
-- `core/calculator_dispatcher.create_calculator_for_profile()`.
-- `core/calculator_iso16358.ISO16358Calculator` (CSPF + HSPF paths).
+- `core.calculators.dispatcher.create_calculator_for_profile()`.
+- `core.calculators.standards.iso16358.ISO16358Calculator` (CSPF + HSPF paths).
 - `data/region_configs/hong_kong.json`.
-- `core/calculator_unit_adapter.py` (not wired in MVP, but available
+- `core/calculators/adapters/unit_adapter.py` (not wired in MVP, but available
   if a future slice needs it).
 - All calculator fixtures, expected values, and xfail constants.
 

@@ -33,16 +33,16 @@ Current representative files include:
 - `core/data_pipeline.py`
 - `core/utils.py`
 - `core/calculators/standards/iso16358.py`
-- `core/calculator_ks_c9306.py`
+- `core/calculators/standards/ks_c9306.py`
 - `core/calculators/standards/ahri_hspf2.py`
 - `core/calculators/standards/ahri_seer2.py`
 - `core/calculators/standards/en14825.py`
 - `core/calculators/standards/asnzs_hspf_excel.py`
-- `core/calculator_dispatcher.py`
-- `core/calculator_profiles.py`
-- `core/calculator_input_adapter.py`
-- `core/calculator_prediction_adapter.py`
-- `core/calculator_unit_adapter.py`
+- `core/calculators/dispatcher.py`
+- `core/calculators/profiles.py`
+- `core/calculators/adapters/input_adapter.py`
+- `core/calculators/adapters/prediction_adapter.py`
+- `core/calculators/adapters/unit_adapter.py`
 
 This structure worked while the project was smaller, but it is no longer a good final structure. Continuing PySide6 Predictor work on top of the flat `core/` root would harden the wrong boundary into new code.
 
@@ -145,17 +145,17 @@ Current owners:
 
 | Responsibility | Current owner | Target direction |
 |---|---|---|
-| calculator profile registry | `core/calculator_profiles.py` | `core/calculators/profiles.py` |
-| calculator dispatcher | `core/calculator_dispatcher.py` | `core/calculators/dispatcher.py` |
+| calculator profile registry | `core/calculators/profiles.py` | migrated |
+| calculator dispatcher | `core/calculators/dispatcher.py` | migrated |
 | ISO 16358 engine | `core/calculators/standards/iso16358.py` | migrated |
-| KS C 9306 engine | `core/calculator_ks_c9306.py` | `core/calculators/standards/ks_c9306.py` |
+| KS C 9306 engine | `core/calculators/standards/ks_c9306.py` | migrated |
 | AHRI SEER2 engine | `core/calculators/standards/ahri_seer2.py` | migrated |
 | AHRI HSPF2 engine | `core/calculators/standards/ahri_hspf2.py` | migrated |
 | EN 14825 engine | `core/calculators/standards/en14825.py` | migrated |
 | AS/NZS Excel compatibility | `core/calculators/standards/asnzs_hspf_excel.py` | migrated |
-| calculator input adapter | `core/calculator_input_adapter.py` | `core/calculators/adapters/input_adapter.py` |
-| calculator prediction adapter | `core/calculator_prediction_adapter.py` | `core/calculators/adapters/prediction_adapter.py` |
-| calculator unit adapter | `core/calculator_unit_adapter.py` | `core/calculators/adapters/unit_adapter.py` |
+| calculator input adapter | `core/calculators/adapters/input_adapter.py` | migrated |
+| calculator prediction adapter | `core/calculators/adapters/prediction_adapter.py` | migrated |
+| calculator unit adapter | `core/calculators/adapters/unit_adapter.py` | migrated |
 
 The dispatcher and profile registry are good migration anchors because they already centralize the standard/profile-to-calculator mapping.
 
@@ -385,15 +385,15 @@ Goal:
 
 Target moves:
 
-- `core/calculator_profiles.py` to `core/calculators/profiles.py`
-- `core/calculator_dispatcher.py` to `core/calculators/dispatcher.py`
+- calculator profiles are migrated to `core/calculators/profiles.py`
+- calculator dispatcher is migrated to `core/calculators/dispatcher.py`
 - ISO 16358 engine is migrated to `core/calculators/standards/iso16358.py`
-- `core/calculator_ks_c9306.py` to `core/calculators/standards/ks_c9306.py`
+- KS C 9306 engine is migrated to `core/calculators/standards/ks_c9306.py`
 - AHRI HSPF2 engine is migrated to `core/calculators/standards/ahri_hspf2.py`
 - AHRI SEER2 engine is migrated to `core/calculators/standards/ahri_seer2.py`
 - EN 14825 engine is migrated to `core/calculators/standards/en14825.py`
 - AS/NZS Excel compatibility is migrated to `core/calculators/standards/asnzs_hspf_excel.py`
-- calculator adapters to `core/calculators/adapters/`
+- calculator adapters are migrated to `core/calculators/adapters/`
 
 Root files remain as wrappers until callers migrate.
 

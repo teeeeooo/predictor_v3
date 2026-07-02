@@ -114,13 +114,13 @@ layer carries the same vocabulary without re-asserting ownership of it.
 ## Required Tests
 
 - Adapter unit tests that map ML/manual candidate points into each supported calculator profile input without touching region config.
-- Schema guard tests proving `core/calculator_*.py` does not import UI table schema or ML registry modules.
+- Schema guard tests proving calculator standard modules do not import UI table schema or ML registry modules.
 - Golden/smoke tests for existing calculator APIs to prove adapter work does not change current result dicts.
 - Ranking smoke tests that consume `CalculatorResultEnvelope` instead of raw calculator-specific dicts.
 
 ## Migration / Refactor Path
 
-1. Add an adapter module candidate such as `core/calculators/adapters/result_adapter.py` or `core/calculator_adapter.py` with pure conversion helpers only.
+1. Add an adapter module candidate such as `core/calculators/adapters/result_adapter.py` with pure conversion helpers only.
 2. Wrap existing calculator outputs into `CalculatorResultEnvelope` without changing calculator public APIs.
 3. Add ML/inverse-search caller code that consumes envelopes and keeps raw calculator output available under `raw_result`.
 4. After callers migrate, consider whether any calculator return dict cleanup is still needed as a separate, approved schema migration.

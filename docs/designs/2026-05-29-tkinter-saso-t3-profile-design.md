@@ -12,7 +12,7 @@ Tkinter currently supports `ISO / ISEER 2-point` and `Hong Kong` under the ISO p
 
 Relevant evidence:
 
-- `core/calculator_profiles.py` already has `profile_id="saso_t3_cspf"` using `calculator_id="iso16358"` and `data/region_configs/saso.json`.
+- `core/calculators/profiles.py` already has `profile_id="saso_t3_cspf"` using `calculator_id="iso16358"` and `data/region_configs/saso.json`.
 - `data/region_configs/saso.json` is a SASO / ISO 16358-1 T3 cooling profile with `reference_point="46_full"`, `t_100_load=46.0`, and default `cspf_test_profile.test_selection="with_optional_test"`.
 - `ui/calculators_2point.py` `IsoCspfSingleWidget` exposes `PROFILE_SASO_T3 = "SASO T3"`.
 - PyQt required inputs are `46 Full`, `35 Full`, `35 Half`; optional input adds `35 Min` via a `35°C Minimum 사용` checkbox.

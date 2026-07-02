@@ -63,7 +63,7 @@
 - **production path와 compatibility path 분리**: 표준 경로와 호환성 경로(Z-phase)의 코드 베이스 격리.
 
 ### 3. KS C 9306 helper separation
-- **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 `core/calculator_ks_c9306.py` 별도 모듈로 관리. 039 이후 KS standalone body는 이미 ISO에 의존하지 않으므로, 본 항목은 series reset 이후에도 잔여 의존 검증 단위로만 유지한다.
+- **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 `core/calculators/standards/ks_c9306.py` 별도 모듈로 관리. 039 이후 KS standalone body는 이미 ISO에 의존하지 않으므로, 본 항목은 series reset 이후에도 잔여 의존 검증 단위로만 유지한다.
 - **common ISO로 무리하게 흡수하지 않음**: KS C 9306은 AHRI / EN14825처럼 special calculator로 분리하며, 새 ISO calculator도 `korea.json` 같은 KS region config를 해석하지 않는다.
 - **분리 트리거**: ISO 파일 legacy 격하와 새 ISO skeleton 작성 직후 잔여 audit으로 수행.
 
@@ -76,7 +76,7 @@
 ### 5. UI resolver-backed config selection
 - **진행 상태**: `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP combo는 profile registry item data 기반으로 전환했다.
 - **남은 후보**: ISO 2-point subwidget 등 다른 UI 경로에 남아 있는 direct config scan은 별도 UI 작업으로 audit한다.
-- **calculator profile resolver 우회 방지**: UI에서도 calculator construction은 `core/calculator_profiles.py` / dispatcher 경로를 우선한다.
+- **calculator profile resolver 우회 방지**: UI에서도 calculator construction은 `core/calculators/profiles.py` / dispatcher 경로를 우선한다.
 
 ## Deferred refactor candidates
 - common seasonal bin engine
