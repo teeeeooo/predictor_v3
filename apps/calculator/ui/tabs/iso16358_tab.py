@@ -51,17 +51,19 @@ class Iso16358Tab(ttk.Frame):
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
 
-        mode_row = ttk.Frame(self._content)
-        mode_row.pack(side=tk.TOP, anchor="w", padx=4, pady=4)
-        ttk.Label(mode_row, text="ISO 프로파일").pack(side=tk.LEFT, padx=(0, 4))
+        self._profile_selector = ttk.LabelFrame(self._content, text="프로파일 선택")
+        self._profile_selector.pack(side=tk.TOP, anchor="w", padx=4, pady=(4, 6))
+        ttk.Label(self._profile_selector, text="ISO 프로파일").pack(
+            side=tk.LEFT, padx=(4, 4), pady=3
+        )
         self._mode_combo = ttk.Combobox(
-            mode_row,
+            self._profile_selector,
             values=list(calculation_mode_labels()),
             state="readonly",
             width=24,
         )
         self._mode_combo.set(MODE_ISO_ISEER_2POINT)
-        self._mode_combo.pack(side=tk.LEFT)
+        self._mode_combo.pack(side=tk.LEFT, padx=(0, 4), pady=3)
         self._mode_combo.bind("<<ComboboxSelected>>", self._on_mode_changed)
 
         self._hong_kong_frame = ttk.Frame(self._content)

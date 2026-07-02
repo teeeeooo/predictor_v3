@@ -272,6 +272,7 @@ def test_calculator_tk_app_builds_widget_tree():
     script = r"""
 import sys
 import tkinter as tk
+from tkinter import ttk
 
 try:
     root = tk.Tk()
@@ -288,7 +289,14 @@ try:
     root.update_idletasks()
     root.update()
 
+    assert isinstance(app.notebook, ttk.Notebook)
+    assert app.notebook.cget("style") == "CalculatorTop.TNotebook"
+    assert app.notebook.tabs()
+    assert app.notebook.tab(app.iso_tab, "text") == "ISO 16358"
     assert isinstance(app.iso_tab, Iso16358Tab)
+    assert isinstance(app.iso_tab._profile_selector, ttk.LabelFrame)
+    assert app.iso_tab._contains_widget(app.iso_tab._profile_selector)
+    assert app.iso_tab._contains_widget(app.iso_tab._mode_combo)
     assert root.winfo_x() >= 0
     assert root.winfo_y() >= 0
     assert root.winfo_height() <= root.winfo_screenheight()

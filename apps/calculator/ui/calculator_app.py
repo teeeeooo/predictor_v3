@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Optional
 
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk
 
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
@@ -44,8 +45,9 @@ class CalculatorTkApp:
     def __init__(self, root: Optional[tk.Tk] = None) -> None:
         self.root = root if root is not None else tk.Tk()
         self.root.title("Calculator (Tkinter)")
+        self._configure_top_notebook_style()
 
-        self.notebook = ttk.Notebook(self.root)
+        self.notebook = ttk.Notebook(self.root, style="CalculatorTop.TNotebook")
         self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.iso_tab = Iso16358Tab(self.notebook)
@@ -91,6 +93,17 @@ class CalculatorTkApp:
     def _set_notebook_content_size(self, size: tuple[int, int]) -> None:
         width, height = size
         self.notebook.configure(width=max(1, width), height=max(1, height))
+
+    def _configure_top_notebook_style(self) -> None:
+        style = ttk.Style(self.root)
+        self._top_tab_selected_font = tkfont.nametofont("TkDefaultFont").copy()
+        self._top_tab_selected_font.configure(weight="bold")
+        style.configure("CalculatorTop.TNotebook.Tab", padding=(10, 4))
+        style.map(
+            "CalculatorTop.TNotebook.Tab",
+            font=[("selected", self._top_tab_selected_font.name)],
+            foreground=[("selected", "#202020")],
+        )
 
     def run(self) -> None:
         self.root.mainloop()
