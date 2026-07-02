@@ -13,8 +13,8 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 Current phase: Machine Learning / Predictor Phase, post-Arc 13 planning. Arc
 13 ML Feature Catalog migration is complete for automated scope; Calculator
 Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF official oracle correction
-are complete; current near-term execution returns to Arc 13.5 Feature Catalog
-Editor work.
+are complete; a small calculator UI micro-polish pass is complete; current
+near-term execution returns to Arc 13.5 Feature Catalog Editor work.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -556,6 +556,24 @@ Scope boundary:
   effective ratios. PRH `Pheater * frunning` is deferred for future
   auxiliary-heater models and is non-impact for the current no-aux-heater
   oracle.
+
+### Calculator Micro-Polish — Pre-Arc 13.5 UI Closeout
+
+Goal:
+
+- Apply a small calculator UI distinction pass before returning to Arc 13.5.
+
+Status:
+
+- Complete. Top-level calculator notebook tabs, ISO profile selector boundary,
+  AHRI SEER2/HSPF2 action rows, and HSPF2 point display labels/order received
+  focused UI-only polish with manual GUI smoke acceptance.
+
+Scope boundary:
+
+- Calculator formula/config/schema/golden behavior stayed unchanged. This was
+  a micro UI closeout, not a continuation of the discarded
+  `feature/calculator-ui-polish` branch.
 
 ### Arc 13.5 — Feature Catalog Editor Bridge
 
