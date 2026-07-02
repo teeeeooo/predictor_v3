@@ -1,4 +1,4 @@
-"""Clipboard helpers for Predict spreadsheet-like tables."""
+"""Clipboard helpers for spreadsheet-like UI tables."""
 
 from __future__ import annotations
 

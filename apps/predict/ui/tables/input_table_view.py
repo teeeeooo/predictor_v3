@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 
-from apps.predict.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
+from apps.common.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
 
 
 class InputTableView(QTableView):

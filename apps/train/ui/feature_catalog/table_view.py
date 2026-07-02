@@ -6,8 +6,8 @@ from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 
-from apps.predict.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
-from apps.predict.ui.tables.undo import CellChange, TableUndoStack
+from apps.common.ui.tables.clipboard import format_tsv, parse_tsv, rectangular_bounds
+from apps.common.ui.tables.undo import CellChange, TableUndoStack
 
 
 class FeatureCatalogTableView(QTableView):

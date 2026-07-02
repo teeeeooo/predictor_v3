@@ -3,7 +3,7 @@
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 
-from apps.predict.ui.tables.clipboard import format_tsv, rectangular_bounds
+from apps.common.ui.tables.clipboard import format_tsv, rectangular_bounds
 
 
 class ResultTableView(QTableView):

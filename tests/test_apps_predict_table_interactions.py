@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
-from apps.predict.ui.tables.clipboard import format_tsv, parse_tsv
+from apps.common.ui.tables.clipboard import format_tsv, parse_tsv
 from apps.predict.ui.tables.input_table_model import InputTableModel
 from apps.predict.ui.tables.input_table_view import InputTableView
 from apps.predict.ui.tables.result_table_model import ResultTableModel

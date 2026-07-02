@@ -1,4 +1,4 @@
-"""Small grouped undo stack for Predict table edits."""
+"""Small grouped undo stack for spreadsheet-like UI table edits."""
 
 from dataclasses import dataclass
 from typing import Any
