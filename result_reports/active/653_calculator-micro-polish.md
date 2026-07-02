@@ -31,6 +31,17 @@
 - HSPF2 main UI labels/order: OK - visible heating columns are `H01, H11, H2v, H32, H42, H1N(STD), H12, H22`; internal `H2Int` and `H1N` field keys are unchanged.
 - HSPF2 batch labels/order: OK - batch matrix uses the same heating display order and labels as the main UI, with `A2` retained as the separate anchor point.
 - H1N/H2Int policy: OK - H1N required policy, H2Int internal adapter/schema naming, optional point policy, and core calculator behavior were not changed.
+- HSPF2 UI point display owner: OK - moved UI-only point order/label constants and helper to `apps/calculator/ui/ahri/hspf2_points.py`; main HSPF2 UI and batch spec now import from that owner.
+
+## Manual GUI Smoke
+
+- done - top-level calculator tab micro polish OK
+- done - ISO profile selector boundary OK
+- done - AHRI SEER2 `일괄 입력` / `상세 보기` horizontal action row OK
+- done - AHRI HSPF2 `일괄 입력` / `상세 보기` horizontal action row OK
+- done - HSPF2 main table display order/labels OK
+- done - HSPF2 batch matrix display order/labels OK
+- done - no calculation, scroll, or result display issue observed
 
 ## Verification
 
@@ -41,15 +52,16 @@
 - `PYTHONPATH=. pytest -q tests/test_apps_calculator_ui_ahri_hspf2.py` - OK, 7 passed / 3 skipped
 - `PYTHONPATH=. pytest -q tests/test_ui_tk_ahri_hspf2_batch.py` - OK, 4 passed / 3 skipped
 - `PYTHONPATH=. pytest -q tests/test_ui_tk_calculator_foundation.py` - OK, 13 passed / 11 skipped
+- `python3 -m py_compile apps/calculator/ui/ahri/hspf2_points.py apps/calculator/ui/ahri/hspf2_batch.py apps/calculator/ui/sections/ahri_hspf2_section.py` - OK
 - `git diff --check` - OK
 - `git status --short` - checked before commit; only scoped follow-up files were modified
 
 ## Structure / Reuse
 
-- change_gate: visual-only micro polish; no reusable helper or theme owner added.
+- change_gate: visual-only micro polish; no theme owner or behavior helper added.
 - Sibling surface check: existing Tk sections already use `ttk.LabelFrame`; reused that toolkit-native boundary instead of introducing a custom style or helper.
-- Follow-up reuse check: HSPF2 main and batch display order/labels now share a small UI-only constant/helper in the existing `hspf2_batch.py` owner instead of duplicating the map or changing the application adapter.
-- code_map_check: skipped; the new helper is a local UI display-label helper only, with no new surface, adapter, public route, or structural inventory change.
+- Follow-up reuse check: HSPF2 main and batch display order/labels now share a small UI-only point display owner in `hspf2_points.py` instead of depending on the batch spec module or changing the application adapter.
+- code_map_check: skipped; the new file is a local UI display-label owner only, with no new surface, adapter, public route, or structural inventory change.
 - Structure Warnings: none observed for changed scope; structure guard not run because this slice does not add a new responsibility boundary.
 
 ## Changed Files
@@ -60,6 +72,7 @@
 - `apps/calculator/ui/sections/ahri_hspf2_section.py`
 - `apps/calculator/ui/ahri/hspf2_batch_access.py`
 - `apps/calculator/ui/ahri/hspf2_batch.py`
+- `apps/calculator/ui/ahri/hspf2_points.py`
 - `tests/test_apps_calculator_ui_ahri_seer2.py`
 - `tests/test_apps_calculator_ui_ahri_hspf2.py`
 - `tests/test_ui_tk_ahri_hspf2_batch.py`
@@ -68,11 +81,11 @@
 
 ## Known Risks
 
-- Manual GUI smoke remains pending to visually close out the subtle tab/profile selector distinction on a real display.
+- Main merge readiness audit remains pending; this task does not merge to main.
 
 ## Next Suggested Action
 
-- Next: manual GUI smoke closeout
+- Next: main merge readiness audit
 
 ## Commit / Push
 

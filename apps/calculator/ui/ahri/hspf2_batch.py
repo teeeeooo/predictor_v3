@@ -20,6 +20,10 @@ from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_POINT_WIDTH_CHARS,
     BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
 )
+from apps.calculator.ui.ahri.hspf2_points import (
+    AHRI_HSPF2_UI_POINT_ORDER,
+    ahri_hspf2_ui_point_label,
+)
 
 _PHYSICAL_ROWS = (MatrixPhysicalRowType.CAPACITY, MatrixPhysicalRowType.POWER)
 _ROW_LABELS = MappingProxyType(
@@ -28,28 +32,6 @@ _ROW_LABELS = MappingProxyType(
         MatrixPhysicalRowType.POWER: "Power",
     }
 )
-AHRI_HSPF2_UI_POINT_ORDER = (
-    "H01",
-    "H11",
-    "H2Int",
-    "H32",
-    "H42",
-    "H1N",
-    "H12",
-    "H22",
-)
-AHRI_HSPF2_UI_POINT_LABELS = MappingProxyType(
-    {
-        "H2Int": "H2v",
-        "H1N": "H1N(STD)",
-    }
-)
-
-
-def ahri_hspf2_ui_point_label(point: str) -> str:
-    return AHRI_HSPF2_UI_POINT_LABELS.get(point, point)
-
-
 @dataclass(frozen=True)
 class AhriHspf2BatchActiveOptions:
     region: str = "IV"

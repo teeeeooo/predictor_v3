@@ -13,7 +13,7 @@ from apps.calculator.ui.ahri.hspf2_adapter import (
     AhriHspf2Options,
     AhriHspf2Summary,
 )
-from apps.calculator.ui.ahri.hspf2_batch import AHRI_HSPF2_UI_POINT_ORDER
+from apps.calculator.ui.ahri.hspf2_points import AHRI_HSPF2_UI_POINT_ORDER
 from tests.calculator_ui_sample_values import (
     HSPF2_HEATING_SAMPLE_VALUES,
     HSPF2_SAMPLE_VALUES,

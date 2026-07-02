@@ -12,7 +12,7 @@ from apps.calculator.application.ahri import (
     AhriHspf2InputError,
     AhriHspf2Options,
 )
-from apps.calculator.ui.ahri.hspf2_batch import (
+from apps.calculator.ui.ahri.hspf2_points import (
     AHRI_HSPF2_UI_POINT_ORDER,
     ahri_hspf2_ui_point_label,
 )
