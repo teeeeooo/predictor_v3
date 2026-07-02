@@ -1,0 +1,46 @@
+"""Controller boundary for the Train Feature Catalog panel."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from apps.train.application.feature_catalog import FeatureCatalogService, FeatureCatalogSnapshot
+
+
+@dataclass(frozen=True)
+class FeatureCatalogControllerState:
+    """UI-facing Feature Catalog load state."""
+
+    snapshot: FeatureCatalogSnapshot | None
+    status: str
+    message: str
+
+
+class FeatureCatalogController:
+    """Coordinate Feature Catalog application service calls for the UI."""
+
+    def __init__(self, service: FeatureCatalogService | None = None) -> None:
+        self._service = service or FeatureCatalogService()
+
+    def refresh(self) -> FeatureCatalogControllerState:
+        """Load the current catalog and return controlled UI state."""
+        try:
+            snapshot = self._service.load_snapshot(include_project_consistency=True)
+        except Exception as exc:
+            return FeatureCatalogControllerState(
+                snapshot=None,
+                status="error",
+                message=f"Feature Catalog load failed: {exc}",
+            )
+
+        if snapshot.has_errors:
+            return FeatureCatalogControllerState(
+                snapshot=snapshot,
+                status="error",
+                message="Feature Catalog validation failed.",
+            )
+        return FeatureCatalogControllerState(
+            snapshot=snapshot,
+            status="ready",
+            message="Feature Catalog validation OK.",
+        )

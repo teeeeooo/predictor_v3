@@ -23,6 +23,7 @@ from apps.train.state.training_run_state import (
     TrainingResult,
 )
 from apps.train.ui.data_mapping_panel import DataMappingPanel
+from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.shell import TrainShell
 from apps.train.ui.train_model_panel import TrainModelPanel
 
@@ -112,13 +113,15 @@ def test_train_shell_tabs_and_predict_workspace_reuse():
     _app()
     shell = TrainShell()
 
-    assert shell.tabs.count() == 3
+    assert shell.tabs.count() == 4
     assert [shell.tabs.tabText(index) for index in range(3)] == [
         "Predict",
         "Train / Model",
         "Data Mapping",
     ]
+    assert shell.tabs.tabText(3) == "Feature Catalog"
     assert isinstance(shell.tabs.widget(0), PredictWorkspace)
+    assert isinstance(shell.tabs.widget(3), FeatureCatalogPanel)
 
 
 def test_predict_shell_keeps_standalone_title_and_status_strip():
@@ -224,11 +227,25 @@ def test_data_mapping_panel_is_visual_only_with_log_area():
         assert not buttons[text].isEnabled()
 
 
+def test_feature_catalog_panel_loads_readonly_catalog():
+    _app()
+    panel = FeatureCatalogPanel()
+
+    assert panel.objectName() == "FeatureCatalogPanel"
+    assert panel.table.model().rowCount() > 0
+    assert panel.table.model().columnCount() == 12
+    assert panel.table.model().headerData(2, Qt.Horizontal, Qt.DisplayRole) == "ml_name"
+    assert "validation OK" in panel.validation_value.text()
+    assert "Catalog validation: OK" in panel.messages.toPlainText()
+
+
 def test_train_ui_widgets_do_not_import_core_execution_foundations():
     sources = (
         Path("apps/train/ui/shell.py"),
         Path("apps/train/ui/train_model_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
+        Path("apps/train/ui/feature_catalog/panel.py"),
+        Path("apps/train/ui/feature_catalog/table_model.py"),
     )
     forbidden = (
         "from core.training",
@@ -249,6 +266,8 @@ def test_train_ui_uses_model_views_not_qtablewidget():
     sources = (
         Path("apps/train/ui/train_model_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
+        Path("apps/train/ui/feature_catalog/panel.py"),
+        Path("apps/train/ui/feature_catalog/table_model.py"),
     )
 
     for source in sources:

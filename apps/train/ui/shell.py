@@ -18,6 +18,7 @@ from apps.common.ui import style
 from apps.predict.ui.status_widgets import model_status_badge_state
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.ui.data_mapping_panel import DataMappingPanel
+from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.train_model_panel import TrainModelPanel
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
@@ -26,7 +27,7 @@ from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 class TrainShell(QMainWindow):
     """Minimal shell for the PySide6 Trainer window."""
 
-    tab_names = ("Predict", "Train / Model", "Data Mapping")
+    tab_names = ("Predict", "Train / Model", "Data Mapping", "Feature Catalog")
 
     def __init__(self, parent: QMainWindow | None = None) -> None:
         super().__init__(parent)
@@ -61,6 +62,7 @@ class TrainShell(QMainWindow):
         )
         tabs.addTab(self.train_model_panel, self.tab_names[1])
         tabs.addTab(DataMappingPanel(tabs), self.tab_names[2])
+        tabs.addTab(FeatureCatalogPanel(tabs), self.tab_names[3])
         layout.addWidget(tabs, 1)
         self.setCentralWidget(central)
         self.tabs = tabs
