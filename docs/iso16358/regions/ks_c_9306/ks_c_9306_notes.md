@@ -202,4 +202,4 @@ production `hspf_bin_hours`에는 golden/sample/test fixture 전용 2-bin 값을
 | KS C 9306:2017 Equation E.2.20~E.2.40 | 가변 용량형 HSPF 성능선과 운전점 선택 구조 |
 | `KS_C_9306.pdf` | 로컬 스캔본 OCR 확인 source |
 | `data/region_configs/korea.json` | 한국 region configuration SSOT |
-| `core/calculator_iso16358.py` | 계산 구현 mapping |
+| `core/calculators/standards/ks_c9306.py` | KS C 9306 계산 구현 mapping |

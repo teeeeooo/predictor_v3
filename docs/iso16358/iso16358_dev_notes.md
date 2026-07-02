@@ -6,14 +6,15 @@
 
 ## 2. Current Calculator Structure
 
-`core/calculator_iso16358.py`는 현재 하나의 `ISO16358Calculator` 안에 아래 경로를 포함한다.
+`core/calculators/standards/iso16358.py`는 현재 하나의
+`ISO16358Calculator` 안에 아래 ISO 공통 경로를 포함한다.
 
 | Path | Entry / helper | Role |
 | --- | --- | --- |
 | CSPF path | `calculate_cspf` | ISO16358-1 common CSPF bin loop, point resolution, PLF, accumulation |
 | generic HSPF fallback | `calculate_hspf`, `interpolate_heating`, `calc_auxiliary_heat` | heating point 보간/외삽과 shortage auxiliary 처리 |
 | variable HSPF path | `_variable_heating_bin` | stage별 heating point 기반 bin detail 계산 |
-| KS C 9306 HSPF profile path | `_calculate_ks_c9306_hspf`, `_ks_hspf_*` helpers | KS C 9306 profile-specific required points, curves, load line, branch selection |
+| KS C 9306 HSPF profile path | `core/calculators/standards/ks_c9306.py`의 `_calculate_ks_c9306_hspf`, `_ks_hspf_*` helpers | KS C 9306 profile-specific required points, curves, load line, branch selection |
 
 이 클래스는 이미 과대화되고 있으나 지금은 구조적 리팩토링을 수행하지 않는다. 리팩토링 후보는 [REFACTOR_PLAN.md](../REFACTOR_PLAN.md)를 따른다.
 
@@ -168,7 +169,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | HSPF validation | required point, load_line schema, fallback 정책을 검증한다. | `tests/test_iso16358_hspf_validation.py` |
 | HSPF smoke | generic/variable path와 aux_cop denominator 처리를 빠르게 확인한다. | `tests/test_iso16358_hspf_smoke.py` |
 | Korea CSPF regression | KS CSPF `6.504`가 유지되는지 확인한다. | one-liner 또는 golden fixture |
-| compile check | syntax regression을 확인한다. | `python3 -B -m py_compile core/calculator_iso16358.py` |
+| compile check | syntax regression을 확인한다. | `python3 -B -m py_compile core/calculators/standards/iso16358.py` |
 | JSON validation | production region config가 유효한 JSON인지 확인한다. | `python3 -B -m json.tool data/region_configs/korea.json` |
 | CSPF profile resolver | `cspf_test_profile`의 measured/default/not_used point resolution을 검증한다. | `tests/test_iso16358_cspf_profile_resolver.py` |
 | CSPF profile calculation | profile path가 legacy ISO T1 default path와 parity를 유지하는지 검증한다. | `tests/test_iso16358_cspf_profile_calculation.py` |
@@ -297,7 +298,7 @@ Extracted formulas from the XLSM file:
 
 -   **Complex EER/Power Calculation:** The official Excel sheet does not simply choose one branch and linearly interpolate power by capacity based on temperature. Instead, it computes specific "boundary temperatures" (`tb`, `tc`, `tp` from CK5, CK6, CK7) and "boundary EERs" (`EER(t0)`, `EER,ful(tb)`, `EER,haf(tc)`, `EER,min(tp)` from CN5, CN6, CN7, CN8). These derived boundary EERs are then used to calculate branch EER/power contributions, indicating a more nuanced piecewise linear interpolation approach.
 -   **`cspf_calculator.py` Evaluation:** The existing `cspf_calculator.py` is valuable as an exploration tool, but it is not directly production-accurate if it does not precisely replicate this boundary-temperature and boundary-EER driven branching logic. Significant refactoring and re-implementation of the power calculation block in `cspf_calculator.py` would be necessary to align with the XLSM's methodology.
--   **`calculator_iso16358.py` Alignment:** The `iso_boundary_eer` direction within `calculator_iso16358.py` is structurally aligned with the XLSM's approach. This architectural choice should be preserved and further developed to accurately model the boundary EERs.
+-   **`iso16358.py` Alignment:** The `iso_boundary_eer` direction within `core/calculators/standards/iso16358.py` is structurally aligned with the XLSM's approach. This architectural choice should be preserved and further developed to accurately model the boundary EERs.
 -   **India Boundary Temperature Rounding:** The rounding of India boundary temperatures is structurally meaningful because `CK5` through `CK7` (tb, tc, tp) directly drive the interpolation of branch EERs. Any deviation in these boundary temperatures will impact the subsequent EER calculations.
 -   **SASO T3 and `cspf_test_profile` Schema:** SASO T3 Phase R2-2 is aligned through the `cspf_test_profile` opt-in path, not a one-off public calculator method. The legacy T1 `_iso_boundary_eer()` behavior remains unchanged, while T3 uses `_iso_boundary_eer_t3_piecewise()` only when `cspf_test_profile.climate_profile == "T3"`. This helper selects 29↔35 for `tj <= 35` and 35↔46 for `tj > 35`, and `_iso_boundary_eer_power()` handles both `{min, half}` and `{half, full}` brackets under that T3 guard.
 -   **SASO T3 Boundary Diagnostics:** The verified golden sample produces Tb ≈ 45.2479°C, Tc ≈ 34.6371°C, and Tp ≈ 29.1799°C. For the `tj > 35` full segment, the intersection is 46.0°C because `46_full` is the building-load reference point.

@@ -40,13 +40,12 @@
   fixtures/golden expected, and public result dict contracts remain unchanged.
 
 ### 1. Calculator series reset: 기존 ISO 파일 legacy 격하 + 새 calculator 3종 작성
-- **왜 후보인지**: 기존 `core/calculator_iso16358.py`가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임. 037~043 사이클의 점진 cleanup으로는 boundary 책임이 정렬되지 않는다는 것이 확인되었다.
-- **방향 전환 (2026-05-17)**: “기존 `core/calculator_iso16358.py`를 부분 cleanup으로 계속 살리는 방향”은 종료한다. 기존 파일은 legacy/reference로 격하하고, 새 ISO / KS / ASNZS calculator 3개 파일을 명확한 책임으로 재작성한다.
+- **왜 후보인지**: 기존 root ISO calculator가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임. 037~043 사이클의 점진 cleanup으로는 boundary 책임이 정렬되지 않는다는 것이 확인되었다.
+- **방향 전환 (2026-05-17)**: 기존 root ISO calculator를 부분 cleanup으로 계속 살리는 방향은 종료한다. 구현은 standard별 calculator package로 분리하고, ISO / KS / ASNZS calculator 파일을 명확한 책임으로 유지한다.
 - **목표 boundary**:
-  - `core/calculator_iso16358.py` (새 파일) — ISO 16358 CSPF/HSPF common standard logic 전용. KS / ASNZS / workbook oracle / legacy diagnostic helper 미포함. Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
-  - `core/calculator_ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). `data/region_configs/korea.json`을 직접 해석. ISO calculator가 KS config를 대신 해석하지 않는다.
-  - `core/calculator_asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. Current workbook HSPF/CSPF snapshot exact-match는 이 모듈/fixture에서만 다루며, historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
-  - 기존 `core/calculator_iso16358.py`의 현 내용은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
+  - `core/calculators/standards/iso16358.py` — ISO 16358 CSPF/HSPF common standard logic 전용. KS / ASNZS / workbook oracle / legacy diagnostic helper 미포함. Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
+  - `core/calculators/standards/ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). `data/region_configs/korea.json`을 직접 해석. ISO calculator가 KS config를 대신 해석하지 않는다.
+  - `core/calculators/standards/asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. Current workbook HSPF/CSPF snapshot exact-match는 이 모듈/fixture에서만 다루며, historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
 - **Region config 저장소**: `data/region_configs/`는 ISO 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
 - **Next work order**:
   1. 완료된 UI audit과 AHRI selector cleanup 상태를 유지한다. `ui/calc_window.py`는 PyQt offscreen launch smoke와 AHRI profile-id selector guard로 보호한다.

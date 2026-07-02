@@ -32,12 +32,12 @@ Current representative files include:
 - `core/models.py`
 - `core/data_pipeline.py`
 - `core/utils.py`
-- `core/calculator_iso16358.py`
+- `core/calculators/standards/iso16358.py`
 - `core/calculator_ks_c9306.py`
 - `core/calculator_ahri_hspf2.py`
 - `core/calculator_ahri_seer2.py`
 - `core/calculator_en14825.py`
-- `core/calculator_asnzs_hspf_excel.py`
+- `core/calculators/standards/asnzs_hspf_excel.py`
 - `core/calculator_dispatcher.py`
 - `core/calculator_profiles.py`
 - `core/calculator_input_adapter.py`
@@ -147,12 +147,12 @@ Current owners:
 |---|---|---|
 | calculator profile registry | `core/calculator_profiles.py` | `core/calculators/profiles.py` |
 | calculator dispatcher | `core/calculator_dispatcher.py` | `core/calculators/dispatcher.py` |
-| ISO 16358 engine | `core/calculator_iso16358.py` | `core/calculators/standards/iso16358.py` |
+| ISO 16358 engine | `core/calculators/standards/iso16358.py` | migrated |
 | KS C 9306 engine | `core/calculator_ks_c9306.py` | `core/calculators/standards/ks_c9306.py` |
 | AHRI SEER2 engine | `core/calculator_ahri_seer2.py` | `core/calculators/standards/ahri_seer2.py` |
 | AHRI HSPF2 engine | `core/calculator_ahri_hspf2.py` | `core/calculators/standards/ahri_hspf2.py` |
 | EN 14825 engine | `core/calculator_en14825.py` | `core/calculators/standards/en14825.py` |
-| AS/NZS Excel compatibility | `core/calculator_asnzs_hspf_excel.py` | `core/calculators/standards/asnzs_hspf_excel.py` |
+| AS/NZS Excel compatibility | `core/calculators/standards/asnzs_hspf_excel.py` | migrated |
 | calculator input adapter | `core/calculator_input_adapter.py` | `core/calculators/adapters/input_adapter.py` |
 | calculator prediction adapter | `core/calculator_prediction_adapter.py` | `core/calculators/adapters/prediction_adapter.py` |
 | calculator unit adapter | `core/calculator_unit_adapter.py` | `core/calculators/adapters/unit_adapter.py` |
@@ -237,10 +237,7 @@ Example transition:
     final owner:
     core/calculators/standards/iso16358.py
 
-    temporary compatibility wrapper:
-    core/calculator_iso16358.py
-
-After callers migrate, wrapper retirement should be explicitly planned.
+Temporary compatibility wrappers should be retired only after callers migrate.
 
 ### Principle 4 — New production code must use the new package boundary
 
@@ -390,12 +387,12 @@ Target moves:
 
 - `core/calculator_profiles.py` to `core/calculators/profiles.py`
 - `core/calculator_dispatcher.py` to `core/calculators/dispatcher.py`
-- `core/calculator_iso16358.py` to `core/calculators/standards/iso16358.py`
+- ISO 16358 engine is migrated to `core/calculators/standards/iso16358.py`
 - `core/calculator_ks_c9306.py` to `core/calculators/standards/ks_c9306.py`
 - `core/calculator_ahri_hspf2.py` to `core/calculators/standards/ahri_hspf2.py`
 - `core/calculator_ahri_seer2.py` to `core/calculators/standards/ahri_seer2.py`
 - `core/calculator_en14825.py` to `core/calculators/standards/en14825.py`
-- `core/calculator_asnzs_hspf_excel.py` to `core/calculators/standards/asnzs_hspf_excel.py`
+- AS/NZS Excel compatibility is migrated to `core/calculators/standards/asnzs_hspf_excel.py`
 - calculator adapters to `core/calculators/adapters/`
 
 Root files remain as wrappers until callers migrate.

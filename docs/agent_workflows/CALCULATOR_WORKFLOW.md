@@ -11,8 +11,9 @@ reference workflow details. `AGENT_TASK_ROUTER.md` only routes here.
   `pandas`.
 - Do not modify `calculate_hspf2_v2()` / `calculate_hspf2()` unless the user
   explicitly asks.
-- Keep ISO16358 / KS C 9306 common engine work centered on
-  `core/calculator_iso16358.py`.
+- Keep ISO16358 common engine work centered on
+  `core/calculators/standards/iso16358.py`; KS C 9306 special behavior belongs
+  in `core/calculators/standards/ks_c9306.py`.
 - Do not mix region config, HW candidate input, ML feature schema, UI table
   schema, or calculator result schema.
 - Do not change public APIs, diagnostics schema, JSON keys, fixture/golden

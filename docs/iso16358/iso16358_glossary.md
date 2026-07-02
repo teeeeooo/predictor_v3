@@ -42,9 +42,9 @@
 
 | 코드 변수명 또는 키 | 데이터 타입 | 위치 | 정의 및 구현상 주의 |
 | --- | --- | --- | --- |
-| `ISO16358Calculator` | class | `core/calculator_iso16358.py` | ISO 16358 CSPF/HSPF 계산 entry class다. 공통 경로와 region profile 경로를 함께 포함하므로 수정 시 CSPF/HSPF regression을 모두 확인한다. |
-| `calculate_cspf()` | method | `core/calculator_iso16358.py` | CSPF 계산 entry point다. region config의 `points`, `derived_rules`, `bin_hours`, `Cd`, load line 설정을 사용한다. |
-| `calculate_hspf()` | method | `core/calculator_iso16358.py` | HSPF 계산 entry point다. KS profile, variable HSPF path, simple fallback path가 공존한다. profile 선택 시 조용한 fallback이 발생하지 않도록 검증한다. |
+| `ISO16358Calculator` | class | `core/calculators/standards/iso16358.py` | ISO 16358 CSPF/HSPF 계산 entry class다. 공통 경로와 ISO profile 경로를 함께 포함하므로 수정 시 CSPF/HSPF regression을 모두 확인한다. |
+| `calculate_cspf()` | method | `core/calculators/standards/iso16358.py` | CSPF 계산 entry point다. region config의 `points`, `derived_rules`, `bin_hours`, `Cd`, load line 설정을 사용한다. |
+| `calculate_hspf()` | method | `core/calculators/standards/iso16358.py` | HSPF 계산 entry point다. ISO common profile, variable HSPF path, simple fallback path가 공존한다. KS C 9306 profile-specific HSPF는 `core/calculators/standards/ks_c9306.py`가 소유한다. |
 | `cspf` | number | CSPF return dict | 최종 Cooling Seasonal Performance Factor다. `annual_cooling_kwh / annual_power_kwh` 구조로 계산된다. |
 | `hspf` | number | HSPF return dict | 최종 Heating Seasonal Performance Factor다. `HSTL / HSEC` 구조로 계산된다. |
 | `annual_cooling_kwh` | number | CSPF return dict | 계절 냉방량을 kWh 단위로 표시한 값이다. 내부 누적 Wh를 1000으로 나눈 값이다. |
@@ -93,7 +93,7 @@
 
 | Data | Location | Owner document |
 | --- | --- | --- |
-| ISO 16358 공통 계산 흐름 | `core/calculator_iso16358.py` | [`iso16358_notes.md`](./iso16358_notes.md) |
+| ISO 16358 공통 계산 흐름 | `core/calculators/standards/iso16358.py` | [`iso16358_notes.md`](./iso16358_notes.md) |
 | ISO 16358 공통 구현 주의사항 | `docs/iso16358/iso16358_dev_notes.md` | [`iso16358_dev_notes.md`](./iso16358_dev_notes.md) |
 | ISO 16358 공통 설계 인사이트 | `docs/iso16358/iso16358_design_notes.md` | [`iso16358_design_notes.md`](./iso16358_design_notes.md) |
 | ISO 16358 공통 용어 | `docs/iso16358/iso16358_glossary.md` | this document |

@@ -172,7 +172,7 @@ Secondary candidates:
 | 4 | building_load_source / t_0_load / reference_point | Weak from tested t_0 variants |
 | 5 | derived rounding / unit conversion | Weak: rounding changes CSPF by about 0.001 |
 
-Do not modify `core/calculator_iso16358.py` or create
+Do not modify `core/calculators/standards/iso16358.py` or create
 `iso_t1_default_2point.json` until the ISO16358-1 text or an official
 calculation sheet confirms whether the default T1 2-point case applies `Cd`,
 uses a different low-load PLF rule, or calculates power below 35_half by a
@@ -291,7 +291,7 @@ KS C 9306과 ISO 16358-1 기본 2점식 CSPF는 계산 경로가 다르다.
 load < half capacity 구간에서 현재 엔진의 `P_tj = (X * P_half(tj)) / PLF`를
 어떤 대체식으로 바꿔야 하는지까지는 명시하지 않는다.
 
-따라서 현재 단계에서는 core/calculator_iso16358.py를 수정하지 않는다.
+따라서 현재 단계에서는 core/calculators/standards/iso16358.py를 수정하지 않는다.
 Cd=0, 임의 PLF 보정 지수, sample-specific 보정계수 등은 hidden factor 성격이므로 사용하지 않는다.
 
 ISO T1 default 2-point 경로는 향후 ISO 16358-1 Clause 6.7 원문 또는 공식 worksheet의 bin별 P(tj)/CSEC(tj)를 확보한 뒤,
@@ -455,7 +455,7 @@ implementation turn, is not a `Cd` change. It is an ISO T1 variable-capacity
 `half < Lc <= full`, scoped so that KS C 9306 and other existing profiles keep
 their current verified behavior.
 
-No code change to `core/calculator_iso16358.py` has been made in this audit
+No code change to `core/calculators/standards/iso16358.py` has been made in this audit
 turn, and no production region config has been added.
 
 ## ISO Boundary EER Method Implementation

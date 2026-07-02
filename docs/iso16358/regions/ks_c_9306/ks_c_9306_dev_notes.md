@@ -353,7 +353,7 @@ production `korea.json`에는 golden/sample/test 전용 2-bin 값을 넣지 않�
 | HSPF smoke | `python3 -B -m pytest tests/test_iso16358_hspf_smoke.py -v` |
 | Korea CSPF regression | CSPF one-liner must keep `6.504` |
 | JSON validation | `python3 -B -m json.tool data/region_configs/korea.json` |
-| syntax check | `python3 -B -m py_compile core/calculator_iso16358.py` |
+| syntax check | `python3 -B -m py_compile core/calculators/standards/ks_c9306.py` |
 
 ## 10. Prompt Snippets for Agent
 
@@ -375,4 +375,4 @@ HSPF 작업용 프롬프트:
 | `KS_C_9306.pdf` | Equation E.2.20~E.2.40 원문 이미지 확인 |
 | [ks_c_9306_machine_extract.md](./ks_c_9306_machine_extract.md) | standard.go.kr 기계판 추출 결과, Table E.5 계수, HSPF formula image map |
 | `data/region_configs/korea.json` | KS region configuration |
-| `core/calculator_iso16358.py` | 구현 동작 확인 |
+| `core/calculators/standards/ks_c9306.py` | 구현 동작 확인 |

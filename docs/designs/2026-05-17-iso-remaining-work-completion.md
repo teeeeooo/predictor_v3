@@ -8,9 +8,9 @@
 
 ## Boundary
 
-- `core/calculator_iso16358.py` remains ISO 16358 common logic only.
+- `core/calculators/standards/iso16358.py` remains ISO 16358 common logic only.
 - `core/_legacy/calculator_iso16358_legacy.py` is archived reference code. Active production callers must not import it.
-- `core/calculator_asnzs_hspf_excel.py` remains an opt-in `ASNZS_EXCEL_COMPAT` workbook compatibility calculator. It may reproduce local workbook snapshot rows, but must not become the ISO common expected source.
+- `core/calculators/standards/asnzs_hspf_excel.py` remains an opt-in `ASNZS_EXCEL_COMPAT` workbook compatibility calculator. It may reproduce local workbook snapshot rows, but must not become the ISO common expected source.
 
 ## AS/NZS Evidence Decision
 

@@ -11,7 +11,7 @@
 - `docs/iso16358/iso16358_dev_notes.md`: Section 14.1, 14.3, 14.4 (캘리브레이션 결과 및 셀 매핑)
 - `tests/fixtures/iso16358_hspf_golden_fixtures.json`: Case 1~8 기대값 및 입력 풀
 - `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py`: 현재 xfail/pass 상태 및 진단 헬퍼
-- `core/calculator_iso16358.py`: `calculate_hspf_iso16358_common` 및 관련 수식 헬퍼 (`_iso_hspf_...`)
+- `core/calculators/standards/iso16358.py`: `calculate_hspf_iso16358_common` 및 관련 수식 헬퍼 (`_iso_hspf_...`)
 - `docs/REFACTOR_PLAN.md`: 공통 경로와 호환성 경로의 분리 원칙
 
 ## 3. Current Python Diff Summary
@@ -61,7 +61,7 @@ H-8의 구체적인 구현 위치 및 구조적 접근 방식은 아래 후보 �
 
 ### A. Resolved Point / Selector Trace Instrumentation
 - **목적**: 구현 전, 각 Case에서 어떤 시험점이 실제로 선택(measured vs calculated)되고 보간 앵커로 쓰이는지 숫자로 고정.
-- **수정 후보**: `core/calculator_iso16358.py` (내부 trace 추가), `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` (진단 출력 강화).
+- **수정 후보**: `core/calculators/standards/iso16358.py` (내부 trace 추가), `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` (진단 출력 강화).
 - **금지**: 계산 결과 변경.
 
 ### B. 2°C Measured/Default Selector Matrix Design

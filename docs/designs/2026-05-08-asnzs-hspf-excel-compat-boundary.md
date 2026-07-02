@@ -16,7 +16,7 @@ ISO16358-2 HSPF common path와 AS/NZS / Energy Rating SEER calculator Excel exac
 - ISO16358 common HSPF path는 ISO 원문 기준의 bin temperature `tj`, capacity/power curve, load ratio `X_j`, Formula 47/49/50-style power calculation을 유지한다.
 - `4.33824` / `1126.120 kWh` / `1126120.47 Wh`는 AS/NZS Excel compatibility reference이며 ISO common expected가 아니다.
 - AS/NZS Excel exact matching은 common ISO calculator path에 섞지 않고 별도 compatibility calculator/profile로 분리한다.
-- `calculator_iso16358.py` common path에는 AS/NZS workbook helper cell convention을 직접 추가하지 않는다.
+- `core/calculators/standards/iso16358.py` common path에는 AS/NZS workbook helper cell convention을 직접 추가하지 않는다.
 - `BE5` / `BK5` / `BQ5`, `BE6` / `BK6` / `BQ6`, `BN` / `BP` / `BY` / `CA` / `CC` 같은 workbook helper cells/anchors를 common production code에 복제하지 않는다.
 
 ## Boundary Decision
@@ -40,7 +40,7 @@ ISO16358-2 HSPF common path와 AS/NZS / Energy Rating SEER calculator Excel exac
   - `calculator_id=asnzs_excel_hspf`
   - `config_path=data/region_configs/asnzs_excel_hspf.json`
   - `enabled=false` until implemented and validated
-- Candidate module: `core/calculator_asnzs_hspf_excel.py`
+- Candidate module: `core/calculators/standards/asnzs_hspf_excel.py`
 - Public API impact: none in this documentation phase.
 - Backward compatibility: current ISO common HSPF output, xfail policy, fixtures, and tests remain unchanged.
 
@@ -48,7 +48,7 @@ ISO16358-2 HSPF common path와 AS/NZS / Energy Rating SEER calculator Excel exac
 
 Track A — ISO16358-2 common HSPF path:
 
-- Keep the ISO text-oriented Formula 47/49/50-style calculation flow in `calculator_iso16358.py`.
+- Keep the ISO text-oriented Formula 47/49/50-style calculation flow in `core/calculators/standards/iso16358.py`.
 - Do not use AS/NZS Excel final HSPF or CHSE values as common ISO golden expected values.
 - Because final-result coverage is not yet sufficient for broad Track A validation, prioritize smaller invariants over a single large final assertion:
   - formula micro golden
@@ -166,7 +166,7 @@ Calculator/profile identity:
 - `metric`: `HSPF`
 - `mode`: `heating`
 - `reference_type`: `ASNZS_EXCEL_COMPAT`
-- candidate module: `core/calculator_asnzs_hspf_excel.py`
+- candidate module: `core/calculators/standards/asnzs_hspf_excel.py`
 - candidate config: `data/region_configs/asnzs_excel_hspf.json`
 
 Input contract candidate:
@@ -195,13 +195,13 @@ Golden/reference namespace:
 - Future guard tests should prove that ISO common expected values do not silently adopt AS/NZS Excel compatibility baselines.
 - Future resolver tests should verify that `asnzs_excel_hspf_compat` is selected only by explicit profile/calculator id.
 - Future guard tests should verify that `region=au_nz` / `standard=ASNZS` alone does not activate compatibility mode.
-- Future guard tests should verify that Excel helper convention is not imported or replicated in `calculator_iso16358.py`.
+- Future guard tests should verify that Excel helper convention is not imported or replicated in `core/calculators/standards/iso16358.py`.
 
 ## Migration / Refactor Path
 
 1. Keep ISO common HSPF implementation and existing fixtures unchanged.
 2. Add an explicit AS/NZS Excel compatibility profile only after the compatibility module contract is approved.
-3. Implement Excel exact matching in a separate compatibility calculator/profile, not in `calculator_iso16358.py`.
+3. Implement Excel exact matching in a separate compatibility calculator/profile, not in `core/calculators/standards/iso16358.py`.
 4. Promote Windows Excel COM baselines only as `REFERENCE_TYPE=ASNZS_EXCEL_COMPAT`, not as ISO common golden expected.
 5. Treat current local workbook snapshot exact-match as a separate fixture from historical case3 packet/full-dump parity.
 
@@ -225,5 +225,5 @@ Golden/reference namespace:
 ## Next Codex Implementation Prompt
 
 ```text
-Implement AS/NZS Excel HSPF exact matching only after this design boundary is accepted. Do not modify calculator_iso16358.py common ISO behavior, ISO common expected values, or existing HSPF fixtures. Add a separate compatibility calculator/profile candidate such as core/calculator_asnzs_hspf_excel.py with profile_id=asnzs_excel_hspf_compat and calculator_id=asnzs_excel_hspf. Treat Windows Excel COM case baselines as REFERENCE_TYPE=ASNZS_EXCEL_COMPAT, not ISO common golden expected.
+Implement AS/NZS Excel HSPF exact matching only after this design boundary is accepted. Do not modify core/calculators/standards/iso16358.py common ISO behavior, ISO common expected values, or existing HSPF fixtures. Add a separate compatibility calculator/profile candidate such as core/calculators/standards/asnzs_hspf_excel.py with profile_id=asnzs_excel_hspf_compat and calculator_id=asnzs_excel_hspf. Treat Windows Excel COM case baselines as REFERENCE_TYPE=ASNZS_EXCEL_COMPAT, not ISO common golden expected.
 ```
