@@ -32,7 +32,6 @@ DEFAULT_CATALOG_PATH = PROJECT_ROOT / "config" / "ml" / "features.csv"
 
 REQUIRED_HEADERS = (
     "order",
-    "feature_id",
     "ml_name",
     "role",
     "ui_key",
@@ -51,7 +50,6 @@ class FeatureCatalogRow:
     """One row from the user-managed ML feature catalog draft."""
 
     order: int
-    feature_id: str
     ml_name: str
     role: str
     ui_key: str
@@ -124,7 +122,6 @@ def _row_from_csv(line_number: int, raw: dict[str, str | None]) -> FeatureCatalo
         raise ValueError(f"line {line_number}: invalid order '{order_text}'") from exc
     return FeatureCatalogRow(
         order=order,
-        feature_id=_clean(raw.get("feature_id")),
         ml_name=_clean(raw.get("ml_name")),
         role=_clean(raw.get("role")),
         ui_key=_clean(raw.get("ui_key")),

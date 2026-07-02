@@ -71,7 +71,10 @@ def test_feature_catalog_table_model_is_read_only():
     assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "order"
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == 1
     assert model.data(model.index(0, 2), Qt.DisplayRole)
-    assert model.data(model.index(0, 10), Qt.DisplayRole) in {"true", "false"}
+    assert model.data(model.index(0, REQUIRED_HEADERS.index("active")), Qt.DisplayRole) in {
+        "true",
+        "false",
+    }
     assert not (model.flags(model.index(0, 0)) & Qt.ItemIsEditable)
     assert model.cell_value(-1, 0) == ""
 

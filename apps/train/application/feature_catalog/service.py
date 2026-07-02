@@ -29,7 +29,7 @@ from apps.train.application.feature_catalog.models import (
 STRICT_BOOL_VALUES = frozenset({"true", "false"})
 STRICT_ZERO_FILL_POLICIES = frozenset({"disallow", "mode_missing_allowed"})
 NONEMPTY_SAVE_FIELDS = frozenset(
-    {"order", "feature_id", "ml_name", "role", "zero_fill_policy", "active"}
+    {"order", "ml_name", "role", "zero_fill_policy", "active"}
 )
 
 
@@ -190,7 +190,6 @@ def _row_from_record(
     return (
         FeatureCatalogRow(
             order=order,
-            feature_id=values["feature_id"],
             ml_name=values["ml_name"],
             role=values["role"],
             ui_key=values["ui_key"],

@@ -329,7 +329,6 @@ def test_model_registry_rules_still_apply_after_catalog_projection():
 def test_feature_catalog_registry_validator_rejects_non_result_target():
     non_result_target = FeatureCatalogRow(
         order=1,
-        feature_id="not_result",
         ml_name="Cooling Capa",
         role="input",
         ui_key="cooling_capa",
@@ -359,7 +358,6 @@ def test_default_catalog_path_is_packaging_required_resource():
 def test_feature_catalog_inactive_rows_are_excluded_from_projections():
     inactive = FeatureCatalogRow(
         order=1,
-        feature_id="inactive_feature",
         ml_name="Inactive Feature",
         role="input",
         ui_key="inactive_feature",
@@ -385,7 +383,6 @@ def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
         [
             {
                 "order": "10",
-                "feature_id": "bad_zero",
                 "ml_name": "ID Volume",
                 "role": "auto",
                 "ui_key": "id_volume",
@@ -399,7 +396,6 @@ def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
             },
             {
                 "order": "20",
-                "feature_id": "bad_one_hot",
                 "ml_name": "R32",
                 "role": "one_hot",
                 "ui_key": "",
@@ -413,7 +409,6 @@ def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
             },
             {
                 "order": "30",
-                "feature_id": "bad_one_hot",
                 "ml_name": "R290",
                 "role": "unknown",
                 "ui_key": "",
@@ -430,13 +425,12 @@ def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
 
     errors = validate_feature_catalog(load_feature_catalog(catalog_path))
 
-    assert "duplicate feature_id: bad_one_hot" in errors
-    assert "feature_id=bad_zero: mode_missing_allowed is not allowed for 'ID Volume'" in errors
-    assert "feature_id=bad_zero: role=auto requires source" in errors
-    assert "feature_id=bad_zero: role=auto requires mapping_key" in errors
-    assert "feature_id=bad_one_hot: role=one_hot requires one_hot_group" in errors
-    assert "feature_id=bad_one_hot: invalid role 'unknown'" in errors
-    assert "feature_id=bad_one_hot: invalid zero_fill_policy 'bad_policy'" in errors
+    assert "ml_name=ID Volume (order=10): mode_missing_allowed is not allowed for 'ID Volume'" in errors
+    assert "ml_name=ID Volume (order=10): role=auto requires source" in errors
+    assert "ml_name=ID Volume (order=10): role=auto requires mapping_key" in errors
+    assert "ml_name=R32 (order=20): role=one_hot requires one_hot_group" in errors
+    assert "ml_name=R290 (order=30): invalid role 'unknown'" in errors
+    assert "ml_name=R290 (order=30): invalid zero_fill_policy 'bad_policy'" in errors
 
 
 def test_feature_catalog_header_policy_rejects_unknown_header(tmp_path):
@@ -612,7 +606,6 @@ def test_features_import_error_for_invalid_catalog_includes_validation_message(t
         [
             {
                 "order": "10",
-                "feature_id": "bad_zero",
                 "ml_name": "ID Volume",
                 "role": "auto",
                 "ui_key": "id_volume",

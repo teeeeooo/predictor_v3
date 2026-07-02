@@ -29,11 +29,6 @@ def validate_feature_catalog(catalog) -> list[str]:
 
     _validate_unique(
         errors,
-        "feature_id",
-        (row.feature_id for row in catalog.rows if row.active),
-    )
-    _validate_unique(
-        errors,
         "ml_name",
         (row.ml_name for row in catalog.rows if row.active and row.ml_name),
     )
@@ -48,7 +43,7 @@ def validate_feature_catalog(catalog) -> list[str]:
     )
 
     for row in catalog.rows:
-        prefix = f"feature_id={row.feature_id or '<blank>'}"
+        prefix = _row_prefix(row)
         if row.role not in ALLOWED_ROLES:
             errors.append(f"{prefix}: invalid role '{row.role}'")
         if row.zero_fill_policy not in ALLOWED_ZERO_FILL_POLICIES:
@@ -119,6 +114,12 @@ def _validate_unique(errors: list[str], field_name: str, values: Iterable[str]) 
         seen.add(value)
     for value in sorted(duplicates):
         errors.append(f"duplicate {field_name}: {value}")
+
+
+def _row_prefix(row) -> str:
+    if row.ml_name:
+        return f"ml_name={row.ml_name} (order={row.order})"
+    return f"order={row.order}"
 
 
 def _validate_model_input_projection(errors: list[str], catalog) -> None:

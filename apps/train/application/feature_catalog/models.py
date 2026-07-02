@@ -14,7 +14,7 @@ EDITABLE_HEADERS = (
     "mapping_key",
     "one_hot_group",
 )
-LOCKED_HEADERS = ("order", "feature_id", "ml_name", "role", "ui_key")
+LOCKED_HEADERS = ("order", "ml_name", "role", "ui_key")
 
 
 @dataclass(frozen=True)

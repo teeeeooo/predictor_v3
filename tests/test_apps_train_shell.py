@@ -233,8 +233,8 @@ def test_feature_catalog_panel_loads_readonly_catalog():
 
     assert panel.objectName() == "FeatureCatalogPanel"
     assert panel.table.model().rowCount() > 0
-    assert panel.table.model().columnCount() == 12
-    assert panel.table.model().headerData(2, Qt.Horizontal, Qt.DisplayRole) == "ml_name"
+    assert panel.table.model().columnCount() == 11
+    assert panel.table.model().headerData(1, Qt.Horizontal, Qt.DisplayRole) == "ml_name"
     assert "validation OK" in panel.validation_value.text()
     assert "Catalog validation: OK" in panel.messages.toPlainText()
     assert panel.export_button.isEnabled()

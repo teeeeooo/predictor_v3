@@ -367,6 +367,8 @@ Validation:
 - compileall
 - git diff --check
 
+Status note (2026-07-02): Slice 0 implementation removed the catalog `feature_id` field from schema, validation, and train DTO paths. `ml_name` is now the catalog row identity for validation messages.
+
 ### Slice 1: Feature Manager UX foundation
 
 Goal:
