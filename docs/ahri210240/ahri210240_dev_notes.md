@@ -4,7 +4,7 @@
 
 이 문서는 AHRI 210/240 HSPF2/SEER2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 생산 경로이며, SEER2는 현재 계산 코드에서 확인 가능한 범위만 다룬다.
 
-Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculator_ahri_hspf2.py`, `core/calculator_ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
+Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculators/standards/ahri_hspf2.py`, `core/calculators/standards/ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
 도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
 
@@ -56,7 +56,7 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | HSPF2 test point schema | `data/region_configs/usa_hspf2.json` | H01/H11/H12/H1N/H22/H2Int/H32/H42/A2 alias and temperatures | canonical key lookup |
 | HSPF2 legacy aliases | `data/region_configs/usa_hspf2.json` | old names to canonical names | conflicting value fail-fast |
 | HSPF2 bin details | HSPF2 return dict | bin별 case, BL, q/p low/int/full, COP, auxiliary | smoke and case tests inspect |
-| SEER2 config | `core/calculator_ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
+| SEER2 config | `core/calculators/standards/ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
 
 `data/region_configs/usa_hspf2.json`의 `_comment`에는 초기 scaffold 잔여 문구가 있으나, v3 경로는 `canonical_hspf2_bin_tables.heating.region_iv`를 사용한다. 문서 작성 시 legacy `bin_data`와 canonical Region IV table을 혼동하면 안 된다.
 
@@ -191,7 +191,7 @@ SEER2는 현재 HSPF2처럼 official calculator parity가 정리되어 있지 �
 
 ### 구현 현황
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
-- **핵심 엔진**: `core/calculator_ahri_hspf2.py`의 `calculate_hspf2_v3` (v2 legacy 대비 정교한 canonical path)
+- **핵심 엔진**: `core/calculators/standards/ahri_hspf2.py`의 `calculate_hspf2_v3` (v2 legacy 대비 정교한 canonical path)
 - **입력 체계**: `legacy_to_canonical()`을 통해 다양한 입력 변수명을 표준 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
 - **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
 

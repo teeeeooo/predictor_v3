@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculator_en14825.py`, `data/region_configs/en14825_scop.json`, `tests/test_en14825_golden.py`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
+이 문서는 EN14825 계산 경로를 수정하거나 검증하는 개발자와 AI Agent를 위한 구현 지침이다. 기준 동작은 `core/calculators/standards/en14825.py`, `data/region_configs/en14825_scop.json`, `tests/test_en14825_golden.py`와 반드시 일치해야 한다. PDF는 Clause/Table/Equation 번호 확인용 Secondary 자료로만 사용한다.
 
 핵심 목적은 계산 순서, 입력 단위, 보간 규칙, Cd 적용 조건, golden 검증을 재현 가능하게 만드는 것이다. EN14825는 bin hour와 운전 모드 시간이 최종 지표에 직접 들어가므로, 작은 schema 오해가 SEER/SCOP 전체를 바꿀 수 있다. 근거: EN14825:2012 Table 36, Table 37, Annex D Table D.1~D.4.
 
@@ -45,7 +45,7 @@
 
 | Data | Location | Meaning | Validation |
 | --- | --- | --- | --- |
-| cooling bin temps/hours | `core/calculator_en14825.py` constants | Table 36 냉방 bin | 현재 상수로 고정 |
+| cooling bin temps/hours | `core/calculators/standards/en14825.py` constants | Table 36 냉방 bin | 현재 상수로 고정 |
 | cooling test points | `calculate_seer(test_points=...)` | A/B/C/D capacity/power | key 누락, 0 이하 값 금지 |
 | SCOP climate data | `data/region_configs/en14825_scop.json` | Table 37, Tdesignh, Tbiv/TOL limits | length, non-negative hour, total hour 검증 |
 | SCOP operational hours | `data/region_configs/en14825_scop.json` | Annex D Table D.2/D.4 | appliance_type/climate key 검증 |
@@ -106,7 +106,7 @@ Legacy SCOP note에서 보존된 raw capacity-control step 해석은 아래와 �
 | Change type | Required checks |
 | --- | --- |
 | 문서만 변경 | markdown 구조와 기준 문서 일치 여부 확인 |
-| 주석만 변경 | `python3 -B -m py_compile core/calculator_en14825.py` |
+| 주석만 변경 | `python3 -B -m py_compile core/calculators/standards/en14825.py` |
 | SEER 계산 변경 | `tests/test_en14825_golden.py::test_en14825_golden_seer` 및 Table 36 edge check |
 | SCOP 계산 변경 | average/warmer/colder golden 전체 실행 |
 | JSON 기후 데이터 변경 | bin hour total 검증과 SCOP golden 전체 실행 |
@@ -127,7 +127,7 @@ SCOP 원본 노트에서 별도 확인 대상으로 남긴 테스트 항목은 �
 기본 검증 명령:
 
 ```bash
-python3 -B -m py_compile core/calculator_en14825.py
+python3 -B -m py_compile core/calculators/standards/en14825.py
 python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 ```
 
@@ -269,13 +269,13 @@ Full standard match를 위해서는 Clause 6.4.2.2와 Clause 7.4.2.2의 raw capa
 ### 문서 업데이트
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md와 core/calculator_en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF review 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 문서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md와 core/calculators/standards/en14825.py를 Primary 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF review 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라.
 ```
 
 ### SCOP 계산 변경
 
 ```text
-AGENTS.md를 먼저 읽고, 수정 범위를 core/calculator_en14825.py와 필요한 테스트 파일로 제한하라. 현재 API는 A/B/C/D/TOL/Tbiv를 resolved declared point로 취급한다. raw capacity-control step list가 없으므로 Clause 7.4.2.2 closest-step 완전 구현을 추측하지 말라. 변경 후 py_compile과 tests/test_en14825_golden.py -v --runxfail을 실행하라.
+AGENTS.md를 먼저 읽고, 수정 범위를 core/calculators/standards/en14825.py와 필요한 테스트 파일로 제한하라. 현재 API는 A/B/C/D/TOL/Tbiv를 resolved declared point로 취급한다. raw capacity-control step list가 없으므로 Clause 7.4.2.2 closest-step 완전 구현을 추측하지 말라. 변경 후 py_compile과 tests/test_en14825_golden.py -v --runxfail을 실행하라.
 ```
 
 ### JSON 데이터 변경

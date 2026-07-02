@@ -9,7 +9,7 @@ This design contract outlines the UI specifications, data models, behavior rules
 
 ## 2. Non-Goals
 * Modification of production Python source files, test suites, or the current directory layout under `apps/calculator/ui/` in this slice.
-* Changing or refactoring the core calculator logic (`core/calculator_en14825.py`).
+* Changing or refactoring the core calculator logic (`core/calculators/standards/en14825.py`).
 * Providing image mockups (the design contract is purely text/schema-based).
 * Addressing core structure debt (flat structure remains untouched).
 * Supporting multi-climate simultaneous batch processing in this slice.
@@ -17,7 +17,7 @@ This design contract outlines the UI specifications, data models, behavior rules
 ## 3. Current Code Boundaries
 * Current Calculator UI package: [apps/calculator/ui/](../../apps/calculator/ui/).
 * Deprecated PyQt calculator-only files ([ui/calc_window.py](../../ui/calc_window.py), [ui/calculators_2point.py](../../ui/calculators_2point.py), [ui/calculator_errors.py](../../ui/calculator_errors.py)) are retired and must not be imported or used.
-* The public API of [core/calculator_en14825.py](../../core/calculator_en14825.py) is preserved as-is.
+* The public API of [core/calculators/standards/en14825.py](../../core/calculators/standards/en14825.py) is preserved as-is.
 
 ## 4. Core API Contract
 The UI adapter/controller layer interacts with the core calculator using the following methods:

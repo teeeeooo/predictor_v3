@@ -154,7 +154,7 @@ implementation in this slice.
 - columns: `A, B, C, D`
 - rows: `능력 [W]`, `전력 [W]`
 - compact auxiliary form: `p_design_c_w` (W), standby powers (W)
-- UI 입력 단위는 W로 통일하며, `core/calculator_en14825.py`
+- UI 입력 단위는 W로 통일하며, `core/calculators/standards/en14825.py`
   (`calculate_seer`)는 kW를 그대로 받는다. `ui/calc_window.py`가
   EN core 호출 직전 W → kW (1/1000) 변환을 수행한다.
 
@@ -181,7 +181,7 @@ Average만 checked 이다.
   - Colder: `Tbiv_temp_c = -15`, `TOL_temp_c = -22`
 - 공통 standby form (W): `p_to_w`, `p_sb_w`, `p_ck_w`, `p_off_w`
   (기본 prefill 0.0)
-- UI 입력 단위는 W로 통일하고 `core/calculator_en14825.py`
+- UI 입력 단위는 W로 통일하고 `core/calculators/standards/en14825.py`
   (`calculate_scop`)와 `data/region_configs/en14825_scop.json`은
   kW/core 기준을 유지한다. UI가 EN core 호출 직전 W → kW 변환을
   수행하고, region config는 수정하지 않는다.

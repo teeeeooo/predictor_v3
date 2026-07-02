@@ -10,7 +10,7 @@ This design document defines the specification for the EN14825 SCOP (heating) co
 * Adhere to Clean Architecture principles by separating data models, adapter mapping, headless table models, and view/controller glue.
 
 ## 2. Non-Goals
-* Modification of the core heating calculator logic in `core/calculator_en14825.py`.
+* Modification of the core heating calculator logic in `core/calculators/standards/en14825.py`.
 * Changing configuration file `data/region_configs/en14825_scop.json`.
 * Modifying the SEER (cooling) tab implementation.
 * Creating shared tab-level base classes (BaseSection) or refactoring existing profiles in this slice.

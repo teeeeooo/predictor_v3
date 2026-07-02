@@ -43,10 +43,10 @@
 
 | 코드 변수명 또는 키 | 데이터 타입 | 위치 | 정의 및 구현상 주의 |
 | --- | --- | --- | --- |
-| `calculate_hspf2()` | function | `core/calculator_ahri_hspf2.py` | HSPF2 생산 entry point다. 현재 v3 AHRI path로 연결되며 명시 지시 없이 수정하지 않는다. |
-| `calculate_hspf2_v2()` | function | `core/calculator_ahri_hspf2.py` | legacy reference path다. 기존 계산 경로 보존 대상이며 명시 지시 없이 수정하지 않는다. |
-| `_calculate_hspf2_v3_ahri()` | function | `core/calculator_ahri_hspf2.py` | AHRI 210/240-2026 variable-capacity heating 계산의 핵심 내부 경로다. |
-| `calculate_seer2()` | function | `core/calculator_ahri_seer2.py` | 현재 구현 확인 가능한 SEER2 냉방 bin 계산 entry point다. |
+| `calculate_hspf2()` | function | `core/calculators/standards/ahri_hspf2.py` | HSPF2 생산 entry point다. 현재 v3 AHRI path로 연결되며 명시 지시 없이 수정하지 않는다. |
+| `calculate_hspf2_v2()` | function | `core/calculators/standards/ahri_hspf2.py` | legacy reference path다. 기존 계산 경로 보존 대상이며 명시 지시 없이 수정하지 않는다. |
+| `_calculate_hspf2_v3_ahri()` | function | `core/calculators/standards/ahri_hspf2.py` | AHRI 210/240-2026 variable-capacity heating 계산의 핵심 내부 경로다. |
+| `calculate_seer2()` | function | `core/calculators/standards/ahri_seer2.py` | 현재 구현 확인 가능한 SEER2 냉방 bin 계산 entry point다. |
 | `data/region_configs/usa_hspf2.json` | JSON | `data/region_configs/usa_hspf2.json` | HSPF2 Region IV canonical bin table, test point schema, legacy alias를 담는다. 이번 문서 작업에서는 수정하지 않는다. |
 | `canonical_hspf2_bin_tables.heating.region_iv` | JSON object | `data/region_configs/usa_hspf2.json` | 현재 v3 경로가 사용하는 Region IV Table 16 canonical table이다. legacy `bin_data`와 혼동하지 않는다. |
 | `fractional_bin_hours` | list 또는 number | `data/region_configs/usa_hspf2.json`, return dict | Table 16의 분수 빈 시간이다. 계절 합산 전 `heating_load_hours`와 곱한다. |

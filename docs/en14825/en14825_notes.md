@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-이 문서는 EN14825 SEER/SCOP 계산 구조를 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 `core/calculator_en14825.py`, `data/region_configs/en14825.json`, `tests/test_en14825_golden.py`이며, PDF는 Clause/Table/Equation 번호 확인용 Secondary 근거로만 사용한다.
+이 문서는 EN14825 SEER/SCOP 계산 구조를 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 `core/calculators/standards/en14825.py`, `data/region_configs/en14825.json`, `tests/test_en14825_golden.py`이며, PDF는 Clause/Table/Equation 번호 확인용 Secondary 근거로만 사용한다.
 
 현재 계산기는 `BS EN 14825:2012 / EN 14825:2012 (E)`의 공기 대 공기(Air-to-air), 가변 용량(Variable capacity), 1:1 가역식(Reversible) 장비를 대상으로 한다. 냉방은 SEER, 난방은 SCOP 경로를 제공하며, 난방 SCOP는 A/B/C/D/TOL/Tbiv 선언 운전점이 이미 해석된 입력이라고 본다. 이 구분이 중요한 이유는 EN14825의 원문은 capacity-control step 선택을 포함하지만, 현재 입력 스키마는 raw step 후보 목록을 받지 않기 때문이다. 근거: EN14825:2012 Clause 6.4.2.2, Clause 7.4.2.2.
 
@@ -131,18 +131,18 @@
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
 | Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section | `_get_seer_bin_data` | n/a | missing config data fails fast |
-| Cooling load line | `core/calculator_en14825.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
-| EERPL declared point | `core/calculator_en14825.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
-| SEERon | `core/calculator_en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
-| SEER | `core/calculator_en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | `seer.design`, `seer.defaults`, `seer.operational_hours` 기본값을 사용한다. |
+| Cooling load line | `core/calculators/standards/en14825.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
+| EERPL declared point | `core/calculators/standards/en14825.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
+| SEERon | `core/calculators/standards/en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
+| SEER | `core/calculators/standards/en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | `seer.design`, `seer.defaults`, `seer.operational_hours` 기본값을 사용한다. |
 | Table 37 and Annex D data | `data/region_configs/en14825.json` `scop` section | n/a | source data | climate와 appliance_type별 값 |
 | SCOP point contract | `data/region_configs/en14825.json` `scop.point_contract` | `_resolve_scop_point_contract` | internal | climate별 required/mapped/inactive point 결정 |
-| SCOP point validation | `core/calculator_en14825.py` | `_validate_scop_points` | internal | contract 해석과 TOL/Tbiv 제한 검증 |
-| Heating load line | `core/calculator_en14825.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |
-| SCOP Cd handling | `core/calculator_en14825.py` | `_scop_pl_at_declared_point` | internal | Clause 7.4.2.2를 declared-point schema에 맞춰 해석 |
-| SCOP capacity/COPPL curve | `core/calculator_en14825.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | duplicate temperature는 같은 canonical curve point를 사용 |
-| SCOPon | `core/calculator_en14825.py` | `_calculate_scop_on` | `scop_on`, `bin_details` | Equation 9 구조 |
-| SCOP | `core/calculator_en14825.py` | `calculate_scop` | `scop`, `SCOP`, `qh_kwh`, `active_kwh`, `standby_kwh`, `total_kwh` | SCOPnet은 반환하지 않는다. |
+| SCOP point validation | `core/calculators/standards/en14825.py` | `_validate_scop_points` | internal | contract 해석과 TOL/Tbiv 제한 검증 |
+| Heating load line | `core/calculators/standards/en14825.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |
+| SCOP Cd handling | `core/calculators/standards/en14825.py` | `_scop_pl_at_declared_point` | internal | Clause 7.4.2.2를 declared-point schema에 맞춰 해석 |
+| SCOP capacity/COPPL curve | `core/calculators/standards/en14825.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | duplicate temperature는 같은 canonical curve point를 사용 |
+| SCOPon | `core/calculators/standards/en14825.py` | `_calculate_scop_on` | `scop_on`, `bin_details` | Equation 9 구조 |
+| SCOP | `core/calculators/standards/en14825.py` | `calculate_scop` | `scop`, `SCOP`, `qh_kwh`, `active_kwh`, `standby_kwh`, `total_kwh` | SCOPnet은 반환하지 않는다. |
 
 ## 9. Critical Implementation Notes
 
@@ -177,7 +177,7 @@
 검증 시 권장 명령:
 
 ```bash
-python3 -B -m py_compile core/calculator_en14825.py
+python3 -B -m py_compile core/calculators/standards/en14825.py
 python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 ```
 
@@ -185,7 +185,7 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 
 | Reference | Usage |
 | --- | --- |
-| `core/calculator_en14825.py` | Primary: 현재 계산 동작 기준 |
+| `core/calculators/standards/en14825.py` | Primary: 현재 계산 동작 기준 |
 | `data/region_configs/en14825.json` | Primary: unified EN14825 config owner; `seer` contains cooling constants and `scop` contains heating climate/Annex D data |
 | `tests/test_en14825_golden.py` | Primary: 현재 golden 기대값 기준 |
 | `docs/archive/standards_legacy/en14825_scop_notes.md` | Historical archive: PDF 확인 페이지와 원본 SEER/SCOP 요약 보존 |
@@ -194,5 +194,5 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 ## 13. Prompt for Future Agent
 
 ```text
-AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, core/calculator_en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF 검토 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
+AGENTS.md의 Lite 규칙과 docs/DOCS_GUIDELINES.md를 먼저 읽어라. EN14825 작업에서는 docs/en14825/en14825_notes.md, docs/en14825/en14825_dev_notes.md, docs/en14825/en14825_design_notes.md, docs/en14825/en14825_glossary.md, core/calculators/standards/en14825.py를 기준으로 삼고, PDF는 Clause/Table/Equation 확인용으로만 사용하라. 과거 PDF 검토 범위 확인이 필요할 때만 docs/archive/standards_legacy/en14825_scop_notes.md를 historical source로 참조하라. 코드 변경이 필요한 경우 수정 대상 파일과 금지 파일을 명시하고, py_compile 및 tests/test_en14825_golden.py 검증을 수행하라.
 ```

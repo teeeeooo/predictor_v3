@@ -38,8 +38,8 @@
 
 | 코드 변수명 또는 키 | 데이터 타입 | 위치 | 정의 및 구현상 주의 |
 | --- | --- | --- | --- |
-| `calculate_seer()` | function | `core/calculator_en14825.py` | EN14825 SEER 생산 entry point다. A/B/C/D 선언 운전점, Pdesignc, 보조전력을 받아 SEER와 SEERon을 반환한다. |
-| `calculate_scop()` | function | `core/calculator_en14825.py` | EN14825 SCOP 생산 entry point다. A/B/C/D/TOL/Tbiv 선언 운전점, Pdesignh, 기후, 보조전력을 받아 SCOP와 SCOPon을 반환한다. |
+| `calculate_seer()` | function | `core/calculators/standards/en14825.py` | EN14825 SEER 생산 entry point다. A/B/C/D 선언 운전점, Pdesignc, 보조전력을 받아 SEER와 SEERon을 반환한다. |
+| `calculate_scop()` | function | `core/calculators/standards/en14825.py` | EN14825 SCOP 생산 entry point다. A/B/C/D/TOL/Tbiv 선언 운전점, Pdesignh, 기후, 보조전력을 받아 SCOP와 SCOPon을 반환한다. |
 | `test_points["A"..."D"]` | dict 또는 tuple | SEER/SCOP input schema | 냉방과 난방의 선언 시험점이다. capacity와 power는 0보다 커야 한다. |
 | `test_points["TOL"]` | dict 또는 tuple | SCOP input schema | TOL 선언 운전점이다. `TOL <= Tbiv`와 기후별 TOL 제한을 만족해야 한다. |
 | `test_points["Tbiv"]` | dict 또는 tuple | SCOP input schema | Tbiv 선언 운전점이다. 기후별 Tbiv 제한을 만족해야 한다. |

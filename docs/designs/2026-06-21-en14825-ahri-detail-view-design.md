@@ -406,7 +406,7 @@ Purpose:
 
 Expected files:
 
-- `core/calculator_en14825.py`
+- `core/calculators/standards/en14825.py`
 - `apps/calculator/ui/en14825/seer_models.py`
 - `apps/calculator/ui/en14825/seer_adapter.py`
 - `apps/calculator/ui/sections/en14825_seer_section.py`
