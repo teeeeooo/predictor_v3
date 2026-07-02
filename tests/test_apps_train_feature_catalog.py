@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QApplication
 from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
 from apps.train.application.feature_catalog import FeatureCatalogService
 from apps.train.controllers.feature_catalog_controller import FeatureCatalogController
+from apps.train.ui.feature_catalog.help_dialog import HELP_TEXT, FeatureCatalogHelpDialog
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
 from apps.train.ui.feature_catalog.table_view import FeatureCatalogTableView
 from core.ml.feature_catalog import DEFAULT_CATALOG_PATH, REQUIRED_HEADERS
@@ -68,7 +69,8 @@ def test_feature_catalog_table_model_is_read_only():
 
     assert model.rowCount() == snapshot.row_count
     assert model.columnCount() == len(REQUIRED_HEADERS)
-    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "order"
+    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "순서"
+    assert model.canonical_header(0) == "order"
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == 1
     assert model.data(model.index(0, 2), Qt.DisplayRole)
     assert model.data(model.index(0, REQUIRED_HEADERS.index("active")), Qt.DisplayRole) in {
@@ -91,10 +93,28 @@ def test_feature_catalog_table_model_editability_and_dirty_state():
     assert model.setData(model.index(0, label_col), "Edited Label", Qt.EditRole)
     assert model.is_dirty
     assert model.cell_value(0, label_col) == "Edited Label"
+    assert model.setData(model.index(0, label_col), snapshot.rows[0].value_at(label_col))
+    assert not model.is_dirty
     assert not model.setData(model.index(0, ml_name_col), "Blocked", Qt.EditRole)
 
     assert model.setData(model.index(0, active_col), "yes", Qt.EditRole)
     assert model.is_invalid_cell(0, active_col)
+
+
+def test_feature_catalog_table_model_exposes_dropdown_options():
+    snapshot = FeatureCatalogService().load_snapshot()
+    model = FeatureCatalogTableModel(snapshot)
+
+    assert model.dropdown_options(0, REQUIRED_HEADERS.index("active")) == ("true", "false")
+    assert "mode_missing_allowed" in model.dropdown_options(
+        0, REQUIRED_HEADERS.index("zero_fill_policy")
+    )
+    assert "auto" in model.dropdown_options(0, REQUIRED_HEADERS.index("role"))
+    assert "idu" in model.dropdown_options(0, REQUIRED_HEADERS.index("source"))
+    assert "ID Volume" in model.dropdown_options(0, REQUIRED_HEADERS.index("mapping_key"))
+    assert "refrigerant" in model.dropdown_options(
+        0, REQUIRED_HEADERS.index("one_hot_group")
+    )
 
 
 def test_feature_catalog_table_view_copy_paste_clear_and_undo():
@@ -143,6 +163,28 @@ def test_feature_catalog_controller_reports_export_result(tmp_path):
     assert export_state.result is not None
     assert export_state.status == "ready"
     assert "validation OK" in export_state.message
+
+
+def test_feature_catalog_controller_exports_current_unsaved_records(tmp_path):
+    _app()
+    controller = FeatureCatalogController()
+    state = controller.refresh()
+    assert state.snapshot is not None
+    model = FeatureCatalogTableModel(state.snapshot)
+    label_col = REQUIRED_HEADERS.index("label")
+    assert model.setData(model.index(0, label_col), "Pending Export Label", Qt.EditRole)
+
+    export_state = controller.export_records(
+        model.records(),
+        state.snapshot,
+        tmp_path / "export.csv",
+    )
+
+    assert export_state.result is not None
+    assert export_state.status == "ready"
+    assert "Pending Export Label" in (tmp_path / "export.csv").read_text(
+        encoding="utf-8-sig"
+    )
 
 
 def test_feature_catalog_controller_returns_controlled_export_error(tmp_path):
@@ -208,3 +250,12 @@ def test_feature_catalog_controller_returns_controlled_save_error(tmp_path):
     assert save_state.result is None
     assert save_state.status == "error"
     assert "Feature Catalog save failed" in save_state.message
+
+
+def test_feature_catalog_help_dialog_contains_user_terms():
+    _app()
+    dialog = FeatureCatalogHelpDialog()
+
+    assert "학습 데이터 컬럼명(ml_name)" in dialog.text.toPlainText()
+    assert "one-hot" in dialog.text.toPlainText()
+    assert HELP_TEXT in dialog.text.toPlainText()

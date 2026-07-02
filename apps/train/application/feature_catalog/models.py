@@ -2,9 +2,22 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+DISPLAY_HEADERS = {
+    "order": "순서",
+    "ml_name": "학습 데이터 컬럼명",
+    "role": "Feature 유형",
+    "ui_key": "화면 항목 키",
+    "label": "화면 표시명",
+    "source": "데이터 출처",
+    "mapping_key": "매핑 키",
+    "one_hot_group": "One-hot 그룹",
+    "zero_fill_policy": "누락값 처리",
+    "active": "사용 여부",
+    "notes": "메모",
+}
 EDITABLE_HEADERS = (
     "label",
     "notes",
@@ -15,6 +28,17 @@ EDITABLE_HEADERS = (
     "one_hot_group",
 )
 LOCKED_HEADERS = ("order", "ml_name", "role", "ui_key")
+
+
+@dataclass(frozen=True)
+class FeatureCatalogFieldOptions:
+    """Dropdown candidates by canonical Feature Catalog header."""
+
+    values_by_header: dict[str, tuple[str, ...]]
+
+    def values_for(self, header: str) -> tuple[str, ...]:
+        """Return dropdown candidates for a canonical header."""
+        return self.values_by_header.get(header, ())
 
 
 @dataclass(frozen=True)
@@ -50,10 +74,14 @@ class FeatureCatalogSnapshot:
 
     path: Path
     headers: tuple[str, ...]
+    display_headers: tuple[str, ...]
     rows: tuple[FeatureCatalogRecord, ...]
     active_count: int
     catalog_validation: ValidationResult
     project_validation: ValidationResult | None = None
+    field_options: FeatureCatalogFieldOptions = field(
+        default_factory=lambda: FeatureCatalogFieldOptions({})
+    )
 
     @property
     def row_count(self) -> int:

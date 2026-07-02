@@ -21,6 +21,8 @@ from apps.train.application.feature_catalog.io_models import (
     FeatureCatalogSaveResult,
 )
 from apps.train.application.feature_catalog.models import (
+    DISPLAY_HEADERS,
+    FeatureCatalogFieldOptions,
     FeatureCatalogRecord,
     FeatureCatalogSnapshot,
     ValidationResult,
@@ -31,6 +33,9 @@ STRICT_ZERO_FILL_POLICIES = frozenset({"disallow", "mode_missing_allowed"})
 NONEMPTY_SAVE_FIELDS = frozenset(
     {"order", "ml_name", "role", "zero_fill_policy", "active"}
 )
+ROLE_OPTIONS = ("input", "auto", "result", "derived", "one_hot", "hidden")
+ACTIVE_OPTIONS = ("true", "false")
+ZERO_FILL_POLICY_OPTIONS = ("disallow", "mode_missing_allowed")
 
 
 class FeatureCatalogService:
@@ -61,6 +66,7 @@ class FeatureCatalogService:
         return FeatureCatalogSnapshot(
             path=Path(catalog.path or self._catalog_path),
             headers=REQUIRED_HEADERS,
+            display_headers=_display_headers(REQUIRED_HEADERS),
             rows=tuple(_record_from_row(row) for row in catalog.rows),
             active_count=len(catalog.active_rows),
             catalog_validation=ValidationResult(
@@ -68,6 +74,7 @@ class FeatureCatalogService:
                 errors=catalog_errors,
             ),
             project_validation=project_validation,
+            field_options=_field_options(catalog),
         )
 
     def export_snapshot(
@@ -85,6 +92,26 @@ class FeatureCatalogService:
             row_count=snapshot.row_count,
             validation_status="failed" if snapshot.has_errors else "ok",
             validation_messages=snapshot.validation_messages(),
+        )
+
+    def export_records(
+        self,
+        records: tuple[FeatureCatalogRecord, ...],
+        base_snapshot: FeatureCatalogSnapshot,
+        destination: str | Path,
+    ) -> FeatureCatalogExportResult:
+        """Export current table records, including unsaved edits."""
+        if self._export_writer is None:
+            raise RuntimeError("Feature Catalog export writer is not configured.")
+
+        rows = tuple(record.values for record in records)
+        messages = _validation_messages_for_records(records, self._catalog_path)
+        path = self._export_writer.write_export(destination, base_snapshot.headers, rows)
+        return FeatureCatalogExportResult(
+            path=path,
+            row_count=len(records),
+            validation_status="failed" if messages else "ok",
+            validation_messages=messages or ("Catalog validation: OK",),
         )
 
     def save_records(
@@ -142,6 +169,46 @@ def _display_value(row: FeatureCatalogRow, header: str) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
+
+
+def _display_headers(headers: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(DISPLAY_HEADERS.get(header, header) for header in headers)
+
+
+def _field_options(catalog: FeatureCatalog) -> FeatureCatalogFieldOptions:
+    sources = tuple(sorted({row.source for row in catalog.rows if row.source}))
+    mapping_keys = tuple(sorted({row.mapping_key for row in catalog.rows if row.mapping_key}))
+    one_hot_groups = tuple(
+        sorted({row.one_hot_group for row in catalog.rows if row.one_hot_group})
+    )
+    return FeatureCatalogFieldOptions(
+        {
+            "role": ROLE_OPTIONS,
+            "active": ACTIVE_OPTIONS,
+            "zero_fill_policy": ZERO_FILL_POLICY_OPTIONS,
+            "source": sources,
+            "mapping_key": mapping_keys,
+            "one_hot_group": one_hot_groups,
+        }
+    )
+
+
+def _validation_messages_for_records(
+    records: tuple[FeatureCatalogRecord, ...],
+    catalog_path: Path,
+) -> tuple[str, ...]:
+    rows, conversion_errors = _rows_from_records(records)
+    if conversion_errors:
+        return tuple(f"Catalog validation: {error}" for error in conversion_errors)
+    draft = FeatureCatalog(
+        rows=tuple(sorted(rows, key=lambda row: row.order)),
+        headers=REQUIRED_HEADERS,
+        path=catalog_path,
+    )
+    errors = tuple(validate_feature_catalog(draft)) + tuple(
+        validate_registry_references(draft, MODEL_REGISTRY)
+    )
+    return tuple(f"Catalog validation: {error}" for error in errors)
 
 
 def _rows_from_records(

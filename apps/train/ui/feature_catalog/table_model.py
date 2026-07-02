@@ -25,7 +25,10 @@ class FeatureCatalogTableModel(QAbstractTableModel):
     def __init__(self, snapshot: FeatureCatalogSnapshot | None = None) -> None:
         super().__init__()
         self._headers: tuple[str, ...] = ()
+        self._display_headers: tuple[str, ...] = ()
         self._rows: list[list[str]] = []
+        self._baseline_rows: tuple[tuple[str, ...], ...] = ()
+        self._field_options = None
         self._dirty = False
         self.set_snapshot(snapshot)
 
@@ -63,7 +66,7 @@ class FeatureCatalogTableModel(QAbstractTableModel):
             return True
         self._rows[index.row()][index.column()] = new_value
         self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole, Qt.BackgroundRole])
-        self._set_dirty(True)
+        self._sync_dirty_state()
         return True
 
     def headerData(
@@ -75,7 +78,7 @@ class FeatureCatalogTableModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            return self._headers[section]
+            return self._display_headers[section]
         return section + 1
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -90,10 +93,13 @@ class FeatureCatalogTableModel(QAbstractTableModel):
         """Replace the table data with a newly loaded snapshot."""
         self.beginResetModel()
         self._headers = tuple(snapshot.headers) if snapshot is not None else ()
+        self._display_headers = tuple(snapshot.display_headers) if snapshot is not None else ()
+        self._field_options = snapshot.field_options if snapshot is not None else None
         self._rows = [
             [record.value_at(column) for column in range(len(self._headers))]
             for record in (snapshot.rows if snapshot is not None else ())
         ]
+        self._baseline_rows = tuple(tuple(row) for row in self._rows)
         self.endResetModel()
         self._set_dirty(False)
 
@@ -106,6 +112,21 @@ class FeatureCatalogTableModel(QAbstractTableModel):
     def records(self) -> tuple[FeatureCatalogRecord, ...]:
         """Return current table rows as service DTOs."""
         return tuple(FeatureCatalogRecord(values=tuple(row)) for row in self._rows)
+
+    def canonical_header(self, column: int) -> str:
+        """Return the canonical header for a column."""
+        if not 0 <= column < len(self._headers):
+            return ""
+        return self._headers[column]
+
+    def dropdown_options(self, row: int, column: int) -> tuple[str, ...]:
+        """Return dropdown candidates for a cell."""
+        if not (0 <= row < self.rowCount() and 0 <= column < self.columnCount()):
+            return ()
+        snapshot_options = getattr(self, "_field_options", None)
+        if snapshot_options is None:
+            return ()
+        return snapshot_options.values_for(self._headers[column])
 
     @property
     def is_dirty(self) -> bool:
@@ -135,3 +156,6 @@ class FeatureCatalogTableModel(QAbstractTableModel):
             return
         self._dirty = dirty
         self.dirty_changed.emit(dirty)
+
+    def _sync_dirty_state(self) -> None:
+        self._set_dirty(tuple(tuple(row) for row in self._rows) != self._baseline_rows)

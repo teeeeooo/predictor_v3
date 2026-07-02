@@ -6,7 +6,9 @@ from apps.train.application.feature_catalog.io_models import (
     FeatureCatalogSaveResult,
 )
 from apps.train.application.feature_catalog.models import (
+    DISPLAY_HEADERS,
     FeatureCatalogRecord,
+    FeatureCatalogFieldOptions,
     FeatureCatalogSnapshot,
     EDITABLE_HEADERS,
     LOCKED_HEADERS,
@@ -16,6 +18,8 @@ from apps.train.application.feature_catalog.service import FeatureCatalogService
 
 __all__ = [
     "EDITABLE_HEADERS",
+    "DISPLAY_HEADERS",
+    "FeatureCatalogFieldOptions",
     "FeatureCatalogRecord",
     "FeatureCatalogExportResult",
     "FeatureCatalogExportWriter",

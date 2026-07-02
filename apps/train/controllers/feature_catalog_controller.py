@@ -98,6 +98,32 @@ class FeatureCatalogController:
             message=f"Exported {result.row_count} rows to {result.path} ({validation_text}).",
         )
 
+    def export_records(
+        self,
+        records: tuple[FeatureCatalogRecord, ...],
+        base_snapshot: FeatureCatalogSnapshot,
+        destination: str | Path,
+    ) -> FeatureCatalogExportState:
+        """Export current table records, including unsaved edits."""
+        try:
+            result = self._service.export_records(records, base_snapshot, destination)
+        except Exception as exc:
+            return FeatureCatalogExportState(
+                result=None,
+                status="error",
+                message=f"Feature Catalog export failed: {exc}",
+            )
+        validation_text = (
+            "validation OK"
+            if result.validation_status == "ok"
+            else "validation has errors"
+        )
+        return FeatureCatalogExportState(
+            result=result,
+            status="ready",
+            message=f"Exported {result.row_count} rows to {result.path} ({validation_text}).",
+        )
+
     def save_records(
         self,
         records: tuple[FeatureCatalogRecord, ...],

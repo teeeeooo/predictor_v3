@@ -22,12 +22,14 @@ from apps.train.controllers.feature_catalog_controller import (
     FeatureCatalogExportState,
     FeatureCatalogSaveState,
 )
+from apps.train.ui.feature_catalog.delegates import FeatureCatalogDropdownDelegate
+from apps.train.ui.feature_catalog.help_dialog import FeatureCatalogHelpDialog
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
 from apps.train.ui.feature_catalog.table_view import FeatureCatalogTableView
 
 
 class FeatureCatalogPanel(QWidget):
-    """Read-only Feature Catalog viewer and validation surface."""
+    """Feature Catalog manager and validation surface."""
 
     def __init__(
         self,
@@ -78,14 +80,17 @@ class FeatureCatalogPanel(QWidget):
         self.export_button = QPushButton("CSV 내보내기")
         self.save_button = QPushButton("저장")
         self.revert_button = QPushButton("되돌리기/다시 불러오기")
+        self.help_button = QPushButton("도움말")
         self.refresh_button.clicked.connect(self.refresh)
         self.export_button.clicked.connect(self._export_csv)
         self.save_button.clicked.connect(self._save_catalog)
         self.revert_button.clicked.connect(self.refresh)
+        self.help_button.clicked.connect(self._show_help)
         layout.addWidget(self.refresh_button)
         layout.addWidget(self.export_button)
         layout.addWidget(self.save_button)
         layout.addWidget(self.revert_button)
+        layout.addWidget(self.help_button)
         layout.addStretch(1)
         return panel
 
@@ -125,6 +130,7 @@ class FeatureCatalogPanel(QWidget):
         table = FeatureCatalogTableView()
         table.setObjectName("FeatureCatalogTable")
         table.setModel(self.table_model)
+        table.setItemDelegate(FeatureCatalogDropdownDelegate(table))
         table.verticalHeader().setVisible(True)
         table.setAlternatingRowColors(True)
         table.horizontalHeader().setStretchLastSection(True)
@@ -172,7 +178,13 @@ class FeatureCatalogPanel(QWidget):
         if not path:
             self._set_export_status("Export cancelled.", "neutral")
             return
-        self._apply_export_state(self.controller.export_csv(self._snapshot, path))
+        self._apply_export_state(
+            self.controller.export_records(self.table_model.records(), self._snapshot, path)
+        )
+
+    def _show_help(self) -> None:
+        dialog = FeatureCatalogHelpDialog(self)
+        dialog.exec()
 
     def _set_validation_status(self, message: str, status: str) -> None:
         kind = "ready" if status == "ready" else "error"
