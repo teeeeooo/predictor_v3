@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/654_summary-calculator-maintenance-micro-polish-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -141,7 +141,7 @@ entries:
 
   - type: decision
     topic: KOREA calculator notebook sub-arc closeout
-    content: KOREA is a top-level Tk calculator tab with CSPF/HSPF single calculation, midpoint guide tables, batch dialogs, and official-result detail views. Midpoint guide values are UI design helpers, not official result dict, batch output, or detail view contract fields; KS C 9306 formula/config/profile/public result contracts remain unchanged.
+    content: KOREA is a top-level Tk calculator tab with CSPF/HSPF single calculation, midpoint guide tables, batch dialogs, and official-result detail views. Midpoint guide values are UI design helpers, not official result dict, batch output, or detail view contract fields; recommended Mid capacity reports the rated test-point capacity input needed to place tc at the recommended midpoint, not the raw load. KS C 9306 formula/config/profile/public result contracts remain unchanged.
     keywords:
       - predictor_v3
       - KOREA calculator
@@ -150,7 +150,7 @@ entries:
       - batch
       - detail
     assertionStatus: verified
-    source: result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md
+    source: result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md; result_reports/summaries/654_summary-calculator-maintenance-micro-polish-closeout.md
 
   - type: decision
     topic: KS C 9306 HSPF official oracle correction
