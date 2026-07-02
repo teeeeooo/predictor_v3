@@ -39,7 +39,9 @@ When adding a new feature row outside the current editor scope, use a bounded
 developer workflow:
 
 1. Edit `config/ml/features.csv` directly.
-2. Add or update one row with a stable `feature_id`.
+2. Add or update one row with a non-empty `ml_name`; this is the catalog row
+   primary identity, raw training data header, and internal ML feature or target
+   name.
 3. Set `role` to one of `input`, `auto`, `result`, `derived`, `one_hot`, or
    `hidden`.
 4. Fill role-specific fields:
@@ -60,7 +62,6 @@ developer workflow:
 The user-managed CSV owns:
 
 - `order`
-- `feature_id`
 - `ml_name`
 - `role`
 - `ui_key`

@@ -475,6 +475,6 @@ Manual smoke should cover:
 
 ## 17. Recommended Next Action
 
-Next: Arc 13.5A Slice 0 — Feature Catalog identity simplification foundation.
+Next: Arc 13.5A Slice 1 — Feature Manager UX foundation.
 
-Implement only `feature_id` removal and `ml_name` identity migration first. Do not mix this with Feature Manager UI work.
+Proceed with the UX foundation slice only: user-friendly headers, dropdown/help planning, export-current-state behavior, and dirty-state baseline work. Do not mix this with add/delete/duplicate feature row implementation.

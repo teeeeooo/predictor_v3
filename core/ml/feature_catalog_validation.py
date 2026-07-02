@@ -44,6 +44,8 @@ def validate_feature_catalog(catalog) -> list[str]:
 
     for row in catalog.rows:
         prefix = _row_prefix(row)
+        if not row.ml_name:
+            errors.append(f"{prefix}: ml_name is required")
         if row.role not in ALLOWED_ROLES:
             errors.append(f"{prefix}: invalid role '{row.role}'")
         if row.zero_fill_policy not in ALLOWED_ZERO_FILL_POLICIES:

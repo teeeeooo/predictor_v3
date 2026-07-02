@@ -420,11 +420,25 @@ def test_feature_catalog_invalid_examples_fail_validation(tmp_path):
                 "active": "true",
                 "notes": "",
             },
+            {
+                "order": "40",
+                "ml_name": "",
+                "role": "hidden",
+                "ui_key": "",
+                "label": "",
+                "source": "",
+                "mapping_key": "",
+                "one_hot_group": "",
+                "zero_fill_policy": "disallow",
+                "active": "false",
+                "notes": "",
+            },
         ],
     )
 
     errors = validate_feature_catalog(load_feature_catalog(catalog_path))
 
+    assert "order=40: ml_name is required" in errors
     assert "ml_name=ID Volume (order=10): mode_missing_allowed is not allowed for 'ID Volume'" in errors
     assert "ml_name=ID Volume (order=10): role=auto requires source" in errors
     assert "ml_name=ID Volume (order=10): role=auto requires mapping_key" in errors
