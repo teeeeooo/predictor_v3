@@ -1,97 +1,98 @@
 # Goal
 
-- Make KS C 9306 HSPF stage interpolation use the same resolved load line as bin load calculation.
-- Add an active official golden assertion for the Korea full-bin config path.
+- Strengthen KS C 9306 HSPF official calculator oracle coverage.
+- Fix the confirmed `rated_maximum` frost hardcoding and `tj <= -7.0` maximum-power behavior without changing CSPF, ISO16358, AHRI, EN, public schema, or `korea.json`.
 
 # Scope
 
 - Changed `core/calculators/standards/ks_c9306.py`.
+- Changed `tests/helpers/iso16358_hspf_samples.py`.
 - Changed `tests/test_iso16358_hspf_validation.py`.
-- No CSPF, config schema, public API, UI, legacy diagnostic, or unrelated refactor changes.
+- Updated this active result report.
 
 # Non-goals
 
-- Did not change `data/region_configs/korea.json`.
-- Did not tune golden expected values to current code output.
-- Did not merge, push, or update legacy xfail diagnostics.
+- No CSPF logic change.
+- No ISO16358 HSPF official exact/golden fixture change.
+- No AHRI/EN calculator change.
+- No public schema or `korea.json` schema change.
+- No PRH `Pheater * frunning` implementation.
+- No unrelated refactor or merge.
 
 # Verification
 
 - `python3 -m py_compile core/calculators/standards/ks_c9306.py`: OK.
-- `python3 -m pytest tests/test_iso16358_hspf_validation.py -q`: NG, new active full-bin golden assertion fails.
-- `python3 -B tools/check_code_structure.py`: OK with existing soft warnings, including `ks_c9306.py` LOC and stale code map warning.
+- `python3 -m pytest tests/test_iso16358_hspf_validation.py -q`: NG, 37 passed / 2 failed. The two failures are the new strict KS official total and bin-level oracle assertions.
+- `python3 -B tools/check_code_structure.py`: OK with existing soft warnings, including `ks_c9306.py` LOC and stale code-map reminder.
 - `git diff --check`: OK.
-- `git status --short`: modified source, test, and this report.
+- `python3 -m pytest tests/test_iso16358_hspf_validation.py tests/test_iso16358_hspf_official_exact_golden.py -q`: NG, 54 passed / 2 failed. The same two KS official oracle assertions fail.
+- `git status --short`: modified source, helper fixture, validation test, and this report.
 
 # Task Results
 
-- task 1: OK - `_calculate_ks_c9306_hspf()` now resolves a load line once and passes it to both `_ks_hspf_bin_load()` and `_ks_hspf_bin()`. `_ks_hspf_bin()` keeps an optional defaulted `load_line` argument, so existing private helper calls remain valid.
-- task 2: NG - active golden test was added with provided expected values, but full-bin Korea config output does not match the expected energy/HSPF values.
-- task 3: NG - focused validation fails on the new golden assertion; static checks pass.
+- task 1: OK - added `KS_C9306_GOLDEN_BIN_EXPECTED` as KS C 9306 official calculator bin-level oracle, separate from ISO16358 official fixtures. `GOLDEN_EXPECTED` is documented as the KS total oracle.
+- task 2: NG - full-bin total golden test now uses `rated_cooling_capacity = 3600.0`, verifies `rounded_hspf`, and keeps official totals. `HSTL` and rounded HSPF pass, but `HSEC` and energy totals still miss the strict oracle.
+- task 3: NG - bin-level official oracle test was added and confirms all active bins and `load_line_used=True`, but strict heat-pump energy checks still fail from `-6°C` onward.
+- task 4: PARTIAL - removed `rated_maximum` `frost=True` hardcoding and uses runtime frost region. Added `tj <= -7.0` maximum-power behavior for `rated_maximum`; this fixes the critical `-8°C`/`-7°C` no-auxiliary regression path after KS test-value rounding.
+- task 5: OK - added `rounded_hspf = round(hspf, 3)` while preserving raw `HSPF` and `hspf` for compatibility.
+- task 6: OK - this report records the official oracle, load-line source, bin-level regression points, implemented fixes, and remaining mismatch.
 
 # Test Results
 
-New active full-bin test uses `rated_cooling_capacity = 3600.0` because the provided HSTL expected value is exactly implied by Korea full bin hours and `BLh(0) = rated_cooling_capacity * 0.82`.
+Current focused output after this slice:
 
-Observed full-bin output after the load-line forwarding fix:
+- `HSTL`: `6651225.0 Wh` (expected `6651225.0 Wh`)
+- `HSEC`: `1802566.0508617363 Wh` (expected `1802769.7 Wh`)
+- `rounded_hspf`: `3.689` (expected `3.689`)
 
-- `HSPF`: `3.698455716648536`
-- `HSTL`: `6651225.0`
-- `HSEC`: `1798378.9747865908`
-- `heat_pump_energy`: `1780876.6858977017`
-- `auxiliary_energy`: `17502.288888888907`
+The strict bin-level oracle now fails first at `-6°C`:
 
-Provided expected:
-
-- `HSPF`: `3.689`
-- `HSTL`: `6651225.0`
-- `HSEC`: `1802769.7`
-- `heat_pump_energy`: `1785292.6`
-- `auxiliary_energy`: `17477.1`
-
-The load-line propagation fix is active: manual sanity output showed all 31 bin details with `load_line_used == True`.
+- actual `heat_pump_energy`: `63912.32481624158 Wh`
+- expected `heat_pump_energy`: `63914.1 Wh`
 
 # Changed Files
 
 - `core/calculators/standards/ks_c9306.py`
+- `tests/helpers/iso16358_hspf_samples.py`
 - `tests/test_iso16358_hspf_validation.py`
 - `result_reports/active/650_ks-hspf-load-line-intersection-golden.md`
 
 # Known Failures / Risks
 
-- The new active full-bin golden test fails. HSTL matches, but HSEC and energy breakdown do not. The remaining mismatch appears to be formula/detail interpretation beyond load-line forwarding, especially in stage interpolation/maximum-side behavior.
-- Full pytest was not run because the requested focused suite already fails.
+- Official strict KS C 9306 total/bin oracle is still not fully matched. The remaining mismatch is not solved by the requested `rated_maximum` hardcoding fix alone.
+- HSPF path now applies the existing KS `round_test_values` policy to HSPF stage values, matching the KS owner docs. This improved the low-temperature auxiliary trace but did not fully match official bin-level heat-pump energy.
+- PRH `Pheater * frunning` remains intentionally unimplemented. Current product has no auxiliary heater, so this is a known non-impact gap for this golden.
+- The `tj <= 2.0 and load > max_stage["capacity"]` special case was left unchanged; current evidence still indicates no result impact for the official golden shortage bins.
 
 # Next Suggested Action
 
-- Audit KS C 9306 HSPF E.2.36/E.2.40 rated-maximum and shortage behavior against an accepted bin-level official trace before changing formulas further.
+- Audit KS C 9306 Equation E.2.36 / rated-maximum and E.2.37~E.2.40 intersection details against the official calculator trace before adding any correction factor or bin-energy override.
 
 # Scope Compliance
 
 - CSPF path unchanged.
-- `korea.json` schema unchanged.
-- Public API unchanged; `_ks_hspf_bin()` signature change is defaulted and internal/private.
-- UI/UX unchanged.
-- Legacy diagnostics unchanged.
-- No merge or push performed.
+- ISO16358 official exact/oracle values unchanged.
+- AHRI/EN paths unchanged.
+- Public schema and `korea.json` schema unchanged.
+- No direct bin-energy override or arbitrary total correction was added.
 
 # Structure Warnings
 
-- `core/calculators/standards/ks_c9306.py` still exceeds the LOC soft limit; this is pre-existing and accepted for this narrow fix.
-- Code map freshness warning remains; skipped regeneration because this task only changed a narrow existing calculator/test path and did not add source structure.
+- `core/calculators/standards/ks_c9306.py` still exceeds the LOC soft limit; this is pre-existing and accepted for this narrow calculator fix.
+- Code map freshness warning remains. `code_map_check`: skipped because no new source structure, helper package, adapter, or reusable boundary was added.
 
 # Warning Triage
 
-- accepted for this slice with reason: fixing the existing KS HSPF method in place avoids a broader calculator split outside the requested scope.
+- accepted for this slice with reason: narrow in-place calculator fix avoids a larger KS HSPF split outside the requested scope.
 
 # Commit / Push
 
-- Commit: not requested.
-- Push: not requested.
+- Commit: requested after implementation; final commit hash is reported in terminal output to avoid a self-referential report update loop.
+- Push: requested after implementation; final remote match is reported in terminal output.
 
 # Project Memory Delta
 
 - type: open_question
-- topic: KS C 9306 HSPF full-bin golden mismatch
-- content: After forwarding resolved Korea config load line into `_ks_hspf_bin()`, full-bin HSTL matches the provided golden when `rated_cooling_capacity=3600.0`, and all bins use load-line interpolation, but HSEC/heat-pump/auxiliary expected values still differ. Further formula audit needs accepted bin-level evidence.
-- keywords: KS C 9306, HSPF, load line, full-bin golden, rated_maximum, HSEC
+- topic: KS C 9306 HSPF official bin-level mismatch after rated_maximum fix
+- content: KS official full-bin oracle is now active in tests. Runtime frost flag and `tj <= -7.0` maximum-power behavior are implemented, and raw `HSPF` plus `rounded_hspf` are returned. Strict official total/bin energy still fails without direct bin override; further audit of E.2.36~E.2.40 intersection details is needed.
+- keywords: KS C 9306, HSPF, official oracle, bin-level, rated_maximum, round_test_values, intersection

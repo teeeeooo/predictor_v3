@@ -734,12 +734,21 @@ class KSC9306Calculator:
         quantity_data = hspf_input.get(quantity, {})
         stage_data = quantity_data.get(stage, {})
         if point in stage_data:
-            return float(stage_data[point])
+            value = float(stage_data[point])
+            if self.config.get("round_test_values", False):
+                return float(self._round_test_value(value))
+            return value
 
         if point == "-7" and stage in ("min", "rated", "intermediate"):
             if "7" in stage_data:
                 factor = self._ks_hspf_minus7_factor(quantity, stage)
-                return float(stage_data["7"]) * factor
+                value = float(stage_data["7"])
+                if self.config.get("round_test_values", False):
+                    value = float(self._round_test_value(value))
+                derived = value * factor
+                if self.config.get("round_test_values", False):
+                    return float(self._round_test_value(derived))
+                return derived
 
         if point == "2" and stage in ("min", "rated", "intermediate"):
             if "7" in stage_data:
@@ -747,9 +756,14 @@ class KSC9306Calculator:
                     hspf_input, quantity, stage, "-7"
                 )
                 value_7 = float(stage_data["7"])
-                return self._ks_hspf_linear(
+                if self.config.get("round_test_values", False):
+                    value_7 = float(self._round_test_value(value_7))
+                value = self._ks_hspf_linear(
                     2.0, -7.0, value_minus7, 7.0, value_7
                 )
+                if self.config.get("round_test_values", False):
+                    return float(self._round_test_value(value))
+                return value
 
         if required:
             raise ValueError(
@@ -1009,16 +1023,16 @@ class KSC9306Calculator:
 
         if case_name == "rated_maximum":
             rated_temp = self._ks_hspf_intersection_temp(
-                hspf_input, "rated", True, load_line
+                hspf_input, "rated", frost, load_line
             )
             max_temp = self._ks_hspf_intersection_temp(
-                hspf_input, "max", True, load_line
+                hspf_input, "max", frost, load_line
             )
             rated_power = self._ks_hspf_power_curve(
-                rated_temp, hspf_input, "rated", True
+                rated_temp, hspf_input, "rated", frost
             )
             max_power = self._ks_hspf_power_curve(
-                max_temp, hspf_input, "max", True
+                max_temp, hspf_input, "max", frost
             )
             return self._ks_hspf_linear(
                 tj, max_temp, max_power, rated_temp, rated_power
@@ -1074,7 +1088,9 @@ class KSC9306Calculator:
                 auxiliary_heat = load - available_capacity
             elif load > rated_stage["capacity"]:
                 operating_case = "rated_maximum"
-                if load_line is None:
+                if tj <= -7.0:
+                    heat_pump_power = max_stage["power"]
+                elif load_line is None:
                     heat_pump_power = self._ks_hspf_interpolate_power_for_load(
                         load,
                         rated_stage["capacity"],
@@ -1215,9 +1231,17 @@ class KSC9306Calculator:
             bin_details.append(detail)
 
         if hsec <= 0:
-            return {"hspf": 0.0, "HSPF": 0.0, "HSTL": hstl, "HSEC": hsec, "bin_details": bin_details}
+            return {
+                "hspf": 0.0,
+                "HSPF": 0.0,
+                "rounded_hspf": 0.0,
+                "HSTL": hstl,
+                "HSEC": hsec,
+                "bin_details": bin_details,
+            }
 
         hspf = hstl / hsec
+        rounded_hspf = round(hspf, 3)
         heat_pump_energy = sum(
             item.get("heat_pump_energy", item.get("compressor_energy", 0.0))
             for item in bin_details
@@ -1228,6 +1252,7 @@ class KSC9306Calculator:
         return {
             "hspf": hspf,
             "HSPF": hspf,
+            "rounded_hspf": rounded_hspf,
             "hstl": hstl,
             "HSTL": hstl,
             "hsec": hsec,
