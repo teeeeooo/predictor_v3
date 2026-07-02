@@ -311,6 +311,9 @@ def test_feature_catalog_save_persists_valid_edit_without_bom(tmp_path):
     assert result.saved
     assert result.snapshot is not None
     assert result.snapshot.rows[0].value_at(label_col) == "Edited Label"
+    assert result.schema_apply_required
+    assert result.schema_apply_message == "Catalog saved. Restart app to apply table schema changes."
+    assert "Restart app to apply table schema changes" in result.message
     assert not catalog_path.read_bytes().startswith(b"\xef\xbb\xbf")
 
 

@@ -49,3 +49,5 @@ class FeatureCatalogSaveResult:
     snapshot: FeatureCatalogSnapshot | None
     errors: tuple[str, ...]
     message: str
+    schema_apply_required: bool = False
+    schema_apply_message: str = ""

@@ -36,6 +36,7 @@ STRICT_ZERO_FILL_POLICIES = frozenset({"disallow", "mode_missing_allowed"})
 NONEMPTY_SAVE_FIELDS = frozenset(
     {"order", "ml_name", "role", "zero_fill_policy", "active"}
 )
+SCHEMA_APPLY_MESSAGE = "Catalog saved. Restart app to apply table schema changes."
 ROLE_OPTIONS = ("input", "auto", "result", "derived", "one_hot", "hidden")
 ACTIVE_OPTIONS = ("true", "false")
 ZERO_FILL_POLICY_OPTIONS = ("disallow", "mode_missing_allowed")
@@ -184,7 +185,9 @@ class FeatureCatalogService:
             saved=not snapshot.has_errors,
             snapshot=snapshot,
             errors=tuple(snapshot.validation_messages()) if snapshot.has_errors else (),
-            message="Feature Catalog saved and reloaded.",
+            message=f"Feature Catalog saved and reloaded. {SCHEMA_APPLY_MESSAGE}",
+            schema_apply_required=True,
+            schema_apply_message=SCHEMA_APPLY_MESSAGE,
         )
 
 
