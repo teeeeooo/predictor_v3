@@ -239,6 +239,13 @@ def test_feature_catalog_panel_loads_readonly_catalog():
     assert "Catalog validation: OK" in panel.messages.toPlainText()
     assert panel.export_button.isEnabled()
     assert panel.export_value.text() == "No export yet"
+    assert not panel.save_button.isEnabled()
+    assert not panel.revert_button.isEnabled()
+
+    label_col = panel.table.model()._headers.index("label")
+    assert panel.table.model().setData(panel.table.model().index(0, label_col), "Edited")
+    assert panel.save_button.isEnabled()
+    assert panel.revert_button.isEnabled()
 
 
 def test_train_ui_widgets_do_not_import_core_execution_foundations():

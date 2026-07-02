@@ -8,6 +8,8 @@ from pathlib import Path
 from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
 from apps.train.application.feature_catalog import (
     FeatureCatalogExportResult,
+    FeatureCatalogRecord,
+    FeatureCatalogSaveResult,
     FeatureCatalogService,
     FeatureCatalogSnapshot,
 )
@@ -27,6 +29,15 @@ class FeatureCatalogExportState:
     """UI-facing Feature Catalog export state."""
 
     result: FeatureCatalogExportResult | None
+    status: str
+    message: str
+
+
+@dataclass(frozen=True)
+class FeatureCatalogSaveState:
+    """UI-facing Feature Catalog save state."""
+
+    result: FeatureCatalogSaveResult | None
     status: str
     message: str
 
@@ -85,4 +96,29 @@ class FeatureCatalogController:
             result=result,
             status="ready",
             message=f"Exported {result.row_count} rows to {result.path} ({validation_text}).",
+        )
+
+    def save_records(
+        self,
+        records: tuple[FeatureCatalogRecord, ...],
+    ) -> FeatureCatalogSaveState:
+        """Validate and save edited catalog records through the service."""
+        try:
+            result = self._service.save_records(records)
+        except Exception as exc:
+            return FeatureCatalogSaveState(
+                result=None,
+                status="error",
+                message=f"Feature Catalog save failed: {exc}",
+            )
+        if not result.saved:
+            return FeatureCatalogSaveState(
+                result=result,
+                status="error",
+                message=result.message,
+            )
+        return FeatureCatalogSaveState(
+            result=result,
+            status="ready",
+            message=result.message,
         )
