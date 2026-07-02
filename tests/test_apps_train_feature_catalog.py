@@ -8,12 +8,14 @@ import shutil
 
 import pytest
 from PySide6.QtCore import QItemSelectionModel, Qt
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QMessageBox
 
 from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
 from apps.train.application.feature_catalog import FeatureCatalogDraftRequest, FeatureCatalogService
 from apps.train.controllers.feature_catalog_controller import FeatureCatalogController
 from apps.train.ui.feature_catalog import FeatureCatalogPanel
+from apps.train.ui.feature_catalog.delegates import FeatureCatalogDropdownDelegate
 from apps.train.ui.feature_catalog.help_dialog import HELP_TEXT, FeatureCatalogHelpDialog
 from apps.train.ui.feature_catalog.row_dialog import FeatureCatalogRowDialog
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
@@ -33,9 +35,15 @@ def _cleanup_qt_widgets():
     if app is None:
         return
     for widget in QApplication.topLevelWidgets():
-        widget.close()
-        widget.deleteLater()
-    app.processEvents()
+        try:
+            widget.close()
+            widget.deleteLater()
+        except RuntimeError:
+            continue
+    try:
+        app.processEvents()
+    except RuntimeError:
+        pass
 
 
 def test_feature_catalog_service_loads_valid_default_catalog():
@@ -88,10 +96,16 @@ def test_feature_catalog_table_model_editability_and_dirty_state():
     model = FeatureCatalogTableModel(snapshot)
     label_col = REQUIRED_HEADERS.index("label")
     ml_name_col = REQUIRED_HEADERS.index("ml_name")
+    order_col = REQUIRED_HEADERS.index("order")
+    role_col = REQUIRED_HEADERS.index("role")
+    ui_key_col = REQUIRED_HEADERS.index("ui_key")
     active_col = REQUIRED_HEADERS.index("active")
 
     assert model.flags(model.index(0, label_col)) & Qt.ItemIsEditable
+    assert model.flags(model.index(0, role_col)) & Qt.ItemIsEditable
+    assert not (model.flags(model.index(0, order_col)) & Qt.ItemIsEditable)
     assert not (model.flags(model.index(0, ml_name_col)) & Qt.ItemIsEditable)
+    assert not (model.flags(model.index(0, ui_key_col)) & Qt.ItemIsEditable)
     assert model.setData(model.index(0, label_col), "Edited Label", Qt.EditRole)
     assert model.is_dirty
     assert model.cell_value(0, label_col) == "Edited Label"
@@ -107,16 +121,63 @@ def test_feature_catalog_table_model_exposes_dropdown_options():
     snapshot = FeatureCatalogService().load_snapshot()
     model = FeatureCatalogTableModel(snapshot)
 
+    assert model.dropdown_options(0, REQUIRED_HEADERS.index("role")) == (
+        "input",
+        "auto",
+        "result",
+        "derived",
+        "one_hot",
+        "hidden",
+    )
     assert model.dropdown_options(0, REQUIRED_HEADERS.index("active")) == ("true", "false")
     assert "mode_missing_allowed" in model.dropdown_options(
         0, REQUIRED_HEADERS.index("zero_fill_policy")
     )
-    assert "auto" in model.dropdown_options(0, REQUIRED_HEADERS.index("role"))
     assert "idu" in model.dropdown_options(0, REQUIRED_HEADERS.index("source"))
     assert "ID Volume" in model.dropdown_options(0, REQUIRED_HEADERS.index("mapping_key"))
     assert "refrigerant" in model.dropdown_options(
         0, REQUIRED_HEADERS.index("one_hot_group")
     )
+
+
+def test_feature_catalog_dropdown_delegate_commits_combo_selection():
+    _app()
+    snapshot = FeatureCatalogService().load_snapshot()
+    model = FeatureCatalogTableModel(snapshot)
+    delegate = FeatureCatalogDropdownDelegate()
+    role_col = REQUIRED_HEADERS.index("role")
+    index = model.index(0, role_col)
+
+    editor = delegate.createEditor(None, None, index)
+    assert isinstance(editor, QComboBox)
+    delegate.setEditorData(editor, index)
+    delegate.commitData.connect(lambda editor: delegate.setModelData(editor, model, index))
+
+    hidden_index = editor.findText("hidden")
+    assert hidden_index >= 0
+    editor.setCurrentIndex(hidden_index)
+    editor.activated.emit(hidden_index)
+    _app().processEvents()
+
+    assert model.cell_value(0, role_col) == "hidden"
+
+
+def test_feature_catalog_table_view_single_click_opens_dropdown_editor():
+    app = _app()
+    snapshot = FeatureCatalogService().load_snapshot()
+    model = FeatureCatalogTableModel(snapshot)
+    view = FeatureCatalogTableView()
+    view.setModel(model)
+    view.setItemDelegate(FeatureCatalogDropdownDelegate(view))
+    view.show()
+    role_index = model.index(0, REQUIRED_HEADERS.index("role"))
+    view.scrollTo(role_index)
+    app.processEvents()
+
+    QTest.mouseClick(view.viewport(), Qt.LeftButton, Qt.NoModifier, view.visualRect(role_index).center())
+    app.processEvents()
+
+    assert view.state() == QAbstractItemView.EditingState
 
 
 def test_feature_catalog_service_builds_draft_record_with_generated_order_and_ui_key():

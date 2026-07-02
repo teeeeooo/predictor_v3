@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtCore import QModelIndex, QItemSelectionModel, QTimer, Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 
@@ -132,6 +132,13 @@ class FeatureCatalogTableView(QTableView):
             return
         super().keyPressEvent(event)
 
+    def mouseReleaseEvent(self, event):  # noqa: ANN001
+        """Open dropdown editors on a single completed click."""
+        index = self.indexAt(event.position().toPoint())
+        super().mouseReleaseEvent(event)
+        if self._is_dropdown_edit_index(index):
+            QTimer.singleShot(0, lambda index=QModelIndex(index): self.edit(index))
+
     def _selected_cells(self) -> list[tuple[int, int]]:
         indexes = self.selectionModel().selectedIndexes() if self.selectionModel() else []
         return sorted({(index.row(), index.column()) for index in indexes})
@@ -181,6 +188,16 @@ class FeatureCatalogTableView(QTableView):
             model.index(row, col),
             QItemSelectionModel.ClearAndSelect,
         )
+
+    def _is_dropdown_edit_index(self, index: QModelIndex) -> bool:
+        if not index.isValid():
+            return False
+        model = self.model()
+        if model is None or not hasattr(model, "dropdown_options"):
+            return False
+        if not (model.flags(index) & Qt.ItemIsEditable):
+            return False
+        return bool(model.dropdown_options(index.row(), index.column()))
 
     def _move_current_vertical(self, backward: bool = False) -> None:
         model = self.model()

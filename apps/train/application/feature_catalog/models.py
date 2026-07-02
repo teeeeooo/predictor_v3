@@ -19,6 +19,7 @@ DISPLAY_HEADERS = {
     "notes": "메모",
 }
 EDITABLE_HEADERS = (
+    "role",
     "label",
     "notes",
     "active",
@@ -27,7 +28,7 @@ EDITABLE_HEADERS = (
     "mapping_key",
     "one_hot_group",
 )
-LOCKED_HEADERS = ("order", "ml_name", "role", "ui_key")
+LOCKED_HEADERS = ("order", "ml_name", "ui_key")
 
 
 @dataclass(frozen=True)

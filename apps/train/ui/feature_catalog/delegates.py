@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QRect, QTimer, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QCompleter,
     QStyle,
+    QStyleOption,
     QStyledItemDelegate,
-    QStyleOptionComboBox,
 )
 
 
@@ -21,15 +21,16 @@ class FeatureCatalogDropdownDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
         if not _options_for(index):
             return
-        combo_option = QStyleOptionComboBox()
-        combo_option.rect = option.rect
-        combo_option.state = option.state | QStyle.State_Enabled
-        combo_option.subControls = QStyle.SC_ComboBoxArrow
-        QApplication.style().drawComplexControl(
-            QStyle.CC_ComboBox,
-            combo_option,
-            painter,
+        arrow_option = QStyleOption(option)
+        arrow_width = QApplication.style().pixelMetric(QStyle.PM_ScrollBarExtent)
+        arrow_option.rect = QRect(
+            option.rect.right() - arrow_width,
+            option.rect.top(),
+            arrow_width,
+            option.rect.height(),
         )
+        arrow_option.state = option.state | QStyle.State_Enabled
+        QApplication.style().drawPrimitive(QStyle.PE_IndicatorArrowDown, arrow_option, painter)
 
     def createEditor(self, parent, option, index):  # noqa: ANN001
         """Create a combo editor for dropdown-capable cells."""
@@ -44,6 +45,7 @@ class FeatureCatalogDropdownDelegate(QStyledItemDelegate):
         completer.setCaseSensitivity(Qt.CaseInsensitive)
         completer.setCompletionMode(QCompleter.PopupCompletion)
         combo.setCompleter(completer)
+        combo.activated.connect(lambda _index, editor=combo: self._commit_and_close(editor))
         QTimer.singleShot(0, combo.showPopup)
         return combo
 
@@ -65,6 +67,10 @@ class FeatureCatalogDropdownDelegate(QStyledItemDelegate):
             model.setData(index, editor.currentText(), Qt.EditRole)
             return
         super().setModelData(editor, model, index)
+
+    def _commit_and_close(self, editor: QComboBox) -> None:
+        self.commitData.emit(editor)
+        self.closeEditor.emit(editor, QStyledItemDelegate.NoHint)
 
 
 def _options_for(index) -> tuple[str, ...]:  # noqa: ANN001
