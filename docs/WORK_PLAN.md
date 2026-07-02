@@ -31,9 +31,9 @@
   closeout summary is
   `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md`.
 - Current next action is not Arc 14 yet. Calculator Sub-Arc - KOREA Notebook
-  Entry and KS C 9306 HSPF official oracle correction are complete; use Arc
-  13.5 to design and implement the `app_train.py` Feature Catalog table editor
-  workflow.
+  Entry and KS C 9306 HSPF official oracle correction are complete. Arc 13.5
+  design is finalized; implement the `app_train.py` Feature Catalog table
+  editor workflow before Arc 14.
 - Arc 13.5 should treat `config/ml/features.csv` as the storage/contract file,
   not as the default direct user editing surface.
 - Arc 14 remains deferred until after Arc 13.5, when the project is ready for a
@@ -41,10 +41,11 @@
 
 ## Next Actions
 
-1. Arc 13.5 Slice 0 - Feature Catalog Editor Design Gate.
-2. Arc 13.5 Slice 1 - Feature Catalog Viewer / Validate / Export.
-3. Arc 13.5 Slice 2 - Editable Catalog Table / Save.
-4. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
+1. Arc 13.5 Slice 1 - Feature Catalog Viewer / Validate.
+2. Arc 13.5 Slice 2 - Excel-safe CSV Export.
+3. Arc 13.5 Slice 3 - Editable Catalog Table / Save with Validation.
+4. Arc 13.5 Slice 4 - Closeout / Docs Sync / Final Push.
+5. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
 
 ## Active Blockers / Open Decisions
 
@@ -52,10 +53,11 @@
   `model/model.pkl` is absent.
 - Mock smoke can cover workflow readiness, but it cannot validate prediction
   accuracy, physical trends, feature importance, or production model quality.
-- Arc 13.5 needs a design gate for the `app_train.py` Feature Catalog table
-  editor direction before implementation.
+- Arc 13.5 implementation must keep Feature Catalog UI parsing/writing behind
+  controller, application service, and file-adapter boundaries.
 - Excel Korean label corruption is treated as a UTF-8 CSV auto-detection issue;
-  Arc 13.5 export design should evaluate UTF-8-SIG for Excel/Numbers checks.
+  Arc 13.5 export uses UTF-8-SIG for Excel/Numbers review while canonical save
+  preserves UTF-8 without BOM.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
 
@@ -99,6 +101,8 @@
   `docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md`.
 - Arc 13.5 Feature Catalog editor design gate:
   `docs/designs/2026-07-01-arc13-5-feature-catalog-editor-design-gate.md`.
+- Arc 13.5 revised slice plan:
+  `docs/designs/2026-07-02-arc13-5-feature-catalog-editor-revised-slice-plan.md`.
 - KOREA calculator notebook entry sub-arc:
   `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
 - KS C 9306 HSPF official oracle closeout:
