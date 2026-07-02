@@ -12,8 +12,9 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 Current phase: Machine Learning / Predictor Phase, post-Arc 13 planning. Arc
 13 ML Feature Catalog migration is complete for automated scope; Calculator
-Sub-Arc - KOREA Notebook Entry is complete; current near-term execution moves
-to Arc 13.5 Feature Catalog Editor work.
+Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF official oracle correction
+are complete; current near-term execution returns to Arc 13.5 Feature Catalog
+Editor work.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -545,11 +546,16 @@ Status:
 
 - Complete. KOREA is registered as a top-level calculator notebook tab with
   CSPF/HSPF single calculation, midpoint guide, batch, and detail surfaces.
+  KS C 9306 HSPF official total/bin oracle correction is also complete.
 
 Scope boundary:
 
 - Preserve calculator formula/config/golden/public result contracts and keep
   the notebook entry separate from Arc 13.5 Train/Admin catalog editor work.
+- The HSPF correction fixed `rated_maximum` handling and rounding-aware frost
+  effective ratios. PRH `Pheater * frunning` is deferred for future
+  auxiliary-heater models and is non-impact for the current no-aux-heater
+  oracle.
 
 ### Arc 13.5 — Feature Catalog Editor Bridge
 
@@ -577,7 +583,7 @@ Direction:
 
 Status:
 
-- Planned bridge arc after the Calculator Sub-Arc and before Arc 14.
+- Planned bridge arc after KOREA closeout and before Arc 14.
 
 ### Arc 14 — ML Catalog-Aligned Real Dataset Readiness Audit
 

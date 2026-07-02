@@ -31,8 +31,9 @@
   closeout summary is
   `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md`.
 - Current next action is not Arc 14 yet. Calculator Sub-Arc - KOREA Notebook
-  Entry is complete; use Arc 13.5 to design and implement the `app_train.py`
-  Feature Catalog table editor workflow.
+  Entry and KS C 9306 HSPF official oracle correction are complete; use Arc
+  13.5 to design and implement the `app_train.py` Feature Catalog table editor
+  workflow.
 - Arc 13.5 should treat `config/ml/features.csv` as the storage/contract file,
   not as the default direct user editing surface.
 - Arc 14 remains deferred until after Arc 13.5, when the project is ready for a
@@ -100,6 +101,8 @@
   `docs/designs/2026-07-01-arc13-5-feature-catalog-editor-design-gate.md`.
 - KOREA calculator notebook entry sub-arc:
   `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
+- KS C 9306 HSPF official oracle closeout:
+  `result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md`.
 - B-option unified case table visual reference:
   `docs/designs/assets/predict_ref_img.png`.
 - Spreadsheet table UX baseline:

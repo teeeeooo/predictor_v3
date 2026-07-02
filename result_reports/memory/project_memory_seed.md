@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -151,6 +151,20 @@ entries:
       - detail
     assertionStatus: verified
     source: result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md
+
+  - type: decision
+    topic: KS C 9306 HSPF official oracle correction
+    content: KS C 9306 HSPF official total and bin-level oracle passes without direct bin-energy override or arbitrary correction factors. For round_test_values=true, non-max frost curves use rounding-aware effective defrost/no-frost ratios from rounded max defrost anchors: capacity 4165/4665 and power 1604/1700. PRH Pheater * frunning remains deferred for future auxiliary-heater models and is non-impact for the current no-aux-heater oracle.
+    keywords:
+      - predictor_v3
+      - KS C 9306
+      - HSPF
+      - official oracle
+      - frost effective ratio
+      - round_test_values
+      - PRH
+    assertionStatus: verified
+    source: result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md
 
   - type: decision
     topic: Train Predict PySide6 boundary
