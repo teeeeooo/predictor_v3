@@ -11,6 +11,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.metrics import mean_squared_error, r2_score
 
 from core.ml.artifacts import TRAIN_DATA_FILE, MODEL_FILE, MODEL_DIR
+from core.ml.catalog_fingerprint import attach_catalog_fingerprint
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 from core.ml.feature_catalog_projection import validate_training_headers
 from core.ml.registry import MODEL_REGISTRY, get_model_config
@@ -104,7 +105,9 @@ def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     df = load_and_preprocess(file)
     validate_training_input_headers(df.columns)
 
-    model_data = {"models": {}, "features": {}, "preprocess_version": "v1.0"}
+    model_data = attach_catalog_fingerprint(
+        {"models": {}, "features": {}, "preprocess_version": "v1.0"}
+    )
     summary_report = "📊 [최종 학습 모델 성능 요약]\n\n"
     all_results_for_excel = []
 

@@ -10,6 +10,7 @@ from apps.train.services.training_service import (
     TrainingService,
 )
 from core.ml.inference import load_model
+from core.ml.catalog_fingerprint import CATALOG_FINGERPRINT_KEY
 from tools.dev.mock_smoke.dev_training_backend import DevFastTrainingBackend
 from tools.dev.mock_smoke.dev_training_runner import run_dev_training_backend
 from tools.dev.mock_smoke.generators import write_mock_training_data
@@ -73,6 +74,7 @@ def test_dev_fast_training_backend_creates_inference_compatible_artifact(tmp_pat
     assert result.status == "complete"
     assert model_path.exists()
     assert load_model(model_path)["preprocess_version"] == "v1.0"
+    assert CATALOG_FINGERPRINT_KEY in load_model(model_path)
     assert any("DEV fast training" in event.message for event in logs)
     assert progress[-1].completed == progress[-1].total
 

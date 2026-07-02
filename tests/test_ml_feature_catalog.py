@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import ast
 import csv
+from dataclasses import replace
 from pathlib import Path
 
+import joblib
 import pandas as pd
 
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
@@ -21,6 +23,14 @@ from core.ml.feature_catalog import (
     validate_training_headers,
     validate_feature_catalog,
     validate_registry_references,
+)
+from core.ml.catalog_fingerprint import (
+    CATALOG_FINGERPRINT_KEY,
+    CATALOG_FINGERPRINT_VERSION,
+    CATALOG_FINGERPRINT_VERSION_KEY,
+    attach_catalog_fingerprint,
+    current_catalog_fingerprint,
+    validate_model_catalog_fingerprint,
 )
 from core.ml.feature_catalog_projection import BASE_FEATURE_RESULT_EXPORT_ORDER
 from core.ml.feature_catalog_projection import one_hot_group, predictor_columns_projection
@@ -457,6 +467,65 @@ def test_feature_catalog_header_policy_rejects_unknown_header(tmp_path):
     errors = validate_feature_catalog(load_feature_catalog(catalog_path))
 
     assert "unknown header(s): width" in errors
+
+
+def test_feature_catalog_fingerprint_changes_with_catalog_contract():
+    catalog = load_feature_catalog()
+    changed_rows = list(catalog.rows)
+    changed_rows[0] = replace(changed_rows[0], active=not changed_rows[0].active)
+    changed = FeatureCatalog(rows=tuple(changed_rows), headers=catalog.headers)
+
+    assert current_catalog_fingerprint(catalog) != current_catalog_fingerprint(changed)
+
+
+def test_model_catalog_fingerprint_metadata_validates_current_catalog():
+    model_data = attach_catalog_fingerprint({"models": {}, "features": {}})
+
+    validate_model_catalog_fingerprint(model_data)
+
+    assert model_data[CATALOG_FINGERPRINT_VERSION_KEY] == CATALOG_FINGERPRINT_VERSION
+    assert len(model_data[CATALOG_FINGERPRINT_KEY]) == 64
+
+
+def test_model_catalog_fingerprint_validation_rejects_missing_or_mismatch():
+    try:
+        validate_model_catalog_fingerprint({"models": {}, "features": {}})
+    except ValueError as exc:
+        missing_message = str(exc)
+    else:
+        raise AssertionError("expected missing catalog fingerprint ValueError")
+
+    try:
+        validate_model_catalog_fingerprint(
+            {
+                "models": {},
+                "features": {},
+                CATALOG_FINGERPRINT_KEY: "not-current",
+            }
+        )
+    except ValueError as exc:
+        mismatch_message = str(exc)
+    else:
+        raise AssertionError("expected catalog fingerprint mismatch ValueError")
+
+    assert "missing Feature Catalog fingerprint" in missing_message
+    assert "fingerprint mismatch" in mismatch_message
+
+
+def test_load_model_rejects_artifact_without_catalog_fingerprint(tmp_path):
+    model_path = tmp_path / "model.pkl"
+    joblib.dump({"models": {}, "features": {}, "preprocess_version": "v1.0"}, model_path)
+
+    from core.ml.inference import load_model
+
+    try:
+        load_model(model_path)
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected missing catalog fingerprint ValueError")
+
+    assert "missing Feature Catalog fingerprint" in message
 
 
 def test_feature_catalog_training_headers_match_raw_ml_name_contract():

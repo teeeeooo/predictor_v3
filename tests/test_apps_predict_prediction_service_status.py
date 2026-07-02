@@ -1,10 +1,13 @@
 """Prediction service model status tests."""
 
+import joblib
+
 from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.services import prediction_service as prediction_service_module
 from apps.predict.services.prediction_service import PredictionService
 from apps.predict.state.predict_session import PredictSession
+from core.ml.catalog_fingerprint import CATALOG_FINGERPRINT_KEY
 
 
 def test_prediction_service_model_status_reports_missing_path(tmp_path):
@@ -57,6 +60,27 @@ def test_prediction_service_model_status_reports_load_error(tmp_path, monkeypatc
     assert result.status == "error"
     assert status.status == "load-error"
     assert status.message == "cannot load model"
+
+
+def test_prediction_service_blocks_catalog_fingerprint_mismatch(tmp_path):
+    model_path = tmp_path / "model.pkl"
+    joblib.dump(
+        {
+            "models": {},
+            "features": {},
+            "preprocess_version": "v1.0",
+            CATALOG_FINGERPRINT_KEY: "not-current",
+        },
+        model_path,
+    )
+    service = PredictionService(model_file=str(model_path))
+
+    result = service.predict_one(
+        PredictionInputRequest(case_id="case-0001", row_input={"Cooling Capa": 3500.0})
+    )
+
+    assert result.status == "error"
+    assert "fingerprint mismatch" in result.message
 
 
 def test_controller_model_status_delegates_without_mutating_session(tmp_path):

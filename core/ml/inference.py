@@ -9,6 +9,7 @@ import numpy as np
 # 데이터 전처리 로직 재사용 (sklearn 의존성 없음)
 from core.ml.preprocessing import calculate_derived_features
 from core.ml.features import TARGETS, BASE_FEATURES, DERIVED_FEATURES
+from core.ml.catalog_fingerprint import validate_model_catalog_fingerprint
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 
 # 현재 시스템의 전처리 버전 (Lite 안전장치 v1.0)
@@ -44,6 +45,7 @@ def load_model(model_file):
             f"모델 버전 불일치 (모델: {model_version}, 코드: {CURRENT_PREPROCESS_VERSION}). "
             "데이터 파이프라인이 변경되었으므로 재학습이 필요합니다."
         )
+    validate_model_catalog_fingerprint(model_data)
 
     return model_data
 

@@ -14,6 +14,7 @@ from core.mapping.autofill import build_autofill_updates
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.features import BASE_FEATURES, TARGETS
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
+from core.ml.catalog_fingerprint import CATALOG_FINGERPRINT_KEY
 from core.ml.inference import load_model, predict_row
 from core.predictor_schema.columns import INPUT_COLS
 from tools.dev.mock_smoke import generators as mock_generators
@@ -64,6 +65,7 @@ def test_mock_prediction_artifact_loads_and_predicts_all_targets(tmp_path):
     model_data = load_model(artifact_path)
     predictions = predict_row(model_data, _sample_row())
 
+    assert CATALOG_FINGERPRINT_KEY in model_data
     assert set(predictions) == set(TARGETS)
     assert all(isinstance(value, float) for value in predictions.values())
 

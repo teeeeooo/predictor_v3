@@ -15,6 +15,7 @@ import pandas as pd
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.artifacts import MODEL_FILE
 from core.ml.artifacts import TRAIN_DATA_FILE
+from core.ml.catalog_fingerprint import attach_catalog_fingerprint
 from core.ml.features import BASE_FEATURES, TARGETS
 from core.ml.preprocessing import prepare_pipeline
 from core.ml.registry import MODEL_REGISTRY, get_model_config
@@ -224,11 +225,13 @@ def build_mock_prediction_artifact(
 ) -> dict[str, object]:
     """Create an inference-compatible deterministic mock model artifact."""
     df = generate_mock_training_frame(rows=rows, seed=seed)
-    artifact: dict[str, object] = {
-        "models": {},
-        "features": {},
-        "preprocess_version": PREPROCESS_VERSION,
-    }
+    artifact: dict[str, object] = attach_catalog_fingerprint(
+        {
+            "models": {},
+            "features": {},
+            "preprocess_version": PREPROCESS_VERSION,
+        }
+    )
     models = artifact["models"]
     features = artifact["features"]
     assert isinstance(models, dict)

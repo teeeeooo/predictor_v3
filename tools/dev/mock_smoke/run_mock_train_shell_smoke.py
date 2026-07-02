@@ -46,7 +46,7 @@ def main() -> int:
     shell = TrainShell()
     app.processEvents()
     tabs = [shell.tabs.tabText(index) for index in range(shell.tabs.count())]
-    expected = ["Predict", "Train / Model", "Data Mapping"]
+    expected = ["Predict", "Train / Model", "Data Mapping", "Feature Catalog"]
     if tabs != expected:
         raise RuntimeError(f"unexpected Train tabs: {tabs}")
     if not isinstance(shell.tabs.widget(0), PredictWorkspace):
