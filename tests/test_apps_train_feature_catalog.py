@@ -8,12 +8,14 @@ import shutil
 
 import pytest
 from PySide6.QtCore import QItemSelectionModel, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
-from apps.train.application.feature_catalog import FeatureCatalogService
+from apps.train.application.feature_catalog import FeatureCatalogDraftRequest, FeatureCatalogService
 from apps.train.controllers.feature_catalog_controller import FeatureCatalogController
+from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.feature_catalog.help_dialog import HELP_TEXT, FeatureCatalogHelpDialog
+from apps.train.ui.feature_catalog.row_dialog import FeatureCatalogRowDialog
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
 from apps.train.ui.feature_catalog.table_view import FeatureCatalogTableView
 from core.ml.feature_catalog import DEFAULT_CATALOG_PATH, REQUIRED_HEADERS
@@ -117,6 +119,63 @@ def test_feature_catalog_table_model_exposes_dropdown_options():
     )
 
 
+def test_feature_catalog_service_builds_draft_record_with_generated_order_and_ui_key():
+    service = FeatureCatalogService()
+    snapshot = service.load_snapshot()
+    request = FeatureCatalogDraftRequest(
+        ml_name="New Feature",
+        role="input",
+        label="New Feature Label",
+        zero_fill_policy="disallow",
+    )
+
+    record = service.build_draft_record(snapshot.rows, request)
+    values = dict(zip(REQUIRED_HEADERS, record.values, strict=True))
+
+    assert values["order"] == "290"
+    assert values["ml_name"] == "New Feature"
+    assert values["ui_key"] == "new_feature"
+    assert values["active"] == "true"
+
+
+def test_feature_catalog_service_generates_unique_ui_key_for_draft_record():
+    service = FeatureCatalogService()
+    snapshot = service.load_snapshot()
+    request = FeatureCatalogDraftRequest(
+        ml_name="Cooling Capa",
+        role="input",
+        label="Cooling Capa Copy",
+    )
+
+    record = service.build_draft_record(snapshot.rows, request)
+    values = dict(zip(REQUIRED_HEADERS, record.values, strict=True))
+
+    assert values["ui_key"] == "cooling_capa_2"
+
+
+def test_feature_catalog_table_model_add_and_remove_rows_tracks_baseline_dirty():
+    snapshot = FeatureCatalogService().load_snapshot()
+    model = FeatureCatalogTableModel(snapshot)
+    service = FeatureCatalogService()
+    record = service.build_draft_record(
+        model.records(),
+        FeatureCatalogDraftRequest(
+            ml_name="Draft Feature",
+            role="input",
+            label="Draft Feature",
+        ),
+    )
+    original_count = model.rowCount()
+
+    model.add_record(record)
+
+    assert model.rowCount() == original_count + 1
+    assert model.is_dirty
+    assert model.remove_rows((original_count,)) == 1
+    assert model.rowCount() == original_count
+    assert not model.is_dirty
+
+
 def test_feature_catalog_table_view_copy_paste_clear_and_undo():
     _app()
     snapshot = FeatureCatalogService().load_snapshot()
@@ -185,6 +244,41 @@ def test_feature_catalog_controller_exports_current_unsaved_records(tmp_path):
     assert "Pending Export Label" in (tmp_path / "export.csv").read_text(
         encoding="utf-8-sig"
     )
+
+
+def test_feature_catalog_row_dialog_returns_draft_request():
+    snapshot = FeatureCatalogService().load_snapshot()
+    dialog = FeatureCatalogRowDialog(snapshot.field_options)
+    dialog.ml_name.setText("Dialog Feature")
+    dialog.label.setText("Dialog Label")
+    dialog.role.setEditText("auto")
+    dialog.source.setEditText("idu")
+    dialog.mapping_key.setEditText("ID Volume")
+
+    request = dialog.request()
+
+    assert request.ml_name == "Dialog Feature"
+    assert request.role == "auto"
+    assert request.source == "idu"
+    assert request.mapping_key == "ID Volume"
+
+
+def test_feature_catalog_panel_delete_removes_selected_draft_row(monkeypatch):
+    _app()
+    panel = FeatureCatalogPanel()
+    original_count = panel.table_model.rowCount()
+    panel.table.selectRow(0)
+    monkeypatch.setattr(
+        QMessageBox,
+        "question",
+        lambda *args, **kwargs: QMessageBox.Yes,
+    )
+
+    panel._delete_selected_features()
+
+    assert panel.table_model.rowCount() == original_count - 1
+    assert panel.table_model.is_dirty
+    assert panel.save_button.isEnabled()
 
 
 def test_feature_catalog_controller_returns_controlled_export_error(tmp_path):

@@ -8,7 +8,9 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QDialog,
     QPushButton,
+    QMessageBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -22,8 +24,10 @@ from apps.train.controllers.feature_catalog_controller import (
     FeatureCatalogExportState,
     FeatureCatalogSaveState,
 )
+from apps.train.application.feature_catalog import FeatureCatalogDraftRequest
 from apps.train.ui.feature_catalog.delegates import FeatureCatalogDropdownDelegate
 from apps.train.ui.feature_catalog.help_dialog import FeatureCatalogHelpDialog
+from apps.train.ui.feature_catalog.row_dialog import FeatureCatalogRowDialog
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
 from apps.train.ui.feature_catalog.table_view import FeatureCatalogTableView
 
@@ -77,16 +81,25 @@ class FeatureCatalogPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.md"))
         self.refresh_button = QPushButton("새로고침")
+        self.add_button = QPushButton("Feature 추가")
+        self.duplicate_button = QPushButton("복제")
+        self.delete_button = QPushButton("삭제")
         self.export_button = QPushButton("CSV 내보내기")
         self.save_button = QPushButton("저장")
         self.revert_button = QPushButton("되돌리기/다시 불러오기")
         self.help_button = QPushButton("도움말")
         self.refresh_button.clicked.connect(self.refresh)
+        self.add_button.clicked.connect(self._add_feature)
+        self.duplicate_button.clicked.connect(self._duplicate_feature)
+        self.delete_button.clicked.connect(self._delete_selected_features)
         self.export_button.clicked.connect(self._export_csv)
         self.save_button.clicked.connect(self._save_catalog)
         self.revert_button.clicked.connect(self.refresh)
         self.help_button.clicked.connect(self._show_help)
         layout.addWidget(self.refresh_button)
+        layout.addWidget(self.add_button)
+        layout.addWidget(self.duplicate_button)
+        layout.addWidget(self.delete_button)
         layout.addWidget(self.export_button)
         layout.addWidget(self.save_button)
         layout.addWidget(self.revert_button)
@@ -144,7 +157,11 @@ class FeatureCatalogPanel(QWidget):
         self._snapshot = snapshot
         self.table_model.set_snapshot(snapshot)
         self.table.clear_undo_history()
-        self.export_button.setEnabled(snapshot is not None)
+        has_snapshot = snapshot is not None
+        self.add_button.setEnabled(has_snapshot)
+        self.duplicate_button.setEnabled(has_snapshot)
+        self.delete_button.setEnabled(has_snapshot)
+        self.export_button.setEnabled(has_snapshot)
         self._set_dirty_state(False)
         if snapshot is None:
             self.path_value.setText("-")
@@ -164,6 +181,53 @@ class FeatureCatalogPanel(QWidget):
     def _save_catalog(self) -> None:
         state = self.controller.save_records(self.table_model.records())
         self._apply_save_state(state)
+
+    def _add_feature(self) -> None:
+        if self._snapshot is None:
+            return
+        dialog = FeatureCatalogRowDialog(self._snapshot.field_options, self)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        record = self.controller.build_draft_record(self.table_model.records(), dialog.request())
+        self.table_model.add_record(record)
+        self._select_row(self.table_model.rowCount() - 1)
+
+    def _duplicate_feature(self) -> None:
+        if self._snapshot is None:
+            return
+        rows = self._selected_rows()
+        if not rows:
+            self._set_validation_status("Select one row to duplicate.", "error")
+            return
+        record = self.table_model.record_at(rows[0])
+        if record is None:
+            return
+        dialog = FeatureCatalogRowDialog(
+            self._snapshot.field_options,
+            self,
+            initial=_duplicate_request(record, self.table_model),
+        )
+        if dialog.exec() != QDialog.Accepted:
+            return
+        draft = self.controller.build_draft_record(self.table_model.records(), dialog.request())
+        self.table_model.add_record(draft)
+        self._select_row(self.table_model.rowCount() - 1)
+
+    def _delete_selected_features(self) -> None:
+        rows = self._selected_rows()
+        if not rows:
+            self._set_validation_status("Select one or more rows to delete.", "error")
+            return
+        answer = QMessageBox.question(
+            self,
+            "Feature 삭제",
+            f"선택한 {len(rows)}개 Feature row를 삭제할까요?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        self.table_model.remove_rows(rows)
 
     def _export_csv(self) -> None:
         if self._snapshot is None:
@@ -185,6 +249,17 @@ class FeatureCatalogPanel(QWidget):
     def _show_help(self) -> None:
         dialog = FeatureCatalogHelpDialog(self)
         dialog.exec()
+
+    def _selected_rows(self) -> tuple[int, ...]:
+        selection = self.table.selectionModel()
+        if selection is None:
+            return ()
+        return tuple(sorted({index.row() for index in selection.selectedIndexes()}))
+
+    def _select_row(self, row: int) -> None:
+        if row < 0:
+            return
+        self.table.selectRow(row)
 
     def _set_validation_status(self, message: str, status: str) -> None:
         kind = "ready" if status == "ready" else "error"
@@ -239,3 +314,23 @@ def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:
     heading.setFont(style.qfont("font.panel_title"))
     layout.addWidget(heading)
     return panel, layout
+
+
+def _duplicate_request(record, model) -> FeatureCatalogDraftRequest:  # noqa: ANN001
+    values = {
+        model.canonical_header(column): record.value_at(column)
+        for column in range(model.columnCount())
+    }
+    ml_name = values.get("ml_name", "")
+    label = values.get("label", "")
+    return FeatureCatalogDraftRequest(
+        ml_name=f"{ml_name} Copy" if ml_name else "",
+        role=values.get("role", "input"),
+        label=f"{label} Copy" if label else "",
+        source=values.get("source", ""),
+        mapping_key=values.get("mapping_key", ""),
+        one_hot_group=values.get("one_hot_group", ""),
+        zero_fill_policy=values.get("zero_fill_policy", "disallow"),
+        active=values.get("active", "true") == "true",
+        notes=values.get("notes", ""),
+    )

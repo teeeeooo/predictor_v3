@@ -113,6 +113,34 @@ class FeatureCatalogTableModel(QAbstractTableModel):
         """Return current table rows as service DTOs."""
         return tuple(FeatureCatalogRecord(values=tuple(row)) for row in self._rows)
 
+    def record_at(self, row: int) -> FeatureCatalogRecord | None:
+        """Return a table record for a row index."""
+        if not 0 <= row < self.rowCount():
+            return None
+        return FeatureCatalogRecord(values=tuple(self._rows[row]))
+
+    def add_record(self, record: FeatureCatalogRecord) -> None:
+        """Append a draft record to the table."""
+        row = self.rowCount()
+        self.beginInsertRows(QModelIndex(), row, row)
+        self._rows.append([record.value_at(column) for column in range(len(self._headers))])
+        self.endInsertRows()
+        self._sync_dirty_state()
+
+    def remove_rows(self, rows: tuple[int, ...]) -> int:
+        """Remove draft rows by table row index."""
+        removed = 0
+        for row in sorted(set(rows), reverse=True):
+            if not 0 <= row < self.rowCount():
+                continue
+            self.beginRemoveRows(QModelIndex(), row, row)
+            del self._rows[row]
+            self.endRemoveRows()
+            removed += 1
+        if removed:
+            self._sync_dirty_state()
+        return removed
+
     def canonical_header(self, column: int) -> str:
         """Return the canonical header for a column."""
         if not 0 <= column < len(self._headers):

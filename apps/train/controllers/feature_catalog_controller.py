@@ -7,6 +7,7 @@ from pathlib import Path
 
 from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
 from apps.train.application.feature_catalog import (
+    FeatureCatalogDraftRequest,
     FeatureCatalogExportResult,
     FeatureCatalogRecord,
     FeatureCatalogSaveResult,
@@ -123,6 +124,14 @@ class FeatureCatalogController:
             status="ready",
             message=f"Exported {result.row_count} rows to {result.path} ({validation_text}).",
         )
+
+    def build_draft_record(
+        self,
+        records: tuple[FeatureCatalogRecord, ...],
+        request: FeatureCatalogDraftRequest,
+    ) -> FeatureCatalogRecord:
+        """Build a new draft record through the application service."""
+        return self._service.build_draft_record(records, request)
 
     def save_records(
         self,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from core.ml.feature_catalog import (
     DEFAULT_CATALOG_PATH,
@@ -13,6 +14,7 @@ from core.ml.feature_catalog import (
     validate_feature_catalog,
     validate_registry_references,
 )
+from core.ml.feature_catalog_projection import UI_VISIBLE_ROLES
 from core.ml.registry import MODEL_REGISTRY
 
 from apps.train.application.feature_catalog.io_models import (
@@ -22,6 +24,7 @@ from apps.train.application.feature_catalog.io_models import (
 )
 from apps.train.application.feature_catalog.models import (
     DISPLAY_HEADERS,
+    FeatureCatalogDraftRequest,
     FeatureCatalogFieldOptions,
     FeatureCatalogRecord,
     FeatureCatalogSnapshot,
@@ -112,6 +115,33 @@ class FeatureCatalogService:
             row_count=len(records),
             validation_status="failed" if messages else "ok",
             validation_messages=messages or ("Catalog validation: OK",),
+        )
+
+    def build_draft_record(
+        self,
+        records: tuple[FeatureCatalogRecord, ...],
+        request: FeatureCatalogDraftRequest,
+    ) -> FeatureCatalogRecord:
+        """Build a new draft record with generated order and ui_key."""
+        order = _next_order(records)
+        ui_key = ""
+        if request.role in UI_VISIBLE_ROLES:
+            ui_key = _unique_ui_key(_slug_key(request.ml_name), _existing_ui_keys(records))
+        values = {
+            "order": str(order),
+            "ml_name": request.ml_name.strip(),
+            "role": request.role.strip(),
+            "ui_key": ui_key,
+            "label": request.label.strip(),
+            "source": request.source.strip(),
+            "mapping_key": request.mapping_key.strip(),
+            "one_hot_group": request.one_hot_group.strip(),
+            "zero_fill_policy": request.zero_fill_policy.strip(),
+            "active": "true" if request.active else "false",
+            "notes": request.notes.strip(),
+        }
+        return FeatureCatalogRecord(
+            values=tuple(values.get(header, "") for header in REQUIRED_HEADERS)
         )
 
     def save_records(
@@ -209,6 +239,38 @@ def _validation_messages_for_records(
         validate_registry_references(draft, MODEL_REGISTRY)
     )
     return tuple(f"Catalog validation: {error}" for error in errors)
+
+
+def _next_order(records: tuple[FeatureCatalogRecord, ...]) -> int:
+    orders: list[int] = []
+    order_col = REQUIRED_HEADERS.index("order")
+    for record in records:
+        try:
+            orders.append(int(record.value_at(order_col)))
+        except ValueError:
+            continue
+    if not orders:
+        return 10
+    return max(orders) + 10
+
+
+def _existing_ui_keys(records: tuple[FeatureCatalogRecord, ...]) -> set[str]:
+    ui_key_col = REQUIRED_HEADERS.index("ui_key")
+    return {record.value_at(ui_key_col) for record in records if record.value_at(ui_key_col)}
+
+
+def _slug_key(value: str) -> str:
+    key = re.sub(r"[^0-9A-Za-z]+", "_", value.strip().lower()).strip("_")
+    return key or "feature"
+
+
+def _unique_ui_key(base: str, existing: set[str]) -> str:
+    candidate = base
+    suffix = 2
+    while candidate in existing:
+        candidate = f"{base}_{suffix}"
+        suffix += 1
+    return candidate
 
 
 def _rows_from_records(

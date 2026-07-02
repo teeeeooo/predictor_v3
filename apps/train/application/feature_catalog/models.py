@@ -55,6 +55,21 @@ class FeatureCatalogRecord:
 
 
 @dataclass(frozen=True)
+class FeatureCatalogDraftRequest:
+    """User-entered fields for creating a draft Feature Catalog row."""
+
+    ml_name: str
+    role: str
+    label: str
+    source: str = ""
+    mapping_key: str = ""
+    one_hot_group: str = ""
+    zero_fill_policy: str = "disallow"
+    active: bool = True
+    notes: str = ""
+
+
+@dataclass(frozen=True)
 class ValidationResult:
     """Validation messages for one Feature Catalog validation scope."""
 
