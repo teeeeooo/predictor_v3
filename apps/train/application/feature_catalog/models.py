@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 
 @dataclass(frozen=True)
@@ -66,3 +67,26 @@ class FeatureCatalogSnapshot:
             else:
                 messages.append(f"{result.scope}: OK")
         return tuple(messages)
+
+
+class FeatureCatalogExportWriter(Protocol):
+    """Writer protocol for Feature Catalog export adapters."""
+
+    def write_export(
+        self,
+        path: str | Path,
+        headers: tuple[str, ...],
+        rows: tuple[tuple[str, ...], ...],
+    ) -> Path:
+        """Write export rows and return the resolved destination path."""
+        ...
+
+
+@dataclass(frozen=True)
+class FeatureCatalogExportResult:
+    """Result of exporting a Feature Catalog snapshot."""
+
+    path: Path
+    row_count: int
+    validation_status: str
+    validation_messages: tuple[str, ...]

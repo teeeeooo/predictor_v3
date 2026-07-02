@@ -15,6 +15,8 @@ from core.ml.feature_catalog import (
 from core.ml.registry import MODEL_REGISTRY
 
 from apps.train.application.feature_catalog.models import (
+    FeatureCatalogExportResult,
+    FeatureCatalogExportWriter,
     FeatureCatalogRecord,
     FeatureCatalogSnapshot,
     ValidationResult,
@@ -24,8 +26,13 @@ from apps.train.application.feature_catalog.models import (
 class FeatureCatalogService:
     """Load and validate the ML Feature Catalog for Train/Admin UI."""
 
-    def __init__(self, catalog_path: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        catalog_path: str | Path | None = None,
+        export_writer: FeatureCatalogExportWriter | None = None,
+    ) -> None:
         self._catalog_path = Path(catalog_path) if catalog_path is not None else DEFAULT_CATALOG_PATH
+        self._export_writer = export_writer
 
     def load_snapshot(
         self,
@@ -51,6 +58,23 @@ class FeatureCatalogService:
                 errors=catalog_errors,
             ),
             project_validation=project_validation,
+        )
+
+    def export_snapshot(
+        self,
+        snapshot: FeatureCatalogSnapshot,
+        destination: str | Path,
+    ) -> FeatureCatalogExportResult:
+        """Export the current table snapshot through the configured writer."""
+        if self._export_writer is None:
+            raise RuntimeError("Feature Catalog export writer is not configured.")
+        rows = tuple(record.values for record in snapshot.rows)
+        path = self._export_writer.write_export(destination, snapshot.headers, rows)
+        return FeatureCatalogExportResult(
+            path=path,
+            row_count=snapshot.row_count,
+            validation_status="failed" if snapshot.has_errors else "ok",
+            validation_messages=snapshot.validation_messages(),
         )
 
 

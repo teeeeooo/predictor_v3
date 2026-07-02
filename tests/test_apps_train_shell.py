@@ -237,6 +237,8 @@ def test_feature_catalog_panel_loads_readonly_catalog():
     assert panel.table.model().headerData(2, Qt.Horizontal, Qt.DisplayRole) == "ml_name"
     assert "validation OK" in panel.validation_value.text()
     assert "Catalog validation: OK" in panel.messages.toPlainText()
+    assert panel.export_button.isEnabled()
+    assert panel.export_value.text() == "No export yet"
 
 
 def test_train_ui_widgets_do_not_import_core_execution_foundations():

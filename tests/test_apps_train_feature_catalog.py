@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 
+from apps.train.adapters.feature_catalog import FeatureCatalogFileAdapter
 from apps.train.application.feature_catalog import FeatureCatalogService
 from apps.train.controllers.feature_catalog_controller import FeatureCatalogController
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
@@ -51,3 +52,42 @@ def test_feature_catalog_table_model_is_read_only():
     assert model.data(model.index(0, 10), Qt.DisplayRole) in {"true", "false"}
     assert not (model.flags(model.index(0, 0)) & Qt.ItemIsEditable)
     assert model.cell_value(-1, 0) == ""
+
+
+def test_feature_catalog_export_writes_excel_safe_csv(tmp_path):
+    service = FeatureCatalogService(export_writer=FeatureCatalogFileAdapter())
+    snapshot = service.load_snapshot()
+    export_path = tmp_path / "feature_catalog.csv"
+
+    result = service.export_snapshot(snapshot, export_path)
+
+    assert result.path == export_path
+    assert result.row_count == snapshot.row_count
+    assert result.validation_status == "ok"
+    assert export_path.read_bytes().startswith(b"\xef\xbb\xbf")
+    lines = export_path.read_text(encoding="utf-8-sig").splitlines()
+    assert lines[0] == ",".join(REQUIRED_HEADERS)
+
+
+def test_feature_catalog_controller_reports_export_result(tmp_path):
+    controller = FeatureCatalogController()
+    state = controller.refresh()
+    assert state.snapshot is not None
+
+    export_state = controller.export_csv(state.snapshot, tmp_path / "export.csv")
+
+    assert export_state.result is not None
+    assert export_state.status == "ready"
+    assert "validation OK" in export_state.message
+
+
+def test_feature_catalog_controller_returns_controlled_export_error(tmp_path):
+    controller = FeatureCatalogController()
+    state = controller.refresh()
+    assert state.snapshot is not None
+
+    export_state = controller.export_csv(state.snapshot, tmp_path)
+
+    assert export_state.result is None
+    assert export_state.status == "error"
+    assert "Feature Catalog export failed" in export_state.message

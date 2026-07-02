@@ -13,12 +13,14 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QFileDialog,
 )
 
 from apps.common.ui import style
 from apps.train.controllers.feature_catalog_controller import (
     FeatureCatalogController,
     FeatureCatalogControllerState,
+    FeatureCatalogExportState,
 )
 from apps.train.ui.feature_catalog.table_model import FeatureCatalogTableModel
 
@@ -35,6 +37,7 @@ class FeatureCatalogPanel(QWidget):
         self.setObjectName("FeatureCatalogPanel")
         self.controller = controller or FeatureCatalogController()
         self.table_model = FeatureCatalogTableModel()
+        self._snapshot = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -70,8 +73,11 @@ class FeatureCatalogPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.md"))
         self.refresh_button = QPushButton("새로고침")
+        self.export_button = QPushButton("CSV 내보내기")
         self.refresh_button.clicked.connect(self.refresh)
+        self.export_button.clicked.connect(self._export_csv)
         layout.addWidget(self.refresh_button)
+        layout.addWidget(self.export_button)
         layout.addStretch(1)
         return panel
 
@@ -83,13 +89,16 @@ class FeatureCatalogPanel(QWidget):
         self.row_count_value = QLabel("0")
         self.active_count_value = QLabel("0")
         self.validation_value = QLabel("Validation pending")
+        self.export_value = QLabel("No export yet")
         self.validation_value.setStyleSheet(style.status_badge_stylesheet("neutral"))
+        self.export_value.setStyleSheet(style.status_badge_stylesheet("neutral"))
         for row, (label, widget) in enumerate(
             (
                 ("Catalog path", self.path_value),
                 ("Rows", self.row_count_value),
                 ("Active rows", self.active_count_value),
                 ("Validation", self.validation_value),
+                ("Export", self.export_value),
             )
         ):
             grid.addWidget(QLabel(label), row, 0)
@@ -121,7 +130,9 @@ class FeatureCatalogPanel(QWidget):
 
     def _apply_state(self, state: FeatureCatalogControllerState) -> None:
         snapshot = state.snapshot
+        self._snapshot = snapshot
         self.table_model.set_snapshot(snapshot)
+        self.export_button.setEnabled(snapshot is not None)
         if snapshot is None:
             self.path_value.setText("-")
             self.row_count_value.setText("0")
@@ -137,10 +148,33 @@ class FeatureCatalogPanel(QWidget):
         self.messages.setPlainText("\n".join(snapshot.validation_messages()))
         self.table.resizeColumnsToContents()
 
+    def _export_csv(self) -> None:
+        if self._snapshot is None:
+            self._set_export_status("Load the Feature Catalog before export.", "error")
+            return
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export Feature Catalog CSV",
+            "feature_catalog_export.csv",
+            "CSV files (*.csv);;All files (*.*)",
+        )
+        if not path:
+            self._set_export_status("Export cancelled.", "neutral")
+            return
+        self._apply_export_state(self.controller.export_csv(self._snapshot, path))
+
     def _set_validation_status(self, message: str, status: str) -> None:
         kind = "ready" if status == "ready" else "error"
         self.validation_value.setText(message)
         self.validation_value.setStyleSheet(style.status_badge_stylesheet(kind))
+
+    def _apply_export_state(self, state: FeatureCatalogExportState) -> None:
+        self._set_export_status(state.message, state.status)
+
+    def _set_export_status(self, message: str, status: str) -> None:
+        kind = "ready" if status == "ready" else "error" if status == "error" else "neutral"
+        self.export_value.setText(message)
+        self.export_value.setStyleSheet(style.status_badge_stylesheet(kind))
 
 
 def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:
