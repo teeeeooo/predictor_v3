@@ -779,6 +779,32 @@ class KSC9306Calculator:
     def _ks_hspf_is_frost_region(self, tj: float) -> bool:
         return -7.0 < tj < 5.5
 
+    def _ks_hspf_frost_def_over_nof_ratio(
+        self,
+        hspf_input: dict,
+        quantity: str
+    ) -> float:
+        if quantity == "capacity":
+            correction_key = "capacity_def_over_nof"
+            default = 1.0 / 1.12
+        elif quantity == "power":
+            correction_key = "power_def_over_nof"
+            default = 1.0 / 1.06
+        else:
+            raise ValueError(f"Unsupported KS HSPF frost ratio quantity: {quantity}")
+
+        base_ratio = self._ks_hspf_correction(hspf_input, correction_key, default)
+        if not self.config.get("round_test_values", False):
+            return base_ratio
+
+        def_value = self._ks_hspf_stage_value(hspf_input, quantity, "max", "def")
+        nofrost_value = float(self._round_test_value(def_value / base_ratio))
+        if nofrost_value <= 0:
+            raise ValueError(
+                f"Invalid KS C 9306 HSPF {quantity} frost no-frost value."
+            )
+        return def_value / nofrost_value
+
     def _ks_hspf_capacity_curve(
         self,
         tj: float,
@@ -797,8 +823,8 @@ class KSC9306Calculator:
         cap_minus7 = self._ks_hspf_stage_value(hspf_input, "capacity", stage, "-7")
         if frost:
             cap_2 = self._ks_hspf_stage_value(hspf_input, "capacity", stage, "2")
-            ratio = self._ks_hspf_correction(
-                hspf_input, "capacity_def_over_nof", 1.0 / 1.12
+            ratio = self._ks_hspf_frost_def_over_nof_ratio(
+                hspf_input, "capacity"
             )
             cap_2 = cap_2 * ratio
             return self._ks_hspf_linear(tj, -7.0, cap_minus7, 2.0, cap_2)
@@ -824,9 +850,7 @@ class KSC9306Calculator:
         power_minus7 = self._ks_hspf_stage_value(hspf_input, "power", stage, "-7")
         if frost:
             power_2 = self._ks_hspf_stage_value(hspf_input, "power", stage, "2")
-            ratio = self._ks_hspf_correction(
-                hspf_input, "power_def_over_nof", 1.0 / 1.06
-            )
+            ratio = self._ks_hspf_frost_def_over_nof_ratio(hspf_input, "power")
             power_2 = power_2 * ratio
             return self._ks_hspf_linear(tj, -7.0, power_minus7, 2.0, power_2)
 

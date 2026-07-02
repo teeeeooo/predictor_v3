@@ -394,6 +394,22 @@ def test_ks_c9306_hspf_official_golden_bin_level_oracle():
     assert details_by_tj[-7]["heat_pump_energy"] == pytest.approx(51810.0, abs=0.5)
 
 
+def test_ks_c9306_hspf_rounding_aware_frost_effective_ratio():
+    calculator = KSC9306Calculator.from_config_path("data/region_configs/korea.json")
+    data = schema_completeness_fixture_not_expected_tuning()
+    hspf_input = data["ks_c_9306_hspf"]
+
+    capacity_ratio = calculator._ks_hspf_frost_def_over_nof_ratio(
+        hspf_input, "capacity"
+    )
+    power_ratio = calculator._ks_hspf_frost_def_over_nof_ratio(
+        hspf_input, "power"
+    )
+
+    assert capacity_ratio == pytest.approx(4165 / 4665)
+    assert power_ratio == pytest.approx(1604 / 1700)
+
+
 
 def test_iso_common_hspf_config_aux_cop_must_be_positive(tmp_path):
     calculator = make_iso_common_calculator(
