@@ -169,8 +169,10 @@ compares that fingerprint with the current catalog.
 
 - If the artifact fingerprint is missing, retrain the model.
 - If the artifact fingerprint differs from the current catalog, retrain the model.
-- The model compatibility fingerprint uses active-row ML contract fields only:
-  `ml_name`, `role`, `one_hot_group`, `zero_fill_policy`, and `active`.
+- The model compatibility fingerprint includes active rows only, using these ML
+  contract fields: `ml_name`, `role`, `one_hot_group`, and `zero_fill_policy`.
+- Toggling `active` changes the fingerprint by including or excluding that row,
+  not by storing `active` inside each payload row.
 - Changing `label`, `notes`, `order`, or `ui_key` does not change the model
   compatibility fingerprint.
 - `source` and `mapping_key` affect UI/input mapping and schema apply concerns,

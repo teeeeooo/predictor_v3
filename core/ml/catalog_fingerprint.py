@@ -10,13 +10,12 @@ from core.ml.feature_catalog import FeatureCatalog, load_feature_catalog
 
 CATALOG_FINGERPRINT_KEY = "feature_catalog_fingerprint"
 CATALOG_FINGERPRINT_VERSION_KEY = "feature_catalog_fingerprint_version"
-CATALOG_FINGERPRINT_VERSION = "feature_catalog.ml_contract.v1"
+CATALOG_FINGERPRINT_VERSION = "feature_catalog.ml_contract.v2"
 ML_CONTRACT_FINGERPRINT_FIELDS = (
     "ml_name",
     "role",
     "one_hot_group",
     "zero_fill_policy",
-    "active",
 )
 
 

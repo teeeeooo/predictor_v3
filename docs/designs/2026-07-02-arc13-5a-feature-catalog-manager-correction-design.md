@@ -443,8 +443,9 @@ Do not do:
 Status note (2026-07-02): Slice 4 implementation stores Feature Catalog fingerprint metadata in real and DEV artifacts and blocks missing/mismatched artifacts at model load.
 
 Status note (2026-07-03): Arc 13.5A narrowed the model compatibility fingerprint
-to active-row ML contract fields: `ml_name`, `role`, `one_hot_group`,
-`zero_fill_policy`, and `active`.
+to active-row ML contract fields: `ml_name`, `role`, `one_hot_group`, and
+`zero_fill_policy`. `active` changes compatibility by row inclusion/exclusion,
+not by being stored in each payload row.
 
 ### Slice 5: Common table helper cleanup
 

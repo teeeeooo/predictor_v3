@@ -476,9 +476,8 @@ def test_feature_catalog_fingerprint_scope_fields_are_explicit():
         "role",
         "one_hot_group",
         "zero_fill_policy",
-        "active",
     )
-    assert CATALOG_FINGERPRINT_VERSION == "feature_catalog.ml_contract.v1"
+    assert CATALOG_FINGERPRINT_VERSION == "feature_catalog.ml_contract.v2"
 
 
 def test_feature_catalog_fingerprint_ignores_non_model_contract_fields():
