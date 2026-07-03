@@ -46,14 +46,16 @@
   selection says it belongs to a follow-up arc and mapping update controls are
   disabled.
 - Arc 13.5R-1 current Predict schema inventory is captured in
-  `docs/designs/assets/current_predict_schema_inventory.md`; the next design
-  step is Arc 13.5R-3 read-only schema draft/projection parity after field/spec
-  confirmation.
+  `docs/designs/assets/current_predict_schema_inventory.md`.
+- Arc 13.5R-3 read-only v2 schema draft/projection parity is captured in
+  `docs/designs/2026-07-03-arc13-5r-readonly-schema-v2-projection-parity.md`;
+  the next design/implementation step is Arc 13.5R-4 projection owner switch
+  readiness.
 
 ## Next Actions
 
-1. Arc 13.5R-3 - Read-only Predict Schema Catalog v2 draft/projection parity
-   prototype.
+1. Arc 13.5R-4 - Projection owner switch readiness / owner switch after parity
+   acceptance.
 2. Arc 14A - Mapping Entity / Master Data Model Foundation.
 3. Arc 14B - Data Mapping Manager UI.
 4. Arc 14C - Runtime Cascade Integration.

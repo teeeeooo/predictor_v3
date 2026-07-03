@@ -1,0 +1,36 @@
+display_order,column_key,label,role,editor,data_type,visible,required,readonly,value_source,mapping_entity,mapping_attribute,trigger_column,rule_id,model_input_enabled,ml_name,one_hot_group,active,notes
+10,cooling_capa,냉방능력,input,number,number,true,true,false,manual,,,,,true,Cooling Capa,,true,Current Feature Catalog input row.
+20,heating_capa,난방능력,input,number,number,true,false,false,manual,,,,,true,Heating Capa,,true,Current Feature Catalog input row.
+30,idu,실내기,input,dropdown,string,true,false,false,manual,idu,,,,false,,,true,UI-only dropdown input from ui_columns.py.
+40,evap_index,증발기,input,dropdown,string,true,false,false,manual,evap_index,,,,false,,,true,UI-only dropdown input; future filter by IDU Size.
+50,odu,실외기,input,dropdown,string,true,false,false,manual,odu,,,odu_cond_clear_filter,false,,,true,UI-only dropdown input; current ODU cascade trigger.
+60,fin_type,FIN종류,input,dropdown,string,true,false,false,rule_options,odu_cascade,Available_Fins,odu,odu_cond_filter,false,,,true,Dependent dropdown option row.
+70,pi,PI,input,dropdown,string,true,false,false,rule_options,odu_cascade,Available_Pis,odu,odu_cond_filter,false,,,true,Dependent dropdown option row.
+80,row,ROW,input,dropdown,string,true,false,false,rule_options,odu_cascade,Available_Rows,odu,odu_cond_filter,false,,,true,Dependent dropdown option row.
+90,compressor,압축기,input,dropdown,string,true,false,false,manual,compressor,,,,false,,,true,UI-only dropdown input.
+100,ref_type,냉매종류,input,dropdown,string,true,false,false,one_hot,ref_type,,,one_hot_refrigerant,true,,refrigerant,true,One-hot selector for refrigerant group.
+110,exp_type,팽창장치,input,dropdown,string,true,false,false,one_hot,exp_type,,,one_hot_expansion_device,true,,expansion_device,true,One-hot selector for expansion device group.
+120,id_volume,ID Volume,auto,readonly,number,true,false,true,mapping_lookup,idu,ID Volume,idu,,true,ID Volume,,true,Simple mapping lookup from selected IDU.
+130,evap_area,Evap Area,auto,readonly,number,true,false,true,mapping_lookup,evap_index,Evap Area,evap_index,,true,Evap Area,,true,Simple mapping lookup from selected Evap Index.
+140,evap_volume,Evap Volume,auto,readonly,number,true,false,true,mapping_lookup,evap_index,Evap Volume,evap_index,,true,Evap Volume,,true,Simple mapping lookup from selected Evap Index.
+150,od_volume,OD Volume,auto,readonly,number,true,false,true,mapping_lookup,odu,OD Volume,odu,,true,OD Volume,,true,Simple mapping lookup from selected ODU.
+160,cond_area,Cond Area,auto,readonly,number,true,false,true,mapping_lookup,cond_specs,Cond Area,odu,cond_specs_lookup,true,Cond Area,,true,Current compatibility projects source=odu; v2 meaning is cond_specs composite lookup.
+170,cond_volume,Cond Volume,auto,readonly,number,true,false,true,mapping_lookup,cond_specs,Cond Volume,odu,cond_specs_lookup,true,Cond Volume,,true,Current compatibility projects source=odu; v2 meaning is cond_specs composite lookup.
+180,comp_eer,Comp EER,auto,readonly,number,true,false,true,mapping_lookup,compressor,Comp EER,compressor,,true,Comp EER,,true,Simple mapping lookup from selected compressor.
+190,comp_cc,Comp cc,auto,readonly,number,true,false,true,mapping_lookup,compressor,Comp cc,compressor,,true,Comp cc,,true,Simple mapping lookup from selected compressor.
+200,cooling_power,냉방 소비전력,result,readonly,number,true,false,true,result,,,,,false,Cooling Power,,true,ML target result column.
+210,eer,EER (rule),result,readonly,number,true,false,true,formula,,,,rule_result,false,,,true,Rule result column from ui_columns.py.
+220,cspf,CSPF,result,readonly,number,true,false,true,formula,,,,rule_result,false,,,true,Rule result column from ui_columns.py.
+230,heating_power,난방 소비전력,result,readonly,number,true,false,true,result,,,,,false,Heating Power,,true,ML target result column.
+240,cop,COP (rule),result,readonly,number,true,false,true,formula,,,,rule_result,false,,,true,Rule result column from ui_columns.py.
+250,hspf2,HSPF2,result,readonly,number,true,false,true,formula,,,,rule_result,false,,,true,Rule result column from ui_columns.py.
+260,ref_qty,냉매량,result,readonly,number,true,false,true,result,,,,,false,Ref Qty,,true,ML target result column.
+270,cooling_hz,냉방 주파수,result,readonly,number,true,false,true,result,,,,,false,Cooling Hz,,true,ML target result column.
+280,heating_hz,난방 주파수,result,readonly,number,true,false,true,result,,,,,false,Heating Hz,,true,ML target result column.
+300,one_hot_refrigerant_r410a,R410A,one_hot_feature,readonly,number,false,false,true,one_hot,,,,,true,R410A,refrigerant,true,Hidden emitted one-hot ML feature.
+310,one_hot_refrigerant_r32,R32,one_hot_feature,readonly,number,false,false,true,one_hot,,,,,true,R32,refrigerant,true,Hidden emitted one-hot ML feature.
+320,one_hot_refrigerant_r290,R290,one_hot_feature,readonly,number,false,false,true,one_hot,,,,,true,R290,refrigerant,true,Hidden emitted one-hot ML feature.
+330,one_hot_expansion_device_eev,EEV,one_hot_feature,readonly,number,false,false,true,one_hot,,,,,true,EEV,expansion_device,true,Hidden emitted one-hot ML feature.
+340,one_hot_expansion_device_capi,Capi,one_hot_feature,readonly,number,false,false,true,one_hot,,,,,true,Capi,expansion_device,true,Hidden emitted one-hot ML feature.
+400,status,Status,status,status,status,true,false,true,status,,,,,false,,,true,Adapter-local virtual status column; excluded from core projection parity.
+410,message,Warning / Error,status,status,status,true,false,true,status,,,,,false,,,true,Adapter-local virtual message column; excluded from core projection parity.
