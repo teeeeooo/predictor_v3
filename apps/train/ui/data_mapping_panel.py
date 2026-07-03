@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QModelIndex
+from PySide6.QtCore import QModelIndex, QSignalBlocker
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
@@ -34,8 +34,8 @@ from apps.train.ui.data_mapping_view_models import (
     value_rows,
 )
 
-ENTITY_PANEL_MIN_WIDTH = 340
-DETAIL_PANEL_INITIAL_WIDTH = 900
+ENTITY_PANEL_MIN_WIDTH = 420
+DETAIL_PANEL_INITIAL_WIDTH = 980
 
 
 class DataMappingPanel(QWidget):
@@ -48,16 +48,19 @@ class DataMappingPanel(QWidget):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("DataMappingPanel")
+        self.setAccessibleName("Data Mapping Manager")
         self._controller = controller or DataMappingController()
         self._selected_entity_key = ""
 
         self.status_label = QLabel()
+        self.status_label.setAccessibleName("Data Mapping validation status")
         self.source_label = QLabel()
-        self.entity_table = _table()
-        self.attribute_table = _table()
-        self.row_table = _table()
-        self.validation_table = _table()
-        self.actions_table = _table()
+        self.source_label.setAccessibleName("Data Mapping source")
+        self.entity_table = _table("Data Mapping Entities")
+        self.attribute_table = _table("Data Mapping Attributes")
+        self.row_table = _table("Data Mapping Rows")
+        self.validation_table = _table("Data Mapping Validation")
+        self.actions_table = _table("Data Mapping Future Actions")
         self._buttons: dict[str, QPushButton] = {}
 
         layout = QVBoxLayout(self)
@@ -90,6 +93,7 @@ class DataMappingPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         refresh_button = QPushButton("Refresh")
+        refresh_button.setAccessibleName("Refresh Data Mapping")
         refresh_button.clicked.connect(self.refresh)
         layout.addWidget(refresh_button)
         for key, label in (
@@ -99,6 +103,7 @@ class DataMappingPanel(QWidget):
             ("reload_runtime", "Reload runtime mapping"),
         ):
             button = QPushButton(label)
+            button.setAccessibleName(label)
             button.setEnabled(False)
             self._buttons[key] = button
             layout.addWidget(button)
@@ -107,6 +112,9 @@ class DataMappingPanel(QWidget):
 
     def _build_body(self) -> QSplitter:
         splitter = QSplitter(self)
+        splitter.setObjectName("DataMappingSplitter")
+        splitter.setAccessibleName("Data Mapping split view")
+        splitter.setChildrenCollapsible(False)
         entity_panel = self._panel("Entities", self.entity_table)
         entity_panel.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH)
         self.entity_table.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH - style.spacing("space.panel") * 2)
@@ -126,6 +134,8 @@ class DataMappingPanel(QWidget):
         lower.addWidget(self._panel("Future Actions", self.actions_table), 1)
         layout.addLayout(lower, 1)
         splitter.addWidget(details)
+        splitter.setCollapsible(0, False)
+        splitter.setCollapsible(1, False)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 3)
         splitter.setSizes((ENTITY_PANEL_MIN_WIDTH, DETAIL_PANEL_INITIAL_WIDTH))
@@ -134,6 +144,7 @@ class DataMappingPanel(QWidget):
     def _panel(self, title: str, table: QTableView) -> QFrame:
         panel = QFrame(self)
         panel.setObjectName("Panel")
+        panel.setAccessibleName(f"Data Mapping {title}")
         panel.setStyleSheet(style.panel_stylesheet())
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(
@@ -151,31 +162,41 @@ class DataMappingPanel(QWidget):
         return panel
 
     def _apply_state(self, state: DataMappingControllerState) -> None:
-        self._selected_entity_key = state.selected_entity_key
-        self.status_label.setText(state.message)
-        self.source_label.setText(f"Source: {state.source_label}")
-        self.entity_table.setModel(ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state)))
-        self.attribute_table.setModel(
-            ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
-        )
-        self.row_table.setModel(ReadOnlyMappingTableModel(value_headers(state), value_rows(state)))
-        self.validation_table.setModel(
-            ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
-        )
-        self.actions_table.setModel(
-            ReadOnlyMappingTableModel(
-                ("Action", "Label", "Enabled", "Reason"),
-                action_rows(state),
+        self.setUpdatesEnabled(False)
+        blockers = tuple(QSignalBlocker(table) for table in _data_tables(self))
+        try:
+            self._selected_entity_key = state.selected_entity_key
+            self.status_label.setText(state.message)
+            self.source_label.setText(f"Source: {state.source_label}")
+            self.entity_table.setModel(
+                ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state))
             )
-        )
-        self._sync_action_buttons(state)
-        self._bind_entity_selection(state)
+            self.attribute_table.setModel(
+                ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
+            )
+            self.row_table.setModel(
+                ReadOnlyMappingTableModel(value_headers(state), value_rows(state))
+            )
+            self.validation_table.setModel(
+                ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
+            )
+            self.actions_table.setModel(
+                ReadOnlyMappingTableModel(
+                    ("Action", "Label", "Enabled", "Reason"),
+                    action_rows(state),
+                )
+            )
+            self._sync_action_buttons(state)
+            self._bind_entity_selection(state)
+        finally:
+            del blockers
+            self.setUpdatesEnabled(True)
+            self.update()
 
     def _bind_entity_selection(self, state: DataMappingControllerState) -> None:
         selection_model = self.entity_table.selectionModel()
         if selection_model is None:
             return
-        selection_model.currentRowChanged.connect(self._on_entity_row_changed)
         if self.entity_table.model() and self.entity_table.model().rowCount() > 0:
             selected_row = next(
                 (
@@ -185,7 +206,12 @@ class DataMappingPanel(QWidget):
                 ),
                 0,
             )
-            self.entity_table.selectRow(selected_row)
+            selection_blocker = QSignalBlocker(selection_model)
+            try:
+                self.entity_table.selectRow(selected_row)
+            finally:
+                del selection_blocker
+        selection_model.currentRowChanged.connect(self._on_entity_row_changed)
 
     def _on_entity_row_changed(self, current: QModelIndex, _previous: QModelIndex) -> None:
         if not current.isValid():
@@ -205,8 +231,20 @@ class DataMappingPanel(QWidget):
                 button.setToolTip(action.reason)
 
 
-def _table() -> QTableView:
+def _data_tables(panel: DataMappingPanel) -> tuple[QTableView, ...]:
+    return (
+        panel.entity_table,
+        panel.attribute_table,
+        panel.row_table,
+        panel.validation_table,
+        panel.actions_table,
+    )
+
+
+def _table(accessible_name: str) -> QTableView:
     table = QTableView()
+    table.setObjectName(accessible_name.replace(" ", ""))
+    table.setAccessibleName(accessible_name)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectRows)
     table.setSelectionMode(QAbstractItemView.SingleSelection)
