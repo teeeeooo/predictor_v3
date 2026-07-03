@@ -35,7 +35,7 @@ Arc 13.5R-1 inventory를 바탕으로 Predict Schema Catalog v2의 field/spec co
 - Source code, `config/ml/features.csv`, fixtures, tests, runtime behavior, mapping converter, Data Mapping Manager UI, cascade engine, ML training/model artifacts 변경 없음.
 - `config/predict/schema.csv` 생성 없음.
 - Report lifecycle movement 없음.
-- Commit/push intentionally not performed for this task.
+- Follow-up commit/push performed after the initial docs-only closeout.
 
 ## Next Action
 
@@ -43,4 +43,5 @@ Arc 13.5R-3 read-only `schema.csv` draft/projection parity prototype.
 
 ## Commit / Push
 
-Not performed by request.
+- Commit: `f615254` (`docs: confirm predict schema v2 field spec`).
+- Push: OK; remote `main` matched `f615254` after push.
