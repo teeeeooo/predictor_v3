@@ -38,16 +38,21 @@
   fingerprint payload dedup are closed out.
 - Active report lifecycle cleanup is complete for Arc 13.5/13.5A and summarized
   in `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
-- Current next action is Arc 14, Data Mapping Manager / Mapping Update
-  Execution. The current `app_train.py` Data Mapping tab is still a placeholder:
-  mapping source selection says it belongs to a follow-up arc and mapping
-  update controls are disabled.
+- Current next action is Arc 13.5R, Predict Schema Catalog v2 design/audit,
+  before implementing Arc 14 Data Mapping Manager. Data Mapping Manager depends
+  on a schema contract for column groups, `mapping_section` / `mapping_key`, and
+  cascade/template behavior. The current `app_train.py` Data Mapping tab remains
+  a placeholder: mapping source selection says it belongs to a follow-up arc and
+  mapping update controls are disabled.
 
 ## Next Actions
 
-1. Arc 14 - Data Mapping Manager / Mapping Update Execution.
-2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-3. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 13.5R - Predict Schema Catalog v2 design/audit.
+2. Arc 14A - Mapping Master Data Model Foundation.
+3. Arc 14B - Data Mapping Manager UI.
+4. Arc 14C - Runtime Cascade Integration.
+5. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+6. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -59,6 +64,12 @@
   Qt tests used offscreen mode.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
+- Schema/column changes need an initial restart-required policy; live schema
+  reload remains a future decision.
+- IDU-Evap Slot and ODU-Cond Slot template scope needs Arc 13.5R audit before
+  runtime cascade implementation.
+- Data Mapping Manager canonical CSV v2 format is undecided; the legacy wide
+  fixture is import compatibility evidence, not the export contract.
 
 ## Active Constraints
 
@@ -76,11 +87,14 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Data Mapping update execution is now the direct target for Arc 14. Existing
-  `scripts/update_mapping.py` and `core.mapping.update` conversion logic should
-  be reviewed, but the GUI must not own raw file conversion directly.
-- Broad ML / predictor algorithm work remains deferred; later prediction
-  execution work must preserve core ML behavior.
+- Data Mapping Manager implementation is deferred until Predict Schema Catalog
+  v2 design/audit defines the column, mapping reference, and cascade/template
+  contract. Existing `scripts/update_mapping.py` and `core.mapping.update`
+  conversion logic should be reviewed later, but the GUI must not own raw file
+  conversion directly.
+- Broad ML / predictor algorithm and real dataset readiness work remains
+  deferred to Arc 15; later prediction execution work must preserve core ML
+  behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their
   candidates belong in `docs/REFACTOR_PLAN.md`.
 
@@ -103,6 +117,8 @@
   `docs/designs/2026-07-01-arc13-5-feature-catalog-editor-design-gate.md`.
 - Arc 13.5 revised slice plan:
   `docs/designs/2026-07-02-arc13-5-feature-catalog-editor-revised-slice-plan.md`.
+- Arc 13.5R Predict Schema / Mapping Manager foundation:
+  `docs/designs/2026-07-03-arc13-5r-predict-schema-mapping-manager-foundation.md`.
 - KOREA calculator notebook entry sub-arc:
   `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
 - KS C 9306 HSPF official oracle closeout:
