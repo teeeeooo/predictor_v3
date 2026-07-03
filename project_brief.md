@@ -15,8 +15,8 @@ Current phase: Machine Learning / Predictor Phase, post-Arc 13.5A planning. Arc
 are complete; Calculator Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF
 official oracle correction are complete; a small calculator UI micro-polish pass
 is complete; current near-term execution adds Arc 13.5R Predict Schema Catalog
-v2 design/audit before Arc 14 Data Mapping Manager work and real dataset
-readiness audit.
+v2 generic mapping entity / attribute / rule design/audit before Arc 14 Data
+Mapping Manager work and real dataset readiness audit.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -609,19 +609,21 @@ Status:
   confirmed dropdown UX OK. Closeout summary:
   `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
 
-### Arc 14 — Mapping Master Data / Manager UI / Runtime Cascade
+### Arc 14 — Mapping Entity / Manager UI / Runtime Cascade
 
 Goal:
 
 - Move the `app_train.py` Data Mapping tab from placeholder/admin status view
-  to mapping master data management, then connect runtime cascade behavior after
-  Predict Schema Catalog v2 boundaries are clear.
+  to mapping entity/master data management, then connect runtime cascade
+  behavior after Predict Schema Catalog v2 boundaries are clear.
 
 Target milestones:
 
-- Arc 13.5R prerequisite: Predict Schema Catalog v2 design/audit for column
-  groups, mapping references, and template-aware cascade boundaries.
-- Arc 14A: Mapping Master Data Model Foundation.
+- Arc 13.5R prerequisite: Predict Schema Catalog v2 design/audit for generic
+  mapping entity, mapping attribute, trigger, and cascade/autofill rule
+  boundaries. IDU-Evap and ODU-Cond are examples/default presets, not the core
+  schema boundary.
+- Arc 14A: Mapping Entity / Master Data Model Foundation.
 - Arc 14B: Data Mapping Manager UI.
 - Arc 14C: Runtime Cascade Integration.
 - Select Excel/CSV mapping source from the Train/Admin Data Mapping tab.

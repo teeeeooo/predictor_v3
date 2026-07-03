@@ -40,15 +40,16 @@
   in `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
 - Current next action is Arc 13.5R, Predict Schema Catalog v2 design/audit,
   before implementing Arc 14 Data Mapping Manager. Data Mapping Manager depends
-  on a schema contract for column groups, `mapping_section` / `mapping_key`, and
-  cascade/template behavior. The current `app_train.py` Data Mapping tab remains
-  a placeholder: mapping source selection says it belongs to a follow-up arc and
-  mapping update controls are disabled.
+  on a generic schema contract for columns, mapping entities, mapping
+  attributes, trigger columns, and cascade/autofill rules. The current
+  `app_train.py` Data Mapping tab remains a placeholder: mapping source
+  selection says it belongs to a follow-up arc and mapping update controls are
+  disabled.
 
 ## Next Actions
 
 1. Arc 13.5R - Predict Schema Catalog v2 design/audit.
-2. Arc 14A - Mapping Master Data Model Foundation.
+2. Arc 14A - Mapping Entity / Master Data Model Foundation.
 3. Arc 14B - Data Mapping Manager UI.
 4. Arc 14C - Runtime Cascade Integration.
 5. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
@@ -66,10 +67,13 @@
   the production empty-state contract.
 - Schema/column changes need an initial restart-required policy; live schema
   reload remains a future decision.
-- IDU-Evap Slot and ODU-Cond Slot template scope needs Arc 13.5R audit before
-  runtime cascade implementation.
-- Data Mapping Manager canonical CSV v2 format is undecided; the legacy wide
-  fixture is import compatibility evidence, not the export contract.
+- IDU-Evap and ODU-Cond are initial examples/default presets, not the schema
+  boundary; the boundary must be generic mapping entity / attribute / rule.
+- Data Mapping Manager canonical CSV v2 format is undecided and must be designed
+  around mapping entity/attribute data; the legacy wide fixture is import
+  compatibility evidence, not the export contract.
+- Cascade/autofill primitive scope needs Arc 13.5R audit at least for `lookup`,
+  `filter`, `clear`, and `composite_lookup`.
 
 ## Active Constraints
 
@@ -88,10 +92,10 @@
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
 - Data Mapping Manager implementation is deferred until Predict Schema Catalog
-  v2 design/audit defines the column, mapping reference, and cascade/template
-  contract. Existing `scripts/update_mapping.py` and `core.mapping.update`
-  conversion logic should be reviewed later, but the GUI must not own raw file
-  conversion directly.
+  v2 design/audit defines the generic column, mapping entity/attribute, trigger,
+  and cascade/autofill rule contract. Existing `scripts/update_mapping.py` and
+  `core.mapping.update` conversion logic should be reviewed later, but the GUI
+  must not own raw file conversion directly.
 - Broad ML / predictor algorithm and real dataset readiness work remains
   deferred to Arc 15; later prediction execution work must preserve core ML
   behavior.
