@@ -2,7 +2,7 @@
 
 import os
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QModelIndex, Qt
 from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
@@ -36,8 +36,35 @@ def test_read_only_mapping_table_model_exposes_headers_rows_and_flags():
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == 1
     assert model.data(model.index(0, 0), Qt.DisplayRole) == "fan_motor"
     assert model.data(model.index(0, 0), Qt.EditRole) == "fan_motor"
-    assert model.cell_value(99, 99) == ""
     assert not (model.flags(model.index(0, 0)) & Qt.ItemIsEditable)
+
+
+def test_read_only_mapping_table_model_guards_invalid_ax_access():
+    model = ReadOnlyMappingTableModel(("A", "B"), (("x", "y"),))
+
+    assert model.data(QModelIndex(), Qt.DisplayRole) is None
+    assert model.data(model.createIndex(99, 0), Qt.DisplayRole) is None
+    assert model.data(model.createIndex(0, 99), Qt.DisplayRole) is None
+    assert model.data(model.index(0, 0), Qt.ToolTipRole) is None
+    assert model.headerData(-1, Qt.Horizontal, Qt.DisplayRole) is None
+    assert model.headerData(99, Qt.Horizontal, Qt.DisplayRole) is None
+    assert model.headerData(99, Qt.Vertical, Qt.DisplayRole) is None
+    assert model.headerData(0, Qt.Horizontal, Qt.ToolTipRole) is None
+    assert model.headerData(0, 999, Qt.DisplayRole) is None
+    assert model.flags(QModelIndex()) == Qt.NoItemFlags
+    assert model.flags(model.createIndex(99, 0)) == Qt.NoItemFlags
+    assert model.cell_value(-1, 0) is None
+    assert model.cell_value(0, -1) is None
+    assert model.cell_value(99, 99) is None
+
+
+def test_read_only_mapping_table_model_guards_short_rows():
+    model = ReadOnlyMappingTableModel(("A", "B"), (("x",),))
+
+    assert model.columnCount() == 2
+    assert model.data(model.createIndex(0, 1), Qt.DisplayRole) is None
+    assert model.cell_value(0, 1) is None
+    assert model.flags(model.createIndex(0, 1)) == Qt.NoItemFlags
 
 
 def test_attribute_and_value_view_models_are_table_ready():

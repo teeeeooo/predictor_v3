@@ -31,7 +31,7 @@ class ReadOnlyMappingTableModel(QAbstractTableModel):
         return len(self._headers)
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if not index.isValid():
+        if not self._has_cell(index):
             return None
         if role in (Qt.DisplayRole, Qt.EditRole):
             return str(self._rows[index.row()][index.column()])
@@ -48,16 +48,34 @@ class ReadOnlyMappingTableModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
+            if not 0 <= section < len(self._headers):
+                return None
             return self._headers[section]
-        return section + 1
+        if orientation == Qt.Vertical:
+            if not 0 <= section < len(self._rows):
+                return None
+            return section + 1
+        return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
-        if not index.isValid():
+        if not self._has_cell(index):
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def cell_value(self, row: int, column: int) -> str:
+    def cell_value(self, row: int, column: int) -> str | None:
         """Return a safe cell value for tests and future copy/export paths."""
-        if not (0 <= row < self.rowCount() and 0 <= column < self.columnCount()):
-            return ""
+        if not self._is_cell_in_range(row, column):
+            return None
         return str(self._rows[row][column])
+
+    def _has_cell(self, index: QModelIndex) -> bool:
+        if not index.isValid():
+            return False
+        return self._is_cell_in_range(index.row(), index.column())
+
+    def _is_cell_in_range(self, row: int, column: int) -> bool:
+        return (
+            0 <= row < len(self._rows)
+            and 0 <= column < len(self._headers)
+            and column < len(self._rows[row])
+        )
