@@ -47,12 +47,13 @@
   disabled.
 - Arc 13.5R-1 current Predict schema inventory is captured in
   `docs/designs/assets/current_predict_schema_inventory.md`; the next design
-  step is Arc 13.5R-2 field/spec confirmation.
+  step is Arc 13.5R-3 read-only schema draft/projection parity after field/spec
+  confirmation.
 
 ## Next Actions
 
-1. Arc 13.5R-2 - Predict Schema Catalog v2 field/spec confirmation after
-   current schema inventory.
+1. Arc 13.5R-3 - Read-only Predict Schema Catalog v2 draft/projection parity
+   prototype.
 2. Arc 14A - Mapping Entity / Master Data Model Foundation.
 3. Arc 14B - Data Mapping Manager UI.
 4. Arc 14C - Runtime Cascade Integration.
@@ -69,15 +70,13 @@
   Qt tests used offscreen mode.
 - A future explicit DEV/demo sample loader remains optional and is not part of
   the production empty-state contract.
-- Schema/column changes need an initial restart-required policy; live schema
+- Schema/column/rule changes use an initial restart-required policy; live schema
   reload remains a future decision.
 - IDU-Evap and ODU-Cond are initial examples/default presets, not the schema
   boundary; the boundary must be generic mapping entity / attribute / rule.
 - Data Mapping Manager canonical CSV v2 format is undecided and must be designed
   around mapping entity/attribute data; the legacy wide fixture is import
   compatibility evidence, not the export contract.
-- Cascade/autofill primitive scope needs Arc 13.5R audit at least for `lookup`,
-  `filter`, `clear`, and `composite_lookup`.
 
 ## Active Constraints
 
