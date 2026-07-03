@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -230,6 +230,49 @@ entries:
       - model compatibility
     assertionStatus: verified
     source: result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md
+
+  - type: decision
+    topic: Arc 13.5R Predict Schema Catalog v2 owner switch
+    content: Predict core column assembly projects from config/predict/schema.csv through the Predict Schema Catalog v2 projection. Feature Catalog remains the ML feature/target/one-hot compatibility source; status/message stay adapter-local virtual columns; mapping/source/mapping_key are legacy compatibility projection fields, while mapping_entity/mapping_attribute/trigger_column/rule_id are the generic semantic schema fields. Schema, column, and rule changes remain restart-required.
+    keywords:
+      - predictor_v3
+      - Arc 13.5R
+      - Predict Schema Catalog v2
+      - config/predict/schema.csv
+      - COLUMNS
+      - mapping_entity
+      - restart required
+    assertionStatus: verified
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
+
+  - type: decision
+    topic: Arc 14 Data Mapping foundation state
+    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager currently has a read-only Train/Admin UI foundation with disabled future action metadata; existing mapping.json repository, converter, and runtime autofill/cascade paths remain compatibility owners until later execution slices. row_key is canonical row identity, key_attribute is the import/export/UI header for that identity, and active controls management visibility/eligibility rather than structural validation.
+    keywords:
+      - predictor_v3
+      - Arc 14
+      - Data Mapping Manager
+      - Mapping Entity
+      - mapping.json
+      - row_key
+      - key_attribute
+      - active
+    assertionStatus: verified
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
+
+  - type: error
+    topic: Data Mapping Computer Use accessibility crash
+    content: Data Mapping Computer Use onscreen smoke still crashed the Python/Qt app while macOS/AppKit accessibility hierarchy reads were in progress, even after table refresh signal blocking and explicit accessibility names were added. Later GUI validation should avoid treating that crash as a Python panel exception without new evidence, and should consider a non-AX smoke path or Qt accessibility bridge mitigation.
+    keywords:
+      - predictor_v3
+      - Data Mapping
+      - Computer Use
+      - accessibility
+      - PySide6
+      - AppKit
+      - SIGSEGV
+    assertionStatus: observed
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
 ```
 
 ## Known Gaps
