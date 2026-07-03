@@ -19,10 +19,10 @@ Record final closeout status for Arc 13.5A Feature Catalog Manager correction.
 
 ## Changed Files
 
-- `result_reports/active/668_arc13-5a-feature-catalog-manager-closeout.md`
+- `result_reports/archive/668_arc13-5a-feature-catalog-manager-closeout.md`
 - `docs/WORK_PLAN.md`
 - `project_log.md`
-- `result_reports/active/672_arc13-5a-final-closeout-update.md`
+- `result_reports/archive/672_arc13-5a-final-closeout-update.md`
 
 ## Verification
 

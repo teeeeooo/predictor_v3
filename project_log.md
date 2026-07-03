@@ -30,7 +30,10 @@
 - Completed Arc 13.5A Feature Catalog Manager correction: dropdown UX bugfix,
   user-confirmed GUI smoke, narrowed ML model compatibility fingerprint, and
   active payload dedup are closed out.
-- No Arc 13.5A blocker remains; next action is active report lifecycle cleanup.
+- Active report lifecycle cleanup is complete in
+  `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
+- No Arc 13.5A blocker remains; next action is Arc 14 ML catalog-aligned real
+  dataset readiness audit.
 
 ## 2026-07-02 — Arc 13.5 feature catalog editor closeout
 

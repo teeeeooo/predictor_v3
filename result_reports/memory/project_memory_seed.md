@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/654_summary-calculator-maintenance-micro-polish-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -216,7 +216,20 @@ entries:
       - features.csv
       - UTF-8-SIG
     assertionStatus: verified
-    source: project_log.md 2026-07-01 Arc 13.5 feature catalog editor direction; result_reports/active/635_planning-doc-sync-arc13-5-feature-catalog-editor.md
+    source: project_log.md 2026-07-01 Arc 13.5 feature catalog editor direction; result_reports/archive/635_planning-doc-sync-arc13-5-feature-catalog-editor.md
+
+  - type: decision
+    topic: Arc 13.5A Feature Catalog Manager closeout
+    content: Arc 13.5A completed the Feature Catalog Manager correction. app_train.py is the normal GUI manager for validation, Excel-safe export, whitelisted edits, draft row actions, help, validation-gated save, and restart-required schema apply messaging. The model artifact fingerprint is scoped to active-row ML contract fields ml_name, role, one_hot_group, and zero_fill_policy; active changes compatibility by row inclusion/exclusion, while label, notes, order, ui_key, source, and mapping_key do not affect model artifact compatibility.
+    keywords:
+      - predictor_v3
+      - Arc 13.5A
+      - Feature Catalog Manager
+      - app_train.py
+      - catalog fingerprint
+      - model compatibility
+    assertionStatus: verified
+    source: result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md
 ```
 
 ## Known Gaps

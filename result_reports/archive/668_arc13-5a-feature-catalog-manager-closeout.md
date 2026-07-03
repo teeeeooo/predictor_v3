@@ -12,13 +12,13 @@ Close out Arc 13.5A remaining Feature Catalog Manager slices after Slice 0.
 - Slice 4: Model artifact Feature Catalog fingerprint guard.
 - Slice 5: Common table clipboard/undo helper cleanup.
 - Arc 13.5A correction: Dropdown UX bugfix completed in
-  `result_reports/active/669_arc13-5a-feature-catalog-dropdown-ux-bugfix.md`.
+  `result_reports/archive/669_arc13-5a-feature-catalog-dropdown-ux-bugfix.md`.
 - Arc 13.5A correction: Feature Catalog fingerprint scope narrowed to the ML
   model contract in
-  `result_reports/active/670_arc13-5a-feature-catalog-fingerprint-scope.md`.
+  `result_reports/archive/670_arc13-5a-feature-catalog-fingerprint-scope.md`.
 - Arc 13.5A correction: redundant `active` row payload field removed; active
   state now affects fingerprint by row inclusion/exclusion, recorded in
-  `result_reports/active/671_arc13-5a-fingerprint-active-field-dedup.md`.
+  `result_reports/archive/671_arc13-5a-fingerprint-active-field-dedup.md`.
 - Workflow/design docs synced to current behavior.
 
 ## Validation

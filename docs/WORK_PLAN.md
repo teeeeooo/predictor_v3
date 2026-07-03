@@ -36,13 +36,15 @@
 - Arc 13.5A Feature Catalog Manager correction is complete: dropdown UX,
   user-confirmed GUI smoke, narrowed model compatibility fingerprint, and active
   fingerprint payload dedup are closed out.
-- Current next action is active report lifecycle cleanup.
+- Active report lifecycle cleanup is complete for Arc 13.5/13.5A and summarized
+  in `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
+- Current next action is Arc 14, the ML catalog-aligned real dataset readiness
+  audit.
 
 ## Next Actions
 
-1. Active report lifecycle cleanup.
-2. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
-3. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
+2. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
