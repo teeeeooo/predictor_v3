@@ -38,13 +38,16 @@
   fingerprint payload dedup are closed out.
 - Active report lifecycle cleanup is complete for Arc 13.5/13.5A and summarized
   in `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
-- Current next action is Arc 14, the ML catalog-aligned real dataset readiness
-  audit.
+- Current next action is Arc 14, Data Mapping Manager / Mapping Update
+  Execution. The current `app_train.py` Data Mapping tab is still a placeholder:
+  mapping source selection says it belongs to a follow-up arc and mapping
+  update controls are disabled.
 
 ## Next Actions
 
-1. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
-2. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14 - Data Mapping Manager / Mapping Update Execution.
+2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+3. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -73,8 +76,9 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Data Mapping update execution remains deferred and is not part of Arc 11
-  Train execution.
+- Data Mapping update execution is now the direct target for Arc 14. Existing
+  `scripts/update_mapping.py` and `core.mapping.update` conversion logic should
+  be reviewed, but the GUI must not own raw file conversion directly.
 - Broad ML / predictor algorithm work remains deferred; later prediction
   execution work must preserve core ML behavior.
 - Internal formula trace and broad code-quality refactors remain on hold; their

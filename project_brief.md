@@ -10,12 +10,12 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, post-Arc 13.5 planning. Arc
-13 ML Feature Catalog migration and Arc 13.5 Feature Catalog Editor Bridge are
-complete for automated scope; Calculator Sub-Arc - KOREA Notebook Entry and KS
-C 9306 HSPF official oracle correction are complete; a small calculator UI
-micro-polish pass is complete; current near-term execution moves to Arc 14 real
-dataset readiness audit.
+Current phase: Machine Learning / Predictor Phase, post-Arc 13.5A planning. Arc
+13 ML Feature Catalog migration and Arc 13.5/13.5A Feature Catalog Manager work
+are complete; Calculator Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF
+official oracle correction are complete; a small calculator UI micro-polish pass
+is complete; current near-term execution moves to Arc 14 Data Mapping Manager /
+Mapping Update Execution before real dataset readiness audit.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -604,18 +604,51 @@ Direction:
 
 Status:
 
-- Complete for automated scope. Real desktop GUI manual smoke remains pending.
+- Complete for automated scope and Arc 13.5A corrections. User direct GUI smoke
+  confirmed dropdown UX OK. Closeout summary:
+  `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
 
-### Arc 14 — ML Catalog-Aligned Real Dataset Readiness Audit
+### Arc 14 — Data Mapping Manager / Mapping Update Execution
+
+Goal:
+
+- Move the `app_train.py` Data Mapping tab from placeholder/admin status view
+  to an actual mapping management surface.
+
+Target milestones:
+
+- Select Excel/CSV mapping source from the Train/Admin Data Mapping tab.
+- Run mapping update through service/controller/adapter boundaries.
+- Generate or update `data/mapping.json`.
+- Show mapping validation, status, and log output.
+- Confirm Predict dropdown/autofill owner connection status.
+- Review existing `scripts/update_mapping.py` and `core.mapping.update`
+  conversion logic, but keep raw file conversion out of the GUI layer.
+
+Status:
+
+- Next recommended arc. This arc is required because the current Data Mapping
+  tab is still placeholder-like: mapping update controls are disabled and source
+  selection is marked for a follow-up arc.
+
+### Arc 15 — ML Catalog-Aligned Real Dataset Readiness Audit
 
 Goal:
 
 - Audit real dataset readiness against the Arc 13 catalog contract and Arc 13.5
-  editor workflow.
+  Feature Catalog Manager workflow after Data Mapping Manager execution is
+  available.
+
+Target milestones:
+
+- Audit real training dataset headers against Feature Catalog `ml_name`.
+- Check `mapping.json` consistency with Feature Catalog `source` and
+  `mapping_key`.
+- Judge real model training and prediction readiness.
 
 Status:
 
-- Next recommended arc after Arc 13.5 closeout.
+- Deferred until Arc 14 Data Mapping Manager / Mapping Update Execution closes.
 
 ### Later — Calculator to Predictor Integration
 
