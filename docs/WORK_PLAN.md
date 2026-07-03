@@ -56,13 +56,19 @@
   catalog lookup, and focused validation now live under `core/mapping`.
   Canonical CSV v2 direction is entity/attribute/row based, while import/export
   and mapping JSON write/reload remain follow-up work.
+- Arc 14B-1 Data Mapping Manager UI Foundation is complete for read-only scope:
+  active/key identity validation semantics are clarified, and Train/Admin now
+  has a service/controller-backed Data Mapping tab showing entity, attribute,
+  row, validation, and disabled future action surfaces from a foundation sample
+  provider.
 
 ## Next Actions
 
-1. Arc 14B - Data Mapping Manager UI.
-2. Arc 14C - Runtime Cascade Integration.
-3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-4. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14B-2 - Data Mapping runtime mapping repository read adapter.
+2. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter.
+3. Arc 14C - Runtime Cascade Integration.
+4. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+5. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -82,6 +88,9 @@
   but the concrete loader/exporter and normalized-vs-wide row-data file shape
   remain follow-up implementation decisions. The legacy wide fixture is import
   compatibility evidence, not the export contract.
+- Data Mapping UI currently uses a foundation sample provider for wiring tests
+  only; it does not display current `mapping.json` data yet. Add a runtime
+  mapping repository read adapter before editable CRUD/export work.
 - Runtime cascade, dropdown option filtering, and one-hot ML input projection
   are not yet v2-owned. Arc 14A/14C must keep semantic mapping fields separate
   from legacy `mapping`, `source`, and `mapping_key` compatibility fields.

@@ -159,3 +159,106 @@ def test_number_and_boolean_data_types_are_validated():
         "invalid_value_type",
         "invalid_value_type",
     ]
+
+
+def test_inactive_attribute_skips_required_and_type_value_validation():
+    attributes = (
+        MappingAttributeDefinition("motor_code", "Motor Code"),
+        MappingAttributeDefinition(
+            "legacy_efficiency",
+            "Legacy Efficiency",
+            data_type="number",
+            required=True,
+            active=False,
+        ),
+    )
+    catalog = MappingEntityCatalog(
+        entities=(_fan_motor_entity(attributes=attributes),),
+        rows=(
+            MappingEntityRow(
+                "fan_motor",
+                "FM-A",
+                {"legacy_efficiency": "not-a-number"},
+            ),
+        ),
+    )
+
+    assert validate_mapping_entity_catalog(catalog) == ()
+
+
+def test_inactive_row_skips_required_and_type_value_validation():
+    catalog = MappingEntityCatalog(
+        entities=(_fan_motor_entity(),),
+        rows=(
+            MappingEntityRow(
+                "fan_motor",
+                "FM-A",
+                {"motor_efficiency": "not-a-number", "enabled": "not-a-boolean"},
+                active=False,
+            ),
+        ),
+    )
+
+    assert validate_mapping_entity_catalog(catalog) == ()
+
+
+def test_inactive_entity_still_participates_in_structural_validation():
+    catalog = MappingEntityCatalog(
+        entities=(
+            _fan_motor_entity(entity_key="fan_motor"),
+            MappingEntityDefinition(
+                entity_key="fan_motor",
+                label="Inactive duplicate",
+                key_attribute="motor_code",
+                attributes=(MappingAttributeDefinition("motor_code", "Motor Code"),),
+                active=False,
+            ),
+        ),
+    )
+
+    assert "duplicate_entity_key" in _codes(catalog)
+
+
+def test_key_attribute_value_may_be_omitted_from_row_values():
+    catalog = MappingEntityCatalog(
+        entities=(_fan_motor_entity(),),
+        rows=(
+            MappingEntityRow(
+                "fan_motor",
+                "FM-A",
+                {"motor_efficiency": 0.82, "enabled": True},
+            ),
+        ),
+    )
+
+    assert validate_mapping_entity_catalog(catalog) == ()
+
+
+def test_key_attribute_value_matches_row_key_after_trim():
+    catalog = MappingEntityCatalog(
+        entities=(_fan_motor_entity(),),
+        rows=(
+            MappingEntityRow(
+                "fan_motor",
+                "FM-A",
+                {"motor_code": " FM-A ", "motor_efficiency": 0.82},
+            ),
+        ),
+    )
+
+    assert validate_mapping_entity_catalog(catalog) == ()
+
+
+def test_key_attribute_value_mismatch_is_rejected():
+    catalog = MappingEntityCatalog(
+        entities=(_fan_motor_entity(),),
+        rows=(
+            MappingEntityRow(
+                "fan_motor",
+                "FM-A",
+                {"motor_code": "FM-B", "motor_efficiency": 0.82},
+            ),
+        ),
+    )
+
+    assert "row_key_attribute_mismatch" in _codes(catalog)

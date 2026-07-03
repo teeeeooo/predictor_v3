@@ -109,3 +109,32 @@ def test_entity_row_values_can_be_looked_up_by_key_and_attribute():
     assert catalog.rows_for_entity("tube_geometry")[0].row_key == "T-07"
     assert catalog.value_for("tube_geometry", "T-07", "inner_area") == "14.2"
     assert catalog.value_for("tube_geometry", "missing", "inner_area", "") == ""
+
+
+def test_row_key_is_canonical_identity_when_key_attribute_value_is_omitted():
+    catalog = MappingEntityCatalog(
+        entities=(
+            MappingEntityDefinition(
+                entity_key="fan_motor",
+                label="Fan Motor",
+                key_attribute="motor_code",
+                attributes=(
+                    MappingAttributeDefinition("motor_code", "Motor Code"),
+                    MappingAttributeDefinition("motor_power", "Motor Power"),
+                ),
+            ),
+        ),
+        rows=(
+            MappingEntityRow(
+                entity_key="fan_motor",
+                row_key="FM-A",
+                values={"motor_power": 35},
+            ),
+        ),
+    )
+
+    row = catalog.row("fan_motor", "FM-A")
+
+    assert row is not None
+    assert row.value_for("motor_code") is None
+    assert catalog.value_for("fan_motor", "FM-A", "motor_power") == 35

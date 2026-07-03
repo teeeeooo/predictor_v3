@@ -1,34 +1,61 @@
-"""Data Mapping visual panel."""
+"""Read-only Data Mapping Manager foundation panel."""
 
 from __future__ import annotations
 
-from pathlib import Path
-
+from PySide6.QtCore import QModelIndex
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
     QPushButton,
+    QSplitter,
     QTableView,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from apps.common.ui import style
-from apps.train.ui.models.static_table_model import StaticTableModel
-from core.mapping.paths import MAPPING_JSON_FILE
+from apps.train.controllers.data_mapping_controller import (
+    DataMappingController,
+    DataMappingControllerState,
+)
+from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
+from apps.train.ui.data_mapping_view_models import (
+    ATTRIBUTE_HEADERS,
+    ENTITY_HEADERS,
+    VALIDATION_HEADERS,
+    action_rows,
+    attribute_rows,
+    entity_rows,
+    validation_rows,
+    value_headers,
+    value_rows,
+)
 
 
 class DataMappingPanel(QWidget):
-    """Visual Data Mapping admin surface without execution wiring."""
+    """Read-only Mapping Entity / Master Data admin surface."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        controller: DataMappingController | None = None,
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("DataMappingPanel")
+        self._controller = controller or DataMappingController()
+        self._selected_entity_key = ""
+
+        self.status_label = QLabel()
+        self.source_label = QLabel()
+        self.entity_table = _table()
+        self.attribute_table = _table()
+        self.row_table = _table()
+        self.validation_table = _table()
+        self.actions_table = _table()
+        self._buttons: dict[str, QPushButton] = {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -39,12 +66,13 @@ class DataMappingPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_command_bar())
+        layout.addWidget(self._build_body(), 1)
 
-        content = QHBoxLayout()
-        content.setSpacing(style.spacing("space.sm"))
-        content.addWidget(self._build_mapping_source_panel(), 1)
-        content.addWidget(self._build_mapping_status_panel(), 2)
-        layout.addLayout(content, 1)
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Reload read-only state through the controller."""
+        self._apply_state(self._controller.refresh(self._selected_entity_key))
 
     def _build_command_bar(self) -> QFrame:
         panel = QFrame(self)
@@ -57,91 +85,124 @@ class DataMappingPanel(QWidget):
             style.spacing("space.panel"),
             style.spacing("space.sm"),
         )
-        layout.setSpacing(style.spacing("space.md"))
-        for button in (
-            _disabled_button("매핑 Excel 선택"),
-            _disabled_button("매핑 업데이트", primary=True),
-            _disabled_button("상태 새로고침"),
+        layout.setSpacing(style.spacing("space.sm"))
+        refresh_button = QPushButton("Refresh")
+        refresh_button.clicked.connect(self.refresh)
+        layout.addWidget(refresh_button)
+        for key, label in (
+            ("import_csv_v2", "Import CSV v2"),
+            ("export_csv_v2", "Export CSV v2"),
+            ("save_mapping_json", "Save mapping.json"),
+            ("reload_runtime", "Reload runtime mapping"),
         ):
+            button = QPushButton(label)
+            button.setEnabled(False)
+            self._buttons[key] = button
             layout.addWidget(button)
         layout.addStretch(1)
         return panel
 
-    def _build_mapping_source_panel(self) -> QFrame:
-        panel, body = _panel("Data Mapping")
-        body.addWidget(QLabel("mapping.json 경로"))
-        body.addWidget(_readonly_line(MAPPING_JSON_FILE))
-        body.addWidget(QLabel("Excel source"))
-        body.addWidget(_readonly_line("후속 Arc에서 선택"))
-        body.addWidget(QLabel("Predict dropdown owner"))
-        body.addWidget(_readonly_line("DropdownOptionAdapter / core mapping owner"))
-        body.addStretch(1)
-        return panel
+    def _build_body(self) -> QSplitter:
+        splitter = QSplitter(self)
+        splitter.addWidget(self._panel("Entities", self.entity_table))
+        details = QWidget(splitter)
+        layout = QVBoxLayout(details)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(style.spacing("space.sm"))
+        self.status_label.setObjectName("PanelTitle")
+        layout.addWidget(self.status_label)
+        layout.addWidget(self.source_label)
+        layout.addWidget(self._panel("Attributes", self.attribute_table), 1)
+        layout.addWidget(self._panel("Rows", self.row_table), 2)
+        lower = QHBoxLayout()
+        lower.setSpacing(style.spacing("space.sm"))
+        lower.addWidget(self._panel("Validation", self.validation_table), 1)
+        lower.addWidget(self._panel("Future Actions", self.actions_table), 1)
+        layout.addLayout(lower, 1)
+        splitter.addWidget(details)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 3)
+        return splitter
 
-    def _build_mapping_status_panel(self) -> QFrame:
-        panel, body = _panel("Mapping Status / Log")
-        body.addWidget(_mapping_table())
-        log = QTextEdit()
-        log.setObjectName("MappingLog")
-        log.setReadOnly(True)
-        log.setPlainText(
-            "Mapping update execution is intentionally deferred.\n"
-            "Predict dropdown/autofill uses DropdownOptionAdapter and the current core mapping owner."
+    def _panel(self, title: str, table: QTableView) -> QFrame:
+        panel = QFrame(self)
+        panel.setObjectName("Panel")
+        panel.setStyleSheet(style.panel_stylesheet())
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
+            style.spacing("space.panel"),
         )
-        body.addWidget(log, 1)
+        layout.setSpacing(style.spacing("space.sm"))
+        heading = QLabel(title)
+        heading.setObjectName("PanelTitle")
+        heading.setFont(style.qfont("font.panel_title"))
+        layout.addWidget(heading)
+        layout.addWidget(table, 1)
         return panel
 
+    def _apply_state(self, state: DataMappingControllerState) -> None:
+        self._selected_entity_key = state.selected_entity_key
+        self.status_label.setText(state.message)
+        self.source_label.setText(f"Source: {state.source_label}")
+        self.entity_table.setModel(ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state)))
+        self.attribute_table.setModel(
+            ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
+        )
+        self.row_table.setModel(ReadOnlyMappingTableModel(value_headers(state), value_rows(state)))
+        self.validation_table.setModel(
+            ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
+        )
+        self.actions_table.setModel(
+            ReadOnlyMappingTableModel(
+                ("Action", "Label", "Enabled", "Reason"),
+                action_rows(state),
+            )
+        )
+        self._sync_action_buttons(state)
+        self._bind_entity_selection(state)
 
-def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:
-    panel = QFrame()
-    panel.setObjectName("Panel")
-    panel.setStyleSheet(style.panel_stylesheet())
-    layout = QVBoxLayout(panel)
-    layout.setContentsMargins(
-        style.spacing("space.panel"),
-        style.spacing("space.panel"),
-        style.spacing("space.panel"),
-        style.spacing("space.panel"),
-    )
-    layout.setSpacing(style.spacing("space.sm"))
-    heading = QLabel(title)
-    heading.setObjectName("PanelTitle")
-    heading.setFont(style.qfont("font.panel_title"))
-    layout.addWidget(heading)
-    return panel, layout
+    def _bind_entity_selection(self, state: DataMappingControllerState) -> None:
+        selection_model = self.entity_table.selectionModel()
+        if selection_model is None:
+            return
+        selection_model.currentRowChanged.connect(self._on_entity_row_changed)
+        if self.entity_table.model() and self.entity_table.model().rowCount() > 0:
+            selected_row = next(
+                (
+                    row
+                    for row, entity in enumerate(state.entities)
+                    if entity.entity_key == state.selected_entity_key
+                ),
+                0,
+            )
+            self.entity_table.selectRow(selected_row)
+
+    def _on_entity_row_changed(self, current: QModelIndex, _previous: QModelIndex) -> None:
+        if not current.isValid():
+            return
+        model = self.entity_table.model()
+        key = model.data(model.index(current.row(), 0)) if model is not None else ""
+        if key and key != self._selected_entity_key:
+            self._selected_entity_key = str(key)
+            self.refresh()
+
+    def _sync_action_buttons(self, state: DataMappingControllerState) -> None:
+        actions = {action.key: action for action in state.actions}
+        for key, button in self._buttons.items():
+            action = actions.get(key)
+            button.setEnabled(bool(action and action.enabled))
+            if action is not None:
+                button.setToolTip(action.reason)
 
 
-def _readonly_line(value: str) -> QLineEdit:
-    line = QLineEdit(value)
-    line.setReadOnly(True)
-    return line
-
-
-def _disabled_button(text: str, primary: bool = False) -> QPushButton:
-    button = QPushButton(text)
-    if primary:
-        button.setObjectName("PrimaryButton")
-    button.setEnabled(False)
-    button.setToolTip("mapping Excel update execution은 후속 Arc에서 구현됩니다.")
-    return button
-
-
-def _mapping_table() -> QTableView:
-    exists = Path(MAPPING_JSON_FILE).exists()
-    rows = (
-        ("mapping.json", "found" if exists else "missing", "현재 JSON read-only 사용"),
-        ("Excel update", "deferred", "실행 foundation은 후속 Arc"),
-        (
-            "Per-row dropdown",
-            "active owner",
-            "DropdownOptionAdapter / core mapping owner",
-        ),
-    )
+def _table() -> QTableView:
     table = QTableView()
-    table.setModel(StaticTableModel(("Item", "Status", "Notes"), rows))
-    table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    table.setSelectionBehavior(QAbstractItemView.SelectRows)
     table.setSelectionMode(QAbstractItemView.SingleSelection)
-    table.setMinimumHeight(180)
+    table.verticalHeader().setVisible(False)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
     return table

@@ -8,7 +8,12 @@ from typing import Any, Mapping
 
 @dataclass(frozen=True)
 class MappingAttributeDefinition:
-    """One attribute that belongs to a generic mapping entity."""
+    """One attribute that belongs to a generic mapping entity.
+
+    ``active`` is management visibility/eligibility metadata. Inactive
+    attributes still participate in structural checks such as duplicate keys,
+    but required/type value checks are skipped.
+    """
 
     attribute_key: str
     label: str
@@ -20,7 +25,11 @@ class MappingAttributeDefinition:
 
 @dataclass(frozen=True)
 class MappingEntityDefinition:
-    """Definition for one generic mapping entity."""
+    """Definition for one generic mapping entity.
+
+    ``key_attribute`` describes the import/export/UI header for ``row_key``.
+    ``row_key`` remains the canonical row identity.
+    """
 
     entity_key: str
     label: str
@@ -43,7 +52,12 @@ class MappingEntityDefinition:
 
 @dataclass(frozen=True)
 class MappingEntityRow:
-    """One row of values for a generic mapping entity."""
+    """One row of values for a generic mapping entity.
+
+    ``row_key`` is the canonical identity. ``values`` may omit the entity
+    ``key_attribute``; when present, that value must match ``row_key`` after
+    string trimming.
+    """
 
     entity_key: str
     row_key: str
