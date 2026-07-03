@@ -47,20 +47,18 @@
   disabled.
 - Arc 13.5R-1 current Predict schema inventory is captured in
   `docs/designs/assets/current_predict_schema_inventory.md`.
-- Arc 13.5R-3 read-only v2 schema draft/projection parity is captured in
-  `docs/designs/2026-07-03-arc13-5r-readonly-schema-v2-projection-parity.md`;
-  the next design/implementation step is Arc 13.5R-4 projection owner switch
-  readiness.
+- Arc 13.5R-4 projection owner switch is complete: Predict core `COLUMNS` now
+  load from the v2 projection while current adapter compatibility fields,
+  mapping/autofill behavior, case-table virtual status/message columns, and
+  one-hot ML input projection remain on their existing runtime owners.
 
 ## Next Actions
 
-1. Arc 13.5R-4 - Projection owner switch readiness / owner switch after parity
-   acceptance.
-2. Arc 14A - Mapping Entity / Master Data Model Foundation.
-3. Arc 14B - Data Mapping Manager UI.
-4. Arc 14C - Runtime Cascade Integration.
-5. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-6. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14A - Mapping Entity / Master Data Model Foundation.
+2. Arc 14B - Data Mapping Manager UI.
+3. Arc 14C - Runtime Cascade Integration.
+4. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+5. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -79,6 +77,9 @@
 - Data Mapping Manager canonical CSV v2 format is undecided and must be designed
   around mapping entity/attribute data; the legacy wide fixture is import
   compatibility evidence, not the export contract.
+- Runtime cascade, dropdown option filtering, and one-hot ML input projection
+  are not yet v2-owned. Arc 14A/14C must keep semantic mapping fields separate
+  from legacy `mapping`, `source`, and `mapping_key` compatibility fields.
 
 ## Active Constraints
 
@@ -96,11 +97,11 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Data Mapping Manager implementation is deferred until Predict Schema Catalog
-  v2 design/audit defines the generic column, mapping entity/attribute, trigger,
-  and cascade/autofill rule contract. Existing `scripts/update_mapping.py` and
-  `core.mapping.update` conversion logic should be reviewed later, but the GUI
-  must not own raw file conversion directly.
+- Data Mapping Manager implementation is deferred until Arc 14A defines the
+  Mapping Entity / Master Data Model Foundation and canonical CSV v2 direction.
+  Existing `scripts/update_mapping.py` and `core.mapping.update` conversion
+  logic should be reviewed later, but the GUI must not own raw file conversion
+  directly.
 - Broad ML / predictor algorithm and real dataset readiness work remains
   deferred to Arc 15; later prediction execution work must preserve core ML
   behavior.
@@ -128,6 +129,8 @@
   `docs/designs/2026-07-02-arc13-5-feature-catalog-editor-revised-slice-plan.md`.
 - Arc 13.5R Predict Schema / Mapping Manager foundation:
   `docs/designs/2026-07-03-arc13-5r-predict-schema-mapping-manager-foundation.md`.
+- Arc 13.5R projection owner switch:
+  `docs/designs/2026-07-03-arc13-5r-projection-owner-switch.md`.
 - KOREA calculator notebook entry sub-arc:
   `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
 - KS C 9306 HSPF official oracle closeout:

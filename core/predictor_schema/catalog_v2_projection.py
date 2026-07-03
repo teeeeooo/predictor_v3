@@ -10,29 +10,7 @@ from core.predictor_schema.catalog_v2 import (
     load_predict_schema_catalog_v2,
     validate_predict_schema_catalog_v2,
 )
-
-ROLE_PRESENTATION_DEFAULTS = {
-    "input": {"width": 90, "bg_color": "#FFFFFF"},
-    "auto": {"width": 90, "bg_color": "#F2F2F2"},
-    "result": {"width": 100, "bg_color": "#E6F3E6"},
-}
-
-WIDTH_OVERRIDES = {
-    "idu": 120,
-    "evap_index": 100,
-    "odu": 120,
-    "fin_type": 80,
-    "pi": 60,
-    "row": 60,
-    "compressor": 120,
-    "ref_type": 80,
-    "exp_type": 80,
-    "comp_eer": 80,
-    "comp_cc": 80,
-    "ref_qty": 80,
-    "cspf": 110,
-    "hspf2": 110,
-}
+from core.predictor_schema.presentation import presentation_metadata
 
 CORE_PROJECTED_ROLES = frozenset({"input", "auto", "result"})
 
@@ -94,20 +72,38 @@ def _project_row(row: PredictSchemaV2Row) -> dict:
         "key": row.column_key,
         "header": row.label,
         "group": row.role,
-        **ROLE_PRESENTATION_DEFAULTS[row.role],
+        **presentation_metadata(row.column_key, row.role),
     }
-    if row.column_key in WIDTH_OVERRIDES:
-        metadata["width"] = WIDTH_OVERRIDES[row.column_key]
     if row.editor == "dropdown":
         metadata["type"] = "dropdown"
-        metadata["mapping"] = row.column_key
+        metadata["mapping"] = _legacy_dropdown_mapping(row)
     if row.role in {"input", "auto"} and row.model_input_enabled and row.ml_name:
         metadata["ml_feature"] = row.ml_name
     if row.role == "auto":
-        metadata["source"] = row.trigger_column
-        metadata["mapping_key"] = row.mapping_attribute
+        metadata["source"] = _legacy_autofill_source(row)
+        metadata["mapping_key"] = _legacy_mapping_key(row)
     if row.role == "result":
         metadata["readonly"] = True
         if row.value_source == "result" and row.ml_name:
             metadata["ml_target"] = row.ml_name
     return metadata
+
+
+def _legacy_dropdown_mapping(row: PredictSchemaV2Row) -> str:
+    """Return the current adapter compatibility mapping key for dropdown rows.
+
+    This is intentionally not the v2 semantic `mapping_entity`. Current
+    `DROPDOWN_TARGET = {k: k}` and dropdown adapters still expect the legacy
+    dropdown column key as the mapping identifier.
+    """
+    return row.column_key
+
+
+def _legacy_autofill_source(row: PredictSchemaV2Row) -> str:
+    """Return the current autofill trigger column compatibility field."""
+    return row.trigger_column
+
+
+def _legacy_mapping_key(row: PredictSchemaV2Row) -> str:
+    """Return the current autofill mapping attribute compatibility field."""
+    return row.mapping_attribute

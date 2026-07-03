@@ -1,50 +1,10 @@
 """Predictor table column schema and column grouping constants."""
 
-from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
-from core.ml.feature_catalog_projection import predictor_columns_projection
-from core.predictor_schema.ui_columns import (
-    INPUT_INSERT_AFTER,
-    RESULT_INSERT_AFTER,
-    insert_columns_after,
-)
-
-
-ROLE_PRESENTATION_DEFAULTS = {
-    "input": {"width": 90, "bg_color": "#FFFFFF"},
-    "auto": {"width": 90, "bg_color": "#F2F2F2"},
-    "result": {"width": 100, "bg_color": "#E6F3E6"},
-}
-
-WIDTH_OVERRIDES = {
-    "comp_eer": 80,
-    "comp_cc": 80,
-    "ref_qty": 80,
-}
-
-def _load_validated_catalog():
-    catalog = load_feature_catalog()
-    errors = validate_feature_catalog(catalog)
-    if errors:
-        joined = "; ".join(errors)
-        raise RuntimeError(f"invalid predictor schema feature catalog: {joined}")
-    return catalog
+from core.predictor_schema.catalog_v2_projection import load_projected_columns_v2
 
 
 def _build_columns():
-    catalog = _load_validated_catalog()
-    projected = predictor_columns_projection(
-        catalog.rows,
-        ROLE_PRESENTATION_DEFAULTS,
-        WIDTH_OVERRIDES,
-    )
-    input_columns = [column for column in projected if column["group"] == "input"]
-    auto_columns = [column for column in projected if column["group"] == "auto"]
-    result_columns = [column for column in projected if column["group"] == "result"]
-    return (
-        insert_columns_after(input_columns, INPUT_INSERT_AFTER)
-        + auto_columns
-        + insert_columns_after(result_columns, RESULT_INSERT_AFTER)
-    )
+    return load_projected_columns_v2()
 
 
 COLUMNS = _build_columns()

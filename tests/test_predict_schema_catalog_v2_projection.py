@@ -10,7 +10,14 @@ from core.predictor_schema.catalog_v2_projection import (
     project_schema_v2_columns,
     status_schema_rows,
 )
-from core.predictor_schema.columns import COLUMNS, DROPDOWN_COLS
+from core.predictor_schema.columns import (
+    AUTO_COLS,
+    COLUMNS,
+    DROPDOWN_COLS,
+    DROPDOWN_TARGET,
+    INPUT_COLS,
+    RESULT_COLS,
+)
 
 
 def test_predict_schema_catalog_v2_projection_matches_current_core_column_order():
@@ -20,6 +27,10 @@ def test_predict_schema_catalog_v2_projection_matches_current_core_column_order(
     assert [column["key"] for column in projected] == [
         column["key"] for column in COLUMNS
     ]
+
+
+def test_predict_schema_catalog_v2_projection_is_current_runtime_owner():
+    assert COLUMNS == load_projected_columns_v2()
 
 
 def test_predict_schema_catalog_v2_projection_matches_current_core_metadata():
@@ -47,6 +58,44 @@ def test_predict_schema_catalog_v2_projection_matches_dropdown_columns():
     ]
 
     assert dropdown_keys == DROPDOWN_COLS
+    assert DROPDOWN_TARGET == {key: key for key in dropdown_keys}
+
+
+def test_predict_schema_catalog_v2_projection_preserves_current_column_groups():
+    assert INPUT_COLS == [
+        "cooling_capa",
+        "heating_capa",
+        "idu",
+        "evap_index",
+        "odu",
+        "fin_type",
+        "pi",
+        "row",
+        "compressor",
+        "ref_type",
+        "exp_type",
+    ]
+    assert AUTO_COLS == [
+        "id_volume",
+        "evap_area",
+        "evap_volume",
+        "od_volume",
+        "cond_area",
+        "cond_volume",
+        "comp_eer",
+        "comp_cc",
+    ]
+    assert RESULT_COLS == [
+        "cooling_power",
+        "eer",
+        "cspf",
+        "heating_power",
+        "cop",
+        "hspf2",
+        "ref_qty",
+        "cooling_hz",
+        "heating_hz",
+    ]
 
 
 def test_predict_schema_catalog_v2_one_hot_selector_mapping_matches_current_adapter():
@@ -80,3 +129,14 @@ def test_predict_schema_catalog_v2_preserves_cond_current_compatibility_metadata
     assert projected["cond_area"]["mapping_key"] == "Cond Area"
     assert projected["cond_volume"]["source"] == "odu"
     assert projected["cond_volume"]["mapping_key"] == "Cond Volume"
+
+
+def test_predict_schema_catalog_v2_separates_semantic_and_legacy_mapping_fields():
+    catalog = load_predict_schema_catalog_v2()
+    rows = {row.column_key: row for row in catalog.active_rows}
+    projected = {column["key"]: column for column in load_projected_columns_v2()}
+
+    assert rows["fin_type"].mapping_entity == "odu_cascade"
+    assert projected["fin_type"]["mapping"] == "fin_type"
+    assert rows["cond_area"].mapping_entity == "cond_specs"
+    assert projected["cond_area"]["source"] == "odu"
