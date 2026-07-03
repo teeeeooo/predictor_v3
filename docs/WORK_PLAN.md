@@ -33,13 +33,16 @@
 - Arc 13.5 Feature Catalog Editor Bridge is complete for automated scope:
   `app_train.py` now has a Feature Catalog tab for validate, Excel-safe export,
   whitelisted edit, and validation-gated canonical save.
-- Current next action is Arc 14, the ML catalog-aligned real dataset readiness
-  audit.
+- Arc 13.5A Feature Catalog Manager correction is complete: dropdown UX,
+  user-confirmed GUI smoke, narrowed model compatibility fingerprint, and active
+  fingerprint payload dedup are closed out.
+- Current next action is active report lifecycle cleanup.
 
 ## Next Actions
 
-1. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
-2. Real model prediction success smoke after `model/model.pkl` is available.
+1. Active report lifecycle cleanup.
+2. Arc 14 - ML Catalog-Aligned Real Dataset Readiness Audit.
+3. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 

@@ -11,6 +11,14 @@ Close out Arc 13.5A remaining Feature Catalog Manager slices after Slice 0.
 - Slice 3: Post-save schema apply behavior via restart-required messaging.
 - Slice 4: Model artifact Feature Catalog fingerprint guard.
 - Slice 5: Common table clipboard/undo helper cleanup.
+- Arc 13.5A correction: Dropdown UX bugfix completed in
+  `result_reports/active/669_arc13-5a-feature-catalog-dropdown-ux-bugfix.md`.
+- Arc 13.5A correction: Feature Catalog fingerprint scope narrowed to the ML
+  model contract in
+  `result_reports/active/670_arc13-5a-feature-catalog-fingerprint-scope.md`.
+- Arc 13.5A correction: redundant `active` row payload field removed; active
+  state now affects fingerprint by row inclusion/exclusion, recorded in
+  `result_reports/active/671_arc13-5a-fingerprint-active-field-dedup.md`.
 - Workflow/design docs synced to current behavior.
 
 ## Validation
@@ -24,12 +32,24 @@ Close out Arc 13.5A remaining Feature Catalog Manager slices after Slice 0.
 
 ## Manual Smoke
 
-Manual desktop GUI smoke was not run in this environment. Automated offscreen Qt coverage exercised Feature Catalog panel load, edit, export, add/delete draft state, shell tab presence, Predict table interactions, DEV training artifact load, and Train shell smoke script.
+Computer Use visual smoke was blocked in the remote environment because the Mac
+session was at the display/login boundary. Supplemental local Qt GUI smoke
+passed during the dropdown bugfix, and the user later confirmed direct GUI smoke
+OK for the dropdown UX in the local desktop session. Automated offscreen Qt
+coverage exercised Feature Catalog panel load, edit, export, add/delete draft
+state, shell tab presence, Predict table interactions, DEV training artifact
+load, and Train shell smoke script.
 
 ## Changed Files
 
 - `docs/workflows/ml_feature_catalog_workflow.md`
 - `docs/designs/2026-07-02-arc13-5a-feature-catalog-manager-correction-design.md`
+- `apps/train/application/feature_catalog/models.py`
+- `apps/train/ui/feature_catalog/delegates.py`
+- `apps/train/ui/feature_catalog/table_view.py`
+- `core/ml/catalog_fingerprint.py`
+- `tests/test_apps_train_feature_catalog.py`
+- `tests/test_ml_feature_catalog.py`
 
 ## Lifecycle
 
@@ -54,4 +74,4 @@ Closeout docs and this report are committed after validation. Push is performed 
 
 ## Next
 
-Run manual desktop GUI smoke in a local graphical session when available, then choose the next project slice. Active report lifecycle cleanup is also due.
+No Arc 13.5A blocker remains. Next action is active report lifecycle cleanup.
