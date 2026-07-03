@@ -32,7 +32,7 @@ When adding or changing an ML feature through the Train/Admin editor:
 5. Use CSV export when an Excel/Numbers review copy is needed; export uses
    UTF-8-SIG, includes current unsaved table edits, and does not mutate the
    canonical catalog.
-6. Edit whitelisted fields in the table: `label`, `notes`, `active`,
+6. Edit whitelisted fields in the table: `role`, `label`, `notes`, `active`,
    `zero_fill_policy`, `source`, `mapping_key`, and `one_hot_group`.
 7. Save only after validation passes; canonical save writes
    `config/ml/features.csv` as UTF-8 without BOM and reloads the catalog.
@@ -169,8 +169,14 @@ compares that fingerprint with the current catalog.
 
 - If the artifact fingerprint is missing, retrain the model.
 - If the artifact fingerprint differs from the current catalog, retrain the model.
-- Changing feature rows, targets, one-hot groups, active state, or zero-fill
-  policy can make an existing model artifact incompatible.
+- The model compatibility fingerprint uses active-row ML contract fields only:
+  `ml_name`, `role`, `one_hot_group`, `zero_fill_policy`, and `active`.
+- Changing `label`, `notes`, `order`, or `ui_key` does not change the model
+  compatibility fingerprint.
+- `source` and `mapping_key` affect UI/input mapping and schema apply concerns,
+  but are not part of the model artifact compatibility fingerprint.
+- A separate UI schema fingerprint remains a future option; it is not wired at
+  runtime by this workflow.
 
 ## CSV Editing Notes
 

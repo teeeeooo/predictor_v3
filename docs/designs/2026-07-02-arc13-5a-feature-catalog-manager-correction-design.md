@@ -320,11 +320,17 @@ Catalog changes may invalidate existing `model.pkl`.
 
 Important rule:
 
-- Changing catalog feature set, targets, one-hot groups, or zero-fill policies can require model retraining.
+- Changing active `ml_name`, `role`, `one_hot_group`, or `zero_fill_policy`, or
+  toggling `active`, can require model retraining.
+- Changing `label`, `notes`, `order`, or `ui_key` does not change the model
+  artifact compatibility fingerprint.
+- `source` and `mapping_key` are UI/input mapping concerns and are excluded from
+  the model artifact compatibility fingerprint. A separate UI schema/apply
+  fingerprint can be considered later, but is not implemented in this slice.
 
 Recommended guard:
 
-- Compute catalog fingerprint/hash from canonical catalog content or projected ML contract.
+- Compute catalog fingerprint/hash from the active-row projected ML contract.
 - Store catalog fingerprint in model artifact when training completes.
 - When loading model for prediction, compare model artifact fingerprint with current catalog fingerprint.
 - If mismatch, block or warn clearly: model was trained with a different Feature Catalog and retraining is required.
@@ -435,6 +441,10 @@ Do not do:
 - Training quality/tuning changes.
 
 Status note (2026-07-02): Slice 4 implementation stores Feature Catalog fingerprint metadata in real and DEV artifacts and blocks missing/mismatched artifacts at model load.
+
+Status note (2026-07-03): Arc 13.5A narrowed the model compatibility fingerprint
+to active-row ML contract fields: `ml_name`, `role`, `one_hot_group`,
+`zero_fill_policy`, and `active`.
 
 ### Slice 5: Common table helper cleanup
 

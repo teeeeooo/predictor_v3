@@ -28,6 +28,7 @@ from core.ml.catalog_fingerprint import (
     CATALOG_FINGERPRINT_KEY,
     CATALOG_FINGERPRINT_VERSION,
     CATALOG_FINGERPRINT_VERSION_KEY,
+    ML_CONTRACT_FINGERPRINT_FIELDS,
     attach_catalog_fingerprint,
     current_catalog_fingerprint,
     validate_model_catalog_fingerprint,
@@ -469,13 +470,75 @@ def test_feature_catalog_header_policy_rejects_unknown_header(tmp_path):
     assert "unknown header(s): width" in errors
 
 
-def test_feature_catalog_fingerprint_changes_with_catalog_contract():
-    catalog = load_feature_catalog()
-    changed_rows = list(catalog.rows)
-    changed_rows[0] = replace(changed_rows[0], active=not changed_rows[0].active)
-    changed = FeatureCatalog(rows=tuple(changed_rows), headers=catalog.headers)
+def test_feature_catalog_fingerprint_scope_fields_are_explicit():
+    assert ML_CONTRACT_FINGERPRINT_FIELDS == (
+        "ml_name",
+        "role",
+        "one_hot_group",
+        "zero_fill_policy",
+        "active",
+    )
+    assert CATALOG_FINGERPRINT_VERSION == "feature_catalog.ml_contract.v1"
 
-    assert current_catalog_fingerprint(catalog) != current_catalog_fingerprint(changed)
+
+def test_feature_catalog_fingerprint_ignores_non_model_contract_fields():
+    catalog = load_feature_catalog()
+    base = current_catalog_fingerprint(catalog)
+
+    for field, value in (
+        ("label", "Display Label Only"),
+        ("notes", "Operator note only"),
+        ("order", catalog.rows[0].order + 999),
+        ("ui_key", "ui_key_only"),
+        ("source", "mapping-source-only"),
+        ("mapping_key", "Mapping Key Only"),
+    ):
+        changed = _catalog_with_changed_active_row(catalog, **{field: value})
+        assert current_catalog_fingerprint(changed) == base, field
+
+
+def test_feature_catalog_fingerprint_changes_with_model_contract_fields():
+    catalog = load_feature_catalog()
+    base = current_catalog_fingerprint(catalog)
+
+    for field, value in (
+        ("ml_name", "Changed ML Name"),
+        ("role", "hidden"),
+        ("active", False),
+        ("one_hot_group", "changed_group"),
+        ("zero_fill_policy", "changed_policy"),
+    ):
+        changed = _catalog_with_changed_active_row(catalog, **{field: value})
+        assert current_catalog_fingerprint(changed) != base, field
+
+
+def test_feature_catalog_fingerprint_excludes_inactive_rows():
+    catalog = load_feature_catalog()
+    inactive_row = replace(
+        catalog.rows[0],
+        order=9999,
+        ml_name="Inactive Feature",
+        active=False,
+    )
+    with_inactive = FeatureCatalog(
+        rows=tuple(catalog.rows) + (inactive_row,),
+        headers=catalog.headers,
+    )
+    with_changed_inactive = FeatureCatalog(
+        rows=tuple(catalog.rows) + (
+            replace(
+                inactive_row,
+                ml_name="Inactive Changed ML Name",
+                role="result",
+                one_hot_group="inactive_group",
+                zero_fill_policy="mode_missing_allowed",
+            ),
+        ),
+        headers=catalog.headers,
+    )
+
+    assert current_catalog_fingerprint(with_inactive) == current_catalog_fingerprint(catalog)
+    assert current_catalog_fingerprint(with_changed_inactive) == current_catalog_fingerprint(catalog)
 
 
 def test_model_catalog_fingerprint_metadata_validates_current_catalog():
@@ -539,6 +602,18 @@ def test_feature_catalog_training_headers_match_raw_ml_name_contract():
     assert catalog.training_headers() == expected
     assert "Cool_Capa_per_EER" not in catalog.training_headers()
     assert set(catalog.training_headers()) == set(BASE_FEATURES)
+
+
+def _catalog_with_changed_active_row(
+    catalog: FeatureCatalog,
+    **changes,
+) -> FeatureCatalog:
+    row_index, row = next(
+        (index, row) for index, row in enumerate(catalog.rows) if row.active
+    )
+    changed_rows = list(catalog.rows)
+    changed_rows[row_index] = replace(row, **changes)
+    return FeatureCatalog(rows=tuple(changed_rows), headers=catalog.headers)
 
 
 def test_validate_training_headers_accepts_catalog_headers_without_aliases():

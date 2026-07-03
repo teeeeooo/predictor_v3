@@ -6,11 +6,18 @@ import hashlib
 import json
 from typing import Any
 
-from core.ml.feature_catalog import REQUIRED_HEADERS, FeatureCatalog, load_feature_catalog
+from core.ml.feature_catalog import FeatureCatalog, load_feature_catalog
 
 CATALOG_FINGERPRINT_KEY = "feature_catalog_fingerprint"
 CATALOG_FINGERPRINT_VERSION_KEY = "feature_catalog_fingerprint_version"
-CATALOG_FINGERPRINT_VERSION = "feature_catalog.v1"
+CATALOG_FINGERPRINT_VERSION = "feature_catalog.ml_contract.v1"
+ML_CONTRACT_FINGERPRINT_FIELDS = (
+    "ml_name",
+    "role",
+    "one_hot_group",
+    "zero_fill_policy",
+    "active",
+)
 
 
 def current_catalog_fingerprint(catalog: FeatureCatalog | None = None) -> str:
@@ -18,11 +25,8 @@ def current_catalog_fingerprint(catalog: FeatureCatalog | None = None) -> str:
     resolved = catalog or load_feature_catalog()
     payload = {
         "version": CATALOG_FINGERPRINT_VERSION,
-        "headers": list(REQUIRED_HEADERS),
-        "rows": [
-            {header: _value_for(row, header) for header in REQUIRED_HEADERS}
-            for row in sorted(resolved.rows, key=lambda item: item.order)
-        ],
+        "fields": list(ML_CONTRACT_FINGERPRINT_FIELDS),
+        "rows": [_payload_row(row) for row in _sorted_active_rows(resolved)],
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
@@ -60,3 +64,19 @@ def _value_for(row, header: str) -> str:  # noqa: ANN001
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
+
+
+def _payload_row(row) -> dict[str, str]:  # noqa: ANN001
+    return {field: _value_for(row, field) for field in ML_CONTRACT_FINGERPRINT_FIELDS}
+
+
+def _sorted_active_rows(catalog: FeatureCatalog):  # noqa: ANN001
+    return sorted(
+        (row for row in catalog.rows if row.active),
+        key=lambda row: (
+            row.role,
+            row.ml_name,
+            row.one_hot_group,
+            row.zero_fill_policy,
+        ),
+    )
