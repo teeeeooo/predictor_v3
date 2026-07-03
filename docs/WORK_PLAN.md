@@ -51,14 +51,18 @@
   load from the v2 projection while current adapter compatibility fields,
   mapping/autofill behavior, case-table virtual status/message columns, and
   one-hot ML input projection remain on their existing runtime owners.
+- Arc 14A Mapping Entity / Master Data Model Foundation is complete: generic
+  Qt-free mapping entity definitions, attribute definitions, row values,
+  catalog lookup, and focused validation now live under `core/mapping`.
+  Canonical CSV v2 direction is entity/attribute/row based, while import/export
+  and mapping JSON write/reload remain follow-up work.
 
 ## Next Actions
 
-1. Arc 14A - Mapping Entity / Master Data Model Foundation.
-2. Arc 14B - Data Mapping Manager UI.
-3. Arc 14C - Runtime Cascade Integration.
-4. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-5. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14B - Data Mapping Manager UI.
+2. Arc 14C - Runtime Cascade Integration.
+3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+4. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -74,8 +78,9 @@
   reload remains a future decision.
 - IDU-Evap and ODU-Cond are initial examples/default presets, not the schema
   boundary; the boundary must be generic mapping entity / attribute / rule.
-- Data Mapping Manager canonical CSV v2 format is undecided and must be designed
-  around mapping entity/attribute data; the legacy wide fixture is import
+- Data Mapping Manager canonical CSV v2 direction is entity/attribute/row based,
+  but the concrete loader/exporter and normalized-vs-wide row-data file shape
+  remain follow-up implementation decisions. The legacy wide fixture is import
   compatibility evidence, not the export contract.
 - Runtime cascade, dropdown option filtering, and one-hot ML input projection
   are not yet v2-owned. Arc 14A/14C must keep semantic mapping fields separate
@@ -97,8 +102,7 @@
 ## Deferred / Hold
 
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
-- Data Mapping Manager implementation is deferred until Arc 14A defines the
-  Mapping Entity / Master Data Model Foundation and canonical CSV v2 direction.
+- Data Mapping Manager implementation can proceed from the Arc 14A foundation.
   Existing `scripts/update_mapping.py` and `core.mapping.update` conversion
   logic should be reviewed later, but the GUI must not own raw file conversion
   directly.
