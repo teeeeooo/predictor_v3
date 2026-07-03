@@ -23,6 +23,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 
+from apps.calculator.ui.layout_constants import TOP_NOTEBOOK_SELECTED_FG
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 from apps.calculator.ui.tabs.ahri210240_tab import Ahri210240Tab
@@ -102,7 +103,7 @@ class CalculatorTkApp:
         style.map(
             "CalculatorTop.TNotebook.Tab",
             font=[("selected", self._top_tab_selected_font.name)],
-            foreground=[("selected", "#202020")],
+            foreground=[("selected", TOP_NOTEBOOK_SELECTED_FG)],
         )
 
     def run(self) -> None:
