@@ -45,10 +45,14 @@
   `app_train.py` Data Mapping tab remains a placeholder: mapping source
   selection says it belongs to a follow-up arc and mapping update controls are
   disabled.
+- Arc 13.5R-1 current Predict schema inventory is captured in
+  `docs/designs/assets/current_predict_schema_inventory.md`; the next design
+  step is Arc 13.5R-2 field/spec confirmation.
 
 ## Next Actions
 
-1. Arc 13.5R - Predict Schema Catalog v2 design/audit.
+1. Arc 13.5R-2 - Predict Schema Catalog v2 field/spec confirmation after
+   current schema inventory.
 2. Arc 14A - Mapping Entity / Master Data Model Foundation.
 3. Arc 14B - Data Mapping Manager UI.
 4. Arc 14C - Runtime Cascade Integration.
