@@ -34,6 +34,9 @@ from apps.train.ui.data_mapping_view_models import (
     value_rows,
 )
 
+ENTITY_PANEL_MIN_WIDTH = 340
+DETAIL_PANEL_INITIAL_WIDTH = 900
+
 
 class DataMappingPanel(QWidget):
     """Read-only Mapping Entity / Master Data admin surface."""
@@ -104,7 +107,10 @@ class DataMappingPanel(QWidget):
 
     def _build_body(self) -> QSplitter:
         splitter = QSplitter(self)
-        splitter.addWidget(self._panel("Entities", self.entity_table))
+        entity_panel = self._panel("Entities", self.entity_table)
+        entity_panel.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH)
+        self.entity_table.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH - style.spacing("space.panel") * 2)
+        splitter.addWidget(entity_panel)
         details = QWidget(splitter)
         layout = QVBoxLayout(details)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -122,6 +128,7 @@ class DataMappingPanel(QWidget):
         splitter.addWidget(details)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 3)
+        splitter.setSizes((ENTITY_PANEL_MIN_WIDTH, DETAIL_PANEL_INITIAL_WIDTH))
         return splitter
 
     def _panel(self, title: str, table: QTableView) -> QFrame:
