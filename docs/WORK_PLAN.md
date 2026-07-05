@@ -66,10 +66,14 @@
   adapts repository data into `MappingEntityCatalog`; sample provider usage is
   explicit test/fallback injection only. Missing `data/mapping.json` surfaces as
   a load error instead of a silent sample fallback.
+- Arc 14B-2F Runtime Source Visibility and Row Identity Display follow-up is
+  complete: load failures preserve the runtime source/path in UI state, and the
+  read-only row table shows row identity only as `Row Key` instead of repeating
+  the entity key attribute as an empty adjacent value column.
 
 ## Next Actions
 
-1. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter.
+1. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter boundary decision.
 2. Arc 14C - Runtime Cascade Integration.
 3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
 4. Real model prediction success smoke after `model/model.pkl` is available.

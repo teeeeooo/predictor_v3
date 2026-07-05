@@ -9,6 +9,7 @@ from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
+    RuntimeMappingCatalogProvider,
 )
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
@@ -83,9 +84,11 @@ def test_attribute_and_value_view_models_are_table_ready():
     assert attribute_model.cell_value(2, 0) == "Inner Surface Area"
     assert attribute_model.cell_value(2, 4) == "false"
     assert value_model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Row Key"
-    assert value_model.headerData(2, Qt.Horizontal, Qt.DisplayRole) == "Size"
+    assert value_model.headerData(1, Qt.Horizontal, Qt.DisplayRole) == "Size"
+    assert value_model.headerData(2, Qt.Horizontal, Qt.DisplayRole) == "Inner Surface Area"
     assert value_model.cell_value(0, 0) == "S1-2"
-    assert value_model.cell_value(0, 3) == "8.2"
+    assert value_model.cell_value(0, 1) == "1"
+    assert value_model.cell_value(0, 2) == "8.2"
 
 
 def test_validation_and_action_rows_represent_read_only_foundation_state():
@@ -121,6 +124,27 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert not panel.entity_table.currentIndex().isValid()
         assert all(not button.isEnabled() for button in panel._buttons.values())
         assert "validation OK" in panel.status_label.text()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
+    app = _app()
+    missing_mapping = tmp_path / "missing.json"
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(missing_mapping)))
+    )
+    panel = DataMappingPanel(controller=controller)
+    try:
+        app.processEvents()
+
+        assert panel.entity_table.model().rowCount() == 0
+        assert str(missing_mapping) in panel.source_label.text()
+        assert "Data Mapping load failed:" in panel.status_label.text()
+        assert panel.validation_table.model().cell_value(0, 1) == "load_failed"
+        assert not panel.entity_table.currentIndex().isValid()
     finally:
         panel.close()
         panel.deleteLater()

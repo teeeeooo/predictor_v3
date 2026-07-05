@@ -70,6 +70,34 @@ Onscreen runtime-data smoke is bounded by the missing `data/mapping.json` in
 this checkout; a temp runtime provider smoke can render data without writing the
 production mapping file.
 
+## Arc 14B-2F Follow-up
+
+Runtime source failure visibility:
+
+- `DataMappingService.source_label` exposes the configured provider source
+  before loading.
+- `DataMappingController` preserves that source label on load failure so the UI
+  shows which runtime mapping path failed.
+- The load failure message remains separate from source display and includes
+  the useful path/context from the runtime adapter.
+- Missing or empty runtime mapping data still does not fall back to the
+  foundation sample provider.
+
+Row identity display policy:
+
+- Internal catalog identity remains `MappingEntityRow.row_key`.
+- Entity `key_attribute` remains part of the catalog definition for future
+  import/export/edit semantics.
+- The read-only row value table uses one visible identity column: `Row Key`.
+- The controller omits the selected entity `key_attribute` from row value
+  headers, avoiding an adjacent empty duplicate identity column.
+
+Open Arc 14B-3 decision:
+
+- Editable CRUD and CSV v2 export/import must decide whether persisted row-data
+  formats include key attributes explicitly or derive them from row identity.
+  This follow-up only defines read-only UI display behavior.
+
 ## Excluded Scope
 
 - No mapping.json write/save implementation.

@@ -55,6 +55,7 @@ def test_data_mapping_service_default_uses_runtime_provider():
     service = DataMappingService()
 
     assert isinstance(service._provider, RuntimeMappingCatalogProvider)
+    assert service.source_label.startswith("Runtime mapping repository:")
 
 
 def test_runtime_mapping_provider_loads_temp_mapping_json(tmp_path):

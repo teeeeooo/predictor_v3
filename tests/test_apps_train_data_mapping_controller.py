@@ -10,6 +10,7 @@ from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
+    RuntimeMappingCatalogProvider,
 )
 
 
@@ -51,9 +52,9 @@ def test_data_mapping_controller_returns_entity_list_and_selected_details():
         "motor_efficiency",
         "enabled",
     ]
-    assert state.value_headers == ("motor_code", "motor_efficiency", "enabled")
+    assert state.value_headers == ("motor_efficiency", "enabled")
     assert state.values[0].row_key == "FM-A"
-    assert state.values[0].values == ("", "0.82", "true")
+    assert state.values[0].values == ("0.82", "true")
 
 
 def test_data_mapping_controller_selects_requested_entity():
@@ -67,7 +68,8 @@ def test_data_mapping_controller_selects_requested_entity():
         "Size",
         "Inner Surface Area",
     ]
-    assert state.values[0].values == ("", "1", "8.2")
+    assert state.value_headers == ("Size", "Inner Surface Area")
+    assert state.values[0].values == ("1", "8.2")
 
 
 def test_data_mapping_controller_returns_validation_status_and_rows():
@@ -79,3 +81,19 @@ def test_data_mapping_controller_returns_validation_status_and_rows():
     assert state.validation_rows[0].code == "invalid_value_type"
     assert state.validation_rows[0].entity_key == "fan_motor"
     assert all(not action.enabled for action in state.actions)
+
+
+def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):
+    missing_mapping = tmp_path / "missing.json"
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(missing_mapping)))
+    )
+
+    state = controller.refresh()
+
+    assert state.status == "error"
+    assert state.source_label == f"Runtime mapping repository: {missing_mapping}"
+    assert str(missing_mapping) in state.message
+    assert "Data Mapping load failed:" in state.message
+    assert state.validation_rows[0].code == "load_failed"
+    assert state.validation_rows[0].field == "source"

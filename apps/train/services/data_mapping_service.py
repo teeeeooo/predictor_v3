@@ -152,13 +152,18 @@ class DataMappingService:
     def __init__(self, provider: MappingCatalogProvider | None = None) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
 
+    @property
+    def source_label(self) -> str:
+        """Return the configured provider source label before loading."""
+        return self._provider.source_label
+
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return catalog data, validation result, and disabled future actions."""
         catalog = self._provider.load_catalog()
         return DataMappingSnapshot(
             catalog=catalog,
             validation_errors=validate_mapping_entity_catalog(catalog),
-            source_label=self._provider.source_label,
+            source_label=self.source_label,
             actions=_future_actions(),
         )
 

@@ -77,13 +77,16 @@ class DataMappingController:
         try:
             snapshot = self._service.load_snapshot()
         except Exception as exc:
-            return _error_state(f"Data Mapping load failed: {exc}")
+            return _error_state(
+                f"Data Mapping load failed: {exc}",
+                source_label=self._service.source_label,
+            )
 
         catalog = snapshot.catalog
         entities = tuple(_entity_summary(catalog, entity) for entity in catalog.entities)
         selected = _selected_entity(catalog, selected_entity_key)
         attributes = _attribute_rows(selected)
-        value_headers = tuple(attribute.attribute_key for attribute in selected.attributes)
+        value_headers = _value_headers(selected)
         values = _value_rows(catalog.rows_for_entity(selected.entity_key), value_headers)
         validation_rows = snapshot.validation_errors
         status = "ready" if snapshot.is_valid else "error"
@@ -145,6 +148,15 @@ def _attribute_rows(
     )
 
 
+def _value_headers(entity: MappingEntityDefinition) -> tuple[str, ...]:
+    key_attribute = entity.key_attribute
+    return tuple(
+        attribute.attribute_key
+        for attribute in entity.attributes
+        if attribute.attribute_key != key_attribute
+    )
+
+
 def _value_rows(
     rows: tuple[MappingEntityRow, ...],
     value_headers: tuple[str, ...],
@@ -170,9 +182,9 @@ def _empty_entity() -> MappingEntityDefinition:
     return MappingEntityDefinition("", "", "", ())
 
 
-def _error_state(message: str) -> DataMappingControllerState:
+def _error_state(message: str, *, source_label: str = "") -> DataMappingControllerState:
     return DataMappingControllerState(
-        source_label="",
+        source_label=source_label,
         status="error",
         message=message,
         selected_entity_key="",
@@ -180,6 +192,12 @@ def _error_state(message: str) -> DataMappingControllerState:
         attributes=(),
         value_headers=(),
         values=(),
-        validation_rows=(),
+        validation_rows=(
+            MappingValidationError(
+                code="load_failed",
+                message=message,
+                field="source",
+            ),
+        ),
         actions=(),
     )
