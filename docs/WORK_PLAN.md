@@ -70,10 +70,17 @@
   complete: load failures preserve the runtime source/path in UI state, and the
   read-only row table shows row identity only as `Row Key` instead of repeating
   the entity key attribute as an empty adjacent value column.
+- Arc 14B-4 Legacy Mapping CSV to JSON reconstruction audit is complete:
+  current runtime consumes section-shaped `mapping.json` data through existing
+  repository/autofill/dropdown owners, while the current CSV converter only
+  creates a `Sheet1` section and no deleted single-wide-CSV parser/header
+  contract was found. Direction C is selected: design UI CRUD next, keep Import
+  disabled, and treat Export as a read-only review snapshot rather than an
+  edit/reimport contract.
 
 ## Next Actions
 
-1. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter boundary decision.
+1. Arc 14B-5 - Data Mapping Manager UI CRUD workflow design with Import disabled and Export scoped to read-only review snapshots.
 2. Arc 14C - Runtime Cascade Integration.
 3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
 4. Real model prediction success smoke after `model/model.pkl` is available.
@@ -92,10 +99,11 @@
   reload remains a future decision.
 - IDU-Evap and ODU-Cond are initial examples/default presets, not the schema
   boundary; the boundary must be generic mapping entity / attribute / rule.
-- Data Mapping Manager canonical CSV v2 direction is entity/attribute/row based,
-  but the concrete loader/exporter and normalized-vs-wide row-data file shape
-  remain follow-up implementation decisions. The legacy wide fixture is import
-  compatibility evidence, not the export contract.
+- Legacy single CSV import reconstruction is not feasible enough to use as the
+  next implementation. If import returns later, it must be an optional
+  compatibility parser with explicit aliases and validation, not inferred from
+  the legacy wide fixture. The immediate Data Mapping path is UI CRUD workflow
+  design; Export should be a read-only review snapshot.
 - Data Mapping UI now uses the runtime mapping repository by default, but this
   checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
   that file or an explicit temp runtime provider harness.
@@ -121,8 +129,8 @@
 - AS/NZS Excel compatibility remains in the deferred Z-phase.
 - Data Mapping Manager implementation can proceed from the Arc 14A foundation.
   Existing `scripts/update_mapping.py` and `core.mapping.update` conversion
-  logic should be reviewed later, but the GUI must not own raw file conversion
-  directly.
+  logic were reviewed for the Arc 14B-4 audit; the GUI must still not own raw
+  file conversion directly.
 - Broad ML / predictor algorithm and real dataset readiness work remains
   deferred to Arc 15; later prediction execution work must preserve core ML
   behavior.
