@@ -77,10 +77,16 @@
   contract was found. Direction C is selected: design UI CRUD next, keep Import
   disabled, and treat Export as a read-only review snapshot rather than an
   edit/reimport contract.
+- Arc 14B-5A Data Mapping UI CRUD workflow design is complete: the editable
+  path is framed as user-facing Predict mapping groups, not a raw JSON or
+  generic entity editor. ODU Cond Specs is one user table that generates
+  `odu_cascade`, `cond_specs`, `fin_type`, `pi`, and `row`; Import remains
+  excluded, Export is read-only snapshot, and Save/Reload/Issues/dirty-state
+  boundaries are documented for implementation slices.
 
 ## Next Actions
 
-1. Arc 14B-5 - Data Mapping Manager UI CRUD workflow design with Import disabled and Export scoped to read-only review snapshots.
+1. Arc 14B-5B - Data Mapping editor draft projection from runtime `mapping.json` to user-facing groups in read-only mode.
 2. Arc 14C - Runtime Cascade Integration.
 3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
 4. Real model prediction success smoke after `model/model.pkl` is available.
@@ -104,6 +110,10 @@
   compatibility parser with explicit aliases and validation, not inferred from
   the legacy wide fixture. The immediate Data Mapping path is UI CRUD workflow
   design; Export should be a read-only review snapshot.
+- Data Mapping editable UX should expose user-facing groups only: IDU, Evap
+  Index, ODU, Compressor, Refrigerant, Expansion, and ODU Cond Specs. Internal
+  `odu_cascade`, `cond_specs`, `fin_type`, `pi`, and `row` sections are derived
+  from ODU Cond Specs rather than edited directly.
 - Data Mapping UI now uses the runtime mapping repository by default, but this
   checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
   that file or an explicit temp runtime provider harness.
