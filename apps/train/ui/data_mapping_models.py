@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
@@ -79,3 +79,38 @@ class ReadOnlyMappingTableModel(QAbstractTableModel):
             and 0 <= column < len(self._headers)
             and column < len(self._rows[row])
         )
+
+
+class EditableMappingTableModel(ReadOnlyMappingTableModel):
+    """Editable table model for Data Mapping draft rows."""
+
+    def __init__(
+        self,
+        headers: Sequence[str] = (),
+        rows: Sequence[Sequence[object]] = (),
+        *,
+        on_cell_changed: Callable[[int, str, object], bool] | None = None,
+    ) -> None:
+        super().__init__(headers, rows)
+        self._on_cell_changed = on_cell_changed
+
+    def setData(
+        self,
+        index: QModelIndex,
+        value: Any,
+        role: int = Qt.EditRole,
+    ) -> bool:
+        if role != Qt.EditRole or not self._has_cell(index):
+            return False
+        header = self._headers[index.column()]
+        if self._on_cell_changed is None:
+            return False
+        accepted = self._on_cell_changed(index.row(), header, value)
+        if accepted:
+            self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        return accepted
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        if not self._has_cell(index):
+            return Qt.NoItemFlags
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable

@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from core.mapping.editor_commands import (
+    add_draft_row,
+    delete_draft_row,
+    duplicate_draft_row,
+    set_draft_cell,
+)
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
@@ -34,6 +40,7 @@ class DataMappingSnapshot:
     validation_result: MappingEditorValidationResult
     source_label: str
     actions: tuple[DataMappingAction, ...]
+    dirty: bool = False
 
     @property
     def is_valid(self) -> bool:
@@ -110,6 +117,8 @@ class DataMappingService:
 
     def __init__(self, provider: MappingDraftProvider | None = None) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
+        self._draft: MappingEditorDraft | None = None
+        self._dirty = False
 
     @property
     def source_label(self) -> str:
@@ -118,7 +127,57 @@ class DataMappingService:
 
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
-        draft = self._provider.load_draft()
+        draft = self._draft or self._provider.load_draft()
+        self._draft = draft
+        return self._snapshot(draft)
+
+    def reload_snapshot(self) -> DataMappingSnapshot:
+        """Discard draft edits and reload from the provider."""
+        self._draft = self._provider.load_draft()
+        self._dirty = False
+        return self._snapshot(self._draft)
+
+    def edit_cell(
+        self,
+        group_key: str,
+        row_index: int,
+        column: str,
+        value: object,
+    ) -> DataMappingSnapshot:
+        """Apply one cell edit to the current draft."""
+        draft = self.load_snapshot().draft
+        next_draft = set_draft_cell(draft, group_key, row_index, column, value)
+        return self._store_command_result(draft, next_draft)
+
+    def add_row(self, group_key: str) -> DataMappingSnapshot:
+        """Append one blank row to a group."""
+        draft = self.load_snapshot().draft
+        return self._store_command_result(draft, add_draft_row(draft, group_key))
+
+    def duplicate_row(self, group_key: str, row_index: int) -> DataMappingSnapshot:
+        """Duplicate one group row."""
+        draft = self.load_snapshot().draft
+        return self._store_command_result(
+            draft,
+            duplicate_draft_row(draft, group_key, row_index),
+        )
+
+    def delete_row(self, group_key: str, row_index: int) -> DataMappingSnapshot:
+        """Delete one group row."""
+        draft = self.load_snapshot().draft
+        return self._store_command_result(draft, delete_draft_row(draft, group_key, row_index))
+
+    def _store_command_result(
+        self,
+        previous: MappingEditorDraft,
+        next_draft: MappingEditorDraft,
+    ) -> DataMappingSnapshot:
+        if next_draft != previous:
+            self._draft = next_draft
+            self._dirty = True
+        return self._snapshot(self._draft or next_draft)
+
+    def _snapshot(self, draft: MappingEditorDraft) -> DataMappingSnapshot:
         validation_result = validate_mapping_editor_draft(draft)
         return DataMappingSnapshot(
             draft=draft,
@@ -126,6 +185,7 @@ class DataMappingService:
             validation_result=validation_result,
             source_label=self.source_label,
             actions=_future_actions(validation_result.save_enabled),
+            dirty=self._dirty,
         )
 
 
@@ -140,5 +200,5 @@ def _future_actions(save_enabled: bool = False) -> tuple[DataMappingAction, ...]
             save_enabled,
             "" if save_enabled else "Resolve Issues before saving.",
         ),
-        DataMappingAction("reload_runtime", "Reload", False, disabled_reason),
+        DataMappingAction("reload_runtime", "Reload", True, ""),
     )

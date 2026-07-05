@@ -54,6 +54,30 @@ def test_data_mapping_controller_selects_requested_entity():
     assert state.values[0].values == ("EVAP-A", "S1", "8.2", "2.1")
 
 
+def test_data_mapping_controller_edit_commands_return_dirty_issue_state():
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+    state = controller.edit_cell("idu", 0, "ID Volume", "bad")
+
+    assert state.dirty
+    assert state.status == "error"
+    assert state.message == "Issues found."
+    assert state.validation_rows[0].code == "invalid_number"
+
+
+def test_data_mapping_controller_add_duplicate_delete_rows():
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+    added = controller.add_row("idu")
+    duplicated = controller.duplicate_row("idu", 0)
+    deleted = controller.delete_row("idu", 1)
+
+    assert added.dirty
+    assert len(added.values) == 2
+    assert len(duplicated.values) == 3
+    assert len(deleted.values) == 2
+
+
 def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):
     missing_mapping = tmp_path / "missing.json"
     controller = DataMappingController(

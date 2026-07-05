@@ -59,6 +59,37 @@ def test_data_mapping_service_disables_save_when_draft_has_issues():
     assert not actions["save_mapping_json"].enabled
 
 
+def test_data_mapping_service_edit_commands_set_dirty_and_rerun_validation():
+    service = DataMappingService(FoundationMappingCatalogProvider())
+
+    initial = service.load_snapshot()
+    edited = service.edit_cell("idu", 0, "IDU", "")
+
+    assert not initial.dirty
+    assert edited.dirty
+    assert not edited.is_valid
+    assert [issue.code for issue in edited.validation_errors] == ["blank_key"]
+
+    reloaded = service.reload_snapshot()
+    assert not reloaded.dirty
+    assert reloaded.is_valid
+
+
+def test_data_mapping_service_add_duplicate_delete_rows():
+    service = DataMappingService(FoundationMappingCatalogProvider())
+
+    added = service.add_row("idu")
+    assert added.dirty
+    assert len(added.draft.group("idu").rows) == 2
+
+    duplicated = service.duplicate_row("idu", 0)
+    assert len(duplicated.draft.group("idu").rows) == 3
+    assert "duplicate_key" in [issue.code for issue in duplicated.validation_errors]
+
+    deleted = service.delete_row("idu", 1)
+    assert len(deleted.draft.group("idu").rows) == 2
+
+
 def test_data_mapping_service_default_uses_runtime_provider():
     service = DataMappingService()
 

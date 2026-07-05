@@ -56,6 +56,18 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Connected service state to validation-gated Save enablement.
 - Kept Issues table default columns user-facing by hiding internal issue codes.
 
+### 5D - Editable CRUD and Dirty State
+
+- Added pure core draft commands for edit cell, add row, duplicate row, and
+  delete row.
+- Added service/controller draft command workflow with dirty state and
+  validation rerun after edits.
+- Added editable Data table model and Data Mapping panel buttons for Add Row,
+  Duplicate, Delete, and Reload.
+- Kept Import disabled and kept Save as validation-gated state only; actual
+  persistence remains 5E.
+- Preserved the no-initial-`selectRow` guard in the programmatic panel smoke.
+
 ## Verification
 
 - 5B py_compile: OK
@@ -78,10 +90,19 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_core_mapping_editor_validation.py -q`
 - 5C Train Data Mapping tests: OK
   `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
+- 5D py_compile: OK
+  `python3 -m py_compile core/mapping/__init__.py core/mapping/editor_commands.py apps/train/services/data_mapping_service.py apps/train/controllers/data_mapping_controller.py apps/train/ui/data_mapping_models.py apps/train/ui/data_mapping_panel.py`
+- 5D editor command / validation tests: OK
+  `python3 -m pytest tests/test_core_mapping_editor_commands.py tests/test_core_mapping_editor_validation.py -q`
+- 5D Train Data Mapping CRUD/UI tests: OK
+  `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
+- 5D Qt programmatic smoke: OK, covered by `DataMappingPanel` offscreen tests in
+  `tests/test_apps_train_data_mapping_ui_models.py`.
 
 ## Changed Files
 
 - `core/mapping/editor_model.py`
+- `core/mapping/editor_commands.py`
 - `core/mapping/editor_projection.py`
 - `core/mapping/editor_validation.py`
 - `core/mapping/__init__.py`
@@ -90,6 +111,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `apps/train/ui/data_mapping_panel.py`
 - `apps/train/ui/data_mapping_view_models.py`
 - `tests/test_core_mapping_editor_projection.py`
+- `tests/test_core_mapping_editor_commands.py`
 - `tests/test_core_mapping_editor_validation.py`
 - `tests/test_apps_train_data_mapping_service.py`
 - `tests/test_apps_train_data_mapping_controller.py`
@@ -104,7 +126,8 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `mapping.json`, or export snapshots.
 - ODU Cond Specs unresolved rows are preserved for data loss prevention and now
   surface as blocking Issues.
-- Table UX remains read-only in 5B; editable parity belongs to 5D.
+- Table UX is editable for single-cell programmatic edits and row CRUD; broader
+  spreadsheet parity remains intentionally outside this first CRUD slice.
 
 ## Scope Compliance
 
@@ -176,5 +199,7 @@ Change gate notes:
 - 5B-F commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - 5C commit hash is reported in terminal/final output to avoid a
+  self-referential report update loop.
+- 5D commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - Push is deferred until all slices complete.

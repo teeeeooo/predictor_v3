@@ -11,7 +11,7 @@ from apps.train.services.data_mapping_service import (
     FoundationMappingCatalogProvider,
     RuntimeMappingCatalogProvider,
 )
-from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
+from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
@@ -75,6 +75,21 @@ def test_read_only_mapping_table_model_guards_short_rows():
     assert model.flags(model.createIndex(0, 1)) == Qt.NoItemFlags
 
 
+def test_editable_mapping_table_model_updates_cell_through_callback():
+    calls = []
+    model = EditableMappingTableModel(
+        ("IDU", "ID Volume"),
+        (("IDU-A", "1.25"),),
+        on_cell_changed=lambda row, column, value: calls.append((row, column, value)) or True,
+    )
+
+    index = model.index(0, 1)
+
+    assert model.flags(index) & Qt.ItemIsEditable
+    assert model.setData(index, "2.5", Qt.EditRole)
+    assert calls == [(0, "ID Volume", "2.5")]
+
+
 def test_attribute_and_value_view_models_are_table_ready():
     state = _foundation_controller().refresh("evap_index")
     attribute_model = ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
@@ -115,15 +130,39 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert not hasattr(panel, "actions_table")
         assert panel.entity_table.minimumWidth() >= 380
         assert not panel.entity_table.currentIndex().isValid()
+        assert panel._buttons["add_row"].isEnabled()
+        assert panel._buttons["duplicate_row"].isEnabled()
+        assert panel._buttons["delete_row"].isEnabled()
         assert panel._buttons["save_mapping_json"].isEnabled()
+        assert panel._buttons["reload_runtime"].isEnabled()
         assert not panel._buttons["import_csv_v2"].isEnabled()
         assert [button.text() for button in panel._buttons.values()] == [
+            "Add Row",
+            "Duplicate",
+            "Delete",
             "Import",
             "Export",
             "Save",
             "Reload",
         ]
         assert panel.status_label.text() == "Ready."
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_programmatic_edit_marks_dirty():
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    try:
+        app.processEvents()
+        model = panel.row_table.model()
+
+        assert model.setData(model.index(0, 1), "2.5", Qt.EditRole)
+
+        assert panel.status_label.text() == "Unsaved changes."
+        assert not panel.row_table.currentIndex().isValid()
     finally:
         panel.close()
         panel.deleteLater()

@@ -21,7 +21,7 @@ from apps.train.controllers.data_mapping_controller import (
     DataMappingController,
     DataMappingControllerState,
 )
-from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
+from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     ENTITY_HEADERS,
@@ -95,6 +95,9 @@ class DataMappingPanel(QWidget):
         refresh_button.clicked.connect(self.refresh)
         layout.addWidget(refresh_button)
         for key, label in (
+            ("add_row", "Add Row"),
+            ("duplicate_row", "Duplicate"),
+            ("delete_row", "Delete"),
             ("import_csv_v2", "Import"),
             ("export_csv_v2", "Export"),
             ("save_mapping_json", "Save"),
@@ -105,6 +108,10 @@ class DataMappingPanel(QWidget):
             button.setEnabled(False)
             self._buttons[key] = button
             layout.addWidget(button)
+        self._buttons["add_row"].clicked.connect(self._add_row)
+        self._buttons["duplicate_row"].clicked.connect(self._duplicate_row)
+        self._buttons["delete_row"].clicked.connect(self._delete_row)
+        self._buttons["reload_runtime"].clicked.connect(self._reload)
         layout.addStretch(1)
         return panel
 
@@ -171,7 +178,11 @@ class DataMappingPanel(QWidget):
                 ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
             )
             self.row_table.setModel(
-                ReadOnlyMappingTableModel(value_headers(state), value_rows(state))
+                EditableMappingTableModel(
+                    value_headers(state),
+                    value_rows(state),
+                    on_cell_changed=self._edit_cell,
+                )
             )
             self.validation_table.setModel(
                 ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
@@ -201,10 +212,45 @@ class DataMappingPanel(QWidget):
     def _sync_action_buttons(self, state: DataMappingControllerState) -> None:
         actions = {action.key: action for action in state.actions}
         for key, button in self._buttons.items():
+            if key in {"add_row", "duplicate_row", "delete_row"}:
+                button.setEnabled(bool(state.selected_group_key))
+                button.setToolTip("")
+                continue
             action = actions.get(key)
             button.setEnabled(bool(action and action.enabled))
             if action is not None:
                 button.setToolTip(action.reason)
+
+    def _edit_cell(self, row: int, column: str, value: object) -> bool:
+        if not self._selected_group_key:
+            return False
+        self._apply_state(
+            self._controller.edit_cell(self._selected_group_key, row, column, value)
+        )
+        return True
+
+    def _add_row(self) -> None:
+        if self._selected_group_key:
+            self._apply_state(self._controller.add_row(self._selected_group_key))
+
+    def _duplicate_row(self) -> None:
+        row = self._selected_row()
+        if self._selected_group_key and row is not None:
+            self._apply_state(self._controller.duplicate_row(self._selected_group_key, row))
+
+    def _delete_row(self) -> None:
+        row = self._selected_row()
+        if self._selected_group_key and row is not None:
+            self._apply_state(self._controller.delete_row(self._selected_group_key, row))
+
+    def _reload(self) -> None:
+        self._apply_state(self._controller.reload())
+
+    def _selected_row(self) -> int | None:
+        index = self.row_table.currentIndex()
+        if not index.isValid():
+            return None
+        return index.row()
 
 
 def _data_tables(panel: DataMappingPanel) -> tuple[QTableView, ...]:
@@ -220,7 +266,11 @@ def _table(accessible_name: str) -> QTableView:
     table = QTableView()
     table.setObjectName(accessible_name.replace(" ", ""))
     table.setAccessibleName(accessible_name)
-    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    table.setEditTriggers(
+        QAbstractItemView.DoubleClicked
+        | QAbstractItemView.EditKeyPressed
+        | QAbstractItemView.AnyKeyPressed
+    )
     table.setSelectionBehavior(QAbstractItemView.SelectRows)
     table.setSelectionMode(QAbstractItemView.SingleSelection)
     table.verticalHeader().setVisible(False)

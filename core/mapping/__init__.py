@@ -23,6 +23,12 @@ from core.mapping.editor_model import (
     MappingEditorRow,
     MappingEditorValidationResult,
 )
+from core.mapping.editor_commands import (
+    add_draft_row,
+    delete_draft_row,
+    duplicate_draft_row,
+    set_draft_cell,
+)
 from core.mapping.editor_projection import (
     OWNED_RUNTIME_SECTIONS,
     load_runtime_mapping_editor_draft,
@@ -41,11 +47,15 @@ __all__ = [
     "MappingEntityRow",
     "MappingValidationError",
     "OWNED_RUNTIME_SECTIONS",
+    "add_draft_row",
     "adapt_runtime_mapping_data",
+    "delete_draft_row",
+    "duplicate_draft_row",
     "load_runtime_mapping_editor_draft",
     "load_runtime_mapping_catalog",
     "project_runtime_mapping_to_editor_draft",
     "runtime_mapping_source_label",
+    "set_draft_cell",
     "validate_mapping_editor_draft",
     "validate_mapping_entity_catalog",
 ]

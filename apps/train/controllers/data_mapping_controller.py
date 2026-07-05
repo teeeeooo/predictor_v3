@@ -57,6 +57,7 @@ class DataMappingControllerState:
     values: tuple[DataMappingValueRow, ...]
     validation_rows: tuple[MappingValidationError, ...]
     actions: tuple[DataMappingAction, ...]
+    dirty: bool = False
 
 
 class DataMappingController:
@@ -85,11 +86,7 @@ class DataMappingController:
         values = _value_rows(selected.rows, value_headers)
         validation_rows = snapshot.validation_errors
         status = "ready" if snapshot.is_valid else "error"
-        message = (
-            "Ready."
-            if snapshot.is_valid
-            else "Issues found."
-        )
+        message = _status_message(snapshot.is_valid, snapshot.dirty)
         return DataMappingControllerState(
             source_label=_display_source_label(snapshot.source_label),
             status=status,
@@ -101,6 +98,63 @@ class DataMappingController:
             values=values,
             validation_rows=validation_rows,
             actions=snapshot.actions,
+            dirty=snapshot.dirty,
+        )
+
+    def edit_cell(
+        self,
+        group_key: str,
+        row_index: int,
+        column: str,
+        value: object,
+    ) -> DataMappingControllerState:
+        """Apply one cell edit and return refreshed state."""
+        snapshot = self._service.edit_cell(group_key, row_index, column, value)
+        return self._state_from_snapshot(snapshot, group_key)
+
+    def add_row(self, group_key: str) -> DataMappingControllerState:
+        """Add one blank row and return refreshed state."""
+        return self._state_from_snapshot(self._service.add_row(group_key), group_key)
+
+    def duplicate_row(self, group_key: str, row_index: int) -> DataMappingControllerState:
+        """Duplicate one row and return refreshed state."""
+        return self._state_from_snapshot(
+            self._service.duplicate_row(group_key, row_index),
+            group_key,
+        )
+
+    def delete_row(self, group_key: str, row_index: int) -> DataMappingControllerState:
+        """Delete one row and return refreshed state."""
+        return self._state_from_snapshot(self._service.delete_row(group_key, row_index), group_key)
+
+    def reload(self) -> DataMappingControllerState:
+        """Discard draft edits and reload from the provider."""
+        return self._state_from_snapshot(self._service.reload_snapshot(), "")
+
+    def _state_from_snapshot(
+        self,
+        snapshot,
+        selected_group_key: str,
+    ) -> DataMappingControllerState:
+        draft = snapshot.draft
+        entities = tuple(_entity_summary(group) for group in draft.groups)
+        selected = _selected_group(draft.groups, selected_group_key)
+        attributes = _attribute_rows(selected)
+        value_headers = selected.columns
+        values = _value_rows(selected.rows, value_headers)
+        status = "ready" if snapshot.is_valid else "error"
+        return DataMappingControllerState(
+            source_label=_display_source_label(snapshot.source_label),
+            status=status,
+            message=_status_message(snapshot.is_valid, snapshot.dirty),
+            selected_group_key=selected.group_key,
+            entities=entities,
+            attributes=attributes,
+            value_headers=value_headers,
+            values=values,
+            validation_rows=snapshot.validation_errors,
+            actions=snapshot.actions,
+            dirty=snapshot.dirty,
         )
 
 
@@ -161,6 +215,14 @@ def _display_value(value: object) -> str:
     return "" if value is None else str(value)
 
 
+def _status_message(is_valid: bool, dirty: bool) -> str:
+    if not is_valid:
+        return "Issues found."
+    if dirty:
+        return "Unsaved changes."
+    return "Ready."
+
+
 def _empty_group() -> MappingEditorGroup:
     return MappingEditorGroup("", "", ())
 
@@ -198,4 +260,5 @@ def _error_state(
             ),
         ),
         actions=(),
+        dirty=False,
     )
