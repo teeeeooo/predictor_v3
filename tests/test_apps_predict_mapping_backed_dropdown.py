@@ -29,6 +29,8 @@ SAMPLE_MAPPING = {
     "idu": {"IDU-B": {}, "IDU-A": {}},
     "odu": {"ODU-A": {}, "ODU-B": {}},
     "compressor": {"CMP-A": {}},
+    "ref_type": {"R410A": {}, "R32": {}},
+    "exp_type": {"EEV": {}, "Capi": {}},
     "odu_cascade": {
         "ODU-A": {
             "Available_Fins": ["F&T"],
@@ -89,7 +91,7 @@ def test_workspace_does_not_parse_raw_mapping_options():
     assert "section.keys()" not in source
 
 
-def test_dropdown_option_adapter_returns_base_and_fallback_options():
+def test_dropdown_option_adapter_returns_mapping_backed_base_options():
     adapter = DropdownOptionAdapter(
         FakeMappingRepository(SAMPLE_MAPPING),
         build_case_table_column_schema(),
@@ -98,8 +100,21 @@ def test_dropdown_option_adapter_returns_base_and_fallback_options():
     assert adapter.base_options_for_key("idu") == ("IDU-A", "IDU-B")
     assert adapter.base_options_for_key("odu") == ("ODU-A", "ODU-B")
     assert adapter.base_options_for_key("compressor") == ("CMP-A",)
-    assert adapter.base_options_for_key("ref_type") == ("R410A", "R32", "R290")
+    assert adapter.base_options_for_key("ref_type") == ("R32", "R410A")
+    assert adapter.base_options_for_key("exp_type") == ("Capi", "EEV")
     assert adapter.base_options_for_key("missing") == ()
+
+
+def test_dropdown_option_adapter_returns_empty_for_missing_ref_and_exp_sections():
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository({}),
+        build_case_table_column_schema(),
+    )
+
+    assert adapter.base_options_for_key("ref_type") == ()
+    assert adapter.base_options_for_key("exp_type") == ()
+    assert "R410A" not in adapter.base_options_for_key("ref_type")
+    assert "EEV" not in adapter.base_options_for_key("exp_type")
 
 
 def test_dropdown_option_adapter_prefers_row_specific_options():
@@ -225,7 +240,7 @@ def test_typed_dropdown_value_commits_and_triggers_autofill_options():
         _dispose_workspace(workspace)
 
 
-def test_missing_mapping_keeps_controlled_status_and_fallback_options(tmp_path: Path):
+def test_missing_mapping_keeps_controlled_status_and_empty_mapping_options(tmp_path: Path):
     _app()
     repo = PredictMappingRepository(mapping_file=str(tmp_path / "missing.json"))
     workspace = PredictWorkspace(mapping_repository=repo)
@@ -234,7 +249,7 @@ def test_missing_mapping_keeps_controlled_status_and_fallback_options(tmp_path: 
         idu_index = workspace.case_model.index(0, _column_index(workspace, "idu"))
 
         assert workspace.dropdown_option_adapter.mapping_status().status == "missing"
-        assert workspace._dropdown_options_for_index(ref_index) == ("R410A", "R32", "R290")
+        assert workspace._dropdown_options_for_index(ref_index) == ()
         assert workspace._dropdown_options_for_index(idu_index) == ()
     finally:
         _dispose_workspace(workspace)

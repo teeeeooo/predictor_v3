@@ -10,12 +10,6 @@ from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.schema.case_table_schema_adapter import UnifiedCaseColumn
 
 
-FALLBACK_DROPDOWN_OPTIONS = {
-    "ref_type": ("R410A", "R32", "R290"),
-    "exp_type": ("EEV", "Capi"),
-}
-
-
 @dataclass(frozen=True)
 class MappingResourceStatus:
     """Qt-free mapping resource status for Predict UI display."""
@@ -47,9 +41,7 @@ class DropdownOptionAdapter:
         return self.base_options_for_key(key)
 
     def base_options_for_key(self, key: str) -> tuple[str, ...]:
-        """Return fallback or mapping-backed base options for a dropdown key."""
-        if key in FALLBACK_DROPDOWN_OPTIONS:
-            return FALLBACK_DROPDOWN_OPTIONS[key]
+        """Return mapping-backed base options for a dropdown key."""
         column = self._columns_by_key.get(key)
         if column is None:
             return ()

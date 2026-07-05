@@ -37,6 +37,15 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Kept the surface read-only and preserved the no-initial-`selectRow`
   regression guard.
 
+### 5B-F - Predict Dropdown Fallback Removal
+
+- Removed the hard-coded Predict dropdown fallback for `ref_type` and
+  `exp_type`.
+- Kept dropdown option resolution on the existing mapping-backed adapter path:
+  schema column key -> mapping target section -> section keys.
+- Missing or empty `ref_type` / `exp_type` sections now return empty option
+  tuples instead of generating `R410A` / `R32` / `R290` / `EEV` / `Capi`.
+
 ## Verification
 
 - 5B py_compile: OK
@@ -47,6 +56,12 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
 - 5B git diff check: OK
   `git diff --check`
+- 5B-F py_compile: OK
+  `python3 -m py_compile apps/predict/adapters/dropdown_option_adapter.py`
+- 5B-F dropdown adapter tests: OK
+  `python3 -m pytest tests/test_apps_predict_mapping_backed_dropdown.py -q`
+- 5B-F Predict mapping controller tests: OK
+  `python3 -m pytest tests/test_apps_predict_mapping_controller.py -q`
 
 ## Changed Files
 
@@ -61,6 +76,8 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `tests/test_apps_train_data_mapping_service.py`
 - `tests/test_apps_train_data_mapping_controller.py`
 - `tests/test_apps_train_data_mapping_ui_models.py`
+- `apps/predict/adapters/dropdown_option_adapter.py`
+- `tests/test_apps_predict_mapping_backed_dropdown.py`
 - `result_reports/active/702_arc14b5-data-mapping-crud-implementation-bundle.md`
 
 ## Known Failures / Risks
@@ -75,9 +92,9 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 
 - Import implemented: no
 - Export read-only snapshot: not yet
-- `mapping.json` SSOT for `ref_type` / `exp_type`: partially, projection added;
-  Predict fallback removal is 5B-F.
-- `FALLBACK_DROPDOWN_OPTIONS` removed: no, 5B-F pending.
+- `mapping.json` SSOT for `ref_type` / `exp_type`: yes for editor projection
+  and Predict base dropdown options.
+- `FALLBACK_DROPDOWN_OPTIONS` removed: yes.
 - UI raw JSON parse/write: no
 - Unknown sections preserved on save: save not yet implemented; projection
   preserves metadata.
@@ -137,5 +154,7 @@ Change gate notes:
 ## Commit / Push
 
 - 5B commit hash is reported in terminal/final output to avoid a
+  self-referential report update loop.
+- 5B-F commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - Push is deferred until all slices complete.
