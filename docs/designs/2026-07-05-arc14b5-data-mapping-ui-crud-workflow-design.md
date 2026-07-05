@@ -22,6 +22,9 @@ writes.
   compatibility parser is designed.
 - Export is a read-only review snapshot, not a file that users edit and import
   back.
+- `mapping.json` is the SSOT for all mapping-backed Predict dropdown options.
+  Hard-coded Predict dropdown fallback options are legacy behavior and should
+  be removed.
 - The UI does not parse or write raw JSON. Core/service boundaries own runtime
   JSON projection, validation, save, reload, and export workflows.
 - Keep the first editable workflow small: one draft, one selected group table,
@@ -111,9 +114,16 @@ domain label such as `IDU`, `Evap Index`, `ODU`, or `Compressor`.
 | Expansion | `Expansion` | `exp_type` |
 | ODU Cond Specs | `ODU`, `Fin Type`, `Pi`, `Row`, `Cond Area`, `Cond Volume` | derived sections listed below |
 
-Refrigerant and Expansion currently have fallback dropdown options in the
-Predict adapter. Whether saved `ref_type` / `exp_type` sections should override,
-merge with, or replace those fallback lists is a future decision.
+Decision: Refrigerant and Expansion are normal mapping groups owned by
+`mapping.json`, not fallback-backed options.
+
+- Refrigerant projects to the required `ref_type` section.
+- Expansion projects to the required `exp_type` section.
+- Predict dropdowns must read `ref_type` and `exp_type` from `mapping.json`
+  only.
+- Missing or empty `ref_type` / `exp_type` sections are validation issues.
+- The current hard-coded Predict dropdown fallback options are legacy behavior
+  and should be removed in implementation.
 
 ## ODU Cond Specs Derived Mapping
 
@@ -207,6 +217,7 @@ Common blocking issues:
 - required field missing;
 - invalid number;
 - referenced row missing.
+- missing or empty required section, including `ref_type` and `exp_type`.
 
 ODU Cond Specs blocking issues:
 
@@ -283,7 +294,7 @@ should still choose names that fit the actual module/package split.
 
 | Slice | Scope |
 | --- | --- |
-| Arc 14B-5B | Editor draft projection: runtime `mapping.json` -> user-facing groups, read-only projection only. |
+| Arc 14B-5B | Editor draft projection: runtime `mapping.json` -> user-facing groups, read-only projection only; include required `ref_type` / `exp_type` projection and remove Predict dropdown hard-coded fallback behavior. |
 | Arc 14B-5C | Draft validation, Issues generation, and Save enable judgment only. |
 | Arc 14B-5D | Editable table commands: Add Row, Duplicate, Delete, Edit Cell, dirty state. Save may remain disabled. |
 | Arc 14B-5E | Save with backup and atomic write. |
@@ -307,8 +318,6 @@ Import remains excluded until an explicit future compatibility-parser decision.
 
 - Should warnings exist in the first editable implementation, or should all
   issues start as blocking?
-- Should Refrigerant and Expansion saved sections replace, merge with, or stay
-  separate from current fallback options?
 - Should Undo be a later command stack, or should early slices rely on Reload
   and unsaved draft discard?
 - Should the first Export implementation ship XLSX only, JSON only, or both?
@@ -316,4 +325,5 @@ Import remains excluded until an explicit future compatibility-parser decision.
 ## Next Action
 
 Arc 14B-5B - implement editor draft projection from runtime `mapping.json` to
-the seven user-facing groups in read-only mode.
+the seven user-facing groups in read-only mode, with `ref_type` / `exp_type`
+owned by mapping data and Predict dropdown fallback options removed.

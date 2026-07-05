@@ -114,6 +114,10 @@
   Index, ODU, Compressor, Refrigerant, Expansion, and ODU Cond Specs. Internal
   `odu_cascade`, `cond_specs`, `fin_type`, `pi`, and `row` sections are derived
   from ODU Cond Specs rather than edited directly.
+- `mapping.json` is the SSOT for Refrigerant and Expansion options:
+  `ref_type` and `exp_type` are required mapping sections, and Predict dropdown
+  hard-coded fallback options are legacy behavior to remove during
+  implementation.
 - Data Mapping UI now uses the runtime mapping repository by default, but this
   checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
   that file or an explicit temp runtime provider harness.
