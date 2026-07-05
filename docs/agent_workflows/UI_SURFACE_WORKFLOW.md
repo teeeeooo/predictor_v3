@@ -163,6 +163,20 @@ Use focused validation by owner:
 - for visual-only or manual-smoke result reflection, do not repeat focused UI
   tests, structure guard, or code_map checks unless source changed again.
 
+For GUI / Computer Use smoke, keep the expensive accessibility-tree reads last
+and bounded:
+
+1. Lock behavior first with focused pytest, fake/controller tests, or a
+   programmatic Qt check where practical.
+2. Run onscreen / Computer Use smoke only after source and tests are stable.
+3. Prefer one `get_app_state` plus the minimum keyboard or click action needed
+   to prove the platform behavior. Avoid repeated state reads after every action
+   unless the action output itself is the acceptance evidence.
+4. If smoke reveals a small source bug, add or update the focused automated
+   guard first, then rerun one bounded smoke pass after the fix.
+5. Record any skipped extra smoke in the report instead of expanding the UI
+   interaction loop.
+
 Do not rerun broad focused tests just because they were used in an earlier
 slice. Rerun them only when the changed helper/controller/provider path is
 actually touched again.

@@ -249,6 +249,8 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
    validation은 input/error boundary를 방어한다.
 3. 계산 로직을 테스트에 맞추기 위해 왜곡하지 않는다.
 4. golden expected 변경은 accepted evidence가 있을 때만 한다.
+5. UI / Computer Use smoke는 먼저 자동/focused test로 owner behavior를 잠근 뒤
+   `UI_SURFACE_WORKFLOW.md`의 bounded smoke 순서를 따른다.
 
 ### 5. 단순 docs 문구 수정
 
@@ -309,6 +311,7 @@ ML->calculator adapter, result schema normalization, UI/core/config/ML 연결 �
 2. 기존 model/view/delegate 또는 shell/view/controller 구조를 확인한다.
 3. UI 표시/편집 변경과 계산 엔진/ML/schema 변경을 분리한다.
 4. 영향 범위에 맞는 focused UI validation을 수행한다.
+   Computer Use / onscreen smoke는 focused tests 이후 마지막 확인으로 bounded하게 수행한다.
 5. 새 table/window/detail/export surface 또는 helper/commonization을 만들 때는
    `docs/agent_workflows/DIFF_READ_BUDGET.md` → Reference Evidence Gate를
    참고하고 code_map check/regenerate 판단을 report에 남긴다.
