@@ -9,6 +9,7 @@ from core.mapping.entity_model import (
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
+    RuntimeMappingCatalogProvider,
 )
 
 
@@ -48,6 +49,40 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
         "save_mapping_json",
         "reload_runtime",
     }
+
+
+def test_data_mapping_service_default_uses_runtime_provider():
+    service = DataMappingService()
+
+    assert isinstance(service._provider, RuntimeMappingCatalogProvider)
+
+
+def test_runtime_mapping_provider_loads_temp_mapping_json(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text(
+        """
+        {
+            "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["F&T"],
+                    "Available_Pis": ["7"],
+                    "Available_Rows": ["1"]
+                }
+            }
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    snapshot = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file))
+    ).load_snapshot()
+
+    assert snapshot.is_valid
+    assert "Runtime mapping repository:" in snapshot.source_label
+    assert snapshot.catalog.entity_definition("idu") is not None
+    assert snapshot.catalog.value_for("idu", "IDU-A", "ID Volume") == 1.25
 
 
 def test_data_mapping_service_returns_validation_errors_from_provider_catalog():

@@ -12,6 +12,10 @@ from core.mapping.entity_model import (
     MappingEntityRow,
     MappingValidationError,
 )
+from core.mapping.entity_runtime_adapter import (
+    load_runtime_mapping_catalog,
+    runtime_mapping_source_label,
+)
 from core.mapping.entity_validation import validate_mapping_entity_catalog
 
 
@@ -126,11 +130,27 @@ class FoundationMappingCatalogProvider:
         )
 
 
+class RuntimeMappingCatalogProvider:
+    """Read-only provider backed by the existing runtime mapping repository."""
+
+    def __init__(self, mapping_file: str | None = None) -> None:
+        self._mapping_file = mapping_file
+
+    @property
+    def source_label(self) -> str:
+        """Return the runtime mapping source displayed by the UI."""
+        return runtime_mapping_source_label(self._mapping_file)
+
+    def load_catalog(self) -> MappingEntityCatalog:
+        """Return the current runtime mapping data as a read-only catalog."""
+        return load_runtime_mapping_catalog(self._mapping_file)
+
+
 class DataMappingService:
     """Provide read-only Mapping Entity catalog snapshots for Train/Admin UI."""
 
     def __init__(self, provider: MappingCatalogProvider | None = None) -> None:
-        self._provider = provider or FoundationMappingCatalogProvider()
+        self._provider = provider or RuntimeMappingCatalogProvider()
 
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return catalog data, validation result, and disabled future actions."""

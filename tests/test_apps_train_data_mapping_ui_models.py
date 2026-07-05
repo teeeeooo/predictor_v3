@@ -6,6 +6,10 @@ from PySide6.QtCore import QModelIndex, Qt
 from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
+from apps.train.services.data_mapping_service import (
+    DataMappingService,
+    FoundationMappingCatalogProvider,
+)
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.data_mapping_view_models import (
@@ -26,8 +30,12 @@ def _app() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
+def _foundation_controller() -> DataMappingController:
+    return DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+
 def test_read_only_mapping_table_model_exposes_headers_rows_and_flags():
-    state = DataMappingController().refresh()
+    state = _foundation_controller().refresh()
     model = ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state))
 
     assert model.rowCount() == 2
@@ -68,7 +76,7 @@ def test_read_only_mapping_table_model_guards_short_rows():
 
 
 def test_attribute_and_value_view_models_are_table_ready():
-    state = DataMappingController().refresh("evap_index")
+    state = _foundation_controller().refresh("evap_index")
     attribute_model = ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
     value_model = ReadOnlyMappingTableModel(value_headers(state), value_rows(state))
 
@@ -81,7 +89,7 @@ def test_attribute_and_value_view_models_are_table_ready():
 
 
 def test_validation_and_action_rows_represent_read_only_foundation_state():
-    state = DataMappingController().refresh()
+    state = _foundation_controller().refresh()
     validation_model = ReadOnlyMappingTableModel(
         VALIDATION_HEADERS,
         validation_rows(state),
@@ -100,7 +108,7 @@ def test_validation_and_action_rows_represent_read_only_foundation_state():
 
 def test_data_mapping_panel_builds_read_only_foundation_surface():
     app = _app()
-    panel = DataMappingPanel()
+    panel = DataMappingPanel(controller=_foundation_controller())
     try:
         app.processEvents()
 

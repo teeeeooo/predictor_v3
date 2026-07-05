@@ -11,6 +11,11 @@ from core.mapping.entity_model import (
     MappingEntityRow,
     MappingValidationError,
 )
+from core.mapping.entity_runtime_adapter import (
+    adapt_runtime_mapping_data,
+    load_runtime_mapping_catalog,
+    runtime_mapping_source_label,
+)
 from core.mapping.entity_validation import validate_mapping_entity_catalog
 
 __all__ = [
@@ -19,5 +24,8 @@ __all__ = [
     "MappingEntityDefinition",
     "MappingEntityRow",
     "MappingValidationError",
+    "adapt_runtime_mapping_data",
+    "load_runtime_mapping_catalog",
+    "runtime_mapping_source_label",
     "validate_mapping_entity_catalog",
 ]

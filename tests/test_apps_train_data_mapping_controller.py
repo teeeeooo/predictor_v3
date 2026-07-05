@@ -7,7 +7,10 @@ from core.mapping.entity_model import (
     MappingEntityRow,
 )
 from apps.train.controllers.data_mapping_controller import DataMappingController
-from apps.train.services.data_mapping_service import DataMappingService
+from apps.train.services.data_mapping_service import (
+    DataMappingService,
+    FoundationMappingCatalogProvider,
+)
 
 
 class InvalidProvider:
@@ -35,7 +38,9 @@ class InvalidProvider:
 
 
 def test_data_mapping_controller_returns_entity_list_and_selected_details():
-    state = DataMappingController().refresh()
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+    state = controller.refresh()
 
     assert state.status == "ready"
     assert state.selected_entity_key == "fan_motor"
@@ -52,7 +57,9 @@ def test_data_mapping_controller_returns_entity_list_and_selected_details():
 
 
 def test_data_mapping_controller_selects_requested_entity():
-    state = DataMappingController().refresh("evap_index")
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+    state = controller.refresh("evap_index")
 
     assert state.selected_entity_key == "evap_index"
     assert [attribute.attribute_key for attribute in state.attributes] == [

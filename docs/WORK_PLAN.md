@@ -61,14 +61,18 @@
   has a service/controller-backed Data Mapping tab showing entity, attribute,
   row, validation, and disabled future action surfaces from a foundation sample
   provider.
+- Arc 14B-2 Runtime Mapping Repository Read Adapter is complete for read-only
+  scope: `DataMappingService()` now defaults to a runtime mapping provider that
+  adapts repository data into `MappingEntityCatalog`; sample provider usage is
+  explicit test/fallback injection only. Missing `data/mapping.json` surfaces as
+  a load error instead of a silent sample fallback.
 
 ## Next Actions
 
-1. Arc 14B-2 - Data Mapping runtime mapping repository read adapter.
-2. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter.
-3. Arc 14C - Runtime Cascade Integration.
-4. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-5. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14B-3 - Data Mapping Manager editable CRUD or CSV v2 loader/exporter.
+2. Arc 14C - Runtime Cascade Integration.
+3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+4. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -88,9 +92,9 @@
   but the concrete loader/exporter and normalized-vs-wide row-data file shape
   remain follow-up implementation decisions. The legacy wide fixture is import
   compatibility evidence, not the export contract.
-- Data Mapping UI currently uses a foundation sample provider for wiring tests
-  only; it does not display current `mapping.json` data yet. Add a runtime
-  mapping repository read adapter before editable CRUD/export work.
+- Data Mapping UI now uses the runtime mapping repository by default, but this
+  checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
+  that file or an explicit temp runtime provider harness.
 - Runtime cascade, dropdown option filtering, and one-hot ML input projection
   are not yet v2-owned. Arc 14A/14C must keep semantic mapping fields separate
   from legacy `mapping`, `source`, and `mapping_key` compatibility fields.
