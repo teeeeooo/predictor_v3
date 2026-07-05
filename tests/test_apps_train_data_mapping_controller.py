@@ -115,6 +115,16 @@ def test_data_mapping_controller_save_clears_dirty_for_runtime_provider(tmp_path
     assert saved.message == "Ready."
 
 
+def test_data_mapping_controller_exports_json_snapshot(tmp_path):
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+    export_file = tmp_path / "snapshot.json"
+
+    state = controller.export_json(export_file)
+
+    assert export_file.exists()
+    assert not state.dirty
+
+
 def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):
     missing_mapping = tmp_path / "missing.json"
     controller = DataMappingController(

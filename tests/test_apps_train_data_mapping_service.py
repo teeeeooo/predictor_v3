@@ -117,6 +117,35 @@ def test_data_mapping_service_saves_runtime_mapping_and_clears_dirty(tmp_path):
     assert not snapshot.dirty
 
 
+def test_data_mapping_service_exports_dirty_draft_without_modifying_mapping_json(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text(
+        """
+        {
+            "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "evap_index": {},
+            "odu": {},
+            "compressor": {},
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}}
+        }
+        """,
+        encoding="utf-8",
+    )
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+    service.edit_cell("idu", 0, "IDU", "IDU-DRAFT")
+    export_file = tmp_path / "snapshot.json"
+
+    result, snapshot = service.export_snapshot(export_file)
+
+    payload = json.loads(export_file.read_text(encoding="utf-8"))
+    saved = json.loads(mapping_file.read_text(encoding="utf-8"))
+    assert result.success
+    assert snapshot.dirty
+    assert payload["groups"][0]["rows"][0]["values"]["IDU"] == "IDU-DRAFT"
+    assert saved["idu"] == {"IDU-A": {"ID Volume": 1.25}}
+
+
 def test_data_mapping_service_add_duplicate_delete_rows():
     service = DataMappingService(FoundationMappingCatalogProvider())
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from apps.train.services.data_mapping_service import (
     DataMappingAction,
@@ -135,6 +136,11 @@ class DataMappingController:
         """Save the current draft and return refreshed state."""
         _result, snapshot = self._service.save_mapping()
         return self._state_from_snapshot(snapshot, "")
+
+    def export_json(self, destination: str | Path) -> DataMappingControllerState:
+        """Export the current draft as JSON and return current state."""
+        _result, snapshot = self._service.export_snapshot(destination)
+        return self._state_from_snapshot(snapshot, snapshot.draft.groups[0].group_key if snapshot.draft.groups else "")
 
     def _state_from_snapshot(
         self,

@@ -12,6 +12,10 @@ from core.mapping.editor_commands import (
     duplicate_draft_row,
     set_draft_cell,
 )
+from core.mapping.editor_export import (
+    MappingEditorExportResult,
+    export_mapping_editor_snapshot_json,
+)
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
@@ -191,6 +195,19 @@ class DataMappingService:
             self._dirty = False
         return result, self._snapshot(draft)
 
+    def export_snapshot(
+        self,
+        destination: str | Path,
+    ) -> tuple[MappingEditorExportResult, DataMappingSnapshot]:
+        """Export the current draft as a read-only review snapshot."""
+        snapshot = self.load_snapshot()
+        result = export_mapping_editor_snapshot_json(
+            snapshot.draft,
+            snapshot.validation_errors,
+            destination,
+        )
+        return result, snapshot
+
     def _store_command_result(
         self,
         previous: MappingEditorDraft,
@@ -224,7 +241,7 @@ def _future_actions(
     disabled_reason = "Read-only mode."
     return (
         DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
-        DataMappingAction("export_csv_v2", "Export", False, disabled_reason),
+        DataMappingAction("export_csv_v2", "Export", True, ""),
         DataMappingAction(
             "save_mapping_json",
             "Save",

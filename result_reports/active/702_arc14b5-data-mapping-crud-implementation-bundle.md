@@ -79,6 +79,16 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Kept Save disabled for non-writable foundation/test providers.
 - Added save failure coverage that preserves the original mapping file.
 
+### 5F - Export Read-only Snapshot
+
+- Added JSON read-only review snapshot export for the current draft.
+- Export payload marks `read_only: true` and `import_contract: false`.
+- Export includes user-facing groups and Issues; dirty drafts export the current
+  draft without saving `mapping.json`.
+- Kept Import disabled.
+- Deferred XLSX snapshot to a future slice because the minimal required export
+  is satisfied by JSON and adding workbook formatting would broaden this bundle.
+
 ## Verification
 
 - 5B py_compile: OK
@@ -115,6 +125,12 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_core_mapping_editor_persistence.py -q`
 - 5E Train Data Mapping save tests: OK
   `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
+- 5F py_compile: OK
+  `python3 -m py_compile core/mapping/editor_export.py apps/train/services/data_mapping_service.py apps/train/controllers/data_mapping_controller.py apps/train/ui/data_mapping_panel.py`
+- 5F export tests: OK
+  `python3 -m pytest tests/test_core_mapping_editor_export.py -q`
+- 5F Train Data Mapping export tests: OK
+  `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
 
 ## Changed Files
 
@@ -123,6 +139,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `core/mapping/editor_projection.py`
 - `core/mapping/editor_persistence.py`
 - `core/mapping/editor_validation.py`
+- `core/mapping/editor_export.py`
 - `core/mapping/__init__.py`
 - `apps/train/services/data_mapping_service.py`
 - `apps/train/controllers/data_mapping_controller.py`
@@ -132,6 +149,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `tests/test_core_mapping_editor_commands.py`
 - `tests/test_core_mapping_editor_validation.py`
 - `tests/test_core_mapping_editor_persistence.py`
+- `tests/test_core_mapping_editor_export.py`
 - `tests/test_apps_train_data_mapping_service.py`
 - `tests/test_apps_train_data_mapping_controller.py`
 - `tests/test_apps_train_data_mapping_ui_models.py`
@@ -148,11 +166,13 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Table UX is editable for single-cell programmatic edits and row CRUD; broader
   spreadsheet parity remains intentionally outside this first CRUD slice.
 - Save backup naming is timestamp-based under a sibling `backups/` directory.
+- XLSX export is not implemented in this bundle; JSON is the shipped read-only
+  review snapshot.
 
 ## Scope Compliance
 
 - Import implemented: no
-- Export read-only snapshot: not yet
+- Export read-only snapshot: yes, JSON.
 - `mapping.json` SSOT for `ref_type` / `exp_type`: yes for editor projection
   and Predict base dropdown options.
 - `FALLBACK_DROPDOWN_OPTIONS` removed: yes.
@@ -221,5 +241,7 @@ Change gate notes:
 - 5D commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - 5E commit hash is reported in terminal/final output to avoid a
+  self-referential report update loop.
+- 5F commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - Push is deferred until all slices complete.

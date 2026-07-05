@@ -39,10 +39,16 @@ from core.mapping.editor_persistence import (
     runtime_mapping_from_editor_draft,
     save_mapping_editor_draft,
 )
+from core.mapping.editor_export import (
+    MappingEditorExportResult,
+    export_mapping_editor_snapshot_json,
+    mapping_editor_snapshot_payload,
+)
 from core.mapping.editor_validation import validate_mapping_editor_draft
 
 __all__ = [
     "MappingEditorDraft",
+    "MappingEditorExportResult",
     "MappingEditorGroup",
     "MappingEditorRow",
     "MappingEditorSaveResult",
@@ -57,11 +63,13 @@ __all__ = [
     "adapt_runtime_mapping_data",
     "delete_draft_row",
     "duplicate_draft_row",
+    "export_mapping_editor_snapshot_json",
     "load_runtime_mapping_editor_draft",
     "load_runtime_mapping_catalog",
     "project_runtime_mapping_to_editor_draft",
     "runtime_mapping_source_label",
     "runtime_mapping_from_editor_draft",
+    "mapping_editor_snapshot_payload",
     "save_mapping_editor_draft",
     "set_draft_cell",
     "validate_mapping_editor_draft",
