@@ -111,6 +111,7 @@ class DataMappingPanel(QWidget):
         self._buttons["add_row"].clicked.connect(self._add_row)
         self._buttons["duplicate_row"].clicked.connect(self._duplicate_row)
         self._buttons["delete_row"].clicked.connect(self._delete_row)
+        self._buttons["save_mapping_json"].clicked.connect(self._save)
         self._buttons["reload_runtime"].clicked.connect(self._reload)
         layout.addStretch(1)
         return panel
@@ -245,6 +246,9 @@ class DataMappingPanel(QWidget):
 
     def _reload(self) -> None:
         self._apply_state(self._controller.reload())
+
+    def _save(self) -> None:
+        self._apply_state(self._controller.save())
 
     def _selected_row(self) -> int | None:
         index = self.row_table.currentIndex()

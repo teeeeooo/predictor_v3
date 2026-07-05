@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from core.mapping.editor_commands import (
@@ -16,9 +17,11 @@ from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
     project_runtime_mapping_to_editor_draft,
 )
+from core.mapping.editor_persistence import MappingEditorSaveResult, save_mapping_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
 from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
+from core.mapping.paths import MAPPING_JSON_FILE
 
 
 @dataclass(frozen=True)
@@ -107,6 +110,11 @@ class RuntimeMappingCatalogProvider:
         """Return the runtime mapping source displayed by the UI."""
         return runtime_mapping_source_label(self._mapping_file)
 
+    @property
+    def mapping_file(self) -> str:
+        """Return the writable runtime mapping path."""
+        return self._mapping_file or MAPPING_JSON_FILE
+
     def load_draft(self) -> MappingEditorDraft:
         """Return the current runtime mapping data as editor draft groups."""
         return load_runtime_mapping_editor_draft(self._mapping_file)
@@ -167,6 +175,22 @@ class DataMappingService:
         draft = self.load_snapshot().draft
         return self._store_command_result(draft, delete_draft_row(draft, group_key, row_index))
 
+    def save_mapping(self) -> tuple[MappingEditorSaveResult, DataMappingSnapshot]:
+        """Save the current valid draft to runtime mapping JSON."""
+        draft = self.load_snapshot().draft
+        mapping_file = getattr(self._provider, "mapping_file", None)
+        if not mapping_file:
+            result = MappingEditorSaveResult(
+                success=False,
+                path=Path(""),
+                message="No writable mapping file is configured.",
+            )
+            return result, self._snapshot(draft)
+        result = save_mapping_editor_draft(draft, mapping_file)
+        if result.success:
+            self._dirty = False
+        return result, self._snapshot(draft)
+
     def _store_command_result(
         self,
         previous: MappingEditorDraft,
@@ -184,12 +208,19 @@ class DataMappingService:
             validation_errors=validation_result.issues,
             validation_result=validation_result,
             source_label=self.source_label,
-            actions=_future_actions(validation_result.save_enabled),
+            actions=_future_actions(
+                validation_result.save_enabled,
+                can_save=bool(getattr(self._provider, "mapping_file", None)),
+            ),
             dirty=self._dirty,
         )
 
 
-def _future_actions(save_enabled: bool = False) -> tuple[DataMappingAction, ...]:
+def _future_actions(
+    save_enabled: bool = False,
+    *,
+    can_save: bool = False,
+) -> tuple[DataMappingAction, ...]:
     disabled_reason = "Read-only mode."
     return (
         DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
@@ -197,8 +228,16 @@ def _future_actions(save_enabled: bool = False) -> tuple[DataMappingAction, ...]
         DataMappingAction(
             "save_mapping_json",
             "Save",
-            save_enabled,
-            "" if save_enabled else "Resolve Issues before saving.",
+            save_enabled and can_save,
+            _save_disabled_reason(save_enabled, can_save),
         ),
         DataMappingAction("reload_runtime", "Reload", True, ""),
     )
+
+
+def _save_disabled_reason(save_enabled: bool, can_save: bool) -> str:
+    if not can_save:
+        return "No writable mapping file is configured."
+    if not save_enabled:
+        return "Resolve Issues before saving."
+    return ""

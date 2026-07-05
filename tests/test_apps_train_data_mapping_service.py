@@ -1,5 +1,7 @@
 """Train Data Mapping service foundation tests."""
 
+import json
+
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
@@ -30,7 +32,8 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
         "Reload",
     ]
     actions = {action.key: action for action in snapshot.actions}
-    assert actions["save_mapping_json"].enabled
+    assert not actions["save_mapping_json"].enabled
+    assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
     assert actions["import_csv_v2"].reason == "Read-only mode."
 
 
@@ -73,6 +76,45 @@ def test_data_mapping_service_edit_commands_set_dirty_and_rerun_validation():
     reloaded = service.reload_snapshot()
     assert not reloaded.dirty
     assert reloaded.is_valid
+
+
+def test_data_mapping_service_saves_runtime_mapping_and_clears_dirty(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text(
+        """
+        {
+            "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "evap_index": {"EVAP-A": {"Evap Area": 8.2, "Evap Volume": 2.1}},
+            "odu": {"ODU-A": {"OD Volume": 2.5}},
+            "compressor": {"CMP-A": {"Comp EER": 3.2, "Comp cc": 11}},
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}},
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["F&T"],
+                    "Available_Pis": ["7"],
+                    "Available_Rows": ["1"]
+                }
+            },
+            "cond_specs": {
+                "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5}
+            },
+            "vendor_notes": {"keep": true}
+        }
+        """,
+        encoding="utf-8",
+    )
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+    service.edit_cell("idu", 0, "ID Volume", "2.5")
+
+    result, snapshot = service.save_mapping()
+
+    saved = json.loads(mapping_file.read_text(encoding="utf-8"))
+    assert result.success
+    assert result.backup_path is not None
+    assert saved["idu"]["IDU-A"]["ID Volume"] == 2.5
+    assert saved["vendor_notes"] == {"keep": True}
+    assert not snapshot.dirty
 
 
 def test_data_mapping_service_add_duplicate_delete_rows():

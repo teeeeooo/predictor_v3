@@ -68,6 +68,17 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   persistence remains 5E.
 - Preserved the no-initial-`selectRow` guard in the programmatic panel smoke.
 
+### 5E - Save with Backup and Atomic Write
+
+- Added core draft-to-runtime projection and save helper.
+- Save validates the draft, preserves unowned sections, replaces owned runtime
+  sections, writes a sibling backup, writes a temp file, and atomically replaces
+  `mapping.json`.
+- Added runtime-provider service save workflow; successful save clears dirty
+  state.
+- Kept Save disabled for non-writable foundation/test providers.
+- Added save failure coverage that preserves the original mapping file.
+
 ## Verification
 
 - 5B py_compile: OK
@@ -98,12 +109,19 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
 - 5D Qt programmatic smoke: OK, covered by `DataMappingPanel` offscreen tests in
   `tests/test_apps_train_data_mapping_ui_models.py`.
+- 5E py_compile: OK
+  `python3 -m py_compile core/mapping/editor_persistence.py apps/train/services/data_mapping_service.py apps/train/controllers/data_mapping_controller.py apps/train/ui/data_mapping_panel.py`
+- 5E persistence tests: OK
+  `python3 -m pytest tests/test_core_mapping_editor_persistence.py -q`
+- 5E Train Data Mapping save tests: OK
+  `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
 
 ## Changed Files
 
 - `core/mapping/editor_model.py`
 - `core/mapping/editor_commands.py`
 - `core/mapping/editor_projection.py`
+- `core/mapping/editor_persistence.py`
 - `core/mapping/editor_validation.py`
 - `core/mapping/__init__.py`
 - `apps/train/services/data_mapping_service.py`
@@ -113,6 +131,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `tests/test_core_mapping_editor_projection.py`
 - `tests/test_core_mapping_editor_commands.py`
 - `tests/test_core_mapping_editor_validation.py`
+- `tests/test_core_mapping_editor_persistence.py`
 - `tests/test_apps_train_data_mapping_service.py`
 - `tests/test_apps_train_data_mapping_controller.py`
 - `tests/test_apps_train_data_mapping_ui_models.py`
@@ -128,6 +147,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   surface as blocking Issues.
 - Table UX is editable for single-cell programmatic edits and row CRUD; broader
   spreadsheet parity remains intentionally outside this first CRUD slice.
+- Save backup naming is timestamp-based under a sibling `backups/` directory.
 
 ## Scope Compliance
 
@@ -137,10 +157,8 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   and Predict base dropdown options.
 - `FALLBACK_DROPDOWN_OPTIONS` removed: yes.
 - UI raw JSON parse/write: no
-- Unknown sections preserved on save: save not yet implemented; projection
-  preserves metadata.
-- ODU Cond Specs derives internal sections: read projection added; save
-  projection is 5E.
+- Unknown sections preserved on save: yes.
+- ODU Cond Specs derives internal sections: yes for save projection.
 
 ## Architecture
 
@@ -201,5 +219,7 @@ Change gate notes:
 - 5C commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - 5D commit hash is reported in terminal/final output to avoid a
+  self-referential report update loop.
+- 5E commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - Push is deferred until all slices complete.

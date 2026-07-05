@@ -78,6 +78,43 @@ def test_data_mapping_controller_add_duplicate_delete_rows():
     assert len(deleted.values) == 2
 
 
+def test_data_mapping_controller_save_clears_dirty_for_runtime_provider(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text(
+        """
+        {
+            "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "evap_index": {"EVAP-A": {"Evap Area": 8.2, "Evap Volume": 2.1}},
+            "odu": {"ODU-A": {"OD Volume": 2.5}},
+            "compressor": {"CMP-A": {"Comp EER": 3.2, "Comp cc": 11}},
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}},
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["F&T"],
+                    "Available_Pis": ["7"],
+                    "Available_Rows": ["1"]
+                }
+            },
+            "cond_specs": {
+                "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5}
+            }
+        }
+        """,
+        encoding="utf-8",
+    )
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+    )
+
+    dirty = controller.edit_cell("idu", 0, "ID Volume", "2.5")
+    saved = controller.save()
+
+    assert dirty.dirty
+    assert not saved.dirty
+    assert saved.message == "Ready."
+
+
 def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):
     missing_mapping = tmp_path / "missing.json"
     controller = DataMappingController(

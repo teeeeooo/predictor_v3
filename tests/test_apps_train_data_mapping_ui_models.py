@@ -133,7 +133,7 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert panel._buttons["add_row"].isEnabled()
         assert panel._buttons["duplicate_row"].isEnabled()
         assert panel._buttons["delete_row"].isEnabled()
-        assert panel._buttons["save_mapping_json"].isEnabled()
+        assert not panel._buttons["save_mapping_json"].isEnabled()
         assert panel._buttons["reload_runtime"].isEnabled()
         assert not panel._buttons["import_csv_v2"].isEnabled()
         assert [button.text() for button in panel._buttons.values()] == [

@@ -34,12 +34,18 @@ from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
     project_runtime_mapping_to_editor_draft,
 )
+from core.mapping.editor_persistence import (
+    MappingEditorSaveResult,
+    runtime_mapping_from_editor_draft,
+    save_mapping_editor_draft,
+)
 from core.mapping.editor_validation import validate_mapping_editor_draft
 
 __all__ = [
     "MappingEditorDraft",
     "MappingEditorGroup",
     "MappingEditorRow",
+    "MappingEditorSaveResult",
     "MappingEditorValidationResult",
     "MappingAttributeDefinition",
     "MappingEntityCatalog",
@@ -55,6 +61,8 @@ __all__ = [
     "load_runtime_mapping_catalog",
     "project_runtime_mapping_to_editor_draft",
     "runtime_mapping_source_label",
+    "runtime_mapping_from_editor_draft",
+    "save_mapping_editor_draft",
     "set_draft_cell",
     "validate_mapping_editor_draft",
     "validate_mapping_entity_catalog",

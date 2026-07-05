@@ -131,6 +131,11 @@ class DataMappingController:
         """Discard draft edits and reload from the provider."""
         return self._state_from_snapshot(self._service.reload_snapshot(), "")
 
+    def save(self) -> DataMappingControllerState:
+        """Save the current draft and return refreshed state."""
+        _result, snapshot = self._service.save_mapping()
+        return self._state_from_snapshot(snapshot, "")
+
     def _state_from_snapshot(
         self,
         snapshot,
