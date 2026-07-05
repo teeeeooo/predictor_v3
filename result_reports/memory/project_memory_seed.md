@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -247,7 +247,7 @@ entries:
 
   - type: decision
     topic: Arc 14 Data Mapping foundation state
-    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager currently has a read-only Train/Admin UI foundation with disabled future action metadata; existing mapping.json repository, converter, and runtime autofill/cascade paths remain compatibility owners until later execution slices. row_key is canonical row identity, key_attribute is the import/export/UI header for that identity, and active controls management visibility/eligibility rather than structural validation.
+    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager has a read-only Train/Admin UI that defaults to runtime mapping.json repository data adapted into MappingEntityCatalog; foundation sample data is explicit test/fallback injection only. Missing/empty mapping data is a visible load error. row_key is canonical row identity, key_attribute is future import/export metadata, and active controls management visibility/eligibility rather than structural validation.
     keywords:
       - predictor_v3
       - Arc 14
@@ -258,11 +258,11 @@ entries:
       - key_attribute
       - active
     assertionStatus: verified
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
-    content: Data Mapping Computer Use onscreen smoke still crashed the Python/Qt app while macOS/AppKit accessibility hierarchy reads were in progress, even after table refresh signal blocking and explicit accessibility names were added. Later GUI validation should avoid treating that crash as a Python panel exception without new evidence, and should consider a non-AX smoke path or Qt accessibility bridge mitigation.
+    content: Data Mapping Computer Use onscreen smoke previously crashed during macOS/AppKit accessibility hierarchy reads. The later isolation found the smallest failing path was a populated entity table with initial selectRow during selection binding; removing that initial programmatic selection stabilized the standalone full panel for bounded Computer Use state, keyboard substitute, and click checks. Future UI smoke should still run focused automated owner tests first and keep Computer Use reads bounded.
     keywords:
       - predictor_v3
       - Data Mapping
@@ -271,8 +271,38 @@ entries:
       - PySide6
       - AppKit
       - SIGSEGV
-    assertionStatus: observed
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
+    assertionStatus: verified
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+
+  - type: decision
+    topic: Arc 14B Data Mapping import/export and CRUD direction
+    content: Legacy single-wide CSV to mapping.json reconstruction is not recoverable enough for implementation. Continue with UI CRUD over user-facing Predict mapping groups; keep Import excluded until a future compatibility-parser design exists; treat Export as a read-only review snapshot rather than an edit/reimport contract; keep Save/Reload/dirty-state behavior below the UI raw JSON boundary.
+    keywords:
+      - predictor_v3
+      - Arc 14B
+      - Data Mapping
+      - mapping.json
+      - CSV import
+      - Export
+      - CRUD
+      - dirty state
+    assertionStatus: verified
+    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+
+  - type: decision
+    topic: Arc 14B ref exp mapping SSOT
+    content: mapping.json is the SSOT for Refrigerant and Expansion options. Refrigerant projects to required ref_type and Expansion projects to required exp_type; Predict dropdown hard-coded fallback options are legacy behavior to remove during implementation, and missing or empty sections should become validation issues.
+    keywords:
+      - predictor_v3
+      - Arc 14B
+      - Data Mapping
+      - mapping.json
+      - ref_type
+      - exp_type
+      - Predict dropdown
+      - validation
+    assertionStatus: verified
+    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
 ```
 
 ## Known Gaps
