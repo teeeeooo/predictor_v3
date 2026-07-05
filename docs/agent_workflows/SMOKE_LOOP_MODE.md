@@ -25,6 +25,14 @@ user asks for quick small fixes based on immediate manual UI smoke results.
   - second: impacted boundary tests if the owner touches shared behavior;
   - final: import checks, py_compile, or targeted smoke guards required by the
     prompt.
+- For Computer Use or onscreen GUI checks, avoid a repeated accessibility-tree
+  loop:
+  - run focused owner tests before the GUI action when practical;
+  - use one bounded state read and the minimum keyboard/click action needed;
+  - if the GUI check exposes a source bug, add/update the focused guard first,
+    then rerun one bounded GUI check after the fix;
+  - record extra skipped GUI checks in the terminal note instead of expanding
+    the smoke loop.
 - Reuse already confirmed policy context; if policy docs are needed, read only
   one short relevant section.
 - Commit/push with a small, specific UI fix message.
