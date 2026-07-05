@@ -17,7 +17,6 @@ from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     ENTITY_HEADERS,
     VALIDATION_HEADERS,
-    action_rows,
     attribute_rows,
     entity_rows,
     validation_rows,
@@ -41,7 +40,7 @@ def test_read_only_mapping_table_model_exposes_headers_rows_and_flags():
 
     assert model.rowCount() == 2
     assert model.columnCount() == len(ENTITY_HEADERS)
-    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Entity"
+    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Group"
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == 1
     assert model.data(model.index(0, 0), Qt.DisplayRole) == "fan_motor"
     assert model.data(model.index(0, 0), Qt.EditRole) == "fan_motor"
@@ -91,22 +90,15 @@ def test_attribute_and_value_view_models_are_table_ready():
     assert value_model.cell_value(0, 2) == "8.2"
 
 
-def test_validation_and_action_rows_represent_read_only_foundation_state():
+def test_validation_rows_represent_read_only_foundation_state():
     state = _foundation_controller().refresh()
     validation_model = ReadOnlyMappingTableModel(
         VALIDATION_HEADERS,
         validation_rows(state),
     )
-    action_model = ReadOnlyMappingTableModel(
-        ("Action", "Label", "Enabled", "Reason"),
-        action_rows(state),
-    )
 
     assert validation_model.cell_value(0, 0) == "info"
     assert validation_model.cell_value(0, 1) == "ok"
-    assert action_model.rowCount() == 4
-    assert action_model.cell_value(0, 2) == "false"
-    assert "future Arc 14B" in action_model.cell_value(0, 3)
 
 
 def test_data_mapping_panel_builds_read_only_foundation_surface():
@@ -119,11 +111,18 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert panel.attribute_table.model().rowCount() > 0
         assert panel.row_table.model().rowCount() > 0
         assert panel.accessibleName() == "Data Mapping Manager"
-        assert panel.entity_table.accessibleName() == "Data Mapping Entities"
+        assert panel.entity_table.accessibleName() == "Groups"
+        assert not hasattr(panel, "actions_table")
         assert panel.entity_table.minimumWidth() >= 380
         assert not panel.entity_table.currentIndex().isValid()
         assert all(not button.isEnabled() for button in panel._buttons.values())
-        assert "validation OK" in panel.status_label.text()
+        assert [button.text() for button in panel._buttons.values()] == [
+            "Import",
+            "Export",
+            "Save",
+            "Reload",
+        ]
+        assert panel.status_label.text() == "Ready."
     finally:
         panel.close()
         panel.deleteLater()
@@ -142,8 +141,11 @@ def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
 
         assert panel.entity_table.model().rowCount() == 0
         assert str(missing_mapping) in panel.source_label.text()
-        assert "Data Mapping load failed:" in panel.status_label.text()
+        assert "runtime" not in panel.source_label.text().lower()
+        assert "repository" not in panel.source_label.text().lower()
+        assert panel.status_label.text() == "Unable to load data."
         assert panel.validation_table.model().cell_value(0, 1) == "load_failed"
+        assert str(missing_mapping) in panel.validation_table.model().cell_value(0, 5)
         assert not panel.entity_table.currentIndex().isValid()
     finally:
         panel.close()

@@ -26,7 +26,6 @@ from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     ENTITY_HEADERS,
     VALIDATION_HEADERS,
-    action_rows,
     attribute_rows,
     entity_rows,
     validation_rows,
@@ -56,11 +55,10 @@ class DataMappingPanel(QWidget):
         self.status_label.setAccessibleName("Data Mapping validation status")
         self.source_label = QLabel()
         self.source_label.setAccessibleName("Data Mapping source")
-        self.entity_table = _table("Data Mapping Entities")
-        self.attribute_table = _table("Data Mapping Attributes")
-        self.row_table = _table("Data Mapping Rows")
-        self.validation_table = _table("Data Mapping Validation")
-        self.actions_table = _table("Data Mapping Future Actions")
+        self.entity_table = _table("Groups")
+        self.attribute_table = _table("Fields")
+        self.row_table = _table("Data")
+        self.validation_table = _table("Issues")
         self._buttons: dict[str, QPushButton] = {}
 
         layout = QVBoxLayout(self)
@@ -93,14 +91,14 @@ class DataMappingPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         refresh_button = QPushButton("Refresh")
-        refresh_button.setAccessibleName("Refresh Data Mapping")
+        refresh_button.setAccessibleName("Refresh")
         refresh_button.clicked.connect(self.refresh)
         layout.addWidget(refresh_button)
         for key, label in (
-            ("import_csv_v2", "Import CSV v2"),
-            ("export_csv_v2", "Export CSV v2"),
-            ("save_mapping_json", "Save mapping.json"),
-            ("reload_runtime", "Reload runtime mapping"),
+            ("import_csv_v2", "Import"),
+            ("export_csv_v2", "Export"),
+            ("save_mapping_json", "Save"),
+            ("reload_runtime", "Reload"),
         ):
             button = QPushButton(label)
             button.setAccessibleName(label)
@@ -115,7 +113,7 @@ class DataMappingPanel(QWidget):
         splitter.setObjectName("DataMappingSplitter")
         splitter.setAccessibleName("Data Mapping split view")
         splitter.setChildrenCollapsible(False)
-        entity_panel = self._panel("Entities", self.entity_table)
+        entity_panel = self._panel("Groups", self.entity_table)
         entity_panel.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH)
         self.entity_table.setMinimumWidth(ENTITY_PANEL_MIN_WIDTH - style.spacing("space.panel") * 2)
         splitter.addWidget(entity_panel)
@@ -126,13 +124,9 @@ class DataMappingPanel(QWidget):
         self.status_label.setObjectName("PanelTitle")
         layout.addWidget(self.status_label)
         layout.addWidget(self.source_label)
-        layout.addWidget(self._panel("Attributes", self.attribute_table), 1)
-        layout.addWidget(self._panel("Rows", self.row_table), 2)
-        lower = QHBoxLayout()
-        lower.setSpacing(style.spacing("space.sm"))
-        lower.addWidget(self._panel("Validation", self.validation_table), 1)
-        lower.addWidget(self._panel("Future Actions", self.actions_table), 1)
-        layout.addLayout(lower, 1)
+        layout.addWidget(self._panel("Fields", self.attribute_table), 1)
+        layout.addWidget(self._panel("Data", self.row_table), 2)
+        layout.addWidget(self._panel("Issues", self.validation_table), 1)
         splitter.addWidget(details)
         splitter.setCollapsible(0, False)
         splitter.setCollapsible(1, False)
@@ -167,7 +161,7 @@ class DataMappingPanel(QWidget):
         try:
             self._selected_entity_key = state.selected_entity_key
             self.status_label.setText(state.message)
-            self.source_label.setText(f"Source: {state.source_label}")
+            self.source_label.setText(state.source_label)
             self.entity_table.setModel(
                 ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state))
             )
@@ -179,12 +173,6 @@ class DataMappingPanel(QWidget):
             )
             self.validation_table.setModel(
                 ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
-            )
-            self.actions_table.setModel(
-                ReadOnlyMappingTableModel(
-                    ("Action", "Label", "Enabled", "Reason"),
-                    action_rows(state),
-                )
             )
             self._sync_action_buttons(state)
             self._bind_entity_selection(state)
@@ -223,7 +211,6 @@ def _data_tables(panel: DataMappingPanel) -> tuple[QTableView, ...]:
         panel.attribute_table,
         panel.row_table,
         panel.validation_table,
-        panel.actions_table,
     )
 
 

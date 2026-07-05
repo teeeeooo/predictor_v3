@@ -77,9 +77,11 @@ class DataMappingController:
         try:
             snapshot = self._service.load_snapshot()
         except Exception as exc:
+            detail = f"Data load failed: {exc}"
             return _error_state(
-                f"Data Mapping load failed: {exc}",
-                source_label=self._service.source_label,
+                "Unable to load data.",
+                source_label=_display_source_label(self._service.source_label),
+                detail_message=detail,
             )
 
         catalog = snapshot.catalog
@@ -91,12 +93,12 @@ class DataMappingController:
         validation_rows = snapshot.validation_errors
         status = "ready" if snapshot.is_valid else "error"
         message = (
-            "Mapping entity validation OK."
+            "Ready."
             if snapshot.is_valid
-            else "Mapping entity validation has errors."
+            else "Issues found."
         )
         return DataMappingControllerState(
-            source_label=snapshot.source_label,
+            source_label=_display_source_label(snapshot.source_label),
             status=status,
             message=message,
             selected_entity_key=selected.entity_key,
@@ -182,7 +184,22 @@ def _empty_entity() -> MappingEntityDefinition:
     return MappingEntityDefinition("", "", "", ())
 
 
-def _error_state(message: str, *, source_label: str = "") -> DataMappingControllerState:
+def _display_source_label(source_label: str) -> str:
+    if not source_label:
+        return ""
+    _prefix, separator, source_path = source_label.partition(":")
+    if separator and source_path.strip():
+        return f"File: {source_path.strip()}"
+    return f"File: {source_label}"
+
+
+def _error_state(
+    message: str,
+    *,
+    source_label: str = "",
+    detail_message: str = "",
+) -> DataMappingControllerState:
+    issue_message = detail_message or message
     return DataMappingControllerState(
         source_label=source_label,
         status="error",
@@ -195,7 +212,7 @@ def _error_state(message: str, *, source_label: str = "") -> DataMappingControll
         validation_rows=(
             MappingValidationError(
                 code="load_failed",
-                message=message,
+                message=issue_message,
                 field="source",
             ),
         ),

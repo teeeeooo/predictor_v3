@@ -92,8 +92,8 @@ def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_pa
     state = controller.refresh()
 
     assert state.status == "error"
-    assert state.source_label == f"Runtime mapping repository: {missing_mapping}"
-    assert str(missing_mapping) in state.message
-    assert "Data Mapping load failed:" in state.message
+    assert state.source_label == f"File: {missing_mapping}"
+    assert state.message == "Unable to load data."
     assert state.validation_rows[0].code == "load_failed"
     assert state.validation_rows[0].field == "source"
+    assert str(missing_mapping) in state.validation_rows[0].message

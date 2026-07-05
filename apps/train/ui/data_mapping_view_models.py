@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from apps.train.controllers.data_mapping_controller import DataMappingControllerState
 
-ENTITY_HEADERS = ("Entity", "Label", "Rows", "Active", "Notes")
-ATTRIBUTE_HEADERS = ("Attribute", "Label", "Type", "Required", "Active", "Notes")
-VALIDATION_HEADERS = ("Severity", "Code", "Entity", "Row", "Attribute", "Message")
+ENTITY_HEADERS = ("Group", "Label", "Rows", "Active", "Notes")
+ATTRIBUTE_HEADERS = ("Field", "Label", "Type", "Required", "Active", "Notes")
+VALIDATION_HEADERS = ("Level", "Code", "Group", "Row", "Field", "Message")
 
 
 def entity_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...], ...]:
@@ -65,14 +65,6 @@ def validation_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...],
             row.message,
         )
         for row in state.validation_rows
-    )
-
-
-def action_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...], ...]:
-    """Return rows describing disabled future actions."""
-    return tuple(
-        (action.key, action.label, _bool_text(action.enabled), action.reason)
-        for action in state.actions
     )
 
 

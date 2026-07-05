@@ -169,10 +169,10 @@ class DataMappingService:
 
 
 def _future_actions() -> tuple[DataMappingAction, ...]:
-    disabled_reason = "Deferred to a future Arc 14B slice."
+    disabled_reason = "Read-only mode."
     return (
-        DataMappingAction("import_csv_v2", "Import CSV v2", False, disabled_reason),
-        DataMappingAction("export_csv_v2", "Export CSV v2", False, disabled_reason),
-        DataMappingAction("save_mapping_json", "Save mapping.json", False, disabled_reason),
-        DataMappingAction("reload_runtime", "Reload runtime mapping", False, disabled_reason),
+        DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
+        DataMappingAction("export_csv_v2", "Export", False, disabled_reason),
+        DataMappingAction("save_mapping_json", "Save", False, disabled_reason),
+        DataMappingAction("reload_runtime", "Reload", False, disabled_reason),
     )

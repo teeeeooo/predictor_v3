@@ -49,6 +49,13 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
         "save_mapping_json",
         "reload_runtime",
     }
+    assert [action.label for action in snapshot.actions] == [
+        "Import",
+        "Export",
+        "Save",
+        "Reload",
+    ]
+    assert {action.reason for action in snapshot.actions} == {"Read-only mode."}
 
 
 def test_data_mapping_service_default_uses_runtime_provider():
