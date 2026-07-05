@@ -110,6 +110,7 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert panel.accessibleName() == "Data Mapping Manager"
         assert panel.entity_table.accessibleName() == "Data Mapping Entities"
         assert panel.entity_table.minimumWidth() >= 380
+        assert not panel.entity_table.currentIndex().isValid()
         assert all(not button.isEnabled() for button in panel._buttons.values())
         assert "validation OK" in panel.status_label.text()
     finally:

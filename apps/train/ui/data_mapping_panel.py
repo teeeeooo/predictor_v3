@@ -197,20 +197,6 @@ class DataMappingPanel(QWidget):
         selection_model = self.entity_table.selectionModel()
         if selection_model is None:
             return
-        if self.entity_table.model() and self.entity_table.model().rowCount() > 0:
-            selected_row = next(
-                (
-                    row
-                    for row, entity in enumerate(state.entities)
-                    if entity.entity_key == state.selected_entity_key
-                ),
-                0,
-            )
-            selection_blocker = QSignalBlocker(selection_model)
-            try:
-                self.entity_table.selectRow(selected_row)
-            finally:
-                del selection_blocker
         selection_model.currentRowChanged.connect(self._on_entity_row_changed)
 
     def _on_entity_row_changed(self, current: QModelIndex, _previous: QModelIndex) -> None:
