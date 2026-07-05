@@ -6,7 +6,10 @@ from core.mapping.entity_model import (
     MappingEntityDefinition,
     MappingEntityRow,
 )
-from apps.train.controllers.data_mapping_controller import DataMappingController
+from apps.train.controllers.data_mapping_controller import (
+    DataMappingController,
+    _display_source_label,
+)
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
@@ -97,3 +100,15 @@ def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_pa
     assert state.validation_rows[0].code == "load_failed"
     assert state.validation_rows[0].field == "source"
     assert str(missing_mapping) in state.validation_rows[0].message
+
+
+def test_source_display_only_removes_known_runtime_prefix():
+    assert (
+        _display_source_label("Runtime mapping repository: /tmp/mapping.json")
+        == "File: /tmp/mapping.json"
+    )
+    assert _display_source_label(r"C:\data\mapping.json") == r"File: C:\data\mapping.json"
+    assert (
+        _display_source_label("Vendor source: C:/data/mapping.json")
+        == "File: Vendor source: C:/data/mapping.json"
+    )

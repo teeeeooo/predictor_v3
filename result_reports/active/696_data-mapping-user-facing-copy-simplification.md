@@ -28,10 +28,18 @@ while preserving the current read-only behavior.
   repository wording.
 - Detailed load errors remain in the Issues table.
 
+## Minor Follow-up
+
+- `_display_source_label()` now removes only the known
+  `Runtime mapping repository:` prefix.
+- Windows-style paths and other provider labels containing `:` are preserved
+  instead of being split at the first colon.
+
 ## Validation
 
 - `python3 -m py_compile apps/train/services/data_mapping_service.py apps/train/controllers/data_mapping_controller.py apps/train/ui/data_mapping_view_models.py apps/train/ui/data_mapping_panel.py`: OK
-- `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`: OK, 15 passed
+- `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`: OK, 16 passed
+- `git diff --check`: OK
 - Programmatic Qt smoke: OK; verified short button labels, `File: <path>`,
   hidden Future Actions table, and `load_failed` issue row.
 

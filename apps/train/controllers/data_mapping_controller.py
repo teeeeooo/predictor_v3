@@ -187,9 +187,9 @@ def _empty_entity() -> MappingEntityDefinition:
 def _display_source_label(source_label: str) -> str:
     if not source_label:
         return ""
-    _prefix, separator, source_path = source_label.partition(":")
-    if separator and source_path.strip():
-        return f"File: {source_path.strip()}"
+    known_prefix = "Runtime mapping repository:"
+    if source_label.startswith(known_prefix):
+        return f"File: {source_label.removeprefix(known_prefix).strip()}"
     return f"File: {source_label}"
 
 
