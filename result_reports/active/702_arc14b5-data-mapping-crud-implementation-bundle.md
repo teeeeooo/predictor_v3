@@ -131,6 +131,11 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_core_mapping_editor_export.py -q`
 - 5F Train Data Mapping export tests: OK
   `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
+- Final structure guard: OK with warnings
+  `python3 -B tools/check_code_structure.py`
+- Final code map check: regenerated and fresh
+  `python3 -B tools/code_checker/build_reference_map.py`
+  `python3 -B tools/code_checker/build_reference_map.py --check`
 
 ## Changed Files
 
@@ -155,6 +160,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - `tests/test_apps_train_data_mapping_ui_models.py`
 - `apps/predict/adapters/dropdown_option_adapter.py`
 - `tests/test_apps_predict_mapping_backed_dropdown.py`
+- `docs/code_map/CODEBASE_REFERENCE_MAP.md`
 - `result_reports/active/702_arc14b5-data-mapping-crud-implementation-bundle.md`
 
 ## Known Failures / Risks
@@ -168,6 +174,10 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Save backup naming is timestamp-based under a sibling `backups/` directory.
 - XLSX export is not implemented in this bundle; JSON is the shipped read-only
   review snapshot.
+- Structure guard still reports existing calculator/app hotspots plus
+  `apps/train/services/data_mapping_service.py` defining 6 top-level classes.
+  The service file remains a thin workflow owner for this slice; a split audit
+  is a reasonable follow-up before adding more provider/result classes there.
 
 ## Scope Compliance
 
@@ -212,7 +222,7 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 change_gate:
   new_source: small
   hotspot_delta: accepted-for-slice
-  code_map_check: checked
+  code_map_check: regenerated
   ui_literal_exemption: none
   reuse_commonization: checked
   report_exemption: none
@@ -226,6 +236,8 @@ Change gate notes:
 - `hotspot_delta`: accepted for this slice; existing Train service/controller/UI
   files were changed to switch projection surfaces, with no new raw JSON or file
   I/O in UI.
+- `code_map_check`: regenerated; `CODEBASE_REFERENCE_MAP.md` now matches the
+  current source fingerprint.
 - `reuse_commonization`: checked; existing runtime entity adapter remains for
   generic read-only catalog use, but user-facing draft projection has distinct
   group/ODU Cond Specs rules.
