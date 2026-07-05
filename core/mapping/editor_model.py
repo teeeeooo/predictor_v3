@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from core.mapping.entity_model import MappingValidationError
+
 
 @dataclass(frozen=True)
 class MappingEditorRow:
@@ -43,3 +45,15 @@ class MappingEditorDraft:
     def group(self, group_key: str) -> MappingEditorGroup | None:
         """Return a group by key."""
         return next((group for group in self.groups if group.group_key == group_key), None)
+
+
+@dataclass(frozen=True)
+class MappingEditorValidationResult:
+    """Validation result for a mapping editor draft."""
+
+    issues: tuple[MappingValidationError, ...] = ()
+
+    @property
+    def save_enabled(self) -> bool:
+        """Return whether the draft can be saved."""
+        return not any(issue.severity == "error" for issue in self.issues)

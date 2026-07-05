@@ -5,6 +5,7 @@ from apps.train.services.data_mapping_service import (
     FoundationMappingCatalogProvider,
     RuntimeMappingCatalogProvider,
 )
+from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 
 
 def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
@@ -16,7 +17,6 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
     assert snapshot.is_valid
     assert snapshot.validation_errors == ()
     assert snapshot.actions
-    assert all(not action.enabled for action in snapshot.actions)
     assert {action.key for action in snapshot.actions} == {
         "import_csv_v2",
         "export_csv_v2",
@@ -29,7 +29,34 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
         "Save",
         "Reload",
     ]
-    assert {action.reason for action in snapshot.actions} == {"Read-only mode."}
+    actions = {action.key: action for action in snapshot.actions}
+    assert actions["save_mapping_json"].enabled
+    assert actions["import_csv_v2"].reason == "Read-only mode."
+
+
+def test_data_mapping_service_disables_save_when_draft_has_issues():
+    class InvalidDraftProvider:
+        source_label = "invalid draft"
+
+        def load_draft(self):
+            return project_runtime_mapping_to_editor_draft(
+                {
+                    "idu": {"IDU-A": {"ID Volume": 1.25}},
+                    "evap_index": {},
+                    "odu": {},
+                    "compressor": {},
+                    "exp_type": {"EEV": {}},
+                }
+            )
+
+    snapshot = DataMappingService(InvalidDraftProvider()).load_snapshot()
+    actions = {action.key: action for action in snapshot.actions}
+
+    assert not snapshot.is_valid
+    assert [issue.code for issue in snapshot.validation_errors] == [
+        "required_section_missing"
+    ]
+    assert not actions["save_mapping_json"].enabled
 
 
 def test_data_mapping_service_default_uses_runtime_provider():
@@ -46,16 +73,19 @@ def test_runtime_mapping_provider_loads_temp_mapping_json(tmp_path):
         {
             "idu": {"IDU-A": {"ID Volume": 1.25}},
             "evap_index": {},
-            "odu": {},
+            "odu": {"ODU-A": {"OD Volume": 2.5}},
             "compressor": {},
-            "ref_type": {},
-            "exp_type": {},
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}},
             "odu_cascade": {
                 "ODU-A": {
                     "Available_Fins": ["F&T"],
                     "Available_Pis": ["7"],
                     "Available_Rows": ["1"]
                 }
+            },
+            "cond_specs": {
+                "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5}
             }
         }
         """,

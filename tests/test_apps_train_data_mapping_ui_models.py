@@ -115,7 +115,8 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert not hasattr(panel, "actions_table")
         assert panel.entity_table.minimumWidth() >= 380
         assert not panel.entity_table.currentIndex().isValid()
-        assert all(not button.isEnabled() for button in panel._buttons.values())
+        assert panel._buttons["save_mapping_json"].isEnabled()
+        assert not panel._buttons["import_csv_v2"].isEnabled()
         assert [button.text() for button in panel._buttons.values()] == [
             "Import",
             "Export",

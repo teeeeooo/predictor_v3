@@ -46,6 +46,16 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 - Missing or empty `ref_type` / `exp_type` sections now return empty option
   tuples instead of generating `R410A` / `R32` / `R290` / `EEV` / `Capi`.
 
+### 5C - Draft Validation and Issues
+
+- Added Qt-free draft validation under `core/mapping`.
+- Added user-facing blocking issues for blank keys, duplicate keys, invalid
+  numbers, missing `ref_type` / `exp_type`, missing ODU references, duplicate
+  ODU Cond Specs composite rows, blank condenser specs, and unresolved
+  `cond_specs` rows.
+- Connected service state to validation-gated Save enablement.
+- Kept Issues table default columns user-facing by hiding internal issue codes.
+
 ## Verification
 
 - 5B py_compile: OK
@@ -62,17 +72,25 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
   `python3 -m pytest tests/test_apps_predict_mapping_backed_dropdown.py -q`
 - 5B-F Predict mapping controller tests: OK
   `python3 -m pytest tests/test_apps_predict_mapping_controller.py -q`
+- 5C py_compile: OK
+  `python3 -m py_compile core/mapping/editor_model.py core/mapping/editor_validation.py apps/train/services/data_mapping_service.py apps/train/controllers/data_mapping_controller.py apps/train/ui/data_mapping_view_models.py apps/train/ui/data_mapping_panel.py`
+- 5C draft validation tests: OK
+  `python3 -m pytest tests/test_core_mapping_editor_validation.py -q`
+- 5C Train Data Mapping tests: OK
+  `python3 -m pytest tests/test_apps_train_data_mapping_service.py tests/test_apps_train_data_mapping_controller.py tests/test_apps_train_data_mapping_ui_models.py -q`
 
 ## Changed Files
 
 - `core/mapping/editor_model.py`
 - `core/mapping/editor_projection.py`
+- `core/mapping/editor_validation.py`
 - `core/mapping/__init__.py`
 - `apps/train/services/data_mapping_service.py`
 - `apps/train/controllers/data_mapping_controller.py`
 - `apps/train/ui/data_mapping_panel.py`
 - `apps/train/ui/data_mapping_view_models.py`
 - `tests/test_core_mapping_editor_projection.py`
+- `tests/test_core_mapping_editor_validation.py`
 - `tests/test_apps_train_data_mapping_service.py`
 - `tests/test_apps_train_data_mapping_controller.py`
 - `tests/test_apps_train_data_mapping_ui_models.py`
@@ -84,8 +102,8 @@ and read-only export slices while preserving `mapping.json` as the runtime SSOT.
 
 - 5B intentionally does not validate draft edits, enable Save, edit rows, save
   `mapping.json`, or export snapshots.
-- ODU Cond Specs unresolved rows are preserved for data loss prevention; 5C
-  will turn them into user-facing Issues.
+- ODU Cond Specs unresolved rows are preserved for data loss prevention and now
+  surface as blocking Issues.
 - Table UX remains read-only in 5B; editable parity belongs to 5D.
 
 ## Scope Compliance
@@ -156,5 +174,7 @@ Change gate notes:
 - 5B commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - 5B-F commit hash is reported in terminal/final output to avoid a
+  self-referential report update loop.
+- 5C commit hash is reported in terminal/final output to avoid a
   self-referential report update loop.
 - Push is deferred until all slices complete.

@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
     project_runtime_mapping_to_editor_draft,
 )
+from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
 from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
 
@@ -30,13 +31,14 @@ class DataMappingSnapshot:
 
     draft: MappingEditorDraft
     validation_errors: tuple[MappingValidationError, ...]
+    validation_result: MappingEditorValidationResult
     source_label: str
     actions: tuple[DataMappingAction, ...]
 
     @property
     def is_valid(self) -> bool:
         """Return whether the mapping entity catalog has no validation errors."""
-        return not self.validation_errors
+        return self.validation_result.save_enabled
 
 
 class MappingDraftProvider(Protocol):
@@ -117,19 +119,26 @@ class DataMappingService:
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
         draft = self._provider.load_draft()
+        validation_result = validate_mapping_editor_draft(draft)
         return DataMappingSnapshot(
             draft=draft,
-            validation_errors=(),
+            validation_errors=validation_result.issues,
+            validation_result=validation_result,
             source_label=self.source_label,
-            actions=_future_actions(),
+            actions=_future_actions(validation_result.save_enabled),
         )
 
 
-def _future_actions() -> tuple[DataMappingAction, ...]:
+def _future_actions(save_enabled: bool = False) -> tuple[DataMappingAction, ...]:
     disabled_reason = "Read-only mode."
     return (
         DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
         DataMappingAction("export_csv_v2", "Export", False, disabled_reason),
-        DataMappingAction("save_mapping_json", "Save", False, disabled_reason),
+        DataMappingAction(
+            "save_mapping_json",
+            "Save",
+            save_enabled,
+            "" if save_enabled else "Resolve Issues before saving.",
+        ),
         DataMappingAction("reload_runtime", "Reload", False, disabled_reason),
     )
