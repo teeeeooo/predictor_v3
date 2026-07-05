@@ -1,4 +1,4 @@
-"""Read-only Data Mapping Manager foundation panel."""
+"""Data Mapping Manager foundation panel."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ class DataMappingPanel(QWidget):
         self.setObjectName("DataMappingPanel")
         self.setAccessibleName("Data Mapping Manager")
         self._controller = controller or DataMappingController()
-        self._selected_entity_key = ""
+        self._selected_group_key = ""
 
         self.status_label = QLabel()
         self.status_label.setAccessibleName("Data Mapping validation status")
@@ -75,8 +75,8 @@ class DataMappingPanel(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        """Reload read-only state through the controller."""
-        self._apply_state(self._controller.refresh(self._selected_entity_key))
+        """Reload state through the controller."""
+        self._apply_state(self._controller.refresh(self._selected_group_key))
 
     def _build_command_bar(self) -> QFrame:
         panel = QFrame(self)
@@ -124,7 +124,9 @@ class DataMappingPanel(QWidget):
         self.status_label.setObjectName("PanelTitle")
         layout.addWidget(self.status_label)
         layout.addWidget(self.source_label)
-        layout.addWidget(self._panel("Fields", self.attribute_table), 1)
+        fields_panel = self._panel("Fields", self.attribute_table)
+        fields_panel.setMaximumHeight(140)
+        layout.addWidget(fields_panel, 0)
         layout.addWidget(self._panel("Data", self.row_table), 2)
         layout.addWidget(self._panel("Issues", self.validation_table), 1)
         splitter.addWidget(details)
@@ -159,7 +161,7 @@ class DataMappingPanel(QWidget):
         self.setUpdatesEnabled(False)
         blockers = tuple(QSignalBlocker(table) for table in _data_tables(self))
         try:
-            self._selected_entity_key = state.selected_entity_key
+            self._selected_group_key = state.selected_group_key
             self.status_label.setText(state.message)
             self.source_label.setText(state.source_label)
             self.entity_table.setModel(
@@ -192,8 +194,8 @@ class DataMappingPanel(QWidget):
             return
         model = self.entity_table.model()
         key = model.data(model.index(current.row(), 0)) if model is not None else ""
-        if key and key != self._selected_entity_key:
-            self._selected_entity_key = str(key)
+        if key and key != self._selected_group_key:
+            self._selected_group_key = str(key)
             self.refresh()
 
     def _sync_action_buttons(self, state: DataMappingControllerState) -> None:

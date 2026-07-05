@@ -17,15 +17,27 @@ from core.mapping.entity_runtime_adapter import (
     runtime_mapping_source_label,
 )
 from core.mapping.entity_validation import validate_mapping_entity_catalog
+from core.mapping.editor_model import MappingEditorDraft, MappingEditorGroup, MappingEditorRow
+from core.mapping.editor_projection import (
+    OWNED_RUNTIME_SECTIONS,
+    load_runtime_mapping_editor_draft,
+    project_runtime_mapping_to_editor_draft,
+)
 
 __all__ = [
+    "MappingEditorDraft",
+    "MappingEditorGroup",
+    "MappingEditorRow",
     "MappingAttributeDefinition",
     "MappingEntityCatalog",
     "MappingEntityDefinition",
     "MappingEntityRow",
     "MappingValidationError",
+    "OWNED_RUNTIME_SECTIONS",
     "adapt_runtime_mapping_data",
+    "load_runtime_mapping_editor_draft",
     "load_runtime_mapping_catalog",
+    "project_runtime_mapping_to_editor_draft",
     "runtime_mapping_source_label",
     "validate_mapping_entity_catalog",
 ]

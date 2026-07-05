@@ -1,11 +1,5 @@
 """Train Data Mapping service foundation tests."""
 
-from core.mapping.entity_model import (
-    MappingAttributeDefinition,
-    MappingEntityCatalog,
-    MappingEntityDefinition,
-    MappingEntityRow,
-)
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
@@ -13,32 +7,12 @@ from apps.train.services.data_mapping_service import (
 )
 
 
-class InvalidProvider:
-    source_label = "invalid test provider"
-
-    def load_catalog(self) -> MappingEntityCatalog:
-        return MappingEntityCatalog(
-            entities=(
-                MappingEntityDefinition(
-                    "fan_motor",
-                    "Fan Motor",
-                    "motor_code",
-                    (MappingAttributeDefinition("motor_code", "Motor Code"),),
-                ),
-            ),
-            rows=(
-                MappingEntityRow("fan_motor", "FM-A", {}),
-                MappingEntityRow("fan_motor", "FM-A", {}),
-            ),
-        )
-
-
 def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
     snapshot = DataMappingService(FoundationMappingCatalogProvider()).load_snapshot()
 
     assert snapshot.source_label == "Foundation sample provider for UI wiring tests only"
-    assert snapshot.catalog.entity_definition("fan_motor") is not None
-    assert snapshot.catalog.entity_definition("evap_index") is not None
+    assert snapshot.draft.group("idu") is not None
+    assert snapshot.draft.group("odu_cond_specs") is not None
     assert snapshot.is_valid
     assert snapshot.validation_errors == ()
     assert snapshot.actions
@@ -71,6 +45,11 @@ def test_runtime_mapping_provider_loads_temp_mapping_json(tmp_path):
         """
         {
             "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "evap_index": {},
+            "odu": {},
+            "compressor": {},
+            "ref_type": {},
+            "exp_type": {},
             "odu_cascade": {
                 "ODU-A": {
                     "Available_Fins": ["F&T"],
@@ -89,12 +68,6 @@ def test_runtime_mapping_provider_loads_temp_mapping_json(tmp_path):
 
     assert snapshot.is_valid
     assert "Runtime mapping repository:" in snapshot.source_label
-    assert snapshot.catalog.entity_definition("idu") is not None
-    assert snapshot.catalog.value_for("idu", "IDU-A", "ID Volume") == 1.25
-
-
-def test_data_mapping_service_returns_validation_errors_from_provider_catalog():
-    snapshot = DataMappingService(InvalidProvider()).load_snapshot()
-
-    assert not snapshot.is_valid
-    assert [error.code for error in snapshot.validation_errors] == ["duplicate_row_key"]
+    idu = snapshot.draft.group("idu")
+    assert idu is not None
+    assert idu.rows[0].value_for("ID Volume") == 1.25

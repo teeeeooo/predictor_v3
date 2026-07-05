@@ -38,12 +38,12 @@ def test_read_only_mapping_table_model_exposes_headers_rows_and_flags():
     state = _foundation_controller().refresh()
     model = ReadOnlyMappingTableModel(ENTITY_HEADERS, entity_rows(state))
 
-    assert model.rowCount() == 2
+    assert model.rowCount() == 7
     assert model.columnCount() == len(ENTITY_HEADERS)
     assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Group"
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == 1
-    assert model.data(model.index(0, 0), Qt.DisplayRole) == "fan_motor"
-    assert model.data(model.index(0, 0), Qt.EditRole) == "fan_motor"
+    assert model.data(model.index(0, 0), Qt.DisplayRole) == "idu"
+    assert model.data(model.index(0, 0), Qt.EditRole) == "idu"
     assert not (model.flags(model.index(0, 0)) & Qt.ItemIsEditable)
 
 
@@ -80,13 +80,13 @@ def test_attribute_and_value_view_models_are_table_ready():
     attribute_model = ReadOnlyMappingTableModel(ATTRIBUTE_HEADERS, attribute_rows(state))
     value_model = ReadOnlyMappingTableModel(value_headers(state), value_rows(state))
 
-    assert attribute_model.cell_value(2, 0) == "Inner Surface Area"
-    assert attribute_model.cell_value(2, 4) == "false"
-    assert value_model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Row Key"
+    assert attribute_model.cell_value(2, 0) == "Evap Area"
+    assert attribute_model.cell_value(2, 3) == "false"
+    assert value_model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "Evap Index"
     assert value_model.headerData(1, Qt.Horizontal, Qt.DisplayRole) == "Size"
-    assert value_model.headerData(2, Qt.Horizontal, Qt.DisplayRole) == "Inner Surface Area"
-    assert value_model.cell_value(0, 0) == "S1-2"
-    assert value_model.cell_value(0, 1) == "1"
+    assert value_model.headerData(2, Qt.Horizontal, Qt.DisplayRole) == "Evap Area"
+    assert value_model.cell_value(0, 0) == "EVAP-A"
+    assert value_model.cell_value(0, 1) == "S1"
     assert value_model.cell_value(0, 2) == "8.2"
 
 
@@ -98,7 +98,7 @@ def test_validation_rows_represent_read_only_foundation_state():
     )
 
     assert validation_model.cell_value(0, 0) == "info"
-    assert validation_model.cell_value(0, 1) == "ok"
+    assert validation_model.cell_value(0, 4) == "Mapping draft projection OK."
 
 
 def test_data_mapping_panel_builds_read_only_foundation_surface():
@@ -107,7 +107,7 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
     try:
         app.processEvents()
 
-        assert panel.entity_table.model().rowCount() == 2
+        assert panel.entity_table.model().rowCount() == 7
         assert panel.attribute_table.model().rowCount() > 0
         assert panel.row_table.model().rowCount() > 0
         assert panel.accessibleName() == "Data Mapping Manager"
@@ -144,8 +144,7 @@ def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
         assert "runtime" not in panel.source_label.text().lower()
         assert "repository" not in panel.source_label.text().lower()
         assert panel.status_label.text() == "Unable to load data."
-        assert panel.validation_table.model().cell_value(0, 1) == "load_failed"
-        assert str(missing_mapping) in panel.validation_table.model().cell_value(0, 5)
+        assert panel.validation_table.model().cell_value(0, 4) == "Data load failed: runtime mapping data is empty or unavailable: " + str(missing_mapping)
         assert not panel.entity_table.currentIndex().isValid()
     finally:
         panel.close()

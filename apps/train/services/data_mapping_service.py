@@ -1,22 +1,17 @@
-"""Read-only Data Mapping service foundation for Train/Admin."""
+"""Data Mapping service foundation for Train/Admin."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
 
-from core.mapping.entity_model import (
-    MappingAttributeDefinition,
-    MappingEntityCatalog,
-    MappingEntityDefinition,
-    MappingEntityRow,
-    MappingValidationError,
+from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.editor_projection import (
+    load_runtime_mapping_editor_draft,
+    project_runtime_mapping_to_editor_draft,
 )
-from core.mapping.entity_runtime_adapter import (
-    load_runtime_mapping_catalog,
-    runtime_mapping_source_label,
-)
-from core.mapping.entity_validation import validate_mapping_entity_catalog
+from core.mapping.entity_model import MappingValidationError
+from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
 
 
 @dataclass(frozen=True)
@@ -31,9 +26,9 @@ class DataMappingAction:
 
 @dataclass(frozen=True)
 class DataMappingSnapshot:
-    """Service snapshot for the read-only Data Mapping foundation."""
+    """Service snapshot for the Data Mapping Manager."""
 
-    catalog: MappingEntityCatalog
+    draft: MappingEditorDraft
     validation_errors: tuple[MappingValidationError, ...]
     source_label: str
     actions: tuple[DataMappingAction, ...]
@@ -44,11 +39,11 @@ class DataMappingSnapshot:
         return not self.validation_errors
 
 
-class MappingCatalogProvider(Protocol):
-    """Read-only provider interface for future mapping data adapters."""
+class MappingDraftProvider(Protocol):
+    """Provider interface for mapping editor draft data."""
 
-    def load_catalog(self) -> MappingEntityCatalog:
-        """Return a mapping entity catalog."""
+    def load_draft(self) -> MappingEditorDraft:
+        """Return a mapping editor draft."""
         ...
 
     @property
@@ -65,68 +60,30 @@ class FoundationMappingCatalogProvider:
 
     source_label = "Foundation sample provider for UI wiring tests only"
 
-    def load_catalog(self) -> MappingEntityCatalog:
-        """Return a small valid catalog used by the read-only foundation UI."""
-        return MappingEntityCatalog(
-            entities=(
-                MappingEntityDefinition(
-                    entity_key="fan_motor",
-                    label="Fan Motor",
-                    key_attribute="motor_code",
-                    attributes=(
-                        MappingAttributeDefinition("motor_code", "Motor Code"),
-                        MappingAttributeDefinition(
-                            "motor_efficiency",
-                            "Motor Efficiency",
-                            data_type="number",
-                            required=True,
-                        ),
-                        MappingAttributeDefinition(
-                            "enabled",
-                            "Enabled",
-                            data_type="boolean",
-                        ),
-                    ),
-                    notes="Generic future entity example.",
-                ),
-                MappingEntityDefinition(
-                    entity_key="evap_index",
-                    label="Evap Index",
-                    key_attribute="evap_index",
-                    attributes=(
-                        MappingAttributeDefinition("evap_index", "Evap Index"),
-                        MappingAttributeDefinition("Size", "Size", data_type="number"),
-                        MappingAttributeDefinition(
-                            "Inner Surface Area",
-                            "Inner Surface Area",
-                            data_type="number",
-                            active=False,
-                            notes="Inactive example attribute.",
-                        ),
-                    ),
-                    notes="Existing mapping entity with future attribute example.",
-                ),
-            ),
-            rows=(
-                MappingEntityRow(
-                    "fan_motor",
-                    "FM-A",
-                    {"motor_efficiency": 0.82, "enabled": True},
-                ),
-                MappingEntityRow(
-                    "fan_motor",
-                    "FM-B",
-                    {"motor_efficiency": 0.86, "enabled": False},
-                    active=False,
-                    notes="Inactive row example.",
-                ),
-                MappingEntityRow(
-                    "evap_index",
-                    "S1-2",
-                    {"Size": 1, "Inner Surface Area": 8.2},
-                ),
-            ),
-            notes="Read-only UI foundation catalog.",
+    def load_draft(self) -> MappingEditorDraft:
+        """Return a small valid draft used by Data Mapping UI tests."""
+        return project_runtime_mapping_to_editor_draft(
+            {
+                "idu": {"IDU-A": {"ID Volume": 1.25, "Size": "S1"}},
+                "evap_index": {
+                    "EVAP-A": {"Size": "S1", "Evap Area": 8.2, "Evap Volume": 2.1}
+                },
+                "odu": {"ODU-A": {"OD Volume": 2.5}},
+                "compressor": {"CMP-A": {"Comp EER": 3.2, "Comp cc": 11}},
+                "ref_type": {"R32": {}, "R410A": {}},
+                "exp_type": {"EEV": {}, "Capi": {}},
+                "odu_cascade": {
+                    "ODU-A": {
+                        "Available_Fins": ["F&T"],
+                        "Available_Pis": ["7"],
+                        "Available_Rows": ["1"],
+                    }
+                },
+                "cond_specs": {
+                    "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5}
+                },
+            },
+            source_label=self.source_label,
         )
 
 
@@ -141,15 +98,15 @@ class RuntimeMappingCatalogProvider:
         """Return the runtime mapping source displayed by the UI."""
         return runtime_mapping_source_label(self._mapping_file)
 
-    def load_catalog(self) -> MappingEntityCatalog:
-        """Return the current runtime mapping data as a read-only catalog."""
-        return load_runtime_mapping_catalog(self._mapping_file)
+    def load_draft(self) -> MappingEditorDraft:
+        """Return the current runtime mapping data as editor draft groups."""
+        return load_runtime_mapping_editor_draft(self._mapping_file)
 
 
 class DataMappingService:
     """Provide read-only Mapping Entity catalog snapshots for Train/Admin UI."""
 
-    def __init__(self, provider: MappingCatalogProvider | None = None) -> None:
+    def __init__(self, provider: MappingDraftProvider | None = None) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
 
     @property
@@ -158,11 +115,11 @@ class DataMappingService:
         return self._provider.source_label
 
     def load_snapshot(self) -> DataMappingSnapshot:
-        """Return catalog data, validation result, and disabled future actions."""
-        catalog = self._provider.load_catalog()
+        """Return draft data, validation result, and disabled future actions."""
+        draft = self._provider.load_draft()
         return DataMappingSnapshot(
-            catalog=catalog,
-            validation_errors=validate_mapping_entity_catalog(catalog),
+            draft=draft,
+            validation_errors=(),
             source_label=self.source_label,
             actions=_future_actions(),
         )
