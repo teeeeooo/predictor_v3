@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QMessageBox,
     QPushButton,
     QFileDialog,
     QSplitter,
@@ -51,6 +52,7 @@ class DataMappingPanel(QWidget):
         self.setAccessibleName("Data Mapping Manager")
         self._controller = controller or DataMappingController()
         self._selected_group_key = ""
+        self._dirty = False
 
         self.status_label = QLabel()
         self.status_label.setAccessibleName("Data Mapping validation status")
@@ -172,6 +174,7 @@ class DataMappingPanel(QWidget):
         blockers = tuple(QSignalBlocker(table) for table in _data_tables(self))
         try:
             self._selected_group_key = state.selected_group_key
+            self._dirty = state.dirty
             self.status_label.setText(state.message)
             self.source_label.setText(state.source_label)
             self.entity_table.setModel(
@@ -247,7 +250,21 @@ class DataMappingPanel(QWidget):
             self._apply_state(self._controller.delete_row(self._selected_group_key, row))
 
     def _reload(self) -> None:
+        if self._dirty and not self._confirm_reload_discard():
+            return
         self._apply_state(self._controller.reload())
+
+    def _confirm_reload_discard(self) -> bool:
+        return (
+            QMessageBox.question(
+                self,
+                "Reload Data Mapping",
+                "Unsaved changes will be discarded. Reload from file?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            == QMessageBox.Yes
+        )
 
     def _save(self) -> None:
         self._apply_state(self._controller.save())

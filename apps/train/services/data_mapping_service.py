@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
 
 from core.mapping.editor_commands import (
     add_draft_row,
@@ -16,56 +14,20 @@ from core.mapping.editor_export import (
     MappingEditorExportResult,
     export_mapping_editor_snapshot_json,
 )
-from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
+from core.mapping.editor_model import MappingEditorDraft
 from core.mapping.editor_projection import (
     load_runtime_mapping_editor_draft,
     project_runtime_mapping_to_editor_draft,
 )
 from core.mapping.editor_persistence import MappingEditorSaveResult, save_mapping_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
-from core.mapping.entity_model import MappingValidationError
 from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
 from core.mapping.paths import MAPPING_JSON_FILE
-
-
-@dataclass(frozen=True)
-class DataMappingAction:
-    """Read-only action metadata for future Data Mapping workflows."""
-
-    key: str
-    label: str
-    enabled: bool
-    reason: str
-
-
-@dataclass(frozen=True)
-class DataMappingSnapshot:
-    """Service snapshot for the Data Mapping Manager."""
-
-    draft: MappingEditorDraft
-    validation_errors: tuple[MappingValidationError, ...]
-    validation_result: MappingEditorValidationResult
-    source_label: str
-    actions: tuple[DataMappingAction, ...]
-    dirty: bool = False
-
-    @property
-    def is_valid(self) -> bool:
-        """Return whether the mapping entity catalog has no validation errors."""
-        return self.validation_result.save_enabled
-
-
-class MappingDraftProvider(Protocol):
-    """Provider interface for mapping editor draft data."""
-
-    def load_draft(self) -> MappingEditorDraft:
-        """Return a mapping editor draft."""
-        ...
-
-    @property
-    def source_label(self) -> str:
-        """Return a display label describing the provider source."""
-        ...
+from apps.train.services.data_mapping_types import (
+    DataMappingAction,
+    DataMappingSnapshot,
+    MappingDraftProvider,
+)
 
 
 class FoundationMappingCatalogProvider:

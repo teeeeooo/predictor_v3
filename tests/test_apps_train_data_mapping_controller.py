@@ -112,7 +112,18 @@ def test_data_mapping_controller_save_clears_dirty_for_runtime_provider(tmp_path
 
     assert dirty.dirty
     assert not saved.dirty
-    assert saved.message == "Ready."
+    assert saved.message == "Saved."
+
+
+def test_data_mapping_controller_save_failure_surfaces_issue():
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+
+    state = controller.save()
+
+    assert state.status == "error"
+    assert state.message == "Save failed."
+    assert state.validation_rows[-1].entity_key == "Save"
+    assert state.validation_rows[-1].message == "No writable mapping file is configured."
 
 
 def test_data_mapping_controller_exports_json_snapshot(tmp_path):
@@ -122,7 +133,31 @@ def test_data_mapping_controller_exports_json_snapshot(tmp_path):
     state = controller.export_json(export_file)
 
     assert export_file.exists()
+    assert state.message == "Exported."
     assert not state.dirty
+
+
+def test_data_mapping_controller_export_failure_surfaces_issue(tmp_path):
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+    destination = tmp_path / "already-a-directory"
+    destination.mkdir()
+
+    state = controller.export_json(destination)
+
+    assert state.status == "error"
+    assert state.message == "Export failed."
+    assert state.validation_rows[-1].entity_key == "Export"
+    assert "Export failed:" in state.validation_rows[-1].message
+
+
+def test_data_mapping_controller_export_keeps_dirty_state(tmp_path):
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+    controller.edit_cell("idu", 0, "ID Volume", "2.5")
+
+    state = controller.export_json(tmp_path / "snapshot.json")
+
+    assert state.message == "Exported."
+    assert state.dirty
 
 
 def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):

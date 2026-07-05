@@ -83,13 +83,17 @@
   `odu_cascade`, `cond_specs`, `fin_type`, `pi`, and `row`; Import remains
   excluded, Export is read-only snapshot, and Save/Reload/Issues/dirty-state
   boundaries are documented for implementation slices.
+- Arc 14B-5B~5G Data Mapping Manager implementation and blocker hardening are
+  complete for user-facing draft projection, mapping-backed ref/exp dropdowns,
+  draft validation, editable row CRUD, validation-gated save with backup and
+  atomic replace, JSON read-only snapshot export, ODU Cond Specs composite-key
+  validation, dirty reload confirmation, and Save/Export feedback.
 
 ## Next Actions
 
-1. Arc 14B-5B - Data Mapping editor draft projection from runtime `mapping.json` to user-facing groups in read-only mode.
-2. Arc 14C - Runtime Cascade Integration.
-3. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-4. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 14C - Runtime Cascade Integration.
+2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+3. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -116,8 +120,7 @@
   from ODU Cond Specs rather than edited directly.
 - `mapping.json` is the SSOT for Refrigerant and Expansion options:
   `ref_type` and `exp_type` are required mapping sections, and Predict dropdown
-  hard-coded fallback options are legacy behavior to remove during
-  implementation.
+  hard-coded fallback options have been removed.
 - Data Mapping UI now uses the runtime mapping repository by default, but this
   checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
   that file or an explicit temp runtime provider harness.

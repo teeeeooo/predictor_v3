@@ -170,6 +170,76 @@ def test_data_mapping_panel_programmatic_edit_marks_dirty():
         app.processEvents()
 
 
+def test_data_mapping_panel_reload_skips_confirm_when_clean(monkeypatch):
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    calls = []
+    try:
+        app.processEvents()
+        monkeypatch.setattr(panel, "_confirm_reload_discard", lambda: calls.append("confirm") or True)
+        original_reload = panel._controller.reload
+        monkeypatch.setattr(
+            panel._controller,
+            "reload",
+            lambda: calls.append("reload") or original_reload(),
+        )
+
+        panel._reload()
+
+        assert calls == ["reload"]
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_reload_cancel_preserves_dirty(monkeypatch):
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    calls = []
+    try:
+        app.processEvents()
+        model = panel.row_table.model()
+        assert model.setData(model.index(0, 1), "2.5", Qt.EditRole)
+        monkeypatch.setattr(panel, "_confirm_reload_discard", lambda: calls.append("confirm") or False)
+        monkeypatch.setattr(panel._controller, "reload", lambda: calls.append("reload"))
+
+        panel._reload()
+
+        assert calls == ["confirm"]
+        assert panel.status_label.text() == "Unsaved changes."
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_reload_confirm_discards_dirty(monkeypatch):
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    calls = []
+    try:
+        app.processEvents()
+        model = panel.row_table.model()
+        assert model.setData(model.index(0, 1), "2.5", Qt.EditRole)
+        monkeypatch.setattr(panel, "_confirm_reload_discard", lambda: calls.append("confirm") or True)
+        original_reload = panel._controller.reload
+        monkeypatch.setattr(
+            panel._controller,
+            "reload",
+            lambda: calls.append("reload") or original_reload(),
+        )
+
+        panel._reload()
+
+        assert calls == ["confirm", "reload"]
+        assert panel.status_label.text() == "Ready."
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
 def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
     app = _app()
     missing_mapping = tmp_path / "missing.json"

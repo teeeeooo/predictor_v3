@@ -96,6 +96,26 @@ def test_missing_odu_reference_in_cond_specs_issue():
     assert "referenced_row_missing" in _codes(mapping)
 
 
+def test_odu_cond_specs_allows_same_odu_with_different_composite_rows():
+    mapping = {
+        **VALID_MAPPING,
+        "odu_cascade": {
+            "ODU-A": {
+                "Available_Fins": ["F&T"],
+                "Available_Pis": ["7"],
+                "Available_Rows": ["1", "2"],
+            }
+        },
+        "cond_specs": {
+            "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5},
+            "ODU-A F&T 7 2": {"Cond Area": 4.5, "Cond Volume": 5.5},
+        },
+    }
+
+    assert "duplicate_key" not in _codes(mapping)
+    assert "duplicate_cond_specs_key" not in _codes(mapping)
+
+
 def test_duplicate_odu_cond_specs_composite_key_issue():
     draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
     group = draft.group("odu_cond_specs")
@@ -109,6 +129,28 @@ def test_duplicate_odu_cond_specs_composite_key_issue():
     draft = replace(draft, groups=groups)
 
     assert "duplicate_cond_specs_key" in [
+        issue.code for issue in validate_mapping_editor_draft(draft).issues
+    ]
+
+
+def test_general_groups_still_block_duplicate_keys():
+    draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
+    odu = draft.group("odu")
+    duplicate = MappingEditorGroup(
+        odu.group_key,
+        odu.label,
+        odu.columns,
+        rows=(
+            MappingEditorRow({"ODU": "ODU-A", "OD Volume": "1"}),
+            MappingEditorRow({"ODU": "ODU-A", "OD Volume": "2"}),
+        ),
+    )
+    draft = replace(
+        draft,
+        groups=tuple(duplicate if group.group_key == "odu" else group for group in draft.groups),
+    )
+
+    assert "duplicate_key" in [
         issue.code for issue in validate_mapping_editor_draft(draft).issues
     ]
 

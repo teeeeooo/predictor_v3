@@ -35,7 +35,8 @@ def validate_mapping_editor_draft(
     """Return user-facing draft validation issues and save enable state."""
     issues: list[MappingValidationError] = []
     for group in draft.groups:
-        issues.extend(_validate_group_keys(group))
+        if group.group_key != ODU_COND_SPECS_GROUP:
+            issues.extend(_validate_group_keys(group))
         issues.extend(_validate_group_numbers(group))
     issues.extend(_validate_required_option_group(draft, REFRIGERANT_GROUP, "Refrigerant"))
     issues.extend(_validate_required_option_group(draft, EXPANSION_GROUP, "Expansion"))

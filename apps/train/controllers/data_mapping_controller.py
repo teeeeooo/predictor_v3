@@ -5,10 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from apps.train.services.data_mapping_service import (
-    DataMappingAction,
-    DataMappingService,
-)
+from apps.train.services.data_mapping_service import DataMappingService
+from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.entity_model import MappingValidationError
 
@@ -134,18 +132,41 @@ class DataMappingController:
 
     def save(self) -> DataMappingControllerState:
         """Save the current draft and return refreshed state."""
-        _result, snapshot = self._service.save_mapping()
-        return self._state_from_snapshot(snapshot, "")
+        result, snapshot = self._service.save_mapping()
+        if result.success:
+            return self._state_from_snapshot(snapshot, "", message="Saved.")
+        return self._state_from_snapshot(
+            snapshot,
+            "",
+            status="error",
+            message="Save failed.",
+            extra_issues=(_operation_issue("save_failed", "Save", "file", result.message),),
+        )
 
     def export_json(self, destination: str | Path) -> DataMappingControllerState:
         """Export the current draft as JSON and return current state."""
-        _result, snapshot = self._service.export_snapshot(destination)
-        return self._state_from_snapshot(snapshot, snapshot.draft.groups[0].group_key if snapshot.draft.groups else "")
+        result, snapshot = self._service.export_snapshot(destination)
+        selected = snapshot.draft.groups[0].group_key if snapshot.draft.groups else ""
+        if result.success:
+            return self._state_from_snapshot(snapshot, selected, message="Exported.")
+        return self._state_from_snapshot(
+            snapshot,
+            selected,
+            status="error",
+            message="Export failed.",
+            extra_issues=(
+                _operation_issue("export_failed", "Export", "file", result.message),
+            ),
+        )
 
     def _state_from_snapshot(
         self,
-        snapshot,
+        snapshot: DataMappingSnapshot,
         selected_group_key: str,
+        *,
+        status: str | None = None,
+        message: str | None = None,
+        extra_issues: tuple[MappingValidationError, ...] = (),
     ) -> DataMappingControllerState:
         draft = snapshot.draft
         entities = tuple(_entity_summary(group) for group in draft.groups)
@@ -153,17 +174,17 @@ class DataMappingController:
         attributes = _attribute_rows(selected)
         value_headers = selected.columns
         values = _value_rows(selected.rows, value_headers)
-        status = "ready" if snapshot.is_valid else "error"
+        resolved_status = status or ("ready" if snapshot.is_valid else "error")
         return DataMappingControllerState(
             source_label=_display_source_label(snapshot.source_label),
-            status=status,
-            message=_status_message(snapshot.is_valid, snapshot.dirty),
+            status=resolved_status,
+            message=message or _status_message(snapshot.is_valid, snapshot.dirty),
             selected_group_key=selected.group_key,
             entities=entities,
             attributes=attributes,
             value_headers=value_headers,
             values=values,
-            validation_rows=snapshot.validation_errors,
+            validation_rows=(*snapshot.validation_errors, *extra_issues),
             actions=snapshot.actions,
             dirty=snapshot.dirty,
         )
@@ -224,6 +245,21 @@ def _display_value(value: object) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return "" if value is None else str(value)
+
+
+def _operation_issue(
+    code: str,
+    group: str,
+    field: str,
+    message: str,
+) -> MappingValidationError:
+    return MappingValidationError(
+        code=code,
+        message=message or f"{group} failed.",
+        entity_key=group,
+        attribute_key=field,
+        field=field,
+    )
 
 
 def _status_message(is_valid: bool, dirty: bool) -> str:
