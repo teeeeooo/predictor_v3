@@ -22,6 +22,9 @@ MODE_MISSING_ALLOWED = frozenset(
     {"Cooling Capa", "Heating Capa", "Cooling Power", "Heating Power"}
 )
 
+# Current compatibility order for `config/ml/features.csv` parity only.
+FEATURE_PROJECTION_COMPATIBILITY_ORDER = ("input", "auto", "one_hot", "result", "derived")
+
 
 def load_data_definition_rows(
     path: str | Path | None = None,
@@ -55,11 +58,8 @@ def project_feature_catalog_from_catalog(
     policy = derived_policy or load_current_derived_feature_policy()
     rows: list[ProjectedFeatureRow] = []
     active_rows = tuple(row for row in catalog.active_rows if row.active)
-    rows.extend(_project_input_rows(active_rows))
-    rows.extend(_project_auto_rows(active_rows))
-    rows.extend(_project_one_hot_rows(active_rows))
-    rows.extend(_project_result_rows(active_rows))
-    rows.extend(_project_derived_rows(policy))
+    for role in FEATURE_PROJECTION_COMPATIBILITY_ORDER:
+        rows.extend(_project_rows_for_role(role, active_rows, policy))
     return _renumber(rows)
 
 
@@ -99,6 +99,24 @@ def extract_mapping_requirements(
         and row.trigger_column
     ]
     return tuple(requirements)
+
+
+def _project_rows_for_role(
+    role: str,
+    rows: tuple[PredictSchemaV2Row, ...],
+    policy: tuple[DerivedFeatureDefinition, ...],
+) -> list[ProjectedFeatureRow]:
+    if role == "input":
+        return _project_input_rows(rows)
+    if role == "auto":
+        return _project_auto_rows(rows)
+    if role == "one_hot":
+        return _project_one_hot_rows(rows)
+    if role == "result":
+        return _project_result_rows(rows)
+    if role == "derived":
+        return _project_derived_rows(policy)
+    raise ValueError(f"unsupported feature projection role '{role}'")
 
 
 def _project_input_rows(rows: tuple[PredictSchemaV2Row, ...]) -> list[ProjectedFeatureRow]:

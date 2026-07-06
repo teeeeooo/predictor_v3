@@ -62,11 +62,25 @@ def compare_projected_features_to_catalog(
     for index in range(max_len):
         if index >= len(projected):
             row = catalog_rows[index]
-            issues.append(_issue("error", "catalog_orphan", row.ml_name, row.role))
+            issues.append(
+                _issue(
+                    "error",
+                    "catalog_orphan",
+                    _row_identity(row),
+                    f"row {index + 1}",
+                )
+            )
             continue
         if index >= len(catalog_rows):
             row = projected[index]
-            issues.append(_issue("error", "projection_extra", row.ml_name, row.role))
+            issues.append(
+                _issue(
+                    "error",
+                    "projection_extra",
+                    _row_identity(row),
+                    f"row {index + 1}",
+                )
+            )
             continue
         expected = catalog_rows[index]
         actual = projected[index]
@@ -78,7 +92,9 @@ def compare_projected_features_to_catalog(
                     subject=expected.ml_name or actual.ml_name,
                     message=(
                         "Projected feature row differs from current features.csv "
-                        f"at row {index + 1}; notes are intentionally excluded."
+                        f"at row {index + 1}; expected={_row_identity(expected)}; "
+                        f"actual={_row_identity(actual)}; notes are intentionally "
+                        "excluded."
                     ),
                 )
             )
@@ -158,6 +174,11 @@ def _issue(
         subject=subject,
         message=f"{code}: {subject} ({detail})",
     )
+
+
+def _row_identity(row: ProjectedFeatureRow) -> str:
+    key = row.ui_key or row.ml_name or "<blank>"
+    return f"{key}/{row.ml_name or '<blank>'}/{row.role}"
 
 
 def _catalog_like_rows(rows: tuple[ProjectedFeatureRow, ...]):

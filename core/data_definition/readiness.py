@@ -8,18 +8,26 @@ from pathlib import Path
 from core.data_definition.model import ProjectedFeatureRow
 from core.data_definition.report_model import ReadinessCheck
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_TRAINING_DATA_PATH = PROJECT_ROOT / "data" / "Practice_4.csv"
-
 
 def build_readiness_checks(
     projected_features: tuple[ProjectedFeatureRow, ...],
     training_data_path: str | Path | None = None,
 ) -> tuple[ReadinessCheck, ...]:
     """Return passive readiness checks without retraining or model inspection."""
-    data_path = Path(training_data_path) if training_data_path else DEFAULT_TRAINING_DATA_PATH
+    training_check = (
+        _training_header_check(projected_features, Path(training_data_path))
+        if training_data_path is not None
+        else ReadinessCheck(
+            name="training_headers",
+            status="not_evaluated",
+            message=(
+                "Caller did not provide a training data path for the Arc 15A "
+                "passive header check."
+            ),
+        )
+    )
     return (
-        _training_header_check(projected_features, data_path),
+        training_check,
         ReadinessCheck(
             name="model_activation",
             status="not_evaluated",
@@ -44,6 +52,12 @@ def _training_header_check(
             message=f"Training data not found for passive header check: {data_path}",
         )
     headers = _read_headers(data_path)
+    if not headers:
+        return ReadinessCheck(
+            name="training_headers",
+            status="unavailable",
+            message=f"Training data header row is empty: {data_path}",
+        )
     required = {
         row.ml_name
         for row in projected_features
