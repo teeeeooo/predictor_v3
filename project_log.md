@@ -24,6 +24,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
+
+### Decision
+- Do not proceed directly from Arc 14D-R into Arc 15 real dataset readiness or a
+  `Unified Data Definition Manager` direction.
+- First run a Pre-Arc 15 audit of `config/ml/features.csv`,
+  `config/predict/schema.csv`, the existing legacy mapping fixture
+  `tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, and Data Mapping
+  Manager output relationships.
+- The user clarified that the legacy mapping CSV was already in the repo, while
+  real training CSV data is still outside the repo on the user's local PC.
+- Do not decide whether the current ML feature contract and Predict schema CSV
+  split is final design or duplication debt until that audit is complete.
+
 ## 2026-07-03 — Arc 14/15 numbering sync
 
 ### Decision

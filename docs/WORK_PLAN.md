@@ -95,8 +95,10 @@
 
 ## Next Actions
 
-1. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-2. Real model prediction success smoke after `model/model.pkl` is available.
+1. Pre-Arc 15 Audit - Config CSV / Legacy Mapping Source / Manager Output
+   Relationship Audit.
+2. Arc 15 direction decision after the audit.
+3. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -139,6 +141,22 @@
   `openpyxl` XLSX read-only review snapshots, export preserves dirty drafts
   without saving `mapping.json`, Import remains unsupported, and Predict
   invalid mapping status is distinct from missing mapping status.
+- `tests/fixtures/mapping/mapping_tables_legacy_wide.csv` appears to be the
+  existing legacy mapping-form source/evidence behind the Data Mapping Manager
+  direction; its current path and relationship to generated manager outputs
+  must be re-audited before Arc 15 direction is finalized.
+- Real training CSV data is not in this checkout; the real training data remains
+  on the user's local PC.
+- `config/ml/features.csv` currently reads as the ML feature contract, while
+  `config/predict/schema.csv` currently reads as the Predict UI/runtime schema
+  contract. Do not decide whether this split is final design or accumulated
+  duplication until the Pre-Arc 15 audit.
+- Data Mapping Manager, Runtime Cascade, and XLSX snapshot export completion do
+  not by themselves settle the Feature Catalog ↔ Predict Schema ↔ Data Mapping
+  Manager relationship.
+- Do not commit to a `Unified Data Definition Manager` direction until the
+  config CSV / legacy mapping source / manager output relationship audit is
+  complete.
 
 ## Active Constraints
 

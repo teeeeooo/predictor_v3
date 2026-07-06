@@ -10,13 +10,14 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, post-Arc 13.5A planning. Arc
-13 ML Feature Catalog migration and Arc 13.5/13.5A Feature Catalog Manager work
-are complete; Calculator Sub-Arc - KOREA Notebook Entry and KS C 9306 HSPF
-official oracle correction are complete; a small calculator UI micro-polish pass
-is complete; current near-term execution adds Arc 13.5R Predict Schema Catalog
-v2 generic mapping entity / attribute / rule design/audit before Arc 14 Data
-Mapping Manager work and real dataset readiness audit.
+Current phase: Machine Learning / Predictor Phase, post-Arc 14D-R direction
+check. Arc 13 ML Feature Catalog migration, Arc 13.5/13.5A Feature Catalog
+Manager work, Arc 13.5R Predict Schema Catalog v2 projection, and Arc 14 Data
+Mapping Manager / Runtime Cascade / XLSX snapshot export work are complete for
+their automated scopes. Before starting Arc 15, the project needs a Pre-Arc 15
+audit of `config/ml/features.csv`, `config/predict/schema.csv`,
+`tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, and `data/mapping.json`
+/ Data Mapping Manager output relationships.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -658,8 +659,13 @@ Target milestones:
 
 Status:
 
-- Deferred until Arc 13.5R Predict Schema Catalog v2 design/audit and Arc 14
-  mapping manager execution close.
+- Pending direction decision after the Pre-Arc 15 config/mapping source audit.
+  The legacy wide mapping CSV is already present as
+  `tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, while the real
+  training CSV is not in the repo. Do not start the real dataset readiness audit
+  or rename this direction to `Unified Data Definition Manager` until the
+  relationship between Feature Catalog, Predict Schema, Data Mapping Manager
+  output, and legacy mapping evidence is checked.
 
 ### Later — Calculator to Predictor Integration
 
