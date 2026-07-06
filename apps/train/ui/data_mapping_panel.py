@@ -1,4 +1,4 @@
-"""Data Mapping Manager foundation panel."""
+"""Data Mapping Manager panel."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Presentation helpers for the read-only Data Mapping UI foundation."""
+"""Presentation helpers for Data Mapping Manager tables."""
 
 from __future__ import annotations
 

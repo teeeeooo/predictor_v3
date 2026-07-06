@@ -1,4 +1,4 @@
-"""Read-only Qt table models for Data Mapping UI foundation."""
+"""Qt table models for Data Mapping Manager rows."""
 
 from __future__ import annotations
 

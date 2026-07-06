@@ -109,7 +109,7 @@ def test_attribute_and_value_view_models_are_table_ready():
     assert value_model.cell_value(0, 2) == "8.2"
 
 
-def test_validation_rows_represent_read_only_foundation_state():
+def test_validation_rows_represent_current_draft_state():
     state = _foundation_controller().refresh()
     validation_model = ReadOnlyMappingTableModel(
         VALIDATION_HEADERS,
@@ -120,7 +120,7 @@ def test_validation_rows_represent_read_only_foundation_state():
     assert validation_model.cell_value(0, 4) == "Mapping draft projection OK."
 
 
-def test_data_mapping_panel_builds_read_only_foundation_surface():
+def test_data_mapping_panel_builds_editable_manager_surface():
     app = _app()
     panel = DataMappingPanel(controller=_foundation_controller())
     try:

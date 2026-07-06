@@ -1,4 +1,4 @@
-"""Data Mapping service foundation for Train/Admin."""
+"""Data Mapping Manager service for Train/Admin."""
 
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ class RuntimeMappingCatalogProvider:
 
 
 class DataMappingService:
-    """Provide read-only Mapping Entity catalog snapshots for Train/Admin UI."""
+    """Provide editable Data Mapping Manager draft snapshots for Train/Admin UI."""
 
     def __init__(self, provider: MappingDraftProvider | None = None) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
