@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -247,7 +247,7 @@ entries:
 
   - type: decision
     topic: Arc 14 Data Mapping foundation state
-    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager has a read-only Train/Admin UI that defaults to runtime mapping.json repository data adapted into MappingEntityCatalog; foundation sample data is explicit test/fallback injection only. Missing/empty mapping data is a visible load error. row_key is canonical row identity, key_attribute is future import/export metadata, and active controls management visibility/eligibility rather than structural validation.
+    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager defaults to runtime mapping.json data and now supports user-facing draft projection, validation, editable row CRUD, validation-gated save with backup/temp/atomic replace, dirty reload confirmation, JSON export, and generated XLSX read-only snapshot export. row_key remains canonical row identity, key_attribute remains future import/export metadata, and active controls management visibility/eligibility rather than structural validation.
     keywords:
       - predictor_v3
       - Arc 14
@@ -258,7 +258,7 @@ entries:
       - key_attribute
       - active
     assertionStatus: verified
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
@@ -276,7 +276,7 @@ entries:
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
-    content: Legacy single-wide CSV to mapping.json reconstruction is not recoverable enough for implementation. Continue with UI CRUD over user-facing Predict mapping groups; keep Import excluded until a future compatibility-parser design exists; treat Export as a read-only review snapshot rather than an edit/reimport contract; keep Save/Reload/dirty-state behavior below the UI raw JSON boundary.
+    content: Legacy single-wide CSV to mapping.json reconstruction is not recoverable enough for implementation. Data Mapping Manager uses UI CRUD over user-facing Predict mapping groups; Import remains excluded until a future compatibility-parser design exists; JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
     keywords:
       - predictor_v3
       - Arc 14B
@@ -287,11 +287,11 @@ entries:
       - CRUD
       - dirty state
     assertionStatus: verified
-    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: decision
     topic: Arc 14B ref exp mapping SSOT
-    content: mapping.json is the SSOT for Refrigerant and Expansion options. Refrigerant projects to required ref_type and Expansion projects to required exp_type; Predict dropdown hard-coded fallback options are legacy behavior to remove during implementation, and missing or empty sections should become validation issues.
+    content: mapping.json is the SSOT for Refrigerant and Expansion options. Refrigerant projects to required ref_type and Expansion projects to required exp_type; Predict dropdown hard-coded fallback options have been removed, and missing or empty sections become validation/status-visible issues rather than generated options.
     keywords:
       - predictor_v3
       - Arc 14B
@@ -302,7 +302,52 @@ entries:
       - Predict dropdown
       - validation
     assertionStatus: verified
-    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+
+  - type: decision
+    topic: Arc 14C runtime cascade integration
+    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. odu_cascade, cond_specs, fin_type, pi, and row are runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
+    keywords:
+      - predictor_v3
+      - Arc 14C
+      - Runtime Cascade
+      - Data Mapping
+      - mapping.json
+      - odu_cascade
+      - cond_specs
+      - autofill
+    assertionStatus: verified
+    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+
+  - type: decision
+    topic: dependency and Excel policy
+    content: Requirements are app-scoped. Train and Predict share requirements/ml_runtime.txt with joblib, numpy, pandas, scikit-learn, and xgboost; Predict excludes training-only optuna. Generated XLSX write/export uses openpyxl, while existing user Excel reads remain an xlwings/Excel automation workflow when needed. Requirements remain unpinned unless a future version policy is introduced.
+    keywords:
+      - predictor_v3
+      - requirements
+      - ml_runtime
+      - Predict
+      - Train
+      - openpyxl
+      - xlwings
+      - Excel
+    assertionStatus: verified
+    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+
+  - type: open_question
+    topic: Pre Arc 15 config mapping source relationship
+    content: Before Arc 15 direction is finalized, audit the relationship between config/ml/features.csv, config/predict/schema.csv, tests/fixtures/mapping/mapping_tables_legacy_wide.csv, Data Mapping Manager outputs, and real training data outside the repo. Do not decide whether the config CSV split is final design or accumulated duplication, and do not commit to a Unified Data Definition Manager direction before that audit.
+    keywords:
+      - predictor_v3
+      - Pre Arc 15
+      - config/ml/features.csv
+      - config/predict/schema.csv
+      - legacy mapping
+      - Data Mapping Manager
+      - training data
+      - Unified Data Definition Manager
+    assertionStatus: observed
+    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 ```
 
 ## Known Gaps
