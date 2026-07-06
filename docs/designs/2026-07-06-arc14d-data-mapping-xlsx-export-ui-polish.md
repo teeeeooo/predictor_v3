@@ -44,16 +44,20 @@ explicitly approves and records a workbook writer dependency such as
 
 ## Dependency Approval Update
 
-Bundle 2A records the dependency foundation required to resume Arc 14D-R:
+Bundle 2A and Bundle 2A-F record the dependency foundation required to resume
+Arc 14D-R:
 
 - `requirements/excel.txt` declares `openpyxl` for predictor_v3-generated XLSX
   write/export.
 - `requirements/excel.txt` declares `xlwings` for Windows user Excel read
   workflows, especially DRM-sensitive reads.
+- `requirements/ml_runtime.txt` separates Train/Predict shared ML runtime so
+  `requirements/predict.txt` can support real `model.pkl` inference without
+  adding training-only `optuna`.
 - DRM-sensitive user-provided Excel files must not be read directly with
   `openpyxl` unless a future task explicitly changes that policy.
 - Arc 14D-R may use `openpyxl` for generated read-only XLSX snapshot export.
-- XLSX export implementation is still not done in Bundle 2A.
+- XLSX export implementation is still not done in Bundle 2A or Bundle 2A-F.
 
 ## UI / Status Findings
 

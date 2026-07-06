@@ -24,7 +24,7 @@
 | --- | --- | --- | --- |
 | `AGENTS.md` | Lite agent entrypoint | user/session start, `README.md` | `AGENT_TASK_ROUTER.md`, docs guardrails |
 | `AGENT_TASK_ROUTER.md` | Task routing index and gate map | `AGENTS.md`, agent workflow | task-specific docs, agent workflow owner docs |
-| `README.md` | Repository public entrypoint | repo root | `project_brief.md`, `project_log.md`, `ACTIVE_DOCUMENTS.md`, docs map |
+| `README.md` | Repository public entrypoint | repo root | `project_brief.md`, `project_log.md`, `ACTIVE_DOCUMENTS.md`, docs map, `docs/development/dependencies.md` |
 | `ACTIVE_DOCUMENTS.md` | Active document inventory | `README.md`, `AGENT_TASK_ROUTER.md` | all active docs by owner relationship |
 | `project_brief.md` | Phase / Arc / Milestone map | `README.md`, new sessions, planning tasks | `docs/WORK_PLAN.md`, `PROJECT_CHARTER.md`, `project_log.md` |
 | `project_log.md` | Decision/history log | task reports, lifecycle summaries | project docs, historical decisions |
@@ -56,6 +56,7 @@
 | `docs/WORK_PLAN.md` | Current slice and near-term execution board | `project_brief.md`, planning tasks, explicit handoff requests | current next action, active blockers/constraints, optional `Session Handoff` |
 | `docs/REFACTOR_PLAN.md` | Refactor candidates and structural guardrails | `project_brief.md`, architecture-sensitive tasks | `docs/WORK_PLAN.md`, `project_log.md` |
 | `docs/PACKAGING.md` | Packaging task owner | packaging route | packaging principles and verification |
+| `docs/development/dependencies.md` | Dependency installation and Excel policy owner | README, requirements tasks, packaging/setup tasks, Arc 14D-R | `requirements/*.txt`, app install guidance, Excel read/write policy |
 | `docs/architecture/project_architecture.md` | Architecture boundary owner | architecture-sensitive tasks | calculator/profile/UI/ML boundaries |
 | `docs/architecture/project_wide_architecture_restructuring_plan.md` | Source input for project-wide architecture reset and migration order | Architecture SSOT updates, package-boundary planning | target `core/common`, `core/predictor_schema`, `core/mapping`, `core/ml`, `core/calculators` package directions and migration arcs |
 | `docs/architecture/pyside6_train_predict_architecture.md` | Governing architecture contract for the PySide6 Train/Predict rewrite | ML/Predictor workflow, design gate, work plan, Train/Predict implementation tasks | `app_predict.py`, `app_train.py`, `apps/predict/`, `apps/train/`, PredictWorkspace, state/controller/service/adapter/worker boundaries |

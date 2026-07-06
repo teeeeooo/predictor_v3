@@ -9,11 +9,17 @@ file:
   It currently has no third-party package because no external dependency is
   shared by `app_train.py`, `app_predict.py`, and `app_calculator.py`.
 - `requirements/train.txt`: Train/Admin runtime. Includes PySide6, the ML
-  training stack, and `requirements/excel.txt`.
+  training-only dependencies, `requirements/ml_runtime.txt`, and
+  `requirements/excel.txt`.
 - `requirements/predict.txt`: Predict runtime. Includes PySide6 and inference
-  data/model loading dependencies. It does not include Excel dependencies.
+  UI dependencies plus `requirements/ml_runtime.txt`. It does not include Excel
+  dependencies.
 - `requirements/calculator.txt`: Calculator runtime. It currently depends on
   stdlib Tkinter and project modules only, through `requirements/base.txt`.
+- `requirements/ml_runtime.txt`: Train/Predict shared ML runtime. Predict uses
+  it because real `model.pkl` inference loads serialized model objects with
+  `joblib.load()` and calls their `.predict()` methods, including stored
+  XGBoost/scikit-learn-backed objects.
 - `requirements/excel.txt`: optional Excel dependencies and policy anchor.
 - `requirements/dev.txt`: development and focused validation requirements.
 
@@ -25,6 +31,18 @@ python3 -m pip install -r requirements/predict.txt
 python3 -m pip install -r requirements/calculator.txt
 python3 -m pip install -r requirements/dev.txt
 ```
+
+## Train / Predict Runtime Boundary
+
+- Train includes `requirements/ml_runtime.txt`, `requirements/excel.txt`,
+  PySide6, and training/tuning-only `optuna`.
+- Predict includes `requirements/ml_runtime.txt` and PySide6. It intentionally
+  excludes `optuna` and Excel dependencies.
+- The shared ML runtime package names are pip names, including `scikit-learn`
+  rather than the import package name `sklearn`.
+- No exact version pins are declared because the project has not adopted a
+  pinning policy and this dependency correction does not introduce minimum
+  version evidence.
 
 ## Excel Dependency Rule
 

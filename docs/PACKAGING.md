@@ -13,10 +13,18 @@
 - **클린 배포 환경**: 일반 개발 환경과 섞이지 않도록, 배포용 빌드는 반드시 독립된 깨끗한 환경에서 수행한다.
 - **전용 가상환경 사용**: PyInstaller 빌드는 `venv_deploy` 또는 그에 준하는 별도 배포용 가상환경 생성을 권장한다.
 - **의존성 최소화**: 패키징 시 불필요한 개발용 라이브러리가 포함되지 않도록 관리한다.
+- **앱별 requirements 기준**: `app_train.py` 패키징은 `requirements/train.txt`,
+  `app_predict.py` 패키징은 `requirements/predict.txt`,
+  `app_calculator.py` 패키징은 `requirements/calculator.txt`를 dependency
+  baseline으로 삼는다. `requirements/dev.txt`는 명시 승인 없는 packaged
+  runtime 기본 source가 아니다.
+- **Excel dependency 분리**: generated XLSX write/export는 `openpyxl`,
+  기존 사용자 Excel read workflow는 Windows 사용자 환경의 `xlwings` 정책을
+  따른다.
 - **작업 분리**: 패키징 작업 시 계산기, ML, UI 등의 핵심 코드/로직 변경을 동시에 진행하지 않는다.
 
 ## PyInstaller considerations
-- **DLL 런타임 방어**: XGBoost 및 NumPy 등의 라이브러리 사용 시 DLL 파일 누락 에러가 발생하기 쉬우므로 주의한다.
+- **DLL 런타임 방어**: XGBoost, scikit-learn, NumPy 등의 라이브러리 사용 시 DLL 파일 누락 에러가 발생하기 쉬우므로 주의한다. Predict packaging도 real `model.pkl` inference를 위해 XGBoost/scikit-learn runtime을 고려해야 한다.
 - **binaries 매핑**: 누락 방지를 위해 `.spec` 파일 생성 시 `binaries` 항목에 해당 동적 라이브러리들을 명시적으로 매핑해야 한다.
 - **spec 파일 관리**: 자동 생성된 `.spec` 파일에만 의존하지 않고, 검증 후 버전 관리 대상에 포함할지 고려한다.
 - **배포 형태**: onefile 또는 onedir 선택은 실제 사용자 배포 및 업데이트 요구사항에 따라 추후 결정한다.
@@ -35,5 +43,5 @@
 ## Open questions
 - 최종 패키징 대상 플랫폼 (Windows 전용인지, 다중 플랫폼인지).
 - PyInstaller 배포 최적 형태 (onefile vs onedir 성능/로딩 속도 트레이드오프).
-- XGBoost/NumPy 외에 명시적 매핑이 필요한 실제 binary dependency 목록.
+- XGBoost/scikit-learn/NumPy 외에 명시적 매핑이 필요한 실제 binary dependency 목록.
 - 생성된 crash log의 저장 위치(AppData 등) 및 보존 주기(retention policy).

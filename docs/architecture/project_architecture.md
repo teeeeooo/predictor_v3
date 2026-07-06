@@ -11,8 +11,13 @@ Architecture SSOT update의 source input은
 
 - **`core/`**: 핵심 비즈니스 로직 및 엔진
   - `ml/`: 순방향 ML 예측, 학습, 전처리, feature/target, registry, artifact path owner.
-  - `predictor_schema/`: `COLUMNS`, dropdown/column grouping, predictor table schema owner.
-  - `mapping/`: mapping path/repository/update/autofill owner.
+  - `predictor_schema/`: `config/predict/schema.csv` v2 projection,
+    compatibility `COLUMNS`, dropdown/column grouping, predictor table schema
+    owner.
+  - `mapping/`: mapping path/repository/update/autofill owner plus Data
+    Mapping Manager editor owners (`editor_model`, `editor_projection`,
+    `editor_validation`, `editor_persistence`, `editor_export`,
+    `editor_commands`).
   - `common/`: shared pure helpers and cross-domain paths such as `LOG_DIR`.
   - `calculators/`: profile/dispatcher, calculator adapters, standard engines, result/ranking adapters owner.
 - **Project-wide architecture reset note**: root compatibility wrappers were
@@ -119,12 +124,18 @@ Migration principles:
 - **냉매/팽창장치 One-hot 변환**: UI에서 선택된 냉매 및 팽창장치는
   PySide6 Predict adapter 경계에서 ML 입력 전 one-hot 피처로 변환됩니다.
   - 관련 키: `R410A`, `R32`, `R290` (냉매), `EEV`, `Capi` (팽창장치)
+  - selectable dropdown option source는 runtime `mapping.json`의 `ref_type`
+    / `exp_type` section이다.
+  - hidden ML one-hot feature emission은 `config/predict/schema.csv`의
+    `one_hot_group` / `ml_name` projection을 따른다.
+  - hard-coded refrigerant/expansion fallback option list를 production
+    dropdown source로 되살리지 않는다.
   - 모델 예측/학습 시 DataFrame 직접 전달을 유지하여 피처 이름을 보존해야 하며, `.values` 변환으로 인해 `feature_names_in_` 속성을 잃지 않도록 주의합니다.
 
 ### ML 학습 및 모델 artifact 가드레일
 - **기본 artifact 계약**: 현재 기본 모델 artifact는 `core/ml/artifacts.py`의 `MODEL_FILE`이 가리키는 `model.pkl` 단일 artifact 계약을 따른다. target별 또는 모델별 artifact 분리는 별도 설계 없이 임의로 도입하지 않는다.
 - **전처리 호환성 guard**: 학습/예측 전처리 호환성 확인을 위해 `preprocess_version` 또는 동등한 전처리 버전 검증 guard를 유지한다. 이 항목은 architecture contract이며, 현재 구현 완료 범위를 과장하지 않는다.
-- **Train/Predict runtime boundary**: `core/ml/training.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/ml/training.py`와 `core/ml/inference.py`는 상호 import로 결합하지 않으며, 예측 경로가 학습 전용 dependency에 의존하지 않도록 유지한다.
+- **Train/Predict runtime boundary**: `core/ml/training.py`는 학습 파이프라인용 모듈이며 예측 런타임 경로와 섞지 않는다. `core/ml/training.py`와 `core/ml/inference.py`는 상호 import로 결합하지 않으며, 예측 경로가 `optuna` 같은 학습 전용 dependency에 의존하지 않도록 유지한다. Predict는 real `model.pkl` 역직렬화와 stored model `.predict()` 실행을 위해 `requirements/ml_runtime.txt`의 shared ML runtime dependency에는 의존한다.
 - **Train/Predict PySide6 rewrite boundary**: `app_predict.py`는 Predict 전용 thin entrypoint, `app_train.py`는 Predict workspace + Train / Model + Data Mapping을 제공하는 관리자/개발자용 thin entrypoint로 전환한다. `PredictWorkspace`는 `apps.predict`에서 정의하고 `apps.train`의 Predict tab에서 재사용한다. Governing architecture contract는 `docs/architecture/pyside6_train_predict_architecture.md`이며, 설계 결정 기록은 `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`를 따른다.
 - **Application-usecase portability boundary**: core package separation alone is
   not sufficient for reusable Train/Predict workflows. Predict execution,
@@ -149,6 +160,11 @@ UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUM
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
 
+`COLUMNS`는 current compatibility projection이다. Canonical editable schema는
+`config/predict/schema.csv`이며, `core/predictor_schema/catalog_v2_projection.py`
+가 v2 catalog를 current compatibility shape로 투영하고
+`core/predictor_schema/columns.py`가 그 projection을 노출한다.
+
 ### 3.2 COLUMNS 자동완성 구조
 - **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계
   매핑은 `core/mapping/autofill.py`와 PySide6 app-side controller 경계에서
@@ -156,7 +172,7 @@ UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUM
 - **ODU 복합 캐스케이딩**: ODU → Fin → Pi → Row로 이어지는 복합
   캐스케이딩 및 면적/체적 매핑은 `core/mapping/autofill.py`의 pure logic과
   PySide6 controller/state 경계에서 처리합니다.
-- **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 `Dict[int, list[int]]` 형태로 `core/predictor_schema/columns.py`에서 관리한다.
+- **드롭다운-자동입력 SSOT**: 드롭다운과 자동입력 대상 컬럼 관계는 `DROPDOWN_TARGET` 같은 key-based compatibility mapping으로 `core/predictor_schema/columns.py`에서 관리한다. Column index는 compatibility output이며, 새 규칙은 stable schema keys에서 출발해야 한다.
 - **안전한 target lookup**: target column 조회는 직접 인덱싱보다 `.get(col, [])`를 사용해 매핑 없는 열의 `KeyError`를 방지한다.
 - **ML feature name mapping**: UI 표시 header와 ML feature name이 다를 수 있으므로 `COLUMNS`에는 `ml_feature` 같은 명시적 mapping key를 둔다. `core/ml/inference.py`에 header 보정 dict를 하드코딩하지 않는다.
 - **Cascading autofill 단계**: 계층형 자동완성은 데이터 조회, signal-blocked value write, UI 상태/rendering update의 3단계를 분리한다.
@@ -193,6 +209,25 @@ UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUM
 - 학습 로그는 `logs/train_log/YYYYMMDD_HHMM/` 구조로 저장됩니다 (`summary.xlsx` 포함).
 - 로그 경로 및 관련 상수는 `core/common/paths.py`에서 관리하며, 실제 로그 처리 및 폴더 생성 유틸리티는 `core/utils.py`에서 담당합니다.
 - 파일 I/O에 의한 부작용(side effect)을 방지하기 위해 `constants.py`에는 순수 상수만 선언하는 원칙을 따릅니다.
+
+### Dependency / Environment Boundary
+
+- App-scoped dependency declarations live under `requirements/`.
+- `requirements/train.txt` is the Train/Admin runtime and includes
+  `requirements/ml_runtime.txt`, `requirements/excel.txt`, PySide6, and
+  training-only `optuna`.
+- `requirements/predict.txt` is the Predict runtime and includes
+  `requirements/ml_runtime.txt` plus PySide6. It must not depend on
+  training-only `optuna`.
+- `requirements/calculator.txt` is the Tkinter calculator runtime and should
+  not include ML or Excel dependencies unless a future calculator task proves a
+  direct runtime need.
+- `requirements/excel.txt` separates Excel policy dependencies: generated XLSX
+  write/export uses `openpyxl`, while existing user Excel read workflows use
+  `xlwings` in Windows user environments.
+- macOS development may automate `openpyxl` checks; `xlwings` Excel automation
+  remains optional/manual because it depends on local Excel installation,
+  permission, and license state.
 
 ## 5. Calculator profile resolver and inverse-search architecture
 
