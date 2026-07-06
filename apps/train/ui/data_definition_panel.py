@@ -20,9 +20,13 @@ from apps.train.controllers.data_definition_controller import (
     DataDefinitionController,
     DataDefinitionControllerState,
 )
+from apps.train.ui.data_definition_models import DataDefinitionDraftTableModel
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 
 SUMMARY_HEADERS = ("Metric", "Value")
+DRAFT_CHANGE_HEADERS = ("Source", "Row Key", "Field", "Before", "After")
+SAVE_PLAN_HEADERS = ("Target", "Status", "Reason")
+SAVE_BLOCKER_HEADERS = ("Severity", "Code", "Target", "Message")
 PROJECTED_FEATURE_HEADERS = (
     "Order",
     "Role",
@@ -69,6 +73,10 @@ class DataDefinitionPanel(QWidget):
         self.status_label = QLabel("Data Definition report pending.")
         self.status_label.setObjectName("PanelTitle")
         self.summary_table = _table("Data Definition Summary")
+        self.draft_table = _table("Data Definition Draft", editable=True)
+        self.draft_changes_table = _table("Data Definition Draft Changes")
+        self.save_plan_table = _table("Data Definition Save Plan")
+        self.save_blockers_table = _table("Data Definition Save Blockers")
         self.projected_features_table = _table("Projected Features")
         self.mapping_requirements_table = _table("Mapping Requirements")
         self.one_hot_table = _table("One-hot Relationships")
@@ -105,9 +113,13 @@ class DataDefinitionPanel(QWidget):
         refresh_button = QPushButton("Refresh")
         refresh_button.setAccessibleName("Refresh Data Definition")
         refresh_button.clicked.connect(self.refresh)
+        reset_button = QPushButton("Reset Draft")
+        reset_button.setAccessibleName("Reset Data Definition Draft")
+        reset_button.clicked.connect(self._reset_draft)
         layout.addWidget(refresh_button, 0, 0)
-        layout.addWidget(self.status_label, 0, 1)
-        layout.setColumnStretch(1, 1)
+        layout.addWidget(reset_button, 0, 1)
+        layout.addWidget(self.status_label, 0, 2)
+        layout.setColumnStretch(2, 1)
         return panel
 
     def _build_body(self) -> QScrollArea:
@@ -118,6 +130,10 @@ class DataDefinitionPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._panel("Summary", self.summary_table, height=190))
+        layout.addWidget(self._panel("Draft", self.draft_table, height=320))
+        layout.addWidget(self._panel("Draft Changes", self.draft_changes_table, height=160))
+        layout.addWidget(self._panel("Save Plan Preview", self.save_plan_table, height=150))
+        layout.addWidget(self._panel("Save Blockers", self.save_blockers_table, height=170))
         layout.addWidget(self._panel("Projected Features", self.projected_features_table))
         layout.addWidget(self._panel("Mapping Requirements", self.mapping_requirements_table))
         layout.addWidget(self._panel("One-hot Relationships", self.one_hot_table, height=180))
@@ -152,6 +168,23 @@ class DataDefinitionPanel(QWidget):
         self.summary_table.setModel(
             ReadOnlyMappingTableModel(SUMMARY_HEADERS, state.summary_rows)
         )
+        self.draft_table.setModel(
+            DataDefinitionDraftTableModel(
+                state.draft_headers,
+                state.draft_row_identities,
+                state.draft_rows,
+                on_cell_changed=self._edit_draft_cell,
+            )
+        )
+        self.draft_changes_table.setModel(
+            ReadOnlyMappingTableModel(DRAFT_CHANGE_HEADERS, state.draft_change_rows)
+        )
+        self.save_plan_table.setModel(
+            ReadOnlyMappingTableModel(SAVE_PLAN_HEADERS, state.save_plan_rows)
+        )
+        self.save_blockers_table.setModel(
+            ReadOnlyMappingTableModel(SAVE_BLOCKER_HEADERS, state.save_blocker_rows)
+        )
         self.projected_features_table.setModel(
             ReadOnlyMappingTableModel(
                 PROJECTED_FEATURE_HEADERS,
@@ -175,14 +208,36 @@ class DataDefinitionPanel(QWidget):
         )
         for table in _tables(self):
             table.resizeColumnsToContents()
+        self.draft_table.resizeColumnsToContents()
+
+    def _reset_draft(self) -> None:
+        self._apply_state(self._controller.reset_draft())
+
+    def _edit_draft_cell(
+        self,
+        row_identity: tuple[str, str],
+        field_name: str,
+        value: object,
+    ) -> bool:
+        state = self._controller.edit_cell(row_identity, field_name, value)
+        self._apply_state(state)
+        return state.last_action_ok
 
 
-def _table(accessible_name: str) -> QTableView:
+def _table(accessible_name: str, *, editable: bool = False) -> QTableView:
     table = QTableView()
     table.setObjectName(accessible_name.replace(" ", ""))
     table.setAccessibleName(accessible_name)
-    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    table.setSelectionBehavior(QAbstractItemView.SelectRows)
+    if editable:
+        table.setEditTriggers(
+            QAbstractItemView.DoubleClicked
+            | QAbstractItemView.EditKeyPressed
+            | QAbstractItemView.SelectedClicked
+        )
+        table.setSelectionBehavior(QAbstractItemView.SelectItems)
+    else:
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
     table.setSelectionMode(QAbstractItemView.ExtendedSelection)
     table.setAlternatingRowColors(True)
     table.verticalHeader().setVisible(True)
@@ -194,6 +249,9 @@ def _table(accessible_name: str) -> QTableView:
 def _tables(panel: DataDefinitionPanel) -> tuple[QTableView, ...]:
     return (
         panel.summary_table,
+        panel.draft_changes_table,
+        panel.save_plan_table,
+        panel.save_blockers_table,
         panel.projected_features_table,
         panel.mapping_requirements_table,
         panel.one_hot_table,
