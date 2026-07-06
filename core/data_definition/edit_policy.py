@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from core.data_definition.draft import DataDefinitionDraftRow
+from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
 
 SCHEMA_BACKED_EDITABLE_FIELDS = frozenset(
     {
@@ -42,6 +42,15 @@ class FieldEditability:
     field_name: str
     editable: bool
     category: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class RestrictedDraftFieldChange:
+    """Non-editable field change detected in a draft diff."""
+
+    row_identity: tuple[str, str]
+    field_name: str
     reason: str
 
 
@@ -89,6 +98,23 @@ def is_field_editable(row: DataDefinitionDraftRow, field_name: str) -> bool:
     return field_editability(row, field_name).editable
 
 
+def restricted_draft_field_changes(
+    draft: DataDefinitionDraft,
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    """Return direct draft edits that violate the field edit policy."""
+    changes: list[RestrictedDraftFieldChange] = []
+    baseline_by_identity = {row.identity: row for row in draft.baseline_rows}
+    for row in draft.rows:
+        before = baseline_by_identity.get(row.identity)
+        if before is not None:
+            changes.extend(_restricted_field_changes(before, row))
+    if len(draft.rows) == len(draft.baseline_rows):
+        for before, after in zip(draft.baseline_rows, draft.rows, strict=True):
+            if before.identity != after.identity:
+                changes.extend(_restricted_field_changes(before, after))
+    return _dedupe_restricted_changes(changes)
+
+
 def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:
     return FieldEditability(
         field_name=field_name,
@@ -96,3 +122,37 @@ def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:
         category=category,
         reason=reason,
     )
+
+
+def _restricted_field_changes(
+    before: DataDefinitionDraftRow,
+    after: DataDefinitionDraftRow,
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    changes: list[RestrictedDraftFieldChange] = []
+    for field_name in DataDefinitionDraftRow.__dataclass_fields__:
+        if getattr(before, field_name) == getattr(after, field_name):
+            continue
+        editability = field_editability(before, field_name)
+        if not editability.editable:
+            changes.append(
+                RestrictedDraftFieldChange(
+                    before.identity,
+                    field_name,
+                    editability.reason,
+                )
+            )
+    return tuple(changes)
+
+
+def _dedupe_restricted_changes(
+    changes: list[RestrictedDraftFieldChange],
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    seen: set[tuple[tuple[str, str], str, str]] = set()
+    unique: list[RestrictedDraftFieldChange] = []
+    for change in changes:
+        key = (change.row_identity, change.field_name, change.reason)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(change)
+    return tuple(unique)

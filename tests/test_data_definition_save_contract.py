@@ -1,6 +1,8 @@
 """Arc 15C-1 Data Definition draft and save contract tests."""
 
 from core.data_definition import (
+    DataDefinitionDraft,
+    DataDefinitionDraftRow,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
@@ -132,6 +134,89 @@ def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
         "data_mapping_dynamic_requirement_deferred",
         "one_hot_runtime_owner_deferred",
     }
+
+
+def test_data_definition_save_plan_blocks_column_key_direct_edit():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, column_key="cooling_capacity")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "restricted_field_edit_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_display_order_direct_edit():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(
+        draft,
+        schema_row.identity,
+        display_order=schema_row.display_order + 1,
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "restricted_field_edit_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_role_direct_edit():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, role="auto")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "restricted_field_edit_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_raw_row_add():
+    draft = build_data_definition_draft()
+    changed = DataDefinitionDraft(
+        rows=(
+            *draft.rows,
+            DataDefinitionDraftRow(
+                source_kind="schema_row",
+                column_key="raw_new_feature",
+                role="input",
+            ),
+        ),
+        baseline_rows=draft.baseline_rows,
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "raw_row_add_delete_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_raw_row_delete():
+    draft = build_data_definition_draft()
+    changed = DataDefinitionDraft(
+        rows=draft.rows[1:],
+        baseline_rows=draft.baseline_rows,
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "raw_row_add_delete_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_allows_schema_backed_label_change():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, label="Cooling Capacity")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert plan.can_save_schema
+    assert _target_status(plan, "schema_csv") == "planned"
+    assert "restricted_field_edit_not_allowed" not in _blocker_codes(plan)
+    assert "raw_row_add_delete_not_allowed" not in _blocker_codes(plan)
 
 
 def _target_status(plan, target):
