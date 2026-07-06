@@ -1,0 +1,142 @@
+"""Arc 15C-1 Data Definition draft and save contract tests."""
+
+from core.data_definition import (
+    build_data_definition_draft,
+    build_data_definition_report,
+    build_data_definition_save_plan,
+    field_editability,
+)
+from core.data_definition.draft import replace_draft_row
+from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
+
+
+def test_data_definition_draft_builds_schema_and_derived_policy_rows():
+    draft = build_data_definition_draft()
+
+    schema_rows = [row for row in draft.rows if row.source_kind == "schema_row"]
+    derived_rows = [row for row in draft.rows if row.source_kind == "derived_policy"]
+
+    assert len(schema_rows) == len(load_predict_schema_catalog_v2().rows)
+    assert len(derived_rows) == 8
+    assert schema_rows[0].column_key == "cooling_capa"
+    assert derived_rows[0].ml_name == "Cool_Capa_per_EER"
+    assert not draft.is_changed
+
+
+def test_data_definition_edit_policy_separates_editable_and_restricted_fields():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    derived_row = next(row for row in draft.rows if row.source_kind == "derived_policy")
+
+    assert field_editability(schema_row, "label").editable
+    assert field_editability(schema_row, "notes").editable
+    assert field_editability(schema_row, "column_key").category == (
+        "schema_backed_restricted"
+    )
+    assert field_editability(schema_row, "display_order").category == (
+        "schema_backed_restricted"
+    )
+    assert field_editability(schema_row, "role").category == "schema_backed_restricted"
+    assert field_editability(schema_row, "mapping_value").category == "mapping_value_owned"
+    assert field_editability(derived_row, "ml_name").category == "derived_policy_blocked"
+
+
+def test_data_definition_save_plan_for_unchanged_draft_is_noop_preview():
+    draft = build_data_definition_draft()
+    plan = build_data_definition_save_plan(draft)
+
+    assert not plan.changed_fields
+    assert not plan.can_save_schema
+    assert not plan.can_write_features_projection
+    assert not plan.can_write_derived_policy
+    assert not plan.requires_restart
+    assert not plan.requires_retrain
+    assert _target_status(plan, "schema_csv") == "no_op"
+    assert _target_status(plan, "features_csv") == "blocked"
+    assert build_data_definition_report().ok
+
+
+def test_data_definition_save_plan_blocks_features_csv_dual_writer_risk():
+    draft = build_data_definition_draft()
+    plan = build_data_definition_save_plan(draft, requested_targets=("features_csv",))
+
+    assert not plan.can_write_features_projection
+    assert _target_status(plan, "features_csv") == "blocked"
+    assert _blocker_codes(plan) >= {"features_csv_dual_writer_not_resolved"}
+
+
+def test_data_definition_save_plan_blocks_derived_policy_persistence():
+    draft = build_data_definition_draft()
+    derived_row = next(row for row in draft.rows if row.source_kind == "derived_policy")
+    changed = replace_draft_row(
+        draft,
+        derived_row.identity,
+        ml_name=f"{derived_row.ml_name}_edited",
+    )
+
+    plan = build_data_definition_save_plan(changed, requested_targets=("derived_policy",))
+
+    assert not plan.can_save_schema
+    assert not plan.can_write_derived_policy
+    assert _blocker_codes(plan) >= {"derived_policy_persistence_required"}
+    assert _target_status(plan, "derived_policy") == "blocked"
+
+
+def test_data_definition_save_plan_blocks_mapping_value_ownership():
+    draft = build_data_definition_draft()
+    plan = build_data_definition_save_plan(draft, requested_targets=("mapping_json",))
+
+    assert "mapping_json" in {target.target for target in plan.planned_targets}
+    assert _target_status(plan, "mapping_json") == "blocked"
+    assert _blocker_codes(plan) >= {"mapping_value_edit_not_allowed"}
+
+
+def test_data_definition_save_plan_marks_restart_and_retrain_state():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(
+        draft,
+        schema_row.identity,
+        model_input_enabled=not schema_row.model_input_enabled,
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert plan.can_save_schema
+    assert plan.requires_restart
+    assert plan.requires_retrain
+    assert "retrain_required_for_new_model_input" in _blocker_codes(plan)
+    assert _target_status(plan, "schema_csv") == "planned"
+    assert "retrain" in plan.restart_impact.message.lower()
+
+
+def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
+    draft = build_data_definition_draft()
+    mapping_row = next(row for row in draft.rows if row.column_key == "evap_area")
+    one_hot_row = next(row for row in draft.rows if row.column_key == "ref_type")
+    changed = replace_draft_row(
+        draft,
+        mapping_row.identity,
+        mapping_attribute="Evap Inner Surface Area",
+    )
+    changed = replace_draft_row(
+        changed,
+        one_hot_row.identity,
+        one_hot_group="tube_type",
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert plan.can_save_schema
+    assert _blocker_codes(plan) >= {
+        "data_mapping_dynamic_requirement_deferred",
+        "one_hot_runtime_owner_deferred",
+    }
+
+
+def _target_status(plan, target):
+    return next(item.status for item in plan.planned_targets if item.target == target)
+
+
+def _blocker_codes(plan):
+    return {blocker.code for blocker in plan.blocked_reasons}
