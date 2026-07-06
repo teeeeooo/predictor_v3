@@ -88,10 +88,14 @@
   draft validation, editable row CRUD, validation-gated save with backup and
   atomic replace, JSON read-only snapshot export, ODU Cond Specs composite-key
   validation, dirty reload confirmation, and Save/Export feedback.
+- Arc 14C Runtime Cascade Integration is complete: Predict runtime dropdowns
+  and autofill now consume Data Mapping Manager generated `mapping.json`
+  sections for ODU Cond Specs cascade behavior while preserving mapping JSON as
+  the SSOT and keeping missing/invalid mapping states empty/status-visible.
 
 ## Next Actions
 
-1. Arc 14C - Runtime Cascade Integration.
+1. Data Mapping XLSX read-only export snapshot.
 2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
 3. Real model prediction success smoke after `model/model.pkl` is available.
 
@@ -124,9 +128,9 @@
 - Data Mapping UI now uses the runtime mapping repository by default, but this
   checkout currently lacks `data/mapping.json`; runtime-data visual smoke needs
   that file or an explicit temp runtime provider harness.
-- Runtime cascade, dropdown option filtering, and one-hot ML input projection
-  are not yet v2-owned. Arc 14A/14C must keep semantic mapping fields separate
-  from legacy `mapping`, `source`, and `mapping_key` compatibility fields.
+- One-hot ML input projection is not yet v2-owned. Arc 14A/14C kept semantic
+  mapping fields separate from legacy `mapping`, `source`, and `mapping_key`
+  compatibility fields.
 
 ## Active Constraints
 

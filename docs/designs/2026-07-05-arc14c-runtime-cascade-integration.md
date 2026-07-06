@@ -78,3 +78,24 @@ No `config/predict/schema.csv` change is required for Arc 14C.
 3. Integrate row-specific dropdown/autofill coordination in Predict.
 4. Add missing/invalid mapping status coverage.
 5. Update docs, report, focused validation, and push.
+
+## Implementation Result
+
+Arc 14C preserved the owner split:
+
+- Core owns cascade lookup and invalid-shape defensive behavior.
+- Predict adapter/controller own base-vs-row-specific option coordination and
+  row edit side effects.
+- Predict workspace remains a display/input surface and does not parse raw
+  mapping JSON.
+
+Final behavior:
+
+- ODU selection narrows Fin Type, Pi, and Row with `odu_cascade`.
+- Blank ODU exposes base `fin_type`, `pi`, and `row` sections when available.
+- Complete ODU + Fin Type + Pi + Row combinations fill Cond Area and Cond
+  Volume through `cond_specs`.
+- Unmatched or invalid `cond_specs` clears Cond Area and Cond Volume.
+- Missing `ref_type`/`exp_type` sections return empty options and no fallback.
+- Missing or invalid ODU cascade sections return empty row-specific options
+  without crashing.
