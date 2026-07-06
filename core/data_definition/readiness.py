@@ -45,11 +45,11 @@ def _training_header_check(
     projected_features: tuple[ProjectedFeatureRow, ...],
     data_path: Path,
 ) -> ReadinessCheck:
-    if not data_path.exists():
+    if not data_path.is_file():
         return ReadinessCheck(
             name="training_headers",
             status="unavailable",
-            message=f"Training data not found for passive header check: {data_path}",
+            message=f"Training data path is not a file for passive header check: {data_path}",
         )
     headers = _read_headers(data_path)
     if not headers:
