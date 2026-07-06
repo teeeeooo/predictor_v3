@@ -81,11 +81,28 @@ General workflow rules:
 | `docs/knowledge/` | ML-only knowledge base, not calculator authority |
 | `docs/designs/` | Design Gate summaries and design records |
 
+## Dependency Installation
+
+Use the narrow requirements file for the app or workflow being run:
+
+```bash
+python3 -m pip install -r requirements/train.txt
+python3 -m pip install -r requirements/predict.txt
+python3 -m pip install -r requirements/calculator.txt
+python3 -m pip install -r requirements/dev.txt
+```
+
+Excel dependencies are documented in `docs/development/dependencies.md`.
+Generated XLSX write/export uses `openpyxl`. Existing user Excel read workflows
+use `xlwings` in Windows user environments, especially for DRM-sensitive
+workbooks. macOS `xlwings` automation validation is optional/manual because it
+depends on local Excel installation, permission, and license state.
+
 ## Development Notes
 
 Use task-specific verification from `AGENT_TASK_ROUTER.md` and the relevant test files under `tests/`. This repository contains pytest-style tests, but the correct subset depends on the touched area: calculator logic, region config, ML/Predictor, UI, or docs.
 
-Do not invent install, build, or run commands from README. If a workflow is unclear, inspect existing files and route through `AGENT_TASK_ROUTER.md`.
+Do not invent build or run commands from README. If a workflow is unclear, inspect existing files and route through `AGENT_TASK_ROUTER.md`.
 
 ## Status And History
 
