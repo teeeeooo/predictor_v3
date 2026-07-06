@@ -31,6 +31,9 @@ SAMPLE_MAPPING = {
     "compressor": {"CMP-A": {}},
     "ref_type": {"R410A": {}, "R32": {}},
     "exp_type": {"EEV": {}, "Capi": {}},
+    "fin_type": {"F&T": {}, "Plate": {}},
+    "pi": {"7": {}, "9": {}},
+    "row": {"1": {}, "2": {}},
     "odu_cascade": {
         "ODU-A": {
             "Available_Fins": ["F&T"],
@@ -47,6 +50,10 @@ SAMPLE_MAPPING = {
         "ODU-A F&T 7 1": {
             "Cond Area": 3.5,
             "Cond Volume": 4.5,
+        },
+        "ODU-B Blue 9 2": {
+            "Cond Area": 6.5,
+            "Cond Volume": 7.5,
         }
     },
 }
@@ -126,6 +133,15 @@ def test_dropdown_option_adapter_prefers_row_specific_options():
     assert adapter.options_for_key("fin_type", ("F&T",)) == ("F&T",)
 
 
+def test_dropdown_option_adapter_keeps_calculated_empty_row_options():
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository(SAMPLE_MAPPING),
+        build_case_table_column_schema(),
+    )
+
+    assert adapter.options_for_key("fin_type", ()) == ()
+
+
 def test_dropdown_option_adapter_reports_mapping_status(tmp_path):
     mapping_file = tmp_path / "mapping.json"
     mapping_file.write_text("{}", encoding="utf-8")
@@ -161,6 +177,76 @@ def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
     assert case.input_values["fin_type"] == ""
     assert case.input_values["pi"] == ""
     assert case.input_values["row"] == ""
+    assert case.autofill_values["cond_area"] == ""
+    assert case.autofill_values["cond_volume"] == ""
+
+
+def test_odu_unselected_uses_base_fin_pi_row_sections():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values["odu"] = ""
+    controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
+
+    controller.handle_cell_edited(case.case_id, "odu")
+
+    assert controller.dropdown_options_for_case(case.case_id, "fin_type") == (
+        "F&T",
+        "Plate",
+    )
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ("7", "9")
+    assert controller.dropdown_options_for_case(case.case_id, "row") == ("1", "2")
+
+
+def test_odu_change_replaces_row_specific_options():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
+
+    case.input_values["odu"] = "ODU-A"
+    controller.handle_cell_edited(case.case_id, "odu")
+    case.input_values["odu"] = "ODU-B"
+    controller.handle_cell_edited(case.case_id, "odu")
+
+    assert controller.dropdown_options_for_case(case.case_id, "fin_type") == ("Blue",)
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ("9",)
+    assert controller.dropdown_options_for_case(case.case_id, "row") == ("2",)
+
+
+def test_cond_specs_autofill_after_fin_pi_row_selection():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {
+            "odu": "ODU-B",
+            "fin_type": "Blue",
+            "pi": "9",
+            "row": "2",
+        }
+    )
+    controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
+
+    controller.handle_cell_edited(case.case_id, "row")
+
+    assert case.autofill_values["cond_area"] == 6.5
+    assert case.autofill_values["cond_volume"] == 7.5
+
+
+def test_unmatched_cond_specs_combination_clears_stale_cond_values():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {
+            "odu": "ODU-A",
+            "fin_type": "F&T",
+            "pi": "9",
+            "row": "1",
+        }
+    )
+    case.autofill_values.update({"cond_area": "stale", "cond_volume": "stale"})
+    controller = InputEditController(session, FakeMappingRepository(SAMPLE_MAPPING))
+
+    controller.handle_cell_edited(case.case_id, "pi")
+
     assert case.autofill_values["cond_area"] == ""
     assert case.autofill_values["cond_volume"] == ""
 

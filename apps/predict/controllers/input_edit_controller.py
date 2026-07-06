@@ -25,9 +25,9 @@ class InputEditController:
         """Return latest dependent dropdown option updates."""
         return self._dropdown_options
 
-    def dropdown_options_for_case(self, case_id: str, key: str) -> tuple[str, ...]:
+    def dropdown_options_for_case(self, case_id: str, key: str) -> tuple[str, ...] | None:
         """Return latest row-specific dropdown options for a column."""
-        return self._dropdown_options_by_case_id.get(case_id, {}).get(key, ())
+        return self._dropdown_options_by_case_id.get(case_id, {}).get(key)
 
     def handle_cell_edited(self, case_id: str, changed_key: str) -> None:
         """Apply autofill updates after one case input cell changes."""

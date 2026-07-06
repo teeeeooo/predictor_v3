@@ -33,10 +33,10 @@ class DropdownOptionAdapter:
     def options_for_key(
         self,
         key: str,
-        row_options: tuple[str, ...] = (),
+        row_options: tuple[str, ...] | None = None,
     ) -> tuple[str, ...]:
         """Return row-specific options when present, otherwise base options."""
-        if row_options:
+        if row_options is not None:
             return row_options
         return self.base_options_for_key(key)
 
