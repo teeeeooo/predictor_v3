@@ -155,15 +155,17 @@ Migration principles:
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
-UI 컬럼의 단일 소스(SSOT)는 `core/predictor_schema/columns.py`의 `COLUMNS`이며, 크게 세 그룹으로 나뉩니다.
+Canonical editable schema SSOT는 `config/predict/schema.csv`이다.
+Runtime compatibility projection은
+`core/predictor_schema/columns.py::COLUMNS`가 제공하며, 현재 UI/runtime
+호환 컬럼은 크게 세 그룹으로 나뉩니다.
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).
 
-`COLUMNS`는 current compatibility projection이다. Canonical editable schema는
-`config/predict/schema.csv`이며, `core/predictor_schema/catalog_v2_projection.py`
-가 v2 catalog를 current compatibility shape로 투영하고
-`core/predictor_schema/columns.py`가 그 projection을 노출한다.
+`core/predictor_schema/catalog_v2_projection.py`가 v2 catalog를 current
+compatibility shape로 투영하고, `core/predictor_schema/columns.py`가 그
+projection을 `COLUMNS`로 노출한다.
 
 ### 3.2 COLUMNS 자동완성 구조
 - **IDU 단순 매핑**: IDU 선택 시 `ID Volume` 자동 완성 등 단순 1단계

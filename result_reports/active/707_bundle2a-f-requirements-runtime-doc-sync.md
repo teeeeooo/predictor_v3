@@ -65,6 +65,9 @@ runtime containing `xgboost` and `scikit-learn`. `optuna` remains training-only.
   projection, key-based dropdown compatibility, Data Mapping Manager editor
   owners, ref/exp one-hot boundary, Train/Predict runtime dependency boundary,
   and dependency/environment boundary.
+- Post-closeout correction: clarified that canonical editable schema SSOT is
+  `config/predict/schema.csv`, while runtime compatibility projection is
+  `core/predictor_schema/columns.py::COLUMNS`.
 - `ACTIVE_DOCUMENTS.md`: registered `docs/development/dependencies.md` as the
   dependency installation and Excel policy owner.
 - `docs/agent_workflows/PACKAGING_WORKFLOW.md`: added app-scoped requirements
