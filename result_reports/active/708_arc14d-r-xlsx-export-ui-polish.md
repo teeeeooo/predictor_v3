@@ -61,6 +61,9 @@ Predict invalid mapping status from missing mapping status.
 
 - Data Mapping Manager export dialog now offers JSON and XLSX filters.
 - Missing extension is appended based on the selected export filter.
+- Post-closeout correction: selecting the Excel filter now also replaces the
+  default `.json` suffix with `.xlsx`, so the dialog default filename cannot
+  accidentally route an Excel-filter export back to JSON.
 - Import remains disabled with user-facing copy directing edits to the current
   screen.
 - Export tooltip states that output is a read-only review snapshot and cannot be
@@ -111,6 +114,8 @@ Predict invalid mapping status from missing mapping status.
 - Final `python3 -B tools/code_checker/build_reference_map.py --check`: OK
   after regenerating `docs/code_map/CODEBASE_REFERENCE_MAP.md`; freshness
   `FRESH`, with informational dirty-worktree note before commit.
+- Post-closeout correction validation: Data Mapping UI model tests OK, focused
+  export-selection test covers Excel filter plus default `.json` filename.
 
 ## Excluded Scope
 

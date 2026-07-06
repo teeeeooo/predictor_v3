@@ -317,10 +317,14 @@ def _table(accessible_name: str) -> QTableView:
 
 def _resolve_export_selection(path: str, selected_filter: str) -> tuple[str, str]:
     suffix = Path(path).suffix.lower()
+    if "*.xlsx" in selected_filter:
+        if suffix == ".xlsx":
+            return path, "xlsx"
+        if suffix == ".json":
+            return str(Path(path).with_suffix(".xlsx")), "xlsx"
+        return f"{path}.xlsx", "xlsx"
     if suffix == ".xlsx":
         return path, "xlsx"
     if suffix == ".json":
         return path, "json"
-    if "*.xlsx" in selected_filter:
-        return f"{path}.xlsx", "xlsx"
     return f"{path}.json", "json"

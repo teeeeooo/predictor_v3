@@ -172,6 +172,13 @@ def test_data_mapping_export_selection_resolves_json_and_xlsx_extensions():
         "/tmp/snapshot.xlsx",
         "xlsx",
     )
+    assert _resolve_export_selection(
+        "/tmp/data_mapping_review_snapshot.json",
+        "Excel Workbook (*.xlsx)",
+    ) == (
+        "/tmp/data_mapping_review_snapshot.xlsx",
+        "xlsx",
+    )
     assert _resolve_export_selection("/tmp/snapshot.xlsx", "JSON Files (*.json)") == (
         "/tmp/snapshot.xlsx",
         "xlsx",
