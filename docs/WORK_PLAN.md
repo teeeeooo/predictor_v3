@@ -95,10 +95,8 @@
 
 ## Next Actions
 
-1. Arc 14D-R - Resume XLSX Export + UI Polish after Bundle 2A-F dependency
-   runtime/doc sync.
-2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
-3. Real model prediction success smoke after `model/model.pkl` is available.
+1. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
+2. Real model prediction success smoke after `model/model.pkl` is available.
 
 ## Active Blockers / Open Decisions
 
@@ -136,8 +134,11 @@
   `requirements/ml_runtime.txt`; Predict includes XGBoost/scikit-learn runtime
   for real `model.pkl` inference while excluding training-only `optuna`; Excel
   policy remains `openpyxl` for generated XLSX write/export and `xlwings` for
-  existing user Excel reads in Windows user environments. Arc 14D-R
-  implementation still has not resumed in this bundle.
+  existing user Excel reads in Windows user environments.
+- Arc 14D-R is complete: Data Mapping Manager export supports JSON and
+  `openpyxl` XLSX read-only review snapshots, export preserves dirty drafts
+  without saving `mapping.json`, Import remains unsupported, and Predict
+  invalid mapping status is distinct from missing mapping status.
 
 ## Active Constraints
 
