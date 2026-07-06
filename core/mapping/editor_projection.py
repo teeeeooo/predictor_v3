@@ -22,6 +22,11 @@ COMPRESSOR_GROUP = "compressor"
 REFRIGERANT_GROUP = "refrigerant"
 EXPANSION_GROUP = "expansion"
 ODU_COND_SPECS_GROUP = "odu_cond_specs"
+MAPPING_ENTITY_GROUP_ALIASES = {
+    "cond_specs": ODU_COND_SPECS_GROUP,
+    "ref_type": REFRIGERANT_GROUP,
+    "exp_type": EXPANSION_GROUP,
+}
 
 OWNED_RUNTIME_SECTIONS = (
     "idu",
@@ -94,6 +99,31 @@ def project_runtime_mapping_to_editor_draft(
     )
 
 
+def apply_mapping_requirements_to_editor_draft(
+    draft: MappingEditorDraft,
+    mapping_requirements: tuple[object, ...] = (),
+) -> MappingEditorDraft:
+    """Return a draft with Data Definition-required mapping attributes visible."""
+    required_by_group = _requirements_by_group(mapping_requirements)
+    if not required_by_group:
+        return draft
+    groups = tuple(
+        _apply_group_requirements(group, required_by_group.get(group.group_key, ()))
+        for group in draft.groups
+    )
+    return MappingEditorDraft(
+        groups=groups,
+        unowned_sections=draft.unowned_sections,
+        source_label=draft.source_label,
+    )
+
+
+def mapping_group_key_for_requirement(requirement: object) -> str:
+    """Return the Data Mapping group key for one Data Definition requirement."""
+    entity = str(getattr(requirement, "mapping_entity", "")).strip()
+    return MAPPING_ENTITY_GROUP_ALIASES.get(entity, entity)
+
+
 def _simple_group(
     group_key: str,
     label: str,
@@ -120,6 +150,58 @@ def _simple_group(
         rows=tuple(rows),
         runtime_sections=(section_name,),
     )
+
+
+def _requirements_by_group(
+    mapping_requirements: tuple[object, ...],
+) -> dict[str, tuple[str, ...]]:
+    grouped: dict[str, list[str]] = {}
+    for requirement in mapping_requirements:
+        group_key = mapping_group_key_for_requirement(requirement)
+        attribute = str(getattr(requirement, "mapping_attribute", "")).strip()
+        if not group_key or not attribute:
+            continue
+        grouped.setdefault(group_key, [])
+        if attribute not in grouped[group_key]:
+            grouped[group_key].append(attribute)
+    return {key: tuple(values) for key, values in grouped.items()}
+
+
+def _apply_group_requirements(
+    group: MappingEditorGroup,
+    required_columns: tuple[str, ...],
+) -> MappingEditorGroup:
+    if not required_columns:
+        return group
+    columns = (*group.columns, *(column for column in required_columns if column not in group.columns))
+    rows = tuple(_row_with_columns(row, columns) for row in group.rows)
+    return MappingEditorGroup(
+        group_key=group.group_key,
+        label=group.label,
+        columns=columns,
+        rows=rows,
+        runtime_sections=group.runtime_sections,
+        notes=_requirement_note(group.notes, required_columns),
+    )
+
+
+def _row_with_columns(row: MappingEditorRow, columns: tuple[str, ...]) -> MappingEditorRow:
+    values = {column: row.value_for(column, "") for column in columns}
+    return MappingEditorRow(
+        values=values,
+        source_key=row.source_key,
+        unresolved=row.unresolved,
+        notes=row.notes,
+    )
+
+
+def _requirement_note(existing: str, required_columns: tuple[str, ...]) -> str:
+    note = f"Required by Data Definition: {', '.join(required_columns)}"
+    if not existing:
+        return note
+    if note in existing:
+        return existing
+    return f"{existing} {note}"
 
 
 def _option_group(

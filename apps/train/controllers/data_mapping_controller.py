@@ -227,13 +227,14 @@ def _selected_group(
 def _attribute_rows(
     group: MappingEditorGroup,
 ) -> tuple[DataMappingAttributeRow, ...]:
+    required_columns = _required_columns(group)
     return tuple(
         DataMappingAttributeRow(
             column,
             column,
             "string",
-            column == group.columns[0],
-            "",
+            column == group.columns[0] or column in required_columns,
+            "Required by Data Definition." if column in required_columns else "",
         )
         for column in group.columns
     )
@@ -293,6 +294,14 @@ def _display_source_label(source_label: str) -> str:
     if source_label.startswith(known_prefix):
         return f"File: {source_label.removeprefix(known_prefix).strip()}"
     return f"File: {source_label}"
+
+
+def _required_columns(group: MappingEditorGroup) -> set[str]:
+    marker = "Required by Data Definition:"
+    if marker not in group.notes:
+        return set()
+    required_text = group.notes.split(marker, 1)[1]
+    return {item.strip() for item in required_text.split(",") if item.strip()}
 
 
 def _error_state(
