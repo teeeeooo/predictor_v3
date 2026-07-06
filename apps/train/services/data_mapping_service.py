@@ -13,6 +13,7 @@ from core.mapping.editor_commands import (
 from core.mapping.editor_export import (
     MappingEditorExportResult,
     export_mapping_editor_snapshot_json,
+    export_mapping_editor_snapshot_xlsx,
 )
 from core.mapping.editor_model import MappingEditorDraft
 from core.mapping.editor_projection import (
@@ -160,14 +161,28 @@ class DataMappingService:
     def export_snapshot(
         self,
         destination: str | Path,
+        export_format: str = "json",
     ) -> tuple[MappingEditorExportResult, DataMappingSnapshot]:
         """Export the current draft as a read-only review snapshot."""
         snapshot = self.load_snapshot()
-        result = export_mapping_editor_snapshot_json(
-            snapshot.draft,
-            snapshot.validation_errors,
-            destination,
-        )
+        if export_format == "xlsx":
+            result = export_mapping_editor_snapshot_xlsx(
+                snapshot.draft,
+                snapshot.validation_errors,
+                destination,
+            )
+        elif export_format == "json":
+            result = export_mapping_editor_snapshot_json(
+                snapshot.draft,
+                snapshot.validation_errors,
+                destination,
+            )
+        else:
+            result = MappingEditorExportResult(
+                success=False,
+                path=Path(destination),
+                message=f"Export failed: unsupported format '{export_format}'.",
+            )
         return result, snapshot
 
     def _store_command_result(
@@ -200,10 +215,15 @@ def _future_actions(
     *,
     can_save: bool = False,
 ) -> tuple[DataMappingAction, ...]:
-    disabled_reason = "Read-only mode."
+    disabled_reason = "Import is not supported. Edit mappings in this screen."
     return (
         DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
-        DataMappingAction("export_csv_v2", "Export", True, ""),
+        DataMappingAction(
+            "export_csv_v2",
+            "Export",
+            True,
+            "Export a read-only review snapshot. It cannot be imported back.",
+        ),
         DataMappingAction(
             "save_mapping_json",
             "Save",

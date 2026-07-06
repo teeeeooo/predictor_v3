@@ -145,7 +145,19 @@ class DataMappingController:
 
     def export_json(self, destination: str | Path) -> DataMappingControllerState:
         """Export the current draft as JSON and return current state."""
-        result, snapshot = self._service.export_snapshot(destination)
+        return self.export_snapshot(destination, "json")
+
+    def export_xlsx(self, destination: str | Path) -> DataMappingControllerState:
+        """Export the current draft as XLSX and return current state."""
+        return self.export_snapshot(destination, "xlsx")
+
+    def export_snapshot(
+        self,
+        destination: str | Path,
+        export_format: str,
+    ) -> DataMappingControllerState:
+        """Export the current draft in the requested review snapshot format."""
+        result, snapshot = self._service.export_snapshot(destination, export_format)
         selected = snapshot.draft.groups[0].group_key if snapshot.draft.groups else ""
         if result.success:
             return self._state_from_snapshot(snapshot, selected, message="Exported.")

@@ -12,7 +12,11 @@ from apps.train.services.data_mapping_service import (
     RuntimeMappingCatalogProvider,
 )
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
-from apps.train.ui.data_mapping_panel import DataMappingPanel
+from apps.train.ui.data_mapping_panel import (
+    EXPORT_FILTERS,
+    DataMappingPanel,
+    _resolve_export_selection,
+)
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     ENTITY_HEADERS,
@@ -137,6 +141,11 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         assert not panel._buttons["save_mapping_json"].isEnabled()
         assert not panel._buttons["import_csv_v2"].isEnabled()
         assert panel._buttons["reload_runtime"].isEnabled()
+        assert (
+            panel._buttons["import_csv_v2"].toolTip()
+            == "Import is not supported. Edit mappings in this screen."
+        )
+        assert "read-only review snapshot" in panel._buttons["export_csv_v2"].toolTip()
         assert [button.text() for button in panel._buttons.values()] == [
             "Add Row",
             "Duplicate",
@@ -151,6 +160,22 @@ def test_data_mapping_panel_builds_read_only_foundation_surface():
         panel.close()
         panel.deleteLater()
         app.processEvents()
+
+
+def test_data_mapping_export_selection_resolves_json_and_xlsx_extensions():
+    assert EXPORT_FILTERS == "JSON Files (*.json);;Excel Workbook (*.xlsx)"
+    assert _resolve_export_selection("/tmp/snapshot", "JSON Files (*.json)") == (
+        "/tmp/snapshot.json",
+        "json",
+    )
+    assert _resolve_export_selection("/tmp/snapshot", "Excel Workbook (*.xlsx)") == (
+        "/tmp/snapshot.xlsx",
+        "xlsx",
+    )
+    assert _resolve_export_selection("/tmp/snapshot.xlsx", "JSON Files (*.json)") == (
+        "/tmp/snapshot.xlsx",
+        "xlsx",
+    )
 
 
 def test_data_mapping_panel_programmatic_edit_marks_dirty():

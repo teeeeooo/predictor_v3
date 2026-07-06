@@ -2,6 +2,8 @@
 
 import json
 
+from openpyxl import load_workbook
+
 from apps.train.services.data_mapping_service import (
     DataMappingService,
     FoundationMappingCatalogProvider,
@@ -34,7 +36,8 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
     actions = {action.key: action for action in snapshot.actions}
     assert not actions["save_mapping_json"].enabled
     assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
-    assert actions["import_csv_v2"].reason == "Read-only mode."
+    assert actions["import_csv_v2"].reason == "Import is not supported. Edit mappings in this screen."
+    assert "read-only review snapshot" in actions["export_csv_v2"].reason
 
 
 def test_data_mapping_service_disables_save_when_draft_has_issues():
@@ -143,6 +146,35 @@ def test_data_mapping_service_exports_dirty_draft_without_modifying_mapping_json
     assert result.success
     assert snapshot.dirty
     assert payload["groups"][0]["rows"][0]["values"]["IDU"] == "IDU-DRAFT"
+    assert saved["idu"] == {"IDU-A": {"ID Volume": 1.25}}
+
+
+def test_data_mapping_service_exports_xlsx_dirty_draft_without_modifying_mapping_json(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text(
+        """
+        {
+            "idu": {"IDU-A": {"ID Volume": 1.25}},
+            "evap_index": {},
+            "odu": {},
+            "compressor": {},
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}}
+        }
+        """,
+        encoding="utf-8",
+    )
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+    service.edit_cell("idu", 0, "IDU", "IDU-DRAFT")
+    export_file = tmp_path / "snapshot.xlsx"
+
+    result, snapshot = service.export_snapshot(export_file, "xlsx")
+
+    workbook = load_workbook(export_file)
+    saved = json.loads(mapping_file.read_text(encoding="utf-8"))
+    assert result.success
+    assert snapshot.dirty
+    assert workbook["IDU"]["A2"].value == "IDU-DRAFT"
     assert saved["idu"] == {"IDU-A": {"ID Volume": 1.25}}
 
 

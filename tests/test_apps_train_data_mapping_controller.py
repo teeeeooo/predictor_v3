@@ -137,6 +137,17 @@ def test_data_mapping_controller_exports_json_snapshot(tmp_path):
     assert not state.dirty
 
 
+def test_data_mapping_controller_exports_xlsx_snapshot(tmp_path):
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+    export_file = tmp_path / "snapshot.xlsx"
+
+    state = controller.export_xlsx(export_file)
+
+    assert export_file.exists()
+    assert state.message == "Exported."
+    assert not state.dirty
+
+
 def test_data_mapping_controller_export_failure_surfaces_issue(tmp_path):
     controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
     destination = tmp_path / "already-a-directory"
@@ -154,7 +165,7 @@ def test_data_mapping_controller_export_keeps_dirty_state(tmp_path):
     controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
     controller.edit_cell("idu", 0, "ID Volume", "2.5")
 
-    state = controller.export_json(tmp_path / "snapshot.json")
+    state = controller.export_snapshot(tmp_path / "snapshot.xlsx", "xlsx")
 
     assert state.message == "Exported."
     assert state.dirty

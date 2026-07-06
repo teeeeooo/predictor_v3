@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QModelIndex, QSignalBlocker
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -37,10 +39,11 @@ from apps.train.ui.data_mapping_view_models import (
 
 ENTITY_PANEL_MIN_WIDTH = 420
 DETAIL_PANEL_INITIAL_WIDTH = 980
+EXPORT_FILTERS = "JSON Files (*.json);;Excel Workbook (*.xlsx)"
 
 
 class DataMappingPanel(QWidget):
-    """Read-only Mapping Entity / Master Data admin surface."""
+    """Editable Data Mapping Manager admin surface."""
 
     def __init__(
         self,
@@ -270,14 +273,15 @@ class DataMappingPanel(QWidget):
         self._apply_state(self._controller.save())
 
     def _export(self) -> None:
-        path, _selected_filter = QFileDialog.getSaveFileName(
+        path, selected_filter = QFileDialog.getSaveFileName(
             self,
             "Export Data Mapping Review Snapshot",
             "data_mapping_review_snapshot.json",
-            "JSON Files (*.json)",
+            EXPORT_FILTERS,
         )
         if path:
-            self._apply_state(self._controller.export_json(path))
+            destination, export_format = _resolve_export_selection(path, selected_filter)
+            self._apply_state(self._controller.export_snapshot(destination, export_format))
 
     def _selected_row(self) -> int | None:
         index = self.row_table.currentIndex()
@@ -309,3 +313,14 @@ def _table(accessible_name: str) -> QTableView:
     table.verticalHeader().setVisible(False)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
     return table
+
+
+def _resolve_export_selection(path: str, selected_filter: str) -> tuple[str, str]:
+    suffix = Path(path).suffix.lower()
+    if suffix == ".xlsx":
+        return path, "xlsx"
+    if suffix == ".json":
+        return path, "json"
+    if "*.xlsx" in selected_filter:
+        return f"{path}.xlsx", "xlsx"
+    return f"{path}.json", "json"
