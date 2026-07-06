@@ -8,13 +8,16 @@ from pathlib import Path
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionReport,
+    DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
     field_editability,
+    save_data_definition_schema_draft,
 )
 from core.data_definition.draft import replace_draft_row
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 BOOLEAN_DRAFT_FIELDS = frozenset(
     {"visible", "required", "readonly", "model_input_enabled", "active"}
@@ -34,7 +37,12 @@ class DataDefinitionService:
     """Load and mutate in-memory Data Definition state."""
 
     def __init__(self, *, schema_path: str | Path | None = None) -> None:
-        self._schema_path = Path(schema_path) if schema_path is not None else None
+        self._schema_path = Path(schema_path) if schema_path is not None else DEFAULT_SCHEMA_PATH
+
+    @property
+    def schema_path(self) -> Path:
+        """Return the explicit schema path owned by the Train service."""
+        return self._schema_path
 
     def load_report(
         self,
@@ -96,6 +104,21 @@ class DataDefinitionService:
         """Build the current draft save-plan preview without writing files."""
         report = current_report or self.load_report()
         return build_data_definition_save_plan(draft, current_report=report)
+
+    def save_schema_draft(
+        self,
+        draft: DataDefinitionDraft,
+        *,
+        current_report: DataDefinitionReport | None = None,
+    ) -> DataDefinitionSchemaSaveResult:
+        """Save the draft through the guarded schema writer."""
+        report = current_report or self.load_report()
+        save_plan = self.preview_save_plan(draft, current_report=report)
+        return save_data_definition_schema_draft(
+            draft,
+            self._schema_path,
+            save_plan=save_plan,
+        )
 
 
 def _coerce_draft_value(field_name: str, value: object) -> tuple[object, str]:

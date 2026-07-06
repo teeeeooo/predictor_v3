@@ -10,6 +10,7 @@ from core.data_definition import (
     DataDefinitionDraftRow,
     DataDefinitionIssue,
     DataDefinitionReport,
+    DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
     field_editability,
 )
@@ -85,6 +86,7 @@ class DataDefinitionControllerState:
     can_save_schema: bool
     save_plan_rows: tuple[tuple[str, ...], ...]
     save_blocker_rows: tuple[tuple[str, ...], ...]
+    save_result_rows: tuple[tuple[str, str], ...]
     draft_change_rows: tuple[tuple[str, ...], ...]
     projected_feature_rows: tuple[tuple[str, ...], ...]
     mapping_requirement_rows: tuple[tuple[str, ...], ...]
@@ -152,6 +154,30 @@ class DataDefinitionController:
             message="Draft reset from schema.",
         )
 
+    def save_schema(self) -> DataDefinitionControllerState:
+        """Run the guarded schema save workflow and return updated UI state."""
+        try:
+            draft = self._draft or self._service.load_draft()
+            report_before = self._service.refresh_report()
+            result = self._service.save_schema_draft(draft, current_report=report_before)
+            if result.status == "written":
+                self._draft = self._service.refresh_draft()
+            else:
+                self._draft = draft
+            report_after = self._service.refresh_report()
+            plan = self._service.preview_save_plan(self._draft, current_report=report_after)
+        except Exception as exc:
+            return _error_state(exc)
+        return _state_from_report(
+            report_after,
+            self._draft,
+            plan,
+            message=result.message,
+            status=_save_status(result),
+            save_result=result,
+            last_action_ok=result.status in {"written", "noop"},
+        )
+
 
 def _state_from_report(
     report: DataDefinitionReport,
@@ -160,6 +186,7 @@ def _state_from_report(
     *,
     message: str | None = None,
     status: str | None = None,
+    save_result: DataDefinitionSchemaSaveResult | None = None,
     last_action_ok: bool = True,
 ) -> DataDefinitionControllerState:
     parity_count = len(report.parity_issues)
@@ -195,6 +222,7 @@ def _state_from_report(
             for target in save_plan.planned_targets
         ),
         save_blocker_rows=_save_blocker_rows(save_plan),
+        save_result_rows=_save_result_rows(save_result),
         draft_change_rows=_draft_change_rows(save_plan),
         projected_feature_rows=tuple(
             (
@@ -306,6 +334,30 @@ def _draft_change_rows(
     )
 
 
+def _save_result_rows(
+    result: DataDefinitionSchemaSaveResult | None,
+) -> tuple[tuple[str, str], ...]:
+    if result is None:
+        return (("Status", "No save attempted."),)
+    return (
+        ("Status", result.status),
+        ("Success", str(result.success).lower()),
+        ("Message", result.message),
+        ("Rows written", str(result.rows_written)),
+        ("Path", str(result.path or "")),
+        ("Backup", str(result.backup_path or "")),
+        ("Issues", ", ".join(issue.code for issue in result.issues) or "none"),
+    )
+
+
+def _save_status(result: DataDefinitionSchemaSaveResult) -> str:
+    if result.status == "written":
+        return "saved"
+    if result.status == "noop":
+        return "ready"
+    return result.status
+
+
 def _issue_rows(
     issues: tuple[DataDefinitionIssue, ...],
 ) -> tuple[tuple[str, ...], ...]:
@@ -336,6 +388,7 @@ def _error_state(exc: Exception) -> DataDefinitionControllerState:
         can_save_schema=False,
         save_plan_rows=(),
         save_blocker_rows=(("error", "load_failed", "Data Definition", str(exc)),),
+        save_result_rows=(("Status", "Error"), ("Message", str(exc))),
         draft_change_rows=(),
         projected_feature_rows=(),
         mapping_requirement_rows=(),
