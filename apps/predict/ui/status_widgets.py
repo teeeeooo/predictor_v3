@@ -79,6 +79,8 @@ def mapping_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
         return "loaded", "ready"
     if status.status == "exists":
         return "available", "ready"
+    if status.status == "invalid":
+        return "invalid", "error"
     return "missing", "missing"
 
 

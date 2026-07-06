@@ -334,8 +334,13 @@ class PredictWorkspace(QWidget):
     def _handle_input_cell_edited(self, case_id: str, changed_key: str) -> None:
         self.input_edit_controller.handle_cell_edited(case_id, changed_key)
         self.case_model.refresh_case_id(case_id)
-        if self.dropdown_option_adapter.mapping_status().status == "missing":
+        mapping_status = self.dropdown_option_adapter.mapping_status().status
+        if mapping_status == "missing":
             self.status_label.setText("입력이 변경되었습니다. mapping 파일이 없어 autofill은 제한됩니다.")
+        elif mapping_status == "invalid":
+            self.status_label.setText(
+                "입력이 변경되었습니다. mapping 데이터가 유효하지 않아 autofill은 제한됩니다."
+            )
         else:
             self.status_label.setText("입력이 변경되었습니다.")
 

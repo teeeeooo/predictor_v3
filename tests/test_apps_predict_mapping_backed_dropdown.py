@@ -7,11 +7,12 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QStyleOptionViewItem
 
-from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
+from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter, MappingResourceStatus
 from apps.predict.controllers.input_edit_controller import InputEditController
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.state.predict_session import PredictSession
+from apps.predict.ui.status_widgets import mapping_status_badge_state
 from apps.predict.ui.tables import case_table_model, case_table_view, delegates
 from apps.predict.ui.workspace import PredictWorkspace
 
@@ -167,6 +168,17 @@ def test_dropdown_option_adapter_reports_invalid_cached_mapping_status(tmp_path)
 
     assert status.status == "invalid"
     assert adapter.base_options_for_key("ref_type") == ()
+
+
+def test_mapping_status_badge_distinguishes_invalid_from_missing():
+    assert mapping_status_badge_state(MappingResourceStatus("", "invalid")) == (
+        "invalid",
+        "error",
+    )
+    assert mapping_status_badge_state(MappingResourceStatus("", "missing")) == (
+        "missing",
+        "missing",
+    )
 
 
 def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
@@ -351,6 +363,29 @@ def test_missing_mapping_keeps_controlled_status_and_empty_mapping_options(tmp_p
         assert workspace.dropdown_option_adapter.mapping_status().status == "missing"
         assert workspace._dropdown_options_for_index(ref_index) == ()
         assert workspace._dropdown_options_for_index(idu_index) == ()
+    finally:
+        _dispose_workspace(workspace)
+
+
+def test_invalid_mapping_edit_message_is_distinct_from_missing(tmp_path: Path):
+    _app()
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text("[]", encoding="utf-8")
+    repo = FakeMappingRepository([])
+    repo.mapping_file = str(mapping_file)
+    session = _session_with_case()
+    workspace = PredictWorkspace(
+        session=session,
+        initial_empty_rows=0,
+        mapping_repository=repo,
+    )
+    try:
+        case_id = session.case_order[0]
+
+        workspace._handle_input_cell_edited(case_id, "odu")
+
+        assert "mapping 데이터가 유효하지" in workspace.status_label.text()
+        assert "mapping 파일이 없어" not in workspace.status_label.text()
     finally:
         _dispose_workspace(workspace)
 
