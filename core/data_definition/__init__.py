@@ -27,6 +27,12 @@ from core.data_definition.save_contract import (
     DataDefinitionWriteTarget,
     build_data_definition_save_plan,
 )
+from core.data_definition.schema_writer import (
+    DataDefinitionSchemaSaveResult,
+    DataDefinitionSchemaWritePreview,
+    save_data_definition_schema_draft,
+    schema_csv_rows_from_draft,
+)
 from core.data_definition.validation import build_data_definition_report
 
 __all__ = [
@@ -40,6 +46,8 @@ __all__ = [
     "DataDefinitionRestartImpact",
     "DataDefinitionSaveBlocker",
     "DataDefinitionSavePlan",
+    "DataDefinitionSchemaSaveResult",
+    "DataDefinitionSchemaWritePreview",
     "DerivedFeatureDefinition",
     "DataDefinitionWriteTarget",
     "FieldEditability",
@@ -51,4 +59,6 @@ __all__ = [
     "build_data_definition_report",
     "build_data_definition_save_plan",
     "field_editability",
+    "save_data_definition_schema_draft",
+    "schema_csv_rows_from_draft",
 ]
