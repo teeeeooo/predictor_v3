@@ -95,7 +95,8 @@
 
 ## Next Actions
 
-1. Data Mapping XLSX read-only export snapshot.
+1. Arc 14D-R - Resume XLSX Export + UI Polish after Bundle 2A dependency
+   foundation.
 2. Arc 15 - ML Catalog-Aligned Real Dataset Readiness Audit.
 3. Real model prediction success smoke after `model/model.pkl` is available.
 
@@ -131,6 +132,10 @@
 - One-hot ML input projection is not yet v2-owned. Arc 14A/14C kept semantic
   mapping fields separate from legacy `mapping`, `source`, and `mapping_key`
   compatibility fields.
+- Bundle 2A records Excel dependency policy: generated XLSX write/export uses
+  `openpyxl`, while existing user Excel read workflows use `xlwings` in
+  Windows user environments. Arc 14D-R implementation still has not resumed in
+  this bundle.
 
 ## Active Constraints
 

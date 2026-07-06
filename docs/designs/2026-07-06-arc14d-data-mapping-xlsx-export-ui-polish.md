@@ -42,6 +42,19 @@ Decision for this slice: Arc 14D implementation is blocked until the project
 explicitly approves and records a workbook writer dependency such as
 `openpyxl` or `xlsxwriter`. Do not implement XLSX by hand with raw zip/XML.
 
+## Dependency Approval Update
+
+Bundle 2A records the dependency foundation required to resume Arc 14D-R:
+
+- `requirements/excel.txt` declares `openpyxl` for predictor_v3-generated XLSX
+  write/export.
+- `requirements/excel.txt` declares `xlwings` for Windows user Excel read
+  workflows, especially DRM-sensitive reads.
+- DRM-sensitive user-provided Excel files must not be read directly with
+  `openpyxl` unless a future task explicitly changes that policy.
+- Arc 14D-R may use `openpyxl` for generated read-only XLSX snapshot export.
+- XLSX export implementation is still not done in Bundle 2A.
+
 ## UI / Status Findings
 
 Data Mapping UI stale wording candidates:
