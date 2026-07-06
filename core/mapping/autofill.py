@@ -33,6 +33,8 @@ def build_autofill_updates(
 ) -> AutofillResult:
     """Return row updates after one dropdown/editable value changes."""
     schema = columns or COLUMNS
+    if not isinstance(mapping_data, dict):
+        mapping_data = {}
     updates: list[AutofillUpdate] = []
     dropdown_options: dict[str, tuple[str, ...]] = {}
 

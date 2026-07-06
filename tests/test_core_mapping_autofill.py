@@ -180,6 +180,18 @@ def test_invalid_cond_specs_shape_returns_no_cond_autofill_values():
     assert updates["cond_volume"] == ""
 
 
+def test_invalid_top_level_mapping_shape_does_not_crash():
+    result = build_autofill_updates(
+        {"odu": "ODU-A", "fin_type": "F&T", "pi": "7", "row": "1"},
+        "row",
+        [],
+    )
+    updates = _updates_by_key(result)
+
+    assert updates["cond_area"] == ""
+    assert updates["cond_volume"] == ""
+
+
 def test_cond_specs_clear_when_cascade_selection_is_incomplete():
     result = build_autofill_updates(
         {"odu": "ODU-A", "fin_type": "F&T", "pi": "", "row": "1"},

@@ -155,6 +155,20 @@ def test_dropdown_option_adapter_reports_mapping_status(tmp_path):
     assert status.mapping_path == str(mapping_file)
 
 
+def test_dropdown_option_adapter_reports_invalid_cached_mapping_status(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text("[]", encoding="utf-8")
+    repository = FakeMappingRepository([])
+    repository.mapping_file = str(mapping_file)
+    repository.load()
+    adapter = DropdownOptionAdapter(repository, build_case_table_column_schema())
+
+    status = adapter.mapping_status()
+
+    assert status.status == "invalid"
+    assert adapter.base_options_for_key("ref_type") == ()
+
+
 def test_odu_edit_updates_dependent_row_option_state_and_clears_stale_values():
     session = _session_with_case()
     case = session.case_store.get_case_at(0)
@@ -339,3 +353,59 @@ def test_missing_mapping_keeps_controlled_status_and_empty_mapping_options(tmp_p
         assert workspace._dropdown_options_for_index(idu_index) == ()
     finally:
         _dispose_workspace(workspace)
+
+
+def test_missing_odu_cascade_keeps_dependent_options_empty():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values["odu"] = "ODU-A"
+    mapping = {key: value for key, value in SAMPLE_MAPPING.items() if key != "odu_cascade"}
+    controller = InputEditController(session, FakeMappingRepository(mapping))
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository(mapping),
+        build_case_table_column_schema(),
+    )
+
+    controller.handle_cell_edited(case.case_id, "odu")
+
+    assert controller.dropdown_options_for_case(case.case_id, "fin_type") == ()
+    assert adapter.options_for_key(
+        "fin_type",
+        controller.dropdown_options_for_case(case.case_id, "fin_type"),
+    ) == ()
+
+
+def test_invalid_odu_cascade_shape_does_not_crash():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values["odu"] = "ODU-A"
+    controller = InputEditController(
+        session,
+        FakeMappingRepository({**SAMPLE_MAPPING, "odu_cascade": []}),
+    )
+
+    controller.handle_cell_edited(case.case_id, "odu")
+
+    assert controller.dropdown_options_for_case(case.case_id, "fin_type") == ()
+
+
+def test_invalid_cond_specs_shape_does_not_crash_or_autofill():
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {
+            "odu": "ODU-A",
+            "fin_type": "F&T",
+            "pi": "7",
+            "row": "1",
+        }
+    )
+    controller = InputEditController(
+        session,
+        FakeMappingRepository({**SAMPLE_MAPPING, "cond_specs": []}),
+    )
+
+    controller.handle_cell_edited(case.case_id, "row")
+
+    assert case.autofill_values["cond_area"] == ""
+    assert case.autofill_values["cond_volume"] == ""

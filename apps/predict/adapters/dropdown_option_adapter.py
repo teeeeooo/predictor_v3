@@ -62,7 +62,14 @@ class DropdownOptionAdapter:
                 status="missing",
                 message="Mapping file is missing.",
             )
-        if getattr(self._mapping_repository, "_mapping_data", None) is not None:
+        cached_mapping = getattr(self._mapping_repository, "_mapping_data", None)
+        if cached_mapping is not None and not isinstance(cached_mapping, dict):
+            return MappingResourceStatus(
+                mapping_path=str(mapping_path),
+                status="invalid",
+                message="Mapping data shape is invalid.",
+            )
+        if cached_mapping is not None:
             return MappingResourceStatus(
                 mapping_path=str(mapping_path),
                 status="loaded",
