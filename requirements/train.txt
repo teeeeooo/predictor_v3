@@ -4,12 +4,8 @@
 # Includes Excel dependencies because Train writes XLSX training logs and owns
 # the Data Mapping XLSX export follow-up.
 -r base.txt
+-r ml_runtime.txt
 -r excel.txt
 
 PySide6
-joblib
-numpy
 optuna
-pandas
-scikit-learn
-xgboost

@@ -1,0 +1,9 @@
+# Shared Train/Predict ML runtime requirements.
+# Install example: python3 -m pip install -r requirements/ml_runtime.txt
+#
+# Predict needs these packages to load model.pkl and run stored model objects.
+joblib
+numpy
+pandas
+scikit-learn
+xgboost

@@ -4,8 +4,6 @@
 # Excel dependencies are not included because app_predict.py does not directly
 # read or write Excel workbooks.
 -r base.txt
+-r ml_runtime.txt
 
 PySide6
-joblib
-numpy
-pandas
