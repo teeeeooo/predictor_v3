@@ -1,0 +1,11 @@
+# Predict runtime requirements.
+# Install example: python3 -m pip install -r requirements/predict.txt
+#
+# Excel dependencies are not included because app_predict.py does not directly
+# read or write Excel workbooks.
+-r base.txt
+
+PySide6
+joblib
+numpy
+pandas

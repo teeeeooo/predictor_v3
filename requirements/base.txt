@@ -1,0 +1,5 @@
+# Shared runtime requirements for app_train.py, app_predict.py, and app_calculator.py.
+# Install example: python3 -m pip install -r requirements/base.txt
+#
+# No third-party package is currently required by all three app entrypoints.
+# Tkinter used by app_calculator.py is provided by the Python runtime.

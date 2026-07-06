@@ -1,0 +1,9 @@
+# Optional Excel read/write dependencies.
+# Install example: python3 -m pip install -r requirements/excel.txt
+#
+# openpyxl: generated XLSX write/export owned by predictor_v3.
+# xlwings: Windows user Excel read workflows, especially DRM-sensitive reads.
+# DRM-sensitive user-provided Excel files must not be read directly with
+# openpyxl unless a future task explicitly changes that policy.
+openpyxl
+xlwings

@@ -1,0 +1,6 @@
+# Calculator runtime requirements.
+# Install example: python3 -m pip install -r requirements/calculator.txt
+#
+# No optional Excel dependency is included. app_calculator.py uses stdlib
+# Tkinter and project core calculator modules.
+-r base.txt

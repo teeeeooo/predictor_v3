@@ -1,0 +1,9 @@
+# Development and focused validation requirements.
+# Install example: python3 -m pip install -r requirements/dev.txt
+#
+# train.txt already includes excel.txt, so this file does not include it again.
+-r train.txt
+-r predict.txt
+-r calculator.txt
+
+pytest

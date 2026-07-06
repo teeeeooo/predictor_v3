@@ -1,0 +1,15 @@
+# Train/Admin runtime requirements.
+# Install example: python3 -m pip install -r requirements/train.txt
+#
+# Includes Excel dependencies because Train writes XLSX training logs and owns
+# the Data Mapping XLSX export follow-up.
+-r base.txt
+-r excel.txt
+
+PySide6
+joblib
+numpy
+optuna
+pandas
+scikit-learn
+xgboost
