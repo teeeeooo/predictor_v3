@@ -84,6 +84,8 @@ Predict mapping status findings:
 - JSON export remains unchanged.
 - XLSX export is a read-only review/share/report snapshot, not an import
   contract.
+- XLSX export is generated with `openpyxl`; `xlwings` remains out of scope
+  because this is not a user-provided Excel read workflow.
 - XLSX workbook sheets should be user-facing groups first: IDU, Evap Index,
   ODU, Compressor, Refrigerant, Expansion, ODU Cond Specs, Issues, and a
   Snapshot Info or README sheet.
@@ -91,8 +93,16 @@ Predict mapping status findings:
 - Service owns export workflow.
 - Controller owns result-to-state conversion.
 - UI owns file path/filter selection only.
+- Export targets the current draft, does not save `mapping.json`, and does not
+  clear dirty state.
 
-## Blocked Scope
+## Resume Scope
 
-The implementation slices 14D-1 through 14D-4 were not started because the
-dependency gate failed before source changes.
+Bundle 2A and 2A-F resolved the dependency gate. Arc 14D-R resumes the blocked
+implementation with generated XLSX export, JSON/XLSX export selection, stale
+Data Mapping wording cleanup, and invalid mapping status wording polish.
+
+Out of scope remains unchanged: Import, XLSX edit/reimport, Excel read,
+`xlwings` implementation, Runtime Cascade changes, Predict schema CSV changes,
+Feature Catalog changes, ML/model/calculator changes, and dependency structure
+changes.
