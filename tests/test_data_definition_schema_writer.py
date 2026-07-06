@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
+import core.data_definition.schema_writer as schema_writer
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
@@ -120,7 +123,79 @@ def test_writer_rejects_non_schema_target(tmp_path):
 
     assert not result.success
     assert result.rows_written == 0
+    assert "schema_writer_target_not_allowed" in _issue_codes(result)
     assert not destination.exists()
+
+
+def test_invalid_editable_field_value_is_blocked_before_replace(tmp_path):
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, row.identity, data_type="invalid_type")
+    destination = tmp_path / "schema.csv"
+
+    result = save_data_definition_schema_draft(changed, destination)
+
+    assert not result.success
+    assert "candidate_schema_validation_failed" in _issue_codes(result)
+    assert not destination.exists()
+
+
+def test_candidate_validation_failure_does_not_overwrite_existing_destination(tmp_path):
+    destination = tmp_path / "schema.csv"
+    destination.write_text("original-content\n", encoding="utf-8")
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, row.identity, editor="invalid_editor")
+
+    result = save_data_definition_schema_draft(changed, destination)
+
+    assert not result.success
+    assert "candidate_schema_validation_failed" in _issue_codes(result)
+    assert destination.read_text(encoding="utf-8") == "original-content\n"
+    assert not (tmp_path / "backups").exists()
+
+
+def test_existing_destination_is_backed_up_and_replaced(tmp_path):
+    initial = tmp_path / "initial_schema.csv"
+    first_draft = build_data_definition_draft()
+    first_row = next(item for item in first_draft.rows if item.column_key == "cooling_capa")
+    first_changed = replace_draft_row(first_draft, first_row.identity, label="First Label")
+    first_result = save_data_definition_schema_draft(first_changed, initial)
+
+    second_draft = build_data_definition_draft(schema_path=initial)
+    second_row = next(item for item in second_draft.rows if item.column_key == "cooling_capa")
+    second_changed = replace_draft_row(second_draft, second_row.identity, label="Second Label")
+    second_result = save_data_definition_schema_draft(second_changed, initial)
+
+    assert first_result.success
+    assert second_result.success
+    assert second_result.backup_path is not None
+    assert second_result.backup_path.exists()
+    assert load_predict_schema_catalog_v2(second_result.backup_path).rows
+    loaded = load_predict_schema_catalog_v2(initial)
+    assert next(item for item in loaded.rows if item.column_key == "cooling_capa").label == (
+        "Second Label"
+    )
+
+
+def test_write_failure_cleans_tmp_without_replacing_destination(tmp_path, monkeypatch):
+    destination = tmp_path / "schema.csv"
+    destination.write_text("original-content\n", encoding="utf-8")
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, row.identity, label="Cooling Capacity")
+
+    def fail_replace(src, dst):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(schema_writer.os, "replace", fail_replace)
+
+    result = save_data_definition_schema_draft(changed, destination)
+
+    assert not result.success
+    assert result.status == "error"
+    assert destination.read_text(encoding="utf-8") == "original-content\n"
+    assert not list(tmp_path.glob(".schema.csv.*.tmp"))
 
 
 def test_schema_rows_exclude_derived_policy_rows():

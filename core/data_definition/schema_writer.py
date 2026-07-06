@@ -17,7 +17,11 @@ from core.data_definition.save_contract import (
     DataDefinitionSavePlan,
     build_data_definition_save_plan,
 )
-from core.predictor_schema.catalog_v2 import REQUIRED_HEADERS
+from core.predictor_schema.catalog_v2 import (
+    REQUIRED_HEADERS,
+    load_predict_schema_catalog_v2,
+    validate_predict_schema_catalog_v2,
+)
 
 
 @dataclass(frozen=True)
@@ -50,7 +54,11 @@ def save_data_definition_schema_draft(
         return _blocked_result(None, (), "destination_path is required")
     destination = Path(destination_path)
     if target != "schema_csv":
-        return _blocked_result(destination, (), f"Unsupported writer target: {target}")
+        return _blocked_result(
+            destination,
+            (_blocker("schema_writer_target_not_allowed", f"Unsupported target: {target}"),),
+            f"Unsupported writer target: {target}",
+        )
 
     plan = save_plan or build_data_definition_save_plan(
         draft,
@@ -126,12 +134,23 @@ def _atomic_write_schema_csv(
     tmp_path = destination.parent / f".{destination.name}.{uuid4().hex}.tmp"
     backup_path: Path | None = None
     try:
-        if preview.backup_required:
-            backup_path = _backup_destination(destination)
         with tmp_path.open("w", encoding="utf-8", newline="") as output:
             writer = csv.DictWriter(output, fieldnames=REQUIRED_HEADERS)
             writer.writeheader()
             writer.writerows(rows)
+        candidate_issues = _candidate_schema_issues(tmp_path)
+        if candidate_issues:
+            tmp_path.unlink(missing_ok=True)
+            return DataDefinitionSchemaSaveResult(
+                success=False,
+                path=destination,
+                rows_written=0,
+                issues=candidate_issues,
+                message="Candidate schema validation failed.",
+                status="blocked",
+            )
+        if preview.backup_required:
+            backup_path = _backup_destination(destination)
         os.replace(tmp_path, destination)
     except OSError as exc:
         tmp_path.unlink(missing_ok=True)
@@ -162,6 +181,14 @@ def _backup_destination(destination: Path) -> Path:
     backup_path = backup_dir / f"{destination.stem}.{stamp}{destination.suffix}"
     shutil.copy2(destination, backup_path)
     return backup_path
+
+
+def _candidate_schema_issues(tmp_path: Path) -> tuple[DataDefinitionSaveBlocker, ...]:
+    errors = validate_predict_schema_catalog_v2(load_predict_schema_catalog_v2(tmp_path))
+    return tuple(
+        _blocker("candidate_schema_validation_failed", error)
+        for error in errors
+    )
 
 
 def _csv_row(row: DataDefinitionDraftRow) -> dict[str, str]:
