@@ -14,6 +14,7 @@ from apps.train.application.feature_catalog import (
     FeatureCatalogService,
     FeatureCatalogSnapshot,
 )
+from apps.train.application.feature_catalog.service import LEGACY_COMPATIBILITY_MESSAGE
 
 
 @dataclass(frozen=True)
@@ -66,12 +67,12 @@ class FeatureCatalogController:
             return FeatureCatalogControllerState(
                 snapshot=snapshot,
                 status="error",
-                message="Feature Catalog validation failed.",
+                message=f"Feature Catalog legacy compatibility validation failed. {LEGACY_COMPATIBILITY_MESSAGE}",
             )
         return FeatureCatalogControllerState(
             snapshot=snapshot,
             status="ready",
-            message="Feature Catalog validation OK.",
+            message=f"Feature Catalog legacy compatibility validation OK. {LEGACY_COMPATIBILITY_MESSAGE}",
         )
 
     def export_csv(

@@ -37,6 +37,14 @@ NONEMPTY_SAVE_FIELDS = frozenset(
     {"order", "ml_name", "role", "zero_fill_policy", "active"}
 )
 SCHEMA_APPLY_MESSAGE = "Catalog saved. Restart app to apply table schema changes."
+LEGACY_COMPATIBILITY_MESSAGE = (
+    "Feature Catalog is a legacy compatibility surface. "
+    "Data Definition is the canonical schema and feature definition owner."
+)
+CANONICAL_SAVE_BLOCK_MESSAGE = (
+    "Feature Catalog canonical save is disabled; use Data Definition for "
+    "schema and feature definition changes."
+)
 ROLE_OPTIONS = ("input", "auto", "result", "derived", "one_hot", "hidden")
 ACTIVE_OPTIONS = ("true", "false")
 ZERO_FILL_POLICY_OPTIONS = ("disallow", "mode_missing_allowed")
@@ -49,9 +57,12 @@ class FeatureCatalogService:
         self,
         catalog_path: str | Path | None = None,
         export_writer: FeatureCatalogExportWriter | None = None,
+        *,
+        allow_legacy_canonical_save: bool = False,
     ) -> None:
         self._catalog_path = Path(catalog_path) if catalog_path is not None else DEFAULT_CATALOG_PATH
         self._export_writer = export_writer
+        self._allow_legacy_canonical_save = allow_legacy_canonical_save
 
     def load_snapshot(
         self,
@@ -150,6 +161,13 @@ class FeatureCatalogService:
         records: tuple[FeatureCatalogRecord, ...],
     ) -> FeatureCatalogSaveResult:
         """Validate and safely save edited records to the canonical catalog."""
+        if self._canonical_save_guard_enabled():
+            return FeatureCatalogSaveResult(
+                saved=False,
+                snapshot=None,
+                errors=(CANONICAL_SAVE_BLOCK_MESSAGE,),
+                message=CANONICAL_SAVE_BLOCK_MESSAGE,
+            )
         if self._export_writer is None:
             raise RuntimeError("Feature Catalog save writer is not configured.")
 
@@ -188,6 +206,12 @@ class FeatureCatalogService:
             message=f"Feature Catalog saved and reloaded. {SCHEMA_APPLY_MESSAGE}",
             schema_apply_required=True,
             schema_apply_message=SCHEMA_APPLY_MESSAGE,
+        )
+
+    def _canonical_save_guard_enabled(self) -> bool:
+        return (
+            not self._allow_legacy_canonical_save
+            and self._catalog_path.resolve() == DEFAULT_CATALOG_PATH.resolve()
         )
 
 
