@@ -1,12 +1,12 @@
 # Arc 15 Closeout - Report Lifecycle / Merge Readiness Audit
 
-## Goal
+## Original Closeout Goal
 
 Close the Arc 15 active report lifecycle, record merge-readiness evidence, and
 push only the `arc15/data-definition-foundation` branch after all slice commits
 are complete and the working tree is clean.
 
-## Scope
+## Original Closeout Scope
 
 - Created summary `725` for the Arc 15 Data Definition foundation workstream.
 - Archived completed active reports `711` through `724`.
@@ -22,7 +22,7 @@ are complete and the working tree is clean.
 - No main push.
 - No production retrain or model artifact activation.
 
-## Report Lifecycle Result
+## Original Closeout Report Lifecycle Result
 
 - Archived completed reports:
   - `711_active-report-lifecycle-cleanup-arc14b-prearc15.md`
@@ -41,11 +41,11 @@ are complete and the working tree is clean.
   - `724_arc15f-training-model-readiness-integration.md`
 - At the closeout commit, the remaining active report was this lifecycle/audit
   report; later follow-up reports do not change that lifecycle history.
-- Current active state: completed state-sync report `727` is archived, and this
-  report is the sole active main-merge decision owner. Merge readiness remains
-  in effect with no unresolved blocker.
+- Before merge execution, completed state-sync report `727` was archived and
+  this report was the sole active main-merge decision owner. The merge recorded
+  below completed that decision, so this report is now archived.
 
-## Merge Readiness Audit
+## Original Merge Readiness Audit
 
 - Branch: `arc15/data-definition-foundation`.
 - Upstream before push: local branch was ahead of
@@ -60,7 +60,7 @@ are complete and the working tree is clean.
 - Merge readiness status: ready for main-merge review after branch push, with
   no merge executed by this slice.
 
-## Validation Result
+## Original Closeout Validation Result
 
 - `python3 -B tools/check_code_structure.py`: passed with 10 existing soft
   warnings in calculator LOC/class-count areas and stale code-map freshness.
@@ -150,6 +150,23 @@ Read Ledger:
 - repeated read: `data_definition_controller.py`; reason: post-edit action diff
   and duplicate-transform inspection.
 
+## Main Merge Execution
+
+- Source: `origin/arc15/data-definition-foundation` at `aaa665bd`.
+- Target baseline: `main` / `origin/main` at `2bf381be`.
+- Merge command: `git merge --no-ff origin/arc15/data-definition-foundation -m
+  "Merge arc15/data-definition-foundation"`.
+- Merge result: success with no conflicts; merge commit `620795be`.
+- Tree verification: merged `HEAD` matched the source branch tree exactly.
+- `python3 -B tools/check_code_structure.py`: passed with the same 10 existing
+  calculator/code-map soft warnings.
+- Data Definition/Data Mapping/Feature Catalog focused validation: passed, 66
+  tests.
+- `git diff --check origin/main...HEAD`: passed before closeout documentation.
+- Unresolved merge blockers: none. Arc 15 main merge execution is complete;
+  final `origin/main` publication equality is reported in terminal output.
+- Next action: Standard Calculation Capability Extension design.
+
 ## Known Risks
 
 - Full broader-suite verification outside the requested closeout command was
@@ -159,7 +176,7 @@ Read Ledger:
 - Model artifact compatibility remains intentionally not evaluated.
 - Derived policy persistence remains blocked by design.
 
-## Scope Compliance
+## Original Closeout Scope Compliance
 
 - No `config/**`, `data/**`, `model/**`, Predict runtime, training execution,
   retrain, artifact activation, main merge, or main push change was made.
@@ -175,3 +192,6 @@ Read Ledger:
 Registered summary `725` and added one compact durable Arc 15 owner-state entry.
 Archiving completed state-sync report `727` adds no new durable decision or
 procedure, so no memory seed update is required.
+Main merge completion changes publication state without changing the durable
+owner contract already covered by summary `725`, so no additional memory seed
+entry is required.

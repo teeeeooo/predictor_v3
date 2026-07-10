@@ -37,14 +37,15 @@
   compatibility/read/export surface.
 - Arc 15-FU1 — Data Definition Controller State Builder Extraction is complete.
   Controller actions remain unchanged, state composition now belongs to the
-  adjacent pure builder, and main merge readiness is maintained.
+  adjacent pure builder, and its focused validation passed.
+- Arc 15 Data Definition foundation and FU1 are merged into `main`. The merge
+  completed without conflicts and retained the validated source-branch tree.
 
 ## Next Actions
 
-Next: Arc 15 main merge execution.
+Next: Standard Calculation Capability Extension design.
 
-1. Execute the Arc 15 main merge.
-2. Start Standard Calculation Capability Extension design.
+1. Start Standard Calculation Capability Extension design.
 
 ## Active Blockers / Open Decisions
 
