@@ -5,7 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import QObject, QThread, QTimer, Signal
 
 from apps.predict.ports.prediction_execution_port import PredictionJob
-from apps.predict.services.prediction_service import PredictionService
+from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 from apps.predict.workers.prediction_worker import PredictionWorker
 
 
@@ -20,12 +20,12 @@ class PySidePredictionRunner(QObject):
 
     def __init__(
         self,
-        service: PredictionService | None = None,
+        service: PredictionServicePort,
         worker_cls: type[PredictionWorker] = PredictionWorker,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
-        self._service = service or PredictionService()
+        self._service = service
         self._worker_cls = worker_cls
         self._thread: QThread | None = None
         self._worker: PredictionWorker | None = None
@@ -61,6 +61,11 @@ class PySidePredictionRunner(QObject):
         """Request cooperative worker cancellation."""
         if self._worker is not None:
             self._worker.cancel()
+
+    def dispose(self) -> None:
+        """Schedule this adapter for deletion after terminal cleanup."""
+
+        self.deleteLater()
 
     def _clear(self) -> None:
         self._thread = None

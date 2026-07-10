@@ -187,7 +187,7 @@ def _requested_target_blockers(
     if "features_csv" in requested_targets:
         blockers.append(_blocker(
             "features_csv_dual_writer_not_resolved", "error",
-            "features.csv write is blocked until Feature Catalog direct save is demoted.",
+            "features.csv write is blocked until Data Definition-to-ML catalog persistence is defined.",
             "features_csv",
         ))
     if "derived_policy" in requested_targets:
@@ -218,7 +218,7 @@ def _write_targets(
         _target(
             "features_csv",
             "blocked",
-            "Feature Catalog direct save still exists; projection output dual writer unresolved.",
+            "The independent ML catalog remains read-only; no projection writer is defined.",
         ),
         _target("derived_policy", "blocked", "Derived policy persistence owner is not defined."),
     ]

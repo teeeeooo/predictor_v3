@@ -128,7 +128,13 @@ def parent_centered_content_geometry(
     screen_height: int,
     min_size: tuple[int, int] = (1, 1),
 ) -> str:
-    """Return a content-sized dialog geometry centered on its parent window."""
+    """Center a dialog on its parent without moving it to monitor one.
+
+    Tk exposes the primary screen dimensions but not a portable per-monitor
+    work area. Clamp an axis only when the parent intersects that primary
+    area. A parent wholly outside it is already on another monitor, so its
+    centered coordinate must be preserved.
+    """
     parent_width, parent_height, parent_x, parent_y = parse_window_geometry(parent_geometry)
     requested_width = max(requested_content_size[0], min_size[0])
     requested_height = max(requested_content_size[1], min_size[1])
@@ -140,11 +146,36 @@ def parent_centered_content_geometry(
     )
     x = parent_x + (parent_width - width) // 2
     y = parent_y + (parent_height - height) // 2
-    return clamp_geometry_to_visible_bounds(
-        format_window_geometry(width, height, x, y),
-        screen_width,
-        screen_height,
+    x = _clamp_axis_when_parent_intersects_primary(
+        coordinate=x,
+        extent=width,
+        screen_extent=screen_width,
+        parent_coordinate=parent_x,
+        parent_extent=parent_width,
     )
+    y = _clamp_axis_when_parent_intersects_primary(
+        coordinate=y,
+        extent=height,
+        screen_extent=screen_height,
+        parent_coordinate=parent_y,
+        parent_extent=parent_height,
+    )
+    return format_window_geometry(width, height, x, y)
+
+
+def _clamp_axis_when_parent_intersects_primary(
+    *,
+    coordinate: int,
+    extent: int,
+    screen_extent: int,
+    parent_coordinate: int,
+    parent_extent: int,
+) -> int:
+    parent_end = parent_coordinate + parent_extent
+    parent_intersects_primary = parent_coordinate < screen_extent and parent_end > 0
+    if not parent_intersects_primary:
+        return coordinate
+    return min(max(0, coordinate), max(0, screen_extent - extent))
 
 
 def resolve_min_window_size(screen_width: int, screen_height: int) -> tuple[int, int]:

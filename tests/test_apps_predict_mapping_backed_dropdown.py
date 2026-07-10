@@ -172,11 +172,11 @@ def test_dropdown_option_adapter_reports_invalid_cached_mapping_status(tmp_path)
 
 def test_mapping_status_badge_distinguishes_invalid_from_missing():
     assert mapping_status_badge_state(MappingResourceStatus("", "invalid")) == (
-        "invalid",
+        "유효하지 않음",
         "error",
     )
     assert mapping_status_badge_state(MappingResourceStatus("", "missing")) == (
-        "missing",
+        "없음",
         "missing",
     )
 

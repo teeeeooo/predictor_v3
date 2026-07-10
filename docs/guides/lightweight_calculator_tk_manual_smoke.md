@@ -40,10 +40,7 @@ Tkinter direction has a verified behaviour baseline.
 - Graph/detail surface verification; that is a later lightweight design phase,
   not part of this summary-surface smoke.
 - New helper scripts under `tools/` or `scripts/`.
-- Touching retired PyQt calculator UI sources.
-- Resolving the macOS Python 3.14 + legacy Qt binding fatal-abort issue in 4
-  PyQt clipboard / table tests (tracked separately; see Known
-  Issue Separation below).
+- Restoring retired Qt calculator UI sources.
 
 ## Environment
 
@@ -55,9 +52,7 @@ calculator core tests pass.
 - Python: `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3`
   (Python 3.14.x). Other Python 3.10+ versions are fine.
 - Tkinter / Tcl/Tk: bundled with the Python.org installer.
-- No legacy Qt binding dependency for the Tkinter path (legacy Qt binding may still be
-  installed for the PyQt UI but must not be loaded by
-  `app_calculator.py`).
+- No Qt dependency is loaded by `app_calculator.py`.
 
 Verify the Python interpreter from the repo root:
 
@@ -105,7 +100,7 @@ From the repo root:
 python3 -B app_calculator.py
 ```
 
-A Tk window titled `Calculator (Tkinter)` should appear. No
+A Tk window titled `Seasonal Efficiency Calculator` should appear. No
 terminal output is expected on the happy path.
 
 ## Manual checklist
@@ -115,13 +110,13 @@ defaults may remain selected. Run each step in order and enter focused test
 values only where a calculation result must be checked.
 
 1. **App launch** — Run the launch command. Confirm the Tk window
-   appears with the title `Calculator (Tkinter)`.
+   appears with the title `Seasonal Efficiency Calculator`.
    Confirm the window appears near the screen center, or at least fully
    inside the visible screen with the title bar reachable.
    Confirm the initial window height fits inside the screen and lower
    CSPF/HSPF tables are either visible or reachable by vertical scroll.
-2. **Standard tabs** — The window shows the current `ISO 16358`, `EN14825`,
-   and `AHRI 210/240` top-level tabs.
+2. **Standard tabs** — The window shows `ISO 16358`, `EN14825`,
+   `AHRI 210/240`, and `KS C 9306` as top-level tabs.
 3. **Profile selector** — Inside the ISO 16358 tab, the profile selector is
    read-only and can select the supported ISO/ISEER, Hong Kong, and SASO
    surfaces.
@@ -257,11 +252,11 @@ values only where a calculation result must be checked.
 | Hong Kong HSPF (focused smoke inputs) | **3.643** |
 | CSPF summary seasonal values | CSTL `1769.6 kWh`, CSEC `358.3 kWh` |
 | HSPF summary seasonal values | HSTL `273.2 kWh`, HSEC `75.0 kWh` |
-| Top-level tabs | `ISO 16358`, `EN14825`, `AHRI 210/240` |
+| Top-level tabs | `ISO 16358`, `EN14825`, `AHRI 210/240`, `KS C 9306` |
 | Hong Kong metric sections | CSPF and HSPF, same screen |
 | `profile_id` exposed in UI | NO |
 | legacy Qt binding loaded into `sys.modules` | NO |
-| Window title | `Calculator (Tkinter)` |
+| Window title | `Seasonal Efficiency Calculator` |
 | Result panel buttons | none |
 
 These are the same values exercised by the automated tests
@@ -277,7 +272,7 @@ Copy this block into the run notes / report; mark each step
 
 ```
 - App launch: OK/NG
-- ISO 16358 / EN14825 / AHRI 210/240 tabs present: OK/NG
+- ISO 16358 / EN14825 / AHRI 210/240 / KS C 9306 tabs present: OK/NG
 - Initial window appears centered or fully inside visible screen: OK/NG
 - Lower CSPF/HSPF tables visible or reachable by vertical scroll: OK/NG
 - Region selector shows "Hong Kong": OK/NG
@@ -327,24 +322,6 @@ pass. Any `NG` should be filed as a follow-up before the Windows
 PyInstaller measurement starts — a regression here would invalidate
 that baseline measurement.
 
-## Known macOS / PyQt issue separation
-
-This checklist is **independent of** the macOS + Python 3.14 + legacy Qt binding
-fatal-abort behaviour observed in the following PyQt clipboard /
-table tests:
-
-- `tests/test_iso16358_result_table_copy_tsv.py`
-- `tests/test_iso16358_table_excel_like_behavior.py`
-- `tests/test_app_calculator_ui_smoke.py`
-- `tests/test_spreadsheet_table_view.py`
-
-Those tests exercise the PyQt calculator UI (`ui/calc_window.py` and
-friends) and crash on the current macOS + legacy Qt binding combination. The
-Tkinter MVP does not import legacy Qt binding and is not affected. Do not try to
-resolve the PyQt crash as part of this checklist; the PyQt
-calculator UI workstream is on hold (see WORK_PLAN 4c–4g and the
-4z pivot note).
-
 ## Next step after passing
 
 Once every checklist item is `OK` on macOS:
@@ -352,8 +329,7 @@ Once every checklist item is `OK` on macOS:
 1. Windows `calculator_tk` packaged size has been measured at
    approximately 11 MB and is acceptable for the current deployment
    candidate.
-2. Keep the PyQt baseline comparison as a later retirement-gate input if
-   calculator-only source retirement resumes.
+2. Keep calculator golden and UI interaction guards green before packaging.
 
 Do not retroactively edit the design doc
 (`docs/designs/legacy/2026-05-22-lightweight-calculator-ui-feasibility.md`)

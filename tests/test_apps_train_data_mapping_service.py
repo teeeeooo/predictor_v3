@@ -12,7 +12,7 @@ from apps.train.services.data_mapping_service import (
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 
 
-def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
+def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     snapshot = DataMappingService(FoundationMappingCatalogProvider()).load_snapshot()
 
     assert snapshot.source_label == "Foundation sample provider for UI wiring tests only"
@@ -22,13 +22,11 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
     assert snapshot.validation_errors == ()
     assert snapshot.actions
     assert {action.key for action in snapshot.actions} == {
-        "import_csv_v2",
         "export_csv_v2",
         "save_mapping_json",
         "reload_runtime",
     }
     assert [action.label for action in snapshot.actions] == [
-        "Import",
         "Export",
         "Save",
         "Reload",
@@ -36,8 +34,18 @@ def test_data_mapping_service_returns_catalog_validation_and_disabled_actions():
     actions = {action.key: action for action in snapshot.actions}
     assert not actions["save_mapping_json"].enabled
     assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
-    assert actions["import_csv_v2"].reason == "Import is not supported. Edit mappings in this screen."
     assert "read-only review snapshot" in actions["export_csv_v2"].reason
+
+
+def test_data_mapping_service_reports_resource_status_without_view_path_checks(tmp_path):
+    mapping_file = tmp_path / "mapping.json"
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+
+    assert service.resource_status() == "missing"
+
+    mapping_file.write_text("{}", encoding="utf-8")
+    assert service.resource_status() == "exists"
+    assert DataMappingService(FoundationMappingCatalogProvider()).resource_status() == "available"
 
 
 def test_data_mapping_service_disables_save_when_draft_has_issues():

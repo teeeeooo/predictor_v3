@@ -2,7 +2,10 @@
 
 import joblib
 
-from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
+from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
+from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+from apps.predict.application.models import PredictionInputRequest
+from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.services import prediction_service as prediction_service_module
 from apps.predict.services.prediction_service import PredictionService
@@ -87,7 +90,15 @@ def test_controller_model_status_delegates_without_mutating_session(tmp_path):
     session = PredictSession()
     session.case_store.append_empty_rows(1)
     service = PredictionService(model_file=str(tmp_path / "missing.pkl"))
-    controller = PredictionController(session=session, service=service)
+    controller = PredictionController(
+        session=session,
+        usecase=PredictionUseCase(
+            session,
+            input_mapper=RowToMlInputAdapter(),
+            result_mapper=PredictionResultAdapter(),
+        ),
+        service=service,
+    )
     before_order = session.case_order
     before_results = dict(session.results_by_case_id)
 

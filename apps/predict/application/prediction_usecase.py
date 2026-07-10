@@ -6,16 +6,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from uuid import uuid4
 
-from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
-from apps.predict.adapters.row_to_ml_input_adapter import (
+from apps.predict.application.models import (
     PredictionInputRequest,
-    RowToMlInputAdapter,
+    PredictionServiceResult,
 )
 from apps.predict.ports.prediction_execution_port import (
     PredictionJob,
     PredictionWorkerSummary,
 )
-from apps.predict.services.prediction_service import PredictionServiceResult
+from apps.predict.ports.prediction_workflow_ports import (
+    PredictionInputMapper,
+    PredictionResultMapper,
+)
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 
@@ -48,12 +50,12 @@ class PredictionUseCase:
     def __init__(
         self,
         session: PredictSession,
-        input_adapter: RowToMlInputAdapter | None = None,
-        result_adapter: PredictionResultAdapter | None = None,
+        input_mapper: PredictionInputMapper,
+        result_mapper: PredictionResultMapper,
     ) -> None:
         self._session = session
-        self._input_adapter = input_adapter or RowToMlInputAdapter()
-        self._result_adapter = result_adapter or PredictionResultAdapter()
+        self._input_mapper = input_mapper
+        self._result_mapper = result_mapper
 
     def prepare_run(
         self,
@@ -65,10 +67,10 @@ class PredictionUseCase:
         invalid_count = 0
         for case_id in case_ids:
             case = self._session.case_store.get_case(case_id)
-            outcome = self._input_adapter.build_request(case)
+            outcome = self._input_mapper.build_request(case)
             if not outcome.is_valid:
                 self._record_result(
-                    self._result_adapter.invalid_result(
+                    self._result_mapper.invalid_result(
                         case_id=case_id,
                         message="; ".join(outcome.errors),
                     ),
@@ -79,7 +81,7 @@ class PredictionUseCase:
             if outcome.request is None:
                 continue
             self._record_result(
-                self._result_adapter.running_result(case_id),
+                self._result_mapper.running_result(case_id),
                 result_callback,
             )
             valid_requests.append(outcome.request)
@@ -108,7 +110,7 @@ class PredictionUseCase:
     ) -> None:
         """Apply one service result to session state."""
         self._record_result(
-            self._result_adapter.from_service_result(service_result),
+            self._result_mapper.from_service_result(service_result),
             result_callback,
         )
 
@@ -120,7 +122,7 @@ class PredictionUseCase:
         """Apply cancelled row state for requests not run by the runner."""
         for case_id in case_ids:
             self._record_result(
-                self._result_adapter.cancelled_result(case_id),
+                self._result_mapper.cancelled_result(case_id),
                 result_callback,
             )
 

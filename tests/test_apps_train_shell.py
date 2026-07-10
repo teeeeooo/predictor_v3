@@ -22,8 +22,8 @@ from apps.train.state.training_run_state import (
     TrainingResourceStatus,
     TrainingResult,
 )
+from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
-from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.shell import TrainShell
 from apps.train.ui.train_model_panel import TrainModelPanel
 
@@ -42,10 +42,11 @@ class FakeTrainController:
         self.last_result = None
 
     def resource_status(self, data_path=None, model_output_path=None):  # noqa: ANN001
+        data_status = "exists" if data_path and Path(data_path).is_file() else "missing"
         return TrainingResourceStatus(
             data_path=str(data_path or ""),
             model_path=str(model_output_path or ""),
-            data_status="exists",
+            data_status=data_status,
             model_status="missing",
         )
 
@@ -114,14 +115,15 @@ def test_train_shell_tabs_and_predict_workspace_reuse():
     shell = TrainShell()
 
     assert shell.tabs.count() == 4
-    assert [shell.tabs.tabText(index) for index in range(3)] == [
+    assert [shell.tabs.tabText(index) for index in range(4)] == [
         "Predict",
         "Train / Model",
+        "Data Definition",
         "Data Mapping",
     ]
-    assert shell.tabs.tabText(3) == "Feature Catalog"
     assert isinstance(shell.tabs.widget(0), PredictWorkspace)
-    assert isinstance(shell.tabs.widget(3), FeatureCatalogPanel)
+    assert isinstance(shell.tabs.widget(2), DataDefinitionPanel)
+    assert isinstance(shell.tabs.widget(3), DataMappingPanel)
 
 
 def test_predict_shell_keeps_standalone_title_and_status_strip():
@@ -166,8 +168,7 @@ def test_train_model_panel_initial_state_with_and_without_data(tmp_path):
     data_path.write_text("x\n1\n", encoding="utf-8")
     panel.set_data_path(str(data_path))
     assert buttons["학습 실행"].isEnabled()
-    assert not buttons["모델 열기"].isEnabled()
-    assert not buttons["로그 저장"].isEnabled()
+    assert set(buttons) == {"학습 데이터 선택", "학습 실행", "중지"}
 
 
 def test_train_model_panel_start_updates_progress_log_and_summary(tmp_path):
@@ -204,57 +205,11 @@ def test_train_model_panel_cancel_button_calls_controller(tmp_path):
     assert controller.cancel_called
 
 
-def test_data_mapping_panel_is_visual_only_with_log_area():
-    _app()
-    panel = DataMappingPanel()
-
-    assert panel.objectName() == "DataMappingPanel"
-    log = panel.findChild(QTextEdit, "MappingLog")
-    assert log is not None
-    assert "deferred" in log.toPlainText()
-    table = panel.findChild(QTableView)
-    assert table is not None
-    assert table.model().rowCount() == 3
-    assert table.model().data(table.model().index(1, 1)) == "deferred"
-    assert (
-        table.model().data(table.model().index(2, 2))
-        == "DropdownOptionAdapter / core mapping owner"
-    )
-    assert "DropdownOptionAdapter" in log.toPlainText()
-
-    buttons = {button.text(): button for button in panel.findChildren(QPushButton)}
-    for text in ("매핑 Excel 선택", "매핑 업데이트", "상태 새로고침"):
-        assert not buttons[text].isEnabled()
-
-
-def test_feature_catalog_panel_loads_readonly_catalog():
-    _app()
-    panel = FeatureCatalogPanel()
-
-    assert panel.objectName() == "FeatureCatalogPanel"
-    assert panel.table.model().rowCount() > 0
-    assert panel.table.model().columnCount() == 11
-    assert panel.table.model().headerData(1, Qt.Horizontal, Qt.DisplayRole) == "학습 데이터 컬럼명"
-    assert "validation OK" in panel.validation_value.text()
-    assert "Catalog validation: OK" in panel.messages.toPlainText()
-    assert panel.export_button.isEnabled()
-    assert panel.export_value.text() == "No export yet"
-    assert not panel.save_button.isEnabled()
-    assert not panel.revert_button.isEnabled()
-
-    label_col = panel.table.model()._headers.index("label")
-    assert panel.table.model().setData(panel.table.model().index(0, label_col), "Edited")
-    assert panel.save_button.isEnabled()
-    assert panel.revert_button.isEnabled()
-
-
 def test_train_ui_widgets_do_not_import_core_execution_foundations():
     sources = (
         Path("apps/train/ui/shell.py"),
         Path("apps/train/ui/train_model_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
-        Path("apps/train/ui/feature_catalog/panel.py"),
-        Path("apps/train/ui/feature_catalog/table_model.py"),
     )
     forbidden = (
         "from core.training",
@@ -275,11 +230,17 @@ def test_train_ui_uses_model_views_not_qtablewidget():
     sources = (
         Path("apps/train/ui/train_model_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
-        Path("apps/train/ui/feature_catalog/panel.py"),
-        Path("apps/train/ui/feature_catalog/table_model.py"),
     )
 
     for source in sources:
         text = source.read_text(encoding="utf-8")
         assert "QTableWidget" not in text
         assert "QTableWidgetItem" not in text
+
+
+def test_train_views_delegate_artifact_existence_checks():
+    shell_source = Path("apps/train/ui/shell.py").read_text(encoding="utf-8")
+    panel_source = Path("apps/train/ui/train_model_panel.py").read_text(encoding="utf-8")
+
+    assert ".exists()" not in shell_source
+    assert ".exists()" not in panel_source

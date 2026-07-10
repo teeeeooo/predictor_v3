@@ -24,10 +24,10 @@ class En14825Tab(ttk.Frame):
         self._scrollable.pack(fill=tk.BOTH, expand=True)
         self._content = self._scrollable.content
 
-        self._p_to_var = tk.StringVar(value="0")
-        self._p_sb_var = tk.StringVar(value="0")
-        self._p_ck_var = tk.StringVar(value="0")
-        self._p_off_var = tk.StringVar(value="0")
+        self._p_to_var = tk.StringVar(master=self, value="0")
+        self._p_sb_var = tk.StringVar(master=self, value="0")
+        self._p_ck_var = tk.StringVar(master=self, value="0")
+        self._p_off_var = tk.StringVar(master=self, value="0")
         self._common_input_tables: list[MetricInputTable] = []
         self._common_input_controllers: list[TkTableController] = []
         self._syncing_common_inputs = False

@@ -3,9 +3,8 @@
 This module (``apps.calculator.ui.calculator_app``) is the current Tkinter
 calculator UI shell used by ``apps.calculator.app``.
 
-The legacy PyQt calculator under ``ui/`` remains a read-only reference
-only until its retirement. No PyQt imports are allowed in this module or in
-this Tkinter UI package.
+The retired PyQt calculator path must not be imported or recreated here. No Qt
+imports are allowed in this module or in this Tkinter UI package.
 
 Responsibilities here are intentionally narrow:
 - Build the Tk root window + ``ttk.Notebook``.
@@ -24,14 +23,13 @@ import tkinter.font as tkfont
 from tkinter import ttk
 
 from apps.calculator.ui.layout_constants import TOP_NOTEBOOK_SELECTED_FG
+from apps.calculator.ui.theme import apply_calculator_theme
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 from apps.calculator.ui.tabs.ahri210240_tab import Ahri210240Tab
 from apps.calculator.ui.tabs.korea_tab import KoreaTab
 from apps.calculator.ui.window_geometry import (
-    apply_overflow_correction,
     center_window,
-    clamp_window_to_visible_bounds,
 )
 
 
@@ -43,9 +41,13 @@ class CalculatorTkApp:
     enters the event loop.
     """
 
+    _INITIAL_SETTLE_CYCLES = 3
+
     def __init__(self, root: Optional[tk.Tk] = None) -> None:
         self.root = root if root is not None else tk.Tk()
-        self.root.title("Calculator (Tkinter)")
+        self.root.withdraw()
+        self.root.title("Seasonal Efficiency Calculator")
+        apply_calculator_theme(self.root)
         self._configure_top_notebook_style()
 
         self.notebook = ttk.Notebook(self.root, style="CalculatorTop.TNotebook")
@@ -61,22 +63,46 @@ class CalculatorTkApp:
         self.notebook.add(self.ahri210240_tab, text="AHRI 210/240")
 
         self.korea_tab = KoreaTab(self.notebook)
-        self.notebook.add(self.korea_tab, text="KOREA")
+        self.notebook.add(self.korea_tab, text="KS C 9306")
 
         self._ignore_initial_tab_changed = True
+        self._initial_fit_complete = False
+        self._initial_settle_remaining = self._INITIAL_SETTLE_CYCLES
+        self._run_requested = False
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         self.root.update_idletasks()
         initial_size = self.iso_tab.preferred_initial_size()
         self._set_notebook_content_size(initial_size)
         center_window(self.root, initial_size)
-        apply_overflow_correction(self.root, self.iso_tab)
-        clamp_window_to_visible_bounds(self.root)
+        # Mainloop (or a test-driven update) lets the hidden widget tree settle
+        # before the one final content fit. Calling ``update()`` from a
+        # constructor can re-enter recurring Tk callbacks and hang startup.
+        self.root.after_idle(self._settle_initial_fit)
+
+    def _settle_initial_fit(self) -> None:
+        if self._initial_fit_complete:
+            return
+        # This callback already runs only after Tk drains the current idle
+        # queue. Re-entering ``update_idletasks()`` from inside it can trap
+        # macOS Tk in a nested idle loop after an earlier root was destroyed.
+        self._initial_settle_remaining -= 1
+        if self._initial_settle_remaining > 0:
+            self.root.after_idle(self._settle_initial_fit)
+            return
+        # A zero-delay timer is intentionally used for the final mutation.
+        # ``update_idletasks()`` may drain nested-tab refit idles first, but it
+        # will not run this timer ahead of them.
         self.root.after(0, self._apply_initial_iso_fit)
 
     def _apply_initial_iso_fit(self) -> None:
+        if self._initial_fit_complete:
+            return
         self._ignore_initial_tab_changed = False
         self.iso_tab.fit_toplevel_to_current_content_once()
+        self._initial_fit_complete = True
+        if self._run_requested:
+            self._show_window()
 
     def _on_tab_changed(self, event: tk.Event) -> None:
         if self._ignore_initial_tab_changed:
@@ -97,7 +123,9 @@ class CalculatorTkApp:
 
     def _configure_top_notebook_style(self) -> None:
         style = ttk.Style(self.root)
-        self._top_tab_selected_font = tkfont.nametofont("TkDefaultFont").copy()
+        self._top_tab_selected_font = tkfont.nametofont(
+            "TkDefaultFont", root=self.root
+        ).copy()
         self._top_tab_selected_font.configure(weight="bold")
         style.configure("CalculatorTop.TNotebook.Tab", padding=(10, 4))
         style.map(
@@ -107,7 +135,15 @@ class CalculatorTkApp:
         )
 
     def run(self) -> None:
+        self._run_requested = True
+        if self._initial_fit_complete:
+            self._show_window()
         self.root.mainloop()
+
+    def _show_window(self) -> None:
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
 
 
 def main() -> None:

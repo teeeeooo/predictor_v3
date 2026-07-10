@@ -1368,7 +1368,7 @@ def test_hong_kong_cspf_batch_opens_dialog_not_metric_tab(tk_root, monkeypatch):
     assert len(first_dialog.section.table.cases) == 5
     assert first_dialog.section.table.viewport_frame.surface_role == "batch_table_viewport"
     assert first_dialog.section.table.viewport_frame.layout_policy == (
-        "vertical_scroll_containment"
+        "table_local_two_axis_scroll_containment"
     )
     assert first_dialog.section.table.table_frame.layout_policy == (
         "vertical_scroll_containment"

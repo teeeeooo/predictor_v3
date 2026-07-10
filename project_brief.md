@@ -19,7 +19,8 @@ Readiness resumes and later connects predictor outputs to calculator adapters.
 
 - Data Definition is the canonical schema and feature-definition owner.
 - Data Mapping Manager owns `mapping.json` values and runtime mapping cascade.
-- Feature Catalog Manager remains the compatibility/read/export surface.
+- `core/ml/feature_catalog*` and `config/ml/features.csv` remain the ML
+  compatibility contract; the former Feature Catalog Manager UI is retired.
 - `config/ml/features.csv` remains the ML feature storage and contract file.
 - Train and Predict remain separate PySide6 applications under `apps/train/`
   and `apps/predict/`; the calculator shell and Tkinter path stay separate.
@@ -40,8 +41,8 @@ Readiness resumes and later connects predictor outputs to calculator adapters.
 ### Closed Foundation
 
 - Arc 13 — ML Pipeline Stabilization: complete for automated scope.
-- Arc 13.5/13.5A — Feature Catalog Editor/Manager: complete for automated scope
-  with accepted dropdown GUI smoke.
+- Arc 13.5/13.5A — Feature Catalog Editor/Manager: historical foundation,
+  superseded by the Arc 15 Data Definition owner and now retired from the UI.
 - Arc 13.5R — Predict Schema projection foundation: complete.
 - Arc 14 — Mapping entity, manager UI, runtime cascade, and snapshot export:
   complete for automated scope.

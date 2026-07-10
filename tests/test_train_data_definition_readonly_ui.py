@@ -14,7 +14,6 @@ import apps.train.services.data_definition_service as data_definition_service_mo
 import apps.train.ui.data_definition_panel as data_definition_panel_module
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
-from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.shell import TrainShell
 from core.data_definition import DataDefinitionReport
 
@@ -96,11 +95,9 @@ def test_train_shell_registers_data_definition_tab_and_keeps_existing_tabs():
             "Train / Model",
             "Data Definition",
             "Data Mapping",
-            "Feature Catalog",
         ]
         assert isinstance(shell.tabs.widget(2), DataDefinitionPanel)
         assert isinstance(shell.tabs.widget(3), DataMappingPanel)
-        assert isinstance(shell.tabs.widget(4), FeatureCatalogPanel)
     finally:
         shell.close()
         shell.deleteLater()

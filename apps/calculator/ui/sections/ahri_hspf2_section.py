@@ -132,12 +132,12 @@ class AhriHspf2Section:
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, CONTROL_ROW_PADY),
         )
-        self.region_var = tk.StringVar(value="IV")
-        self.h42_var = tk.BooleanVar(value=True)
-        self.h12_var = tk.BooleanVar(value=False)
-        self.h22_var = tk.BooleanVar(value=False)
-        self.h1n_same_speed_var = tk.BooleanVar(value=False)
-        self.minimum_speed_var = tk.BooleanVar(value=True)
+        self.region_var = tk.StringVar(master=self._frame, value="IV")
+        self.h42_var = tk.BooleanVar(master=self._frame, value=True)
+        self.h12_var = tk.BooleanVar(master=self._frame, value=False)
+        self.h22_var = tk.BooleanVar(master=self._frame, value=False)
+        self.h1n_same_speed_var = tk.BooleanVar(master=self._frame, value=False)
+        self.minimum_speed_var = tk.BooleanVar(master=self._frame, value=True)
         ttk.Label(frame, text="Region:").pack(
             side=tk.LEFT,
             padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP),

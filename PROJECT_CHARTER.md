@@ -20,7 +20,7 @@
 - **UI 툴킷 정책 (UI Toolkit Policy):**
   - Calculator UI는 Tkinter 전환을 활성 마이그레이션 방향(active migration direction)으로 진행합니다.
   - Train/Predict의 신규 재작성(rewrite)은 PyQt5 migration이 아니라 PySide6 기준 신규 작성으로 진행합니다.
-  - 기존 `ui/` PyQt5 Train/Predict 경로는 당장 삭제하지 않고 reference-only / legacy path로 유지합니다.
+  - 기존 `ui/` PyQt5 Train/Predict 경로는 퇴역했으며 복원하지 않습니다. 현재 production UI owner는 `apps/train/` / `apps/predict/`의 PySide6 경계입니다.
   - PyQt6로의 전환은 계속 금지합니다.
 - **API 안정성:** `core` 모듈의 calculator public API는 신중하게 유지합니다.
 - **UI 분리 및 경계 (UI Separation & Boundary):**

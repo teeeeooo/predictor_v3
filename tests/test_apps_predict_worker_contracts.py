@@ -6,8 +6,9 @@ from pathlib import Path
 import pytest
 
 from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
-from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
-from apps.predict.workers.prediction_worker import (
+from apps.predict.application.models import PredictionInputRequest
+from apps.predict.composition import build_predict_workspace_composition
+from apps.predict.ports.prediction_execution_port import (
     PredictionJob,
     PredictionProgress,
     PredictionWorkerSummary,
@@ -53,6 +54,9 @@ def test_result_adapter_builds_running_invalid_and_cancelled_rows():
 
 def test_service_adapter_contract_modules_do_not_import_pyside():
     paths = (
+        "apps/predict/application/models.py",
+        "apps/predict/ports/prediction_execution_port.py",
+        "apps/predict/ports/prediction_workflow_ports.py",
         "apps/predict/services/prediction_service.py",
         "apps/predict/adapters/row_to_ml_input_adapter.py",
         "apps/predict/adapters/prediction_result_adapter.py",
@@ -69,3 +73,24 @@ def test_worker_contract_module_does_not_import_widgets_or_session():
 
     assert "QtWidgets" not in source
     assert "PredictSession" not in source
+
+
+def test_application_and_ports_do_not_import_concrete_adapters():
+    paths = (
+        "apps/predict/application/prediction_usecase.py",
+        "apps/predict/ports/prediction_execution_port.py",
+        "apps/predict/ports/prediction_workflow_ports.py",
+    )
+
+    for path in paths:
+        source = Path(path).read_text(encoding="utf-8")
+        assert "apps.predict.adapters" not in source
+        assert "apps.predict.services" not in source
+
+
+def test_composition_owner_builds_predict_state_without_widgets():
+    composition = build_predict_workspace_composition(initial_empty_rows=2)
+
+    assert len(composition.session.case_order) == 2
+    assert composition.prediction_controller.is_running is False
+    assert composition.input_edit_controller is not None

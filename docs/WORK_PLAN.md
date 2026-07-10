@@ -17,13 +17,13 @@
 
 ## Current Slice
 
-Agent harness/report lifecycle redesign, legacy migrations, audit corrections,
-and the main merge are complete and verified.
+Clean/Hexagonal/MVC boundary refactor and conservative desktop UX modernization
+are active on `refactor/clean-hex-mvc-ui-20260711`.
 
 ## Next Action
 
-Start Standard Calculation Capability Extension design using the capability
-boundary and execution order in `project_brief.md`.
+Finish full regression, structure/staged gates, macOS UI smoke, architecture
+record, commits, and branch push without merging `main`.
 
 ## Active Blockers
 
@@ -31,12 +31,14 @@ None.
 
 ## Active Constraints
 
-- Preserve formulas, config, fixtures/goldens, public results, schemas, and owners.
+- Preserve calculator numeric results, config meaning, fixtures, and goldens.
+- Public/schema changes require a concrete boundary or UX reason and the
+  smallest compatible change.
 - Keep legacy report and summary bodies byte-preserved historical evidence.
 - Do not combine documentation cleanup with unrelated source refactoring.
 - Delete tracked files only within the user-approved scope of each slice.
 - Use focused verification and staged-gate checks for the affected surface.
-- Commit and push only with explicit user approval.
+- Commit and push are approved for this branch; merging `main` is forbidden.
 
 ## Deferred / Hold
 

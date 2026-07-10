@@ -9,7 +9,7 @@ from apps.calculator.ui.scrollable_frame import mousewheel_units
 
 
 class BatchTableViewport(ttk.Frame):
-    """Canvas-backed vertical containment for a batch table grid."""
+    """Canvas-backed two-axis containment for a batch table grid."""
 
     def __init__(
         self,
@@ -20,7 +20,9 @@ class BatchTableViewport(ttk.Frame):
     ) -> None:
         super().__init__(master, name="batch_table_viewport")
         self.surface_role = "batch_table_viewport"
-        self.layout_policy = "vertical_scroll_containment"
+        self.layout_policy = "table_local_two_axis_scroll_containment"
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
         self.canvas = tk.Canvas(
             self,
             name="batch_table_viewport_canvas",
@@ -32,9 +34,23 @@ class BatchTableViewport(ttk.Frame):
             orient=tk.VERTICAL,
             command=self.canvas.yview,
         )
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.horizontal_scrollbar = ttk.Scrollbar(
+            self,
+            orient=tk.HORIZONTAL,
+            command=self.canvas.xview,
+        )
+        self.canvas.configure(
+            yscrollcommand=self.scrollbar.set,
+            xscrollcommand=self.horizontal_scrollbar.set,
+        )
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        # Keep the horizontal affordance stable. Dynamically adding/removing it
+        # from a canvas <Configure> callback makes Tk recalculate the viewport,
+        # which can oscillate forever when a batch dialog is reopened with a
+        # different row count on macOS.
+        self.horizontal_scrollbar.grid(row=1, column=0, sticky="ew")
         self._scrollbar_visible = False
+        self._horizontal_scrollbar_visible = True
         self.content = tk.Frame(
             self.canvas,
             name=content_name,
@@ -69,12 +85,34 @@ class BatchTableViewport(ttk.Frame):
                     "<Button-5>", self._on_mousewheel, add="+"
                 ),
             ),
+            (
+                "<Shift-MouseWheel>",
+                self._mousewheel_toplevel.bind(
+                    "<Shift-MouseWheel>", self._on_shift_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Shift-Button-4>",
+                self._mousewheel_toplevel.bind(
+                    "<Shift-Button-4>", self._on_shift_mousewheel, add="+"
+                ),
+            ),
+            (
+                "<Shift-Button-5>",
+                self._mousewheel_toplevel.bind(
+                    "<Shift-Button-5>", self._on_shift_mousewheel, add="+"
+                ),
+            ),
         )
         self.bind("<Destroy>", self._unbind_mousewheel, add="+")
 
     @property
     def scrollbar_visible(self) -> bool:
         return self._scrollbar_visible
+
+    @property
+    def horizontal_scrollbar_visible(self) -> bool:
+        return self._horizontal_scrollbar_visible
 
     def preferred_content_size(self) -> tuple[int, int]:
         """Return the table surface's natural size before viewport allocation."""
@@ -103,6 +141,14 @@ class BatchTableViewport(ttk.Frame):
         viewport_height = self.canvas.winfo_height()
         return max(0, content_height - viewport_height)
 
+    def horizontal_overflow_delta(self) -> int:
+        bbox = self.canvas.bbox("all")
+        if bbox is None:
+            return 0
+        content_width = bbox[2] - bbox[0]
+        viewport_width = self.canvas.winfo_width()
+        return max(0, content_width - viewport_width)
+
     def _on_content_configured(self, _event: tk.Event | None = None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         self._sync_content_width(self.canvas.winfo_width())
@@ -121,12 +167,12 @@ class BatchTableViewport(ttk.Frame):
         bbox = self.canvas.bbox("all")
         content_height = 0 if bbox is None else bbox[3] - bbox[1]
         viewport_height = self.canvas.winfo_height()
-        needed = content_height > viewport_height
-        if needed and not self._scrollbar_visible:
-            self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        vertical_needed = content_height > viewport_height
+        if vertical_needed and not self._scrollbar_visible:
+            self.scrollbar.grid(row=0, column=1, sticky="ns")
             self._scrollbar_visible = True
-        elif not needed and self._scrollbar_visible:
-            self.scrollbar.pack_forget()
+        elif not vertical_needed and self._scrollbar_visible:
+            self.scrollbar.grid_remove()
             self._scrollbar_visible = False
 
     def _unbind_mousewheel(self, _event: tk.Event | None = None) -> None:
@@ -151,4 +197,14 @@ class BatchTableViewport(ttk.Frame):
         units = mousewheel_units(event)
         if units:
             self.canvas.yview_scroll(units, "units")
+        return "break"
+
+    def _on_shift_mousewheel(self, event: tk.Event) -> str:
+        if not self._contains_widget(getattr(event, "widget", None)):
+            return ""
+        if self.horizontal_overflow_delta() <= 0:
+            return "break"
+        units = mousewheel_units(event)
+        if units:
+            self.canvas.xview_scroll(units, "units")
         return "break"

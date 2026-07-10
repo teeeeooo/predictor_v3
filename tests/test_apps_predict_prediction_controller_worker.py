@@ -3,12 +3,15 @@
 import pytest
 from PySide6.QtCore import QCoreApplication, QEventLoop, QObject, QTimer, Signal
 
+from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
+from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+from apps.predict.application.models import PredictionServiceResult
+from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.controllers.prediction_controller import PredictionController
 from apps.predict.ports.prediction_execution_port import (
     PredictionProgress,
     PredictionWorkerSummary,
 )
-from apps.predict.services.prediction_service import PredictionServiceResult
 from apps.predict.state.predict_session import PredictSession
 from core.ml.features import TARGETS
 
@@ -96,6 +99,7 @@ class FakePredictionRunner(QObject):
         self.job = None
         self.cancel_called = False
         self.is_running = False
+        self.disposed = False
 
     def start(self, job) -> None:  # noqa: ANN001
         self.job = job
@@ -162,6 +166,9 @@ class FakePredictionRunner(QObject):
             )
         )
 
+    def dispose(self) -> None:
+        self.disposed = True
+
 
 def _controller(session, service, *, auto_finish: bool = True):  # noqa: ANN001
     runners = []
@@ -171,8 +178,14 @@ def _controller(session, service, *, auto_finish: bool = True):  # noqa: ANN001
         runners.append(runner)
         return runner
 
+    usecase = PredictionUseCase(
+        session,
+        input_mapper=RowToMlInputAdapter(),
+        result_mapper=PredictionResultAdapter(),
+    )
     return PredictionController(
         session=session,
+        usecase=usecase,
         service=service,
         runner_factory=_factory,
     ), runners
@@ -182,7 +195,7 @@ def test_controller_worker_run_updates_session_rows():
     _app()
     session = _session_with_cases("3500", "3600")
     service = FakePredictionService(("complete", "complete"))
-    controller, _runners = _controller(session, service)
+    controller, runners = _controller(session, service)
     summaries = []
     progress = []
 
@@ -194,6 +207,7 @@ def test_controller_worker_run_updates_session_rows():
 
     assert [item.completed for item in progress] == [1, 2]
     assert summaries[0].complete == 2
+    assert runners[0].disposed
     assert service.calls == list(session.case_order)
     for case_id in session.case_order:
         assert session.result_for_case(case_id).status == "complete"
@@ -246,6 +260,7 @@ def test_controller_cancel_requests_worker_cancel():
     _wait_until(lambda: summaries and controller._runner is None)
 
     assert runners[0].cancel_called
+    assert runners[0].disposed
     assert summaries[0].complete == 1
     assert summaries[0].cancelled == 1
     assert service.calls == [session.case_order[0]]

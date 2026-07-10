@@ -326,14 +326,18 @@ resolver는 `calculator_id` 값으로 모듈을 명시적으로 라우팅하고,
 
 #### Calculator series reset direction (2026-05-17 결정)
 
-위 boundary는 목표 구조이며, 2026-05-17 series reset 작업에서 기존 ISO 구현은 legacy/reference로 격하되고 새 파일들이 이 책임 경계에 맞춰 재작성되고 있다.
+위 boundary는 현재 production 구조이다. 2026-05-17 series reset에서
+시작한 기존 ISO 혼재 구현의 대체가 완료되었고, 2026-07-11
+리팩터링에서 runtime inbound가 없던 legacy source/test를 퇴역했다.
 
-- 기존 혼재 구현은 `core/_legacy/calculator_iso16358_legacy.py`로 격하했다.
+- 퇴역한 혼재 ISO 구현은 production package에 남기지 않는다.
 - `core/calculators/standards/iso16358.py`는 ISO 16358 CSPF/HSPF common standard logic만 담당한다. KS / ASNZS / workbook oracle 책임은 포함하지 않는다.
 - `core/calculators/standards/ks_c9306.py`는 KS C 9306 전용 special calculator로 유지하며, `data/region_configs/korea.json`을 직접 해석한다. ISO calculator가 KS config를 대신 해석하지 않는다.
 - `core/calculators/standards/asnzs_hspf_excel.py`는 AS/NZS workbook oracle compatibility 전용 calculator로 유지한다. Current workbook HSPF/CSPF snapshot exact-match는 이 경로에서만 검증하고, historical case3 full-dump parity는 Z-phase로 유지한다.
 - `data/region_configs/`는 ISO 전용이 아닌 다중 calculator 공유 정적 standard/region config 저장소이며, 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
-- tests 정책: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator 기준으로 이전하고, diagnostic/workbook-mixed 테스트는 삭제 또는 legacy/archive로 격리한다. (자세한 실행 순서는 `docs/WORK_PLAN.md`와 `docs/REFACTOR_PLAN.md` 참조.)
+- tests 정책: active official/golden/formula/validation guard만 production
+  calculator를 방어한다. 퇴역한 implementation의 diagnostic behavior를
+  다시 고정하는 test namespace는 만들지 않는다.
 - profile / dispatcher / UI 연결은 새 calculator series boundary를 유지한 상태에서만 확장한다.
 
 ### External calculator compatibility profiles

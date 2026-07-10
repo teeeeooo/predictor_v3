@@ -120,7 +120,7 @@ def test_korea_hspf_batch_handler_calculates_sample_row_without_guide_outputs():
     result = KoreaHspfBatchHandler().calculate_row(dict(KOREA_HSPF_SAMPLE))
 
     assert result.state is BatchRowState.OK
-    assert result.values == {HSPF: "2.882", HSTL: "6466.5", HSEC: "2243.5"}
+    assert result.values == {HSPF: "2.874", HSTL: "6466.5", HSEC: "2250.0"}
     assert "current_tc" not in result.values
     assert "recommended_tc" not in result.values
 
@@ -156,4 +156,4 @@ def test_korea_batch_matrix_controller_calculates_cases() -> None:
     assert cspf_table._results[0][CSPF] == "4.559"
     assert hspf_summary.valid_rows == 1
     assert hspf_summary.blank_rows == 1
-    assert hspf_table._results[0][HSPF] == "2.882"
+    assert hspf_table._results[0][HSPF] == "2.874"

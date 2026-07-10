@@ -1,21 +1,18 @@
 # ML Feature Catalog Workflow
 
-> **Current owner boundary:** Data Definition owns schema and
-> feature-definition changes. Feature Catalog is limited to legacy
-> compatibility, read, and export behavior; canonical save is disabled by
-> default. The edit/save steps below are historical and must not guide current
-> schema changes.
+> **Current owner boundary:** Data Definition owns user-facing schema and
+> feature-definition changes. The former Train/Admin Feature Catalog UI has
+> been retired. `core/ml/feature_catalog*` and `config/ml/features.csv` remain
+> an internal ML compatibility contract for training headers, projections, and
+> model fingerprints.
 
 ## Purpose
 
-Arc 13 makes `config/ml/features.csv` the operating contract for ML feature,
-target, and one-hot feature names.
-
-Arc 13.5A adds the default Feature Catalog Manager surface: use `app_train.py`
-and the Train/Admin `Feature Catalog` tab for validation, Excel-safe export,
-allowlist-aided edits, add/duplicate/delete draft rows, Help, and canonical
-save. Direct CSV editing remains an advanced fallback for automation or
-recovery work.
+`config/ml/features.csv` remains the compatibility contract for ML feature,
+target, and one-hot feature names. Normal schema changes are made through the
+`Data Definition` tab in `app_train.py`; there is no separate Feature Catalog
+manager or canonical-save UI. Direct catalog editing is an exceptional,
+explicitly reviewed developer maintenance action.
 
 The central rule is:
 
@@ -28,28 +25,21 @@ data must use the catalog `ml_name` values directly.
 
 ## Edit Flow
 
-When adding or changing an ML feature through the Train/Admin editor:
+For normal schema/feature-definition changes:
 
-1. Open `app_train.py` and select the `Feature Catalog` tab.
-2. Review catalog and project consistency validation status.
-3. Use Help when field roles, required values, or validation errors are unclear.
-4. Use Add, Duplicate, or Delete for draft row changes. These actions update the
-   table draft only; `features.csv` changes only after Save.
-5. Use CSV export when an Excel/Numbers review copy is needed; export uses
-   UTF-8-SIG, includes current unsaved table edits, and does not mutate the
-   canonical catalog.
-6. Edit whitelisted fields in the table: `role`, `label`, `notes`, `active`,
-   `zero_fill_policy`, `source`, `mapping_key`, and `one_hot_group`.
-7. Save only after validation passes; canonical save writes
-   `config/ml/features.csv` as UTF-8 without BOM and reloads the catalog.
-8. Restart the app after saving when table schema changes need to apply to
-   already-open Predict/Train surfaces.
-9. Align the training CSV or Excel export header to the catalog `ml_name`.
-10. Run the focused catalog and ML guard tests before training.
-11. Train only after the guard tests pass.
+1. Open `app_train.py` and select the `Data Definition` tab.
+2. Review schema, projection parity, mapping requirements, and model-readiness
+   validation before editing.
+3. Use only the guarded Data Definition draft/save flow. Respect any blocked
+   field, restart-required, or retrain-required result.
+4. Stop if the change requires a `features.csv` compatibility projection write;
+   the current Data Definition writer does not own that write target.
+5. Align raw training headers to the active catalog `ml_name` contract.
+6. Run the focused catalog, Data Definition, and ML guard tests.
+7. Restart or retrain when the validated change reports that impact.
 
-When adding a new feature row outside the current editor scope, use a bounded
-developer workflow:
+If explicit maintenance of the internal compatibility catalog is approved, use
+this bounded developer workflow:
 
 1. Edit `config/ml/features.csv` directly.
 2. Add or update one row with a non-empty `ml_name`; this is the catalog row
@@ -67,12 +57,13 @@ developer workflow:
 5. Set `zero_fill_policy`.
 6. Save the file as UTF-8 comma-delimited CSV without BOM.
 7. Align the training CSV or Excel export header to the catalog `ml_name`.
-8. Run the focused catalog and ML guard tests before training.
+8. Confirm Data Definition projection parity and run the focused catalog and ML
+   guard tests before training.
 9. Train only after the guard tests pass.
 
-## User-managed Fields
+## Compatibility Catalog Fields
 
-The user-managed CSV owns:
+The internal compatibility CSV contains:
 
 - `order`
 - `ml_name`
@@ -191,8 +182,9 @@ compares that fingerprint with the current catalog.
 When reviewing with Numbers or Excel:
 
 - keep the comma delimiter;
-- prefer the Train/Admin `Feature Catalog` export, which writes UTF-8-SIG for
-  spreadsheet auto-detection;
+- use a disposable review copy if UTF-8-SIG is needed for spreadsheet
+  auto-detection; keep the canonical file UTF-8 without BOM;
+- do not expect a Train/Admin catalog import or export surface;
 - do not rename headers in the training export unless the same `ml_name` change
   is made in `features.csv`;
 - do not add visual presentation fields such as width or color.

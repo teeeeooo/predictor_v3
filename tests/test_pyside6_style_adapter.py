@@ -40,3 +40,12 @@ def test_table_group_label_stylesheet_uses_subtle_group_roles():
 
     assert "background" in sheet
     assert "border" in sheet
+
+
+def test_app_stylesheet_includes_focus_hover_and_local_scroll_affordances():
+    sheet = style.app_stylesheet()
+
+    assert "QPushButton:hover" in sheet
+    assert "QLineEdit:focus" in sheet
+    assert "QScrollBar::handle" in sheet
+    assert style.color("accent.primary") in sheet

@@ -100,6 +100,10 @@ class DataMappingController:
             dirty=snapshot.dirty,
         )
 
+    def resource_status(self) -> str:
+        """Return mapping resource availability through the service boundary."""
+        return self._service.resource_status()
+
     def edit_cell(
         self,
         group_key: str,

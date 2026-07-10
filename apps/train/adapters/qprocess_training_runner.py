@@ -8,6 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from apps.train.adapters.training_process_events import parse_training_event
+from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
     TrainingProgress,
@@ -48,13 +49,18 @@ class QProcessTrainingRunner(QObject):
         self._pending_result: TrainingResult | None = None
         self._kill_timer: QTimer | None = None
         self._temp_artifact_path: Path | None = None
+        self._callbacks: TrainingExecutionCallbacks | None = None
 
     @property
     def is_running(self) -> bool:
         """Return whether the child process is active."""
         return self._process is not None and self._process.state() != QProcess.NotRunning
 
-    def start(self, request: TrainingRequest) -> None:
+    def start(
+        self,
+        request: TrainingRequest,
+        callbacks: TrainingExecutionCallbacks | None = None,
+    ) -> None:
         """Start the child training job."""
         if self.is_running:
             raise RuntimeError("Training process already in progress.")
@@ -65,6 +71,8 @@ class QProcessTrainingRunner(QObject):
         self._stdout_buffer = ""
         self._stderr_buffer = ""
         self._temp_artifact_path = self._default_temp_artifact_path(request)
+        self._callbacks = callbacks
+        self._connect_callbacks(callbacks)
 
         process = QProcess(self)
         process.setProgram(self._python_executable)
@@ -87,6 +95,23 @@ class QProcessTrainingRunner(QObject):
         self._kill_timer.timeout.connect(self._kill_if_running)
         self._kill_timer.start(self._terminate_timeout_ms)
         return True
+
+    def dispose(self) -> None:
+        """Release Qt-owned runner resources after terminal cleanup."""
+        self._stop_kill_timer()
+        self.deleteLater()
+
+    def _connect_callbacks(
+        self,
+        callbacks: TrainingExecutionCallbacks | None,
+    ) -> None:
+        if callbacks is None:
+            return
+        self.log_event.connect(callbacks.log)
+        self.progress.connect(callbacks.progress)
+        self.finished.connect(callbacks.finished)
+        self.failed.connect(callbacks.failed)
+        self.cancelled.connect(callbacks.cancelled)
 
     def _arguments_for(self, request: TrainingRequest) -> list[str]:
         return [

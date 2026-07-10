@@ -1,5 +1,9 @@
 """Predict workspace unified case-table surface."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -11,16 +15,11 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
-from apps.predict.adapters.dropdown_option_adapter import DropdownOptionAdapter
-from apps.predict.adapters.pyside_prediction_runner import PySidePredictionRunner
-from apps.predict.controllers.input_edit_controller import InputEditController
-from apps.predict.controllers.prediction_controller import (
-    PredictionController,
-    PredictionRunSummary,
+from apps.predict.application.prediction_usecase import PredictionRunSummary
+from apps.predict.composition import (
+    PredictWorkspaceComposition,
+    build_predict_workspace_composition,
 )
-from apps.predict.controllers.table_edit_controller import TableEditController
-from apps.predict.mapping.mapping_repository import PredictMappingRepository
-from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ui.command_bar import PredictCommandBar
 from apps.predict.ui.tables.delegates import DropdownDelegate
@@ -34,6 +33,10 @@ from apps.predict.ui.status_widgets import (
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
+
+if TYPE_CHECKING:
+    from apps.predict.mapping.mapping_repository import PredictMappingRepository
+    from apps.predict.state.predict_session import PredictSession
 
 
 DEFAULT_INITIAL_ROWS = 3
@@ -50,36 +53,34 @@ class PredictWorkspace(QWidget):
         mapping_repository: PredictMappingRepository | None = None,
         show_title: bool = True,
         show_status_strip: bool = True,
+        composition: PredictWorkspaceComposition | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("PredictWorkspace")
-        self.session = session or PredictSession()
-        self.table_edit_controller = TableEditController(self.session)
-        self.table_edit_controller.ensure_initial_rows(initial_empty_rows)
-        self.mapping_repository = mapping_repository or PredictMappingRepository()
-        self.input_edit_controller = InputEditController(
-            self.session,
-            mapping_repository=self.mapping_repository,
+        if composition is not None and (session is not None or mapping_repository is not None):
+            raise ValueError(
+                "composition cannot be combined with session or mapping_repository"
+            )
+        resolved = composition or build_predict_workspace_composition(
+            session=session,
+            initial_empty_rows=initial_empty_rows,
+            mapping_repository=mapping_repository,
         )
-        self.prediction_controller = PredictionController(
-            self.session,
-            runner_factory=lambda service: PySidePredictionRunner(service=service),
-        )
+        self.session = resolved.session
+        self.table_edit_controller = resolved.table_edit_controller
+        self.mapping_repository = resolved.mapping_repository
+        self.input_edit_controller = resolved.input_edit_controller
+        self.prediction_controller = resolved.prediction_controller
+        self.dropdown_option_adapter = resolved.dropdown_option_adapter
 
         self.case_model = CaseTableModel(
             self.session,
+            columns=resolved.columns,
             edit_callback=self._handle_input_cell_edited,
         )
         self.case_table = CaseTableView(self)
         self.case_table.setModel(self.case_model)
-        self.dropdown_option_adapter = DropdownOptionAdapter(
-            self.mapping_repository,
-            self.case_model.columns,
-        )
         self._configure_tables()
-
-        self.show_title = show_title
-        self.show_status_strip = show_status_strip
 
         model_text, model_kind = model_status_badge_state(
             self.prediction_controller.model_status()
@@ -89,12 +90,12 @@ class PredictWorkspace(QWidget):
         )
         self.model_badge = StatusBadge("모델 상태", model_text, model_kind)
         self.mapping_badge = StatusBadge(
-            "mapping",
+            "데이터 매핑",
             mapping_text,
             mapping_kind,
         )
-        self.preprocess_badge = StatusBadge("preprocess", "v1.0", "ready")
-        self.schema_badge = StatusBadge("schema", "ready", "ready")
+        self.preprocess_badge = StatusBadge("전처리", "v1.0", "ready")
+        self.schema_badge = StatusBadge("입력 스키마", "준비됨", "ready")
         self.status_strip = StatusStrip(
             (self.model_badge, self.mapping_badge, self.preprocess_badge, self.schema_badge),
             self,
@@ -112,7 +113,7 @@ class PredictWorkspace(QWidget):
         self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
         self.command_bar.copy_results_button.setText("선택 복사")
 
-        table_panel = self._build_table_panel("Unified Case Table", self.case_table)
+        table_panel = self._build_table_panel("예측 케이스", self.case_table)
 
         self.status_label = QLabel()
         self.status_label.setObjectName("PredictWorkspaceStatus")
@@ -132,7 +133,7 @@ class PredictWorkspace(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         if show_title:
-            self.title_label = QLabel("HVAC V3 Predictor")
+            self.title_label = QLabel("HVAC Performance Predictor")
             self.title_label.setObjectName("PredictWorkspaceTitle")
             self.title_label.setFont(style.qfont("font.window_title"))
             title_layout = QHBoxLayout()

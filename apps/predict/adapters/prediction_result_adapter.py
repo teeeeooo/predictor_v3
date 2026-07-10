@@ -3,6 +3,7 @@
 from math import isfinite
 from typing import Any
 
+from apps.predict.application.models import PredictionServiceResult
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_result_column_schema,
@@ -20,7 +21,7 @@ class PredictionResultAdapter:
             column.ml_target: column.key for column in self._columns if column.ml_target
         }
 
-    def from_service_result(self, result: Any) -> ResultRow:
+    def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
         """Convert one service result into a ResultRow."""
         if result.status != "complete":
             return ResultRow(
@@ -92,6 +93,6 @@ class PredictionResultAdapter:
         return first_line[:160]
 
 
-def apply_prediction_result(result: Any) -> ResultRow:
+def apply_prediction_result(result: PredictionServiceResult) -> ResultRow:
     """Convert one prediction service result with the default adapter."""
     return PredictionResultAdapter().from_service_result(result)

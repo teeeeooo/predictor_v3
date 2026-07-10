@@ -258,5 +258,10 @@ def test_calculator_app_registers_ahri_metric_tabs(tk_root) -> None:
         for tab_id in app.ahri210240_tab.metric_notebook.tabs()
     ]
 
-    assert tab_names == ["ISO 16358", "EN14825", "AHRI 210/240"]
+    assert tab_names == [
+        "ISO 16358",
+        "EN14825",
+        "AHRI 210/240",
+        "KS C 9306",
+    ]
     assert metric_names == ["SEER2", "HSPF2"]

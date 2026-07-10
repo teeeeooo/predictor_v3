@@ -1,9 +1,12 @@
 """Convert Predict session rows into core predictor inputs."""
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
 from typing import Any
 
+from apps.predict.application.models import (
+    PredictionInputOutcome,
+    PredictionInputRequest,
+)
 from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_input_column_schema,
@@ -11,30 +14,6 @@ from apps.predict.schema.column_schema_adapter import (
 from apps.predict.state.case_row import CaseRow
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 from core.ml.feature_catalog_projection import one_hot_group
-
-
-@dataclass(frozen=True)
-class PredictionInputRequest:
-    """Validated input for one core prediction call."""
-
-    case_id: str
-    row_input: dict[str, Any]
-
-
-@dataclass(frozen=True)
-class RowInputOutcome:
-    """Adapter outcome for one case row."""
-
-    case_id: str
-    request: PredictionInputRequest | None = None
-    errors: tuple[str, ...] = ()
-    warnings: tuple[str, ...] = field(default_factory=tuple)
-
-    @property
-    def is_valid(self) -> bool:
-        """Return whether this row can be sent to prediction service."""
-        return self.request is not None and not self.errors
-
 
 class RowToMlInputAdapter:
     """Build core predictor input dictionaries without importing Qt."""
@@ -56,7 +35,7 @@ class RowToMlInputAdapter:
             else self._load_default_one_hot_groups()
         )
 
-    def build_request(self, case: CaseRow) -> RowInputOutcome:
+    def build_request(self, case: CaseRow) -> PredictionInputOutcome:
         """Return a structured request or row-level validation errors."""
         errors: list[str] = []
         warnings: list[str] = []
@@ -88,18 +67,18 @@ class RowToMlInputAdapter:
             )
 
         if errors:
-            return RowInputOutcome(
+            return PredictionInputOutcome(
                 case_id=case.case_id,
                 errors=tuple(errors),
                 warnings=tuple(warnings),
             )
-        return RowInputOutcome(
+        return PredictionInputOutcome(
             case_id=case.case_id,
             request=PredictionInputRequest(case_id=case.case_id, row_input=row_input),
             warnings=tuple(warnings),
         )
 
-    def build_requests(self, cases: list[CaseRow]) -> list[RowInputOutcome]:
+    def build_requests(self, cases: list[CaseRow]) -> list[PredictionInputOutcome]:
         """Build request outcomes for several case rows."""
         return [self.build_request(case) for case in cases]
 
@@ -160,6 +139,6 @@ class RowToMlInputAdapter:
             return None
 
 
-def build_prediction_input_request(case: CaseRow) -> RowInputOutcome:
+def build_prediction_input_request(case: CaseRow) -> PredictionInputOutcome:
     """Build one prediction input request with the default adapter."""
     return RowToMlInputAdapter().build_request(case)

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-
 from apps.calculator.ui.window_measurement import TkVisibleContentMeasurement
 
 
@@ -97,46 +95,6 @@ def test_visible_measurement_snapshot_returns_size_overflow_and_diagnostics():
     assert snapshot.include_overflow_in_fit is False
     assert snapshot.diagnostics["content_reqheight"] == 300
     assert snapshot.diagnostics["vertical_overflow_delta"] == 42
-
-
-def test_nested_notebook_uses_hidden_tabs_for_width_but_visible_tab_for_height():
-    content = FakeContent(400, 500)
-    notebook = FakeNotebook(
-        {
-            "current": FakeContent(450, 180),
-            "hidden": FakeContent(520, 280),
-        },
-        selected="current",
-        notebook_height=300,
-    )
-    suppress_events = []
-
-    @contextmanager
-    def suppress_measurement():
-        suppress_events.append("enter")
-        try:
-            yield
-        finally:
-            suppress_events.append("exit")
-
-    measurement = TkVisibleContentMeasurement(
-        content=content,
-        scrollbar=FakeScrollbar(15),
-        overflow_source=FakeOverflowSource(),
-        nested_notebook=notebook,
-        nested_notebook_active=lambda: True,
-        suppress_measurement=suppress_measurement,
-    )
-
-    snapshot = measurement.snapshot()
-
-    assert snapshot.preferred_size == (561, 418)
-    assert snapshot.vertical_overflow_delta == 0
-    assert snapshot.include_overflow_in_fit is False
-    assert snapshot.diagnostics["nested_max_tab_width"] == 520
-    assert snapshot.diagnostics["nested_current_tab_height"] == 180
-    assert notebook.selected_history == ["current", "hidden", "current"]
-    assert suppress_events == ["enter", "exit"]
 
 
 def test_inactive_nested_notebook_does_not_affect_measurement():

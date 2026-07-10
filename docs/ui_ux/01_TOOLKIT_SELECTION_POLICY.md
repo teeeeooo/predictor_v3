@@ -16,9 +16,9 @@
 - **New** desktop UI with editable, table-heavy screens uses the approved
   toolkit for that application. If no project-specific design gate exists,
   **legacy Qt binding** remains the historical default.
-- `predictor_v3` Train/Predict is an approved exception: new Train/Predict UI
-  work targets PySide6 under `apps/predict/` and `apps/train/`, while legacy
-  legacy Qt binding `ui/` code remains reference-only until a later retirement slice.
+- `predictor_v3` Train/Predict is an approved exception: current Train/Predict
+  UI targets PySide6 under `apps/predict/` and `apps/train/`; the former legacy
+  Qt `ui/` path is retired and must not be restored as a production dependency.
 - **Existing** Tkinter apps stay on Tkinter and follow
   `adapters/TKINTER_TABLE_ADAPTER.md` for table-shaped surfaces.
 - Within a single application, do **not** mix Tkinter and legacy Qt binding

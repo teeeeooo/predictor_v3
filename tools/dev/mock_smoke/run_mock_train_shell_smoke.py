@@ -15,7 +15,9 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton  # noqa: E402
 
 from apps.predict.ui.workspace import PredictWorkspace  # noqa: E402
-from apps.train.ui.shell import TrainShell  # noqa: E402
+from apps.train.app import create_shell  # noqa: E402
+from apps.train.ui.data_definition_panel import DataDefinitionPanel  # noqa: E402
+from apps.train.ui.data_mapping_panel import DataMappingPanel  # noqa: E402
 from tools.dev.mock_smoke.generators import (  # noqa: E402
     cleanup_from_manifest,
     generate_mock_smoke_bundle,
@@ -43,18 +45,26 @@ def main() -> int:
         force=args.force,
     )
     app = QApplication.instance() or QApplication([])
-    shell = TrainShell()
+    shell = create_shell()
     app.processEvents()
     tabs = [shell.tabs.tabText(index) for index in range(shell.tabs.count())]
-    expected = ["Predict", "Train / Model", "Data Mapping", "Feature Catalog"]
+    expected = ["Predict", "Train / Model", "Data Definition", "Data Mapping"]
     if tabs != expected:
         raise RuntimeError(f"unexpected Train tabs: {tabs}")
     if not isinstance(shell.tabs.widget(0), PredictWorkspace):
         raise RuntimeError("Predict tab is not an embedded PredictWorkspace")
     if shell.tabs.widget(0).title_label is not None:
         raise RuntimeError("embedded Predict workspace title is visible")
+    if not isinstance(shell.tabs.widget(2), DataDefinitionPanel):
+        raise RuntimeError("Data Definition tab is not the current manager surface")
+    if not isinstance(shell.tabs.widget(3), DataMappingPanel):
+        raise RuntimeError("Data Mapping tab is not the current manager surface")
     status_text = "\n".join(label.text() for label in shell.findChildren(QLabel))
-    for expected_text in ("model.pkl loaded", "학습 데이터: found", "mapping: loaded"):
+    for expected_text in (
+        "model.pkl 로드됨",
+        "학습 데이터: 확인됨",
+        "데이터 매핑: 로드됨",
+    ):
         if expected_text not in status_text:
             raise RuntimeError(f"Train status strip missing: {expected_text}")
     train_buttons = {
@@ -64,14 +74,21 @@ def main() -> int:
     for text in ("학습 데이터 선택", "학습 실행"):
         if not train_buttons[text].isEnabled():
             raise RuntimeError(f"Train control is disabled: {text}")
-    for text in ("중지", "모델 열기", "로그 저장"):
-        if train_buttons[text].isEnabled():
-            raise RuntimeError(f"Train control should be disabled: {text}")
-    for button in shell.tabs.widget(2).findChildren(QPushButton):
-        if button.isEnabled():
-            raise RuntimeError(f"deferred Data Mapping button is enabled: {button.text()}")
-    print("train shell smoke: tabs/status/train controls/data mapping deferred OK")
-    print("trainer execution: controller-ready")
+    if train_buttons["중지"].isEnabled():
+        raise RuntimeError("Train stop control should be disabled while idle")
+    if set(train_buttons) != {"학습 데이터 선택", "학습 실행", "중지"}:
+        raise RuntimeError(f"unexpected Train controls: {sorted(train_buttons)}")
+    mapping_buttons = {
+        button.text(): button
+        for button in shell.tabs.widget(3).findChildren(QPushButton)
+    }
+    if "Import" in mapping_buttons:
+        raise RuntimeError("removed Data Mapping Import placeholder is visible")
+    for text in ("Refresh", "Add Row", "Export", "Reload"):
+        if not mapping_buttons[text].isEnabled():
+            raise RuntimeError(f"Data Mapping control is disabled: {text}")
+    print("train shell smoke: tabs/status/active controls OK")
+    print("trainer execution: production adapter composed")
     if args.cleanup:
         removed = cleanup_from_manifest(
             paths["manifest"],

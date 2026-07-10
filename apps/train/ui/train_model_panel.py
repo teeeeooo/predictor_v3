@@ -87,19 +87,13 @@ class TrainModelPanel(QWidget):
         self.select_button = _command_button("학습 데이터 선택")
         self.run_button = _command_button("학습 실행", primary=True)
         self.cancel_button = _command_button("중지")
-        self.open_model_button = _command_button("모델 열기")
-        self.save_log_button = _command_button("로그 저장")
         self.select_button.clicked.connect(self._select_training_data)
         self.run_button.clicked.connect(self._run_training)
         self.cancel_button.clicked.connect(self._cancel_training)
-        self.open_model_button.setEnabled(False)
-        self.save_log_button.setEnabled(False)
         for button in (
             self.select_button,
             self.run_button,
             self.cancel_button,
-            self.open_model_button,
-            self.save_log_button,
         ):
             layout.addWidget(button)
         layout.addStretch(1)
@@ -264,7 +258,11 @@ class TrainModelPanel(QWidget):
 
     def _update_control_state(self) -> None:
         running = self.training_controller.is_running
-        data_exists = Path(self.data_path_line.text()).exists()
+        resources = self.training_controller.resource_status(
+            self.data_path_line.text(),
+            self.model_path_line.text(),
+        )
+        data_exists = resources.data_status == "exists"
         self.run_button.setEnabled(data_exists and not running)
         self.cancel_button.setEnabled(running)
         self.select_button.setEnabled(not running)

@@ -34,7 +34,7 @@ def test_calculator_app_registers_korea_top_level_tab(tk_root) -> None:
         "ISO 16358",
         "EN14825",
         "AHRI 210/240",
-        "KOREA",
+        "KS C 9306",
     ]
     assert app.korea_tab.master is app.notebook
 

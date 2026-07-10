@@ -65,23 +65,23 @@ class StatusStrip(QFrame):
 def model_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
     """Return badge text/kind for PredictionModelStatus-like objects."""
     if status.status == "loaded":
-        return "model.pkl loaded", "ready"
+        return "model.pkl 로드됨", "ready"
     if status.status == "exists":
-        return "model.pkl exists", "ready"
+        return "model.pkl 사용 가능", "ready"
     if status.status == "load-error":
-        return "model load error", "error"
-    return "model.pkl missing", "missing"
+        return "모델 로드 오류", "error"
+    return "model.pkl 없음", "missing"
 
 
 def mapping_status_badge_state(status) -> tuple[str, str]:  # noqa: ANN001
     """Return badge text/kind for MappingResourceStatus-like objects."""
     if status.status == "loaded":
-        return "loaded", "ready"
+        return "로드됨", "ready"
     if status.status == "exists":
-        return "available", "ready"
+        return "사용 가능", "ready"
     if status.status == "invalid":
-        return "invalid", "error"
-    return "missing", "missing"
+        return "유효하지 않음", "error"
+    return "없음", "missing"
 
 
 def prediction_summary_text(summary) -> str:  # noqa: ANN001

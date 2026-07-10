@@ -59,6 +59,9 @@ def app_stylesheet() -> str:
         color: {color("text.default")};
         font-size: {visual_font("font.body")["size"]}pt;
     }}
+    QMainWindow, QDialog, QScrollArea, QScrollArea > QWidget > QWidget {{
+        background: {color("surface.default")};
+    }}
     QFrame#Panel, QWidget#Panel {{
         background: {color("surface.panel")};
         border: 1px solid {color("border.default")};
@@ -71,18 +74,27 @@ def app_stylesheet() -> str:
     QTabWidget::pane {{
         border: 1px solid {color("border.default")};
         background: {color("surface.panel")};
-        top: -1px;
+        border-radius: {radius("radius.panel")}px;
+        top: -2px;
     }}
     QTabBar::tab {{
         background: {color("surface.header")};
         border: 1px solid {color("border.default")};
-        padding: {spacing("space.sm")}px {spacing("space.lg")}px;
-        min-width: 112px;
+        padding: {spacing("space.sm")}px {spacing("space.md")}px;
+        min-width: 104px;
+        margin-right: {spacing("space.xs")}px;
+        border-top-left-radius: {radius("radius.cell")}px;
+        border-top-right-radius: {radius("radius.cell")}px;
     }}
     QTabBar::tab:selected {{
         background: {color("surface.panel")};
         color: {color("accent.primary")};
         font-weight: 700;
+        border-bottom-color: {color("surface.panel")};
+    }}
+    QTabBar::tab:hover:!selected {{
+        color: {color("text.default")};
+        border-color: {color("border.focus")};
     }}
     QTableView, QTableWidget {{
         background: {color("surface.panel")};
@@ -107,8 +119,16 @@ def app_stylesheet() -> str:
         background: {color("surface.panel")};
         border: 1px solid {color("border.default")};
         border-radius: {radius("radius.cell")}px;
-        padding: {spacing("space.xs")}px {spacing("space.sm")}px;
-        min-height: 28px;
+        padding: {spacing("space.xs")}px {spacing("space.md")}px;
+        min-height: 30px;
+    }}
+    QPushButton:hover:!disabled {{
+        border-color: {color("accent.primary")};
+        color: {color("accent.primary")};
+        background: {color("surface.header")};
+    }}
+    QPushButton:focus {{
+        border: 2px solid {color("border.focus")};
     }}
     QPushButton:disabled {{
         color: {color("text.disabled")};
@@ -117,19 +137,27 @@ def app_stylesheet() -> str:
     QPushButton#PrimaryButton {{
         background: {color("accent.primary")};
         border-color: {color("accent.primary")};
-        color: #FFFFFF;
+        color: {color("text.on_accent")};
         font-weight: 700;
+    }}
+    QPushButton#PrimaryButton:hover:!disabled {{
+        background: {color("status.ready")};
+        color: {color("text.on_accent")};
     }}
     QPushButton#PrimaryButton:disabled {{
         color: {color("text.disabled")};
         background: {color("table.fixed")};
         border-color: {color("border.default")};
     }}
-    QLineEdit, QTextEdit {{
+    QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
         background: {color("surface.panel")};
         border: 1px solid {color("border.default")};
         border-radius: {radius("radius.cell")}px;
         padding: {spacing("space.xs")}px;
+    }}
+    QLineEdit:focus, QTextEdit:focus, QComboBox:focus,
+    QSpinBox:focus, QDoubleSpinBox:focus {{
+        border: 2px solid {color("border.focus")};
     }}
     QLineEdit:read-only, QTextEdit:read-only {{
         background: {color("surface.header")};
@@ -146,6 +174,30 @@ def app_stylesheet() -> str:
     QProgressBar::chunk {{
         background: {color("accent.primary")};
         border-radius: {radius("radius.cell")}px;
+    }}
+    QToolTip {{
+        background: {color("surface.panel")};
+        color: {color("text.default")};
+        border: 1px solid {color("border.default")};
+        padding: {spacing("space.xs")}px;
+    }}
+    QScrollBar:vertical, QScrollBar:horizontal {{
+        background: {color("surface.default")};
+        border: 0;
+        margin: 0;
+    }}
+    QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{
+        background: {color("border.default")};
+        border-radius: {radius("radius.cell")}px;
+        min-height: 28px;
+        min-width: 28px;
+    }}
+    QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {{
+        background: {color("text.disabled")};
+    }}
+    QScrollBar::add-line, QScrollBar::sub-line {{
+        width: 0;
+        height: 0;
     }}
     """
 

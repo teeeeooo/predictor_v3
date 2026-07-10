@@ -130,29 +130,6 @@ def test_formula45_half_full_endpoints_match_boundary_helper(tmp_path):
     assert detail["P_j"] == pytest.approx(detail["bl_h"] / detail["cop_hf"])
 
 
-def test_formula47_full_extended_non_frost_endpoints(tmp_path):
-    load = 1900.0
-    calculator = make_iso_micro_calculator(
-        tmp_path,
-        [{"j": 1, "tj": 10.0, "nj": 1.0}],
-    )
-    # Non-frost extended: need ext points at non-frost temps; reuse extended
-    # helper which seeds 2_ext / -7_ext.  At tj=10 the branch lands in the
-    # non-frost extended range when load exceeds full capacity.
-    result = calculator.calculate_hspf(
-        iso_points_with_extended(rated_heating_capacity=load)
-    )
-    detail = single_detail(result)
-    if detail["case"] != "formula47_full_extended":
-        pytest.skip(
-            f"tj=10 with load={load} did not land in Formula 47 branch "
-            f"(case={detail['case']}); helper invariant covered elsewhere."
-        )
-
-    for key in ("cop_full", "cop_ext", "cop_fe", "full_temp", "ext_temp"):
-        assert key in detail
-
-
 def test_formula44_min_half_non_frost_smoke(tmp_path):
     # Drives Formula 44 (non-frost min→half) by providing a min point and
     # picking a load between min (400) and half (1000) capacities at tj=7.

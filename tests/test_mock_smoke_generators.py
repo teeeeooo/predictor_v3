@@ -328,8 +328,8 @@ def test_train_shell_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
         text=True,
     )
 
-    assert "train shell smoke: tabs/status/train controls/data mapping deferred OK" in result.stdout
-    assert "trainer execution: controller-ready" in result.stdout
+    assert "train shell smoke: tabs/status/active controls OK" in result.stdout
+    assert "trainer execution: production adapter composed" in result.stdout
     assert not (tmp_path / MANIFEST_NAME).exists()
 
 

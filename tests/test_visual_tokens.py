@@ -16,6 +16,7 @@ REQUIRED_COLOR_ROLES = {
     "surface.panel",
     "text.default",
     "text.disabled",
+    "text.on_accent",
     "text.muted",
     "border.default",
     "border.focus",

@@ -15,8 +15,6 @@ from core.data_definition.validation import (
 )
 from core.ml.feature_catalog import load_feature_catalog
 from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
-from core.predictor_schema.catalog_v2_projection import load_projected_columns_v2
-from core.predictor_schema.columns import COLUMNS
 
 EXPECTED_DERIVED_FEATURES = (
     "Cool_Capa_per_EER",
@@ -209,10 +207,6 @@ def test_data_definition_validates_one_hot_selector_and_emitted_feature_parity()
     assert relationships["expansion_device"].emitted_ml_names == ("EEV", "Capi")
     assert relationships["expansion_device"].catalog_ml_names == ("EEV", "Capi")
     assert not [issue for issue in report.issues if issue.code.startswith("one_hot")]
-
-
-def test_data_definition_does_not_switch_runtime_projection_owner():
-    assert COLUMNS == load_projected_columns_v2()
 
 
 def _readiness_by_name(readiness):

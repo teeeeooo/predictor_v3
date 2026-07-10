@@ -17,10 +17,12 @@ class _FakeWidget:
 
 
 class _FakeCanvas:
-    def __init__(self, *, bbox=(0, 0, 100, 200), height=50):
+    def __init__(self, *, bbox=(0, 0, 100, 200), width=100, height=50):
         self._bbox = bbox
+        self._width = width
         self._height = height
         self.scroll_calls = []
+        self.horizontal_scroll_calls = []
         self.itemconfigure_calls = []
 
     def bbox(self, _tag):
@@ -29,8 +31,14 @@ class _FakeCanvas:
     def winfo_height(self):
         return self._height
 
+    def winfo_width(self):
+        return self._width
+
     def yview_scroll(self, units, mode):
         self.scroll_calls.append((units, mode))
+
+    def xview_scroll(self, units, mode):
+        self.horizontal_scroll_calls.append((units, mode))
 
     def itemconfigure(self, item, **kwargs):
         self.itemconfigure_calls.append((item, kwargs))
@@ -44,9 +52,9 @@ class _FakeToplevel:
         self.unbind_calls.append((sequence, funcid))
 
 
-def _make_viewport(*, bbox=(0, 0, 100, 200), height=50):
+def _make_viewport(*, bbox=(0, 0, 100, 200), width=100, height=50):
     viewport = object.__new__(BatchTableViewport)
-    viewport.canvas = _FakeCanvas(bbox=bbox, height=height)
+    viewport.canvas = _FakeCanvas(bbox=bbox, width=width, height=height)
     viewport.content = _FakeWidget(master=viewport)
     viewport._content_window = "content-window"
     viewport._mousewheel_toplevel = _FakeToplevel()
@@ -54,6 +62,9 @@ def _make_viewport(*, bbox=(0, 0, 100, 200), height=50):
         ("<MouseWheel>", "mousewheel-id"),
         ("<Button-4>", "button4-id"),
         ("<Button-5>", "button5-id"),
+        ("<Shift-MouseWheel>", "shift-mousewheel-id"),
+        ("<Shift-Button-4>", "shift-button4-id"),
+        ("<Shift-Button-5>", "shift-button5-id"),
     )
     return viewport
 
@@ -115,6 +126,30 @@ def test_batch_table_viewport_reports_overflow_delta_from_canvas_bbox():
     assert viewport.vertical_overflow_delta() == 0
 
 
+def test_batch_table_viewport_reports_and_routes_horizontal_overflow():
+    viewport = _make_viewport(bbox=(0, 0, 640, 200), width=320, height=200)
+    entry = _FakeWidget(master=viewport.content)
+    event = type("Event", (), {"widget": entry, "delta": -1})()
+
+    assert viewport.horizontal_overflow_delta() == 320
+    assert viewport._on_shift_mousewheel(event) == "break"
+    assert viewport.canvas.horizontal_scroll_calls == [(1, "units")]
+
+
+def test_batch_table_viewport_keeps_horizontal_wheel_local():
+    viewport = _make_viewport(bbox=(0, 0, 100, 50), width=100, height=50)
+    internal = _FakeWidget(master=viewport.content)
+    external = _FakeWidget()
+
+    assert viewport._on_shift_mousewheel(
+        type("Event", (), {"widget": external, "delta": -1})()
+    ) == ""
+    assert viewport._on_shift_mousewheel(
+        type("Event", (), {"widget": internal, "delta": -1})()
+    ) == "break"
+    assert viewport.canvas.horizontal_scroll_calls == []
+
+
 def test_batch_table_viewport_unbinds_only_on_own_destroy_event():
     viewport = _make_viewport()
     child_event = type("Event", (), {"widget": viewport.content})()
@@ -132,4 +167,7 @@ def test_batch_table_viewport_unbinds_only_on_own_destroy_event():
         ("<MouseWheel>", "mousewheel-id"),
         ("<Button-4>", "button4-id"),
         ("<Button-5>", "button5-id"),
+        ("<Shift-MouseWheel>", "shift-mousewheel-id"),
+        ("<Shift-Button-4>", "shift-button4-id"),
+        ("<Shift-Button-5>", "shift-button5-id"),
     ]

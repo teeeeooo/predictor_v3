@@ -9,7 +9,8 @@ invariants, resume points, repeated errors, and open questions.
 ## Source Coverage
 
 Active entries draw from owner docs, project-log evidence, durable result
-records, and pre-cutover summaries through the Arc 15 closeout. Retired,
+records, and pre-cutover summaries through the clean/hexagonal desktop
+refactor. Retired,
 superseded, and resolved entries remain preserved with source traces under
 `result_reports/memory/archive/`.
 
@@ -72,17 +73,20 @@ entries:
 
   - type: decision
     topic: window viewport and result-detail surface policy
-    content: Calculator UI density may use metric sub-tabs inside standard tabs. Window/refit behavior preserves monitor/x placement, caps automatic height, uses scrollable overflow, avoids hidden-tab selection side effects, and routes detail/nested/profile refits through shared lifecycle helpers. Detail surfaces use schema-driven panels, header-included TSV copy, CSV export where appropriate, outdoor-temperature graph axes when available, and natural BatchMatrix sizing rather than fixed geometry.
+    content: Calculator startup is hidden-first and settles geometry before the first show. Main content and batch tables use scrollable overflow, including horizontal batch scrolling and Shift+wheel, while parent-centered dialogs preserve off-primary monitor coordinates. Qt Train/Predict shells share an available-screen policy that caps and centers initial size without assuming the primary display. Detail surfaces continue to use schema-driven panels, header-included TSV copy, CSV export where appropriate, and natural BatchMatrix sizing rather than fixed geometry.
     keywords:
       - predictor_v3
       - Tkinter calculator
       - viewport
+      - horizontal scroll
+      - multi-monitor
+      - window policy
       - detail panel
       - BinDetailSchema
       - BatchMatrixTable
       - natural sizing
     assertionStatus: verified
-    source: consolidated from result_reports/legacy/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md, 195_summary-tkinter-detail-panel-copy-graph-arc.md, 200_summary-window-geometry-viewport-ui-pivot-prep-arc.md, 221_summary-post-main-table-window-refit-arc.md, 249_summary-batch-two-row-matrix-and-reference-parity-arc.md, 260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md, 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md, and 480_summary-calculator-closeout-token-cleanup-structure-audit.md
+    source: consolidated from result_reports/legacy/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md, 195_summary-tkinter-detail-panel-copy-graph-arc.md, 200_summary-window-geometry-viewport-ui-pivot-prep-arc.md, 221_summary-post-main-table-window-refit-arc.md, 249_summary-batch-two-row-matrix-and-reference-parity-arc.md, 260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md, 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md, and 480_summary-calculator-closeout-token-cleanup-structure-audit.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
 
   - type: decision
     topic: calculator standard and config ownership
@@ -190,7 +194,7 @@ entries:
 
   - type: decision
     topic: Predict Train execution boundary
-    content: Predict/Train execution keeps UI/runtime-neutral usecases and execution ports separate from PySide adapters. Arc 9.5 accepted the unified case table direction; Arc 10 put prediction behind worker/progress/cancel boundaries; Arc 11 corrected Train execution through a killable process runner adapter and Predict execution through an isolated runner lifecycle.
+    content: Predict and Train build runtime-neutral DTOs, usecases, and execution ports in explicit composition roots, then inject concrete PySide runners. Controllers do not import concrete adapters or own toolkit lifecycle. Predict retains the unified case table and worker/progress/cancel boundary; the Train QProcess adapter owns process signals, cancellation, and cleanup. app_train.py and app_predict.py remain separate thin entrypoints.
     keywords:
       - predictor_v3
       - Predict execution
@@ -199,7 +203,7 @@ entries:
       - worker progress
       - hexagonal boundary
     assertionStatus: verified
-    source: consolidated from result_reports/legacy/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md, 602_summary-arc10-arc11-worker-train-execution-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md
+    source: consolidated from result_reports/legacy/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md, 602_summary-arc10-arc11-worker-train-execution-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
 
   - type: decision
     topic: Arc 13 ML feature catalog closeout
@@ -215,30 +219,18 @@ entries:
     source: result_reports/legacy/summaries/633_summary-arc13-feature-catalog-closeout.md
 
   - type: decision
-    topic: Arc 13.5 feature catalog editor direction
-    content: Arc 13.5 should make app_train.py the default Feature Catalog viewer/editor workflow. config/ml/features.csv remains the storage and contract file. Direct CSV editing in Excel or Numbers is not the default user workflow; export design should evaluate an Excel/Numbers-friendly encoding policy such as UTF-8-SIG.
+    topic: ML feature catalog compatibility boundary
+    content: config/ml/features.csv and core/ml/feature_catalog remain the ML feature/target/one-hot compatibility contract. The superseded Arc 13.5 Qt Feature Catalog Manager UI is retired because Arc 15 Data Definition is the active Train/Admin schema surface. No ML capability was added; catalog fingerprint and fixed-artifact numeric compatibility guards remain required for future ML contract changes.
     keywords:
       - predictor_v3
-      - Arc 13.5
-      - Feature Catalog
-      - app_train.py
+      - ML feature catalog
+      - Feature Catalog UI retired
+      - Data Definition
       - features.csv
-      - UTF-8-SIG
-    assertionStatus: verified
-    source: project_log.md 2026-07-01 Arc 13.5 feature catalog editor direction; result_reports/legacy/archive/635_planning-doc-sync-arc13-5-feature-catalog-editor.md
-
-  - type: decision
-    topic: Arc 13.5A Feature Catalog Manager closeout
-    content: Arc 13.5A completed the Feature Catalog Manager correction. app_train.py is the normal GUI manager for validation, Excel-safe export, whitelisted edits, draft row actions, help, validation-gated save, and restart-required schema apply messaging. The model artifact fingerprint is scoped to active-row ML contract fields ml_name, role, one_hot_group, and zero_fill_policy; active changes compatibility by row inclusion/exclusion, while label, notes, order, ui_key, source, and mapping_key do not affect model artifact compatibility.
-    keywords:
-      - predictor_v3
-      - Arc 13.5A
-      - Feature Catalog Manager
-      - app_train.py
       - catalog fingerprint
       - model compatibility
     assertionStatus: verified
-    source: result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md
+    source: result_reports/legacy/summaries/633_summary-arc13-feature-catalog-closeout.md; result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
 
   - type: decision
     topic: Arc 13.5R Predict Schema Catalog v2 owner switch
@@ -362,7 +354,7 @@ entries:
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
-    content: Data Definition is now the Train/Admin schema and feature-definition owner for the Arc 15 foundation. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition, Feature Catalog is a legacy compatibility surface with canonical default features.csv save blocked, and readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
+    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
     keywords:
       - predictor_v3
       - Arc 15
@@ -373,7 +365,7 @@ entries:
       - readiness
       - schema writer
     assertionStatus: verified
-    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md
+    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
 ```
 
 ## Known Gaps

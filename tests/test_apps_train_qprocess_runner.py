@@ -7,6 +7,10 @@ from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtWidgets import QApplication
 
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
+from apps.train.ports.training_execution_port import (
+    TrainingExecutionCallbacks,
+    TrainingExecutionPort,
+)
 from apps.train.state.training_run_state import TrainingRequest
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
@@ -53,9 +57,16 @@ def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path):
     finished = []
     progress = []
 
-    runner.progress.connect(progress.append)
-    runner.finished.connect(finished.append)
-    runner.start(request)
+    runner.start(
+        request,
+        TrainingExecutionCallbacks(
+            log=lambda _event: None,
+            progress=progress.append,
+            finished=finished.append,
+            failed=lambda _result: None,
+            cancelled=lambda _result: None,
+        ),
+    )
 
     _wait_until(lambda: finished and not runner.is_running)
 
@@ -63,6 +74,7 @@ def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path):
     assert Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
     assert progress[-1].completed == progress[-1].total
+    assert isinstance(runner, TrainingExecutionPort)
 
 
 def test_qprocess_runner_cancel_kills_hanging_process_and_removes_temp(tmp_path):

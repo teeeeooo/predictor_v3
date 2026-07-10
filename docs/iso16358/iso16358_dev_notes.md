@@ -165,14 +165,14 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 
 | Test type | Purpose | Required cases |
 | --- | --- | --- |
-| HSPF golden | official/sample HSPF fixture가 유지되는지 확인한다. | `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py` |
+| HSPF golden | official/sample HSPF fixture가 유지되는지 확인한다. | `tests/test_iso16358_hspf_official_exact_golden.py` |
 | HSPF validation | required point, load_line schema, fallback 정책을 검증한다. | `tests/test_iso16358_hspf_validation.py` |
 | HSPF smoke | generic/variable path와 aux_cop denominator 처리를 빠르게 확인한다. | `tests/test_iso16358_hspf_smoke.py` |
 | Korea CSPF regression | KS CSPF `6.504`가 유지되는지 확인한다. | one-liner 또는 golden fixture |
 | compile check | syntax regression을 확인한다. | `python3 -B -m py_compile core/calculators/standards/iso16358.py` |
 | JSON validation | production region config가 유효한 JSON인지 확인한다. | `python3 -B -m json.tool data/region_configs/korea.json` |
-| CSPF profile resolver | `cspf_test_profile`의 measured/default/not_used point resolution을 검증한다. | `tests/test_iso16358_cspf_profile_resolver.py` |
-| CSPF profile calculation | profile path가 legacy ISO T1 default path와 parity를 유지하는지 검증한다. | `tests/test_iso16358_cspf_profile_calculation.py` |
+| CSPF profile resolver | T1/T3 profile의 measured/default/not_used point resolution을 검증한다. | `tests/test_iso16358_cspf_iso_t1_default_golden.py`, `tests/test_iso16358_cspf_t3_profile.py` |
+| CSPF profile calculation | active profile path의 고정 결과와 branch를 검증한다. | `tests/test_iso16358_cspf_iso_t1_default_golden.py` |
 | SASO T3 golden | T3 piecewise boundary EER, min-half/half-full bracket, `46_full` load line을 검증한다. | `tests/test_iso16358_cspf_saso_t3_regression.py` |
 | Hong Kong CSPF golden | declared/rated full capacity load anchor와 measured performance curve 분리 동작을 검증한다. | `tests/test_iso16358_cspf_hong_kong_config.py` |
 

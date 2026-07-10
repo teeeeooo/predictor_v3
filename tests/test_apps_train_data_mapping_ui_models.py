@@ -139,18 +139,12 @@ def test_data_mapping_panel_builds_editable_manager_surface():
         assert panel._buttons["delete_row"].isEnabled()
         assert panel._buttons["export_csv_v2"].isEnabled()
         assert not panel._buttons["save_mapping_json"].isEnabled()
-        assert not panel._buttons["import_csv_v2"].isEnabled()
         assert panel._buttons["reload_runtime"].isEnabled()
-        assert (
-            panel._buttons["import_csv_v2"].toolTip()
-            == "Import is not supported. Edit mappings in this screen."
-        )
         assert "read-only review snapshot" in panel._buttons["export_csv_v2"].toolTip()
         assert [button.text() for button in panel._buttons.values()] == [
             "Add Row",
             "Duplicate",
             "Delete",
-            "Import",
             "Export",
             "Save",
             "Reload",

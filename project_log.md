@@ -29,6 +29,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-11 — Clean/hexagonal desktop refactor
+
+### Decision
+
+- Preserve calculator and fixed-artifact ML numeric behavior while removing
+  retired calculator code, stale legacy tests, dead Predict split-table UI, and
+  the superseded Train Feature Catalog Manager UI.
+- Keep `app_train.py` and `app_predict.py` separate and thin. Runtime-neutral
+  ports, DTOs, and usecases are assembled in composition roots; PySide runners
+  own toolkit/process lifecycle.
+- Keep `config/ml/features.csv` and the core ML feature catalog as compatibility
+  contracts without adding incomplete ML functionality. Arc 15 Data Definition
+  remains the active Train/Admin schema surface.
+- Use shared semantic visual tokens and screen-aware window policy, hidden-first
+  calculator startup, multi-monitor-safe dialog placement, and two-axis batch
+  table scrolling as the conservative desktop UX baseline.
+
 ## 2026-07-10 — Agent harness report and memory lifecycle redesign
 
 ### Decision

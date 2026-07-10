@@ -70,7 +70,7 @@ class AhriSeer2Section:
             padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
             pady=CONTROL_ROW_PADY,
         )
-        self.type_var = tk.StringVar(value="HP")
+        self.type_var = tk.StringVar(master=self._frame, value="HP")
         self.type_selector = ttk.Combobox(
             option_frame,
             textvariable=self.type_var,

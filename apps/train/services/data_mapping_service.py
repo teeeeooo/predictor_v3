@@ -129,6 +129,13 @@ class DataMappingService:
         """Return the configured provider source label before loading."""
         return self._provider.source_label
 
+    def resource_status(self) -> str:
+        """Return whether the configured runtime mapping resource exists."""
+        mapping_file = getattr(self._provider, "mapping_file", None)
+        if not mapping_file:
+            return "available"
+        return "exists" if Path(mapping_file).is_file() else "missing"
+
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
         requirements = self._load_mapping_requirements()
@@ -322,9 +329,7 @@ def _future_actions(
     *,
     can_save: bool = False,
 ) -> tuple[DataMappingAction, ...]:
-    disabled_reason = "Import is not supported. Edit mappings in this screen."
     return (
-        DataMappingAction("import_csv_v2", "Import", False, disabled_reason),
         DataMappingAction(
             "export_csv_v2",
             "Export",

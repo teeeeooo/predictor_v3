@@ -4,12 +4,13 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
+from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.ui.shell import PredictShell
 
 
 def create_shell() -> PredictShell:
     """Create the minimal Predict shell."""
-    return PredictShell()
+    return PredictShell(composition=build_predict_workspace_composition())
 
 
 def main() -> int:

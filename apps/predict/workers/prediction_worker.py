@@ -7,7 +7,7 @@ from apps.predict.ports.prediction_execution_port import (
     PredictionProgress,
     PredictionWorkerSummary,
 )
-from apps.predict.services.prediction_service import PredictionService
+from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 
 
 class PredictionWorker(QObject):
@@ -22,12 +22,12 @@ class PredictionWorker(QObject):
     def __init__(
         self,
         job: PredictionJob,
-        service: PredictionService | None = None,
+        service: PredictionServicePort,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._job = job
-        self._service = service or PredictionService()
+        self._service = service
         self._cancel_requested = False
 
     @Slot()

@@ -1,8 +1,10 @@
 """PredictionUseCase tests without PySide/QApplication."""
 
+from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
+from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+from apps.predict.application.models import PredictionServiceResult
 from apps.predict.application.prediction_usecase import PredictionUseCase
 from apps.predict.ports.prediction_execution_port import PredictionWorkerSummary
-from apps.predict.services.prediction_service import PredictionServiceResult
 from apps.predict.state.predict_session import PredictSession
 from core.ml.features import TARGETS
 
@@ -16,9 +18,17 @@ def _session_with_cases(*cooling_values: str) -> PredictSession:
     return session
 
 
+def _usecase(session: PredictSession) -> PredictionUseCase:
+    return PredictionUseCase(
+        session,
+        input_mapper=RowToMlInputAdapter(),
+        result_mapper=PredictionResultAdapter(),
+    )
+
+
 def test_prediction_usecase_prepares_invalid_and_valid_rows_without_qt():
     session = _session_with_cases("3500", "")
-    usecase = PredictionUseCase(session)
+    usecase = _usecase(session)
     results = []
 
     plan = usecase.prepare_run(list(session.case_order), results.append)
@@ -33,7 +43,7 @@ def test_prediction_usecase_prepares_invalid_and_valid_rows_without_qt():
 
 def test_prediction_usecase_fake_runner_e2e_without_pyside():
     session = _session_with_cases("3500", "3600")
-    usecase = PredictionUseCase(session)
+    usecase = _usecase(session)
     plan = usecase.prepare_run(list(session.case_order))
     assert plan.job is not None
 

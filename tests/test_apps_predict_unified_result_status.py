@@ -57,6 +57,9 @@ def test_complete_result_displays_result_status_and_message_columns():
     assert model.cell_value(0, _column_index(model, "cooling_power")) == "2.06"
     assert model.cell_value(0, _column_index(model, "eer")) == "3.45"
     assert model.cell_value(0, _column_index(model, "status")) == "complete"
+    assert model.data(
+        model.index(0, _column_index(model, "status")), Qt.DisplayRole
+    ) == "완료"
     assert model.cell_value(0, _column_index(model, "message")) == "done"
 
 

@@ -50,7 +50,10 @@ class CaseTableModel(QAbstractTableModel):
             return self._tooltip_for_cell(index.row(), index.column())
         if role not in (Qt.DisplayRole, Qt.EditRole):
             return None
-        return self.cell_value(index.row(), index.column())
+        value = self.cell_value(index.row(), index.column())
+        if role == Qt.DisplayRole and column.key == "status":
+            return _STATUS_DISPLAY.get(str(value), str(value))
+        return value
 
     def setData(
         self,
@@ -215,3 +218,14 @@ class CaseTableModel(QAbstractTableModel):
 
 
 _REFRESH_ROLES = [Qt.DisplayRole, Qt.EditRole, Qt.BackgroundRole, Qt.ToolTipRole]
+
+_STATUS_DISPLAY = {
+    "pending": "대기",
+    "running": "실행 중",
+    "complete": "완료",
+    "partial": "일부 완료",
+    "warning": "경고",
+    "error": "오류",
+    "invalid": "입력 확인",
+    "cancelled": "취소",
+}

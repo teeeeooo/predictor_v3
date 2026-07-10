@@ -10,8 +10,8 @@ from apps.predict.adapters.row_to_ml_input_adapter import (
     RowToMlInputAdapter,
     build_prediction_input_request,
 )
+from apps.predict.application.models import PredictionServiceResult
 from apps.predict.services.prediction_service import PredictionService
-from apps.predict.services.prediction_service import PredictionServiceResult
 from apps.predict.state.case_row import CaseRow
 
 

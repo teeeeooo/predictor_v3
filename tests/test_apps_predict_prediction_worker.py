@@ -1,13 +1,14 @@
 """PredictionWorker headless behavior tests."""
 
-from pathlib import Path
-
 from PySide6.QtCore import QCoreApplication
 
-from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
-from apps.predict.services.prediction_service import PredictionServiceResult
+from apps.predict.application.models import (
+    PredictionInputRequest,
+    PredictionServiceResult,
+)
+from apps.predict.ports.prediction_execution_port import PredictionJob
 from apps.predict.state.predict_session import PredictSession
-from apps.predict.workers.prediction_worker import PredictionJob, PredictionWorker
+from apps.predict.workers.prediction_worker import PredictionWorker
 
 
 def _app() -> QCoreApplication:
@@ -124,15 +125,6 @@ def test_worker_cancel_after_row_stops_future_rows():
     assert cancelled[0].cancelled == 2
     assert cancelled[0].cancelled_case_ids == ("case-0002", "case-0003")
     assert finished == []
-
-
-def test_worker_source_does_not_import_widgets_or_mutate_session():
-    source = Path("apps/predict/workers/prediction_worker.py").read_text(
-        encoding="utf-8"
-    )
-
-    assert "QtWidgets" not in source
-    assert "PredictSession" not in source
 
 
 def test_worker_does_not_mutate_predict_session():

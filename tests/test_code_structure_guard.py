@@ -249,8 +249,8 @@ def test_soft_limit_skipped_when_file_in_allowlist():
     source = "x = 1\n" * (guard.LOC_SOFT_LIMIT + 5)
     findings = guard.check_soft_limits(
         source,
-        "core/_legacy/calculator_iso16358_legacy.py",
-        loc_allowlist={"core/_legacy/calculator_iso16358_legacy.py"},
+        "apps/calculator/ui/metric_input_table.py",
+        loc_allowlist={"apps/calculator/ui/metric_input_table.py"},
         class_allowlist=set(),
     )
     assert not any("LOC soft limit" in f.message for f in findings)
@@ -275,9 +275,9 @@ def test_class_soft_limit_skipped_when_in_allowlist():
     )
     findings = guard.check_soft_limits(
         source,
-        "ui/calc_window.py",
+        "legacy/large_window.py",
         loc_allowlist=set(),
-        class_allowlist={"ui/calc_window.py"},
+        class_allowlist={"legacy/large_window.py"},
     )
     assert not any("top-level classes" in f.message for f in findings)
 

@@ -16,7 +16,7 @@
 | Predict schema adapters | `apps/predict/schema/column_schema_adapter.py`, `apps/predict/schema/case_table_schema_adapter.py` |
 | Predict UI/runtime usage | `apps/predict/ui/tables/case_table_model.py`, `apps/predict/ui/workspace.py`, `apps/predict/controllers/input_edit_controller.py` |
 | Mapping/autofill and ML input | `core/mapping/autofill.py`, `apps/predict/adapters/dropdown_option_adapter.py`, `apps/predict/adapters/row_to_ml_input_adapter.py` |
-| Test evidence | `tests/test_ml_feature_catalog.py`, `tests/test_apps_predict_schema_adapter.py`, `tests/test_apps_predict_case_table_schema_adapter.py`, `tests/test_apps_predict_mapping_backed_dropdown.py`, `tests/test_core_mapping_autofill.py`, `tests/test_apps_predict_prediction_adapters.py`, `tests/test_apps_train_feature_catalog.py` |
+| Test evidence | `tests/test_ml_feature_catalog.py`, `tests/test_apps_predict_schema_adapter.py`, `tests/test_apps_predict_case_table_schema_adapter.py`, `tests/test_apps_predict_mapping_backed_dropdown.py`, `tests/test_core_mapping_autofill.py`, `tests/test_apps_predict_prediction_adapters.py`, `tests/test_data_definition_core_projection.py` |
 
 ## Current Schema Assembly Flow
 

@@ -82,6 +82,17 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
         predict/
           __init__.py
           app.py
+          composition.py
+
+          application/
+            __init__.py
+            models.py
+            prediction_usecase.py
+
+          ports/
+            __init__.py
+            prediction_execution_port.py
+            prediction_workflow_ports.py
 
           ui/
             __init__.py
@@ -95,12 +106,7 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
               case_table_model.py
               case_table_view.py
               group_header.py
-              input_table_model.py
-              input_table_view.py
-              result_table_model.py
-              result_table_view.py
               delegates.py
-              table_sync.py
 
           controllers/
             __init__.py
@@ -121,6 +127,7 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
             __init__.py
             row_to_ml_input_adapter.py
             prediction_result_adapter.py
+            pyside_prediction_runner.py
             mapping_adapter.py
             cascade_adapter.py
 
@@ -143,22 +150,32 @@ Do not change core ML behavior unless a later slice explicitly authorizes it.
             __init__.py
             shell.py
             train_model_panel.py
+            data_definition_panel.py
             data_mapping_panel.py
-            train_log_panel.py
 
           controllers/
             __init__.py
             train_controller.py
-            mapping_controller.py
+            data_definition_controller.py
+            data_mapping_controller.py
 
           services/
             __init__.py
             training_service.py
-            mapping_service.py
+            data_definition_service.py
+            data_mapping_service.py
 
-          workers/
+          ports/
             __init__.py
-            train_worker.py
+            training_execution_port.py
+
+          adapters/
+            __init__.py
+            qprocess_training_runner.py
+
+          jobs/
+            __init__.py
+            train_job.py
 
 ### 3.2 First production foundation structure
 
@@ -172,6 +189,15 @@ The first production foundation slices may use this smaller structure:
         predict/
           __init__.py
           app.py
+          composition.py
+          application/
+            __init__.py
+            models.py
+            prediction_usecase.py
+          ports/
+            __init__.py
+            prediction_execution_port.py
+            prediction_workflow_ports.py
           ui/
             __init__.py
             shell.py
@@ -180,9 +206,6 @@ The first production foundation slices may use this smaller structure:
               __init__.py
               case_table_model.py
               case_table_view.py
-              input_table_model.py
-              result_table_model.py
-              table_sync.py
           schema/
             __init__.py
             case_table_schema_adapter.py
@@ -197,6 +220,7 @@ The first production foundation slices may use this smaller structure:
             __init__.py
             row_to_ml_input_adapter.py
             prediction_result_adapter.py
+            pyside_prediction_runner.py
 
         train/
           __init__.py
@@ -205,16 +229,27 @@ The first production foundation slices may use this smaller structure:
             __init__.py
             shell.py
             train_model_panel.py
+            data_definition_panel.py
             data_mapping_panel.py
           controllers/
             __init__.py
             train_controller.py
+            data_definition_controller.py
+            data_mapping_controller.py
           services/
             __init__.py
             training_service.py
-          workers/
+            data_definition_service.py
+            data_mapping_service.py
+          ports/
             __init__.py
-            train_worker.py
+            training_execution_port.py
+          adapters/
+            __init__.py
+            qprocess_training_runner.py
+          jobs/
+            __init__.py
+            train_job.py
 
 Do not create all files in the full target structure unless the current slice needs them.
 
@@ -261,6 +296,7 @@ Responsibility:
 - Create `QApplication`.
 - Register global exception handler through existing core utility if available.
 - Set style or application metadata.
+- Build the concrete Predict object graph through `apps.predict.composition`.
 - Create and show `PredictShell`.
 - Start event loop.
 
@@ -293,10 +329,11 @@ Allowed:
 
 - `apps.predict` imports PySide6.
 - `apps.predict` imports `core.ml.inference`, `core.predictor_schema.columns`, `core.ml.registry`, `core.ml.preprocessing`, `core.utils` through services/adapters where possible.
-- `apps.train` imports PySide6.
+- `apps.train.ui` and `apps.train.adapters` import PySide6; Train ports,
+  controllers, services, and state remain Qt-free.
 - `apps.train` imports `apps.predict.ui.workspace.PredictWorkspace`.
-- `apps.train` imports `core.ml.training` through `training_service` or `train_worker`.
-- `apps.train` imports `scripts.update_mapping` only through `mapping_service`.
+- `apps.train.jobs.train_job` imports `core.ml.training` inside the child process.
+- Data Mapping repository access stays behind `DataMappingService`.
 
 ### 5.2 Forbidden imports
 
@@ -330,9 +367,9 @@ Primary regions:
 
 Displays concise status items:
 
-- model status, e.g. `모델 상태: model.pkl loaded`
+- model status, e.g. `모델 상태: model.pkl 로드됨`
 - preprocess version, e.g. `preprocess: v1.0`
-- mapping status, e.g. `mapping: loaded`
+- mapping status, e.g. `데이터 매핑: 로드됨`
 
 This is a status display only. Model loading behavior belongs to `ModelService`.
 
@@ -495,6 +532,7 @@ The Trainer app uses exactly these top-level tabs at first:
 
 - `Predict`
 - `Train / Model`
+- `Data Definition`
 - `Data Mapping`
 
 ### 7.3 Predict tab
@@ -519,8 +557,6 @@ Command bar buttons:
 - `학습 데이터 선택`
 - `학습 실행`
 - `중지`
-- `모델 열기`
-- `로그 저장`
 
 Training configuration fields:
 
@@ -547,17 +583,24 @@ Training summary displays per target:
 - status
 - elapsed time
 
-Training log displays emitted log lines from training worker/service.
+Training log displays emitted log lines from the execution port.
 
-### 7.5 Data Mapping tab
+### 7.5 Data Definition tab
+
+The Data Definition tab is the current schema/feature-definition manager. It
+owns guarded schema draft edits, validation/readiness projection, and explicit
+save/restart/retrain feedback. The retired Feature Catalog manager is not a
+top-level UI surface.
+
+### 7.6 Data Mapping tab
 
 The Data Mapping tab includes:
 
-- source mapping file selection
-- mapping update execution
-- mapping output path/status
-- mapping load status
-- log or validation result area
+- runtime mapping source/status
+- group, field, and value tables
+- validation issues
+- bounded add/duplicate/delete/edit commands
+- review export, guarded save, and reload
 
 The tab may call existing mapping update functionality through `MappingService`.
 
@@ -697,19 +740,18 @@ Must not:
 
 ### 9.3 Historical split table foundation
 
-Files:
+The former split-table files were retired after the unified `CaseTableModel` /
+`CaseTableView` path reached behavior parity:
 
 - `apps/predict/ui/tables/input_table_model.py`
+- `apps/predict/ui/tables/input_table_view.py`
 - `apps/predict/ui/tables/result_table_model.py`
+- `apps/predict/ui/tables/result_table_view.py`
 - `apps/predict/ui/tables/table_sync.py`
 
-These files may remain during migration for compatibility and rollback
-evidence, but they are not the current Arc 9.5 final UX target. The final
-workspace must not depend on split table synchronization or hidden joined-copy
-behavior.
-
-If still present, split table sync must stay local to legacy/foundation paths
-and must not become the active workspace interaction contract.
+Do not restore these modules as compatibility code. Regressions belong in the
+unified table owner, and toolkit-neutral TSV helper coverage stays attached to
+the unified Predict table tests.
 
 ## 10. Adapter Specification
 
@@ -748,6 +790,8 @@ Responsibility:
 - use `COLUMNS` `ml_feature` metadata where available
 - convert refrigerant and expansion-device selections into one-hot inputs
 - perform type normalization for numeric inputs
+- return the application-owned `PredictionInputOutcome` /
+  `PredictionInputRequest` contracts
 - return validation errors for missing required input
 
 Must not:
@@ -765,6 +809,7 @@ File:
 Responsibility:
 
 - convert `core.ml.inference.predict_row()` result dict to `ResultRow`
+- consume the application-owned `PredictionServiceResult` contract
 - map model target keys to UI result fields
 - handle missing target predictions
 - produce warning/error status for partial results
@@ -827,8 +872,8 @@ File:
 Responsibility:
 
 - call `core.ml.inference.predict_row`
-- accept ML input dict and loaded model data
-- return raw prediction dict or structured service result
+- accept application-owned `PredictionInputRequest` values
+- return application-owned `PredictionServiceResult` values
 - expose lightweight model status for UI/controller display without requiring
   widgets or eager model load unless explicitly requested
 
@@ -862,6 +907,11 @@ Recommended payloads:
 
 Signals may use `Signal(object)` with dataclass payloads.
 
+`PredictionJob`, `PredictionProgress`, `PredictionWorkerSummary`, and the
+`PredictionExecutionPort` contract are owned by
+`apps/predict/ports/prediction_execution_port.py`; the worker and PySide runner
+consume them rather than re-exporting adapter-owned DTOs.
+
 Arc 11 correction: the QThread worker is a PySide adapter implementation, not
 the final UI/runtime-neutral application-usecase boundary. Future non-PySide
 interfaces must reuse prediction orchestration through a usecase/execution port
@@ -882,17 +932,15 @@ File:
 
 Responsibility:
 
-- wrap `core.ml.training.train_all_models`
-- own training configuration object
-- provide a clean call boundary for worker/controller
+- provide Qt-free training request validation and resource status
+- provide a clean call boundary for the controller
 - remain Qt-free
 - validate the training data path before execution
-- return structured request/log/progress/result/resource-status contracts
-- keep production training as the default path
+- return structured validation/resource-status contracts
 
-Production service must not change core ML algorithms, preprocessing,
+The service must not run training or change core ML algorithms, preprocessing,
 `MODEL_REGISTRY`, target behavior, or the single `model/model.pkl` artifact
-contract. It may translate exceptions into structured error results.
+contract. Execution failures are translated at the process adapter/job boundary.
 
 Arc 11 correction: production Train execution must not be accepted as a direct
 in-process `train_all_models()` call behind QThread. Production training must
@@ -905,42 +953,38 @@ production `apps/` or `core/`. The DEV backend may create an
 inference-compatible mock model artifact by reusing the existing mock artifact
 generator, and it must not claim real training quality or metrics.
 
-### 11.5 Train worker
+### 11.5 Training execution port and process adapter
 
-File:
+Files:
 
-- `apps/train/workers/train_worker.py`
-
-Responsibility:
-
-- run training off the UI thread
-- emit log lines
-- emit progress updates if available
-- emit finished status
-- receive immutable training requests
-- call the training service boundary
-- support cooperative cancellation without `terminate()` or thread kill
-- remain a PySide adapter or compatibility layer after the production execution
-  port/process runner exists
-
-Must not:
-
-- contain ML training algorithms
-- duplicate `core.ml.training` logic
-- mutate Train / Model widgets directly
-- leave orphan threads after finish, error, or cancel
-
-### 11.6 Mapping service
-
-File:
-
-- `apps/train/services/mapping_service.py`
+- `apps/train/ports/training_execution_port.py`
+- `apps/train/adapters/qprocess_training_runner.py`
+- `apps/train/jobs/train_job.py`
 
 Responsibility:
 
-- wrap mapping update logic
-- expose mapping update status
-- keep script-level details out of QWidgets
+- keep the controller dependent on a Qt-free `TrainingExecutionPort`
+- let the `QProcessTrainingRunner` adapter own `QProcess`, Qt signal wiring,
+  cancellation escalation, and Qt resource disposal
+- run real core training only in the child-process job
+- promote a completed temporary model artifact atomically and remove temporary
+  output on cancellation or failure
+- compose the production adapter in `apps/train/app.py`
+
+The controller must not import PySide6 or a concrete process runner. A runner
+instance is single-run and is disposed after a terminal callback.
+
+### 11.6 Data Mapping service
+
+File:
+
+- `apps/train/services/data_mapping_service.py`
+
+Responsibility:
+
+- load and validate the runtime mapping draft
+- expose mapping resource status and bounded edit/save/export/reload operations
+- keep filesystem and mapping repository details out of QWidgets
 
 ## 12. Controller Specification
 
@@ -954,10 +998,10 @@ Responsibility:
 
 - handle command bar actions
 - choose prediction scope
-- coordinate session, adapters, services, and worker
-- build requests from `PredictSession` using row adapters on the UI thread
+- coordinate session, application usecase, service port, and execution port
+- prepare requests through the injected application usecase on the UI thread
 - apply invalid and running result rows on the UI thread before worker start
-- start and own the QThread / worker lifecycle
+- start execution through `PredictionExecutionPort`
 - receive worker row/progress/finish/cancel/failure events on the UI thread
 - apply result updates to `PredictSession` on the UI thread
 - request table model refresh through callbacks or signals
@@ -978,6 +1022,7 @@ Must not:
 - put ML algorithms in the controller
 - let the worker mutate `PredictSession` directly
 - leave orphan worker threads after finish/cancel/failure
+- import concrete prediction adapters or PySide runner classes
 
 ### 12.2 Table edit controller
 
@@ -1004,27 +1049,28 @@ File:
 Responsibility:
 
 - handle training command actions
-- coordinate train worker/service
+- coordinate request validation/service and the training execution port
 - update Train / Model panel state
 - expose `start(...)`, `cancel()`, `is_running`, and resource status
 - reject double start
-- validate training data path before worker start
-- own QThread/worker lifecycle and cleanup
+- validate training data path before execution start
+- clear the active port after terminal execution
 - forward log/progress/result events to the panel through callbacks or signals
 
-Must not become a QWidget, call core training internals directly, write logs
-directly to QTextEdit, or own Data Mapping update execution.
+Must not import PySide6 or a concrete runner, become a QWidget, call core
+training internals directly, write logs directly to QTextEdit, or own Data
+Mapping update execution.
 
-### 12.4 Mapping controller
+### 12.4 Data Mapping controller
 
 File:
 
-- `apps/train/controllers/mapping_controller.py`
+- `apps/train/controllers/data_mapping_controller.py`
 
 Responsibility:
 
-- handle mapping file selection and update actions
-- call `MappingService`
+- handle Data Mapping table actions
+- call `DataMappingService`
 - update Data Mapping tab state
 
 ## 13. Visual and UX Rules
@@ -1084,9 +1130,10 @@ controller boundary.
 
 The Train / Model tab follows the same separation. It renders training controls,
 paths, progress, log output, target summary, and result state, but production
-training execution must flow through `TrainingService`, `TrainWorker`, and
-`TrainController`. Data Mapping update controls remain deferred until their
-own service/controller boundary is explicitly scoped.
+training execution must flow through `TrainingService`, `TrainController`, the
+`TrainingExecutionPort`, and its process adapter. The adapter owns concrete Qt
+process lifecycle; the controller owns application state only. Data Mapping
+resource checks and operations flow through its service/controller boundary.
 
 While prediction is running, row mutation commands should initially be disabled
 unless a later explicit design protects running case IDs with equivalent
@@ -1209,8 +1256,9 @@ Verification:
 Allowed:
 
 - implement Train / Model tab
+- implement Data Definition tab
 - implement Data Mapping tab
-- implement train worker
+- implement the training execution port and process adapter
 - wire training log/progress
 
 Forbidden:
@@ -1221,7 +1269,7 @@ Forbidden:
 
 Verification:
 
-- worker signal smoke
+- execution port/process-adapter smoke
 - service boundary tests
 - import smoke
 - manual training-panel smoke if possible
@@ -1271,9 +1319,10 @@ Verification:
 
 ### Run for Trainer changes
 
-- train worker import smoke
+- training execution port/controller test
+- process adapter smoke
 - train service boundary test
-- log signal smoke if feasible
+- log/progress callback smoke if feasible
 - no UI-thread or QThread direct `train_all_models` call accepted as production
   Train execution
 

@@ -36,8 +36,6 @@ UI arcs.
   - `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`
   - `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`
   - future adapters when present
-- PyQt environment or skip-matrix tasks only:
-  `docs/guides/pyqt_test_support_matrix.md`
 
 ## Preflight Structure Guard
 

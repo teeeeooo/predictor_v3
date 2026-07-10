@@ -1,20 +1,23 @@
 """Responsive layout defaults for lightweight Tkinter calculator surfaces."""
 
-TABLE_GRID_COLOR = "#c4ccd4"
-TABLE_HEADER_BG = "#e8edf2"
-TABLE_EDITABLE_BG = "#ffffff"
-TABLE_SELECTED_BG = "#dbeafe"
-TABLE_ACTIVE_BG = "#bfdbfe"
-TABLE_STATIC_BG = "#f1f3f5"
-TABLE_HEADER_FG = "#26333f"
-TABLE_STATIC_FG = "#66737f"
-TABLE_INVALID_BG = "#fee2e2"
-TABLE_PASS_BG = "#dcfce7"
-RESULT_TITLE_BG = "#f1f3f5"
-RESULT_HEADER_BG = "#e8edf2"
-RESULT_VALUE_BG = "#ffffff"
-RESULT_STATUS_FG = "#52606d"
-TOP_NOTEBOOK_SELECTED_FG = "#202020"
+from ui_common.visual_tokens import visual_color
+
+
+TABLE_GRID_COLOR = visual_color("border.default")
+TABLE_HEADER_BG = visual_color("table.header")
+TABLE_EDITABLE_BG = visual_color("table.input")
+TABLE_SELECTED_BG = visual_color("table.selected")
+TABLE_ACTIVE_BG = visual_color("table.active")
+TABLE_STATIC_BG = visual_color("table.fixed")
+TABLE_HEADER_FG = visual_color("text.default")
+TABLE_STATIC_FG = visual_color("text.muted")
+TABLE_INVALID_BG = visual_color("table.invalid")
+TABLE_PASS_BG = visual_color("table.result")
+RESULT_TITLE_BG = visual_color("surface.header")
+RESULT_HEADER_BG = visual_color("table.header")
+RESULT_VALUE_BG = visual_color("surface.panel")
+RESULT_STATUS_FG = visual_color("status.neutral")
+TOP_NOTEBOOK_SELECTED_FG = visual_color("accent.primary")
 
 TABLE_FONT_SIZE = 10
 TABLE_BODY_FONT = ("TkDefaultFont", TABLE_FONT_SIZE)

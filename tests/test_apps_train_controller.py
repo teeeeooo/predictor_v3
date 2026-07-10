@@ -1,12 +1,14 @@
-"""TrainController worker orchestration tests."""
+"""Qt-free TrainController execution-port orchestration tests."""
 
-import os
+from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QObject, QEventLoop, QTimer, Signal
-from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.train_controller import TrainController
+from apps.train.ports.training_execution_port import (
+    TrainingExecutionCallbacks,
+    TrainingExecutionPort,
+)
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
     TrainingProgress,
@@ -14,32 +16,6 @@ from apps.train.state.training_run_state import (
     TrainingResult,
 )
 from tools.dev.mock_smoke.generators import write_mock_training_data
-
-
-def _app() -> QApplication:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    return QApplication.instance() or QApplication([])
-
-
-def _wait_until(predicate, timeout_ms: int = 1500) -> None:  # noqa: ANN001
-    app = _app()
-    if predicate():
-        app.processEvents()
-        return
-    loop = QEventLoop()
-    poll = QTimer()
-    timeout = QTimer()
-    poll.setInterval(10)
-    timeout.setSingleShot(True)
-    poll.timeout.connect(lambda: loop.quit() if predicate() else None)
-    timeout.timeout.connect(loop.quit)
-    poll.start()
-    timeout.start(timeout_ms)
-    loop.exec()
-    poll.stop()
-    timeout.stop()
-    app.processEvents()
-    assert predicate()
 
 
 def _request(tmp_path, run_id: str = "run-controller") -> TrainingRequest:  # noqa: ANN001
@@ -51,29 +27,34 @@ def _request(tmp_path, run_id: str = "run-controller") -> TrainingRequest:  # no
     )
 
 
-class FakeTrainingRunner(QObject):
-    """Runner double that lets tests observe controller wiring."""
-
-    log_event = Signal(object)
-    progress = Signal(object)
-    finished = Signal(object)
-    failed = Signal(object)
-    cancelled = Signal(object)
+class FakeTrainingExecution:
+    """Runtime-neutral port double for controller tests."""
 
     def __init__(self, *, finish_immediately: bool = True) -> None:
-        super().__init__()
         self.started = False
         self.cancel_called = False
-        self.request = None
+        self.dispose_called = False
+        self.request: TrainingRequest | None = None
+        self.callbacks: TrainingExecutionCallbacks | None = None
         self.finish_immediately = finish_immediately
-        self.is_running = False
+        self._is_running = False
 
-    def start(self, request):  # noqa: ANN001
+    @property
+    def is_running(self) -> bool:
+        return self._is_running
+
+    def start(
+        self,
+        request: TrainingRequest,
+        callbacks: TrainingExecutionCallbacks | None = None,
+    ) -> None:
+        assert callbacks is not None
         self.started = True
-        self.is_running = True
+        self._is_running = True
         self.request = request
-        self.log_event.emit(TrainingLogEvent(request.run_id, "fake runner started"))
-        self.progress.emit(
+        self.callbacks = callbacks
+        callbacks.log(TrainingLogEvent(request.run_id, "fake execution started"))
+        callbacks.progress(
             TrainingProgress(
                 run_id=request.run_id,
                 completed=0,
@@ -83,12 +64,14 @@ class FakeTrainingRunner(QObject):
             )
         )
         if self.finish_immediately:
-            QTimer.singleShot(0, self.complete)
+            self.complete()
 
     def cancel(self) -> bool:
+        assert self.request is not None
+        assert self.callbacks is not None
         self.cancel_called = True
-        self.is_running = False
-        self.cancelled.emit(
+        self._is_running = False
+        self.callbacks.cancelled(
             TrainingResult(
                 run_id=self.request.run_id,
                 status="cancelled",
@@ -99,8 +82,10 @@ class FakeTrainingRunner(QObject):
         return True
 
     def complete(self) -> None:
-        self.is_running = False
-        self.progress.emit(
+        assert self.request is not None
+        assert self.callbacks is not None
+        self._is_running = False
+        self.callbacks.progress(
             TrainingProgress(
                 run_id=self.request.run_id,
                 completed=1,
@@ -109,7 +94,7 @@ class FakeTrainingRunner(QObject):
                 indeterminate=False,
             )
         )
-        self.finished.emit(
+        self.callbacks.finished(
             TrainingResult(
                 run_id=self.request.run_id,
                 status="complete",
@@ -118,11 +103,17 @@ class FakeTrainingRunner(QObject):
             )
         )
 
+    def dispose(self) -> None:
+        self.dispose_called = True
 
-def test_train_controller_start_runs_worker_service(tmp_path):
-    _app()
-    runner = FakeTrainingRunner()
-    controller = TrainController(runner=runner)
+
+def test_training_execution_double_satisfies_port_contract():
+    assert isinstance(FakeTrainingExecution(), TrainingExecutionPort)
+
+
+def test_train_controller_start_runs_execution_port(tmp_path):
+    execution = FakeTrainingExecution()
+    controller = TrainController(execution=execution)
     finished = []
     progress = []
 
@@ -131,31 +122,30 @@ def test_train_controller_start_runs_worker_service(tmp_path):
         progress_callback=progress.append,
         finished_callback=finished.append,
     )
-    _wait_until(lambda: finished and controller._runner is None)
 
     assert progress[-1].completed == progress[-1].total
     assert finished[0].status == "complete"
     assert controller.last_result == finished[0]
     assert not controller.is_running
+    assert execution.dispose_called
+    assert controller._execution is None
 
 
 def test_train_controller_rejects_double_start(tmp_path):
-    _app()
-    runner = FakeTrainingRunner(finish_immediately=False)
-    controller = TrainController(runner=runner)
+    execution = FakeTrainingExecution(finish_immediately=False)
+    controller = TrainController(execution=execution)
 
     controller.start(_request(tmp_path))
-    assert runner.started
+    assert execution.started
     assert controller.is_running
     with pytest.raises(RuntimeError, match="already in progress"):
         controller.start(_request(tmp_path, "second"))
 
-    runner.complete()
-    _wait_until(lambda: controller._runner is None)
+    execution.complete()
+    assert controller._execution is None
 
 
 def test_train_controller_missing_data_path_returns_controlled_error(tmp_path):
-    _app()
     controller = TrainController()
     failed = []
     request = TrainingRequest(
@@ -170,29 +160,61 @@ def test_train_controller_missing_data_path_returns_controlled_error(tmp_path):
     assert result.status == "error"
     assert failed[0] == result
     assert controller.last_result == result
-    assert controller._runner is None
+    assert controller._execution is None
 
 
-def test_train_controller_cancel_calls_worker_cancel(tmp_path):
-    _app()
-    runner = FakeTrainingRunner(finish_immediately=False)
-    controller = TrainController(runner=runner)
+def test_train_controller_valid_request_without_adapter_is_controlled_error(tmp_path):
+    controller = TrainController()
+    failed = []
+
+    result = controller.start(_request(tmp_path), failed_callback=failed.append)
+
+    assert result is not None
+    assert result.status == "error"
+    assert "adapter is not configured" in result.message
+    assert failed == [result]
+
+
+def test_train_controller_uses_execution_factory_for_each_run(tmp_path):
+    executions: list[FakeTrainingExecution] = []
+
+    def factory() -> FakeTrainingExecution:
+        execution = FakeTrainingExecution()
+        executions.append(execution)
+        return execution
+
+    controller = TrainController(execution_factory=factory)
+
+    controller.start(_request(tmp_path, "first"))
+    controller.start(_request(tmp_path, "second"))
+
+    assert len(executions) == 2
+    assert all(execution.dispose_called for execution in executions)
+
+
+def test_train_controller_cancel_calls_execution_port(tmp_path):
+    execution = FakeTrainingExecution(finish_immediately=False)
+    controller = TrainController(execution=execution)
     cancelled = []
 
     controller.start(_request(tmp_path), cancelled_callback=cancelled.append)
-    assert runner.started
     assert controller.cancel()
-    _wait_until(lambda: cancelled and controller._runner is None)
 
-    assert runner.cancel_called
+    assert execution.cancel_called
     assert cancelled[0].status == "cancelled"
     assert controller.last_result == cancelled[0]
+    assert controller._execution is None
 
 
-def test_train_controller_source_does_not_import_widgets():
-    source = "apps/train/controllers/train_controller.py"
-    text = open(source, encoding="utf-8").read()
+def test_train_controller_source_is_runtime_neutral():
+    source = Path("apps/train/controllers/train_controller.py").read_text(encoding="utf-8")
 
-    assert "QtWidgets" not in text
-    assert "TrainModelPanel" not in text
-    assert "QThread" not in text
+    for forbidden in (
+        "PySide6",
+        "QProcess",
+        "QObject",
+        "QThread",
+        ".connect(",
+        "deleteLater",
+    ):
+        assert forbidden not in source

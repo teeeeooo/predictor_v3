@@ -104,7 +104,6 @@ class DataMappingPanel(QWidget):
             ("add_row", "Add Row"),
             ("duplicate_row", "Duplicate"),
             ("delete_row", "Delete"),
-            ("import_csv_v2", "Import"),
             ("export_csv_v2", "Export"),
             ("save_mapping_json", "Save"),
             ("reload_runtime", "Reload"),

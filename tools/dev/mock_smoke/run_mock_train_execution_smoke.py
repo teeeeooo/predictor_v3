@@ -60,7 +60,6 @@ def _wait_until(app: QApplication, predicate, timeout_ms: int = 8000) -> bool:  
 
 def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
     app = QApplication.instance() or QApplication([])
-    shell = TrainShell()
     runner = QProcessTrainingRunner(
         extra_args=(
             "--dev-fast",
@@ -70,10 +69,9 @@ def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
             str(predict_delay_ms),
         )
     )
-    controller = TrainController(runner=runner)
+    controller = TrainController(execution=runner)
+    shell = TrainShell(train_controller=controller)
     panel = shell.train_model_panel
-    panel.training_controller = controller
-    panel._update_control_state()
     app.processEvents()
     if not panel.run_button.isEnabled():
         raise RuntimeError("Train run button is not enabled for mock training data.")
@@ -83,7 +81,7 @@ def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
         app,
         lambda: controller.last_result is not None
         and not controller.is_running
-        and controller._runner is None,
+        and controller._execution is None,
     ):
         raise RuntimeError("Train execution smoke did not finish before timeout.")
     result = controller.last_result

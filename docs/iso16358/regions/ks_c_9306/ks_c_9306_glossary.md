@@ -108,7 +108,7 @@ ISO 16358 공통 용어는 [`../../iso16358_glossary.md`](../../iso16358_glossar
 | --- | --- | --- |
 | 한국 region configuration | `data/region_configs/korea.json` | [`ks_c_9306_notes.md`](./ks_c_9306_notes.md) |
 | 한국 CSPF golden sample | `docs/iso16358/regions/ks_c_9306/ks_c_9306_notes.md` | [`ks_c_9306_notes.md`](./ks_c_9306_notes.md) |
-| 한국 HSPF golden / validation tests | `tests/_legacy/test_iso16358_hspf_golden_diagnostic.py`, `tests/test_iso16358_hspf_validation.py` | [`ks_c_9306_dev_notes.md`](./ks_c_9306_dev_notes.md) |
+| 한국 HSPF golden / validation tests | `tests/test_iso16358_hspf_ks_oracle.py`, `tests/test_iso16358_hspf_validation.py` | [`ks_c_9306_dev_notes.md`](./ks_c_9306_dev_notes.md) |
 | 한국 구현 주의사항 | `docs/iso16358/regions/ks_c_9306/ks_c_9306_dev_notes.md` | [`ks_c_9306_dev_notes.md`](./ks_c_9306_dev_notes.md) |
 | 한국 설계 heuristic | `docs/iso16358/regions/ks_c_9306/ks_c_9306_design_notes.md` | [`ks_c_9306_design_notes.md`](./ks_c_9306_design_notes.md) |
 | ISO 공통 용어 | `docs/iso16358/iso16358_glossary.md` | [`../../iso16358_glossary.md`](../../iso16358_glossary.md) |

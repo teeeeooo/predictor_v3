@@ -169,8 +169,9 @@ python3 -B tools/dev/mock_smoke/run_mock_train_shell_smoke.py \
   --force
 ```
 
-The shell/status runner checks construction and controller-ready controls only;
-use the Train execution runner below for E2E execution.
+The shell/status runner checks the four current tabs, resource badges, active
+Train/Data Mapping controls, removed placeholders, and production execution
+adapter composition. Use the Train execution runner below for E2E execution.
 
 Train execution E2E smoke:
 
@@ -182,12 +183,12 @@ python3 -B tools/dev/mock_smoke/run_mock_train_execution_smoke.py \
   --force
 ```
 
-This runner injects the DEV-only fast training backend through the Train
-controller boundary, writes a local inference-compatible `model/model.pkl`, and
-then runs Predict smoke against that trained output. The optional
-`--with-real-core-training` flag exercises the production core training service
-directly, but remains off by default because it is expensive and its metrics are
-meaningless for mock data.
+This runner injects the DEV-only fast training backend behind the production
+process adapter and Train controller port, writes a local inference-compatible
+`model/model.pkl`, and then runs Predict smoke against that trained output. The
+optional `--with-real-core-training` flag exercises the real child-process
+training job, but remains off by default because it is expensive and its
+metrics are meaningless for mock data.
 
 ## Manual Smoke Guide
 
@@ -199,8 +200,10 @@ meaningless for mock data.
    prediction.
 5. Check model-present status, row-level prediction results, progress updates,
    and cooperative cancel behavior.
-6. Run `python3 -B app_train.py` and confirm the Predict tab still embeds the
-   Predict workspace; Trainer execution remains deferred.
+6. Run `python3 -B app_train.py` and confirm the exact top-level flow is
+   `Predict`, `Train / Model`, `Data Definition`, and `Data Mapping`.
+7. Start a bounded Train run and confirm log/progress/finish state; use `중지`
+   to verify process cancellation when a disposable test artifact is available.
 
 ## Cleanup
 
@@ -237,10 +240,10 @@ Only do this when the files are generated DEV smoke artifacts.
 - worker/progress/cancel smoke;
 - `app_train` Predict-tab construction;
 - `app_train` shell/status/tab construction smoke;
-- Train / Model controller-ready controls;
-- DEV-only Train execution E2E through service/worker/controller/UI;
+- Train / Model controls and production process-adapter composition;
+- DEV-only Train execution E2E through execution port/controller/UI;
 - Predict smoke after DEV Train output;
-- deferred Data Mapping controls.
+- active Data Definition and Data Mapping manager surfaces.
 
 ## What This Cannot Verify
 

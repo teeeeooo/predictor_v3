@@ -175,6 +175,24 @@ def test_parent_centered_content_geometry_caps_to_screen():
     ) == f"{max_width}x{max_height}+0+0"
 
 
+def test_parent_centered_geometry_preserves_right_hand_monitor_coordinates():
+    assert parent_centered_content_geometry(
+        "800x600+1920+100",
+        requested_content_size=(640, 320),
+        screen_width=1920,
+        screen_height=1080,
+    ) == "640x320+2000+240"
+
+
+def test_parent_centered_geometry_preserves_negative_monitor_coordinates():
+    assert parent_centered_content_geometry(
+        "800x600-1200+100",
+        requested_content_size=(640, 320),
+        screen_width=1920,
+        screen_height=1080,
+    ) == "640x320-1120+240"
+
+
 def test_geometry_parser_handles_negative_coordinates():
     assert parse_window_geometry("640x480+10+20") == (640, 480, 10, 20)
     assert parse_window_geometry("640x480-10+20") == (640, 480, -10, 20)
@@ -347,40 +365,55 @@ finally:
     assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
-def test_calculator_launch_keeps_initial_iso_size(monkeypatch):
-    tk = pytest.importorskip("tkinter")
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:
-        pytest.skip(f"Tk not available: {exc}")
-    try:
-        from apps.calculator.ui.calculator_app import CalculatorTkApp
-        from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
+def test_calculator_launch_keeps_initial_iso_size():
+    # A second full Tk shell can trap macOS Tk's native event loop after an
+    # earlier same-process root was destroyed. Keep this launch lifecycle check
+    # isolated for the same reason as the full widget-tree smoke above.
+    script = r"""
+import sys
+import tkinter as tk
 
-        calls = []
-        original = Iso16358Tab.fit_toplevel_to_current_content_once
+try:
+    root = tk.Tk()
+except tk.TclError:
+    raise SystemExit(77)
 
-        def record_once(self):
-            calls.append(self)
-            original(self)
+try:
+    from apps.calculator.ui.calculator_app import CalculatorTkApp
+    from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 
-        monkeypatch.setattr(
-            Iso16358Tab, "fit_toplevel_to_current_content_once", record_once
-        )
-        app = CalculatorTkApp(root=root)
+    calls = []
+    original = Iso16358Tab.fit_toplevel_to_current_content_once
 
-        assert calls == []
-        root.update()
-        assert set(calls) <= {app.iso_tab}
-        preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
-        assert (root.winfo_width(), root.winfo_height()) == (
-            preferred_width,
-            preferred_height,
-        )
-        root.update()
-        assert set(calls) <= {app.iso_tab}
-    finally:
-        root.destroy()
+    def record_once(self):
+        calls.append(self)
+        original(self)
+
+    Iso16358Tab.fit_toplevel_to_current_content_once = record_once
+    app = CalculatorTkApp(root=root)
+
+    assert calls == []
+    root.update()
+    assert calls == [app.iso_tab]
+    preferred_width, preferred_height = app.iso_tab.preferred_initial_size()
+    assert (root.winfo_width(), root.winfo_height()) == (
+        preferred_width,
+        preferred_height,
+    )
+    root.update()
+    assert calls == [app.iso_tab]
+finally:
+    root.destroy()
+"""
+    completed = subprocess.run(
+        [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if completed.returncode == 77:
+        pytest.skip("Tk not available")
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 def test_scrollable_frame_hides_scrollbar_when_content_fits():

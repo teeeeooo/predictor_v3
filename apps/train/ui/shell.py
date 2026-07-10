@@ -1,7 +1,6 @@
 """Minimal Trainer shell."""
 
 from html import escape
-from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -15,14 +14,15 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.common.ui.window_policy import apply_initial_window_layout
+from apps.predict.composition import PredictWorkspaceComposition
 from apps.predict.ui.status_widgets import model_status_badge_state
 from apps.predict.ui.workspace import PredictWorkspace
+from apps.train.controllers.data_mapping_controller import DataMappingController
+from apps.train.controllers.train_controller import TrainController
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
-from apps.train.ui.feature_catalog import FeatureCatalogPanel
 from apps.train.ui.train_model_panel import TrainModelPanel
-from core.mapping.paths import MAPPING_JSON_FILE
-from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
 class TrainShell(QMainWindow):
@@ -33,13 +33,20 @@ class TrainShell(QMainWindow):
         "Train / Model",
         "Data Definition",
         "Data Mapping",
-        "Feature Catalog",
     )
 
-    def __init__(self, parent: QMainWindow | None = None) -> None:
+    def __init__(
+        self,
+        parent: QMainWindow | None = None,
+        *,
+        train_controller: TrainController | None = None,
+        data_mapping_controller: DataMappingController | None = None,
+        predict_composition: PredictWorkspaceComposition | None = None,
+    ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("HVAC V3 Trainer")
-        self.resize(1280, 820)
+        self.train_controller = train_controller or TrainController()
+        self.data_mapping_controller = data_mapping_controller or DataMappingController()
+        self.setWindowTitle("HVAC Training Studio")
         self.setStyleSheet(style.app_stylesheet())
 
         central = QWidget(self)
@@ -58,9 +65,11 @@ class TrainShell(QMainWindow):
             tabs,
             show_title=False,
             show_status_strip=False,
+            composition=predict_composition,
         )
         self.train_model_panel = TrainModelPanel(
             tabs,
+            controller=self.train_controller,
             on_model_status_changed=self.refresh_status_strip,
         )
         tabs.addTab(
@@ -69,11 +78,14 @@ class TrainShell(QMainWindow):
         )
         tabs.addTab(self.train_model_panel, self.tab_names[1])
         tabs.addTab(DataDefinitionPanel(tabs), self.tab_names[2])
-        tabs.addTab(DataMappingPanel(tabs), self.tab_names[3])
-        tabs.addTab(FeatureCatalogPanel(tabs), self.tab_names[4])
+        tabs.addTab(
+            DataMappingPanel(tabs, controller=self.data_mapping_controller),
+            self.tab_names[3],
+        )
         layout.addWidget(tabs, 1)
         self.setCentralWidget(central)
         self.tabs = tabs
+        apply_initial_window_layout(self, (1280, 820))
 
     def _build_status_strip(self) -> QFrame:
         strip = QFrame(self)
@@ -106,27 +118,28 @@ class TrainShell(QMainWindow):
         self.predict_workspace.model_badge.set_status(model_text, model_kind)
 
     def _status_values(self) -> tuple[tuple[str, str, str, str], ...]:
-        model_exists = Path(MODEL_FILE).exists()
-        train_data_exists = Path(TRAIN_DATA_FILE).exists()
-        mapping_exists = Path(MAPPING_JSON_FILE).exists()
+        training = self.train_controller.resource_status()
+        model_exists = training.model_status == "exists"
+        train_data_exists = training.data_status == "exists"
+        mapping_exists = self.data_mapping_controller.resource_status() == "exists"
         return (
             (
                 "model",
                 "모델 상태",
-                "model.pkl loaded" if model_exists else "model.pkl missing",
+                "model.pkl 로드됨" if model_exists else "model.pkl 없음",
                 "ready" if model_exists else "missing",
             ),
-            ("preprocess", "preprocess", "v1.0", "ready"),
+            ("preprocess", "전처리", "v1.0", "ready"),
             (
                 "train_data",
                 "학습 데이터",
-                "found" if train_data_exists else "missing",
+                "확인됨" if train_data_exists else "없음",
                 "ready" if train_data_exists else "missing",
             ),
             (
                 "mapping",
-                "mapping",
-                "loaded" if mapping_exists else "missing",
+                "데이터 매핑",
+                "로드됨" if mapping_exists else "없음",
                 "ready" if mapping_exists else "missing",
             ),
         )

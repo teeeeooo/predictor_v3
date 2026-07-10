@@ -7,16 +7,15 @@ import pytest
 from PySide6.QtCore import QItemSelectionModel, Qt
 from PySide6.QtWidgets import QApplication, QFrame
 
+from apps.common.ui.tables.clipboard import format_tsv, parse_tsv
 from apps.predict.schema.case_table_schema_adapter import build_case_table_column_schema
 from apps.predict.controllers.table_edit_controller import TableEditController
 from apps.predict.controllers.prediction_controller import PredictionRunSummary
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
-from apps.predict.workers.prediction_worker import PredictionProgress
+from apps.predict.ports.prediction_execution_port import PredictionProgress
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
-from apps.predict.ui.tables.input_table_view import InputTableView
-from apps.predict.ui.tables.result_table_view import ResultTableView
 from apps.predict.ui.workspace import PredictWorkspace
 
 
@@ -50,9 +49,14 @@ def test_workspace_uses_one_unified_case_table_without_split_sync():
     assert isinstance(workspace.case_table, CaseTableView)
     assert workspace.case_table.model() is workspace.case_model
     assert workspace.findChildren(CaseTableView) == [workspace.case_table]
-    assert not workspace.findChildren(InputTableView)
-    assert not workspace.findChildren(ResultTableView)
     assert not hasattr(workspace, "table_sync")
+
+
+def test_predict_tsv_helpers_normalize_and_format_table_payloads():
+    assert parse_tsv("a\tb\r\nc\td\r\n") == [["a", "b"], ["c", "d"]]
+    assert parse_tsv("a\tb\rc\td") == [["a", "b"], ["c", "d"]]
+    assert parse_tsv("") == []
+    assert format_tsv([["a", None], [1, "b"]]) == "a\t\n1\tb\n"
 
 
 def test_workspace_unified_table_schema_and_readonly_result_status_columns():
@@ -215,6 +219,15 @@ def test_workspace_no_direct_model_file_status_owner():
 
     assert "MODEL_FILE" not in source
     assert "core.ml.artifacts" not in source
+
+
+def test_workspace_delegates_concrete_dependency_composition():
+    source = Path("apps/predict/ui/workspace.py").read_text(encoding="utf-8")
+
+    assert "build_predict_workspace_composition" in source
+    assert "PySidePredictionRunner" not in source
+    assert "PredictMappingRepository()" not in source
+    assert "PredictionController(" not in source
 
 
 def test_unified_group_header_is_table_linked_not_detached_band():

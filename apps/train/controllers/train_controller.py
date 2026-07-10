@@ -1,13 +1,15 @@
-"""Training execution controller foundation."""
+"""Qt-free training execution controller."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from uuid import uuid4
 
-from PySide6.QtCore import QObject, Slot
-
-from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
+from apps.train.ports.training_execution_port import (
+    TrainingExecutionCallbacks,
+    TrainingExecutionFactory,
+    TrainingExecutionPort,
+)
 from apps.train.services.training_service import TrainingService
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
@@ -25,20 +27,18 @@ ProgressCallback = Callable[[TrainingProgress], None]
 ResultCallback = Callable[[TrainingResult], None]
 
 
-class TrainController(QObject):
-    """Coordinate Train service, worker, and thread lifecycle."""
+class TrainController:
+    """Coordinate validation and a runtime-neutral training execution port."""
 
     def __init__(
         self,
         service: TrainingService | None = None,
-        runner: QProcessTrainingRunner | None = None,
-        runner_cls: type[QProcessTrainingRunner] = QProcessTrainingRunner,
-        parent: QObject | None = None,
+        execution: TrainingExecutionPort | None = None,
+        execution_factory: TrainingExecutionFactory | None = None,
     ) -> None:
-        super().__init__(parent)
         self._service = service or TrainingService()
-        self._runner = runner
-        self._runner_cls = runner_cls
+        self._execution = execution
+        self._execution_factory = execution_factory
         self._is_running = False
         self._last_result: TrainingResult | None = None
         self._status_callback: StatusCallback | None = None
@@ -79,7 +79,7 @@ class TrainController(QObject):
         failed_callback: ResultCallback | None = None,
         cancelled_callback: ResultCallback | None = None,
     ) -> TrainingResult | None:
-        """Start a worker-backed training run."""
+        """Validate and start a training run through the execution port."""
         if self._is_running:
             raise RuntimeError("Training run already in progress.")
 
@@ -99,13 +99,12 @@ class TrainController(QObject):
         self._finished_callback = finished_callback
         self._failed_callback = failed_callback
         self._cancelled_callback = cancelled_callback
-        self._start_worker(training_request)
-        return None
+        return self._start_execution(training_request)
 
     def cancel(self) -> bool:
         """Hard-cancel the active training runner when possible."""
-        if self._runner is not None:
-            return self._runner.cancel()
+        if self._execution is not None:
+            return self._execution.cancel()
         return False
 
     def _coerce_request(
@@ -123,64 +122,89 @@ class TrainController(QObject):
             model_output_path=str(model_output_path or MODEL_FILE),
         )
 
-    def _start_worker(self, request: TrainingRequest) -> None:
-        self._is_running = True
-        runner = self._runner or self._runner_cls()
-        self._runner = runner
-        runner.log_event.connect(self._handle_log)
-        runner.progress.connect(self._handle_progress)
-        runner.finished.connect(self._handle_finished)
-        runner.failed.connect(self._handle_failed)
-        runner.cancelled.connect(self._handle_cancelled)
-        runner.finished.connect(self._clear_runner)
-        runner.failed.connect(self._clear_runner)
-        runner.cancelled.connect(self._clear_runner)
-        runner.start(request)
+    def _start_execution(self, request: TrainingRequest) -> TrainingResult | None:
+        execution = self._execution
+        if execution is None and self._execution_factory is not None:
+            execution = self._execution_factory()
+            self._execution = execution
+        if execution is None:
+            result = TrainingResult(
+                run_id=request.run_id,
+                status="error",
+                model_path=request.model_output_path,
+                message="Training execution adapter is not configured.",
+            )
+            self._last_result = result
+            self._notify(self._status_callback, result.message)
+            if self._failed_callback is not None:
+                self._failed_callback(result)
+            self._clear_callbacks()
+            return result
 
-    @Slot(object)
+        self._is_running = True
+        callbacks = TrainingExecutionCallbacks(
+            log=self._handle_log,
+            progress=self._handle_progress,
+            finished=self._handle_finished,
+            failed=self._handle_failed,
+            cancelled=self._handle_cancelled,
+        )
+        try:
+            execution.start(request, callbacks)
+        except Exception as exc:
+            result = TrainingResult(
+                run_id=request.run_id,
+                status="error",
+                model_path=request.model_output_path,
+                message=str(exc).splitlines()[0],
+            )
+            self._handle_failed(result)
+            return result
+        return None
+
     def _handle_log(self, event: TrainingLogEvent) -> None:
         if self._log_callback is not None:
             self._log_callback(event)
 
-    @Slot(object)
     def _handle_progress(self, progress: TrainingProgress) -> None:
         if self._progress_callback is not None:
             self._progress_callback(progress)
         if progress.message:
             self._notify(self._status_callback, progress.message)
 
-    @Slot(object)
     def _handle_finished(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
         self._notify(self._status_callback, "Training run finished.")
         if self._finished_callback is not None:
             self._finished_callback(result)
+        self._clear_execution()
 
-    @Slot(object)
     def _handle_failed(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
         self._notify(self._status_callback, f"Training run failed: {result.message}")
         if self._failed_callback is not None:
             self._failed_callback(result)
+        self._clear_execution()
 
-    @Slot(object)
     def _handle_cancelled(self, result: TrainingResult) -> None:
         self._is_running = False
         self._last_result = result
         self._notify(self._status_callback, "Training run cancelled.")
         if self._cancelled_callback is not None:
             self._cancelled_callback(result)
+        self._clear_execution()
 
     def _notify(self, callback: StatusCallback | None, message: str) -> None:
         if callback is not None:
             callback(message)
 
-    def _clear_runner(self) -> None:
-        if self._runner is not None:
-            self._runner.deleteLater()
-        self._runner = None
+    def _clear_execution(self) -> None:
+        execution = self._execution
+        self._execution = None
+        if execution is not None:
+            execution.dispose()
         self._clear_callbacks()
 
     def _clear_callbacks(self) -> None:

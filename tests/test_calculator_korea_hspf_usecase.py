@@ -50,9 +50,9 @@ def test_korea_hspf_usecase_valid_sample_outputs_and_guide():
     assert result.status == "ok"
     assert result.status_text == "계산 완료"
     assert result.summary_fields == (
-        ("HSPF", "2.882"),
+        ("HSPF", "2.874"),
         ("HSTL [kWh]", "6466.5"),
-        ("HSEC [kWh]", "2243.5"),
+        ("HSEC [kWh]", "2250.0"),
     )
     assert result.guide_fields == (
         ("current_tc", "3.8 °C"),

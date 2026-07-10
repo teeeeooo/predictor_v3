@@ -41,7 +41,7 @@ from core.ml.preprocessing import prepare_pipeline
 from core.ml.registry import MODEL_REGISTRY, get_model_config
 from core.ml.training import validate_training_input_headers
 from core.predictor_schema.columns import AUTO_COLS, COLUMNS, INPUT_COLS, RESULT_COLS
-from core.predictor_schema.columns import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
+from core.predictor_schema.presentation import ROLE_PRESENTATION_DEFAULTS, WIDTH_OVERRIDES
 from core.predictor_schema.ui_columns import (
     DROPDOWN_INPUT_COLUMNS,
     INPUT_INSERT_AFTER,

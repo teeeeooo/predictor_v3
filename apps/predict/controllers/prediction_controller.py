@@ -1,32 +1,30 @@
 """Prediction execution controller foundation."""
 
 from collections.abc import Callable
-from typing import Any
 
-from apps.predict.adapters.prediction_result_adapter import PredictionResultAdapter
-from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
+from apps.predict.application.models import (
+    PredictionModelStatus,
+    PredictionServiceResult,
+)
 from apps.predict.application.prediction_usecase import (
     PredictionRunSummary,
     PredictionUseCase,
 )
-from apps.predict.services.prediction_service import (
-    PredictionModelStatus,
-    PredictionServiceResult,
-    PredictionService,
-)
 from apps.predict.state.predict_session import PredictSession
 from apps.predict.state.result_row import ResultRow
 from apps.predict.ports.prediction_execution_port import (
+    PredictionExecutionPort,
     PredictionProgress,
     PredictionWorkerSummary,
 )
+from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
 
 
 StatusCallback = Callable[[str], None]
 ResultCallback = Callable[[ResultRow], None]
 ProgressCallback = Callable[[PredictionProgress], None]
 SummaryCallback = Callable[["PredictionRunSummary"], None]
-PredictionRunnerFactory = Callable[[PredictionService], Any]
+PredictionRunnerFactory = Callable[[PredictionServicePort], PredictionExecutionPort]
 
 
 class PredictionController:
@@ -35,19 +33,14 @@ class PredictionController:
     def __init__(
         self,
         session: PredictSession,
-        input_adapter: RowToMlInputAdapter | None = None,
-        service: PredictionService | None = None,
-        result_adapter: PredictionResultAdapter | None = None,
-        runner=None,  # noqa: ANN001
+        usecase: PredictionUseCase,
+        service: PredictionServicePort,
+        runner: PredictionExecutionPort | None = None,
         runner_factory: PredictionRunnerFactory | None = None,
     ) -> None:
         self._session = session
-        self._service = service or PredictionService()
-        self._usecase = PredictionUseCase(
-            session=session,
-            input_adapter=input_adapter,
-            result_adapter=result_adapter,
-        )
+        self._service = service
+        self._usecase = usecase
         self._runner = runner
         self._runner_factory = runner_factory
         self._is_running = False
@@ -291,8 +284,9 @@ class PredictionController:
             finished_callback(summary)
 
     def _clear_runner(self) -> None:
-        if self._runner is not None:
-            self._runner.deleteLater()
+        runner = self._runner
         self._runner = None
         self._active_total = 0
         self._active_invalid = 0
+        if runner is not None:
+            runner.dispose()

@@ -83,10 +83,19 @@ class En14825SeerSection:
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Auxiliary Parameters Frame
-        self._p_design_var = tk.StringVar(value="")
-        self._t_design_var = tk.StringVar(value=str(self._seer_defaults["t_design_c"]))
-        self._cd_var = tk.StringVar(value=str(self._seer_defaults["degradation_coefficient"]))
-        self._appliance_type_var = tk.StringVar(value=self._seer_defaults["appliance_type"])
+        self._p_design_var = tk.StringVar(master=self._frame, value="")
+        self._t_design_var = tk.StringVar(
+            master=self._frame,
+            value=str(self._seer_defaults["t_design_c"]),
+        )
+        self._cd_var = tk.StringVar(
+            master=self._frame,
+            value=str(self._seer_defaults["degradation_coefficient"]),
+        )
+        self._appliance_type_var = tk.StringVar(
+            master=self._frame,
+            value=self._seer_defaults["appliance_type"],
+        )
         self._syncing_design_inputs = False
 
         aux_frame = ttk.Frame(self._frame)

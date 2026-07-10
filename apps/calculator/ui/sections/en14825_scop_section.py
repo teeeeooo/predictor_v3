@@ -80,8 +80,11 @@ class En14825ScopSection:
         self._frame.columnconfigure(0, weight=1)
 
         # 1. Top Auxiliary Parameters Frame
-        self._cd_var = tk.StringVar(value="0.25")
-        self._appliance_type_var = tk.StringVar(value="reversible")
+        self._cd_var = tk.StringVar(master=self._frame, value="0.25")
+        self._appliance_type_var = tk.StringVar(
+            master=self._frame,
+            value="reversible",
+        )
         self._syncing_aux_inputs = False
 
         aux_frame = ttk.Frame(self._frame)
@@ -138,19 +141,19 @@ class En14825ScopSection:
 
         # Climate-specific vars
         self.p_design_h_vars: dict[str, tk.StringVar] = {
-            "average": tk.StringVar(value=""),
-            "warmer": tk.StringVar(value=""),
-            "colder": tk.StringVar(value=""),
+            "average": tk.StringVar(master=self._frame, value=""),
+            "warmer": tk.StringVar(master=self._frame, value=""),
+            "colder": tk.StringVar(master=self._frame, value=""),
         }
         self.tbiv_vars: dict[str, tk.StringVar] = {
-            "average": tk.StringVar(value="-10"),
-            "warmer": tk.StringVar(value="2"),
-            "colder": tk.StringVar(value="-15"),
+            "average": tk.StringVar(master=self._frame, value="-10"),
+            "warmer": tk.StringVar(master=self._frame, value="2"),
+            "colder": tk.StringVar(master=self._frame, value="-15"),
         }
         self.tol_vars: dict[str, tk.StringVar] = {
-            "average": tk.StringVar(value="-11"),
-            "warmer": tk.StringVar(value="-11"),
-            "colder": tk.StringVar(value="-22"),
+            "average": tk.StringVar(master=self._frame, value="-11"),
+            "warmer": tk.StringVar(master=self._frame, value="-11"),
+            "colder": tk.StringVar(master=self._frame, value="-22"),
         }
 
         self.input_tables: dict[str, MetricInputTable] = {}
@@ -178,7 +181,10 @@ class En14825ScopSection:
             toggle_frame = ttk.Frame(card)
             toggle_frame.pack(fill=tk.X, padx=6, pady=4)
 
-            active_var = tk.BooleanVar(value=(clm == "average"))
+            active_var = tk.BooleanVar(
+                master=self._frame,
+                value=(clm == "average"),
+            )
             self.climate_active_vars[clm] = active_var
 
             chk = ttk.Checkbutton(

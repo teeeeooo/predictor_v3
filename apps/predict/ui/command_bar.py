@@ -23,10 +23,7 @@ class PredictCommandBar(QFrame):
         self.delete_row_button = QPushButton("행 삭제", self)
         self.paste_button = QPushButton("입력 붙여넣기", self)
         self.copy_results_button = QPushButton("결과 복사", self)
-        self.export_button = QPushButton("Export CSV", self)
 
-        self.export_button.setEnabled(False)
-        self.export_button.setToolTip("후속 export UX slice에서 활성화됩니다.")
         self.cancel_button.setEnabled(False)
 
         layout = QHBoxLayout(self)
@@ -46,7 +43,6 @@ class PredictCommandBar(QFrame):
         layout.addSpacing(style.spacing("space.md"))
         layout.addWidget(self.paste_button)
         layout.addWidget(self.copy_results_button)
-        layout.addWidget(self.export_button)
         layout.addStretch(1)
 
     def set_running(self, running: bool) -> None:

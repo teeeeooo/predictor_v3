@@ -1,32 +1,15 @@
-"""Qt-free service boundary for core prediction calls."""
+"""Qt-free service adapter for core prediction calls."""
 
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from apps.predict.application.models import (
+    PredictionInputRequest,
+    PredictionModelStatus,
+    PredictionServiceResult,
+)
 from core.ml.artifacts import MODEL_FILE
 from core.ml.inference import load_model, predict_row
-
-from apps.predict.adapters.row_to_ml_input_adapter import PredictionInputRequest
-
-
-@dataclass(frozen=True)
-class PredictionServiceResult:
-    """Service result for one prediction request."""
-
-    case_id: str
-    status: str
-    predictions: dict[str, float] = field(default_factory=dict)
-    message: str = ""
-
-
-@dataclass(frozen=True)
-class PredictionModelStatus:
-    """Qt-free model artifact status for controller/UI display."""
-
-    model_path: str
-    status: str
-    message: str = ""
 
 
 class PredictionService:

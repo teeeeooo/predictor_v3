@@ -61,7 +61,6 @@ CLASS_SOFT_LIMIT = 5
 
 # Files exempt from LOC soft limit. Paths are relative to repo root.
 LOC_ALLOWLIST: Set[str] = {
-    "core/_legacy/calculator_iso16358_legacy.py",
     "core/calculator_iso16358.py",
     "core/calculator_ks_c9306.py",
     "core/calculator_ahri_hspf2.py",
@@ -77,7 +76,6 @@ LOC_ALLOWLIST: Set[str] = {
 
 # Files exempt from class-count soft limit.
 CLASS_ALLOWLIST: Set[str] = {
-    "core/_legacy/calculator_iso16358_legacy.py",
     "ui/spreadsheet_table.py",
     "apps/calculator/ui/batch_dialogs/profiles/saso_t3.py",
     "apps/calculator/ui/batch_dialogs/profiles/iso_iseer_2point.py",
