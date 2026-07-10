@@ -41,10 +41,10 @@ Update only the document whose owned state changed.
 New records are written directly to their final date-based path and indexed.
 They do not move through active/summary/archive stages.
 
-Existing `result_reports/active/`, `archive/`, and `summaries/` are legacy.
-Their physical relocation under `result_reports/legacy/` is a separately
-approved migration. Historical report/summary bodies remain unchanged; active
-external references are semantically classified before exact path replacement.
+Existing `result_reports/active/` remains a legacy input at its historical path.
+Existing archive and summary evidence is read-only under
+`result_reports/legacy/archive/` and `result_reports/legacy/summaries/`.
+Historical report/summary bodies remain unchanged.
 
 Do not create cleanup reports, summaries, or memory deltas merely to manage a
 report count.

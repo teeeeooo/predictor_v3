@@ -37,9 +37,8 @@
   output owns commit hash and push status.
 - Memory Review Gate replaces active-count/summary/archive cleanup as the
   memory-update checkpoint.
-- Existing archive and summary reports will move physically under
-  `result_reports/legacy/` in a separately reviewed migration while historical
-  bodies remain unchanged.
+- Existing archive and summary reports now reside under read-only
+  `result_reports/legacy/` while historical bodies remain unchanged.
 
 ## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
 
@@ -69,7 +68,7 @@
   user-confirmed GUI smoke, narrowed ML model compatibility fingerprint, and
   active payload dedup are closed out.
 - Active report lifecycle cleanup is complete in
-  `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
+  `result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
 - No Arc 13.5A blocker remains; next action is Arc 14 Data Mapping Manager /
   Mapping Update Execution after the Arc 14/15 numbering sync.
 
@@ -125,7 +124,7 @@
   header runtime guard, inference zero-fill policy, and registry/catalog
   consistency guards now share the catalog contract.
 - Arc 13 reports 624-632 are covered by
-  `result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md` and
+  `result_reports/legacy/summaries/633_summary-arc13-feature-catalog-closeout.md` and
   archived.
 - Next recommended work is an ML catalog-aligned real dataset readiness audit.
 

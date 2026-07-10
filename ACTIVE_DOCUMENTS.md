@@ -9,7 +9,7 @@
   `data/region_configs/REGION_CONFIG_RULES.md`, result-record control docs,
   and `result_reports/memory/*.md`.
 - Excluded: `docs/archive/**`, `reference_files/*.md`, result records,
-  and legacy `result_reports/active/**`, `archive/**`, `summaries/**`.
+  legacy `result_reports/active/**`, and `result_reports/legacy/**`.
 - `result_reports/README.md` and `REPORT_INDEX.md` are active control docs;
   individual records are history artifacts, not owner documents.
 

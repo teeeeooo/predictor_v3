@@ -29,7 +29,7 @@ superseded, and resolved entries remain preserved with source traces under
 entries:
   - type: procedure
     topic: agent workflow and lifecycle boundary
-    content: AGENTS.md is the lite entrypoint and AGENT_TASK_ROUTER.md is the route map. Ordinary tracked-file work does not create reports. Durable compact records are limited to contract/policy/migration/manual-evidence and non-obvious regression triggers, use date-based final paths plus REPORT_INDEX, and are committed with their source changes. Memory Review replaces report-count lifecycle cleanup and is required for new records, milestone/branch closeout, explicit handoff, and return to a long-paused workstream.
+    content: AGENTS.md is the lite entrypoint and AGENT_TASK_ROUTER.md is the route map. Ordinary tracked-file work does not create reports. Durable compact records are limited to contract/policy/migration/manual-evidence and non-obvious regression triggers, use date-based final paths plus REPORT_INDEX, and are committed with their source changes. Memory Review replaces report-count lifecycle cleanup and is required for new records, milestone/branch closeout, explicit handoff, and return to a long-paused workstream. Pre-cutover evidence is read-only under result_reports/legacy/archive and result_reports/legacy/summaries; legacy bodies preserve historical paths and commands.
     keywords:
       - predictor_v3
       - AGENTS.md
@@ -41,7 +41,7 @@ entries:
       - memory review
       - report index
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md; docs/designs/2026-07-10-agent-harness-report-lifecycle-redesign.md
+    source: result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md; result_reports/records/2026-07/2026-07-10-result-report-legacy-migration.md; docs/designs/2026-07-10-agent-harness-report-lifecycle-redesign.md
 
   - type: decision
     topic: architecture and source owner boundary
@@ -54,7 +54,7 @@ entries:
       - check_code_structure
       - agent change gate
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/123_summary-calculator-tkinter-quality-xfail.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, 314_summary-tkinter-table-controller-switch-arc-closeout.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, and 416_summary-en14825-batch-agent-change-gate-closeout.md
+    source: consolidated from result_reports/legacy/summaries/123_summary-calculator-tkinter-quality-xfail.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, 314_summary-tkinter-table-controller-switch-arc-closeout.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, and 416_summary-en14825-batch-agent-change-gate-closeout.md
 
   - type: decision
     topic: UI UX SSOT and table interaction contract
@@ -68,7 +68,7 @@ entries:
       - MetricInputTable
       - MVC separation
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/101_summary-calculator-ui-iso-hspf-stabilization.md, 114_summary-ui-ux-ssot-calculator-boundary.md, 165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md, 180_summary-tkinter-calculator-ux-implementation-arc.md, 221_summary-post-main-table-window-refit-arc.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, and 314_summary-tkinter-table-controller-switch-arc-closeout.md
+    source: consolidated from result_reports/legacy/summaries/101_summary-calculator-ui-iso-hspf-stabilization.md, 114_summary-ui-ux-ssot-calculator-boundary.md, 165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md, 180_summary-tkinter-calculator-ux-implementation-arc.md, 221_summary-post-main-table-window-refit-arc.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, and 314_summary-tkinter-table-controller-switch-arc-closeout.md
 
   - type: decision
     topic: window viewport and result-detail surface policy
@@ -82,7 +82,7 @@ entries:
       - BatchMatrixTable
       - natural sizing
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md, 195_summary-tkinter-detail-panel-copy-graph-arc.md, 200_summary-window-geometry-viewport-ui-pivot-prep-arc.md, 221_summary-post-main-table-window-refit-arc.md, 249_summary-batch-two-row-matrix-and-reference-parity-arc.md, 260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md, 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md, and 480_summary-calculator-closeout-token-cleanup-structure-audit.md
+    source: consolidated from result_reports/legacy/summaries/180_summary-tkinter-calculator-ux-implementation-arc.md, 195_summary-tkinter-detail-panel-copy-graph-arc.md, 200_summary-window-geometry-viewport-ui-pivot-prep-arc.md, 221_summary-post-main-table-window-refit-arc.md, 249_summary-batch-two-row-matrix-and-reference-parity-arc.md, 260_summary-hspf-detail-schema-window-lifecycle-arc-closeout.md, 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md, and 480_summary-calculator-closeout-token-cleanup-structure-audit.md
 
   - type: decision
     topic: calculator standard and config ownership
@@ -97,7 +97,7 @@ entries:
       - EN14825
       - AHRI 210/240
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/033_summary-calculator-architecture-ks-profile-dispatch.md, 054_summary-calculator-ui-iso-separation.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, 404_summary-en14825-config-point-contract-ui-workflow-closeout.md, 416_summary-en14825-batch-agent-change-gate-closeout.md, and 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md
+    source: consolidated from result_reports/legacy/summaries/033_summary-calculator-architecture-ks-profile-dispatch.md, 054_summary-calculator-ui-iso-separation.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, 404_summary-en14825-config-point-contract-ui-workflow-closeout.md, 416_summary-en14825-batch-agent-change-gate-closeout.md, and 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md
 
   - type: decision
     topic: calculator envelope and ML boundary
@@ -110,7 +110,7 @@ entries:
       - ranking
       - unit conversion
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/081_summary-calculator-ui-v1-audit-2-3.md, 082_summary-envelope-adapter-four-stage-chain.md, and 101_summary-calculator-ui-iso-hspf-stabilization.md
+    source: consolidated from result_reports/legacy/summaries/081_summary-calculator-ui-v1-audit-2-3.md, 082_summary-envelope-adapter-four-stage-chain.md, and 101_summary-calculator-ui-iso-hspf-stabilization.md
 
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap
@@ -122,7 +122,7 @@ entries:
       - golden fixture
       - xfail
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/101_summary-calculator-ui-iso-hspf-stabilization.md and 132_summary-xfail-archive-pyqt-tkinter-stabilization.md
+    source: consolidated from result_reports/legacy/summaries/101_summary-calculator-ui-iso-hspf-stabilization.md and 132_summary-xfail-archive-pyqt-tkinter-stabilization.md
 
   - type: open_question
     topic: ASNZS case3 full-dump parity
@@ -133,7 +133,7 @@ entries:
       - case3
       - external reference
     assertionStatus: observed
-    source: result_reports/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
+    source: result_reports/legacy/summaries/054_summary-calculator-ui-iso-separation.md; result_reports/legacy/summaries/132_summary-xfail-archive-pyqt-tkinter-stabilization.md
 
   - type: decision
     topic: calculator application and UI boundary
@@ -146,7 +146,7 @@ entries:
       - batch dialog
       - detail panel
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md, 490_summary-calculator-helper-batch-lifecycle-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md
+    source: consolidated from result_reports/legacy/summaries/461_summary-en14825-ahri-detail-lifecycle-closeout.md, 490_summary-calculator-helper-batch-lifecycle-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md
 
   - type: decision
     topic: KOREA calculator notebook sub-arc closeout
@@ -159,7 +159,7 @@ entries:
       - batch
       - detail
     assertionStatus: verified
-    source: result_reports/summaries/644_summary-korea-calculator-subarc-closeout.md; result_reports/summaries/654_summary-calculator-maintenance-micro-polish-closeout.md
+    source: result_reports/legacy/summaries/644_summary-korea-calculator-subarc-closeout.md; result_reports/legacy/summaries/654_summary-calculator-maintenance-micro-polish-closeout.md
 
   - type: decision
     topic: KS C 9306 HSPF official oracle correction
@@ -173,7 +173,7 @@ entries:
       - round_test_values
       - PRH
     assertionStatus: verified
-    source: result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md
+    source: result_reports/legacy/summaries/651_summary-ks-hspf-official-oracle-closeout.md
 
   - type: decision
     topic: Train Predict PySide6 boundary
@@ -186,7 +186,7 @@ entries:
       - Train Predict
       - package owners
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/516_summary-architecture-reset-pyside6-foundation-closeout.md, 536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md, and 554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md
+    source: consolidated from result_reports/legacy/summaries/516_summary-architecture-reset-pyside6-foundation-closeout.md, 536_summary-arc7-arc85-core-owner-wrapper-retirement-closeout.md, and 554_summary-arc9-pyside6-schema-legacy-ui-harvest-closeout.md
 
   - type: decision
     topic: Predict Train execution boundary
@@ -199,7 +199,7 @@ entries:
       - worker progress
       - hexagonal boundary
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md, 602_summary-arc10-arc11-worker-train-execution-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md
+    source: consolidated from result_reports/legacy/summaries/582_summary-arc95-unified-table-manual-smoke-closeout.md, 602_summary-arc10-arc11-worker-train-execution-closeout.md, and 622_summary-arc11-arc12-boundary-closeout.md
 
   - type: decision
     topic: Arc 13 ML feature catalog closeout
@@ -212,7 +212,7 @@ entries:
       - ml_name
       - zero fill
     assertionStatus: verified
-    source: result_reports/summaries/633_summary-arc13-feature-catalog-closeout.md
+    source: result_reports/legacy/summaries/633_summary-arc13-feature-catalog-closeout.md
 
   - type: decision
     topic: Arc 13.5 feature catalog editor direction
@@ -225,7 +225,7 @@ entries:
       - features.csv
       - UTF-8-SIG
     assertionStatus: verified
-    source: project_log.md 2026-07-01 Arc 13.5 feature catalog editor direction; result_reports/archive/635_planning-doc-sync-arc13-5-feature-catalog-editor.md
+    source: project_log.md 2026-07-01 Arc 13.5 feature catalog editor direction; result_reports/legacy/archive/635_planning-doc-sync-arc13-5-feature-catalog-editor.md
 
   - type: decision
     topic: Arc 13.5A Feature Catalog Manager closeout
@@ -238,7 +238,7 @@ entries:
       - catalog fingerprint
       - model compatibility
     assertionStatus: verified
-    source: result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md
+    source: result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md
 
   - type: decision
     topic: Arc 13.5R Predict Schema Catalog v2 owner switch
@@ -252,7 +252,7 @@ entries:
       - mapping_entity
       - restart required
     assertionStatus: verified
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md
 
   - type: decision
     topic: Arc 14 Data Mapping foundation state
@@ -267,7 +267,7 @@ entries:
       - key_attribute
       - active
     assertionStatus: verified
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
@@ -281,7 +281,7 @@ entries:
       - AppKit
       - SIGSEGV
     assertionStatus: verified
-    source: result_reports/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
@@ -296,7 +296,7 @@ entries:
       - CRUD
       - dirty state
     assertionStatus: verified
-    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: decision
     topic: Arc 14B ref exp mapping SSOT
@@ -311,7 +311,7 @@ entries:
       - Predict dropdown
       - validation
     assertionStatus: verified
-    source: result_reports/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: decision
     topic: Arc 14C runtime cascade integration
@@ -326,7 +326,7 @@ entries:
       - cond_specs
       - autofill
     assertionStatus: verified
-    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: decision
     topic: dependency and Excel policy
@@ -341,7 +341,7 @@ entries:
       - xlwings
       - Excel
     assertionStatus: verified
-    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
 
   - type: open_question
     topic: Pre Arc 15 config mapping source relationship
@@ -356,9 +356,9 @@ entries:
       - training data
       - Unified Data Definition Manager
     assertionStatus: observed
-    source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
     resolutionStatus: resolved_by_arc15_foundation
-    resolvedBy: result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md
+    resolvedBy: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
@@ -373,7 +373,7 @@ entries:
       - readiness
       - schema writer
     assertionStatus: verified
-    source: result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md
+    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md
 ```
 
 ## Known Gaps

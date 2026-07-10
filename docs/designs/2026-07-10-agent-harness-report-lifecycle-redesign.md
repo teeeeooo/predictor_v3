@@ -20,8 +20,8 @@ guards.
 - New records use date-based final paths and a one-line discovery index.
 - Memory review is required for new records, milestone/branch closeout, explicit
   handoff, and return to a long-paused workstream.
-- Existing archive/summary content will move physically under legacy in a
-  separate slice. Historical bodies remain unchanged.
+- Existing archive/summary content is read-only under
+  `result_reports/legacy/`. Historical bodies remain unchanged.
 
 ## Core vs Handler Boundary
 
@@ -73,11 +73,17 @@ guards.
 - No calculator, ML, UI runtime, schema, or golden behavior change.
 - No commit or push without explicit user authorization.
 
+## Implementation Status
+
+- Slice A completed in commit `c3cd9e4`.
+- Slice B moved 720 archived reports and 53 summaries under the physical legacy
+  boundary with byte-preserved bodies and targeted active-reference remapping.
+- Push remains pending user review.
+
 ## Next Codex Implementation Prompt
 
 ```text
-Implement Slice A only: conditional compact result records, the five-field
-terminal status, date-based records and index, Memory Review Gate, and optional
-report-aware staged validation. Preserve objective structure/UI checks. Do not
-move legacy reports until Slice A is reviewed.
+Review Slice B rename purity, active and historical path boundaries, compact
+record/index/memory consistency, and staged gate output before committing or
+pushing.
 ```

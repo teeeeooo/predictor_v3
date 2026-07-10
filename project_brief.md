@@ -108,13 +108,13 @@ Status: complete for current phase.
 Summary anchors:
 
 - EN14825 config, point contract, UI workflow closeout:
-  `result_reports/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
+  `result_reports/legacy/summaries/404_summary-en14825-config-point-contract-ui-workflow-closeout.md`
 - EN14825 batch and agent change-gate closeout:
-  `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
+  `result_reports/legacy/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`
 - AHRI calculator UI/batch lifecycle closeout:
-  `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
+  `result_reports/legacy/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`
 - Calculator helper/batch/detail lifecycle closeout:
-  `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`
+  `result_reports/legacy/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`
 
 Detailed EN14825, AHRI, helper, batch, detail, token, and manual-smoke
 milestones are intentionally not repeated here.
@@ -144,7 +144,7 @@ Reference anchors:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
 - `docs/architecture/pyside6_train_predict_architecture.md`
-- `result_reports/summaries/506_summary-pyside6-train-predict-arc3-closeout.md`
+- `result_reports/legacy/summaries/506_summary-pyside6-train-predict-arc3-closeout.md`
 
 ### Arc 2 — PySide6 App Foundation and Package Boundary
 
@@ -615,7 +615,7 @@ Status:
 
 - Complete for automated scope and Arc 13.5A corrections. User direct GUI smoke
   confirmed dropdown UX OK. Closeout summary:
-  `result_reports/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
+  `result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
 
 ### Arc 14 — Mapping Entity / Manager UI / Runtime Cascade
 

@@ -6,8 +6,8 @@
   active constraints, and deferred/hold items.
 - Keep Phase / Arc / Milestone direction in `project_brief.md`.
 - Keep long-term goals and Phase 1~5 direction in `PROJECT_CHARTER.md`.
-- Keep completed work history in `project_log.md`, `result_reports/summaries/`,
-  and `result_reports/archive/`.
+- Keep completed work history in `project_log.md`, `result_reports/records/`,
+  and read-only `result_reports/legacy/`.
 - Keep refactor candidates and structural triggers in `docs/REFACTOR_PLAN.md`.
 
 ## Work Plan Update Rule
@@ -101,11 +101,11 @@ Next: Standard Calculation Capability Extension design.
 
 - Active Arc / Milestone map: `project_brief.md`.
 - Last closed EN14825 batch/workflow summary:
-  `result_reports/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
+  `result_reports/legacy/summaries/416_summary-en14825-batch-agent-change-gate-closeout.md`.
 - AHRI calculator and supporting UI/workflow closeout:
-  `result_reports/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
+  `result_reports/legacy/summaries/445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md`.
 - Calculator helper/batch/detail lifecycle closeout:
-  `result_reports/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`.
+  `result_reports/legacy/summaries/490_summary-calculator-helper-batch-lifecycle-closeout.md`.
 - PySide6 Train/Predict rewrite design gate:
   `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`.
 - PySide6 Train/Predict governing architecture contract:
@@ -123,7 +123,7 @@ Next: Standard Calculation Capability Extension design.
 - KOREA calculator notebook entry sub-arc:
   `docs/designs/2026-07-01-korea-notebook-entry-subarc-spec.md`.
 - KS C 9306 HSPF official oracle closeout:
-  `result_reports/summaries/651_summary-ks-hspf-official-oracle-closeout.md`.
+  `result_reports/legacy/summaries/651_summary-ks-hspf-official-oracle-closeout.md`.
 - B-option unified case table visual reference:
   `docs/designs/assets/predict_ref_img.png`.
 - Spreadsheet table UX baseline:

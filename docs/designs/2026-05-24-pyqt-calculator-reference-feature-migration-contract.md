@@ -9,10 +9,10 @@ retirement.
 
 The governing evidence is:
 
-- `result_reports/archive/154_pyqt-calculator-retirement-audit.md`, which
+- `result_reports/legacy/archive/154_pyqt-calculator-retirement-audit.md`, which
   classified calculator-only retirement candidates, retained Predict/Train
   assets, and shared PyQt hold assets.
-- `result_reports/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md`,
+- `result_reports/legacy/summaries/165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md`,
   which confirmed the Tkinter direction and kept retirement held behind UX
   and packaging judgment.
 - `docs/ui_ux/03_SPREADSHEET_TABLE_UX_CONTRACT.md` and

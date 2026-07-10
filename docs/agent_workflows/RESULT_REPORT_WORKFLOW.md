@@ -56,8 +56,8 @@ result_reports/records/YYYY-MM/YYYY-MM-DD-<slug>.md
 - Records are append-only. Correct a material error with a new correction
   record rather than rewriting history.
 
-Existing `active/`, `archive/`, and `summaries/` are legacy inputs.
-Their physical migration is a separate approved slice.
+Existing `active/` is a legacy input retained at its historical path. Existing
+archive and summary evidence is read-only under `result_reports/legacy/`.
 
 ## Record Contract
 
