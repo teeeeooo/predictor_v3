@@ -55,6 +55,9 @@ result_reports/records/YYYY-MM/YYYY-MM-DD-<slug>.md
 - Do not scan legacy directories for a global number.
 - Records are append-only. Correct a material error with a new correction
   record rather than rewriting history.
+- Existing records preserve the metadata and optional change-gate schema valid
+  when created. Current parser and staged-checker schemas apply only to newly
+  staged records; do not bulk-convert existing records.
 
 Existing `active/` is a legacy input retained at its historical path. Existing
 archive and summary evidence is read-only under `result_reports/legacy/`.

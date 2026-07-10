@@ -17,13 +17,17 @@
 
 ## Current Slice
 
-Harness audit cleanup is complete, and the current branch is ready for branch
-handoff.
+Agent harness/report lifecycle redesign, legacy migration, and pre-merge
+corrections are complete. The branch is ready for main merge execution.
 
 ## Next Action
 
+Merge `chore/agent-harness-report-lifecycle` into `main`.
+
+## After Merge
+
 Start Standard Calculation Capability Extension design using the capability
-boundary and six-step order in `project_brief.md`.
+boundary and execution order in `project_brief.md`.
 
 ## Active Blockers
 
@@ -40,8 +44,6 @@ None.
 
 ## Deferred / Hold
 
-- Standard Calculation Capability Extension begins after harness cleanup; its
-  capability boundary and six-step order are owned by `project_brief.md`.
 - Production ML Readiness resumes after the standard-calculation sequence.
 - ML validation gap: `model/model.pkl` is absent and training CSV is external;
   mock smoke cannot validate accuracy, trends, importance, or model quality.
