@@ -8,16 +8,16 @@
 
 | 파일 | 목적 |
 | --- | --- |
-| `../ACTIVE_DOCUMENTS.md` | active 문서 목록과 inbound/outbound owner 관계를 관리한다. |
+| `../ACTIVE_DOCUMENTS.md` | top-level owner/root/index를 찾는 비포괄 owner-route map이다. |
 | `DOCS_GUIDELINES.md` | 프로젝트 전체 규격 문서 작성 철학, 금지 규칙, 근거 표기, 품질 기준을 정의한다. |
 | `STANDARD_DOC_TEMPLATE.md` | 규격별 `notes`, `dev_notes`, `design_notes`, `glossary` 문서를 만들 때 복사해서 쓰는 표준 템플릿이다. |
 | `FORMULA_REFERENCE_GUIDE.md` | 수식, 변수, 용어를 정리할 때 사용하는 공통 형식과 예시를 제공한다. |
 | `PACKAGING.md` | 로컬/배포 패키징 원칙과 패키징 작업 시 확인해야 할 owner 문서다. |
-| `WORK_PLAN.md` | 현재 우선순위, 다음 실행 순서, phase 전환, Z-phase 항목을 관리하는 실행 순서 문서다. |
+| `WORK_PLAN.md` | 현재 slice와 단 하나의 next action, blocker, constraint, hold를 관리한다. |
 | `REFACTOR_PLAN.md` | 일반 TODO-list가 아니라 리팩토링 후보, 구조 분리 트리거, guardrail, 분리 전략을 관리하는 문서다. |
 | `README.md` | `docs` 폴더의 목적, 문서 구조, 새 문서 작성 순서를 안내한다. |
 
-`WORK_PLAN.md`는 지금 무엇을 어떤 순서로 진행할지 관리하고, `REFACTOR_PLAN.md`는 구조 개선 후보와 분리 전략을 관리한다. 완료 이력이나 일반 작업 목록을 두 문서에 중복해서 쌓지 않는다.
+`WORK_PLAN.md`는 현재 slice와 단 하나의 next action을 관리하고, `REFACTOR_PLAN.md`는 구조 개선 후보와 분리 전략을 관리한다. `project_log.md`는 milestone decision, durable failure/lesson, process rule만 보존한다. ordinary 작업 상세는 Git diff/commit history, focused validation, terminal/final output에 남기고 conditional trigger일 때만 compact record를 작성한다.
 
 ## 주요 하위 영역
 
@@ -80,7 +80,7 @@ docs/en14825/en14825_glossary.md
 ## 새 규격 문서를 추가할 때의 순서
 
 1. `AGENTS.md`와 `AGENT_TASK_ROUTER.md`의 해당 작업 유형을 확인한다.
-2. 여러 active 문서에 걸친 업데이트라면 `ACTIVE_DOCUMENTS.md`에서 owner 문서와 inbound/outbound 관계를 확인한다.
+2. top-level owner가 불명하면 `ACTIVE_DOCUMENTS.md`에서 시작점을 찾고 child 문서는 해당 owner의 README/index/workflow에서 확인한다.
 3. 신규 규격 문서 생성 또는 규격 문서 구조 변경이면 `docs/DOCS_GUIDELINES.md`를 확인한다.
 4. 새 standard canonical 문서를 만들 때는 `docs/STANDARD_DOC_TEMPLATE.md`에서 필요한 템플릿을 복사한다.
 5. `docs/<standard>/` 폴더를 만들고 `notes`, `dev_notes`, `design_notes`, `glossary` 4개 문서를 분리해 작성한다.

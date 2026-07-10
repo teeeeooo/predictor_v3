@@ -14,11 +14,8 @@ VALID_GATE = """\
 change_gate:
   new_source: small
   hotspot_delta: none
-  code_map_check: regenerated
   ui_literal_exemption: none
   reuse_commonization: checked
-  report_exemption: none
-  read_ledger: included
 """
 
 VALID_RECORD_PREFIX = """\
@@ -197,7 +194,7 @@ def test_checker_reads_staged_blob_not_worktree(repo: Path) -> None:
     assert not _errors(repo)
 
 
-def test_structured_report_exemption_allows_reviewed_literal(repo: Path) -> None:
+def test_structured_ui_literal_exemption_allows_reviewed_literal(repo: Path) -> None:
     _stage(repo, "apps/calculator/ui/view.py", 'BACKGROUND = "#A1B2C3"\n')
     _stage_report(
         repo,

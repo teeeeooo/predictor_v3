@@ -1,7 +1,7 @@
 # Lightweight Calculator — macOS Tkinter Manual Smoke Checklist
 
 > Companion to
-> `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`
+> `docs/designs/legacy/2026-05-22-lightweight-calculator-ui-feasibility.md`
 > and `docs/guides/lightweight_calculator_packaging_check.md`. This
 > document covers **manual GUI verification on macOS** for the
 > Tkinter calculator-only MVP. PyInstaller packaging and Windows
@@ -356,6 +356,6 @@ Once every checklist item is `OK` on macOS:
    calculator-only source retirement resumes.
 
 Do not retroactively edit the design doc
-(`docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`)
+(`docs/designs/legacy/2026-05-22-lightweight-calculator-ui-feasibility.md`)
 to record the smoke result; record it in the run's result report
 instead so the design doc keeps describing the *intent*.

@@ -1,5 +1,11 @@
 # ML Feature Catalog Workflow
 
+> **Current owner boundary:** Data Definition owns schema and
+> feature-definition changes. Feature Catalog is limited to legacy
+> compatibility, read, and export behavior; canonical save is disabled by
+> default. The edit/save steps below are historical and must not guide current
+> schema changes.
+
 ## Purpose
 
 Arc 13 makes `config/ml/features.csv` the operating contract for ML feature,

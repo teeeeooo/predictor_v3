@@ -1,136 +1,75 @@
 # Refactor Plan
 
 ## Purpose
-- 리팩토링 후보와 트리거만 관리한다.
-- 장기 목표와 Phase 1~5는 `PROJECT_CHARTER.md`를 따른다.
-- 현재 우선순위와 다음 실행 순서는 `docs/WORK_PLAN.md`를 본다.
-- 실제 작업 기록과 decision history는 `project_log.md`를 본다.
-- 큰 설계 결정은 `docs/designs/*`에 둔다.
 
-## Refactor principles
-- 계산 결과 회귀 방어 최우선
-- public API 무단 변경 금지
-- golden expected 임의 변경 금지
-- 한 번에 대규모 구조 변경 금지
-- 분리 전 branch trace / tests / fixtures 보호 확인
+- Track only unresolved structural candidates and their start triggers.
+- Keep execution in `docs/WORK_PLAN.md`, direction in `project_brief.md`, and
+  completed decisions in `project_log.md`.
+- A listed candidate is not authorization to refactor.
 
-## Active refactor candidates
+## Active Candidate — ISO 16358 Internal Helper Extraction
 
-### 0. Predict/Train application-usecase and execution port boundary correction
-- **왜 후보인지**: Arc 11 architecture review reopened final acceptance because
-  production Train execution is not behind a killable outbound process adapter
-  and Predict orchestration remains PySide6/QThread-bound.
-- **목표 boundary**:
-  - Train: `TrainingExecutionPort` plus process runner adapter so `중지` can
-    hard-stop the running training process and clean temporary artifacts.
-  - Predict: UI/runtime-neutral prediction usecase and execution port, with the
-    existing QThread worker retained only as a PySide adapter implementation.
-- **범위 제한**: ML algorithm, preprocessing, target registry, feature schema,
-  artifact schema, mapping schema, and calculator formulas remain unchanged.
+Potential scope: separate point resolution, bin iteration, and energy
+accumulation inside the ISO 16358 implementation.
 
-### 0b. Calculator usecase boundary correction
-- **왜 후보인지**: Calculator UI still contains application orchestration that
-  should be reusable outside a specific UI section.
-- **실행 상태**: Arc 12로 분리해 완료했다. ISO/ISEER, SASO T3, Hong Kong
-  CSPF/HSPF, EN14825 SEER/SCOP, and AHRI SEER2/HSPF2는 application
-  boundary treatment 또는 thin UI shim을 통해 calculator orchestration을 UI
-  section/batch code에서 분리했다. Arc 13 ML Pipeline Stabilization이 다음
-  추천 arc다.
-- **지켜야 할 guard**: calculator formulas, config semantics, profile IDs,
-  fixtures/golden expected, and public result dict contracts remain unchanged.
+The current `iso16358.py` is an approximately 1,800-LOC single owner, so the
+candidate is evidence-based. It remains trigger-only and must not preempt the
+next approved product workstream.
 
-### 1. Calculator series reset: 기존 ISO 파일 legacy 격하 + 새 calculator 3종 작성
-- **왜 후보인지**: 기존 root ISO calculator가 ISO16358, KS C 9306, AS/NZS workbook oracle trace, region compatibility, UI/profile 기대를 동시에 떠안으면서 작업이 반복적으로 꼬임. 037~043 사이클의 점진 cleanup으로는 boundary 책임이 정렬되지 않는다는 것이 확인되었다.
-- **방향 전환 (2026-05-17)**: 기존 root ISO calculator를 부분 cleanup으로 계속 살리는 방향은 종료한다. 구현은 standard별 calculator package로 분리하고, ISO / KS / ASNZS calculator 파일을 명확한 책임으로 유지한다.
-- **목표 boundary**:
-  - `core/calculators/standards/iso16358.py` — ISO 16358 CSPF/HSPF common standard logic 전용. KS / ASNZS / workbook oracle / legacy diagnostic helper 미포함. Hong Kong / India / SASO / ISO T1 default 등 ISO 16358 기반 regional profile JSON을 해석하는 대표 calculator.
-  - `core/calculators/standards/ks_c9306.py` — KS C 9306 전용 special calculator (KS CSPF, KS HSPF). `data/region_configs/korea.json`을 직접 해석. ISO calculator가 KS config를 대신 해석하지 않는다.
-  - `core/calculators/standards/asnzs_hspf_excel.py` — AS/NZS workbook oracle / Excel compatibility 전용. Current workbook HSPF/CSPF snapshot exact-match는 이 모듈/fixture에서만 다루며, historical case3 full-dump 재현은 별도 Z-phase로 유지한다.
-- **Region config 저장소**: `data/region_configs/`는 ISO 전용이 아니라 여러 calculator가 공유하는 정적 standard/region config 저장소이다. 각 JSON은 boundary에서 정한 calculator가 직접 해석한다.
-- **Next work order**:
-  1. 완료된 UI audit과 AHRI selector cleanup 상태를 유지한다. `ui/calc_window.py`는 PyQt offscreen launch smoke와 AHRI profile-id selector guard로 보호한다.
-  2. Calculator result envelope / ML adapter boundary는 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`를 기준으로 한다.
-  3. ML / inverse-search 복귀 전 첫 refactor slice는 adapter helper 추가로 제한하고, core calculator public API와 region config 의미를 변경하지 않는다.
-  4. Historical case3 workbook full-dump가 확보되면 AS/NZS workbook oracle compatibility를 별도 phase로 확장한다.
-- **tests 정책 (이번 reset에 한정)**: legacy implementation behavior를 고정하는 테스트는 그대로 유지하지 않는다. 필요한 regression만 새 calculator contract 기준으로 이전하고, diagnostic / workbook-mixed 테스트는 삭제 또는 legacy/archive 디렉터리로 격리한다. 새 calculator skeleton 단계에서 해당 분류 audit을 선행한다.
-- **037~043 사이클의 미세 cleanup은 종료**: KS measured input prep 분리(037), CSPF point resolution 분리(038), standalone body 구현(039), audit(040), legacy delegate 제거(041), ISO ks_intersection 분기 제거 audit(042) 및 구현(043) 같은 작업은 이번 reset 이후 더 이상 다음 작업으로 제안하지 않는다.
-- **Reference branch**: `work/iso-hspf-refactor-ui-followup`은 merge 대상이 아니라 reference/spike로만 둔다. diff cherry-pick 또는 merge는 수행하지 않는다.
-- **지켜야 할 guard**: public API contract와 새 calculator의 expected/golden 기준 유지. KS C 9306 region config 해석을 새 ISO common path에 합치지 않고, AS/NZS workbook oracle convention을 새 ISO common path에 섞지 않는다.
+Start only when one or more triggers are observed:
 
-### 2. ISO CSPF/HSPF helper separation
-- **CSPF/HSPF helper 분리 후보**: bin loop, point resolution, energy accumulation 등 공통 로직 모듈화. 이번 series reset 이후 새 ISO 파일 안에서 처음부터 명확한 helper 경계로 작성한다.
-- **common path / region-specific path 경계**: 공통 엔진이 특정 지역의 특수 로직(예: KS C 9306)에 오염되지 않도록 분리.
-- **production path와 compatibility path 분리**: 표준 경로와 호환성 경로(Z-phase)의 코드 베이스 격리.
+- the same ISO branch or accumulation rule must change in multiple places;
+- a focused fix cannot be isolated without touching unrelated calculation stages;
+- function size or control-flow depth materially obstructs formula review;
+- region-specific behavior begins leaking into the global ISO path.
 
-### 3. KS C 9306 helper separation
-- **KS C 9306 독립성 유지**: 한국 고유의 부하 라인 계산 및 보간 규칙을 `core/calculators/standards/ks_c9306.py` 별도 모듈로 관리. 039 이후 KS standalone body는 이미 ISO에 의존하지 않으므로, 본 항목은 series reset 이후에도 잔여 의존 검증 단위로만 유지한다.
-- **common ISO로 무리하게 흡수하지 않음**: KS C 9306은 AHRI / EN14825처럼 special calculator로 분리하며, 새 ISO calculator도 `korea.json` 같은 KS region config를 해석하지 않는다.
-- **분리 트리거**: ISO 파일 legacy 격하와 새 ISO skeleton 작성 직후 잔여 audit으로 수행.
+Required boundary:
 
-### 4. profile/schema resolver cleanup
-- **region config / profile schema / calculator input boundary**: 각 레이어 간의 데이터 계약 명확화.
-- **nested config 직접 주입 금지**: 계산기 core가 config 파일 구조에 직접 의존하지 않도록 resolver를 통한 데이터 전달.
-- **resolver-backed path 필요성**: 신규 규격 추가 시 유연한 확장을 위한 프로필 리졸버 강화.
-- **adapter boundary 기준**: result envelope / ML adapter 작업은 `docs/designs/2026-05-17-calculator-result-envelope-ml-adapter.md`의 `PredictedPointsEnvelope` / `CalculatorInputEnvelope` / `CalculatorResultEnvelope` 흐름을 따른다.
+- keep ISO global logic in the ISO owner and region behavior in config/profile
+  or explicit handler boundaries;
+- do not absorb KS C 9306 or AS/NZS workbook-oracle conventions;
+- preserve public functions, formula behavior, rounding order, diagnostics,
+  config meaning, fixtures, and golden expected values;
+- treat extraction as no-behavior-change unless an approved formula task says otherwise.
 
-### 5. UI resolver-backed config selection
-- **진행 상태**: `ui/calc_window.py`의 AHRI SEER2와 EN14825 SCOP combo는 profile registry item data 기반으로 전환했다.
-- **남은 후보**: ISO 2-point subwidget 등 다른 UI 경로에 남아 있는 direct config scan은 별도 UI 작업으로 audit한다.
-- **calculator profile resolver 우회 방지**: UI에서도 calculator construction은 `core/calculators/profiles.py` / dispatcher 경로를 우선한다.
+## Active Candidate — Warning-First Code Quality Guards
 
-## Deferred refactor candidates
-- common seasonal bin engine
-- full plugin architecture
-- AS/NZS HSPF compatibility calculator module
-- Excel row-level exact reconstruction support
-- large package split
+Add a guard only after a real problem identifies its value and owner. Introduce
+one warning at a time, measure noise, then consider enforcement separately.
 
-### 6. Code quality guardrail backlog
+Candidate checks:
 
-Static-analysis candidates to be introduced incrementally, warning-first, after
-real cleanup/controller work reveals need. Owned by `tools/code_checker/` for
-semantic checks and `tools/check_code_structure.py` for structural checks.
+- broad `except` / silent fallback smells;
+- compatibility wrapper and re-export inventory;
+- long-function, complexity, or nesting warnings beyond current soft limits;
+- import-cycle detection;
+- fan-in/fan-out summaries.
 
-**Warning-first candidates** (introduce one at a time; hard-fail only after noise
-is understood):
+When introducing a warning, assign its owner from the observed problem. Extend
+`tools/check_code_structure.py` only for focused AST/structure checks that fit
+its scope. Type and mock audits remain later decisions.
 
-- broad `except` / `pass` / silent fallback smell warning
-- re-export / compatibility wrapper inventory (e.g. `batch_table.py`,
-  `ui_tk/table/__init__.py`)
-- complexity / max-depth / long-function warning beyond current LOC soft limit
-- import cycle detector
-- fan-in / fan-out summary
+## Deferred
 
-**Later candidates** (after warning-first candidates are stable):
+- AS/NZS historical Excel/workbook reconstruction remains deferred until its
+  workbook evidence and compatibility scope are available.
+- Historical reconstruction must remain separate from production ISO logic and
+  must not redefine current golden expectations by inference.
 
-- strict type checker adoption (mypy / pyright)
-- mock boundary audit for headless-vs-GUI tests
+## Non-Goals
 
-**Policy**:
-- Do not implement all gates at once.
-- Choose owner per check type: `tools/code_checker/` for semantic map-based
-  checks, `tools/check_code_structure.py` for structural AST checks.
-- Revisit this backlog after ui_tk cleanup and controller switch slices are
-  complete.
+- Formula fixes, fixture/golden changes, UI features, ML work, packaging,
+  ordinary tests, and documentation cleanup are not refactor tasks.
+- Do not revive completed Predict/Train, calculator-boundary, KS, resolver, UI,
+  common-engine, plugin-architecture, or package-split plans from old history.
+- Do not start speculative cleanup merely because a candidate is documented.
 
-## Not refactor tasks
-- HSPF xfail 해소
-- golden fixture 보강
-- UI 기능 구현
-- ML/inverse-search 복귀
-- 문서 오타 수정
-- 단순 validation/smoke test 추가
+## General Triggers And Guardrails
 
-## Refactor trigger checklist
-- 파일/클래스 비대화
-- 같은 branch 조건이 반복적으로 생김
-- common path 수정 시 region regression이 반복적으로 깨짐
-- UI/config/ML schema가 calculator core에 침투함
-- public API 또는 result schema가 흔들릴 위험이 생김
-
-## Guardrails for any refactor
-- public API 유지
-- golden/smoke/validation test 선확인
-- region config 의미 변경 금지
-- compatibility calculator와 production calculator 분리
-- `docs/designs/*`에 design gate summary 작성 후 구현
+- Trigger examples: repeated branch conditions, recurring cross-region
+  regressions, owner leakage, or code size that blocks safe focused changes.
+- Confirm the owner boundary and focused verification before editing.
+- Preserve public API, JSON/result schema, diagnostics, region config meaning,
+  formula behavior, fixtures, goldens, and compatibility boundaries.
+- Use a Design Gate before any change that could alter architecture, schema,
+  routing, global-vs-specific behavior, or a public contract.

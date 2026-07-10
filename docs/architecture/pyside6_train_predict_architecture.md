@@ -9,7 +9,7 @@ It is intended for Codex/agent implementation work. It defines the target packag
 The design decision behind this architecture contract is recorded in:
 
 - `docs/designs/2026-06-27-pyside6-train-predict-rewrite-design-gate.md`
-- `docs/designs/2026-06-28-arc10-prediction-worker-progress-design.md`
+- `docs/designs/legacy/2026-06-28-arc10-prediction-worker-progress-design.md`
 
 Non-binding visual references:
 
@@ -30,7 +30,7 @@ earlier split table foundation remains implementation history only.
 
 Arc 9.1 retired the legacy `ui/` path. Arc 9.2 moved the project-specific
 legacy visual/table harvest to
-`docs/designs/2026-06-27-pyside6-visual-table-parity-harvest.md` as the Arc 9.5
+`docs/designs/legacy/2026-06-27-pyside6-visual-table-parity-harvest.md` as the Arc 9.5
 design reference. Visual token ownership for Arc 9.5 belongs to
 `ui_common.visual_tokens`.
 

@@ -17,6 +17,8 @@ This document owns packaging and deployment-build workflow details.
 ## Owner Documents
 
 - Packaging owner: `docs/PACKAGING.md`
+- Calculator packaging measurement tasks only:
+  `docs/guides/lightweight_calculator_packaging_check.md`
 - Existing packaging failure or milestone decisions: search `project_log.md`
   by keyword only.
 

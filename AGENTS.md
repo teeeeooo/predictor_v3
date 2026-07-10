@@ -60,7 +60,7 @@ route와 owner 문서를 읽는다.
   검토한다.
 - 새 책임 영역이 3개 이상이면 interface/skeleton과 구현 slice를 분리한다.
 - 구조 영향 source 작업은 `tools/check_code_structure.py`와 staged change
-  gate를 영향 범위에 맞게 사용한다. semantic reuse/code-map 판단은
+  gate를 영향 범위에 맞게 사용한다. reuse/owner 판단은
   warning-first이며 report 부재 자체는 실패가 아니다.
 - 공통/특화 경계, schema, routing, public contract가 불명확하면 구현 전
   Design Gate를 통과한다. prompt가 경계를 충분히 고정하면 짧은

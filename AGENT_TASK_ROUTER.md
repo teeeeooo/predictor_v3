@@ -26,6 +26,11 @@
 - every changed line은 Goal과 직접 연결되어야 한다.
 - ambiguous standard/profile/region/schema combination은 fail-fast한다.
 - commit/push와 tracked file 삭제는 사용자 승인이 필요하다.
+- 기존 변경 검토는 changed paths/stat, exact-symbol 검색, narrow
+  hunk/owner range순으로 시작하고 behavior/ownership가 불명확할 때만
+  범위를 넓힌다.
+- validation은 matching owner에서 가져오며 unrelated guard나 최종
+  focused suite가 이미 커버한 unchanged subset을 반복하지 않는다.
 
 ### Architecture Triage
 
@@ -44,7 +49,7 @@ Design Gate 또는 별도 audit/design slice를 사용한다.
 ### Staged Change Gate
 
 - objective whitespace, syntax, hard LOC, UI literal 정책은 hard check다.
-- code-map, reuse/commonization, hotspot 책임 판단은 기본 warning-first다.
+- reuse/commonization과 hotspot 책임 판단은 기본 warning-first다.
 - ordinary source/test/tool/config 변경은 report 부재만으로 실패하지 않는다.
 - 예외 UI literal 또는 구조 판단을 durable하게 남길 필요가 있으면 optional
   `change_gate` block을 compact record에 둔다.
@@ -120,7 +125,7 @@ record trigger다. Accepted evidence 없이 expected 값을 변경하지 않는�
 - matching workflow owner
 
 owner/input/output/public contract를 먼저 정하고 compatibility layer는 얇게
-유지한다. 새 helper/adapter/surface/split/move는 bounded sibling/code-map
+유지한다. 새 helper/adapter/surface/split/move는 bounded sibling/owner
 검색을 수행한다. ordinary internal 구조 변경은 warning-first이며 report를
 자동 요구하지 않지만, owner/public contract 변경은 compact record trigger다.
 

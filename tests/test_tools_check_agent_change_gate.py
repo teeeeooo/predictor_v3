@@ -18,11 +18,8 @@ VALID_GATE = """\
 change_gate:
   new_source: split
   hotspot_delta: accepted-for-slice
-  code_map_check: regenerated
   ui_literal_exemption: none
   reuse_commonization: checked
-  report_exemption: none
-  read_ledger: included
 """
 
 VALID_RECORD = """\
@@ -104,11 +101,10 @@ def test_record_change_gate_and_manifest_parsers_validate_closed_schemas() -> No
     assert metadata.memory_review == "no-change"
     gate = parse_change_gate(VALID_RECORD)
     assert gate.new_source == "split"
-    active_gate = VALID_GATE.replace(
-        "  report_exemption: none\n  read_ledger: included\n",
-        "",
-    )
-    assert parse_change_gate(active_gate).read_ledger == "not_required"
+    with pytest.raises(ValueError, match="exactly"):
+        parse_change_gate(VALID_GATE + "  code_map_check: checked\n")
+    with pytest.raises(ValueError, match="exactly"):
+        parse_change_gate(VALID_GATE + "  report_exemption: none\n")
     with pytest.raises(ValueError, match="exactly"):
         parse_record_metadata(VALID_RECORD.replace("  tags:", "  extra: x\n  tags:"))
 
@@ -116,13 +112,20 @@ def test_record_change_gate_and_manifest_parsers_validate_closed_schemas() -> No
         """\
 allowed_paths:
   - tools/existing.py
-report_exemption:
-  reason: user-approved-formatting-only
-  scope: formatting-only
-  approved_by_user: true
+report_path: result_reports/records/2026-07/2026-07-10-focused-gate-test.md
 """
     )
     assert manifest.allowed_paths == ("tools/existing.py",)
+    assert manifest.report_path == (
+        "result_reports/records/2026-07/2026-07-10-focused-gate-test.md"
+    )
+    with pytest.raises(ValueError, match="unknown manifest"):
+        parse_manifest(
+            "allowed_paths:\n"
+            "  - tools/existing.py\n"
+            "report_exemption:\n"
+            "  reason: status-only\n"
+        )
 
 
 def test_ordinary_tool_change_does_not_require_report(repo: Path) -> None:
@@ -140,7 +143,6 @@ def test_structural_change_without_report_is_warning_first(repo: Path) -> None:
 
     findings = _findings(repo)
     assert not [item for item in findings if item[0] == "error"]
-    assert any("code-map judgment" in message for _, message in findings)
     assert any("reuse/commonization" in message for _, message in findings)
 
 
@@ -242,11 +244,7 @@ def test_manifest_still_limits_staged_scope(repo: Path) -> None:
     git_dir = repo / _git(repo, "rev-parse", "--git-dir").strip()
     (git_dir / "agent_task_manifest.yml").write_text(
         "allowed_paths:\n"
-        "  - docs/not-staged.md\n"
-        "report_exemption:\n"
-        "  reason: status-only\n"
-        "  scope: scope-test\n"
-        "  approved_by_user: true\n",
+        "  - docs/not-staged.md\n",
         encoding="utf-8",
     )
 

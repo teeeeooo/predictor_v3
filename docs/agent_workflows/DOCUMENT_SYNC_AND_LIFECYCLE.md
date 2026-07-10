@@ -2,7 +2,7 @@
 
 ## Role
 
-This document owns active-document sync, current-state document boundaries,
+This document owns active owner-map sync, current-state document boundaries,
 session handoff, and legacy-document movement.
 
 ## First Judgment
@@ -11,24 +11,27 @@ Use filenames, diff stat, changed-file type, and the user request to decide
 whether any documentation sync is actually needed. Do not read or edit planning
 documents merely because source changed.
 
-## Active Document Inventory
+## Active Owner Map
 
 Check `ACTIVE_DOCUMENTS.md` when:
 
-- multiple active documents are affected;
-- a new active owner/index/control document is created;
-- an active document changes owner role or inbound/outbound relationships;
-- an active document becomes legacy or is physically moved.
+- a top-level owner, root, index, or control document is created or retired;
+- one of those documents changes responsibility or is physically moved.
 
-Design-record additions and lifecycle status changes also update
-`docs/designs/README.md`.
+Do not update the map for every active child document or ordinary multi-document
+wording change. Discover children through the nearest owner README, index, or
+workflow, and use filesystem search when completeness matters.
+
+Update the matching design index when a new root active design is created, an
+active decision is absorbed into an owner, an active record moves to legacy,
+or a legacy record is explicitly re-promoted.
 
 ## Document Boundaries
 
 - `docs/WORK_PLAN.md`: current slice, next action, blockers, constraints, hold.
 - `project_brief.md`: current Phase / Arc / Milestone map only.
 - `docs/REFACTOR_PLAN.md`: refactor candidates and structural triggers.
-- `project_log.md`: milestone decisions, durable failures, lessons.
+- `project_log.md`: milestone decisions, durable failures/lessons, process rules.
 - standard/dev notes: reusable specification interpretation, calculation
   rationale, and schema meaning.
 - result records: durable change reason/evidence at one point in time.

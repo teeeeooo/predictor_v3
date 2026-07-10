@@ -125,7 +125,7 @@ def validate_records(
             Finding(
                 "warning",
                 RECORD_ROOT,
-                "multiple change_gate records require manifest selection for exemptions",
+                "multiple change_gate records require manifest report_path selection",
             )
         )
     return None

@@ -401,19 +401,6 @@ def test_profile_tab_allows_common_controller_construction():
 
 
 # ---------------------------------------------------------------------------
-# code_map freshness reminder
-# ---------------------------------------------------------------------------
-
-
-def test_reference_map_freshness_warns_when_missing(tmp_path):
-    findings = guard.check_reference_map_freshness(tmp_path)
-    assert any(
-        f.severity == "warning" and "missing" in f.message
-        for f in findings
-    )
-
-
-# ---------------------------------------------------------------------------
 # Repo-wide pass
 # ---------------------------------------------------------------------------
 

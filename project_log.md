@@ -1,11 +1,15 @@
 # Project Log
 
-이 문서는 작업 과정의 시도, 실패, 성공, 중요 결정사항 및 반복 방지를 위한 기록용입니다.
+이 문서는 milestone decision, durable failure/lesson, process rule를
+보존하는 기록입니다.
 
 ## Project Log Policy
 
-- `project_log.md`는 milestone급 decision, failure, lesson, process-rule change만 기록한다.
-- task별 상세 결과, 검증 상세, 체크리스트, 파일 변경 목록은 result report에 기록한다.
+- `project_log.md`는 milestone decision, durable failure/lesson,
+  process-rule change만 기록한다.
+- ordinary 작업 상세는 Git diff/commit history, focused validation,
+  terminal/final output에 남긴다. compact record는 conditional trigger에서만
+  작성한다.
 - 장기 기억 후보는 Memory Review Gate를 통해
   `result_reports/memory/project_memory_seed.md`에서 선별 관리한다.
 - report 본문이나 seed entry 전문을 `project_log.md`에 반복 복사하지 않는다.
@@ -39,6 +43,12 @@
   memory-update checkpoint.
 - Existing archive and summary reports now reside under read-only
   `result_reports/legacy/` while historical bodies remain unchanged.
+- Stale generated reference-map/read-budget layers were retired; targeted
+  owner/reuse search plus objective structure and staged gates remain.
+- `ACTIVE_DOCUMENTS.md` is an owner-route map; child-document completeness
+  belongs to local indexes and filesystem search.
+- The active design root now contains only current/governing/future-unabsorbed
+  decisions; 45 historical records are under an indexed legacy boundary.
 
 ## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
 

@@ -11,7 +11,7 @@
 - 지역별/규격별 config와 profile을 통해 계산 조건을 관리한다.
 - Calculator UI, 테스트, 문서, agent workflow 규칙을 함께 유지한다.
 
-README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이력을 보존하는 문서가 아니다. 변동성 큰 상태는 `project_brief.md`, `project_log.md`, `docs/REFACTOR_PLAN.md`를 기준으로 확인한다.
+README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이력을 보존하는 문서가 아니다. 현재 방향과 실행 상태는 `project_brief.md`, `docs/WORK_PLAN.md`, `docs/REFACTOR_PLAN.md`에서 확인한다.
 
 ## What This Repository Contains
 
@@ -46,9 +46,9 @@ README는 진입점 문서이며, 현재 진행 상황이나 상세 작업 이�
 | `AGENTS.md` | Lightweight project rules for agents |
 | `AGENT_TASK_ROUTER.md` | Task-specific reading and execution routing |
 | `project_brief.md` | Short current-state summary for new sessions |
-| `project_log.md` | Work history, decisions, failures, and lessons |
-| `ACTIVE_DOCUMENTS.md` | Active documentation inventory and inbound/outbound owner map |
-| `docs/WORK_PLAN.md` | Current priorities and next execution order |
+| `project_log.md` | Milestone decisions, durable failures/lessons, and process rules |
+| `ACTIVE_DOCUMENTS.md` | Top-level documentation owner-route map |
+| `docs/WORK_PLAN.md` | Current slice and exactly one next action |
 | `docs/REFACTOR_PLAN.md` | Refactoring candidates and structure triggers |
 
 ## Agent Workflow
@@ -69,7 +69,7 @@ General workflow rules:
 | Path | Role |
 | --- | --- |
 | `docs/README.md` | Documentation structure and standard-document writing guide |
-| `ACTIVE_DOCUMENTS.md` | Active documentation inventory; check this before broad doc updates |
+| `ACTIVE_DOCUMENTS.md` | Top-level owner-route map; child completeness comes from local indexes or search |
 | `docs/DOCS_GUIDELINES.md` | Standard documentation philosophy, structure, and evidence rules |
 | `docs/STANDARD_DOC_TEMPLATE.md` | Template for standard `notes`, `dev_notes`, `design_notes`, and `glossary` docs |
 | `docs/FORMULA_REFERENCE_GUIDE.md` | Formula, variable, and term documentation format |
@@ -109,6 +109,11 @@ Do not invent build or run commands from README. If a workflow is unclear, inspe
 README intentionally avoids detailed current status and work history.
 
 - Current high-level status: `project_brief.md`
-- Detailed work history and decisions: `project_log.md`
+- Current slice and one next action: `docs/WORK_PLAN.md`
+- Milestone decisions, durable failures/lessons, and process rules: `project_log.md`
 - Active document owner map: `ACTIVE_DOCUMENTS.md`
 - Living future work and refactor plan: `docs/REFACTOR_PLAN.md`
+
+Ordinary work detail belongs in Git diff/commit history, focused validation,
+and terminal/final output. Create a compact record only for a conditional
+record trigger.

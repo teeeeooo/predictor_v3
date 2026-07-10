@@ -80,6 +80,9 @@
 - Phase / Arc / Milestone 지도는 `project_brief.md`에 둔다.
 - 현재 slice, 다음 action, blocker, active constraints, hold 상태는 `docs/WORK_PLAN.md`에 둔다.
 - 명시적으로 요청된 다음 세션 handoff pointer는 `docs/WORK_PLAN.md`의 `Session Handoff`에 둔다.
-- 작업 기록과 try/fail/success, milestone decision과 lesson은 `project_log.md`에 둔다.
+- milestone decision, durable failure/lesson, process rule는 `project_log.md`에
+  둔다. ordinary 작업 상세는 Git diff/commit history, focused validation,
+  terminal/final output이 소유하고 conditional trigger일 때만 compact
+  record를 남긴다.
 - 리팩토링 후보와 구조 분리 기준은 `docs/REFACTOR_PLAN.md`에 둔다.
 - 같은 내용을 여러 문서에 중복으로 길게 기록하지 않는다.

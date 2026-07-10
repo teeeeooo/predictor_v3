@@ -10,7 +10,6 @@ from tools.agent_change_gate_ui_literals import check_ui_magic_literals
 from tools.agent_change_gate_models import ChangeGate, Finding, TaskManifest, parse_manifest
 from tools.agent_change_gate_records import RECORD_ROOT, validate_records
 
-CODE_MAP_PATH = "docs/code_map/CODEBASE_REFERENCE_MAP.md"
 PRODUCTION_ROOTS = ("core/", "ui/", "apps/", "scripts/")
 
 
@@ -42,14 +41,6 @@ def evaluate_cached(index: GitIndex) -> list[Finding]:
     for change in changes:
         if _is_python_source(change.path):
             structural = _check_source(index, change, gate, findings) or structural
-    if structural and (gate is None or gate.code_map_check == "not_required"):
-        findings.append(
-            Finding(
-                "warning",
-                CODE_MAP_PATH,
-                "structural source change should include a bounded code-map judgment",
-            )
-        )
     if structural and (
         gate is None or gate.reuse_commonization == "not_required"
     ):

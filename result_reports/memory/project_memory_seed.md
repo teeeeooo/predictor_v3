@@ -45,7 +45,7 @@ entries:
 
   - type: decision
     topic: architecture and source owner boundary
-    content: Project-wide code quality requires thin app entrypoints, clean Model/Controller(or Service)/Shell(or Adapter)/View/Policy boundaries, explicit source owner packages before new files, and warning/reference-map evidence only as support. check_code_structure.py remains the stricter structure guard; staged structure work uses the agent change gate against Git index blobs.
+    content: Project-wide code quality requires thin app entrypoints, clean Model/Controller(or Service)/Shell(or Adapter)/View/Policy boundaries, explicit source owner packages before new files, and targeted sibling/owner/reuse search as warning-first evidence. check_code_structure.py remains the stricter structure guard; staged structure work uses the agent change gate against Git index blobs.
     keywords:
       - predictor_v3
       - clean architecture
@@ -54,7 +54,7 @@ entries:
       - check_code_structure
       - agent change gate
     assertionStatus: verified
-    source: consolidated from result_reports/legacy/summaries/123_summary-calculator-tkinter-quality-xfail.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, 314_summary-tkinter-table-controller-switch-arc-closeout.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, and 416_summary-en14825-batch-agent-change-gate-closeout.md
+    source: consolidated from result_reports/legacy/summaries/123_summary-calculator-tkinter-quality-xfail.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, 314_summary-tkinter-table-controller-switch-arc-closeout.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, and 416_summary-en14825-batch-agent-change-gate-closeout.md; result_reports/records/2026-07/2026-07-10-code-map-and-read-budget-retirement.md
 
   - type: decision
     topic: UI UX SSOT and table interaction contract

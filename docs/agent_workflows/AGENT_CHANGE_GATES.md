@@ -7,8 +7,8 @@ It does not make result records mandatory for ordinary changes.
 
 ## Applicability
 
-The cached checker inspects staged source, test, tool, region-config, code-map,
-and result-record changes. Docs-only wording and status checks normally need no
+The cached checker inspects staged source, test, tool, region-config, and
+result-record changes. Docs-only wording and status checks normally need no
 gate beyond diff inspection.
 
 ## Objective Hard Checks
@@ -33,7 +33,6 @@ The checker warns, but does not fail solely, when:
 - a new production source is 251-350 LOC;
 - a new source has many top-level classes;
 - an existing hotspot grows by 40 net LOC or more;
-- a structural change has no bounded code-map judgment;
 - a structural change has no reuse/commonization decision;
 - a Phase 2 UI presentation literal may deserve a token.
 
@@ -49,14 +48,12 @@ A compact record may include:
 change_gate:
   new_source: none | small | split | justified
   hotspot_delta: none | wiring-only | accepted-for-slice | split-audit-required | split-required
-  code_map_check: not_required | checked | skipped | regenerated | no-change
   ui_literal_exemption: none | approved-for-slice
   reuse_commonization: not_required | checked | reused-existing-owner | local-with-reason | design-deferred
 ```
 
 Use this block for an approved UI literal exemption or a structure decision
-worth preserving. Legacy `report_exemption` and `read_ledger` fields remain
-parser-compatible but are not part of the active five-field contract.
+worth preserving.
 
 ## Local Task Manifest
 
@@ -109,9 +106,6 @@ python3 -B tools/check_agent_change_gate.py --cached
 Hooks are implemented in the repository but enabled per clone only when
 `core.hooksPath` is configured. Do not describe them as active in a checkout
 without verifying that configuration.
-
-The legacy commit-message exemption trailer validator remains compatibility
-only; the new policy does not require exemption trailers for report-free work.
 
 ## Validation
 

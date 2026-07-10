@@ -23,6 +23,7 @@ UI arcs.
 
 ## Owner Documents
 
+- UI/UX local index: `docs/ui_ux/README.md`
 - UI/UX root: `docs/ui_ux/00_UI_UX_SYSTEM.md`
 - Toolkit policy: `docs/ui_ux/01_TOOLKIT_SELECTION_POLICY.md`
 - Layout tokens and screen caps: `docs/ui_ux/02_DESIGN_TOKENS_AND_LAYOUT.md`
@@ -35,6 +36,8 @@ UI arcs.
   - `docs/ui_ux/adapters/TKINTER_TABLE_ADAPTER.md`
   - `docs/ui_ux/adapters/PYQT_TABLE_IMPLEMENTATION.md`
   - future adapters when present
+- PyQt environment or skip-matrix tasks only:
+  `docs/guides/pyqt_test_support_matrix.md`
 
 ## Preflight Structure Guard
 
@@ -149,6 +152,35 @@ region config, ML features, or public result keys:
 - use `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md` for boundary
   decisions.
 
+## Manual Smoke-loop Fast Lane
+
+Use this fast lane only when the user explicitly requests smoke-loop mode or
+asks for an immediate micro-fix based on manual UI smoke. It applies to
+same-surface Tkinter/PyQt display, focus, scroll, selection, shortcut, spacing,
+or interaction corrections.
+
+- Limit the loop to source and focused test changes. Do not use it for
+  calculator core, golden/fixture/config/schema, ML/Predictor, public API or
+  diagnostics, or work that needs broader design.
+- Reuse already confirmed policy context. If more policy context is necessary,
+  read only the short relevant owner section.
+- Do not update current-state plans, project logs, or memory during the loop.
+  At a stable checkpoint, update a manual-smoke guide, current-state owner, or
+  memory owner only when its owned state actually changed.
+- Ordinary smoke-loop corrections need no result record. Create a compact
+  record only for a normal trigger such as a repeated, non-obvious,
+  platform/manual-only, cross-owner bug or one without an automated regression
+  guard.
+- Do not run full pytest. Validate in tiers: changed-surface owner tests first,
+  impacted boundary tests only when shared behavior changed, then requested
+  import, `py_compile`, or targeted smoke guards.
+- Keep onscreen or Computer Use checks bounded: run focused guards first when
+  practical, use one state read and the minimum keyboard/click action, and if a
+  source bug appears, update the focused guard before one bounded rerun.
+- When the user declares the loop stable, close the checkpoint with the
+  terminal/final validation note; only perform owner-state or compact-record
+  updates when the conditions above apply.
+
 ## Validation
 
 Use focused validation by owner:
@@ -158,10 +190,10 @@ Use focused validation by owner:
 - focused UI import or smoke tests for changed surfaces;
 - Windows/manual smoke only for platform behavior that cannot be reliably
   automated.
-- if UI source structure changed, follow the structure guard and code_map
-  judgment rules in `docs/agent_workflows/DIFF_READ_BUDGET.md`;
+- if UI source structure changed, run the focused structure guard for the
+  changed surface and owner;
 - for visual-only or manual-smoke result reflection, do not repeat focused UI
-  tests, structure guard, or code_map checks unless source changed again.
+  tests or the structure guard unless source changed again.
 
 For GUI / Computer Use smoke, keep the expensive accessibility-tree reads last
 and bounded:
@@ -174,8 +206,8 @@ and bounded:
    unless the action output itself is the acceptance evidence.
 4. If smoke reveals a small source bug, add or update the focused automated
    guard first, then rerun one bounded smoke pass after the fix.
-5. Record any skipped extra smoke in the report instead of expanding the UI
-   interaction loop.
+5. Note any skipped extra smoke in the terminal/final output instead of
+   expanding the UI interaction loop.
 
 Do not rerun broad focused tests just because they were used in an earlier
 slice. Rerun them only when the changed helper/controller/provider path is

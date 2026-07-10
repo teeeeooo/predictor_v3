@@ -12,7 +12,6 @@ folder_tree.txt
 .devcontainer/
 .claude/
 temporary_info.md
-.code_checker/
 .dev_artifacts/
 .mock_smoke/
 predictor_v3_mock_smoke/

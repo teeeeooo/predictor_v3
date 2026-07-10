@@ -13,7 +13,6 @@ _HOTSPOT_VALUES = {
     "split-audit-required",
     "split-required",
 }
-_CODE_MAP_VALUES = {"not_required", "checked", "skipped", "regenerated", "no-change"}
 _UI_LITERAL_EXEMPTION_VALUES = {"none", "approved-for-slice"}
 _REUSE_COMMONIZATION_VALUES = {
     "not_required",
@@ -22,14 +21,6 @@ _REUSE_COMMONIZATION_VALUES = {
     "local-with-reason",
     "design-deferred",
 }
-_EXEMPTION_VALUES = {
-    "none",
-    "user-approved-docs-only",
-    "user-approved-formatting-only",
-    "commit-push-only",
-    "status-only",
-}
-_LEDGER_VALUES = {"not_required", "included", "skipped"}
 
 
 @dataclass(frozen=True)
@@ -43,20 +34,14 @@ class Finding:
 class ChangeGate:
     new_source: str
     hotspot_delta: str
-    code_map_check: str
     ui_literal_exemption: str
     reuse_commonization: str
-    report_exemption: str
-    read_ledger: str
 
 
 @dataclass(frozen=True)
 class TaskManifest:
     allowed_paths: tuple[str, ...]
     report_path: str | None
-    reason: str
-    scope: str
-    approved_by_user: bool
 
 
 @dataclass(frozen=True)
@@ -73,22 +58,17 @@ def parse_change_gate(source: str) -> ChangeGate:
     required = {
         "new_source",
         "hotspot_delta",
-        "code_map_check",
         "ui_literal_exemption",
         "reuse_commonization",
     }
-    optional = {"report_exemption", "read_ledger"}
-    if not required.issubset(fields) or set(fields) - required - optional:
+    if set(fields) != required:
         raise ValueError(
-            "change_gate fields must contain the five active decision fields"
+            "change_gate fields must be exactly the four active decision fields"
         )
-    fields.setdefault("report_exemption", "none")
-    fields.setdefault("read_ledger", "not_required")
     gate = ChangeGate(**fields)
     allowed = (
         (gate.new_source, _NEW_SOURCE_VALUES, "new_source"),
         (gate.hotspot_delta, _HOTSPOT_VALUES, "hotspot_delta"),
-        (gate.code_map_check, _CODE_MAP_VALUES, "code_map_check"),
         (
             gate.ui_literal_exemption,
             _UI_LITERAL_EXEMPTION_VALUES,
@@ -99,8 +79,6 @@ def parse_change_gate(source: str) -> ChangeGate:
             _REUSE_COMMONIZATION_VALUES,
             "reuse_commonization",
         ),
-        (gate.report_exemption, _EXEMPTION_VALUES, "report_exemption"),
-        (gate.read_ledger, _LEDGER_VALUES, "read_ledger"),
     )
     for value, choices, key in allowed:
         if value not in choices:
@@ -128,7 +106,6 @@ def parse_record_metadata(source: str) -> RecordMetadata:
 def parse_manifest(source: str) -> TaskManifest:
     allowed: list[str] = []
     report_path: str | None = None
-    exemption: dict[str, str] = {}
     seen_top_level: set[str] = set()
     section = ""
     for raw in source.splitlines():
@@ -143,7 +120,6 @@ def parse_manifest(source: str) -> TaskManifest:
             if not separator or key not in {
                 "allowed_paths",
                 "report_path",
-                "report_exemption",
             }:
                 raise ValueError(f"unknown manifest top-level field: {key}")
             if key in seen_top_level:
@@ -166,30 +142,12 @@ def parse_manifest(source: str) -> TaskManifest:
                 raise ValueError("manifest allowed_paths entries must be nonempty")
             allowed.append(path)
             continue
-        if section == "report_exemption" and ":" in text:
-            key, value = text.split(":", 1)
-            if key not in {"reason", "scope", "approved_by_user"}:
-                raise ValueError(f"unknown report_exemption field: {key}")
-            if key in exemption:
-                raise ValueError(f"duplicate report_exemption field: {key}")
-            exemption[key] = _plain_value(value)
-            continue
         raise ValueError(f"invalid manifest field placement: {text}")
     if not allowed:
         raise ValueError("manifest allowed_paths must be nonempty")
     if any("*" in path or "?" in path for path in allowed):
         raise ValueError("manifest allowed_paths must use literal paths")
-    reason = exemption.get("reason", "")
-    scope = exemption.get("scope", "")
-    approved = exemption.get("approved_by_user", "") == "true"
-    if exemption:
-        if reason not in _EXEMPTION_VALUES - {"none"}:
-            raise ValueError(f"unsupported manifest exemption: {reason}")
-        if not scope or not approved:
-            raise ValueError("manifest requires scope and approved_by_user: true")
-    else:
-        reason = "none"
-    return TaskManifest(tuple(allowed), report_path, reason, scope, approved)
+    return TaskManifest(tuple(allowed), report_path)
 
 
 def _parse_indented_fields(source: str, heading: str) -> dict[str, str]:

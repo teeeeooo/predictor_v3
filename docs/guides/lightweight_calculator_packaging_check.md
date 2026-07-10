@@ -1,7 +1,7 @@
 # Lightweight Calculator Packaging Size Check
 
 > Companion to
-> `docs/designs/2026-05-22-lightweight-calculator-ui-feasibility.md`.
+> `docs/designs/legacy/2026-05-22-lightweight-calculator-ui-feasibility.md`.
 > This guide documents the **measurement procedure**. It does NOT
 > claim measured sizes. Any number that has not been observed locally
 > stays labeled `not measured`.

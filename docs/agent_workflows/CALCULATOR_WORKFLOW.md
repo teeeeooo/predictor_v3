@@ -34,6 +34,9 @@ reference workflow details. `AGENT_TASK_ROUTER.md` only routes here.
   `docs/REFACTOR_PLAN.md`
 - Excel COM reference packet work:
   `docs/iso16358/excel_com_runner_packet_protocol.md`
+- Before modifying `tests/_legacy/**`: `tests/_legacy/README.md`
+- Calculator manual smoke tasks only:
+  `docs/guides/lightweight_calculator_tk_manual_smoke.md`
 
 ## Logic Change Flow
 

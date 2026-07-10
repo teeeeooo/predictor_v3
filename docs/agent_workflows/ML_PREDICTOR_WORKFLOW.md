@@ -49,6 +49,12 @@ the short routing gate.
   contract as the acceptance contract.
 - Project-wide responsibility boundaries:
   `docs/architecture/PROJECT_CLEAN_ARCHITECTURE_BOUNDARY.md`.
+- DEV-only mock smoke owner: `tools/dev/mock_smoke/README.md`. It can verify
+  workflow readiness but cannot support accuracy, physical-trend, importance,
+  or model-quality claims.
+- Legacy compatibility and training-header reference only:
+  `docs/workflows/ml_feature_catalog_workflow.md`. It is not the current schema
+  editor or schema/feature-definition owner.
 
 ## Flow
 
