@@ -1,0 +1,98 @@
+"""Controller boundary for the Train Data Definition panel."""
+
+from __future__ import annotations
+
+from apps.train.controllers.data_definition_state_builder import (
+    DRAFT_FIELDS,
+    DRAFT_HEADERS,
+    DataDefinitionControllerState,
+    DataDefinitionDraftCellState,
+    error_state as _error_state,
+    save_status as _save_status,
+    state_from_report as _state_from_report,
+)
+from apps.train.services.data_definition_service import DataDefinitionService
+from core.data_definition import DataDefinitionDraft
+
+
+class DataDefinitionController:
+    """Coordinate Data Definition report and draft refresh for the UI."""
+
+    def __init__(self, service: DataDefinitionService | None = None) -> None:
+        self._service = service or DataDefinitionService()
+        self._draft: DataDefinitionDraft | None = None
+
+    def refresh(self) -> DataDefinitionControllerState:
+        """Return current Data Definition view state and reload the draft."""
+        try:
+            report = self._service.refresh_report()
+            self._draft = self._service.refresh_draft()
+        except Exception as exc:
+            return _error_state(exc)
+        return _state_from_report(
+            report,
+            self._draft,
+            self._service.preview_save_plan(self._draft, current_report=report),
+        )
+
+    def edit_cell(
+        self,
+        row_identity: tuple[str, str],
+        field_name: str,
+        value: object,
+    ) -> DataDefinitionControllerState:
+        """Apply one draft edit and return refreshed preview state."""
+        try:
+            draft = self._draft or self._service.load_draft()
+            result = self._service.edit_draft_cell(draft, row_identity, field_name, value)
+            self._draft = result.draft
+            report = self._service.refresh_report()
+            state = _state_from_report(
+                report,
+                self._draft,
+                self._service.preview_save_plan(self._draft, current_report=report),
+                message=result.message,
+                status="draft_changed" if result.accepted and self._draft.is_changed else None,
+                last_action_ok=result.accepted,
+            )
+        except Exception as exc:
+            return _error_state(exc)
+        return state
+
+    def reset_draft(self) -> DataDefinitionControllerState:
+        """Discard in-memory edits and reload draft state from the service."""
+        try:
+            report = self._service.refresh_report()
+            self._draft = self._service.refresh_draft()
+        except Exception as exc:
+            return _error_state(exc)
+        return _state_from_report(
+            report,
+            self._draft,
+            self._service.preview_save_plan(self._draft, current_report=report),
+            message="Draft reset from schema.",
+        )
+
+    def save_schema(self) -> DataDefinitionControllerState:
+        """Run the guarded schema save workflow and return updated UI state."""
+        try:
+            draft = self._draft or self._service.load_draft()
+            report_before = self._service.refresh_report()
+            result = self._service.save_schema_draft(draft, current_report=report_before)
+            if result.status == "written":
+                self._draft = self._service.refresh_draft()
+            else:
+                self._draft = draft
+            report_after = self._service.refresh_report()
+            plan = self._service.preview_save_plan(self._draft, current_report=report_after)
+        except Exception as exc:
+            return _error_state(exc)
+        return _state_from_report(
+            report_after,
+            self._draft,
+            plan,
+            message=result.message,
+            status=_save_status(result),
+            save_result=result,
+            last_action_ok=result.status in {"written", "noop"},
+        )

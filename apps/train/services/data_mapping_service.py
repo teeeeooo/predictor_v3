@@ -17,13 +17,17 @@ from core.mapping.editor_export import (
 )
 from core.mapping.editor_model import MappingEditorDraft
 from core.mapping.editor_projection import (
+    apply_mapping_requirements_to_editor_draft,
     load_runtime_mapping_editor_draft,
+    mapping_group_key_for_requirement,
     project_runtime_mapping_to_editor_draft,
 )
 from core.mapping.editor_persistence import MappingEditorSaveResult, save_mapping_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
+from core.mapping.entity_model import MappingValidationError
 from core.mapping.paths import MAPPING_JSON_FILE
+from core.data_definition import MappingRequirement, build_data_definition_report
 from apps.train.services.data_mapping_types import (
     DataMappingAction,
     DataMappingSnapshot,
@@ -87,11 +91,36 @@ class RuntimeMappingCatalogProvider:
         return load_runtime_mapping_editor_draft(self._mapping_file)
 
 
+class DataDefinitionMappingRequirementProvider:
+    """Read Data Definition mapping requirements for Data Mapping UI projection."""
+
+    def load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
+        """Return current Data Definition mapping requirements."""
+        return build_data_definition_report().mapping_requirements
+
+
+class EmptyMappingRequirementProvider:
+    """No-op requirement provider for explicit test/custom draft providers."""
+
+    def load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
+        """Return no dynamic requirements."""
+        return ()
+
+
 class DataMappingService:
     """Provide editable Data Mapping Manager draft snapshots for Train/Admin UI."""
 
-    def __init__(self, provider: MappingDraftProvider | None = None) -> None:
+    def __init__(
+        self,
+        provider: MappingDraftProvider | None = None,
+        mapping_requirement_provider: DataDefinitionMappingRequirementProvider | None = None,
+    ) -> None:
         self._provider = provider or RuntimeMappingCatalogProvider()
+        default_requirement_provider = (
+            DataDefinitionMappingRequirementProvider()
+            if provider is None else EmptyMappingRequirementProvider()
+        )
+        self._mapping_requirement_provider = mapping_requirement_provider or default_requirement_provider
         self._draft: MappingEditorDraft | None = None
         self._dirty = False
 
@@ -102,15 +131,23 @@ class DataMappingService:
 
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
-        draft = self._draft or self._provider.load_draft()
+        requirements = self._load_mapping_requirements()
+        draft = apply_mapping_requirements_to_editor_draft(
+            self._draft or self._provider.load_draft(),
+            requirements,
+        )
         self._draft = draft
-        return self._snapshot(draft)
+        return self._snapshot(draft, requirements)
 
     def reload_snapshot(self) -> DataMappingSnapshot:
         """Discard draft edits and reload from the provider."""
-        self._draft = self._provider.load_draft()
+        requirements = self._load_mapping_requirements()
+        self._draft = apply_mapping_requirements_to_editor_draft(
+            self._provider.load_draft(),
+            requirements,
+        )
         self._dirty = False
-        return self._snapshot(self._draft)
+        return self._snapshot(self._draft, requirements)
 
     def edit_cell(
         self,
@@ -144,19 +181,27 @@ class DataMappingService:
 
     def save_mapping(self) -> tuple[MappingEditorSaveResult, DataMappingSnapshot]:
         """Save the current valid draft to runtime mapping JSON."""
-        draft = self.load_snapshot().draft
+        snapshot = self.load_snapshot()
+        draft = snapshot.draft
         mapping_file = getattr(self._provider, "mapping_file", None)
+        if not snapshot.validation_result.save_enabled:
+            result = MappingEditorSaveResult(
+                success=False,
+                path=Path(mapping_file or ""),
+                message="Resolve Issues before saving.",
+            )
+            return result, snapshot
         if not mapping_file:
             result = MappingEditorSaveResult(
                 success=False,
                 path=Path(""),
                 message="No writable mapping file is configured.",
             )
-            return result, self._snapshot(draft)
+            return result, snapshot
         result = save_mapping_editor_draft(draft, mapping_file)
         if result.success:
             self._dirty = False
-        return result, self._snapshot(draft)
+        return result, self._snapshot(draft, self._load_mapping_requirements())
 
     def export_snapshot(
         self,
@@ -193,10 +238,18 @@ class DataMappingService:
         if next_draft != previous:
             self._draft = next_draft
             self._dirty = True
-        return self._snapshot(self._draft or next_draft)
+        return self._snapshot(self._draft or next_draft, self._load_mapping_requirements())
 
-    def _snapshot(self, draft: MappingEditorDraft) -> DataMappingSnapshot:
-        validation_result = validate_mapping_editor_draft(draft)
+    def _snapshot(
+        self,
+        draft: MappingEditorDraft,
+        requirements: tuple[MappingRequirement, ...],
+    ) -> DataMappingSnapshot:
+        base_validation = validate_mapping_editor_draft(draft)
+        dynamic_issues = _required_mapping_value_issues(draft, requirements)
+        validation_result = type(base_validation)(
+            issues=(*base_validation.issues, *dynamic_issues)
+        )
         return DataMappingSnapshot(
             draft=draft,
             validation_errors=validation_result.issues,
@@ -208,6 +261,60 @@ class DataMappingService:
             ),
             dirty=self._dirty,
         )
+
+    def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
+        return self._mapping_requirement_provider.load_mapping_requirements()
+
+
+def _required_mapping_value_issues(
+    draft: MappingEditorDraft,
+    requirements: tuple[MappingRequirement, ...],
+) -> tuple[MappingValidationError, ...]:
+    issues: list[MappingValidationError] = []
+    for requirement in requirements:
+        group_key = mapping_group_key_for_requirement(requirement)
+        group = draft.group(group_key)
+        if group is None:
+            issues.append(
+                MappingValidationError(
+                    code="required_mapping_group_missing",
+                    message=f"{requirement.mapping_entity} mapping group is required.",
+                    entity_key=requirement.mapping_entity,
+                    attribute_key=requirement.mapping_attribute,
+                    field=requirement.mapping_attribute,
+                )
+            )
+            continue
+        issues.extend(_missing_value_issues(group, requirement.mapping_attribute))
+    return tuple(issues)
+
+
+def _missing_value_issues(group, attribute: str) -> tuple[MappingValidationError, ...]:  # noqa: ANN001
+    if not group.rows:
+        return (
+            MappingValidationError(
+                code="required_mapping_value_missing",
+                message=f"{attribute} is required by Data Definition but the group has no rows.",
+                entity_key=group.label,
+                attribute_key=attribute,
+                field=attribute,
+            ),
+        )
+    issues: list[MappingValidationError] = []
+    for index, row in enumerate(group.rows, start=1):
+        if str(row.value_for(attribute, "")).strip():
+            continue
+        issues.append(
+            MappingValidationError(
+                code="required_mapping_value_missing",
+                message=f"{attribute} is required by Data Definition.",
+                entity_key=group.label,
+                attribute_key=attribute,
+                row_key=row.source_key or str(index),
+                field=attribute,
+            )
+        )
+    return tuple(issues)
 
 
 def _future_actions(

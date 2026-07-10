@@ -6,7 +6,7 @@ This document stages backend-neutral long-term memory candidates from existing s
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
 
 ## Scope and Non-goals
 
@@ -348,6 +348,23 @@ entries:
       - Unified Data Definition Manager
     assertionStatus: observed
     source: result_reports/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    resolutionStatus: resolved_by_arc15_foundation
+    resolvedBy: result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md
+
+  - type: decision
+    topic: Arc 15 Data Definition foundation owner state
+    content: Data Definition is now the Train/Admin schema and feature-definition owner for the Arc 15 foundation. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition, Feature Catalog is a legacy compatibility surface with canonical default features.csv save blocked, and readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
+    keywords:
+      - predictor_v3
+      - Arc 15
+      - Data Definition
+      - schema.csv
+      - Feature Catalog
+      - Data Mapping
+      - readiness
+      - schema writer
+    assertionStatus: verified
+    source: result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md
 ```
 
 ## Known Gaps

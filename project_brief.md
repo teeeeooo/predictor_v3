@@ -10,14 +10,14 @@ and explicit handoff pointers belong to `docs/WORK_PLAN.md`.
 
 ## 1. Current Phase
 
-Current phase: Machine Learning / Predictor Phase, post-Arc 14D-R direction
-check. Arc 13 ML Feature Catalog migration, Arc 13.5/13.5A Feature Catalog
-Manager work, Arc 13.5R Predict Schema Catalog v2 projection, and Arc 14 Data
-Mapping Manager / Runtime Cascade / XLSX snapshot export work are complete for
-their automated scopes. Before starting Arc 15, the project needs a Pre-Arc 15
-audit of `config/ml/features.csv`, `config/predict/schema.csv`,
-`tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, and `data/mapping.json`
-/ Data Mapping Manager output relationships.
+Current phase: Machine Learning / Predictor Phase, Arc 15 closeout. Arc 13
+Feature Catalog migration, Arc 13.5/13.5A Feature Catalog Manager, Arc 13.5R
+Predict Schema projection foundation, Arc 14 Data Mapping Manager/runtime
+cascade/snapshot export, and Arc 15 Data Definition foundation are complete for
+their automated scopes. Arc 15-FU1 is the last no-behavior-change controller
+state-builder extraction before the Arc 15 main merge. After the merge, the
+next workstream is Standard Calculation Capability Extension; ML resumes as a
+new Production ML Readiness Arc after that calculator workstream.
 
 The calculator UI/workflow stabilization phase is complete enough to resume the
 ML / predictor path, and the approved PySide6 Train/Predict foundation now
@@ -91,6 +91,13 @@ Project direction remains aligned with `PROJECT_CHARTER.md`:
   `core.calculators` remain UI-toolkit independent.
 - Region config, HW candidate input, ML feature schema, calculator result
   schema, and UI table schema must not be mixed.
+- Data Definition is the canonical schema/feature-definition owner; Data
+  Mapping Manager owns `mapping.json` values; Feature Catalog Manager remains
+  the legacy compatibility/read/export surface.
+- Standard calculation core and standard/region config are not calculator
+  dependencies. The calculator is their first consumer/adapter; future
+  ML/Predict must reuse the same stable input/result contract without copying
+  calculation formulas or rules into either adapter.
 
 ## 3. Previous Completed Phase
 
@@ -637,35 +644,53 @@ Target milestones:
 
 Status:
 
-- Next implementation family after Arc 13.5R schema design/audit. This arc is
-  required because the current Data Mapping tab is still placeholder-like:
-  mapping update controls are disabled and source selection is marked for a
-  follow-up arc.
+- Complete for automated scope: Arc 13.5R established the Predict Schema
+  projection foundation, and Arc 14 completed the Data Mapping Manager,
+  runtime cascade, and snapshot export workstream.
 
-### Arc 15 — ML Catalog-Aligned Real Dataset Readiness Audit
+### Arc 15 — Data Definition Foundation
 
 Goal:
 
-- Audit real dataset readiness against the Arc 13 catalog contract, Arc 13.5
-  Feature Catalog Manager workflow, and the Arc 13.5R/14 schema-mapping
-  contract after mapping manager execution is available.
-
-Target milestones:
-
-- Audit real training dataset headers against Feature Catalog `ml_name`.
-- Check `mapping.json` consistency with Feature Catalog `source` and
-  `mapping_key`.
-- Judge real model training and prediction readiness.
+- Establish the canonical Data Definition foundation for schema and feature
+  definition while preserving Data Mapping value ownership and Feature Catalog
+  legacy compatibility surfaces.
 
 Status:
 
-- Pending direction decision after the Pre-Arc 15 config/mapping source audit.
-  The legacy wide mapping CSV is already present as
-  `tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, while the real
-  training CSV is not in the repo. Do not start the real dataset readiness audit
-  or rename this direction to `Unified Data Definition Manager` until the
-  relationship between Feature Catalog, Predict Schema, Data Mapping Manager
-  output, and legacy mapping evidence is checked.
+- Complete for automated foundation scope. Arc 15-FU1 is the final
+  no-behavior-change controller state-builder extraction before main merge.
+
+### Next Workstream — Standard Calculation Capability Extension
+
+Boundary:
+
+- Standard calculation core and standard/region config remain independent of
+  the calculator. The calculator is the first consumer/adapter; future
+  ML/Predict reuses the same stable input/result contract. Do not duplicate
+  calculation formulas or rules in calculator UI or ML adapters.
+
+Confirmed capability scope:
+
+- BRAZIL: reuse ISO 16358-1 calculation core; manage Brazil bins and rules as
+  config/core capability; produce 3-point and 2-point comparison results; keep
+  Rule 1, Rule 2, and final OK/NG in core. Calculator integration is a separate
+  follow-up slice.
+- AHRI: add two-stage SEER2, two-stage HSPF2, and triple-capacity northern
+  heat-pump HSPF2. Triple-capacity cooling SEER2 uses the normal two-stage
+  cooling path; this product-type resolution belongs to the core/application
+  domain, not the UI. Calculator integration follows core implementation in a
+  separate slice.
+
+Order:
+
+1. BRAZIL core/profile.
+2. BRAZIL calculator integration and department deployment.
+3. AHRI multi-capacity audit/foundation.
+4. Two-stage SEER2, then two-stage HSPF2, then triple-capacity northern
+   heat-pump HSPF2.
+5. AHRI calculator integration and department deployment.
+6. Resume ML as a new Production ML Readiness Arc.
 
 ### Later — Calculator to Predictor Integration
 
