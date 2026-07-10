@@ -14,9 +14,10 @@ are complete and the working tree is clean.
   one compact Arc 15 owner-state entry.
 - Ran the requested closeout validation.
 
-## Non-goals
+## Original Closeout Non-goals
 
-- No code, config, data, or model source changes.
+- The original lifecycle closeout made no code, config, data, or model source
+  changes.
 - No main merge.
 - No main push.
 - No production retrain or model artifact activation.
@@ -40,6 +41,9 @@ are complete and the working tree is clean.
   - `724_arc15f-training-model-readiness-integration.md`
 - At the closeout commit, the remaining active report was this lifecycle/audit
   report; later follow-up reports do not change that lifecycle history.
+- Current active state: completed state-sync report `727` is archived, and this
+  report is the sole active main-merge decision owner. Merge readiness remains
+  in effect with no unresolved blocker.
 
 ## Merge Readiness Audit
 
@@ -160,11 +164,14 @@ Read Ledger:
 - No `config/**`, `data/**`, `model/**`, Predict runtime, training execution,
   retrain, artifact activation, main merge, or main push change was made.
 
-## Commit / Push
+## Original Closeout Commit / Push
 
 - Commit: final hash reported in terminal output.
-- Push: performed only after all six slice commits and a clean working tree.
+- Original closeout push: performed only after all six original slice commits
+  and a clean working tree.
 
 ## Project Memory Delta
 
 Registered summary `725` and added one compact durable Arc 15 owner-state entry.
+Archiving completed state-sync report `727` adds no new durable decision or
+procedure, so no memory seed update is required.
