@@ -38,7 +38,8 @@ are complete and the working tree is clean.
   - `722_arc15d-data-mapping-dynamic-requirement.md`
   - `723_arc15e-feature-catalog-owner-switch.md`
   - `724_arc15f-training-model-readiness-integration.md`
-- Remaining active report after closeout commit: this lifecycle/audit report.
+- At the closeout commit, the remaining active report was this lifecycle/audit
+  report; later follow-up reports do not change that lifecycle history.
 
 ## Merge Readiness Audit
 
@@ -73,6 +74,77 @@ are complete and the working tree is clean.
 - `git diff --stat`: showed only the memory seed edit before final staging for
   the same reason; staged archive movement was checked with
   `git diff --cached --stat`.
+
+## Arc 15-FU1 Follow-up
+
+- Extracted immutable state dataclasses, draft constants, and report/draft/save
+  projection helpers from `data_definition_controller.py` into the adjacent
+  pure `data_definition_state_builder.py` module.
+- Controller action orchestration, service call order, `_draft` lifecycle,
+  exception boundary, statuses, messages, state values, and row ordering are
+  unchanged.
+- `DataDefinitionControllerState`, `DataDefinitionDraftCellState`,
+  `DRAFT_FIELDS`, and `DRAFT_HEADERS` remain importable from the existing
+  controller module. No schema, public result contract, or PySide6 UI behavior
+  changed.
+- Dependency review passed: the builder imports only immutable dataclass support
+  and `core.data_definition`; it does not import the controller, service, file
+  I/O, or UI toolkit modules.
+- Focused validation passed: 56 Data Definition tests and the 66-test Data
+  Definition/Data Mapping/Feature Catalog integration selection.
+- Structure guard passed with the same 10 unrelated calculator/code-map soft
+  warnings; no changed/new source warning was emitted.
+- The bounded code-map reuse search found no existing Data Definition state
+  builder candidate. The feature-local builder is retained because its
+  projection rules are controller-adapter-specific; no generic state framework
+  is warranted.
+- Main diff scope remains inside Arc 15 Data Definition controller/report/plan
+  work. Unresolved blockers: none. Main merge readiness remains in effect; no
+  main merge or main push was performed.
+
+```yaml
+change_gate:
+  new_source: justified
+  hotspot_delta: none
+  code_map_check: checked
+  ui_literal_exemption: none
+  reuse_commonization: local-with-reason
+  report_exemption: none
+  read_ledger: included
+```
+
+- `new_source: justified`: the single 318-line module preserves one cohesive
+  pure state-composition responsibility; splitting its state contracts from the
+  transforms would exceed the approved one-module extraction scope.
+- `code_map_check: checked`: bounded `data definition` / `state builder` /
+  `draft` / `save plan` searches found no reusable candidate; code-map
+  regeneration was not added because that file is outside the allowed diff.
+- `reuse_commonization: local-with-reason`: Data Definition-specific row and
+  message projections remain local to the existing controller adapter owner.
+
+Read Ledger:
+- `apps/train/controllers/data_definition_controller.py`: lines 1-400, reason:
+  separate all listed pure transforms while preserving complete action flow.
+- `apps/train/ui/data_definition_panel.py`: lines 1-40 and 160-205, reason:
+  verify controller-state import and state consumption.
+- `apps/train/ui/data_definition_models.py`: lines 1-45, reason: verify draft
+  cell-state import and model contract.
+- `tests/test_train_data_definition_edit_ui.py`: lines 1-130, reason: preserve
+  edit/reset rows, statuses, and messages.
+- `tests/test_train_data_definition_save_ui.py`: lines 1-120, reason: preserve
+  guarded-save state and result formatting.
+- `tests/test_train_data_definition_readiness_integration.py`: lines 1-41,
+  reason: preserve readiness and blocker projections.
+- `tests/test_train_data_definition_readonly_ui.py`: lines 1-100, reason:
+  preserve read-only summary and table state.
+- `result_reports/active/726_arc15-closeout-merge-readiness-audit.md`: lines
+  1-100, reason: append FU1 evidence without rewriting lifecycle history.
+- `docs/WORK_PLAN.md`: lines 24-100, reason: update Current Slice and Next
+  Actions while preserving deferred order.
+- broad read: `data_definition_controller.py`; blocker: the explicit extraction
+  list spans the full controller and action/helper boundary.
+- repeated read: `data_definition_controller.py`; reason: post-edit action diff
+  and duplicate-transform inspection.
 
 ## Known Risks
 

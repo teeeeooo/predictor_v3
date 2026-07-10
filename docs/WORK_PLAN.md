@@ -35,17 +35,16 @@
   Definition is the canonical schema/feature-definition owner; Data Mapping
   Manager owns `mapping.json` values; Feature Catalog Manager is the legacy
   compatibility/read/export surface.
-- Current work: Arc 15-FU1 — Data Definition Controller State Builder
-  Extraction.
+- Arc 15-FU1 — Data Definition Controller State Builder Extraction is complete.
+  Controller actions remain unchanged, state composition now belongs to the
+  adjacent pure builder, and main merge readiness is maintained.
 
 ## Next Actions
 
-Next: Arc 15-FU1 controller state builder extraction.
+Next: Arc 15 main merge execution.
 
-1. Complete Arc 15-FU1 with no behavior change.
-2. Reflect the FU1 result in report 726 and reverify merge readiness.
-3. Execute the Arc 15 main merge.
-4. Start Standard Calculation Capability Extension design.
+1. Execute the Arc 15 main merge.
+2. Start Standard Calculation Capability Extension design.
 
 ## Active Blockers / Open Decisions
 
