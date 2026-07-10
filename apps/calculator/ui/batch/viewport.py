@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.scrollable_frame import mousewheel_units
+from apps.calculator.ui.theme import APP_SURFACE
 
 
 class BatchTableViewport(ttk.Frame):
@@ -26,6 +27,7 @@ class BatchTableViewport(ttk.Frame):
         self.canvas = tk.Canvas(
             self,
             name="batch_table_viewport_canvas",
+            background=APP_SURFACE,
             highlightthickness=0,
             borderwidth=0,
         )

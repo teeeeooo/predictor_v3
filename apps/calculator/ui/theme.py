@@ -8,7 +8,10 @@ from tkinter import ttk
 from ui_common.visual_tokens import visual_color, visual_spacing
 
 
-APP_SURFACE = visual_color("surface.default")
+# Calculator chrome uses one continuous white surface. Semantic table/header
+# roles retain their own colors below; only non-semantic window/panel chrome is
+# flattened to avoid a mottled mix of app, panel, and native Tk backgrounds.
+APP_SURFACE = visual_color("surface.panel")
 PANEL_SURFACE = visual_color("surface.panel")
 HEADER_SURFACE = visual_color("surface.header")
 HOVER_SURFACE = visual_color("table.calculated")

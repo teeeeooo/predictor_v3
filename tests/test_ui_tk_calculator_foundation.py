@@ -444,6 +444,25 @@ def test_scrollable_frame_hides_scrollbar_when_content_fits():
         root.destroy()
 
 
+def test_scrollable_frame_uses_one_calculator_chrome_surface():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        pytest.skip(f"Tk not available: {exc}")
+    try:
+        from apps.calculator.ui.scrollable_frame import ScrollableFrame
+        from apps.calculator.ui.theme import APP_SURFACE, PANEL_SURFACE
+
+        sf = ScrollableFrame(root)
+
+        assert APP_SURFACE == PANEL_SURFACE
+        assert sf.cget("background") == APP_SURFACE
+        assert sf.canvas.cget("background") == APP_SURFACE
+    finally:
+        root.destroy()
+
+
 def test_scrollable_frame_shows_scrollbar_when_content_overflows():
     tk = pytest.importorskip("tkinter")
     try:

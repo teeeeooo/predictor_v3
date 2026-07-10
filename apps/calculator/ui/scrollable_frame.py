@@ -10,6 +10,8 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.theme import APP_SURFACE
+
 
 def mousewheel_units(event) -> int:
     if getattr(event, "num", None) == 4:
@@ -28,9 +30,14 @@ class ScrollableFrame(tk.Frame):
     """A frame with a scrollable content area and auto-hide scrollbar."""
 
     def __init__(self, parent: tk.Widget) -> None:
-        super().__init__(parent)
+        super().__init__(parent, background=APP_SURFACE)
 
-        self._canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
+        self._canvas = tk.Canvas(
+            self,
+            background=APP_SURFACE,
+            highlightthickness=0,
+            borderwidth=0,
+        )
         self._scrollbar = ttk.Scrollbar(
             self, orient=tk.VERTICAL, command=self._canvas.yview
         )
