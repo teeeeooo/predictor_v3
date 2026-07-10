@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 _NEW_SOURCE_VALUES = {"none", "small", "split", "justified"}
 _HOTSPOT_VALUES = {
@@ -58,6 +59,15 @@ class TaskManifest:
     approved_by_user: bool
 
 
+@dataclass(frozen=True)
+class RecordMetadata:
+    date: str
+    topic: str
+    tags: str
+    memory_review: str
+    memory_reason: str
+
+
 def parse_change_gate(source: str) -> ChangeGate:
     fields = _parse_indented_fields(source, "change_gate")
     required = {
@@ -66,11 +76,14 @@ def parse_change_gate(source: str) -> ChangeGate:
         "code_map_check",
         "ui_literal_exemption",
         "reuse_commonization",
-        "report_exemption",
-        "read_ledger",
     }
-    if set(fields) != required:
-        raise ValueError(f"change_gate fields must be exactly {sorted(required)!r}")
+    optional = {"report_exemption", "read_ledger"}
+    if not required.issubset(fields) or set(fields) - required - optional:
+        raise ValueError(
+            "change_gate fields must contain the five active decision fields"
+        )
+    fields.setdefault("report_exemption", "none")
+    fields.setdefault("read_ledger", "not_required")
     gate = ChangeGate(**fields)
     allowed = (
         (gate.new_source, _NEW_SOURCE_VALUES, "new_source"),
@@ -95,6 +108,23 @@ def parse_change_gate(source: str) -> ChangeGate:
     return gate
 
 
+def parse_record_metadata(source: str) -> RecordMetadata:
+    fields = _parse_indented_fields(source, "record")
+    required = {"date", "topic", "tags", "memory_review", "memory_reason"}
+    if set(fields) != required:
+        raise ValueError(f"record fields must be exactly {sorted(required)!r}")
+    metadata = RecordMetadata(**fields)
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", metadata.date):
+        raise ValueError("record date must use YYYY-MM-DD")
+    if not metadata.topic or not metadata.tags:
+        raise ValueError("record topic and tags must be nonempty")
+    if metadata.memory_review not in {"updated", "no-change"}:
+        raise ValueError(f"unsupported memory_review: {metadata.memory_review}")
+    if not metadata.memory_reason:
+        raise ValueError("record memory_reason must be nonempty")
+    return metadata
+
+
 def parse_manifest(source: str) -> TaskManifest:
     allowed: list[str] = []
     report_path: str | None = None
@@ -110,7 +140,11 @@ def parse_manifest(source: str) -> TaskManifest:
         indent = len(raw) - len(raw.lstrip(" "))
         if indent == 0:
             key, separator, value = text.partition(":")
-            if not separator or key not in {"allowed_paths", "report_path", "report_exemption"}:
+            if not separator or key not in {
+                "allowed_paths",
+                "report_path",
+                "report_exemption",
+            }:
                 raise ValueError(f"unknown manifest top-level field: {key}")
             if key in seen_top_level:
                 raise ValueError(f"duplicate manifest top-level field: {key}")
@@ -148,18 +182,23 @@ def parse_manifest(source: str) -> TaskManifest:
     reason = exemption.get("reason", "")
     scope = exemption.get("scope", "")
     approved = exemption.get("approved_by_user", "") == "true"
-    if reason not in _EXEMPTION_VALUES - {"none"}:
-        raise ValueError(f"unsupported manifest exemption: {reason}")
-    if not scope or not approved:
-        raise ValueError("manifest requires scope and approved_by_user: true")
+    if exemption:
+        if reason not in _EXEMPTION_VALUES - {"none"}:
+            raise ValueError(f"unsupported manifest exemption: {reason}")
+        if not scope or not approved:
+            raise ValueError("manifest requires scope and approved_by_user: true")
+    else:
+        reason = "none"
     return TaskManifest(tuple(allowed), report_path, reason, scope, approved)
 
 
 def _parse_indented_fields(source: str, heading: str) -> dict[str, str]:
     lines = source.splitlines()
-    matches = [index for index, line in enumerate(lines) if line.strip() == f"{heading}:"]
+    matches = [
+        index for index, line in enumerate(lines) if line.strip() == f"{heading}:"
+    ]
     if len(matches) != 1:
-        raise ValueError(f"report must contain exactly one {heading} block")
+        raise ValueError(f"record must contain exactly one {heading} block")
     fields: dict[str, str] = {}
     for line in lines[matches[0] + 1 :]:
         if not line.startswith((" ", "\t")):
@@ -172,4 +211,4 @@ def _parse_indented_fields(source: str, heading: str) -> dict[str, str]:
 
 
 def _plain_value(value: str) -> str:
-    return value.strip().strip('"\'')
+    return value.strip().strip("\"'")

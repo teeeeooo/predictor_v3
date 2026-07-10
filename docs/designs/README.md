@@ -37,6 +37,7 @@ the title, purpose/decision/status, and necessary surrounding range.
 | File | Status | One-line decision | Current source of truth | Read when |
 | --- | --- | --- | --- | --- |
 | `TEMPLATE_DESIGN_GATE.md` | template | Standard shape for future design gate records. | `AGENTS.md`, `AGENT_TASK_ROUTER.md` | Creating a new design gate record. |
+| `2026-07-10-agent-harness-report-lifecycle-redesign.md` | active reference | Replace per-change reports and lifecycle cleanup with conditional compact records, indexed discovery, and a Memory Review Gate. | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, agent workflow owners | Implementing or reviewing the harness report/memory redesign and legacy migration. |
 | `2026-05-06-iso16358-2-hspf-core-boundary.md` | active reference | Keep ISO HSPF core boundaries explicit. | `docs/architecture/project_architecture.md`, ISO docs | ISO HSPF boundary or resolver work. |
 | `2026-05-08-asnzs-hspf-excel-compat-boundary.md` | historical reference | Preserve AS/NZS Excel compatibility boundary evidence. | relevant AS/NZS future owner docs | AS/NZS compatibility work resumes. |
 | `2026-05-10-iso16358-2-hspf-h8-routing-resolver-design.md` | active reference | Route ISO HSPF H-8 behavior through resolver/design boundaries. | `docs/iso16358/iso16358_dev_notes.md`, architecture docs | ISO HSPF H-8 routing work. |

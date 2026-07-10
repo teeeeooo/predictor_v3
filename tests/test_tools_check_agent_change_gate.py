@@ -7,12 +7,14 @@ import pytest
 
 from tools.agent_change_gate import evaluate_cached
 from tools.agent_change_gate_git import GitIndex
-from tools.agent_change_gate_models import parse_change_gate, parse_manifest
+from tools.agent_change_gate_models import (
+    parse_change_gate,
+    parse_manifest,
+    parse_record_metadata,
+)
 
 
 VALID_GATE = """\
-# Result
-
 change_gate:
   new_source: split
   hotspot_delta: accepted-for-slice
@@ -22,6 +24,18 @@ change_gate:
   report_exemption: none
   read_ledger: included
 """
+
+VALID_RECORD = """\
+# Result
+
+record:
+  date: 2026-07-10
+  topic: focused-gate-test
+  tags: test, harness
+  memory_review: no-change
+  memory_reason: existing memory is sufficient
+
+""" + VALID_GATE
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -47,17 +61,27 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _stage_report(repo: Path, name: str = "500_gate.md", text: str = VALID_GATE) -> str:
-    path = f"result_reports/active/{name}"
+def _stage_record(
+    repo: Path,
+    name: str = "2026-07-10-focused-gate-test.md",
+    text: str = VALID_RECORD,
+    *,
+    with_index: bool = True,
+) -> str:
+    path = f"result_reports/records/2026-07/{name}"
     target = repo / path
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding="utf-8")
     _git(repo, "add", path)
+    if with_index:
+        index = repo / "result_reports/REPORT_INDEX.md"
+        index.parent.mkdir(parents=True, exist_ok=True)
+        index.write_text(
+            f"| {chr(96)}{path}{chr(96)} |\n",
+            encoding="utf-8",
+        )
+        _git(repo, "add", "result_reports/REPORT_INDEX.md")
     return path
-
-
-def _messages(repo: Path) -> list[str]:
-    return [item.message for item in evaluate_cached(GitIndex(repo))]
 
 
 def _findings(repo: Path) -> list[tuple[str, str]]:
@@ -67,11 +91,26 @@ def _findings(repo: Path) -> list[tuple[str, str]]:
     ]
 
 
-def test_change_gate_and_manifest_parsers_validate_closed_schemas() -> None:
-    gate = parse_change_gate(VALID_GATE)
+def _messages(repo: Path, severity: str | None = None) -> list[str]:
+    return [
+        item.message
+        for item in evaluate_cached(GitIndex(repo))
+        if severity is None or item.severity == severity
+    ]
+
+
+def test_record_change_gate_and_manifest_parsers_validate_closed_schemas() -> None:
+    metadata = parse_record_metadata(VALID_RECORD)
+    assert metadata.memory_review == "no-change"
+    gate = parse_change_gate(VALID_RECORD)
     assert gate.new_source == "split"
+    active_gate = VALID_GATE.replace(
+        "  report_exemption: none\n  read_ledger: included\n",
+        "",
+    )
+    assert parse_change_gate(active_gate).read_ledger == "not_required"
     with pytest.raises(ValueError, match="exactly"):
-        parse_change_gate(VALID_GATE + "  extra: value\n")
+        parse_record_metadata(VALID_RECORD.replace("  tags:", "  extra: x\n  tags:"))
 
     manifest = parse_manifest(
         """\
@@ -84,166 +123,138 @@ report_exemption:
 """
     )
     assert manifest.allowed_paths == ("tools/existing.py",)
-    with pytest.raises(ValueError, match="literal"):
-        parse_manifest(
-            "allowed_paths:\n  - tools/*.py\nreport_exemption:\n"
-            "  reason: status-only\n  scope: status\n  approved_by_user: true\n"
-        )
+
+
+def test_ordinary_tool_change_does_not_require_report(repo: Path) -> None:
+    target = repo / "tools/existing.py"
+    target.write_text("VALUE = 2\n", encoding="utf-8")
+    _git(repo, "add", "tools/existing.py")
+
+    assert not _findings(repo)
+
+
+def test_structural_change_without_report_is_warning_first(repo: Path) -> None:
+    target = repo / "tools/new_helper.py"
+    target.write_text("def helper():\n    return 1\n", encoding="utf-8")
+    _git(repo, "add", "tools/new_helper.py")
+
+    findings = _findings(repo)
+    assert not [item for item in findings if item[0] == "error"]
+    assert any("code-map judgment" in message for _, message in findings)
+    assert any("reuse/commonization" in message for _, message in findings)
+
+
+def test_new_record_requires_staged_index(repo: Path) -> None:
+    _stage_record(repo, with_index=False)
+
+    assert any("REPORT_INDEX.md update" in message for message in _messages(repo, "error"))
+
+
+def test_valid_new_record_is_accepted(repo: Path) -> None:
+    _stage_record(repo)
+
+    assert not _messages(repo, "error")
+
+
+def test_record_reads_staged_blob_not_worktree(repo: Path) -> None:
+    path = _stage_record(repo)
+    (repo / path).write_text("record:\n  invalid: worktree only\n", encoding="utf-8")
+
+    assert not _messages(repo, "error")
+
+
+def test_result_records_are_append_only(repo: Path) -> None:
+    path = _stage_record(repo)
+    _git(repo, "commit", "-qm", "add record")
+    target = repo / path
+    target.write_text(VALID_RECORD + "\ncorrection in place\n", encoding="utf-8")
+    _git(repo, "add", path)
+
+    assert any("append-only" in message for message in _messages(repo, "error"))
+
+
+def test_memory_update_requires_staged_seed(repo: Path) -> None:
+    updated = VALID_RECORD.replace(
+        "memory_review: no-change",
+        "memory_review: updated",
+    )
+    _stage_record(repo, text=updated)
+    assert any("requires the staged memory seed" in message for message in _messages(repo, "error"))
+
+    seed = repo / "result_reports/memory/project_memory_seed.md"
+    seed.parent.mkdir(parents=True, exist_ok=True)
+    seed.write_text("# Memory\n", encoding="utf-8")
+    _git(repo, "add", "result_reports/memory/project_memory_seed.md")
+    assert not any("requires the staged memory seed" in message for message in _messages(repo, "error"))
+
+
+def test_record_path_and_date_must_match(repo: Path) -> None:
+    _stage_record(repo, name="2026-07-11-wrong-date.md")
+
+    assert any("date must match" in message for message in _messages(repo, "error"))
 
 
 @pytest.mark.parametrize(
-    ("source", "message"),
+    ("line_count", "severity", "expected"),
     [
-        (
-            "allowed_paths:\n  - tools/existing.py\nunknown: value\n",
-            "unknown manifest top-level field",
-        ),
-        (
-            "allowed_paths:\n  - tools/existing.py\nreport_exemption:\n  typo: value\n",
-            "unknown report_exemption field",
-        ),
-        (
-            "allowed_paths:\n  - tools/existing.py\n  report_path: report.md\n",
-            "invalid manifest field placement",
-        ),
-        (
-            "allowed_paths:\n  - tools/existing.py\nreport_exemption:\n"
-            "  reason: status-only\n  scope: status\n  approved_by_user: TRUE\n",
-            "approved_by_user: true",
-        ),
+        (300, "warning", "split or justify"),
+        (351, "error", "exceeds 350 LOC"),
     ],
 )
-def test_manifest_rejects_unknown_or_ambiguously_placed_fields(source: str, message: str) -> None:
-    with pytest.raises(ValueError, match=message):
-        parse_manifest(source)
-
-
-def test_relevant_change_requires_staged_active_report(repo: Path) -> None:
-    target = repo / "tools/existing.py"
-    target.write_text("VALUE = 2\n", encoding="utf-8")
-    _git(repo, "add", str(target.relative_to(repo)))
-
-    assert any("requires one active report" in message for message in _messages(repo))
-
-    report = repo / "result_reports/active/unstaged.md"
-    report.parent.mkdir(parents=True)
-    report.write_text(VALID_GATE, encoding="utf-8")
-    assert any("requires one active report" in message for message in _messages(repo))
-
-
-def test_gate_reads_staged_report_blob_not_worktree(repo: Path) -> None:
-    target = repo / "tools/existing.py"
-    target.write_text("VALUE = 2\n", encoding="utf-8")
-    _git(repo, "add", "tools/existing.py")
-    report_path = _stage_report(repo)
-    (repo / report_path).write_text("change_gate:\n  invalid: worktree-only\n", encoding="utf-8")
-
-    assert not [item for item in evaluate_cached(GitIndex(repo)) if item.severity == "error"]
-
-
-def test_source_policy_reads_staged_blob_not_larger_worktree_file(repo: Path) -> None:
-    target = repo / "apps/new_feature.py"
-    target.parent.mkdir()
-    staged = "\n".join(f"VALUE_{i} = {i}" for i in range(240)) + "\n"
-    target.write_text(staged, encoding="utf-8")
-    _git(repo, "add", "apps/new_feature.py")
-    working = "\n".join(f"VALUE_{i} = {i}" for i in range(360)) + "\n"
-    target.write_text(working, encoding="utf-8")
-    _stage_report(repo, text=VALID_GATE.replace("new_source: split", "new_source: small"))
-
-    assert not [item for item in evaluate_cached(GitIndex(repo)) if item.severity == "error"]
-
-
-def test_multiple_reports_require_manifest_selection(repo: Path) -> None:
-    target = repo / "tools/existing.py"
-    target.write_text("VALUE = 2\n", encoding="utf-8")
-    _git(repo, "add", "tools/existing.py")
-    selected = _stage_report(repo, "500_first.md")
-    second = _stage_report(repo, "501_second.md")
-    assert any("multiple staged reports" in message for message in _messages(repo))
-
-    git_dir = Path(_git(repo, "rev-parse", "--git-dir").strip())
-    if not git_dir.is_absolute():
-        git_dir = repo / git_dir
-    (git_dir / "agent_task_manifest.yml").write_text(
-        "allowed_paths:\n"
-        "  - tools/existing.py\n"
-        f"  - {selected}\n"
-        f"  - {second}\n"
-        f"report_path: {selected}\n"
-        "report_exemption:\n"
-        "  reason: status-only\n"
-        "  scope: report-selection\n"
-        "  approved_by_user: true\n",
-        encoding="utf-8",
-    )
-    assert not [item for item in evaluate_cached(GitIndex(repo)) if item.severity == "error"]
-
-
-def test_manifest_rejects_staged_paths_outside_literal_allowlist(repo: Path) -> None:
-    target = repo / "tools/existing.py"
-    target.write_text("VALUE = 2\n", encoding="utf-8")
-    _git(repo, "add", "tools/existing.py")
-    report_path = _stage_report(repo)
-    git_dir = repo / _git(repo, "rev-parse", "--git-dir").strip()
-    (git_dir / "agent_task_manifest.yml").write_text(
-        f"allowed_paths:\n  - {report_path}\n"
-        f"report_path: {report_path}\n"
-        "report_exemption:\n  reason: status-only\n"
-        "  scope: report-selection\n  approved_by_user: true\n",
-        encoding="utf-8",
-    )
-
-    assert any("staged paths not allowed" in message for message in _messages(repo))
-
-
-@pytest.mark.parametrize(
-    ("line_count", "expected"),
-    [(300, "requires split/justified"), (351, "exceeds 350 LOC")],
-)
-def test_new_production_source_loc_policy(repo: Path, line_count: int, expected: str) -> None:
+def test_new_production_source_loc_policy(
+    repo: Path,
+    line_count: int,
+    severity: str,
+    expected: str,
+) -> None:
     app = repo / "apps/new_feature.py"
     app.parent.mkdir()
-    app.write_text("\n".join(f"VALUE_{i} = {i}" for i in range(line_count)) + "\n", encoding="utf-8")
+    app.write_text(
+        "\n".join(f"VALUE_{i} = {i}" for i in range(line_count)) + "\n",
+        encoding="utf-8",
+    )
     _git(repo, "add", "apps/new_feature.py")
-    _stage_report(repo, text=VALID_GATE.replace("new_source: split", "new_source: small"))
 
-    assert any(expected in message for message in _messages(repo))
+    assert any(expected in message for message in _messages(repo, severity))
 
 
-def test_hotspot_growth_requires_explicit_decision(repo: Path) -> None:
+def test_hotspot_growth_is_warning_first(repo: Path) -> None:
     hotspot = repo / "apps/hotspot.py"
     hotspot.parent.mkdir()
-    hotspot.write_text("\n".join(f"BASE_{i} = {i}" for i in range(401)) + "\n", encoding="utf-8")
+    hotspot.write_text(
+        "\n".join(f"BASE_{i} = {i}" for i in range(401)) + "\n",
+        encoding="utf-8",
+    )
     _git(repo, "add", "apps/hotspot.py")
     _git(repo, "commit", "-qm", "add hotspot")
     with hotspot.open("a", encoding="utf-8") as stream:
         stream.write("\n".join(f"ADDED_{i} = {i}" for i in range(40)) + "\n")
     _git(repo, "add", "apps/hotspot.py")
-    _stage_report(repo, text=VALID_GATE.replace("accepted-for-slice", "none"))
 
-    assert any("hotspot net +40 LOC" in message for message in _messages(repo))
+    assert any("hotspot net +40 LOC" in message for message in _messages(repo, "warning"))
+    assert not _messages(repo, "error")
 
 
-def test_structural_source_requires_reuse_commonization_decision(repo: Path) -> None:
-    target = repo / "tools" / "new_helper.py"
-    target.write_text("def helper():\n    return 1\n", encoding="utf-8")
-    _git(repo, "add", "tools/new_helper.py")
-    _stage_report(
-        repo,
-        text=VALID_GATE.replace(
-            "reuse_commonization: checked",
-            "reuse_commonization: not_required",
-        ),
+def test_manifest_still_limits_staged_scope(repo: Path) -> None:
+    target = repo / "tools/existing.py"
+    target.write_text("VALUE = 2\n", encoding="utf-8")
+    _git(repo, "add", "tools/existing.py")
+    git_dir = repo / _git(repo, "rev-parse", "--git-dir").strip()
+    (git_dir / "agent_task_manifest.yml").write_text(
+        "allowed_paths:\n"
+        "  - docs/not-staged.md\n"
+        "report_exemption:\n"
+        "  reason: status-only\n"
+        "  scope: scope-test\n"
+        "  approved_by_user: true\n",
+        encoding="utf-8",
     )
 
-    assert any(
-        "requires reuse_commonization decision" in message for message in _messages(repo)
-    )
+    assert any("staged paths not allowed" in message for message in _messages(repo, "error"))
 
 
-def test_docs_only_change_does_not_require_reuse_commonization_decision(repo: Path) -> None:
-    docs = repo / "docs" / "note.md"
+def test_docs_only_change_has_no_findings(repo: Path) -> None:
+    docs = repo / "docs/note.md"
     docs.parent.mkdir()
     docs.write_text("docs only\n", encoding="utf-8")
     _git(repo, "add", "docs/note.md")

@@ -2,365 +2,102 @@
 
 ## Role
 
-This document owns change-focused agent gates for:
-
-- pre-write source boundary decisions;
-- compact read-budget evidence;
-- staged report association and structured gate metadata;
-- local no-report exceptions and commit metadata;
-- future pre-commit, commit-msg, pre-push, and CI enforcement.
-
-It complements `DIFF_READ_BUDGET.md`, `RESULT_REPORT_WORKFLOW.md`, and
-`check_code_structure.py`. It does not replace their owner responsibilities.
-
-The owner policy, staged checker, and local hooks are active. Branch-diff,
-pre-push, and CI enforcement remain separate future slices.
+This document owns staged objective checks and warning-first structure evidence.
+It does not make result records mandatory for ordinary changes.
 
 ## Applicability
 
-Use this workflow for:
+The cached checker inspects staged source, test, tool, region-config, code-map,
+and result-record changes. Docs-only wording and status checks normally need no
+gate beyond diff inspection.
 
-- new source modules, helpers, adapters, controllers, profiles, dialogs,
-  tables, shells, sessions, policies, or tools;
-- structure-impacting source moves, splits, merges, or owner changes;
-- additions to an existing soft-limit hotspot;
-- report-backed source, test, tool, config, or code-map changes;
-- follow-ups where broad or repeated reads were previously identified.
+## Objective Hard Checks
 
-Docs-only wording, report lifecycle work, commit/push-only follow-ups, and
-simple status checks do not require the full workflow unless they modify this
-workflow or its enforcement.
+The staged checker fails on:
 
-## Required Stages
+- staged whitespace errors;
+- Python syntax errors in checked source;
+- new production source over 350 LOC;
+- Phase 1 UI presentation literals that bypass token owners without an approved
+  exemption;
+- malformed or mutated result records;
+- a new record without its index row or required memory update;
+- staged paths outside an explicitly supplied local manifest.
 
-1. Run the pre-write boundary check before creating source files.
-2. Read targeted ranges and keep a Read Ledger when required.
-3. Implement within the declared owner boundaries.
-4. Add a structured `change_gate` block to the associated active report.
-5. Validate the staged change against this policy.
-6. Run hooks and CI enforcement after those surfaces are implemented.
+These checks are mechanical and do not depend on report presence.
 
-## Pre-write Boundary Gate
+## Warning-First Structure Checks
 
-Before source edits, answer these questions:
+The checker warns, but does not fail solely, when:
 
-| Question | Required action when yes |
-| --- | --- |
-| New source likely exceeds 220 LOC? | Record a split plan. |
-| New source likely exceeds 250 LOC? | Split first or justify it. |
-| One file owns two or more responsibilities? | State the owner boundary. |
-| State, view, shell, calculation, or I/O are mixed? | Split by responsibility. |
-| Reference implementation is already 200 LOC or larger? | Decide the split before adapting it. |
-| Existing target exceeds a soft limit? | Keep it wiring-only or run a split audit. |
-| Task introduces three or more responsibility areas? | Separate interface/skeleton and implementation slices. |
+- a new production source is 251-350 LOC;
+- a new source has many top-level classes;
+- an existing hotspot grows by 40 net LOC or more;
+- a structural change has no bounded code-map judgment;
+- a structural change has no reuse/commonization decision;
+- a Phase 2 UI presentation literal may deserve a token.
 
-Prefer feature-local state/view/wrapper splits over premature generic
-framework extraction. Do not split a cohesive owner solely to reduce LOC.
+Warnings require review, not automatic extraction or a mandatory record. A
+durable record is needed only when the task independently matches a Result
+Record trigger.
 
-Allowed `new_source` decisions:
+## Optional Change Gate Evidence
 
-- `none`
-- `small`
-- `split`
-- `justified`
-
-Allowed `hotspot_delta` decisions:
-
-- `none`
-- `wiring-only`
-- `accepted-for-slice`
-- `split-audit-required`
-- `split-required`
-
-`justified`, `accepted-for-slice`, and either split-required value need one
-short reason in the report.
-
-## Read Ledger
-
-Include a compact Read Ledger when:
-
-- creating a source module or UI/tool surface;
-- changing architecture-sensitive ownership;
-- modifying a dialog, table, profile, window, result, or export surface;
-- a prior review identified read-budget problems;
-- any broad or repeated read occurred.
-
-Follow `DIFF_READ_BUDGET.md`: locate symbols first, start with 30-80 lines,
-and require a blocker before reading more than 100 lines from one file at once.
-
-Report format:
-
-```text
-Read Ledger:
-- <path>: lines <start>-<end>, reason: <short reason>
-- broad read: none | <path + blocker>
-- repeated read: none | <path + reason>
-```
-
-Accepted broad-read blockers are unclear method/owner boundaries after symbol
-search, explicit full-file inventory, truncated target output, or generated
-structure that cannot be inspected narrowly. "Might be useful" is not a
-blocker.
-
-## Structured Change Gate
-
-Every associated active report for source, test, tool, config, or code-map
-changes must contain this exact block:
+A compact record may include:
 
 ```yaml
 change_gate:
-  new_source: none
-  hotspot_delta: none
-  code_map_check: not_required
-  ui_literal_exemption: none
-  reuse_commonization: not_required
-  report_exemption: none
-  read_ledger: not_required
+  new_source: none | small | split | justified
+  hotspot_delta: none | wiring-only | accepted-for-slice | split-audit-required | split-required
+  code_map_check: not_required | checked | skipped | regenerated | no-change
+  ui_literal_exemption: none | approved-for-slice
+  reuse_commonization: not_required | checked | reused-existing-owner | local-with-reason | design-deferred
 ```
 
-Allowed `code_map_check` values:
+Use this block for an approved UI literal exemption or a structure decision
+worth preserving. Legacy `report_exemption` and `read_ledger` fields remain
+parser-compatible but are not part of the active five-field contract.
 
-- `not_required`
-- `checked`
-- `skipped`
-- `regenerated`
-- `no-change`
+## Local Task Manifest
 
-Allowed `ui_literal_exemption` values:
-
-- `none`
-- `approved-for-slice`
-
-`approved-for-slice` requires a short report reason naming the literal, owner,
-and why a token is not appropriate in that slice. Ordinary prose, a manifest,
-or a commit trailer cannot grant this exemption.
-
-Allowed `reuse_commonization` values:
-
-- `not_required`
-- `checked`
-- `reused-existing-owner`
-- `local-with-reason`
-- `design-deferred`
-
-Structural source changes cannot use `not_required`. Use `checked` when a
-bounded sibling/owner search found no reuse candidate, `reused-existing-owner`
-when an existing owner or helper is used, `local-with-reason` when local logic
-is deliberately retained, and `design-deferred` when commonization is plausible
-but belongs in a separate design/report slice.
-
-Allowed `report_exemption` values:
-
-- `none`
-- `user-approved-docs-only`
-- `user-approved-formatting-only`
-- `commit-push-only`
-- `status-only`
-
-Allowed `read_ledger` values:
-
-- `not_required`
-- `included`
-- `skipped`
-
-The future gate tool must parse only this structured block for pass/fail. It
-must not infer gate state from ordinary report prose. Add one short reason for
-`new_source: justified`, nontrivial hotspot decisions, `code_map_check:
-skipped`, non-`not_required` `reuse_commonization` values, non-`none`
-exemptions, and `read_ledger: skipped`.
-
-## Staged Report Association
-
-In `--cached` mode, only staged files under `result_reports/active/` can satisfy
-the report requirement.
-
-| Staged state | Decision |
-| --- | --- |
-| Relevant change plus exactly one staged active report | Parse that report. |
-| Relevant change plus no staged active report | Fail unless a valid local exemption exists. |
-| Relevant change plus multiple staged active reports | Fail unless the manifest selects one `report_path`. |
-| Existing active report is not staged | Do not recognize it. |
-
-When a manifest selects `report_path`, that path must itself be a staged active
-report. The tool must read its index blob, not its working-tree content.
-
-## No-report Exceptions
-
-No-report approval is narrow and must not use `--no-verify` as the normal path.
-
-Allowed reasons:
-
-- `user-approved-docs-only`
-- `user-approved-formatting-only`
-- `commit-push-only`
-- `status-only`
-
-No-report exemption is forbidden for behavior changes, calculator logic,
-schema/public API changes, expected/golden changes, or new workflow/tool source.
-
-### Local Manifest
-
-The cached checker and future local hook read a task manifest resolved through:
+The optional local manifest is resolved through:
 
 ```bash
 git rev-parse --git-path agent_task_manifest.yml
 ```
 
-Minimum schema:
+It may restrict staged files with literal `allowed_paths` and select one
+`report_path` when multiple new records contain change-gate evidence. It is
+local staging control, not durable project history and not a reason to require a
+report.
 
-```yaml
-allowed_paths:
-  - docs/agent_workflows/AGENT_CHANGE_GATES.md
-report_path: null
-report_exemption:
-  reason: user-approved-formatting-only
-  scope: formatting-only
-  approved_by_user: true
-```
+## Result Record Checks
 
-Rules:
+New records must:
 
-- `allowed_paths` is required, nonempty, and contains literal repository paths;
-- every staged path must be listed;
-- glob patterns are not accepted in the initial implementation;
-- `report_path`, when set, must identify one staged active report;
-- reason and scope must be allowed and compatible;
-- `approved_by_user` must be exactly `true`.
-- unknown or duplicate top-level/nested fields and misplaced indentation fail;
-  unrecognized manifest content is never silently ignored.
+- be added under
+  `result_reports/records/YYYY-MM/YYYY-MM-DD-<slug>.md`;
+- contain the five-field `record` metadata block;
+- have a staged row in `result_reports/REPORT_INDEX.md`;
+- stage the memory seed when `memory_review: updated`;
+- remain append-only after commit.
 
-`user-approved-docs-only` accepts docs/report text paths only.
-`user-approved-formatting-only` accepts existing files only and requires the
-future gate's formatting-only classifier to confirm no semantic change.
-`commit-push-only` and `status-only` cannot authorize staged content changes.
+The checker reads index blobs rather than unstaged worktree content.
 
-### Commit Trailer And CI
+## UI Literal Policy
 
-Local manifests are not available to CI. A locally exempted commit must carry:
+Phase 1 rejects new staged production UI literals for known table/window/color
+policy surfaces. Token-owner modules and existing grandfathered lines remain
+outside the check.
 
-```text
-Agent-Report-Exemption: user-approved-formatting-only
-```
+Phase 2 warns on likely repeated `width`, `height`, `padx`, `pady`, or
+named-color literals. Prefer an existing token/helper; create a durable
+exemption record only when the local value is deliberate and reusable policy is
+not appropriate.
 
-A `commit-msg` hook validates the trailer format and allowlisted value. The
-cached checker remains responsible for staged-diff and local-manifest
-eligibility. Branch-diff CI must recognize only the same allowlisted trailer
-values and independently verify that the diff is eligible. The trailer alone
-is never sufficient evidence.
+Domain/regulation values are not UI presentation literals.
 
-## Staged Change Gate
-
-Execution order and rerun budget are owned by
-`docs/agent_workflows/RESULT_REPORT_WORKFLOW.md`.
-
-The future command surfaces are:
-
-```bash
-python3 -B tools/check_agent_change_gate.py --cached
-python3 -B tools/check_agent_change_gate.py --base <merge-base> --head HEAD
-```
-
-`--cached` must inspect the index:
-
-- inventory: `git diff --cached --name-status`;
-- staged content: `git show :<path>`;
-- staged delta: `git diff --cached --numstat`;
-- whitespace: `git diff --cached --check`.
-
-It must remain correct with partially staged files.
-
-Minimum staged checks:
-
-| Check | Policy |
-| --- | --- |
-| Whitespace errors | Hard fail. |
-| New production Python source over 350 LOC | Hard fail. |
-| New production Python source 251-350 LOC | Require `new_source: split` or `justified`. |
-| New production source over 5 classes | Warning. |
-| New production source over 5 classes and over 250 LOC | Also require `new_source: justified`. |
-| New production source over 8 classes | Strong warning, not hard fail. |
-| Existing hotspot with net +40 LOC or more | Require an accepted hotspot decision. |
-| Relevant change without associated staged report | Fail unless valid exemption. |
-| Structural source change without code-map judgment | Fail. |
-| Structural source change without reuse/commonization decision | Fail. |
-| Staged path outside manifest `allowed_paths` | Fail. |
-
-Production source roots are `core/`, `ui/`, `apps/`, and `scripts/`. Tool source
-under `tools/` is report-relevant even though it is not evaluated as production
-runtime source by the LOC policy.
-
-A hotspot is an existing source already over a structure soft limit,
-allowlisted as known-large, or over that limit in staged content. Use net LOC
-delta between the base/index blobs, not raw diff additions, for the +40 rule.
-
-Structural changes include new/moved/deleted source, new helpers or surfaces,
-owner/commonization changes, and source splits or merges.
-
-### Reuse / Commonization Decision
-
-This gate is project-wide, not calculator-specific. Before report-backed source
-structure changes, check whether the change repeats local logic that should be
-owned by an existing helper, adapter, controller, policy, or sibling surface.
-
-The report should record the minimum decision evidence:
-
-- sibling surfaces or existing owner/helper checked;
-- whether an existing owner/helper was reused;
-- whether the change repeats mapping, formatting, routing, lifecycle, sizing,
-  validation, I/O, or orchestration policy;
-- no-reuse reason when local implementation remains appropriate;
-- whether a design/report slice is required before commonization.
-
-The staged checker validates only the structured value. It does not judge
-whether the architecture decision is correct; that remains a human review and
-report-quality responsibility.
-
-### UI Magic Literal And Token Policy
-
-UI table sizing, colors, fonts, spacing, and window sizing are presentation
-policy. New reusable values must come from a token owner such as
-`apps/calculator/ui/layout_constants.py` or a feature-appropriate
-`*token*.py` module. Do not place a repeated raw presentation value directly in
-a section, dialog, profile, table, or window surface.
-
-Domain/regulation constants are different: temperatures, test-point values,
-bin data, conversion factors, and standard-defined defaults remain with their
-calculator/config/schema owner. The UI literal gate does not scan core,
-configuration, fixtures, or calculation tests merely because they contain
-numbers.
-
-Phase 1 checks only newly added staged lines in production UI Python under
-`apps/calculator/ui/`, `ui/`, and `ui_tk/`. It rejects:
-
-- numeric `row_header_chars=` and `data_column_chars=` keyword values;
-- numeric-pair `min_size=(...)` keyword arguments, assignments, and `min_size`
-  property returns;
-- literal `geometry("<width>x<height>")` calls;
-- `#RRGGBB` string literals.
-
-Phase 2 is warning-first only. It flags newly added staged UI source lines that
-introduce likely presentation literals such as numeric `width=`, `height=`,
-`padx=`, or `pady=` keyword values, plus simple named colors like `white`,
-`gray`, or `red`. Runtime sentinels `0` and `1`, token owners, approved
-exemptions, tests, core/domain/config paths, and existing grandfathered lines
-remain outside the hard-fail policy.
-
-Phase 2 warnings should prompt a report decision: use an existing token/helper,
-add a meaningful token owner when the value is reusable, or record why local
-presentation policy is acceptable for the slice. They do not block commits by
-themselves.
-
-`apps/calculator/ui/layout_constants.py` and UI files whose basename contains
-`token` are token owners and are exempt from these detections. Tests are not
-production UI and are outside this Phase 1 scan.
-
-Legacy is grandfathered by staged-line scope: existing raw literals do not fail
-until a change adds them as new lines. This is not permission to copy a legacy
-literal into new code. The checker reads index blobs and index diff hunks, so a
-partially staged clean token change cannot be failed by an unstaged worktree
-literal.
-
-## Hook And CI Policy
+## Hook Policy
 
 `.githooks/pre-commit` runs:
 
@@ -369,51 +106,20 @@ git diff --cached --check
 python3 -B tools/check_agent_change_gate.py --cached
 ```
 
-The cached command includes the Phase 1 UI literal check; the hook must not
-invoke a second checker process.
+Hooks are implemented in the repository but enabled per clone only when
+`core.hooksPath` is configured. Do not describe them as active in a checkout
+without verifying that configuration.
 
-Do not run pytest or regenerate the code map in pre-commit.
+The legacy commit-message exemption trailer validator remains compatibility
+only; the new policy does not require exemption trailers for report-free work.
 
-`.githooks/commit-msg` validates exemption trailer format, uniqueness, and
-allowlisted values. Enable both repository hooks locally with:
+## Validation
 
-```bash
-git config core.hooksPath .githooks
-```
+When this policy or checker changes, run:
 
-Hook activation is an explicit per-clone setup step and is not forced by the
-repository. Pre-push may run `check_code_structure.py` and code-map `--check`
-after the staged gate is stable; it must not run full pytest by default.
+- focused agent-change-gate tests;
+- focused UI literal tests when that surface changes;
+- Git hook tests when hook behavior changes;
+- `tools/check_code_structure.py` for structure-impacting source changes.
 
-CI must rerun branch-diff gates because hooks can be bypassed. It must handle
-merge-base and shallow-clone setup explicitly and fail clearly when the base is
-unavailable. CI checks generated artifacts; it does not regenerate them.
-
-## Implementation Status And Slices
-
-Current status after this owner document lands:
-
-- policy owner: implemented;
-- router links: implemented;
-- `check_agent_change_gate.py --cached`: implemented and focused-tested;
-- staged UI magic-literal Phase 1 gate: implemented and focused-tested;
-- staged UI literal Phase 2 warnings: implemented and focused-tested;
-- reuse/commonization decision gate: implemented and focused-tested;
-- pre-commit/commit-msg hooks: implemented and focused-tested;
-- profile-tab lifecycle ownership structure gate: implemented and focused-tested;
-- pre-push and CI branch mode: pending.
-
-The structure gate rejects direct construction/calls to
-`TkVisibleContentMeasurement`, `TkContentHuggingShell`,
-`DynamicContentRefitScheduler`, and `register_content` in production
-`apps/calculator/ui/tabs/*.py`. The allowed assembly owner is
-`apps/calculator/ui/lifecycle/`; tests remain outside the production scan.
-
-Implementation order:
-
-1. Enable the repository hooks per clone with
-   `git config core.hooksPath .githooks`.
-2. Add branch-diff mode and CI/pre-push integration in a separately approved
-   slice.
-
-Do not duplicate this policy text into routing documents.
+Do not run full pytest solely because the harness policy changed.

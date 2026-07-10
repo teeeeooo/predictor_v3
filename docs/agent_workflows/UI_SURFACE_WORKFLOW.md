@@ -54,10 +54,9 @@ Before editing UI surface code:
 - for structure-impacting UI work, `python3 -B tools/check_code_structure.py`
   can be used as a preflight guard, not only as a commit-time validator.
 
-For report-backed UI source changes, record the reuse/commonization decision
-expected by `AGENT_CHANGE_GATES.md`: checked sibling surfaces, reuse outcome,
-and the no-reuse or design-deferred reason. This is warning-first evidence, not
-permission to start a broad refactor inside a narrow UI slice.
+When the UI task independently requires a compact result record, preserve a
+nontrivial reuse/commonization decision there. Ordinary UI source work remains
+warning-first and does not require a record merely for changing source.
 
 ## Post-implementation Soft Warning Triage
 
@@ -95,7 +94,8 @@ When creating or changing a table-shaped UI:
 - prefer the existing owner/helper/adapter when it fits; if not reused, record
   the incompatibility or reuse-blocking reason before implementation;
 - do not treat an Entry/Label grid as a table surface by appearance alone;
-- record pass/fail evidence for table parity in the report validation;
+- preserve table-parity evidence in focused tests; add it to a compact record
+  only when the task matches a normal record trigger;
 - if a reference implementation is not reused, record why and add a
   controller/helper-level parity test plan;
 - if Windows/manual smoke first finds a core interaction bug, record it as a

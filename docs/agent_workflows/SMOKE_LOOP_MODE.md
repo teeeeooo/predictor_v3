@@ -18,7 +18,10 @@ user asks for quick small fixes based on immediate manual UI smoke results.
 - Modify source/test only.
 - Do not update `docs/WORK_PLAN.md`, `project_log.md`, or
   `result_reports/memory/project_memory_seed.md`.
-- Do not create `result_reports/active/` reports.
+- Do not create a result record for an ordinary smoke-loop correction.
+- Create a compact record only when the bug is repeated, non-obvious,
+  platform/manual-only, cross-owner, or cannot be protected by an automated
+  regression guard.
 - Do not run full pytest.
 - Run validation in tiers:
   - first: focused owner tests for the changed surface/controller/helper;
@@ -49,5 +52,6 @@ Do not use smoke-loop mode for:
 
 ## Stable Checkpoint
 
-When the user says the loop is stable, a follow-up checkpoint task may update
-manual smoke guide, `docs/WORK_PLAN.md`, and a compact report.
+When the user says the loop is stable, a follow-up checkpoint may update the
+manual smoke guide or current plan only when their owned state changed. A
+compact record still requires a normal Result Record trigger.

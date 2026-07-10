@@ -1,282 +1,145 @@
-# Result Report Workflow
+# Result Record Workflow
 
 ## Role
 
-This document owns result report creation, numbering, terminal output, and
-commit/push expectations for agent work.
+This document owns conditional result-record triggers, record shape, discovery
+index, terminal status, and commit/push handling.
 
-`AGENT_TASK_ROUTER.md` only routes to this document; it is not the detailed
-report workflow owner.
+Ordinary tracked-file changes do not require a report.
 
-## When A Report Is Required
+## Required Record Triggers
 
-Create a Markdown report under `result_reports/active/` when:
+Create one compact record when the task changes or establishes:
 
-- tracked files are created, modified, deleted, or moved;
-- code, docs, tests, config, model artifacts, contracts, or public behavior
-  change;
-- an audit result should remain as a future reference artifact;
-- summary/archive/project log lifecycle maintenance is performed;
-- the user explicitly asks for a report.
+- architecture or owner boundaries;
+- schema, public API, JSON keys, or diagnostics contracts;
+- calculator formulas, golden/fixture expectations, or region-config behavior;
+- agent harness, gate, or workflow enforcement;
+- migration, release, or deployment decisions;
+- external/manual evidence that is necessary for final acceptance;
+- a non-obvious, repeated, cross-owner, platform/manual-only, or unguarded
+  UI/bug regression;
+- an explicitly user-requested report.
 
-No-report / terminal-only mode is allowed only when no repo files are changed
-and the task is a simple status, diff, push, or cause analysis response.
+Do not create a record for ordinary implementation, focused internal refactor,
+tests, UI polish, simple bugfix, docs wording, formatting, or status checks
+unless one of the triggers above is actually present.
 
-## Report Location And Numbering
+## UI And Bug Recurrence History
 
-- Active reports: `result_reports/active/`
-- Summaries: `result_reports/summaries/`
-- Archive: `result_reports/archive/`
-- Memory staging: `result_reports/memory/`
+Regression tests are the primary recurrence guard. For an ordinary UI/bugfix
+without a result record, use a meaningful commit body when commit is requested:
 
-Report filename format:
+```text
+Symptom:
+Cause:
+Fix:
+Guard:
+```
 
-- `NNN_verb-target-scope.md`
+When recurrence is suspected, search Git history by the affected path and a
+stable symptom/symbol before opening broad historical reports. Escalate to a
+compact record only for the non-obvious/repeated/manual/cross-owner cases listed
+above.
 
-Numbering rule:
+## Location And Naming
 
-- Use the maximum existing report number across `active`, `archive`, and
-  `summaries`, then add 1.
-- Do not restart numbering in a new session.
-- Do not create phase-specific numbering.
-- Do not run `git pull`, `git merge`, or `git rebase` just to determine the
-  next number.
+New records use their final history path immediately:
 
-## Report Modes
+```text
+result_reports/records/YYYY-MM/YYYY-MM-DD-<slug>.md
+```
 
-Full report mode is required for:
+- Use a short kebab-case slug.
+- Add `-02`, `-03`, and so on only for a same-day path collision.
+- Do not scan legacy directories for a global number.
+- Records are append-only. Correct a material error with a new correction
+  record rather than rewriting history.
 
-- logic/code changes;
-- architecture-sensitive changes;
-- calculator/golden/fixture/config changes;
-- test additions or behavior guard changes;
-- schema, contract, or public API impact.
+Existing `active/`, `archive/`, and `summaries/` are legacy inputs.
+Their physical migration is a separate approved slice.
 
-Compact report mode is allowed for:
+## Record Contract
 
-- docs wording or routing cleanup;
-- link/path expression updates;
-- report lifecycle maintenance;
-- audit/report-only work without code behavior changes.
+Every new record contains exactly one metadata block:
 
-Summary/archive lifecycle maintenance must route to
-`docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` for the memory seed check
-before closeout.
+```yaml
+record:
+  date: YYYY-MM-DD
+  topic: short-stable-topic
+  tags: comma-separated, search-friendly, tags
+  memory_review: updated | no-change
+  memory_reason: one short reason
+```
 
-Compact report minimum sections:
+Minimum content:
 
-- Goal
-- Scope
+- Change Reason
+- Contract / Behavior Changed
+- Evidence And Verification
 - Changed Files
-- Verification
 - Known Risks
-- Commit / Push
 
-Compact audit reports should preserve the decision, not duplicate terminal
-output. Prefer a short inventory table or tight bullets for evidence,
-classification, decision, and next action. Keep validation and command output to
-one-line status summaries unless a failure/blocker needs detail.
-Validation scope follows the task-specific workflow owner; reports should record
-what was run and any skipped stronger checks, not create a separate command
-matrix.
+Preserve why and the durable evidence. Do not reproduce the full terminal
+output, diff, test log, implementation diary, or owner-document text.
 
-For compact report-only or narrow UI correction work, keep MVC/SoC, behavior
-preservation, and known risks to one or two bullets each unless the decision
-would otherwise be ambiguous.
+An optional `change_gate` block may record an approved UI literal exemption or
+nontrivial structure decision. It is not required merely because source or test
+files changed.
 
-If the user explicitly asks for no report on a docs/workflow cleanup, do not
-create a report solely because a tracked docs file changed. Keep the terminal
-summary short and record the commit/push result there.
+## Discovery Index
 
-Full report default sections:
+Add one row per new record to `result_reports/REPORT_INDEX.md`:
 
-- Goal
-- Scope
-- Non-goals
-- Verification
-- Task Results
-- Test Results
-- Changed Files
-- Known Failures / Risks
-- Next Suggested Action
-- Scope Compliance
-- Commit / Push
-- Project Memory Delta
+```text
+| Date | Topic | Tags | Decision / Reason | Record |
+```
 
-When a new UI surface, script, helper, adapter, workflow path, or reusable
-component is created or an existing stable path is replaced/extended, include a
-short reference parity section: whether an existing reference was checked, why it
-was or was not reused, and any unresolved parity gaps.
+The staged checker verifies the path, index row, and memory-review consistency.
+Search the index or memory seed before opening record bodies.
 
-For report-backed source structure changes, include a compact
-reuse/commonization decision matching the structured `change_gate` value:
-checked sibling surfaces or owners, reuse outcome, repeated local-policy risk,
-and no-reuse or design-deferred reason. The report does not need a broad
-duplicate inventory; the goal is to make local hotfix and helper repetition
-visible before it hardens into a pattern.
+## Memory Review
 
-For structure-impacting source changes, include a compact code map judgment from
-`docs/agent_workflows/DIFF_READ_BUDGET.md`:
+Every new record declares one of:
 
-- `code_map_check`: `checked`, `skipped`, `regenerated`, or `no-change`
-- if skipped, record the short reason;
-- if regenerated, record whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` is
-  included in the diff.
+- `updated`: update `result_reports/memory/project_memory_seed.md` in the
+  same staged change;
+- `no-change`: give a short reason why existing memory is sufficient or the
+  decision is not useful for long-term recall.
 
-Docs-only, report-only, manual-smoke reflection, and audit-only work can omit
-`code_map_check` unless the task specifically audits source structure inventory
-or the code map.
+The broader Memory Review Gate also applies at milestone/branch closeout,
+explicit handoff, and return to a long-paused workstream. Its owner is
+`PROJECT_LOG_AND_MEMORY.md`.
 
-For report-backed source/test changes, include compact structure warning
-coverage when relevant:
+## Verification Budget
 
-- `Structure Warnings`: `none` is enough when no changed/new source file emits a
-  structure warning, or for docs-only work.
-- `Warning Triage`: if a changed/new source file emits a soft warning, record
-  the warning path, reason, and action.
+- Run focused behavior/tool tests once against the final implementation.
+- Run structure/staged checks only when their owned surface changed.
+- Do not rerun a passing command unless relevant evidence changed.
+- Record skipped stronger verification only when it leaves a meaningful risk.
 
-Recommended warning triage actions:
+## Commit And Push
 
-- `none`
-- `accepted for this slice with reason`
-- `split audit required before next code slice`
-- `split implementation required before continuing`
-- `blocked`
-
-Do not turn every report into a long template. The rule is to prevent source
-structure warnings from being hidden behind "validation OK"; it does not change
-the active report count policy or the commit/push wording policy.
-
-## Report Content
-
-- Do not record personal author names, email addresses, or other identifying
-  information in report bodies. The report is a task artifact, not a personal
-  attribution document. Git commit metadata already tracks authorship.
-
-## Verification Budget And Order
-
-Applicable focused pytest, structure guard, code-map check, and cached gate
-commands have a default budget of one execution each per task.
-
-Rerun a command only when:
-
-- its previous execution failed; or
-- source, test, report, or gate evidence relevant to that command changed after
-  the previous execution.
-
-Do not rerun a focused suite when a final superset already includes the same
-tests. Prefer static inspection before final verification when implementation
-is still changing.
-
-Use this default order:
-
-1. Complete implementation, documentation sync, and the active report.
-2. Check `git diff --numstat` or otherwise confirm the hotspot delta.
-3. Run the focused pytest selection once when applicable.
-4. Run the structure guard once when applicable.
-5. Run the code-map check once and record the check/regenerate judgment.
-6. Run the cached gate once against the final staged task scope.
-7. Commit, push, and verify the remote SHA match.
+- Commit and push require explicit user authorization.
+- A required compact record is included in the same commit as its source/docs
+  changes.
+- Do not put a commit hash in the record. Git history already associates the
+  record and diff.
+- Use a separate report-only commit only when the user explicitly requests it.
+- Do not create self-referential hash update loops.
 
 ## Terminal Output
 
-For report-backed work, keep terminal/final output short. Detailed results
-belong in the report.
+Use the five-field result:
 
-When the user does not require a fixed long output schema, use at most six short
-lines: `modified`, `created/report` when relevant, `validation`, `commit`,
-`push`, and `next`. Do not repeat report sections in terminal output.
+```text
+modified: <paths | none>
+validation: <passed/failed/skipped + short scope>
+commit: <hash | not requested | not performed>
+push: <remote/branch + OK/NG | not requested>
+report: <path | not created>
+```
 
-Required publication/status fields (`local_head`, `remote_main`, `match`,
-`status`, and `active_report_count`) are exempt from the six-line guideline.
-Keep any remaining terminal output compact.
-
-Use this final shape:
-
-- `task N: OK/NG - short summary`
-- `modified: path/to/file1, path/to/file2`
-- `report: result_reports/active/NNN_name.md`
-
-`modified:` includes only files actually changed by the task. Do not include
-pre-existing unrelated dirty files.
-
-## Commit / Push
-
-- Report files are task artifacts and must be committed and pushed when
-  created.
-- Prefer separate source/docs and report commits when practical.
-- Audit/report-only work may commit only the report.
-- Record commit hash and push status in the report.
-- If recording the report commit hash would require editing the same report,
-  do not create a self-referential hash/update loop. Record the source/docs
-  commit when useful, and put the final pushed commit hash and push result in
-  the terminal/final response.
-- Do not leave `pending` commit/push wording in a completed report when no
-  follow-up report update is planned.
-- A completed push report must include `local_head`, `remote_main`, and
-  `match: OK/NG`. Resolve `remote_main` from the remote repository, not only
-  the local `origin/main` tracking ref.
-- A push is complete only when `local_head == remote_main`. If they differ,
-  report `match: NG` and do not claim push completion.
-- Preferred publication verification:
-
-  ```bash
-  local_head=$(git rev-parse HEAD)
-  remote_main=$(git ls-remote --heads origin refs/heads/main | awk '{print $1}')
-  test "$local_head" = "$remote_main"
-  ```
-
-- For a user-requested commit/push-only follow-up after validation already ran
-  and no files changed since, do not repeat validation. Use one compact
-  commit/push command sequence and one short final publication result with
-  `local_head`, `remote_main`, `match`, and clean/dirty status.
-- When the user requested commit/push for a report-backed task, check the
-  active report count before final output. If `result_reports/active/` has
-  more than 10 reports, do not run lifecycle maintenance automatically; add a
-  short terminal note that summary/archive maintenance is pending and should
-  be handled as a separate follow-up.
-- Active report count command: `find result_reports/active -maxdepth 1 -type f -name '*.md' | wc -l`
-- Do not run `git pull`, `git merge`, or `git rebase` unless the user asks.
-- **Active Report Count Wording Policy**:
-  - Do not write the exact active report count in durable documents (e.g., `WORK_PLAN.md`, `project_log.md`, or report bodies).
-  - Use threshold wording instead (e.g., "active report count exceeds lifecycle threshold; cleanup pending").
-  - Report the exact count only in the final agent terminal output under the `active_report_count` key.
-  - If the exact count is absolutely required in the report body, calculate it during the final verification step *after* all new active report files have been created. The default policy remains to omit exact numbers from durable documents.
-
-## Project Memory Delta
-
-Use `Project Memory Delta` only for long-lived memory candidates.
-
-- Full reports include the section; use `- none` if no candidate exists.
-- Compact reports include it only when the work creates a durable decision,
-  procedure, error, open question, or relation.
-- No-report / terminal-only mode never creates memory deltas.
-
-Memory delta entries are backend-neutral. Required fields:
-
-- `type`
-- `topic`
-- `content`
-- `keywords`
-- `assertionStatus`
-- `source`
-
-`keywords` must be a YAML list, not a comma-separated string.
-
-Allowed `type` values:
-
-- `fact`
-- `decision`
-- `error`
-- `preference`
-- `procedure`
-- `relation`
-- `episode`
-- `open_question`
-
-Allowed `assertionStatus` values:
-
-- `observed`
-- `inferred`
-- `verified`
-- `rejected`
+When push is performed, resolve and compare the actual remote branch SHA before
+claiming `OK`. Add prose only for failures, weaker verification, or residual
+risks that are not clear from these fields.

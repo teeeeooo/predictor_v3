@@ -56,7 +56,7 @@ def check_ui_magic_literals(
                     "ui_literal_exemption: approved-for-slice"
                     if severity == "error"
                     else f"new UI {kind} literal should use an existing token, "
-                    "owner helper, or report-local no-reuse reason"
+                    "owner helper, or record-local no-reuse reason"
                 )
                 findings.append(Finding(severity, f"{change.path}:{line}", message))
     return findings

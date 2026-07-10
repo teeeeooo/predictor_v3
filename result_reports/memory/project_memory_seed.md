@@ -2,18 +2,25 @@
 
 ## Purpose
 
-This document stages backend-neutral long-term memory candidates from existing summary reports. It is a compact decision index for current and future agent work, without defining or requiring any backend.
+This document is a backend-neutral current memory bank for long-running,
+branching project work. It preserves a compact set of durable decisions,
+invariants, resume points, repeated errors, and open questions.
 
 ## Source Coverage
 
-Active seed entries are maintained from source summaries and project log evidence through `result_reports/summaries/725_summary-arc15-data-definition-foundation-closeout.md`, plus explicit July 2026 memory maintenance reports. Retired, stale, superseded, resolved, and consolidated-away source entries remain preserved with source traces in `result_reports/memory/archive/project_memory_seed_retired_2026-07.md`.
+Active entries draw from owner docs, project-log evidence, durable result
+records, and pre-cutover summaries through the Arc 15 closeout. Retired,
+superseded, and resolved entries remain preserved with source traces under
+`result_reports/memory/archive/`.
 
 ## Scope and Non-goals
 
 - Seed entries preserve durable decisions, procedures, verified failure states, and unresolved follow-ups that affect later work.
 - Active entries are consolidated by owner boundary or current project state so this file stays usable as a compact first-read index.
-- Entries derive from summary headings, scoped decision/risk/action sections, project_log evidence, and explicit memory maintenance tasks; archived individual report bodies were not reread for this pass.
-- This document does not backfill individual reports, modify summaries or `project_log.md`, move archive files, or connect to a memory backend.
+- Entries derive from Memory Review Gate decisions, owner docs, scoped durable
+  evidence, and project-log decisions; legacy report bodies are not broad-read.
+- This document does not backfill or rewrite result records, summaries,
+  `project_log.md`, or legacy evidence.
 - Hypotheses and uncompleted work are represented as `open_question`, not confirmed decisions.
 
 ## Seed Entries
@@ -22,17 +29,19 @@ Active seed entries are maintained from source summaries and project log evidenc
 entries:
   - type: procedure
     topic: agent workflow and lifecycle boundary
-    content: AGENTS.md is the active lite entrypoint and AGENT_TASK_ROUTER.md is the route/gate map. Tracked-file work writes sequential result reports, summaries group arc/workstream evidence, project_log.md records only durable milestone decisions, and memory seed updates happen only through summary lifecycle or explicit maintenance. Durable docs use threshold wording for active report counts; exact counts belong only in terminal output.
+    content: AGENTS.md is the lite entrypoint and AGENT_TASK_ROUTER.md is the route map. Ordinary tracked-file work does not create reports. Durable compact records are limited to contract/policy/migration/manual-evidence and non-obvious regression triggers, use date-based final paths plus REPORT_INDEX, and are committed with their source changes. Memory Review replaces report-count lifecycle cleanup and is required for new records, milestone/branch closeout, explicit handoff, and return to a long-paused workstream.
     keywords:
       - predictor_v3
       - AGENTS.md
       - AGENT_TASK_ROUTER.md
       - result report
+      - result record
       - project_log
       - memory seed
-      - lifecycle
+      - memory review
+      - report index
     assertionStatus: verified
-    source: consolidated from result_reports/summaries/011_summary-agent-rules-doc-workflow.md, 020_summary-active-report-doc-lifecycle.md, 140_summary-project-memory-delta-workflow.md, 153_summary-agent-workflow-memory-token-log-lifecycle.md, 314_summary-tkinter-table-controller-switch-arc-closeout.md, and 2026-07 memory maintenance reports
+    source: result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md; docs/designs/2026-07-10-agent-harness-report-lifecycle-redesign.md
 
   - type: decision
     topic: architecture and source owner boundary
@@ -377,11 +386,14 @@ entries:
 
 ## Next Maintenance Rule
 
-- seed는 summary lifecycle의 `Project Memory Seed Sync Judgment` 또는 명시적 memory maintenance task에서만 갱신한다.
-- 일반 source/code/doc 작업 중에는 seed를 수정하지 않는다.
-- 새 summary-level durable rule, error, open_question이 있으면 1~2개 entry만 추가한다.
-- 기존 entry가 대체되면 `supersedes` 또는 `resolutionStatus`를 사용한다.
-- 오래되었거나 덜 쓰이는 entry는 즉시 삭제하지 않고 `stale` / `superseded` / `retired` 후보로 표시한다.
-- seed entry가 50개를 넘으면 memory maintenance audit 후보로 보고하고, 75개를 넘으면 반드시 유지보수를 수행한다.
-- Do not retroactively modify individual reports or summaries to match this seed.
-- Keep seed/index staging separate from any future backend import step.
+- Memory Review Gate trigger에서만 `updated` 또는 `no-change + reason`을
+  판단한다.
+- ordinary source/code/docs 작업은 durable memory가 바뀌지 않으면 seed를
+  수정하지 않는다.
+- 새 durable decision/error/open_question은 가장 작은 관련 entry를 갱신하거나
+  1개 entry만 추가한다.
+- 대체된 entry는 source trace를 보존하고 superseded/retired 처리한다.
+- report 수는 memory cleanup trigger가 아니다. 검색성이 나빠지거나 stale
+  active entry가 누적될 때만 전용 maintenance를 수행한다.
+- result record와 legacy evidence는 memory 내용에 맞추기 위해 소급 수정하지
+  않는다.

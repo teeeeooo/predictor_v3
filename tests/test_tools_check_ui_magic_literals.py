@@ -21,6 +21,18 @@ change_gate:
   read_ledger: included
 """
 
+VALID_RECORD_PREFIX = """\
+# UI Gate
+
+record:
+  date: 2026-07-10
+  topic: focused-ui-literal-gate
+  tags: ui, test
+  memory_review: no-change
+  memory_reason: focused gate fixture has no durable project memory
+
+"""
+
 
 def _git(repo: Path, *args: str) -> None:
     subprocess.run(
@@ -48,7 +60,16 @@ def _stage(repo: Path, path: str, source: str) -> None:
 
 
 def _stage_report(repo: Path, gate: str = VALID_GATE) -> None:
-    _stage(repo, "result_reports/active/500_ui_gate.md", gate)
+    path = (
+        "result_reports/records/2026-07/"
+        "2026-07-10-focused-ui-literal-gate.md"
+    )
+    _stage(repo, path, VALID_RECORD_PREFIX + gate)
+    _stage(
+        repo,
+        "result_reports/REPORT_INDEX.md",
+        f"| {chr(96)}{path}{chr(96)} |\n",
+    )
 
 
 def _errors(repo: Path) -> list[str]:

@@ -6,7 +6,8 @@
 
 - `project_log.md`는 milestone급 decision, failure, lesson, process-rule change만 기록한다.
 - task별 상세 결과, 검증 상세, 체크리스트, 파일 변경 목록은 result report에 기록한다.
-- granular memory candidate는 `Project Memory Delta`와 `result_reports/memory/project_memory_seed.md`에서 관리한다.
+- 장기 기억 후보는 Memory Review Gate를 통해
+  `result_reports/memory/project_memory_seed.md`에서 선별 관리한다.
 - report 본문이나 seed entry 전문을 `project_log.md`에 반복 복사하지 않는다.
 - 기존 과거 로그는 보존하며, policy 추가 작업에서 기존 날짜별 항목을 재작성, 축약, 삭제하지 않는다.
 - 새 로그를 추가하기 전 최근 2~3개 로그와 merge 가능한지 먼저 확인하고, 유사한 내용이면 중복 section을 만들지 않는다.
@@ -23,6 +24,22 @@
 - `docs/archive/project_log/2026-06/project_log_2026-06_part02_2026-06-30_to_2026-06-04.md`
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
+
+## 2026-07-10 — Agent harness report and memory lifecycle redesign
+
+### Decision
+
+- Ordinary tracked-file changes no longer require result reports.
+- Durable compact records are limited to contract/policy/migration/manual
+  evidence and non-obvious regression triggers, and are committed with their
+  source changes.
+- New records use date-based final paths plus `REPORT_INDEX.md`; terminal
+  output owns commit hash and push status.
+- Memory Review Gate replaces active-count/summary/archive cleanup as the
+  memory-update checkpoint.
+- Existing archive and summary reports will move physically under
+  `result_reports/legacy/` in a separately reviewed migration while historical
+  bodies remain unchanged.
 
 ## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
 

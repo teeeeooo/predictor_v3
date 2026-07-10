@@ -73,8 +73,9 @@ owner path is ambiguous or the task changes direction.
 - Avoid searching many broad keywords at once.
 - If broad search is needed, first reduce candidate files with `rg -l` or
   already confirmed owner files.
-- For docs-wide questions, start with `docs/WORK_PLAN.md` and active reports,
-  then expand only if owner/pending evidence is missing.
+- For docs-wide questions, start with the active owner, `docs/WORK_PLAN.md`
+  when current execution state matters, and the report index or memory seed
+  only when historical evidence is needed.
 
 ## Read Range Rules
 
@@ -144,9 +145,9 @@ boundary.
      scope or ownership;
    - `design-deferred`: reuse/commonization looks plausible but needs a
      separate design slice.
-6. Record the decision in the active report's `reuse_commonization` field. If
-   the user explicitly approved no-report docs/tooling work, record the same
-   decision in the final output instead.
+6. If the task independently requires a compact result record, preserve the
+   decision in its optional `change_gate` block. Otherwise treat the staged
+   finding as warning-first and mention only unresolved risk in final output.
 
 Do not treat a keyword hit as proof of reusable code. It is only a candidate
 that should make the agent look before writing.
@@ -194,9 +195,9 @@ Skip for work that does not change structure or surface inventory:
   files, new symbols, moved files, removed helpers, new surfaces, or changed
   owner/commonization paths.
 - Do not regenerate for wording-only or test-only changes.
-- In the report/final output, record `code_map_check` as `checked`, `skipped`,
-  `regenerated`, or `no-change`. If skipped, include the short reason. If
-  regenerated, include whether `docs/code_map/CODEBASE_REFERENCE_MAP.md` changed.
+- When a compact record is required, record `code_map_check` as `checked`,
+  `skipped`, `regenerated`, or `no-change`. Without a record, report only
+  a skipped or unresolved judgment that leaves material risk.
 - Do not run code_map check/regenerate for docs-only, report-only, manual-smoke
   reflection, or audit-only work unless that audit is specifically about the
   code map or structural source inventory.

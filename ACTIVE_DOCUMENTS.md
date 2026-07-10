@@ -5,10 +5,13 @@
 
 ## Scope
 
-- Included: root Markdown, `docs/**/*.md`, `data/region_configs/REGION_CONFIG_RULES.md`, `result_reports/memory/*.md`.
-- Excluded: `docs/archive/**`, `reference_files/*.md`, `result_reports/archive/**`, `result_reports/summaries/**`, `result_reports/active/**`.
-- `result_reports/active/**`, `result_reports/summaries/**`, `result_reports/archive/**`는 lifecycle artifact이므로 active owner inventory에서 제외한다.
-- `result_reports/memory/*.md`는 lifecycle artifact의 예외로, backend-neutral active memory staging 문서로 관리한다.
+- Included: root Markdown, `docs/**/*.md`,
+  `data/region_configs/REGION_CONFIG_RULES.md`, result-record control docs,
+  and `result_reports/memory/*.md`.
+- Excluded: `docs/archive/**`, `reference_files/*.md`, result records,
+  and legacy `result_reports/active/**`, `archive/**`, `summaries/**`.
+- `result_reports/README.md` and `REPORT_INDEX.md` are active control docs;
+  individual records are history artifacts, not owner documents.
 
 ## Maintenance Rule
 
@@ -16,7 +19,8 @@
 2. 문서의 owner 역할, primary inbound, primary outbound가 바뀌면 이 파일을 갱신한다.
 3. 문서 업데이트 작업을 요청받으면 `AGENT_TASK_ROUTER.md`의 Documentation Sync gate에서 이 파일을 먼저 확인한다.
 4. `docs/designs/*.md` 추가, lifecycle status 변경, owner-doc mapping 변경은 `docs/designs/README.md`를 갱신한다.
-5. 대규모 report lifecycle 정리는 이 파일이 아니라 `result_reports/summaries/`와 `project_log.md`에 기록한다.
+5. 신규 result record는 이 inventory에 개별 등록하지 않고
+   `result_reports/REPORT_INDEX.md`에 등록한다.
 
 ## Entrypoints
 
@@ -34,9 +38,9 @@
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
-| `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` | Result report creation, numbering, terminal output, and commit/push workflow owner | `AGENT_TASK_ROUTER.md`, report-backed tasks | `result_reports/active/`, `result_reports/summaries/`, `result_reports/archive/`, `result_reports/memory/` |
+| `docs/agent_workflows/RESULT_REPORT_WORKFLOW.md` | Conditional result-record triggers, record/index contract, terminal output, and same-commit workflow owner | `AGENT_TASK_ROUTER.md`, record-triggered tasks | `result_reports/records/`, `result_reports/REPORT_INDEX.md`, memory review |
 | `docs/agent_workflows/DIFF_READ_BUDGET.md` | Read-budget and diff-inspection discipline owner | `AGENT_TASK_ROUTER.md`, large docs/diff/code inspection tasks | targeted source/docs ranges, terminal output discipline |
-| `docs/agent_workflows/AGENT_CHANGE_GATES.md` | Pre-write boundary, Read Ledger, staged report association, and future hook/CI gate policy owner | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, structure-impacting source work | active reports, future change-gate tools and hooks |
+| `docs/agent_workflows/AGENT_CHANGE_GATES.md` | Objective staged checks, warning-first structure evidence, and conditional record/index/memory validation owner | `AGENTS.md`, `AGENT_TASK_ROUTER.md`, structure-impacting source work | staged findings, optional change-gate evidence, result records |
 | `docs/agent_workflows/PROJECT_LOG_AND_MEMORY.md` | Project log update judgment and memory seed workflow owner | `AGENT_TASK_ROUTER.md`, lifecycle/memory/log tasks | `project_log.md`, `result_reports/memory/project_memory_seed.md`, project log archive |
 | `docs/agent_workflows/SMOKE_LOOP_MODE.md` | Manual UI smoke-loop micro-fix workflow owner | `AGENT_TASK_ROUTER.md`, user smoke-loop instructions | focused UI fixes, stable checkpoint follow-up |
 | `docs/agent_workflows/DOCUMENT_SYNC_AND_LIFECYCLE.md` | Documentation sync and active-doc lifecycle workflow owner | `AGENT_TASK_ROUTER.md`, docs/lifecycle/commit tasks | `ACTIVE_DOCUMENTS.md`, work plan/refactor/brief/log sync judgments |
@@ -121,17 +125,18 @@
 | --- | --- | --- | --- |
 | `docs/designs/README.md` | Design record index and lifecycle owner | design-gate/reference tasks, `AGENT_TASK_ROUTER.md` update trigger | individual `docs/designs/*.md` records, owner-doc mapping |
 
-## Root Result Docs
+## Result Record Control Docs
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
-| none | Root result docs have been moved to `reference_files/` as reference snapshots. | n/a | n/a |
+| `result_reports/README.md` | Current result-record layout, discovery, and legacy boundary | agent workflow, report lookup | records index, memory seed, legacy evidence |
+| `result_reports/REPORT_INDEX.md` | One-line discovery index for post-cutover compact records | new result records | targeted record reads |
 
 ## Memory Staging Docs
 
 | Document | Role | Primary inbound | Primary outbound |
 | --- | --- | --- | --- |
-| `result_reports/memory/project_memory_seed.md` | Backend-neutral `Project Memory Delta` seed/staging document; preserves traceable source summaries/reports rather than replacing original report text | `AGENT_TASK_ROUTER.md`, `result_reports/summaries/*.md`, `Project Memory Delta` workflow | future local index, memory backend import, agent session recall |
+| `result_reports/memory/project_memory_seed.md` | Curated current memory bank for long-running workstream recall | Memory Review Gate, project log, owner docs, durable records/legacy evidence | keyword-first agent recall and source pointers |
 
 `result_reports/memory/archive/` stores retired, stale, superseded, or resolved
 memory seed entries with source traces preserved. Individual archive files are

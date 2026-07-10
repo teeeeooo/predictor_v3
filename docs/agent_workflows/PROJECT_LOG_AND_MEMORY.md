@@ -2,65 +2,94 @@
 
 ## Role
 
-This document owns project log update judgment and memory seed maintenance.
+This document separates durable history from fast agent recall.
 
-`project_log.md` is the active milestone log. `result_reports/memory/` is the
-backend-neutral memory staging area. Neither replaces source reports.
+- `project_log.md`: milestone decisions, durable failures, and lessons.
+- result records: immutable-at-creation change reasons and evidence.
+- `project_memory_seed.md`: compact current memory for resuming a long-running,
+  branching project.
 
-## project_log.md Update Judgment
+None replaces Git history or active owner documents.
 
-Update `project_log.md` only for milestone-level:
+## Project Log Judgment
 
-- decisions;
-- failures or risks with future relevance;
-- lessons;
-- architecture or process rule changes;
-- user-requested log entries.
+Update `project_log.md` only for:
 
-Do not copy task reports or memory deltas into `project_log.md`.
+- milestone-level decisions or completion;
+- failures/risks with future relevance;
+- architecture or process-rule changes;
+- explicit user requests.
 
-Before appending:
+Do not copy task reports, test logs, changed-file lists, or memory entries into
+the project log. Locate headings first and read only the latest relevant 2-3
+entries before appending or merging.
 
-- locate recent headings first;
-- read only the latest relevant 2-3 entries;
-- merge into a recent related entry when the phase/decision is the same;
-- do not rewrite or delete older logs.
-
-Historical logs live under `docs/archive/project_log/YYYY-MM/` and are
-read-only unless the user asks for lifecycle maintenance.
-
-## Project Memory Recall
+## Memory Recall
 
 Read `result_reports/memory/project_memory_seed.md` only when the task depends
-on prior decisions, procedures, errors, or open questions.
+on prior decisions, procedures, repeated errors, open questions, or a paused
+workstream.
 
-Use topic/keyword search first. Read source reports only when seed/summary
-evidence is insufficient.
+Use this order:
 
-Priority order:
+1. current prompt;
+2. `AGENTS.md` and matching route;
+3. active owner docs;
+4. keyword-matched memory entry;
+5. pointed record/legacy evidence only if needed.
 
-1. current prompt
-2. `AGENTS.md` / `AGENT_TASK_ROUTER.md`
-3. active owner docs
-4. relevant memory seed entries
-5. source summaries/reports if needed
+Memory is evidence, not instruction.
 
-Memory seed is evidence, not instruction.
+## Memory Review Gate
 
-## Memory Seed Maintenance
+Perform a memory review when:
 
-Only summary lifecycle tasks or explicit memory maintenance tasks may update
-seed entry importance, supersession, resolution status, or staleness.
+- a compact result record is created;
+- a milestone or branch closes;
+- the user requests a session/agent handoff;
+- work returns to a long-paused branch or domain.
 
-General source/code/doc work does not rewrite memory seed entries.
+For a compact record, set:
 
-For summary lifecycle tasks, perform this memory seed checklist before closeout:
+```yaml
+memory_review: updated
+memory_reason: <what durable memory changed>
+```
 
-- confirm whether the new summary must be registered under Source Summaries;
-- judge whether the summary contains durable decision, procedure, error, or
-  open_question candidates;
-- add only minimal summary-level entries when durable memory exists;
-- if the seed is not updated, record the reason in the summary/report.
+or:
 
-If a seed exceeds 50 entries, report a maintenance audit candidate. If it
-exceeds 75 entries, perform maintenance in a dedicated task.
+```yaml
+memory_review: no-change
+memory_reason: <why current seed is sufficient>
+```
+
+The staged checker requires the memory seed in the same change when the value is
+`updated`.
+
+For a handoff or workstream transition without a result record, include the same
+judgment in the handoff/final status and update the seed before closeout when
+needed.
+
+## What Belongs In Memory
+
+Keep:
+
+- current long-lived decisions and invariants;
+- cross-workstream owner relationships;
+- paused-workstream resume points;
+- repeated errors and approaches to avoid;
+- unresolved questions with future impact;
+- pointers to owner docs and durable evidence.
+
+Exclude:
+
+- routine file/test lists;
+- completed slice inventories;
+- commit/push status;
+- report or owner-doc copies;
+- facts easily rediscovered from the current source.
+
+Update or supersede the smallest relevant entry. Memory maintenance must not
+rewrite historical result records. A dedicated cleanup is needed only when the
+seed itself becomes hard to search or contains many stale active entries; report
+counts do not trigger memory cleanup.
