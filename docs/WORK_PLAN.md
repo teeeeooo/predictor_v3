@@ -17,14 +17,10 @@
 
 ## Current Slice
 
-Agent harness/report lifecycle redesign, legacy migration, and pre-merge
-corrections are complete. The branch is ready for main merge execution.
+Agent harness/report lifecycle redesign, legacy migrations, audit corrections,
+and the main merge are complete and verified.
 
 ## Next Action
-
-Merge `chore/agent-harness-report-lifecycle` into `main`.
-
-## After Merge
 
 Start Standard Calculation Capability Extension design using the capability
 boundary and execution order in `project_brief.md`.

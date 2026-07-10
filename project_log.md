@@ -49,6 +49,7 @@
   belongs to local indexes and filesystem search.
 - The active design root now contains only current/governing/future-unabsorbed
   decisions; 45 historical records are under an indexed legacy boundary.
+- The audited harness branch was merged into `main` after pre-merge corrections.
 
 ## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
 

@@ -78,8 +78,7 @@ guards.
 - Slice A completed in commit `c3cd9e4`.
 - Slice B moved 720 archived reports and 53 summaries under the physical legacy
   boundary with byte-preserved bodies and targeted active-reference remapping.
-- Branch push is complete. Main merge remains pending completion and verification
-  of the pre-merge documentation corrections.
+- Branch push and main merge are complete.
 
 ## Next Codex Implementation Prompt
 
