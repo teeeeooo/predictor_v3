@@ -17,13 +17,12 @@
 
 ## Current Slice
 
-Clean/Hexagonal/MVC refactor and pre-merge correction are complete on
-`refactor/clean-hex-mvc-ui-20260711`. The branch is ready for main merge
-execution.
+Clean/Hexagonal/MVC refactor and pre-merge correction are complete and merged
+to `main` from `refactor/clean-hex-mvc-ui-20260711`.
 
 ## Next Action
 
-`refactor/clean-hex-mvc-ui-20260711` main merge execution.
+Standard Calculation Capability Extension design.
 
 ## After Merge
 
