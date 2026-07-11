@@ -116,6 +116,36 @@ entries:
     assertionStatus: verified
     source: consolidated from result_reports/legacy/summaries/081_summary-calculator-ui-v1-audit-2-3.md, 082_summary-envelope-adapter-four-stage-chain.md, and 101_summary-calculator-ui-iso-hspf-stabilization.md
 
+  - type: decision
+    topic: Brazil CSPF composite capability boundary
+    content: Brazil CSPF is a core-owned composite capability `brazil.cspf_compliance`, not a generic region/metric UI route or SASO optional-point variant. The fixed Brazil profile uses the ISO 16358 T1 required-only resolver with Brazil bins; the handler independently runs 3-point and 2-point ISO calculations, preserves raw results, derives exact CSPF/rule values from diagnostics, and owns final Rule 1 OR Rule 2 compliance. Application single and batch surfaces call the composite capability once per case and only format the returned domain result.
+    keywords:
+      - predictor_v3
+      - Brazil CSPF
+      - brazil.cspf_compliance
+      - capability allowlist
+      - ISO T1
+      - Rule 1
+      - Rule 2
+      - batch calculator
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-compliance.md
+
+  - type: decision
+    topic: Brazil CSPF batch package ownership
+    content: Brazil CSPF batch UI remains a feature-local composition over shared batch infrastructure. The package exposes schema/spec and row result contracts separately from the Brazil application row adapter, while Tk section/view and dialog/snapshot composition remain UI owners. The package preserves the former module's public imports; schema and row adapter stay free of Tk dependencies, and Brazil-specific keys do not move into common batch code.
+    keywords:
+      - predictor_v3
+      - Brazil CSPF
+      - batch package
+      - schema owner
+      - row adapter
+      - Tk section
+      - dialog composition
+      - public import compatibility
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-batch-package-split.md
+
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap
     content: ISO16358-2 HSPF official exact fixtures are settled with no active production xfails. The known trap was applying extended minus7 frost factors directly to measured 2 degree Celsius values; the corrected route applies measured-to-default conversion before the extension factor. Obsolete pure-route formula experiments are retired and should not be revived as production evidence.

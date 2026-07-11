@@ -12,6 +12,7 @@ from core.calculators.capability.gateway import (
 from core.calculators.capability.requests import (
     AhriHspf2Request,
     AhriSeer2Request,
+    BrazilCspfComplianceRequest,
     En14825ScopRequest,
     En14825SeerRequest,
     Iso16358CspfRequest,
@@ -19,9 +20,16 @@ from core.calculators.capability.requests import (
     KsC9306CspfRequest,
     KsC9306HspfRequest,
 )
+from core.calculators.capability.results import (
+    BrazilCspfComplianceResult,
+    BrazilRuleEvaluation,
+)
+from core.calculators.capability.brazil import BrazilCspfComplianceError
 
 __all__ = [
-    "AhriHspf2Request", "AhriSeer2Request", "CapabilityConfigurationError",
+    "AhriHspf2Request", "AhriSeer2Request", "BrazilCspfComplianceRequest",
+    "BrazilCspfComplianceError", "BrazilCspfComplianceResult",
+    "BrazilRuleEvaluation", "CapabilityConfigurationError",
     "CapabilityNotFoundError", "CapabilityRequestTypeError", "En14825ScopRequest",
     "En14825SeerRequest", "Iso16358CspfRequest", "Iso16358HspfRequest",
     "KsC9306CspfRequest", "KsC9306HspfRequest", "StandardCalculationCapabilityError",

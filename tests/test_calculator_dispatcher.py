@@ -72,6 +72,7 @@ def test_dispatcher_returns_en14825_calculator_for_en14825_seer_profile_id():
     "profile_id",
     [
         "iso_t1_default_2point_cspf",
+        "brazil_cspf_compliance",
         "india_iseer_cspf",
         "hong_kong_cspf",
         "hong_kong_hspf",

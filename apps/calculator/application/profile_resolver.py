@@ -12,6 +12,7 @@ from typing import Mapping, Tuple
 MODE_HONG_KONG = "Hong Kong"
 MODE_ISO_ISEER_2POINT = "ISO / ISEER 2-point"
 MODE_SASO_T3 = "SASO T3"
+MODE_BRAZIL_CSPF = "Brazil CSPF"
 
 
 REGION_BY_LABEL: Mapping[str, str] = {
@@ -39,7 +40,12 @@ _PROFILE_BY_CALCULATION_MODE_LABEL: Mapping[str, str] = {
 
 def calculation_mode_labels() -> Tuple[str, ...]:
     """Return user-visible ISO profile selector labels."""
-    return (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG, MODE_SASO_T3)
+    return (
+        MODE_ISO_ISEER_2POINT,
+        MODE_HONG_KONG,
+        MODE_SASO_T3,
+        MODE_BRAZIL_CSPF,
+    )
 
 
 def region_labels() -> Tuple[str, ...]:

@@ -1,0 +1,31 @@
+{
+  "id": "brazil_cspf_compliance_golden",
+  "measured_points": {
+    "35_full": {"capacity": 2978, "power": 940},
+    "35_half": {"capacity": 1587, "power": 384},
+    "29_half": {"capacity": 1356, "power": 244}
+  },
+  "expected": {
+    "three_point": {
+      "cspf": 6.02,
+      "cstl_kwh": 2461,
+      "csec_kwh": 409,
+      "exact_cspf": 6.0230584487,
+      "exact_cstl_kwh": 2461.278286,
+      "exact_csec_kwh": 408.642604
+    },
+    "two_point": {
+      "cspf": 4.55,
+      "cstl_kwh": 2461,
+      "csec_kwh": 541,
+      "exact_cspf": 4.5500136808,
+      "exact_cstl_kwh": 2461.278286,
+      "exact_csec_kwh": 540.938656
+    },
+    "measured_29_half_eer": 5.5573770492,
+    "calculated_29_bin_eer": 5.7524453055,
+    "rule_1": "OK",
+    "rule_2": "NG",
+    "final": "OK"
+  }
+}

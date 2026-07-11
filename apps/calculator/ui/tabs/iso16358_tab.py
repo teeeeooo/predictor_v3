@@ -11,7 +11,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
+from apps.calculator.ui.layout_constants import ISO_SECTION_CONTENT_PAD
 from apps.calculator.application.profile_resolver import (
+    MODE_BRAZIL_CSPF,
     MODE_HONG_KONG,
     MODE_ISO_ISEER_2POINT,
     MODE_SASO_T3,
@@ -21,6 +23,7 @@ from apps.calculator.application.profile_resolver import (
 )
 from apps.calculator.ui.sections.hong_kong_cspf_section import HongKongCspfSection
 from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
+from apps.calculator.ui.sections.brazil_cspf_section import BrazilCspfSection
 from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from apps.calculator.ui.sections.iso_saso_t3_section import IsoSasoT3Section
 from apps.calculator.ui.scrollable_frame import ScrollableFrame
@@ -69,8 +72,10 @@ class Iso16358Tab(ttk.Frame):
         self._hong_kong_frame = ttk.Frame(self._content)
         self._two_point_frame = ttk.Frame(self._content)
         self._saso_t3_frame = ttk.Frame(self._content)
+        self._brazil_frame = ttk.Frame(self._content)
         self._two_point_section = None
         self._saso_t3_section = None
+        self._brazil_section = None
 
         self._region_row = ttk.Frame(self._hong_kong_frame)
         self._region_label = ttk.Label(self._region_row, text="지역")
@@ -176,11 +181,19 @@ class Iso16358Tab(ttk.Frame):
         self._hong_kong_frame.pack_forget()
         self._two_point_frame.pack_forget()
         self._saso_t3_frame.pack_forget()
+        self._brazil_frame.pack_forget()
         if self._two_point_section is not None:
             self._two_point_section.cancel_pending()
         if self._saso_t3_section is not None:
             self._saso_t3_section.cancel_pending()
-        if mode_label not in (MODE_ISO_ISEER_2POINT, MODE_HONG_KONG, MODE_SASO_T3):
+        if self._brazil_section is not None:
+            self._brazil_section.cancel_pending()
+        if mode_label not in (
+            MODE_ISO_ISEER_2POINT,
+            MODE_HONG_KONG,
+            MODE_SASO_T3,
+            MODE_BRAZIL_CSPF,
+        ):
             mode_label = MODE_ISO_ISEER_2POINT
             self._mode_combo.set(mode_label)
 
@@ -207,6 +220,21 @@ class Iso16358Tab(ttk.Frame):
                 self._saso_t3_section.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
             self.result_panel = self._saso_t3_section.result_panel
             self._saso_t3_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            self._rendered_mode_label = mode_label
+            return
+
+        if mode_label == MODE_BRAZIL_CSPF:
+            self.sections = {}
+            if self._brazil_section is None:
+                self._brazil_section = BrazilCspfSection(self._brazil_frame)
+                self._brazil_section.pack(
+                    fill=tk.BOTH,
+                    expand=True,
+                    padx=ISO_SECTION_CONTENT_PAD,
+                    pady=ISO_SECTION_CONTENT_PAD,
+                )
+            self.result_panel = self._brazil_section.result_panel
+            self._brazil_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             self._rendered_mode_label = mode_label
             return
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from apps.calculator.application.profile_resolver import (
     METRIC_SECTIONS_BY_REGION,
+    MODE_BRAZIL_CSPF,
     MODE_HONG_KONG,
     MODE_ISO_ISEER_2POINT,
     MODE_SASO_T3,
@@ -19,6 +20,7 @@ from apps.calculator.application.profile_resolver import (
 
 __all__ = [
     "METRIC_SECTIONS_BY_REGION",
+    "MODE_BRAZIL_CSPF",
     "MODE_HONG_KONG",
     "MODE_ISO_ISEER_2POINT",
     "MODE_SASO_T3",

@@ -17,16 +17,17 @@
 
 ## Current Slice
 
-Standard Calculation Capability audit correction is complete on
-`codex/standard-calculation-capability`.
+Brazil CSPF implementation and pre-merge batch ownership correction are
+complete on `codex/brazil-cspf-compliance`.
 
 ## Next Action
 
-Brazil standard/profile/golden audit.
+Await audit confirmation; any merge to `main` requires a separate explicit
+user request.
 
 ## After Merge
 
-Brazil standard/profile/golden audit.
+Main merge, deployment, and packaging remain out of scope for this slice.
 
 ## Active Blockers
 
