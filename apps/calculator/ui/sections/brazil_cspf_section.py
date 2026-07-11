@@ -17,6 +17,8 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.brazil_cspf_result_table import BrazilCspfResultTable
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
@@ -31,7 +33,10 @@ class BrazilCspfSection:
         *,
         on_trace_visibility_changed: Callable[[], None] | None = None,
     ) -> None:
-        del on_trace_visibility_changed
+        self._on_detail_visibility_changed = on_trace_visibility_changed
+        self._detail_sources: dict[str, tuple[dict[str, object], ...]] = {}
+        self._detail_summaries: dict[str, tuple[tuple[str, str], ...]] = {}
+        self._detail_status: str | None = "입력 대기"
         self._usecase = BrazilCspfUseCase()
         self._batch_handle: BatchDialogHandle[
             list[dict[str, str]], BrazilCspfBatchDialog
@@ -93,6 +98,13 @@ class BrazilCspfSection:
         )
         self.batch_button.surface_role = "brazil_cspf_batch_open"
         self.batch_button.pack(side=tk.LEFT)
+        self.detail_toggle = ttk.Button(
+            self.action_row,
+            text="상세 보기 ↓",
+            command=self._toggle_detail,
+        )
+        self.detail_toggle.surface_role = "brazil_cspf_detail_toggle"
+        self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
         self.export_button = ttk.Button(
             self.action_row,
             text="Export CSV",
@@ -100,6 +112,26 @@ class BrazilCspfSection:
         )
         self.export_button.surface_role = "brazil_cspf_export"
         self.export_button.pack(side=tk.LEFT, padx=(6, 0))
+
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("3-point", "2-point"),
+            default_source="3-point",
+            csv_filename="brazil_cspf_bin_detail.csv",
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 4,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            before_show=self._update_detail_panel,
+            on_change=self._on_detail_visibility_changed,
+        )
 
         self.input_controller = TkTableController(self.input_table)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
@@ -116,8 +148,13 @@ class BrazilCspfSection:
     def recalculate_now(self) -> None:
         result = self._usecase.calculate(self.input_table.get_text_values())
         if not result.is_ok:
+            self._clear_detail(result.detail_status or result.status_text)
             self.result_table.set_status(result.status_text)
             return
+        self._detail_sources = dict(result.detail_sources or {})
+        self._detail_summaries = dict(result.detail_summaries or {})
+        self._detail_status = result.detail_status
+        self._update_detail_panel()
         self.result_table.set_result(
             result.rows,
             result.rules,
@@ -140,6 +177,32 @@ class BrazilCspfSection:
     def _export_csv(self) -> None:
         headers, rows = self.result_table.table_export_data()
         export_table_to_csv(self._frame, "brazil_cspf_result.csv", headers, rows)
+
+    def _toggle_detail(self) -> None:
+        self._detail_visibility.toggle()
+
+    def _update_detail_panel(self) -> None:
+        if self._detail_status is not None:
+            self.detail_panel.set_status(self._detail_status)
+            return
+        sources = {
+            label: BinDetailSource(
+                rows=tuple(rows),
+                summary=self._detail_summaries.get(label, ()),
+            )
+            for label, rows in self._detail_sources.items()
+        }
+        self.detail_panel.set_sources(
+            sources,
+            source_order=("3-point", "2-point"),
+            panel_status="상세 데이터 없음",
+        )
+
+    def _clear_detail(self, status: str) -> None:
+        self._detail_sources = {}
+        self._detail_summaries = {}
+        self._detail_status = status
+        self._update_detail_panel()
 
     @property
     def _batch_dialog(self) -> BrazilCspfBatchDialog | None:

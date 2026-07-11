@@ -17,17 +17,18 @@
 
 ## Current Slice
 
-Brazil CSPF implementation and pre-merge batch ownership correction are
-complete on `codex/brazil-cspf-compliance`.
+Brazil CSPF detail/rule/batch-width UI correction is complete on
+`codex/brazil-cspf-ui-polish`.
 
 ## Next Action
 
-Await audit confirmation; any merge to `main` requires a separate explicit
-user request.
+Await audit confirmation; merge to `main` requires a separate explicit user
+request.
 
 ## After Merge
 
-Main merge, deployment, and packaging remain out of scope for this slice.
+After validation, audit and merge to `main` require a separate explicit user
+request; deployment and packaging remain out of scope.
 
 ## Active Blockers
 

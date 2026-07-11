@@ -7,8 +7,8 @@ from tkinter import ttk
 
 from apps.calculator.application.brazil_cspf.models import BrazilRuleDisplay
 from apps.calculator.ui.layout_constants import (
+    BRAZIL_CSPF_RULE_COLUMN_WIDTHS_PX,
     BRAZIL_CSPF_RESULT_TABLE_HEIGHT,
-    BRAZIL_CSPF_RULE_LABEL_WIDTH_CHARS,
     RESULT_COMPARISON_VALUE_COLUMN_MIN_WIDTH_PX,
     RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
     RESULT_SCENARIO_COLUMN_MIN_WIDTH_PX,
@@ -26,6 +26,22 @@ BRAZIL_CSPF_RESULT_COLUMNS: tuple[str, ...] = (
     "CSPF",
     "CSTL [kWh]",
     "CSEC [kWh]",
+)
+
+BRAZIL_CSPF_RULE_COLUMNS: tuple[str, ...] = (
+    "Rule",
+    "조건",
+    "대상값",
+    "기준값",
+    "판정",
+)
+
+BRAZIL_CSPF_EXPORT_COLUMNS: tuple[str, ...] = (
+    "Scenario",
+    "CSPF",
+    "CSTL [kWh]",
+    "CSEC [kWh]",
+    "판정",
 )
 
 
@@ -75,30 +91,32 @@ class BrazilCspfResultTable:
         self.table.bind("<Command-a>", self.select_all)
 
         self.rule_frame = ttk.Frame(self._frame)
-        self.rule_comparisons: dict[str, ttk.Label] = {}
-        self.rule_statuses: dict[str, tk.Label] = {}
-        for rule_label in ("Rule 1", "Rule 2"):
-            row = ttk.Frame(self.rule_frame)
-            row.pack(side=tk.TOP, anchor="w", fill=tk.X, pady=(4, 0))
-            ttk.Label(
-                row,
-                text=rule_label,
-                width=BRAZIL_CSPF_RULE_LABEL_WIDTH_CHARS,
-            ).pack(side=tk.LEFT, anchor="w")
-            comparison_widget = ttk.Label(row, text="")
-            comparison_widget.pack(side=tk.LEFT, anchor="w")
-            status_widget = tk.Label(
-                row,
-                text="",
-                anchor="w",
-                foreground=RESULT_STATUS_FG,
-                font=TABLE_BODY_FONT,
-                padx=TABLE_CELL_PADX,
-                pady=TABLE_CELL_PADY,
+        self.rule_title = ttk.Label(self.rule_frame, text="판정")
+        self.rule_title.pack(side=tk.TOP, anchor="w", pady=(4, 0))
+        self.rule_table = ttk.Treeview(
+            self.rule_frame,
+            columns=BRAZIL_CSPF_RULE_COLUMNS,
+            show="headings",
+            height=BRAZIL_CSPF_RESULT_TABLE_HEIGHT,
+            selectmode="browse",
+        )
+        self.rule_table.surface_role = "brazil_cspf_rule_table"
+        for column, width in zip(
+            BRAZIL_CSPF_RULE_COLUMNS,
+            BRAZIL_CSPF_RULE_COLUMN_WIDTHS_PX,
+        ):
+            self.rule_table.heading(column, text=column)
+            self.rule_table.column(
+                column,
+                anchor=tk.W if column == "조건" else tk.CENTER,
+                width=width,
+                minwidth=width,
+                stretch=False,
             )
-            status_widget.pack(side=tk.LEFT, anchor="w")
-            self.rule_comparisons[rule_label] = comparison_widget
-            self.rule_statuses[rule_label] = status_widget
+        self.rule_table.bind("<Control-c>", self.copy)
+        self.rule_table.bind("<Command-c>", self.copy)
+        self.rule_table.bind("<Control-a>", self.select_all)
+        self.rule_table.bind("<Command-a>", self.select_all)
 
         self.final_status_label = tk.Label(
             self._frame,
@@ -146,6 +164,7 @@ class BrazilCspfResultTable:
 
     def set_status(self, status: str) -> None:
         self._clear_tree()
+        self._clear_rule_tree()
         self.rows = ()
         self.row_labels = ()
         self.rules = ()
@@ -157,6 +176,7 @@ class BrazilCspfResultTable:
 
     def clear(self) -> None:
         self._clear_tree()
+        self._clear_rule_tree()
         self.rows = ()
         self.row_labels = ()
         self.rules = ()
@@ -172,10 +192,11 @@ class BrazilCspfResultTable:
             return str(self.status_label.cget("text"))
         lines = ["\t".join(self.column_labels)]
         lines.extend("\t".join(row) for row in self.rows)
-        for rule in self.rules:
-            lines.append(f"{rule.label}\t{rule.comparison}\t판정: {rule.status_text}")
+        if self.rules:
+            lines.append("\t".join(BRAZIL_CSPF_RULE_COLUMNS))
+            lines.extend("\t".join(row) for row in self._rule_export_rows())
         if self.final_status is not None:
-            lines.append(f"최종 판정: {self.final_status}")
+            lines.append(f"Final\t최종 판정: {self.final_status}")
         status = str(self.status_label.cget("text"))
         if status:
             lines.append(status)
@@ -185,13 +206,11 @@ class BrazilCspfResultTable:
         if not self.rows:
             status = str(self.status_label.cget("text")) or "No result rows"
             return ("Status",), ((status,),)
-        export_rows = list(self.rows)
-        export_rows.extend(
-            (rule.label, rule.comparison, "", rule.status_text) for rule in self.rules
-        )
+        export_rows = [(*row, "") for row in self.rows]
+        export_rows.extend(self._rule_export_rows())
         if self.final_status is not None:
-            export_rows.append(("Final", self.final_status, "", ""))
-        return self.column_labels, tuple(export_rows)
+            export_rows.append(("Final", "", "", "", self.final_status))
+        return BRAZIL_CSPF_EXPORT_COLUMNS, tuple(export_rows)
 
     def copy_table(self) -> bool:
         headers, rows = self.table_export_data()
@@ -203,6 +222,7 @@ class BrazilCspfResultTable:
 
     def select_all(self, _event: tk.Event | None = None) -> str:
         self.table.selection_set(self.table.get_children())
+        self.rule_table.selection_set(self.rule_table.get_children())
         return "break"
 
     def _show_table(self) -> None:
@@ -212,16 +232,25 @@ class BrazilCspfResultTable:
     def _show_rules(
         self, rules: tuple[BrazilRuleDisplay, ...], final_status: str
     ) -> None:
-        by_label = {rule.label: rule for rule in rules}
-        for label, comparison_widget in self.rule_comparisons.items():
-            rule = by_label.get(label)
-            comparison_widget.configure(text=rule.comparison if rule else "")
-            self.rule_statuses[label].configure(
-                text=f"판정: {rule.status_text}" if rule else ""
-            )
+        self._clear_rule_tree()
+        for rule in rules:
+            self.rule_table.insert("", tk.END, values=self._rule_row(rule))
+        self.rule_table.pack(side=tk.TOP, anchor="w")
         self.rule_frame.pack(side=tk.TOP, anchor="w", fill=tk.X)
         self.final_status_label.configure(text=f"최종 판정: {final_status}")
         self.final_status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
+
+    def _rule_row(self, rule: BrazilRuleDisplay) -> tuple[str, ...]:
+        return (
+            rule.label,
+            rule.condition_text or rule.comparison,
+            rule.left_value_text,
+            rule.right_value_text,
+            rule.status_text,
+        )
+
+    def _rule_export_rows(self) -> tuple[tuple[str, ...], ...]:
+        return tuple(self._rule_row(rule) for rule in self.rules)
 
     def _set_status(self, status: str) -> None:
         self.status_label.configure(text=status)
@@ -231,3 +260,7 @@ class BrazilCspfResultTable:
     def _clear_tree(self) -> None:
         for item_id in self.table.get_children():
             self.table.delete(item_id)
+
+    def _clear_rule_tree(self) -> None:
+        for item_id in self.rule_table.get_children():
+            self.rule_table.delete(item_id)

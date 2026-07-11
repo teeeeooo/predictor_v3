@@ -68,6 +68,24 @@ def test_brazil_usecase_calls_one_composite_capability_and_formats_golden():
     assert result.rules[1].comparison == (
         "29°C Half 실측 EER 5.56 > 29°C bin 계산 EER 5.75"
     )
+    assert result.rules[0].condition_text == "CSPF 3pt ≤ CSPF 2pt × 1.4"
+    assert result.rules[1].condition_text == "29°C EER 실측 > 계산"
+    assert set(result.detail_sources or {}) == {"3-point", "2-point"}
+    assert result.detail_sources is not None
+    assert result.detail_sources["3-point"]
+    assert result.detail_sources["2-point"]
+    assert result.detail_summaries == {
+        "3-point": (
+            ("CSPF", "6.02"),
+            ("CSTL [kWh]", "2461"),
+            ("CSEC [kWh]", "409"),
+        ),
+        "2-point": (
+            ("CSPF", "4.55"),
+            ("CSTL [kWh]", "2461"),
+            ("CSEC [kWh]", "541"),
+        ),
+    }
     assert result.final_status == "OK"
     assert result.final_status_text == "최종 판정: OK"
     assert len(calls) == 1
@@ -81,16 +99,19 @@ def test_brazil_usecase_clears_result_for_empty_partial_and_invalid_input():
     empty = usecase.calculate({})
     assert empty.status == "empty"
     assert empty.rows == ()
+    assert empty.detail_status == "입력 대기"
 
     partial = usecase.calculate({"full_capacity": "2978"})
     assert partial.status == "invalid"
     assert partial.rows == ()
+    assert partial.detail_status == "입력 오류: 숫자 입력을 확인하세요."
 
     invalid = _raw_values()
     invalid["half_29_power"] = "nan"
     result = usecase.calculate(invalid)
     assert result.status == "invalid"
     assert result.rows == ()
+    assert result.detail_status == "입력 오류: 숫자 입력을 확인하세요."
 
 
 def test_brazil_display_rounding_does_not_recompute_core_rule_decision():
@@ -129,8 +150,8 @@ def test_brazil_batch_row_matches_single_result_and_contains_rule_outputs():
     assert result.values[THREE_POINT_CSTL] == "2461"
     assert result.values[THREE_POINT_CSEC] == "409"
     assert result.values[TWO_POINT_CSPF] == "4.55"
-    assert result.values[TWO_POINT_CSTL] == "2461"
-    assert result.values[TWO_POINT_CSEC] == "541"
+    assert TWO_POINT_CSTL not in result.values
+    assert TWO_POINT_CSEC not in result.values
     assert result.values[RULE_1] == "OK"
     assert result.values[MEASURED_29_HALF_EER] == "5.56"
     assert result.values[CALCULATED_29_BIN_EER] == "5.75"
@@ -163,8 +184,25 @@ def test_brazil_batch_matrix_has_six_inputs_and_required_outputs():
         "half_29_capacity",
         "half_29_power",
     )
-    assert len(BRAZIL_CSPF_MATRIX_SPEC.result_keys) == 12
-    assert BRAZIL_CSPF_MATRIX_SPEC.result_keys[-1] == ROW_STATUS
+    assert BRAZIL_CSPF_MATRIX_SPEC.result_keys == (
+        THREE_POINT_CSPF,
+        THREE_POINT_CSTL,
+        THREE_POINT_CSEC,
+        TWO_POINT_CSPF,
+        RULE_1,
+        MEASURED_29_HALF_EER,
+        CALCULATED_29_BIN_EER,
+        RULE_2,
+        FINAL,
+        ROW_STATUS,
+    )
+    assert TWO_POINT_CSTL not in BRAZIL_CSPF_MATRIX_SPEC.result_keys
+    assert TWO_POINT_CSEC not in BRAZIL_CSPF_MATRIX_SPEC.result_keys
+
+    snapshots = BRAZIL_CSPF_MATRIX_SPEC.snapshot_cases(
+        ({TWO_POINT_CSTL: "2461", TWO_POINT_CSEC: "541", TWO_POINT_CSPF: "4.55"},)
+    )
+    assert snapshots == ({TWO_POINT_CSPF: "4.55"},)
 
 
 def test_brazil_batch_package_preserves_public_surface_and_owner_layers():

@@ -25,9 +25,7 @@ from .schema import (
     THREE_POINT_CSEC,
     THREE_POINT_CSPF,
     THREE_POINT_CSTL,
-    TWO_POINT_CSEC,
     TWO_POINT_CSPF,
-    TWO_POINT_CSTL,
 )
 
 
@@ -67,8 +65,6 @@ class BrazilCspfBatchHandler:
                 THREE_POINT_CSTL: three_point[2],
                 THREE_POINT_CSEC: three_point[3],
                 TWO_POINT_CSPF: two_point[1],
-                TWO_POINT_CSTL: two_point[2],
-                TWO_POINT_CSEC: two_point[3],
                 RULE_1: rule_1.status_text,
                 MEASURED_29_HALF_EER: rule_2.left_value_text,
                 CALCULATED_29_BIN_EER: rule_2.right_value_text,

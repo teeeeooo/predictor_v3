@@ -226,7 +226,10 @@ class Iso16358Tab(ttk.Frame):
         if mode_label == MODE_BRAZIL_CSPF:
             self.sections = {}
             if self._brazil_section is None:
-                self._brazil_section = BrazilCspfSection(self._brazil_frame)
+                self._brazil_section = BrazilCspfSection(
+                    self._brazil_frame,
+                    on_trace_visibility_changed=self._on_trace_visibility_changed,
+                )
                 self._brazil_section.pack(
                     fill=tk.BOTH,
                     expand=True,

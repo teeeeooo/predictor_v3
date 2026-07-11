@@ -146,6 +146,21 @@ entries:
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-11-brazil-cspf-batch-package-split.md
 
+  - type: decision
+    topic: Brazil CSPF UI presentation and batch result boundary
+    content: Brazil single-result detail presentation consumes application-provided 3-point/2-point bin sources and summaries through the shared BinDetailPanel and DetailPanelVisibility lifecycle; Rule 1/Rule 2 are rendered from core-owned left/right/passed values in a compact table. The Brazil batch UI omits only 2-point CSTL/CSEC display/export/snapshot result keys while preserving public compatibility constants, single results, raw results, and core formulas.
+    keywords:
+      - predictor_v3
+      - Brazil CSPF
+      - BinDetailPanel
+      - DetailPanelVisibility
+      - Rule table
+      - batch result columns
+      - CSTL
+      - CSEC
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-polish.md
+
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap
     content: ISO16358-2 HSPF official exact fixtures are settled with no active production xfails. The known trap was applying extended minus7 frost factors directly to measured 2 degree Celsius values; the corrected route applies measured-to-default conversion before the extension factor. Obsolete pure-route formula experiments are retired and should not be revived as production evidence.

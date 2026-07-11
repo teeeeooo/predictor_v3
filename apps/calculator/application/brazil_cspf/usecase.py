@@ -8,6 +8,8 @@ from collections.abc import Callable, Mapping
 from apps.calculator.application.brazil_cspf.models import (
     BrazilCspfUseCaseResult,
     BrazilRuleDisplay,
+    DetailRows,
+    DetailSummaries,
     MeasuredPoints,
     ResultRow,
 )
@@ -49,6 +51,7 @@ class BrazilCspfUseCase:
             return BrazilCspfUseCaseResult(
                 status="empty",
                 status_text=_INPUT_WAITING_STATUS,
+                detail_status=_INPUT_WAITING_STATUS,
             )
         try:
             measured = _parse_measured_points(raw_values)
@@ -56,6 +59,7 @@ class BrazilCspfUseCase:
             return BrazilCspfUseCaseResult(
                 status="invalid",
                 status_text=_INPUT_ERROR_STATUS,
+                detail_status=_INPUT_ERROR_STATUS,
             )
 
         try:
@@ -70,6 +74,7 @@ class BrazilCspfUseCase:
             return BrazilCspfUseCaseResult(
                 status="error",
                 status_text=_CALCULATION_ERROR_STATUS,
+                detail_status=_CALCULATION_ERROR_STATUS,
             )
 
 
@@ -120,6 +125,47 @@ def _map_operation_result(
         final_status=final_status,
         final_status_text=f"최종 판정: {final_status}",
         operation_result=result,
+        detail_sources=_detail_sources(result),
+        detail_summaries=_detail_summaries(result),
+        detail_status=None,
+    )
+
+
+def _detail_sources(result: BrazilCspfComplianceResult) -> DetailRows:
+    return {
+        "3-point": _bin_details(result.three_point_result),
+        "2-point": _bin_details(result.two_point_result),
+    }
+
+
+def _detail_summaries(result: BrazilCspfComplianceResult) -> DetailSummaries:
+    return {
+        "3-point": _detail_summary(
+            result.three_point_result,
+            result.three_point_exact_cspf,
+        ),
+        "2-point": _detail_summary(
+            result.two_point_result,
+            result.two_point_exact_cspf,
+        ),
+    }
+
+
+def _bin_details(raw_result: Mapping[str, object]) -> tuple[dict[str, object], ...]:
+    raw = raw_result.get("bin_details")
+    if not isinstance(raw, (list, tuple)):
+        raise ValueError("Missing Brazil bin detail rows")
+    return tuple(dict(item) for item in raw if isinstance(item, Mapping))
+
+
+def _detail_summary(
+    raw_result: Mapping[str, object],
+    exact_cspf: float,
+) -> tuple[tuple[str, str], ...]:
+    return (
+        ("CSPF", f"{exact_cspf:.2f}"),
+        ("CSTL [kWh]", _rounded_kwh(raw_result, "annual_cooling_kwh")),
+        ("CSEC [kWh]", _rounded_kwh(raw_result, "annual_power_kwh")),
     )
 
 
@@ -162,6 +208,7 @@ def _rule_1_display(result: BrazilCspfComplianceResult) -> BrazilRuleDisplay:
         right_value_text=right,
         status_text="OK" if rule.passed else "NG",
         passed=rule.passed,
+        condition_text="CSPF 3pt ≤ CSPF 2pt × 1.4",
     )
 
 
@@ -178,4 +225,5 @@ def _rule_2_display(result: BrazilCspfComplianceResult) -> BrazilRuleDisplay:
         right_value_text=right,
         status_text="OK" if rule.passed else "NG",
         passed=rule.passed,
+        condition_text="29°C EER 실측 > 계산",
     )
