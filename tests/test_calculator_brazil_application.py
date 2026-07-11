@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 
@@ -164,3 +165,18 @@ def test_brazil_batch_matrix_has_six_inputs_and_required_outputs():
     )
     assert len(BRAZIL_CSPF_MATRIX_SPEC.result_keys) == 12
     assert BRAZIL_CSPF_MATRIX_SPEC.result_keys[-1] == ROW_STATUS
+
+
+def test_brazil_batch_package_preserves_public_surface_and_owner_layers():
+    package_name = "apps.calculator.ui.batch_dialogs.profiles.brazil_cspf"
+    package = importlib.import_module(package_name)
+    schema = importlib.import_module(f"{package_name}.schema")
+    row_adapter = importlib.import_module(f"{package_name}.row_adapter")
+
+    package_path = Path(package.__file__ or "")
+    assert package_path.name == "__init__.py"
+    assert not package_path.with_name("brazil_cspf.py").exists()
+    assert package.BRAZIL_CSPF_MATRIX_SPEC is schema.BRAZIL_CSPF_MATRIX_SPEC
+    assert package.BrazilCspfBatchHandler is row_adapter.BrazilCspfBatchHandler
+    assert not hasattr(schema, "tk")
+    assert not hasattr(row_adapter, "tk")

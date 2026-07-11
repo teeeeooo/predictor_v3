@@ -131,6 +131,21 @@ entries:
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-11-brazil-cspf-compliance.md
 
+  - type: decision
+    topic: Brazil CSPF batch package ownership
+    content: Brazil CSPF batch UI remains a feature-local composition over shared batch infrastructure. The package exposes schema/spec and row result contracts separately from the Brazil application row adapter, while Tk section/view and dialog/snapshot composition remain UI owners. The package preserves the former module's public imports; schema and row adapter stay free of Tk dependencies, and Brazil-specific keys do not move into common batch code.
+    keywords:
+      - predictor_v3
+      - Brazil CSPF
+      - batch package
+      - schema owner
+      - row adapter
+      - Tk section
+      - dialog composition
+      - public import compatibility
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-batch-package-split.md
+
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap
     content: ISO16358-2 HSPF official exact fixtures are settled with no active production xfails. The known trap was applying extended minus7 frost factors directly to measured 2 degree Celsius values; the corrected route applies measured-to-default conversion before the extension factor. Obsolete pure-route formula experiments are retired and should not be revived as production evidence.

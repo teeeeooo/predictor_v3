@@ -17,17 +17,17 @@
 
 ## Current Slice
 
-Brazil CSPF compliance implementation is in progress on
-`codex/brazil-cspf-compliance`.
+Brazil CSPF implementation and pre-merge batch ownership correction are
+complete on `codex/brazil-cspf-compliance`.
 
 ## Next Action
 
-Complete final validation, record the Brazil contract evidence, commit the
-scoped change, and push the branch.
+Await audit confirmation; any merge to `main` requires a separate explicit
+user request.
 
 ## After Merge
 
-Do not merge to `main`; deployment and packaging remain out of scope.
+Main merge, deployment, and packaging remain out of scope for this slice.
 
 ## Active Blockers
 
