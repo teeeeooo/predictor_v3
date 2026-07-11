@@ -9,6 +9,7 @@ from typing import Mapping, Protocol
 from apps.calculator.adapters.ahri_calculator_factory import (
     create_ahri_seer2_calculator,
 )
+from core.calculators.capability import AhriSeer2Request, execute_request_with_calculator, execute_standard_calculation
 
 AHRI_SEER2_POINT_ORDER = ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low")
 AHRI_SEER2_TEMPERATURES_C = {
@@ -68,6 +69,10 @@ class AhriSeer2Adapter:
 
     def __init__(self, calculator: _Seer2Calculator | None = None) -> None:
         self._calculator = calculator or create_ahri_seer2_calculator()
+        self._execute = (
+            (lambda _id, request: execute_request_with_calculator(request, calculator))
+            if calculator is not None else execute_standard_calculation
+        )
 
     def calculate(
         self,
@@ -110,9 +115,9 @@ class AhriSeer2Adapter:
         if incomplete:
             return None
 
-        result = self._calculator.calculate_seer2(
-            points,
-            system_type=system_type,
+        result = self._execute(
+            "ahri210240.seer2",
+            AhriSeer2Request(points, system_type=system_type),
         )
         cooling_season_hours = self._cooling_season_hours()
         return AhriSeer2Summary(

@@ -6,6 +6,7 @@ from typing import Dict, Optional, Protocol, Tuple
 from apps.calculator.adapters.en14825_calculator_factory import (
     create_en14825_calculator,
 )
+from core.calculators.capability import En14825ScopRequest, execute_request_with_calculator, execute_standard_calculation
 from apps.calculator.application.en14825.scop_models import (
     ScopPointInput,
     ScopPointComputed,
@@ -32,6 +33,10 @@ class ScopAdapter:
 
     def __init__(self, calculator: Optional[_ScopCalculator] = None) -> None:
         self.calculator = calculator or create_en14825_calculator()
+        self._execute = (
+            (lambda _id, request: execute_request_with_calculator(request, calculator))
+            if calculator is not None else execute_standard_calculation
+        )
 
     def get_climate_data(self, climate: str) -> dict:
         """Fetch climate-specific configuration data from the core calculator config."""
@@ -324,7 +329,7 @@ class ScopAdapter:
                 }
 
             try:
-                dec_res = self.calculator.calculate_scop(
+                dec_res = self._execute("en14825.scop", En14825ScopRequest(parameters=dict(
                     test_points=core_declared_points,
                     p_to=p_to_kw,
                     p_sb=p_sb_kw,
@@ -336,7 +341,7 @@ class ScopAdapter:
                     appliance_type=appliance_type,
                     tbiv_temp_c=eff_tbiv,
                     tol_temp_c=eff_tol,
-                )
+                )))
                 summary.declared_scop = dec_res["scop"]
                 summary.declared_qh_kwh = dec_res["qh_kwh"]
                 summary.declared_total_kwh = dec_res["total_kwh"]
@@ -359,7 +364,7 @@ class ScopAdapter:
                 }
 
             try:
-                test_res = self.calculator.calculate_scop(
+                test_res = self._execute("en14825.scop", En14825ScopRequest(parameters=dict(
                     test_points=core_tested_points,
                     p_to=p_to_kw,
                     p_sb=p_sb_kw,
@@ -371,7 +376,7 @@ class ScopAdapter:
                     appliance_type=appliance_type,
                     tbiv_temp_c=eff_tbiv,
                     tol_temp_c=eff_tol,
-                )
+                )))
                 summary.tested_scop = test_res["scop"]
                 summary.tested_qh_kwh = test_res["qh_kwh"]
                 summary.tested_total_kwh = test_res["total_kwh"]

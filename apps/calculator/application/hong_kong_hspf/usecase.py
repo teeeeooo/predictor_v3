@@ -4,14 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from apps.calculator.adapters.core_calculator_dispatcher import (
-    create_calculator_for_profile,
-)
+from core.calculators.capability import Iso16358HspfRequest, execute_standard_calculation
 from apps.calculator.application.hong_kong_hspf.models import HongKongHspfUseCaseResult
 from apps.calculator.application.profile_resolver import resolve_profile_id
 
 
-CalculatorFactory = Callable[..., object]
+CapabilityExecutor = Callable[[str, object], object]
 
 _INPUT_WAITING_STATUS = "입력 대기"
 _INPUT_ERROR_STATUS = "입력 오류: 숫자 입력을 확인하세요."
@@ -22,8 +20,8 @@ _FIELDS = ("full_capacity", "full_power", "half_capacity", "half_power")
 class HongKongHspfUseCase:
     """Calculate Hong Kong HSPF from raw section inputs."""
 
-    def __init__(self, calculator_factory: CalculatorFactory = create_calculator_for_profile):
-        self._calculator_factory = calculator_factory
+    def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
+        self._capability_executor = capability_executor
 
     def calculate(
         self,
@@ -60,8 +58,9 @@ class HongKongHspfUseCase:
         }
         try:
             profile_id = resolve_profile_id(region_label, "HSPF")
-            calculator = self._calculator_factory(profile_id=profile_id)
-            result = calculator.calculate_hspf(measured)
+            result = self._capability_executor(
+                "iso16358.hspf", Iso16358HspfRequest(profile_id, measured)
+            )
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"
             return HongKongHspfUseCaseResult(

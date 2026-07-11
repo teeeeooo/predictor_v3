@@ -9,6 +9,7 @@ from typing import Mapping, Protocol
 from apps.calculator.adapters.ahri_calculator_factory import (
     create_ahri_hspf2_calculator,
 )
+from core.calculators.capability import AhriHspf2Request, execute_request_with_calculator, execute_standard_calculation
 
 AHRI_HSPF2_POINT_ORDER = (
     "H01",
@@ -97,7 +98,10 @@ class AhriHspf2Adapter:
     _NUMERIC_KEYS = ("cd", "defrost_credit", "cut_out_c", "cut_in_c")
 
     def __init__(self, calculator: _Hspf2Calculator | None = None) -> None:
-        self._calculator = calculator or create_ahri_hspf2_calculator()
+        self._execute = (
+            (lambda _id, request: execute_request_with_calculator(request, calculator))
+            if calculator is not None else execute_standard_calculation
+        )
 
     def calculate(
         self,
@@ -147,15 +151,17 @@ class AhriHspf2Adapter:
             for point in active_points
         }
         points["A2"] = (numeric["a2_capacity"], _A2_CORE_POWER_PLACEHOLDER)
-        result = self._calculator.calculate_hspf2(
-            points,
-            t_off=self._celsius_to_fahrenheit(numeric["cut_out_c"]),
-            t_on=self._celsius_to_fahrenheit(numeric["cut_in_c"]),
-            c_d_heating=numeric["cd"],
-            fdef_override=numeric["defrost_credit"],
-            h1n_same_speed_as_h3=options.h1n_same_speed_as_h32,
-            minimum_speed_limited=options.minimum_speed_limited,
-            **AHRI_HSPF2_HIDDEN_DEFAULTS,
+        result = self._execute(
+            "ahri210240.hspf2",
+            AhriHspf2Request(points, parameters={
+                "t_off": self._celsius_to_fahrenheit(numeric["cut_out_c"]),
+                "t_on": self._celsius_to_fahrenheit(numeric["cut_in_c"]),
+                "c_d_heating": numeric["cd"],
+                "fdef_override": numeric["defrost_credit"],
+                "h1n_same_speed_as_h3": options.h1n_same_speed_as_h32,
+                "minimum_speed_limited": options.minimum_speed_limited,
+                **AHRI_HSPF2_HIDDEN_DEFAULTS,
+            }),
         )
         metadata = self._required_mapping(
             self._required_mapping(result, "summary"), "metadata"

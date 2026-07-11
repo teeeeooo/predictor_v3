@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from apps.calculator.adapters.saso_t3_calculator import (
-    calculate_saso_t3_cspf,
-)
+from core.calculators.capability import Iso16358CspfRequest, execute_standard_calculation
 from apps.calculator.application.profile_resolver import (
     MODE_SASO_T3,
     resolve_calculation_mode_profile_id,
@@ -19,7 +17,7 @@ from apps.calculator.application.saso_t3.models import (
 )
 
 
-SasoT3CalculatorGateway = Callable[..., Mapping[str, object]]
+CapabilityExecutor = Callable[[str, object], object]
 
 REQUIRED_TRACE_LABEL = "Required only (3-point)"
 OPTIONAL_TRACE_LABEL = "With 35 Min (4-point)"
@@ -47,9 +45,18 @@ class SasoT3UseCase:
 
     def __init__(
         self,
-        calculator_gateway: SasoT3CalculatorGateway = calculate_saso_t3_cspf,
+        capability_executor: CapabilityExecutor = execute_standard_calculation,
+        *,
+        calculator_gateway: Callable[..., Mapping[str, object]] | None = None,
     ):
-        self._calculator_gateway = calculator_gateway
+        if calculator_gateway is None:
+            self._capability_executor = capability_executor
+        else:
+            self._capability_executor = lambda _id, request: calculator_gateway(
+                request.measured_points,
+                profile_id=request.profile_id,
+                test_selection=request.test_selection,
+            )
 
     def calculate(self, raw_values: Mapping[str, str]) -> SasoT3UseCaseResult:
         """Calculate SASO T3 rows from raw input-table text values."""
@@ -200,10 +207,13 @@ class SasoT3UseCase:
         measured: MeasuredPoints,
         test_selection: str,
     ) -> Mapping[str, object]:
-        return self._calculator_gateway(
-            measured,
-            profile_id=resolve_calculation_mode_profile_id(MODE_SASO_T3),
-            test_selection=test_selection,
+        return self._capability_executor(
+            "iso16358.cspf",
+            Iso16358CspfRequest(
+                resolve_calculation_mode_profile_id(MODE_SASO_T3),
+                measured,
+                test_selection=test_selection,
+            ),
         )
 
 

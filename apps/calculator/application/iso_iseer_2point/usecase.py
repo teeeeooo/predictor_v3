@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-
-from apps.calculator.adapters.core_calculator_dispatcher import (
-    create_calculator_for_profile,
-)
+from core.calculators.capability import Iso16358CspfRequest, execute_standard_calculation
 from apps.calculator.application.iso_iseer_2point.models import (
     IsoIseer2PointUseCaseResult,
     MeasuredPoints,
@@ -18,7 +15,7 @@ from apps.calculator.application.profile_resolver import (
 )
 
 
-CalculatorFactory = Callable[..., object]
+CapabilityExecutor = Callable[[str, object], object]
 
 _INPUT_WAITING_STATUS = "입력 대기"
 _INPUT_ERROR_STATUS = "입력 오류: 숫자 입력을 확인하세요."
@@ -29,8 +26,8 @@ _AUTO_CALC_DONE_STATUS = "자동 계산 완료"
 class IsoIseer2PointUseCase:
     """Calculate ISO 16358-1 and India ISEER comparison rows."""
 
-    def __init__(self, calculator_factory: CalculatorFactory = create_calculator_for_profile):
-        self._calculator_factory = calculator_factory
+    def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
+        self._capability_executor = capability_executor
 
     def calculate(self, raw_values: Mapping[str, str]) -> IsoIseer2PointUseCaseResult:
         """Calculate both ISO/ISEER profiles from raw input-table text values."""
@@ -57,8 +54,9 @@ class IsoIseer2PointUseCase:
         for profile_label in two_point_profile_labels():
             try:
                 profile_id = resolve_two_point_profile_id(profile_label)
-                calculator = self._calculator_factory(profile_id=profile_id)
-                result = calculator.calculate_cspf(measured)
+                result = self._capability_executor(
+                    "iso16358.cspf", Iso16358CspfRequest(profile_id, measured)
+                )
                 row = _two_point_result_row(profile_label, measured, result)
                 rows.append(row)
                 detail_sources[profile_label] = _bin_details(result)

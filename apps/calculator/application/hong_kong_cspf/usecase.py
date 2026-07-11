@@ -4,14 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from apps.calculator.adapters.core_calculator_dispatcher import (
-    create_calculator_for_profile,
-)
+from core.calculators.capability import Iso16358CspfRequest, execute_standard_calculation
 from apps.calculator.application.hong_kong_cspf.models import HongKongCspfUseCaseResult
 from apps.calculator.application.profile_resolver import resolve_profile_id
 
 
-CalculatorFactory = Callable[..., object]
+CapabilityExecutor = Callable[[str, object], object]
 
 _INPUT_WAITING_STATUS = "입력 대기"
 _INPUT_ERROR_STATUS = "입력 오류: 숫자 입력을 확인하세요."
@@ -28,8 +26,8 @@ _FIELDS = (
 class HongKongCspfUseCase:
     """Calculate Hong Kong CSPF from raw section inputs."""
 
-    def __init__(self, calculator_factory: CalculatorFactory = create_calculator_for_profile):
-        self._calculator_factory = calculator_factory
+    def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
+        self._capability_executor = capability_executor
 
     def calculate(
         self,
@@ -66,10 +64,11 @@ class HongKongCspfUseCase:
         }
         try:
             profile_id = resolve_profile_id(region_label, "CSPF")
-            calculator = self._calculator_factory(profile_id=profile_id)
-            result = calculator.calculate_cspf(
-                measured,
-                declared_capacity=numeric["declared_capacity"],
+            result = self._capability_executor(
+                "iso16358.cspf",
+                Iso16358CspfRequest(
+                    profile_id, measured, declared_capacity=numeric["declared_capacity"]
+                ),
             )
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"

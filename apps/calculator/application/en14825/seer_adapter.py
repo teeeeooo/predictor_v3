@@ -6,6 +6,7 @@ from typing import Dict, Optional, Protocol, Tuple
 from apps.calculator.adapters.en14825_calculator_factory import (
     create_en14825_calculator,
 )
+from core.calculators.capability import En14825SeerRequest, execute_request_with_calculator, execute_standard_calculation
 from apps.calculator.application.en14825.seer_models import (
     SeerPointInput,
     SeerPointComputed,
@@ -24,14 +25,15 @@ class SeerAdapter:
 
     def __init__(self, calculator: Optional[_SeerCalculator] = None) -> None:
         self.calculator = calculator or create_en14825_calculator()
+        self._execute = (
+            (lambda _id, request: execute_request_with_calculator(request, calculator))
+            if calculator is not None else execute_standard_calculation
+        )
 
     def _calculate_core(self, **kwargs) -> Mapping[str, object]:
-        calculate = getattr(
-            self.calculator,
-            "calculate_seer_with_details",
-            self.calculator.calculate_seer,
+        return self._execute(
+            "en14825.seer", En14825SeerRequest(parameters=kwargs)
         )
-        return calculate(**kwargs)
 
     @staticmethod
     def get_part_load_info(tj: float, p_design_c_w: float, t_design_c: float) -> Tuple[float, float]:

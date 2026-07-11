@@ -4,16 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from apps.calculator.adapters.core_calculator_dispatcher import (
-    create_calculator_for_profile,
-)
+from core.calculators.capability import KsC9306HspfRequest, execute_standard_calculation
 from apps.calculator.application.korea.midpoint_guide import (
     calculate_hspf_midpoint_guide,
 )
 from apps.calculator.application.korea.models import KoreaHspfUseCaseResult
 
 
-CalculatorFactory = Callable[..., object]
+CapabilityExecutor = Callable[[str, object], object]
 
 _INPUT_WAITING_STATUS = "입력 대기"
 _INPUT_ERROR_STATUS = "입력 오류: 숫자 입력을 확인하세요."
@@ -37,8 +35,8 @@ _FIELDS = (
 class KoreaHspfUseCase:
     """Calculate KOREA KS C 9306 HSPF from raw section inputs."""
 
-    def __init__(self, calculator_factory: CalculatorFactory = create_calculator_for_profile):
-        self._calculator_factory = calculator_factory
+    def __init__(self, capability_executor: CapabilityExecutor = execute_standard_calculation):
+        self._capability_executor = capability_executor
 
     def calculate(self, raw_values: Mapping[str, str]) -> KoreaHspfUseCaseResult:
         if not any(str(raw_values.get(field, "")).strip() for field in _FIELDS):
@@ -83,8 +81,9 @@ class KoreaHspfUseCase:
             },
         }
         try:
-            calculator = self._calculator_factory(profile_id="ks_c9306_hspf")
-            result = calculator.calculate_hspf(measured)
+            result = self._capability_executor(
+                "ks_c9306.hspf", KsC9306HspfRequest("ks_c9306_hspf", measured)
+            )
         except Exception as exc:
             status_text = f"오류: {type(exc).__name__}: {exc}"
             return KoreaHspfUseCaseResult(

@@ -391,6 +391,20 @@ Calculator result schema와 ML feature schema는 분리한다. Calculator result
 
 Normalized envelope는 adapter/recommendation boundary의 계약이며, core calculator가 UI table schema 또는 `MODEL_REGISTRY`를 읽는 구조로 확장하지 않는다. 기존 calculator return dict는 envelope의 `raw_result` 아래에 보존한다.
 
+### Standard calculation capability boundary
+
+Production 표준 계산의 선택과 실행은 `core.calculators.capability`의 public
+gateway가 canonical boundary다. `capability_id`는 engine이나 UI가 아니라 동일한
+typed request/result와 orchestration을 공유하는 operation을 식별하며, 지역 설정은
+`profile_id`로 선택한다. Single과 batch는 같은 operation을 호출한다.
+
+Built-in registry는 core가 명시적으로 조립한다. Application/Predict/Batch는
+core-owned request를 생성하고 dispatcher나 standard engine을 직접 실행하지 않는다.
+Handler는 raw result, diagnostics, engine/profile validation 예외를 그대로 전달하며,
+resolution/request-type/registry invariant만 capability-level 예외가 소유한다.
+Result/prediction/ranking envelope는 capability 뒤의 optional consumer adapter다.
+향후 Brazil/AHRI workflow도 별도 경로 대신 built-in operation handler로 확장한다.
+
 ### Forbidden coupling
 
 - region config에 HW candidate input 또는 ML prediction 값을 넣지 않는다.
@@ -406,7 +420,7 @@ Normalized envelope는 adapter/recommendation boundary의 계약이며, core cal
 
 본 섹션은 UI에 한정하지 않고, `core/`, `ui/`, `apps/calculator/ui/`, `scripts/`, `tools/`, ML adapter, packaging probe 등 새 module / script / feature를 추가할 때 공통으로 적용되는 boundary 원칙이다. 전체 규칙은 `AGENTS.md` New Code Quality Gate가 owner이며, 본 섹션은 아키텍처 관점의 요약이다.
 
-- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. UI / CLI / script는 `core` public 진입점 (`core.calculators.dispatcher.create_calculator_for_profile`, adapter, resolver 등) 으로만 core를 호출한다. `core/` 안에서 `ui`, `apps.calculator.ui`, `legacy Qt binding`, `tkinter`를 import하지 않는다.
+- Layer import 방향: `core/` → UI / CLI / Tkinter / PyQt / script 어느 layer도 import하지 않는다. Production 표준 계산 caller는 `core.calculators.capability` public gateway로 실행하고 profile/dispatcher는 capability handler 내부 construction owner로 둔다. `core/` 안에서 `ui`, `apps.calculator.ui`, `legacy Qt binding`, `tkinter`를 import하지 않는다.
 - Tkinter shell 독립성: `apps/calculator/ui/`는 retired legacy `ui` package를
   import하지 않는다. Calculator and Train/Predict remain separate deployment
   surfaces over shared core owners.
