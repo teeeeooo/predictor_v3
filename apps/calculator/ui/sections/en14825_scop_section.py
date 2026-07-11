@@ -108,6 +108,7 @@ class En14825ScopSection:
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
+            visual_style="shared",
         )
         self.cd_table.grid(
             row=0, column=0, sticky="w",
@@ -227,6 +228,7 @@ class En14825ScopSection:
                 row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
                 data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
                 layout_policy="content_hug",
+                visual_style="shared",
             )
             climate_table.grid(row=0, column=0, sticky="w", padx=(6, 10))
             climate_table.set_values(self._climate_aux_values(clm))
@@ -256,6 +258,7 @@ class En14825ScopSection:
                 editable_cells=editable_cells,
                 row_header_chars=METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
                 section_break_before_rows=ScopTableModel.SECTION_BREAK_BEFORE_ROWS,
+                visual_style="shared",
             )
             table.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 6))
             table.default_cell_background = lambda pos, c=clm: self._resolve_cell_bg(pos, c)

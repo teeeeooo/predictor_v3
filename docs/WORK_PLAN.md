@@ -17,16 +17,15 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 5 is complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Large
-detail/trace data remains on Treeview through one shared visual style adapter,
-while schema, scrolling, source selection, copy/CSV, visibility, refit, and
-graphs remain with their existing owners.
+Calculator table architecture Slices 1-6 are complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Every active
+Calculator table now maps to Editable Matrix, Compact Result Grid, or
+Scrollable Data Table and consumes the matching shared visual foundation.
 
 ## Next Action
 
-Implement Slice 6 EN14825 complex surfaces and final active-table parity
-inventory, then remove only migrated-surface visual duplication.
+Review the completed feature branch. Do not merge it to `main` without a later
+explicit user instruction.
 
 ## Active Blockers
 

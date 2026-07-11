@@ -67,6 +67,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     tk_root.update_idletasks()
 
     table = section.result_table
+    assert section.input_table.visual_style == "shared"
     assert table.row_labels == ("3-point", "2-point")
     assert table.column_labels == ("Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]")
     assert len(table.result_value_labels) == 8

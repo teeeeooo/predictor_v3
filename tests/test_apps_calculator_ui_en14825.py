@@ -421,6 +421,8 @@ def test_en14825_gui_integration():
         assert section.input_table.row_header_chars == (
             METRIC_TABLE_EN14825_ROW_HEADER_CHARS
         )
+        assert section.design_table.visual_style == "shared"
+        assert section.input_table.visual_style == "shared"
         assert METRIC_TABLE_EN14825_ROW_HEADER_CHARS >= len("Declared capacity [W]")
         declared_header = section.input_table.row_header_cells[
             "declared_capacity"
@@ -618,15 +620,27 @@ def test_en14825_tab_composes_seer_scop_and_refits_on_scop_toggle():
         assert not hasattr(tab, "_appliance_type_var")
         assert "appliance_type" not in tab._common_input_tables[0].get_text_values()
         assert tab._common_input_tables[0].layout_policy == "content_hug"
+        assert all(table.visual_style == "shared" for table in tab._common_input_tables)
         assert tab._common_input_tables[0].table_frame.layout_policy == "content_hug"
         assert not hasattr(tab.seer_section, "_p_to_var")
         assert not hasattr(tab.scop_section, "_p_to_var")
         assert tab.seer_section.design_table.layout_policy == "content_hug"
+        assert tab.seer_section.design_table.visual_style == "shared"
+        assert tab.seer_section.input_table.visual_style == "shared"
         assert tab.seer_section.input_table.layout_policy == "content_hug"
         assert tab.seer_section.input_table.grid_info()["sticky"] == "w"
         assert tab.seer_section.result_panel.layout_policy == "content_hug"
         assert tab.seer_section.appliance_type_label.cget("text") == "Type"
         assert tab.scop_section.cd_table.layout_policy == "content_hug"
+        assert tab.scop_section.cd_table.visual_style == "shared"
+        assert all(
+            table.visual_style == "shared"
+            for table in tab.scop_section.climate_input_tables.values()
+        )
+        assert all(
+            table.visual_style == "shared"
+            for table in tab.scop_section.input_tables.values()
+        )
         assert tab.scop_section.climate_input_tables["average"].layout_policy == "content_hug"
         assert tab.scop_section.input_tables["average"].layout_policy == "content_hug"
         assert tab.scop_section.input_tables["average"].grid_info()["sticky"] == "w"

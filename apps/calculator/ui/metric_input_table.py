@@ -16,11 +16,7 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_DATA_COLUMN_CHARS,
     TABLE_DATA_COLUMN_WEIGHT,
-    TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
-    TABLE_HEADER_FG,
-    TABLE_HEADER_FONT,
-    TABLE_HEADER_PADY,
     TABLE_ROW_HEADER_CHARS,
     TABLE_ROW_HEADER_WEIGHT,
     TABLE_STATIC_FG,
@@ -60,7 +56,7 @@ class MetricInputTable(ttk.Frame):
         layout_policy: str = "content_hug",
         values_changed_callback: ValuesChangedCallback | None = None,
         section_break_before_rows: Iterable[str] | None = None,
-        visual_style: str = "legacy",
+        visual_style: str = "shared",
         **kwargs: object,
     ) -> None:
         super().__init__(master, **kwargs)
@@ -75,8 +71,8 @@ class MetricInputTable(ttk.Frame):
         self.row_header_chars = row_header_chars
         self.data_column_chars = data_column_chars
         self.layout_policy = layout_policy
-        if visual_style not in {"legacy", "shared"}:
-            raise ValueError("MetricInputTable visual_style must be 'legacy' or 'shared'")
+        if visual_style != "shared":
+            raise ValueError("MetricInputTable visual_style must be 'shared'")
         self.visual_style = visual_style
         self._values_changed_callback = values_changed_callback
         self._values: dict[str, str] = {
@@ -106,16 +102,7 @@ class MetricInputTable(ttk.Frame):
     def _build_table(self) -> None:
         is_content_hug = self.layout_policy == "content_hug"
         self.columnconfigure(0, weight=0 if is_content_hug else 1)
-        if self.visual_style == "shared":
-            self.table_frame = create_grid_surface(self, name="matrix_surface")
-        else:
-            self.table_frame = tk.Frame(
-                self,
-                name="matrix_surface",
-                background=TABLE_GRID_COLOR,
-                borderwidth=1,
-                relief=tk.SOLID,
-            )
+        self.table_frame = create_grid_surface(self, name="matrix_surface")
         self.table_frame.grid(
             row=0,
             column=0,
@@ -164,27 +151,17 @@ class MetricInputTable(ttk.Frame):
         if key is not None:
             cell.surface_key = key
             self.header_cells[key] = cell
-        if self.visual_style == "shared":
-            create_text_label(
-                cell,
-                text=label,
-                width=self.row_header_chars if key is None else self.data_column_chars,
-                alignment=(
-                    AlignmentRole.HEADER_IDENTITY
-                    if key is None
-                    else AlignmentRole.HEADER_VALUE
-                ),
-                header=True,
-            )
-        else:
-            tk.Label(
-                cell,
-                text=label,
-                width=self.row_header_chars if key is None else self.data_column_chars,
-                background=TABLE_HEADER_BG,
-                foreground=TABLE_HEADER_FG,
-                font=TABLE_HEADER_FONT,
-            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
+        create_text_label(
+            cell,
+            text=label,
+            width=self.row_header_chars if key is None else self.data_column_chars,
+            alignment=(
+                AlignmentRole.HEADER_IDENTITY
+                if key is None
+                else AlignmentRole.HEADER_VALUE
+            ),
+            header=True,
+        )
 
     def update_column_header(self, column_key: str, new_label: str) -> None:
         """Update the text label of a column header dynamically."""
@@ -200,24 +177,13 @@ class MetricInputTable(ttk.Frame):
         )
         cell.surface_key = key
         self.row_header_cells[key] = cell
-        if self.visual_style == "shared":
-            create_text_label(
-                cell,
-                text=label,
-                width=self.row_header_chars,
-                alignment=AlignmentRole.HEADER_IDENTITY,
-                header=True,
-            )
-        else:
-            tk.Label(
-                cell,
-                text=label,
-                width=self.row_header_chars,
-                anchor="w",
-                background=TABLE_HEADER_BG,
-                foreground=TABLE_HEADER_FG,
-                font=TABLE_HEADER_FONT,
-            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
+        create_text_label(
+            cell,
+            text=label,
+            width=self.row_header_chars,
+            alignment=AlignmentRole.HEADER_IDENTITY,
+            header=True,
+        )
 
     def _add_static_cell(
         self, *, row: int, column: int, address: CellAddress
@@ -302,28 +268,19 @@ class MetricInputTable(ttk.Frame):
         background: str,
         row_key: str | None = None,
     ) -> tk.Frame:
-        if self.visual_style == "shared":
-            return create_cell_container(
-                self.table_frame,
-                row=row,
-                column=column,
-                background=background,
-                surface_role=role,
-                section_break=(
-                    TABLE_SECTION_BREAK_GAP
-                    if row_key is not None
-                    and row_key in self.section_break_before_rows
-                    else 0
-                ),
-            )
-        cell = tk.Frame(self.table_frame, background=background, borderwidth=0)
-        if row_key is not None and row_key in self.section_break_before_rows:
-            pady = (TABLE_SECTION_BREAK_GAP, 1)
-        else:
-            pady = (0, 1)
-        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=pady)
-        cell.surface_role = role
-        return cell
+        return create_cell_container(
+            self.table_frame,
+            row=row,
+            column=column,
+            background=background,
+            surface_role=role,
+            section_break=(
+                TABLE_SECTION_BREAK_GAP
+                if row_key is not None
+                and row_key in self.section_break_before_rows
+                else 0
+            ),
+        )
 
     def _handle_change(self, field_key: str) -> None:
         value = self._variables[field_key].get()

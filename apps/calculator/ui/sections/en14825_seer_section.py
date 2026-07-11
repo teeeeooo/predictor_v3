@@ -127,6 +127,7 @@ class En14825SeerSection:
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
+            visual_style="shared",
         )
         self.design_table.grid(
             row=0, column=0, sticky="w",
@@ -187,6 +188,7 @@ class En14825SeerSection:
                 "tested_capacity",
                 "capacity_percent",
             ),
+            visual_style="shared",
         )
         self.input_table.grid(
             row=3,
