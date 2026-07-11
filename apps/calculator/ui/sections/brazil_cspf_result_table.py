@@ -6,6 +6,13 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.application.brazil_cspf.models import BrazilRuleDisplay
+from apps.calculator.ui.sections.brazil_cspf_export import (
+    BRAZIL_CSPF_RESULT_COLUMNS,
+    BRAZIL_CSPF_RULE_COLUMNS,
+    BrazilCspfExportDocument,
+    build_brazil_cspf_export_document,
+    copy_brazil_cspf_export,
+)
 from apps.calculator.ui.layout_constants import (
     BRAZIL_CSPF_RULE_COLUMN_WIDTHS_PX,
     BRAZIL_CSPF_RESULT_TABLE_HEIGHT,
@@ -19,30 +26,6 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
 )
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
-
-
-BRAZIL_CSPF_RESULT_COLUMNS: tuple[str, ...] = (
-    "Scenario",
-    "CSPF",
-    "CSTL [kWh]",
-    "CSEC [kWh]",
-)
-
-BRAZIL_CSPF_RULE_COLUMNS: tuple[str, ...] = (
-    "Rule",
-    "조건",
-    "대상값",
-    "기준값",
-    "판정",
-)
-
-BRAZIL_CSPF_EXPORT_COLUMNS: tuple[str, ...] = (
-    "Scenario",
-    "CSPF",
-    "CSTL [kWh]",
-    "CSEC [kWh]",
-    "판정",
-)
 
 
 class BrazilCspfResultTable:
@@ -190,29 +173,26 @@ class BrazilCspfResultTable:
     def as_text(self) -> str:
         if not self.rows:
             return str(self.status_label.cget("text"))
-        lines = ["\t".join(self.column_labels)]
-        lines.extend("\t".join(row) for row in self.rows)
-        if self.rules:
-            lines.append("\t".join(BRAZIL_CSPF_RULE_COLUMNS))
-            lines.extend("\t".join(row) for row in self._rule_export_rows())
-        if self.final_status is not None:
-            lines.append(f"Final\t최종 판정: {self.final_status}")
-        status = str(self.status_label.cget("text"))
-        if status:
-            lines.append(status)
-        return "\n".join(lines)
+        return self.export_document().as_tsv()
 
     def table_export_data(self) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
+        """Return only the visible comparison table's schema and rows."""
         if not self.rows:
             status = str(self.status_label.cget("text")) or "No result rows"
             return ("Status",), ((status,),)
-        export_rows = [(*row, "") for row in self.rows]
-        export_rows.extend(self._rule_export_rows())
-        if self.final_status is not None:
-            export_rows.append(("Final", "", "", "", self.final_status))
-        return BRAZIL_CSPF_EXPORT_COLUMNS, tuple(export_rows)
+        return self.column_labels, self.rows
+
+    def export_document(self) -> BrazilCspfExportDocument:
+        """Build the valid Result/Rule/Final export document."""
+        return build_brazil_cspf_export_document(
+            self.rows,
+            self.rules,
+            self.final_status or "NG",
+        )
 
     def copy_table(self) -> bool:
+        if self.rows:
+            return copy_brazil_cspf_export(self.table, self.export_document())
         headers, rows = self.table_export_data()
         return copy_table_to_clipboard(self.table, headers, rows)
 
@@ -248,9 +228,6 @@ class BrazilCspfResultTable:
             rule.right_value_text,
             rule.status_text,
         )
-
-    def _rule_export_rows(self) -> tuple[tuple[str, ...], ...]:
-        return tuple(self._rule_row(rule) for rule in self.rules)
 
     def _set_status(self, status: str) -> None:
         self.status_label.configure(text=status)

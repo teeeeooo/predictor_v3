@@ -161,6 +161,21 @@ entries:
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-polish.md
 
+  - type: decision
+    topic: Brazil CSPF sectioned export contract
+    content: Brazil single Copy/CSV/as_text valid output uses one Brazil-local export document with independent Result, Rule, and Final sections. Result and Rule headers are never reused across row schemas; variable-width CSV serialization stays local because the shared one-header CSV helper is unchanged. Empty/invalid states retain the existing Status export fallback, and table_export_data remains result-table-only compatibility output.
+    keywords:
+      - predictor_v3
+      - Brazil CSPF
+      - sectioned export
+      - clipboard TSV
+      - variable-width CSV
+      - Result section
+      - Rule section
+      - Final section
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-export-section-schema.md
+
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap
     content: ISO16358-2 HSPF official exact fixtures are settled with no active production xfails. The known trap was applying extended minus7 frost factors directly to measured 2 degree Celsius values; the corrected route applies measured-to-default conversion before the extension factor. Obsolete pure-route formula experiments are retired and should not be revived as production evidence.

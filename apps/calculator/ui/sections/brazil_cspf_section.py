@@ -18,6 +18,9 @@ from apps.calculator.ui.layout_constants import (
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
+from apps.calculator.ui.sections.brazil_cspf_export import (
+    export_brazil_cspf_sectioned_csv,
+)
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.brazil_cspf_result_table import BrazilCspfResultTable
 from apps.calculator.ui.table.controller import TkTableController
@@ -175,6 +178,13 @@ class BrazilCspfSection:
         self._batch_handle.clear(snapshot)
 
     def _export_csv(self) -> None:
+        if self.result_table.rows:
+            export_brazil_cspf_sectioned_csv(
+                self._frame,
+                "brazil_cspf_result.csv",
+                self.result_table.export_document(),
+            )
+            return
         headers, rows = self.result_table.table_export_data()
         export_table_to_csv(self._frame, "brazil_cspf_result.csv", headers, rows)
 

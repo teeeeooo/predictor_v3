@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import csv
 from pathlib import Path
 
 import pytest
@@ -40,7 +41,9 @@ def _raw_values() -> dict[str, str]:
     }
 
 
-def test_brazil_result_surface_renders_two_rows_rules_and_export_data(tk_root):
+def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
+    tk_root, tmp_path, monkeypatch
+):
     section = BrazilCspfSection(tk_root)
     section.input_table.set_values_batch(_raw_values())
     section.recalculate_now()
@@ -55,12 +58,14 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(tk_root):
     assert "조건" in table.as_text()
     assert "CSPF 3pt ≤ CSPF 2pt × 1.4" in table.as_text()
     assert "29°C EER 실측 > 계산" in table.as_text()
-    assert "최종 판정: OK" in table.as_text()
+    assert "[Final]" in table.as_text()
+    assert "Final\tOK" in table.as_text()
     headers, rows = table.table_export_data()
-    assert headers == ("Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]", "판정")
-    assert any(row[0] == "Rule 1" for row in rows)
-    assert any(row[0] == "Rule 2" for row in rows)
-    assert any(row[0] == "Final" for row in rows)
+    assert headers == ("Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]")
+    assert rows == (
+        ("3-point", "6.02", "2461", "409"),
+        ("2-point", "4.55", "2461", "541"),
+    )
     rule_rows = [
         table.rule_table.item(item_id, "values")
         for item_id in table.rule_table.get_children()
@@ -69,6 +74,44 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(tk_root):
         ("Rule 1", "CSPF 3pt ≤ CSPF 2pt × 1.4", "6.02", "6.37", "OK"),
         ("Rule 2", "29°C EER 실측 > 계산", "5.56", "5.75", "NG"),
     ]
+    expected_tsv = "\n".join(
+        (
+            "[Result]",
+            "Scenario\tCSPF\tCSTL [kWh]\tCSEC [kWh]",
+            "3-point\t6.02\t2461\t409",
+            "2-point\t4.55\t2461\t541",
+            "[Rule]",
+            "Rule\t조건\t대상값\t기준값\t판정",
+            "Rule 1\tCSPF 3pt ≤ CSPF 2pt × 1.4\t6.02\t6.37\tOK",
+            "Rule 2\t29°C EER 실측 > 계산\t5.56\t5.75\tNG",
+            "[Final]",
+            "Final\tOK",
+        )
+    )
+    assert table.as_text() == expected_tsv
+    assert table.export_document().as_tsv() == expected_tsv
+    assert table.copy_table() is True
+    assert tk_root.clipboard_get() == expected_tsv
+
+    csv_path = tmp_path / "brazil_result.csv"
+    monkeypatch.setattr(
+        "apps.calculator.ui.sections.brazil_cspf_export.filedialog.asksaveasfilename",
+        lambda **_kwargs: str(csv_path),
+    )
+    section._export_csv()
+    with csv_path.open(encoding="utf-8-sig", newline="") as handle:
+        assert list(csv.reader(handle)) == [
+            ["[Result]"],
+            ["Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]"],
+            ["3-point", "6.02", "2461", "409"],
+            ["2-point", "4.55", "2461", "541"],
+            ["[Rule]"],
+            ["Rule", "조건", "대상값", "기준값", "판정"],
+            ["Rule 1", "CSPF 3pt ≤ CSPF 2pt × 1.4", "6.02", "6.37", "OK"],
+            ["Rule 2", "29°C EER 실측 > 계산", "5.56", "5.75", "NG"],
+            ["[Final]"],
+            ["Final", "OK"],
+        ]
 
     section.input_table.set_value("half_power", "bad")
     section.recalculate_now()
@@ -77,6 +120,19 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(tk_root):
     assert table.final_status is None
     assert len(table.table.get_children()) == 0
     assert len(table.rule_table.get_children()) == 0
+    assert table.table_export_data() == (
+        ("Status",),
+        (("입력 오류: 숫자 입력을 확인하세요.",),),
+    )
+    assert table.as_text() == "입력 오류: 숫자 입력을 확인하세요."
+    assert table.copy_table() is True
+    assert tk_root.clipboard_get() == "Status\n입력 오류: 숫자 입력을 확인하세요."
+    section._export_csv()
+    with csv_path.open(encoding="utf-8-sig", newline="") as handle:
+        assert list(csv.reader(handle)) == [
+            ["Status"],
+            ["입력 오류: 숫자 입력을 확인하세요."],
+        ]
 
 
 def test_brazil_detail_panel_switches_sources_and_supports_copy_export(
