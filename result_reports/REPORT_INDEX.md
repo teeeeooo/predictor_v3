@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-12 | Compact Result Grid correction | calculator, tkinter, compact-result, focus, clipboard, correction | Restore click-to-focus keyboard copy, unique sibling widget identity, and shared clipboard-owner delegation without changing ISO contracts. | `result_reports/records/2026-07/2026-07-12-compact-result-grid-correction.md` |
 | 2026-07-12 | Calculator table foundation | calculator, tkinter, table, architecture, compact-result, iso-iseer | Establish the three-family shared Tk visual foundation and migrate only ISO/ISEER input/result while preserving behavior and export contracts. | `result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md` |
 | 2026-07-11 | Brazil CSPF final interaction correction | calculator, brazil, cspf, tkinter, interaction, batch, audit-correction | Preserve selected/active overlays after semantic repaint, expose single Copy, and prove unchanged headings fit with Tk font pixels. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-interaction-correction.md` |
 | 2026-07-11 | Brazil CSPF compliance | calculator, brazil, cspf, capability, profile, golden, tkinter, batch | Add the Brazil composite capability, exact compliance rules, production profile/config, and single/batch surfaces while preserving ISO contracts. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-compliance.md` |

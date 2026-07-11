@@ -15,20 +15,24 @@ from apps.calculator.ui.table.visual_policy import (
 def create_grid_surface(
     parent: tk.Misc,
     *,
-    name: str,
+    name: str | None = None,
     focusable: bool = False,
     policy: TkTableVisualPolicy = DEFAULT_TABLE_VISUAL_POLICY,
 ) -> tk.Frame:
+    options: dict[str, object] = {
+        "background": policy.divider_color,
+        "borderwidth": policy.outer_border_width,
+        "relief": tk.FLAT,
+        "takefocus": 1 if focusable else 0,
+        "highlightthickness": policy.divider_width if focusable else 0,
+        "highlightcolor": policy.focus_border_color,
+        "highlightbackground": policy.divider_color,
+    }
+    if name is not None:
+        options["name"] = name
     surface = tk.Frame(
         parent,
-        name=name,
-        background=policy.divider_color,
-        borderwidth=policy.outer_border_width,
-        relief=tk.FLAT,
-        takefocus=1 if focusable else 0,
-        highlightthickness=policy.divider_width if focusable else 0,
-        highlightcolor=policy.focus_border_color,
-        highlightbackground=policy.divider_color,
+        **options,
     )
     surface.visual_policy = policy
     surface.outer_edge_policy = "flat_low_contrast"

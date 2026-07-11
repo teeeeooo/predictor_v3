@@ -9,6 +9,8 @@ from __future__ import annotations
 import pytest
 
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table_clipboard import encode_table_tsv
 from tests.calculator_ui_sample_values import ISO_TWO_POINT_SAMPLE_VALUES
 
 
@@ -134,6 +136,8 @@ class TestSharedTableVisualFoundation:
         section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
         section.recalculate_now()
         grid = section.result_table.table
+        assert grid.frame.bind("<Control-c>")
+        assert grid.frame.bind("<Command-c>")
         assert grid.surface_role == "two_point_comparison_table"
         assert grid.frame.winfo_class() == "Frame"
         assert grid.frame.focus_policy == "visible"
@@ -155,3 +159,61 @@ class TestSharedTableVisualFoundation:
         assert section.result_table.table.frame.clipboard_get() == "\n".join(
             ["\t".join(headers), *("\t".join(row) for row in rows)]
         )
+
+    @pytest.mark.parametrize("target_kind", ("header", "body"))
+    def test_visible_cell_click_focuses_grid_and_keyboard_copy(
+        self, section, tk_root, target_kind: str
+    ) -> None:
+        section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
+        section.recalculate_now()
+        tk_root.deiconify()
+        tk_root.update_idletasks()
+        grid = section.result_table.table
+        target = (
+            grid.header_labels[0]
+            if target_kind == "header"
+            else grid.value_labels[(0, 0)]
+        )
+
+        target.event_generate("<Button-1>")
+        assert tk_root.focus_get() == grid.frame
+
+        grid.frame.event_generate("<Control-c>")
+        assert grid.frame.clipboard_get() == encode_table_tsv(grid.headers, grid.rows)
+
+    def test_multiple_grids_under_one_parent_are_independent(self, tk_root) -> None:
+        first = CompactResultGrid(tk_root, headers=("First", "Value"))
+        second = CompactResultGrid(tk_root, headers=("Second", "Value"))
+        first.pack()
+        second.pack()
+        first.set_rows((("A", "1"),))
+        second.set_rows((("B", "2"),))
+        tk_root.deiconify()
+        tk_root.update_idletasks()
+
+        assert str(first.frame) != str(second.frame)
+        assert first.headers == ("First", "Value")
+        assert second.headers == ("Second", "Value")
+        assert first.rows == (("A", "1"),)
+        assert second.rows == (("B", "2"),)
+        assert first.value_cells[(0, 0)] is not second.value_cells[(0, 0)]
+
+        first.header_labels[0].event_generate("<Button-1>")
+        assert tk_root.focus_get() == first.frame
+        second.value_labels[(0, 0)].event_generate("<Button-1>")
+        assert tk_root.focus_get() == second.frame
+
+        first.set_rows((("A2", "3"),))
+        assert second.rows == (("B", "2"),)
+        first.clear()
+        assert first.value_cells == {}
+        assert second.value_cells
+
+    def test_tsv_and_copy_delegate_to_shared_clipboard_encoding(self, tk_root) -> None:
+        grid = CompactResultGrid(tk_root, headers=("Name", "Value"))
+        grid.set_rows((("None-safe", None),))  # type: ignore[arg-type]
+        expected = encode_table_tsv(grid.headers, grid.rows)
+
+        assert grid.as_tsv() == expected == "Name\tValue\nNone-safe\t"
+        grid.copy()
+        assert grid.frame.clipboard_get() == expected

@@ -16,6 +16,10 @@ from apps.calculator.ui.table.visual_policy import (
     SemanticTone,
     TkTableVisualPolicy,
 )
+from apps.calculator.ui.table_clipboard import (
+    copy_table_to_clipboard,
+    encode_table_tsv,
+)
 
 CellPosition = tuple[int, int]
 
@@ -45,7 +49,6 @@ class CompactResultGrid:
         self.surface_role = surface_role
         self.frame = create_grid_surface(
             parent,
-            name="compact_result_grid",
             focusable=True,
             policy=policy,
         )
@@ -96,13 +99,10 @@ class CompactResultGrid:
         return self.headers, self.rows
 
     def as_tsv(self) -> str:
-        lines = ["\t".join(self.headers)]
-        lines.extend("\t".join(row) for row in self.rows)
-        return "\n".join(lines)
+        return encode_table_tsv(self.headers, self.rows)
 
     def copy(self, _event: tk.Event | None = None) -> str:
-        self.frame.clipboard_clear()
-        self.frame.clipboard_append(self.as_tsv())
+        copy_table_to_clipboard(self.frame, self.headers, self.rows)
         return "break"
 
     def _build_headers(self) -> None:
@@ -131,6 +131,8 @@ class CompactResultGrid:
             )
             self.header_cells[column] = cell
             self.header_labels[column] = label
+            self._bind_focus_target(cell)
+            self._bind_focus_target(label)
 
     def _build_row(self, row_index: int, row: tuple[str, ...]) -> None:
         for column, value in enumerate(row):
@@ -160,6 +162,8 @@ class CompactResultGrid:
             )
             self.value_cells[position] = cell
             self.value_labels[position] = label
+            self._bind_focus_target(cell)
+            self._bind_focus_target(label)
 
     def _update_values(self) -> None:
         for row_index, row in enumerate(self.rows):
@@ -182,3 +186,9 @@ class CompactResultGrid:
         for row in rows:
             if len(row) != len(self.headers):
                 raise ValueError("compact result row width must match headers")
+
+    def _bind_focus_target(self, widget: tk.Misc) -> None:
+        widget.bind("<Button-1>", self._focus_from_click, add="+")
+
+    def _focus_from_click(self, _event: tk.Event | None = None) -> None:
+        self.frame.focus_force()
