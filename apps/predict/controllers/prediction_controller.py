@@ -44,7 +44,7 @@ class PredictionController:
         self._runner = runner
         self._runner_factory = runner_factory
         self._is_running = False
-        self._active_total = 0
+        self._active_case_ids: tuple[str, ...] = ()
         self._active_invalid = 0
 
     @property
@@ -95,6 +95,7 @@ class PredictionController:
 
         self._start_worker(
             plan.job,
+            case_ids=tuple(case_ids),
             invalid_count=plan.summary.invalid,
             status_callback=status_callback,
             result_callback=result_callback,
@@ -165,6 +166,7 @@ class PredictionController:
     def _start_worker(
         self,
         job,
+        case_ids: tuple[str, ...],
         invalid_count: int,
         status_callback: StatusCallback | None,
         result_callback: ResultCallback | None,
@@ -172,7 +174,7 @@ class PredictionController:
         finished_callback: SummaryCallback | None,
     ) -> None:
         self._is_running = True
-        self._active_total = job.total + invalid_count
+        self._active_case_ids = case_ids
         self._active_invalid = invalid_count
         runner = self._runner
         if runner is None:
@@ -212,6 +214,7 @@ class PredictionController:
             lambda exc: self._handle_worker_failed(
                 exc,
                 status_callback,
+                result_callback,
                 finished_callback,
             )
         )
@@ -267,26 +270,24 @@ class PredictionController:
         self,
         exc: object,
         status_callback: StatusCallback | None,
+        result_callback: ResultCallback | None,
         finished_callback: SummaryCallback | None,
     ) -> None:
+        failure_message = f"Prediction worker failed: {str(exc).splitlines()[0]}"
+        summary = self._usecase.apply_infrastructure_failure(
+            self._active_case_ids,
+            failure_message,
+            result_callback,
+        )
         self._is_running = False
-        summary = PredictionRunSummary(
-            total=self._active_total,
-            complete=0,
-            error=0,
-            invalid=self._active_invalid,
-        )
-        self._notify(
-            status_callback,
-            f"Prediction worker failed: {str(exc).splitlines()[0]}",
-        )
+        self._notify(status_callback, failure_message)
         if finished_callback is not None:
             finished_callback(summary)
 
     def _clear_runner(self) -> None:
         runner = self._runner
         self._runner = None
-        self._active_total = 0
+        self._active_case_ids = ()
         self._active_invalid = 0
         if runner is not None:
             runner.dispose()

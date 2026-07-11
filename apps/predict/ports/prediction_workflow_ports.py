@@ -40,6 +40,9 @@ class PredictionResultMapper(Protocol):
     ) -> ResultRow:
         """Build a cancelled row."""
 
+    def infrastructure_failure_result(self, case_id: str, message: str) -> ResultRow:
+        """Build an error row for a runner/infrastructure failure."""
+
 
 class PredictionServicePort(Protocol):
     """Execute prepared prediction requests and expose model status."""

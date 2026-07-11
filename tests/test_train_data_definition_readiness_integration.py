@@ -14,11 +14,16 @@ def test_controller_surfaces_retrain_required_preview_for_model_input_change():
     )
 
     assert edited.draft_changed
-    assert edited.can_save_schema
+    assert not edited.can_save_schema
     assert ("Impact", "Schema restart and model retrain are required before activation.") in (
         edited.summary_rows
     )
     assert any(row[1] == "retrain_required_for_new_model_input" for row in edited.save_blocker_rows)
+    assert any(
+        row[:3]
+        == ("error", "ml_compatibility_projection_write_required", "schema_csv")
+        for row in edited.save_blocker_rows
+    )
 
 
 def test_controller_surfaces_restart_only_preview_for_visible_change():

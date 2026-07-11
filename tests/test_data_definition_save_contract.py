@@ -93,7 +93,7 @@ def test_data_definition_save_plan_blocks_mapping_value_ownership():
     assert _blocker_codes(plan) >= {"mapping_value_edit_not_allowed"}
 
 
-def test_data_definition_save_plan_marks_restart_and_retrain_state():
+def test_data_definition_save_plan_blocks_model_input_projection_change():
     draft = build_data_definition_draft()
     schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
     changed = replace_draft_row(
@@ -104,12 +104,53 @@ def test_data_definition_save_plan_marks_restart_and_retrain_state():
 
     plan = build_data_definition_save_plan(changed)
 
-    assert plan.can_save_schema
+    blocker = _blocker(plan, "ml_compatibility_projection_write_required")
+
+    assert not plan.can_save_schema
     assert plan.requires_restart
     assert plan.requires_retrain
     assert "retrain_required_for_new_model_input" in _blocker_codes(plan)
-    assert _target_status(plan, "schema_csv") == "planned"
+    assert blocker.severity == "error"
+    assert blocker.target == "schema_csv"
+    assert _target_status(plan, "schema_csv") == "blocked"
     assert "retrain" in plan.restart_impact.message.lower()
+
+
+def test_data_definition_save_plan_blocks_ml_name_projection_change():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, row.identity, ml_name="Cooling Capacity Renamed")
+
+    plan = build_data_definition_save_plan(changed)
+    blocker = _blocker(plan, "ml_compatibility_projection_write_required")
+
+    assert not plan.can_save_schema
+    assert blocker.severity == "error"
+    assert blocker.target == "schema_csv"
+    assert "features.csv" in blocker.message
+
+
+def test_data_definition_save_plan_blocks_one_hot_group_projection_change():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.role == "one_hot_feature")
+    changed = replace_draft_row(draft, row.identity, one_hot_group="changed_group")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert _target_status(plan, "schema_csv") == "blocked"
+    assert "ml_compatibility_projection_write_required" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_active_projection_change():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, row.identity, active=False)
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "ml_compatibility_projection_write_required" in _blocker_codes(plan)
 
 
 def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
@@ -219,9 +260,25 @@ def test_data_definition_save_plan_allows_schema_backed_label_change():
     assert "raw_row_add_delete_not_allowed" not in _blocker_codes(plan)
 
 
+def test_data_definition_save_plan_allows_notes_change_without_ml_impact():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, notes="Display note only")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert plan.can_save_schema
+    assert _target_status(plan, "schema_csv") == "planned"
+    assert "ml_compatibility_projection_write_required" not in _blocker_codes(plan)
+
+
 def _target_status(plan, target):
     return next(item.status for item in plan.planned_targets if item.target == target)
 
 
 def _blocker_codes(plan):
     return {blocker.code for blocker in plan.blocked_reasons}
+
+
+def _blocker(plan, code):
+    return next(blocker for blocker in plan.blocked_reasons if blocker.code == code)

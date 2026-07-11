@@ -38,18 +38,24 @@ def test_prediction_job_progress_and_summary_are_frozen_payloads():
         job.total = 2
 
 
-def test_result_adapter_builds_running_invalid_and_cancelled_rows():
+def test_result_adapter_builds_running_invalid_cancelled_and_failure_rows():
     adapter = PredictionResultAdapter()
 
     running = adapter.running_result("case-0001")
     invalid = adapter.invalid_result("case-0002", "bad\nsecond line")
     cancelled = adapter.cancelled_result("case-0003")
+    failed = adapter.infrastructure_failure_result(
+        "case-0004",
+        "Prediction worker failed: adapter exploded\ntrace detail",
+    )
 
     assert running.status == "running"
     assert invalid.status == "invalid"
     assert invalid.message == "bad"
     assert cancelled.status == "cancelled"
     assert cancelled.message == "Prediction cancelled."
+    assert failed.status == "error"
+    assert failed.message == "Prediction worker failed: adapter exploded"
 
 
 def test_service_adapter_contract_modules_do_not_import_pyside():

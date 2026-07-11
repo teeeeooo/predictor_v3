@@ -62,6 +62,7 @@ def test_data_definition_controller_save_reloads_after_success(tmp_path):
 
     edited = controller.edit_cell(row_identity, "label", "Cooling Capacity")
     saved = controller.save_schema()
+    noop = controller.save_schema()
 
     assert edited.can_save_schema
     assert saved.status == "saved"
@@ -69,6 +70,8 @@ def test_data_definition_controller_save_reloads_after_success(tmp_path):
     assert not saved.draft_changed
     assert saved.save_plan_rows[0][1] == "no_op"
     assert saved.draft_rows[0][DRAFT_FIELDS.index("label")].value == "Cooling Capacity"
+    assert noop.status == "ready"
+    assert ("Status", "noop") in noop.save_result_rows
 
 
 def test_data_definition_controller_surfaces_blocked_candidate_validation(tmp_path):
@@ -84,6 +87,37 @@ def test_data_definition_controller_surfaces_blocked_candidate_validation(tmp_pa
     assert saved.status == "blocked"
     assert ("Status", "blocked") in saved.save_result_rows
     assert "candidate_schema_validation_failed" in dict(saved.save_result_rows)["Issues"]
+    assert schema_path.read_text(encoding="utf-8") == original
+    assert not (tmp_path / "backups").exists()
+
+
+def test_data_definition_controller_blocks_ml_projection_change_without_write(tmp_path):
+    schema_path = _copy_schema(tmp_path)
+    original = schema_path.read_text(encoding="utf-8")
+    controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    state = controller.refresh()
+    row_index = next(
+        index
+        for index, identity in enumerate(state.draft_row_identities)
+        if identity == ("schema_row", "cooling_capa")
+    )
+
+    edited = controller.edit_cell(
+        state.draft_row_identities[row_index],
+        "ml_name",
+        "Cooling Capacity Renamed",
+    )
+    saved = controller.save_schema()
+
+    blocker = next(
+        row
+        for row in edited.save_blocker_rows
+        if row[1] == "ml_compatibility_projection_write_required"
+    )
+    assert not edited.can_save_schema
+    assert blocker[:3] == ("error", "ml_compatibility_projection_write_required", "schema_csv")
+    assert saved.status == "blocked"
+    assert "ml_compatibility_projection_write_required" in dict(saved.save_result_rows)["Issues"]
     assert schema_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "backups").exists()
 

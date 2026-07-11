@@ -72,6 +72,14 @@ class PredictionResultAdapter:
             message=self._clean_message(message),
         )
 
+    def infrastructure_failure_result(self, case_id: str, message: str) -> ResultRow:
+        """Build an error row for a runner/infrastructure failure."""
+        return ResultRow(
+            case_id=case_id,
+            status="error",
+            message=self._clean_message(message),
+        )
+
     def _format_number(self, value: Any) -> str:
         if value is None:
             return ""

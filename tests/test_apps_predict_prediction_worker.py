@@ -47,6 +47,11 @@ class FakePredictionService:
         )
 
 
+class FailingPredictionService:
+    def predict_one(self, request: PredictionInputRequest) -> PredictionServiceResult:
+        raise RuntimeError(f"unexpected failure for {request.case_id}")
+
+
 def test_worker_emits_row_results_progress_and_finished_summary():
     _app()
     service = FakePredictionService(("complete", "complete"))
@@ -82,6 +87,24 @@ def test_worker_emits_row_error_and_continues():
     assert [result.status for result in row_results] == ["complete", "error", "complete"]
     assert finished[0].complete == 2
     assert finished[0].error == 1
+
+
+def test_worker_forwards_unexpected_service_exception_as_failed_signal():
+    _app()
+    worker = PredictionWorker(_job(2), service=FailingPredictionService())
+    failed = []
+    finished = []
+    row_results = []
+    worker.failed.connect(failed.append)
+    worker.finished.connect(finished.append)
+    worker.row_result.connect(row_results.append)
+
+    worker.run()
+
+    assert len(failed) == 1
+    assert "unexpected failure for case-0001" in str(failed[0])
+    assert finished == []
+    assert row_results == []
 
 
 def test_worker_cancel_before_run_stops_before_remaining_rows():

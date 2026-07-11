@@ -68,3 +68,31 @@ def test_prediction_usecase_fake_runner_e2e_without_pyside():
     assert summary.invalid == 0
     for case_id in session.case_order:
         assert session.result_for_case(case_id).status == "complete"
+
+
+def test_prediction_usecase_terminalizes_only_running_rows_after_infrastructure_failure():
+    session = _session_with_cases("3500", "3600", "")
+    usecase = _usecase(session)
+    plan = usecase.prepare_run(list(session.case_order))
+    assert plan.job is not None
+    first, second, third = session.case_order
+    usecase.apply_service_result(
+        PredictionServiceResult(
+            case_id=first,
+            status="complete",
+            predictions={target: 1200.0 for target in TARGETS},
+        )
+    )
+    results = []
+
+    summary = usecase.apply_infrastructure_failure(
+        session.case_order,
+        "Prediction worker failed: infrastructure exploded",
+        results.append,
+    )
+
+    assert session.result_for_case(first).status == "complete"
+    assert session.result_for_case(second).status == "error"
+    assert session.result_for_case(third).status == "invalid"
+    assert [result.case_id for result in results] == [second]
+    assert (summary.total, summary.complete, summary.error, summary.invalid) == (3, 1, 1, 1)

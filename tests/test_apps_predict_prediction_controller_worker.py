@@ -166,6 +166,12 @@ class FakePredictionRunner(QObject):
             )
         )
 
+    def fail(self, *, completed_rows: int = 0, message: str = "runner exploded") -> None:
+        for request in self.job.requests[:completed_rows]:
+            self.row_result.emit(self._service.predict_one(request))
+        self.is_running = False
+        self.failed.emit(RuntimeError(message))
+
     def dispose(self) -> None:
         self.disposed = True
 
@@ -298,6 +304,63 @@ def test_controller_model_missing_becomes_controlled_row_errors():
     for case_id in session.case_order:
         assert session.result_for_case(case_id).status == "error"
         assert "모델 파일" in session.result_for_case(case_id).message
+
+
+def test_controller_runner_failure_preserves_terminal_rows_and_summarizes_session():
+    _app()
+    session = _session_with_cases("3500", "", "3600")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    summaries = []
+    results = []
+
+    controller.start_all(
+        result_callback=results.append,
+        finished_callback=summaries.append,
+    )
+    runners[0].fail(completed_rows=1, message="execution adapter exploded\ntrace")
+    _wait_until(lambda: summaries and controller._runner is None)
+
+    first, invalid, remaining = session.case_order
+    assert session.result_for_case(first).status == "complete"
+    assert session.result_for_case(invalid).status == "invalid"
+    assert session.result_for_case(remaining).status == "error"
+    assert "execution adapter exploded" in session.result_for_case(remaining).message
+    assert (summaries[0].total, summaries[0].complete) == (3, 1)
+    assert (summaries[0].error, summaries[0].invalid) == (1, 1)
+    assert not controller.is_running
+    assert runners[0].disposed
+    assert results[-1].case_id == remaining
+
+
+def test_controller_immediate_runner_failure_errors_all_rows_and_allows_retry():
+    _app()
+    session = _session_with_cases("3500", "3600")
+    service = FakePredictionService()
+    controller, runners = _controller(session, service, auto_finish=False)
+    summaries = []
+
+    controller.start_all(finished_callback=summaries.append)
+    runners[0].fail(message="runner failed immediately")
+    _wait_until(lambda: len(summaries) == 1 and controller._runner is None)
+
+    assert all(
+        session.result_for_case(case_id).status == "error"
+        for case_id in session.case_order
+    )
+    assert (summaries[0].complete, summaries[0].error, summaries[0].invalid) == (0, 2, 0)
+    assert runners[0].disposed
+    assert not controller.is_running
+
+    controller.start_all(finished_callback=summaries.append)
+    assert len(runners) == 2
+    runners[1].complete()
+    _wait_until(lambda: len(summaries) == 2 and controller._runner is None)
+
+    assert summaries[1].complete == 2
+    assert summaries[1].error == 0
+    assert runners[1].disposed
+    assert not controller.is_running
 
 
 def test_controller_source_does_not_import_pyside_runner_concrete():

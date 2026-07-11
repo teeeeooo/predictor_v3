@@ -30,8 +30,12 @@ def test_save_plan_marks_retrain_for_model_input_name_and_source_changes():
 
     assert ml_name_plan.requires_retrain
     assert value_source_plan.requires_retrain
+    assert not ml_name_plan.can_save_schema
+    assert not value_source_plan.can_save_schema
     assert "retrain_required_for_new_model_input" in _blocker_codes(ml_name_plan)
     assert "retrain_required_for_new_model_input" in _blocker_codes(value_source_plan)
+    assert "ml_compatibility_projection_write_required" in _blocker_codes(ml_name_plan)
+    assert "ml_compatibility_projection_write_required" in _blocker_codes(value_source_plan)
 
 
 def test_save_plan_marks_schema_visible_editor_data_type_restart_required():

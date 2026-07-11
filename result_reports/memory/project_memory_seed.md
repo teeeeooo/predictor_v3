@@ -194,7 +194,7 @@ entries:
 
   - type: decision
     topic: Predict Train execution boundary
-    content: Predict and Train build runtime-neutral DTOs, usecases, and execution ports in explicit composition roots, then inject concrete PySide runners. Controllers do not import concrete adapters or own toolkit lifecycle. Predict retains the unified case table and worker/progress/cancel boundary; the Train QProcess adapter owns process signals, cancellation, and cleanup. app_train.py and app_predict.py remain separate thin entrypoints.
+    content: Predict and Train build runtime-neutral DTOs, usecases, and execution ports in explicit composition roots, then inject concrete PySide runners. Controllers do not import concrete adapters or own toolkit lifecycle. Predict retains the unified case table and worker/progress/cancel boundary; its controller retains active run case IDs, while the usecase and result mapper convert only still-running rows to terminal errors after an infrastructure failure and summarize actual session states. The Train QProcess adapter owns process signals, cancellation, and cleanup. app_train.py and app_predict.py remain separate thin entrypoints.
     keywords:
       - predictor_v3
       - Predict execution
@@ -354,7 +354,7 @@ entries:
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
-    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
+    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
     keywords:
       - predictor_v3
       - Arc 15

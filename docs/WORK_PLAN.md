@@ -17,13 +17,17 @@
 
 ## Current Slice
 
-Clean/Hexagonal/MVC boundary refactor and conservative desktop UX modernization
-are active on `refactor/clean-hex-mvc-ui-20260711`.
+Clean/Hexagonal/MVC refactor and pre-merge correction are complete on
+`refactor/clean-hex-mvc-ui-20260711`. The branch is ready for main merge
+execution.
 
 ## Next Action
 
-Finish full regression, structure/staged gates, macOS UI smoke, architecture
-record, commits, and branch push without merging `main`.
+`refactor/clean-hex-mvc-ui-20260711` main merge execution.
+
+## After Merge
+
+Standard Calculation Capability Extension design.
 
 ## Active Blockers
 
@@ -38,7 +42,6 @@ None.
 - Do not combine documentation cleanup with unrelated source refactoring.
 - Delete tracked files only within the user-approved scope of each slice.
 - Use focused verification and staged-gate checks for the affected surface.
-- Commit and push are approved for this branch; merging `main` is forbidden.
 
 ## Deferred / Hold
 

@@ -122,7 +122,11 @@ def _writer_blockers(
             "derived_policy_persistence_required",
             "Derived policy changes cannot be written to schema.csv.",
         ))
-    return tuple(blocker for blocker in blockers if blocker.severity == "error")
+    return tuple(
+        blocker
+        for blocker in blockers
+        if blocker.severity == "error" and blocker.target in {target, ""}
+    )
 
 
 def _atomic_write_schema_csv(

@@ -7,8 +7,12 @@ from typing import Literal
 
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftChange
 from core.data_definition.edit_policy import restricted_draft_field_changes
-from core.data_definition.validation import build_data_definition_report
+from core.data_definition.projection import (
+    project_feature_catalog_from_draft,
+    projected_feature_catalog_fingerprint,
+)
 from core.data_definition.report_model import DataDefinitionReport
+from core.data_definition.validation import build_data_definition_report
 
 BlockerSeverity = Literal["error", "warning", "info"]
 WriteTargetStatus = Literal["planned", "blocked", "deferred", "no_op"]
@@ -74,6 +78,7 @@ def build_data_definition_save_plan(
     changes = draft.changes()
     blockers = [
         *_report_blockers(report),
+        *_candidate_projection_blockers(draft, report),
         *_change_blockers(draft, changes),
         *_requested_target_blockers(requested_targets),
     ]
@@ -114,6 +119,28 @@ def _report_blockers(report: DataDefinitionReport) -> tuple[DataDefinitionSaveBl
             "Current projection parity must be resolved before save.", "features_csv",
         ))
     return tuple(blockers)
+
+
+def _candidate_projection_blockers(
+    draft: DataDefinitionDraft,
+    report: DataDefinitionReport,
+) -> tuple[DataDefinitionSaveBlocker, ...]:
+    if not draft.is_changed:
+        return ()
+    candidate = project_feature_catalog_from_draft(draft)
+    if projected_feature_catalog_fingerprint(candidate) == (
+        projected_feature_catalog_fingerprint(report.catalog_features)
+    ):
+        return ()
+    return (_blocker(
+        "ml_compatibility_projection_write_required",
+        "error",
+        (
+            "Schema save is blocked because the draft changes the ML compatibility "
+            "projection and no features.csv projection writer is available."
+        ),
+        "schema_csv",
+    ),)
 
 
 def _change_blockers(
@@ -208,7 +235,16 @@ def _write_targets(
     blockers: list[DataDefinitionSaveBlocker],
     requested_targets: tuple[str, ...],
 ) -> tuple[DataDefinitionWriteTarget, ...]:
-    schema_status = "planned" if any(_is_schema_change(change) for change in changes) else "no_op"
+    has_schema_change = any(_is_schema_change(change) for change in changes)
+    schema_blocked = any(
+        blocker.severity == "error" and blocker.target in {"schema_csv", ""}
+        for blocker in blockers
+    )
+    schema_status: WriteTargetStatus = (
+        "blocked" if has_schema_change and schema_blocked
+        else "planned" if has_schema_change
+        else "no_op"
+    )
     targets = [
         _target(
             "schema_csv",

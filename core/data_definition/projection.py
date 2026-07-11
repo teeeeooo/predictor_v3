@@ -5,13 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from core.data_definition.derived_policy import load_current_derived_feature_policy
+from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
 from core.data_definition.model import (
     DataDefinitionRow,
     DerivedFeatureDefinition,
     MappingRequirement,
     ProjectedFeatureRow,
 )
-from core.ml.feature_catalog import FeatureCatalogRow
+from core.ml.catalog_fingerprint import current_catalog_fingerprint
+from core.ml.feature_catalog import FeatureCatalog, FeatureCatalogRow
 from core.predictor_schema.catalog_v2 import (
     PredictSchemaCatalogV2,
     PredictSchemaV2Row,
@@ -61,6 +63,33 @@ def project_feature_catalog_from_catalog(
     for role in FEATURE_PROJECTION_COMPATIBILITY_ORDER:
         rows.extend(_project_rows_for_role(role, active_rows, policy))
     return _renumber(rows)
+
+
+def project_feature_catalog_from_draft(
+    draft: DataDefinitionDraft,
+    derived_policy: tuple[DerivedFeatureDefinition, ...] | None = None,
+) -> tuple[ProjectedFeatureRow, ...]:
+    """Project schema-backed draft rows to ML compatibility rows."""
+    schema_rows = tuple(
+        _schema_row_from_draft(row, line_number=index)
+        for index, row in enumerate(
+            (item for item in draft.rows if item.source_kind == "schema_row"),
+            start=2,
+        )
+    )
+    return project_feature_catalog_from_catalog(
+        PredictSchemaCatalogV2(rows=schema_rows),
+        derived_policy,
+    )
+
+
+def projected_feature_catalog_fingerprint(
+    rows: tuple[ProjectedFeatureRow, ...],
+) -> str:
+    """Return the existing ML compatibility fingerprint for projected rows."""
+    # ProjectedFeatureRow intentionally exposes every field consumed by the
+    # catalog fingerprint owner, so the compatibility DTO needs no second copy.
+    return current_catalog_fingerprint(FeatureCatalog(rows=rows))  # type: ignore[arg-type]
 
 
 def projected_row_from_catalog_row(row: FeatureCatalogRow) -> ProjectedFeatureRow:
@@ -241,4 +270,33 @@ def _definition_row(row: PredictSchemaV2Row) -> DataDefinitionRow:
         ml_name=row.ml_name,
         one_hot_group=row.one_hot_group,
         display_order=row.display_order,
+    )
+
+
+def _schema_row_from_draft(
+    row: DataDefinitionDraftRow,
+    *,
+    line_number: int,
+) -> PredictSchemaV2Row:
+    return PredictSchemaV2Row(
+        line_number=line_number,
+        display_order=row.display_order,
+        column_key=row.column_key,
+        label=row.label,
+        role=row.role,
+        editor=row.editor,
+        data_type=row.data_type,
+        visible=row.visible,
+        required=row.required,
+        readonly=row.readonly,
+        value_source=row.value_source,
+        mapping_entity=row.mapping_entity,
+        mapping_attribute=row.mapping_attribute,
+        trigger_column=row.trigger_column,
+        rule_id=row.rule_id,
+        model_input_enabled=row.model_input_enabled,
+        ml_name=row.ml_name,
+        one_hot_group=row.one_hot_group,
+        active=row.active,
+        notes=row.notes,
     )

@@ -126,6 +126,36 @@ class PredictionUseCase:
                 result_callback,
             )
 
+    def apply_infrastructure_failure(
+        self,
+        case_ids: tuple[str, ...],
+        message: str,
+        result_callback: ResultCallback | None = None,
+    ) -> PredictionRunSummary:
+        """Turn only still-running rows into terminal infrastructure errors."""
+        for case_id in case_ids:
+            if self._session.result_for_case(case_id).status != "running":
+                continue
+            self._record_result(
+                self._result_mapper.infrastructure_failure_result(case_id, message),
+                result_callback,
+            )
+        return self.summary_from_case_ids(case_ids)
+
+    def summary_from_case_ids(
+        self,
+        case_ids: tuple[str, ...],
+    ) -> PredictionRunSummary:
+        """Summarize the actual session states for one active run."""
+        statuses = [self._session.result_for_case(case_id).status for case_id in case_ids]
+        return PredictionRunSummary(
+            total=len(case_ids),
+            complete=statuses.count("complete"),
+            error=statuses.count("error"),
+            invalid=statuses.count("invalid"),
+            cancelled=statuses.count("cancelled"),
+        )
+
     def summary_from_worker(
         self,
         summary: PredictionWorkerSummary,

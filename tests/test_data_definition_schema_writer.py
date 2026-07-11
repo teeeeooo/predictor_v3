@@ -155,6 +155,29 @@ def test_candidate_validation_failure_does_not_overwrite_existing_destination(tm
     assert not (tmp_path / "backups").exists()
 
 
+def test_ml_projection_guard_does_not_overwrite_existing_schema(tmp_path):
+    destination = tmp_path / "schema.csv"
+    destination.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
+    original = destination.read_bytes()
+    draft = build_data_definition_draft(schema_path=destination)
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+
+    for field_name, value in (
+        ("ml_name", "Cooling Capacity Renamed"),
+        ("model_input_enabled", False),
+        ("active", False),
+    ):
+        changed = replace_draft_row(draft, row.identity, **{field_name: value})
+        result = save_data_definition_schema_draft(changed, destination)
+
+        assert not result.success
+        assert result.status == "blocked"
+        assert "ml_compatibility_projection_write_required" in _issue_codes(result)
+        assert destination.read_bytes() == original
+
+    assert not (tmp_path / "backups").exists()
+
+
 def test_existing_destination_is_backed_up_and_replaced(tmp_path):
     initial = tmp_path / "initial_schema.csv"
     first_draft = build_data_definition_draft()
