@@ -17,16 +17,16 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 3 is complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Simple
-Hong Kong, SASO T3, Korea, and AHRI single matrices now consume the shared
-visual policy; SASO comparison and Korea midpoint guide use the compact-result
-family while preserving profile-local behavior.
+Calculator table architecture Slice 4 is complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Row-per-case
+and logical-matrix batch tables now consume the shared flat visual primitives
+while preserving their distinct models, controllers, snapshots, scrolling,
+status, and export behavior.
 
 ## Next Action
 
-Implement Slice 4 batch-table visual migration while preserving controllers,
-snapshots, viewport containment, status counts, and export behavior.
+Implement Slice 5 Treeview style-adapter migration for detail and trace tables
+while preserving schemas, selectors, copy/CSV, visibility, and refit behavior.
 
 ## Active Blockers
 

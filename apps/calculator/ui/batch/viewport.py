@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from apps.calculator.ui.scrollable_frame import mousewheel_units
+from apps.calculator.ui.table.grid_primitives import create_grid_surface
 from apps.calculator.ui.theme import APP_SURFACE
 
 
@@ -53,13 +54,11 @@ class BatchTableViewport(ttk.Frame):
         self.horizontal_scrollbar.grid(row=1, column=0, sticky="ew")
         self._scrollbar_visible = False
         self._horizontal_scrollbar_visible = True
-        self.content = tk.Frame(
+        self.content = create_grid_surface(
             self.canvas,
             name=content_name,
-            background=content_background,
-            borderwidth=1,
-            relief=tk.SOLID,
         )
+        self.content.configure(background=content_background)
         self._content_window = self.canvas.create_window(
             (0, 0),
             window=self.content,

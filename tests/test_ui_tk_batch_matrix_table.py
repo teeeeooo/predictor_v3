@@ -12,6 +12,12 @@ from apps.calculator.ui.batch.matrix_models import (
     HONG_KONG_CSPF_MATRIX_SPEC,
     MatrixCellKind,
 )
+from apps.calculator.ui.batch.case_table import BatchCaseTable
+from apps.calculator.ui.batch.models import (
+    BatchColumnRole,
+    BatchColumnSpec,
+    BatchProfileSpec,
+)
 from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
@@ -66,7 +72,30 @@ def test_matrix_table_constructs_with_hong_kong_spec(root):
     t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
     assert t.spec is HONG_KONG_CSPF_MATRIX_SPEC
     assert t.row_count() == 10  # 5 default cases * 2 physical rows
+    assert t.table_frame.outer_edge_policy == "flat_low_contrast"
+    assert t.table_frame.cget("relief") == tk.FLAT
+    assert t.cell_frame((0, 2)).semantic_background == t.default_cell_background((0, 2))
     t.destroy()
+
+
+def test_row_per_case_table_uses_shared_flat_grid_primitives(root):
+    spec = BatchProfileSpec(
+        profile_key="visual-test",
+        title="Visual Test",
+        columns=(
+            BatchColumnSpec("input", "Input", BatchColumnRole.INPUT),
+            BatchColumnSpec("result", "Result", BatchColumnRole.RESULT),
+        ),
+        default_rows=({"input": "10"},),
+    )
+    table = BatchCaseTable(root, spec)
+
+    assert table.table_frame.outer_edge_policy == "flat_low_contrast"
+    assert table.table_frame.cget("relief") == tk.FLAT
+    assert table.cell_frame((0, 0)).semantic_background == table.default_cell_background((0, 0))
+    assert table.cell_frame((0, 1)).semantic_background == table.default_cell_background((0, 1))
+    assert int(table.cell_frame((0, 0)).cget("takefocus")) == 1
+    table.destroy()
 
 
 def test_matrix_table_defaults_to_empty_performance_cases(root):
