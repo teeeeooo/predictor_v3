@@ -17,18 +17,17 @@
 
 ## Current Slice
 
-Brazil CSPF final interaction correction is complete on
-`codex/brazil-cspf-ui-polish`.
+Calculator UI/UX unification Slice 0 is the active workstream. Brazil CSPF core,
+single/batch integration, detail, Copy/CSV, semantic result coloring, and
+interaction-state correction are merged to `main`. The current Slice inventories
+active Calculator surfaces and defines the shared table visual policy and safe
+migration order without changing Calculator source or tests.
 
 ## Next Action
 
-Await final audit confirmation; merge to `main` requires a separate explicit user
-request.
-
-## After Merge
-
-After validation, audit and merge to `main` require a separate explicit user
-request; deployment and packaging remain out of scope.
+Review `docs/designs/2026-07-11-calculator-ui-ux-unification-slice-0.md`, then
+approve the representative first implementation Slice and its Treeview parity
+stop condition.
 
 ## Active Blockers
 
@@ -46,6 +45,7 @@ None.
 
 ## Deferred / Hold
 
+- AHRI multi-capacity remains deferred after Calculator UI/UX unification.
 - Production ML Readiness resumes after the standard-calculation sequence.
 - ML validation gap: `model/model.pkl` is absent and training CSV is external;
   mock smoke cannot validate accuracy, trends, importance, or model quality.
