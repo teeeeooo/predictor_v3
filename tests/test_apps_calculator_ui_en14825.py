@@ -482,12 +482,8 @@ def test_en14825_gui_integration():
 
         # 6. CalculatorTkApp notebook에 EN14825 tab이 등록되는지 확인한다.
         app = CalculatorTkApp(root=root)
-        notebook = None
-        for child in root.winfo_children():
-            if isinstance(child, ttk.Notebook):
-                notebook = child
-                break
-        assert notebook is not None
+        notebook = app.notebook
+        assert notebook.winfo_class() == "TNotebook"
         tab_names = [notebook.tab(i, "text") for i in range(len(notebook.tabs()))]
         assert "EN14825" in tab_names
 
@@ -527,7 +523,7 @@ def test_en14825_seer_cell_background_follows_editable_role_contract():
         assert section.input_table.cell_frame(editable_pos).cget("background") == TABLE_EDITABLE_BG
         assert section.input_table.cell_widget(editable_pos).cget("background") == TABLE_EDITABLE_BG
         assert section.input_table.cell_role(computed_pos) == CellRole.READONLY
-        assert isinstance(section.input_table.cell_widget(computed_pos), tk.Label)
+        assert section.input_table.cell_widget(computed_pos).winfo_class() == "Label"
         assert section.input_table.cell_frame(computed_pos).cget("background") == TABLE_STATIC_BG
 
         _populate_seer_sample(section)
