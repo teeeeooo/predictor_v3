@@ -1,0 +1,66 @@
+{
+  "_comment": "Brazil CSPF production profile. ISO 16358-1 T1 resolver with Brazil-specific cooling temperature bins.",
+  "region": "Brazil",
+  "standard": "Brazil CSPF / ISO 16358-1:2013 T1",
+  "cspf_test_profile": {
+    "climate_profile": "T1",
+    "test_selection": "required_only"
+  },
+  "t_100_load": 35.0,
+  "t_0_load": 20.0,
+  "reference_point": "35_full",
+  "Cd": 0.25,
+  "building_load_source": "measured",
+  "power_interpolation_method": "iso_boundary_eer",
+  "points": {
+    "35_full": "measure",
+    "35_half": "measure",
+    "29_full": "default",
+    "29_half": "default"
+  },
+  "derived_rules": {
+    "29_full": {
+      "source": "35_full",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    },
+    "29_half": {
+      "source": "35_half",
+      "capacity_factor": 1.077,
+      "power_factor": 0.914
+    }
+  },
+  "bin_hours": [
+    {"tj": 15, "nj": 0},
+    {"tj": 16, "nj": 0},
+    {"tj": 17, "nj": 0},
+    {"tj": 18, "nj": 0},
+    {"tj": 19, "nj": 0},
+    {"tj": 20, "nj": 0},
+    {"tj": 21, "nj": 130},
+    {"tj": 22, "nj": 167},
+    {"tj": 23, "nj": 231},
+    {"tj": 24, "nj": 271},
+    {"tj": 25, "nj": 253},
+    {"tj": 26, "nj": 226},
+    {"tj": 27, "nj": 189},
+    {"tj": 28, "nj": 149},
+    {"tj": 29, "nj": 128},
+    {"tj": 30, "nj": 111},
+    {"tj": 31, "nj": 84},
+    {"tj": 32, "nj": 60},
+    {"tj": 33, "nj": 38},
+    {"tj": 34, "nj": 22},
+    {"tj": 35, "nj": 12},
+    {"tj": 36, "nj": 5},
+    {"tj": 37, "nj": 3},
+    {"tj": 38, "nj": 1},
+    {"tj": 39, "nj": 0},
+    {"tj": 40, "nj": 0},
+    {"tj": 41, "nj": 0},
+    {"tj": 42, "nj": 0},
+    {"tj": 43, "nj": 0},
+    {"tj": 44, "nj": 0},
+    {"tj": 45, "nj": 0}
+  ]
+}

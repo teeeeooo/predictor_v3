@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Mapping
 
 MeasuredPoints = Mapping[str, object]
+BRAZIL_CSPF_COMPLIANCE_PROFILE_ID = "brazil_cspf_compliance"
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,12 @@ class Iso16358CspfRequest:
     measured_points: MeasuredPoints
     declared_capacity: float | None = None
     test_selection: str | None = None
+
+
+@dataclass(frozen=True)
+class BrazilCspfComplianceRequest:
+    measured_points: MeasuredPoints
+    profile_id: str = BRAZIL_CSPF_COMPLIANCE_PROFILE_ID
 
 
 @dataclass(frozen=True)

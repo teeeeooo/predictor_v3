@@ -5,30 +5,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, Protocol, TypeVar
 
+from core.calculators.capability.brazil import BrazilCspfComplianceHandler
+from core.calculators.capability.compatibility import validate_profile_for_capability
+from core.calculators.capability.errors import (
+    CapabilityConfigurationError,
+    CapabilityNotFoundError,
+    CapabilityRequestTypeError,
+    StandardCalculationCapabilityError,
+)
 from core.calculators.capability.requests import (
     AhriHspf2Request, AhriSeer2Request, En14825ScopRequest, En14825SeerRequest,
+    BrazilCspfComplianceRequest,
     Iso16358CspfRequest, Iso16358HspfRequest, KsC9306CspfRequest, KsC9306HspfRequest,
 )
 from core.calculators.dispatcher import create_calculator_for_profile
-from core.calculators.profiles import CalculatorProfile, resolve_calculator_profile
+from core.calculators.profiles import (
+    CalculatorProfile,
+    list_calculator_profiles,
+    resolve_calculator_profile,
+)
 
 RequestT = TypeVar("RequestT")
-
-
-class StandardCalculationCapabilityError(Exception):
-    """Base error for contracts owned by the capability boundary."""
-
-
-class CapabilityNotFoundError(StandardCalculationCapabilityError):
-    pass
-
-
-class CapabilityRequestTypeError(StandardCalculationCapabilityError, TypeError):
-    pass
-
-
-class CapabilityConfigurationError(StandardCalculationCapabilityError):
-    pass
 
 
 class CapabilityHandler(Protocol, Generic[RequestT]):
@@ -104,17 +101,14 @@ class _MethodHandler:
         return _invoke_calculator(request, calculator, self.method_name)
 
     def _validate_profile(self, profile: CalculatorProfile) -> None:
-        compatible = (
-            profile.calculator_id == self.calculator_id
-            and profile.metric.casefold() in {metric.casefold() for metric in self.metrics}
-            and profile.mode.casefold() == self.mode.casefold()
-            and profile.standard.casefold() == self.standard.casefold()
+        validate_profile_for_capability(
+            profile,
+            self.capability_id,
+            calculator_id=self.calculator_id,
+            metrics=self.metrics,
+            mode=self.mode,
+            standard=self.standard,
         )
-        if not compatible:
-            raise CapabilityConfigurationError(
-                f"Profile {profile.profile_id!r} is not compatible with "
-                f"capability {self.capability_id!r}"
-            )
 
 
 def _invoke_calculator(request, calculator, method_name: str):
@@ -160,8 +154,20 @@ def build_builtin_capability_registry() -> CapabilityRegistry:
     )
     for definition in definitions:
         registry.register(_MethodHandler(*definition))
-    if registry.capability_ids != tuple(item[0] for item in definitions):
+    registry.register(BrazilCspfComplianceHandler())
+    expected_ids = tuple(item[0] for item in definitions) + (
+        "brazil.cspf_compliance",
+    )
+    if registry.capability_ids != expected_ids:
         raise CapabilityConfigurationError("Built-in capability registry is incomplete")
+    registered_ids = set(registry.capability_ids)
+    for profile in list_calculator_profiles(enabled_only=False):
+        if profile.capability_ids is None:
+            continue
+        if not profile.capability_ids or not set(profile.capability_ids) <= registered_ids:
+            raise CapabilityConfigurationError(
+                f"Profile {profile.profile_id!r} has an invalid capability allowlist"
+            )
     return registry
 
 

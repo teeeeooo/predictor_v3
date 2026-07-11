@@ -136,6 +136,7 @@ def test_list_calculator_profiles_returns_enabled_profiles_only():
         "ks_c9306_cspf",
         "ks_c9306_hspf",
         "iso_t1_default_2point_cspf",
+        "brazil_cspf_compliance",
         "india_iseer_cspf",
         "hong_kong_cspf",
         "hong_kong_hspf",
@@ -194,6 +195,12 @@ def test_resolve_ks_c9306_hspf_by_selector():
             "generic_t1",
             "CSPF",
             "data/region_configs/iso_t1_default_2point.json",
+        ),
+        (
+            "brazil_cspf_compliance",
+            "brazil",
+            "CSPF",
+            "data/region_configs/brazil.json",
         ),
         (
             "india_iseer_cspf",

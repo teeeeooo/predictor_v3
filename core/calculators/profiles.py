@@ -12,6 +12,7 @@ class CalculatorProfile:
     calculator_id: str
     config_path: str
     enabled: bool = True
+    capability_ids: tuple[str, ...] | None = None
 
 
 _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
@@ -84,6 +85,17 @@ _CALCULATOR_PROFILES: Tuple[CalculatorProfile, ...] = (
         calculator_id="iso16358",
         config_path="data/region_configs/iso_t1_default_2point.json",
         enabled=True,
+    ),
+    CalculatorProfile(
+        profile_id="brazil_cspf_compliance",
+        standard="ISO_16358",
+        region="brazil",
+        metric="CSPF",
+        mode="cooling",
+        calculator_id="iso16358",
+        config_path="data/region_configs/brazil.json",
+        enabled=True,
+        capability_ids=("brazil.cspf_compliance",),
     ),
     CalculatorProfile(
         profile_id="india_iseer_cspf",

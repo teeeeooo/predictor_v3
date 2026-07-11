@@ -17,11 +17,12 @@ def test_region_labels_contains_hong_kong():
     assert "Hong Kong" in profile_resolver.region_labels()
 
 
-def test_calculation_mode_labels_keep_2point_default_then_hong_kong_then_saso_profile():
+def test_calculation_mode_labels_add_brazil_after_existing_iso_modes():
     assert profile_resolver.calculation_mode_labels() == (
         "ISO / ISEER 2-point",
         "Hong Kong",
         "SASO T3",
+        "Brazil CSPF",
     )
 
 
