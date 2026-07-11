@@ -1,12 +1,9 @@
-"""Brazil-local sectioned result export contract and adapters."""
+"""Pure Brazil sectioned result export document and schema."""
 
 from __future__ import annotations
 
-import csv
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
-from tkinter import filedialog
 
 from apps.calculator.application.brazil_cspf.models import BrazilRuleDisplay
 from apps.calculator.ui.table_clipboard import encode_table_tsv
@@ -99,57 +96,10 @@ def build_brazil_cspf_export_document(
     )
 
 
-def copy_brazil_cspf_export(widget, document: BrazilCspfExportDocument) -> bool:
-    """Copy a sectioned Brazil document without flattening its schemas."""
-    contents = document.as_tsv()
-    if not contents:
-        return False
-    widget.clipboard_clear()
-    widget.clipboard_append(contents)
-    return True
-
-
-def write_brazil_cspf_sectioned_csv(
-    path: str | Path,
-    document: BrazilCspfExportDocument,
-    *,
-    encoding: str = "utf-8-sig",
-) -> None:
-    """Write section labels and each section's own header/rows to CSV."""
-    with Path(path).open("w", newline="", encoding=encoding) as handle:
-        writer = csv.writer(handle)
-        for section in document.sections:
-            writer.writerow((f"[{section.label}]",))
-            if section.headers:
-                writer.writerow(section.headers)
-            writer.writerows(section.rows)
-
-
-def export_brazil_cspf_sectioned_csv(
-    parent,
-    default_filename: str,
-    document: BrazilCspfExportDocument,
-) -> bool:
-    """Choose a destination and write the sectioned Brazil CSV document."""
-    path = filedialog.asksaveasfilename(
-        parent=parent,
-        initialfile=default_filename,
-        defaultextension=".csv",
-        filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
-    )
-    if not path:
-        return False
-    write_brazil_cspf_sectioned_csv(path, document)
-    return True
-
-
 __all__ = [
     "BRAZIL_CSPF_RESULT_COLUMNS",
     "BRAZIL_CSPF_RULE_COLUMNS",
     "BrazilCspfExportDocument",
     "BrazilExportSection",
     "build_brazil_cspf_export_document",
-    "copy_brazil_cspf_export",
-    "export_brazil_cspf_sectioned_csv",
-    "write_brazil_cspf_sectioned_csv",
 ]

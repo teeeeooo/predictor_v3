@@ -357,6 +357,7 @@ def test_check_ui_package_registry():
     # Good examples (registered package)
     assert guard.check_ui_package_registry("apps/calculator/ui/en14825/seer_adapter.py") == []
     assert guard.check_ui_package_registry("apps/calculator/ui/batch/models.py") == []
+    assert guard.check_ui_package_registry("apps/calculator/ui/brazil_cspf/section.py") == []
     assert guard.check_ui_package_registry("apps/calculator/ui/lifecycle/controller.py") == []
     # Flat file (registry check is only for packages under ui/, meaning depth >= 5)
     assert guard.check_ui_package_registry("apps/calculator/ui/result_panel.py") == []

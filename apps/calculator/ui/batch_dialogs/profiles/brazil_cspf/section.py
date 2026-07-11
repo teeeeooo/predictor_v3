@@ -20,6 +20,7 @@ from apps.calculator.ui.layout_constants import (
 )
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
+from .presentation import brazil_batch_cell_background
 
 
 class BrazilCspfBatchSection:
@@ -38,6 +39,9 @@ class BrazilCspfBatchSection:
         self._frame.rowconfigure(0, weight=1)
         self.status_var = tk.StringVar(master=self._frame, value="")
         self.table = BatchMatrixTable(self._frame, BRAZIL_CSPF_MATRIX_SPEC)
+        self.table.default_cell_background = lambda position: (
+            brazil_batch_cell_background(self.table, position)
+        )
         self.table.grid(
             row=0,
             column=0,

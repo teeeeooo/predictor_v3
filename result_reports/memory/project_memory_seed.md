@@ -148,7 +148,7 @@ entries:
 
   - type: decision
     topic: Brazil CSPF UI presentation and batch result boundary
-    content: Brazil single-result detail presentation consumes application-provided 3-point/2-point bin sources and summaries through the shared BinDetailPanel and DetailPanelVisibility lifecycle; Rule 1/Rule 2 are rendered from core-owned left/right/passed values in a compact table. The Brazil batch UI omits only 2-point CSTL/CSEC display/export/snapshot result keys while preserving public compatibility constants, single results, raw results, and core formulas.
+    content: Brazil single-result detail presentation consumes application-provided 3-point/2-point bin sources and summaries through the shared BinDetailPanel and DetailPanelVisibility lifecycle; Rule 1/Rule 2 are rendered from core-owned left/right/passed values in a cell-rendered table. The Brazil batch UI exposes only the nine compliance result columns and omits 2-point CSTL/CSEC and Row Status from display/export/snapshot while controller-only PENDING/ERROR/OK state, single results, raw results, and core formulas remain unchanged.
     keywords:
       - predictor_v3
       - Brazil CSPF
@@ -158,12 +158,13 @@ entries:
       - batch result columns
       - CSTL
       - CSEC
+      - Row Status
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-polish.md
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-polish.md; result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-export-correction.md
 
   - type: decision
     topic: Brazil CSPF sectioned export contract
-    content: Brazil single Copy/CSV/as_text valid output uses one Brazil-local export document with independent Result, Rule, and Final sections. Result and Rule headers are never reused across row schemas; variable-width CSV serialization stays local because the shared one-header CSV helper is unchanged. Empty/invalid states retain the existing Status export fallback, and table_export_data remains result-table-only compatibility output.
+    content: Brazil single Copy/CSV/as_text valid output uses one pure Brazil-local export document with independent Result, Rule, and Final sections. Tk clipboard, file-dialog, and CSV writing are separate feature adapters; Result and Rule headers are never reused across row schemas. Empty/invalid states retain the existing Status export fallback, and table_export_data remains result-table-only compatibility output.
     keywords:
       - predictor_v3
       - Brazil CSPF
@@ -173,8 +174,9 @@ entries:
       - Result section
       - Rule section
       - Final section
+      - export adapter
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-export-section-schema.md
+    source: result_reports/records/2026-07/2026-07-11-brazil-cspf-export-section-schema.md; result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-export-correction.md
 
   - type: error
     topic: ISO16358 HSPF fixture and minus7 trap

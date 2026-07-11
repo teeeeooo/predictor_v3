@@ -19,7 +19,6 @@ from .schema import (
     HALF_CAPACITY,
     HALF_POWER,
     MEASURED_29_HALF_EER,
-    ROW_STATUS,
     RULE_1,
     RULE_2,
     THREE_POINT_CSEC,
@@ -51,12 +50,12 @@ class BrazilCspfBatchHandler:
         self, row: Mapping[str, str]
     ) -> BrazilCspfBatchCalculationResult:
         if not _has_complete_inputs(row):
-            return _blank_result(BatchRowState.PENDING, "PENDING")
+            return _blank_result(BatchRowState.PENDING)
         result = self._usecase.calculate(
             {key: str(row.get(key, "")) for key in _REQUIRED_INPUT_KEYS}
         )
         if not result.is_ok or len(result.rows) != 2 or len(result.rules) != 2:
-            return _blank_result(BatchRowState.ERROR, "ERROR")
+            return _blank_result(BatchRowState.ERROR)
         three_point, two_point = result.rows
         rule_1, rule_2 = result.rules
         return BrazilCspfBatchCalculationResult(
@@ -70,7 +69,6 @@ class BrazilCspfBatchHandler:
                 CALCULATED_29_BIN_EER: rule_2.right_value_text,
                 RULE_2: rule_2.status_text,
                 FINAL: result.final_status or "",
-                ROW_STATUS: "OK",
             },
             state=BatchRowState.OK,
         )
@@ -80,13 +78,9 @@ def _has_complete_inputs(row: Mapping[str, str]) -> bool:
     return all(str(row.get(key, "")).strip() for key in _REQUIRED_INPUT_KEYS)
 
 
-def _blank_result(
-    state: BatchRowState,
-    row_status: str,
-) -> BrazilCspfBatchCalculationResult:
+def _blank_result(state: BatchRowState) -> BrazilCspfBatchCalculationResult:
     return BrazilCspfBatchCalculationResult(
-        values={key: "" for key in BRAZIL_CSPF_MATRIX_SPEC.result_keys[:-1]}
-        | {ROW_STATUS: row_status},
+        values={key: "" for key in BRAZIL_CSPF_MATRIX_SPEC.result_keys},
         state=state,
     )
 

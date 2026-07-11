@@ -226,6 +226,17 @@ class BatchMatrixTable(ttk.Frame):
                 var = self._variables[logical_case_index].get(key)
                 if var is not None:
                     var.set(value)
+        self.repaint_case_backgrounds(logical_case_index)
+
+    def repaint_case_backgrounds(self, logical_case_index: int) -> None:
+        """Reapply semantic backgrounds after result values change."""
+        first_row = logical_case_index * len(self.spec.physical_rows)
+        for row in range(first_row, first_row + len(self.spec.physical_rows)):
+            for column in range(self.column_count()):
+                position = (row, column)
+                background = self.default_cell_background(position)
+                self.cell_frame(position).configure(background=background)
+                self.cell_widget(position).configure(background=background)
 
     def clear_results(self) -> None:
         for key in self.spec.result_keys:

@@ -512,6 +512,7 @@ def check_ui_package_registry(relpath: str) -> List[Finding]:
             "ahri",
             "batch",
             "batch_dialogs",
+            "brazil_cspf",
             "en14825",
             "lifecycle",
             "sections",

@@ -208,7 +208,7 @@ def _rule_1_display(result: BrazilCspfComplianceResult) -> BrazilRuleDisplay:
         right_value_text=right,
         status_text="OK" if rule.passed else "NG",
         passed=rule.passed,
-        condition_text="CSPF 3pt ≤ CSPF 2pt × 1.4",
+        condition_text=f"CSPF 3pt ≤ CSPF 2pt × {multiplier}",
     )
 
 

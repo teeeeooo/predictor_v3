@@ -23,7 +23,7 @@ from apps.calculator.application.profile_resolver import (
 )
 from apps.calculator.ui.sections.hong_kong_cspf_section import HongKongCspfSection
 from apps.calculator.ui.sections.hong_kong_hspf_section import HongKongHspfSection
-from apps.calculator.ui.sections.brazil_cspf_section import BrazilCspfSection
+from apps.calculator.ui.brazil_cspf import BrazilCspfSection
 from apps.calculator.ui.sections.iso_iseer_2point_section import IsoIseer2PointSection
 from apps.calculator.ui.sections.iso_saso_t3_section import IsoSasoT3Section
 from apps.calculator.ui.scrollable_frame import ScrollableFrame

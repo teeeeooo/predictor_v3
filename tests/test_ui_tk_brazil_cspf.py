@@ -8,8 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from apps.calculator.ui.sections.brazil_cspf_section import BrazilCspfSection
+from apps.calculator.ui.brazil_cspf import BrazilCspfSection
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
+from apps.calculator.ui.layout_constants import TABLE_ERROR_BG, TABLE_PASS_BG
+from apps.calculator.ui.batch_dialogs.profiles.brazil_cspf import (
+    BRAZIL_CSPF_MATRIX_SPEC,
+    FINAL,
+    RULE_1,
+    RULE_2,
+    THREE_POINT_CSPF,
+)
 
 
 FIXTURE_PATH = Path("tests/fixtures/brazil_cspf_compliance_golden.json")
@@ -52,7 +60,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     table = section.result_table
     assert table.row_labels == ("3-point", "2-point")
     assert table.column_labels == ("Scenario", "CSPF", "CSTL [kWh]", "CSEC [kWh]")
-    assert len(table.table.get_children()) == 2
+    assert len(table.result_value_labels) == 8
     assert "Rule 1" in table.as_text()
     assert "Rule 2" in table.as_text()
     assert "조건" in table.as_text()
@@ -66,14 +74,20 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
         ("3-point", "6.02", "2461", "409"),
         ("2-point", "4.55", "2461", "541"),
     )
-    rule_rows = [
-        table.rule_table.item(item_id, "values")
-        for item_id in table.rule_table.get_children()
-    ]
+    rule_rows = [tuple(table.rule_value_labels[(row, column)].cget("text") for column in range(5)) for row in range(2)]
     assert rule_rows == [
         ("Rule 1", "CSPF 3pt ≤ CSPF 2pt × 1.4", "6.02", "6.37", "OK"),
         ("Rule 2", "29°C EER 실측 > 계산", "5.56", "5.75", "NG"),
     ]
+    assert all(
+        label.cget("anchor") == "center"
+        for label in (*table.table.winfo_children(), *table.rule_table.winfo_children())
+    )
+    assert table.result_value_labels[(0, 1)].cget("background") == TABLE_PASS_BG
+    assert table.result_value_labels[(1, 3)].cget("background") == TABLE_PASS_BG
+    assert table.rule_value_labels[(0, 4)].cget("background") == TABLE_PASS_BG
+    assert table.rule_value_labels[(1, 4)].cget("background") == TABLE_ERROR_BG
+    assert table.final_status_label.cget("background") == TABLE_PASS_BG
     expected_tsv = "\n".join(
         (
             "[Result]",
@@ -95,7 +109,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
 
     csv_path = tmp_path / "brazil_result.csv"
     monkeypatch.setattr(
-        "apps.calculator.ui.sections.brazil_cspf_export.filedialog.asksaveasfilename",
+        "apps.calculator.ui.brazil_cspf.export_adapter.filedialog.asksaveasfilename",
         lambda **_kwargs: str(csv_path),
     )
     section._export_csv()
@@ -118,8 +132,8 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rows == ()
     assert table.rules == ()
     assert table.final_status is None
-    assert len(table.table.get_children()) == 0
-    assert len(table.rule_table.get_children()) == 0
+    assert table.result_value_labels == {}
+    assert table.rule_value_labels == {}
     assert table.table_export_data() == (
         ("Status",),
         (("입력 오류: 숫자 입력을 확인하세요.",),),
@@ -214,6 +228,19 @@ def test_brazil_batch_dialog_opens_and_preserves_input_snapshot(tk_root, monkeyp
     assert "two_point_cstl" not in dialog.section.table.cases[0]
     assert "two_point_csec" not in dialog.section.table.cases[0]
     headers, _rows = dialog.section.table.table_export_data()
+    expected_result_headers = (
+        "CSPF 3pt",
+        "CSTL 3pt",
+        "CSEC 3pt",
+        "CSPF 2pt",
+        "Rule 1",
+        "29°C EER 실측",
+        "29°C EER 계산",
+        "Rule 2",
+        "Final",
+    )
+    assert headers[-9:] == expected_result_headers
+    assert "Row Status" not in headers
     assert "2-point CSTL" not in headers
     assert "2-point CSEC" not in headers
     copied = []
@@ -240,6 +267,26 @@ def test_brazil_batch_dialog_opens_and_preserves_input_snapshot(tk_root, monkeyp
     assert "2-point CSTL" not in exported[0][1]
     assert "2-point CSEC" not in exported[0][1]
 
+    table = dialog.section.table
+    first_result_column = BRAZIL_CSPF_MATRIX_SPEC.result_start_column
+    key_to_column = {
+        key: first_result_column + offset
+        for offset, (key, _label, _width) in enumerate(
+            BRAZIL_CSPF_MATRIX_SPEC.result_metrics
+        )
+    }
+    assert table.cell_widget((0, key_to_column[THREE_POINT_CSPF])).cget(
+        "background"
+    ) == TABLE_PASS_BG
+    assert table.cell_widget((0, key_to_column[RULE_1])).cget("background") == TABLE_PASS_BG
+    assert table.cell_widget((0, key_to_column[RULE_2])).cget("background") == TABLE_ERROR_BG
+    assert table.cell_widget((0, key_to_column[FINAL])).cget("background") == TABLE_PASS_BG
+    for cell in table.table_frame.grid_slaves(row=0):
+        labels = cell.winfo_children()
+        if labels:
+            label = labels[0]
+            assert label.winfo_reqwidth() <= cell.winfo_reqwidth()
+
     dialog.close()
     assert section._batch_dialog is None
     assert section._batch_snapshot is not None
@@ -262,3 +309,20 @@ def test_brazil_mode_keeps_result_surface_stale_free_when_input_is_incomplete(tk
     assert section.result_table.rules == ()
     assert section.detail_panel.table.table_rows() == ()
     assert section.detail_panel.graph._rows == ()
+
+
+def test_brazil_final_ng_uses_error_background_without_losing_text(tk_root):
+    section = BrazilCspfSection(tk_root)
+    section.input_table.set_values_batch(_raw_values())
+    section.recalculate_now()
+    table = section.result_table
+
+    table.set_result(
+        table.rows,
+        table.rules,
+        final_status="NG",
+        status="최종 판정: NG",
+    )
+
+    assert table.final_status_label.cget("text") == "최종 판정: NG"
+    assert table.final_status_label.cget("background") == TABLE_ERROR_BG

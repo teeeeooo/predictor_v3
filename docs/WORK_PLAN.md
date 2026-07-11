@@ -17,7 +17,7 @@
 
 ## Current Slice
 
-Brazil CSPF Copy/CSV section schema correction is complete on
+Brazil CSPF UI/export structure correction is complete on
 `codex/brazil-cspf-ui-polish`.
 
 ## Next Action

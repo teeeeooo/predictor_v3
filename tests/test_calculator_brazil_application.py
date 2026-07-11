@@ -14,7 +14,6 @@ from apps.calculator.ui.batch_dialogs.profiles.brazil_cspf import (
     CALCULATED_29_BIN_EER,
     FINAL,
     MEASURED_29_HALF_EER,
-    ROW_STATUS,
     RULE_1,
     RULE_2,
     THREE_POINT_CSPF,
@@ -137,8 +136,34 @@ def test_brazil_display_rounding_does_not_recompute_core_rule_decision():
 
     assert result.rows[0][1] == "6.02"
     assert result.rules[0].comparison.endswith("= 6.02")
+    assert result.rules[0].condition_text == "CSPF 3pt ≤ CSPF 2pt × 1.4"
     assert result.rules[0].status_text == "NG"
     assert result.final_status == "NG"
+
+
+def test_brazil_rule_1_compact_and_full_text_share_core_multiplier():
+    raw_result = {
+        "annual_cooling_kwh": 1.0,
+        "annual_power_kwh": 1.0,
+        "bin_details": (),
+    }
+    operation_result = BrazilCspfComplianceResult(
+        three_point_result=raw_result,
+        two_point_result=raw_result,
+        three_point_exact_cspf=6.0,
+        two_point_exact_cspf=4.0,
+        rule_1_multiplier=1.5,
+        rule_1=BrazilRuleEvaluation(6.0, 6.0, True),
+        rule_2=BrazilRuleEvaluation(5.0, 4.0, True),
+        final_passed=True,
+    )
+
+    result = BrazilCspfUseCase(
+        capability_executor=lambda _capability_id, _request: operation_result
+    ).calculate(_raw_values())
+
+    assert "× 1.5" in result.rules[0].comparison
+    assert result.rules[0].condition_text == "CSPF 3pt ≤ CSPF 2pt × 1.5"
 
 
 def test_brazil_batch_row_matches_single_result_and_contains_rule_outputs():
@@ -157,7 +182,6 @@ def test_brazil_batch_row_matches_single_result_and_contains_rule_outputs():
     assert result.values[CALCULATED_29_BIN_EER] == "5.75"
     assert result.values[RULE_2] == "NG"
     assert result.values[FINAL] == "OK"
-    assert result.values[ROW_STATUS] == "OK"
 
 
 def test_brazil_batch_keeps_partial_and_invalid_rows_independent():
@@ -169,10 +193,8 @@ def test_brazil_batch_keeps_partial_and_invalid_rows_independent():
 
     assert partial.state is BatchRowState.PENDING
     assert partial.values[THREE_POINT_CSPF] == ""
-    assert partial.values[ROW_STATUS] == "PENDING"
     assert invalid.state is BatchRowState.ERROR
     assert invalid.values[TWO_POINT_CSPF] == ""
-    assert invalid.values[ROW_STATUS] == "ERROR"
 
 
 def test_brazil_batch_matrix_has_six_inputs_and_required_outputs():
@@ -194,7 +216,6 @@ def test_brazil_batch_matrix_has_six_inputs_and_required_outputs():
         CALCULATED_29_BIN_EER,
         RULE_2,
         FINAL,
-        ROW_STATUS,
     )
     assert TWO_POINT_CSTL not in BRAZIL_CSPF_MATRIX_SPEC.result_keys
     assert TWO_POINT_CSEC not in BRAZIL_CSPF_MATRIX_SPEC.result_keys
@@ -218,3 +239,17 @@ def test_brazil_batch_package_preserves_public_surface_and_owner_layers():
     assert package.BrazilCspfBatchHandler is row_adapter.BrazilCspfBatchHandler
     assert not hasattr(schema, "tk")
     assert not hasattr(row_adapter, "tk")
+
+
+def test_brazil_single_package_separates_document_from_tk_io():
+    package_name = "apps.calculator.ui.brazil_cspf"
+    package = importlib.import_module(package_name)
+    document = importlib.import_module(f"{package_name}.export_document")
+    adapter = importlib.import_module(f"{package_name}.export_adapter")
+
+    package_path = Path(package.__file__ or "")
+    assert package_path.name == "__init__.py"
+    assert package.BrazilCspfExportDocument is document.BrazilCspfExportDocument
+    assert not hasattr(document, "filedialog")
+    assert not hasattr(document, "csv")
+    assert hasattr(adapter, "filedialog")
