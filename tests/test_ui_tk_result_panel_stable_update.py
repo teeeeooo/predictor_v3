@@ -143,6 +143,22 @@ class TestStableUpdate:
 
         assert panel.summary_tables["CSPF"].winfo_width() == initial_width
 
+    def test_summary_uses_shared_flat_grid_primitives(self, panel, tk_root) -> None:
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("CSPF", "4.939"),)),)
+        )
+        tk_root.update_idletasks()
+
+        card = panel.summary_tables["CSPF"]
+        header = panel.summary_header_cells["CSPF"][0]
+        value = panel.summary_value_cells["CSPF"][0]
+        value_label = panel.summary_value_labels["CSPF"][0]
+        assert card.outer_edge_policy == "flat_low_contrast"
+        assert int(card.cget("borderwidth")) == 0
+        assert header.surface_role == "summary_header_cell"
+        assert value.surface_role == "summary_value_cell"
+        assert value_label.alignment_role == "numeric_result"
+
 
 class TestRebuildOnShapeChange:
     """Shape changes trigger full widget rebuild."""

@@ -7,18 +7,21 @@ from tkinter import ttk
 from typing import Iterable
 
 from apps.calculator.ui.layout_constants import (
-    RESULT_HEADER_BG,
     RESULT_STATUS_FG,
     RESULT_TITLE_BG,
     RESULT_VALUE_BG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
-    TABLE_GRID_COLOR,
     TABLE_HEADER_FONT,
-    TABLE_HEADER_PADY,
 )
 from apps.calculator.ui.result_models import ResultSummary
+from apps.calculator.ui.table.grid_primitives import (
+    create_cell_container,
+    create_grid_surface,
+    create_text_label,
+)
+from apps.calculator.ui.table.visual_policy import AlignmentRole, SemanticTone
 
 
 class ResultPanel:
@@ -122,8 +125,15 @@ class ResultPanel:
     def _make_summary_cell(
         self, card: tk.Frame, *, row: int, column: int, background: str
     ) -> tk.Frame:
-        cell = tk.Frame(card, background=background, borderwidth=0)
-        cell.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
+        cell = create_cell_container(
+            card,
+            row=row,
+            column=column,
+            background=background,
+            surface_role=(
+                "summary_header_cell" if row == 1 else "summary_value_cell"
+            ),
+        )
         self._configure_summary_column(card, column)
         return cell
 
@@ -135,13 +145,7 @@ class ResultPanel:
         )
 
     def _render_summary_table(self, row: int, summary: ResultSummary) -> None:
-        card = tk.Frame(
-            self._summary_holder,
-            name=f"{summary.title.lower()}_summary",
-            background=TABLE_GRID_COLOR,
-            borderwidth=1,
-            relief=tk.SOLID,
-        )
+        card = create_grid_surface(self._summary_holder)
         card.grid(
             row=row,
             column=0,
@@ -213,28 +217,28 @@ class ResultPanel:
         for column, (label, value) in enumerate(summary.fields):
             self._configure_summary_column(card, column)
             header = self._make_summary_cell(
-                card, row=1, column=column, background=RESULT_HEADER_BG
+                card,
+                row=1,
+                column=column,
+                background=card.visual_policy.header_background,
             )
-            header.surface_role = "summary_header_cell"
-            tk.Label(
+            create_text_label(
                 header,
                 text=label,
-                background=RESULT_HEADER_BG,
-                font=TABLE_HEADER_FONT,
-            ).pack(
-                fill=tk.BOTH,
-                expand=True,
-                padx=TABLE_CELL_PADX,
-                pady=TABLE_HEADER_PADY,
+                width=None,
+                alignment=AlignmentRole.HEADER_VALUE,
+                header=True,
             )
             value_cell = self._make_summary_cell(
                 card, row=2, column=column, background=RESULT_VALUE_BG
             )
-            value_cell.surface_role = "summary_value_cell"
-            value_label = tk.Label(
-                value_cell, text=value, background=RESULT_VALUE_BG, font=TABLE_BODY_FONT
+            value_label = create_text_label(
+                value_cell,
+                text=value,
+                width=None,
+                alignment=AlignmentRole.NUMERIC_RESULT,
+                tone=SemanticTone.DEFAULT,
             )
-            value_label.pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
             headers.append(header)
             values.append(value_cell)
             value_labels.append(value_label)

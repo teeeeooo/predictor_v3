@@ -61,6 +61,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     tk_root, tmp_path, monkeypatch
 ):
     section = BrazilCspfSection(tk_root)
+    section.pack()
     section.input_table.set_values_batch(_raw_values())
     section.recalculate_now()
     tk_root.update_idletasks()
@@ -87,10 +88,15 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
         ("Rule 1", "CSPF 3pt ≤ CSPF 2pt × 1.4", "6.02", "6.37", "OK"),
         ("Rule 2", "29°C EER 실측 > 계산", "5.56", "5.75", "NG"),
     ]
-    assert all(
-        label.cget("anchor") == "center"
-        for label in (*table.table.winfo_children(), *table.rule_table.winfo_children())
-    )
+    assert table.result_grid.frame.outer_edge_policy == "flat_low_contrast"
+    assert table.rule_grid.frame.outer_edge_policy == "flat_low_contrast"
+    assert int(table.table.cget("borderwidth")) == 0
+    assert int(table.rule_table.cget("borderwidth")) == 0
+    assert table.result_grid.value_labels[(0, 0)].alignment_role == "identity_text"
+    assert table.result_grid.value_labels[(0, 1)].alignment_role == "numeric_result"
+    assert table.rule_grid.value_labels[(0, 0)].alignment_role == "identity_text"
+    assert table.rule_grid.value_labels[(0, 1)].alignment_role == "identity_text"
+    assert table.rule_grid.value_labels[(0, 2)].alignment_role == "numeric_result"
     assert table.result_value_labels[(0, 1)].cget("background") == TABLE_PASS_BG
     assert table.result_value_labels[(1, 3)].cget("background") == TABLE_PASS_BG
     assert table.rule_value_labels[(0, 4)].cget("background") == TABLE_PASS_BG
@@ -113,6 +119,13 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.as_text() == expected_tsv
     assert table.export_document().as_tsv() == expected_tsv
     section.copy_button.invoke()
+    assert tk_root.clipboard_get() == expected_tsv
+
+    tk_root.deiconify()
+    tk_root.update_idletasks()
+    table.rule_grid.value_labels[(0, 0)].event_generate("<Button-1>")
+    assert tk_root.focus_get() == table.rule_grid.frame
+    table.rule_grid.frame.event_generate("<Control-c>")
     assert tk_root.clipboard_get() == expected_tsv
 
     csv_path = tmp_path / "brazil_result.csv"

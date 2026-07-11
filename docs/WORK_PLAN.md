@@ -17,15 +17,16 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 1 is the active workstream under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. It adds the
-shared Tk visual policy and grid primitives, establishes Compact Result Grid,
-and migrates only the representative ISO/ISEER single input and result surfaces.
+Calculator table architecture Slice 2 is complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Generic
+`ResultPanel` rendering and Brazil CSPF result/Rule grids now consume the shared
+compact-result foundation while preserving stable updates, focus, Final, and
+sectioned export behavior.
 
 ## Next Action
 
-Review Slice 1 focused validation and visual behavior, then approve Slice 2
-(generic result surfaces and Brazil adoption) separately.
+Review Slice 2 focused validation, then approve Slice 3 (remaining simple
+single surfaces) separately.
 
 ## Active Blockers
 

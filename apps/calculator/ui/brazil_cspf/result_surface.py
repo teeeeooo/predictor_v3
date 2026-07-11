@@ -7,18 +7,16 @@ from tkinter import ttk
 
 from apps.calculator.application.brazil_cspf.models import BrazilRuleDisplay
 from apps.calculator.ui.layout_constants import (
-    RESULT_HEADER_BG,
     RESULT_STATUS_FG,
     RESULT_VALUE_BG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
     TABLE_ERROR_BG,
-    TABLE_GRID_COLOR,
-    TABLE_HEADER_FONT,
-    TABLE_HEADER_PADY,
     TABLE_PASS_BG,
 )
+from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 
 from .export_adapter import copy_brazil_cspf_export
@@ -41,19 +39,32 @@ class BrazilCspfResultTable:
         self.rows: tuple[tuple[str, ...], ...] = ()
         self.rules: tuple[BrazilRuleDisplay, ...] = ()
         self.final_status: str | None = None
-        self.result_value_labels: dict[tuple[int, int], tk.Label] = {}
-        self.rule_value_labels: dict[tuple[int, int], tk.Label] = {}
-
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
-        self.table = tk.Frame(self._frame, background=TABLE_GRID_COLOR)
-        self.table.surface_role = "brazil_cspf_comparison_table"
+        self.result_grid = CompactResultGrid(
+            self._frame,
+            headers=BRAZIL_CSPF_RESULT_COLUMNS,
+            column_widths=(12, 12, 12, 12),
+            surface_role="brazil_cspf_comparison_table",
+        )
+        self.table = self.result_grid.frame
+        self.result_value_labels = self.result_grid.value_labels
         self.rule_frame = ttk.Frame(self._frame)
         self.rule_title = ttk.Label(self.rule_frame, text="판정")
         self.rule_title.pack(side=tk.TOP, anchor="w", pady=(4, 0))
-        self.rule_table = tk.Frame(self.rule_frame, background=TABLE_GRID_COLOR)
-        self.rule_table.surface_role = "brazil_cspf_rule_table"
+        self.rule_grid = CompactResultGrid(
+            self.rule_frame,
+            headers=BRAZIL_CSPF_RULE_COLUMNS,
+            column_widths=(10, 30, 12, 12, 10),
+            identity_columns=frozenset({0, 1}),
+            surface_role="brazil_cspf_rule_table",
+        )
+        self.rule_table = self.rule_grid.frame
+        self.rule_value_labels = self.rule_grid.value_labels
+        for grid in (self.result_grid, self.rule_grid):
+            grid.frame.bind("<Control-c>", self.copy)
+            grid.frame.bind("<Command-c>", self.copy)
         self.final_status_label = self._status_label("brazil_cspf_final_status")
         self.status_label = self._status_label("brazil_cspf_result_status")
 
@@ -72,27 +83,25 @@ class BrazilCspfResultTable:
         self.row_labels = tuple(row[0] for row in rows)
         self.rules = rules
         self.final_status = final_status
-        self._render_grid(
-            self.table,
-            BRAZIL_CSPF_RESULT_COLUMNS,
+        self.result_grid.set_rows(
             rows,
-            self.result_value_labels,
-            result_columns=frozenset(range(1, len(BRAZIL_CSPF_RESULT_COLUMNS))),
+            tones={
+                (row, column): SemanticTone.PASS
+                for row in range(len(rows))
+                for column in range(1, len(BRAZIL_CSPF_RESULT_COLUMNS))
+            },
         )
         rule_rows = tuple(self._rule_row(rule) for rule in rules)
-        judgement_backgrounds = {
-            (index, 4): TABLE_PASS_BG if rule.passed else TABLE_ERROR_BG
+        judgement_tones = {
+            (index, 4): SemanticTone.PASS if rule.passed else SemanticTone.FAIL
             for index, rule in enumerate(rules)
         }
-        self._render_grid(
-            self.rule_table,
-            BRAZIL_CSPF_RULE_COLUMNS,
+        self.rule_grid.set_rows(
             rule_rows,
-            self.rule_value_labels,
-            cell_backgrounds=judgement_backgrounds,
+            tones=judgement_tones,
         )
-        self.table.pack(side=tk.TOP, anchor="w")
-        self.rule_table.pack(side=tk.TOP, anchor="w")
+        self.result_grid.pack(side=tk.TOP, anchor="w")
+        self.rule_grid.pack(side=tk.TOP, anchor="w")
         self.rule_frame.pack(side=tk.TOP, anchor="w", fill=tk.X)
         self.final_status_label.configure(
             text=f"최종 판정: {final_status}",
@@ -110,9 +119,9 @@ class BrazilCspfResultTable:
         self.row_labels = ()
         self.rules = ()
         self.final_status = None
-        self._clear_grid(self.table, self.result_value_labels)
-        self._clear_grid(self.rule_table, self.rule_value_labels)
-        self.table.pack_forget()
+        self.result_grid.clear()
+        self.rule_grid.clear()
+        self.result_grid.pack_forget()
         self.rule_frame.pack_forget()
         self.final_status_label.pack_forget()
         self.status_label.configure(text="")
@@ -146,56 +155,6 @@ class BrazilCspfResultTable:
 
     def select_all(self, _event: tk.Event | None = None) -> str:
         return "break"
-
-    def _render_grid(
-        self,
-        frame: tk.Frame,
-        headers: tuple[str, ...],
-        rows: tuple[tuple[str, ...], ...],
-        registry: dict[tuple[int, int], tk.Label],
-        *,
-        result_columns: frozenset[int] = frozenset(),
-        cell_backgrounds: dict[tuple[int, int], str] | None = None,
-    ) -> None:
-        self._clear_grid(frame, registry)
-        for column, text in enumerate(headers):
-            self._make_cell(frame, 0, column, text, header=True)
-        for row_index, row in enumerate(rows):
-            for column, text in enumerate(row):
-                background = (cell_backgrounds or {}).get((row_index, column))
-                if background is None and column in result_columns:
-                    background = TABLE_PASS_BG
-                registry[(row_index, column)] = self._make_cell(
-                    frame, row_index + 1, column, text, background=background
-                )
-
-    def _make_cell(
-        self,
-        frame: tk.Frame,
-        row: int,
-        column: int,
-        text: str,
-        *,
-        header: bool = False,
-        background: str | None = None,
-    ) -> tk.Label:
-        label = tk.Label(
-            frame,
-            text=text,
-            anchor="center",
-            background=background or (RESULT_HEADER_BG if header else RESULT_VALUE_BG),
-            font=TABLE_HEADER_FONT if header else TABLE_BODY_FONT,
-            padx=TABLE_CELL_PADX,
-            pady=TABLE_HEADER_PADY if header else TABLE_CELL_PADY,
-        )
-        label.grid(row=row, column=column, sticky="nsew", padx=(0, 1), pady=(0, 1))
-        return label
-
-    @staticmethod
-    def _clear_grid(frame: tk.Frame, registry: dict[tuple[int, int], tk.Label]) -> None:
-        for child in frame.winfo_children():
-            child.destroy()
-        registry.clear()
 
     @staticmethod
     def _rule_row(rule: BrazilRuleDisplay) -> tuple[str, ...]:
