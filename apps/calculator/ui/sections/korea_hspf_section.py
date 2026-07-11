@@ -53,6 +53,7 @@ class KoreaHspfSection:
             columns=(("capacity", "능력 [W]"),),
             rows=(("rated", "정격 냉방능력"),),
             editable_cells={("rated", "capacity"): "rated_cooling_capacity"},
+            visual_style="shared",
         )
         self.rated_table.grid(
             row=0,
@@ -86,6 +87,7 @@ class KoreaHspfSection:
                 ("capacity", "max"): "max_capacity",
                 ("power", "max"): "max_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=2,
@@ -159,7 +161,6 @@ class KoreaHspfSection:
         self.trace_table = self.detail_panel.table
         self.rated_controller = TkTableController(self.rated_table)
         self.input_controller = TkTableController(self.input_table)
-        self.guide_controller = self._guide.controller
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.rated_table.set_values_changed_callback(self._auto_calc.schedule)
         self.input_table.set_values_changed_callback(self._auto_calc.schedule)

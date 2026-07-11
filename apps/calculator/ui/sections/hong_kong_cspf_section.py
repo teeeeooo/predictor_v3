@@ -55,6 +55,7 @@ class HongKongCspfSection:
             columns=(("capacity", "능력 [W]"),),
             rows=(("rated", "정격 표기치"),),
             editable_cells={("rated", "capacity"): "declared_capacity"},
+            visual_style="shared",
         )
         self.rated_table.grid(
             row=0,
@@ -79,6 +80,7 @@ class HongKongCspfSection:
                 ("capacity", "half"): "half_capacity",
                 ("power", "half"): "half_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=2,

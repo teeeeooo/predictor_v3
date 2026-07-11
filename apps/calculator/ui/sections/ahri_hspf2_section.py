@@ -191,6 +191,7 @@ class AhriHspf2Section:
             },
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -203,6 +204,7 @@ class AhriHspf2Section:
             editable_cells={("capacity", "A2"): "a2_capacity"},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -228,6 +230,7 @@ class AhriHspf2Section:
             editable_cells=editable,
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_HEATING_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 8))
         for point in AHRI_HSPF2_UI_POINT_ORDER:

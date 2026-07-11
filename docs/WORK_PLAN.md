@@ -17,16 +17,16 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 2 is complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Generic
-`ResultPanel` rendering and Brazil CSPF result/Rule grids now consume the shared
-compact-result foundation while preserving stable updates, focus, Final, and
-sectioned export behavior.
+Calculator table architecture Slice 3 is complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Simple
+Hong Kong, SASO T3, Korea, and AHRI single matrices now consume the shared
+visual policy; SASO comparison and Korea midpoint guide use the compact-result
+family while preserving profile-local behavior.
 
 ## Next Action
 
-Review Slice 2 focused validation, then approve Slice 3 (remaining simple
-single surfaces) separately.
+Implement Slice 4 batch-table visual migration while preserving controllers,
+snapshots, viewport containment, status counts, and export behavior.
 
 ## Active Blockers
 

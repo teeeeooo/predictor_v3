@@ -59,6 +59,15 @@ def test_korea_tab_contains_cspf_hspf_metric_notebook(tk_root) -> None:
     assert korea.hspf_section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert not korea.cspf_section.detail_panel.is_visible()
     assert not korea.hspf_section.detail_panel.is_visible()
+    from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+
+    assert korea.cspf_section.rated_table.visual_style == "shared"
+    assert korea.cspf_section.input_table.visual_style == "shared"
+    assert korea.hspf_section.rated_table.visual_style == "shared"
+    assert korea.hspf_section.input_table.visual_style == "shared"
+    assert isinstance(korea.cspf_section.guide_table, CompactResultGrid)
+    assert isinstance(korea.hspf_section.guide_table, CompactResultGrid)
+    assert korea.cspf_section.guide_table.headers == ("항목", "값")
     assert korea.cspf_section.guide_table.text_at_address(("current_tc", "value")) == (
         "입력 대기"
     )

@@ -103,6 +103,7 @@ class AhriSeer2Section:
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
             values_changed_callback=self.schedule_recalculate,
+            visual_style="shared",
         )
         self.input_table.grid(
             row=1,

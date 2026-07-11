@@ -72,6 +72,7 @@ class IsoSasoT3Section:
                 ("capacity", "min_35"): "min_35_capacity",
                 ("power", "min_35"): "min_35_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6),
