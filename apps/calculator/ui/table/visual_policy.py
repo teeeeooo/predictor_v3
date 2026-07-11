@@ -57,6 +57,8 @@ class TkTableVisualPolicy:
     focus_border_color: str = TABLE_FOCUS_BORDER
     header_background: str = TABLE_HEADER_BG
     header_foreground: str = TABLE_HEADER_FG
+    calculated_background: str = TABLE_PASS_BG
+    pass_background: str = TABLE_PASS_BG
     header_font: tuple = TABLE_HEADER_FONT
     body_font: tuple = TABLE_BODY_FONT
     cell_padx: int = TABLE_CELL_PADX
@@ -76,8 +78,10 @@ class TkTableVisualPolicy:
         return "center"
 
     def background(self, tone: SemanticTone, *, editable: bool = False) -> str:
-        if tone in {SemanticTone.CALCULATED, SemanticTone.PASS}:
-            return TABLE_PASS_BG
+        if tone is SemanticTone.CALCULATED:
+            return self.calculated_background
+        if tone is SemanticTone.PASS:
+            return self.pass_background
         if tone in {SemanticTone.FAIL, SemanticTone.INVALID}:
             return TABLE_ERROR_BG if tone is SemanticTone.FAIL else TABLE_INVALID_BG
         if editable:

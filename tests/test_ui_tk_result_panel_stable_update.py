@@ -63,6 +63,9 @@ class TestStableUpdate:
         )
         tk_root.update_idletasks()
         labels = panel.summary_value_labels["CSPF"]
+        value_cell = panel.summary_value_cells["CSPF"][0]
+        initial_cell_identity = str(value_cell)
+        initial_label_identity = str(labels[0])
         assert labels[0].cget("text") == "1"
 
         panel.set_summaries(
@@ -72,6 +75,11 @@ class TestStableUpdate:
         assert labels[0].cget("text") == "99"
         assert labels[0].semantic_tone == "calculated"
         assert labels[0].cget("background") == TABLE_PASS_BG
+        assert str(value_cell) == initial_cell_identity
+        assert str(labels[0]) == initial_label_identity
+        assert value_cell.cget("background") == TABLE_PASS_BG
+        assert value_cell.semantic_background == TABLE_PASS_BG
+        assert value_cell.cget("background") == labels[0].cget("background")
 
     def test_same_shape_updates_status_text(self, panel, tk_root) -> None:
         panel.set_summaries(
@@ -163,6 +171,9 @@ class TestStableUpdate:
         assert value_label.alignment_role == "numeric_result"
         assert value_label.semantic_tone == "calculated"
         assert value_label.cget("background") == TABLE_PASS_BG
+        assert value.cget("background") == TABLE_PASS_BG
+        assert value.semantic_background == TABLE_PASS_BG
+        assert value.cget("background") == value_label.cget("background")
 
 
 class TestRebuildOnShapeChange:

@@ -230,7 +230,10 @@ class ResultPanel:
                 header=True,
             )
             value_cell = self._make_summary_cell(
-                card, row=2, column=column, background=RESULT_VALUE_BG
+                card,
+                row=2,
+                column=column,
+                background=card.visual_policy.background(SemanticTone.CALCULATED),
             )
             value_label = create_text_label(
                 value_cell,

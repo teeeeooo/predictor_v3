@@ -14,6 +14,7 @@ from apps.calculator.ui.table.visual_policy import SemanticTone, TkTableVisualPo
 from apps.calculator.ui.table_clipboard import encode_table_tsv
 from apps.calculator.ui.layout_constants import (
     RESULT_VALUE_BG,
+    TABLE_EDITABLE_BG,
     TABLE_ERROR_BG,
     TABLE_INVALID_BG,
     TABLE_PASS_BG,
@@ -137,11 +138,21 @@ class TestSharedTableVisualFoundation:
     ) -> None:
         policy = TkTableVisualPolicy()
         assert SemanticTone.CALCULATED is not SemanticTone.PASS
-        assert policy.background(SemanticTone.CALCULATED) == TABLE_PASS_BG
-        assert policy.background(SemanticTone.PASS) == TABLE_PASS_BG
+        assert policy.calculated_background == TABLE_PASS_BG
+        assert policy.pass_background == TABLE_PASS_BG
+        assert policy.background(SemanticTone.CALCULATED) == policy.calculated_background
+        assert policy.background(SemanticTone.PASS) == policy.pass_background
         assert policy.background(SemanticTone.FAIL) == TABLE_ERROR_BG
         assert policy.background(SemanticTone.DEFAULT) == RESULT_VALUE_BG
         assert policy.background(SemanticTone.INVALID) == TABLE_INVALID_BG
+        assert policy.background(SemanticTone.DEFAULT, editable=True) == TABLE_EDITABLE_BG
+
+        independent = TkTableVisualPolicy(
+            calculated_background="calculated-only",
+            pass_background="pass-only",
+        )
+        assert independent.background(SemanticTone.CALCULATED) == "calculated-only"
+        assert independent.background(SemanticTone.PASS) == "pass-only"
 
     def test_iso_input_uses_flat_shared_grid_surface(self, section) -> None:
         table = section.input_table
