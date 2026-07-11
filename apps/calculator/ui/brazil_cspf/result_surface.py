@@ -86,7 +86,7 @@ class BrazilCspfResultTable:
         self.result_grid.set_rows(
             rows,
             tones={
-                (row, column): SemanticTone.PASS
+                (row, column): SemanticTone.CALCULATED
                 for row in range(len(rows))
                 for column in range(1, len(BRAZIL_CSPF_RESULT_COLUMNS))
             },

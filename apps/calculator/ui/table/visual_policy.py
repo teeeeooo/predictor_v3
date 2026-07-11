@@ -22,7 +22,6 @@ from apps.calculator.ui.layout_constants import (
     TABLE_INVALID_BG,
     TABLE_PASS_BG,
     TABLE_SELECTED_BG,
-    TABLE_STATIC_BG,
     TABLE_STATIC_FG,
 )
 
@@ -77,12 +76,10 @@ class TkTableVisualPolicy:
         return "center"
 
     def background(self, tone: SemanticTone, *, editable: bool = False) -> str:
-        if tone is SemanticTone.PASS:
+        if tone in {SemanticTone.CALCULATED, SemanticTone.PASS}:
             return TABLE_PASS_BG
         if tone in {SemanticTone.FAIL, SemanticTone.INVALID}:
             return TABLE_ERROR_BG if tone is SemanticTone.FAIL else TABLE_INVALID_BG
-        if tone is SemanticTone.CALCULATED:
-            return TABLE_STATIC_BG
         if editable:
             return TABLE_EDITABLE_BG
         return RESULT_VALUE_BG

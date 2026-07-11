@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-12 | Calculated semantic tone correction | calculator, tkinter, semantic-tone, calculated, result, correction | Distinguish calculated read-only results from compliance pass/fail while preserving the approved shared light-green rendering. | `result_reports/records/2026-07/2026-07-12-calculated-semantic-tone-correction.md` |
 | 2026-07-12 | Calculator table Slice 2 | calculator, tkinter, compact-result, result-panel, brazil, migration | Migrate generic ResultPanel and Brazil result/Rule rendering to shared compact primitives while preserving stable focus and sectioned export. | `result_reports/records/2026-07/2026-07-12-calculator-table-slice2.md` |
 | 2026-07-12 | Compact Result Grid correction | calculator, tkinter, compact-result, focus, clipboard, correction | Restore click-to-focus keyboard copy, unique sibling widget identity, and shared clipboard-owner delegation without changing ISO contracts. | `result_reports/records/2026-07/2026-07-12-compact-result-grid-correction.md` |
 | 2026-07-12 | Calculator table foundation | calculator, tkinter, table, architecture, compact-result, iso-iseer | Establish the three-family shared Tk visual foundation and migrate only ISO/ISEER input/result while preserving behavior and export contracts. | `result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md` |

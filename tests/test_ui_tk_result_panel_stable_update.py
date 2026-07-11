@@ -11,6 +11,7 @@ import tkinter as tk
 
 import pytest
 
+from apps.calculator.ui.layout_constants import TABLE_PASS_BG
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
 
@@ -69,6 +70,8 @@ class TestStableUpdate:
         )
         tk_root.update_idletasks()
         assert labels[0].cget("text") == "99"
+        assert labels[0].semantic_tone == "calculated"
+        assert labels[0].cget("background") == TABLE_PASS_BG
 
     def test_same_shape_updates_status_text(self, panel, tk_root) -> None:
         panel.set_summaries(
@@ -158,6 +161,8 @@ class TestStableUpdate:
         assert header.surface_role == "summary_header_cell"
         assert value.surface_role == "summary_value_cell"
         assert value_label.alignment_role == "numeric_result"
+        assert value_label.semantic_tone == "calculated"
+        assert value_label.cget("background") == TABLE_PASS_BG
 
 
 class TestRebuildOnShapeChange:

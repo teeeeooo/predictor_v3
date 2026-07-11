@@ -12,6 +12,7 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
 )
 from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 
 TWO_POINT_RESULT_COLUMNS: tuple[str, ...] = (
@@ -63,7 +64,14 @@ class IsoIseer2PointResultTable:
     def set_rows(self, rows: tuple[tuple[str, ...], ...], *, status: str) -> None:
         self.rows = rows
         self.row_labels = tuple(row[0] for row in rows)
-        self.table.set_rows(rows)
+        self.table.set_rows(
+            rows,
+            tones={
+                (row, column): SemanticTone.CALCULATED
+                for row in range(len(rows))
+                for column in range(1, len(self.column_labels))
+            },
+        )
         self._show_table()
         self._set_status(status)
         self._set_copy_text(self.as_text())

@@ -237,7 +237,7 @@ class ResultPanel:
                 text=value,
                 width=None,
                 alignment=AlignmentRole.NUMERIC_RESULT,
-                tone=SemanticTone.DEFAULT,
+                tone=SemanticTone.CALCULATED,
             )
             headers.append(header)
             values.append(value_cell)

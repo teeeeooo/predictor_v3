@@ -97,6 +97,13 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rule_grid.value_labels[(0, 0)].alignment_role == "identity_text"
     assert table.rule_grid.value_labels[(0, 1)].alignment_role == "identity_text"
     assert table.rule_grid.value_labels[(0, 2)].alignment_role == "numeric_result"
+    assert table.result_value_labels[(0, 0)].semantic_tone == "default"
+    assert table.result_value_labels[(0, 1)].semantic_tone == "calculated"
+    assert table.rule_value_labels[(0, 0)].semantic_tone == "default"
+    assert table.rule_value_labels[(0, 1)].semantic_tone == "default"
+    assert table.rule_value_labels[(0, 2)].semantic_tone == "default"
+    assert table.rule_value_labels[(0, 4)].semantic_tone == "pass"
+    assert table.rule_value_labels[(1, 4)].semantic_tone == "fail"
     assert table.result_value_labels[(0, 1)].cget("background") == TABLE_PASS_BG
     assert table.result_value_labels[(1, 3)].cget("background") == TABLE_PASS_BG
     assert table.rule_value_labels[(0, 4)].cget("background") == TABLE_PASS_BG

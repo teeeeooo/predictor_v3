@@ -10,7 +10,14 @@ import pytest
 
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.visual_policy import SemanticTone, TkTableVisualPolicy
 from apps.calculator.ui.table_clipboard import encode_table_tsv
+from apps.calculator.ui.layout_constants import (
+    RESULT_VALUE_BG,
+    TABLE_ERROR_BG,
+    TABLE_INVALID_BG,
+    TABLE_PASS_BG,
+)
 from tests.calculator_ui_sample_values import ISO_TWO_POINT_SAMPLE_VALUES
 
 
@@ -125,6 +132,17 @@ class TestUndoBehavior:
 
 
 class TestSharedTableVisualFoundation:
+    def test_calculated_and_pass_keep_distinct_meaning_with_same_background(
+        self,
+    ) -> None:
+        policy = TkTableVisualPolicy()
+        assert SemanticTone.CALCULATED is not SemanticTone.PASS
+        assert policy.background(SemanticTone.CALCULATED) == TABLE_PASS_BG
+        assert policy.background(SemanticTone.PASS) == TABLE_PASS_BG
+        assert policy.background(SemanticTone.FAIL) == TABLE_ERROR_BG
+        assert policy.background(SemanticTone.DEFAULT) == RESULT_VALUE_BG
+        assert policy.background(SemanticTone.INVALID) == TABLE_INVALID_BG
+
     def test_iso_input_uses_flat_shared_grid_surface(self, section) -> None:
         table = section.input_table
         assert table.visual_style == "shared"
@@ -150,6 +168,12 @@ class TestSharedTableVisualFoundation:
         assert grid.header_labels[1].alignment_role == "header_value"
         assert grid.value_labels[(0, 0)].alignment_role == "identity_text"
         assert grid.value_labels[(0, 1)].alignment_role == "numeric_result"
+        assert grid.value_labels[(0, 0)].semantic_tone == "default"
+        for row in range(len(grid.rows)):
+            for column in range(1, len(grid.headers)):
+                label = grid.value_labels[(row, column)]
+                assert label.semantic_tone == "calculated"
+                assert label.cget("background") == TABLE_PASS_BG
 
     def test_result_whole_table_copy_matches_export_contract(self, section) -> None:
         section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
