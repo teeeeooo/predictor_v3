@@ -17,6 +17,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
+| `2026-07-12-calculator-table-architecture-design.md` | Approved design owner for the three Calculator table families and migration Slices. | Implementing or reviewing Calculator table-family migration. |
 | `2026-07-11-calculator-ui-ux-unification-slice-0.md` | Active Calculator surface audit, target table policy, and migration Slice design. | Reviewing or implementing Calculator UI/UX unification. |
 | `TEMPLATE_DESIGN_GATE.md` | Template for a new Design Gate record. | Creating a new design record. |
 | `2026-07-10-agent-harness-report-lifecycle-redesign.md` | Current harness report/memory lifecycle redesign evidence. | Reviewing the conditional-record or Memory Review redesign. |
@@ -37,6 +38,6 @@ Update this index when:
 - a new active design record is created at the root;
 - an active record is absorbed by an owner or moved to legacy;
 - a legacy record is explicitly re-promoted;
-- one of the five active records changes its current role.
+- one of the six active records changes its current role.
 
 Ordinary implementation or wording changes do not update this index.

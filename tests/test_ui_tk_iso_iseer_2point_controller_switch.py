@@ -74,7 +74,7 @@ class TestRecalculate:
             "half_power": "380",
         })
         section.recalculate_now()
-        # Treeview result table should have rows populated
+        # Compact result grid should have rows populated.
         assert section.result_table.rows
         # Copy text should contain "자동 계산 완료" and not "오류"
         copy_text = section.result_table.status_label.cget("text")
@@ -120,3 +120,38 @@ class TestUndoBehavior:
         # Trigger undo
         ctrl._undo_last()
         assert ctrl.table.text_at_position((0, 0)) == "3600"
+
+
+class TestSharedTableVisualFoundation:
+    def test_iso_input_uses_flat_shared_grid_surface(self, section) -> None:
+        table = section.input_table
+        assert table.visual_style == "shared"
+        assert table.table_frame.outer_edge_policy == "flat_low_contrast"
+        assert int(table.table_frame.cget("borderwidth")) == 0
+        assert table.header_cells["full"].surface_role == "header_cell"
+
+    def test_result_uses_compact_grid_and_preserves_logical_data(self, section) -> None:
+        section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
+        section.recalculate_now()
+        grid = section.result_table.table
+        assert grid.surface_role == "two_point_comparison_table"
+        assert grid.frame.winfo_class() == "Frame"
+        assert grid.frame.focus_policy == "visible"
+        assert int(grid.frame.cget("takefocus")) == 1
+        assert grid.logical_data() == (
+            section.result_table.column_labels,
+            section.result_table.rows,
+        )
+        assert grid.header_labels[0].alignment_role == "header_identity"
+        assert grid.header_labels[1].alignment_role == "header_value"
+        assert grid.value_labels[(0, 0)].alignment_role == "identity_text"
+        assert grid.value_labels[(0, 1)].alignment_role == "numeric_result"
+
+    def test_result_whole_table_copy_matches_export_contract(self, section) -> None:
+        section.input_table.set_values(ISO_TWO_POINT_SAMPLE_VALUES)
+        section.recalculate_now()
+        headers, rows = section.result_table.table_export_data()
+        section.result_table.table.copy()
+        assert section.result_table.table.frame.clipboard_get() == "\n".join(
+            ["\t".join(headers), *("\t".join(row) for row in rows)]
+        )

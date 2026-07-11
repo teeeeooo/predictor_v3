@@ -66,6 +66,7 @@ class IsoIseer2PointSection:
                 ("capacity", "half"): "half_capacity",
                 ("power", "half"): "half_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=1,

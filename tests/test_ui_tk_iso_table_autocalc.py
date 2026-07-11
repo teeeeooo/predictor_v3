@@ -71,9 +71,8 @@ def _two_point_text(tab) -> str:
     return tab._two_point_section.result_table._text.get("1.0", tk.END).strip()
 
 
-def _two_point_tree_values(tab) -> list[tuple[str, ...]]:
-    tree = tab._two_point_section.result_table.table
-    return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
+def _two_point_result_values(tab) -> list[tuple[str, ...]]:
+    return list(tab._two_point_section.result_table.table.rows)
 
 
 def _bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
@@ -320,17 +319,13 @@ def test_iso_iseer_2point_mode_renders_explicit_sample_summaries(tk_root):
         "CSEC [kWh]",
     )
     assert table.row_labels == ("ISO 16358-1", "India ISEER")
-    from apps.calculator.ui.layout_constants import (
-        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
-        RESULT_PROFILE_COLUMN_WIDTH_PX,
-    )
-    assert int(table.table.column("EER Full", "width")) == (
-        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX
-    )
-    assert int(table.table.column("Region/Profile", "width")) == (
-        RESULT_PROFILE_COLUMN_WIDTH_PX
-    )
-    rows = _two_point_tree_values(tab)
+    assert table.table.frame.outer_edge_policy == "flat_low_contrast"
+    assert int(table.table.frame.cget("borderwidth")) == 0
+    assert tuple(
+        table.table.header_labels[index].cget("text")
+        for index in range(len(table.column_labels))
+    ) == table.column_labels
+    rows = _two_point_result_values(tab)
     assert len(rows) == 2
     assert {row[0] for row in rows} == {"ISO 16358-1", "India ISEER"}
     assert all(len(row) == len(table.column_labels) for row in rows)
@@ -356,12 +351,12 @@ def test_iso_iseer_2point_input_change_updates_both_summaries(tk_root):
     _select_mode(tab, "ISO / ISEER 2-point")
     section = tab._two_point_section
     before = _two_point_text(tab)
-    before_rows = _two_point_tree_values(tab)
+    before_rows = _two_point_result_values(tab)
 
     assert section.input_table.set_value("full_power", "1000") is True
     section._auto_calc.flush_now()
     after = _two_point_text(tab)
-    after_rows = _two_point_tree_values(tab)
+    after_rows = _two_point_result_values(tab)
 
     assert after != before
     assert after_rows != before_rows
@@ -386,14 +381,14 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
-    assert _two_point_tree_values(tab) == []
+    assert _two_point_result_values(tab) == []
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "two_point_result_status"
     assert section.result_table.status_label.cget("text") == "입력 오류: 숫자 입력을 확인하세요."
 
     assert section.input_table.set_value("full_power", "900") is True
     section._auto_calc.flush_now()
-    assert len(_two_point_tree_values(tab)) == 2
+    assert len(_two_point_result_values(tab)) == 2
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
 
 

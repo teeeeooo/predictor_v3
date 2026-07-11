@@ -72,6 +72,20 @@ entries:
     source: consolidated from result_reports/legacy/summaries/101_summary-calculator-ui-iso-hspf-stabilization.md, 114_summary-ui-ux-ssot-calculator-boundary.md, 165_summary-pyqt-retirement-tkinter-ui-matrix-rules.md, 180_summary-tkinter-calculator-ux-implementation-arc.md, 221_summary-post-main-table-window-refit-arc.md, 231_summary-architecture-uiux-boundary-and-window-refit-arc.md, and 314_summary-tkinter-table-controller-switch-arc-closeout.md
 
   - type: decision
+    topic: Calculator table family architecture
+    content: Active Tk Calculator tables migrate through three explicit families: Editable Matrix keeps the existing models/controllers, Compact Result Grid owns small fixed read-only results, and Scrollable Data Table retains Treeview for large detail data. All families consume a shared Tk visual policy while profile schemas, status meaning, calculations, and export documents remain local. Slice 1 establishes the policy/grid primitives and migrates only ISO/ISEER single input/result; later families remain opt-in until separately approved.
+    keywords:
+      - predictor_v3
+      - Calculator table
+      - Editable Matrix
+      - Compact Result Grid
+      - Scrollable Data Table
+      - Tk visual policy
+      - ISO ISEER
+    assertionStatus: verified
+    source: docs/designs/2026-07-12-calculator-table-architecture-design.md; result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md
+
+  - type: decision
     topic: window viewport and result-detail surface policy
     content: Calculator startup is hidden-first and settles geometry before the first show. Main content and batch tables use scrollable overflow, including horizontal batch scrolling and Shift+wheel, while parent-centered dialogs preserve off-primary monitor coordinates. Qt Train/Predict shells share an available-screen policy that caps and centers initial size without assuming the primary display. Detail surfaces continue to use schema-driven panels, header-included TSV copy, CSV export where appropriate, and natural BatchMatrix sizing rather than fixed geometry.
     keywords:

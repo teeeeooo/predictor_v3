@@ -17,17 +17,15 @@
 
 ## Current Slice
 
-Calculator UI/UX unification Slice 0 is the active workstream. Brazil CSPF core,
-single/batch integration, detail, Copy/CSV, semantic result coloring, and
-interaction-state correction are merged to `main`. The current Slice inventories
-active Calculator surfaces and defines the shared table visual policy and safe
-migration order without changing Calculator source or tests.
+Calculator table architecture Slice 1 is the active workstream under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. It adds the
+shared Tk visual policy and grid primitives, establishes Compact Result Grid,
+and migrates only the representative ISO/ISEER single input and result surfaces.
 
 ## Next Action
 
-Review `docs/designs/2026-07-11-calculator-ui-ux-unification-slice-0.md`, then
-approve the representative first implementation Slice and its Treeview parity
-stop condition.
+Review Slice 1 focused validation and visual behavior, then approve Slice 2
+(generic result surfaces and Brazil adoption) separately.
 
 ## Active Blockers
 
