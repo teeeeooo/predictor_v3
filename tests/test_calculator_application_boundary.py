@@ -152,4 +152,5 @@ def test_arc12_application_packages_use_outbound_calculator_adapters():
         encoding="utf-8"
     )
     assert ".config[" not in saso_source
-    assert "calculate_saso_t3_cspf" in saso_source
+    assert "execute_standard_calculation" in saso_source
+    assert "calculator_gateway" not in saso_source

@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-11 | Standard calculation capability correction | calculator, capability, architecture, audit-correction | Enforce operation/profile compatibility and remove application execution bypass seams. | `result_reports/records/2026-07/2026-07-11-standard-calculation-capability-correction.md` |
 | 2026-07-11 | Standard calculation capability | calculator, capability, architecture, migration | Establish one core-owned production execution boundary while preserving operation-specific raw results and exceptions. | `result_reports/records/2026-07/2026-07-11-standard-calculation-capability.md` |
 | 2026-07-11 | Clean hexagonal MVC UI refactor | architecture, hexagonal, mvc, ui-ux, legacy-retirement | Retire stale compatibility surfaces, wire runtime-neutral execution ports, and stabilize modern desktop window/scroll behavior without changing numeric contracts. | `result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md` |
 | 2026-07-10 | Agent harness report policy bootstrap | agent-harness, report-policy, memory | Replace per-change reports and lifecycle cleanup with conditional compact records and Memory Review Gate. | `result_reports/records/2026-07/2026-07-10-agent-harness-report-policy-bootstrap.md` |

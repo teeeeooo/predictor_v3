@@ -116,6 +116,14 @@ class FakeHeatingCalculator:
         }
 
 
+def _executor(calculator):
+    def execute(capability_id, request):
+        assert capability_id == "en14825.scop"
+        return calculator.calculate_scop(**dict(request.parameters))
+
+    return execute
+
+
 def test_scop_imports():
     """Verify that all SCOP foundation elements are correctly exported and importable."""
     import apps.calculator.ui.en14825 as ui_pkg
@@ -206,7 +214,7 @@ def test_scop_adapter_w_to_kw_conversion():
     }
 
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
 
     adapter.calculate(
         inputs=inputs,
@@ -545,7 +553,7 @@ def test_scop_adapter_resolved_defaults_average():
         "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
     }
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
     adapter.calculate(inputs=inputs, p_design_h_w=3000.0, climate="average")
     assert len(fake_core.calls) == 1
     assert fake_core.calls[0]["tbiv_temp_c"] == -10.0
@@ -563,7 +571,7 @@ def test_scop_adapter_resolved_defaults_warmer():
         "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
     }
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
     adapter.calculate(inputs=inputs, p_design_h_w=3000.0, climate="warmer")
     assert len(fake_core.calls) == 1
     assert fake_core.calls[0]["tbiv_temp_c"] == 2.0
@@ -581,7 +589,7 @@ def test_scop_adapter_resolved_defaults_colder():
         "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
     }
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
     adapter.calculate(inputs=inputs, p_design_h_w=3000.0, climate="colder")
     assert len(fake_core.calls) == 1
     assert fake_core.calls[0]["tbiv_temp_c"] == -15.0
@@ -599,7 +607,7 @@ def test_scop_adapter_resolved_partial_overrides():
         "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
     }
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
 
     # Tbiv only overridden, TOL should use average default (-11.0)
     adapter.calculate(inputs=inputs, p_design_h_w=3000.0, climate="average", tbiv_temp_c=-5.0)
@@ -623,7 +631,7 @@ def test_scop_adapter_invalid_override_prevention():
         "Tbiv": ScopPointInput(declared_capacity=3000.0, declared_cop=3.5),
     }
     fake_core = FakeHeatingCalculator()
-    adapter = ScopAdapter(calculator=fake_core)
+    adapter = ScopAdapter(capability_executor=_executor(fake_core))
 
     # Override average TOL to -5 and Tbiv to -10 -> TOL > Tbiv
     res = adapter.calculate(inputs=inputs, p_design_h_w=3000.0, climate="average", tbiv_temp_c=-10.0, tol_temp_c=-5.0)
@@ -877,7 +885,7 @@ def test_scop_section_uses_en14825_common_auxiliary_inputs_and_appliance_type():
         )
         section._appliance_type_var.set("heating_only")
         fake_core = FakeHeatingCalculator()
-        section.adapter = ScopAdapter(calculator=fake_core)
+        section.adapter = ScopAdapter(capability_executor=_executor(fake_core))
 
         section.recalculate_now()
 

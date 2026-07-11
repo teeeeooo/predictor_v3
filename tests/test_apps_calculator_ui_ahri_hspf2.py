@@ -94,12 +94,22 @@ class FakeHspf2Calculator:
         return self.result
 
 
+def _executor(calculator):
+    def execute(capability_id, request):
+        assert capability_id == "ahri210240.hspf2"
+        return calculator.calculate_hspf2(
+            request.test_points, **dict(request.parameters)
+        )
+
+    return execute
+
+
 def test_hspf2_adapter_omits_inactive_points_and_injects_hidden_defaults() -> None:
     calculator = FakeHspf2Calculator()
     values = complete_values()
     values["a2_power"] = "invalid legacy input is ignored"
     values["capacity_H12"] = "invalid but inactive"
-    adapter = AhriHspf2Adapter(calculator)
+    adapter = AhriHspf2Adapter(_executor(calculator))
 
     summary = adapter.calculate(values, options=AhriHspf2Options())
 
@@ -181,7 +191,7 @@ def test_hspf2_adapter_maps_v3_source_contract(
         "h42_source": h42_source,
     }
 
-    summary = AhriHspf2Adapter(FakeHspf2Calculator(result)).calculate(
+    summary = AhriHspf2Adapter(_executor(FakeHspf2Calculator(result))).calculate(
         complete_values(), options=AhriHspf2Options()
     )
 
@@ -199,7 +209,7 @@ def test_hspf2_adapter_includes_enabled_optional_points_and_flags() -> None:
         minimum_speed_limited=False,
     )
 
-    AhriHspf2Adapter(calculator).calculate(complete_values(), options=options)
+    AhriHspf2Adapter(_executor(calculator)).calculate(complete_values(), options=options)
 
     assert "H42" not in calculator.points
     assert calculator.points["H12"] == (24000.0, 2200.0)
@@ -209,7 +219,7 @@ def test_hspf2_adapter_includes_enabled_optional_points_and_flags() -> None:
 
 
 def test_hspf2_adapter_blanks_incomplete_and_marks_invalid_active_input() -> None:
-    adapter = AhriHspf2Adapter(FakeHspf2Calculator())
+    adapter = AhriHspf2Adapter(_executor(FakeHspf2Calculator()))
     incomplete = complete_values()
     incomplete["power_H42"] = ""
     assert adapter.calculate(incomplete, options=AhriHspf2Options()) is None

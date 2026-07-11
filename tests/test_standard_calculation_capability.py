@@ -8,7 +8,9 @@ from core.calculators.capability import (
     CapabilityRequestTypeError,
     StandardCalculationGateway,
     build_builtin_capability_registry,
+    execute_standard_calculation,
 )
+from core.calculators.capability import Iso16358CspfRequest, Iso16358HspfRequest
 from core.calculators.capability.gateway import CapabilityRegistry
 
 
@@ -85,6 +87,42 @@ def test_builtin_registry_exposes_all_active_operations():
     )
 
 
+@pytest.mark.parametrize(
+    ("capability_id", "calculation_request"),
+    (
+        ("iso16358.cspf", Iso16358CspfRequest("ks_c9306_cspf", {})),
+        ("iso16358.cspf", Iso16358CspfRequest("hong_kong_hspf", {})),
+        ("iso16358.hspf", Iso16358HspfRequest("saso_t3_cspf", {})),
+    ),
+)
+def test_builtin_operation_rejects_incompatible_profile_before_construction(
+    monkeypatch, capability_id, calculation_request
+):
+    constructed = False
+
+    def fail_if_constructed(**_kwargs):
+        nonlocal constructed
+        constructed = True
+        raise AssertionError("calculator must not be constructed")
+
+    monkeypatch.setattr(
+        "core.calculators.capability.gateway.create_calculator_for_profile",
+        fail_if_constructed,
+    )
+
+    with pytest.raises(CapabilityConfigurationError):
+        execute_standard_calculation(capability_id, calculation_request)
+    assert constructed is False
+
+
+@pytest.mark.parametrize("profile_id", ("missing_profile", "asnzs_excel_hspf_compat"))
+def test_unknown_or_disabled_profile_preserves_resolver_value_error(profile_id):
+    with pytest.raises(ValueError, match="Calculator profile selector"):
+        execute_standard_calculation(
+            "iso16358.cspf", Iso16358CspfRequest(profile_id, {})
+        )
+
+
 def test_production_application_does_not_import_standard_engines_or_dispatcher():
     from pathlib import Path
 
@@ -98,11 +136,35 @@ def test_production_application_does_not_import_standard_engines_or_dispatcher()
         "core.calculators.standards",
         "core.calculators.dispatcher",
         "apps.calculator.adapters.core_calculator_dispatcher",
+        "execute_request_with_calculator",
     )
     violations = []
     for production_root in production_roots:
         for path in production_root.rglob("*.py"):
             text = path.read_text(encoding="utf-8")
             if any(token in text for token in forbidden):
+                violations.append(str(path.relative_to(root)))
+    assert violations == []
+
+
+def test_production_callers_do_not_invoke_standard_methods_outside_capability():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    production_roots = (
+        root / "apps" / "calculator" / "application",
+        root / "apps" / "calculator" / "adapters",
+        root / "apps" / "calculator" / "ui",
+        root / "apps" / "predict",
+    )
+    direct_calls = (
+        ".calculate_cspf(", ".calculate_hspf(", ".calculate_seer(",
+        ".calculate_scop(", ".calculate_seer2(", ".calculate_hspf2(",
+    )
+    violations = []
+    for production_root in production_roots:
+        for path in production_root.rglob("*.py"):
+            source = path.read_text(encoding="utf-8")
+            if any(call in source for call in direct_calls):
                 violations.append(str(path.relative_to(root)))
     assert violations == []

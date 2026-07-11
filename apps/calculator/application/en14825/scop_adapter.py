@@ -6,7 +6,7 @@ from typing import Dict, Optional, Protocol, Tuple
 from apps.calculator.adapters.en14825_calculator_factory import (
     create_en14825_calculator,
 )
-from core.calculators.capability import En14825ScopRequest, execute_request_with_calculator, execute_standard_calculation
+from core.calculators.capability import En14825ScopRequest, execute_standard_calculation
 from apps.calculator.application.en14825.scop_models import (
     ScopPointInput,
     ScopPointComputed,
@@ -31,12 +31,9 @@ class ScopAdapter:
         "colder": {"tbiv": -15.0, "tol": -22.0},
     }
 
-    def __init__(self, calculator: Optional[_ScopCalculator] = None) -> None:
-        self.calculator = calculator or create_en14825_calculator()
-        self._execute = (
-            (lambda _id, request: execute_request_with_calculator(request, calculator))
-            if calculator is not None else execute_standard_calculation
-        )
+    def __init__(self, capability_executor=execute_standard_calculation) -> None:
+        self.calculator = create_en14825_calculator()
+        self._execute = capability_executor
 
     def get_climate_data(self, climate: str) -> dict:
         """Fetch climate-specific configuration data from the core calculator config."""

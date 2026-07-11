@@ -9,7 +9,7 @@ from typing import Mapping, Protocol
 from apps.calculator.adapters.ahri_calculator_factory import (
     create_ahri_seer2_calculator,
 )
-from core.calculators.capability import AhriSeer2Request, execute_request_with_calculator, execute_standard_calculation
+from core.calculators.capability import AhriSeer2Request, execute_standard_calculation
 
 AHRI_SEER2_POINT_ORDER = ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low")
 AHRI_SEER2_TEMPERATURES_C = {
@@ -67,12 +67,15 @@ class AhriSeer2Summary:
 class AhriSeer2Adapter:
     """Parse the UI matrix and call the existing SEER2 calculator contract."""
 
-    def __init__(self, calculator: _Seer2Calculator | None = None) -> None:
-        self._calculator = calculator or create_ahri_seer2_calculator()
-        self._execute = (
-            (lambda _id, request: execute_request_with_calculator(request, calculator))
-            if calculator is not None else execute_standard_calculation
-        )
+    def __init__(
+        self,
+        capability_executor=execute_standard_calculation,
+        *,
+        calculator_config: Mapping[str, object] | None = None,
+    ) -> None:
+        self._calculator = None if calculator_config is not None else create_ahri_seer2_calculator()
+        self._calculator_config = calculator_config
+        self._execute = capability_executor
 
     def calculate(
         self,
@@ -142,7 +145,8 @@ class AhriSeer2Adapter:
     def _cooling_season_hours(self) -> float:
         key = "cooling_season_hours"
         try:
-            constants = self._calculator.config["constants"]
+            config = self._calculator_config or self._calculator.config
+            constants = config["constants"]
             if not isinstance(constants, Mapping):
                 raise TypeError("constants must be a mapping")
             value = float(constants[key])

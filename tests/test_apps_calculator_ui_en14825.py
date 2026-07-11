@@ -50,6 +50,14 @@ class FakeCalculator:
         }
 
 
+def _executor(calculator):
+    def execute(capability_id, request):
+        assert capability_id == "en14825.seer"
+        return calculator.calculate_seer(**dict(request.parameters))
+
+    return execute
+
+
 def test_seer_point_input_init():
     """Verify initialization of SeerPointInput model."""
     inp = SeerPointInput(
@@ -124,7 +132,7 @@ def test_seer_adapter_w_to_kw_conversion_with_stub():
         "D": SeerPointInput(declared_capacity=1200.0, declared_eer=6.2, tested_capacity=1200.0, tested_power=194.0),
     }
     fake_core = FakeCalculator()
-    adapter = SeerAdapter(calculator=fake_core)
+    adapter = SeerAdapter(capability_executor=_executor(fake_core))
 
     adapter.calculate(
         inputs=inputs,
@@ -703,7 +711,7 @@ def test_seer_section_uses_en14825_common_auxiliary_inputs():
         section = En14825SeerSection(root, common_input_values=lambda: common_values)
         _populate_seer_sample(section)
         fake_core = FakeCalculator()
-        section.adapter = SeerAdapter(calculator=fake_core)
+        section.adapter = SeerAdapter(capability_executor=_executor(fake_core))
 
         section.recalculate_now()
 

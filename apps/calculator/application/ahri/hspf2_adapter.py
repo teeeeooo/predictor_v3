@@ -6,10 +6,7 @@ from dataclasses import dataclass
 import math
 from typing import Mapping, Protocol
 
-from apps.calculator.adapters.ahri_calculator_factory import (
-    create_ahri_hspf2_calculator,
-)
-from core.calculators.capability import AhriHspf2Request, execute_request_with_calculator, execute_standard_calculation
+from core.calculators.capability import AhriHspf2Request, execute_standard_calculation
 
 AHRI_HSPF2_POINT_ORDER = (
     "H01",
@@ -55,14 +52,6 @@ def parse_numeric_cell(value: str) -> float:
     return parsed
 
 
-class _Hspf2Calculator(Protocol):
-    def calculate_hspf2(
-        self,
-        test_points: Mapping[str, tuple[float, float]],
-        **kwargs: object,
-    ) -> Mapping[str, object]: ...
-
-
 class AhriHspf2InputError(ValueError):
     """Non-empty HSPF2 UI fields that cannot be calculated."""
 
@@ -97,11 +86,8 @@ class AhriHspf2Adapter:
 
     _NUMERIC_KEYS = ("cd", "defrost_credit", "cut_out_c", "cut_in_c")
 
-    def __init__(self, calculator: _Hspf2Calculator | None = None) -> None:
-        self._execute = (
-            (lambda _id, request: execute_request_with_calculator(request, calculator))
-            if calculator is not None else execute_standard_calculation
-        )
+    def __init__(self, capability_executor=execute_standard_calculation) -> None:
+        self._execute = capability_executor
 
     def calculate(
         self,

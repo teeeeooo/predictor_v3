@@ -8,7 +8,6 @@ from core.calculators.capability.gateway import (
     StandardCalculationGateway,
     build_builtin_capability_registry,
     execute_standard_calculation,
-    execute_request_with_calculator,
 )
 from core.calculators.capability.requests import (
     AhriHspf2Request,
@@ -28,5 +27,4 @@ __all__ = [
     "KsC9306CspfRequest", "KsC9306HspfRequest", "StandardCalculationCapabilityError",
     "StandardCalculationGateway", "build_builtin_capability_registry",
     "execute_standard_calculation",
-    "execute_request_with_calculator",
 ]

@@ -17,16 +17,16 @@
 
 ## Current Slice
 
-Clean/Hexagonal/MVC refactor and pre-merge correction are complete and merged
-to `main` from `refactor/clean-hex-mvc-ui-20260711`.
+Standard Calculation Capability audit correction is complete on
+`codex/standard-calculation-capability`.
 
 ## Next Action
 
-Standard Calculation Capability Extension design.
+Brazil standard/profile/golden audit.
 
 ## After Merge
 
-Standard Calculation Capability Extension design.
+Brazil standard/profile/golden audit.
 
 ## Active Blockers
 

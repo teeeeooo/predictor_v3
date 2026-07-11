@@ -115,15 +115,16 @@ def test_saso_t3_section_no_longer_imports_core_dispatcher_or_mutates_config():
     assert ".config[" not in source
 
 
-def test_saso_t3_usecase_uses_outbound_gateway_for_selection_override():
+def test_saso_t3_usecase_uses_capability_executor_for_selection_override():
     calls = []
 
-    def fake_gateway(measured, *, profile_id, test_selection):
+    def fake_executor(capability_id, request):
         calls.append(
             {
-                "measured": measured,
-                "profile_id": profile_id,
-                "test_selection": test_selection,
+                "capability_id": capability_id,
+                "measured": request.measured_points,
+                "profile_id": request.profile_id,
+                "test_selection": request.test_selection,
             }
         )
         return {
@@ -133,7 +134,7 @@ def test_saso_t3_usecase_uses_outbound_gateway_for_selection_override():
             "bin_details": [],
         }
 
-    result = SasoT3UseCase(calculator_gateway=fake_gateway).calculate(
+    result = SasoT3UseCase(capability_executor=fake_executor).calculate(
         SASO_T3_SAMPLE_VALUES
     )
 
@@ -143,6 +144,7 @@ def test_saso_t3_usecase_uses_outbound_gateway_for_selection_override():
         "with_optional_test",
     ]
     assert {call["profile_id"] for call in calls} == {"saso_t3_cspf"}
+    assert {call["capability_id"] for call in calls} == {"iso16358.cspf"}
 
 
 def test_saso_t3_usecase_does_not_mutate_core_config_shape():

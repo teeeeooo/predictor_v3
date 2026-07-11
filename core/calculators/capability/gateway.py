@@ -10,6 +10,7 @@ from core.calculators.capability.requests import (
     Iso16358CspfRequest, Iso16358HspfRequest, KsC9306CspfRequest, KsC9306HspfRequest,
 )
 from core.calculators.dispatcher import create_calculator_for_profile
+from core.calculators.profiles import CalculatorProfile, resolve_calculator_profile
 
 RequestT = TypeVar("RequestT")
 
@@ -91,30 +92,44 @@ class _MethodHandler:
     capability_id: str
     request_type: type
     method_name: str
+    calculator_id: str
+    metrics: tuple[str, ...]
+    mode: str
+    standard: str
 
     def execute(self, request):
+        profile = resolve_calculator_profile(profile_id=request.profile_id)
+        self._validate_profile(profile)
         calculator = create_calculator_for_profile(profile_id=request.profile_id)
-        return execute_request_with_calculator(request, calculator, self.method_name)
+        return _invoke_calculator(request, calculator, self.method_name)
+
+    def _validate_profile(self, profile: CalculatorProfile) -> None:
+        compatible = (
+            profile.calculator_id == self.calculator_id
+            and profile.metric.casefold() in {metric.casefold() for metric in self.metrics}
+            and profile.mode.casefold() == self.mode.casefold()
+            and profile.standard.casefold() == self.standard.casefold()
+        )
+        if not compatible:
+            raise CapabilityConfigurationError(
+                f"Profile {profile.profile_id!r} is not compatible with "
+                f"capability {self.capability_id!r}"
+            )
 
 
-def execute_request_with_calculator(request, calculator, method_name: str | None = None):
-    """Test-composition helper; production handlers construct their own calculator."""
+def _invoke_calculator(request, calculator, method_name: str):
     if isinstance(request, Iso16358CspfRequest) and request.test_selection is not None:
         calculator.config["cspf_test_profile"]["test_selection"] = request.test_selection
     if isinstance(request, (Iso16358CspfRequest, KsC9306CspfRequest)):
         kwargs = {}
         if request.declared_capacity is not None:
             kwargs["declared_capacity"] = request.declared_capacity
-        return getattr(calculator, method_name or "calculate_cspf")(request.measured_points, **kwargs)
+        return getattr(calculator, method_name)(request.measured_points, **kwargs)
     if isinstance(request, (Iso16358HspfRequest, KsC9306HspfRequest)):
-        return getattr(calculator, method_name or "calculate_hspf")(request.measured_points)
+        return getattr(calculator, method_name)(request.measured_points)
     if isinstance(request, (En14825SeerRequest, En14825ScopRequest)):
-        resolved_name = method_name or (
-            "calculate_seer_with_details" if isinstance(request, En14825SeerRequest)
-            else "calculate_scop"
-        )
-        method = getattr(calculator, resolved_name, None)
-        if method is None and resolved_name == "calculate_seer_with_details":
+        method = getattr(calculator, method_name, None)
+        if method is None and method_name == "calculate_seer_with_details":
             method = calculator.calculate_seer
         return method(**dict(request.parameters))
     if isinstance(request, AhriSeer2Request):
@@ -134,17 +149,17 @@ def execute_request_with_calculator(request, calculator, method_name: str | None
 def build_builtin_capability_registry() -> CapabilityRegistry:
     registry = CapabilityRegistry()
     definitions = (
-        ("iso16358.cspf", Iso16358CspfRequest, "calculate_cspf"),
-        ("iso16358.hspf", Iso16358HspfRequest, "calculate_hspf"),
-        ("ks_c9306.cspf", KsC9306CspfRequest, "calculate_cspf"),
-        ("ks_c9306.hspf", KsC9306HspfRequest, "calculate_hspf"),
-        ("en14825.seer", En14825SeerRequest, "calculate_seer_with_details"),
-        ("en14825.scop", En14825ScopRequest, "calculate_scop"),
-        ("ahri210240.seer2", AhriSeer2Request, "calculate_seer2"),
-        ("ahri210240.hspf2", AhriHspf2Request, "calculate_hspf2"),
+        ("iso16358.cspf", Iso16358CspfRequest, "calculate_cspf", "iso16358", ("CSPF", "ISEER"), "cooling", "ISO_16358"),
+        ("iso16358.hspf", Iso16358HspfRequest, "calculate_hspf", "iso16358", ("HSPF",), "heating", "ISO_16358"),
+        ("ks_c9306.cspf", KsC9306CspfRequest, "calculate_cspf", "ks_c9306", ("CSPF",), "cooling", "KS_C_9306"),
+        ("ks_c9306.hspf", KsC9306HspfRequest, "calculate_hspf", "ks_c9306", ("HSPF",), "heating", "KS_C_9306"),
+        ("en14825.seer", En14825SeerRequest, "calculate_seer_with_details", "en14825", ("SEER",), "cooling", "EN_14825"),
+        ("en14825.scop", En14825ScopRequest, "calculate_scop", "en14825", ("SCOP",), "heating", "EN_14825"),
+        ("ahri210240.seer2", AhriSeer2Request, "calculate_seer2", "ahri_seer2", ("SEER2",), "cooling", "AHRI_210_240"),
+        ("ahri210240.hspf2", AhriHspf2Request, "calculate_hspf2", "ahri_hspf2", ("HSPF2",), "heating", "AHRI_210_240"),
     )
-    for capability_id, request_type, method_name in definitions:
-        registry.register(_MethodHandler(capability_id, request_type, method_name))
+    for definition in definitions:
+        registry.register(_MethodHandler(*definition))
     if registry.capability_ids != tuple(item[0] for item in definitions):
         raise CapabilityConfigurationError("Built-in capability registry is incomplete")
     return registry

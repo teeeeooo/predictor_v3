@@ -21,7 +21,7 @@ def test_en14825_application_package_does_not_import_ui_package():
         assert "PySide6" not in source
         assert "core.calculators.standards.en14825" not in source
         if path.name.endswith("_adapter.py"):
-            assert "apps.calculator.adapters.en14825_calculator_factory" in source
+            assert "execute_request_with_calculator" not in source
 
 
 def test_en14825_ui_adapter_paths_are_shims():

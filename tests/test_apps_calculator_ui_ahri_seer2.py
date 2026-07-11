@@ -80,9 +80,22 @@ class FakeSeer2Calculator:
         }
 
 
+def _executor(calculator):
+    def execute(capability_id, request):
+        assert capability_id == "ahri210240.seer2"
+        return calculator.calculate_seer2(
+            request.test_points,
+            system_type=request.system_type,
+            p_w_off=request.p_w_off,
+            cd_low=request.cd_low,
+        )
+
+    return execute
+
+
 def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
     calculator = FakeSeer2Calculator()
-    summary = AhriSeer2Adapter(calculator).calculate(
+    summary = AhriSeer2Adapter(_executor(calculator), calculator_config=calculator.config).calculate(
         SAMPLE_VALUES,
         system_type="AC",
     )
@@ -98,7 +111,7 @@ def test_seer2_adapter_maps_exact_point_order_and_type() -> None:
 
 
 def test_seer2_adapter_keeps_incomplete_blank_and_rejects_invalid() -> None:
-    adapter = AhriSeer2Adapter(FakeSeer2Calculator())
+    adapter = AhriSeer2Adapter(_executor(FakeSeer2Calculator()))
     incomplete = dict(SAMPLE_VALUES)
     incomplete["power_F_Low"] = ""
     assert adapter.calculate(incomplete, system_type="HP") is None
@@ -132,7 +145,7 @@ def test_seer2_adapter_rejects_missing_or_invalid_required_core_result(
         def calculate_seer2(self, *args, **kwargs):
             return result
 
-    adapter = AhriSeer2Adapter(ContractMismatchCalculator())
+    adapter = AhriSeer2Adapter(_executor(ContractMismatchCalculator()))
 
     with pytest.raises(
         ValueError,
@@ -153,7 +166,7 @@ def test_seer2_adapter_rejects_invalid_bin_details(bin_details) -> None:
         ValueError,
         match="Invalid AHRI SEER2 core result: bin_details",
     ):
-        AhriSeer2Adapter(ContractMismatchCalculator()).calculate(
+        AhriSeer2Adapter(_executor(ContractMismatchCalculator())).calculate(
             SAMPLE_VALUES,
             system_type="HP",
         )
@@ -173,7 +186,7 @@ def test_seer2_adapter_rejects_missing_or_invalid_cooling_season_hours(
         ValueError,
         match="Invalid AHRI SEER2 calculator config: cooling_season_hours",
     ):
-        AhriSeer2Adapter(calculator).calculate(SAMPLE_VALUES, system_type="HP")
+        AhriSeer2Adapter(_executor(calculator), calculator_config=calculator.config).calculate(SAMPLE_VALUES, system_type="HP")
 
 
 @pytest.fixture
@@ -197,7 +210,7 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     calculator = FakeSeer2Calculator()
     section = AhriSeer2Section(
         tk_root,
-        adapter=AhriSeer2Adapter(calculator),
+        adapter=AhriSeer2Adapter(_executor(calculator), calculator_config=calculator.config),
     )
     section.pack()
     tk_root.update_idletasks()

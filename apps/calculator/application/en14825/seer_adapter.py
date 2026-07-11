@@ -6,7 +6,7 @@ from typing import Dict, Optional, Protocol, Tuple
 from apps.calculator.adapters.en14825_calculator_factory import (
     create_en14825_calculator,
 )
-from core.calculators.capability import En14825SeerRequest, execute_request_with_calculator, execute_standard_calculation
+from core.calculators.capability import En14825SeerRequest, execute_standard_calculation
 from apps.calculator.application.en14825.seer_models import (
     SeerPointInput,
     SeerPointComputed,
@@ -23,12 +23,9 @@ class _SeerCalculator(Protocol):
 class SeerAdapter:
     """Adapter to compute intermediate values and coordinate with the core calculator."""
 
-    def __init__(self, calculator: Optional[_SeerCalculator] = None) -> None:
-        self.calculator = calculator or create_en14825_calculator()
-        self._execute = (
-            (lambda _id, request: execute_request_with_calculator(request, calculator))
-            if calculator is not None else execute_standard_calculation
-        )
+    def __init__(self, capability_executor=execute_standard_calculation) -> None:
+        self.calculator = create_en14825_calculator()
+        self._execute = capability_executor
 
     def _calculate_core(self, **kwargs) -> Mapping[str, object]:
         return self._execute(

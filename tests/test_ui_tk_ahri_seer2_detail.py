@@ -9,6 +9,7 @@ from apps.calculator.ui.sections.bin_detail_schema import AHRI_SEER2_BIN_DETAIL_
 from tests.test_apps_calculator_ui_ahri_seer2 import (
     FakeSeer2Calculator,
     SAMPLE_VALUES,
+    _executor,
 )
 
 
@@ -42,7 +43,7 @@ def _build_section(tk_root, *, callback=None):
 
     section = AhriSeer2Section(
         tk_root,
-        adapter=AhriSeer2Adapter(FakeSeer2Calculator()),
+        adapter=AhriSeer2Adapter(_executor(FakeSeer2Calculator())),
         on_trace_visibility_changed=callback,
     )
     section.input_table.set_values_batch(SAMPLE_VALUES)

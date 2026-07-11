@@ -46,17 +46,8 @@ class SasoT3UseCase:
     def __init__(
         self,
         capability_executor: CapabilityExecutor = execute_standard_calculation,
-        *,
-        calculator_gateway: Callable[..., Mapping[str, object]] | None = None,
     ):
-        if calculator_gateway is None:
-            self._capability_executor = capability_executor
-        else:
-            self._capability_executor = lambda _id, request: calculator_gateway(
-                request.measured_points,
-                profile_id=request.profile_id,
-                test_selection=request.test_selection,
-            )
+        self._capability_executor = capability_executor
 
     def calculate(self, raw_values: Mapping[str, str]) -> SasoT3UseCaseResult:
         """Calculate SASO T3 rows from raw input-table text values."""
