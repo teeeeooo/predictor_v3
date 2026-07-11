@@ -17,16 +17,16 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 4 is complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Row-per-case
-and logical-matrix batch tables now consume the shared flat visual primitives
-while preserving their distinct models, controllers, snapshots, scrolling,
-status, and export behavior.
+Calculator table architecture Slice 5 is complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Large
+detail/trace data remains on Treeview through one shared visual style adapter,
+while schema, scrolling, source selection, copy/CSV, visibility, refit, and
+graphs remain with their existing owners.
 
 ## Next Action
 
-Implement Slice 5 Treeview style-adapter migration for detail and trace tables
-while preserving schemas, selectors, copy/CSV, visibility, and refit behavior.
+Implement Slice 6 EN14825 complex surfaces and final active-table parity
+inventory, then remove only migrated-surface visual duplication.
 
 ## Active Blockers
 

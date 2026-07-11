@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-12 | Calculator table Slice 5 | calculator, tkinter, treeview, detail, trace, migration | Retain Treeview for large detail data through one shared visual style adapter while preserving schema, scrolling, source selection, copy/CSV, visibility, and refit behavior. | `result_reports/records/2026-07/2026-07-12-calculator-table-slice5.md` |
 | 2026-07-12 | Calculator table Slice 4 | calculator, tkinter, batch, editable-matrix, viewport, migration | Move both batch table shapes and their viewport content to shared flat-grid primitives while preserving controller, snapshot, scroll, status, and export behavior. | `result_reports/records/2026-07/2026-07-12-calculator-table-slice4.md` |
 | 2026-07-12 | Calculator table Slice 3 | calculator, tkinter, compact-result, single-surface, migration | Migrate simple single-profile matrices, SASO result comparison, and Korea midpoint guide to the shared table families without changing profile contracts. | `result_reports/records/2026-07/2026-07-12-calculator-table-slice3.md` |
 | 2026-07-12 | Semantic visual binding correction | calculator, tkinter, semantic-tone, calculated, pass, result-panel | Keep calculated/pass bindings independently configurable and apply calculated presentation to the full ResultPanel value cell. | `result_reports/records/2026-07/2026-07-12-semantic-visual-binding-correction.md` |

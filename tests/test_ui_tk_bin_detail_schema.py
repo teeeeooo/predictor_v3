@@ -100,6 +100,31 @@ class TestBinTraceTableDefaultSchema:
         assert table.scrollbar.grid_info()["row"] == 0
         assert table.horizontal_scrollbar.grid_info()["row"] == 1
 
+    def test_detail_treeview_uses_shared_visual_style_adapter(self, tk_root) -> None:
+        from tkinter import ttk
+
+        from apps.calculator.ui.layout_constants import (
+            RESULT_VALUE_BG,
+            TABLE_HEADER_BG,
+            TABLE_SELECTED_BG,
+        )
+        from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
+        from apps.calculator.ui.table.treeview_style import DETAIL_TREEVIEW_STYLE
+
+        table = BinTraceTable(tk_root)
+        style = ttk.Style(tk_root)
+
+        assert table.table.cget("style") == DETAIL_TREEVIEW_STYLE
+        assert table.table.outer_edge_policy == "flat_low_contrast"
+        assert table.table_style.style_name == DETAIL_TREEVIEW_STYLE
+        assert style.lookup(DETAIL_TREEVIEW_STYLE, "background") == RESULT_VALUE_BG
+        assert style.lookup(table.table_style.heading_style_name, "background") == (
+            TABLE_HEADER_BG
+        )
+        assert ("selected", TABLE_SELECTED_BG) in style.map(
+            DETAIL_TREEVIEW_STYLE, "background"
+        )
+
     def test_default_table_export_data_with_rows(self, tk_root) -> None:
         from apps.calculator.ui.sections.bin_trace_table import BinTraceTable
 

@@ -19,6 +19,7 @@ from apps.calculator.ui.sections.bin_detail_schema import (
     BinDetailSchema,
     COOLING_BIN_DETAIL_SCHEMA,
 )
+from apps.calculator.ui.table.treeview_style import apply_treeview_style
 
 _MAX_VISIBLE_ROWS = 10
 
@@ -55,6 +56,7 @@ class BinTraceTable:
             height=1,
             selectmode="browse",
         )
+        self.table_style = apply_treeview_style(self.table)
         self.table.surface_role = "bin_trace_table"
         self.scrollbar = ttk.Scrollbar(
             self._table_frame, orient=tk.VERTICAL, command=self.table.yview
