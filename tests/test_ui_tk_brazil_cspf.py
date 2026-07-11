@@ -10,10 +10,18 @@ import pytest
 
 from apps.calculator.ui.brazil_cspf import BrazilCspfSection
 from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
-from apps.calculator.ui.layout_constants import TABLE_ERROR_BG, TABLE_PASS_BG
+from apps.calculator.ui.layout_constants import (
+    TABLE_ACTIVE_BG,
+    TABLE_ERROR_BG,
+    TABLE_PASS_BG,
+    TABLE_SELECTED_BG,
+    TABLE_STATIC_BG,
+)
 from apps.calculator.ui.batch_dialogs.profiles.brazil_cspf import (
     BRAZIL_CSPF_MATRIX_SPEC,
+    CALCULATED_29_BIN_EER,
     FINAL,
+    MEASURED_29_HALF_EER,
     RULE_1,
     RULE_2,
     THREE_POINT_CSPF,
@@ -104,7 +112,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     )
     assert table.as_text() == expected_tsv
     assert table.export_document().as_tsv() == expected_tsv
-    assert table.copy_table() is True
+    section.copy_button.invoke()
     assert tk_root.clipboard_get() == expected_tsv
 
     csv_path = tmp_path / "brazil_result.csv"
@@ -139,7 +147,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
         (("입력 오류: 숫자 입력을 확인하세요.",),),
     )
     assert table.as_text() == "입력 오류: 숫자 입력을 확인하세요."
-    assert table.copy_table() is True
+    section.copy_button.invoke()
     assert tk_root.clipboard_get() == "Status\n입력 오류: 숫자 입력을 확인하세요."
     section._export_csv()
     with csv_path.open(encoding="utf-8-sig", newline="") as handle:
@@ -281,11 +289,12 @@ def test_brazil_batch_dialog_opens_and_preserves_input_snapshot(tk_root, monkeyp
     assert table.cell_widget((0, key_to_column[RULE_1])).cget("background") == TABLE_PASS_BG
     assert table.cell_widget((0, key_to_column[RULE_2])).cget("background") == TABLE_ERROR_BG
     assert table.cell_widget((0, key_to_column[FINAL])).cget("background") == TABLE_PASS_BG
-    for cell in table.table_frame.grid_slaves(row=0):
-        labels = cell.winfo_children()
-        if labels:
-            label = labels[0]
-            assert label.winfo_reqwidth() <= cell.winfo_reqwidth()
+    for column in range(
+        BRAZIL_CSPF_MATRIX_SPEC.result_start_column,
+        BRAZIL_CSPF_MATRIX_SPEC.column_count,
+    ):
+        text_width, horizontal_padding, content_width = table.header_text_metrics(column)
+        assert text_width + horizontal_padding <= content_width
 
     dialog.close()
     assert section._batch_dialog is None
@@ -309,6 +318,74 @@ def test_brazil_mode_keeps_result_surface_stale_free_when_input_is_incomplete(tk
     assert section.result_table.rules == ()
     assert section.detail_panel.table.table_rows() == ()
     assert section.detail_panel.graph._rows == ()
+
+
+def test_brazil_batch_recalculation_preserves_overlays_and_clears_stale_colors(
+    tk_root,
+):
+    section = BrazilCspfSection(tk_root)
+    section.batch_button.invoke()
+    batch = section._batch_dialog.section
+    table = batch.table
+    interaction = table.interaction_controller
+    table.cases[0].update(_raw_values())
+    interaction.select((0, 2))
+    interaction.select((0, 3), extend=True)
+
+    batch._recalculate_now()
+    result_columns = {
+        key: BRAZIL_CSPF_MATRIX_SPEC.result_start_column + offset
+        for offset, (key, _label, _width) in enumerate(
+            BRAZIL_CSPF_MATRIX_SPEC.result_metrics
+        )
+    }
+    assert interaction.active == (0, 3)
+    assert interaction.selected_positions() == ((0, 2), (0, 3))
+    assert table.cell_widget((0, 2)).cget("background") == TABLE_SELECTED_BG
+    assert table.cell_widget((0, 3)).cget("background") == TABLE_ACTIVE_BG
+    assert table.cell_widget((0, result_columns[THREE_POINT_CSPF])).cget(
+        "background"
+    ) == TABLE_PASS_BG
+
+    transitions = (("OK", "NG", TABLE_ERROR_BG), ("NG", "OK", TABLE_PASS_BG))
+    for before, after, expected in transitions:
+        table.set_result(0, {RULE_1: before})
+        table.set_result(0, {RULE_1: after})
+        assert table.text_at_position((0, result_columns[RULE_1])) == after
+        assert (
+            table.cell_widget((0, result_columns[RULE_1])).cget("background")
+            == expected
+        )
+
+    table.cases[0]["half_29_power"] = ""
+    batch._recalculate_now()
+    for key in (THREE_POINT_CSPF, RULE_1, RULE_2, FINAL):
+        position = (0, result_columns[key])
+        assert table.text_at_position(position) == ""
+        assert table.cell_widget(position).cget("background") == TABLE_STATIC_BG
+
+    table.cases[0].update({**_raw_values(), "half_29_power": "bad"})
+    batch._recalculate_now()
+    for key in (MEASURED_29_HALF_EER, CALCULATED_29_BIN_EER, RULE_2):
+        position = (0, result_columns[key])
+        assert table.text_at_position(position) == ""
+        assert table.cell_widget(position).cget("background") == TABLE_STATIC_BG
+
+    table.cases[0].update(_raw_values())
+    batch._recalculate_now()
+    assert table.cell_widget((0, result_columns[THREE_POINT_CSPF])).cget(
+        "background"
+    ) == TABLE_PASS_BG
+    table.clear_results()
+    assert table.text_at_position((0, result_columns[FINAL])) == ""
+    assert (
+        table.cell_widget((0, result_columns[FINAL])).cget("background")
+        == TABLE_STATIC_BG
+    )
+    assert table.cell_widget((0, 2)).cget("background") == TABLE_SELECTED_BG
+    assert table.cell_widget((0, 3)).cget("background") == TABLE_ACTIVE_BG
+
+    section._batch_dialog.close()
 
 
 def test_brazil_final_ng_uses_error_background_without_losing_text(tk_root):

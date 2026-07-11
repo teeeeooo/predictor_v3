@@ -108,6 +108,13 @@ class BrazilCspfSection:
         )
         self.detail_toggle.surface_role = "brazil_cspf_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.copy_button = ttk.Button(
+            self.action_row,
+            text="Copy",
+            command=self.result_table.copy_table,
+        )
+        self.copy_button.surface_role = "brazil_cspf_copy"
+        self.copy_button.pack(side=tk.LEFT, padx=(6, 0))
         self.export_button = ttk.Button(
             self.action_row,
             text="Export CSV",

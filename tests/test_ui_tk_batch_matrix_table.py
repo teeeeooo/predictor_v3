@@ -16,6 +16,9 @@ from apps.calculator.ui.batch.matrix_table import BatchMatrixTable
 from apps.calculator.ui.layout_constants import (
     BATCH_MATRIX_CASE_COLUMN_WIDTH_CHARS,
     BATCH_MATRIX_ROW_TYPE_COLUMN_WIDTH_CHARS,
+    TABLE_ACTIVE_BG,
+    TABLE_PASS_BG,
+    TABLE_STATIC_BG,
 )
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table.roles import CellRole
@@ -120,6 +123,31 @@ def test_result_first_row_displays_values_second_row_blank(table):
     assert table.text_at_position((1, 5)) == ""
     assert table.text_at_position((0, 6)) == "729.0"
     assert table.text_at_position((1, 6)) == ""
+
+
+def test_result_repaint_preserves_active_cell_and_clears_semantic_background(root):
+    t = BatchMatrixTable(root, HONG_KONG_CSPF_MATRIX_SPEC)
+    default_background = t.default_cell_background
+    t.default_cell_background = lambda position: (
+        TABLE_PASS_BG
+        if t.cell_role(position) is CellRole.RESULT and t.text_at_position(position)
+        else default_background(position)
+    )
+    controller = TkTableController(t)
+    t.interaction_controller = controller
+    controller.select((0, 2))
+
+    t.set_result(0, {CSPF: "4.939"})
+    assert controller.active == (0, 2)
+    assert controller.selected_positions() == ((0, 2),)
+    assert t.cell_widget((0, 2)).cget("background") == TABLE_ACTIVE_BG
+    assert t.cell_widget((0, 5)).cget("background") == TABLE_PASS_BG
+
+    t.clear_results()
+    assert t.text_at_position((0, 5)) == ""
+    assert t.cell_widget((0, 5)).cget("background") == TABLE_STATIC_BG
+    assert t.cell_widget((0, 2)).cget("background") == TABLE_ACTIVE_BG
+    t.destroy()
 
 
 def test_not_applicable_cell_is_non_editable(table):

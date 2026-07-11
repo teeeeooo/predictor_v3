@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable, Mapping
-from tkinter import ttk
+from tkinter import font as tkfont, ttk
 
 from apps.calculator.ui.batch.matrix_models import BatchMatrixSpec, MatrixCellKind
 from apps.calculator.ui.batch.viewport import BatchTableViewport
@@ -51,6 +51,7 @@ class BatchMatrixTable(ttk.Frame):
         self._variables: list[dict[str, tk.StringVar]] = []
         self._cell_frames: dict[tuple[int, int], tk.Frame] = {}
         self._cell_widgets: dict[tuple[int, int], tk.Widget] = {}
+        self._header_labels: dict[int, tk.Label] = {}
         self._batch_depth = 0
         self._batch_changed = False
         self.interaction_controller = None
@@ -237,6 +238,8 @@ class BatchMatrixTable(ttk.Frame):
                 background = self.default_cell_background(position)
                 self.cell_frame(position).configure(background=background)
                 self.cell_widget(position).configure(background=background)
+        if self.interaction_controller is not None:
+            self.interaction_controller.repaint_presentation()
 
     def clear_results(self) -> None:
         for key in self.spec.result_keys:
@@ -248,6 +251,17 @@ class BatchMatrixTable(ttk.Frame):
                 var = vars_dict.get(key)
                 if var is not None:
                     var.set("")
+        for logical_index in range(len(self.cases)):
+            self.repaint_case_backgrounds(logical_index)
+
+    def header_text_metrics(self, column_index: int) -> tuple[int, int, int]:
+        """Return measured text, horizontal padding, and token content widths."""
+        label = self._header_labels[column_index]
+        header_font = tkfont.Font(root=self, font=label.cget("font"))
+        text_width = header_font.measure(str(label.cget("text")))
+        horizontal_padding = 2 * int(label.cget("padx"))
+        content_width = header_font.measure("0" * self._header_width(column_index))
+        return text_width, horizontal_padding, content_width
 
     # ---- Viewport helpers ----
 
@@ -285,6 +299,7 @@ class BatchMatrixTable(ttk.Frame):
         self._variables.clear()
         self._cell_frames.clear()
         self._cell_widgets.clear()
+        self._header_labels.clear()
         self._build_headers()
         for logical_index, case in enumerate(self.cases):
             self._build_case_rows(logical_index, case)
@@ -305,13 +320,20 @@ class BatchMatrixTable(ttk.Frame):
             cell.surface_role = "header_cell"
             label_text = self._header_label(column_index)
             width_chars = self._header_width(column_index)
-            tk.Label(
+            label = tk.Label(
                 cell,
                 text=label_text,
                 width=width_chars,
                 background=TABLE_HEADER_BG,
                 font=TABLE_HEADER_FONT,
-            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
+            )
+            label.pack(
+                fill=tk.BOTH,
+                expand=True,
+                padx=TABLE_CELL_PADX,
+                pady=TABLE_HEADER_PADY,
+            )
+            self._header_labels[column_index] = label
 
     def _header_label(self, column_index: int) -> str:
         if column_index == 0:

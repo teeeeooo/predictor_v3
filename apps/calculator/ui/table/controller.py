@@ -77,6 +77,10 @@ class TkTableController:
         self._clamp_active()
         self._paint_selection()
 
+    def repaint_presentation(self) -> None:
+        """Reapply controller-owned selection and active-cell overlays."""
+        self._paint_selection()
+
     def select(self, position: CellAddress, *, extend: bool = False) -> None:
         if not self._position_exists(position):
             return

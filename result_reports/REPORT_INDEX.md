@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-11 | Brazil CSPF final interaction correction | calculator, brazil, cspf, tkinter, interaction, batch, audit-correction | Preserve selected/active overlays after semantic repaint, expose single Copy, and prove unchanged headings fit with Tk font pixels. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-interaction-correction.md` |
 | 2026-07-11 | Brazil CSPF compliance | calculator, brazil, cspf, capability, profile, golden, tkinter, batch | Add the Brazil composite capability, exact compliance rules, production profile/config, and single/batch surfaces while preserving ISO contracts. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-compliance.md` |
 | 2026-07-11 | Brazil CSPF batch package split | calculator, brazil, cspf, batch, package, architecture, tkinter | Split Brazil batch schema, row adapter, Tk section, and dialog composition while preserving public imports, shared owners, and behavior. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-batch-package-split.md` |
 | 2026-07-11 | Brazil CSPF UI polish | calculator, brazil, cspf, detail, rule-table, batch, tkinter | Add shared single-result detail inspection, structured Rule presentation, and batch-only 2-point column reduction without changing core or golden contracts. | `result_reports/records/2026-07/2026-07-11-brazil-cspf-ui-polish.md` |

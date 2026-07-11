@@ -17,12 +17,12 @@
 
 ## Current Slice
 
-Brazil CSPF UI/export structure correction is complete on
+Brazil CSPF final interaction correction is complete on
 `codex/brazil-cspf-ui-polish`.
 
 ## Next Action
 
-Await audit confirmation; merge to `main` requires a separate explicit user
+Await final audit confirmation; merge to `main` requires a separate explicit user
 request.
 
 ## After Merge
