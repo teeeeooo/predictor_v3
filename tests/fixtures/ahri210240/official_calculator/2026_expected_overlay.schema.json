@@ -2,10 +2,143 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "AHRI 210/240-2026 official evidence overlay",
   "type": "object",
-  "required": ["schema_version", "standard"],
+  "required": [
+    "schema_version",
+    "standard",
+    "dual_stage_seer2_synthetic_01",
+    "dual_stage_hspf2_synthetic_01",
+    "dual_stage_hspf2_cutout_synthetic_01",
+    "triple_capacity_northern_hspf2_synthetic_01"
+  ],
   "properties": {
     "schema_version": {"const": 1},
-    "standard": {"type": "string"}
+    "standard": {"type": "string"},
+    "dual_stage_seer2_synthetic_01": {
+      "type": "object",
+      "required": [
+        "status",
+        "raw_seer2",
+        "published_seer2",
+        "normalized_cooling_aggregate",
+        "normalized_energy_aggregate"
+      ],
+      "properties": {
+        "status": {"const": "direct_m1"},
+        "raw_seer2": {"type": "number"},
+        "published_seer2": {"type": "number"},
+        "normalized_cooling_aggregate": {"type": "number"},
+        "normalized_energy_aggregate": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "dual_stage_hspf2_synthetic_01": {
+      "type": "object",
+      "required": [
+        "status",
+        "raw_hspf2",
+        "published_hspf2",
+        "defrost_factor",
+        "heating_load_hours",
+        "normalized_heating_aggregate",
+        "normalized_compressor_energy_wh",
+        "normalized_resistance_energy_wh",
+        "seasonal_heating_btu",
+        "seasonal_compressor_energy_wh",
+        "seasonal_resistance_energy_wh",
+        "seasonal_total_energy_wh",
+        "resistance_btu_per_wh"
+      ],
+      "properties": {
+        "status": {"const": "recalculated_2026"},
+        "raw_hspf2": {"type": "number"},
+        "published_hspf2": {"type": "number"},
+        "defrost_factor": {"type": "number"},
+        "heating_load_hours": {"type": "number"},
+        "normalized_heating_aggregate": {"type": "number"},
+        "normalized_compressor_energy_wh": {"type": "number"},
+        "normalized_resistance_energy_wh": {"type": "number"},
+        "seasonal_heating_btu": {"type": "number"},
+        "seasonal_compressor_energy_wh": {"type": "number"},
+        "seasonal_resistance_energy_wh": {"type": "number"},
+        "seasonal_total_energy_wh": {"type": "number"},
+        "resistance_btu_per_wh": {"const": 3.412}
+      },
+      "additionalProperties": false
+    },
+    "dual_stage_hspf2_cutout_synthetic_01": {
+      "type": "object",
+      "required": [
+        "status",
+        "raw_hspf2",
+        "published_hspf2",
+        "defrost_factor",
+        "heating_load_hours",
+        "normalized_heating_aggregate",
+        "normalized_compressor_energy_wh",
+        "normalized_resistance_energy_wh",
+        "seasonal_heating_btu",
+        "seasonal_compressor_energy_wh",
+        "seasonal_resistance_energy_wh",
+        "seasonal_total_energy_wh",
+        "resistance_btu_per_wh"
+      ],
+      "properties": {
+        "status": {"const": "recalculated_2026"},
+        "raw_hspf2": {"type": "number"},
+        "published_hspf2": {"type": "number"},
+        "defrost_factor": {"type": "number"},
+        "heating_load_hours": {"type": "number"},
+        "normalized_heating_aggregate": {"type": "number"},
+        "normalized_compressor_energy_wh": {"type": "number"},
+        "normalized_resistance_energy_wh": {"type": "number"},
+        "seasonal_heating_btu": {"type": "number"},
+        "seasonal_compressor_energy_wh": {"type": "number"},
+        "seasonal_resistance_energy_wh": {"type": "number"},
+        "seasonal_total_energy_wh": {"type": "number"},
+        "resistance_btu_per_wh": {"const": 3.412}
+      },
+      "additionalProperties": false
+    },
+    "triple_capacity_northern_hspf2_synthetic_01": {
+      "type": "object",
+      "required": [
+        "status",
+        "raw_hspf2_candidate",
+        "published_hspf2_candidate",
+        "defrost_factor",
+        "heating_load_hours",
+        "corrected_h2low_capacity",
+        "corrected_h2low_power",
+        "normalized_heating_aggregate",
+        "normalized_compressor_energy_wh",
+        "normalized_resistance_energy_wh",
+        "seasonal_heating_btu",
+        "seasonal_compressor_energy_wh",
+        "seasonal_resistance_energy_wh",
+        "seasonal_total_energy_wh",
+        "resistance_btu_per_wh",
+        "defrost_factor_source"
+      ],
+      "properties": {
+        "status": {"const": "partial_evidence_plus_recalculated_2026"},
+        "raw_hspf2_candidate": {"type": "number"},
+        "published_hspf2_candidate": {"type": "number"},
+        "defrost_factor": {"type": "number"},
+        "heating_load_hours": {"type": "number"},
+        "corrected_h2low_capacity": {"type": "number"},
+        "corrected_h2low_power": {"type": "number"},
+        "normalized_heating_aggregate": {"type": "number"},
+        "normalized_compressor_energy_wh": {"type": "number"},
+        "normalized_resistance_energy_wh": {"type": "number"},
+        "seasonal_heating_btu": {"type": "number"},
+        "seasonal_compressor_energy_wh": {"type": "number"},
+        "seasonal_resistance_energy_wh": {"type": "number"},
+        "seasonal_total_energy_wh": {"type": "number"},
+        "resistance_btu_per_wh": {"const": 3.412},
+        "defrost_factor_source": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }
