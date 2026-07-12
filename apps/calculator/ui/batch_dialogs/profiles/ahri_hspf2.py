@@ -107,7 +107,11 @@ class AhriHspf2BatchSection:
         self.product_var = tk.StringVar(
             master=self._frame,
             value=next(
-                (label for label, value in _PRODUCT_LABELS.items() if value == active.product_classification),
+                (
+                    label
+                    for label, value in _PRODUCT_LABELS.items()
+                    if value == active.product_classification
+                ),
                 "Variable Capacity",
             ),
         )
@@ -119,13 +123,19 @@ class AhriHspf2BatchSection:
         self._build_common_inputs()
         self._table_host = ttk.Frame(self._frame)
         self._table_host.grid(
-            row=1, column=0, sticky="nsew", padx=ISO_SECTION_PADX, pady=6
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=ISO_SECTION_PADX,
+            pady=6,
         )
         self._table_host.columnconfigure(0, weight=1)
         self._table_host.rowconfigure(0, weight=1)
         self._create_table(build_ahri_hspf2_batch_spec(active))
         self._auto_calc = DebouncedAutoCalc(
-            self._frame, self._recalculate_now, delay_ms=150
+            self._frame,
+            self._recalculate_now,
+            delay_ms=150,
         )
         self.table.set_values_changed_callback(self._auto_calc.schedule)
         self.product_var.trace_add("write", lambda *_args: self._on_product_changed())
@@ -148,7 +158,9 @@ class AhriHspf2BatchSection:
             *dict(_VARIABLE_NUMERIC_FIELDS),
             *dict(_MULTI_NUMERIC_FIELDS),
         ):
-            self._vars[key].trace_add("write", lambda *_args: self._auto_calc.schedule())
+            self._vars[key].trace_add(
+                "write", lambda *_args: self._auto_calc.schedule()
+            )
         self._build_actions()
         self._show_product_controls()
         self._auto_calc.flush_now()
@@ -166,7 +178,9 @@ class AhriHspf2BatchSection:
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, 0),
         )
-        ttk.Label(frame, text="Product").grid(row=0, column=0, padx=3, pady=(4, 2))
+        ttk.Label(frame, text="Product").grid(
+            row=0, column=0, padx=3, pady=(4, 2)
+        )
         ttk.Combobox(
             frame,
             textvariable=self.product_var,
@@ -174,7 +188,9 @@ class AhriHspf2BatchSection:
             state="readonly",
             width=22,
         ).grid(row=1, column=0, padx=3, pady=(0, 4))
-        ttk.Label(frame, text="Region").grid(row=0, column=1, padx=3, pady=(4, 2))
+        ttk.Label(frame, text="Region").grid(
+            row=0, column=1, padx=3, pady=(4, 2)
+        )
         ttk.Combobox(
             frame,
             textvariable=self._vars["region"],
@@ -189,7 +205,9 @@ class AhriHspf2BatchSection:
         self._multi_controls.grid(row=0, column=2, rowspan=2, sticky="w")
         self._build_multi_controls(self._multi_controls)
         self.apply_button = ttk.Button(
-            frame, text="Apply Options", command=self._apply_options
+            frame,
+            text="Apply Options",
+            command=self._apply_options,
         )
         self.apply_button.grid(row=1, column=20, padx=(6, 12), pady=(0, 4))
 
@@ -232,7 +250,10 @@ class AhriHspf2BatchSection:
             ).grid(row=1, column=column, padx=3, pady=(0, 4))
             column += 1
         ttk.Label(frame, text="Defrost Mode").grid(
-            row=0, column=column, padx=3, pady=(4, 2)
+            row=0,
+            column=column,
+            padx=3,
+            pady=(4, 2),
         )
         ttk.Combobox(
             frame,
@@ -246,8 +267,19 @@ class AhriHspf2BatchSection:
             self._numeric_entry(frame, key, label, column)
             column += 1
 
-    def _numeric_entry(self, frame: ttk.Frame, key: str, label: str, column: int) -> None:
-        ttk.Label(frame, text=label).grid(row=0, column=column, padx=3, pady=(4, 2))
+    def _numeric_entry(
+        self,
+        frame: ttk.Frame,
+        key: str,
+        label: str,
+        column: int,
+    ) -> None:
+        ttk.Label(frame, text=label).grid(
+            row=0,
+            column=column,
+            padx=3,
+            pady=(4, 2),
+        )
         ttk.Entry(
             frame,
             textvariable=self._vars[key],
@@ -274,13 +306,17 @@ class AhriHspf2BatchSection:
         for label, command in (
             ("Add Case", self._add_case),
             ("Remove Case", self._remove_case),
-            ("Copy All", self.table.copy_all),
+            ("Copy All", self._copy_all),
             ("Export CSV", self._export_csv),
         ):
             ttk.Button(row, text=label, command=command).pack(
-                side=tk.LEFT, padx=(0, 6)
+                side=tk.LEFT,
+                padx=(0, 6),
             )
-        ttk.Label(row, textvariable=self.status_var).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Label(row, textvariable=self.status_var).pack(
+            side=tk.LEFT,
+            padx=(6, 0),
+        )
 
     def _create_table(self, spec: BatchMatrixSpec) -> None:
         self.table = BatchMatrixTable(self._table_host, spec)
@@ -323,10 +359,18 @@ class AhriHspf2BatchSection:
             h12_enabled=self._parse_bool(self._vars["h12_enabled"].get()),
             h22_enabled=self._parse_bool(self._vars["h22_enabled"].get()),
             product_classification=self.product_classification,
-            h4_full_enabled=self._parse_bool(self._vars["h4_full_enabled"].get()),
-            h2_low_enabled=self._parse_bool(self._vars["h2_low_enabled"].get()),
-            h2_boost_enabled=self._parse_bool(self._vars["h2_boost_enabled"].get()),
-            h3_low_enabled=self._parse_bool(self._vars["h3_low_enabled"].get()),
+            h4_full_enabled=self._parse_bool(
+                self._vars["h4_full_enabled"].get()
+            ),
+            h2_low_enabled=self._parse_bool(
+                self._vars["h2_low_enabled"].get()
+            ),
+            h2_boost_enabled=self._parse_bool(
+                self._vars["h2_boost_enabled"].get()
+            ),
+            h3_low_enabled=self._parse_bool(
+                self._vars["h3_low_enabled"].get()
+            ),
         )
 
     def _on_product_changed(self) -> None:
@@ -361,7 +405,10 @@ class AhriHspf2BatchSection:
         self._auto_calc.flush_now()
 
     def _merge_visible_inputs_to_store(self) -> None:
-        self._session.sync_visible_cases(self.table.cases, self.table.spec.input_keys)
+        self._session.sync_visible_cases(
+            self.table.cases,
+            self.table.spec.input_keys,
+        )
 
     def _add_case(self) -> None:
         self._merge_visible_inputs_to_store()
@@ -375,6 +422,9 @@ class AhriHspf2BatchSection:
         self.table.restore_snapshot(self._session.visible_cases(self.table.spec))
         self._auto_calc.schedule()
 
+    def _copy_all(self) -> str:
+        return self.table.copy_all()
+
     def _numeric_values(self) -> dict[str, str]:
         fields = (
             _VARIABLE_NUMERIC_FIELDS
@@ -386,7 +436,9 @@ class AhriHspf2BatchSection:
     def _common_inputs(self) -> AhriHspf2BatchCommonInputs:
         return AhriHspf2BatchCommonInputs(
             active=self._session.active_options,
-            h1n_h32_same_hz=self._parse_bool(self._vars["h1n_h32_same_hz"].get()),
+            h1n_h32_same_hz=self._parse_bool(
+                self._vars["h1n_h32_same_hz"].get()
+            ),
             min_spd=self._parse_bool(self._vars["min_spd"].get()),
             numeric_values=self._numeric_values(),
             low_stage_lockout_enabled=self._parse_bool(
