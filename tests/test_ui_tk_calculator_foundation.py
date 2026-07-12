@@ -351,6 +351,23 @@ try:
         assert calls == [(1, "units")]
     else:
         assert calls == []
+    from apps.calculator.application.profile_resolver import MODE_HONG_KONG, MODE_SASO_T3
+    app.iso_tab._render_mode(MODE_SASO_T3)
+    app.iso_tab._render_mode(MODE_HONG_KONG)
+    result_sections = (
+        app.iso_tab._two_point_section,
+        app.iso_tab._saso_t3_section,
+        *app.iso_tab._hong_kong_sections.values(),
+        app.en14825_tab.seer_section,
+        app.en14825_tab.scop_section,
+        app.ahri210240_tab.seer2_section,
+        app.ahri210240_tab.hspf2_section,
+        app.korea_tab.cspf_section,
+        app.korea_tab.hspf_section,
+    )
+    for section in result_sections:
+        assert section.copy_button.cget("text") == "Copy"
+        assert section.export_button.cget("text") == "Export CSV"
 finally:
     root.destroy()
 """
@@ -359,6 +376,73 @@ finally:
         capture_output=True,
         text=True,
         timeout=10,
+    )
+    if completed.returncode == 77:
+        pytest.skip("Tk not available")
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
+def test_calculator_notebook_tabs_keep_fixed_geometry_across_selection():
+    script = r"""
+import tkinter as tk
+from tkinter import ttk
+
+try:
+    root = tk.Tk()
+except tk.TclError:
+    raise SystemExit(77)
+
+try:
+    from apps.calculator.ui.calculator_app import CalculatorTkApp
+    from apps.calculator.ui.theme import (
+        ACCENT,
+        NOTEBOOK_TAB_FONT,
+        NOTEBOOK_TAB_PADDING,
+        PANEL_SURFACE,
+        TOP_NOTEBOOK_TAB_PADDING,
+    )
+
+    app = CalculatorTkApp(root=root)
+    root.deiconify()
+    root.update_idletasks()
+    style = ttk.Style(root)
+    for tab_style, padding in (
+        ("TNotebook.Tab", NOTEBOOK_TAB_PADDING),
+        ("CalculatorTop.TNotebook.Tab", TOP_NOTEBOOK_TAB_PADDING),
+    ):
+        assert style.lookup(tab_style, "font") == NOTEBOOK_TAB_FONT
+        assert tuple(style.lookup(tab_style, "padding")) == padding
+        assert style.map(tab_style, "font") == []
+        assert style.map(tab_style, "padding") == []
+        assert style.lookup(tab_style, "foreground", ("selected",)) == ACCENT
+        assert style.lookup(tab_style, "background", ("selected",)) == PANEL_SURFACE
+
+    for notebook_style in ("TNotebook", "CalculatorTop.TNotebook"):
+        notebook = ttk.Notebook(root, style=notebook_style)
+        for label in ("Alpha", "Beta"):
+            frame = ttk.Frame(notebook, width=160, height=80)
+            notebook.add(frame, text=label)
+        notebook.pack()
+        root.update_idletasks()
+        before = (notebook.winfo_reqwidth(), notebook.winfo_reqheight())
+        notebook.select(1)
+        root.update_idletasks()
+        after = (notebook.winfo_reqwidth(), notebook.winfo_reqheight())
+        assert after == before
+        notebook.destroy()
+
+    assert app.iso_tab._metric_notebook.cget("style") == ""
+    assert app.en14825_tab._standard_notebook.cget("style") == ""
+    assert app.ahri210240_tab.metric_notebook.cget("style") == ""
+    assert app.korea_tab.metric_notebook.cget("style") == ""
+finally:
+    root.destroy()
+"""
+    completed = subprocess.run(
+        [sys.executable, "-B", "-c", textwrap.dedent(script)],
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     if completed.returncode == 77:
         pytest.skip("Tk not available")

@@ -5,6 +5,11 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.ui.layout_constants import (
+    NOTEBOOK_TAB_FONT,
+    NOTEBOOK_TAB_PADDING,
+    TOP_NOTEBOOK_TAB_PADDING,
+)
 from ui_common.visual_tokens import visual_color, visual_spacing
 
 
@@ -111,12 +116,19 @@ def apply_calculator_theme(root: tk.Misc) -> ttk.Style:
         background=HEADER_SURFACE,
         foreground=TEXT_MUTED,
         bordercolor=BORDER,
-        padding=(14, 8),
+        font=NOTEBOOK_TAB_FONT,
+        padding=NOTEBOOK_TAB_PADDING,
+    )
+    style.configure(
+        "CalculatorTop.TNotebook.Tab",
+        font=NOTEBOOK_TAB_FONT,
+        padding=TOP_NOTEBOOK_TAB_PADDING,
     )
     style.map(
         "TNotebook.Tab",
         background=[("selected", PANEL_SURFACE), ("active", HOVER_SURFACE)],
         foreground=[("selected", ACCENT), ("active", TEXT_PRIMARY)],
+        padding=[],
     )
     style.configure(
         "TCheckbutton",

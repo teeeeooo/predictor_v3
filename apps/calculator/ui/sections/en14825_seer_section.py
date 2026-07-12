@@ -24,6 +24,7 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_seer import (
 )
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import (
@@ -127,6 +128,7 @@ class En14825SeerSection:
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
+            visual_style="shared",
         )
         self.design_table.grid(
             row=0, column=0, sticky="w",
@@ -187,6 +189,7 @@ class En14825SeerSection:
                 "tested_capacity",
                 "capacity_percent",
             ),
+            visual_style="shared",
         )
         self.input_table.grid(
             row=3,
@@ -233,6 +236,15 @@ class En14825SeerSection:
         )
         self.detail_toggle.surface_role = "en14825_seer_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(ISO_SECTION_BLOCK_GAP, 0))
+        self.result_actions = add_result_actions(
+            action_row,
+            parent=self._frame,
+            result_owner=self.result_panel,
+            csv_filename="en14825_seer_result.csv",
+            surface_prefix="en14825_seer_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("Declared", "Tested"),

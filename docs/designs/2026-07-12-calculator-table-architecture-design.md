@@ -1,6 +1,6 @@
 # Calculator Table Architecture Design
 
-**Status:** Approved design
+**Status:** Implemented — Slices 1-6 complete
 **Scope:** Tkinter Calculator table surfaces
 **Primary implementation sequence:** Table foundation → representative ISO/ISEER migration → progressive Calculator-wide adoption
 **Proposed canonical location:** `docs/designs/2026-07-12-calculator-table-architecture-design.md`

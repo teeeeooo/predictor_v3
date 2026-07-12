@@ -69,6 +69,7 @@ class BrazilCspfSection:
                 ("capacity", "half_29"): "half_29_capacity",
                 ("power", "half_29"): "half_29_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=1,

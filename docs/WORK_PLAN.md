@@ -17,16 +17,18 @@
 
 ## Current Slice
 
-Calculator table architecture Slice 2 is complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Generic
-`ResultPanel` rendering and Brazil CSPF result/Rule grids now consume the shared
-compact-result foundation while preserving stable updates, focus, Final, and
-sectioned export behavior.
+Calculator table architecture Slices 1-6 are complete under
+`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Every active
+Calculator table now maps to Editable Matrix, Compact Result Grid, or
+Scrollable Data Table and consumes the matching shared visual foundation.
+Final corrections add stable Notebook visibility/geometry and visible
+Copy/Export CSV actions to every active Single result without changing those
+family boundaries.
 
 ## Next Action
 
-Review Slice 2 focused validation, then approve Slice 3 (remaining simple
-single surfaces) separately.
+Calculator table architecture is accepted for automated and manual GUI scope.
+Resume the next explicitly selected workstream after main integration.
 
 ## Active Blockers
 

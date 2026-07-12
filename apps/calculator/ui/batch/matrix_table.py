@@ -16,12 +16,15 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
-    TABLE_HEADER_FONT,
-    TABLE_HEADER_PADY,
     TABLE_STATIC_FG,
 )
 from apps.calculator.ui.table.roles import CellRole
 from apps.calculator.ui.table.cell_background import cell_background
+from apps.calculator.ui.table.grid_primitives import (
+    create_cell_container,
+    create_text_label,
+)
+from apps.calculator.ui.table.visual_policy import AlignmentRole
 
 ValuesChangedCallback = Callable[[], None]
 
@@ -315,23 +318,21 @@ class BatchMatrixTable(ttk.Frame):
                 grid_column,
                 weight=0 if column_index < self.spec.measurement_start_column else 1,
             )
-            cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-            cell.grid(row=0, column=grid_column, sticky="nsew", padx=(0, 1), pady=(0, 1))
-            cell.surface_role = "header_cell"
+            cell = create_cell_container(
+                self.table_frame,
+                row=0,
+                column=grid_column,
+                background=TABLE_HEADER_BG,
+                surface_role="header_cell",
+            )
             label_text = self._header_label(column_index)
             width_chars = self._header_width(column_index)
-            label = tk.Label(
+            label = create_text_label(
                 cell,
                 text=label_text,
                 width=width_chars,
-                background=TABLE_HEADER_BG,
-                font=TABLE_HEADER_FONT,
-            )
-            label.pack(
-                fill=tk.BOTH,
-                expand=True,
-                padx=TABLE_CELL_PADX,
-                pady=TABLE_HEADER_PADY,
+                alignment=AlignmentRole.HEADER_VALUE,
+                header=True,
             )
             self._header_labels[column_index] = label
 
@@ -382,15 +383,14 @@ class BatchMatrixTable(ttk.Frame):
             is_editable = cell.editable and cell.input_key is not None
             background = cell_background(editable=is_editable)
 
-            cell_frame = tk.Frame(self.table_frame, background=background, takefocus=1)
-            cell_frame.grid(
+            cell_frame = create_cell_container(
+                self.table_frame,
                 row=physical_row + 1,
                 column=column_index,
-                sticky="nsew",
-                padx=(0, 1),
-                pady=(0, 1),
+                background=background,
+                surface_role="editable_cell" if is_editable else "static_cell",
+                focusable=True,
             )
-            cell_frame.surface_role = "editable_cell" if is_editable else "static_cell"
             self._cell_frames[position] = cell_frame
 
             if is_editable and cell.input_key is not None:

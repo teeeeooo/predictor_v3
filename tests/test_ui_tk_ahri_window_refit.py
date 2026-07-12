@@ -73,3 +73,39 @@ def test_repeated_visible_metric_events_coalesce_to_one_fit(tk_root) -> None:
 
     assert fits == ["fit"]
     assert not ahri._refit_scheduler.is_pending
+
+
+def test_ahri_visibility_uses_tk_identity_not_python_notebook_class(
+    monkeypatch, tk_root
+) -> None:
+    notebook, _placeholder, ahri = _build_outer_notebook(tk_root)
+    notebook.select(ahri)
+    monkeypatch.setattr(
+        "apps.calculator.ui.tabs.ahri210240_tab.ttk.Notebook",
+        type("ReloadedNotebook", (), {}),
+    )
+
+    assert ahri._is_visible_surface() is True
+
+
+def test_korea_nested_notebook_visible_and_hidden_refit_contract(tk_root) -> None:
+    from tkinter import ttk
+
+    from apps.calculator.ui.tabs.korea_tab import KoreaTab
+
+    notebook = ttk.Notebook(tk_root)
+    placeholder = ttk.Frame(notebook)
+    korea = KoreaTab(notebook)
+    notebook.add(placeholder, text="Other")
+    notebook.add(korea, text="Korea")
+    notebook.pack(fill="both", expand=True)
+    tk_root.update_idletasks()
+    calls = []
+    korea._refit_scheduler.request_refit = lambda **kwargs: calls.append(kwargs)
+
+    notebook.select(placeholder)
+    korea._on_metric_changed()
+    assert calls == []
+    notebook.select(korea)
+    korea._on_metric_changed()
+    assert calls == [{"settle_cycles": 2}]

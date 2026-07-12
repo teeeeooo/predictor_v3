@@ -22,6 +22,7 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SCOP_BIN_DETAIL_SCHEMA,
@@ -108,6 +109,7 @@ class En14825ScopSection:
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_DECLARED_DATA_COLUMN_CHARS,
             layout_policy="content_hug",
+            visual_style="shared",
         )
         self.cd_table.grid(
             row=0, column=0, sticky="w",
@@ -227,6 +229,7 @@ class En14825ScopSection:
                 row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
                 data_column_chars=METRIC_TABLE_STANDARD_DATA_COLUMN_CHARS,
                 layout_policy="content_hug",
+                visual_style="shared",
             )
             climate_table.grid(row=0, column=0, sticky="w", padx=(6, 10))
             climate_table.set_values(self._climate_aux_values(clm))
@@ -256,6 +259,7 @@ class En14825ScopSection:
                 editable_cells=editable_cells,
                 row_header_chars=METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
                 section_break_before_rows=ScopTableModel.SECTION_BREAK_BEFORE_ROWS,
+                visual_style="shared",
             )
             table.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 6))
             table.default_cell_background = lambda pos, c=clm: self._resolve_cell_bg(pos, c)
@@ -291,6 +295,15 @@ class En14825ScopSection:
         )
         self.detail_toggle.surface_role = "en14825_scop_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(ISO_SECTION_BLOCK_GAP, 0))
+        self.result_actions = add_result_actions(
+            action_row,
+            parent=self._frame,
+            result_owner=self,
+            csv_filename="en14825_scop_result.csv",
+            surface_prefix="en14825_scop_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         source_labels = tuple(
             f"{climate.capitalize()} {dataset}"
             for climate in self.climates
@@ -455,6 +468,7 @@ class En14825ScopSection:
                 self._set_result_card_visible(clm, True)
             else:
                 inner.pack_forget()
+                self._clear_result_card(clm)
                 self._set_result_card_visible(clm, False)
 
         # Re-trigger calculation and layout refit
@@ -504,7 +518,9 @@ class En14825ScopSection:
                 if input_mapping.invalid_fields:
                     table.set_invalid_fields(input_mapping.invalid_fields)
                     self._clear_computed_rows(clm)
-                    self._clear_result_card(clm)
+                    self._show_result_card_invalid(
+                        clm, "입력 오류: 숫자 입력을 확인하세요."
+                    )
                     detail_errors.append("입력 오류: 숫자 입력을 확인하세요.")
                     continue
                 else:
@@ -512,7 +528,9 @@ class En14825ScopSection:
 
             except Exception:
                 self._clear_computed_rows(clm)
-                self._clear_result_card(clm)
+                self._show_result_card_invalid(
+                    clm, "입력 대기: 기류/설정을 확인하세요."
+                )
                 detail_errors.append("입력 대기: 기류/설정을 확인하세요.")
                 continue
 
@@ -608,6 +626,30 @@ class En14825ScopSection:
     def _toggle_detail(self) -> None:
         self._detail_visibility.toggle()
 
+    def copy_result(self) -> bool:
+        """Copy active climate results from their current visible surfaces."""
+        rows = self.sectioned_csv_rows()
+        text = "\n".join("\t".join(row) for row in rows)
+        self._frame.clipboard_clear()
+        self._frame.clipboard_append(text)
+        return True
+
+    def sectioned_csv_rows(self) -> tuple[tuple[str, ...], ...]:
+        """Compose active climate snapshots in their visible display order."""
+        rows: list[tuple[str, ...]] = []
+        for climate in self.climates:
+            if not self.climate_active_vars[climate].get():
+                continue
+            if rows:
+                rows.append(())
+            snapshot = self._result_surfaces[climate].visible_snapshot()
+            rows.append((climate.capitalize(),))
+            if snapshot.has_result_values:
+                rows.append(snapshot.headers)
+                rows.extend(snapshot.rows)
+            rows.append(("Status", snapshot.status))
+        return tuple(rows)
+
     def _format_t_design_h(self, climate: str) -> str:
         try:
             return f"{float(self.adapter.get_climate_data(climate)['t_design_h_c']):.0f}"
@@ -625,6 +667,9 @@ class En14825ScopSection:
 
     def _show_result_card_error(self, climate: str, message: str) -> None:
         self._result_surfaces[climate].show_error(message)
+
+    def _show_result_card_invalid(self, climate: str, message: str) -> None:
+        self._result_surfaces[climate].show_invalid(message)
 
     def _clear_result_card(self, climate: str) -> None:
         self._result_surfaces[climate].clear()

@@ -22,6 +22,7 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_models import result_status
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
@@ -55,6 +56,7 @@ class HongKongCspfSection:
             columns=(("capacity", "능력 [W]"),),
             rows=(("rated", "정격 표기치"),),
             editable_cells={("rated", "capacity"): "declared_capacity"},
+            visual_style="shared",
         )
         self.rated_table.grid(
             row=0,
@@ -79,6 +81,7 @@ class HongKongCspfSection:
                 ("capacity", "half"): "half_capacity",
                 ("power", "half"): "half_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=2,
@@ -117,6 +120,15 @@ class HongKongCspfSection:
         )
         self.detail_toggle.surface_role = "hong_kong_cspf_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.result_actions = add_result_actions(
+            self.action_row,
+            parent=self._frame,
+            result_owner=self.result_panel,
+            csv_filename="hong_kong_cspf_result.csv",
+            surface_prefix="hong_kong_cspf_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("Hong Kong CSPF",),

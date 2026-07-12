@@ -203,6 +203,7 @@ class En14825Tab(ttk.Frame):
             row_header_chars=8,
             data_column_chars=8,
             layout_policy="content_hug",
+            visual_style="shared",
         )
         table.grid(row=0, column=0, sticky="w", padx=6, pady=6)
         table.set_values(self._common_numeric_values())

@@ -20,11 +20,14 @@ from apps.calculator.ui.layout_constants import (
     TABLE_CELL_PADY,
     TABLE_GRID_COLOR,
     TABLE_HEADER_BG,
-    TABLE_HEADER_FONT,
-    TABLE_HEADER_PADY,
     TABLE_STATIC_FG,
 )
 from apps.calculator.ui.table.cell_background import cell_background
+from apps.calculator.ui.table.grid_primitives import (
+    create_cell_container,
+    create_text_label,
+)
+from apps.calculator.ui.table.visual_policy import AlignmentRole
 
 ValuesChangedCallback = Callable[[], None]
 ROW_HEADER_WIDTH_CHARS = 4
@@ -235,29 +238,37 @@ class BatchCaseTable(ttk.Frame):
 
     def _build_headers(self) -> None:
         self.table_frame.columnconfigure(0, weight=0)
-        corner = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-        corner.grid(row=0, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
-        corner.surface_role = "corner_header_cell"
-        tk.Label(
+        corner = create_cell_container(
+            self.table_frame,
+            row=0,
+            column=0,
+            background=TABLE_HEADER_BG,
+            surface_role="corner_header_cell",
+        )
+        create_text_label(
             corner,
             text="#",
             width=ROW_HEADER_WIDTH_CHARS,
-            background=TABLE_HEADER_BG,
-            font=TABLE_HEADER_FONT,
-        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
+            alignment=AlignmentRole.HEADER_VALUE,
+            header=True,
+        )
         for column_index, column in enumerate(self.model.spec.columns):
             grid_column = column_index + 1
             self.table_frame.columnconfigure(grid_column, weight=1)
-            cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-            cell.grid(row=0, column=grid_column, sticky="nsew", padx=(0, 1), pady=(0, 1))
-            cell.surface_role = "header_cell"
-            tk.Label(
+            cell = create_cell_container(
+                self.table_frame,
+                row=0,
+                column=grid_column,
+                background=TABLE_HEADER_BG,
+                surface_role="header_cell",
+            )
+            create_text_label(
                 cell,
                 text=column.label,
                 width=column.width_chars,
-                background=TABLE_HEADER_BG,
-                font=TABLE_HEADER_FONT,
-            ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_HEADER_PADY)
+                alignment=AlignmentRole.HEADER_VALUE,
+                header=True,
+            )
 
     def _build_row(self, row_index: int, row: Mapping[str, str]) -> None:
         variables: dict[str, tk.StringVar] = {}
@@ -268,15 +279,14 @@ class BatchCaseTable(ttk.Frame):
             variables[column.key] = variable
             is_input = column.role is BatchColumnRole.INPUT
             background = cell_background(editable=is_input)
-            cell = tk.Frame(self.table_frame, background=background, takefocus=1)
-            cell.grid(
+            cell = create_cell_container(
+                self.table_frame,
                 row=row_index + 1,
                 column=column_index + 1,
-                sticky="nsew",
-                padx=(0, 1),
-                pady=(0, 1),
+                background=background,
+                surface_role="editable_cell" if is_input else "result_cell",
+                focusable=True,
             )
-            cell.surface_role = "editable_cell" if is_input else "result_cell"
             if is_input:
                 widget = self._make_entry(cell, variable, row_index, column.key, column.width_chars)
             else:
@@ -296,17 +306,20 @@ class BatchCaseTable(ttk.Frame):
         self._variables.append(variables)
 
     def _build_row_header(self, row_index: int) -> None:
-        cell = tk.Frame(self.table_frame, background=TABLE_HEADER_BG)
-        cell.grid(row=row_index + 1, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
-        cell.surface_role = "row_header_cell"
-        tk.Label(
+        cell = create_cell_container(
+            self.table_frame,
+            row=row_index + 1,
+            column=0,
+            background=TABLE_HEADER_BG,
+            surface_role="row_header_cell",
+        )
+        create_text_label(
             cell,
             text=str(row_index + 1),
             width=ROW_HEADER_WIDTH_CHARS,
-            anchor="center",
-            background=TABLE_HEADER_BG,
-            font=TABLE_HEADER_FONT,
-        ).pack(fill=tk.BOTH, expand=True, padx=TABLE_CELL_PADX, pady=TABLE_CELL_PADY)
+            alignment=AlignmentRole.HEADER_VALUE,
+            header=True,
+        )
 
     def _make_entry(
         self,

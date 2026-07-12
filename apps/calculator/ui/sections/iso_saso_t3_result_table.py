@@ -5,17 +5,15 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 from apps.calculator.ui.layout_constants import (
-    RESULT_COMPARISON_VALUE_COLUMN_MIN_WIDTH_PX,
-    RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
-    RESULT_SCENARIO_COLUMN_MIN_WIDTH_PX,
-    RESULT_SCENARIO_COLUMN_WIDTH_PX,
     RESULT_STATUS_FG,
     TABLE_BODY_FONT,
     TABLE_CELL_PADX,
     TABLE_CELL_PADY,
 )
+from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+from apps.calculator.ui.table.visual_policy import SemanticTone
+from apps.calculator.ui.table_clipboard import copy_table_to_clipboard
 
 SASO_T3_RESULT_COLUMNS: tuple[str, ...] = (
     "Scenario",
@@ -43,35 +41,13 @@ class IsoSasoT3ResultTable:
         self.title_label = ttk.Label(self._frame, text=title)
         self.title_label.pack(side=tk.TOP, anchor="w", pady=(0, 4))
 
-        self.table = ttk.Treeview(
+        self.table = CompactResultGrid(
             self._frame,
-            columns=self.column_labels,
-            show="headings",
-            height=2,
-            selectmode="browse",
+            headers=self.column_labels,
+            column_widths=(24, 12, 12, 12, 12, 12, 12, 12),
+            surface_role="saso_t3_comparison_table",
         )
-        self.table.surface_role = "saso_t3_comparison_table"
         self.table.pack(side=tk.TOP, anchor="w")
-        for column in self.column_labels:
-            self.table.heading(column, text=column)
-            self.table.column(
-                column,
-                anchor=tk.CENTER,
-                width=RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
-                minwidth=RESULT_COMPARISON_VALUE_COLUMN_MIN_WIDTH_PX,
-                stretch=False,
-            )
-        self.table.column(
-            "Scenario",
-            anchor=tk.W,
-            width=RESULT_SCENARIO_COLUMN_WIDTH_PX,
-            minwidth=RESULT_SCENARIO_COLUMN_MIN_WIDTH_PX,
-            stretch=False,
-        )
-        self.table.bind("<Control-c>", self.copy)
-        self.table.bind("<Command-c>", self.copy)
-        self.table.bind("<Control-a>", self.select_all)
-        self.table.bind("<Command-a>", self.select_all)
 
         self.status_label = tk.Label(
             self._frame,
@@ -92,21 +68,25 @@ class IsoSasoT3ResultTable:
 
     def set_rows(self, rows: tuple[tuple[str, ...], ...], *, status: str) -> None:
         self._show_table()
-        self._clear_tree()
         self.rows = rows
         self.row_labels = tuple(row[0] for row in rows)
-        self.table.configure(height=max(1, len(rows)))
-        for row in rows:
-            self.table.insert("", tk.END, values=row)
+        self.table.set_rows(
+            rows,
+            tones={
+                (row, column): SemanticTone.CALCULATED
+                for row in range(len(rows))
+                for column in range(1, len(self.column_labels))
+            },
+        )
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(self.as_text())
 
     def set_status(self, status: str) -> None:
-        self._clear_tree()
         self.rows = ()
         self.row_labels = ()
+        self.table.clear()
         self.table.pack_forget()
         self.status_label.configure(text=status)
         if not self.status_label.winfo_manager():
@@ -131,23 +111,18 @@ class IsoSasoT3ResultTable:
 
     def copy_table(self) -> bool:
         headers, rows = self.table_export_data()
-        return copy_table_to_clipboard(self.table, headers, rows)
+        return copy_table_to_clipboard(self.table.frame, headers, rows)
 
     def copy(self, _event: tk.Event | None = None) -> str:
         self.copy_table()
         return "break"
 
     def select_all(self, _event: tk.Event | None = None) -> str:
-        self.table.selection_set(self.table.get_children())
         return "break"
 
     def _show_table(self) -> None:
         if not self.table.winfo_manager():
             self.table.pack(side=tk.TOP, anchor="w")
-
-    def _clear_tree(self) -> None:
-        for item_id in self.table.get_children():
-            self.table.delete(item_id)
 
     def _set_copy_text(self, text: str) -> None:
         self._text.configure(state=tk.NORMAL)

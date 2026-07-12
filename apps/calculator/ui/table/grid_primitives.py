@@ -48,9 +48,16 @@ def create_cell_container(
     background: str,
     surface_role: str,
     section_break: int = 0,
+    focusable: bool = False,
     policy: TkTableVisualPolicy = DEFAULT_TABLE_VISUAL_POLICY,
 ) -> tk.Frame:
-    cell = tk.Frame(parent, background=background, borderwidth=0, relief=tk.FLAT)
+    cell = tk.Frame(
+        parent,
+        background=background,
+        borderwidth=0,
+        relief=tk.FLAT,
+        takefocus=1 if focusable else 0,
+    )
     cell.grid(
         row=row,
         column=column,

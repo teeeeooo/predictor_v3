@@ -226,6 +226,7 @@ def test_seer2_section_table_roles_labels_autocalc_and_result(tk_root) -> None:
     assert tuple(key for key, _label in section.input_table.columns) == (
         AHRI_SEER2_POINT_ORDER
     )
+    assert section.input_table.visual_style == "shared"
     assert section.batch_button.master is section.detail_toggle.master
     assert section.batch_button.winfo_manager() == "pack"
     assert section.detail_toggle.winfo_manager() == "pack"

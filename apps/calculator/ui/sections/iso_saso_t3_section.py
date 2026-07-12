@@ -23,6 +23,7 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.saso_t3 import SasoT3BatchDialog
 
@@ -72,6 +73,7 @@ class IsoSasoT3Section:
                 ("capacity", "min_35"): "min_35_capacity",
                 ("power", "min_35"): "min_35_power",
             },
+            visual_style="shared",
         )
         self.input_table.grid(
             row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6),
@@ -113,6 +115,15 @@ class IsoSasoT3Section:
         )
         self.detail_toggle.surface_role = "saso_t3_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.result_actions = add_result_actions(
+            self.action_row,
+            parent=self._frame,
+            result_owner=self.result_table,
+            csv_filename="saso_t3_result.csv",
+            surface_prefix="saso_t3_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),

@@ -7,6 +7,7 @@ to full rebuild when the shape changes.
 
 from __future__ import annotations
 
+import csv
 import tkinter as tk
 
 import pytest
@@ -174,6 +175,97 @@ class TestStableUpdate:
         assert value.cget("background") == TABLE_PASS_BG
         assert value.semantic_background == TABLE_PASS_BG
         assert value.cget("background") == value_label.cget("background")
+
+
+class TestResultActions:
+    def test_result_panel_copy_uses_latest_summary_and_status_only(
+        self, panel, tk_root
+    ) -> None:
+        from tkinter import ttk
+
+        from apps.calculator.ui.result_actions import add_result_actions
+
+        row = ttk.Frame(tk_root)
+        actions = add_result_actions(
+            row,
+            parent=tk_root,
+            result_owner=panel,
+            csv_filename="result.csv",
+            surface_prefix="test_result",
+        )
+        panel.set_summaries(
+            (ResultSummary(title="First", fields=(("Value", "1"),), status="old"),)
+        )
+        panel.set_summaries(
+            (ResultSummary(title="Latest", fields=(("Value", "2"),), status="done"),)
+        )
+        actions.copy_button.invoke()
+        copied = tk_root.clipboard_get()
+        assert "Latest" in copied and "2" in copied and "done" in copied
+        assert "First" not in copied and "old" not in copied
+
+        panel.set_summaries((ResultSummary(title="Latest", fields=(), status="waiting"),))
+        actions.copy_button.invoke()
+        assert tk_root.clipboard_get() == "[Latest]\nwaiting"
+
+        panel.clear()
+        actions.copy_button.invoke()
+        assert tk_root.clipboard_get() == "Status\tNo results"
+
+    def test_result_panel_sectioned_csv_preserves_display_order(
+        self, panel, tk_root, monkeypatch, tmp_path
+    ) -> None:
+        from tkinter import ttk
+
+        from apps.calculator.ui.result_actions import add_result_actions
+
+        panel.set_summaries(
+            (
+                ResultSummary(
+                    title="Climate A",
+                    fields=(("SCOP", "3.20"), ("QH", "100")),
+                    status="complete",
+                ),
+                ResultSummary(
+                    title="Climate B",
+                    fields=(("SCOP", "3.10"),),
+                    status="warning",
+                ),
+            )
+        )
+        row = ttk.Frame(tk_root)
+        actions = add_result_actions(
+            row,
+            parent=tk_root,
+            result_owner=panel,
+            csv_filename="scop_result.csv",
+            surface_prefix="test_scop_result",
+        )
+        path = tmp_path / "scop.csv"
+        monkeypatch.setattr(
+            "apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",
+            lambda **_kwargs: str(path),
+        )
+        actions.export_button.invoke()
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            assert list(csv.reader(handle)) == [
+                ["Climate A"],
+                ["Field", "Value"],
+                ["SCOP", "3.20"],
+                ["QH", "100"],
+                ["Status", "complete"],
+                [],
+                ["Climate B"],
+                ["Field", "Value"],
+                ["SCOP", "3.10"],
+                ["Status", "warning"],
+            ]
+
+        monkeypatch.setattr(
+            "apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",
+            lambda **_kwargs: "",
+        )
+        assert actions.export_button.invoke() == 0
 
 
 class TestRebuildOnShapeChange:

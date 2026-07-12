@@ -266,6 +266,10 @@ def test_hspf2_section_defaults_tables_optional_roles_and_result(tk_root) -> Non
     section.pack()
     tk_root.update_idletasks()
 
+    assert section.numeric_table.visual_style == "shared"
+    assert section.a2_table.visual_style == "shared"
+    assert section.heating_table.visual_style == "shared"
+
     assert section.region_var.get() == "IV"
     assert (section.h42_var.get(), section.h12_var.get(), section.h22_var.get()) == (
         True,

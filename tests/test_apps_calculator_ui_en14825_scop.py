@@ -683,9 +683,12 @@ def test_scop_gui_integration_basics():
         assert section.climate_active_vars["warmer"].get() is False
         assert section.climate_active_vars["colder"].get() is False
         assert section.cd_table.layout_policy == "content_hug"
+        assert section.cd_table.visual_style == "shared"
         assert section.appliance_type_label.cget("text") == "Type"
         assert section.climate_input_tables["average"].layout_policy == "content_hug"
+        assert section.climate_input_tables["average"].visual_style == "shared"
         assert section.input_tables["average"].layout_policy == "content_hug"
+        assert section.input_tables["average"].visual_style == "shared"
         from apps.calculator.ui.layout_constants import (
             METRIC_TABLE_EN14825_ROW_HEADER_CHARS,
         )
@@ -726,11 +729,19 @@ def test_scop_gui_integration_basics():
         )
 
         result_surface = section._result_surfaces["average"]
+        from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+
+        assert isinstance(result_surface._grid, CompactResultGrid)
+        assert result_surface.frame.outer_edge_policy == "flat_low_contrast"
         assert result_surface.header_labels["row_label"].cget("text") == "구분"
         assert result_surface.header_labels["row_label"].cget("background") == RESULT_HEADER_BG
         assert section._result_value_labels["average"][("Tested", "SCOP")].cget("background") == TABLE_PASS_BG
-        assert result_surface.row_header_labels["Tested"].cget("background") == TABLE_PASS_BG
-        assert result_surface._status_label.grid_info()["sticky"] == "ew"
+        assert result_surface.row_header_labels["Tested"].cget("background") == RESULT_VALUE_BG
+        assert result_surface.row_header_labels["Tested"].semantic_tone == "default"
+        assert result_surface._status_label.winfo_manager() == "pack"
+        assert set(result_surface._status_label.master.grid_info()["sticky"]) == set(
+            "nsew"
+        )
         assert result_surface._status_label.cget("anchor") == "w"
         assert result_surface._status_label.cget("background") == RESULT_VALUE_BG
 

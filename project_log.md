@@ -29,6 +29,32 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-12 — Calculator table-family migration closeout
+
+### Decision
+
+- Completed the active Tk Calculator migration to three explicit table
+  families: Editable Matrix, Compact Result Grid, and Scrollable Data Table.
+- Shared visual policy and primitives now cover all active single, batch,
+  compact-result, and detail tables while existing controllers, profile
+  schemas, calculations, status meaning, lifecycle, and export contracts stay
+  with their established owners.
+- Small fixed results no longer use Treeview; the sole active Treeview remains
+  the large `BinTraceTable` detail surface through the shared style adapter.
+- EN14825 section hotspots remain unchanged ownership-wise; future new
+  responsibilities require a split audit rather than reopening the table-family
+  decision.
+- Final correction keeps top/nested Notebook tab geometry fixed across
+  selection, removes Python class-identity from AHRI/Korea visibility checks,
+  and passes the full Tk Calculator suite without the prior order failure.
+- Every active Single result surface now exposes Copy and Excel-friendly CSV
+  actions while result owners retain their native payloads and detail/Batch
+  export paths remain separate. SCOP composes export directly from active
+  visible climate surfaces rather than its hidden compatibility text model.
+- The user completed final GUI review and approved the feature branch for
+  integration to `main`; the Calculator table architecture workstream is
+  closed with no remaining merge blocker.
+
 ## 2026-07-11 — Clean/hexagonal desktop refactor
 
 ### Decision

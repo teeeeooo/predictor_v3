@@ -90,8 +90,7 @@ def _saso_text(tab) -> str:
 
 
 def _saso_tree_values(tab) -> list[tuple[str, ...]]:
-    tree = tab._saso_t3_section.result_table.table
-    return [tuple(tree.item(item_id, "values")) for item_id in tree.get_children()]
+    return list(tab._saso_t3_section.result_table.table.rows)
 
 
 def _saso_bin_trace_rows(tab) -> tuple[tuple[str, ...], ...]:
@@ -546,6 +545,34 @@ def test_iso_iseer_detail_copy_button_uses_header_included_tsv(tk_root):
     assert "None" not in trace_clipboard
 
 
+def test_iso_iseer_result_actions_use_compact_result_not_detail(
+    monkeypatch, tk_root
+):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+    calls = []
+
+    section.copy_button.invoke()
+    copied = tk_root.clipboard_get()
+    assert copied.splitlines()[0] == "\t".join(section.result_table.column_labels)
+    assert "Bin No." not in copied
+
+    def fake_export(parent, default_filename, headers, rows):
+        calls.append((parent, default_filename, headers, rows))
+        return True
+
+    monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
+    section.export_button.invoke()
+    assert calls == [
+        (
+            section._frame,
+            "iso_iseer_2point_result.csv",
+            section.result_table.column_labels,
+            section.result_table.rows,
+        )
+    ]
+
+
 def test_iso_iseer_detail_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section
@@ -612,7 +639,10 @@ def test_saso_t3_profile_renders_default_result(tk_root):
     assert "Trace CSV 내보내기" not in _widget_texts(section._frame)
 
     table = section.result_table
+    from apps.calculator.ui.table.compact_result_grid import CompactResultGrid
+
     assert table.surface_role == "saso_t3_result_surface"
+    assert isinstance(table.table, CompactResultGrid)
     assert table.table.surface_role == "saso_t3_comparison_table"
     assert table.column_labels == (
         "Scenario",
@@ -636,16 +666,9 @@ def test_saso_t3_profile_renders_default_result(tk_root):
         "With 35 Min (4-point)",
         "Required only (3-point)",
     )
-    from apps.calculator.ui.layout_constants import (
-        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX,
-        RESULT_SCENARIO_COLUMN_WIDTH_PX,
-    )
-    assert int(table.table.column("EER 46 Full", "width")) == (
-        RESULT_COMPARISON_VALUE_COLUMN_WIDTH_PX
-    )
-    assert int(table.table.column("Scenario", "width")) == (
-        RESULT_SCENARIO_COLUMN_WIDTH_PX
-    )
+    assert table.table.frame.outer_edge_policy == "flat_low_contrast"
+    assert table.table.header_labels[0].cget("anchor") == "w"
+    assert table.table.header_labels[1].cget("anchor") == "center"
 
     text = _saso_text(tab)
     for label in table.column_labels:
@@ -1263,6 +1286,9 @@ def test_iso_hong_kong_sections_use_corrected_layout_without_action_buttons(tk_r
     assert isinstance(cspf.input_table, MetricInputTable)
     assert isinstance(hspf.input_table, MetricInputTable)
     assert isinstance(cspf.rated_table, MetricInputTable)
+    assert cspf.input_table.visual_style == "shared"
+    assert hspf.input_table.visual_style == "shared"
+    assert cspf.rated_table.visual_style == "shared"
     assert not hasattr(hspf, "rated_table")
     assert isinstance(cspf.rated_controller, TkTableController)
     assert cspf.rated_controller.table is cspf.rated_table

@@ -34,6 +34,7 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.ahri_hspf2_detail import format_hspf2_bin_details
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_HSPF2_BIN_DETAIL_SCHEMA
@@ -86,6 +87,15 @@ class AhriHspf2Section:
         )
         self.detail_toggle.surface_role = "ahri_hspf2_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.result_actions = add_result_actions(
+            action_row,
+            parent=self._frame,
+            result_owner=self.result_panel,
+            csv_filename="ahri_hspf2_result.csv",
+            surface_prefix="ahri_hspf2_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("HSPF2",),
@@ -191,6 +201,7 @@ class AhriHspf2Section:
             },
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=1, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -203,6 +214,7 @@ class AhriHspf2Section:
             editable_cells={("capacity", "A2"): "a2_capacity"},
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_ANCHOR_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=2, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 6))
         return table
@@ -228,6 +240,7 @@ class AhriHspf2Section:
             editable_cells=editable,
             row_header_chars=METRIC_TABLE_DESCRIPTIVE_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_HEATING_DATA_COLUMN_CHARS,
+            visual_style="shared",
         )
         table.grid(row=3, column=0, sticky="w", padx=ISO_SECTION_PADX, pady=(0, 8))
         for point in AHRI_HSPF2_UI_POINT_ORDER:
