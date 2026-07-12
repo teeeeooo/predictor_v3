@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AHRI 210/240-2026 official evidence overlay",
+  "type": "object",
+  "required": ["schema_version", "standard"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "standard": {"type": "string"}
+  },
+  "additionalProperties": true
+}
