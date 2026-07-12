@@ -129,6 +129,8 @@ jobs:
         id: staged_gate
         if: steps.calculator_tests.outcome == 'success'
         run: |
+          gate_log="$RUNNER_TEMP/staged-gate.log"
+          rm -f pytest-focused.log pytest-calculator.log pytest-main-baseline.log
           set +e
           {
             git fetch origin main:refs/remotes/origin/main
@@ -136,9 +138,9 @@ jobs:
             git add -A
             git diff --cached --check
             python -B tools/check_agent_change_gate.py --cached
-          } > staged-gate.log 2>&1
+          } > "$gate_log" 2>&1
           status=$?
-          cat staged-gate.log
+          cat "$gate_log"
           git reset --mixed HEAD
           exit $status
       - name: Upload staged gate log
@@ -146,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: staged-change-gate-log
-          path: staged-gate.log
+          path: ${{ runner.temp }}/staged-gate.log
           if-no-files-found: ignore
       - name: Structure guard
         if: always() && steps.calculator_tests.outcome == 'success'
