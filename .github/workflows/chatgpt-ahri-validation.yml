@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m compileall -q core/calculators apps/calculator tests/test_ahri_multicapacity_2026.py
       - name: Focused AHRI tests
+        id: focused_tests
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb >/dev/null
@@ -41,10 +42,14 @@ jobs:
             tests/test_ui_tk_ahri_hspf2_detail.py \
             > pytest.log 2>&1
           status=$?
-          if [ $status -ne 0 ]; then
-            tail -n 120 pytest.log
-            exit $status
-          fi
           cat pytest.log
+          exit $status
+      - name: Upload focused test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ahri-focused-test-log
+          path: pytest.log
       - name: Structure guard
+        if: steps.focused_tests.outcome == 'success'
         run: python -B tools/check_code_structure.py
