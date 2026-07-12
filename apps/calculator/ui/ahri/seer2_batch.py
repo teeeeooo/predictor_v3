@@ -7,7 +7,6 @@ from types import MappingProxyType
 from typing import Mapping
 
 from apps.calculator.application.ahri import (
-    AHRI_SEER2_POINT_ORDER,
     AHRI_SEER2_PRODUCT_POINT_ORDER,
     AhriSeer2Adapter,
     AhriSeer2Options,
@@ -62,16 +61,32 @@ def build_ahri_seer2_batch_spec(product_classification: str) -> BatchMatrixSpec:
             f"Unsupported AHRI SEER2 batch product: {product_classification!r}"
         ) from exc
     if product_classification == "variable_capacity":
-        result_metrics = (("seer2", "SEER2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),)
+        profile_key = "ahri_seer2"
+        result_metrics = (
+            ("seer2", "SEER2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+        )
     else:
+        profile_key = f"ahri_seer2_{product_classification}"
         result_metrics = (
             ("raw_seer2", "Raw SEER2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
-            ("published_seer2", "Published SEER2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
-            ("total_cooling", "Total Cooling [kBtu]", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
-            ("total_energy", "Total Energy [kWh]", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+            (
+                "published_seer2",
+                "Published SEER2",
+                BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+            ),
+            (
+                "total_cooling",
+                "Total Cooling [kBtu]",
+                BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+            ),
+            (
+                "total_energy",
+                "Total Energy [kWh]",
+                BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS,
+            ),
         )
     return BatchMatrixSpec(
-        profile_key=f"ahri_seer2_{product_classification}",
+        profile_key=profile_key,
         title="AHRI 210/240 SEER2 Batch Matrix",
         physical_rows=_PHYSICAL_ROWS,
         row_type_labels=_ROW_TYPE_LABELS,
@@ -107,7 +122,9 @@ class AhriSeer2BatchHandler:
     ) -> None:
         self._common_inputs = common_inputs
         self._adapter = adapter or AhriSeer2Adapter()
-        self.spec = build_ahri_seer2_batch_spec(common_inputs.product_classification)
+        self.spec = build_ahri_seer2_batch_spec(
+            common_inputs.product_classification
+        )
 
     def calculate_row(self, row: Mapping[str, str]) -> AhriSeer2BatchResult:
         text_values = {
@@ -133,7 +150,9 @@ class AhriSeer2BatchHandler:
                     "total_cooling": f"{summary.total_cooling_kbtu:.3f}",
                     "total_energy": f"{summary.total_energy_kwh:.3f}",
                 }
-            return AhriSeer2BatchResult(values=values, state=BatchRowState.OK)
+            return AhriSeer2BatchResult(
+                values=values, state=BatchRowState.OK
+            )
         except (KeyError, TypeError, ValueError, ZeroDivisionError):
             return self._blank_result(BatchRowState.ERROR)
 
