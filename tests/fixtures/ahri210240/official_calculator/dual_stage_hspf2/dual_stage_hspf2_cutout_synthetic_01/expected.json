@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "fixture_id": "ahri210240_dual_stage_hspf2_synthetic_01",
+  "fixture_id": "ahri210240_dual_stage_hspf2_cutout_synthetic_01",
   "standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
   "oracle_status": {
     "kind": "official AHRI Analytics Appendix M/M1 evidence oracle",
@@ -30,17 +30,17 @@
     "ODTempWhenLockOut": 40
   },
   "tested_optional_points": {
-    "H4Tested": false,
+    "H4Tested": true,
     "H21Tested": true,
-    "T_off": null,
-    "T_on": null,
-    "isDemandDefrost": true,
+    "T_off": 35,
+    "T_on": 45,
+    "isDemandDefrost": false,
     "demandDefrostCredit": 1.03
   },
   "compressor_cut_in_cut_out": {
     "ODTempWhenLockOut": 40,
-    "T_off": null,
-    "T_on": null
+    "T_off": 35,
+    "T_on": 45
   },
   "degradation_coefficients": {
     "degCoeffHeatFull": 0.22,
@@ -82,11 +82,11 @@
     "isNonmobileHomeAndNonSpaceConstrained": true,
     "lockOutLowCapacityOps": false,
     "ODTempWhenLockOut": 40,
-    "H4Tested": false,
+    "H4Tested": true,
     "H21Tested": true,
-    "T_off": null,
-    "T_on": null,
-    "isDemandDefrost": true,
+    "T_off": 35,
+    "T_on": 45,
+    "isDemandDefrost": false,
     "demandDefrostCredit": 1.03,
     "degCoeffHeatFull": 0.22,
     "degCoeffHeatMin": 0.18,
@@ -230,8 +230,8 @@
   },
   "results": {
     "M": {
-      "screen_headline": 9.47,
-      "raw_headline": 9.46530640542776,
+      "screen_headline": 4.28,
+      "raw_headline": 4.28461472949153,
       "headline_raw_field": "M.HSPF",
       "design_load": {
         "value": 25000,
@@ -352,38 +352,38 @@
         "M.cutOut_delta2": 1,
         "M.cutOut_delta3": 1,
         "M.cutOut_delta4": 1,
-        "M.cutOut_delta5": 1,
-        "M.cutOut_delta6": 1,
-        "M.cutOut_delta7": 1,
-        "M.cutOut_delta8": 1,
-        "M.cutOut_delta9": 1,
-        "M.cutOut_delta10": 1,
-        "M.cutOut_delta11": 1,
-        "M.cutOut_delta12": 1,
-        "M.cutOut_delta13": 1,
-        "M.cutOut_delta14": 1,
-        "M.cutOut_delta15": 1,
-        "M.cutOut_delta16": 1,
-        "M.cutOut_delta17": 1,
-        "M.cutOut_delta18": 1,
+        "M.cutOut_delta5": 0.5,
+        "M.cutOut_delta6": 0.5,
+        "M.cutOut_delta7": 0,
+        "M.cutOut_delta8": 0,
+        "M.cutOut_delta9": 0,
+        "M.cutOut_delta10": 0,
+        "M.cutOut_delta11": 0,
+        "M.cutOut_delta12": 0,
+        "M.cutOut_delta13": 0,
+        "M.cutOut_delta14": 0,
+        "M.cutOut_delta15": 0,
+        "M.cutOut_delta16": 0,
+        "M.cutOut_delta17": 0,
+        "M.cutOut_delta18": 0,
         "M.cutOut_delta_prime1": 1,
         "M.cutOut_delta_prime2": 1,
         "M.cutOut_delta_prime3": 1,
         "M.cutOut_delta_prime4": 1,
-        "M.cutOut_delta_prime5": 1,
-        "M.cutOut_delta_prime6": 1,
-        "M.cutOut_delta_prime7": 1,
-        "M.cutOut_delta_prime8": 1,
-        "M.cutOut_delta_prime9": 1,
-        "M.cutOut_delta_prime10": 1,
-        "M.cutOut_delta_prime11": 1,
-        "M.cutOut_delta_prime12": 1,
-        "M.cutOut_delta_prime13": 1,
-        "M.cutOut_delta_prime14": 1,
-        "M.cutOut_delta_prime15": 1,
-        "M.cutOut_delta_prime16": 1,
-        "M.cutOut_delta_prime17": 1,
-        "M.cutOut_delta_prime18": 1,
+        "M.cutOut_delta_prime5": 0.5,
+        "M.cutOut_delta_prime6": 0.5,
+        "M.cutOut_delta_prime7": 0,
+        "M.cutOut_delta_prime8": 0,
+        "M.cutOut_delta_prime9": 0,
+        "M.cutOut_delta_prime10": 0,
+        "M.cutOut_delta_prime11": 0,
+        "M.cutOut_delta_prime12": 0,
+        "M.cutOut_delta_prime13": 0,
+        "M.cutOut_delta_prime14": 0,
+        "M.cutOut_delta_prime15": 0,
+        "M.cutOut_delta_prime16": 0,
+        "M.cutOut_delta_prime17": 0,
+        "M.cutOut_delta_prime18": 0,
         "M.ratioTotalHeating1": 127.05,
         "M.ratioTotalHeating2": 284.9,
         "M.ratioTotalHeating3": 429.595833333333,
@@ -406,17 +406,17 @@
         "M.ratioTotalResistHeating2": 0,
         "M.ratioTotalResistHeating3": 0,
         "M.ratioTotalResistHeating4": 0,
-        "M.ratioTotalResistHeating5": 0,
-        "M.ratioTotalResistHeating6": 0,
-        "M.ratioTotalResistHeating7": 0,
-        "M.ratioTotalResistHeating8": 0,
-        "M.ratioTotalResistHeating9": 0,
-        "M.ratioTotalResistHeating10": 0,
-        "M.ratioTotalResistHeating11": 0,
-        "M.ratioTotalResistHeating12": 3.58677605234887,
-        "M.ratioTotalResistHeating13": 6.08702021681806,
-        "M.ratioTotalResistHeating14": 3.50620177751734,
-        "M.ratioTotalResistHeating15": 2.49169840804766,
+        "M.ratioTotalResistHeating5": 108.103818732298,
+        "M.ratioTotalResistHeating6": 143.449067291728,
+        "M.ratioTotalResistHeating7": 390.865807207735,
+        "M.ratioTotalResistHeating8": 310.774978025198,
+        "M.ratioTotalResistHeating9": 222.317853305987,
+        "M.ratioTotalResistHeating10": 162.437738060357,
+        "M.ratioTotalResistHeating11": 129.536575837484,
+        "M.ratioTotalResistHeating12": 70.8785037601328,
+        "M.ratioTotalResistHeating13": 35.5332552007032,
+        "M.ratioTotalResistHeating14": 12.7844516066022,
+        "M.ratioTotalResistHeating15": 6.86224240648501,
         "M.ratioTotalResistHeating16": 0,
         "M.ratioTotalResistHeating17": 0,
         "M.ratioTotalResistHeating18": 0,
@@ -424,21 +424,21 @@
         "M.ratioTotalPower2": 23.1843334737487,
         "M.ratioTotalPower3": 35.7908488039254,
         "M.ratioTotalPower4": 45.890771859869,
-        "M.ratioTotalPower5": 64.7946433698827,
-        "M.ratioTotalPower6": 101.17880057352,
-        "M.ratioTotalPower7": 148.514944430118,
-        "M.ratioTotalPower8": 127.403643507376,
-        "M.ratioTotalPower9": 92.6254226059942,
-        "M.ratioTotalPower10": 67.4,
-        "M.ratioTotalPower11": 53.663787202381,
-        "M.ratioTotalPower12": 28.6,
-        "M.ratioTotalPower13": 13.5,
-        "M.ratioTotalPower14": 4.6,
-        "M.ratioTotalPower15": 2.35,
+        "M.ratioTotalPower5": 32.3973216849414,
+        "M.ratioTotalPower6": 50.5894002867602,
+        "M.ratioTotalPower7": 0,
+        "M.ratioTotalPower8": 0,
+        "M.ratioTotalPower9": 0,
+        "M.ratioTotalPower10": 0,
+        "M.ratioTotalPower11": 0,
+        "M.ratioTotalPower12": 0,
+        "M.ratioTotalPower13": 0,
+        "M.ratioTotalPower14": 0,
+        "M.ratioTotalPower15": 0,
         "M.ratioTotalPower16": 0,
         "M.ratioTotalPower17": 0,
         "M.ratioTotalPower18": 0,
-        "M.HSPF": 9.46530640542776
+        "M.HSPF": 4.28461472949153
       },
       "seasonal_aggregates": [
         {
@@ -489,7 +489,7 @@
             "M.ratioTotalResistHeating17",
             "M.ratioTotalResistHeating18"
           ],
-          "value": 15.671696454731931,
+          "value": 1593.5442914347102,
           "unit": "not exposed",
           "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
@@ -515,7 +515,7 @@
             "M.ratioTotalPower17",
             "M.ratioTotalPower18"
           ],
-          "value": 819.6119474499465,
+          "value": 197.9674277323762,
           "unit": "not exposed",
           "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
@@ -604,11 +604,11 @@
             "M.binPowerConsumption_k15": 1316.66666666667,
             "M.binPowerConsumption_k25": 1822.22222222222,
             "M.buildingHeatLoad5": 7379.16666666667,
-            "M.cutOut_delta5": 1,
-            "M.cutOut_delta_prime5": 1,
+            "M.cutOut_delta5": 0.5,
+            "M.cutOut_delta_prime5": 0.5,
             "M.ratioTotalHeating5": 737.916666666667,
-            "M.ratioTotalPower5": 64.7946433698827,
-            "M.ratioTotalResistHeating5": 0
+            "M.ratioTotalPower5": 32.3973216849414,
+            "M.ratioTotalResistHeating5": 108.103818732298
           }
         },
         {
@@ -622,11 +622,11 @@
             "M.binPowerConsumption_k16": 1433.33333333333,
             "M.binPowerConsumption_k26": 1877.77777777778,
             "M.buildingHeatLoad6": 8983.33333333333,
-            "M.cutOut_delta6": 1,
-            "M.cutOut_delta_prime6": 1,
+            "M.cutOut_delta6": 0.5,
+            "M.cutOut_delta_prime6": 0.5,
             "M.ratioTotalHeating6": 979.183333333333,
-            "M.ratioTotalPower6": 101.17880057352,
-            "M.ratioTotalResistHeating6": 0
+            "M.ratioTotalPower6": 50.5894002867602,
+            "M.ratioTotalResistHeating6": 143.449067291728
           }
         },
         {
@@ -640,11 +640,11 @@
             "M.binPowerConsumption_k17": 1475,
             "M.binPowerConsumption_k27": 1933.33333333333,
             "M.buildingHeatLoad7": 10587.5,
-            "M.cutOut_delta7": 1,
-            "M.cutOut_delta_prime7": 1,
+            "M.cutOut_delta7": 0,
+            "M.cutOut_delta_prime7": 0,
             "M.ratioTotalHeating7": 1334.025,
-            "M.ratioTotalPower7": 148.514944430118,
-            "M.ratioTotalResistHeating7": 0
+            "M.ratioTotalPower7": 0,
+            "M.ratioTotalResistHeating7": 390.865807207735
           }
         },
         {
@@ -658,11 +658,11 @@
             "M.binPowerConsumption_k18": 1516.66666666667,
             "M.binPowerConsumption_k28": 1988.88888888889,
             "M.buildingHeatLoad8": 12191.6666666667,
-            "M.cutOut_delta8": 1,
-            "M.cutOut_delta_prime8": 1,
+            "M.cutOut_delta8": 0,
+            "M.cutOut_delta_prime8": 0,
             "M.ratioTotalHeating8": 1060.675,
-            "M.ratioTotalPower8": 127.403643507376,
-            "M.ratioTotalResistHeating8": 0
+            "M.ratioTotalPower8": 0,
+            "M.ratioTotalResistHeating8": 310.774978025198
           }
         },
         {
@@ -676,11 +676,11 @@
             "M.binPowerConsumption_k19": 1558.33333333333,
             "M.binPowerConsumption_k29": 2044.44444444444,
             "M.buildingHeatLoad9": 13795.8333333333,
-            "M.cutOut_delta9": 1,
-            "M.cutOut_delta_prime9": 1,
+            "M.cutOut_delta9": 0,
+            "M.cutOut_delta_prime9": 0,
             "M.ratioTotalHeating9": 758.770833333333,
-            "M.ratioTotalPower9": 92.6254226059942,
-            "M.ratioTotalResistHeating9": 0
+            "M.ratioTotalPower9": 0,
+            "M.ratioTotalResistHeating9": 222.317853305987
           }
         },
         {
@@ -694,11 +694,11 @@
             "M.binPowerConsumption_k110": 1600,
             "M.binPowerConsumption_k210": 2100,
             "M.buildingHeatLoad10": 15400,
-            "M.cutOut_delta10": 1,
-            "M.cutOut_delta_prime10": 1,
+            "M.cutOut_delta10": 0,
+            "M.cutOut_delta_prime10": 0,
             "M.ratioTotalHeating10": 554.4,
-            "M.ratioTotalPower10": 67.4,
-            "M.ratioTotalResistHeating10": 0
+            "M.ratioTotalPower10": 0,
+            "M.ratioTotalResistHeating10": 162.437738060357
           }
         },
         {
@@ -712,11 +712,11 @@
             "M.binPowerConsumption_k111": 1641.66666666667,
             "M.binPowerConsumption_k211": 2150,
             "M.buildingHeatLoad11": 17004.1666666667,
-            "M.cutOut_delta11": 1,
-            "M.cutOut_delta_prime11": 1,
+            "M.cutOut_delta11": 0,
+            "M.cutOut_delta_prime11": 0,
             "M.ratioTotalHeating11": 442.108333333333,
-            "M.ratioTotalPower11": 53.663787202381,
-            "M.ratioTotalResistHeating11": 0
+            "M.ratioTotalPower11": 0,
+            "M.ratioTotalResistHeating11": 129.536575837484
           }
         },
         {
@@ -730,11 +730,11 @@
             "M.binPowerConsumption_k112": 1683.33333333333,
             "M.binPowerConsumption_k212": 2200,
             "M.buildingHeatLoad12": 18608.3333333333,
-            "M.cutOut_delta12": 1,
-            "M.cutOut_delta_prime12": 1,
+            "M.cutOut_delta12": 0,
+            "M.cutOut_delta_prime12": 0,
             "M.ratioTotalHeating12": 241.908333333333,
-            "M.ratioTotalPower12": 28.6,
-            "M.ratioTotalResistHeating12": 3.58677605234887
+            "M.ratioTotalPower12": 0,
+            "M.ratioTotalResistHeating12": 70.8785037601328
           }
         },
         {
@@ -748,11 +748,11 @@
             "M.binPowerConsumption_k113": 1725,
             "M.binPowerConsumption_k213": 2250,
             "M.buildingHeatLoad13": 20212.5,
-            "M.cutOut_delta13": 1,
-            "M.cutOut_delta_prime13": 1,
+            "M.cutOut_delta13": 0,
+            "M.cutOut_delta_prime13": 0,
             "M.ratioTotalHeating13": 121.275,
-            "M.ratioTotalPower13": 13.5,
-            "M.ratioTotalResistHeating13": 6.08702021681806
+            "M.ratioTotalPower13": 0,
+            "M.ratioTotalResistHeating13": 35.5332552007032
           }
         },
         {
@@ -766,11 +766,11 @@
             "M.binPowerConsumption_k114": 1766.66666666667,
             "M.binPowerConsumption_k214": 2300,
             "M.buildingHeatLoad14": 21816.6666666667,
-            "M.cutOut_delta14": 1,
-            "M.cutOut_delta_prime14": 1,
+            "M.cutOut_delta14": 0,
+            "M.cutOut_delta_prime14": 0,
             "M.ratioTotalHeating14": 43.6333333333333,
-            "M.ratioTotalPower14": 4.6,
-            "M.ratioTotalResistHeating14": 3.50620177751734
+            "M.ratioTotalPower14": 0,
+            "M.ratioTotalResistHeating14": 12.7844516066022
           }
         },
         {
@@ -784,11 +784,11 @@
             "M.binPowerConsumption_k115": 1808.33333333333,
             "M.binPowerConsumption_k215": 2350,
             "M.buildingHeatLoad15": 23420.8333333333,
-            "M.cutOut_delta15": 1,
-            "M.cutOut_delta_prime15": 1,
+            "M.cutOut_delta15": 0,
+            "M.cutOut_delta_prime15": 0,
             "M.ratioTotalHeating15": 23.4208333333333,
-            "M.ratioTotalPower15": 2.35,
-            "M.ratioTotalResistHeating15": 2.49169840804766
+            "M.ratioTotalPower15": 0,
+            "M.ratioTotalResistHeating15": 6.86224240648501
           }
         },
         {
@@ -802,8 +802,8 @@
             "M.binPowerConsumption_k116": 1850,
             "M.binPowerConsumption_k216": 2400,
             "M.buildingHeatLoad16": 25025,
-            "M.cutOut_delta16": 1,
-            "M.cutOut_delta_prime16": 1,
+            "M.cutOut_delta16": 0,
+            "M.cutOut_delta_prime16": 0,
             "M.ratioTotalHeating16": 0,
             "M.ratioTotalPower16": 0,
             "M.ratioTotalResistHeating16": 0
@@ -820,8 +820,8 @@
             "M.binPowerConsumption_k117": 1891.66666666667,
             "M.binPowerConsumption_k217": 2450,
             "M.buildingHeatLoad17": 26629.1666666667,
-            "M.cutOut_delta17": 1,
-            "M.cutOut_delta_prime17": 1,
+            "M.cutOut_delta17": 0,
+            "M.cutOut_delta_prime17": 0,
             "M.ratioTotalHeating17": 0,
             "M.ratioTotalPower17": 0,
             "M.ratioTotalResistHeating17": 0
@@ -838,8 +838,8 @@
             "M.binPowerConsumption_k118": 1933.33333333333,
             "M.binPowerConsumption_k218": 2500,
             "M.buildingHeatLoad18": 28233.3333333333,
-            "M.cutOut_delta18": 1,
-            "M.cutOut_delta_prime18": 1,
+            "M.cutOut_delta18": 0,
+            "M.cutOut_delta_prime18": 0,
             "M.ratioTotalHeating18": 0,
             "M.ratioTotalPower18": 0,
             "M.ratioTotalResistHeating18": 0
@@ -875,38 +875,38 @@
           "M.cutOut_delta_prime2": 1,
           "M.cutOut_delta_prime3": 1,
           "M.cutOut_delta_prime4": 1,
-          "M.cutOut_delta_prime5": 1,
-          "M.cutOut_delta_prime6": 1,
-          "M.cutOut_delta_prime7": 1,
-          "M.cutOut_delta_prime8": 1,
-          "M.cutOut_delta_prime9": 1,
-          "M.cutOut_delta_prime10": 1,
-          "M.cutOut_delta_prime11": 1,
-          "M.cutOut_delta_prime12": 1,
-          "M.cutOut_delta_prime13": 1,
-          "M.cutOut_delta_prime14": 1,
-          "M.cutOut_delta_prime15": 1,
-          "M.cutOut_delta_prime16": 1,
-          "M.cutOut_delta_prime17": 1,
-          "M.cutOut_delta_prime18": 1,
+          "M.cutOut_delta_prime5": 0.5,
+          "M.cutOut_delta_prime6": 0.5,
+          "M.cutOut_delta_prime7": 0,
+          "M.cutOut_delta_prime8": 0,
+          "M.cutOut_delta_prime9": 0,
+          "M.cutOut_delta_prime10": 0,
+          "M.cutOut_delta_prime11": 0,
+          "M.cutOut_delta_prime12": 0,
+          "M.cutOut_delta_prime13": 0,
+          "M.cutOut_delta_prime14": 0,
+          "M.cutOut_delta_prime15": 0,
+          "M.cutOut_delta_prime16": 0,
+          "M.cutOut_delta_prime17": 0,
+          "M.cutOut_delta_prime18": 0,
           "M.cutOut_delta1": 1,
           "M.cutOut_delta2": 1,
           "M.cutOut_delta3": 1,
           "M.cutOut_delta4": 1,
-          "M.cutOut_delta5": 1,
-          "M.cutOut_delta6": 1,
-          "M.cutOut_delta7": 1,
-          "M.cutOut_delta8": 1,
-          "M.cutOut_delta9": 1,
-          "M.cutOut_delta10": 1,
-          "M.cutOut_delta11": 1,
-          "M.cutOut_delta12": 1,
-          "M.cutOut_delta13": 1,
-          "M.cutOut_delta14": 1,
-          "M.cutOut_delta15": 1,
-          "M.cutOut_delta16": 1,
-          "M.cutOut_delta17": 1,
-          "M.cutOut_delta18": 1
+          "M.cutOut_delta5": 0.5,
+          "M.cutOut_delta6": 0.5,
+          "M.cutOut_delta7": 0,
+          "M.cutOut_delta8": 0,
+          "M.cutOut_delta9": 0,
+          "M.cutOut_delta10": 0,
+          "M.cutOut_delta11": 0,
+          "M.cutOut_delta12": 0,
+          "M.cutOut_delta13": 0,
+          "M.cutOut_delta14": 0,
+          "M.cutOut_delta15": 0,
+          "M.cutOut_delta16": 0,
+          "M.cutOut_delta17": 0,
+          "M.cutOut_delta18": 0
         },
         "delta_distribution": {
           "cutOut_delta_prime": {
@@ -935,25 +935,25 @@
               1,
               1,
               1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1
+              0.5,
+              0.5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
             ],
             "counts": {
-              "one": 18,
-              "fractional": 0,
-              "zero": 0,
+              "one": 4,
+              "fractional": 2,
+              "zero": 12,
               "other": 0,
               "blank": 0
             }
@@ -984,25 +984,25 @@
               1,
               1,
               1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1
+              0.5,
+              0.5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
             ],
             "counts": {
-              "one": 18,
-              "fractional": 0,
-              "zero": 0,
+              "one": 4,
+              "fractional": 2,
+              "zero": 12,
               "other": 0,
               "blank": 0
             }
@@ -1016,22 +1016,22 @@
           "M.ratioTotalResistHeating2": 0,
           "M.ratioTotalResistHeating3": 0,
           "M.ratioTotalResistHeating4": 0,
-          "M.ratioTotalResistHeating5": 0,
-          "M.ratioTotalResistHeating6": 0,
-          "M.ratioTotalResistHeating7": 0,
-          "M.ratioTotalResistHeating8": 0,
-          "M.ratioTotalResistHeating9": 0,
-          "M.ratioTotalResistHeating10": 0,
-          "M.ratioTotalResistHeating11": 0,
-          "M.ratioTotalResistHeating12": 3.58677605234887,
-          "M.ratioTotalResistHeating13": 6.08702021681806,
-          "M.ratioTotalResistHeating14": 3.50620177751734,
-          "M.ratioTotalResistHeating15": 2.49169840804766,
+          "M.ratioTotalResistHeating5": 108.103818732298,
+          "M.ratioTotalResistHeating6": 143.449067291728,
+          "M.ratioTotalResistHeating7": 390.865807207735,
+          "M.ratioTotalResistHeating8": 310.774978025198,
+          "M.ratioTotalResistHeating9": 222.317853305987,
+          "M.ratioTotalResistHeating10": 162.437738060357,
+          "M.ratioTotalResistHeating11": 129.536575837484,
+          "M.ratioTotalResistHeating12": 70.8785037601328,
+          "M.ratioTotalResistHeating13": 35.5332552007032,
+          "M.ratioTotalResistHeating14": 12.7844516066022,
+          "M.ratioTotalResistHeating15": 6.86224240648501,
           "M.ratioTotalResistHeating16": 0,
           "M.ratioTotalResistHeating17": 0,
           "M.ratioTotalResistHeating18": 0
         },
-        "sum": 15.671696454731931,
+        "sum": 1593.5442914347102,
         "status": "raw resistance/auxiliary aggregate fields preserved"
       },
       "case_names": {
@@ -1115,7 +1115,7 @@
             "building_load": 7379.16666666667,
             "low_stage_capacity": 16666.6666666667,
             "high_stage_capacity": 22277.7777777778,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 108.103818732298
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -1131,7 +1131,7 @@
             "building_load": 8983.33333333333,
             "low_stage_capacity": 14944.4444444444,
             "high_stage_capacity": 21722.2222222222,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 143.449067291728
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -1147,7 +1147,7 @@
             "building_load": 10587.5,
             "low_stage_capacity": 13833.3333333333,
             "high_stage_capacity": 21166.6666666667,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 390.865807207735
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -1163,7 +1163,7 @@
             "building_load": 12191.6666666667,
             "low_stage_capacity": 12722.2222222222,
             "high_stage_capacity": 20611.1111111111,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 310.774978025198
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -1179,7 +1179,7 @@
             "building_load": 13795.8333333333,
             "low_stage_capacity": 11611.1111111111,
             "high_stage_capacity": 20055.5555555556,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 222.317853305987
           },
           "operating_regime": "between_low_and_high_stage"
         },
@@ -1195,7 +1195,7 @@
             "building_load": 15400,
             "low_stage_capacity": 10500,
             "high_stage_capacity": 19500,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 162.437738060357
           },
           "operating_regime": "between_low_and_high_stage"
         },
@@ -1211,7 +1211,7 @@
             "building_load": 17004.1666666667,
             "low_stage_capacity": 9250,
             "high_stage_capacity": 18583.3333333333,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 129.536575837484
           },
           "operating_regime": "between_low_and_high_stage"
         },
@@ -1227,7 +1227,7 @@
             "building_load": 18608.3333333333,
             "low_stage_capacity": 8000,
             "high_stage_capacity": 17666.6666666667,
-            "auxiliary_resistance": 3.58677605234887
+            "auxiliary_resistance": 70.8785037601328
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -1243,7 +1243,7 @@
             "building_load": 20212.5,
             "low_stage_capacity": 6750,
             "high_stage_capacity": 16750,
-            "auxiliary_resistance": 6.08702021681806
+            "auxiliary_resistance": 35.5332552007032
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -1259,7 +1259,7 @@
             "building_load": 21816.6666666667,
             "low_stage_capacity": 5500,
             "high_stage_capacity": 15833.3333333333,
-            "auxiliary_resistance": 3.50620177751734
+            "auxiliary_resistance": 12.7844516066022
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -1275,7 +1275,7 @@
             "building_load": 23420.8333333333,
             "low_stage_capacity": 4250,
             "high_stage_capacity": 14916.6666666667,
-            "auxiliary_resistance": 2.49169840804766
+            "auxiliary_resistance": 6.86224240648501
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -1336,8 +1336,8 @@
       }
     },
     "M1": {
-      "screen_headline": 8.57,
-      "raw_headline": 8.5695257081792,
+      "screen_headline": 3.89,
+      "raw_headline": 3.89179789143965,
       "headline_raw_field": "M1.HSPF",
       "design_load": {
         "value": null,
@@ -1409,14 +1409,14 @@
         "M1.binHeatCapacity_k28": 20611.1111111111,
         "M1.binHeatCapacity_k29": 20055.5555555556,
         "M1.binHeatCapacity_k210": 19500,
-        "M1.binHeatCapacity_k211": 18583.3333333333,
-        "M1.binHeatCapacity_k212": 17666.6666666667,
-        "M1.binHeatCapacity_k213": 16750,
-        "M1.binHeatCapacity_k214": 15833.3333333333,
-        "M1.binHeatCapacity_k215": 14916.6666666667,
-        "M1.binHeatCapacity_k216": 14000,
-        "M1.binHeatCapacity_k217": 13083.3333333333,
-        "M1.binHeatCapacity_k218": 12166.6666666667,
+        "M1.binHeatCapacity_k211": 18458.3333333333,
+        "M1.binHeatCapacity_k212": 17416.6666666667,
+        "M1.binHeatCapacity_k213": 16375,
+        "M1.binHeatCapacity_k214": 15333.3333333333,
+        "M1.binHeatCapacity_k215": 14291.6666666667,
+        "M1.binHeatCapacity_k216": 13250,
+        "M1.binHeatCapacity_k217": 12208.3333333333,
+        "M1.binHeatCapacity_k218": 11166.6666666667,
         "M1.binPowerConsumption_k11": 1450,
         "M1.binPowerConsumption_k12": 1416.66666666667,
         "M1.binPowerConsumption_k13": 1383.33333333333,
@@ -1445,50 +1445,50 @@
         "M1.binPowerConsumption_k28": 1988.88888888889,
         "M1.binPowerConsumption_k29": 2044.44444444444,
         "M1.binPowerConsumption_k210": 2100,
-        "M1.binPowerConsumption_k211": 2150,
-        "M1.binPowerConsumption_k212": 2200,
-        "M1.binPowerConsumption_k213": 2250,
-        "M1.binPowerConsumption_k214": 2300,
-        "M1.binPowerConsumption_k215": 2350,
-        "M1.binPowerConsumption_k216": 2400,
-        "M1.binPowerConsumption_k217": 2450,
-        "M1.binPowerConsumption_k218": 2500,
+        "M1.binPowerConsumption_k211": 2183.33333333333,
+        "M1.binPowerConsumption_k212": 2266.66666666667,
+        "M1.binPowerConsumption_k213": 2350,
+        "M1.binPowerConsumption_k214": 2433.33333333333,
+        "M1.binPowerConsumption_k215": 2516.66666666667,
+        "M1.binPowerConsumption_k216": 2600,
+        "M1.binPowerConsumption_k217": 2683.33333333333,
+        "M1.binPowerConsumption_k218": 2766.66666666667,
         "M1.cutOut_delta1": 1,
         "M1.cutOut_delta2": 1,
         "M1.cutOut_delta3": 1,
         "M1.cutOut_delta4": 1,
-        "M1.cutOut_delta5": 1,
-        "M1.cutOut_delta6": 1,
-        "M1.cutOut_delta7": 1,
-        "M1.cutOut_delta8": 1,
-        "M1.cutOut_delta9": 1,
-        "M1.cutOut_delta10": 1,
-        "M1.cutOut_delta11": 1,
-        "M1.cutOut_delta12": 1,
-        "M1.cutOut_delta13": 1,
-        "M1.cutOut_delta14": 1,
-        "M1.cutOut_delta15": 1,
-        "M1.cutOut_delta16": 1,
-        "M1.cutOut_delta17": 1,
-        "M1.cutOut_delta18": 1,
+        "M1.cutOut_delta5": 0.5,
+        "M1.cutOut_delta6": 0.5,
+        "M1.cutOut_delta7": 0,
+        "M1.cutOut_delta8": 0,
+        "M1.cutOut_delta9": 0,
+        "M1.cutOut_delta10": 0,
+        "M1.cutOut_delta11": 0,
+        "M1.cutOut_delta12": 0,
+        "M1.cutOut_delta13": 0,
+        "M1.cutOut_delta14": 0,
+        "M1.cutOut_delta15": 0,
+        "M1.cutOut_delta16": 0,
+        "M1.cutOut_delta17": 0,
+        "M1.cutOut_delta18": 0,
         "M1.cutOut_delta_prime1": 1,
         "M1.cutOut_delta_prime2": 1,
         "M1.cutOut_delta_prime3": 1,
         "M1.cutOut_delta_prime4": 1,
-        "M1.cutOut_delta_prime5": 1,
-        "M1.cutOut_delta_prime6": 1,
-        "M1.cutOut_delta_prime7": 1,
-        "M1.cutOut_delta_prime8": 1,
-        "M1.cutOut_delta_prime9": 1,
-        "M1.cutOut_delta_prime10": 1,
-        "M1.cutOut_delta_prime11": 1,
-        "M1.cutOut_delta_prime12": 1,
-        "M1.cutOut_delta_prime13": 1,
-        "M1.cutOut_delta_prime14": 1,
-        "M1.cutOut_delta_prime15": 1,
-        "M1.cutOut_delta_prime16": 1,
-        "M1.cutOut_delta_prime17": 1,
-        "M1.cutOut_delta_prime18": 1,
+        "M1.cutOut_delta_prime5": 0.5,
+        "M1.cutOut_delta_prime6": 0.5,
+        "M1.cutOut_delta_prime7": 0,
+        "M1.cutOut_delta_prime8": 0,
+        "M1.cutOut_delta_prime9": 0,
+        "M1.cutOut_delta_prime10": 0,
+        "M1.cutOut_delta_prime11": 0,
+        "M1.cutOut_delta_prime12": 0,
+        "M1.cutOut_delta_prime13": 0,
+        "M1.cutOut_delta_prime14": 0,
+        "M1.cutOut_delta_prime15": 0,
+        "M1.cutOut_delta_prime16": 0,
+        "M1.cutOut_delta_prime17": 0,
+        "M1.cutOut_delta_prime18": 0,
         "M1.ratioTotalHeating1": 0,
         "M1.ratioTotalHeating2": 0,
         "M1.ratioTotalHeating3": 213.21,
@@ -1511,17 +1511,17 @@
         "M1.ratioTotalResistHeating2": 0,
         "M1.ratioTotalResistHeating3": 0,
         "M1.ratioTotalResistHeating4": 0,
-        "M1.ratioTotalResistHeating5": 0,
-        "M1.ratioTotalResistHeating6": 0,
-        "M1.ratioTotalResistHeating7": 0,
-        "M1.ratioTotalResistHeating8": 0,
-        "M1.ratioTotalResistHeating9": 43.7428785363154,
-        "M1.ratioTotalResistHeating10": 70.8819220627014,
-        "M1.ratioTotalResistHeating11": 84.4574665494677,
-        "M1.ratioTotalResistHeating12": 58.8612169157144,
-        "M1.ratioTotalResistHeating13": 34.8432464107823,
-        "M1.ratioTotalResistHeating14": 14.1732591073347,
-        "M1.ratioTotalResistHeating15": 8.36605137220431,
+        "M1.ratioTotalResistHeating5": 131.409317316144,
+        "M1.ratioTotalResistHeating6": 198.326985057134,
+        "M1.ratioTotalResistHeating7": 585.883387049517,
+        "M1.ratioTotalResistHeating8": 492.481687664811,
+        "M1.ratioTotalResistHeating9": 366.935247582772,
+        "M1.ratioTotalResistHeating10": 276.566070905362,
+        "M1.ratioTotalResistHeating11": 226.024025783768,
+        "M1.ratioTotalResistHeating12": 126.152944623498,
+        "M1.ratioTotalResistHeating13": 64.2894813946674,
+        "M1.ratioTotalResistHeating14": 23.4515089364196,
+        "M1.ratioTotalResistHeating15": 12.7365953706417,
         "M1.ratioTotalResistHeating16": 0,
         "M1.ratioTotalResistHeating17": 0,
         "M1.ratioTotalResistHeating18": 0,
@@ -1529,21 +1529,21 @@
         "M1.ratioTotalPower2": 0,
         "M1.ratioTotalPower3": 18.1771053745239,
         "M1.ratioTotalPower4": 43.9922303473492,
-        "M1.ratioTotalPower5": 77.2874412679577,
-        "M1.ratioTotalPower6": 133.913874967027,
-        "M1.ratioTotalPower7": 201.88875,
-        "M1.ratioTotalPower8": 166.30955399061,
-        "M1.ratioTotalPower9": 112.444444444444,
-        "M1.ratioTotalPower10": 75.6,
-        "M1.ratioTotalPower11": 55.9,
-        "M1.ratioTotalPower12": 28.6,
-        "M1.ratioTotalPower13": 13.5,
-        "M1.ratioTotalPower14": 4.6,
-        "M1.ratioTotalPower15": 2.35,
+        "M1.ratioTotalPower5": 38.6437206339789,
+        "M1.ratioTotalPower6": 66.9569374835136,
+        "M1.ratioTotalPower7": 0,
+        "M1.ratioTotalPower8": 0,
+        "M1.ratioTotalPower9": 0,
+        "M1.ratioTotalPower10": 0,
+        "M1.ratioTotalPower11": 0,
+        "M1.ratioTotalPower12": 0,
+        "M1.ratioTotalPower13": 0,
+        "M1.ratioTotalPower14": 0,
+        "M1.ratioTotalPower15": 0,
         "M1.ratioTotalPower16": 0,
         "M1.ratioTotalPower17": 0,
         "M1.ratioTotalPower18": 0,
-        "M1.HSPF": 8.5695257081792
+        "M1.HSPF": 3.89179789143965
       },
       "seasonal_aggregates": [
         {
@@ -1594,7 +1594,7 @@
             "M1.ratioTotalResistHeating17",
             "M1.ratioTotalResistHeating18"
           ],
-          "value": 315.32604095452024,
+          "value": 2504.2572516847345,
           "unit": "not exposed",
           "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
@@ -1620,7 +1620,7 @@
             "M1.ratioTotalPower17",
             "M1.ratioTotalPower18"
           ],
-          "value": 934.5634003919118,
+          "value": 167.7699938393656,
           "unit": "not exposed",
           "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
@@ -1709,11 +1709,11 @@
             "M1.binPowerConsumption_k15": 1316.66666666667,
             "M1.binPowerConsumption_k25": 1822.22222222222,
             "M1.buildingHeatLoad5": 8970,
-            "M1.cutOut_delta5": 1,
-            "M1.cutOut_delta_prime5": 1,
+            "M1.cutOut_delta5": 0.5,
+            "M1.cutOut_delta_prime5": 0.5,
             "M1.ratioTotalHeating5": 897,
-            "M1.ratioTotalPower5": 77.2874412679577,
-            "M1.ratioTotalResistHeating5": 0
+            "M1.ratioTotalPower5": 38.6437206339789,
+            "M1.ratioTotalResistHeating5": 131.409317316144
           }
         },
         {
@@ -1727,11 +1727,11 @@
             "M1.binPowerConsumption_k16": 1433.33333333333,
             "M1.binPowerConsumption_k26": 1877.77777777778,
             "M1.buildingHeatLoad6": 12420,
-            "M1.cutOut_delta6": 1,
-            "M1.cutOut_delta_prime6": 1,
+            "M1.cutOut_delta6": 0.5,
+            "M1.cutOut_delta_prime6": 0.5,
             "M1.ratioTotalHeating6": 1353.78,
-            "M1.ratioTotalPower6": 133.913874967027,
-            "M1.ratioTotalResistHeating6": 0
+            "M1.ratioTotalPower6": 66.9569374835136,
+            "M1.ratioTotalResistHeating6": 198.326985057134
           }
         },
         {
@@ -1745,11 +1745,11 @@
             "M1.binPowerConsumption_k17": 1475,
             "M1.binPowerConsumption_k27": 1933.33333333333,
             "M1.buildingHeatLoad7": 15870,
-            "M1.cutOut_delta7": 1,
-            "M1.cutOut_delta_prime7": 1,
+            "M1.cutOut_delta7": 0,
+            "M1.cutOut_delta_prime7": 0,
             "M1.ratioTotalHeating7": 1999.62,
-            "M1.ratioTotalPower7": 201.88875,
-            "M1.ratioTotalResistHeating7": 0
+            "M1.ratioTotalPower7": 0,
+            "M1.ratioTotalResistHeating7": 585.883387049517
           }
         },
         {
@@ -1763,11 +1763,11 @@
             "M1.binPowerConsumption_k18": 1516.66666666667,
             "M1.binPowerConsumption_k28": 1988.88888888889,
             "M1.buildingHeatLoad8": 19320,
-            "M1.cutOut_delta8": 1,
-            "M1.cutOut_delta_prime8": 1,
+            "M1.cutOut_delta8": 0,
+            "M1.cutOut_delta_prime8": 0,
             "M1.ratioTotalHeating8": 1680.84,
-            "M1.ratioTotalPower8": 166.30955399061,
-            "M1.ratioTotalResistHeating8": 0
+            "M1.ratioTotalPower8": 0,
+            "M1.ratioTotalResistHeating8": 492.481687664811
           }
         },
         {
@@ -1781,11 +1781,11 @@
             "M1.binPowerConsumption_k19": 1558.33333333333,
             "M1.binPowerConsumption_k29": 2044.44444444444,
             "M1.buildingHeatLoad9": 22770,
-            "M1.cutOut_delta9": 1,
-            "M1.cutOut_delta_prime9": 1,
+            "M1.cutOut_delta9": 0,
+            "M1.cutOut_delta_prime9": 0,
             "M1.ratioTotalHeating9": 1252.35,
-            "M1.ratioTotalPower9": 112.444444444444,
-            "M1.ratioTotalResistHeating9": 43.7428785363154
+            "M1.ratioTotalPower9": 0,
+            "M1.ratioTotalResistHeating9": 366.935247582772
           }
         },
         {
@@ -1799,11 +1799,11 @@
             "M1.binPowerConsumption_k110": 1600,
             "M1.binPowerConsumption_k210": 2100,
             "M1.buildingHeatLoad10": 26220,
-            "M1.cutOut_delta10": 1,
-            "M1.cutOut_delta_prime10": 1,
+            "M1.cutOut_delta10": 0,
+            "M1.cutOut_delta_prime10": 0,
             "M1.ratioTotalHeating10": 943.92,
-            "M1.ratioTotalPower10": 75.6,
-            "M1.ratioTotalResistHeating10": 70.8819220627014
+            "M1.ratioTotalPower10": 0,
+            "M1.ratioTotalResistHeating10": 276.566070905362
           }
         },
         {
@@ -1813,15 +1813,15 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k111": 9250,
-            "M1.binHeatCapacity_k211": 18583.3333333333,
+            "M1.binHeatCapacity_k211": 18458.3333333333,
             "M1.binPowerConsumption_k111": 1641.66666666667,
-            "M1.binPowerConsumption_k211": 2150,
+            "M1.binPowerConsumption_k211": 2183.33333333333,
             "M1.buildingHeatLoad11": 29670,
-            "M1.cutOut_delta11": 1,
-            "M1.cutOut_delta_prime11": 1,
+            "M1.cutOut_delta11": 0,
+            "M1.cutOut_delta_prime11": 0,
             "M1.ratioTotalHeating11": 771.42,
-            "M1.ratioTotalPower11": 55.9,
-            "M1.ratioTotalResistHeating11": 84.4574665494677
+            "M1.ratioTotalPower11": 0,
+            "M1.ratioTotalResistHeating11": 226.024025783768
           }
         },
         {
@@ -1831,15 +1831,15 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k112": 8000,
-            "M1.binHeatCapacity_k212": 17666.6666666667,
+            "M1.binHeatCapacity_k212": 17416.6666666667,
             "M1.binPowerConsumption_k112": 1683.33333333333,
-            "M1.binPowerConsumption_k212": 2200,
+            "M1.binPowerConsumption_k212": 2266.66666666667,
             "M1.buildingHeatLoad12": 33120,
-            "M1.cutOut_delta12": 1,
-            "M1.cutOut_delta_prime12": 1,
+            "M1.cutOut_delta12": 0,
+            "M1.cutOut_delta_prime12": 0,
             "M1.ratioTotalHeating12": 430.56,
-            "M1.ratioTotalPower12": 28.6,
-            "M1.ratioTotalResistHeating12": 58.8612169157144
+            "M1.ratioTotalPower12": 0,
+            "M1.ratioTotalResistHeating12": 126.152944623498
           }
         },
         {
@@ -1849,15 +1849,15 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k113": 6750,
-            "M1.binHeatCapacity_k213": 16750,
+            "M1.binHeatCapacity_k213": 16375,
             "M1.binPowerConsumption_k113": 1725,
-            "M1.binPowerConsumption_k213": 2250,
+            "M1.binPowerConsumption_k213": 2350,
             "M1.buildingHeatLoad13": 36570,
-            "M1.cutOut_delta13": 1,
-            "M1.cutOut_delta_prime13": 1,
+            "M1.cutOut_delta13": 0,
+            "M1.cutOut_delta_prime13": 0,
             "M1.ratioTotalHeating13": 219.42,
-            "M1.ratioTotalPower13": 13.5,
-            "M1.ratioTotalResistHeating13": 34.8432464107823
+            "M1.ratioTotalPower13": 0,
+            "M1.ratioTotalResistHeating13": 64.2894813946674
           }
         },
         {
@@ -1867,15 +1867,15 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k114": 5500,
-            "M1.binHeatCapacity_k214": 15833.3333333333,
+            "M1.binHeatCapacity_k214": 15333.3333333333,
             "M1.binPowerConsumption_k114": 1766.66666666667,
-            "M1.binPowerConsumption_k214": 2300,
+            "M1.binPowerConsumption_k214": 2433.33333333333,
             "M1.buildingHeatLoad14": 40020,
-            "M1.cutOut_delta14": 1,
-            "M1.cutOut_delta_prime14": 1,
+            "M1.cutOut_delta14": 0,
+            "M1.cutOut_delta_prime14": 0,
             "M1.ratioTotalHeating14": 80.04,
-            "M1.ratioTotalPower14": 4.6,
-            "M1.ratioTotalResistHeating14": 14.1732591073347
+            "M1.ratioTotalPower14": 0,
+            "M1.ratioTotalResistHeating14": 23.4515089364196
           }
         },
         {
@@ -1885,15 +1885,15 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k115": 4250,
-            "M1.binHeatCapacity_k215": 14916.6666666667,
+            "M1.binHeatCapacity_k215": 14291.6666666667,
             "M1.binPowerConsumption_k115": 1808.33333333333,
-            "M1.binPowerConsumption_k215": 2350,
+            "M1.binPowerConsumption_k215": 2516.66666666667,
             "M1.buildingHeatLoad15": 43470,
-            "M1.cutOut_delta15": 1,
-            "M1.cutOut_delta_prime15": 1,
+            "M1.cutOut_delta15": 0,
+            "M1.cutOut_delta_prime15": 0,
             "M1.ratioTotalHeating15": 43.47,
-            "M1.ratioTotalPower15": 2.35,
-            "M1.ratioTotalResistHeating15": 8.36605137220431
+            "M1.ratioTotalPower15": 0,
+            "M1.ratioTotalResistHeating15": 12.7365953706417
           }
         },
         {
@@ -1903,12 +1903,12 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k116": 3000,
-            "M1.binHeatCapacity_k216": 14000,
+            "M1.binHeatCapacity_k216": 13250,
             "M1.binPowerConsumption_k116": 1850,
-            "M1.binPowerConsumption_k216": 2400,
+            "M1.binPowerConsumption_k216": 2600,
             "M1.buildingHeatLoad16": 46920,
-            "M1.cutOut_delta16": 1,
-            "M1.cutOut_delta_prime16": 1,
+            "M1.cutOut_delta16": 0,
+            "M1.cutOut_delta_prime16": 0,
             "M1.ratioTotalHeating16": 0,
             "M1.ratioTotalPower16": 0,
             "M1.ratioTotalResistHeating16": 0
@@ -1921,12 +1921,12 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k117": 1750,
-            "M1.binHeatCapacity_k217": 13083.3333333333,
+            "M1.binHeatCapacity_k217": 12208.3333333333,
             "M1.binPowerConsumption_k117": 1891.66666666667,
-            "M1.binPowerConsumption_k217": 2450,
+            "M1.binPowerConsumption_k217": 2683.33333333333,
             "M1.buildingHeatLoad17": 50370,
-            "M1.cutOut_delta17": 1,
-            "M1.cutOut_delta_prime17": 1,
+            "M1.cutOut_delta17": 0,
+            "M1.cutOut_delta_prime17": 0,
             "M1.ratioTotalHeating17": 0,
             "M1.ratioTotalPower17": 0,
             "M1.ratioTotalResistHeating17": 0
@@ -1939,12 +1939,12 @@
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k118": 500,
-            "M1.binHeatCapacity_k218": 12166.6666666667,
+            "M1.binHeatCapacity_k218": 11166.6666666667,
             "M1.binPowerConsumption_k118": 1933.33333333333,
-            "M1.binPowerConsumption_k218": 2500,
+            "M1.binPowerConsumption_k218": 2766.66666666667,
             "M1.buildingHeatLoad18": 53820,
-            "M1.cutOut_delta18": 1,
-            "M1.cutOut_delta_prime18": 1,
+            "M1.cutOut_delta18": 0,
+            "M1.cutOut_delta_prime18": 0,
             "M1.ratioTotalHeating18": 0,
             "M1.ratioTotalPower18": 0,
             "M1.ratioTotalResistHeating18": 0
@@ -1980,38 +1980,38 @@
           "M1.cutOut_delta_prime2": 1,
           "M1.cutOut_delta_prime3": 1,
           "M1.cutOut_delta_prime4": 1,
-          "M1.cutOut_delta_prime5": 1,
-          "M1.cutOut_delta_prime6": 1,
-          "M1.cutOut_delta_prime7": 1,
-          "M1.cutOut_delta_prime8": 1,
-          "M1.cutOut_delta_prime9": 1,
-          "M1.cutOut_delta_prime10": 1,
-          "M1.cutOut_delta_prime11": 1,
-          "M1.cutOut_delta_prime12": 1,
-          "M1.cutOut_delta_prime13": 1,
-          "M1.cutOut_delta_prime14": 1,
-          "M1.cutOut_delta_prime15": 1,
-          "M1.cutOut_delta_prime16": 1,
-          "M1.cutOut_delta_prime17": 1,
-          "M1.cutOut_delta_prime18": 1,
+          "M1.cutOut_delta_prime5": 0.5,
+          "M1.cutOut_delta_prime6": 0.5,
+          "M1.cutOut_delta_prime7": 0,
+          "M1.cutOut_delta_prime8": 0,
+          "M1.cutOut_delta_prime9": 0,
+          "M1.cutOut_delta_prime10": 0,
+          "M1.cutOut_delta_prime11": 0,
+          "M1.cutOut_delta_prime12": 0,
+          "M1.cutOut_delta_prime13": 0,
+          "M1.cutOut_delta_prime14": 0,
+          "M1.cutOut_delta_prime15": 0,
+          "M1.cutOut_delta_prime16": 0,
+          "M1.cutOut_delta_prime17": 0,
+          "M1.cutOut_delta_prime18": 0,
           "M1.cutOut_delta1": 1,
           "M1.cutOut_delta2": 1,
           "M1.cutOut_delta3": 1,
           "M1.cutOut_delta4": 1,
-          "M1.cutOut_delta5": 1,
-          "M1.cutOut_delta6": 1,
-          "M1.cutOut_delta7": 1,
-          "M1.cutOut_delta8": 1,
-          "M1.cutOut_delta9": 1,
-          "M1.cutOut_delta10": 1,
-          "M1.cutOut_delta11": 1,
-          "M1.cutOut_delta12": 1,
-          "M1.cutOut_delta13": 1,
-          "M1.cutOut_delta14": 1,
-          "M1.cutOut_delta15": 1,
-          "M1.cutOut_delta16": 1,
-          "M1.cutOut_delta17": 1,
-          "M1.cutOut_delta18": 1
+          "M1.cutOut_delta5": 0.5,
+          "M1.cutOut_delta6": 0.5,
+          "M1.cutOut_delta7": 0,
+          "M1.cutOut_delta8": 0,
+          "M1.cutOut_delta9": 0,
+          "M1.cutOut_delta10": 0,
+          "M1.cutOut_delta11": 0,
+          "M1.cutOut_delta12": 0,
+          "M1.cutOut_delta13": 0,
+          "M1.cutOut_delta14": 0,
+          "M1.cutOut_delta15": 0,
+          "M1.cutOut_delta16": 0,
+          "M1.cutOut_delta17": 0,
+          "M1.cutOut_delta18": 0
         },
         "delta_distribution": {
           "cutOut_delta_prime": {
@@ -2040,25 +2040,25 @@
               1,
               1,
               1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1
+              0.5,
+              0.5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
             ],
             "counts": {
-              "one": 18,
-              "fractional": 0,
-              "zero": 0,
+              "one": 4,
+              "fractional": 2,
+              "zero": 12,
               "other": 0,
               "blank": 0
             }
@@ -2089,25 +2089,25 @@
               1,
               1,
               1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1,
-              1
+              0.5,
+              0.5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
             ],
             "counts": {
-              "one": 18,
-              "fractional": 0,
-              "zero": 0,
+              "one": 4,
+              "fractional": 2,
+              "zero": 12,
               "other": 0,
               "blank": 0
             }
@@ -2121,22 +2121,22 @@
           "M1.ratioTotalResistHeating2": 0,
           "M1.ratioTotalResistHeating3": 0,
           "M1.ratioTotalResistHeating4": 0,
-          "M1.ratioTotalResistHeating5": 0,
-          "M1.ratioTotalResistHeating6": 0,
-          "M1.ratioTotalResistHeating7": 0,
-          "M1.ratioTotalResistHeating8": 0,
-          "M1.ratioTotalResistHeating9": 43.7428785363154,
-          "M1.ratioTotalResistHeating10": 70.8819220627014,
-          "M1.ratioTotalResistHeating11": 84.4574665494677,
-          "M1.ratioTotalResistHeating12": 58.8612169157144,
-          "M1.ratioTotalResistHeating13": 34.8432464107823,
-          "M1.ratioTotalResistHeating14": 14.1732591073347,
-          "M1.ratioTotalResistHeating15": 8.36605137220431,
+          "M1.ratioTotalResistHeating5": 131.409317316144,
+          "M1.ratioTotalResistHeating6": 198.326985057134,
+          "M1.ratioTotalResistHeating7": 585.883387049517,
+          "M1.ratioTotalResistHeating8": 492.481687664811,
+          "M1.ratioTotalResistHeating9": 366.935247582772,
+          "M1.ratioTotalResistHeating10": 276.566070905362,
+          "M1.ratioTotalResistHeating11": 226.024025783768,
+          "M1.ratioTotalResistHeating12": 126.152944623498,
+          "M1.ratioTotalResistHeating13": 64.2894813946674,
+          "M1.ratioTotalResistHeating14": 23.4515089364196,
+          "M1.ratioTotalResistHeating15": 12.7365953706417,
           "M1.ratioTotalResistHeating16": 0,
           "M1.ratioTotalResistHeating17": 0,
           "M1.ratioTotalResistHeating18": 0
         },
-        "sum": 315.32604095452024,
+        "sum": 2504.2572516847345,
         "status": "raw resistance/auxiliary aggregate fields preserved"
       },
       "case_names": {
@@ -2220,7 +2220,7 @@
             "building_load": 8970,
             "low_stage_capacity": 16666.6666666667,
             "high_stage_capacity": 22277.7777777778,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 131.409317316144
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -2236,7 +2236,7 @@
             "building_load": 12420,
             "low_stage_capacity": 14944.4444444444,
             "high_stage_capacity": 21722.2222222222,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 198.326985057134
           },
           "operating_regime": "load_at_or_below_low_stage"
         },
@@ -2252,7 +2252,7 @@
             "building_load": 15870,
             "low_stage_capacity": 13833.3333333333,
             "high_stage_capacity": 21166.6666666667,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 585.883387049517
           },
           "operating_regime": "between_low_and_high_stage"
         },
@@ -2268,7 +2268,7 @@
             "building_load": 19320,
             "low_stage_capacity": 12722.2222222222,
             "high_stage_capacity": 20611.1111111111,
-            "auxiliary_resistance": 0
+            "auxiliary_resistance": 492.481687664811
           },
           "operating_regime": "between_low_and_high_stage"
         },
@@ -2284,7 +2284,7 @@
             "building_load": 22770,
             "low_stage_capacity": 11611.1111111111,
             "high_stage_capacity": 20055.5555555556,
-            "auxiliary_resistance": 43.7428785363154
+            "auxiliary_resistance": 366.935247582772
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2300,7 +2300,7 @@
             "building_load": 26220,
             "low_stage_capacity": 10500,
             "high_stage_capacity": 19500,
-            "auxiliary_resistance": 70.8819220627014
+            "auxiliary_resistance": 276.566070905362
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2315,8 +2315,8 @@
           "raw_values": {
             "building_load": 29670,
             "low_stage_capacity": 9250,
-            "high_stage_capacity": 18583.3333333333,
-            "auxiliary_resistance": 84.4574665494677
+            "high_stage_capacity": 18458.3333333333,
+            "auxiliary_resistance": 226.024025783768
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2331,8 +2331,8 @@
           "raw_values": {
             "building_load": 33120,
             "low_stage_capacity": 8000,
-            "high_stage_capacity": 17666.6666666667,
-            "auxiliary_resistance": 58.8612169157144
+            "high_stage_capacity": 17416.6666666667,
+            "auxiliary_resistance": 126.152944623498
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2347,8 +2347,8 @@
           "raw_values": {
             "building_load": 36570,
             "low_stage_capacity": 6750,
-            "high_stage_capacity": 16750,
-            "auxiliary_resistance": 34.8432464107823
+            "high_stage_capacity": 16375,
+            "auxiliary_resistance": 64.2894813946674
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2363,8 +2363,8 @@
           "raw_values": {
             "building_load": 40020,
             "low_stage_capacity": 5500,
-            "high_stage_capacity": 15833.3333333333,
-            "auxiliary_resistance": 14.1732591073347
+            "high_stage_capacity": 15333.3333333333,
+            "auxiliary_resistance": 23.4515089364196
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2379,8 +2379,8 @@
           "raw_values": {
             "building_load": 43470,
             "low_stage_capacity": 4250,
-            "high_stage_capacity": 14916.6666666667,
-            "auxiliary_resistance": 8.36605137220431
+            "high_stage_capacity": 14291.6666666667,
+            "auxiliary_resistance": 12.7365953706417
           },
           "operating_regime": "high_stage_with_auxiliary_heat"
         },
@@ -2395,7 +2395,7 @@
           "raw_values": {
             "building_load": 46920,
             "low_stage_capacity": 3000,
-            "high_stage_capacity": 14000,
+            "high_stage_capacity": 13250,
             "auxiliary_resistance": 0
           },
           "operating_regime": "above_high_stage"
@@ -2411,7 +2411,7 @@
           "raw_values": {
             "building_load": 50370,
             "low_stage_capacity": 1750,
-            "high_stage_capacity": 13083.3333333333,
+            "high_stage_capacity": 12208.3333333333,
             "auxiliary_resistance": 0
           },
           "operating_regime": "above_high_stage"
@@ -2427,7 +2427,7 @@
           "raw_values": {
             "building_load": 53820,
             "low_stage_capacity": 500,
-            "high_stage_capacity": 12166.6666666667,
+            "high_stage_capacity": 11166.6666666667,
             "auxiliary_resistance": 0
           },
           "operating_regime": "above_high_stage"
@@ -2448,9 +2448,9 @@
   },
   "checksums": {
     "input_template.csv": "0a7d124814a2cb94e1fcda11d314dc6884d5196012e2365bc2d217db31259c81",
-    "input.csv": "824418810d57f1535e5ce853ca9e1a5081034abe3814c8806303c9888e5657ed",
-    "result_m.csv": "ae4ad2744f7ccffa74e1b6a05c51bfd767838cf8682c889200b7552e474882ad",
-    "result_m1.csv": "9d45be22698c9982c5728c405dc238073a2849d32aae55e534f317f3149ce424"
+    "input.csv": "43063541c2739de9be7dcf748fc291af0ad26912553125ca1be38043589b3e7c",
+    "result_m.csv": "045360950de236133abc4c6235fdcd373c629e1eb0671ecf728802c540b20f09",
+    "result_m1.csv": "ef744d3d4a541564cef07d88553684d2d28dbc1ba541f17b36efc8b9906ae7e6"
   },
   "known_limitations": [
     "Calculator/version information was not displayed in the UI.",

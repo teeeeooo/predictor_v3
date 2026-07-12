@@ -1,7 +1,14 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "fixture_id": "ahri210240_triple_capacity_northern_hspf2_synthetic_01",
   "standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
+  "oracle_status": {
+    "kind": "official AHRI Analytics Appendix M/M1 evidence oracle",
+    "official_source": "AHRI Analytics official calculation app",
+    "official_standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
+    "target_2026_boundary": "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit.",
+    "certification_claim": false
+  },
   "calculator_source": "AHRI Analytics official calculation app",
   "calculator_url": "https://seerhspf2.ahrianalytics.org/app/seerhspf2",
   "calculation_date": "2026-07-12",
@@ -19,24 +26,8 @@
     "needCoilOnlyAdjust": false,
     "isMobileHomeAndSpaceConstrained": false,
     "isNonmobileHomeAndNonSpaceConstrained": true,
-    "ODTempWhenLockOut": -20,
-    "H23Tested": true,
-    "H21Tested": true,
-    "H31Tested": true,
-    "compOperationTemp_k1_lower": 40,
-    "compOperationTemp_k1_upper": 65,
-    "compOperationTemp_k2_lower": 20,
-    "compOperationTemp_k2_upper": 50,
-    "compOperationTemp_k3_lower": -20,
-    "compOperationTemp_k3_upper": 30,
-    "T_off": -45,
-    "T_on": -45,
-    "isDemandDefrost": true,
-    "demandDefrostCredit": 1.028571429,
-    "degCoeffHeatBoost": 0.18,
-    "degCoeffHeatFull": 0.22,
-    "degCoeffHeatMin": 0.28,
-    "lockOutLowCapacityOps": false
+    "lockOutLowCapacityOps": false,
+    "ODTempWhenLockOut": -20
   },
   "tested_optional_points": {
     "H23Tested": true,
@@ -97,6 +88,133 @@
     "scfm17min": 800,
     "scfm5boost": 800
   },
+  "input_fields": {
+    "compressorDesignStage": "Triple Stages",
+    "indoorBlowerType": "Fixed Speed/PSC",
+    "needCoilOnlyAdjust": false,
+    "isMobileHomeAndSpaceConstrained": false,
+    "isNonmobileHomeAndNonSpaceConstrained": true,
+    "lockOutLowCapacityOps": false,
+    "ODTempWhenLockOut": -20,
+    "H23Tested": true,
+    "H21Tested": true,
+    "H31Tested": true,
+    "compOperationTemp_k1_lower": 40,
+    "compOperationTemp_k1_upper": 65,
+    "compOperationTemp_k2_lower": 20,
+    "compOperationTemp_k2_upper": 50,
+    "compOperationTemp_k3_lower": -20,
+    "compOperationTemp_k3_upper": 30,
+    "T_off": -45,
+    "T_on": -45,
+    "isDemandDefrost": true,
+    "demandDefrostCredit": 1.028571429,
+    "degCoeffHeatBoost": 0.18,
+    "degCoeffHeatFull": 0.22,
+    "degCoeffHeatMin": 0.28,
+    "coolCapacity95Full": 30000,
+    "heatCapacity62min": 26000,
+    "heatCapacity47full": 28000,
+    "heatCapacity47min": 21000,
+    "heatCapacity35boost": 30000,
+    "heatCapacity35full": 25500,
+    "heatCapacity35min": 18500,
+    "heatCapacity17boost": 28000,
+    "heatCapacity17full": 22000,
+    "heatCapacity17min": 14500,
+    "heatCapacity5boost": 25000,
+    "powerConsumption62min": 1350,
+    "powerConsumption47full": 1850,
+    "powerConsumption47min": 1300,
+    "powerConsumption35boost": 2400,
+    "powerConsumption35full": 2050,
+    "powerConsumption35min": 1550,
+    "powerConsumption17boost": 3000,
+    "powerConsumption17full": 2350,
+    "powerConsumption17min": 1750,
+    "powerConsumption5boost": 3400,
+    "scfm95full": 800,
+    "scfm62min": 800,
+    "scfm47full": 800,
+    "scfm47min": 800,
+    "scfm35boost": 800,
+    "scfm35full": 800,
+    "scfm35min": 800,
+    "scfm17boost": 800,
+    "scfm17full": 800,
+    "scfm17min": 800,
+    "scfm5boost": 800
+  },
+  "input_field_groups": {
+    "ui_options": [
+      "compressorDesignStage",
+      "indoorBlowerType",
+      "needCoilOnlyAdjust",
+      "isMobileHomeAndSpaceConstrained",
+      "isNonmobileHomeAndNonSpaceConstrained",
+      "lockOutLowCapacityOps",
+      "ODTempWhenLockOut"
+    ],
+    "tested_optional_points": [
+      "H23Tested",
+      "H21Tested",
+      "H31Tested",
+      "T_off",
+      "T_on",
+      "isDemandDefrost",
+      "demandDefrostCredit"
+    ],
+    "compressor_cut_in_cut_out": [
+      "ODTempWhenLockOut",
+      "compOperationTemp_k1_lower",
+      "compOperationTemp_k1_upper",
+      "compOperationTemp_k2_lower",
+      "compOperationTemp_k2_upper",
+      "compOperationTemp_k3_lower",
+      "compOperationTemp_k3_upper",
+      "T_off",
+      "T_on"
+    ],
+    "degradation_coefficients": [
+      "degCoeffHeatBoost",
+      "degCoeffHeatFull",
+      "degCoeffHeatMin"
+    ],
+    "input_test_points": [
+      "coolCapacity95Full",
+      "heatCapacity62min",
+      "heatCapacity47full",
+      "heatCapacity47min",
+      "heatCapacity35boost",
+      "heatCapacity35full",
+      "heatCapacity35min",
+      "heatCapacity17boost",
+      "heatCapacity17full",
+      "heatCapacity17min",
+      "heatCapacity5boost",
+      "powerConsumption62min",
+      "powerConsumption47full",
+      "powerConsumption47min",
+      "powerConsumption35boost",
+      "powerConsumption35full",
+      "powerConsumption35min",
+      "powerConsumption17boost",
+      "powerConsumption17full",
+      "powerConsumption17min",
+      "powerConsumption5boost",
+      "scfm95full",
+      "scfm62min",
+      "scfm47full",
+      "scfm47min",
+      "scfm35boost",
+      "scfm35full",
+      "scfm35min",
+      "scfm17boost",
+      "scfm17full",
+      "scfm17min",
+      "scfm5boost"
+    ]
+  },
   "bin_temperature_f": {
     "value": null,
     "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
@@ -105,14 +223,58 @@
     "value": null,
     "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
   },
+  "performance_curve_groups": {
+    "values": [
+      "k1",
+      "k2",
+      "k3"
+    ],
+    "meaning": "Raw k1/k2/k3 curve groups only; not operating cases."
+  },
   "activated_operating_cases": {
     "values": [
       "case1",
       "case2",
       "case3",
-      "case8"
+      "case8",
+      "0"
     ],
-    "source": "Northern HSPF2 M.case_name fields when available; otherwise raw bin groups k1/k2"
+    "by_result": {
+      "M": [
+        "case1",
+        "case2",
+        "case3",
+        "case8",
+        "0"
+      ],
+      "M1": [
+        "case1",
+        "case2",
+        "case3",
+        "case8",
+        "0"
+      ]
+    },
+    "source": "Northern official raw case_name fields retained verbatim; k1/k2/k3 are performance curve groups."
+  },
+  "regime_distribution": {
+    "classification": "Northern official raw case_name fields retained verbatim; k1/k2/k3 are performance curve groups.",
+    "by_result": {
+      "M": {
+        "case1": 5,
+        "case2": 4,
+        "case3": 3,
+        "case8": 5,
+        "0": 1
+      },
+      "M1": {
+        "case1": 5,
+        "case2": 4,
+        "case3": 1,
+        "case8": 7,
+        "0": 1
+      }
+    }
   },
   "results": {
     "M": {
@@ -120,14 +282,301 @@
       "raw_headline": 10.6480406437411,
       "headline_raw_field": "M.HSPF",
       "design_load": {
-        "value": 30000.0,
-        "raw_field": "M.DHR"
+        "value": 30000,
+        "raw_field": "M.DHR",
+        "raw_value": 30000
       },
-      "seasonal_totals": {
-        "delivered_capacity_or_load": {
-          "value": 9211.125,
+      "raw_fields": {
+        "": 1,
+        "M.coolCapacity95Full": 30000,
+        "M.heatCapacity62min": 26000,
+        "M.heatCapacity47full": 28000,
+        "M.heatCapacity47min": 21000,
+        "M.heatCapacity35boost": 30000,
+        "M.heatCapacity35full": 25500,
+        "M.heatCapacity35min": 18500,
+        "M.heatCapacity17boost": 28000,
+        "M.heatCapacity17full": 22000,
+        "M.heatCapacity17min": 14500,
+        "M.heatCapacity5boost": 25000,
+        "M.powerConsumption62min": 1350,
+        "M.powerConsumption47full": 1850,
+        "M.powerConsumption47min": 1300,
+        "M.powerConsumption35boost": 2400,
+        "M.powerConsumption35full": 2050,
+        "M.powerConsumption35min": 1550,
+        "M.powerConsumption17boost": 3000,
+        "M.powerConsumption17full": 2350,
+        "M.powerConsumption17min": 1750,
+        "M.powerConsumption5boost": 3400,
+        "M.DHR": 30000,
+        "M.buildingHeatLoad1": 1155,
+        "M.buildingHeatLoad2": 3080,
+        "M.buildingHeatLoad3": 5005,
+        "M.buildingHeatLoad4": 6930,
+        "M.buildingHeatLoad5": 8855,
+        "M.buildingHeatLoad6": 10780,
+        "M.buildingHeatLoad7": 12705,
+        "M.buildingHeatLoad8": 14630,
+        "M.buildingHeatLoad9": 16555,
+        "M.buildingHeatLoad10": 18480,
+        "M.buildingHeatLoad11": 20405,
+        "M.buildingHeatLoad12": 22330,
+        "M.buildingHeatLoad13": 24255,
+        "M.buildingHeatLoad14": 26180,
+        "M.buildingHeatLoad15": 28105,
+        "M.buildingHeatLoad16": 30030,
+        "M.buildingHeatLoad17": 31955,
+        "M.buildingHeatLoad18": 33880,
+        "M.binHeatCapacity_k11": 26000,
+        "M.binHeatCapacity_k12": 24333.3333333333,
+        "M.binHeatCapacity_k13": 22666.6666666667,
+        "M.binHeatCapacity_k14": 21000,
+        "M.binHeatCapacity_k15": 19333.3333333333,
+        "M.binHeatCapacity_k16": 18944.4444444444,
+        "M.binHeatCapacity_k17": 17833.3333333333,
+        "M.binHeatCapacity_k18": 16722.2222222222,
+        "M.binHeatCapacity_k19": 15611.1111111111,
+        "M.binHeatCapacity_k110": 14500,
+        "M.binHeatCapacity_k111": 13416.6666666667,
+        "M.binHeatCapacity_k112": 12333.3333333333,
+        "M.binHeatCapacity_k113": 11250,
+        "M.binHeatCapacity_k114": 10166.6666666667,
+        "M.binHeatCapacity_k115": 9083.33333333333,
+        "M.binHeatCapacity_k116": 8000,
+        "M.binHeatCapacity_k117": 6916.66666666667,
+        "M.binHeatCapacity_k118": 5833.33333333333,
+        "M.binHeatCapacity_k21": 31000,
+        "M.binHeatCapacity_k22": 30000,
+        "M.binHeatCapacity_k23": 29000,
+        "M.binHeatCapacity_k24": 28000,
+        "M.binHeatCapacity_k25": 26861.1111111111,
+        "M.binHeatCapacity_k26": 25888.8888888889,
+        "M.binHeatCapacity_k27": 24916.6666666667,
+        "M.binHeatCapacity_k28": 23944.4444444444,
+        "M.binHeatCapacity_k29": 22972.2222222222,
+        "M.binHeatCapacity_k210": 22000,
+        "M.binHeatCapacity_k211": 21000,
+        "M.binHeatCapacity_k212": 20000,
+        "M.binHeatCapacity_k213": 19000,
+        "M.binHeatCapacity_k214": 18000,
+        "M.binHeatCapacity_k215": 17000,
+        "M.binHeatCapacity_k216": 16000,
+        "M.binHeatCapacity_k217": 15000,
+        "M.binHeatCapacity_k218": 14000,
+        "M.binHeatCapacity_k31": 0,
+        "M.binHeatCapacity_k32": 0,
+        "M.binHeatCapacity_k33": 0,
+        "M.binHeatCapacity_k34": 0,
+        "M.binHeatCapacity_k35": 30777.7777777778,
+        "M.binHeatCapacity_k36": 30222.2222222222,
+        "M.binHeatCapacity_k37": 29666.6666666667,
+        "M.binHeatCapacity_k38": 29111.1111111111,
+        "M.binHeatCapacity_k39": 28555.5555555556,
+        "M.binHeatCapacity_k310": 28000,
+        "M.binHeatCapacity_k311": 26750,
+        "M.binHeatCapacity_k312": 25500,
+        "M.binHeatCapacity_k313": 24250,
+        "M.binHeatCapacity_k314": 23000,
+        "M.binHeatCapacity_k315": 21750,
+        "M.binHeatCapacity_k316": 20500,
+        "M.binHeatCapacity_k317": 19250,
+        "M.binHeatCapacity_k318": 18000,
+        "M.binPowerConsumption_k11": 1350,
+        "M.binPowerConsumption_k12": 1333.33333333333,
+        "M.binPowerConsumption_k13": 1316.66666666667,
+        "M.binPowerConsumption_k14": 1300,
+        "M.binPowerConsumption_k15": 1283.33333333333,
+        "M.binPowerConsumption_k16": 1527.77777777778,
+        "M.binPowerConsumption_k17": 1583.33333333333,
+        "M.binPowerConsumption_k18": 1638.88888888889,
+        "M.binPowerConsumption_k19": 1694.44444444444,
+        "M.binPowerConsumption_k110": 1750,
+        "M.binPowerConsumption_k111": 1825,
+        "M.binPowerConsumption_k112": 1900,
+        "M.binPowerConsumption_k113": 1975,
+        "M.binPowerConsumption_k114": 2050,
+        "M.binPowerConsumption_k115": 2125,
+        "M.binPowerConsumption_k116": 2200,
+        "M.binPowerConsumption_k117": 2275,
+        "M.binPowerConsumption_k118": 2350,
+        "M.binPowerConsumption_k21": 1600,
+        "M.binPowerConsumption_k22": 1683.33333333333,
+        "M.binPowerConsumption_k23": 1766.66666666667,
+        "M.binPowerConsumption_k24": 1850,
+        "M.binPowerConsumption_k25": 1933.33333333333,
+        "M.binPowerConsumption_k26": 2016.66666666667,
+        "M.binPowerConsumption_k27": 2100,
+        "M.binPowerConsumption_k28": 2183.33333333333,
+        "M.binPowerConsumption_k29": 2266.66666666667,
+        "M.binPowerConsumption_k210": 2350,
+        "M.binPowerConsumption_k211": 2433.33333333333,
+        "M.binPowerConsumption_k212": 2516.66666666667,
+        "M.binPowerConsumption_k213": 2600,
+        "M.binPowerConsumption_k214": 2683.33333333333,
+        "M.binPowerConsumption_k215": 2766.66666666667,
+        "M.binPowerConsumption_k216": 2850,
+        "M.binPowerConsumption_k217": 2933.33333333333,
+        "M.binPowerConsumption_k218": 3016.66666666667,
+        "M.binPowerConsumption_k31": 0,
+        "M.binPowerConsumption_k32": 0,
+        "M.binPowerConsumption_k33": 0,
+        "M.binPowerConsumption_k34": 0,
+        "M.binPowerConsumption_k35": 2166.66666666667,
+        "M.binPowerConsumption_k36": 2333.33333333333,
+        "M.binPowerConsumption_k37": 2500,
+        "M.binPowerConsumption_k38": 2666.66666666667,
+        "M.binPowerConsumption_k39": 2833.33333333333,
+        "M.binPowerConsumption_k310": 3000,
+        "M.binPowerConsumption_k311": 3166.66666666667,
+        "M.binPowerConsumption_k312": 3333.33333333333,
+        "M.binPowerConsumption_k313": 3500,
+        "M.binPowerConsumption_k314": 3666.66666666667,
+        "M.binPowerConsumption_k315": 3833.33333333333,
+        "M.binPowerConsumption_k316": 4000,
+        "M.binPowerConsumption_k317": 4166.66666666667,
+        "M.binPowerConsumption_k318": 4333.33333333333,
+        "M.cutOut_delta1": 1,
+        "M.cutOut_delta2": 1,
+        "M.cutOut_delta3": 1,
+        "M.cutOut_delta4": 1,
+        "M.cutOut_delta5": 1,
+        "M.cutOut_delta6": 1,
+        "M.cutOut_delta7": 1,
+        "M.cutOut_delta8": 1,
+        "M.cutOut_delta9": 1,
+        "M.cutOut_delta10": 1,
+        "M.cutOut_delta11": 1,
+        "M.cutOut_delta12": 1,
+        "M.cutOut_delta13": 1,
+        "M.cutOut_delta14": 1,
+        "M.cutOut_delta15": 1,
+        "M.cutOut_delta16": 1,
+        "M.cutOut_delta17": 1,
+        "M.cutOut_delta18": 1,
+        "M.cutOut_delta_prime1": 1,
+        "M.cutOut_delta_prime2": 1,
+        "M.cutOut_delta_prime3": 1,
+        "M.cutOut_delta_prime4": 1,
+        "M.cutOut_delta_prime5": 1,
+        "M.cutOut_delta_prime6": 1,
+        "M.cutOut_delta_prime7": 1,
+        "M.cutOut_delta_prime8": 1,
+        "M.cutOut_delta_prime9": 1,
+        "M.cutOut_delta_prime10": 1,
+        "M.cutOut_delta_prime11": 1,
+        "M.cutOut_delta_prime12": 1,
+        "M.cutOut_delta_prime13": 1,
+        "M.cutOut_delta_prime14": 1,
+        "M.cutOut_delta_prime15": 1,
+        "M.cutOut_delta_prime16": 1,
+        "M.cutOut_delta_prime17": 1,
+        "M.cutOut_delta_prime18": 1,
+        "M.cutOut_delta_doublePrime1": 0,
+        "M.cutOut_delta_doublePrime2": 0,
+        "M.cutOut_delta_doublePrime3": 0,
+        "M.cutOut_delta_doublePrime4": 0,
+        "M.cutOut_delta_doublePrime5": 1,
+        "M.cutOut_delta_doublePrime6": 1,
+        "M.cutOut_delta_doublePrime7": 1,
+        "M.cutOut_delta_doublePrime8": 1,
+        "M.cutOut_delta_doublePrime9": 1,
+        "M.cutOut_delta_doublePrime10": 1,
+        "M.cutOut_delta_doublePrime11": 1,
+        "M.cutOut_delta_doublePrime12": 1,
+        "M.cutOut_delta_doublePrime13": 1,
+        "M.cutOut_delta_doublePrime14": 1,
+        "M.cutOut_delta_doublePrime15": 1,
+        "M.cutOut_delta_doublePrime16": 1,
+        "M.cutOut_delta_doublePrime17": 1,
+        "M.cutOut_delta_doublePrime18": 1,
+        "M.ratioTotalHeating1": 152.46,
+        "M.ratioTotalHeating2": 341.88,
+        "M.ratioTotalHeating3": 515.515,
+        "M.ratioTotalHeating4": 644.49,
+        "M.ratioTotalHeating5": 885.5,
+        "M.ratioTotalHeating6": 1175.02,
+        "M.ratioTotalHeating7": 1600.83,
+        "M.ratioTotalHeating8": 1272.81,
+        "M.ratioTotalHeating9": 910.525,
+        "M.ratioTotalHeating10": 665.28,
+        "M.ratioTotalHeating11": 530.53,
+        "M.ratioTotalHeating12": 290.29,
+        "M.ratioTotalHeating13": 145.53,
+        "M.ratioTotalHeating14": 52.36,
+        "M.ratioTotalHeating15": 28.105,
+        "M.ratioTotalHeating16": 0,
+        "M.ratioTotalHeating17": 0,
+        "M.ratioTotalHeating18": 0,
+        "M.ratioTotalResistHeating1": 0,
+        "M.ratioTotalResistHeating2": 0,
+        "M.ratioTotalResistHeating3": 0,
+        "M.ratioTotalResistHeating4": 0,
+        "M.ratioTotalResistHeating5": 0,
+        "M.ratioTotalResistHeating6": 0,
+        "M.ratioTotalResistHeating7": 0,
+        "M.ratioTotalResistHeating8": 0,
+        "M.ratioTotalResistHeating9": 0,
+        "M.ratioTotalResistHeating10": 0,
+        "M.ratioTotalResistHeating11": 0,
+        "M.ratioTotalResistHeating12": 0,
+        "M.ratioTotalResistHeating13": 0.00878992089071838,
+        "M.ratioTotalResistHeating14": 1.86346322883094,
+        "M.ratioTotalResistHeating15": 1.86199824201582,
+        "M.ratioTotalResistHeating16": 0,
+        "M.ratioTotalResistHeating17": 0,
+        "M.ratioTotalResistHeating18": 0,
+        "M.ratioTotalPower1": 10.4009096077317,
+        "M.ratioTotalPower2": 23.9663512092534,
+        "M.ratioTotalPower3": 37.1898591420679,
+        "M.ratioTotalPower4": 47.9243243243243,
+        "M.ratioTotalPower5": 67.99142422656,
+        "M.ratioTotalPower6": 107.166216929223,
+        "M.ratioTotalPower7": 153.758755931622,
+        "M.ratioTotalPower8": 128.561710166159,
+        "M.ratioTotalPower9": 96.5867051459548,
+        "M.ratioTotalPower10": 75.926714955262,
+        "M.ratioTotalPower11": 65.6052103712786,
+        "M.ratioTotalPower12": 38.8149467429354,
+        "M.ratioTotalPower13": 21,
+        "M.ratioTotalPower14": 7.33333333333333,
+        "M.ratioTotalPower15": 3.83333333333333,
+        "M.ratioTotalPower16": 0,
+        "M.ratioTotalPower17": 0,
+        "M.ratioTotalPower18": 0,
+        "M.case_name1": "case1",
+        "M.case_name2": "case1",
+        "M.case_name3": "case1",
+        "M.case_name4": "case1",
+        "M.case_name5": "case1",
+        "M.case_name6": "case2",
+        "M.case_name7": "case2",
+        "M.case_name8": "case2",
+        "M.case_name9": "case2",
+        "M.case_name10": "case3",
+        "M.case_name11": "case3",
+        "M.case_name12": "case3",
+        "M.case_name13": "case8",
+        "M.case_name14": "case8",
+        "M.case_name15": "case8",
+        "M.case_name16": "case8",
+        "M.case_name17": "case8",
+        "M.case_name18": "0",
+        "M.HSPF": 10.6480406437411
+      },
+      "seasonal_aggregates": [
+        {
+          "normalized_name": "raw_ratio_total_heating",
           "raw_columns": [
             "M.ratioTotalHeating1",
+            "M.ratioTotalHeating2",
+            "M.ratioTotalHeating3",
+            "M.ratioTotalHeating4",
+            "M.ratioTotalHeating5",
+            "M.ratioTotalHeating6",
+            "M.ratioTotalHeating7",
+            "M.ratioTotalHeating8",
+            "M.ratioTotalHeating9",
             "M.ratioTotalHeating10",
             "M.ratioTotalHeating11",
             "M.ratioTotalHeating12",
@@ -136,22 +585,24 @@
             "M.ratioTotalHeating15",
             "M.ratioTotalHeating16",
             "M.ratioTotalHeating17",
-            "M.ratioTotalHeating18",
-            "M.ratioTotalHeating2",
-            "M.ratioTotalHeating3",
-            "M.ratioTotalHeating4",
-            "M.ratioTotalHeating5",
-            "M.ratioTotalHeating6",
-            "M.ratioTotalHeating7",
-            "M.ratioTotalHeating8",
-            "M.ratioTotalHeating9"
+            "M.ratioTotalHeating18"
           ],
-          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 9211.125,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "resistance_or_auxiliary_contribution": {
-          "value": 3.7342513917374784,
+        {
+          "normalized_name": "raw_ratio_total_resist_heating",
           "raw_columns": [
             "M.ratioTotalResistHeating1",
+            "M.ratioTotalResistHeating2",
+            "M.ratioTotalResistHeating3",
+            "M.ratioTotalResistHeating4",
+            "M.ratioTotalResistHeating5",
+            "M.ratioTotalResistHeating6",
+            "M.ratioTotalResistHeating7",
+            "M.ratioTotalResistHeating8",
+            "M.ratioTotalResistHeating9",
             "M.ratioTotalResistHeating10",
             "M.ratioTotalResistHeating11",
             "M.ratioTotalResistHeating12",
@@ -160,22 +611,24 @@
             "M.ratioTotalResistHeating15",
             "M.ratioTotalResistHeating16",
             "M.ratioTotalResistHeating17",
-            "M.ratioTotalResistHeating18",
-            "M.ratioTotalResistHeating2",
-            "M.ratioTotalResistHeating3",
-            "M.ratioTotalResistHeating4",
-            "M.ratioTotalResistHeating5",
-            "M.ratioTotalResistHeating6",
-            "M.ratioTotalResistHeating7",
-            "M.ratioTotalResistHeating8",
-            "M.ratioTotalResistHeating9"
+            "M.ratioTotalResistHeating18"
           ],
-          "status": "raw_bin_aggregate; applicable to heating profiles only"
+          "value": 3.7342513917374784,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "electrical_energy": {
-          "value": 886.0597954190388,
+        {
+          "normalized_name": "raw_ratio_total_power",
           "raw_columns": [
             "M.ratioTotalPower1",
+            "M.ratioTotalPower2",
+            "M.ratioTotalPower3",
+            "M.ratioTotalPower4",
+            "M.ratioTotalPower5",
+            "M.ratioTotalPower6",
+            "M.ratioTotalPower7",
+            "M.ratioTotalPower8",
+            "M.ratioTotalPower9",
             "M.ratioTotalPower10",
             "M.ratioTotalPower11",
             "M.ratioTotalPower12",
@@ -184,613 +637,709 @@
             "M.ratioTotalPower15",
             "M.ratioTotalPower16",
             "M.ratioTotalPower17",
-            "M.ratioTotalPower18",
-            "M.ratioTotalPower2",
-            "M.ratioTotalPower3",
-            "M.ratioTotalPower4",
-            "M.ratioTotalPower5",
-            "M.ratioTotalPower6",
-            "M.ratioTotalPower7",
-            "M.ratioTotalPower8",
-            "M.ratioTotalPower9"
+            "M.ratioTotalPower18"
           ],
-          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 886.0597954190388,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
-      },
+      ],
       "bin_trace": [
         {
-          "bin_key": "1",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name1": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "2",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name2": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "3",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name3": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "4",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name4": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "5",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name5": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "6",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name6": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "7",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name7": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "8",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name8": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "9",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name9": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "k10",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.case_name10": "case3"
-          },
-          "operating_case": "case3"
-        },
-        {
-          "bin_key": "k11",
+          "bin_index": 1,
+          "bin_key": "bin_1",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k11": 26000,
+            "M.binHeatCapacity_k21": 31000,
+            "M.binHeatCapacity_k31": 0,
             "M.binPowerConsumption_k11": 1350,
-            "M.case_name11": "case3"
+            "M.binPowerConsumption_k21": 1600,
+            "M.binPowerConsumption_k31": 0,
+            "M.buildingHeatLoad1": 1155,
+            "M.case_name1": "case1",
+            "M.cutOut_delta1": 1,
+            "M.cutOut_delta_doublePrime1": 0,
+            "M.cutOut_delta_prime1": 1,
+            "M.ratioTotalHeating1": 152.46,
+            "M.ratioTotalPower1": 10.4009096077317,
+            "M.ratioTotalResistHeating1": 0
           },
-          "operating_case": "case3"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k12",
+          "bin_index": 2,
+          "bin_key": "bin_2",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k12": 24333.3333333333,
+            "M.binHeatCapacity_k22": 30000,
+            "M.binHeatCapacity_k32": 0,
             "M.binPowerConsumption_k12": 1333.33333333333,
-            "M.case_name12": "case3"
+            "M.binPowerConsumption_k22": 1683.33333333333,
+            "M.binPowerConsumption_k32": 0,
+            "M.buildingHeatLoad2": 3080,
+            "M.case_name2": "case1",
+            "M.cutOut_delta2": 1,
+            "M.cutOut_delta_doublePrime2": 0,
+            "M.cutOut_delta_prime2": 1,
+            "M.ratioTotalHeating2": 341.88,
+            "M.ratioTotalPower2": 23.9663512092534,
+            "M.ratioTotalResistHeating2": 0
           },
-          "operating_case": "case3"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k13",
+          "bin_index": 3,
+          "bin_key": "bin_3",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k13": 22666.6666666667,
+            "M.binHeatCapacity_k23": 29000,
+            "M.binHeatCapacity_k33": 0,
             "M.binPowerConsumption_k13": 1316.66666666667,
-            "M.case_name13": "case8"
+            "M.binPowerConsumption_k23": 1766.66666666667,
+            "M.binPowerConsumption_k33": 0,
+            "M.buildingHeatLoad3": 5005,
+            "M.case_name3": "case1",
+            "M.cutOut_delta3": 1,
+            "M.cutOut_delta_doublePrime3": 0,
+            "M.cutOut_delta_prime3": 1,
+            "M.ratioTotalHeating3": 515.515,
+            "M.ratioTotalPower3": 37.1898591420679,
+            "M.ratioTotalResistHeating3": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k14",
+          "bin_index": 4,
+          "bin_key": "bin_4",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k14": 21000,
+            "M.binHeatCapacity_k24": 28000,
+            "M.binHeatCapacity_k34": 0,
             "M.binPowerConsumption_k14": 1300,
-            "M.case_name14": "case8"
+            "M.binPowerConsumption_k24": 1850,
+            "M.binPowerConsumption_k34": 0,
+            "M.buildingHeatLoad4": 6930,
+            "M.case_name4": "case1",
+            "M.cutOut_delta4": 1,
+            "M.cutOut_delta_doublePrime4": 0,
+            "M.cutOut_delta_prime4": 1,
+            "M.ratioTotalHeating4": 644.49,
+            "M.ratioTotalPower4": 47.9243243243243,
+            "M.ratioTotalResistHeating4": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k15",
+          "bin_index": 5,
+          "bin_key": "bin_5",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k15": 19333.3333333333,
+            "M.binHeatCapacity_k25": 26861.1111111111,
+            "M.binHeatCapacity_k35": 30777.7777777778,
             "M.binPowerConsumption_k15": 1283.33333333333,
-            "M.case_name15": "case8"
+            "M.binPowerConsumption_k25": 1933.33333333333,
+            "M.binPowerConsumption_k35": 2166.66666666667,
+            "M.buildingHeatLoad5": 8855,
+            "M.case_name5": "case1",
+            "M.cutOut_delta5": 1,
+            "M.cutOut_delta_doublePrime5": 1,
+            "M.cutOut_delta_prime5": 1,
+            "M.ratioTotalHeating5": 885.5,
+            "M.ratioTotalPower5": 67.99142422656,
+            "M.ratioTotalResistHeating5": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k16",
+          "bin_index": 6,
+          "bin_key": "bin_6",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k16": 18944.4444444444,
+            "M.binHeatCapacity_k26": 25888.8888888889,
+            "M.binHeatCapacity_k36": 30222.2222222222,
             "M.binPowerConsumption_k16": 1527.77777777778,
-            "M.case_name16": "case8"
+            "M.binPowerConsumption_k26": 2016.66666666667,
+            "M.binPowerConsumption_k36": 2333.33333333333,
+            "M.buildingHeatLoad6": 10780,
+            "M.case_name6": "case2",
+            "M.cutOut_delta6": 1,
+            "M.cutOut_delta_doublePrime6": 1,
+            "M.cutOut_delta_prime6": 1,
+            "M.ratioTotalHeating6": 1175.02,
+            "M.ratioTotalPower6": 107.166216929223,
+            "M.ratioTotalResistHeating6": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k17",
+          "bin_index": 7,
+          "bin_key": "bin_7",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k17": 17833.3333333333,
+            "M.binHeatCapacity_k27": 24916.6666666667,
+            "M.binHeatCapacity_k37": 29666.6666666667,
             "M.binPowerConsumption_k17": 1583.33333333333,
-            "M.case_name17": "case8"
+            "M.binPowerConsumption_k27": 2100,
+            "M.binPowerConsumption_k37": 2500,
+            "M.buildingHeatLoad7": 12705,
+            "M.case_name7": "case2",
+            "M.cutOut_delta7": 1,
+            "M.cutOut_delta_doublePrime7": 1,
+            "M.cutOut_delta_prime7": 1,
+            "M.ratioTotalHeating7": 1600.83,
+            "M.ratioTotalPower7": 153.758755931622,
+            "M.ratioTotalResistHeating7": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k18",
+          "bin_index": 8,
+          "bin_key": "bin_8",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k18": 16722.2222222222,
+            "M.binHeatCapacity_k28": 23944.4444444444,
+            "M.binHeatCapacity_k38": 29111.1111111111,
             "M.binPowerConsumption_k18": 1638.88888888889,
-            "M.case_name18": 0
+            "M.binPowerConsumption_k28": 2183.33333333333,
+            "M.binPowerConsumption_k38": 2666.66666666667,
+            "M.buildingHeatLoad8": 14630,
+            "M.case_name8": "case2",
+            "M.cutOut_delta8": 1,
+            "M.cutOut_delta_doublePrime8": 1,
+            "M.cutOut_delta_prime8": 1,
+            "M.ratioTotalHeating8": 1272.81,
+            "M.ratioTotalPower8": 128.561710166159,
+            "M.ratioTotalResistHeating8": 0
           },
-          "operating_case": "0"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k19",
+          "bin_index": 9,
+          "bin_key": "bin_9",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k19": 15611.1111111111,
-            "M.binPowerConsumption_k19": 1694.44444444444
-          }
-        },
-        {
-          "bin_key": "k21",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k21": 31000,
-            "M.binPowerConsumption_k21": 1600
-          }
-        },
-        {
-          "bin_key": "k22",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k22": 30000,
-            "M.binPowerConsumption_k22": 1683.33333333333
-          }
-        },
-        {
-          "bin_key": "k23",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k23": 29000,
-            "M.binPowerConsumption_k23": 1766.66666666667
-          }
-        },
-        {
-          "bin_key": "k24",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k24": 28000,
-            "M.binPowerConsumption_k24": 1850
-          }
-        },
-        {
-          "bin_key": "k25",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k25": 26861.1111111111,
-            "M.binPowerConsumption_k25": 1933.33333333333
-          }
-        },
-        {
-          "bin_key": "k26",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k26": 25888.8888888889,
-            "M.binPowerConsumption_k26": 2016.66666666667
-          }
-        },
-        {
-          "bin_key": "k27",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k27": 24916.6666666667,
-            "M.binPowerConsumption_k27": 2100
-          }
-        },
-        {
-          "bin_key": "k28",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k28": 23944.4444444444,
-            "M.binPowerConsumption_k28": 2183.33333333333
-          }
-        },
-        {
-          "bin_key": "k29",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M.binHeatCapacity_k29": 22972.2222222222,
-            "M.binPowerConsumption_k29": 2266.66666666667
-          }
-        },
-        {
-          "bin_key": "k31",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k31": 0,
-            "M.binPowerConsumption_k31": 0
-          }
-        },
-        {
-          "bin_key": "k32",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k32": 0,
-            "M.binPowerConsumption_k32": 0
-          }
-        },
-        {
-          "bin_key": "k33",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k33": 0,
-            "M.binPowerConsumption_k33": 0
-          }
-        },
-        {
-          "bin_key": "k34",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k34": 0,
-            "M.binPowerConsumption_k34": 0
-          }
-        },
-        {
-          "bin_key": "k35",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k35": 30777.7777777778,
-            "M.binPowerConsumption_k35": 2166.66666666667
-          }
-        },
-        {
-          "bin_key": "k36",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k36": 30222.2222222222,
-            "M.binPowerConsumption_k36": 2333.33333333333
-          }
-        },
-        {
-          "bin_key": "k37",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k37": 29666.6666666667,
-            "M.binPowerConsumption_k37": 2500
-          }
-        },
-        {
-          "bin_key": "k38",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k38": 29111.1111111111,
-            "M.binPowerConsumption_k38": 2666.66666666667
-          }
-        },
-        {
-          "bin_key": "k39",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M.binHeatCapacity_k39": 28555.5555555556,
-            "M.binPowerConsumption_k39": 2833.33333333333
-          }
+            "M.binPowerConsumption_k19": 1694.44444444444,
+            "M.binPowerConsumption_k29": 2266.66666666667,
+            "M.binPowerConsumption_k39": 2833.33333333333,
+            "M.buildingHeatLoad9": 16555,
+            "M.case_name9": "case2",
+            "M.cutOut_delta9": 1,
+            "M.cutOut_delta_doublePrime9": 1,
+            "M.cutOut_delta_prime9": 1,
+            "M.ratioTotalHeating9": 910.525,
+            "M.ratioTotalPower9": 96.5867051459548,
+            "M.ratioTotalResistHeating9": 0
+          },
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k110",
+          "bin_index": 10,
+          "bin_key": "bin_10",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k110": 14500,
-            "M.binPowerConsumption_k110": 1750
-          }
+            "M.binHeatCapacity_k210": 22000,
+            "M.binHeatCapacity_k310": 28000,
+            "M.binPowerConsumption_k110": 1750,
+            "M.binPowerConsumption_k210": 2350,
+            "M.binPowerConsumption_k310": 3000,
+            "M.buildingHeatLoad10": 18480,
+            "M.case_name10": "case3",
+            "M.cutOut_delta10": 1,
+            "M.cutOut_delta_doublePrime10": 1,
+            "M.cutOut_delta_prime10": 1,
+            "M.ratioTotalHeating10": 665.28,
+            "M.ratioTotalPower10": 75.926714955262,
+            "M.ratioTotalResistHeating10": 0
+          },
+          "operating_case": "case3"
         },
         {
-          "bin_key": "k111",
+          "bin_index": 11,
+          "bin_key": "bin_11",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k111": 13416.6666666667,
-            "M.binPowerConsumption_k111": 1825
-          }
+            "M.binHeatCapacity_k211": 21000,
+            "M.binHeatCapacity_k311": 26750,
+            "M.binPowerConsumption_k111": 1825,
+            "M.binPowerConsumption_k211": 2433.33333333333,
+            "M.binPowerConsumption_k311": 3166.66666666667,
+            "M.buildingHeatLoad11": 20405,
+            "M.case_name11": "case3",
+            "M.cutOut_delta11": 1,
+            "M.cutOut_delta_doublePrime11": 1,
+            "M.cutOut_delta_prime11": 1,
+            "M.ratioTotalHeating11": 530.53,
+            "M.ratioTotalPower11": 65.6052103712786,
+            "M.ratioTotalResistHeating11": 0
+          },
+          "operating_case": "case3"
         },
         {
-          "bin_key": "k112",
+          "bin_index": 12,
+          "bin_key": "bin_12",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k112": 12333.3333333333,
-            "M.binPowerConsumption_k112": 1900
-          }
+            "M.binHeatCapacity_k212": 20000,
+            "M.binHeatCapacity_k312": 25500,
+            "M.binPowerConsumption_k112": 1900,
+            "M.binPowerConsumption_k212": 2516.66666666667,
+            "M.binPowerConsumption_k312": 3333.33333333333,
+            "M.buildingHeatLoad12": 22330,
+            "M.case_name12": "case3",
+            "M.cutOut_delta12": 1,
+            "M.cutOut_delta_doublePrime12": 1,
+            "M.cutOut_delta_prime12": 1,
+            "M.ratioTotalHeating12": 290.29,
+            "M.ratioTotalPower12": 38.8149467429354,
+            "M.ratioTotalResistHeating12": 0
+          },
+          "operating_case": "case3"
         },
         {
-          "bin_key": "k113",
+          "bin_index": 13,
+          "bin_key": "bin_13",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k113": 11250,
-            "M.binPowerConsumption_k113": 1975
-          }
+            "M.binHeatCapacity_k213": 19000,
+            "M.binHeatCapacity_k313": 24250,
+            "M.binPowerConsumption_k113": 1975,
+            "M.binPowerConsumption_k213": 2600,
+            "M.binPowerConsumption_k313": 3500,
+            "M.buildingHeatLoad13": 24255,
+            "M.case_name13": "case8",
+            "M.cutOut_delta13": 1,
+            "M.cutOut_delta_doublePrime13": 1,
+            "M.cutOut_delta_prime13": 1,
+            "M.ratioTotalHeating13": 145.53,
+            "M.ratioTotalPower13": 21,
+            "M.ratioTotalResistHeating13": 0.00878992089071838
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k114",
+          "bin_index": 14,
+          "bin_key": "bin_14",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k114": 10166.6666666667,
-            "M.binPowerConsumption_k114": 2050
-          }
+            "M.binHeatCapacity_k214": 18000,
+            "M.binHeatCapacity_k314": 23000,
+            "M.binPowerConsumption_k114": 2050,
+            "M.binPowerConsumption_k214": 2683.33333333333,
+            "M.binPowerConsumption_k314": 3666.66666666667,
+            "M.buildingHeatLoad14": 26180,
+            "M.case_name14": "case8",
+            "M.cutOut_delta14": 1,
+            "M.cutOut_delta_doublePrime14": 1,
+            "M.cutOut_delta_prime14": 1,
+            "M.ratioTotalHeating14": 52.36,
+            "M.ratioTotalPower14": 7.33333333333333,
+            "M.ratioTotalResistHeating14": 1.86346322883094
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k115",
+          "bin_index": 15,
+          "bin_key": "bin_15",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k115": 9083.33333333333,
-            "M.binPowerConsumption_k115": 2125
-          }
+            "M.binHeatCapacity_k215": 17000,
+            "M.binHeatCapacity_k315": 21750,
+            "M.binPowerConsumption_k115": 2125,
+            "M.binPowerConsumption_k215": 2766.66666666667,
+            "M.binPowerConsumption_k315": 3833.33333333333,
+            "M.buildingHeatLoad15": 28105,
+            "M.case_name15": "case8",
+            "M.cutOut_delta15": 1,
+            "M.cutOut_delta_doublePrime15": 1,
+            "M.cutOut_delta_prime15": 1,
+            "M.ratioTotalHeating15": 28.105,
+            "M.ratioTotalPower15": 3.83333333333333,
+            "M.ratioTotalResistHeating15": 1.86199824201582
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k116",
+          "bin_index": 16,
+          "bin_key": "bin_16",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k116": 8000,
-            "M.binPowerConsumption_k116": 2200
-          }
+            "M.binHeatCapacity_k216": 16000,
+            "M.binHeatCapacity_k316": 20500,
+            "M.binPowerConsumption_k116": 2200,
+            "M.binPowerConsumption_k216": 2850,
+            "M.binPowerConsumption_k316": 4000,
+            "M.buildingHeatLoad16": 30030,
+            "M.case_name16": "case8",
+            "M.cutOut_delta16": 1,
+            "M.cutOut_delta_doublePrime16": 1,
+            "M.cutOut_delta_prime16": 1,
+            "M.ratioTotalHeating16": 0,
+            "M.ratioTotalPower16": 0,
+            "M.ratioTotalResistHeating16": 0
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k117",
+          "bin_index": 17,
+          "bin_key": "bin_17",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k117": 6916.66666666667,
-            "M.binPowerConsumption_k117": 2275
-          }
+            "M.binHeatCapacity_k217": 15000,
+            "M.binHeatCapacity_k317": 19250,
+            "M.binPowerConsumption_k117": 2275,
+            "M.binPowerConsumption_k217": 2933.33333333333,
+            "M.binPowerConsumption_k317": 4166.66666666667,
+            "M.buildingHeatLoad17": 31955,
+            "M.case_name17": "case8",
+            "M.cutOut_delta17": 1,
+            "M.cutOut_delta_doublePrime17": 1,
+            "M.cutOut_delta_prime17": 1,
+            "M.ratioTotalHeating17": 0,
+            "M.ratioTotalPower17": 0,
+            "M.ratioTotalResistHeating17": 0
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k118",
+          "bin_index": 18,
+          "bin_key": "bin_18",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binHeatCapacity_k118": 5833.33333333333,
-            "M.binPowerConsumption_k118": 2350
-          }
-        },
-        {
-          "bin_key": "k210",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k210": 22000,
-            "M.binPowerConsumption_k210": 2350
-          }
-        },
-        {
-          "bin_key": "k211",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k211": 21000,
-            "M.binPowerConsumption_k211": 2433.33333333333
-          }
-        },
-        {
-          "bin_key": "k212",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k212": 20000,
-            "M.binPowerConsumption_k212": 2516.66666666667
-          }
-        },
-        {
-          "bin_key": "k213",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k213": 19000,
-            "M.binPowerConsumption_k213": 2600
-          }
-        },
-        {
-          "bin_key": "k214",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k214": 18000,
-            "M.binPowerConsumption_k214": 2683.33333333333
-          }
-        },
-        {
-          "bin_key": "k215",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k215": 17000,
-            "M.binPowerConsumption_k215": 2766.66666666667
-          }
-        },
-        {
-          "bin_key": "k216",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k216": 16000,
-            "M.binPowerConsumption_k216": 2850
-          }
-        },
-        {
-          "bin_key": "k217",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k217": 15000,
-            "M.binPowerConsumption_k217": 2933.33333333333
-          }
-        },
-        {
-          "bin_key": "k218",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M.binHeatCapacity_k218": 14000,
-            "M.binPowerConsumption_k218": 3016.66666666667
-          }
-        },
-        {
-          "bin_key": "k310",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k310": 28000,
-            "M.binPowerConsumption_k310": 3000
-          }
-        },
-        {
-          "bin_key": "k311",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k311": 26750,
-            "M.binPowerConsumption_k311": 3166.66666666667
-          }
-        },
-        {
-          "bin_key": "k312",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k312": 25500,
-            "M.binPowerConsumption_k312": 3333.33333333333
-          }
-        },
-        {
-          "bin_key": "k313",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k313": 24250,
-            "M.binPowerConsumption_k313": 3500
-          }
-        },
-        {
-          "bin_key": "k314",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k314": 23000,
-            "M.binPowerConsumption_k314": 3666.66666666667
-          }
-        },
-        {
-          "bin_key": "k315",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k315": 21750,
-            "M.binPowerConsumption_k315": 3833.33333333333
-          }
-        },
-        {
-          "bin_key": "k316",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k316": 20500,
-            "M.binPowerConsumption_k316": 4000
-          }
-        },
-        {
-          "bin_key": "k317",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binHeatCapacity_k317": 19250,
-            "M.binPowerConsumption_k317": 4166.66666666667
-          }
-        },
-        {
-          "bin_key": "k318",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M.binHeatCapacity_k318": 18000,
-            "M.binPowerConsumption_k318": 4333.33333333333
-          }
+            "M.binPowerConsumption_k118": 2350,
+            "M.binPowerConsumption_k218": 3016.66666666667,
+            "M.binPowerConsumption_k318": 4333.33333333333,
+            "M.buildingHeatLoad18": 33880,
+            "M.case_name18": "0",
+            "M.cutOut_delta18": 1,
+            "M.cutOut_delta_doublePrime18": 1,
+            "M.cutOut_delta_prime18": 1,
+            "M.ratioTotalHeating18": 0,
+            "M.ratioTotalPower18": 0,
+            "M.ratioTotalResistHeating18": 0
+          },
+          "operating_case": "0"
         }
-      ]
+      ],
+      "building_loads": {
+        "raw_values": {
+          "M.buildingHeatLoad1": 1155,
+          "M.buildingHeatLoad2": 3080,
+          "M.buildingHeatLoad3": 5005,
+          "M.buildingHeatLoad4": 6930,
+          "M.buildingHeatLoad5": 8855,
+          "M.buildingHeatLoad6": 10780,
+          "M.buildingHeatLoad7": 12705,
+          "M.buildingHeatLoad8": 14630,
+          "M.buildingHeatLoad9": 16555,
+          "M.buildingHeatLoad10": 18480,
+          "M.buildingHeatLoad11": 20405,
+          "M.buildingHeatLoad12": 22330,
+          "M.buildingHeatLoad13": 24255,
+          "M.buildingHeatLoad14": 26180,
+          "M.buildingHeatLoad15": 28105,
+          "M.buildingHeatLoad16": 30030,
+          "M.buildingHeatLoad17": 31955,
+          "M.buildingHeatLoad18": 33880
+        },
+        "raw_field_count": 18
+      },
+      "cutout": {
+        "raw_values": {
+          "M.cutOut_delta_doublePrime1": 0,
+          "M.cutOut_delta_doublePrime2": 0,
+          "M.cutOut_delta_doublePrime3": 0,
+          "M.cutOut_delta_doublePrime4": 0,
+          "M.cutOut_delta_doublePrime5": 1,
+          "M.cutOut_delta_doublePrime6": 1,
+          "M.cutOut_delta_doublePrime7": 1,
+          "M.cutOut_delta_doublePrime8": 1,
+          "M.cutOut_delta_doublePrime9": 1,
+          "M.cutOut_delta_doublePrime10": 1,
+          "M.cutOut_delta_doublePrime11": 1,
+          "M.cutOut_delta_doublePrime12": 1,
+          "M.cutOut_delta_doublePrime13": 1,
+          "M.cutOut_delta_doublePrime14": 1,
+          "M.cutOut_delta_doublePrime15": 1,
+          "M.cutOut_delta_doublePrime16": 1,
+          "M.cutOut_delta_doublePrime17": 1,
+          "M.cutOut_delta_doublePrime18": 1,
+          "M.cutOut_delta_prime1": 1,
+          "M.cutOut_delta_prime2": 1,
+          "M.cutOut_delta_prime3": 1,
+          "M.cutOut_delta_prime4": 1,
+          "M.cutOut_delta_prime5": 1,
+          "M.cutOut_delta_prime6": 1,
+          "M.cutOut_delta_prime7": 1,
+          "M.cutOut_delta_prime8": 1,
+          "M.cutOut_delta_prime9": 1,
+          "M.cutOut_delta_prime10": 1,
+          "M.cutOut_delta_prime11": 1,
+          "M.cutOut_delta_prime12": 1,
+          "M.cutOut_delta_prime13": 1,
+          "M.cutOut_delta_prime14": 1,
+          "M.cutOut_delta_prime15": 1,
+          "M.cutOut_delta_prime16": 1,
+          "M.cutOut_delta_prime17": 1,
+          "M.cutOut_delta_prime18": 1,
+          "M.cutOut_delta1": 1,
+          "M.cutOut_delta2": 1,
+          "M.cutOut_delta3": 1,
+          "M.cutOut_delta4": 1,
+          "M.cutOut_delta5": 1,
+          "M.cutOut_delta6": 1,
+          "M.cutOut_delta7": 1,
+          "M.cutOut_delta8": 1,
+          "M.cutOut_delta9": 1,
+          "M.cutOut_delta10": 1,
+          "M.cutOut_delta11": 1,
+          "M.cutOut_delta12": 1,
+          "M.cutOut_delta13": 1,
+          "M.cutOut_delta14": 1,
+          "M.cutOut_delta15": 1,
+          "M.cutOut_delta16": 1,
+          "M.cutOut_delta17": 1,
+          "M.cutOut_delta18": 1
+        },
+        "delta_distribution": {
+          "cutOut_delta_doublePrime": {
+            "raw_columns": [
+              "M.cutOut_delta_doublePrime1",
+              "M.cutOut_delta_doublePrime2",
+              "M.cutOut_delta_doublePrime3",
+              "M.cutOut_delta_doublePrime4",
+              "M.cutOut_delta_doublePrime5",
+              "M.cutOut_delta_doublePrime6",
+              "M.cutOut_delta_doublePrime7",
+              "M.cutOut_delta_doublePrime8",
+              "M.cutOut_delta_doublePrime9",
+              "M.cutOut_delta_doublePrime10",
+              "M.cutOut_delta_doublePrime11",
+              "M.cutOut_delta_doublePrime12",
+              "M.cutOut_delta_doublePrime13",
+              "M.cutOut_delta_doublePrime14",
+              "M.cutOut_delta_doublePrime15",
+              "M.cutOut_delta_doublePrime16",
+              "M.cutOut_delta_doublePrime17",
+              "M.cutOut_delta_doublePrime18"
+            ],
+            "raw_values": [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 14,
+              "fractional": 0,
+              "zero": 4,
+              "other": 0,
+              "blank": 0
+            }
+          },
+          "cutOut_delta_prime": {
+            "raw_columns": [
+              "M.cutOut_delta_prime1",
+              "M.cutOut_delta_prime2",
+              "M.cutOut_delta_prime3",
+              "M.cutOut_delta_prime4",
+              "M.cutOut_delta_prime5",
+              "M.cutOut_delta_prime6",
+              "M.cutOut_delta_prime7",
+              "M.cutOut_delta_prime8",
+              "M.cutOut_delta_prime9",
+              "M.cutOut_delta_prime10",
+              "M.cutOut_delta_prime11",
+              "M.cutOut_delta_prime12",
+              "M.cutOut_delta_prime13",
+              "M.cutOut_delta_prime14",
+              "M.cutOut_delta_prime15",
+              "M.cutOut_delta_prime16",
+              "M.cutOut_delta_prime17",
+              "M.cutOut_delta_prime18"
+            ],
+            "raw_values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 18,
+              "fractional": 0,
+              "zero": 0,
+              "other": 0,
+              "blank": 0
+            }
+          },
+          "cutOut_delta": {
+            "raw_columns": [
+              "M.cutOut_delta1",
+              "M.cutOut_delta2",
+              "M.cutOut_delta3",
+              "M.cutOut_delta4",
+              "M.cutOut_delta5",
+              "M.cutOut_delta6",
+              "M.cutOut_delta7",
+              "M.cutOut_delta8",
+              "M.cutOut_delta9",
+              "M.cutOut_delta10",
+              "M.cutOut_delta11",
+              "M.cutOut_delta12",
+              "M.cutOut_delta13",
+              "M.cutOut_delta14",
+              "M.cutOut_delta15",
+              "M.cutOut_delta16",
+              "M.cutOut_delta17",
+              "M.cutOut_delta18"
+            ],
+            "raw_values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 18,
+              "fractional": 0,
+              "zero": 0,
+              "other": 0,
+              "blank": 0
+            }
+          }
+        },
+        "status": "raw cutout delta fields preserved; values are not reinterpreted"
+      },
+      "resistance_auxiliary": {
+        "raw_values": {
+          "M.ratioTotalResistHeating1": 0,
+          "M.ratioTotalResistHeating2": 0,
+          "M.ratioTotalResistHeating3": 0,
+          "M.ratioTotalResistHeating4": 0,
+          "M.ratioTotalResistHeating5": 0,
+          "M.ratioTotalResistHeating6": 0,
+          "M.ratioTotalResistHeating7": 0,
+          "M.ratioTotalResistHeating8": 0,
+          "M.ratioTotalResistHeating9": 0,
+          "M.ratioTotalResistHeating10": 0,
+          "M.ratioTotalResistHeating11": 0,
+          "M.ratioTotalResistHeating12": 0,
+          "M.ratioTotalResistHeating13": 0.00878992089071838,
+          "M.ratioTotalResistHeating14": 1.86346322883094,
+          "M.ratioTotalResistHeating15": 1.86199824201582,
+          "M.ratioTotalResistHeating16": 0,
+          "M.ratioTotalResistHeating17": 0,
+          "M.ratioTotalResistHeating18": 0
+        },
+        "sum": 3.7342513917374784,
+        "status": "raw resistance/auxiliary aggregate fields preserved"
+      },
+      "case_names": {
+        "raw_values": {
+          "M.case_name1": "case1",
+          "M.case_name2": "case1",
+          "M.case_name3": "case1",
+          "M.case_name4": "case1",
+          "M.case_name5": "case1",
+          "M.case_name6": "case2",
+          "M.case_name7": "case2",
+          "M.case_name8": "case2",
+          "M.case_name9": "case2",
+          "M.case_name10": "case3",
+          "M.case_name11": "case3",
+          "M.case_name12": "case3",
+          "M.case_name13": "case8",
+          "M.case_name14": "case8",
+          "M.case_name15": "case8",
+          "M.case_name16": "case8",
+          "M.case_name17": "case8",
+          "M.case_name18": "0"
+        },
+        "status": "Northern official case_name values retained verbatim"
+      },
+      "regime_by_bin": [],
+      "regime_distribution": {}
     },
     "M1": {
       "screen_headline": 10.05,
@@ -798,13 +1347,299 @@
       "headline_raw_field": "M1.HSPF",
       "design_load": {
         "value": null,
-        "raw_field": null
+        "raw_field": null,
+        "raw_value": null
       },
-      "seasonal_totals": {
-        "delivered_capacity_or_load": {
-          "value": 10398.99,
+      "raw_fields": {
+        "": 1,
+        "M1.coolCapacity95Full": 30000,
+        "M1.heatCapacity62min": 26000,
+        "M1.heatCapacity47full": 28000,
+        "M1.heatCapacity47min": 21000,
+        "M1.heatCapacity35boost": 30000,
+        "M1.heatCapacity35full": 25500,
+        "M1.heatCapacity35min": 18500,
+        "M1.heatCapacity17boost": 28000,
+        "M1.heatCapacity17full": 22000,
+        "M1.heatCapacity17min": 14500,
+        "M1.heatCapacity5boost": 25000,
+        "M1.powerConsumption62min": 1350,
+        "M1.powerConsumption47full": 1850,
+        "M1.powerConsumption47min": 1300,
+        "M1.powerConsumption35boost": 2400,
+        "M1.powerConsumption35full": 2050,
+        "M1.powerConsumption35min": 1550,
+        "M1.powerConsumption17boost": 3000,
+        "M1.powerConsumption17full": 2350,
+        "M1.powerConsumption17min": 1750,
+        "M1.powerConsumption5boost": 3400,
+        "M1.buildingHeatLoad1": -4830,
+        "M1.buildingHeatLoad2": -1380,
+        "M1.buildingHeatLoad3": 2070,
+        "M1.buildingHeatLoad4": 5520,
+        "M1.buildingHeatLoad5": 8970,
+        "M1.buildingHeatLoad6": 12420,
+        "M1.buildingHeatLoad7": 15870,
+        "M1.buildingHeatLoad8": 19320,
+        "M1.buildingHeatLoad9": 22770,
+        "M1.buildingHeatLoad10": 26220,
+        "M1.buildingHeatLoad11": 29670,
+        "M1.buildingHeatLoad12": 33120,
+        "M1.buildingHeatLoad13": 36570,
+        "M1.buildingHeatLoad14": 40020,
+        "M1.buildingHeatLoad15": 43470,
+        "M1.buildingHeatLoad16": 46920,
+        "M1.buildingHeatLoad17": 50370,
+        "M1.buildingHeatLoad18": 53820,
+        "M1.binHeatCapacity_k11": 26000,
+        "M1.binHeatCapacity_k12": 24333.3333333333,
+        "M1.binHeatCapacity_k13": 22666.6666666667,
+        "M1.binHeatCapacity_k14": 21000,
+        "M1.binHeatCapacity_k15": 19333.3333333333,
+        "M1.binHeatCapacity_k16": 18944.4444444444,
+        "M1.binHeatCapacity_k17": 17833.3333333333,
+        "M1.binHeatCapacity_k18": 16722.2222222222,
+        "M1.binHeatCapacity_k19": 15611.1111111111,
+        "M1.binHeatCapacity_k110": 14500,
+        "M1.binHeatCapacity_k111": 13416.6666666667,
+        "M1.binHeatCapacity_k112": 12333.3333333333,
+        "M1.binHeatCapacity_k113": 11250,
+        "M1.binHeatCapacity_k114": 10166.6666666667,
+        "M1.binHeatCapacity_k115": 9083.33333333333,
+        "M1.binHeatCapacity_k116": 8000,
+        "M1.binHeatCapacity_k117": 6916.66666666667,
+        "M1.binHeatCapacity_k118": 5833.33333333333,
+        "M1.binHeatCapacity_k21": 31000,
+        "M1.binHeatCapacity_k22": 30000,
+        "M1.binHeatCapacity_k23": 29000,
+        "M1.binHeatCapacity_k24": 28000,
+        "M1.binHeatCapacity_k25": 26861.1111111111,
+        "M1.binHeatCapacity_k26": 25888.8888888889,
+        "M1.binHeatCapacity_k27": 24916.6666666667,
+        "M1.binHeatCapacity_k28": 23944.4444444444,
+        "M1.binHeatCapacity_k29": 22972.2222222222,
+        "M1.binHeatCapacity_k210": 22000,
+        "M1.binHeatCapacity_k211": 21000,
+        "M1.binHeatCapacity_k212": 20000,
+        "M1.binHeatCapacity_k213": 19000,
+        "M1.binHeatCapacity_k214": 18000,
+        "M1.binHeatCapacity_k215": 17000,
+        "M1.binHeatCapacity_k216": 16000,
+        "M1.binHeatCapacity_k217": 15000,
+        "M1.binHeatCapacity_k218": 14000,
+        "M1.binHeatCapacity_k31": 0,
+        "M1.binHeatCapacity_k32": 0,
+        "M1.binHeatCapacity_k33": 0,
+        "M1.binHeatCapacity_k34": 0,
+        "M1.binHeatCapacity_k35": 30777.7777777778,
+        "M1.binHeatCapacity_k36": 30222.2222222222,
+        "M1.binHeatCapacity_k37": 29666.6666666667,
+        "M1.binHeatCapacity_k38": 29111.1111111111,
+        "M1.binHeatCapacity_k39": 28555.5555555556,
+        "M1.binHeatCapacity_k310": 28000,
+        "M1.binHeatCapacity_k311": 26750,
+        "M1.binHeatCapacity_k312": 25500,
+        "M1.binHeatCapacity_k313": 24250,
+        "M1.binHeatCapacity_k314": 23000,
+        "M1.binHeatCapacity_k315": 21750,
+        "M1.binHeatCapacity_k316": 20500,
+        "M1.binHeatCapacity_k317": 19250,
+        "M1.binHeatCapacity_k318": 18000,
+        "M1.binPowerConsumption_k11": 1350,
+        "M1.binPowerConsumption_k12": 1333.33333333333,
+        "M1.binPowerConsumption_k13": 1316.66666666667,
+        "M1.binPowerConsumption_k14": 1300,
+        "M1.binPowerConsumption_k15": 1283.33333333333,
+        "M1.binPowerConsumption_k16": 1527.77777777778,
+        "M1.binPowerConsumption_k17": 1583.33333333333,
+        "M1.binPowerConsumption_k18": 1638.88888888889,
+        "M1.binPowerConsumption_k19": 1694.44444444444,
+        "M1.binPowerConsumption_k110": 1750,
+        "M1.binPowerConsumption_k111": 1825,
+        "M1.binPowerConsumption_k112": 1900,
+        "M1.binPowerConsumption_k113": 1975,
+        "M1.binPowerConsumption_k114": 2050,
+        "M1.binPowerConsumption_k115": 2125,
+        "M1.binPowerConsumption_k116": 2200,
+        "M1.binPowerConsumption_k117": 2275,
+        "M1.binPowerConsumption_k118": 2350,
+        "M1.binPowerConsumption_k21": 1600,
+        "M1.binPowerConsumption_k22": 1683.33333333333,
+        "M1.binPowerConsumption_k23": 1766.66666666667,
+        "M1.binPowerConsumption_k24": 1850,
+        "M1.binPowerConsumption_k25": 1933.33333333333,
+        "M1.binPowerConsumption_k26": 2016.66666666667,
+        "M1.binPowerConsumption_k27": 2100,
+        "M1.binPowerConsumption_k28": 2183.33333333333,
+        "M1.binPowerConsumption_k29": 2266.66666666667,
+        "M1.binPowerConsumption_k210": 2350,
+        "M1.binPowerConsumption_k211": 2433.33333333333,
+        "M1.binPowerConsumption_k212": 2516.66666666667,
+        "M1.binPowerConsumption_k213": 2600,
+        "M1.binPowerConsumption_k214": 2683.33333333333,
+        "M1.binPowerConsumption_k215": 2766.66666666667,
+        "M1.binPowerConsumption_k216": 2850,
+        "M1.binPowerConsumption_k217": 2933.33333333333,
+        "M1.binPowerConsumption_k218": 3016.66666666667,
+        "M1.binPowerConsumption_k31": 0,
+        "M1.binPowerConsumption_k32": 0,
+        "M1.binPowerConsumption_k33": 0,
+        "M1.binPowerConsumption_k34": 0,
+        "M1.binPowerConsumption_k35": 2166.66666666667,
+        "M1.binPowerConsumption_k36": 2333.33333333333,
+        "M1.binPowerConsumption_k37": 2500,
+        "M1.binPowerConsumption_k38": 2666.66666666667,
+        "M1.binPowerConsumption_k39": 2833.33333333333,
+        "M1.binPowerConsumption_k310": 3000,
+        "M1.binPowerConsumption_k311": 3166.66666666667,
+        "M1.binPowerConsumption_k312": 3333.33333333333,
+        "M1.binPowerConsumption_k313": 3500,
+        "M1.binPowerConsumption_k314": 3666.66666666667,
+        "M1.binPowerConsumption_k315": 3833.33333333333,
+        "M1.binPowerConsumption_k316": 4000,
+        "M1.binPowerConsumption_k317": 4166.66666666667,
+        "M1.binPowerConsumption_k318": 4333.33333333333,
+        "M1.cutOut_delta1": 1,
+        "M1.cutOut_delta2": 1,
+        "M1.cutOut_delta3": 1,
+        "M1.cutOut_delta4": 1,
+        "M1.cutOut_delta5": 1,
+        "M1.cutOut_delta6": 1,
+        "M1.cutOut_delta7": 1,
+        "M1.cutOut_delta8": 1,
+        "M1.cutOut_delta9": 1,
+        "M1.cutOut_delta10": 1,
+        "M1.cutOut_delta11": 1,
+        "M1.cutOut_delta12": 1,
+        "M1.cutOut_delta13": 1,
+        "M1.cutOut_delta14": 1,
+        "M1.cutOut_delta15": 1,
+        "M1.cutOut_delta16": 1,
+        "M1.cutOut_delta17": 1,
+        "M1.cutOut_delta18": 1,
+        "M1.cutOut_delta_prime1": 1,
+        "M1.cutOut_delta_prime2": 1,
+        "M1.cutOut_delta_prime3": 1,
+        "M1.cutOut_delta_prime4": 1,
+        "M1.cutOut_delta_prime5": 1,
+        "M1.cutOut_delta_prime6": 1,
+        "M1.cutOut_delta_prime7": 1,
+        "M1.cutOut_delta_prime8": 1,
+        "M1.cutOut_delta_prime9": 1,
+        "M1.cutOut_delta_prime10": 1,
+        "M1.cutOut_delta_prime11": 1,
+        "M1.cutOut_delta_prime12": 1,
+        "M1.cutOut_delta_prime13": 1,
+        "M1.cutOut_delta_prime14": 1,
+        "M1.cutOut_delta_prime15": 1,
+        "M1.cutOut_delta_prime16": 1,
+        "M1.cutOut_delta_prime17": 1,
+        "M1.cutOut_delta_prime18": 1,
+        "M1.cutOut_delta_doublePrime1": 0,
+        "M1.cutOut_delta_doublePrime2": 0,
+        "M1.cutOut_delta_doublePrime3": 0,
+        "M1.cutOut_delta_doublePrime4": 0,
+        "M1.cutOut_delta_doublePrime5": 1,
+        "M1.cutOut_delta_doublePrime6": 1,
+        "M1.cutOut_delta_doublePrime7": 1,
+        "M1.cutOut_delta_doublePrime8": 1,
+        "M1.cutOut_delta_doublePrime9": 1,
+        "M1.cutOut_delta_doublePrime10": 1,
+        "M1.cutOut_delta_doublePrime11": 1,
+        "M1.cutOut_delta_doublePrime12": 1,
+        "M1.cutOut_delta_doublePrime13": 1,
+        "M1.cutOut_delta_doublePrime14": 1,
+        "M1.cutOut_delta_doublePrime15": 1,
+        "M1.cutOut_delta_doublePrime16": 1,
+        "M1.cutOut_delta_doublePrime17": 1,
+        "M1.cutOut_delta_doublePrime18": 1,
+        "M1.ratioTotalHeating1": 0,
+        "M1.ratioTotalHeating2": 0,
+        "M1.ratioTotalHeating3": 213.21,
+        "M1.ratioTotalHeating4": 513.36,
+        "M1.ratioTotalHeating5": 897,
+        "M1.ratioTotalHeating6": 1353.78,
+        "M1.ratioTotalHeating7": 1999.62,
+        "M1.ratioTotalHeating8": 1680.84,
+        "M1.ratioTotalHeating9": 1252.35,
+        "M1.ratioTotalHeating10": 943.92,
+        "M1.ratioTotalHeating11": 771.42,
+        "M1.ratioTotalHeating12": 430.56,
+        "M1.ratioTotalHeating13": 219.42,
+        "M1.ratioTotalHeating14": 80.04,
+        "M1.ratioTotalHeating15": 43.47,
+        "M1.ratioTotalHeating16": 0,
+        "M1.ratioTotalHeating17": 0,
+        "M1.ratioTotalHeating18": 0,
+        "M1.ratioTotalResistHeating1": 0,
+        "M1.ratioTotalResistHeating2": 0,
+        "M1.ratioTotalResistHeating3": 0,
+        "M1.ratioTotalResistHeating4": 0,
+        "M1.ratioTotalResistHeating5": 0,
+        "M1.ratioTotalResistHeating6": 0,
+        "M1.ratioTotalResistHeating7": 0,
+        "M1.ratioTotalResistHeating8": 0,
+        "M1.ratioTotalResistHeating9": 0,
+        "M1.ratioTotalResistHeating10": 0,
+        "M1.ratioTotalResistHeating11": 22.2443598007618,
+        "M1.ratioTotalResistHeating12": 29.0243187811309,
+        "M1.ratioTotalResistHeating13": 21.6583650747143,
+        "M1.ratioTotalResistHeating14": 9.97363023732786,
+        "M1.ratioTotalResistHeating15": 6.36390272487547,
+        "M1.ratioTotalResistHeating16": 0,
+        "M1.ratioTotalResistHeating17": 0,
+        "M1.ratioTotalResistHeating18": 0,
+        "M1.ratioTotalPower1": 0,
+        "M1.ratioTotalPower2": 0,
+        "M1.ratioTotalPower3": 16.0254887969174,
+        "M1.ratioTotalPower4": 38.9590192644483,
+        "M1.ratioTotalPower5": 68.7561594743915,
+        "M1.ratioTotalPower6": 121.22206763857,
+        "M1.ratioTotalPower7": 185.354314720812,
+        "M1.ratioTotalPower8": 161.040035105683,
+        "M1.ratioTotalPower9": 123.841779975278,
+        "M1.ratioTotalPower10": 102.304946603275,
+        "M1.ratioTotalPower11": 82.3333333333333,
+        "M1.ratioTotalPower12": 43.3333333333333,
+        "M1.ratioTotalPower13": 21,
+        "M1.ratioTotalPower14": 7.33333333333333,
+        "M1.ratioTotalPower15": 3.83333333333333,
+        "M1.ratioTotalPower16": 0,
+        "M1.ratioTotalPower17": 0,
+        "M1.ratioTotalPower18": 0,
+        "M1.case_name1": "case1",
+        "M1.case_name2": "case1",
+        "M1.case_name3": "case1",
+        "M1.case_name4": "case1",
+        "M1.case_name5": "case1",
+        "M1.case_name6": "case2",
+        "M1.case_name7": "case2",
+        "M1.case_name8": "case2",
+        "M1.case_name9": "case2",
+        "M1.case_name10": "case3",
+        "M1.case_name11": "case8",
+        "M1.case_name12": "case8",
+        "M1.case_name13": "case8",
+        "M1.case_name14": "case8",
+        "M1.case_name15": "case8",
+        "M1.case_name16": "case8",
+        "M1.case_name17": "case8",
+        "M1.case_name18": "0",
+        "M1.HSPF": 10.0473265237749
+      },
+      "seasonal_aggregates": [
+        {
+          "normalized_name": "raw_ratio_total_heating",
           "raw_columns": [
             "M1.ratioTotalHeating1",
+            "M1.ratioTotalHeating2",
+            "M1.ratioTotalHeating3",
+            "M1.ratioTotalHeating4",
+            "M1.ratioTotalHeating5",
+            "M1.ratioTotalHeating6",
+            "M1.ratioTotalHeating7",
+            "M1.ratioTotalHeating8",
+            "M1.ratioTotalHeating9",
             "M1.ratioTotalHeating10",
             "M1.ratioTotalHeating11",
             "M1.ratioTotalHeating12",
@@ -813,22 +1648,24 @@
             "M1.ratioTotalHeating15",
             "M1.ratioTotalHeating16",
             "M1.ratioTotalHeating17",
-            "M1.ratioTotalHeating18",
-            "M1.ratioTotalHeating2",
-            "M1.ratioTotalHeating3",
-            "M1.ratioTotalHeating4",
-            "M1.ratioTotalHeating5",
-            "M1.ratioTotalHeating6",
-            "M1.ratioTotalHeating7",
-            "M1.ratioTotalHeating8",
-            "M1.ratioTotalHeating9"
+            "M1.ratioTotalHeating18"
           ],
-          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 10398.99,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "resistance_or_auxiliary_contribution": {
-          "value": 89.26457661881034,
+        {
+          "normalized_name": "raw_ratio_total_resist_heating",
           "raw_columns": [
             "M1.ratioTotalResistHeating1",
+            "M1.ratioTotalResistHeating2",
+            "M1.ratioTotalResistHeating3",
+            "M1.ratioTotalResistHeating4",
+            "M1.ratioTotalResistHeating5",
+            "M1.ratioTotalResistHeating6",
+            "M1.ratioTotalResistHeating7",
+            "M1.ratioTotalResistHeating8",
+            "M1.ratioTotalResistHeating9",
             "M1.ratioTotalResistHeating10",
             "M1.ratioTotalResistHeating11",
             "M1.ratioTotalResistHeating12",
@@ -837,22 +1674,24 @@
             "M1.ratioTotalResistHeating15",
             "M1.ratioTotalResistHeating16",
             "M1.ratioTotalResistHeating17",
-            "M1.ratioTotalResistHeating18",
-            "M1.ratioTotalResistHeating2",
-            "M1.ratioTotalResistHeating3",
-            "M1.ratioTotalResistHeating4",
-            "M1.ratioTotalResistHeating5",
-            "M1.ratioTotalResistHeating6",
-            "M1.ratioTotalResistHeating7",
-            "M1.ratioTotalResistHeating8",
-            "M1.ratioTotalResistHeating9"
+            "M1.ratioTotalResistHeating18"
           ],
-          "status": "raw_bin_aggregate; applicable to heating profiles only"
+          "value": 89.26457661881034,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "electrical_energy": {
-          "value": 975.3371449127085,
+        {
+          "normalized_name": "raw_ratio_total_power",
           "raw_columns": [
             "M1.ratioTotalPower1",
+            "M1.ratioTotalPower2",
+            "M1.ratioTotalPower3",
+            "M1.ratioTotalPower4",
+            "M1.ratioTotalPower5",
+            "M1.ratioTotalPower6",
+            "M1.ratioTotalPower7",
+            "M1.ratioTotalPower8",
+            "M1.ratioTotalPower9",
             "M1.ratioTotalPower10",
             "M1.ratioTotalPower11",
             "M1.ratioTotalPower12",
@@ -861,613 +1700,709 @@
             "M1.ratioTotalPower15",
             "M1.ratioTotalPower16",
             "M1.ratioTotalPower17",
-            "M1.ratioTotalPower18",
-            "M1.ratioTotalPower2",
-            "M1.ratioTotalPower3",
-            "M1.ratioTotalPower4",
-            "M1.ratioTotalPower5",
-            "M1.ratioTotalPower6",
-            "M1.ratioTotalPower7",
-            "M1.ratioTotalPower8",
-            "M1.ratioTotalPower9"
+            "M1.ratioTotalPower18"
           ],
-          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 975.3371449127085,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
-      },
+      ],
       "bin_trace": [
         {
-          "bin_key": "1",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name1": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "2",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name2": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "3",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name3": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "4",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name4": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "5",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name5": "case1"
-          },
-          "operating_case": "case1"
-        },
-        {
-          "bin_key": "6",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name6": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "7",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name7": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "8",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name8": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "9",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name9": "case2"
-          },
-          "operating_case": "case2"
-        },
-        {
-          "bin_key": "k10",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.case_name10": "case3"
-          },
-          "operating_case": "case3"
-        },
-        {
-          "bin_key": "k11",
+          "bin_index": 1,
+          "bin_key": "bin_1",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k11": 26000,
+            "M1.binHeatCapacity_k21": 31000,
+            "M1.binHeatCapacity_k31": 0,
             "M1.binPowerConsumption_k11": 1350,
-            "M1.case_name11": "case8"
+            "M1.binPowerConsumption_k21": 1600,
+            "M1.binPowerConsumption_k31": 0,
+            "M1.buildingHeatLoad1": -4830,
+            "M1.case_name1": "case1",
+            "M1.cutOut_delta1": 1,
+            "M1.cutOut_delta_doublePrime1": 0,
+            "M1.cutOut_delta_prime1": 1,
+            "M1.ratioTotalHeating1": 0,
+            "M1.ratioTotalPower1": 0,
+            "M1.ratioTotalResistHeating1": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k12",
+          "bin_index": 2,
+          "bin_key": "bin_2",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k12": 24333.3333333333,
+            "M1.binHeatCapacity_k22": 30000,
+            "M1.binHeatCapacity_k32": 0,
             "M1.binPowerConsumption_k12": 1333.33333333333,
-            "M1.case_name12": "case8"
+            "M1.binPowerConsumption_k22": 1683.33333333333,
+            "M1.binPowerConsumption_k32": 0,
+            "M1.buildingHeatLoad2": -1380,
+            "M1.case_name2": "case1",
+            "M1.cutOut_delta2": 1,
+            "M1.cutOut_delta_doublePrime2": 0,
+            "M1.cutOut_delta_prime2": 1,
+            "M1.ratioTotalHeating2": 0,
+            "M1.ratioTotalPower2": 0,
+            "M1.ratioTotalResistHeating2": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k13",
+          "bin_index": 3,
+          "bin_key": "bin_3",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k13": 22666.6666666667,
+            "M1.binHeatCapacity_k23": 29000,
+            "M1.binHeatCapacity_k33": 0,
             "M1.binPowerConsumption_k13": 1316.66666666667,
-            "M1.case_name13": "case8"
+            "M1.binPowerConsumption_k23": 1766.66666666667,
+            "M1.binPowerConsumption_k33": 0,
+            "M1.buildingHeatLoad3": 2070,
+            "M1.case_name3": "case1",
+            "M1.cutOut_delta3": 1,
+            "M1.cutOut_delta_doublePrime3": 0,
+            "M1.cutOut_delta_prime3": 1,
+            "M1.ratioTotalHeating3": 213.21,
+            "M1.ratioTotalPower3": 16.0254887969174,
+            "M1.ratioTotalResistHeating3": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k14",
+          "bin_index": 4,
+          "bin_key": "bin_4",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k14": 21000,
+            "M1.binHeatCapacity_k24": 28000,
+            "M1.binHeatCapacity_k34": 0,
             "M1.binPowerConsumption_k14": 1300,
-            "M1.case_name14": "case8"
+            "M1.binPowerConsumption_k24": 1850,
+            "M1.binPowerConsumption_k34": 0,
+            "M1.buildingHeatLoad4": 5520,
+            "M1.case_name4": "case1",
+            "M1.cutOut_delta4": 1,
+            "M1.cutOut_delta_doublePrime4": 0,
+            "M1.cutOut_delta_prime4": 1,
+            "M1.ratioTotalHeating4": 513.36,
+            "M1.ratioTotalPower4": 38.9590192644483,
+            "M1.ratioTotalResistHeating4": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k15",
+          "bin_index": 5,
+          "bin_key": "bin_5",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k15": 19333.3333333333,
+            "M1.binHeatCapacity_k25": 26861.1111111111,
+            "M1.binHeatCapacity_k35": 30777.7777777778,
             "M1.binPowerConsumption_k15": 1283.33333333333,
-            "M1.case_name15": "case8"
+            "M1.binPowerConsumption_k25": 1933.33333333333,
+            "M1.binPowerConsumption_k35": 2166.66666666667,
+            "M1.buildingHeatLoad5": 8970,
+            "M1.case_name5": "case1",
+            "M1.cutOut_delta5": 1,
+            "M1.cutOut_delta_doublePrime5": 1,
+            "M1.cutOut_delta_prime5": 1,
+            "M1.ratioTotalHeating5": 897,
+            "M1.ratioTotalPower5": 68.7561594743915,
+            "M1.ratioTotalResistHeating5": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case1"
         },
         {
-          "bin_key": "k16",
+          "bin_index": 6,
+          "bin_key": "bin_6",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k16": 18944.4444444444,
+            "M1.binHeatCapacity_k26": 25888.8888888889,
+            "M1.binHeatCapacity_k36": 30222.2222222222,
             "M1.binPowerConsumption_k16": 1527.77777777778,
-            "M1.case_name16": "case8"
+            "M1.binPowerConsumption_k26": 2016.66666666667,
+            "M1.binPowerConsumption_k36": 2333.33333333333,
+            "M1.buildingHeatLoad6": 12420,
+            "M1.case_name6": "case2",
+            "M1.cutOut_delta6": 1,
+            "M1.cutOut_delta_doublePrime6": 1,
+            "M1.cutOut_delta_prime6": 1,
+            "M1.ratioTotalHeating6": 1353.78,
+            "M1.ratioTotalPower6": 121.22206763857,
+            "M1.ratioTotalResistHeating6": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k17",
+          "bin_index": 7,
+          "bin_key": "bin_7",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k17": 17833.3333333333,
+            "M1.binHeatCapacity_k27": 24916.6666666667,
+            "M1.binHeatCapacity_k37": 29666.6666666667,
             "M1.binPowerConsumption_k17": 1583.33333333333,
-            "M1.case_name17": "case8"
+            "M1.binPowerConsumption_k27": 2100,
+            "M1.binPowerConsumption_k37": 2500,
+            "M1.buildingHeatLoad7": 15870,
+            "M1.case_name7": "case2",
+            "M1.cutOut_delta7": 1,
+            "M1.cutOut_delta_doublePrime7": 1,
+            "M1.cutOut_delta_prime7": 1,
+            "M1.ratioTotalHeating7": 1999.62,
+            "M1.ratioTotalPower7": 185.354314720812,
+            "M1.ratioTotalResistHeating7": 0
           },
-          "operating_case": "case8"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k18",
+          "bin_index": 8,
+          "bin_key": "bin_8",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k18": 16722.2222222222,
+            "M1.binHeatCapacity_k28": 23944.4444444444,
+            "M1.binHeatCapacity_k38": 29111.1111111111,
             "M1.binPowerConsumption_k18": 1638.88888888889,
-            "M1.case_name18": 0
+            "M1.binPowerConsumption_k28": 2183.33333333333,
+            "M1.binPowerConsumption_k38": 2666.66666666667,
+            "M1.buildingHeatLoad8": 19320,
+            "M1.case_name8": "case2",
+            "M1.cutOut_delta8": 1,
+            "M1.cutOut_delta_doublePrime8": 1,
+            "M1.cutOut_delta_prime8": 1,
+            "M1.ratioTotalHeating8": 1680.84,
+            "M1.ratioTotalPower8": 161.040035105683,
+            "M1.ratioTotalResistHeating8": 0
           },
-          "operating_case": "0"
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k19",
+          "bin_index": 9,
+          "bin_key": "bin_9",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k19": 15611.1111111111,
-            "M1.binPowerConsumption_k19": 1694.44444444444
-          }
-        },
-        {
-          "bin_key": "k21",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k21": 31000,
-            "M1.binPowerConsumption_k21": 1600
-          }
-        },
-        {
-          "bin_key": "k22",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k22": 30000,
-            "M1.binPowerConsumption_k22": 1683.33333333333
-          }
-        },
-        {
-          "bin_key": "k23",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k23": 29000,
-            "M1.binPowerConsumption_k23": 1766.66666666667
-          }
-        },
-        {
-          "bin_key": "k24",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k24": 28000,
-            "M1.binPowerConsumption_k24": 1850
-          }
-        },
-        {
-          "bin_key": "k25",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k25": 26861.1111111111,
-            "M1.binPowerConsumption_k25": 1933.33333333333
-          }
-        },
-        {
-          "bin_key": "k26",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k26": 25888.8888888889,
-            "M1.binPowerConsumption_k26": 2016.66666666667
-          }
-        },
-        {
-          "bin_key": "k27",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k27": 24916.6666666667,
-            "M1.binPowerConsumption_k27": 2100
-          }
-        },
-        {
-          "bin_key": "k28",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k28": 23944.4444444444,
-            "M1.binPowerConsumption_k28": 2183.33333333333
-          }
-        },
-        {
-          "bin_key": "k29",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M1.binHeatCapacity_k29": 22972.2222222222,
-            "M1.binPowerConsumption_k29": 2266.66666666667
-          }
-        },
-        {
-          "bin_key": "k31",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k31": 0,
-            "M1.binPowerConsumption_k31": 0
-          }
-        },
-        {
-          "bin_key": "k32",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k32": 0,
-            "M1.binPowerConsumption_k32": 0
-          }
-        },
-        {
-          "bin_key": "k33",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k33": 0,
-            "M1.binPowerConsumption_k33": 0
-          }
-        },
-        {
-          "bin_key": "k34",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k34": 0,
-            "M1.binPowerConsumption_k34": 0
-          }
-        },
-        {
-          "bin_key": "k35",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k35": 30777.7777777778,
-            "M1.binPowerConsumption_k35": 2166.66666666667
-          }
-        },
-        {
-          "bin_key": "k36",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k36": 30222.2222222222,
-            "M1.binPowerConsumption_k36": 2333.33333333333
-          }
-        },
-        {
-          "bin_key": "k37",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k37": 29666.6666666667,
-            "M1.binPowerConsumption_k37": 2500
-          }
-        },
-        {
-          "bin_key": "k38",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k38": 29111.1111111111,
-            "M1.binPowerConsumption_k38": 2666.66666666667
-          }
-        },
-        {
-          "bin_key": "k39",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M1.binHeatCapacity_k39": 28555.5555555556,
-            "M1.binPowerConsumption_k39": 2833.33333333333
-          }
+            "M1.binPowerConsumption_k19": 1694.44444444444,
+            "M1.binPowerConsumption_k29": 2266.66666666667,
+            "M1.binPowerConsumption_k39": 2833.33333333333,
+            "M1.buildingHeatLoad9": 22770,
+            "M1.case_name9": "case2",
+            "M1.cutOut_delta9": 1,
+            "M1.cutOut_delta_doublePrime9": 1,
+            "M1.cutOut_delta_prime9": 1,
+            "M1.ratioTotalHeating9": 1252.35,
+            "M1.ratioTotalPower9": 123.841779975278,
+            "M1.ratioTotalResistHeating9": 0
+          },
+          "operating_case": "case2"
         },
         {
-          "bin_key": "k110",
+          "bin_index": 10,
+          "bin_key": "bin_10",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k110": 14500,
-            "M1.binPowerConsumption_k110": 1750
-          }
+            "M1.binHeatCapacity_k210": 22000,
+            "M1.binHeatCapacity_k310": 28000,
+            "M1.binPowerConsumption_k110": 1750,
+            "M1.binPowerConsumption_k210": 2350,
+            "M1.binPowerConsumption_k310": 3000,
+            "M1.buildingHeatLoad10": 26220,
+            "M1.case_name10": "case3",
+            "M1.cutOut_delta10": 1,
+            "M1.cutOut_delta_doublePrime10": 1,
+            "M1.cutOut_delta_prime10": 1,
+            "M1.ratioTotalHeating10": 943.92,
+            "M1.ratioTotalPower10": 102.304946603275,
+            "M1.ratioTotalResistHeating10": 0
+          },
+          "operating_case": "case3"
         },
         {
-          "bin_key": "k111",
+          "bin_index": 11,
+          "bin_key": "bin_11",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k111": 13416.6666666667,
-            "M1.binPowerConsumption_k111": 1825
-          }
+            "M1.binHeatCapacity_k211": 21000,
+            "M1.binHeatCapacity_k311": 26750,
+            "M1.binPowerConsumption_k111": 1825,
+            "M1.binPowerConsumption_k211": 2433.33333333333,
+            "M1.binPowerConsumption_k311": 3166.66666666667,
+            "M1.buildingHeatLoad11": 29670,
+            "M1.case_name11": "case8",
+            "M1.cutOut_delta11": 1,
+            "M1.cutOut_delta_doublePrime11": 1,
+            "M1.cutOut_delta_prime11": 1,
+            "M1.ratioTotalHeating11": 771.42,
+            "M1.ratioTotalPower11": 82.3333333333333,
+            "M1.ratioTotalResistHeating11": 22.2443598007618
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k112",
+          "bin_index": 12,
+          "bin_key": "bin_12",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k112": 12333.3333333333,
-            "M1.binPowerConsumption_k112": 1900
-          }
+            "M1.binHeatCapacity_k212": 20000,
+            "M1.binHeatCapacity_k312": 25500,
+            "M1.binPowerConsumption_k112": 1900,
+            "M1.binPowerConsumption_k212": 2516.66666666667,
+            "M1.binPowerConsumption_k312": 3333.33333333333,
+            "M1.buildingHeatLoad12": 33120,
+            "M1.case_name12": "case8",
+            "M1.cutOut_delta12": 1,
+            "M1.cutOut_delta_doublePrime12": 1,
+            "M1.cutOut_delta_prime12": 1,
+            "M1.ratioTotalHeating12": 430.56,
+            "M1.ratioTotalPower12": 43.3333333333333,
+            "M1.ratioTotalResistHeating12": 29.0243187811309
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k113",
+          "bin_index": 13,
+          "bin_key": "bin_13",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k113": 11250,
-            "M1.binPowerConsumption_k113": 1975
-          }
+            "M1.binHeatCapacity_k213": 19000,
+            "M1.binHeatCapacity_k313": 24250,
+            "M1.binPowerConsumption_k113": 1975,
+            "M1.binPowerConsumption_k213": 2600,
+            "M1.binPowerConsumption_k313": 3500,
+            "M1.buildingHeatLoad13": 36570,
+            "M1.case_name13": "case8",
+            "M1.cutOut_delta13": 1,
+            "M1.cutOut_delta_doublePrime13": 1,
+            "M1.cutOut_delta_prime13": 1,
+            "M1.ratioTotalHeating13": 219.42,
+            "M1.ratioTotalPower13": 21,
+            "M1.ratioTotalResistHeating13": 21.6583650747143
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k114",
+          "bin_index": 14,
+          "bin_key": "bin_14",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k114": 10166.6666666667,
-            "M1.binPowerConsumption_k114": 2050
-          }
+            "M1.binHeatCapacity_k214": 18000,
+            "M1.binHeatCapacity_k314": 23000,
+            "M1.binPowerConsumption_k114": 2050,
+            "M1.binPowerConsumption_k214": 2683.33333333333,
+            "M1.binPowerConsumption_k314": 3666.66666666667,
+            "M1.buildingHeatLoad14": 40020,
+            "M1.case_name14": "case8",
+            "M1.cutOut_delta14": 1,
+            "M1.cutOut_delta_doublePrime14": 1,
+            "M1.cutOut_delta_prime14": 1,
+            "M1.ratioTotalHeating14": 80.04,
+            "M1.ratioTotalPower14": 7.33333333333333,
+            "M1.ratioTotalResistHeating14": 9.97363023732786
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k115",
+          "bin_index": 15,
+          "bin_key": "bin_15",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k115": 9083.33333333333,
-            "M1.binPowerConsumption_k115": 2125
-          }
+            "M1.binHeatCapacity_k215": 17000,
+            "M1.binHeatCapacity_k315": 21750,
+            "M1.binPowerConsumption_k115": 2125,
+            "M1.binPowerConsumption_k215": 2766.66666666667,
+            "M1.binPowerConsumption_k315": 3833.33333333333,
+            "M1.buildingHeatLoad15": 43470,
+            "M1.case_name15": "case8",
+            "M1.cutOut_delta15": 1,
+            "M1.cutOut_delta_doublePrime15": 1,
+            "M1.cutOut_delta_prime15": 1,
+            "M1.ratioTotalHeating15": 43.47,
+            "M1.ratioTotalPower15": 3.83333333333333,
+            "M1.ratioTotalResistHeating15": 6.36390272487547
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k116",
+          "bin_index": 16,
+          "bin_key": "bin_16",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k116": 8000,
-            "M1.binPowerConsumption_k116": 2200
-          }
+            "M1.binHeatCapacity_k216": 16000,
+            "M1.binHeatCapacity_k316": 20500,
+            "M1.binPowerConsumption_k116": 2200,
+            "M1.binPowerConsumption_k216": 2850,
+            "M1.binPowerConsumption_k316": 4000,
+            "M1.buildingHeatLoad16": 46920,
+            "M1.case_name16": "case8",
+            "M1.cutOut_delta16": 1,
+            "M1.cutOut_delta_doublePrime16": 1,
+            "M1.cutOut_delta_prime16": 1,
+            "M1.ratioTotalHeating16": 0,
+            "M1.ratioTotalPower16": 0,
+            "M1.ratioTotalResistHeating16": 0
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k117",
+          "bin_index": 17,
+          "bin_key": "bin_17",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k117": 6916.66666666667,
-            "M1.binPowerConsumption_k117": 2275
-          }
+            "M1.binHeatCapacity_k217": 15000,
+            "M1.binHeatCapacity_k317": 19250,
+            "M1.binPowerConsumption_k117": 2275,
+            "M1.binPowerConsumption_k217": 2933.33333333333,
+            "M1.binPowerConsumption_k317": 4166.66666666667,
+            "M1.buildingHeatLoad17": 50370,
+            "M1.case_name17": "case8",
+            "M1.cutOut_delta17": 1,
+            "M1.cutOut_delta_doublePrime17": 1,
+            "M1.cutOut_delta_prime17": 1,
+            "M1.ratioTotalHeating17": 0,
+            "M1.ratioTotalPower17": 0,
+            "M1.ratioTotalResistHeating17": 0
+          },
+          "operating_case": "case8"
         },
         {
-          "bin_key": "k118",
+          "bin_index": 18,
+          "bin_key": "bin_18",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binHeatCapacity_k118": 5833.33333333333,
-            "M1.binPowerConsumption_k118": 2350
-          }
-        },
-        {
-          "bin_key": "k210",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k210": 22000,
-            "M1.binPowerConsumption_k210": 2350
-          }
-        },
-        {
-          "bin_key": "k211",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k211": 21000,
-            "M1.binPowerConsumption_k211": 2433.33333333333
-          }
-        },
-        {
-          "bin_key": "k212",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k212": 20000,
-            "M1.binPowerConsumption_k212": 2516.66666666667
-          }
-        },
-        {
-          "bin_key": "k213",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k213": 19000,
-            "M1.binPowerConsumption_k213": 2600
-          }
-        },
-        {
-          "bin_key": "k214",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k214": 18000,
-            "M1.binPowerConsumption_k214": 2683.33333333333
-          }
-        },
-        {
-          "bin_key": "k215",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k215": 17000,
-            "M1.binPowerConsumption_k215": 2766.66666666667
-          }
-        },
-        {
-          "bin_key": "k216",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k216": 16000,
-            "M1.binPowerConsumption_k216": 2850
-          }
-        },
-        {
-          "bin_key": "k217",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k217": 15000,
-            "M1.binPowerConsumption_k217": 2933.33333333333
-          }
-        },
-        {
-          "bin_key": "k218",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M1.binHeatCapacity_k218": 14000,
-            "M1.binPowerConsumption_k218": 3016.66666666667
-          }
-        },
-        {
-          "bin_key": "k310",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k310": 28000,
-            "M1.binPowerConsumption_k310": 3000
-          }
-        },
-        {
-          "bin_key": "k311",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k311": 26750,
-            "M1.binPowerConsumption_k311": 3166.66666666667
-          }
-        },
-        {
-          "bin_key": "k312",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k312": 25500,
-            "M1.binPowerConsumption_k312": 3333.33333333333
-          }
-        },
-        {
-          "bin_key": "k313",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k313": 24250,
-            "M1.binPowerConsumption_k313": 3500
-          }
-        },
-        {
-          "bin_key": "k314",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k314": 23000,
-            "M1.binPowerConsumption_k314": 3666.66666666667
-          }
-        },
-        {
-          "bin_key": "k315",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k315": 21750,
-            "M1.binPowerConsumption_k315": 3833.33333333333
-          }
-        },
-        {
-          "bin_key": "k316",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k316": 20500,
-            "M1.binPowerConsumption_k316": 4000
-          }
-        },
-        {
-          "bin_key": "k317",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binHeatCapacity_k317": 19250,
-            "M1.binPowerConsumption_k317": 4166.66666666667
-          }
-        },
-        {
-          "bin_key": "k318",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M1.binHeatCapacity_k318": 18000,
-            "M1.binPowerConsumption_k318": 4333.33333333333
-          }
+            "M1.binPowerConsumption_k118": 2350,
+            "M1.binPowerConsumption_k218": 3016.66666666667,
+            "M1.binPowerConsumption_k318": 4333.33333333333,
+            "M1.buildingHeatLoad18": 53820,
+            "M1.case_name18": "0",
+            "M1.cutOut_delta18": 1,
+            "M1.cutOut_delta_doublePrime18": 1,
+            "M1.cutOut_delta_prime18": 1,
+            "M1.ratioTotalHeating18": 0,
+            "M1.ratioTotalPower18": 0,
+            "M1.ratioTotalResistHeating18": 0
+          },
+          "operating_case": "0"
         }
-      ]
+      ],
+      "building_loads": {
+        "raw_values": {
+          "M1.buildingHeatLoad1": -4830,
+          "M1.buildingHeatLoad2": -1380,
+          "M1.buildingHeatLoad3": 2070,
+          "M1.buildingHeatLoad4": 5520,
+          "M1.buildingHeatLoad5": 8970,
+          "M1.buildingHeatLoad6": 12420,
+          "M1.buildingHeatLoad7": 15870,
+          "M1.buildingHeatLoad8": 19320,
+          "M1.buildingHeatLoad9": 22770,
+          "M1.buildingHeatLoad10": 26220,
+          "M1.buildingHeatLoad11": 29670,
+          "M1.buildingHeatLoad12": 33120,
+          "M1.buildingHeatLoad13": 36570,
+          "M1.buildingHeatLoad14": 40020,
+          "M1.buildingHeatLoad15": 43470,
+          "M1.buildingHeatLoad16": 46920,
+          "M1.buildingHeatLoad17": 50370,
+          "M1.buildingHeatLoad18": 53820
+        },
+        "raw_field_count": 18
+      },
+      "cutout": {
+        "raw_values": {
+          "M1.cutOut_delta_doublePrime1": 0,
+          "M1.cutOut_delta_doublePrime2": 0,
+          "M1.cutOut_delta_doublePrime3": 0,
+          "M1.cutOut_delta_doublePrime4": 0,
+          "M1.cutOut_delta_doublePrime5": 1,
+          "M1.cutOut_delta_doublePrime6": 1,
+          "M1.cutOut_delta_doublePrime7": 1,
+          "M1.cutOut_delta_doublePrime8": 1,
+          "M1.cutOut_delta_doublePrime9": 1,
+          "M1.cutOut_delta_doublePrime10": 1,
+          "M1.cutOut_delta_doublePrime11": 1,
+          "M1.cutOut_delta_doublePrime12": 1,
+          "M1.cutOut_delta_doublePrime13": 1,
+          "M1.cutOut_delta_doublePrime14": 1,
+          "M1.cutOut_delta_doublePrime15": 1,
+          "M1.cutOut_delta_doublePrime16": 1,
+          "M1.cutOut_delta_doublePrime17": 1,
+          "M1.cutOut_delta_doublePrime18": 1,
+          "M1.cutOut_delta_prime1": 1,
+          "M1.cutOut_delta_prime2": 1,
+          "M1.cutOut_delta_prime3": 1,
+          "M1.cutOut_delta_prime4": 1,
+          "M1.cutOut_delta_prime5": 1,
+          "M1.cutOut_delta_prime6": 1,
+          "M1.cutOut_delta_prime7": 1,
+          "M1.cutOut_delta_prime8": 1,
+          "M1.cutOut_delta_prime9": 1,
+          "M1.cutOut_delta_prime10": 1,
+          "M1.cutOut_delta_prime11": 1,
+          "M1.cutOut_delta_prime12": 1,
+          "M1.cutOut_delta_prime13": 1,
+          "M1.cutOut_delta_prime14": 1,
+          "M1.cutOut_delta_prime15": 1,
+          "M1.cutOut_delta_prime16": 1,
+          "M1.cutOut_delta_prime17": 1,
+          "M1.cutOut_delta_prime18": 1,
+          "M1.cutOut_delta1": 1,
+          "M1.cutOut_delta2": 1,
+          "M1.cutOut_delta3": 1,
+          "M1.cutOut_delta4": 1,
+          "M1.cutOut_delta5": 1,
+          "M1.cutOut_delta6": 1,
+          "M1.cutOut_delta7": 1,
+          "M1.cutOut_delta8": 1,
+          "M1.cutOut_delta9": 1,
+          "M1.cutOut_delta10": 1,
+          "M1.cutOut_delta11": 1,
+          "M1.cutOut_delta12": 1,
+          "M1.cutOut_delta13": 1,
+          "M1.cutOut_delta14": 1,
+          "M1.cutOut_delta15": 1,
+          "M1.cutOut_delta16": 1,
+          "M1.cutOut_delta17": 1,
+          "M1.cutOut_delta18": 1
+        },
+        "delta_distribution": {
+          "cutOut_delta_doublePrime": {
+            "raw_columns": [
+              "M1.cutOut_delta_doublePrime1",
+              "M1.cutOut_delta_doublePrime2",
+              "M1.cutOut_delta_doublePrime3",
+              "M1.cutOut_delta_doublePrime4",
+              "M1.cutOut_delta_doublePrime5",
+              "M1.cutOut_delta_doublePrime6",
+              "M1.cutOut_delta_doublePrime7",
+              "M1.cutOut_delta_doublePrime8",
+              "M1.cutOut_delta_doublePrime9",
+              "M1.cutOut_delta_doublePrime10",
+              "M1.cutOut_delta_doublePrime11",
+              "M1.cutOut_delta_doublePrime12",
+              "M1.cutOut_delta_doublePrime13",
+              "M1.cutOut_delta_doublePrime14",
+              "M1.cutOut_delta_doublePrime15",
+              "M1.cutOut_delta_doublePrime16",
+              "M1.cutOut_delta_doublePrime17",
+              "M1.cutOut_delta_doublePrime18"
+            ],
+            "raw_values": [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 14,
+              "fractional": 0,
+              "zero": 4,
+              "other": 0,
+              "blank": 0
+            }
+          },
+          "cutOut_delta_prime": {
+            "raw_columns": [
+              "M1.cutOut_delta_prime1",
+              "M1.cutOut_delta_prime2",
+              "M1.cutOut_delta_prime3",
+              "M1.cutOut_delta_prime4",
+              "M1.cutOut_delta_prime5",
+              "M1.cutOut_delta_prime6",
+              "M1.cutOut_delta_prime7",
+              "M1.cutOut_delta_prime8",
+              "M1.cutOut_delta_prime9",
+              "M1.cutOut_delta_prime10",
+              "M1.cutOut_delta_prime11",
+              "M1.cutOut_delta_prime12",
+              "M1.cutOut_delta_prime13",
+              "M1.cutOut_delta_prime14",
+              "M1.cutOut_delta_prime15",
+              "M1.cutOut_delta_prime16",
+              "M1.cutOut_delta_prime17",
+              "M1.cutOut_delta_prime18"
+            ],
+            "raw_values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 18,
+              "fractional": 0,
+              "zero": 0,
+              "other": 0,
+              "blank": 0
+            }
+          },
+          "cutOut_delta": {
+            "raw_columns": [
+              "M1.cutOut_delta1",
+              "M1.cutOut_delta2",
+              "M1.cutOut_delta3",
+              "M1.cutOut_delta4",
+              "M1.cutOut_delta5",
+              "M1.cutOut_delta6",
+              "M1.cutOut_delta7",
+              "M1.cutOut_delta8",
+              "M1.cutOut_delta9",
+              "M1.cutOut_delta10",
+              "M1.cutOut_delta11",
+              "M1.cutOut_delta12",
+              "M1.cutOut_delta13",
+              "M1.cutOut_delta14",
+              "M1.cutOut_delta15",
+              "M1.cutOut_delta16",
+              "M1.cutOut_delta17",
+              "M1.cutOut_delta18"
+            ],
+            "raw_values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "counts": {
+              "one": 18,
+              "fractional": 0,
+              "zero": 0,
+              "other": 0,
+              "blank": 0
+            }
+          }
+        },
+        "status": "raw cutout delta fields preserved; values are not reinterpreted"
+      },
+      "resistance_auxiliary": {
+        "raw_values": {
+          "M1.ratioTotalResistHeating1": 0,
+          "M1.ratioTotalResistHeating2": 0,
+          "M1.ratioTotalResistHeating3": 0,
+          "M1.ratioTotalResistHeating4": 0,
+          "M1.ratioTotalResistHeating5": 0,
+          "M1.ratioTotalResistHeating6": 0,
+          "M1.ratioTotalResistHeating7": 0,
+          "M1.ratioTotalResistHeating8": 0,
+          "M1.ratioTotalResistHeating9": 0,
+          "M1.ratioTotalResistHeating10": 0,
+          "M1.ratioTotalResistHeating11": 22.2443598007618,
+          "M1.ratioTotalResistHeating12": 29.0243187811309,
+          "M1.ratioTotalResistHeating13": 21.6583650747143,
+          "M1.ratioTotalResistHeating14": 9.97363023732786,
+          "M1.ratioTotalResistHeating15": 6.36390272487547,
+          "M1.ratioTotalResistHeating16": 0,
+          "M1.ratioTotalResistHeating17": 0,
+          "M1.ratioTotalResistHeating18": 0
+        },
+        "sum": 89.26457661881034,
+        "status": "raw resistance/auxiliary aggregate fields preserved"
+      },
+      "case_names": {
+        "raw_values": {
+          "M1.case_name1": "case1",
+          "M1.case_name2": "case1",
+          "M1.case_name3": "case1",
+          "M1.case_name4": "case1",
+          "M1.case_name5": "case1",
+          "M1.case_name6": "case2",
+          "M1.case_name7": "case2",
+          "M1.case_name8": "case2",
+          "M1.case_name9": "case2",
+          "M1.case_name10": "case3",
+          "M1.case_name11": "case8",
+          "M1.case_name12": "case8",
+          "M1.case_name13": "case8",
+          "M1.case_name14": "case8",
+          "M1.case_name15": "case8",
+          "M1.case_name16": "case8",
+          "M1.case_name17": "case8",
+          "M1.case_name18": "0"
+        },
+        "status": "Northern official case_name values retained verbatim"
+      },
+      "regime_by_bin": [],
+      "regime_distribution": {}
     }
   },
   "raw_input_filename": "input.csv",
@@ -1484,6 +2419,9 @@
   "known_limitations": [
     "Calculator/version information was not displayed in the UI.",
     "Downloaded result CSVs do not expose explicit bin temperature or bin-hour columns; raw field names and values are retained.",
-    "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above."
+    "Raw headers without an official semantic mapping are preserved with normalized_name/unit/interpretation candidate metadata only.",
+    "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above.",
+    "This is official-calculator evidence, not a certification claim or production formula fixture.",
+    "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit."
   ]
 }

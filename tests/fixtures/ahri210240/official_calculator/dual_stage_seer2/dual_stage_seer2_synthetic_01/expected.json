@@ -1,7 +1,14 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "fixture_id": "ahri210240_dual_stage_seer2_synthetic_01",
   "standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
+  "oracle_status": {
+    "kind": "official AHRI Analytics Appendix M/M1 evidence oracle",
+    "official_source": "AHRI Analytics official calculation app",
+    "official_standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
+    "target_2026_boundary": "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit.",
+    "certification_claim": false
+  },
   "calculator_source": "AHRI Analytics official calculation app",
   "calculator_url": "https://seerhspf2.ahrianalytics.org/app/seerhspf2",
   "calculation_date": "2026-07-12",
@@ -19,10 +26,8 @@
     "needCoilOnlyAdjust": false,
     "isMobileHomeAndSpaceConstrained": false,
     "isNonmobileHomeAndNonSpaceConstrained": true,
-    "ODTempWhenLockOut": null,
-    "degCoeffCoolFull": 0.18,
-    "degCoeffCoolMin": 0.24,
-    "lockOutLowCapacityOps": false
+    "lockOutLowCapacityOps": false,
+    "ODTempWhenLockOut": null
   },
   "tested_optional_points": {},
   "compressor_cut_in_cut_out": {
@@ -46,6 +51,62 @@
     "scfm82min": 650,
     "scfm67min": 650
   },
+  "input_fields": {
+    "compressorDesignStage": "Dual Stage",
+    "indoorBlowerType": "Fixed Speed/PSC",
+    "needCoilOnlyAdjust": false,
+    "isMobileHomeAndSpaceConstrained": false,
+    "isNonmobileHomeAndNonSpaceConstrained": true,
+    "lockOutLowCapacityOps": false,
+    "ODTempWhenLockOut": null,
+    "degCoeffCoolFull": 0.18,
+    "degCoeffCoolMin": 0.24,
+    "coolCapacity95full": 48000,
+    "coolCapacity82full": 52000,
+    "coolCapacity82min": 30000,
+    "coolCapacity67min": 34000,
+    "powerConsumption95full": 4300,
+    "powerConsumption82full": 3900,
+    "powerConsumption82min": 2200,
+    "powerConsumption67min": 2500,
+    "scfm95full": 800,
+    "scfm82full": 800,
+    "scfm82min": 650,
+    "scfm67min": 650
+  },
+  "input_field_groups": {
+    "ui_options": [
+      "compressorDesignStage",
+      "indoorBlowerType",
+      "needCoilOnlyAdjust",
+      "isMobileHomeAndSpaceConstrained",
+      "isNonmobileHomeAndNonSpaceConstrained",
+      "lockOutLowCapacityOps",
+      "ODTempWhenLockOut"
+    ],
+    "tested_optional_points": [],
+    "compressor_cut_in_cut_out": [
+      "ODTempWhenLockOut"
+    ],
+    "degradation_coefficients": [
+      "degCoeffCoolFull",
+      "degCoeffCoolMin"
+    ],
+    "input_test_points": [
+      "coolCapacity95full",
+      "coolCapacity82full",
+      "coolCapacity82min",
+      "coolCapacity67min",
+      "powerConsumption95full",
+      "powerConsumption82full",
+      "powerConsumption82min",
+      "powerConsumption67min",
+      "scfm95full",
+      "scfm82full",
+      "scfm82min",
+      "scfm67min"
+    ]
+  },
   "bin_temperature_f": {
     "value": null,
     "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
@@ -54,12 +115,47 @@
     "value": null,
     "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
   },
-  "activated_operating_cases": {
+  "performance_curve_groups": {
     "values": [
       "k1",
       "k2"
     ],
-    "source": "Northern HSPF2 M.case_name fields when available; otherwise raw bin groups k1/k2"
+    "meaning": "Raw k1/k2/k3 curve groups only; not operating cases."
+  },
+  "activated_operating_cases": {
+    "values": [
+      "load_at_or_below_low_stage",
+      "between_low_and_high_stage",
+      "above_high_stage"
+    ],
+    "by_result": {
+      "M": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ],
+      "M1": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ]
+    },
+    "source": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups."
+  },
+  "regime_distribution": {
+    "classification": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups.",
+    "by_result": {
+      "M": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      },
+      "M1": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      }
+    }
   },
   "results": {
     "M": {
@@ -68,11 +164,80 @@
       "headline_raw_field": "M.SEER",
       "design_load": {
         "value": null,
-        "raw_field": null
+        "raw_field": null,
+        "raw_value": null
       },
-      "seasonal_totals": {
-        "delivered_capacity_or_load": {
-          "value": 17117.2027972028,
+      "raw_fields": {
+        "": 1,
+        "M.coolCapacity95full": 48000,
+        "M.coolCapacity82full": 52000,
+        "M.coolCapacity82min": 30000,
+        "M.coolCapacity67min": 34000,
+        "M.powerConsumption95full": 4300,
+        "M.powerConsumption82full": 3900,
+        "M.powerConsumption82min": 2200,
+        "M.powerConsumption67min": 2500,
+        "M.binCoolCapacity_k11": 34000,
+        "M.binCoolCapacity_k12": 32666.6666666667,
+        "M.binCoolCapacity_k13": 31333.3333333333,
+        "M.binCoolCapacity_k14": 30000,
+        "M.binCoolCapacity_k15": 28666.6666666667,
+        "M.binCoolCapacity_k16": 27333.3333333333,
+        "M.binCoolCapacity_k17": 26000,
+        "M.binCoolCapacity_k18": 24666.6666666667,
+        "M.binCoolCapacity_k21": 56615.3846153846,
+        "M.binCoolCapacity_k22": 55076.9230769231,
+        "M.binCoolCapacity_k23": 53538.4615384615,
+        "M.binCoolCapacity_k24": 52000,
+        "M.binCoolCapacity_k25": 50461.5384615385,
+        "M.binCoolCapacity_k26": 48923.0769230769,
+        "M.binCoolCapacity_k27": 47384.6153846154,
+        "M.binCoolCapacity_k28": 45846.1538461538,
+        "M.buildingCoolLoad1": 2909.09090909091,
+        "M.buildingCoolLoad2": 10181.8181818182,
+        "M.buildingCoolLoad3": 17454.5454545455,
+        "M.buildingCoolLoad4": 24727.2727272727,
+        "M.buildingCoolLoad5": 32000,
+        "M.buildingCoolLoad6": 39272.7272727273,
+        "M.buildingCoolLoad7": 46545.4545454545,
+        "M.buildingCoolLoad8": 53818.1818181818,
+        "M.ratioTotalCooling1": 622.545454545455,
+        "M.ratioTotalCooling2": 2352,
+        "M.ratioTotalCooling3": 3770.18181818182,
+        "M.ratioTotalCooling4": 3981.09090909091,
+        "M.ratioTotalCooling5": 3328,
+        "M.ratioTotalCooling6": 2042.18181818182,
+        "M.ratioTotalCooling7": 837.818181818182,
+        "M.ratioTotalCooling8": 183.384615384615,
+        "M.binPowerConsumption_k11": 2500,
+        "M.binPowerConsumption_k12": 2400,
+        "M.binPowerConsumption_k13": 2300,
+        "M.binPowerConsumption_k14": 2200,
+        "M.binPowerConsumption_k15": 2100,
+        "M.binPowerConsumption_k16": 2000,
+        "M.binPowerConsumption_k17": 1900,
+        "M.binPowerConsumption_k18": 1800,
+        "M.binPowerConsumption_k21": 3438.46153846154,
+        "M.binPowerConsumption_k22": 3592.30769230769,
+        "M.binPowerConsumption_k23": 3746.15384615385,
+        "M.binPowerConsumption_k24": 3900,
+        "M.binPowerConsumption_k25": 4053.84615384615,
+        "M.binPowerConsumption_k26": 4207.69230769231,
+        "M.binPowerConsumption_k27": 4361.53846153846,
+        "M.binPowerConsumption_k28": 4515.38461538462,
+        "M.ratioTotalPower1": 56.020942408377,
+        "M.ratioTotalPower2": 200.385542168675,
+        "M.ratioTotalPower3": 303.646859083192,
+        "M.ratioTotalPower4": 302.582914572864,
+        "M.ratioTotalPower5": 249.477647058823,
+        "M.ratioTotalPower6": 167.485812999352,
+        "M.ratioTotalPower7": 76.7689993459777,
+        "M.ratioTotalPower8": 18.0615384615385,
+        "M.SEER": 12.4540352056775
+      },
+      "seasonal_aggregates": [
+        {
+          "normalized_name": "raw_ratio_total_cooling",
           "raw_columns": [
             "M.ratioTotalCooling1",
             "M.ratioTotalCooling2",
@@ -83,15 +248,12 @@
             "M.ratioTotalCooling7",
             "M.ratioTotalCooling8"
           ],
-          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 17117.2027972028,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "resistance_or_auxiliary_contribution": {
-          "value": 0,
-          "raw_columns": [],
-          "status": "raw_bin_aggregate; applicable to heating profiles only"
-        },
-        "electrical_energy": {
-          "value": 1374.4302560987992,
+        {
+          "normalized_name": "raw_ratio_total_power",
           "raw_columns": [
             "M.ratioTotalPower1",
             "M.ratioTotalPower2",
@@ -102,155 +264,279 @@
             "M.ratioTotalPower7",
             "M.ratioTotalPower8"
           ],
-          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 1374.4302560987992,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
-      },
+      ],
       "bin_trace": [
         {
-          "bin_key": "k11",
+          "bin_index": 1,
+          "bin_key": "bin_1",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k11": 34000,
-            "M.binPowerConsumption_k11": 2500
+            "M.binCoolCapacity_k21": 56615.3846153846,
+            "M.binPowerConsumption_k11": 2500,
+            "M.binPowerConsumption_k21": 3438.46153846154,
+            "M.buildingCoolLoad1": 2909.09090909091,
+            "M.ratioTotalCooling1": 622.545454545455,
+            "M.ratioTotalPower1": 56.020942408377
           }
         },
         {
-          "bin_key": "k12",
+          "bin_index": 2,
+          "bin_key": "bin_2",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k12": 32666.6666666667,
-            "M.binPowerConsumption_k12": 2400
+            "M.binCoolCapacity_k22": 55076.9230769231,
+            "M.binPowerConsumption_k12": 2400,
+            "M.binPowerConsumption_k22": 3592.30769230769,
+            "M.buildingCoolLoad2": 10181.8181818182,
+            "M.ratioTotalCooling2": 2352,
+            "M.ratioTotalPower2": 200.385542168675
           }
         },
         {
-          "bin_key": "k13",
+          "bin_index": 3,
+          "bin_key": "bin_3",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k13": 31333.3333333333,
-            "M.binPowerConsumption_k13": 2300
+            "M.binCoolCapacity_k23": 53538.4615384615,
+            "M.binPowerConsumption_k13": 2300,
+            "M.binPowerConsumption_k23": 3746.15384615385,
+            "M.buildingCoolLoad3": 17454.5454545455,
+            "M.ratioTotalCooling3": 3770.18181818182,
+            "M.ratioTotalPower3": 303.646859083192
           }
         },
         {
-          "bin_key": "k14",
+          "bin_index": 4,
+          "bin_key": "bin_4",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k14": 30000,
-            "M.binPowerConsumption_k14": 2200
+            "M.binCoolCapacity_k24": 52000,
+            "M.binPowerConsumption_k14": 2200,
+            "M.binPowerConsumption_k24": 3900,
+            "M.buildingCoolLoad4": 24727.2727272727,
+            "M.ratioTotalCooling4": 3981.09090909091,
+            "M.ratioTotalPower4": 302.582914572864
           }
         },
         {
-          "bin_key": "k15",
+          "bin_index": 5,
+          "bin_key": "bin_5",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k15": 28666.6666666667,
-            "M.binPowerConsumption_k15": 2100
+            "M.binCoolCapacity_k25": 50461.5384615385,
+            "M.binPowerConsumption_k15": 2100,
+            "M.binPowerConsumption_k25": 4053.84615384615,
+            "M.buildingCoolLoad5": 32000,
+            "M.ratioTotalCooling5": 3328,
+            "M.ratioTotalPower5": 249.477647058823
           }
         },
         {
-          "bin_key": "k16",
+          "bin_index": 6,
+          "bin_key": "bin_6",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k16": 27333.3333333333,
-            "M.binPowerConsumption_k16": 2000
+            "M.binCoolCapacity_k26": 48923.0769230769,
+            "M.binPowerConsumption_k16": 2000,
+            "M.binPowerConsumption_k26": 4207.69230769231,
+            "M.buildingCoolLoad6": 39272.7272727273,
+            "M.ratioTotalCooling6": 2042.18181818182,
+            "M.ratioTotalPower6": 167.485812999352
           }
         },
         {
-          "bin_key": "k17",
+          "bin_index": 7,
+          "bin_key": "bin_7",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k17": 26000,
-            "M.binPowerConsumption_k17": 1900
+            "M.binCoolCapacity_k27": 47384.6153846154,
+            "M.binPowerConsumption_k17": 1900,
+            "M.binPowerConsumption_k27": 4361.53846153846,
+            "M.buildingCoolLoad7": 46545.4545454545,
+            "M.ratioTotalCooling7": 837.818181818182,
+            "M.ratioTotalPower7": 76.7689993459777
           }
         },
         {
-          "bin_key": "k18",
+          "bin_index": 8,
+          "bin_key": "bin_8",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M.binCoolCapacity_k18": 24666.6666666667,
-            "M.binPowerConsumption_k18": 1800
-          }
-        },
-        {
-          "bin_key": "k21",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k21": 56615.3846153846,
-            "M.binPowerConsumption_k21": 3438.46153846154
-          }
-        },
-        {
-          "bin_key": "k22",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k22": 55076.9230769231,
-            "M.binPowerConsumption_k22": 3592.30769230769
-          }
-        },
-        {
-          "bin_key": "k23",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k23": 53538.4615384615,
-            "M.binPowerConsumption_k23": 3746.15384615385
-          }
-        },
-        {
-          "bin_key": "k24",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k24": 52000,
-            "M.binPowerConsumption_k24": 3900
-          }
-        },
-        {
-          "bin_key": "k25",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k25": 50461.5384615385,
-            "M.binPowerConsumption_k25": 4053.84615384615
-          }
-        },
-        {
-          "bin_key": "k26",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k26": 48923.0769230769,
-            "M.binPowerConsumption_k26": 4207.69230769231
-          }
-        },
-        {
-          "bin_key": "k27",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M.binCoolCapacity_k27": 47384.6153846154,
-            "M.binPowerConsumption_k27": 4361.53846153846
-          }
-        },
-        {
-          "bin_key": "k28",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M.binCoolCapacity_k28": 45846.1538461538,
-            "M.binPowerConsumption_k28": 4515.38461538462
+            "M.binPowerConsumption_k18": 1800,
+            "M.binPowerConsumption_k28": 4515.38461538462,
+            "M.buildingCoolLoad8": 53818.1818181818,
+            "M.ratioTotalCooling8": 183.384615384615,
+            "M.ratioTotalPower8": 18.0615384615385
           }
         }
-      ]
+      ],
+      "building_loads": {
+        "raw_values": {
+          "M.buildingCoolLoad1": 2909.09090909091,
+          "M.buildingCoolLoad2": 10181.8181818182,
+          "M.buildingCoolLoad3": 17454.5454545455,
+          "M.buildingCoolLoad4": 24727.2727272727,
+          "M.buildingCoolLoad5": 32000,
+          "M.buildingCoolLoad6": 39272.7272727273,
+          "M.buildingCoolLoad7": 46545.4545454545,
+          "M.buildingCoolLoad8": 53818.1818181818
+        },
+        "raw_field_count": 8
+      },
+      "cutout": {
+        "raw_values": {},
+        "delta_distribution": {},
+        "status": "raw cutout delta fields preserved; values are not reinterpreted"
+      },
+      "resistance_auxiliary": {
+        "raw_values": {},
+        "sum": 0,
+        "status": "raw resistance/auxiliary aggregate fields preserved"
+      },
+      "case_names": {
+        "raw_values": {},
+        "status": "case_name fields not exposed for this profile"
+      },
+      "regime_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad1",
+            "low_stage_capacity": "M.binCoolCapacity_k11",
+            "high_stage_capacity": "M.binCoolCapacity_k21"
+          },
+          "raw_values": {
+            "building_load": 2909.09090909091,
+            "low_stage_capacity": 34000,
+            "high_stage_capacity": 56615.3846153846
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 2,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad2",
+            "low_stage_capacity": "M.binCoolCapacity_k12",
+            "high_stage_capacity": "M.binCoolCapacity_k22"
+          },
+          "raw_values": {
+            "building_load": 10181.8181818182,
+            "low_stage_capacity": 32666.6666666667,
+            "high_stage_capacity": 55076.9230769231
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 3,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad3",
+            "low_stage_capacity": "M.binCoolCapacity_k13",
+            "high_stage_capacity": "M.binCoolCapacity_k23"
+          },
+          "raw_values": {
+            "building_load": 17454.5454545455,
+            "low_stage_capacity": 31333.3333333333,
+            "high_stage_capacity": 53538.4615384615
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 4,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad4",
+            "low_stage_capacity": "M.binCoolCapacity_k14",
+            "high_stage_capacity": "M.binCoolCapacity_k24"
+          },
+          "raw_values": {
+            "building_load": 24727.2727272727,
+            "low_stage_capacity": 30000,
+            "high_stage_capacity": 52000
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 5,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad5",
+            "low_stage_capacity": "M.binCoolCapacity_k15",
+            "high_stage_capacity": "M.binCoolCapacity_k25"
+          },
+          "raw_values": {
+            "building_load": 32000,
+            "low_stage_capacity": 28666.6666666667,
+            "high_stage_capacity": 50461.5384615385
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 6,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad6",
+            "low_stage_capacity": "M.binCoolCapacity_k16",
+            "high_stage_capacity": "M.binCoolCapacity_k26"
+          },
+          "raw_values": {
+            "building_load": 39272.7272727273,
+            "low_stage_capacity": 27333.3333333333,
+            "high_stage_capacity": 48923.0769230769
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 7,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad7",
+            "low_stage_capacity": "M.binCoolCapacity_k17",
+            "high_stage_capacity": "M.binCoolCapacity_k27"
+          },
+          "raw_values": {
+            "building_load": 46545.4545454545,
+            "low_stage_capacity": 26000,
+            "high_stage_capacity": 47384.6153846154
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 8,
+          "raw_fields": {
+            "building_load": "M.buildingCoolLoad8",
+            "low_stage_capacity": "M.binCoolCapacity_k18",
+            "high_stage_capacity": "M.binCoolCapacity_k28"
+          },
+          "raw_values": {
+            "building_load": 53818.1818181818,
+            "low_stage_capacity": 24666.6666666667,
+            "high_stage_capacity": 45846.1538461538
+          },
+          "operating_regime": "above_high_stage"
+        }
+      ],
+      "regime_distribution": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      }
     },
     "M1": {
       "screen_headline": 12.45,
@@ -258,11 +544,80 @@
       "headline_raw_field": "M1.SEER",
       "design_load": {
         "value": null,
-        "raw_field": null
+        "raw_field": null,
+        "raw_value": null
       },
-      "seasonal_totals": {
-        "delivered_capacity_or_load": {
-          "value": 17117.2027972028,
+      "raw_fields": {
+        "": 1,
+        "M1.coolCapacity95full": 48000,
+        "M1.coolCapacity82full": 52000,
+        "M1.coolCapacity82min": 30000,
+        "M1.coolCapacity67min": 34000,
+        "M1.powerConsumption95full": 4300,
+        "M1.powerConsumption82full": 3900,
+        "M1.powerConsumption82min": 2200,
+        "M1.powerConsumption67min": 2500,
+        "M1.binCoolCapacity_k11": 34000,
+        "M1.binCoolCapacity_k12": 32666.6666666667,
+        "M1.binCoolCapacity_k13": 31333.3333333333,
+        "M1.binCoolCapacity_k14": 30000,
+        "M1.binCoolCapacity_k15": 28666.6666666667,
+        "M1.binCoolCapacity_k16": 27333.3333333333,
+        "M1.binCoolCapacity_k17": 26000,
+        "M1.binCoolCapacity_k18": 24666.6666666667,
+        "M1.binCoolCapacity_k21": 56615.3846153846,
+        "M1.binCoolCapacity_k22": 55076.9230769231,
+        "M1.binCoolCapacity_k23": 53538.4615384615,
+        "M1.binCoolCapacity_k24": 52000,
+        "M1.binCoolCapacity_k25": 50461.5384615385,
+        "M1.binCoolCapacity_k26": 48923.0769230769,
+        "M1.binCoolCapacity_k27": 47384.6153846154,
+        "M1.binCoolCapacity_k28": 45846.1538461538,
+        "M1.buildingCoolLoad1": 2909.09090909091,
+        "M1.buildingCoolLoad2": 10181.8181818182,
+        "M1.buildingCoolLoad3": 17454.5454545455,
+        "M1.buildingCoolLoad4": 24727.2727272727,
+        "M1.buildingCoolLoad5": 32000,
+        "M1.buildingCoolLoad6": 39272.7272727273,
+        "M1.buildingCoolLoad7": 46545.4545454545,
+        "M1.buildingCoolLoad8": 53818.1818181818,
+        "M1.ratioTotalCooling1": 622.545454545455,
+        "M1.ratioTotalCooling2": 2352,
+        "M1.ratioTotalCooling3": 3770.18181818182,
+        "M1.ratioTotalCooling4": 3981.09090909091,
+        "M1.ratioTotalCooling5": 3328,
+        "M1.ratioTotalCooling6": 2042.18181818182,
+        "M1.ratioTotalCooling7": 837.818181818182,
+        "M1.ratioTotalCooling8": 183.384615384615,
+        "M1.binPowerConsumption_k11": 2500,
+        "M1.binPowerConsumption_k12": 2400,
+        "M1.binPowerConsumption_k13": 2300,
+        "M1.binPowerConsumption_k14": 2200,
+        "M1.binPowerConsumption_k15": 2100,
+        "M1.binPowerConsumption_k16": 2000,
+        "M1.binPowerConsumption_k17": 1900,
+        "M1.binPowerConsumption_k18": 1800,
+        "M1.binPowerConsumption_k21": 3438.46153846154,
+        "M1.binPowerConsumption_k22": 3592.30769230769,
+        "M1.binPowerConsumption_k23": 3746.15384615385,
+        "M1.binPowerConsumption_k24": 3900,
+        "M1.binPowerConsumption_k25": 4053.84615384615,
+        "M1.binPowerConsumption_k26": 4207.69230769231,
+        "M1.binPowerConsumption_k27": 4361.53846153846,
+        "M1.binPowerConsumption_k28": 4515.38461538462,
+        "M1.ratioTotalPower1": 56.020942408377,
+        "M1.ratioTotalPower2": 200.385542168675,
+        "M1.ratioTotalPower3": 303.646859083192,
+        "M1.ratioTotalPower4": 302.582914572864,
+        "M1.ratioTotalPower5": 249.477647058823,
+        "M1.ratioTotalPower6": 167.485812999352,
+        "M1.ratioTotalPower7": 76.7689993459777,
+        "M1.ratioTotalPower8": 18.0615384615385,
+        "M1.SEER": 12.4540352056775
+      },
+      "seasonal_aggregates": [
+        {
+          "normalized_name": "raw_ratio_total_cooling",
           "raw_columns": [
             "M1.ratioTotalCooling1",
             "M1.ratioTotalCooling2",
@@ -273,15 +628,12 @@
             "M1.ratioTotalCooling7",
             "M1.ratioTotalCooling8"
           ],
-          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 17117.2027972028,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         },
-        "resistance_or_auxiliary_contribution": {
-          "value": 0,
-          "raw_columns": [],
-          "status": "raw_bin_aggregate; applicable to heating profiles only"
-        },
-        "electrical_energy": {
-          "value": 1374.4302560987992,
+        {
+          "normalized_name": "raw_ratio_total_power",
           "raw_columns": [
             "M1.ratioTotalPower1",
             "M1.ratioTotalPower2",
@@ -292,155 +644,279 @@
             "M1.ratioTotalPower7",
             "M1.ratioTotalPower8"
           ],
-          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+          "value": 1374.4302560987992,
+          "unit": "not exposed",
+          "interpretation": "candidate seasonal aggregate over raw CSV column family; raw header meaning is not assumed"
         }
-      },
+      ],
       "bin_trace": [
         {
-          "bin_key": "k11",
+          "bin_index": 1,
+          "bin_key": "bin_1",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k11": 34000,
-            "M1.binPowerConsumption_k11": 2500
+            "M1.binCoolCapacity_k21": 56615.3846153846,
+            "M1.binPowerConsumption_k11": 2500,
+            "M1.binPowerConsumption_k21": 3438.46153846154,
+            "M1.buildingCoolLoad1": 2909.09090909091,
+            "M1.ratioTotalCooling1": 622.545454545455,
+            "M1.ratioTotalPower1": 56.020942408377
           }
         },
         {
-          "bin_key": "k12",
+          "bin_index": 2,
+          "bin_key": "bin_2",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k12": 32666.6666666667,
-            "M1.binPowerConsumption_k12": 2400
+            "M1.binCoolCapacity_k22": 55076.9230769231,
+            "M1.binPowerConsumption_k12": 2400,
+            "M1.binPowerConsumption_k22": 3592.30769230769,
+            "M1.buildingCoolLoad2": 10181.8181818182,
+            "M1.ratioTotalCooling2": 2352,
+            "M1.ratioTotalPower2": 200.385542168675
           }
         },
         {
-          "bin_key": "k13",
+          "bin_index": 3,
+          "bin_key": "bin_3",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k13": 31333.3333333333,
-            "M1.binPowerConsumption_k13": 2300
+            "M1.binCoolCapacity_k23": 53538.4615384615,
+            "M1.binPowerConsumption_k13": 2300,
+            "M1.binPowerConsumption_k23": 3746.15384615385,
+            "M1.buildingCoolLoad3": 17454.5454545455,
+            "M1.ratioTotalCooling3": 3770.18181818182,
+            "M1.ratioTotalPower3": 303.646859083192
           }
         },
         {
-          "bin_key": "k14",
+          "bin_index": 4,
+          "bin_key": "bin_4",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k14": 30000,
-            "M1.binPowerConsumption_k14": 2200
+            "M1.binCoolCapacity_k24": 52000,
+            "M1.binPowerConsumption_k14": 2200,
+            "M1.binPowerConsumption_k24": 3900,
+            "M1.buildingCoolLoad4": 24727.2727272727,
+            "M1.ratioTotalCooling4": 3981.09090909091,
+            "M1.ratioTotalPower4": 302.582914572864
           }
         },
         {
-          "bin_key": "k15",
+          "bin_index": 5,
+          "bin_key": "bin_5",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k15": 28666.6666666667,
-            "M1.binPowerConsumption_k15": 2100
+            "M1.binCoolCapacity_k25": 50461.5384615385,
+            "M1.binPowerConsumption_k15": 2100,
+            "M1.binPowerConsumption_k25": 4053.84615384615,
+            "M1.buildingCoolLoad5": 32000,
+            "M1.ratioTotalCooling5": 3328,
+            "M1.ratioTotalPower5": 249.477647058823
           }
         },
         {
-          "bin_key": "k16",
+          "bin_index": 6,
+          "bin_key": "bin_6",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k16": 27333.3333333333,
-            "M1.binPowerConsumption_k16": 2000
+            "M1.binCoolCapacity_k26": 48923.0769230769,
+            "M1.binPowerConsumption_k16": 2000,
+            "M1.binPowerConsumption_k26": 4207.69230769231,
+            "M1.buildingCoolLoad6": 39272.7272727273,
+            "M1.ratioTotalCooling6": 2042.18181818182,
+            "M1.ratioTotalPower6": 167.485812999352
           }
         },
         {
-          "bin_key": "k17",
+          "bin_index": 7,
+          "bin_key": "bin_7",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k17": 26000,
-            "M1.binPowerConsumption_k17": 1900
+            "M1.binCoolCapacity_k27": 47384.6153846154,
+            "M1.binPowerConsumption_k17": 1900,
+            "M1.binPowerConsumption_k27": 4361.53846153846,
+            "M1.buildingCoolLoad7": 46545.4545454545,
+            "M1.ratioTotalCooling7": 837.818181818182,
+            "M1.ratioTotalPower7": 76.7689993459777
           }
         },
         {
-          "bin_key": "k18",
+          "bin_index": 8,
+          "bin_key": "bin_8",
           "temperature_f": null,
           "hours_or_fractional_hours": null,
           "raw_values": {
             "M1.binCoolCapacity_k18": 24666.6666666667,
-            "M1.binPowerConsumption_k18": 1800
-          }
-        },
-        {
-          "bin_key": "k21",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k21": 56615.3846153846,
-            "M1.binPowerConsumption_k21": 3438.46153846154
-          }
-        },
-        {
-          "bin_key": "k22",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k22": 55076.9230769231,
-            "M1.binPowerConsumption_k22": 3592.30769230769
-          }
-        },
-        {
-          "bin_key": "k23",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k23": 53538.4615384615,
-            "M1.binPowerConsumption_k23": 3746.15384615385
-          }
-        },
-        {
-          "bin_key": "k24",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k24": 52000,
-            "M1.binPowerConsumption_k24": 3900
-          }
-        },
-        {
-          "bin_key": "k25",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k25": 50461.5384615385,
-            "M1.binPowerConsumption_k25": 4053.84615384615
-          }
-        },
-        {
-          "bin_key": "k26",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k26": 48923.0769230769,
-            "M1.binPowerConsumption_k26": 4207.69230769231
-          }
-        },
-        {
-          "bin_key": "k27",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
-            "M1.binCoolCapacity_k27": 47384.6153846154,
-            "M1.binPowerConsumption_k27": 4361.53846153846
-          }
-        },
-        {
-          "bin_key": "k28",
-          "temperature_f": null,
-          "hours_or_fractional_hours": null,
-          "raw_values": {
             "M1.binCoolCapacity_k28": 45846.1538461538,
-            "M1.binPowerConsumption_k28": 4515.38461538462
+            "M1.binPowerConsumption_k18": 1800,
+            "M1.binPowerConsumption_k28": 4515.38461538462,
+            "M1.buildingCoolLoad8": 53818.1818181818,
+            "M1.ratioTotalCooling8": 183.384615384615,
+            "M1.ratioTotalPower8": 18.0615384615385
           }
         }
-      ]
+      ],
+      "building_loads": {
+        "raw_values": {
+          "M1.buildingCoolLoad1": 2909.09090909091,
+          "M1.buildingCoolLoad2": 10181.8181818182,
+          "M1.buildingCoolLoad3": 17454.5454545455,
+          "M1.buildingCoolLoad4": 24727.2727272727,
+          "M1.buildingCoolLoad5": 32000,
+          "M1.buildingCoolLoad6": 39272.7272727273,
+          "M1.buildingCoolLoad7": 46545.4545454545,
+          "M1.buildingCoolLoad8": 53818.1818181818
+        },
+        "raw_field_count": 8
+      },
+      "cutout": {
+        "raw_values": {},
+        "delta_distribution": {},
+        "status": "raw cutout delta fields preserved; values are not reinterpreted"
+      },
+      "resistance_auxiliary": {
+        "raw_values": {},
+        "sum": 0,
+        "status": "raw resistance/auxiliary aggregate fields preserved"
+      },
+      "case_names": {
+        "raw_values": {},
+        "status": "case_name fields not exposed for this profile"
+      },
+      "regime_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad1",
+            "low_stage_capacity": "M1.binCoolCapacity_k11",
+            "high_stage_capacity": "M1.binCoolCapacity_k21"
+          },
+          "raw_values": {
+            "building_load": 2909.09090909091,
+            "low_stage_capacity": 34000,
+            "high_stage_capacity": 56615.3846153846
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 2,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad2",
+            "low_stage_capacity": "M1.binCoolCapacity_k12",
+            "high_stage_capacity": "M1.binCoolCapacity_k22"
+          },
+          "raw_values": {
+            "building_load": 10181.8181818182,
+            "low_stage_capacity": 32666.6666666667,
+            "high_stage_capacity": 55076.9230769231
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 3,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad3",
+            "low_stage_capacity": "M1.binCoolCapacity_k13",
+            "high_stage_capacity": "M1.binCoolCapacity_k23"
+          },
+          "raw_values": {
+            "building_load": 17454.5454545455,
+            "low_stage_capacity": 31333.3333333333,
+            "high_stage_capacity": 53538.4615384615
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 4,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad4",
+            "low_stage_capacity": "M1.binCoolCapacity_k14",
+            "high_stage_capacity": "M1.binCoolCapacity_k24"
+          },
+          "raw_values": {
+            "building_load": 24727.2727272727,
+            "low_stage_capacity": 30000,
+            "high_stage_capacity": 52000
+          },
+          "operating_regime": "load_at_or_below_low_stage"
+        },
+        {
+          "bin_index": 5,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad5",
+            "low_stage_capacity": "M1.binCoolCapacity_k15",
+            "high_stage_capacity": "M1.binCoolCapacity_k25"
+          },
+          "raw_values": {
+            "building_load": 32000,
+            "low_stage_capacity": 28666.6666666667,
+            "high_stage_capacity": 50461.5384615385
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 6,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad6",
+            "low_stage_capacity": "M1.binCoolCapacity_k16",
+            "high_stage_capacity": "M1.binCoolCapacity_k26"
+          },
+          "raw_values": {
+            "building_load": 39272.7272727273,
+            "low_stage_capacity": 27333.3333333333,
+            "high_stage_capacity": 48923.0769230769
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 7,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad7",
+            "low_stage_capacity": "M1.binCoolCapacity_k17",
+            "high_stage_capacity": "M1.binCoolCapacity_k27"
+          },
+          "raw_values": {
+            "building_load": 46545.4545454545,
+            "low_stage_capacity": 26000,
+            "high_stage_capacity": 47384.6153846154
+          },
+          "operating_regime": "between_low_and_high_stage"
+        },
+        {
+          "bin_index": 8,
+          "raw_fields": {
+            "building_load": "M1.buildingCoolLoad8",
+            "low_stage_capacity": "M1.binCoolCapacity_k18",
+            "high_stage_capacity": "M1.binCoolCapacity_k28"
+          },
+          "raw_values": {
+            "building_load": 53818.1818181818,
+            "low_stage_capacity": 24666.6666666667,
+            "high_stage_capacity": 45846.1538461538
+          },
+          "operating_regime": "above_high_stage"
+        }
+      ],
+      "regime_distribution": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      }
     }
   },
   "raw_input_filename": "input.csv",
@@ -457,6 +933,9 @@
   "known_limitations": [
     "Calculator/version information was not displayed in the UI.",
     "Downloaded result CSVs do not expose explicit bin temperature or bin-hour columns; raw field names and values are retained.",
-    "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above."
+    "Raw headers without an official semantic mapping are preserved with normalized_name/unit/interpretation candidate metadata only.",
+    "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above.",
+    "This is official-calculator evidence, not a certification claim or production formula fixture.",
+    "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit."
   ]
 }
