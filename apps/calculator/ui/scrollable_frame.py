@@ -92,6 +92,26 @@ class ScrollableFrame(tk.Frame):
     def scrollbar_visible(self) -> bool:
         return self._scrollbar_visible
 
+    def intrinsic_content_reqwidth(self) -> int:
+        """Return active child width before the viewport stretches the canvas item."""
+        self._content.update_idletasks()
+        widths: list[int] = []
+        for child in self._content.winfo_children():
+            manager = child.winfo_manager()
+            if not manager:
+                continue
+            if manager == "pack":
+                info = child.pack_info()
+            elif manager == "grid":
+                info = child.grid_info()
+            else:
+                info = {}
+            widths.append(
+                child.winfo_reqwidth()
+                + self._total_axis_padding(info.get("padx", 0))
+            )
+        return max(widths, default=1)
+
     def vertical_overflow_delta(self) -> int:
         """Return measured vertical overflow in pixels, or 0 if none."""
         bbox = self._canvas.bbox("all")
@@ -138,6 +158,18 @@ class ScrollableFrame(tk.Frame):
         # then overwrite the intrinsic content measurement used to fit the active
         # Calculator tab.
         self._canvas.itemconfigure(self._content_window, width=width)
+
+    @staticmethod
+    def _total_axis_padding(value: object) -> int:
+        if isinstance(value, (tuple, list)):
+            parts = value
+        else:
+            text = str(value).strip()
+            parts = text.split() if text else (0,)
+        numbers = [int(float(part)) for part in parts]
+        if len(numbers) == 1:
+            return 2 * numbers[0]
+        return sum(numbers[:2])
 
     def _unbind_mousewheel(self, _event=None) -> None:
         if _event is not None and getattr(_event, "widget", None) is not self:
