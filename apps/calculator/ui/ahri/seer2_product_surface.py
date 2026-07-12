@@ -12,7 +12,9 @@ from apps.calculator.application.ahri import (
     AHRI_SEER2_TEMPERATURES_C,
     AhriSeer2Options,
 )
-from apps.calculator.application.ahri.seer2_adapter import AHRI_SEER2_DUAL_DEFAULTS
+from apps.calculator.application.ahri.seer2_adapter import (
+    AHRI_SEER2_DUAL_DEFAULTS,
+)
 from apps.calculator.ui.layout_constants import (
     CONTROL_COMPACT_GAP,
     CONTROL_ROW_PADY,
@@ -76,10 +78,14 @@ class AhriSeer2ProductSurface:
         self.input_table.grid(row=table_row, column=0, sticky="w")
         self.controller = TkTableController(self.input_table)
         for point in point_order:
-            self.input_table.static_cell_labels[("condition_temp", point)].configure(
+            self.input_table.static_cell_labels[
+                ("condition_temp", point)
+            ].configure(
                 text=f"Cooling / {AHRI_SEER2_TEMPERATURES_C[point]:.1f} °C"
             )
-            self.input_table.static_cell_labels[("eer2", point)].configure(text="")
+            self.input_table.static_cell_labels[("eer2", point)].configure(
+                text=""
+            )
         table_values = snapshot.get("table_values", snapshot)
         if isinstance(table_values, Mapping):
             values = {
@@ -93,14 +99,22 @@ class AhriSeer2ProductSurface:
     def _build_dual_options(self, snapshot: Mapping[str, object]) -> None:
         option_frame = ttk.LabelFrame(self.frame, text="Dual-stage Options")
         option_frame.grid(row=0, column=0, sticky="w", pady=(0, 6))
-        saved_lockout = bool(snapshot.get("low_stage_lockout_enabled", False))
-        self.lockout_var = tk.BooleanVar(master=self.frame, value=saved_lockout)
+        saved_lockout = bool(
+            snapshot.get("low_stage_lockout_enabled", False)
+        )
+        self.lockout_var = tk.BooleanVar(
+            master=self.frame, value=saved_lockout
+        )
         ttk.Checkbutton(
             option_frame,
             text="Low-stage lockout",
             variable=self.lockout_var,
             command=self._on_values_changed,
-        ).pack(side=tk.LEFT, padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP), pady=CONTROL_ROW_PADY)
+        ).pack(
+            side=tk.LEFT,
+            padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
         self.options_table = MetricInputTable(
             option_frame,
             columns=(
@@ -112,22 +126,33 @@ class AhriSeer2ProductSurface:
             editable_cells={
                 ("value", "cd_low"): "cd_low",
                 ("value", "cd_full"): "cd_full",
-                ("value", "low_stage_lockout_temp_f"): "low_stage_lockout_temp_f",
+                (
+                    "value",
+                    "low_stage_lockout_temp_f",
+                ): "low_stage_lockout_temp_f",
             },
             row_header_chars=METRIC_TABLE_COMPACT_ROW_HEADER_CHARS,
             data_column_chars=METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
             values_changed_callback=self._on_values_changed,
             visual_style="shared",
         )
-        self.options_table.pack(side=tk.LEFT, padx=(0, CONTROL_ROW_PADY), pady=CONTROL_ROW_PADY)
+        self.options_table.pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_ROW_PADY),
+            pady=CONTROL_ROW_PADY,
+        )
         defaults = dict(AHRI_SEER2_DUAL_DEFAULTS)
         saved_options = snapshot.get("option_values")
         if isinstance(saved_options, Mapping):
-            defaults.update({key: str(value) for key, value in saved_options.items()})
+            defaults.update(
+                {key: str(value) for key, value in saved_options.items()}
+            )
         self.options_table.set_values_batch(defaults)
         self.options_controller = TkTableController(self.options_table)
         self._apply_lockout_state()
-        self.lockout_var.trace_add("write", lambda *_args: self._apply_lockout_state())
+        self.lockout_var.trace_add(
+            "write", lambda *_args: self._apply_lockout_state()
+        )
 
     def _apply_lockout_state(self) -> None:
         if self.options_table is None or self.lockout_var is None:
@@ -164,25 +189,10 @@ class AhriSeer2ProductSurface:
     def options(self) -> AhriSeer2Options:
         if self.product == "variable_capacity":
             return AhriSeer2Options()
-        values = self.options_table.get_text_values() if self.options_table else {}
-        lockout = bool(self.lockout_var and self.lockout_var.get())
         return AhriSeer2Options(
             product_classification="dual_stage",
-            low_stage_lockout_enabled=lockout,
-            low_stage_lockout_temp_f=(
-                float(values["low_stage_lockout_temp_f"].replace(",", ""))
-                if lockout and values.get("low_stage_lockout_temp_f", "").strip()
-                else None
-            ),
-            cd_low=(
-                float(values["cd_low"].replace(",", ""))
-                if values.get("cd_low", "").strip()
-                else None
-            ),
-            cd_full=(
-                float(values["cd_full"].replace(",", ""))
-                if values.get("cd_full", "").strip()
-                else None
+            low_stage_lockout_enabled=bool(
+                self.lockout_var and self.lockout_var.get()
             ),
         )
 
@@ -200,12 +210,16 @@ class AhriSeer2ProductSurface:
 
     def set_invalid_fields(self, errors: Mapping[str, str]) -> None:
         table_errors = {
-            key: value for key, value in errors.items() if key in self.input_table.field_order
+            key: value
+            for key, value in errors.items()
+            if key in self.input_table.field_order
         }
         self.input_table.set_invalid_fields(table_errors)
         if self.options_table is not None:
             option_errors = {
-                key: value for key, value in errors.items() if key in self.options_table.field_order
+                key: value
+                for key, value in errors.items()
+                if key in self.options_table.field_order
             }
             self.options_table.set_invalid_fields(option_errors)
 
