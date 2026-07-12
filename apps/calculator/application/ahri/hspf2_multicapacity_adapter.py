@@ -30,6 +30,8 @@ AHRI_HSPF2_TRIPLE_POINT_ORDER = (
     "H3Boost",
     "H4Boost",
 )
+H3_LOW_REQUIRED_MAX_F = 37.0
+H3_LOW_REQUIRED_MAX_C = (H3_LOW_REQUIRED_MAX_F - 32.0) * 5.0 / 9.0
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,32 @@ class MultiCapacityHspf2InputError(ValueError):
         self.field_errors = dict(field_errors)
 
 
+def dual_h3_low_required(
+    text_values: Mapping[str, str],
+    *,
+    lockout_enabled: bool,
+) -> bool:
+    """Return Table 7 footnote 7 requiredness for a Dual-stage product."""
+    if not lockout_enabled:
+        return True
+    try:
+        lockout_c = _parse_numeric(
+            str(text_values.get("low_stage_lockout_temp_c", ""))
+        )
+    except ValueError:
+        return True
+    return _c_to_f(lockout_c) <= H3_LOW_REQUIRED_MAX_F
+
+
+def triple_h3_low_required(text_values: Mapping[str, str]) -> bool:
+    """Return whether the Triple Northern Low range reaches 37 F or below."""
+    try:
+        low_min_c = _parse_numeric(str(text_values.get("low_min_c", "")))
+    except ValueError:
+        return True
+    return _c_to_f(low_min_c) <= H3_LOW_REQUIRED_MAX_F
+
+
 def calculate_multicapacity_hspf2(
     executor,
     text_values: Mapping[str, str],
@@ -90,7 +118,18 @@ def calculate_multicapacity_hspf2(
         if product == "dual_stage"
         else AHRI_HSPF2_TRIPLE_POINT_ORDER
     )
-    optional_points = _optional_point_state(options)
+    h3_low_required = (
+        dual_h3_low_required(
+            text_values,
+            lockout_enabled=options.low_stage_lockout_enabled,
+        )
+        if product == "dual_stage"
+        else triple_h3_low_required(text_values)
+    )
+    optional_points = _optional_point_state(
+        options,
+        h3_low_required=h3_low_required,
+    )
     active_points = [
         point for point in points_order if optional_points.get(point, True)
     ]
@@ -115,6 +154,17 @@ def calculate_multicapacity_hspf2(
     for point in active_points:
         required.extend((f"capacity_{point}", f"power_{point}"))
     stripped = {key: str(text_values.get(key, "")).strip() for key in required}
+    h3_fields = {"capacity_H3Low", "power_H3Low"}
+    missing_h3 = {
+        key: "37°F 이하 Low-stage 운전 시 필수 시험점"
+        for key in h3_fields
+        if key in stripped and not stripped[key]
+    }
+    non_h3_fields_complete = all(
+        value for key, value in stripped.items() if key not in h3_fields
+    )
+    if h3_low_required and missing_h3 and non_h3_fields_complete:
+        raise MultiCapacityHspf2InputError(missing_h3)
     if not all(stripped.values()):
         return None
     numeric: dict[str, float] = {}
@@ -177,12 +227,11 @@ def calculate_multicapacity_hspf2(
                 numeric["low_stage_lockout_temp_c"]
             )
     else:
-        h2_low_tested = options.measured_h2_low and not options.measured_h3_low
         parameters.update(
             {
-                "h2_low_tested": h2_low_tested,
+                "h2_low_tested": False,
                 "h2_boost_tested": options.measured_h2_boost,
-                "h3_low_tested": options.measured_h3_low,
+                "h3_low_tested": h3_low_required,
                 "cd_boost": numeric["cd_boost"],
                 "stage_ranges_f": {
                     stage: (
@@ -236,16 +285,21 @@ def calculate_multicapacity_hspf2(
     )
 
 
-def _optional_point_state(options: AhriHspf2Options) -> dict[str, bool]:
+def _optional_point_state(
+    options: AhriHspf2Options,
+    *,
+    h3_low_required: bool,
+) -> dict[str, bool]:
     if options.product_classification == "dual_stage":
         return {
             "H2Low": options.measured_h2_low,
+            "H3Low": h3_low_required,
             "H4Full": options.measured_h4_full,
         }
     return {
-        "H2Low": options.measured_h2_low and not options.measured_h3_low,
+        "H2Low": False,
         "H2Boost": options.measured_h2_boost,
-        "H3Low": options.measured_h3_low,
+        "H3Low": h3_low_required,
     }
 
 
