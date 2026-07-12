@@ -6,17 +6,18 @@
 
 ## 2. Current Calculator Structure
 
-`core/calculators/standards/iso16358.py`는 현재 하나의
-`ISO16358Calculator` 안에 아래 ISO 공통 경로를 포함한다.
+`core/calculators/standards/iso16358.py`는 stable facade이며, private
+`_iso16358/` package의 CSPF와 HSPF engine을 하나의 config context로 조립한다.
 
 | Path | Entry / helper | Role |
 | --- | --- | --- |
-| CSPF path | `calculate_cspf` | ISO16358-1 common CSPF bin loop, point resolution, PLF, accumulation |
-| generic HSPF fallback | `calculate_hspf`, `interpolate_heating`, `calc_auxiliary_heat` | heating point 보간/외삽과 shortage auxiliary 처리 |
-| variable HSPF path | `_variable_heating_bin` | stage별 heating point 기반 bin detail 계산 |
+| CSPF path | `_iso16358/cspf_points.py`, `cspf_performance.py`, `cspf_engine.py`, `cspf_result.py` | ISO16358-1 point resolution, boundary performance, PLF/bin accumulation, result assembly |
+| generic HSPF fallback | `_iso16358/hspf_legacy_points.py`, `hspf_legacy_engine.py` | heating point 보간/외삽과 shortage auxiliary 처리 |
+| ISO common HSPF | `_iso16358/hspf_points.py`, `hspf_curves.py`, `hspf_extended.py`, `hspf_load.py`, `hspf_snapshot.py`, `hspf_cases.py`, `hspf_engine.py`, `hspf_result.py` | common point/fallback, curve, building load, branch, bin, result responsibility |
 | KS C 9306 HSPF profile path | `core/calculators/standards/ks_c9306.py`의 `_calculate_ks_c9306_hspf`, `_ks_hspf_*` helpers | KS C 9306 profile-specific required points, curves, load line, branch selection |
 
-이 클래스는 이미 과대화되고 있으나 지금은 구조적 리팩토링을 수행하지 않는다. 리팩토링 후보는 [REFACTOR_PLAN.md](../REFACTOR_PLAN.md)를 따른다.
+Facade의 import path, public method, config attributes는 유지한다. Application과
+UI는 private `_iso16358` owner를 import하지 않고 capability를 통해 계산한다.
 
 ## 3. bin_details 표준 구조 (디버그/검증용)
 

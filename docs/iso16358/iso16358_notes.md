@@ -225,13 +225,13 @@ production region config에는 규격값과 공식 계수만 둔다. golden/samp
 
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
-| region configuration loading | `core/calculators/standards/iso16358.py` | `ISO16358Calculator.__init__` | internal configuration | JSON key를 공통 엔진 속성으로 읽는다. |
-| measured/default point resolution | `core/calculators/standards/iso16358.py` | `resolve_points` | resolved point dict | `points`와 `derived_rules`를 해석한다. |
-| cooling temperature interpolation | `core/calculators/standards/iso16358.py` | `interpolate` | interpolated point dict | load type별 temperature-capacity-power line을 만든다. |
-| heating temperature interpolation | `core/calculators/standards/iso16358.py` | `interpolate_heating` | interpolated point dict | HSPF common fallback에서 사용한다. |
-| CSPF calculation | `core/calculators/standards/iso16358.py` | `calculate_cspf` | `cspf`, `annual_cooling_kwh`, `annual_power_kwh` | bin loop와 seasonal accumulation을 수행한다. |
-| HSPF calculation | `core/calculators/standards/iso16358.py` | `calculate_hspf` | `hspf`, `hstl`, `hsec` | generic, variable, and ISO common profile branch의 entry point이다. |
-| variable HSPF bin | `core/calculators/standards/iso16358.py` | `_variable_heating_bin` | bin detail | aux_cop를 auxiliary energy에 적용한다. |
+| region configuration loading | `core/calculators/standards/_iso16358/context.py` | `ISO16358ConfigContext` | internal configuration | JSON을 한 번 읽고 CSPF/HSPF engine이 같은 context를 사용한다. |
+| measured/default point resolution | `core/calculators/standards/_iso16358/cspf_points.py` | `resolve_points` | resolved point dict | `points`와 `derived_rules`를 해석한다. |
+| cooling temperature interpolation | `core/calculators/standards/_iso16358/cspf_performance.py` | `interpolate` | interpolated point dict | load type별 temperature-capacity-power line을 만든다. |
+| heating temperature interpolation | `core/calculators/standards/_iso16358/hspf_legacy_points.py` | `interpolate_heating` | interpolated point dict | generic HSPF fallback에서 사용한다. |
+| CSPF calculation | `core/calculators/standards/_iso16358/cspf_engine.py` | `calculate_cspf` | `cspf`, `annual_cooling_kwh`, `annual_power_kwh` | bin loop와 seasonal accumulation을 수행한다. |
+| HSPF calculation | `core/calculators/standards/_iso16358/hspf_engine.py` | `calculate_hspf` | `hspf`, `hstl`, `hsec` | generic, variable, and ISO common profile branch의 entry point이다. |
+| variable HSPF bin | `core/calculators/standards/_iso16358/hspf_legacy_engine.py` | `_variable_heating_bin` | bin detail | aux_cop를 auxiliary energy에 적용한다. |
 | KS C 9306 HSPF profile | `core/calculators/standards/ks_c9306.py` | `_calculate_ks_c9306_hspf` | `hspf`, `HSPF`, `bin_details` | KS region 문서의 profile-specific helper이다. |
 | region data | `data/region_configs/*.json` | configuration file | configuration keys | 국가별 차이는 JSON과 region 문서로 분리한다. |
 
