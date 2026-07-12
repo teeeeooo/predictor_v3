@@ -12,7 +12,7 @@ class HSPF2VariableCapacityEngine:
 
     def calculate(self, test_points: dict, **kwargs) -> dict:
         p = self.performance
-        canonical_points = self.point_resolver.legacy_to_canonical(test_points)
+        canonical_points = self.point_resolver.normalize_public_test_points(test_points)
         seasonal = self.context.seasonal_context(kwargs)
         resolved = self.point_resolver.resolve_variable_capacity(canonical_points, kwargs)
         full_points = resolved.full_points

@@ -124,7 +124,7 @@
     }
   },
   "test_point_aliases": {
-    "legacy_to_canonical": {
+    "public_to_canonical": {
       "H1_Full": "H12",
       "H2_Full": "H32",
       "H3_Full": "H42",
@@ -132,11 +132,6 @@
       "AFull": "A2",
       "A_Full": "A2",
       "A_full": "A2"
-    },
-    "canonical_to_internal_hspf2_v2": {
-      "H12": "H1_Full",
-      "H32": "H2_Full",
-      "H42": "H3_Full"
     }
   },
   "test_point_temps": {

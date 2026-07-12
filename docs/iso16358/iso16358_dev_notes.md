@@ -12,7 +12,7 @@
 | Path | Entry / helper | Role |
 | --- | --- | --- |
 | CSPF path | `_iso16358/cspf_points.py`, `cspf_performance.py`, `cspf_engine.py`, `cspf_result.py` | ISO16358-1 point resolution, boundary performance, PLF/bin accumulation, result assembly |
-| generic HSPF fallback | `_iso16358/hspf_legacy_points.py`, `hspf_legacy_engine.py` | heating point 보간/외삽과 shortage auxiliary 처리 |
+| ISO 16358-2 HSPF | `_iso16358/hspf_points.py`, `hspf_cases.py`, `hspf_engine.py` | `iso16358_2_hspf` profile point resolution, bin cases, seasonal aggregation |
 | ISO common HSPF | `_iso16358/hspf_points.py`, `hspf_curves.py`, `hspf_extended.py`, `hspf_load.py`, `hspf_snapshot.py`, `hspf_cases.py`, `hspf_engine.py`, `hspf_result.py` | common point/fallback, curve, building load, branch, bin, result responsibility |
 | KS C 9306 HSPF profile path | `core/calculators/standards/ks_c9306.py`의 `_calculate_ks_c9306_hspf`, `_ks_hspf_*` helpers | KS C 9306 profile-specific required points, curves, load line, branch selection |
 
@@ -66,7 +66,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 
 | Path | Required behavior |
 | --- | --- |
-| generic HSPF fallback | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
+| ISO common HSPF auxiliary heat | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
 | variable HSPF path | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
 | KS C 9306 HSPF profile path | `auxiliary_energy = auxiliary_heat × hours / aux_cop` |
 
@@ -111,7 +111,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | 온도 보간과 부하 보간 혼동 | 중간 부하 소비전력이 과소/과대 계산된다. | temperature interpolation과 capacity-range interpolation을 같은 단계로 취급한다. | 먼저 온도별 성능선을 만들고 이후 load 위치에 따라 power를 정한다. | ISO 16358-1:2013 Chapter 6 |
 | auxiliary 누락 | HSPF가 과대 계산된다. | heat pump shortage를 denominator에 더하지 않는다. | HSEC가 heat pump energy plus auxiliary energy인지 확인한다. | ISO 16358-2 |
 | profile fallback | KS profile 입력 누락이 조용히 common result로 바뀐다. | profile branch 조건에 input 존재 여부를 같이 둔다. | profile만 보고 KS path로 진입하고 input 누락은 `ValueError`로 처리한다. | Project implementation |
-| Profile path가 legacy 결과를 바꿈 | 기존 ISO T1 default regression이 바뀐다. | `cspf_test_profile` 분기가 legacy path에 누출된다. | profile key가 있을 때만 새 path로 진입하고, legacy config 결과를 항상 regression으로 보호한다. |
+| Profile path가 flat-config 결과를 바꿈 | 기존 ISO T1 flat-config regression이 바뀐다. | `cspf_test_profile` 분기가 flat-config path에 누출된다. | profile key가 있을 때만 profile path로 진입하고 selector를 strict validation하며 flat-config 결과를 regression으로 보호한다. |
 | required_only에서 min point 합성 | 저부하 bin의 PLF branch가 달라져 CSPF가 변한다. | optional minimum과 required_only를 같은 구조로 처리한다. | required_only에서는 half를 lowest continuous operating point로 사용한다. |
 | T3를 35/29 hard-code로 계산 | 46°C high anchor를 사용하는 T3에서 ValueError 또는 잘못된 보간이 발생한다. | 기존 `iso_boundary_eer` 구조를 그대로 재사용한다. | T3는 `tj > 35`에서 46↔35, `tj <= 35`에서 35↔29 segment를 선택한다. |
 
@@ -130,7 +130,7 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | `derived_rules` | CSPF default point 생성 규칙 | source, capacity factor, power factor를 사용한다. |
 | `bin_hours` | cooling outdoor temperature와 hour | CSPF seasonal accumulation의 시간 가중치이다. |
 | `hspf_bin_hours` | heating outdoor temperature와 hour | HSPF seasonal accumulation의 시간 가중치이다. |
-| `cspf_test_profile` | CSPF variable/inverter profile path selector | legacy flat config와 병렬로 동작하는 opt-in key이다. 없는 경우 기존 path를 반드시 유지한다. |
+| `cspf_test_profile` | CSPF variable/inverter profile path selector | flat config와 병렬로 동작하는 opt-in key이다. key가 있으면 `climate_profile`/`test_selection`은 필수 enum이며 unknown/missing은 fail-fast한다. |
 | `cspf_test_profile.climate_profile` | T1/T3 climate profile | T1은 35↔29 단일 segment, T3는 46↔35 / 35↔29 piecewise segment를 사용한다. |
 | `cspf_test_profile.test_selection` | required_only / with_optional_test | required_only에서는 minimum point를 합성하지 않는다. optional minimum 선택 시에만 min branch를 활성화한다. |
 
@@ -301,7 +301,7 @@ Extracted formulas from the XLSM file:
 -   **`cspf_calculator.py` Evaluation:** The existing `cspf_calculator.py` is valuable as an exploration tool, but it is not directly production-accurate if it does not precisely replicate this boundary-temperature and boundary-EER driven branching logic. Significant refactoring and re-implementation of the power calculation block in `cspf_calculator.py` would be necessary to align with the XLSM's methodology.
 -   **`iso16358.py` Alignment:** The `iso_boundary_eer` direction within `core/calculators/standards/iso16358.py` is structurally aligned with the XLSM's approach. This architectural choice should be preserved and further developed to accurately model the boundary EERs.
 -   **India Boundary Temperature Rounding:** The rounding of India boundary temperatures is structurally meaningful because `CK5` through `CK7` (tb, tc, tp) directly drive the interpolation of branch EERs. Any deviation in these boundary temperatures will impact the subsequent EER calculations.
--   **SASO T3 and `cspf_test_profile` Schema:** SASO T3 Phase R2-2 is aligned through the `cspf_test_profile` opt-in path, not a one-off public calculator method. The legacy T1 `_iso_boundary_eer()` behavior remains unchanged, while T3 uses `_iso_boundary_eer_t3_piecewise()` only when `cspf_test_profile.climate_profile == "T3"`. This helper selects 29↔35 for `tj <= 35` and 35↔46 for `tj > 35`, and `_iso_boundary_eer_power()` handles both `{min, half}` and `{half, full}` brackets under that T3 guard.
+-   **SASO T3 and `cspf_test_profile` Schema:** SASO T3 Phase R2-2 is aligned through the `cspf_test_profile` opt-in path, not a one-off public calculator method. The flat-config T1 `_iso_boundary_eer()` behavior remains unchanged, while T3 uses `_iso_boundary_eer_t3_piecewise()` only when the strictly validated `climate_profile` is `T3`. This helper selects 29↔35 for `tj <= 35` and 35↔46 for `tj > 35`, and `_iso_boundary_eer_power()` handles both `{min, half}` and `{half, full}` brackets under that T3 guard.
 -   **SASO T3 Boundary Diagnostics:** The verified golden sample produces Tb ≈ 45.2479°C, Tc ≈ 34.6371°C, and Tp ≈ 29.1799°C. For the `tj > 35` full segment, the intersection is 46.0°C because `46_full` is the building-load reference point.
 -   **T3 29_full default point:** The T3 resolver behavior for 29_full is confirmed and maintained: capacity is `1.077 × 35_full capacity`, and power is `0.914 × 35_full power`. Treat this as confirmed resolver behavior and test coverage, not as a Phase R2-2-only new rule.
 -   **Hong Kong CSPF load anchor:** Hong Kong measured CSPF uses measured 35_full / 35_half capacity and power for the performance curve, but uses declared/rated 35_full capacity as the building-load anchor. Use `building_load_source = "declared"` and pass rated 35_full capacity as `declared_capacity`. Do not tune Cd or derived factors to match the source tool.

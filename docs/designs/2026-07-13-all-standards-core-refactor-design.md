@@ -272,3 +272,21 @@ Final evidence:
 - structure guard: ten pre-existing warnings, no new warning; the EN, ISO, and
   KS monolith warnings were removed;
 - changed-owner compilation and staged objective gates passed.
+
+## 14. Audit Correction — Silent Fallback Retirement
+
+The post-refactor audit narrowed the supported calculation boundary. EN config
+attribute replacement now updates the shared context. ISO HSPF accepts only the
+`iso16358_2_hspf` profile; the generic interpolation and variable-bin fallback
+owners were removed. ISO CSPF profile selectors are required enums, while the
+existing profile-absent flat-config path remains supported. KS rejects ISO
+`cspf_test_profile` schema rather than executing T1/T3 compatibility branches.
+AHRI retired the separate HSPF2 v2 engine and public v2 surface; active input
+aliases remain through `normalize_public_test_points()` and the variable, dual,
+and triple-northern product engines remain unchanged.
+
+These are intentional fail-fast compatibility changes for unsupported inputs,
+not formula or golden changes. AST/runtime/owner-base guards prevent the retired
+modules, selector defaults, cross-standard branches, and private-owner imports
+from being reintroduced. The append-only original closeout record is superseded
+for this boundary by the dated silent-fallback correction record.

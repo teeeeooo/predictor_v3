@@ -9,8 +9,9 @@ reference workflow details. `AGENT_TASK_ROUTER.md` only routes here.
 
 - Calculator implementations stay pure Python; do not introduce `numpy` or
   `pandas`.
-- Do not modify `calculate_hspf2_v2()` / `calculate_hspf2()` unless the user
-  explicitly asks.
+- Do not modify production `calculate_hspf2()` unless the user explicitly asks.
+  The retired HSPF2 v2 method and seasonal engine must not be reintroduced as a
+  fallback.
 - Keep ISO16358 common engine work centered on
   `core/calculators/standards/iso16358.py`; KS C 9306 special behavior belongs
   in `core/calculators/standards/ks_c9306.py`.

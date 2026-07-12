@@ -29,11 +29,6 @@ HSPF2_V3_KWARGS = {
     "defrost_t_test_minutes": 90,
     "defrost_t_max_minutes": 720,
 }
-HSPF2_V2_POINTS = {
-    "H1_Full": (24000, 2200),
-    "H2_Full": (22000, 2100),
-    "H3_Full": (18000, 1900),
-}
 SEER2_POINTS = {
     "A_Full": (36000, 3000),
     "B_Full": (30000, 2200),
@@ -59,18 +54,13 @@ def test_hspf2_public_facade_contract_is_locked():
     assert str(inspect.signature(calculator.calculate_hspf2_v3)) == (
         "(test_points: dict, **kwargs) -> dict"
     )
-    assert str(inspect.signature(calculator.calculate_hspf2_v2)) == (
-        "(test_points: dict, **kwargs) -> dict"
-    )
     assert str(inspect.signature(calculator.get_test_point_schema)) == (
         "(mode: str = None) -> dict"
     )
-    assert str(inspect.signature(calculator.legacy_to_canonical)) == (
+    assert str(inspect.signature(calculator.normalize_public_test_points)) == (
         "(test_points: dict) -> dict"
     )
-    assert str(inspect.signature(calculator.canonical_to_internal_usage)) == (
-        "(test_points: dict) -> dict"
-    )
+    assert not hasattr(calculator, "calculate_hspf2_v2")
 
     for attribute in (
         "config",
@@ -108,22 +98,6 @@ def test_hspf2_v3_characterization_is_deeply_locked():
     ]
     assert _canonical_result_sha256(result) == (
         "25109558e7c46408ba02c0831c35be8af96abff2c3362452c9a0d00b8209beaf"
-    )
-
-
-def test_hspf2_v2_characterization_is_deeply_locked():
-    result = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH).calculate_hspf2_v2(
-        HSPF2_V2_POINTS
-    )
-
-    assert list(result) == [
-        "HSPF2",
-        "total_heating_Btu",
-        "total_energy_Wh",
-        "bin_details",
-    ]
-    assert _canonical_result_sha256(result) == (
-        "ea95ed40f7f7c43e4dbdee8842d062c59719072ca5ef898ea9e591561a14ebf1"
     )
 
 

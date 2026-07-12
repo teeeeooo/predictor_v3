@@ -9,8 +9,6 @@ from .hspf_cases import HSPFCaseEngineMixin
 from .hspf_curves import HSPFCommonCurveMixin
 from .hspf_engine import HSPFSeasonalMixin
 from .hspf_extended import HSPFExtendedPerformanceMixin
-from .hspf_legacy_engine import HSPFLegacyEngineMixin
-from .hspf_legacy_points import HSPFLegacyPointMixin
 from .hspf_load import HSPFLoadContextMixin
 from .hspf_points import HSPFCommonPointMixin
 from .hspf_snapshot import HSPFPerformanceSnapshotMixin
@@ -31,8 +29,6 @@ class ISO16358CSPFEngine(
 class ISO16358HSPFEngine(
     ISOEngineContext,
     ISOInputPreparationMixin,
-    HSPFLegacyPointMixin,
-    HSPFLegacyEngineMixin,
     HSPFCommonCurveMixin,
     HSPFExtendedPerformanceMixin,
     HSPFCommonPointMixin,
@@ -41,4 +37,4 @@ class ISO16358HSPFEngine(
     HSPFCaseEngineMixin,
     HSPFSeasonalMixin,
 ):
-    """ISO 16358-2 common and compatibility seasonal calculation owner."""
+    """ISO 16358-2 supported-profile seasonal calculation owner."""

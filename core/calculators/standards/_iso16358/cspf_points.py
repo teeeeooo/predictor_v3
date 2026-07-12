@@ -2,30 +2,53 @@
 
 
 class CSPFPointResolverMixin:
+    _CSPF_CLIMATES = frozenset({"T1", "T3"})
+    _CSPF_TEST_SELECTIONS = frozenset(
+        {"required_only", "with_optional_test"}
+    )
+
     def _has_cspf_test_profile(self) -> bool:
         return "cspf_test_profile" in self.config
+
+    def _validated_cspf_test_profile(self) -> dict:
+        profile = self.config.get("cspf_test_profile")
+        if not isinstance(profile, dict):
+            raise ValueError("cspf_test_profile must be a configuration object.")
+        climate = profile.get("climate_profile")
+        selection = profile.get("test_selection")
+        if climate not in self._CSPF_CLIMATES:
+            raise ValueError(
+                f"Unsupported ISO CSPF climate_profile: {climate!r}; "
+                f"supported={sorted(self._CSPF_CLIMATES)}"
+            )
+        if selection not in self._CSPF_TEST_SELECTIONS:
+            raise ValueError(
+                f"Unsupported ISO CSPF test_selection: {selection!r}; "
+                f"supported={sorted(self._CSPF_TEST_SELECTIONS)}"
+            )
+        return profile
 
     def _get_cspf_profile_cd(self) -> float:
         if "Cd" in self.config:
             return float(self.config["Cd"])
-        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        profile = self._validated_cspf_test_profile()["climate_profile"]
         return 0.27 if profile == "T3" else 0.25
 
     def _get_active_load_levels(self) -> list:
-        profile_cfg = self.config.get("cspf_test_profile", {})
+        profile_cfg = self._validated_cspf_test_profile()
         selection = profile_cfg.get("test_selection")
         if selection == "with_optional_test":
             return ["full", "half", "min"]
         return ["full", "half"]
 
     def _get_cspf_temperature_segments(self) -> list:
-        profile = self.config.get("cspf_test_profile", {}).get("climate_profile")
+        profile = self._validated_cspf_test_profile()["climate_profile"]
         if profile == "T3":
             return [{"boundary": 35.0, "high": [46, 35], "low": [35, 29]}]
         return [{"boundary": None, "high": [35, 29]}]
 
     def _resolve_cspf_profile_points(self, measured: dict) -> dict:
-        profile_cfg = self.config.get("cspf_test_profile", {})
+        profile_cfg = self._validated_cspf_test_profile()
         climate = profile_cfg.get("climate_profile")
         selection = profile_cfg.get("test_selection")
 

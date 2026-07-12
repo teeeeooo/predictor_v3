@@ -6,13 +6,8 @@ def row_at_temp(result, temp_f):
     return next(row for row in result["bin_details"] if row["temp_F"] == temp_f)
 
 
-def test_hspf2_v3_smoke_and_legacy_delta():
+def test_hspf2_v3_smoke():
     calc = AHRIHSPF2Calculator("data/region_configs/usa_hspf2.json")
-    legacy_points = {
-        "H1_Full": (24000, 2200),
-        "H2_Full": (22000, 2100),
-        "H3_Full": (18000, 1900),
-    }
     canonical_with_h42 = {
         "H01": (12500, 980),
         "H11": (12000, 1000),
@@ -54,7 +49,6 @@ def test_hspf2_v3_smoke_and_legacy_delta():
         "defrost_t_max_minutes": 720,
     }
 
-    v2 = calc.calculate_hspf2_v2(legacy_points)
     v3_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42, **kwargs)
     v3_without_h42 = calc.calculate_hspf2_v3(canonical_without_h42, **kwargs)
     performance = HSPF2VariablePerformance()
@@ -75,9 +69,6 @@ def test_hspf2_v3_smoke_and_legacy_delta():
         (q_h4full, 1900),
     )
 
-    v2_raw = v2["total_heating_Btu"] / v2["total_energy_Wh"]
-    assert v2["HSPF2"] == 9.602
-    assert round(v2_raw, 6) != round(v3_with_h42["raw_hspf2"], 6)
     assert v3_with_h42["h42_source"] == "provided"
     assert v3_without_h42["h42_source"] == "not_provided"
     assert v3_with_h42["summary"]["metadata"]["h12_source"] == "tested"

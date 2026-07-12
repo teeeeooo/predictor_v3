@@ -31,7 +31,7 @@ def test_hspf2_context_preserves_loaded_state_and_region_iv_values():
 
 def test_hspf2_point_owner_preserves_aliases_and_fallback_sources():
     _, resolver = _owners()
-    canonical = resolver.legacy_to_canonical(
+    canonical = resolver.normalize_public_test_points(
         {**HSPF2_V3_POINTS, "A_Full": HSPF2_V3_POINTS["A_Full"]}
     )
     canonical.pop("H12")
@@ -49,7 +49,9 @@ def test_hspf2_point_owner_preserves_case_insensitive_conflict_detection():
     _, resolver = _owners()
 
     with pytest.raises(ValueError, match="Conflicting test point values for canonical key H12"):
-        resolver.legacy_to_canonical({"H12": (24000, 2200), "h1_full": (23000, 2100)})
+        resolver.normalize_public_test_points(
+            {"H12": (24000, 2200), "h1_full": (23000, 2100)}
+        )
 
 
 def test_hspf2_facade_delegates_v3_to_variable_capacity_engine():
@@ -59,17 +61,6 @@ def test_hspf2_facade_delegates_v3_to_variable_capacity_engine():
     through_facade = calculator.calculate_hspf2_v3(HSPF2_V3_POINTS, **HSPF2_V3_KWARGS)
 
     assert through_facade == direct
-
-
-def test_hspf2_facade_delegates_v2_to_legacy_engine():
-    calculator = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH)
-    points = {
-        "H1_Full": (24000, 2200),
-        "H2_Full": (22000, 2100),
-        "H3_Full": (18000, 1900),
-    }
-
-    assert calculator.calculate_hspf2_v2(points) == calculator._legacy_engine.calculate(points)
 
 
 def test_shared_numeric_primitives_keep_the_extracted_engine_semantics():

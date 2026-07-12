@@ -35,6 +35,36 @@ def test_en14825_public_facade_contract_is_locked() -> None:
         assert hasattr(calculator, attribute)
 
 
+def test_en14825_reassigned_config_sections_share_facade_context() -> None:
+    calculator = EN14825Calculator()
+    seer = {
+        **calculator.seer_config,
+        "design": {**calculator.seer_config["design"], "t_design_c": 31},
+        "defaults": {**calculator.seer_config["defaults"], "cd": 0.19},
+        "bin_data": {"temps": [31], "hours": [777]},
+    }
+    scop = {
+        **calculator.scop_config,
+        "climates": {
+            **calculator.scop_config["climates"],
+            "warmer": {
+                **calculator.scop_config["climates"]["warmer"],
+                "t_design_h_c": 4,
+            },
+        },
+    }
+
+    calculator.seer_config = seer
+    calculator.scop_config = scop
+
+    assert calculator._context.seer_config is calculator.seer_config
+    assert calculator._context.scop_config is calculator.scop_config
+    assert calculator._get_seer_design_value("t_design_c") == 31
+    assert calculator._get_seer_default_value("cd") == 0.19
+    assert calculator._get_seer_bin_data() == ([31], [777])
+    assert calculator._get_scop_climate_data("warmer")["t_design_h_c"] == 4
+
+
 def test_en14825_supported_branch_results_are_deeply_locked() -> None:
     calculator = EN14825Calculator()
     results = {

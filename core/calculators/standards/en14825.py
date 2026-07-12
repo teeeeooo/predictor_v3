@@ -36,6 +36,17 @@ class EN14825Calculator:
             self._scop_performance,
         )
 
+    def __setattr__(self, name: str, value) -> None:
+        object.__setattr__(self, name, value)
+        context = self.__dict__.get("_context")
+        if context is not None and name in (
+            "config_path",
+            "config",
+            "seer_config",
+            "scop_config",
+        ):
+            setattr(context, name, value)
+
     def __getattr__(self, name: str):
         """Preserve relied-upon private helper access during the extraction."""
         for owner_name in (

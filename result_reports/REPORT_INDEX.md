@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-13 | Silent fallback retirement | calculator, en14825, iso16358, ks-c9306, ahri210240, fail-fast, correction | Retire unsupported cross-standard and historical calculation fallbacks while preserving active formulas, aliases, routes, and golden results. | `result_reports/records/2026-07/2026-07-13-silent-fallback-retirement.md` |
 | 2026-07-13 | All standards core refactor closeout | calculator, en14825, iso16358, ks-c9306, brazil, architecture, refactor, closeout | Close active non-AHRI routes with stable facades, standard-local private owners, unchanged behavior, and cwd-independent static resources. | `result_reports/records/2026-07/2026-07-13-all-standards-core-refactor-closeout.md` |
 | 2026-07-13 | All standards core refactor contract lock | calculator, en14825, iso16358, ks-c9306, brazil, architecture, refactor | Inventory every active non-AHRI route and lock stable facades and ordered deep results before extracting private owners. | `result_reports/records/2026-07/2026-07-13-all-standards-core-refactor-contract-lock.md` |
 | 2026-07-12 | AHRI multi-capacity implementation | ahri210240, seer2, hspf2, dual-stage, triple-capacity, tkinter | Implement product-discriminated multi-capacity engines and Calculator surfaces while preserving stable capabilities and variable-capacity contracts. | `result_reports/records/2026-07/2026-07-12-ahri-multicapacity-implementation.md` |

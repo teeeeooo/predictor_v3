@@ -2,7 +2,6 @@
 
 from ._ahri.hspf2_context import HSPF2ConfigContext
 from ._ahri.hspf2_dual import HSPF2DualStageEngine
-from ._ahri.hspf2_legacy import HSPF2LegacyEngine
 from ._ahri.hspf2_points import HSPF2PointResolver
 from ._ahri.hspf2_triple_northern import HSPF2TripleNorthernEngine
 from ._ahri.hspf2_variable import HSPF2VariableCapacityEngine
@@ -33,21 +32,14 @@ class AHRIHSPF2Calculator:
             setattr(self, attribute, getattr(self._context, attribute))
         self._point_resolver = HSPF2PointResolver(self.test_point_schema, self.test_point_aliases)
         self._variable_engine = HSPF2VariableCapacityEngine(self._context, self._point_resolver)
-        self._legacy_engine = HSPF2LegacyEngine(self._context, self._point_resolver)
         self._dual_engine = HSPF2DualStageEngine(self._context)
         self._triple_engine = HSPF2TripleNorthernEngine(self._context)
 
     def get_test_point_schema(self, mode: str = None) -> dict:
         return self._point_resolver.get_test_point_schema(mode)
 
-    def legacy_to_canonical(self, test_points: dict) -> dict:
-        return self._point_resolver.legacy_to_canonical(test_points)
-
-    def canonical_to_internal_usage(self, test_points: dict) -> dict:
-        return self._point_resolver.canonical_to_internal_usage(test_points)
-
-    def calculate_hspf2_v2(self, test_points: dict, **kwargs) -> dict:
-        return self._legacy_engine.calculate(test_points, **kwargs)
+    def normalize_public_test_points(self, test_points: dict) -> dict:
+        return self._point_resolver.normalize_public_test_points(test_points)
 
     def calculate_hspf2_v3(self, test_points: dict, **kwargs) -> dict:
         return self._variable_engine.calculate(test_points, **kwargs)

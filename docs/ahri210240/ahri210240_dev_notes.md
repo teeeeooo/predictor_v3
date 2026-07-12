@@ -54,7 +54,7 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | --- | --- | --- | --- |
 | canonical HSPF2 bin table | `data/region_configs/usa_hspf2.json` | Region IV Table 16 fractional bin hours | length, non-negative, sum 0.757 |
 | HSPF2 test point schema | `data/region_configs/usa_hspf2.json` | H01/H11/H12/H1N/H22/H2Int/H32/H42/A2 alias and temperatures | canonical key lookup |
-| HSPF2 legacy aliases | `data/region_configs/usa_hspf2.json` | old names to canonical names | conflicting value fail-fast |
+| HSPF2 public aliases | `data/region_configs/usa_hspf2.json` | accepted public names to canonical names | conflicting value fail-fast |
 | HSPF2 bin details | HSPF2 return dict | bin별 case, BL, q/p low/int/full, COP, auxiliary | smoke and case tests inspect |
 | SEER2 config | `core/calculators/standards/ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
 
@@ -127,7 +127,7 @@ Naming policy note:
 
 | Check | What to inspect | Expected |
 | --- | --- | --- |
-| canonical key | `legacy_to_canonical()` result | HSPF2 v3 필수 key가 모두 존재 |
+| canonical key | `normalize_public_test_points()` result | HSPF2 production 필수 key가 모두 존재 |
 | Region IV table | `bin_table.fractional_bin_hours_sum` | 0.757 |
 | absolute hours | `bin_details.hours` | fractional * 1701 |
 | H12 fallback | `summary.metadata.h12_source` | tested / eq_11_183 / eq_11_185 |
@@ -185,7 +185,7 @@ SEER2의 현재 variable-capacity 테스트 입력과 expected는 사용자가 A
 | SEER2 config | config/schema migration 승인 전까지 | external JSON schema와 tests 정비 | AHRI 210/240 cooling sections |
 | SEER2 off-mode | 공식 요구와 입력 단위 확인 전까지 | `p_w_off` 실제 seasonal denominator 반영 검토 | AHRI 210/240 cooling sections |
 
-계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. 특히 `calculate_hspf2_v2()`와 `calculate_hspf2()`는 보호 대상이다.
+계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. Production `calculate_hspf2()`는 보호 대상이며 retired v2 public method는 제공하지 않는다.
 
 ### Final internal ownership
 
@@ -198,7 +198,6 @@ Public import path와 method/result contract는 `ahri_hspf2.py`, `ahri_seer2.py`
 | `hspf2_performance.py` | variable-capacity low/intermediate/full performance와 building load |
 | `hspf2_variable.py` | Case I/II/III bin loop와 seasonal accumulation |
 | `hspf2_result.py` | 기존 raw result, duplicate totals, summary, diagnostics mapping assembly |
-| `hspf2_legacy.py` | v2 validation, interpolation, seasonal loop, legacy result mapping |
 | `seer2_variable.py` | A/B/E/F curves, Case 1/2.1/2.2/3, fractional seasonal result |
 | `numeric.py` | 두 engine에서 의미가 동일함이 확인된 safe division과 linear interpolation만 공유 |
 
@@ -209,7 +208,7 @@ Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누
 ### 구현 현황
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
 - **핵심 엔진**: `core/calculators/standards/_ahri/hspf2_variable.py` (stable `ahri_hspf2.py` facade를 통해 호출)
-- **입력 체계**: `legacy_to_canonical()`을 통해 다양한 입력 변수명을 표준 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
+- **입력 체계**: `normalize_public_test_points()`를 통해 active public alias를 canonical 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
 - **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
 
 ### 검증 및 디버깅 기준
@@ -239,7 +238,7 @@ AGENTS.md의 Lite 규칙만 따르고 docs/DOCS_GUIDELINES.md, docs/STANDARD_DOC
 ### HSPF2 계산 작업
 
 ```text
-AGENTS.md Lite 규칙을 먼저 읽어라. HSPF2는 Region IV, non-ducted single-split variable-capacity air-to-air heat pump 경로를 우선 보호한다. calculate_hspf2_v2()와 calculate_hspf2()는 명시 지시 없이 수정하지 말고, 변경 후 test_hspf2_v3_smoke.py, test_hspf2_v3_low_cases.py, test_hspf2_v3_h2int.py, test_hspf2_v3_bincheck.py를 실행하라.
+AGENTS.md Lite 규칙을 먼저 읽어라. HSPF2는 variable-capacity, dual-stage, triple-capacity-northern production 경로를 보호한다. calculate_hspf2()는 명시 지시 없이 수정하지 말고, 변경 후 active product golden과 product dispatch 테스트를 실행하라.
 ```
 
 ### SEER2 정비 작업

@@ -65,13 +65,13 @@ class HSPF2PointResolver:
             return self.test_point_schema
         return self.test_point_schema.get(mode, {})
 
-    def legacy_to_canonical(self, test_points: dict) -> dict:
-        legacy_map = self.test_point_aliases.get("legacy_to_canonical", {})
+    def normalize_public_test_points(self, test_points: dict) -> dict:
+        alias_map = self.test_point_aliases.get("public_to_canonical", {})
         schema_keys = self.schema_keys()
         canonical_points = {}
         for key, value in test_points.items():
-            legacy_key = self.match_key_case_insensitive(key, legacy_map.keys())
-            canonical_key = legacy_map.get(legacy_key, key)
+            alias_key = self.match_key_case_insensitive(key, alias_map.keys())
+            canonical_key = alias_map.get(alias_key, key)
             canonical_key = self.match_key_case_insensitive(canonical_key, schema_keys)
             if canonical_key in canonical_points and canonical_points[canonical_key] != value:
                 raise ValueError(
@@ -81,37 +81,11 @@ class HSPF2PointResolver:
             canonical_points[canonical_key] = value
         return canonical_points
 
-    def canonical_to_internal_usage(self, test_points: dict) -> dict:
-        canonical_points = self.legacy_to_canonical(test_points)
-        internal_map = self.test_point_aliases.get("canonical_to_internal_hspf2_v2", {})
-        internal_points = {}
-        for key, value in canonical_points.items():
-            canonical_key = self.match_key_case_insensitive(key, internal_map.keys())
-            internal_key = internal_map.get(canonical_key, key)
-            if internal_key in internal_points and internal_points[internal_key] != value:
-                raise ValueError(
-                    f"Conflicting test point values for internal key {internal_key}: "
-                    f"{internal_points[internal_key]} vs {value}"
-                )
-            internal_points[internal_key] = value
-        return internal_points
-
     def positive_point(self, test_points: dict, key: str) -> CapacityPower:
         capacity, power = self.get_point(test_points, key)
         if capacity <= 0 or power <= 0:
             raise ValueError(f"Invalid canonical test point {key}: capacity={capacity}, power={power}")
         return capacity, power
-
-    def validate_legacy_full_load_points(self, test_points: dict) -> dict:
-        points = {
-            "H1_Full": self.get_point(test_points, "H1_Full"),
-            "H2_Full": self.get_point(test_points, "H2_Full"),
-            "H3_Full": self.get_point(test_points, "H3_Full"),
-        }
-        for key, (capacity, power) in points.items():
-            if capacity <= 0 or power <= 0:
-                raise ValueError(f"Invalid test point {key}: capacity={capacity}, power={power}")
-        return points
 
     def _resolve_h12(self, canonical_points, full_points, h1_nom, kwargs):
         if "H12" in canonical_points:

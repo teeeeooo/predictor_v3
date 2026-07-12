@@ -24,33 +24,3 @@ def assemble_common_hspf_result(hstl: float, hsec: float, bin_details: list) -> 
         "auxiliary_energy_wh": auxiliary_energy,
         "bin_details": bin_details,
     }
-
-
-def assemble_legacy_hspf_result(hstl: float, hsec: float, bin_details: list) -> dict:
-    if hsec <= 0:
-        return {
-            "hspf": 0.0,
-            "HSPF": 0.0,
-            "HSTL": hstl,
-            "HSEC": hsec,
-            "bin_details": bin_details,
-        }
-    hspf_value = hstl / hsec
-    heat_pump_energy = sum(
-        item.get("heat_pump_energy", item.get("compressor_energy", 0.0))
-        for item in bin_details
-    )
-    auxiliary_energy = sum(
-        item.get("auxiliary_energy", 0.0) for item in bin_details
-    )
-    return {
-        "hspf": hspf_value,
-        "HSPF": hspf_value,
-        "hstl": hstl,
-        "HSTL": hstl,
-        "hsec": hsec,
-        "HSEC": hsec,
-        "heat_pump_energy": heat_pump_energy,
-        "auxiliary_energy": auxiliary_energy,
-        "bin_details": bin_details,
-    }

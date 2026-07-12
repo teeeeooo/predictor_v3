@@ -156,7 +156,6 @@
 | H22 fallback | `core/calculators/standards/_ahri/hspf2_points.py` | `resolve_variable_capacity` | `summary.metadata.h22_source` | tested / eq_11_44_11_50 |
 | intermediate slope | `core/calculators/standards/_ahri/hspf2_performance.py` | `intermediate_capacity_power_at_temp` | `debug_info.intermediate_metadata` | Eq.11.199~11.204 trace |
 | Case details | `core/calculators/standards/_ahri/hspf2_variable.py` | `calculate` | `bin_details` | Case I/II/III |
-| HSPF2 legacy | `core/calculators/standards/_ahri/hspf2_legacy.py` | `calculate` | `HSPF2` | public v2 facade가 위임하는 legacy reference |
 | SEER2 current path | `core/calculators/standards/_ahri/seer2_variable.py` | `calculate` | `SEER2` | public SEER2 facade 뒤의 variable-capacity 냉방 경로 |
 
 ## 9. Critical Implementation Notes
