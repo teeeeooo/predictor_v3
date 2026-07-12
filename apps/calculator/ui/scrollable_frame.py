@@ -92,23 +92,6 @@ class ScrollableFrame(tk.Frame):
     def scrollbar_visible(self) -> bool:
         return self._scrollbar_visible
 
-    def intrinsic_content_reqwidth(self) -> int:
-        """Measure content before the canvas viewport forces a wider window item."""
-        configured = self._canvas.itemcget(self._content_window, "width")
-        configured_width = int(float(configured or 0))
-        if configured_width <= 0:
-            self._content.update_idletasks()
-            return max(1, self._content.winfo_reqwidth())
-        try:
-            self._canvas.itemconfigure(self._content_window, width=0)
-            self._content.update_idletasks()
-            return max(1, self._content.winfo_reqwidth())
-        finally:
-            self._canvas.itemconfigure(
-                self._content_window,
-                width=configured_width,
-            )
-
     def vertical_overflow_delta(self) -> int:
         """Return measured vertical overflow in pixels, or 0 if none."""
         bbox = self._canvas.bbox("all")
@@ -150,11 +133,9 @@ class ScrollableFrame(tk.Frame):
         if _event is not None and getattr(_event, "width", 0) > width:
             width = _event.width - self._scrollbar.winfo_reqwidth()
         width = max(1, width)
-        # The canvas window controls the rendered viewport width. Do not also set
-        # the embedded frame's requested width: a wide hidden sibling tab would
-        # then overwrite the intrinsic content measurement used to fit the active
-        # Calculator tab.
         self._canvas.itemconfigure(self._content_window, width=width)
+        if int(self._content.cget("width") or 0) != width:
+            self._content.configure(width=width)
 
     def _unbind_mousewheel(self, _event=None) -> None:
         if _event is not None and getattr(_event, "widget", None) is not self:
