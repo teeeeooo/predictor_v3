@@ -17,21 +17,25 @@
 
 ## Current Slice
 
-AHRI 210/240-2026 multi-capacity implementation is complete on
-`chatgpt/ahri-multicapacity-core-gui`. Dual-stage SEER2, Dual-stage HSPF2, and
-Triple-capacity Northern HSPF2 now use product-specific engines and Calculator
-Single/Batch surfaces while the existing variable-capacity engines, stable
-facades, capability IDs, fixtures, and result schemas remain compatible.
+PR #11 audit corrections are complete on
+`chatgpt/ahri-multicapacity-core-gui`. The Dual H2Low fallback, Triple H2Low
+correction precedence, normalized-versus-seasonal HSPF2 result contract,
+Triple Cases 4–7 equation evidence, SEER2 option validation, and overlay
+numerical integrity have been corrected without changing the approved
+sibling-engine and stable-capability architecture.
 
 ## Next Action
 
-Review draft PR #11 and perform one bounded native Tkinter visual smoke if release
-acceptance requires it. Merge to main only after explicit user approval.
+Re-audit PR #11 against the blocking findings. Perform the requested bounded
+native Windows/macOS five-path Tkinter smoke outside the GitHub connector before
+main integration when that manual evidence is required. Merge only after explicit
+user approval.
 
 ## Active Blockers
 
-None for automated acceptance. Native Windows/macOS visual smoke was not
-available through the GitHub connector and remains an optional pre-merge check.
+- Native Windows/macOS five-path GUI smoke cannot be executed through the GitHub
+  connector and remains pending manual evidence.
+- Main merge remains blocked until correction re-audit approval.
 
 ## Active Constraints
 
@@ -41,6 +45,7 @@ available through the GitHub connector and remains an optional pre-merge check.
   expected overlay for corrected or derived values.
 - Multi-capacity published ratings use nearest 0.05 without changing the current
   variable-capacity 0.025 HSPF2 behavior.
+- Keep normalized fractional-bin aggregates separate from actual seasonal totals.
 - Do not merge the implementation branch without explicit approval.
 
 ## Deferred / Hold
