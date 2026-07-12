@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "purpose": "AHRI Analytics official calculator multi-capacity evidence fixtures; not production formula fixtures.",
+  "calculator_url": "https://seerhspf2.ahrianalytics.org/app/seerhspf2",
+  "calculation_date": "2026-07-12",
+  "fixtures": [
+    {
+      "fixture_id": "ahri210240_dual_stage_seer2_synthetic_01",
+      "product_classification": "dual_stage_cooling",
+      "directory": "dual_stage_seer2/dual_stage_seer2_synthetic_01",
+      "files": [
+        "input_template.csv",
+        "input.csv",
+        "result_m.csv",
+        "result_m1.csv",
+        "expected.json",
+        "provenance.md"
+      ]
+    },
+    {
+      "fixture_id": "ahri210240_dual_stage_hspf2_synthetic_01",
+      "product_classification": "dual_stage_heat_pump",
+      "directory": "dual_stage_hspf2/dual_stage_hspf2_synthetic_01",
+      "files": [
+        "input_template.csv",
+        "input.csv",
+        "result_m.csv",
+        "result_m1.csv",
+        "expected.json",
+        "provenance.md"
+      ]
+    },
+    {
+      "fixture_id": "ahri210240_triple_capacity_northern_hspf2_synthetic_01",
+      "product_classification": "triple_capacity_northern_heat_pump",
+      "directory": "triple_capacity_northern_hspf2/triple_capacity_northern_hspf2_synthetic_01",
+      "files": [
+        "input_template.csv",
+        "input.csv",
+        "result_m.csv",
+        "result_m1.csv",
+        "expected.json",
+        "provenance.md"
+      ]
+    }
+  ]
+}

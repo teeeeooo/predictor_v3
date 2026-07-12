@@ -1,0 +1,6 @@
+"compressorDesignStage","indoorBlowerType","needCoilOnlyAdjust","isMobileHomeAndSpaceConstrained","isNonmobileHomeAndNonSpaceConstrained","lockOutLowCapacityOps","ODTempWhenLockOut","degCoeffCoolFull","degCoeffCoolMin","coolCapacity95full","coolCapacity82full","coolCapacity82min","coolCapacity67min","powerConsumption95full","powerConsumption82full","powerConsumption82min","powerConsumption67min","scfm95full","scfm82full","scfm82min","scfm67min"
+"Dual Stage","Fixed Speed/PSC",FALSE,FALSE,TRUE,FALSE,,0.2,0.2,54952.49,58194.72,43231.18,45887.87,4625.09,4029.71,2621.2,2117.66,800,800,800,800
+"Dual Stage","Fixed Speed/PSC",FALSE,FALSE,FALSE,FALSE,,,,,,,,,,,,,,,
+"Dual Stage","Fixed Speed/PSC",FALSE,FALSE,FALSE,FALSE,,,,,,,,,,,,,,,
+"Dual Stage","Fixed Speed/PSC",FALSE,FALSE,FALSE,FALSE,,,,,,,,,,,,,,,
+"Dual Stage","Fixed Speed/PSC",FALSE,FALSE,FALSE,FALSE,,,,,,,,,,,,,,,

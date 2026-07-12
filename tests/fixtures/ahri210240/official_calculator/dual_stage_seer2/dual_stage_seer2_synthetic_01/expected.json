@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "fixture_id": "ahri210240_dual_stage_seer2_synthetic_01",
+  "standard": "AHRI 210/240 (2023), Appendix M and Appendix M1",
+  "calculator_source": "AHRI Analytics official calculation app",
+  "calculator_url": "https://seerhspf2.ahrianalytics.org/app/seerhspf2",
+  "calculation_date": "2026-07-12",
+  "calculator_version": "not displayed",
+  "product_classification": "dual_stage_cooling",
+  "product_type": "SEER → Dual Stage",
+  "mode": "cooling",
+  "dhr_doe_settings": {
+    "dhr_selection": null,
+    "doe_region": null
+  },
+  "ui_options": {
+    "compressorDesignStage": "Dual Stage",
+    "indoorBlowerType": "Fixed Speed/PSC",
+    "needCoilOnlyAdjust": false,
+    "isMobileHomeAndSpaceConstrained": false,
+    "isNonmobileHomeAndNonSpaceConstrained": true,
+    "ODTempWhenLockOut": null,
+    "degCoeffCoolFull": 0.18,
+    "degCoeffCoolMin": 0.24,
+    "lockOutLowCapacityOps": false
+  },
+  "tested_optional_points": {},
+  "compressor_cut_in_cut_out": {
+    "ODTempWhenLockOut": null
+  },
+  "degradation_coefficients": {
+    "degCoeffCoolFull": 0.18,
+    "degCoeffCoolMin": 0.24
+  },
+  "input_test_points": {
+    "coolCapacity95full": 48000,
+    "coolCapacity82full": 52000,
+    "coolCapacity82min": 30000,
+    "coolCapacity67min": 34000,
+    "powerConsumption95full": 4300,
+    "powerConsumption82full": 3900,
+    "powerConsumption82min": 2200,
+    "powerConsumption67min": 2500,
+    "scfm95full": 800,
+    "scfm82full": 800,
+    "scfm82min": 650,
+    "scfm67min": 650
+  },
+  "bin_temperature_f": {
+    "value": null,
+    "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
+  },
+  "bin_hours_or_fractional_hours": {
+    "value": null,
+    "status": "not exposed in downloaded raw result CSV; raw bin keys are preserved"
+  },
+  "activated_operating_cases": {
+    "values": [
+      "k1",
+      "k2"
+    ],
+    "source": "Northern HSPF2 M.case_name fields when available; otherwise raw bin groups k1/k2"
+  },
+  "results": {
+    "M": {
+      "screen_headline": 12.45,
+      "raw_headline": 12.4540352056775,
+      "headline_raw_field": "M.SEER",
+      "design_load": {
+        "value": null,
+        "raw_field": null
+      },
+      "seasonal_totals": {
+        "delivered_capacity_or_load": {
+          "value": 17117.2027972028,
+          "raw_columns": [
+            "M.ratioTotalCooling1",
+            "M.ratioTotalCooling2",
+            "M.ratioTotalCooling3",
+            "M.ratioTotalCooling4",
+            "M.ratioTotalCooling5",
+            "M.ratioTotalCooling6",
+            "M.ratioTotalCooling7",
+            "M.ratioTotalCooling8"
+          ],
+          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+        },
+        "resistance_or_auxiliary_contribution": {
+          "value": 0,
+          "raw_columns": [],
+          "status": "raw_bin_aggregate; applicable to heating profiles only"
+        },
+        "electrical_energy": {
+          "value": 1374.4302560987992,
+          "raw_columns": [
+            "M.ratioTotalPower1",
+            "M.ratioTotalPower2",
+            "M.ratioTotalPower3",
+            "M.ratioTotalPower4",
+            "M.ratioTotalPower5",
+            "M.ratioTotalPower6",
+            "M.ratioTotalPower7",
+            "M.ratioTotalPower8"
+          ],
+          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+        }
+      },
+      "bin_trace": [
+        {
+          "bin_key": "k11",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k11": 34000,
+            "M.binPowerConsumption_k11": 2500
+          }
+        },
+        {
+          "bin_key": "k12",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k12": 32666.6666666667,
+            "M.binPowerConsumption_k12": 2400
+          }
+        },
+        {
+          "bin_key": "k13",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k13": 31333.3333333333,
+            "M.binPowerConsumption_k13": 2300
+          }
+        },
+        {
+          "bin_key": "k14",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k14": 30000,
+            "M.binPowerConsumption_k14": 2200
+          }
+        },
+        {
+          "bin_key": "k15",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k15": 28666.6666666667,
+            "M.binPowerConsumption_k15": 2100
+          }
+        },
+        {
+          "bin_key": "k16",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k16": 27333.3333333333,
+            "M.binPowerConsumption_k16": 2000
+          }
+        },
+        {
+          "bin_key": "k17",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k17": 26000,
+            "M.binPowerConsumption_k17": 1900
+          }
+        },
+        {
+          "bin_key": "k18",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k18": 24666.6666666667,
+            "M.binPowerConsumption_k18": 1800
+          }
+        },
+        {
+          "bin_key": "k21",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k21": 56615.3846153846,
+            "M.binPowerConsumption_k21": 3438.46153846154
+          }
+        },
+        {
+          "bin_key": "k22",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k22": 55076.9230769231,
+            "M.binPowerConsumption_k22": 3592.30769230769
+          }
+        },
+        {
+          "bin_key": "k23",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k23": 53538.4615384615,
+            "M.binPowerConsumption_k23": 3746.15384615385
+          }
+        },
+        {
+          "bin_key": "k24",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k24": 52000,
+            "M.binPowerConsumption_k24": 3900
+          }
+        },
+        {
+          "bin_key": "k25",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k25": 50461.5384615385,
+            "M.binPowerConsumption_k25": 4053.84615384615
+          }
+        },
+        {
+          "bin_key": "k26",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k26": 48923.0769230769,
+            "M.binPowerConsumption_k26": 4207.69230769231
+          }
+        },
+        {
+          "bin_key": "k27",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k27": 47384.6153846154,
+            "M.binPowerConsumption_k27": 4361.53846153846
+          }
+        },
+        {
+          "bin_key": "k28",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M.binCoolCapacity_k28": 45846.1538461538,
+            "M.binPowerConsumption_k28": 4515.38461538462
+          }
+        }
+      ]
+    },
+    "M1": {
+      "screen_headline": 12.45,
+      "raw_headline": 12.4540352056775,
+      "headline_raw_field": "M1.SEER",
+      "design_load": {
+        "value": null,
+        "raw_field": null
+      },
+      "seasonal_totals": {
+        "delivered_capacity_or_load": {
+          "value": 17117.2027972028,
+          "raw_columns": [
+            "M1.ratioTotalCooling1",
+            "M1.ratioTotalCooling2",
+            "M1.ratioTotalCooling3",
+            "M1.ratioTotalCooling4",
+            "M1.ratioTotalCooling5",
+            "M1.ratioTotalCooling6",
+            "M1.ratioTotalCooling7",
+            "M1.ratioTotalCooling8"
+          ],
+          "status": "raw_bin_aggregate; calculator does not expose a separately named seasonal total column"
+        },
+        "resistance_or_auxiliary_contribution": {
+          "value": 0,
+          "raw_columns": [],
+          "status": "raw_bin_aggregate; applicable to heating profiles only"
+        },
+        "electrical_energy": {
+          "value": 1374.4302560987992,
+          "raw_columns": [
+            "M1.ratioTotalPower1",
+            "M1.ratioTotalPower2",
+            "M1.ratioTotalPower3",
+            "M1.ratioTotalPower4",
+            "M1.ratioTotalPower5",
+            "M1.ratioTotalPower6",
+            "M1.ratioTotalPower7",
+            "M1.ratioTotalPower8"
+          ],
+          "status": "raw_bin aggregate; calculator does not expose a separately named seasonal total column"
+        }
+      },
+      "bin_trace": [
+        {
+          "bin_key": "k11",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k11": 34000,
+            "M1.binPowerConsumption_k11": 2500
+          }
+        },
+        {
+          "bin_key": "k12",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k12": 32666.6666666667,
+            "M1.binPowerConsumption_k12": 2400
+          }
+        },
+        {
+          "bin_key": "k13",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k13": 31333.3333333333,
+            "M1.binPowerConsumption_k13": 2300
+          }
+        },
+        {
+          "bin_key": "k14",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k14": 30000,
+            "M1.binPowerConsumption_k14": 2200
+          }
+        },
+        {
+          "bin_key": "k15",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k15": 28666.6666666667,
+            "M1.binPowerConsumption_k15": 2100
+          }
+        },
+        {
+          "bin_key": "k16",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k16": 27333.3333333333,
+            "M1.binPowerConsumption_k16": 2000
+          }
+        },
+        {
+          "bin_key": "k17",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k17": 26000,
+            "M1.binPowerConsumption_k17": 1900
+          }
+        },
+        {
+          "bin_key": "k18",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k18": 24666.6666666667,
+            "M1.binPowerConsumption_k18": 1800
+          }
+        },
+        {
+          "bin_key": "k21",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k21": 56615.3846153846,
+            "M1.binPowerConsumption_k21": 3438.46153846154
+          }
+        },
+        {
+          "bin_key": "k22",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k22": 55076.9230769231,
+            "M1.binPowerConsumption_k22": 3592.30769230769
+          }
+        },
+        {
+          "bin_key": "k23",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k23": 53538.4615384615,
+            "M1.binPowerConsumption_k23": 3746.15384615385
+          }
+        },
+        {
+          "bin_key": "k24",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k24": 52000,
+            "M1.binPowerConsumption_k24": 3900
+          }
+        },
+        {
+          "bin_key": "k25",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k25": 50461.5384615385,
+            "M1.binPowerConsumption_k25": 4053.84615384615
+          }
+        },
+        {
+          "bin_key": "k26",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k26": 48923.0769230769,
+            "M1.binPowerConsumption_k26": 4207.69230769231
+          }
+        },
+        {
+          "bin_key": "k27",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k27": 47384.6153846154,
+            "M1.binPowerConsumption_k27": 4361.53846153846
+          }
+        },
+        {
+          "bin_key": "k28",
+          "temperature_f": null,
+          "hours_or_fractional_hours": null,
+          "raw_values": {
+            "M1.binCoolCapacity_k28": 45846.1538461538,
+            "M1.binPowerConsumption_k28": 4515.38461538462
+          }
+        }
+      ]
+    }
+  },
+  "raw_input_filename": "input.csv",
+  "raw_result_filenames": {
+    "M": "result_m.csv",
+    "M1": "result_m1.csv"
+  },
+  "checksums": {
+    "input_template.csv": "cd493cae7b1ced34eb9198cdcd21034fda92c804fd5393c9141d98cdeb00fc1e",
+    "input.csv": "c2fddce738ec49aad88644cda594495003909f705bc258d223b24094d131438d",
+    "result_m.csv": "63b62c877dab7865e7fd9c8a3a7bbe3bca868c43377dd505c32fd3312b21bb26",
+    "result_m1.csv": "0764bab0e123713abc7617e8b6ffe4371fa866749beb9f03c4175fec896e5e6e"
+  },
+  "known_limitations": [
+    "Calculator/version information was not displayed in the UI.",
+    "Downloaded result CSVs do not expose explicit bin temperature or bin-hour columns; raw field names and values are retained.",
+    "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above."
+  ]
+}

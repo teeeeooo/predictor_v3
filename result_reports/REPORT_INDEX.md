@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-12 | AHRI multi-capacity official fixtures | ahri210240, seer2, hspf2, fixture, golden, chrome, provenance | Preserve three synthetic AHRI Analytics official-calculator M/M1 cases with raw inputs, normalized expected data, provenance, and fixture integrity checks without changing production calculators. | `result_reports/records/2026-07/2026-07-12-ahri-multicapacity-official-fixtures.md` |
 | 2026-07-12 | AHRI core refactor closeout correction | ahri210240, seer2, hspf2, architecture, refactor, closeout, correction | Record the completed R1–R5 owner structure and final 180-test/structure/staged-gate evidence without mutating the append-only R0 baseline. | `result_reports/records/2026-07/2026-07-12-ahri-core-refactor-closeout-correction.md` |
 | 2026-07-12 | AHRI core refactor contract lock | ahri210240, seer2, hspf2, architecture, golden, refactor | Lock stable facades and official-calculator golden results before extracting private engines. | `result_reports/records/2026-07/2026-07-12-ahri-core-refactor-contract-lock.md` |
 | 2026-07-12 | Calculator table architecture merge closeout | calculator, tkinter, table-architecture, gui-smoke, merge, closeout | Record user-confirmed final GUI acceptance and approve the completed feature branch for main integration. | `result_reports/records/2026-07/2026-07-12-calculator-table-architecture-merge-closeout.md` |
