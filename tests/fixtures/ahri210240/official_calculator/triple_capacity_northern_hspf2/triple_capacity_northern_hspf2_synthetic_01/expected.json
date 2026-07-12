@@ -257,25 +257,6 @@
     },
     "source": "Northern official raw case_name fields retained verbatim; k1/k2/k3 are performance curve groups."
   },
-  "regime_distribution": {
-    "classification": "Northern official raw case_name fields retained verbatim; k1/k2/k3 are performance curve groups.",
-    "by_result": {
-      "M": {
-        "case1": 5,
-        "case2": 4,
-        "case3": 3,
-        "case8": 5,
-        "0": 1
-      },
-      "M1": {
-        "case1": 5,
-        "case2": 4,
-        "case3": 1,
-        "case8": 7,
-        "0": 1
-      }
-    }
-  },
   "results": {
     "M": {
       "screen_headline": 10.65,
@@ -1337,9 +1318,7 @@
           "M.case_name18": "0"
         },
         "status": "Northern official case_name values retained verbatim"
-      },
-      "regime_by_bin": [],
-      "regime_distribution": {}
+      }
     },
     "M1": {
       "screen_headline": 10.05,
@@ -2400,9 +2379,7 @@
           "M1.case_name18": "0"
         },
         "status": "Northern official case_name values retained verbatim"
-      },
-      "regime_by_bin": [],
-      "regime_distribution": {}
+      }
     }
   },
   "raw_input_filename": "input.csv",
@@ -2423,5 +2400,24 @@
     "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above.",
     "This is official-calculator evidence, not a certification claim or production formula fixture.",
     "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit."
-  ]
+  ],
+  "operating_case_distribution": {
+    "classification": "Northern official raw case_name fields retained verbatim; k1/k2/k3 are performance curve groups.",
+    "by_result": {
+      "M": {
+        "case1": 5,
+        "case2": 4,
+        "case3": 3,
+        "case8": 5,
+        "0": 1
+      },
+      "M1": {
+        "case1": 5,
+        "case2": 4,
+        "case3": 1,
+        "case8": 7,
+        "0": 1
+      }
+    }
+  }
 }

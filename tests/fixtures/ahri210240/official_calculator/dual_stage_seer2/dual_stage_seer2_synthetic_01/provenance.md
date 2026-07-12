@@ -16,6 +16,7 @@
 - `input_fields` preserves every input CSV header, including booleans and blanks.
 - `raw_fields` preserves every M/M1 result CSV header/value; missing raw fields are integrity failures.
 - `performance_curve_groups` labels raw `k1/k2/k3` curve groups only; they are not operating cases.
+- Dual-stage load regimes, compressor availability, and auxiliary heat state are separate projections.
 - `seasonal_aggregates` uses `normalized_name`, `unit: not exposed`, and candidate interpretation metadata without inventing raw-header semantics.
 
 ## Screen headline values
@@ -28,8 +29,9 @@
 ## Input options and normalized test-point groups
 
 - Performance curve groups: k1, k2 (raw curve groups only).
-- Activated operating cases: load_at_or_below_low_stage, between_low_and_high_stage, above_high_stage.
-- Operating-case source: Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups.
+- Activated load-capacity regimes: load_at_or_below_low_stage, between_low_and_high_stage, above_high_stage.
+- Load-capacity source: Raw building load compared with raw low/high stage capacity; not an AHRI operating-case label.
+- Compressor availability and auxiliary heat state are recorded per bin from their raw fields.
 
 | Group | Raw fields / values |
 |---|---|
@@ -37,19 +39,21 @@
 | `tested_optional_points` |  |
 | `compressor_cut_in_cut_out` | `ODTempWhenLockOut`=None |
 | `degradation_coefficients` | `degCoeffCoolFull`=0.18, `degCoeffCoolMin`=0.24 |
-| `input_test_points` | `lockOutLowCapacityOps`=False, `coolCapacity95full`=48000, `coolCapacity82full`=52000, `coolCapacity82min`=30000, `coolCapacity67min`=34000, `powerConsumption95full`=4300, `powerConsumption82full`=3900, `powerConsumption82min`=2200, `powerConsumption67min`=2500, `scfm95full`=800, `scfm82full`=800, `scfm82min`=650, `scfm67min`=650 |
+| `input_test_points` | `coolCapacity95full`=48000, `coolCapacity82full`=52000, `coolCapacity82min`=30000, `coolCapacity67min`=34000, `powerConsumption95full`=4300, `powerConsumption82full`=3900, `powerConsumption82min`=2200, `powerConsumption67min`=2500, `scfm95full`=800, `scfm82full`=800, `scfm82min`=650, `scfm67min`=650 |
 
-## Regime and raw-result projections
+## State and raw-result projections
 
-- Regime distribution: `{"M": {"load_at_or_below_low_stage": 4, "between_low_and_high_stage": 3, "above_high_stage": 1}, "M1": {"load_at_or_below_low_stage": 4, "between_low_and_high_stage": 3, "above_high_stage": 1}}`
+- Load-capacity regime distribution: `{"M": {"load_at_or_below_low_stage": 4, "between_low_and_high_stage": 3, "above_high_stage": 1}, "M1": {"load_at_or_below_low_stage": 4, "between_low_and_high_stage": 3, "above_high_stage": 1}}`
 
 ### M
 
 - DHR raw field/value: `None` / `None`.
 - Building-load raw fields: 8.
 - Resistance/auxiliary raw fields: 0; sum `0`.
-- Northern raw case names: `{}`.
+- Raw case-name fields: `{}`.
 - Cutout delta distribution: `{}`.
+- Compressor availability distribution: `{"status": "not_exposed", "counts": {"available": 0, "fractional": 0, "unavailable": 0, "other": 0, "blank": 0}}`.
+- Auxiliary heat distribution: `{"status": "not_exposed", "counts": {"active": 0, "inactive": 0, "other": 0, "blank": 0}}`.
 - Seasonal aggregate columns and sums:
 
 | Normalized name | Raw columns | Sum | Unit |
@@ -62,8 +66,10 @@
 - DHR raw field/value: `None` / `None`.
 - Building-load raw fields: 8.
 - Resistance/auxiliary raw fields: 0; sum `0`.
-- Northern raw case names: `{}`.
+- Raw case-name fields: `{}`.
 - Cutout delta distribution: `{}`.
+- Compressor availability distribution: `{"status": "not_exposed", "counts": {"available": 0, "fractional": 0, "unavailable": 0, "other": 0, "blank": 0}}`.
+- Auxiliary heat distribution: `{"status": "not_exposed", "counts": {"active": 0, "inactive": 0, "other": 0, "blank": 0}}`.
 - Seasonal aggregate columns and sums:
 
 | Normalized name | Raw columns | Sum | Unit |

@@ -188,46 +188,6 @@
     ],
     "meaning": "Raw k1/k2/k3 curve groups only; not operating cases."
   },
-  "activated_operating_cases": {
-    "values": [
-      "load_at_or_below_low_stage",
-      "between_low_and_high_stage",
-      "above_high_stage",
-      "high_stage_with_auxiliary_heat"
-    ],
-    "by_result": {
-      "M": [
-        "load_at_or_below_low_stage",
-        "between_low_and_high_stage",
-        "above_high_stage",
-        "high_stage_with_auxiliary_heat"
-      ],
-      "M1": [
-        "load_at_or_below_low_stage",
-        "between_low_and_high_stage",
-        "above_high_stage",
-        "high_stage_with_auxiliary_heat"
-      ]
-    },
-    "source": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups."
-  },
-  "regime_distribution": {
-    "classification": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups.",
-    "by_result": {
-      "M": {
-        "load_at_or_below_low_stage": 8,
-        "between_low_and_high_stage": 3,
-        "high_stage_with_auxiliary_heat": 4,
-        "above_high_stage": 3
-      },
-      "M1": {
-        "load_at_or_below_low_stage": 6,
-        "between_low_and_high_stage": 2,
-        "high_stage_with_auxiliary_heat": 7,
-        "above_high_stage": 3
-      }
-    }
-  },
   "results": {
     "M": {
       "screen_headline": 4.28,
@@ -1038,301 +998,505 @@
         "raw_values": {},
         "status": "case_name fields not exposed for this profile"
       },
-      "regime_by_bin": [
+      "load_capacity_regime_by_bin": [
         {
           "bin_index": 1,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad1",
             "low_stage_capacity": "M.binHeatCapacity_k11",
-            "high_stage_capacity": "M.binHeatCapacity_k21",
-            "auxiliary_resistance": "M.ratioTotalResistHeating1"
+            "high_stage_capacity": "M.binHeatCapacity_k21"
           },
           "raw_values": {
             "building_load": 962.5,
             "low_stage_capacity": 22000,
-            "high_stage_capacity": 27750,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 27750
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 2,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad2",
             "low_stage_capacity": "M.binHeatCapacity_k12",
-            "high_stage_capacity": "M.binHeatCapacity_k22",
-            "auxiliary_resistance": "M.ratioTotalResistHeating2"
+            "high_stage_capacity": "M.binHeatCapacity_k22"
           },
           "raw_values": {
             "building_load": 2566.66666666667,
             "low_stage_capacity": 20666.6666666667,
-            "high_stage_capacity": 26833.3333333333,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 26833.3333333333
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 3,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad3",
             "low_stage_capacity": "M.binHeatCapacity_k13",
-            "high_stage_capacity": "M.binHeatCapacity_k23",
-            "auxiliary_resistance": "M.ratioTotalResistHeating3"
+            "high_stage_capacity": "M.binHeatCapacity_k23"
           },
           "raw_values": {
             "building_load": 4170.83333333333,
             "low_stage_capacity": 19333.3333333333,
-            "high_stage_capacity": 25916.6666666667,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 25916.6666666667
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 4,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad4",
             "low_stage_capacity": "M.binHeatCapacity_k14",
-            "high_stage_capacity": "M.binHeatCapacity_k24",
-            "auxiliary_resistance": "M.ratioTotalResistHeating4"
+            "high_stage_capacity": "M.binHeatCapacity_k24"
           },
           "raw_values": {
             "building_load": 5775,
             "low_stage_capacity": 18000,
-            "high_stage_capacity": 25000,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 25000
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 5,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad5",
             "low_stage_capacity": "M.binHeatCapacity_k15",
-            "high_stage_capacity": "M.binHeatCapacity_k25",
-            "auxiliary_resistance": "M.ratioTotalResistHeating5"
+            "high_stage_capacity": "M.binHeatCapacity_k25"
           },
           "raw_values": {
             "building_load": 7379.16666666667,
             "low_stage_capacity": 16666.6666666667,
-            "high_stage_capacity": 22277.7777777778,
-            "auxiliary_resistance": 108.103818732298
+            "high_stage_capacity": 22277.7777777778
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 6,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad6",
             "low_stage_capacity": "M.binHeatCapacity_k16",
-            "high_stage_capacity": "M.binHeatCapacity_k26",
-            "auxiliary_resistance": "M.ratioTotalResistHeating6"
+            "high_stage_capacity": "M.binHeatCapacity_k26"
           },
           "raw_values": {
             "building_load": 8983.33333333333,
             "low_stage_capacity": 14944.4444444444,
-            "high_stage_capacity": 21722.2222222222,
-            "auxiliary_resistance": 143.449067291728
+            "high_stage_capacity": 21722.2222222222
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 7,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad7",
             "low_stage_capacity": "M.binHeatCapacity_k17",
-            "high_stage_capacity": "M.binHeatCapacity_k27",
-            "auxiliary_resistance": "M.ratioTotalResistHeating7"
+            "high_stage_capacity": "M.binHeatCapacity_k27"
           },
           "raw_values": {
             "building_load": 10587.5,
             "low_stage_capacity": 13833.3333333333,
-            "high_stage_capacity": 21166.6666666667,
-            "auxiliary_resistance": 390.865807207735
+            "high_stage_capacity": 21166.6666666667
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 8,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad8",
             "low_stage_capacity": "M.binHeatCapacity_k18",
-            "high_stage_capacity": "M.binHeatCapacity_k28",
-            "auxiliary_resistance": "M.ratioTotalResistHeating8"
+            "high_stage_capacity": "M.binHeatCapacity_k28"
           },
           "raw_values": {
             "building_load": 12191.6666666667,
             "low_stage_capacity": 12722.2222222222,
-            "high_stage_capacity": 20611.1111111111,
-            "auxiliary_resistance": 310.774978025198
+            "high_stage_capacity": 20611.1111111111
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 9,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad9",
             "low_stage_capacity": "M.binHeatCapacity_k19",
-            "high_stage_capacity": "M.binHeatCapacity_k29",
-            "auxiliary_resistance": "M.ratioTotalResistHeating9"
+            "high_stage_capacity": "M.binHeatCapacity_k29"
           },
           "raw_values": {
             "building_load": 13795.8333333333,
             "low_stage_capacity": 11611.1111111111,
-            "high_stage_capacity": 20055.5555555556,
-            "auxiliary_resistance": 222.317853305987
+            "high_stage_capacity": 20055.5555555556
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 10,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad10",
             "low_stage_capacity": "M.binHeatCapacity_k110",
-            "high_stage_capacity": "M.binHeatCapacity_k210",
-            "auxiliary_resistance": "M.ratioTotalResistHeating10"
+            "high_stage_capacity": "M.binHeatCapacity_k210"
           },
           "raw_values": {
             "building_load": 15400,
             "low_stage_capacity": 10500,
-            "high_stage_capacity": 19500,
-            "auxiliary_resistance": 162.437738060357
+            "high_stage_capacity": 19500
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 11,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad11",
             "low_stage_capacity": "M.binHeatCapacity_k111",
-            "high_stage_capacity": "M.binHeatCapacity_k211",
-            "auxiliary_resistance": "M.ratioTotalResistHeating11"
+            "high_stage_capacity": "M.binHeatCapacity_k211"
           },
           "raw_values": {
             "building_load": 17004.1666666667,
             "low_stage_capacity": 9250,
-            "high_stage_capacity": 18583.3333333333,
-            "auxiliary_resistance": 129.536575837484
+            "high_stage_capacity": 18583.3333333333
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 12,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad12",
             "low_stage_capacity": "M.binHeatCapacity_k112",
-            "high_stage_capacity": "M.binHeatCapacity_k212",
-            "auxiliary_resistance": "M.ratioTotalResistHeating12"
+            "high_stage_capacity": "M.binHeatCapacity_k212"
           },
           "raw_values": {
             "building_load": 18608.3333333333,
             "low_stage_capacity": 8000,
-            "high_stage_capacity": 17666.6666666667,
-            "auxiliary_resistance": 70.8785037601328
+            "high_stage_capacity": 17666.6666666667
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 13,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad13",
             "low_stage_capacity": "M.binHeatCapacity_k113",
-            "high_stage_capacity": "M.binHeatCapacity_k213",
-            "auxiliary_resistance": "M.ratioTotalResistHeating13"
+            "high_stage_capacity": "M.binHeatCapacity_k213"
           },
           "raw_values": {
             "building_load": 20212.5,
             "low_stage_capacity": 6750,
-            "high_stage_capacity": 16750,
-            "auxiliary_resistance": 35.5332552007032
+            "high_stage_capacity": 16750
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 14,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad14",
             "low_stage_capacity": "M.binHeatCapacity_k114",
-            "high_stage_capacity": "M.binHeatCapacity_k214",
-            "auxiliary_resistance": "M.ratioTotalResistHeating14"
+            "high_stage_capacity": "M.binHeatCapacity_k214"
           },
           "raw_values": {
             "building_load": 21816.6666666667,
             "low_stage_capacity": 5500,
-            "high_stage_capacity": 15833.3333333333,
-            "auxiliary_resistance": 12.7844516066022
+            "high_stage_capacity": 15833.3333333333
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 15,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad15",
             "low_stage_capacity": "M.binHeatCapacity_k115",
-            "high_stage_capacity": "M.binHeatCapacity_k215",
-            "auxiliary_resistance": "M.ratioTotalResistHeating15"
+            "high_stage_capacity": "M.binHeatCapacity_k215"
           },
           "raw_values": {
             "building_load": 23420.8333333333,
             "low_stage_capacity": 4250,
-            "high_stage_capacity": 14916.6666666667,
-            "auxiliary_resistance": 6.86224240648501
+            "high_stage_capacity": 14916.6666666667
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 16,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad16",
             "low_stage_capacity": "M.binHeatCapacity_k116",
-            "high_stage_capacity": "M.binHeatCapacity_k216",
-            "auxiliary_resistance": "M.ratioTotalResistHeating16"
+            "high_stage_capacity": "M.binHeatCapacity_k216"
           },
           "raw_values": {
             "building_load": 25025,
             "low_stage_capacity": 3000,
-            "high_stage_capacity": 14000,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 14000
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 17,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad17",
             "low_stage_capacity": "M.binHeatCapacity_k117",
-            "high_stage_capacity": "M.binHeatCapacity_k217",
-            "auxiliary_resistance": "M.ratioTotalResistHeating17"
+            "high_stage_capacity": "M.binHeatCapacity_k217"
           },
           "raw_values": {
             "building_load": 26629.1666666667,
             "low_stage_capacity": 1750,
-            "high_stage_capacity": 13083.3333333333,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 13083.3333333333
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 18,
           "raw_fields": {
             "building_load": "M.buildingHeatLoad18",
             "low_stage_capacity": "M.binHeatCapacity_k118",
-            "high_stage_capacity": "M.binHeatCapacity_k218",
-            "auxiliary_resistance": "M.ratioTotalResistHeating18"
+            "high_stage_capacity": "M.binHeatCapacity_k218"
           },
           "raw_values": {
             "building_load": 28233.3333333333,
             "low_stage_capacity": 500,
-            "high_stage_capacity": 12166.6666666667,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 12166.6666666667
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         }
       ],
-      "regime_distribution": {
+      "load_capacity_regime_distribution": {
         "load_at_or_below_low_stage": 8,
         "between_low_and_high_stage": 3,
-        "high_stage_with_auxiliary_heat": 4,
-        "above_high_stage": 3
+        "above_high_stage": 7
+      },
+      "compressor_availability_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_field": "M.cutOut_delta1",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 2,
+          "raw_field": "M.cutOut_delta2",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 3,
+          "raw_field": "M.cutOut_delta3",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 4,
+          "raw_field": "M.cutOut_delta4",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 5,
+          "raw_field": "M.cutOut_delta5",
+          "raw_value": 0.5,
+          "state": "fractional"
+        },
+        {
+          "bin_index": 6,
+          "raw_field": "M.cutOut_delta6",
+          "raw_value": 0.5,
+          "state": "fractional"
+        },
+        {
+          "bin_index": 7,
+          "raw_field": "M.cutOut_delta7",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 8,
+          "raw_field": "M.cutOut_delta8",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 9,
+          "raw_field": "M.cutOut_delta9",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 10,
+          "raw_field": "M.cutOut_delta10",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 11,
+          "raw_field": "M.cutOut_delta11",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 12,
+          "raw_field": "M.cutOut_delta12",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 13,
+          "raw_field": "M.cutOut_delta13",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 14,
+          "raw_field": "M.cutOut_delta14",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 15,
+          "raw_field": "M.cutOut_delta15",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 16,
+          "raw_field": "M.cutOut_delta16",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 17,
+          "raw_field": "M.cutOut_delta17",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 18,
+          "raw_field": "M.cutOut_delta18",
+          "raw_value": 0,
+          "state": "unavailable"
+        }
+      ],
+      "compressor_availability_status": "raw_cutOut_delta",
+      "compressor_availability_distribution": {
+        "status": "raw_cutOut_delta",
+        "counts": {
+          "available": 4,
+          "fractional": 2,
+          "unavailable": 12,
+          "other": 0,
+          "blank": 0
+        }
+      },
+      "auxiliary_heat_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_field": "M.ratioTotalResistHeating1",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 2,
+          "raw_field": "M.ratioTotalResistHeating2",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 3,
+          "raw_field": "M.ratioTotalResistHeating3",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 4,
+          "raw_field": "M.ratioTotalResistHeating4",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 5,
+          "raw_field": "M.ratioTotalResistHeating5",
+          "raw_value": 108.103818732298,
+          "state": "active"
+        },
+        {
+          "bin_index": 6,
+          "raw_field": "M.ratioTotalResistHeating6",
+          "raw_value": 143.449067291728,
+          "state": "active"
+        },
+        {
+          "bin_index": 7,
+          "raw_field": "M.ratioTotalResistHeating7",
+          "raw_value": 390.865807207735,
+          "state": "active"
+        },
+        {
+          "bin_index": 8,
+          "raw_field": "M.ratioTotalResistHeating8",
+          "raw_value": 310.774978025198,
+          "state": "active"
+        },
+        {
+          "bin_index": 9,
+          "raw_field": "M.ratioTotalResistHeating9",
+          "raw_value": 222.317853305987,
+          "state": "active"
+        },
+        {
+          "bin_index": 10,
+          "raw_field": "M.ratioTotalResistHeating10",
+          "raw_value": 162.437738060357,
+          "state": "active"
+        },
+        {
+          "bin_index": 11,
+          "raw_field": "M.ratioTotalResistHeating11",
+          "raw_value": 129.536575837484,
+          "state": "active"
+        },
+        {
+          "bin_index": 12,
+          "raw_field": "M.ratioTotalResistHeating12",
+          "raw_value": 70.8785037601328,
+          "state": "active"
+        },
+        {
+          "bin_index": 13,
+          "raw_field": "M.ratioTotalResistHeating13",
+          "raw_value": 35.5332552007032,
+          "state": "active"
+        },
+        {
+          "bin_index": 14,
+          "raw_field": "M.ratioTotalResistHeating14",
+          "raw_value": 12.7844516066022,
+          "state": "active"
+        },
+        {
+          "bin_index": 15,
+          "raw_field": "M.ratioTotalResistHeating15",
+          "raw_value": 6.86224240648501,
+          "state": "active"
+        },
+        {
+          "bin_index": 16,
+          "raw_field": "M.ratioTotalResistHeating16",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 17,
+          "raw_field": "M.ratioTotalResistHeating17",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 18,
+          "raw_field": "M.ratioTotalResistHeating18",
+          "raw_value": 0,
+          "state": "inactive"
+        }
+      ],
+      "auxiliary_heat_status": "raw_ratioTotalResistHeating",
+      "auxiliary_heat_distribution": {
+        "status": "raw_ratioTotalResistHeating",
+        "counts": {
+          "active": 11,
+          "inactive": 7,
+          "other": 0,
+          "blank": 0
+        }
       }
     },
     "M1": {
@@ -2143,301 +2307,505 @@
         "raw_values": {},
         "status": "case_name fields not exposed for this profile"
       },
-      "regime_by_bin": [
+      "load_capacity_regime_by_bin": [
         {
           "bin_index": 1,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad1",
             "low_stage_capacity": "M1.binHeatCapacity_k11",
-            "high_stage_capacity": "M1.binHeatCapacity_k21",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating1"
+            "high_stage_capacity": "M1.binHeatCapacity_k21"
           },
           "raw_values": {
             "building_load": -4830,
             "low_stage_capacity": 22000,
-            "high_stage_capacity": 27750,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 27750
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 2,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad2",
             "low_stage_capacity": "M1.binHeatCapacity_k12",
-            "high_stage_capacity": "M1.binHeatCapacity_k22",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating2"
+            "high_stage_capacity": "M1.binHeatCapacity_k22"
           },
           "raw_values": {
             "building_load": -1380,
             "low_stage_capacity": 20666.6666666667,
-            "high_stage_capacity": 26833.3333333333,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 26833.3333333333
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 3,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad3",
             "low_stage_capacity": "M1.binHeatCapacity_k13",
-            "high_stage_capacity": "M1.binHeatCapacity_k23",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating3"
+            "high_stage_capacity": "M1.binHeatCapacity_k23"
           },
           "raw_values": {
             "building_load": 2070,
             "low_stage_capacity": 19333.3333333333,
-            "high_stage_capacity": 25916.6666666667,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 25916.6666666667
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 4,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad4",
             "low_stage_capacity": "M1.binHeatCapacity_k14",
-            "high_stage_capacity": "M1.binHeatCapacity_k24",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating4"
+            "high_stage_capacity": "M1.binHeatCapacity_k24"
           },
           "raw_values": {
             "building_load": 5520,
             "low_stage_capacity": 18000,
-            "high_stage_capacity": 25000,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 25000
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 5,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad5",
             "low_stage_capacity": "M1.binHeatCapacity_k15",
-            "high_stage_capacity": "M1.binHeatCapacity_k25",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating5"
+            "high_stage_capacity": "M1.binHeatCapacity_k25"
           },
           "raw_values": {
             "building_load": 8970,
             "low_stage_capacity": 16666.6666666667,
-            "high_stage_capacity": 22277.7777777778,
-            "auxiliary_resistance": 131.409317316144
+            "high_stage_capacity": 22277.7777777778
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 6,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad6",
             "low_stage_capacity": "M1.binHeatCapacity_k16",
-            "high_stage_capacity": "M1.binHeatCapacity_k26",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating6"
+            "high_stage_capacity": "M1.binHeatCapacity_k26"
           },
           "raw_values": {
             "building_load": 12420,
             "low_stage_capacity": 14944.4444444444,
-            "high_stage_capacity": 21722.2222222222,
-            "auxiliary_resistance": 198.326985057134
+            "high_stage_capacity": 21722.2222222222
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 7,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad7",
             "low_stage_capacity": "M1.binHeatCapacity_k17",
-            "high_stage_capacity": "M1.binHeatCapacity_k27",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating7"
+            "high_stage_capacity": "M1.binHeatCapacity_k27"
           },
           "raw_values": {
             "building_load": 15870,
             "low_stage_capacity": 13833.3333333333,
-            "high_stage_capacity": 21166.6666666667,
-            "auxiliary_resistance": 585.883387049517
+            "high_stage_capacity": 21166.6666666667
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 8,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad8",
             "low_stage_capacity": "M1.binHeatCapacity_k18",
-            "high_stage_capacity": "M1.binHeatCapacity_k28",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating8"
+            "high_stage_capacity": "M1.binHeatCapacity_k28"
           },
           "raw_values": {
             "building_load": 19320,
             "low_stage_capacity": 12722.2222222222,
-            "high_stage_capacity": 20611.1111111111,
-            "auxiliary_resistance": 492.481687664811
+            "high_stage_capacity": 20611.1111111111
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 9,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad9",
             "low_stage_capacity": "M1.binHeatCapacity_k19",
-            "high_stage_capacity": "M1.binHeatCapacity_k29",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating9"
+            "high_stage_capacity": "M1.binHeatCapacity_k29"
           },
           "raw_values": {
             "building_load": 22770,
             "low_stage_capacity": 11611.1111111111,
-            "high_stage_capacity": 20055.5555555556,
-            "auxiliary_resistance": 366.935247582772
+            "high_stage_capacity": 20055.5555555556
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 10,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad10",
             "low_stage_capacity": "M1.binHeatCapacity_k110",
-            "high_stage_capacity": "M1.binHeatCapacity_k210",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating10"
+            "high_stage_capacity": "M1.binHeatCapacity_k210"
           },
           "raw_values": {
             "building_load": 26220,
             "low_stage_capacity": 10500,
-            "high_stage_capacity": 19500,
-            "auxiliary_resistance": 276.566070905362
+            "high_stage_capacity": 19500
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 11,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad11",
             "low_stage_capacity": "M1.binHeatCapacity_k111",
-            "high_stage_capacity": "M1.binHeatCapacity_k211",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating11"
+            "high_stage_capacity": "M1.binHeatCapacity_k211"
           },
           "raw_values": {
             "building_load": 29670,
             "low_stage_capacity": 9250,
-            "high_stage_capacity": 18458.3333333333,
-            "auxiliary_resistance": 226.024025783768
+            "high_stage_capacity": 18458.3333333333
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 12,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad12",
             "low_stage_capacity": "M1.binHeatCapacity_k112",
-            "high_stage_capacity": "M1.binHeatCapacity_k212",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating12"
+            "high_stage_capacity": "M1.binHeatCapacity_k212"
           },
           "raw_values": {
             "building_load": 33120,
             "low_stage_capacity": 8000,
-            "high_stage_capacity": 17416.6666666667,
-            "auxiliary_resistance": 126.152944623498
+            "high_stage_capacity": 17416.6666666667
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 13,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad13",
             "low_stage_capacity": "M1.binHeatCapacity_k113",
-            "high_stage_capacity": "M1.binHeatCapacity_k213",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating13"
+            "high_stage_capacity": "M1.binHeatCapacity_k213"
           },
           "raw_values": {
             "building_load": 36570,
             "low_stage_capacity": 6750,
-            "high_stage_capacity": 16375,
-            "auxiliary_resistance": 64.2894813946674
+            "high_stage_capacity": 16375
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 14,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad14",
             "low_stage_capacity": "M1.binHeatCapacity_k114",
-            "high_stage_capacity": "M1.binHeatCapacity_k214",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating14"
+            "high_stage_capacity": "M1.binHeatCapacity_k214"
           },
           "raw_values": {
             "building_load": 40020,
             "low_stage_capacity": 5500,
-            "high_stage_capacity": 15333.3333333333,
-            "auxiliary_resistance": 23.4515089364196
+            "high_stage_capacity": 15333.3333333333
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 15,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad15",
             "low_stage_capacity": "M1.binHeatCapacity_k115",
-            "high_stage_capacity": "M1.binHeatCapacity_k215",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating15"
+            "high_stage_capacity": "M1.binHeatCapacity_k215"
           },
           "raw_values": {
             "building_load": 43470,
             "low_stage_capacity": 4250,
-            "high_stage_capacity": 14291.6666666667,
-            "auxiliary_resistance": 12.7365953706417
+            "high_stage_capacity": 14291.6666666667
           },
-          "operating_regime": "high_stage_with_auxiliary_heat"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 16,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad16",
             "low_stage_capacity": "M1.binHeatCapacity_k116",
-            "high_stage_capacity": "M1.binHeatCapacity_k216",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating16"
+            "high_stage_capacity": "M1.binHeatCapacity_k216"
           },
           "raw_values": {
             "building_load": 46920,
             "low_stage_capacity": 3000,
-            "high_stage_capacity": 13250,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 13250
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 17,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad17",
             "low_stage_capacity": "M1.binHeatCapacity_k117",
-            "high_stage_capacity": "M1.binHeatCapacity_k217",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating17"
+            "high_stage_capacity": "M1.binHeatCapacity_k217"
           },
           "raw_values": {
             "building_load": 50370,
             "low_stage_capacity": 1750,
-            "high_stage_capacity": 12208.3333333333,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 12208.3333333333
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         },
         {
           "bin_index": 18,
           "raw_fields": {
             "building_load": "M1.buildingHeatLoad18",
             "low_stage_capacity": "M1.binHeatCapacity_k118",
-            "high_stage_capacity": "M1.binHeatCapacity_k218",
-            "auxiliary_resistance": "M1.ratioTotalResistHeating18"
+            "high_stage_capacity": "M1.binHeatCapacity_k218"
           },
           "raw_values": {
             "building_load": 53820,
             "low_stage_capacity": 500,
-            "high_stage_capacity": 11166.6666666667,
-            "auxiliary_resistance": 0
+            "high_stage_capacity": 11166.6666666667
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         }
       ],
-      "regime_distribution": {
+      "load_capacity_regime_distribution": {
         "load_at_or_below_low_stage": 6,
         "between_low_and_high_stage": 2,
-        "high_stage_with_auxiliary_heat": 7,
-        "above_high_stage": 3
+        "above_high_stage": 10
+      },
+      "compressor_availability_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_field": "M1.cutOut_delta1",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 2,
+          "raw_field": "M1.cutOut_delta2",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 3,
+          "raw_field": "M1.cutOut_delta3",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 4,
+          "raw_field": "M1.cutOut_delta4",
+          "raw_value": 1,
+          "state": "available"
+        },
+        {
+          "bin_index": 5,
+          "raw_field": "M1.cutOut_delta5",
+          "raw_value": 0.5,
+          "state": "fractional"
+        },
+        {
+          "bin_index": 6,
+          "raw_field": "M1.cutOut_delta6",
+          "raw_value": 0.5,
+          "state": "fractional"
+        },
+        {
+          "bin_index": 7,
+          "raw_field": "M1.cutOut_delta7",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 8,
+          "raw_field": "M1.cutOut_delta8",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 9,
+          "raw_field": "M1.cutOut_delta9",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 10,
+          "raw_field": "M1.cutOut_delta10",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 11,
+          "raw_field": "M1.cutOut_delta11",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 12,
+          "raw_field": "M1.cutOut_delta12",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 13,
+          "raw_field": "M1.cutOut_delta13",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 14,
+          "raw_field": "M1.cutOut_delta14",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 15,
+          "raw_field": "M1.cutOut_delta15",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 16,
+          "raw_field": "M1.cutOut_delta16",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 17,
+          "raw_field": "M1.cutOut_delta17",
+          "raw_value": 0,
+          "state": "unavailable"
+        },
+        {
+          "bin_index": 18,
+          "raw_field": "M1.cutOut_delta18",
+          "raw_value": 0,
+          "state": "unavailable"
+        }
+      ],
+      "compressor_availability_status": "raw_cutOut_delta",
+      "compressor_availability_distribution": {
+        "status": "raw_cutOut_delta",
+        "counts": {
+          "available": 4,
+          "fractional": 2,
+          "unavailable": 12,
+          "other": 0,
+          "blank": 0
+        }
+      },
+      "auxiliary_heat_by_bin": [
+        {
+          "bin_index": 1,
+          "raw_field": "M1.ratioTotalResistHeating1",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 2,
+          "raw_field": "M1.ratioTotalResistHeating2",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 3,
+          "raw_field": "M1.ratioTotalResistHeating3",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 4,
+          "raw_field": "M1.ratioTotalResistHeating4",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 5,
+          "raw_field": "M1.ratioTotalResistHeating5",
+          "raw_value": 131.409317316144,
+          "state": "active"
+        },
+        {
+          "bin_index": 6,
+          "raw_field": "M1.ratioTotalResistHeating6",
+          "raw_value": 198.326985057134,
+          "state": "active"
+        },
+        {
+          "bin_index": 7,
+          "raw_field": "M1.ratioTotalResistHeating7",
+          "raw_value": 585.883387049517,
+          "state": "active"
+        },
+        {
+          "bin_index": 8,
+          "raw_field": "M1.ratioTotalResistHeating8",
+          "raw_value": 492.481687664811,
+          "state": "active"
+        },
+        {
+          "bin_index": 9,
+          "raw_field": "M1.ratioTotalResistHeating9",
+          "raw_value": 366.935247582772,
+          "state": "active"
+        },
+        {
+          "bin_index": 10,
+          "raw_field": "M1.ratioTotalResistHeating10",
+          "raw_value": 276.566070905362,
+          "state": "active"
+        },
+        {
+          "bin_index": 11,
+          "raw_field": "M1.ratioTotalResistHeating11",
+          "raw_value": 226.024025783768,
+          "state": "active"
+        },
+        {
+          "bin_index": 12,
+          "raw_field": "M1.ratioTotalResistHeating12",
+          "raw_value": 126.152944623498,
+          "state": "active"
+        },
+        {
+          "bin_index": 13,
+          "raw_field": "M1.ratioTotalResistHeating13",
+          "raw_value": 64.2894813946674,
+          "state": "active"
+        },
+        {
+          "bin_index": 14,
+          "raw_field": "M1.ratioTotalResistHeating14",
+          "raw_value": 23.4515089364196,
+          "state": "active"
+        },
+        {
+          "bin_index": 15,
+          "raw_field": "M1.ratioTotalResistHeating15",
+          "raw_value": 12.7365953706417,
+          "state": "active"
+        },
+        {
+          "bin_index": 16,
+          "raw_field": "M1.ratioTotalResistHeating16",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 17,
+          "raw_field": "M1.ratioTotalResistHeating17",
+          "raw_value": 0,
+          "state": "inactive"
+        },
+        {
+          "bin_index": 18,
+          "raw_field": "M1.ratioTotalResistHeating18",
+          "raw_value": 0,
+          "state": "inactive"
+        }
+      ],
+      "auxiliary_heat_status": "raw_ratioTotalResistHeating",
+      "auxiliary_heat_distribution": {
+        "status": "raw_ratioTotalResistHeating",
+        "counts": {
+          "active": 11,
+          "inactive": 7,
+          "other": 0,
+          "blank": 0
+        }
       }
     }
   },
@@ -2459,5 +2827,40 @@
     "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above.",
     "This is official-calculator evidence, not a certification claim or production formula fixture.",
     "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit."
-  ]
+  ],
+  "activated_load_capacity_regimes": {
+    "values": [
+      "load_at_or_below_low_stage",
+      "between_low_and_high_stage",
+      "above_high_stage"
+    ],
+    "by_result": {
+      "M": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ],
+      "M1": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ]
+    },
+    "source": "Raw building load compared with raw low/high stage capacity; not an AHRI operating-case label."
+  },
+  "load_capacity_regime_distribution": {
+    "classification": "Raw building load versus low/high capacity; not an AHRI operating-case label.",
+    "by_result": {
+      "M": {
+        "load_at_or_below_low_stage": 8,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 7
+      },
+      "M1": {
+        "load_at_or_below_low_stage": 6,
+        "between_low_and_high_stage": 2,
+        "above_high_stage": 10
+      }
+    }
+  }
 }

@@ -122,41 +122,6 @@
     ],
     "meaning": "Raw k1/k2/k3 curve groups only; not operating cases."
   },
-  "activated_operating_cases": {
-    "values": [
-      "load_at_or_below_low_stage",
-      "between_low_and_high_stage",
-      "above_high_stage"
-    ],
-    "by_result": {
-      "M": [
-        "load_at_or_below_low_stage",
-        "between_low_and_high_stage",
-        "above_high_stage"
-      ],
-      "M1": [
-        "load_at_or_below_low_stage",
-        "between_low_and_high_stage",
-        "above_high_stage"
-      ]
-    },
-    "source": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups."
-  },
-  "regime_distribution": {
-    "classification": "Reclassified from raw building load against raw low/high stage capacity; k1/k2 remain performance curve groups.",
-    "by_result": {
-      "M": {
-        "load_at_or_below_low_stage": 4,
-        "between_low_and_high_stage": 3,
-        "above_high_stage": 1
-      },
-      "M1": {
-        "load_at_or_below_low_stage": 4,
-        "between_low_and_high_stage": 3,
-        "above_high_stage": 1
-      }
-    }
-  },
   "results": {
     "M": {
       "screen_headline": 12.45,
@@ -418,7 +383,7 @@
         "raw_values": {},
         "status": "case_name fields not exposed for this profile"
       },
-      "regime_by_bin": [
+      "load_capacity_regime_by_bin": [
         {
           "bin_index": 1,
           "raw_fields": {
@@ -431,7 +396,7 @@
             "low_stage_capacity": 34000,
             "high_stage_capacity": 56615.3846153846
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 2,
@@ -445,7 +410,7 @@
             "low_stage_capacity": 32666.6666666667,
             "high_stage_capacity": 55076.9230769231
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 3,
@@ -459,7 +424,7 @@
             "low_stage_capacity": 31333.3333333333,
             "high_stage_capacity": 53538.4615384615
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 4,
@@ -473,7 +438,7 @@
             "low_stage_capacity": 30000,
             "high_stage_capacity": 52000
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 5,
@@ -487,7 +452,7 @@
             "low_stage_capacity": 28666.6666666667,
             "high_stage_capacity": 50461.5384615385
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 6,
@@ -501,7 +466,7 @@
             "low_stage_capacity": 27333.3333333333,
             "high_stage_capacity": 48923.0769230769
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 7,
@@ -515,7 +480,7 @@
             "low_stage_capacity": 26000,
             "high_stage_capacity": 47384.6153846154
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 8,
@@ -529,13 +494,36 @@
             "low_stage_capacity": 24666.6666666667,
             "high_stage_capacity": 45846.1538461538
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         }
       ],
-      "regime_distribution": {
+      "load_capacity_regime_distribution": {
         "load_at_or_below_low_stage": 4,
         "between_low_and_high_stage": 3,
         "above_high_stage": 1
+      },
+      "compressor_availability_by_bin": [],
+      "compressor_availability_status": "not_exposed",
+      "compressor_availability_distribution": {
+        "status": "not_exposed",
+        "counts": {
+          "available": 0,
+          "fractional": 0,
+          "unavailable": 0,
+          "other": 0,
+          "blank": 0
+        }
+      },
+      "auxiliary_heat_by_bin": [],
+      "auxiliary_heat_status": "not_exposed",
+      "auxiliary_heat_distribution": {
+        "status": "not_exposed",
+        "counts": {
+          "active": 0,
+          "inactive": 0,
+          "other": 0,
+          "blank": 0
+        }
       }
     },
     "M1": {
@@ -798,7 +786,7 @@
         "raw_values": {},
         "status": "case_name fields not exposed for this profile"
       },
-      "regime_by_bin": [
+      "load_capacity_regime_by_bin": [
         {
           "bin_index": 1,
           "raw_fields": {
@@ -811,7 +799,7 @@
             "low_stage_capacity": 34000,
             "high_stage_capacity": 56615.3846153846
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 2,
@@ -825,7 +813,7 @@
             "low_stage_capacity": 32666.6666666667,
             "high_stage_capacity": 55076.9230769231
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 3,
@@ -839,7 +827,7 @@
             "low_stage_capacity": 31333.3333333333,
             "high_stage_capacity": 53538.4615384615
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 4,
@@ -853,7 +841,7 @@
             "low_stage_capacity": 30000,
             "high_stage_capacity": 52000
           },
-          "operating_regime": "load_at_or_below_low_stage"
+          "load_capacity_regime": "load_at_or_below_low_stage"
         },
         {
           "bin_index": 5,
@@ -867,7 +855,7 @@
             "low_stage_capacity": 28666.6666666667,
             "high_stage_capacity": 50461.5384615385
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 6,
@@ -881,7 +869,7 @@
             "low_stage_capacity": 27333.3333333333,
             "high_stage_capacity": 48923.0769230769
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 7,
@@ -895,7 +883,7 @@
             "low_stage_capacity": 26000,
             "high_stage_capacity": 47384.6153846154
           },
-          "operating_regime": "between_low_and_high_stage"
+          "load_capacity_regime": "between_low_and_high_stage"
         },
         {
           "bin_index": 8,
@@ -909,13 +897,36 @@
             "low_stage_capacity": 24666.6666666667,
             "high_stage_capacity": 45846.1538461538
           },
-          "operating_regime": "above_high_stage"
+          "load_capacity_regime": "above_high_stage"
         }
       ],
-      "regime_distribution": {
+      "load_capacity_regime_distribution": {
         "load_at_or_below_low_stage": 4,
         "between_low_and_high_stage": 3,
         "above_high_stage": 1
+      },
+      "compressor_availability_by_bin": [],
+      "compressor_availability_status": "not_exposed",
+      "compressor_availability_distribution": {
+        "status": "not_exposed",
+        "counts": {
+          "available": 0,
+          "fractional": 0,
+          "unavailable": 0,
+          "other": 0,
+          "blank": 0
+        }
+      },
+      "auxiliary_heat_by_bin": [],
+      "auxiliary_heat_status": "not_exposed",
+      "auxiliary_heat_distribution": {
+        "status": "not_exposed",
+        "counts": {
+          "active": 0,
+          "inactive": 0,
+          "other": 0,
+          "blank": 0
+        }
       }
     }
   },
@@ -937,5 +948,40 @@
     "M1 HSPF result CSVs do not expose a separate DHR field; the input DHR/DOE selection is retained above.",
     "This is official-calculator evidence, not a certification claim or production formula fixture.",
     "AHRI 210/240-2026 final formula is not established by this fixture; direct golden use requires a standards audit."
-  ]
+  ],
+  "activated_load_capacity_regimes": {
+    "values": [
+      "load_at_or_below_low_stage",
+      "between_low_and_high_stage",
+      "above_high_stage"
+    ],
+    "by_result": {
+      "M": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ],
+      "M1": [
+        "load_at_or_below_low_stage",
+        "between_low_and_high_stage",
+        "above_high_stage"
+      ]
+    },
+    "source": "Raw building load compared with raw low/high stage capacity; not an AHRI operating-case label."
+  },
+  "load_capacity_regime_distribution": {
+    "classification": "Raw building load versus low/high capacity; not an AHRI operating-case label.",
+    "by_result": {
+      "M": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      },
+      "M1": {
+        "load_at_or_below_low_stage": 4,
+        "between_low_and_high_stage": 3,
+        "above_high_stage": 1
+      }
+    }
+  }
 }

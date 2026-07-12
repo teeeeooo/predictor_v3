@@ -17,7 +17,6 @@ REGIME_ORDER = [
     "load_at_or_below_low_stage",
     "between_low_and_high_stage",
     "above_high_stage",
-    "high_stage_with_auxiliary_heat",
 ]
 
 
@@ -213,6 +212,97 @@ def cutout_projection(raw):
     return raw_values, distributions
 
 
+def availability_projection(raw, label):
+    columns = sorted(
+        [
+            field
+            for field in raw
+            if re.fullmatch(rf"{label}\.cutOut_delta\d+", field)
+        ],
+        key=natural_key,
+    )
+    if not columns:
+        return [], "not_exposed", {
+            "available": 0,
+            "fractional": 0,
+            "unavailable": 0,
+            "other": 0,
+            "blank": 0,
+        }
+    entries = []
+    counts = Counter()
+    for field in columns:
+        value = raw[field]
+        state = (
+            "available"
+            if value is not None and abs(float(value) - 1) <= 1e-12
+            else "fractional"
+            if value is not None and 0 < float(value) < 1
+            else "unavailable"
+            if value is not None and abs(float(value)) <= 1e-12
+            else "blank"
+            if value is None
+            else "other"
+        )
+        counts[state] += 1
+        entries.append(
+            {
+                "bin_index": int(re.search(r"(\d+)$", field).group(1)),
+                "raw_field": field,
+                "raw_value": value,
+                "state": state,
+            }
+        )
+    return entries, "raw_cutOut_delta", {
+        name: counts.get(name, 0)
+        for name in ("available", "fractional", "unavailable", "other", "blank")
+    }
+
+
+def auxiliary_projection(raw, label):
+    columns = sorted(
+        [
+            field
+            for field in raw
+            if re.fullmatch(rf"{label}\.ratioTotalResistHeating\d+", field)
+        ],
+        key=natural_key,
+    )
+    if not columns:
+        return [], "not_exposed", {
+            "active": 0,
+            "inactive": 0,
+            "other": 0,
+            "blank": 0,
+        }
+    entries = []
+    counts = Counter()
+    for field in columns:
+        value = raw[field]
+        state = (
+            "active"
+            if value is not None and float(value) > 0
+            else "inactive"
+            if value is not None and float(value) == 0
+            else "blank"
+            if value is None
+            else "other"
+        )
+        counts[state] += 1
+        entries.append(
+            {
+                "bin_index": int(re.search(r"(\d+)$", field).group(1)),
+                "raw_field": field,
+                "raw_value": value,
+                "state": state,
+            }
+        )
+    return entries, "raw_ratioTotalResistHeating", {
+        name: counts.get(name, 0)
+        for name in ("active", "inactive", "other", "blank")
+    }
+
+
 def dual_regimes(fixture, raw, label):
     if not fixture["product_classification"].startswith("dual_stage"):
         return [], {}
@@ -240,10 +330,6 @@ def dual_regimes(fixture, raw, label):
             "high_stage_capacity": high_field,
         }
         raw_values = {name: raw[field] for name, field in raw_fields.items()}
-        if mode == "heating":
-            aux_field = f"{prefix}.ratioTotalResistHeating{index}"
-            raw_fields["auxiliary_resistance"] = aux_field
-            raw_values["auxiliary_resistance"] = raw[aux_field]
         load = float(raw_values["building_load"])
         low = float(raw_values["low_stage_capacity"])
         high = float(raw_values["high_stage_capacity"])
@@ -254,19 +340,13 @@ def dual_regimes(fixture, raw, label):
             if load <= high
             else "above_high_stage"
         )
-        if (
-            mode == "heating"
-            and regime == "above_high_stage"
-            and float(raw_values["auxiliary_resistance"]) > 0
-        ):
-            regime = "high_stage_with_auxiliary_heat"
         distribution[regime] += 1
         entries.append(
             {
                 "bin_index": index,
                 "raw_fields": raw_fields,
                 "raw_values": raw_values,
-                "operating_regime": regime,
+                "load_capacity_regime": regime,
             }
         )
     return entries, dict(distribution)
@@ -431,39 +511,77 @@ def test_regimes_are_reclassified_and_curve_groups_are_not_cases(fixture):
     case_dir = FIXTURE_ROOT / fixture["directory"]
     expected = load_expected(fixture)
     curve_groups = expected["performance_curve_groups"]["values"]
-    active_cases = expected["activated_operating_cases"]["values"]
-
-    assert not set(curve_groups).intersection(active_cases)
     for label, filename in (("M", "result_m.csv"), ("M1", "result_m1.csv")):
         raw = parsed_row(case_dir / filename)
         result = expected["results"][label]
         if fixture["product_classification"].startswith("dual_stage"):
+            active_regimes = expected["activated_load_capacity_regimes"]["values"]
+            assert "activated_operating_cases" not in expected
+            assert not set(curve_groups).intersection(active_regimes)
             actual_entries, actual_distribution = dual_regimes(fixture, raw, label)
-            assert result["regime_by_bin"] == actual_entries
-            assert result["regime_distribution"] == actual_distribution
+            assert result["load_capacity_regime_by_bin"] == actual_entries
+            assert result["load_capacity_regime_distribution"] == actual_distribution
             expected_active = [
                 regime
                 for regime in REGIME_ORDER
                 if regime in actual_distribution
             ]
-            assert expected["activated_operating_cases"]["by_result"][label] == expected_active
-            required = (
-                REGIME_ORDER[:3]
-                if fixture["product_classification"] == "dual_stage_cooling"
-                else REGIME_ORDER
-            )
-            assert set(required).issubset(actual_distribution)
+            assert expected["activated_load_capacity_regimes"]["by_result"][label] == expected_active
+            assert set(REGIME_ORDER[:3]).issubset(actual_distribution)
+            availability, availability_status, availability_counts = availability_projection(raw, label)
+            assert result["compressor_availability_by_bin"] == availability
+            assert result["compressor_availability_status"] == availability_status
+            assert result["compressor_availability_distribution"] == {
+                "status": availability_status,
+                "counts": availability_counts,
+            }
+            auxiliary, auxiliary_status, auxiliary_counts = auxiliary_projection(raw, label)
+            assert result["auxiliary_heat_by_bin"] == auxiliary
+            assert result["auxiliary_heat_status"] == auxiliary_status
+            assert result["auxiliary_heat_distribution"] == {
+                "status": auxiliary_status,
+                "counts": auxiliary_counts,
+            }
         else:
+            active_cases = expected["activated_operating_cases"]["values"]
+            assert "activated_load_capacity_regimes" not in expected
+            assert not set(curve_groups).intersection(active_cases)
             raw_cases = [
                 value for field, value in raw.items() if ".case_name" in field
             ]
-            assert result["regime_by_bin"] == []
             assert expected["activated_operating_cases"]["by_result"][label] == list(
                 dict.fromkeys(raw_cases)
             )
-            assert expected["regime_distribution"]["by_result"][label] == dict(
+            assert expected["operating_case_distribution"]["by_result"][label] == dict(
                 Counter(raw_cases)
             )
+
+
+@pytest.mark.parametrize("label", ("M", "M1"))
+def test_cutout_fixture_requires_exact_branch_coverage(label):
+    fixture = next(
+        fixture
+        for fixture in load_manifest()["fixtures"]
+        if fixture["fixture_id"]
+        == "ahri210240_dual_stage_hspf2_cutout_synthetic_01"
+    )
+    case_dir = FIXTURE_ROOT / fixture["directory"]
+    expected = load_expected(fixture)
+    raw = parsed_row(case_dir / ("result_m.csv" if label == "M" else "result_m1.csv"))
+    required_counts = {
+        "one": 4,
+        "fractional": 2,
+        "zero": 12,
+        "other": 0,
+        "blank": 0,
+    }
+
+    _, raw_distribution = cutout_projection(raw)
+    for family in ("cutOut_delta", "cutOut_delta_prime"):
+        assert raw_distribution[family]["counts"] == required_counts
+        assert expected["results"][label]["cutout"]["delta_distribution"][family][
+            "counts"
+        ] == required_counts
 
 
 @pytest.mark.parametrize("fixture", fixture_params())
@@ -499,6 +617,20 @@ def test_oracle_boundary_and_provenance_are_explicit_and_non_sensitive(fixture):
     )
     assert "2026" in oracle["target_2026_boundary"]
     assert oracle["certification_claim"] is False
+    input_test_point_lines = [
+        line
+        for line in provenance.splitlines()
+        if line.startswith("| `input_test_points` |")
+    ]
+    ui_option_lines = [
+        line
+        for line in provenance.splitlines()
+        if line.startswith("| `ui_options` |")
+    ]
+    assert len(input_test_point_lines) == 1
+    assert len(ui_option_lines) == 1
+    assert "lockoutlowcapacityops" not in input_test_point_lines[0].lower()
+    assert "lockoutlowcapacityops" in ui_option_lines[0].lower()
     assert "session/" not in provenance
     assert "cookie" not in provenance
     assert "token" not in provenance
