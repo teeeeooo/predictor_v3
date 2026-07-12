@@ -42,6 +42,7 @@ jobs:
             tests/test_ui_tk_ahri_hspf2_batch.py \
             tests/test_ui_tk_ahri_seer2_detail.py \
             tests/test_ui_tk_ahri_hspf2_detail.py \
+            tests/test_ui_tk_ahri_multicapacity_products.py \
             > pytest.log 2>&1
           status=$?
           cat pytest.log
