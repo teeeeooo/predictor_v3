@@ -83,12 +83,17 @@ class HSPF2TripleNorthernEngine:
                     "delta_low": deltas["low"],
                     "delta_full": deltas["full"],
                     "delta_boost": deltas["boost"],
-                    "compressor_availability": self._availability_label(max(deltas.values())),
+                    "compressor_availability": self._availability_label(
+                        max(deltas.values())
+                    ),
                     "operating_case": f"Case {case}",
                     "case": case,
                     "stage_fractions": load_fractions,
                     "PLF": plf,
-                    "q_comp": max(0.0, bin_heating - e_resistance * RESISTANCE_BTU_PER_WH),
+                    "q_comp": max(
+                        0.0,
+                        bin_heating - e_resistance * RESISTANCE_BTU_PER_WH,
+                    ),
                     "q_aux": e_resistance * RESISTANCE_BTU_PER_WH,
                     "e_comp": e_comp,
                     "e_aux": e_resistance,
@@ -106,6 +111,7 @@ class HSPF2TripleNorthernEngine:
             bin_details=details,
             metadata={
                 "point_sources": sources,
+                "resolved_points": points,
                 "stage_ranges_f": ranges,
                 "cd_low_used": cd_low,
                 "cd_full_used": cd_full,
@@ -126,45 +132,85 @@ class HSPF2TripleNorthernEngine:
             fractions["low"] = safe_div(load, ql)
             plf = max(0.01, 1.0 - cds["low"] * (1.0 - fractions["low"]))
             e_comp = safe_div(pl * fractions["low"] * dl * fraction, plf)
-            e_res = safe_div(load * (1.0 - dl) * fraction, RESISTANCE_BTU_PER_WH)
+            e_res = safe_div(
+                load * (1.0 - dl) * fraction,
+                RESISTANCE_BTU_PER_WH,
+            )
         elif permitted["full"] and load <= qf:
             if permitted["low"] and load > ql:
                 case = 4
                 fractions["low"] = safe_div(qf - load, qf - ql)
                 fractions["full"] = 1.0 - fractions["low"]
-                e_comp = (pl * fractions["low"] + pf * fractions["full"]) * dl * fraction
-                e_res = safe_div(load * (1.0 - dl) * fraction, RESISTANCE_BTU_PER_WH)
+                e_comp = (
+                    pl * fractions["low"] + pf * fractions["full"]
+                ) * dl * fraction
+                e_res = safe_div(
+                    load * (1.0 - dl) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
             else:
                 case = 2
                 fractions["full"] = safe_div(load, qf)
-                plf = max(0.01, 1.0 - cds["full"] * (1.0 - fractions["full"]))
-                e_comp = safe_div(pf * fractions["full"] * df * fraction, plf)
-                e_res = safe_div(load * (1.0 - df) * fraction, RESISTANCE_BTU_PER_WH)
+                plf = max(
+                    0.01,
+                    1.0 - cds["full"] * (1.0 - fractions["full"]),
+                )
+                e_comp = safe_div(
+                    pf * fractions["full"] * df * fraction,
+                    plf,
+                )
+                e_res = safe_div(
+                    load * (1.0 - df) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
         elif permitted["boost"] and load <= qb:
             if permitted["full"] and load > qf:
                 case = 5
                 fractions["full"] = safe_div(qb - load, qb - qf)
                 fractions["boost"] = 1.0 - fractions["full"]
-                e_comp = (pf * fractions["full"] + pb * fractions["boost"]) * db * fraction
-                e_res = safe_div(load * (1.0 - db) * fraction, RESISTANCE_BTU_PER_WH)
+                e_comp = (
+                    pf * fractions["full"] + pb * fractions["boost"]
+                ) * db * fraction
+                e_res = safe_div(
+                    load * (1.0 - db) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
             else:
                 case = 3
                 fractions["boost"] = safe_div(load, qb)
-                plf = max(0.01, 1.0 - cds["boost"] * (1.0 - fractions["boost"]))
-                e_comp = safe_div(pb * fractions["boost"] * db * fraction, plf)
-                e_res = safe_div(load * (1.0 - db) * fraction, RESISTANCE_BTU_PER_WH)
+                plf = max(
+                    0.01,
+                    1.0 - cds["boost"] * (1.0 - fractions["boost"]),
+                )
+                e_comp = safe_div(
+                    pb * fractions["boost"] * db * fraction,
+                    plf,
+                )
+                e_res = safe_div(
+                    load * (1.0 - db) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
         elif permitted["boost"]:
             case, fractions = 8, {"boost": 1.0}
             e_comp = pb * db * fraction
-            e_res = safe_div(max(0.0, load - qb * db) * fraction, RESISTANCE_BTU_PER_WH)
+            e_res = safe_div(
+                max(0.0, load - qb * db) * fraction,
+                RESISTANCE_BTU_PER_WH,
+            )
         elif permitted["full"]:
             case, fractions = 7, {"full": 1.0}
             e_comp = pf * df * fraction
-            e_res = safe_div(max(0.0, load - qf * df) * fraction, RESISTANCE_BTU_PER_WH)
+            e_res = safe_div(
+                max(0.0, load - qf * df) * fraction,
+                RESISTANCE_BTU_PER_WH,
+            )
         elif permitted["low"]:
             case, fractions = 6, {"low": 1.0}
             e_comp = pl * dl * fraction
-            e_res = safe_div(max(0.0, load - ql * dl) * fraction, RESISTANCE_BTU_PER_WH)
+            e_res = safe_div(
+                max(0.0, load - ql * dl) * fraction,
+                RESISTANCE_BTU_PER_WH,
+            )
         else:
             case, fractions = 8, {"resistance": 1.0}
             e_comp = 0.0
@@ -183,34 +229,76 @@ class HSPF2TripleNorthernEngine:
             "H4Boost": positive_point(test_points, "H4Boost", "H43"),
         }
         sources = {key: "tested" for key in points}
-        h3_low = positive_point(test_points, "H3Low", "H31", required=False)
-        if h3_low is None or not bool(options.get("h3_low_tested", True)):
+        h3_low_input = positive_point(
+            test_points,
+            "H3Low",
+            "H31",
+            required=False,
+        )
+        h3_low_tested = h3_low_input is not None and bool(
+            options.get("h3_low_tested", True)
+        )
+        if h3_low_tested:
+            h3_low = h3_low_input
+            sources["H3Low"] = "tested"
+        else:
             if ranges["low"][0] < 40.0:
-                raise ValueError("H3Low is required when Low stage is permitted below 40 F")
+                raise ValueError(
+                    "H3Low is required when Low stage is permitted below 40 F"
+                )
             h3_low = points["H1Low"]
             sources["H3Low"] = "not_applicable_to_permitted_range"
-        else:
-            sources["H3Low"] = "tested"
         points["H3Low"] = h3_low
-        h2_low = positive_point(test_points, "H2Low", "H21", required=False)
-        if h2_low is None or not bool(options.get("h2_low_tested", False)):
+
+        h2_low_input = positive_point(
+            test_points,
+            "H2Low",
+            "H21",
+            required=False,
+        )
+        if h3_low_tested:
             q_h3, p_h3 = h3_low
             q_h1, p_h1 = points["H1Low"]
             h2_low = (
-                0.9 * (q_h3 + 0.6 * (q_h1 - q_h3)),
+                0.90 * (q_h3 + 0.6 * (q_h1 - q_h3)),
+                0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
+            )
+            sources["H2Low"] = "eq_11_253_11_254_from_tested_h3low"
+        elif h2_low_input is not None and bool(
+            options.get("h2_low_tested", False)
+        ):
+            h2_low = h2_low_input
+            sources["H2Low"] = "tested"
+        else:
+            q_h3, p_h3 = h3_low
+            q_h1, p_h1 = points["H1Low"]
+            h2_low = (
+                0.90 * (q_h3 + 0.6 * (q_h1 - q_h3)),
                 0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
             )
             sources["H2Low"] = "eq_11_253_11_254"
-        else:
-            sources["H2Low"] = "tested"
         points["H2Low"] = h2_low
-        h2_boost = positive_point(test_points, "H2Boost", "H23", required=False)
+
+        h2_boost = positive_point(
+            test_points,
+            "H2Boost",
+            "H23",
+            required=False,
+        )
         if h2_boost is None or not bool(options.get("h2_boost_tested", True)):
             q_h2_full, p_h2_full = points["H2Full"]
             q_h3_full, p_h3_full = points["H3Full"]
             q_h1_full, p_h1_full = points["H1Full"]
-            q_ratio = safe_div(q_h2_full, q_h3_full + 0.6 * (q_h1_full - q_h3_full), 1.0)
-            p_ratio = safe_div(p_h2_full, p_h3_full + 0.6 * (p_h1_full - p_h3_full), 1.0)
+            q_ratio = safe_div(
+                q_h2_full,
+                q_h3_full + 0.6 * (q_h1_full - q_h3_full),
+                1.0,
+            )
+            p_ratio = safe_div(
+                p_h2_full,
+                p_h3_full + 0.6 * (p_h1_full - p_h3_full),
+                1.0,
+            )
             q_h3_boost, p_h3_boost = points["H3Boost"]
             q_h4_boost, p_h4_boost = points["H4Boost"]
             h2_boost = (
@@ -226,28 +314,70 @@ class HSPF2TripleNorthernEngine:
     @staticmethod
     def _boost_curve(temp_f, points):
         if temp_f > 17.0:
-            low, high, low_temp, high_temp = points["H3Boost"], points["H2Boost"], 17.0, 35.0
+            low, high, low_temp, high_temp = (
+                points["H3Boost"],
+                points["H2Boost"],
+                17.0,
+                35.0,
+            )
         else:
-            low, high, low_temp, high_temp = points["H4Boost"], points["H3Boost"], 5.0, 17.0
+            low, high, low_temp, high_temp = (
+                points["H4Boost"],
+                points["H3Boost"],
+                5.0,
+                17.0,
+            )
         return (
-            max(0.0, linear_interpolate(temp_f, low_temp, low[0], high_temp, high[0])),
-            max(0.0, linear_interpolate(temp_f, low_temp, low[1], high_temp, high[1])),
+            max(
+                0.0,
+                linear_interpolate(
+                    temp_f,
+                    low_temp,
+                    low[0],
+                    high_temp,
+                    high[0],
+                ),
+            ),
+            max(
+                0.0,
+                linear_interpolate(
+                    temp_f,
+                    low_temp,
+                    low[1],
+                    high_temp,
+                    high[1],
+                ),
+            ),
         )
 
     @staticmethod
     def _stage_ranges(options):
         raw = options.get("stage_ranges_f")
         if isinstance(raw, Mapping):
-            ranges = {stage: tuple(float(v) for v in raw[stage]) for stage in ("low", "full", "boost")}
+            ranges = {
+                stage: tuple(float(v) for v in raw[stage])
+                for stage in ("low", "full", "boost")
+            }
         else:
             ranges = {
-                "low": (float(options.get("low_stage_min_f", 40.0)), float(options.get("low_stage_max_f", 65.0))),
-                "full": (float(options.get("full_stage_min_f", 20.0)), float(options.get("full_stage_max_f", 50.0))),
-                "boost": (float(options.get("boost_stage_min_f", -20.0)), float(options.get("boost_stage_max_f", 30.0))),
+                "low": (
+                    float(options.get("low_stage_min_f", 40.0)),
+                    float(options.get("low_stage_max_f", 65.0)),
+                ),
+                "full": (
+                    float(options.get("full_stage_min_f", 20.0)),
+                    float(options.get("full_stage_max_f", 50.0)),
+                ),
+                "boost": (
+                    float(options.get("boost_stage_min_f", -20.0)),
+                    float(options.get("boost_stage_max_f", 30.0)),
+                ),
             }
         for stage, (lower, upper) in ranges.items():
             if lower > upper:
-                raise ValueError(f"Invalid {stage} stage operating range: {lower} > {upper}")
+                raise ValueError(
+                    f"Invalid {stage} stage operating range: {lower} > {upper}"
+                )
         return ranges
 
     @staticmethod
@@ -255,8 +385,16 @@ class HSPF2TripleNorthernEngine:
         raw_low = options.get("cd_low", options.get("c_d_low"))
         low_defaulted = raw_low is None or float(raw_low) > 0.25
         low = effective_cd(raw_low)
-        full = low if low_defaulted else effective_cd(options.get("cd_full", options.get("c_d_full", low)))
-        boost = effective_cd(options.get("cd_boost", options.get("c_d_boost", full)))
+        full = (
+            low
+            if low_defaulted
+            else effective_cd(
+                options.get("cd_full", options.get("c_d_full", low))
+            )
+        )
+        boost = effective_cd(
+            options.get("cd_boost", options.get("c_d_boost", full))
+        )
         return low, full, boost
 
     @staticmethod
