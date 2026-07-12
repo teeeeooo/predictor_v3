@@ -1,5 +1,6 @@
 import pytest
 
+from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
 from core.calculators.standards._ahri.hspf2_context import HSPF2ConfigContext
 from core.calculators.standards._ahri.hspf2_points import HSPF2PointResolver
 
@@ -48,3 +49,12 @@ def test_hspf2_point_owner_preserves_case_insensitive_conflict_detection():
 
     with pytest.raises(ValueError, match="Conflicting test point values for canonical key H12"):
         resolver.legacy_to_canonical({"H12": (24000, 2200), "h1_full": (23000, 2100)})
+
+
+def test_hspf2_facade_delegates_v3_to_variable_capacity_engine():
+    calculator = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH)
+
+    direct = calculator._variable_engine.calculate(HSPF2_V3_POINTS, **HSPF2_V3_KWARGS)
+    through_facade = calculator.calculate_hspf2_v3(HSPF2_V3_POINTS, **HSPF2_V3_KWARGS)
+
+    assert through_facade == direct
