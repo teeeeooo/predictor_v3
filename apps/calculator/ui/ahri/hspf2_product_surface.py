@@ -11,6 +11,10 @@ from apps.calculator.application.ahri import (
     AHRI_HSPF2_TEMPERATURES_C,
     AhriHspf2Options,
 )
+from apps.calculator.application.ahri.hspf2_multicapacity_adapter import (
+    dual_h3_low_required,
+    triple_h3_low_required,
+)
 from apps.calculator.application.ahri.product_defaults import (
     AHRI_HSPF2_COMMON_DEFAULTS,
     AHRI_HSPF2_TRIPLE_RANGE_DEFAULTS,
@@ -75,6 +79,13 @@ class AhriHspf2ProductSurface:
         )
         for table in self._tables:
             table.set_values_changed_callback(self._on_values_changed)
+        self.numeric_table.set_values_changed_callback(
+            self._on_requiredness_input_changed
+        )
+        if self.range_table is not None:
+            self.range_table.set_values_changed_callback(
+                self._on_requiredness_input_changed
+            )
         self._apply_states()
 
     def _build_control_bar(self, snapshot: Mapping[str, object]) -> None:
@@ -117,6 +128,7 @@ class AhriHspf2ProductSurface:
             )
         )
         self.h2_low_checkbutton: ttk.Checkbutton | None = None
+        self.h3_low_checkbutton: ttk.Checkbutton | None = None
         for label, variable in options:
             button = ttk.Checkbutton(frame, text=label, variable=variable)
             button.pack(
@@ -126,6 +138,8 @@ class AhriHspf2ProductSurface:
             )
             if variable is self.h2_low_var:
                 self.h2_low_checkbutton = button
+            if variable is self.h3_low_var:
+                self.h3_low_checkbutton = button
         ttk.Label(frame, text="Defrost").pack(
             side=tk.LEFT, padx=(CONTROL_GROUP_GAP, CONTROL_COMPACT_GAP)
         )
@@ -319,25 +333,40 @@ class AhriHspf2ProductSurface:
         self._apply_states()
         self._on_values_changed()
 
-    def _enforce_triple_low_precedence(self) -> None:
-        if (
-            self.product != "triple_capacity_northern"
-            or self.h2_low_checkbutton is None
-        ):
+    def _on_requiredness_input_changed(self) -> None:
+        if self._syncing_state:
             return
-        h3_low_tested = self.h3_low_var.get()
-        self.h2_low_checkbutton.configure(
-            state="disabled" if h3_low_tested else "normal"
-        )
-        if h3_low_tested and self.h2_low_var.get():
-            self._syncing_state = True
-            try:
-                self.h2_low_var.set(False)
-            finally:
-                self._syncing_state = False
+        self._apply_states()
+        self._on_values_changed()
+
+    def _h3_low_required(self) -> bool:
+        values = self.numeric_table.get_text_values()
+        if self.range_table is not None:
+            values.update(self.range_table.get_text_values())
+        if self.product == "dual_stage":
+            return dual_h3_low_required(
+                values,
+                lockout_enabled=self.low_lockout_var.get(),
+            )
+        return triple_h3_low_required(values)
+
+    def _enforce_conditional_low_points(self) -> None:
+        if self.product != "triple_capacity_northern":
+            return
+        h3_required = self._h3_low_required()
+        self._syncing_state = True
+        try:
+            self.h3_low_var.set(h3_required)
+            self.h2_low_var.set(False)
+        finally:
+            self._syncing_state = False
+        if self.h3_low_checkbutton is not None:
+            self.h3_low_checkbutton.configure(state="disabled")
+        if self.h2_low_checkbutton is not None:
+            self.h2_low_checkbutton.configure(state="disabled")
 
     def _apply_states(self) -> None:
-        self._enforce_triple_low_precedence()
+        self._enforce_conditional_low_points()
         optional = self._optional_point_state()
         for table in self.heating_tables:
             readonly = {
@@ -374,15 +403,17 @@ class AhriHspf2ProductSurface:
                 controller.refresh()
 
     def _optional_point_state(self) -> dict[str, bool]:
+        h3_required = self._h3_low_required()
         if self.product == "dual_stage":
             return {
                 "H2Low": self.h2_low_var.get(),
+                "H3Low": h3_required,
                 "H4Full": self.h4_full_var.get(),
             }
         return {
-            "H2Low": self.h2_low_var.get() and not self.h3_low_var.get(),
+            "H2Low": False,
             "H2Boost": self.h2_boost_var.get(),
-            "H3Low": self.h3_low_var.get(),
+            "H3Low": h3_required,
         }
 
     def grid(self, **kwargs: object) -> None:
@@ -398,16 +429,16 @@ class AhriHspf2ProductSurface:
         return values
 
     def options(self, *, region: str = "IV") -> AhriHspf2Options:
-        measured_h2_low = self.h2_low_var.get()
-        if self.product == "triple_capacity_northern":
-            measured_h2_low = measured_h2_low and not self.h3_low_var.get()
+        h3_required = self._h3_low_required()
         return AhriHspf2Options(
             region=region,
             product_classification=self.product,
             measured_h4_full=self.h4_full_var.get(),
-            measured_h2_low=measured_h2_low,
+            measured_h2_low=(
+                self.h2_low_var.get() if self.product == "dual_stage" else False
+            ),
             measured_h2_boost=self.h2_boost_var.get(),
-            measured_h3_low=self.h3_low_var.get(),
+            measured_h3_low=h3_required,
             low_stage_lockout_enabled=self.low_lockout_var.get(),
             defrost_mode=self.defrost_mode_var.get(),
         )
@@ -424,7 +455,7 @@ class AhriHspf2ProductSurface:
                 "h4_full": self.h4_full_var.get(),
                 "h2_low": self.h2_low_var.get(),
                 "h2_boost": self.h2_boost_var.get(),
-                "h3_low": self.h3_low_var.get(),
+                "h3_low": self._h3_low_required(),
                 "low_lockout": self.low_lockout_var.get(),
                 "defrost_mode": self.defrost_mode_var.get(),
             },
