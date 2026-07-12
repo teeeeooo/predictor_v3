@@ -39,15 +39,20 @@ class HSPF2TripleNorthernEngine:
             if fraction <= 0:
                 continue
             load = building_load(temp_f, q_a_full, context)
-            q_low, p_low = low_curve(temp_f, points)
-            q_full, p_full = full_curve(temp_f, points, points["H4Boost"])
-            q_boost, p_boost = self._boost_curve(temp_f, points)
             permitted = {
                 stage: lower <= temp_f <= upper
                 for stage, (lower, upper) in ranges.items()
             }
+            if permitted["low"]:
+                q_low, p_low = low_curve(temp_f, points)
+                delta_low = availability(temp_f, q_low, p_low, context)
+            else:
+                q_low = p_low = None
+                delta_low = 0.0
+            q_full, p_full = full_curve(temp_f, points, points["H4Boost"])
+            q_boost, p_boost = self._boost_curve(temp_f, points)
             deltas = {
-                "low": availability(temp_f, q_low, p_low, context),
+                "low": delta_low,
                 "full": availability(temp_f, q_full, p_full, context),
                 "boost": availability(temp_f, q_boost, p_boost, context),
             }
@@ -59,6 +64,11 @@ class HSPF2TripleNorthernEngine:
                 powers={"low": p_low, "full": p_full, "boost": p_boost},
                 deltas=deltas,
                 cds={"low": cd_low, "full": cd_full, "boost": cd_boost},
+            )
+            selected_delta = self._selected_availability_delta(
+                case,
+                load_fractions,
+                deltas,
             )
             bin_heating = load * fraction
             total_heating += bin_heating
@@ -84,7 +94,7 @@ class HSPF2TripleNorthernEngine:
                     "delta_full": deltas["full"],
                     "delta_boost": deltas["boost"],
                     "compressor_availability": self._availability_label(
-                        max(deltas.values())
+                        selected_delta
                     ),
                     "operating_case": f"Case {case}",
                     "case": case,
@@ -113,6 +123,7 @@ class HSPF2TripleNorthernEngine:
                 "point_sources": sources,
                 "resolved_points": points,
                 "stage_ranges_f": ranges,
+                "h3_low_required": ranges["low"][0] <= 37.0,
                 "cd_low_used": cd_low,
                 "cd_full_used": cd_full,
                 "cd_boost_used": cd_boost,
@@ -229,6 +240,7 @@ class HSPF2TripleNorthernEngine:
             "H4Boost": positive_point(test_points, "H4Boost", "H43"),
         }
         sources = {key: "tested" for key in points}
+        h3_low_required = ranges["low"][0] <= 37.0
         h3_low_input = positive_point(
             test_points,
             "H3Low",
@@ -238,46 +250,23 @@ class HSPF2TripleNorthernEngine:
         h3_low_tested = h3_low_input is not None and bool(
             options.get("h3_low_tested", True)
         )
-        if h3_low_tested:
-            h3_low = h3_low_input
-            sources["H3Low"] = "tested"
-        else:
-            if ranges["low"][0] < 40.0:
+        if h3_low_required:
+            if not h3_low_tested:
                 raise ValueError(
-                    "H3Low is required when Low stage is permitted below 40 F"
+                    "H3Low is required when Low stage is permitted at or below 37 F"
                 )
-            h3_low = points["H1Low"]
-            sources["H3Low"] = "not_applicable_to_permitted_range"
-        points["H3Low"] = h3_low
-
-        h2_low_input = positive_point(
-            test_points,
-            "H2Low",
-            "H21",
-            required=False,
-        )
-        if h3_low_tested:
-            q_h3, p_h3 = h3_low
+            points["H3Low"] = h3_low_input
+            sources["H3Low"] = "tested"
+            q_h3, p_h3 = h3_low_input
             q_h1, p_h1 = points["H1Low"]
-            h2_low = (
+            points["H2Low"] = (
                 0.90 * (q_h3 + 0.6 * (q_h1 - q_h3)),
                 0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
             )
             sources["H2Low"] = "eq_11_253_11_254_from_tested_h3low"
-        elif h2_low_input is not None and bool(
-            options.get("h2_low_tested", False)
-        ):
-            h2_low = h2_low_input
-            sources["H2Low"] = "tested"
         else:
-            q_h3, p_h3 = h3_low
-            q_h1, p_h1 = points["H1Low"]
-            h2_low = (
-                0.90 * (q_h3 + 0.6 * (q_h1 - q_h3)),
-                0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
-            )
-            sources["H2Low"] = "eq_11_253_11_254"
-        points["H2Low"] = h2_low
+            sources["H3Low"] = "not_applicable_to_permitted_range"
+            sources["H2Low"] = "not_applicable_to_permitted_range"
 
         h2_boost = positive_point(
             test_points,
@@ -396,6 +385,22 @@ class HSPF2TripleNorthernEngine:
             options.get("cd_boost", options.get("c_d_boost", full))
         )
         return low, full, boost
+
+    @staticmethod
+    def _selected_availability_delta(case, fractions, deltas):
+        if "resistance" in fractions:
+            return 0.0
+        stage_by_case = {
+            1: "low",
+            2: "full",
+            3: "boost",
+            4: "low",
+            5: "boost",
+            6: "low",
+            7: "full",
+            8: "boost",
+        }
+        return deltas[stage_by_case[case]]
 
     @staticmethod
     def _availability_label(value):
