@@ -133,12 +133,18 @@ class AhriSeer2BatchHandler:
         if not all(text_values.values()):
             return self._blank_result(BatchRowState.PENDING)
         try:
-            summary = self._adapter.calculate(
-                text_values,
-                system_type=self._common_inputs.system_type,
-                product_classification=self._common_inputs.product_classification,
-                options=self._common_inputs.options,
-            )
+            if self._common_inputs.product_classification == "variable_capacity":
+                summary = self._adapter.calculate(
+                    text_values,
+                    system_type=self._common_inputs.system_type,
+                )
+            else:
+                summary = self._adapter.calculate(
+                    text_values,
+                    system_type=self._common_inputs.system_type,
+                    product_classification=self._common_inputs.product_classification,
+                    options=self._common_inputs.options,
+                )
             if summary is None:
                 return self._blank_result(BatchRowState.PENDING)
             if self._common_inputs.product_classification == "variable_capacity":
