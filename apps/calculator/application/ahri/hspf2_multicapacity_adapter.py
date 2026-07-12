@@ -12,7 +12,9 @@ AHRI_HSPF2_DUAL_POINT_ORDER = (
     "H0Low", "H1Low", "H1Full", "H2Low", "H2Full", "H3Low", "H3Full", "H4Full"
 )
 AHRI_HSPF2_TRIPLE_POINT_ORDER = (
-    "H0Low", "H1Low", "H1Full", "H2Boost", "H2Full", "H3Low", "H3Full", "H3Boost", "H4Boost"
+    "H0Low", "H1Low", "H2Low", "H3Low",
+    "H1Full", "H2Full", "H3Full",
+    "H2Boost", "H3Boost", "H4Boost",
 )
 
 
@@ -64,14 +66,14 @@ def calculate_multicapacity_hspf2(
         raise MultiCapacityHspf2InputError({"product": "지원하지 않는 제품 형식"})
     if options.region != "IV":
         raise MultiCapacityHspf2InputError({"region": "Region IV 필요"})
-
     points_order = (
         AHRI_HSPF2_DUAL_POINT_ORDER
         if product == "dual_stage"
         else AHRI_HSPF2_TRIPLE_POINT_ORDER
     )
-    optional_enabled = _optional_point_state(options)
-    active_points = [point for point in points_order if optional_enabled.get(point, True)]
+    active_points = [
+        point for point in points_order if _optional_point_state(options).get(point, True)
+    ]
     required = ["a2_capacity", "cut_out_c", "cut_in_c", "cd_low", "cd_full"]
     if product == "triple_capacity_northern":
         required.append("cd_boost")
@@ -90,7 +92,6 @@ def calculate_multicapacity_hspf2(
         raise MultiCapacityHspf2InputError({"defrost_mode": "지원하지 않는 제상 모드"})
     for point in active_points:
         required.extend((f"capacity_{point}", f"power_{point}"))
-
     stripped = {key: str(text_values.get(key, "")).strip() for key in required}
     if not all(stripped.values()):
         return None
@@ -102,14 +103,18 @@ def calculate_multicapacity_hspf2(
         except ValueError:
             errors[key] = "숫자 입력 필요"
     for key, value in numeric.items():
-        if key.startswith(("capacity_", "power_")) or key == "a2_capacity":
-            if value <= 0:
-                errors[key] = "0 초과 필요"
+        if (key.startswith(("capacity_", "power_")) or key == "a2_capacity") and value <= 0:
+            errors[key] = "0 초과 필요"
         if key.startswith("cd_") and value < 0:
             errors[key] = "0 이상 필요"
+    if product == "triple_capacity_northern":
+        for stage in ("low", "full", "boost"):
+            low_key, high_key = f"{stage}_min_c", f"{stage}_max_c"
+            if low_key in numeric and high_key in numeric and numeric[low_key] > numeric[high_key]:
+                errors[low_key] = "하한은 상한 이하 필요"
+                errors[high_key] = "상한은 하한 이상 필요"
     if errors:
         raise MultiCapacityHspf2InputError(errors)
-
     points = {
         point: (numeric[f"capacity_{point}"], numeric[f"power_{point}"])
         for point in active_points
@@ -142,6 +147,7 @@ def calculate_multicapacity_hspf2(
     else:
         parameters.update(
             {
+                "h2_low_tested": options.measured_h2_low,
                 "h2_boost_tested": options.measured_h2_boost,
                 "h3_low_tested": options.measured_h3_low,
                 "cd_boost": numeric["cd_boost"],
@@ -154,7 +160,6 @@ def calculate_multicapacity_hspf2(
                 },
             }
         )
-
     result = executor(
         "ahri210240.hspf2",
         AhriHspf2Request(
@@ -184,7 +189,11 @@ def calculate_multicapacity_hspf2(
 def _optional_point_state(options: AhriHspf2Options) -> dict[str, bool]:
     if options.product_classification == "dual_stage":
         return {"H2Low": options.measured_h2_low, "H4Full": options.measured_h4_full}
-    return {"H2Boost": options.measured_h2_boost, "H3Low": options.measured_h3_low}
+    return {
+        "H2Low": options.measured_h2_low,
+        "H2Boost": options.measured_h2_boost,
+        "H3Low": options.measured_h3_low,
+    }
 
 
 def _parse_numeric(value: str) -> float:
