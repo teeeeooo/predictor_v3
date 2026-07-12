@@ -6,38 +6,31 @@ The HSPF2 rules are intentionally kept separate from the SEER2 engine until the
 heating path is validated. Shared helpers are duplicated locally for now.
 """
 
-import json
-import os
 import warnings
 from decimal import Decimal, ROUND_HALF_UP
+
+from ._ahri.hspf2_context import HSPF2ConfigContext
+from ._ahri.hspf2_points import HSPF2PointResolver
 
 
 class AHRIHSPF2Calculator:
     """AHRI 210/240 HSPF2 calculator scaffold for variable-capacity systems."""
 
     def __init__(self, config_path: str):
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Config file not found: {config_path}")
-
-        with open(config_path, "r", encoding="utf-8") as f:
-            self.config = json.load(f)
-
-        self.bin_temps = self.config["bin_data"]["bin_temps"]
-        self.bin_hours = self.config["bin_data"]["bin_hours"]
-        self.canonical_hspf2_bin_tables = self.config.get("canonical_hspf2_bin_tables", {})
-        self.test_point_schema = self.config.get("test_point_schema", {})
-        self.test_point_aliases = self.config.get("test_point_aliases", {})
-        self.test_point_temps = self.config.get("test_point_temps", {})
-        self.constants = self.config.get("constants", {})
-        self.defaults = self.config.get("defaults", {})
-        _hspf2_defaults = {
-            "t_off": -40.0,
-            "t_on": -40.0,
-            "fdef_override": 1.0,
-        }
-        for key, value in _hspf2_defaults.items():
-            if key not in self.defaults:
-                self.defaults[key] = value
+        self._context = HSPF2ConfigContext(config_path)
+        for attribute in (
+            "config",
+            "bin_temps",
+            "bin_hours",
+            "canonical_hspf2_bin_tables",
+            "test_point_schema",
+            "test_point_aliases",
+            "test_point_temps",
+            "constants",
+            "defaults",
+        ):
+            setattr(self, attribute, getattr(self._context, attribute))
+        self._point_resolver = HSPF2PointResolver(self.test_point_schema, self.test_point_aliases)
 
     def _safe_div(self, num: float, den: float, fallback: float = 0.0) -> float:
         return num / den if den != 0 else fallback
@@ -53,100 +46,25 @@ class AHRIHSPF2Calculator:
         return float(rounded_units * step)
 
     def _get_region_iv_heating_bin_table(self) -> dict:
-        try:
-            table = self.canonical_hspf2_bin_tables["heating"]["region_iv"]
-        except KeyError as exc:
-            raise ValueError("Missing canonical Region IV heating bin table for HSPF2 v3.") from exc
-
-        bin_temps = table.get("bin_temps_f", [])
-        fractional_hours = table.get("fractional_bin_hours", [])
-        if len(bin_temps) != len(fractional_hours):
-            raise ValueError("Region IV bin_temps_f and fractional_bin_hours must have the same length.")
-        if not bin_temps:
-            raise ValueError("Region IV bin table must not be empty.")
-        if any(hours < 0 for hours in fractional_hours):
-            raise ValueError("Region IV fractional_bin_hours must not contain negative values.")
-
-        expected_sum = table.get("fractional_bin_hours_sum")
-        if expected_sum is not None:
-            actual_sum = round(sum(fractional_hours), 3)
-            if actual_sum != round(expected_sum, 3):
-                raise ValueError(
-                    f"Region IV fractional bin hour sum mismatch: actual={actual_sum}, expected={expected_sum}"
-                )
-
-        return table
+        return self._context.region_iv_heating_bin_table()
 
     def _get_point(self, test_points: dict, key: str) -> tuple:
-        if key in test_points:
-            return test_points[key]
-
-        key_lower = key.lower()
-        for candidate_key, value in test_points.items():
-            if candidate_key.lower() == key_lower:
-                return value
-
-        raise ValueError(f"Missing test point: {key}")
+        return self._point_resolver.get_point(test_points, key)
 
     def _schema_keys(self) -> set:
-        keys = set()
-        for mode_points in self.test_point_schema.values():
-            if isinstance(mode_points, dict):
-                keys.update(mode_points.keys())
-        return keys
+        return self._point_resolver.schema_keys()
 
     def _match_key_case_insensitive(self, key: str, candidates) -> str:
-        if key in candidates:
-            return key
-
-        key_lower = key.lower()
-        for candidate in candidates:
-            if candidate.lower() == key_lower:
-                return candidate
-
-        return key
+        return self._point_resolver.match_key_case_insensitive(key, candidates)
 
     def get_test_point_schema(self, mode: str = None) -> dict:
-        if mode is None:
-            return self.test_point_schema
-        return self.test_point_schema.get(mode, {})
+        return self._point_resolver.get_test_point_schema(mode)
 
     def legacy_to_canonical(self, test_points: dict) -> dict:
-        legacy_map = self.test_point_aliases.get("legacy_to_canonical", {})
-        schema_keys = self._schema_keys()
-        canonical_points = {}
-
-        for key, value in test_points.items():
-            legacy_key = self._match_key_case_insensitive(key, legacy_map.keys())
-            canonical_key = legacy_map.get(legacy_key, key)
-            canonical_key = self._match_key_case_insensitive(canonical_key, schema_keys)
-
-            if canonical_key in canonical_points and canonical_points[canonical_key] != value:
-                raise ValueError(
-                    f"Conflicting test point values for canonical key {canonical_key}: "
-                    f"{canonical_points[canonical_key]} vs {value}"
-                )
-            canonical_points[canonical_key] = value
-
-        return canonical_points
+        return self._point_resolver.legacy_to_canonical(test_points)
 
     def canonical_to_internal_usage(self, test_points: dict) -> dict:
-        canonical_points = self.legacy_to_canonical(test_points)
-        internal_map = self.test_point_aliases.get("canonical_to_internal_hspf2_v2", {})
-        internal_points = {}
-
-        for key, value in canonical_points.items():
-            canonical_key = self._match_key_case_insensitive(key, internal_map.keys())
-            internal_key = internal_map.get(canonical_key, key)
-
-            if internal_key in internal_points and internal_points[internal_key] != value:
-                raise ValueError(
-                    f"Conflicting test point values for internal key {internal_key}: "
-                    f"{internal_points[internal_key]} vs {value}"
-                )
-            internal_points[internal_key] = value
-
-        return internal_points
+        return self._point_resolver.canonical_to_internal_usage(test_points)
 
     def _validate_canonical_full_load_points(self, test_points: dict) -> tuple:
         canonical_points = self.legacy_to_canonical(test_points)
@@ -250,17 +168,7 @@ class AHRIHSPF2Calculator:
         return max(0.0, q_tj), max(0.0, p_tj)
 
     def _validate_full_load_points(self, test_points: dict) -> dict:
-        points = {
-            "H1_Full": self._get_point(test_points, "H1_Full"),
-            "H2_Full": self._get_point(test_points, "H2_Full"),
-            "H3_Full": self._get_point(test_points, "H3_Full"),
-        }
-
-        for key, (capacity, power) in points.items():
-            if capacity <= 0 or power <= 0:
-                raise ValueError(f"Invalid test point {key}: capacity={capacity}, power={power}")
-
-        return points
+        return self._point_resolver.validate_legacy_full_load_points(test_points)
 
     def _capacity_power_at_temp(self, temp_f: float, full_points: dict) -> tuple:
         h1_temp = self.test_point_temps.get("H1_full", 47)
@@ -284,43 +192,10 @@ class AHRIHSPF2Calculator:
         return max(0.0, q_tj), max(0.0, p_tj)
 
     def _get_positive_point(self, test_points: dict, key: str) -> tuple:
-        capacity, power = self._get_point(test_points, key)
-        if capacity <= 0 or power <= 0:
-            raise ValueError(f"Invalid canonical test point {key}: capacity={capacity}, power={power}")
-        return capacity, power
+        return self._point_resolver.positive_point(test_points, key)
 
     def _require_ahri_kwargs(self, kwargs: dict) -> tuple:
-        missing = [
-            key for key in (
-                "defrost_t_test_minutes",
-                "defrost_t_max_minutes",
-            )
-            if key not in kwargs
-        ]
-        if missing:
-            raise ValueError(
-                "HSPF2 v3 AHRI path requires explicit Appendix J/defrost inputs: "
-                + ", ".join(missing)
-            )
-
-        t_off = kwargs.get("t_off", self.defaults.get("t_off", -40.0))
-        t_on = kwargs.get("t_on", self.defaults.get("t_on", -40.0))
-        if t_on < t_off:
-            raise ValueError(f"t_on({t_on}) must be >= t_off({t_off})")
-
-        raw_t_test = kwargs["defrost_t_test_minutes"]
-        raw_t_max = kwargs["defrost_t_max_minutes"]
-        if raw_t_test <= 0 or raw_t_max <= 90:
-            raise ValueError(
-                "Invalid demand defrost inputs: "
-                f"defrost_t_test_minutes={raw_t_test} must be > 0, "
-                f"defrost_t_max_minutes={raw_t_max} must be > 90"
-            )
-
-        t_test = max(raw_t_test, 90)
-        t_max = min(raw_t_max, 720)
-
-        return t_off, t_on, t_test, t_max, raw_t_test, raw_t_max
+        return self._context._require_ahri_kwargs(kwargs)
 
     def _cert_low_capacity_power_at_temp(self, temp_f: float, low_points: dict) -> tuple:
         q_h0_low, p_h0_low = low_points["H01"]
@@ -491,69 +366,42 @@ class AHRIHSPF2Calculator:
 
     def _calculate_hspf2_v3_ahri(self, test_points: dict, **kwargs) -> dict:
         canonical_points = self.legacy_to_canonical(test_points)
-        t_off, t_on, t_test, t_max, raw_t_test, raw_t_max = self._require_ahri_kwargs(kwargs)
-        required_points = ("H01", "H11", "H1N", "H2Int", "H32", "A2")
-        missing = [key for key in required_points if key not in canonical_points]
-        if missing:
-            raise ValueError(
-                "HSPF2 v3 AHRI path requires canonical AHRI test points: "
-                + ", ".join(missing)
-            )
-
-        full_points = {
-            "H32": self._get_positive_point(canonical_points, "H32"),
-        }
-        h4_point = None
-        h42_source = "not_provided"
-        if "H42" in canonical_points:
-            h4_point = self._get_positive_point(canonical_points, "H42")
-            h42_source = "provided"
-
-        low_points = {
-            "H01": self._get_positive_point(canonical_points, "H01"),
-            "H11": self._get_positive_point(canonical_points, "H11"),
-        }
-        h1_nom = self._get_positive_point(canonical_points, "H1N")
-        full_points["H12"], h12_source = self._resolve_h12_full_capacity_point(
-            canonical_points, full_points, h1_nom, **kwargs
-        )
-        (
-            full_points["H22"],
-            h22_source,
-            h22_tested,
-            h22_for_slope_source,
-            h22_high_anchor_source,
-            h22_high_anchor_capacity,
-            h22_high_anchor_power,
-        ) = self._resolve_h22_full_capacity_point(canonical_points, full_points)
+        seasonal = self._context.seasonal_context(kwargs)
+        resolved = self._point_resolver.resolve_variable_capacity(canonical_points, kwargs)
+        full_points = resolved.full_points
+        low_points = resolved.low_points
+        h1_nom = resolved.h1_nom
+        h4_point = resolved.h4_point
+        h42_source = resolved.h42_source
+        h12_source = resolved.h12_source
+        h22_source = resolved.h22_source
+        h22_tested = resolved.h22_tested
+        h22_for_slope_source = resolved.h22_for_slope_source
+        h22_high_anchor_source = resolved.h22_high_anchor_source
+        h22_high_anchor_capacity = resolved.h22_high_anchor_capacity
+        h22_high_anchor_power = resolved.h22_high_anchor_power
         h22_capacity, h22_power = full_points["H22"]
-        h2_int = self._get_positive_point(canonical_points, "H2Int")
-        q_a_full, _ = self._get_positive_point(canonical_points, "A2")
-
-        bin_table = self._get_region_iv_heating_bin_table()
-        bin_temps = bin_table["bin_temps_f"]
-        fractional_bin_hours = bin_table["fractional_bin_hours"]
-        hlh = bin_table["heating_load_hours"]
-        bin_hours = [frac * hlh for frac in fractional_bin_hours]
-        c_vs = bin_table.get("variable_capacity_slope_factor", 1.07)
-        t_zl = bin_table.get("zero_load_temp_f", 55)
-        t_od = bin_table.get("outdoor_design_temp_f", 5)
-        c_d_heating = kwargs.get("c_d_heating", self.defaults.get("c_d_heating", 0.25))
-        aux_eer = kwargs.get("aux_cop", self.defaults.get("aux_cop", 1.0)) * 3.412
-        fdef_override = kwargs.get("fdef_override", self.defaults.get("fdef_override", 1.0))
-        minimum_speed_limited = bool(
-            kwargs.get(
-                "does_comp_limit_min_spd",
-                kwargs.get(
-                    "comp_limit_min_spd",
-                    kwargs.get(
-                        "minimum_speed_limited",
-                        kwargs.get("is_minimum_speed_limited", False),
-                    ),
-                ),
-            )
-        )
-        case_i_low_source = "eq_11_189_194" if minimum_speed_limited else "eq_11_187_188"
+        h2_int = resolved.h2_int
+        q_a_full = resolved.q_a_full
+        bin_table = seasonal.bin_table
+        bin_temps = seasonal.bin_temps
+        fractional_bin_hours = seasonal.fractional_bin_hours
+        hlh = seasonal.heating_load_hours
+        bin_hours = seasonal.bin_hours
+        c_vs = seasonal.variable_capacity_slope_factor
+        t_zl = seasonal.zero_load_temp_f
+        t_od = seasonal.outdoor_design_temp_f
+        c_d_heating = seasonal.c_d_heating
+        aux_eer = seasonal.auxiliary_eer
+        fdef_override = seasonal.fdef_override
+        minimum_speed_limited = seasonal.minimum_speed_limited
+        case_i_low_source = seasonal.case_i_low_source
+        t_off = seasonal.t_off
+        t_on = seasonal.t_on
+        t_test = seasonal.t_test
+        t_max = seasonal.t_max
+        raw_t_test = seasonal.raw_t_test
+        raw_t_max = seasonal.raw_t_max
 
         f_def_seasonal = 1.0 + 0.03 * (1.0 - self._safe_div(t_test - 90, t_max - 90))
         total_heating_btu = 0.0
