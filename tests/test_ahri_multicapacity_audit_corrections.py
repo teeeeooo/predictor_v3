@@ -37,14 +37,14 @@ def test_triple_surface_disables_h2low_when_h3low_is_tested(tk_root):
 
     surface.h3_low_var.set(False)
     surface.h2_low_var.set(True)
-    assert surface.h2_low_checkbutton.cget("state") == "normal"
+    assert str(surface.h2_low_checkbutton.cget("state")) == "normal"
     assert surface.options().measured_h2_low is True
 
     surface.h3_low_var.set(True)
     tk_root.update_idletasks()
 
     assert surface.h2_low_var.get() is False
-    assert surface.h2_low_checkbutton.cget("state") == "disabled"
+    assert str(surface.h2_low_checkbutton.cget("state")) == "disabled"
     assert surface.options().measured_h3_low is True
     assert surface.options().measured_h2_low is False
     low_table = surface.heating_tables[0]
