@@ -21,11 +21,15 @@ Calculator table architecture Slices 1-6 are complete under
 `docs/designs/2026-07-12-calculator-table-architecture-design.md`. Every active
 Calculator table now maps to Editable Matrix, Compact Result Grid, or
 Scrollable Data Table and consumes the matching shared visual foundation.
+Final corrections add stable Notebook visibility/geometry and visible
+Copy/Export CSV actions to every active Single result without changing those
+family boundaries.
 
 ## Next Action
 
-Review the completed feature branch. Do not merge it to `main` without a later
-explicit user instruction.
+Perform the final user GUI review of Notebook tabs and Single result actions.
+Do not merge the completed feature branch to `main` without a later explicit
+user instruction.
 
 ## Active Blockers
 

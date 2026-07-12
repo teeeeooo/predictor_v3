@@ -96,6 +96,14 @@ def test_scop_status_tone_updates_container_and_label_and_clears_stale_values(
     )
 
     surface = ScopResultSurface(tk_root)
+    assert surface._status_label.semantic_tone == "pending"
+    assert surface._status_cell.semantic_tone == "pending"
+    assert surface._status_cell.cget("background") == surface._status_label.cget(
+        "background"
+    )
+    assert surface._status_cell.semantic_background == surface._status_cell.cget(
+        "background"
+    )
     surface.update(ScopResultSummary(declared_scop=3.2, status_code="complete"))
     surface.update(ScopResultSummary(status_code="invalid_climate"))
     assert surface._status_label.semantic_tone == "invalid"

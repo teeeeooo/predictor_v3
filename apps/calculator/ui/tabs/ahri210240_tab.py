@@ -66,7 +66,7 @@ class Ahri210240Tab(ttk.Frame):
 
     def _is_visible_surface(self) -> bool:
         parent = self.master
-        if isinstance(parent, ttk.Notebook):
+        if parent.winfo_class() == "TNotebook":
             return self in tuple(parent.nametowidget(tab) for tab in parent.tabs()) and (
                 parent.select() == str(self)
             )

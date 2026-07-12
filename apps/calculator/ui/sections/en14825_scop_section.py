@@ -22,6 +22,7 @@ from apps.calculator.ui.batch_dialogs.profiles.en14825_scop_dialog import (
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.en14825.scop_batch_session import En14825ScopBatchSnapshot
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import (
     EN14825_SCOP_BIN_DETAIL_SCHEMA,
@@ -294,6 +295,15 @@ class En14825ScopSection:
         )
         self.detail_toggle.surface_role = "en14825_scop_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(ISO_SECTION_BLOCK_GAP, 0))
+        self.result_actions = add_result_actions(
+            action_row,
+            parent=self._frame,
+            result_owner=self.result_panel,
+            csv_filename="en14825_scop_result.csv",
+            surface_prefix="en14825_scop_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         source_labels = tuple(
             f"{climate.capitalize()} {dataset}"
             for climate in self.climates

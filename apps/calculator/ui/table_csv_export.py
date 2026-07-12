@@ -22,6 +22,17 @@ def write_csv(
         writer.writerows(tuple(row) for row in rows)
 
 
+def write_rows_csv(
+    path: str | Path,
+    rows: Sequence[Sequence[str]],
+    *,
+    encoding: str = "utf-8-sig",
+) -> None:
+    """Write already-sectioned rows without imposing a table header."""
+    with Path(path).open("w", newline="", encoding=encoding) as handle:
+        csv.writer(handle).writerows(tuple(row) for row in rows)
+
+
 def export_table_to_csv(
     parent,
     default_filename: str,
@@ -38,4 +49,22 @@ def export_table_to_csv(
     if not path:
         return False
     write_csv(path, headers, rows)
+    return True
+
+
+def export_rows_to_csv(
+    parent,
+    default_filename: str,
+    rows: Sequence[Sequence[str]],
+) -> bool:
+    """Ask for a destination and export sectioned rows; cancel is a no-op."""
+    path = filedialog.asksaveasfilename(
+        parent=parent,
+        initialfile=default_filename,
+        defaultextension=".csv",
+        filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
+    )
+    if not path:
+        return False
+    write_rows_csv(path, rows)
     return True

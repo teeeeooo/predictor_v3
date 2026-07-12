@@ -53,6 +53,7 @@ class ResultPanel:
         self.summary_value_labels: dict[str, tuple[tk.Label, ...]] = {}
         self.summary_status_labels: dict[str, tk.Label] = {}
         self._summary_shapes: dict[str, tuple[str, tuple[str, ...]]] = {}
+        self._summaries: tuple[ResultSummary, ...] = ()
         self._text = tk.Text(self._frame, height=10, width=60, wrap="word")
         self._text.configure(state=tk.DISABLED)
 
@@ -63,6 +64,7 @@ class ResultPanel:
         self._frame.grid(**kwargs)
 
     def append(self, text: str) -> None:
+        self._summaries = ()
         self._show_text_mode()
         self._text.configure(state=tk.NORMAL)
         if self._text.get("1.0", tk.END).strip():
@@ -71,6 +73,7 @@ class ResultPanel:
         self._text.configure(state=tk.DISABLED)
 
     def set_text(self, text: str) -> None:
+        self._summaries = ()
         self._show_text_mode()
         self._text.configure(state=tk.NORMAL)
         self._text.delete("1.0", tk.END)
@@ -80,6 +83,7 @@ class ResultPanel:
     def set_summaries(self, summaries: Iterable[ResultSummary]) -> None:
         """Render latest metric summaries as compact cards and copy text."""
         summaries = tuple(summaries)
+        self._summaries = summaries
         self._hide_text_mode()
         if self._can_update_in_place(summaries):
             self._update_summary_values(summaries)
@@ -93,6 +97,7 @@ class ResultPanel:
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
     def clear(self) -> None:
+        self._summaries = ()
         self._clear_summary_tables()
         self._hide_text_mode()
         self._set_copy_text("")
@@ -308,3 +313,25 @@ class ResultPanel:
         widget = self._text
         widget.clipboard_clear()
         widget.clipboard_append(contents)
+
+    def copy_result(self) -> bool:
+        """Copy the latest result, including an explicit empty-result status."""
+        contents = self._text.get("1.0", tk.END).rstrip() or "Status\tNo results"
+        self._text.clipboard_clear()
+        self._text.clipboard_append(contents)
+        return True
+
+    def sectioned_csv_rows(self) -> tuple[tuple[str, ...], ...]:
+        """Return the latest visible summaries in display order for CSV export."""
+        if not self._summaries:
+            status = self._text.get("1.0", tk.END).rstrip() or "No results"
+            return (("Status", status),)
+        rows: list[tuple[str, ...]] = []
+        for index, summary in enumerate(self._summaries):
+            if index:
+                rows.append(())
+            rows.append((summary.title,))
+            rows.append(("Field", "Value"))
+            rows.extend(summary.fields)
+            rows.append(("Status", summary.status))
+        return tuple(rows)

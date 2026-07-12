@@ -545,6 +545,34 @@ def test_iso_iseer_detail_copy_button_uses_header_included_tsv(tk_root):
     assert "None" not in trace_clipboard
 
 
+def test_iso_iseer_result_actions_use_compact_result_not_detail(
+    monkeypatch, tk_root
+):
+    tab = _make_tab(tk_root)
+    section = tab._two_point_section
+    calls = []
+
+    section.copy_button.invoke()
+    copied = tk_root.clipboard_get()
+    assert copied.splitlines()[0] == "\t".join(section.result_table.column_labels)
+    assert "Bin No." not in copied
+
+    def fake_export(parent, default_filename, headers, rows):
+        calls.append((parent, default_filename, headers, rows))
+        return True
+
+    monkeypatch.setattr(table_csv_export, "export_table_to_csv", fake_export)
+    section.export_button.invoke()
+    assert calls == [
+        (
+            section._frame,
+            "iso_iseer_2point_result.csv",
+            section.result_table.column_labels,
+            section.result_table.rows,
+        )
+    ]
+
+
 def test_iso_iseer_detail_csv_export_button_still_calls_helper(monkeypatch, tk_root):
     tab = _make_tab(tk_root)
     section = tab._two_point_section

@@ -19,7 +19,6 @@ from __future__ import annotations
 from typing import Optional
 
 import tkinter as tk
-import tkinter.font as tkfont
 from tkinter import ttk
 
 from apps.calculator.ui.layout_constants import TOP_NOTEBOOK_SELECTED_FG
@@ -123,14 +122,8 @@ class CalculatorTkApp:
 
     def _configure_top_notebook_style(self) -> None:
         style = ttk.Style(self.root)
-        self._top_tab_selected_font = tkfont.nametofont(
-            "TkDefaultFont", root=self.root
-        ).copy()
-        self._top_tab_selected_font.configure(weight="bold")
-        style.configure("CalculatorTop.TNotebook.Tab", padding=(10, 4))
         style.map(
             "CalculatorTop.TNotebook.Tab",
-            font=[("selected", self._top_tab_selected_font.name)],
             foreground=[("selected", TOP_NOTEBOOK_SELECTED_FG)],
         )
 

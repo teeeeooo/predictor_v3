@@ -72,6 +72,7 @@ class ScopResultSurface:
             tone=SemanticTone.PENDING,
         )
         self._status_label.configure(foreground=RESULT_STATUS_FG)
+        self._set_status("대기 중", SemanticTone.PENDING)
 
     @property
     def frame(self) -> tk.Frame:

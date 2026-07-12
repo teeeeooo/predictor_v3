@@ -20,6 +20,9 @@ RESULT_HEADER_BG = visual_color("table.header")
 RESULT_VALUE_BG = visual_color("surface.panel")
 RESULT_STATUS_FG = visual_color("status.neutral")
 TOP_NOTEBOOK_SELECTED_FG = visual_color("accent.primary")
+NOTEBOOK_TAB_FONT = "TkDefaultFont 10"
+NOTEBOOK_TAB_PADDING = (14, 8)
+TOP_NOTEBOOK_TAB_PADDING = (10, 4)
 
 TABLE_FONT_SIZE = 10
 TABLE_BODY_FONT = ("TkDefaultFont", TABLE_FONT_SIZE)

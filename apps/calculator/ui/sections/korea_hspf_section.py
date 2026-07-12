@@ -19,6 +19,7 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.result_models import ResultSummary, result_status
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import HEATING_HSPF_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
@@ -136,6 +137,15 @@ class KoreaHspfSection:
         )
         self.detail_toggle.surface_role = "korea_hspf_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.result_actions = add_result_actions(
+            self.action_row,
+            parent=self._frame,
+            result_owner=self.result_panel,
+            csv_filename="korea_hspf_result.csv",
+            surface_prefix="korea_hspf_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=("KOREA HSPF",),

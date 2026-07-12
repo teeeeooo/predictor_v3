@@ -22,6 +22,7 @@ from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.iso_iseer_2point import IsoIseer2PointBatchDialog
 
@@ -108,6 +109,15 @@ class IsoIseer2PointSection:
         )
         self.detail_toggle.surface_role = "two_point_detail_toggle"
         self.detail_toggle.pack(side=tk.LEFT, padx=(6, 0))
+        self.result_actions = add_result_actions(
+            self.action_row,
+            parent=self._frame,
+            result_owner=self.result_table,
+            csv_filename="iso_iseer_2point_result.csv",
+            surface_prefix="iso_iseer_2point_result",
+        )
+        self.copy_button = self.result_actions.copy_button
+        self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
             source_labels=tuple(two_point_profile_labels()),
