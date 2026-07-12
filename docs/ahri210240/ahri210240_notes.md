@@ -4,7 +4,7 @@
 
 이 문서는 AHRI 210/240 계열의 HSPF2와 SEER2 계산 자산을 프로젝트 기준으로 정리한 기준 문서다. Primary 기준은 이 문서와 `docs/ahri210240/ahri210240_dev_notes.md`, `core/calculators/standards/ahri_hspf2.py`, `core/calculators/standards/ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, 관련 HSPF2 테스트 파일이다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다.
 
-현재 프로젝트에서 가장 깊게 검증된 경로는 AHRI 210/240-2026 HSPF2 v3 경로다. 적용 대상은 non-ducted, single-split, variable-capacity, air-to-air heat pump이며, 우선 지역은 Region IV다. SEER2는 현재 계산 코드에서 확인 가능한 variable-capacity cooling bin 계산 범위만 문서화한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107, Equation 11.181~11.218.
+현재 프로젝트에서 가장 깊게 검증된 경로는 AHRI 210/240-2026 HSPF2 v3 경로다. 적용 대상은 non-ducted, single-split, variable-capacity, air-to-air heat pump이며, 우선 지역은 Region IV다. 현재 테스트의 variable-capacity HSPF2/SEER2 입력과 expected 결과는 사용자가 AHRI 공식 계산기로 검증한 official-calculator golden으로 고정한다. 신규 deep-result fingerprint는 구조 호환성을 위한 characterization이며 official golden으로 재분류하지 않는다. SEER2의 지원 범위는 여전히 현재 계산 코드의 variable-capacity cooling bin 경로로 한정한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107, Equation 11.181~11.218.
 
 ## 2. Scope
 
@@ -150,14 +150,14 @@
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
 | HSPF2 entry point | `core/calculators/standards/ahri_hspf2.py` | `calculate_hspf2` | `HSPF2` | v3 production path로 연결 |
-| HSPF2 v3 path | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `raw_hspf2`, `bin_details` | AHRI 210/240-2026 variable-capacity heating |
+| HSPF2 v3 path | `core/calculators/standards/_ahri/hspf2_variable.py` | `HSPF2VariableCapacityEngine.calculate` | `raw_hspf2`, `bin_details` | facade 뒤의 AHRI 210/240-2026 variable-capacity heating |
 | Region IV bin table | `data/region_configs/usa_hspf2.json` | n/a | `bin_table` | Table 16 fractional bin hours |
-| H1Full fallback | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `summary.metadata.h12_source` | tested / eq_11_183 / eq_11_185 |
-| H22 fallback | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `summary.metadata.h22_source` | tested / eq_11_44_11_50 |
-| intermediate slope | `core/calculators/standards/ahri_hspf2.py` | `_cert_intermediate_capacity_power_at_temp` | `debug_info.intermediate_metadata` | Eq.11.199~11.204 trace |
-| Case details | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `bin_details` | Case I/II/III |
-| HSPF2 legacy | `core/calculators/standards/ahri_hspf2.py` | `calculate_hspf2_v2` | `HSPF2` | legacy reference only |
-| SEER2 current path | `core/calculators/standards/ahri_seer2.py` | `calculate_seer2` | `SEER2` | 현재 구현 확인 가능한 냉방 경로 |
+| H1Full fallback | `core/calculators/standards/_ahri/hspf2_points.py` | `resolve_variable_capacity` | `summary.metadata.h12_source` | tested / eq_11_183 / eq_11_185 |
+| H22 fallback | `core/calculators/standards/_ahri/hspf2_points.py` | `resolve_variable_capacity` | `summary.metadata.h22_source` | tested / eq_11_44_11_50 |
+| intermediate slope | `core/calculators/standards/_ahri/hspf2_performance.py` | `intermediate_capacity_power_at_temp` | `debug_info.intermediate_metadata` | Eq.11.199~11.204 trace |
+| Case details | `core/calculators/standards/_ahri/hspf2_variable.py` | `calculate` | `bin_details` | Case I/II/III |
+| HSPF2 legacy | `core/calculators/standards/_ahri/hspf2_legacy.py` | `calculate` | `HSPF2` | public v2 facade가 위임하는 legacy reference |
+| SEER2 current path | `core/calculators/standards/_ahri/seer2_variable.py` | `calculate` | `SEER2` | public SEER2 facade 뒤의 variable-capacity 냉방 경로 |
 
 ## 9. Critical Implementation Notes
 
@@ -179,7 +179,7 @@
 | HSPF2 Region I/II/III/V/VI | Region IV table만 canonical table로 존재 | 각 region fractional bin hours, HLH, t_od, t_zl, C_vs | AHRI 210/240-2026 Table 16 |
 | HSPF2 ducted/VRF/multi-split/dual fuel | 현재 scope 밖 | 장비별 test point schema와 Section 11 분기 | AHRI 210/240-2026 Section 11 |
 | HSPF2 automatic use of Eq.11.107 multiplier | 현재 raw는 `fdef_override`를 곱함 | defrost 적용 정책과 golden 재검증 | AHRI 210/240-2026 Equation 11.107 |
-| SEER2 official golden parity | 관련 테스트가 HSPF2만큼 정리되어 있지 않음 | AHRI 공식 계산기 또는 인증 worksheet | AHRI 210/240 cooling sections |
+| SEER2 additional parity | 현재 official-calculator golden은 variable-capacity 구현 범위만 고정 | off-mode 등 추가 경로의 AHRI 공식 계산기 또는 인증 worksheet | AHRI 210/240 cooling sections |
 | SEER2 data externalization | 현재 파일 내 기본 config write side effect 존재 | 별도 JSON schema와 테스트 | Project current implementation |
 
 ## 11. Golden Sample Verification

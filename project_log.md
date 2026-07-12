@@ -29,6 +29,14 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-12 — AHRI SEER2/HSPF2 core refactor closeout
+
+### Decision
+
+- Preserve `ahri_seer2.py` and `ahri_hspf2.py` as the stable public facades used by Calculator, capability, dispatcher, and ML envelope routes.
+- Keep variable-capacity SEER2, variable-capacity HSPF2, and legacy HSPF2 v2 behind separate private owners; future two-stage/triple-capacity formulas must be sibling engines rather than branches added to the current formula bodies.
+- Treat the existing user-confirmed expected results as official-calculator golden and the canonical deep-result fingerprints as structural characterization only. No formula, rounding, config, result/diagnostics schema, application scaling, or exception contract changed in this refactor.
+
 ## 2026-07-12 — Calculator table-family migration closeout
 
 ### Decision

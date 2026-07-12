@@ -4,7 +4,7 @@
 
 이 문서는 AHRI 210/240 HSPF2/SEER2 계산 자산을 수정하거나 검증하는 개발자와 AI Agent를 위한 작업 지침이다. 현재 프로젝트에서는 HSPF2 v3가 가장 중요한 생산 경로이며, SEER2는 현재 계산 코드에서 확인 가능한 범위만 다룬다.
 
-Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculators/standards/ahri_hspf2.py`, `core/calculators/standards/ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, `test_hspf2_v3_*.py`다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
+Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calculators/standards/ahri_hspf2.py`, `core/calculators/standards/ahri_seer2.py`, `data/region_configs/usa_hspf2.json`, 관련 AHRI 테스트다. 현재 테스트의 variable-capacity HSPF2/SEER2 입력과 expected 결과는 사용자가 AHRI 공식 계산기로 검증한 official-calculator golden이며, refactor를 맞추기 위해 변경하지 않는다. AHRI PDF는 Section/Table/Equation 번호 확인용 Secondary 근거로만 사용한다. 과거 HSPF2 구현 상세 원본은 `docs/archive/standards_legacy/ahri_hspf2.md`에 historical source로 보존한다. 근거: AHRI 210/240-2026 Section 11, Table 16, Equation 11.104, Equation 11.107.
 
 도메인 용어 및 코드 변수명 정의는 `glossary.md`를 참조하라.
 
@@ -19,7 +19,7 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | Case I PLF를 Case II/III에도 적용 | energy denominator가 과대 또는 과소 계산된다. | cycling correction 적용 위치 혼동 | Case I에만 `PLF = 1 - Cd * (1 - HLF)` 적용한다. | AHRI 210/240-2026 Case I path |
 | ISO16358 HSPF Formula 30/50 branch를 AHRI HSPF2에 이식 | Case I/II/III energy trace가 표준과 맞지 않는다. | ISO Table 1의 2°C/-7°C extended frost matrix와 AHRI HSPF2 Hxx test point 체계를 혼동함 | AHRI HSPF2는 Section 11의 Case I/II/III, H01/H11/H12/H22/H2Int/H32/H42 경로만 사용한다. ISO `P_fe`, `P_ext`, `P_RH` 구조는 AHRI path에 넣지 않는다. | AHRI 210/240-2026 Section 11; ISO16358-2 Table 1, Formula 30 |
 | defrost trace와 multiplier 적용을 혼동 | raw HSPF2가 예상과 다르게 변한다. | Eq.11.107 계산값과 `fdef_override` 적용 정책 혼동 | `summary.metadata.defrost`의 `f_def_seasonal`, `fdef_used`, `seasonal_defrost_multiplier_applied`를 함께 확인한다. | AHRI 210/240-2026 Equation 11.107 |
-| SEER2를 HSPF2와 같은 검증 수준으로 가정 | 문서와 실제 신뢰 수준이 불일치한다. | SEER2 official parity 테스트가 부족함 | SEER2는 현재 구현 확인 범위로만 설명한다. | Project current implementation |
+| official golden과 characterization을 혼동 | refactor 실패와 구조 snapshot 차이를 구분하지 못한다. | 새로 생성한 deep-result fingerprint를 공식 golden으로 오인 | 기존 사용자 확인 expected만 official-calculator golden으로 두고, 신규 fingerprint는 structural characterization으로 표기한다. | Project decision 2026-07-12 |
 
 ## 3. Correct Calculation Order
 
@@ -150,7 +150,7 @@ Naming policy note:
 | H12/H22 fallback 변경 | official comparison case와 metadata source 확인 |
 | H2Int 경로 변경 | H2Int power sensitivity test 필수 |
 | Case I/II/III 변경 | conservation test와 case activation test 필수 |
-| SEER2 변경 | 별도 SEER2 golden test를 먼저 작성한 뒤 변경 |
+| SEER2 변경 | 기존 official-calculator golden과 deep characterization을 먼저 실행한 뒤 변경 |
 
 권장 명령:
 
@@ -173,7 +173,7 @@ python3 -B test_hspf2_v3_bincheck.py
 | H2Int sensitivity | intermediate power가 Case II COP에 영향을 주는지 확인 | `test_hspf2_v3_h2int.py` |
 | Case activation | Case I/II/III, fractional availability 확인 | `test_hspf2_v3_low_cases.py` |
 
-SEER2는 현재 HSPF2처럼 official calculator parity가 정리되어 있지 않다. 향후 SEER2를 확장할 때는 먼저 AHRI 공식 계산기 또는 인증 worksheet 기반 golden case를 확보해야 한다.
+SEER2의 현재 variable-capacity 테스트 입력과 expected는 사용자가 AHRI 공식 계산기로 검증한 golden이다. 다만 이 결정은 현재 지표와 결과를 보호하며, off-mode나 추가 standard parity를 검증했다는 의미는 아니다.
 
 ## 10. Future Refactor Notes
 
@@ -182,16 +182,33 @@ SEER2는 현재 HSPF2처럼 official calculator parity가 정리되어 있지 �
 | HSPF2 v2 legacy path | v3 migration 안정성 확인 완료까지 | legacy reference로만 유지 | Project compatibility |
 | Defrost multiplier | 정책과 golden이 확정될 때까지 | Eq.11.107 seasonal multiplier 적용 여부 명확화 | AHRI 210/240-2026 Equation 11.107 |
 | Region expansion | Region IV 외 table 검증 전까지 | region parameterized table 구조 | AHRI 210/240-2026 Table 16 |
-| SEER2 config | SEER2 golden 확보 전까지 | external JSON schema와 tests 정비 | AHRI 210/240 cooling sections |
+| SEER2 config | config/schema migration 승인 전까지 | external JSON schema와 tests 정비 | AHRI 210/240 cooling sections |
 | SEER2 off-mode | 공식 요구와 입력 단위 확인 전까지 | `p_w_off` 실제 seasonal denominator 반영 검토 | AHRI 210/240 cooling sections |
 
 계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. 특히 `calculate_hspf2_v2()`와 `calculate_hspf2()`는 보호 대상이다.
+
+### Final internal ownership
+
+Public import path와 method/result contract는 `ahri_hspf2.py`, `ahri_seer2.py` facade가 소유한다. 구현은 `core/calculators/standards/_ahri/`의 private owner로 분리되며 application, UI, capability, ML envelope에 노출하지 않는다.
+
+| Owner | Responsibility |
+| --- | --- |
+| `hspf2_context.py` | config 로드, Region IV validation, seasonal runtime context |
+| `hspf2_points.py` | alias/case normalization, validation, H12/H22/H42 fallback metadata |
+| `hspf2_performance.py` | variable-capacity low/intermediate/full performance와 building load |
+| `hspf2_variable.py` | Case I/II/III bin loop와 seasonal accumulation |
+| `hspf2_result.py` | 기존 raw result, duplicate totals, summary, diagnostics mapping assembly |
+| `hspf2_legacy.py` | v2 validation, interpolation, seasonal loop, legacy result mapping |
+| `seer2_variable.py` | A/B/E/F curves, Case 1/2.1/2.2/3, fractional seasonal result |
+| `numeric.py` | 두 engine에서 의미가 동일함이 확인된 safe division과 linear interpolation만 공유 |
+
+Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누적하지 않고, 후속 design에서 facade 뒤의 sibling engine으로 추가한다.
 
 ## 11. HSPF2 v3 구현 현황 및 검증 기준
 
 ### 구현 현황
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
-- **핵심 엔진**: `core/calculators/standards/ahri_hspf2.py`의 `calculate_hspf2_v3` (v2 legacy 대비 정교한 canonical path)
+- **핵심 엔진**: `core/calculators/standards/_ahri/hspf2_variable.py` (stable `ahri_hspf2.py` facade를 통해 호출)
 - **입력 체계**: `legacy_to_canonical()`을 통해 다양한 입력 변수명을 표준 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
 - **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
 
@@ -228,5 +245,5 @@ AGENTS.md Lite 규칙을 먼저 읽어라. HSPF2는 Region IV, non-ducted single
 ### SEER2 정비 작업
 
 ```text
-AGENTS.md Lite 규칙을 먼저 읽어라. SEER2는 현재 구현 확인 가능한 범위만 신뢰하고, 공식 parity를 주장하지 말라. 먼저 AHRI 공식 계산기 또는 인증 worksheet 기반 golden case를 추가한 뒤 계산 경로를 수정하라.
+AGENTS.md Lite 규칙을 먼저 읽어라. SEER2는 현재 variable-capacity official-calculator golden expected를 변경하지 말고, 현재 구현 확인 범위 밖의 off-mode나 추가 parity를 주장하지 말라. 계산 해석 변경은 별도 golden evidence와 승인 후 진행하라.
 ```

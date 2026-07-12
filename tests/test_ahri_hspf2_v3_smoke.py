@@ -1,4 +1,5 @@
 from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculators.standards._ahri.hspf2_performance import HSPF2VariablePerformance
 
 
 def row_at_temp(result, temp_f):
@@ -56,17 +57,18 @@ def test_hspf2_v3_smoke_and_legacy_delta():
     v2 = calc.calculate_hspf2_v2(legacy_points)
     v3_with_h42 = calc.calculate_hspf2_v3(canonical_with_h42, **kwargs)
     v3_without_h42 = calc.calculate_hspf2_v3(canonical_without_h42, **kwargs)
-    q_low_42, p_low_42 = calc._canonical_low_capacity_power_at_temp(
+    performance = HSPF2VariablePerformance()
+    q_low_42, p_low_42 = performance.canonical_low_capacity_power_at_temp(
         42,
         canonical_low_speed_mock,
     )
-    q_full_at_5, _ = calc._cert_full_capacity_power_at_temp(
+    q_full_at_5, _ = performance.full_capacity_power_at_temp(
         5,
         canonical_h4_full_anchor_mock,
         canonical_h4_full_anchor_mock["H12"],
         (q_h4full, 1900),
     )
-    q_full_at_17, _ = calc._cert_full_capacity_power_at_temp(
+    q_full_at_17, _ = performance.full_capacity_power_at_temp(
         17,
         canonical_h4_full_anchor_mock,
         canonical_h4_full_anchor_mock["H12"],
