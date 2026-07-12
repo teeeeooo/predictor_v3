@@ -31,7 +31,6 @@ class HSPF2TripleNorthernEngine:
         points, sources = self._resolve_points(test_points, options, ranges)
         q_a_full, _ = positive_point(test_points, "AFull", "A2", "A_Full")
         cd_low, cd_full, cd_boost = self._degradation_coefficients(options)
-
         total_heating = compressor_energy = resistance_energy = 0.0
         details: list[dict] = []
         for index, (temp_f, fraction) in enumerate(
@@ -97,7 +96,6 @@ class HSPF2TripleNorthernEngine:
                     "E_j": e_comp + e_resistance,
                 }
             )
-
         return assemble_result(
             product=TRIPLE_CAPACITY_NORTHERN,
             formula_path="ahri_210_240_2026_triple_capacity_northern_heating",
@@ -186,7 +184,7 @@ class HSPF2TripleNorthernEngine:
         }
         sources = {key: "tested" for key in points}
         h3_low = positive_point(test_points, "H3Low", "H31", required=False)
-        if h3_low is None:
+        if h3_low is None or not bool(options.get("h3_low_tested", True)):
             if ranges["low"][0] < 40.0:
                 raise ValueError("H3Low is required when Low stage is permitted below 40 F")
             h3_low = points["H1Low"]
@@ -194,13 +192,18 @@ class HSPF2TripleNorthernEngine:
         else:
             sources["H3Low"] = "tested"
         points["H3Low"] = h3_low
-        q_h3, p_h3 = h3_low
-        q_h1, p_h1 = points["H1Low"]
-        points["H2Low"] = (
-            0.9 * (q_h3 + 0.6 * (q_h1 - q_h3)),
-            0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
-        )
-        sources["H2Low"] = "eq_11_253_11_254"
+        h2_low = positive_point(test_points, "H2Low", "H21", required=False)
+        if h2_low is None or not bool(options.get("h2_low_tested", False)):
+            q_h3, p_h3 = h3_low
+            q_h1, p_h1 = points["H1Low"]
+            h2_low = (
+                0.9 * (q_h3 + 0.6 * (q_h1 - q_h3)),
+                0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
+            )
+            sources["H2Low"] = "eq_11_253_11_254"
+        else:
+            sources["H2Low"] = "tested"
+        points["H2Low"] = h2_low
         h2_boost = positive_point(test_points, "H2Boost", "H23", required=False)
         if h2_boost is None or not bool(options.get("h2_boost_tested", True)):
             q_h2_full, p_h2_full = points["H2Full"]
@@ -252,10 +255,7 @@ class HSPF2TripleNorthernEngine:
         raw_low = options.get("cd_low", options.get("c_d_low"))
         low_defaulted = raw_low is None or float(raw_low) > 0.25
         low = effective_cd(raw_low)
-        if low_defaulted:
-            full = low
-        else:
-            full = effective_cd(options.get("cd_full", options.get("c_d_full", low)))
+        full = low if low_defaulted else effective_cd(options.get("cd_full", options.get("c_d_full", low)))
         boost = effective_cd(options.get("cd_boost", options.get("c_d_boost", full)))
         return low, full, boost
 
