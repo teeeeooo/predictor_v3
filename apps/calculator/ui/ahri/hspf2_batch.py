@@ -65,7 +65,9 @@ class AhriHspf2BatchResult:
     state: BatchRowState
 
 
-def _point_spec(point: str, *, enabled: bool = True, label: str | None = None) -> MatrixMeasurementPointSpec:
+def _point_spec(
+    point: str, *, enabled: bool = True, label: str | None = None
+) -> MatrixMeasurementPointSpec:
     return MatrixMeasurementPointSpec(
         key=point,
         label=label or point,
@@ -79,7 +81,9 @@ def _point_spec(point: str, *, enabled: bool = True, label: str | None = None) -
     )
 
 
-def build_ahri_hspf2_batch_spec(active: AhriHspf2BatchActiveOptions) -> BatchMatrixSpec:
+def build_ahri_hspf2_batch_spec(
+    active: AhriHspf2BatchActiveOptions,
+) -> BatchMatrixSpec:
     product = active.product_classification
     points: list[MatrixMeasurementPointSpec] = [
         MatrixMeasurementPointSpec(
@@ -108,9 +112,14 @@ def build_ahri_hspf2_batch_spec(active: AhriHspf2BatchActiveOptions) -> BatchMat
             )
             for point in AHRI_HSPF2_UI_POINT_ORDER
         )
-        result_metrics = (("hspf2", "HSPF2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),)
+        result_metrics = (
+            ("hspf2", "HSPF2", BATCH_MATRIX_RESULT_PRIMARY_WIDTH_CHARS),
+        )
     elif product == "dual_stage":
-        enabled = {"H2Low": active.h2_low_enabled, "H4Full": active.h4_full_enabled}
+        enabled = {
+            "H2Low": active.h2_low_enabled,
+            "H4Full": active.h4_full_enabled,
+        }
         points.extend(
             _point_spec(point, enabled=enabled.get(point, True))
             for point in AHRI_HSPF2_DUAL_POINT_ORDER
@@ -118,6 +127,7 @@ def build_ahri_hspf2_batch_spec(active: AhriHspf2BatchActiveOptions) -> BatchMat
         result_metrics = _multi_result_metrics()
     elif product == "triple_capacity_northern":
         enabled = {
+            "H2Low": active.h2_low_enabled,
             "H2Boost": active.h2_boost_enabled,
             "H3Low": active.h3_low_enabled,
         }
@@ -163,7 +173,9 @@ class AhriHspf2BatchHandler:
         self.spec = build_ahri_hspf2_batch_spec(common.active)
 
     def calculate_row(self, row: Mapping[str, str]) -> AhriHspf2BatchResult:
-        visible = {key: str(row.get(key, "")).strip() for key in self.spec.input_keys}
+        visible = {
+            key: str(row.get(key, "")).strip() for key in self.spec.input_keys
+        }
         if not all(visible.values()):
             return self._blank(BatchRowState.PENDING)
         values = dict(self.common.numeric_values)
