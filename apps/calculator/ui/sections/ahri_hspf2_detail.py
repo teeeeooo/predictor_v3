@@ -30,12 +30,24 @@ def _common_values(row: Mapping[str, object]) -> dict[str, object]:
         "building_load": optional_fixed_number(row.get("building_load"), 1),
         "q_low": optional_fixed_number(row.get("q_low"), 1),
         "q_full": optional_fixed_number(row.get("q_full"), 1),
-        "q_comp": optional_fixed_number(row.get("q_comp"), 1),
-        "e_comp": optional_fixed_number(row.get("e_comp"), 1),
-        "q_aux": optional_fixed_number(row.get("q_aux"), 1),
-        "e_aux": optional_fixed_number(row.get("e_aux"), 1),
-        "q_total": optional_fixed_number(row.get("q_j"), 1),
-        "e_total": optional_fixed_number(row.get("E_j"), 1),
+        "q_comp": optional_fixed_number(
+            _first(row, "seasonal_q_comp", "q_comp"), 1
+        ),
+        "e_comp": optional_fixed_number(
+            _first(row, "seasonal_e_comp", "e_comp"), 1
+        ),
+        "q_aux": optional_fixed_number(
+            _first(row, "seasonal_q_aux", "q_aux"), 1
+        ),
+        "e_aux": optional_fixed_number(
+            _first(row, "seasonal_e_aux", "e_aux"), 1
+        ),
+        "q_total": optional_fixed_number(
+            _first(row, "seasonal_q_j", "q_j"), 1
+        ),
+        "e_total": optional_fixed_number(
+            _first(row, "seasonal_E_j", "E_j"), 1
+        ),
     }
 
 
