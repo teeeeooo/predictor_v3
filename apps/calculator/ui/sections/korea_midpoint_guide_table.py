@@ -45,16 +45,23 @@ class KoreaMidpointGuideTable:
         values = {key: value for key, value in fields}
         self._render(values)
 
-    def set_status(self, status: str) -> None:
+    def set_status(self, status: str, *, tone: SemanticTone) -> None:
         self._render(
             {
                 "current_tc": status,
                 "recommended_tc": "-",
                 "recommended_mid_capacity": "-",
-            }
+            },
+            value_tones={"current_tc": tone},
         )
 
-    def _render(self, values: dict[str, str]) -> None:
+    def _render(
+        self,
+        values: dict[str, str],
+        *,
+        value_tones: dict[str, SemanticTone] | None = None,
+    ) -> None:
+        value_tones = value_tones or {}
         rows = tuple(
             (label, values.get(row_key, "-"))
             for row_key, label in _GUIDE_ROWS
@@ -63,9 +70,12 @@ class KoreaMidpointGuideTable:
             rows,
             tones={
                 (row_index, 1): (
-                    SemanticTone.PENDING
-                    if value == "-"
-                    else SemanticTone.CALCULATED
+                    value_tones.get(
+                        _GUIDE_ROWS[row_index][0],
+                        SemanticTone.PENDING
+                        if value == "-"
+                        else SemanticTone.CALCULATED,
+                    )
                 )
                 for row_index, (_label, value) in enumerate(rows)
             },

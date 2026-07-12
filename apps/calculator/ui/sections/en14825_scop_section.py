@@ -507,7 +507,9 @@ class En14825ScopSection:
                 if input_mapping.invalid_fields:
                     table.set_invalid_fields(input_mapping.invalid_fields)
                     self._clear_computed_rows(clm)
-                    self._clear_result_card(clm)
+                    self._show_result_card_invalid(
+                        clm, "입력 오류: 숫자 입력을 확인하세요."
+                    )
                     detail_errors.append("입력 오류: 숫자 입력을 확인하세요.")
                     continue
                 else:
@@ -515,7 +517,9 @@ class En14825ScopSection:
 
             except Exception:
                 self._clear_computed_rows(clm)
-                self._clear_result_card(clm)
+                self._show_result_card_invalid(
+                    clm, "입력 대기: 기류/설정을 확인하세요."
+                )
                 detail_errors.append("입력 대기: 기류/설정을 확인하세요.")
                 continue
 
@@ -628,6 +632,9 @@ class En14825ScopSection:
 
     def _show_result_card_error(self, climate: str, message: str) -> None:
         self._result_surfaces[climate].show_error(message)
+
+    def _show_result_card_invalid(self, climate: str, message: str) -> None:
+        self._result_surfaces[climate].show_invalid(message)
 
     def _clear_result_card(self, climate: str) -> None:
         self._result_surfaces[climate].clear()

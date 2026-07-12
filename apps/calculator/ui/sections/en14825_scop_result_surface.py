@@ -63,6 +63,7 @@ class ScopResultSurface:
             surface_role="compact_status_cell",
         )
         status_cell.grid_configure(columnspan=len(self._COLUMNS) + 1)
+        self._status_cell = status_cell
         self._status_label = create_text_label(
             status_cell,
             text="대기 중",
@@ -102,16 +103,23 @@ class ScopResultSurface:
 
     def update(self, summary: ScopResultSummary) -> None:
         self.show()
-        self._status_label.configure(text=format_scop_status(summary))
+        self._set_status(
+            format_scop_status(summary), self._status_tone(summary.status_code)
+        )
         self._set_row_values(format_scop_compact_rows(summary))
 
     def show_error(self, message: str) -> None:
         self.show()
-        self._status_label.configure(text=f"기류/설정 오류: {message}")
+        self._set_status(f"기류/설정 오류: {message}", SemanticTone.WARNING)
+        self.clear_values()
+
+    def show_invalid(self, message: str) -> None:
+        self.show()
+        self._set_status(message, SemanticTone.INVALID)
         self.clear_values()
 
     def clear(self) -> None:
-        self._status_label.configure(text="대기 중")
+        self._set_status("대기 중", SemanticTone.PENDING)
         self.clear_values()
 
     def clear_values(self) -> None:
@@ -128,7 +136,7 @@ class ScopResultSurface:
             )
             for row_label in self._ROW_LABELS
         )
-        self._grid.set_rows(display_rows, tones=self._row_tones())
+        self._grid.set_rows(display_rows, tones=self._cell_tones(display_rows))
 
     def _empty_rows(self) -> tuple[tuple[str, ...], ...]:
         return tuple(
@@ -137,7 +145,42 @@ class ScopResultSurface:
         )
 
     def _row_tones(self) -> dict[tuple[int, int], SemanticTone]:
+        return self._cell_tones(self._empty_rows())
+
+    def _cell_tones(
+        self, rows: tuple[tuple[str, ...], ...]
+    ) -> dict[tuple[int, int], SemanticTone]:
         return {
-            (1, column): SemanticTone.CALCULATED
-            for column in range(len(self._COLUMNS) + 1)
+            (row, column): (
+                SemanticTone.DEFAULT
+                if column == 0
+                else SemanticTone.PENDING
+                if value == "-"
+                else SemanticTone.CALCULATED
+            )
+            for row, values in enumerate(rows)
+            for column, value in enumerate(values)
         }
+
+    def _set_status(self, text: str, tone: SemanticTone) -> None:
+        background = self._grid.policy.background(tone)
+        self._status_cell.configure(background=background)
+        self._status_cell.semantic_background = background
+        self._status_cell.semantic_tone = tone.value
+        self._status_label.configure(text=text, background=background)
+        self._status_label.semantic_tone = tone.value
+
+    @staticmethod
+    def _status_tone(status_code: str) -> SemanticTone:
+        if status_code in {"idle", "input_incomplete"}:
+            return SemanticTone.PENDING
+        if status_code == "complete":
+            return SemanticTone.DEFAULT
+        if status_code in {
+            "invalid_design_load",
+            "invalid_t_design",
+            "invalid_climate",
+            "invalid_temp_override",
+        }:
+            return SemanticTone.INVALID
+        return SemanticTone.WARNING

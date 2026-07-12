@@ -74,3 +74,11 @@ def test_korea_tab_contains_cspf_hspf_metric_notebook(tk_root) -> None:
     assert korea.hspf_section.guide_table.text_at_address(("current_tc", "value")) == (
         "입력 대기"
     )
+    for guide_table in (
+        korea.cspf_section.guide_table,
+        korea.hspf_section.guide_table,
+    ):
+        assert guide_table.value_labels[(0, 0)].semantic_tone == "default"
+        assert guide_table.value_labels[(0, 1)].semantic_tone == "pending"
+        assert guide_table.value_labels[(1, 1)].semantic_tone == "pending"
+        assert guide_table.value_labels[(2, 1)].semantic_tone == "pending"

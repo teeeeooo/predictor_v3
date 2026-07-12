@@ -736,7 +736,8 @@ def test_scop_gui_integration_basics():
         assert result_surface.header_labels["row_label"].cget("text") == "구분"
         assert result_surface.header_labels["row_label"].cget("background") == RESULT_HEADER_BG
         assert section._result_value_labels["average"][("Tested", "SCOP")].cget("background") == TABLE_PASS_BG
-        assert result_surface.row_header_labels["Tested"].cget("background") == TABLE_PASS_BG
+        assert result_surface.row_header_labels["Tested"].cget("background") == RESULT_VALUE_BG
+        assert result_surface.row_header_labels["Tested"].semantic_tone == "default"
         assert result_surface._status_label.winfo_manager() == "pack"
         assert set(result_surface._status_label.master.grid_info()["sticky"]) == set(
             "nsew"

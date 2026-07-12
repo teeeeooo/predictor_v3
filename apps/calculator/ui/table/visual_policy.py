@@ -55,6 +55,8 @@ class TkTableVisualPolicy:
     divider_width: int = 1
     outer_border_width: int = 0
     focus_border_color: str = TABLE_FOCUS_BORDER
+    body_background: str = RESULT_VALUE_BG
+    selected_background: str = TABLE_SELECTED_BG
     header_background: str = TABLE_HEADER_BG
     header_foreground: str = TABLE_HEADER_FG
     calculated_background: str = TABLE_PASS_BG
@@ -86,17 +88,16 @@ class TkTableVisualPolicy:
             return TABLE_ERROR_BG if tone is SemanticTone.FAIL else TABLE_INVALID_BG
         if editable:
             return TABLE_EDITABLE_BG
-        return RESULT_VALUE_BG
+        return self.body_background
 
     def foreground(self, *, muted: bool = False) -> str:
         return TABLE_STATIC_FG if muted else TABLE_HEADER_FG
 
-    @staticmethod
-    def overlay_background(name: str) -> str:
+    def overlay_background(self, name: str) -> str:
         if name == "active" or name == "focus":
             return TABLE_ACTIVE_BG
         if name == "selected":
-            return TABLE_SELECTED_BG
+            return self.selected_background
         raise ValueError(f"unknown table interaction overlay: {name!r}")
 
 

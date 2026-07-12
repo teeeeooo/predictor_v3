@@ -24,6 +24,7 @@ from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.korea_midpoint_guide_table import (
     KoreaMidpointGuideTable,
 )
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table.controller import TkTableController
 
 
@@ -212,7 +213,14 @@ class KoreaCspfSection:
                 )
         self._guide.set_values(result.guide_fields)
         if result.guide_status and not result.guide_fields:
-            self._guide.set_status(result.guide_status)
+            tone = (
+                SemanticTone.INVALID
+                if result.invalid_fields
+                else SemanticTone.WARNING
+                if result.guide_status.startswith("guide 계산 오류")
+                else SemanticTone.PENDING
+            )
+            self._guide.set_status(result.guide_status, tone=tone)
         if not result.is_ok:
             self._clear_trace(result.detail_status or result.status_text)
             self.result_panel.set_summaries(
