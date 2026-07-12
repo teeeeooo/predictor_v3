@@ -28,6 +28,39 @@ class HSPF2VariablePerformance:
         p_low = p_h1_low + (p_h0_low - p_h1_low) * self.safe_div(temp_f - 47, 62 - 47)
         return max(0.0, q_low), max(0.0, p_low)
 
+    def canonical_low_capacity_power_at_temp(self, temp_f: float, low_points: dict) -> tuple:
+        point_temps = {"H11": 47, "H2V": 35, "H31": 17}
+        points = []
+        for key in ("H11", "H2V", "H31"):
+            value = low_points.get(key)
+            if value is None:
+                continue
+            capacity, power = value
+            if capacity <= 0 or power <= 0:
+                raise ValueError(
+                    f"Invalid canonical low-speed test point {key}: capacity={capacity}, power={power}"
+                )
+            points.append((point_temps[key], capacity, power))
+        if len(points) < 2:
+            return None, None
+        points.sort(reverse=True)
+        for idx in range(len(points) - 1):
+            high_temp, q_high, p_high = points[idx]
+            low_temp, q_low, p_low = points[idx + 1]
+            if high_temp >= temp_f >= low_temp:
+                return max(0.0, self.linear(temp_f, high_temp, q_high, low_temp, q_low)), max(
+                    0.0, self.linear(temp_f, high_temp, p_high, low_temp, p_low)
+                )
+        if temp_f > points[0][0]:
+            x1, q1, p1 = points[0]
+            x2, q2, p2 = points[1]
+        else:
+            x1, q1, p1 = points[-2]
+            x2, q2, p2 = points[-1]
+        return max(0.0, self.linear(temp_f, x1, q1, x2, q2)), max(
+            0.0, self.linear(temp_f, x1, p1, x2, p2)
+        )
+
     def minimum_limited_low_capacity_power_at_temp(
         self,
         temp_f: float,

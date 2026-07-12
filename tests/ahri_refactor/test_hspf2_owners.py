@@ -58,3 +58,14 @@ def test_hspf2_facade_delegates_v3_to_variable_capacity_engine():
     through_facade = calculator.calculate_hspf2_v3(HSPF2_V3_POINTS, **HSPF2_V3_KWARGS)
 
     assert through_facade == direct
+
+
+def test_hspf2_facade_delegates_v2_to_legacy_engine():
+    calculator = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH)
+    points = {
+        "H1_Full": (24000, 2200),
+        "H2_Full": (22000, 2100),
+        "H3_Full": (18000, 1900),
+    }
+
+    assert calculator.calculate_hspf2_v2(points) == calculator._legacy_engine.calculate(points)
