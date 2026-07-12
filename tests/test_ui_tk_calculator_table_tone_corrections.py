@@ -295,18 +295,91 @@ def test_scop_warning_pending_and_active_transitions_use_current_surface(tk_root
     assert "PASS" not in str(rows) and "FAIL" not in str(rows)
 
     section.climate_active_vars["average"].set(False)
+    section._on_climate_toggle()
+    section._auto_calc.cancel()
     rows = section.sectioned_csv_rows()
     assert ("Average",) not in rows and rows[0] == ("Warmer",)
 
     section.climate_active_vars["average"].set(True)
+    section._on_climate_toggle()
+    section._auto_calc.cancel()
     rows = section.sectioned_csv_rows()
     assert rows[0] == ("Average",)
-    assert ("Status", "기류/설정 오류: surface failure") in rows
+    assert ("Status", "대기 중") in rows
+    assert ("Status", "기류/설정 오류: surface failure") not in rows
 
     section._result_surfaces["average"].show_invalid("입력 오류")
     rows = section.sectioned_csv_rows()
     assert ("Status", "입력 오류") in rows
     assert ("Status", "대기 중") in rows
+
+
+def test_scop_complete_deactivate_reactivate_clears_only_target_climate(
+    tk_root,
+) -> None:
+    section = _scop_section(tk_root)
+    average = section._result_surfaces["average"]
+    warmer = section._result_surfaces["warmer"]
+    average.update(_complete_scop_summary())
+    section.climate_active_vars["warmer"].set(True)
+    warmer.update(_complete_scop_summary())
+    section.input_tables["warmer"].set_value("declared_capacity_B", "4321")
+
+    assert "3.20" in str(section.sectioned_csv_rows())
+    section.climate_active_vars["warmer"].set(False)
+    section._on_climate_toggle()
+    section._auto_calc.cancel()
+    assert ("Warmer",) not in section.sectioned_csv_rows()
+    assert section.input_tables["warmer"].get_text_values()[
+        "declared_capacity_B"
+    ] == "4321"
+
+    section.climate_active_vars["warmer"].set(True)
+    section._on_climate_toggle()
+    section._auto_calc.cancel()
+    rows = section.sectioned_csv_rows()
+    assert rows[0] == ("Average",)
+    assert rows.index(("Average",)) < rows.index(("Warmer",))
+    warmer_index = rows.index(("Warmer",))
+    assert rows[warmer_index + 1] == ("Status", "대기 중")
+    assert rows.count(("Status", "자동 계산 완료")) == 1
+    assert warmer.visible_snapshot().has_result_values is False
+
+    latest = _complete_scop_summary()
+    latest.tested_scop = 2.9
+    warmer.update(latest)
+    rows = section.sectioned_csv_rows()
+    assert any(row[:2] == ("Tested", "2.90") for row in rows)
+
+
+@pytest.mark.parametrize(
+    "show_stale,stale_text",
+    [
+        (lambda surface: surface.show_invalid("입력 오류"), "입력 오류"),
+        (
+            lambda surface: surface.show_error("surface failure"),
+            "기류/설정 오류: surface failure",
+        ),
+    ],
+)
+def test_scop_error_deactivate_reactivate_resets_to_pending(
+    tk_root, show_stale, stale_text
+) -> None:
+    section = _scop_section(tk_root)
+    section.climate_active_vars["warmer"].set(True)
+    surface = section._result_surfaces["warmer"]
+    show_stale(surface)
+
+    section.climate_active_vars["warmer"].set(False)
+    section._on_climate_toggle()
+    section.climate_active_vars["warmer"].set(True)
+    section._on_climate_toggle()
+    section._auto_calc.cancel()
+
+    rows = section.sectioned_csv_rows()
+    assert ("Status", "대기 중") in rows
+    assert stale_text not in str(rows)
+    assert surface.visible_snapshot().has_result_values is False
 
 
 def test_scop_result_csv_cancel_is_noop(tk_root, monkeypatch) -> None:

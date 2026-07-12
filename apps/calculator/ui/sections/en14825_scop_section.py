@@ -468,6 +468,7 @@ class En14825ScopSection:
                 self._set_result_card_visible(clm, True)
             else:
                 inner.pack_forget()
+                self._clear_result_card(clm)
                 self._set_result_card_visible(clm, False)
 
         # Re-trigger calculation and layout refit
