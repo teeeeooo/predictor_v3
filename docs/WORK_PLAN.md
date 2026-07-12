@@ -18,24 +18,26 @@
 ## Current Slice
 
 PR #11 audit corrections are complete on
-`chatgpt/ahri-multicapacity-core-gui`. The Dual H2Low fallback, Triple H2Low
-correction precedence, normalized-versus-seasonal HSPF2 result contract,
-Triple Cases 4–7 equation evidence, SEER2 option validation, and overlay
-numerical integrity have been corrected without changing the approved
-sibling-engine and stable-capability architecture.
+`chatgpt/ahri-multicapacity-core-gui`. In addition to the earlier formula,
+seasonal-total, validation, and overlay corrections, Dual-stage and Triple
+Northern H3Low requiredness now follows the AHRI Table 7 footnote 7 boundary:
+H3Low is required only when the Low stage operates at or below 37°F. Inactive
+Low-stage curves are not evaluated, fabricated H3Low/H2Low metadata is not
+exposed, and Single/Batch active schemas use the same requiredness rule.
+Compressor-availability detail now follows the stage selected by each case.
 
 ## Next Action
 
-Re-audit PR #11 against the blocking findings. Perform the requested bounded
-native Windows/macOS five-path Tkinter smoke outside the GitHub connector before
-main integration when that manual evidence is required. Merge only after explicit
+Perform the final merge audit for PR #11. Perform the requested bounded native
+Windows/macOS five-path Tkinter smoke outside the GitHub connector before main
+integration when that manual evidence is required. Merge only after explicit
 user approval.
 
 ## Active Blockers
 
 - Native Windows/macOS five-path GUI smoke cannot be executed through the GitHub
   connector and remains pending manual evidence.
-- Main merge remains blocked until correction re-audit approval.
+- Main merge remains blocked until final merge-audit approval.
 
 ## Active Constraints
 
@@ -46,6 +48,8 @@ user approval.
 - Multi-capacity published ratings use nearest 0.05 without changing the current
   variable-capacity 0.025 HSPF2 behavior.
 - Keep normalized fractional-bin aggregates separate from actual seasonal totals.
+- Use the inclusive 37°F boundary for conditional H3Low requiredness in core,
+  application, Single, and Batch contracts.
 - Do not merge the implementation branch without explicit approval.
 
 ## Deferred / Hold
