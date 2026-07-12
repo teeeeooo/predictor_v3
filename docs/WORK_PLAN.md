@@ -17,22 +17,21 @@
 
 ## Current Slice
 
-Implement the approved AHRI 210/240-2026 multi-capacity workstream from
-`docs/designs/2026-07-12-ahri-multicapacity-core-calculator-gui-design.md`.
-The active branch adds product-discriminated Dual-stage SEER2, Dual-stage HSPF2,
-and Triple-capacity Northern HSPF2 while preserving the current variable-capacity
-engines and stable capability IDs.
+AHRI 210/240-2026 multi-capacity implementation is complete on
+`chatgpt/ahri-multicapacity-core-gui`. Dual-stage SEER2, Dual-stage HSPF2, and
+Triple-capacity Northern HSPF2 now use product-specific engines and Calculator
+Single/Batch surfaces while the existing variable-capacity engines, stable
+facades, capability IDs, fixtures, and result schemas remain compatible.
 
 ## Next Action
 
-Complete product-aware Calculator Single/Batch surfaces, focused export/state
-guards, and CI validation; then close the implementation record and request
-review without merging to main.
+Review draft PR #11 and perform one bounded native Tkinter visual smoke if release
+acceptance requires it. Merge to main only after explicit user approval.
 
 ## Active Blockers
 
-- GitHub connector cannot perform local Tkinter platform visual smoke; CI and
-  automated UI guards are required before closeout.
+None for automated acceptance. Native Windows/macOS visual smoke was not
+available through the GitHub connector and remains an optional pre-merge check.
 
 ## Active Constraints
 
@@ -42,7 +41,7 @@ review without merging to main.
   expected overlay for corrected or derived values.
 - Multi-capacity published ratings use nearest 0.05 without changing the current
   variable-capacity 0.025 HSPF2 behavior.
-- Use focused verification and staged-gate checks for affected owners.
+- Do not merge the implementation branch without explicit approval.
 
 ## Deferred / Hold
 
