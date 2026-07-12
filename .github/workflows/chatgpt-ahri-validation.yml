@@ -76,7 +76,31 @@ jobs:
           fi
           printf 'Calculator test files (%s):\n' "${#calculator_tests[@]}"
           printf '  %s\n' "${calculator_tests[@]}"
-          xvfb-run -a python -B - <<'PY' > pytest-calculator.log 2>&1
+          git worktree add --detach /tmp/predictor-main origin/main
+          (
+            cd /tmp/predictor-main
+            PYTHONPATH=. xvfb-run -a python -B - <<'PY'
+          import tkinter as tk
+          from apps.calculator.ui.calculator_app import CalculatorTkApp
+
+          root = tk.Tk()
+          root.withdraw()
+          try:
+              app = CalculatorTkApp(root=root)
+              root.update_idletasks()
+              root.update()
+              print('Main baseline geometry:')
+              print('  root:', root.winfo_width(), root.winfo_height())
+              print('  iso preferred:', app.iso_tab.preferred_initial_size())
+              print(
+                  '  iso diagnostics:',
+                  dict(app.iso_tab._measurement.snapshot().diagnostics),
+              )
+          finally:
+              root.destroy()
+          PY
+          ) > pytest-calculator.log 2>&1
+          xvfb-run -a python -B - <<'PY' >> pytest-calculator.log 2>&1
           import tkinter as tk
           from apps.calculator.ui.calculator_app import CalculatorTkApp
 
@@ -87,7 +111,7 @@ jobs:
               root.update_idletasks()
               root.update()
               snapshot = app.iso_tab._measurement.snapshot()
-              print('Calculator geometry diagnostic:')
+              print('PR geometry:')
               print('  root:', root.winfo_width(), root.winfo_height())
               print('  iso preferred:', app.iso_tab.preferred_initial_size())
               print('  iso diagnostics:', dict(snapshot.diagnostics))
