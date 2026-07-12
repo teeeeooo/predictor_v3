@@ -17,27 +17,22 @@
 
 ## Current Slice
 
-PR #11 audit corrections are complete on
-`chatgpt/ahri-multicapacity-core-gui`. In addition to the earlier formula,
-seasonal-total, validation, and overlay corrections, Dual-stage and Triple
-Northern H3Low requiredness now follows the AHRI Table 7 footnote 7 boundary:
-H3Low is required only when the Low stage operates at or below 37°F. Inactive
-Low-stage curves are not evaluated, fabricated H3Low/H2Low metadata is not
-exposed, and Single/Batch active schemas use the same requiredness rule.
-Compressor-availability detail now follows the stage selected by each case.
+AHRI 210/240-2026 multi-capacity implementation is complete. Dual-stage SEER2,
+Dual-stage HSPF2, and Triple-capacity Northern HSPF2 are integrated through the
+existing stable capability IDs and product-specific sibling engines. All audit
+corrections, including conditional H3Low requiredness, seasonal-total contracts,
+Case 4–7 equation evidence, field validation, and overlay integrity, are complete.
+Automated validation passed and the user completed GUI verification and accepted
+the implementation for main integration.
 
 ## Next Action
 
-Perform the final merge audit for PR #11. Perform the requested bounded native
-Windows/macOS five-path Tkinter smoke outside the GitHub connector before main
-integration when that manual evidence is required. Merge only after explicit
-user approval.
+Await the next user-selected workstream and establish its active slice from the
+owner documents. No further action remains for PR #11.
 
 ## Active Blockers
 
-- Native Windows/macOS five-path GUI smoke cannot be executed through the GitHub
-  connector and remains pending manual evidence.
-- Main merge remains blocked until final merge-audit approval.
+None.
 
 ## Active Constraints
 
@@ -50,11 +45,10 @@ user approval.
 - Keep normalized fractional-bin aggregates separate from actual seasonal totals.
 - Use the inclusive 37°F boundary for conditional H3Low requiredness in core,
   application, Single, and Batch contracts.
-- Do not merge the implementation branch without explicit approval.
 
 ## Deferred / Hold
 
-- Production ML Readiness resumes after the standard-calculation sequence.
+- Production ML Readiness resumes when selected as the next active workstream.
 - ML validation gap: `model/model.pkl` is absent and training CSV is external;
   mock smoke cannot validate accuracy, trends, importance, or model quality.
 
