@@ -65,6 +65,7 @@ class AhriSeer2BatchSection:
         initial_product = saved.get("product", "variable_capacity")
         if initial_snapshot and not self._product_cases:
             self._product_cases[initial_product] = initial_snapshot.cases
+        self._active_product = initial_product
         self._frame = ttk.LabelFrame(parent, text="AHRI 210/240 SEER2 Batch")
         self._frame.columnconfigure(0, weight=1)
         self._frame.rowconfigure(1, weight=1)
@@ -104,7 +105,7 @@ class AhriSeer2BatchSection:
         self.status_var = tk.StringVar(master=self._frame, value="")
         self._build_common_inputs()
         self.table: BatchMatrixTable
-        self._build_table(self.product_classification)
+        self._build_table(self._active_product)
         self._auto_calc = DebouncedAutoCalc(
             self._frame, self._recalculate_now, delay_ms=150
         )
@@ -191,10 +192,10 @@ class AhriSeer2BatchSection:
     def _on_product_changed(self) -> None:
         if not hasattr(self, "table"):
             return
-        old_product = self.table.spec.profile_key.removeprefix("ahri_seer2_")
-        self._product_cases[old_product] = self._input_cases()
+        self._product_cases[self._active_product] = self._input_cases()
         self.table.destroy()
-        self._build_table(self.product_classification)
+        self._active_product = self.product_classification
+        self._build_table(self._active_product)
         self.table.set_values_changed_callback(self._auto_calc.schedule)
         self._apply_product_controls()
         self.status_var.set("0 valid / 1 pending")
@@ -255,6 +256,8 @@ class AhriSeer2BatchSection:
         )
 
     def common_values(self) -> dict[str, str]:
+        if self.product_classification == "variable_capacity":
+            return {"type": self.type_var.get()}
         return {
             "product": self.product_classification,
             "type": self.type_var.get(),
