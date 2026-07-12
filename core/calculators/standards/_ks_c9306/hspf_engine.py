@@ -9,14 +9,14 @@ class KSHSPFSeasonalMixin:
         measured_inputs: dict,
         aux_cop: float = 1.0
     ) -> dict:
+        hspf_config = self._validate_ks_hspf_config()
         hspf_input = self._ks_hspf_input(measured_inputs)
         self._validate_ks_c9306_hspf_input(hspf_input)
         hstl = 0.0
         hsec = 0.0
         bin_details = []
-        hspf_config = self._ks_hspf_config()
-        bin_hours_key = hspf_config.get("bin_hours_key")
-        bin_hours = self.config.get(bin_hours_key, self.bin_hours) if bin_hours_key else self.bin_hours
+        bin_hours_key = hspf_config["bin_hours_key"]
+        bin_hours = self.config[bin_hours_key]
         load_line = (
             self._ks_hspf_load_line(hspf_input)
             or self._ks_hspf_config_load_line(measured_inputs)

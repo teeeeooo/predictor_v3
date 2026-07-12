@@ -55,7 +55,7 @@ class KSCSPFSeasonalMixin:
             )
 
         cd = float(self.config.get("Cd", self.Cd))
-        power_interp_method = self.config.get("power_interpolation_method")
+        power_interp_method = self.config["power_interpolation_method"]
 
         cstl = 0.0
         csec = 0.0

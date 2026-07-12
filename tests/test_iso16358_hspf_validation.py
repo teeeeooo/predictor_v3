@@ -14,7 +14,9 @@ from tests.helpers.iso16358_hspf_samples import (
 
 
 def schema_completeness_fixture_not_expected_tuning():
-    return deepcopy(OFFICIAL_GOLDEN_SAMPLE)
+    fixture = deepcopy(OFFICIAL_GOLDEN_SAMPLE)
+    fixture["rated_cooling_capacity"] = 3600.0
+    return fixture
 
 
 def remove_nested(data, *keys):
@@ -313,11 +315,13 @@ def test_ks_c9306_hspf_config_load_line_missing_cooling_capacity_value(tmp_path)
         },
     )
 
+    data = schema_completeness_fixture_not_expected_tuning()
+    data.pop("rated_cooling_capacity")
     with pytest.raises(
         ValueError,
         match="KS C 9306 HSPF requires rated_cooling_capacity for heating building load",
     ):
-        calculator.calculate_hspf(schema_completeness_fixture_not_expected_tuning())
+        calculator.calculate_hspf(data)
 
 
 def test_ks_c9306_hspf_config_load_line_with_cooling_capacity_passes(tmp_path):

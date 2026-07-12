@@ -46,15 +46,15 @@
 | `calculate_hspf2()` | function | `core/calculators/standards/ahri_hspf2.py` | HSPF2 생산 entry point다. 현재 v3 AHRI path로 연결되며 명시 지시 없이 수정하지 않는다. |
 | `_calculate_hspf2_v3_ahri()` | function | `core/calculators/standards/ahri_hspf2.py` | AHRI 210/240-2026 variable-capacity heating 계산의 핵심 내부 경로다. |
 | `calculate_seer2()` | function | `core/calculators/standards/ahri_seer2.py` | 현재 구현 확인 가능한 SEER2 냉방 bin 계산 entry point다. |
-| `data/region_configs/usa_hspf2.json` | JSON | `data/region_configs/usa_hspf2.json` | HSPF2 Region IV canonical bin table, test point schema, legacy alias를 담는다. 이번 문서 작업에서는 수정하지 않는다. |
-| `canonical_hspf2_bin_tables.heating.region_iv` | JSON object | `data/region_configs/usa_hspf2.json` | 현재 v3 경로가 사용하는 Region IV Table 16 canonical table이다. legacy `bin_data`와 혼동하지 않는다. |
+| `data/region_configs/usa_hspf2.json` | JSON | `data/region_configs/usa_hspf2.json` | HSPF2 Region IV canonical table, active point schema/alias/default를 담는다. |
+| `canonical_hspf2_bin_tables.heating.region_iv` | JSON object | `data/region_configs/usa_hspf2.json` | variable/dual/triple 경로가 공통으로 사용하는 Region IV Table 16 canonical table이다. |
 | `fractional_bin_hours` | list 또는 number | `data/region_configs/usa_hspf2.json`, return dict | Table 16의 분수 빈 시간이다. 계절 합산 전 `heating_load_hours`와 곱한다. |
 | `heating_load_hours` | number | `data/region_configs/usa_hspf2.json` | HLH 값이다. 현재 Region IV는 1701이며 absolute hours 계산에 사용된다. |
 | `zero_load_temp_f` | number | `data/region_configs/usa_hspf2.json` | `t_zl`에 해당한다. `BL(tj)` 계산에 사용한다. |
 | `outdoor_design_temp_f` | number | `data/region_configs/usa_hspf2.json` | `t_od`에 해당한다. `BL(tj)` 계산에 사용한다. |
 | `variable_capacity_slope_factor` | number | `data/region_configs/usa_hspf2.json` | `C_vs`에 해당한다. `BL(tj)` 계산에 사용한다. |
 | `H01`, `H11`, `H12`, `H1N`, `H22`, `H2Int`, `H32`, `H42`, `A2` | dict | HSPF2 input schema | canonical HSPF2 test point key다. 각 dict에는 capacity와 power가 필요하다. |
-| `H1_Full`, `H2_Full`, `H3_Full`, `A_Full` | alias key | public input schema | active Calculator input alias다. 각각 `H12`, `H32`, `H42`, `A2`로 매핑되며 충돌 값은 fail-fast 처리한다. |
+| `A_Full` | alias key | variable-capacity public input schema | active alias로 `A2`로 매핑되며 canonical key와 충돌하면 fail-fast한다. |
 | `defrost_t_test_minutes` | number | HSPF2 input schema | Ttest 입력이다. > 0이어야 하며 내부 사용값은 최소 90으로 clamp한다. |
 | `defrost_t_max_minutes` | number | HSPF2 input schema | Tmax 입력이다. > 90이어야 하며 내부 사용값은 최대 720으로 clamp한다. |
 | `h1n_same_speed_as_h3` | bool | HSPF2 optional input | H12가 없을 때 Eq.11.183 fallback을 선택하는 speed relation flag다. 기본값은 False다. |

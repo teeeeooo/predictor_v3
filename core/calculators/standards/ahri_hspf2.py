@@ -20,13 +20,9 @@ class AHRIHSPF2Calculator:
         self._context = HSPF2ConfigContext(config_path)
         for attribute in (
             "config",
-            "bin_temps",
-            "bin_hours",
             "canonical_hspf2_bin_tables",
             "test_point_schema",
             "test_point_aliases",
-            "test_point_temps",
-            "constants",
             "defaults",
         ):
             setattr(self, attribute, getattr(self._context, attribute))

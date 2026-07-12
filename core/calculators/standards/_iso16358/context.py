@@ -24,12 +24,24 @@ CONTEXT_ATTRIBUTES = (
 
 
 class ISO16358ConfigContext:
+    _BUILDING_LOAD_SOURCES = frozenset({"measured", "declared"})
+    _POWER_INTERPOLATION_METHODS = frozenset(
+        {"capacity_linear", "iso_boundary_eer"}
+    )
+
     def __init__(self, config_path: str) -> None:
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"설정 파일을 찾을 수 없습니다: {config_path}")
         with open(config_path, "r", encoding="utf-8") as config_file:
             self.config = json.load(config_file)
         self.config.pop("_comment", None)
+
+        self._validate_optional_selector(
+            "building_load_source", self._BUILDING_LOAD_SOURCES
+        )
+        self._validate_optional_selector(
+            "power_interpolation_method", self._POWER_INTERPOLATION_METHODS
+        )
 
         self.t_100_load = self.config.get("t_100_load", 35.0)
         self.t_0_load = self.config.get("t_0_load", 20.0)
@@ -49,6 +61,16 @@ class ISO16358ConfigContext:
         self.points_config = self.config.get("points", {})
         self.derived_rules = self.config.get("derived_rules", {})
         self.bin_hours = self.config.get("bin_hours", [])
+
+    def _validate_optional_selector(self, field: str, supported: frozenset) -> None:
+        if field not in self.config:
+            return
+        value = self.config[field]
+        if not isinstance(value, str) or value not in supported:
+            raise ValueError(
+                f"Unsupported ISO CSPF {field}: {value!r}; "
+                f"supported={sorted(supported)}"
+            )
 
 
 class ISOEngineContext:

@@ -185,11 +185,18 @@ def make_phase1_config_path(tmp_path, ks_profile=True):
             "power_def_over_nof": 1 / 1.06,
             "cd": 0.25,
         },
+        "load_line": {
+            "source": "rated_cooling_capacity",
+            "zero_load_temp": 16.0,
+            "full_load_temp": 0.0,
+            "rated_capacity_factor": 0.82,
+        },
+        "bin_hours_key": "hspf_bin_hours",
     }
 
     config = {
         "mode": "heating",
-        "bin_hours": [
+        "hspf_bin_hours": [
             {
                 "tj": 7.0,
                 "nj": h1_hours,

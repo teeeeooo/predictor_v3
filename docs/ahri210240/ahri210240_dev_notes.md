@@ -58,7 +58,9 @@ Primary 기준은 `docs/ahri210240/ahri210240_notes.md`, 이 문서, `core/calcu
 | HSPF2 bin details | HSPF2 return dict | bin별 case, BL, q/p low/int/full, COP, auxiliary | smoke and case tests inspect |
 | SEER2 config | `core/calculators/standards/ahri_seer2.py` current config block and external config path | cooling bin and point temperatures | limited validation |
 
-`data/region_configs/usa_hspf2.json`의 `_comment`에는 초기 scaffold 잔여 문구가 있으나, v3 경로는 `canonical_hspf2_bin_tables.heating.region_iv`를 사용한다. 문서 작성 시 legacy `bin_data`와 canonical Region IV table을 혼동하면 안 된다.
+`data/region_configs/usa_hspf2.json`은 canonical Region IV table, active point schema,
+`A_Full -> A2` public alias, production defaults만 HSPF2 runtime contract로
+유지한다. retired v2 `bin_data`, point temperatures, constants는 제거됐다.
 
 현재 `data/region_configs/usa.json`은 SEER2/cooling flat config이고, `data/region_configs/usa_hspf2.json`은 HSPF2/heating flat config이다. 두 계산기 모두 top-level key를 직접 읽으므로 단순 병합은 금지한다. 완전 통합은 `cooling` / `heating` namespace schema migration 이후 별도 검토한다.
 
@@ -209,6 +211,10 @@ Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
 - **핵심 엔진**: `core/calculators/standards/_ahri/hspf2_variable.py` (stable `ahri_hspf2.py` facade를 통해 호출)
 - **입력 체계**: `normalize_public_test_points()`를 통해 active public alias를 canonical 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
+- **Unit type**: derived H12는 split(`split`, `split_system`,
+  `split-system`) 또는 packaged(`single_package`, `single-package`,
+  `package`, `packaged`)만 허용한다. 명시 selector 오타/null과
+  `unit_type`/`system_type` 충돌은 fail-fast한다.
 - **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
 
 ### 검증 및 디버깅 기준

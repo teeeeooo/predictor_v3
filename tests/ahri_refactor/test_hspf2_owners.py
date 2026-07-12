@@ -48,9 +48,9 @@ def test_hspf2_point_owner_preserves_aliases_and_fallback_sources():
 def test_hspf2_point_owner_preserves_case_insensitive_conflict_detection():
     _, resolver = _owners()
 
-    with pytest.raises(ValueError, match="Conflicting test point values for canonical key H12"):
+    with pytest.raises(ValueError, match="Conflicting test point values for canonical key A2"):
         resolver.normalize_public_test_points(
-            {"H12": (24000, 2200), "h1_full": (23000, 2100)}
+            {"A2": (24000, 2200), "a_full": (23000, 2100)}
         )
 
 

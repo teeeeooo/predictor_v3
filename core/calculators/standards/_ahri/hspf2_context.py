@@ -41,13 +41,9 @@ class HSPF2ConfigContext:
         with open(config_path, "r", encoding="utf-8") as file:
             self.config = json.load(file)
 
-        self.bin_temps = self.config["bin_data"]["bin_temps"]
-        self.bin_hours = self.config["bin_data"]["bin_hours"]
         self.canonical_hspf2_bin_tables = self.config.get("canonical_hspf2_bin_tables", {})
         self.test_point_schema = self.config.get("test_point_schema", {})
         self.test_point_aliases = self.config.get("test_point_aliases", {})
-        self.test_point_temps = self.config.get("test_point_temps", {})
-        self.constants = self.config.get("constants", {})
         self.defaults = self.config.get("defaults", {})
         for key, value in {
             "t_off": -40.0,

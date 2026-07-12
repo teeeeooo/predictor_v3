@@ -64,16 +64,14 @@ def test_hspf2_public_facade_contract_is_locked():
 
     for attribute in (
         "config",
-        "bin_temps",
-        "bin_hours",
         "canonical_hspf2_bin_tables",
         "test_point_schema",
         "test_point_aliases",
-        "test_point_temps",
-        "constants",
         "defaults",
     ):
         assert hasattr(calculator, attribute)
+    for retired in ("bin_temps", "bin_hours", "test_point_temps", "constants"):
+        assert not hasattr(calculator, retired)
 
 
 def test_hspf2_v3_characterization_is_deeply_locked():

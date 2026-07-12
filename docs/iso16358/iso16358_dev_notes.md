@@ -133,6 +133,8 @@ HSPF 경로에서 auxiliary 또는 make-up heat는 denominator인 HSEC에 포함
 | `cspf_test_profile` | CSPF variable/inverter profile path selector | flat config와 병렬로 동작하는 opt-in key이다. key가 있으면 `climate_profile`/`test_selection`은 필수 enum이며 unknown/missing은 fail-fast한다. |
 | `cspf_test_profile.climate_profile` | T1/T3 climate profile | T1은 35↔29 단일 segment, T3는 46↔35 / 35↔29 piecewise segment를 사용한다. |
 | `cspf_test_profile.test_selection` | required_only / with_optional_test | required_only에서는 minimum point를 합성하지 않는다. optional minimum 선택 시에만 min branch를 활성화한다. |
+| `building_load_source` | measured / declared | key 생략 시 measured default를 유지하고 explicit unknown/null은 fail-fast한다. |
+| `power_interpolation_method` | capacity_linear / iso_boundary_eer | key 생략 시 capacity_linear default를 유지하고 explicit unknown/null은 fail-fast한다. |
 
 ## 10. Interpolation / Extrapolation Rules
 

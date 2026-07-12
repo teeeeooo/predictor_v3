@@ -2,6 +2,47 @@
 
 
 class KSCSPFPointResolverMixin:
+    def _validate_ks_cspf_config(self) -> None:
+        if "cspf_test_profile" in self.config:
+            raise ValueError(
+                "KS C 9306 does not support ISO cspf_test_profile configuration."
+            )
+        points = self.config.get("points")
+        if not isinstance(points, dict) or not points:
+            raise ValueError("Invalid KS C 9306 CSPF points: non-empty dict required.")
+        invalid_types = {
+            key: value
+            for key, value in points.items()
+            if value not in {"measure", "default"}
+        }
+        if invalid_types:
+            raise ValueError(
+                f"Invalid KS C 9306 CSPF points schema: {invalid_types!r}"
+            )
+        derived_rules = self.config.get("derived_rules")
+        if not isinstance(derived_rules, dict):
+            raise ValueError("Invalid KS C 9306 CSPF derived_rules: dict required.")
+        for point, point_type in points.items():
+            if point_type != "default":
+                continue
+            rule = derived_rules.get(point)
+            if not isinstance(rule, dict) or rule.get("source") not in points:
+                raise ValueError(
+                    f"Invalid KS C 9306 CSPF derived_rules for {point!r}."
+                )
+        building_load_source = self.config.get("building_load_source")
+        if building_load_source not in {"declared", "measured"}:
+            raise ValueError(
+                "Unsupported KS C 9306 CSPF building_load_source: "
+                f"{building_load_source!r}"
+            )
+        interpolation = self.config.get("power_interpolation_method")
+        if interpolation != "ks_intersection":
+            raise ValueError(
+                "Unsupported KS C 9306 CSPF power_interpolation_method: "
+                f"{interpolation!r}"
+            )
+
     def _resolve_ks_cspf_points(self, measured_inputs: dict) -> dict:
         """KS CSPF용 point resolution.
 
@@ -9,18 +50,9 @@ class KSCSPFPointResolverMixin:
         ``points`` + ``derived_rules``만 measure/default 검증과 연쇄 파생
         규칙을 KS module 안에서 수행한다.
         """
-        if "cspf_test_profile" in self.config:
-            raise ValueError(
-                "KS C 9306 does not support ISO cspf_test_profile configuration."
-            )
-
-        points_config = self.config.get("points", {})
-        derived_rules = self.config.get("derived_rules", {})
-        if not points_config:
-            resolved = {}
-            for key, value in measured_inputs.items():
-                resolved[key] = dict(value) if isinstance(value, dict) else value
-            return resolved
+        self._validate_ks_cspf_config()
+        points_config = self.config["points"]
+        derived_rules = self.config["derived_rules"]
 
         resolved = {}
         for point_key, point_type in points_config.items():

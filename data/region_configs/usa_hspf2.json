@@ -4,12 +4,6 @@
   "mode": "heating",
   "metric": "HSPF2",
   "unit_system": "imperial",
-  "system_type": "air_to_air_variable_capacity",
-  "_comment": "Initial HSPF2 scaffold. TODO: Replace temporary bin_hours with confirmed AHRI 210/240 or DOE Appendix M1 table values.",
-  "bin_data": {
-    "bin_temps": [62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2, -3, -8],
-    "bin_hours": [160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20]
-  },
   "canonical_hspf2_bin_tables": {
     "heating": {
       "region_iv": {
@@ -125,43 +119,11 @@
   },
   "test_point_aliases": {
     "public_to_canonical": {
-      "H1_Full": "H12",
-      "H2_Full": "H32",
-      "H3_Full": "H42",
-      "H21": "H2Int",
-      "AFull": "A2",
-      "A_Full": "A2",
-      "A_full": "A2"
+      "A_Full": "A2"
     }
   },
-  "test_point_temps": {
-    "H1_full": 47,
-    "H2_full": 17,
-    "H3_full": 5,
-    "H1_low": 47,
-    "H2_low": 17
-  },
-  "constants": {
-    "balance_temp_f": 65,
-    "design_temp_f": 5,
-    "defrost_credit_default": 1.0,
-    "demand_defrost_factor_default": 0.9,
-    "off_mode_hours": 737,
-    "t_OBO": 45,
-    "defrost_control_type": "demand",
-    "t_defrost_test": 35,
-    "t_defrost_max": 45,
-    "defrost_t_test_minutes": 90,
-    "defrost_t_max_minutes": 720,
-    "demand_defrost_credit_max": 1.03,
-    "t_off": -10,
-    "t_on": -5
-  },
   "defaults": {
-    "cd_default_low": 0.25,
-    "cd_default_full": 0.25,
     "c_d_heating": 0.25,
-    "p_w_off": 0.0,
     "aux_cop": 1.0
   }
 }

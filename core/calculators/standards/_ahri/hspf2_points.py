@@ -87,6 +87,34 @@ class HSPF2PointResolver:
             raise ValueError(f"Invalid canonical test point {key}: capacity={capacity}, power={power}")
         return capacity, power
 
+    @staticmethod
+    def _normalize_unit_type(kwargs: dict) -> str:
+        aliases = {
+            "split": "split",
+            "split_system": "split",
+            "split-system": "split",
+            "single_package": "single_package",
+            "single-package": "single_package",
+            "package": "single_package",
+            "packaged": "single_package",
+        }
+        supplied = []
+        for field in ("unit_type", "system_type"):
+            if field not in kwargs:
+                continue
+            value = kwargs[field]
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"Unsupported AHRI HSPF2 {field}: {value!r}")
+            normalized = aliases.get(value.strip().lower())
+            if normalized is None:
+                raise ValueError(f"Unsupported AHRI HSPF2 {field}: {value!r}")
+            supplied.append((field, normalized))
+        if len({value for _, value in supplied}) > 1:
+            raise ValueError(
+                "Conflicting AHRI HSPF2 unit_type and system_type selectors."
+            )
+        return supplied[0][1] if supplied else "split"
+
     def _resolve_h12(self, canonical_points, full_points, h1_nom, kwargs):
         if "H12" in canonical_points:
             return self.positive_point(canonical_points, "H12"), "tested"
@@ -96,13 +124,8 @@ class HSPF2PointResolver:
         q_h3_full, p_h3_full = full_points["H32"]
         if q_h3_full == 0 or p_h3_full == 0:
             raise ValueError("Invalid H3Full for Eq.11.185/11.186 fallback")
-        unit_type = kwargs.get("unit_type", kwargs.get("system_type", "split"))
-        csf = 0.0262 if str(unit_type).lower() in (
-            "single_package",
-            "single-package",
-            "package",
-            "packaged",
-        ) else 0.0204
+        unit_type = self._normalize_unit_type(kwargs)
+        csf = 0.0262 if unit_type == "single_package" else 0.0204
         return (q_h3_full * (1 + 30 * csf), p_h3_full * (1 + 30 * 0.00455)), "eq_11_185"
 
     def _resolve_h22(self, canonical_points, full_points):

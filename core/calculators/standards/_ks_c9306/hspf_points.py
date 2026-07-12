@@ -2,12 +2,6 @@
 
 
 class KSHSPFPointResolverMixin:
-    def _has_ks_c9306_hspf_input(self, measured_inputs: dict) -> bool:
-        hspf_config = self.config.get("hspf", {})
-        if not isinstance(hspf_config, dict):
-            return False
-        return hspf_config.get("profile") == "ks_c_9306_hspf"
-
     def _ks_hspf_input(self, measured_inputs: dict) -> dict:
         if "ks_c_9306_hspf" not in measured_inputs:
             raise ValueError("Missing ks_c_9306_hspf input.")
@@ -17,9 +11,77 @@ class KSHSPFPointResolverMixin:
         return hspf_input
 
     def _ks_hspf_config(self) -> dict:
-        hspf_config = self.config.get("hspf", {})
+        hspf_config = self.config.get("hspf")
         if not isinstance(hspf_config, dict):
-            return {}
+            raise ValueError("Invalid KS C 9306 HSPF hspf: dict required.")
+        if hspf_config.get("profile") != "ks_c_9306_hspf":
+            raise ValueError(
+                "Unsupported KS C 9306 HSPF profile: "
+                f"{hspf_config.get('profile')!r}"
+            )
+        return hspf_config
+
+    def _validate_ks_hspf_config(self) -> dict:
+        hspf_config = self._ks_hspf_config()
+        required_points = hspf_config.get("required_points")
+        if not isinstance(required_points, dict) or not required_points:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF required_points: non-empty dict required."
+            )
+        for temp_key, point_names in required_points.items():
+            if not isinstance(temp_key, str) or not isinstance(point_names, list) or not point_names:
+                raise ValueError(
+                    "Invalid KS C 9306 HSPF required_points schema."
+                )
+            for point_name in point_names:
+                if not isinstance(point_name, str):
+                    raise ValueError(
+                        "Invalid KS C 9306 HSPF required_points schema."
+                    )
+                self._ks_hspf_profile_point_path(temp_key, point_name)
+
+        bin_hours_key = hspf_config.get("bin_hours_key")
+        if not isinstance(bin_hours_key, str) or not bin_hours_key:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF bin_hours_key: non-empty string required."
+            )
+        bin_hours = self.config.get(bin_hours_key)
+        if not isinstance(bin_hours, list) or not bin_hours:
+            raise ValueError(
+                f"Invalid KS C 9306 HSPF {bin_hours_key}: non-empty list required."
+            )
+
+        for field in ("derived_rules", "correction"):
+            value = hspf_config.get(field)
+            if value is not None and not isinstance(value, dict):
+                raise ValueError(
+                    f"Invalid KS C 9306 HSPF {field}: dict required."
+                )
+
+        load_line = hspf_config.get("load_line")
+        if not isinstance(load_line, dict):
+            raise ValueError("Invalid KS C 9306 HSPF load_line: dict required.")
+        required_load_line = {
+            "source",
+            "zero_load_temp",
+            "full_load_temp",
+            "rated_capacity_factor",
+        }
+        if "source" not in load_line:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF load_line: source is required."
+            )
+        missing = required_load_line - load_line.keys()
+        if missing:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF load_line: zero_load_temp, "
+                "full_load_temp, and rated_capacity_factor are required."
+            )
+        if load_line["source"] != "rated_cooling_capacity":
+            raise ValueError(
+                "KS C 9306 HSPF requires rated_cooling_capacity, not "
+                f"{load_line['source']!r}."
+            )
         return hspf_config
 
     def _ks_hspf_profile_point_path(self, temp_key: str, point_name: str) -> tuple:
@@ -42,11 +104,7 @@ class KSHSPFPointResolverMixin:
         return stage, temp_key
 
     def _ks_hspf_required_points(self) -> dict:
-        hspf_config = self._ks_hspf_config()
-        required_points = hspf_config.get("required_points", {})
-        if isinstance(required_points, dict) and required_points:
-            return required_points
-        return {}
+        return self._ks_hspf_config()["required_points"]
 
     def _validate_ks_hspf_positive_number(self, value, field_path: str) -> None:
         try:

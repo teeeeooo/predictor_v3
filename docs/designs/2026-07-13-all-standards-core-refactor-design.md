@@ -290,3 +290,18 @@ not formula or golden changes. AST/runtime/owner-base guards prevent the retired
 modules, selector defaults, cross-standard branches, and private-owner imports
 from being reintroduced. The append-only original closeout record is superseded
 for this boundary by the dated silent-fallback correction record.
+
+### Final audit correction
+
+The final audit removes the remaining AHRI v2-only config/context/facade fields
+and narrows variable-capacity aliases to `A_Full -> A2`; product-local dual and
+triple aliases stay in their own resolvers. ISO CSPF validates explicit
+`building_load_source` (`measured`, `declared`) and
+`power_interpolation_method` (`capacity_linear`, `iso_boundary_eer`) while
+preserving omitted-key defaults. KS CSPF requires its point/derived schema,
+accepts `declared` or `measured` load sources, and requires
+`ks_intersection`. KS HSPF requires the `ks_c_9306_hspf` profile, non-empty
+required points and bin table, and the rated-cooling-capacity config load line.
+AHRI derived-H12 unit type accepts split and packaged semantic aliases and
+rejects unknown or conflicting explicit selectors. The final correction record
+supersedes the earlier silent-fallback record for these remaining surfaces.

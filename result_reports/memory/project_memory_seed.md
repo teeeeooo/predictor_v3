@@ -121,6 +121,21 @@ entries:
     source: consolidated from result_reports/legacy/summaries/033_summary-calculator-architecture-ks-profile-dispatch.md, 054_summary-calculator-ui-iso-separation.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, 404_summary-en14825-config-point-contract-ui-workflow-closeout.md, 416_summary-en14825-batch-agent-change-gate-closeout.md, and 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md; docs/designs/2026-07-12-ahri-seer2-hspf2-core-refactor-design.md; docs/designs/2026-07-13-all-standards-core-refactor-design.md; result_reports/records/2026-07/2026-07-13-all-standards-core-refactor-closeout.md; result_reports/records/2026-07/2026-07-13-silent-fallback-retirement.md; result_reports/records/2026-07/2026-07-12-ahri-core-refactor-contract-lock.md; result_reports/records/2026-07/2026-07-12-ahri-multicapacity-official-fixtures.md; result_reports/records/2026-07/2026-07-12-ahri-multicapacity-audit-correction.md; result_reports/records/2026-07/2026-07-12-ahri-multicapacity-state-schema-correction.md
 
   - type: decision
+    topic: calculator strict selector and retired-surface boundary
+    content: Explicit invalid calculator selectors fail fast rather than selecting another calculation. ISO CSPF allows measured/declared building load and capacity_linear/iso_boundary_eer power interpolation while preserving omitted-key defaults. KS CSPF requires its non-empty point/derived schema, measured/declared load source, and ks_intersection; KS HSPF requires ks_c_9306_hspf, required points, explicit non-empty bin table, and rated_cooling_capacity config load line before any user load-line override is considered. AHRI HSPF2 config/context/facade contains no v2 bin/temperature/constants surface; variable public alias normalization is exactly A_Full to A2, while dual/triple aliases remain product-local. Derived H12 accepts only normalized split or packaged unit types and rejects conflicts.
+    keywords:
+      - predictor_v3
+      - silent selector
+      - strict config
+      - ISO CSPF
+      - KS C 9306
+      - AHRI HSPF2
+      - public alias
+      - unit type
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-13-all-standards-final-audit-correction.md
+
+  - type: decision
     topic: calculator envelope and ML boundary
     content: Calculator result envelopes and ML/ranking adapters are separate from calculator public APIs and region config. CalculatorInputEnvelope uses calculator_profile_id, standard, region, mode, metric, measured_inputs, and options; envelope adapters fail fast on unit mismatches and do not perform UI table conversions; ranking consumes RankingCandidateEnvelope rather than raw calculator output.
     keywords:

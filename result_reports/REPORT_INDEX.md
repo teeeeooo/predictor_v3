@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-13 | All standards final audit correction | calculator, iso16358, ks-c9306, ahri210240, selector, schema, correction | Remove final AHRI v2 config surfaces and fail fast on explicit invalid ISO/KS/AHRI selectors without changing active golden behavior. | `result_reports/records/2026-07/2026-07-13-all-standards-final-audit-correction.md` |
 | 2026-07-13 | Silent fallback retirement | calculator, en14825, iso16358, ks-c9306, ahri210240, fail-fast, correction | Retire unsupported cross-standard and historical calculation fallbacks while preserving active formulas, aliases, routes, and golden results. | `result_reports/records/2026-07/2026-07-13-silent-fallback-retirement.md` |
 | 2026-07-13 | All standards core refactor closeout | calculator, en14825, iso16358, ks-c9306, brazil, architecture, refactor, closeout | Close active non-AHRI routes with stable facades, standard-local private owners, unchanged behavior, and cwd-independent static resources. | `result_reports/records/2026-07/2026-07-13-all-standards-core-refactor-closeout.md` |
 | 2026-07-13 | All standards core refactor contract lock | calculator, en14825, iso16358, ks-c9306, brazil, architecture, refactor | Inventory every active non-AHRI route and lock stable facades and ordered deep results before extracting private owners. | `result_reports/records/2026-07/2026-07-13-all-standards-core-refactor-contract-lock.md` |

@@ -11,7 +11,7 @@
 | ROUND_HALF_UP 누락 | golden sample의 CSPF와 annual power가 어긋난다. | raw float 시험값을 그대로 사용한다. | `round_test_values` 적용 위치를 먼저 확인한다. |
 | Python `round()` 사용 | .5 경계에서 인증 계산과 다른 정수가 나온다. | bankers rounding이 적용된다. | Decimal 기반 HALF_UP helper를 사용한다. |
 | declared capacity 누락 | ValueError가 발생하거나 BL(tj)가 잘못 잡힌다. | 한국은 measured reference가 아니라 declared source이다. | `building_load_source = declared`를 유지한다. |
-| `ks_intersection` 미적용 | 중간 용량 범위 power가 golden과 달라진다. | 기본 capacity-linear interpolation으로 fallback된다. | `power_interpolation_method`를 확인한다. |
+| `ks_intersection` 미적용 | 중간 용량 범위 power가 golden과 달라진다. | selector 누락/오타다. | `power_interpolation_method` validation이 fail-fast하는지 확인한다. |
 | 외삽 과신 | 고온/저온 bin에서 비현실적인 capacity/power가 나온다. | 시험점 두 개로 선형 외삽한다. | 외삽 bin과 BL > max_cap branch를 함께 점검한다. |
 | BL > max_cap 처리 변경 | cooling output이 과대 계산된다. | 요구 부하를 항상 처리한다고 가정한다. | 최고 용량 초과 시 output cap을 유지한다. |
 
@@ -59,6 +59,14 @@ facade를 호출한다. KS owner는 ISO public facade를 재호출하지 않는�
 | --- | --- | --- |
 | `capacity_linear` | ISO 공통 기본 보간 | KS golden sample 불일치 |
 | `ks_intersection` | KS C 9306 중간 부하 전력 산정 | 타 region에 적용하면 국가별 특례가 누출됨 |
+
+KS CSPF는 non-empty `points`, dict `derived_rules`, `declared`/
+`measured` building-load source, `ks_intersection` power method를 필수로
+한다. KS HSPF는 `ks_c_9306_hspf` profile, non-empty
+`required_points`, explicit `bin_hours_key`/bin list, `rated_cooling_capacity`
+config load-line schema를 계산 전에 검증한다. 사용자가 명시한
+slope/intercept load line은 유지하지만 invalid config profile을 우회하지
+못한다.
 
 구현 판단: KS method가 실패해 `None`을 반환할 때만 공통 capacity-linear fallback을 허용한다. 이 fallback은 방어 로직이지 KS 주 계산 경로가 아니다.
 

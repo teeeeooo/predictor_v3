@@ -104,7 +104,9 @@
 
 ### HSPF2 v3 Flow
 
-1. 입력 test point를 canonical key로 변환한다. legacy alias는 `H1_Full -> H12`, `H2_Full -> H32`, `H3_Full -> H42`, `A_Full -> A2`로 매핑된다.
+1. 입력 test point를 canonical key로 변환한다. Variable-capacity public
+   alias allowlist는 `A_Full -> A2`만 유지하며, dual/triple point alias는
+   각 product resolver가 소유한다.
 2. 필수점 `H01`, `H11`, `H1N`, `H2Int`, `H32`, `A2`와 defrost 입력을 검증한다.
 3. Region IV canonical bin table을 읽고 fractional bin hour 합이 0.757인지 검증한다. `absolute bin hours = fractional bin hours * HLH`이며, 현재 HLH는 1701이다. 근거: AHRI 210/240-2026 Table 16.
 4. H12가 있으면 실측 full-load high temperature point로 사용한다. 없으면 `h1n_same_speed_as_h3` 여부에 따라 Eq.11.183 또는 Eq.11.185 fallback을 사용한다.

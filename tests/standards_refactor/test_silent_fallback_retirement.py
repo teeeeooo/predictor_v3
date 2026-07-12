@@ -71,6 +71,41 @@ def test_iso_cspf_profile_selectors_are_strict(
         calculator.calculate_cspf({})
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("building_load_source", "automatic"),
+        ("building_load_source", ""),
+        ("building_load_source", None),
+        ("power_interpolation_method", "linear"),
+        ("power_interpolation_method", ""),
+        ("power_interpolation_method", None),
+    ],
+)
+def test_iso_flat_config_selectors_reject_explicit_invalid_values(
+    tmp_path: Path, field: str, value: str | None
+) -> None:
+    def mutate(config: dict) -> None:
+        config[field] = value
+
+    with pytest.raises(ValueError, match=field):
+        ISO16358Calculator(
+            _write_config(tmp_path, "iso_t1_default_2point.json", mutate)
+        )
+
+
+def test_iso_flat_config_selector_defaults_remain_supported(tmp_path: Path) -> None:
+    def mutate(config: dict) -> None:
+        config.pop("building_load_source", None)
+        config.pop("power_interpolation_method", None)
+
+    calculator = ISO16358Calculator(
+        _write_config(tmp_path, "iso_t1_default_2point.json", mutate)
+    )
+    assert calculator.building_load_source == "measured"
+    assert calculator.power_interpolation_method == "capacity_linear"
+
+
 def test_ks_rejects_iso_cspf_profile_schema() -> None:
     config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
     config["cspf_test_profile"] = {
@@ -79,6 +114,101 @@ def test_ks_rejects_iso_cspf_profile_schema() -> None:
     }
     with pytest.raises(ValueError, match="does not support ISO cspf_test_profile"):
         KSC9306Calculator(config).calculate_cspf({})
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("points", None, "points"),
+        ("points", {}, "points"),
+        ("points", [], "points"),
+        ("derived_rules", [], "derived_rules"),
+        ("building_load_source", "automatic", "building_load_source"),
+        ("power_interpolation_method", "capacity_linear", "power_interpolation_method"),
+    ],
+)
+def test_ks_cspf_rejects_missing_schema_and_unknown_selectors(
+    field: str, value, message: str
+) -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    if value is None:
+        config.pop(field, None)
+    else:
+        config[field] = value
+    with pytest.raises(ValueError, match=message):
+        KSC9306Calculator(config).calculate_cspf({})
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda config: config.pop("hspf"), "hspf"),
+        (lambda config: config["hspf"].update(profile="unknown"), "profile"),
+        (lambda config: config["hspf"].pop("required_points"), "required_points"),
+        (lambda config: config["hspf"].update(required_points={}), "required_points"),
+        (lambda config: config["hspf"].pop("bin_hours_key"), "bin_hours_key"),
+        (lambda config: config["hspf"].update(bin_hours_key="missing_bins"), "missing_bins"),
+        (
+            lambda config: config["hspf"]["load_line"].update(source="unknown"),
+            "rated_cooling_capacity",
+        ),
+    ],
+)
+def test_ks_hspf_rejects_invalid_profile_and_required_schema(
+    mutation, message: str
+) -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    mutation(config)
+    with pytest.raises(ValueError, match=message):
+        KSC9306Calculator(config).calculate_hspf({})
+
+
+def test_ahri_active_alias_allowlist_and_retired_aliases() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    assert calculator.test_point_aliases == {
+        "public_to_canonical": {"A_Full": "A2"}
+    }
+    assert calculator.normalize_public_test_points(
+        {"a_full": (24000, 2500)}
+    ) == {"A2": (24000, 2500)}
+    for retired in ("H1_Full", "H2_Full", "H3_Full", "H21", "AFull"):
+        assert calculator.normalize_public_test_points({retired: (1, 1)}) == {
+            retired: (1, 1)
+        }
+
+
+@pytest.mark.parametrize("field", ["unit_type", "system_type"])
+@pytest.mark.parametrize("value", ["unknown", "", None, 7])
+def test_ahri_explicit_invalid_unit_type_fails_fast(field: str, value) -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    points = {
+        "H01": (12500, 980),
+        "H11": (12000, 1000),
+        "H1N": (22000, 2000),
+        "H2Int": (13000, 1200),
+        "H32": (22000, 2100),
+        "A2": (24000, 2500),
+    }
+    with pytest.raises(ValueError, match=field):
+        calculator._point_resolver.resolve_variable_capacity(
+            points, {field: value}
+        )
+
+
+def test_ahri_conflicting_unit_type_aliases_fail_fast() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    points = {
+        "H01": (12500, 980),
+        "H11": (12000, 1000),
+        "H1N": (22000, 2000),
+        "H2Int": (13000, 1200),
+        "H32": (22000, 2100),
+        "A2": (24000, 2500),
+    }
+    with pytest.raises(ValueError, match="Conflicting.*unit_type.*system_type"):
+        calculator._point_resolver.resolve_variable_capacity(
+            points, {"unit_type": "split", "system_type": "packaged"}
+        )
 
 
 def test_retired_owner_modules_and_facade_surface_are_absent() -> None:
@@ -91,6 +221,19 @@ def test_retired_owner_modules_and_facade_surface_are_absent() -> None:
     calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
     assert not hasattr(calculator, "calculate_hspf2_v2")
     assert not hasattr(calculator, "canonical_to_internal_usage")
+    for retired in ("bin_temps", "bin_hours", "test_point_temps", "constants"):
+        assert not hasattr(calculator, retired)
+    assert set(calculator.config).isdisjoint(
+        {"bin_data", "test_point_temps", "constants"}
+    )
+    assert set(calculator._context.__dict__).isdisjoint(
+        {"bin_temps", "bin_hours", "test_point_temps", "constants"}
+    )
+    assert set(calculator.__dict__) >= {
+        "_variable_engine",
+        "_dual_engine",
+        "_triple_engine",
+    }
 
     from core.calculators.standards._iso16358.engines import ISO16358HSPFEngine
 
