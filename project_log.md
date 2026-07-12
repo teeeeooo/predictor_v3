@@ -51,6 +51,9 @@
   actions while result owners retain their native payloads and detail/Batch
   export paths remain separate. SCOP composes export directly from active
   visible climate surfaces rather than its hidden compatibility text model.
+- The user completed final GUI review and approved the feature branch for
+  integration to `main`; the Calculator table architecture workstream is
+  closed with no remaining merge blocker.
 
 ## 2026-07-11 — Clean/hexagonal desktop refactor
 

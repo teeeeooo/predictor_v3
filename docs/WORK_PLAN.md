@@ -27,9 +27,8 @@ family boundaries.
 
 ## Next Action
 
-Perform the final user GUI review of Notebook tabs and Single result actions.
-Do not merge the completed feature branch to `main` without a later explicit
-user instruction.
+Calculator table architecture is accepted for automated and manual GUI scope.
+Resume the next explicitly selected workstream after main integration.
 
 ## Active Blockers
 

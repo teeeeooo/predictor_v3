@@ -84,7 +84,7 @@ entries:
       - ISO ISEER
       - BinTraceTable
     assertionStatus: verified
-    source: docs/designs/2026-07-12-calculator-table-architecture-design.md; result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md; result_reports/records/2026-07/2026-07-12-calculator-table-slice6.md; result_reports/records/2026-07/2026-07-12-calculator-result-actions-notebook-correction.md; result_reports/records/2026-07/2026-07-12-calculator-scop-visible-export-correction.md
+    source: docs/designs/2026-07-12-calculator-table-architecture-design.md; result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md; result_reports/records/2026-07/2026-07-12-calculator-table-slice6.md; result_reports/records/2026-07/2026-07-12-calculator-result-actions-notebook-correction.md; result_reports/records/2026-07/2026-07-12-calculator-scop-visible-export-correction.md; result_reports/records/2026-07/2026-07-12-calculator-table-architecture-merge-closeout.md
 
   - type: decision
     topic: window viewport and result-detail surface policy
