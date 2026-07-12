@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "standard": "AHRI 210/240-2026 (I-P)",
+  "dual_stage_seer2_synthetic_01": {
+    "status": "direct_m1",
+    "raw_seer2": 12.454035205677503,
+    "published_seer2": 12.45,
+    "seasonal_cooling": 17117.202797202794,
+    "seasonal_energy": 1374.4302560987994
+  },
+  "dual_stage_hspf2_synthetic_01": {
+    "status": "recalculated_2026",
+    "raw_hspf2": 8.56889212463095,
+    "published_hspf2": 8.55,
+    "seasonal_load": 10398.99,
+    "compressor_energy": 934.5634003919118,
+    "resistance_energy": 315.41845773088437,
+    "resistance_btu_per_wh": 3.412
+  },
+  "dual_stage_hspf2_cutout_synthetic_01": {
+    "status": "recalculated_2026",
+    "raw_hspf2": 3.890729181034762,
+    "published_hspf2": 3.9,
+    "seasonal_load": 10398.99,
+    "compressor_energy": 167.7699938393656,
+    "resistance_energy": 2504.9912075029306,
+    "resistance_btu_per_wh": 3.412
+  },
+  "triple_capacity_northern_hspf2_synthetic_01": {
+    "status": "partial_evidence_plus_recalculated_2026",
+    "raw_hspf2_candidate": 10.046800549191993,
+    "published_hspf2_candidate": 10.05,
+    "seasonal_load": 10398.99,
+    "compressor_energy_direct_m1": 975.3371449127085,
+    "resistance_energy_recalculated_2026": 89.29073856975371,
+    "defrost_factor_source": "fixture_explicit_override"
+  }
+}
