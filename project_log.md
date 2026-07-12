@@ -29,6 +29,22 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-13 — Active non-AHRI Calculator core refactor closeout
+
+### Decision
+
+- Preserve EN 14825, ISO 16358, and KS C 9306 public facade imports, methods,
+  config attributes, routes, results, diagnostics, rounding, exceptions, and
+  all official/golden expected values.
+- Keep config, point resolution, performance curves, seasonal loops, and result
+  assembly in standard-local private owners. ISO and KS CSPF/HSPF engines remain
+  separate, and KS does not call the ISO public facade.
+- Keep Brazil as capability-owned composite policy and AS/NZS as a disabled
+  compatibility path. Resolve profile resources statically without repo-cwd
+  dependence, scanning, or plugin discovery.
+- Do not commonize cross-standard numeric helpers until formula, units,
+  boundary, rounding, and exception semantics are all proven identical.
+
 ## 2026-07-12 — AHRI SEER2/HSPF2 core refactor closeout
 
 ### Decision

@@ -1,6 +1,6 @@
 # All Active Calculator Standards Core Refactor Design
 
-**Status:** R0 inventory and contract lock complete; R1-R6 implementation pending
+**Status:** Implemented; R0-R6 complete
 
 **Base main:** `1d8eca3df9d36d7fbc65cd9f057c22d1917a6595`
 
@@ -35,15 +35,15 @@ app_calculator.py
 
 | Runtime target | Profile / capability | Current owner | Classification | R0 decision |
 | --- | --- | --- | --- | --- |
-| EN 14825 SEER | `en14825_seer` / `en14825.seer` | `en14825.py` | `active_standard_engine` | R1 refactor |
-| EN 14825 SCOP | `en14825_scop` / `en14825.scop` | `en14825.py` | `active_standard_engine` | R1 refactor |
-| ISO T1 default CSPF | `iso_t1_default_2point_cspf` / `iso16358.cspf` | `iso16358.py` | `active_standard_engine` | R2 refactor |
-| India ISEER | `india_iseer_cspf` / `iso16358.cspf` | `iso16358.py` | `active_standard_engine` | R2 refactor |
-| Hong Kong CSPF | `hong_kong_cspf` / `iso16358.cspf` | `iso16358.py` | `active_standard_engine` | R2 refactor |
-| Hong Kong HSPF | `hong_kong_hspf` / `iso16358.hspf` | `iso16358.py` | `active_standard_engine` | R2 refactor |
-| SASO T3 CSPF | `saso_t3_cspf` / `iso16358.cspf` | `iso16358.py` | `active_standard_engine` | R2 refactor |
-| KS C 9306 CSPF | `ks_c9306_cspf` / `ks_c9306.cspf` | `ks_c9306.py` | `active_standard_engine` | R3 refactor |
-| KS C 9306 HSPF | `ks_c9306_hspf` / `ks_c9306.hspf` | `ks_c9306.py` | `active_standard_engine` | R3 refactor |
+| EN 14825 SEER | `en14825_seer` / `en14825.seer` | stable facade + `_en14825/` | `active_standard_engine` | R1 refactored |
+| EN 14825 SCOP | `en14825_scop` / `en14825.scop` | stable facade + `_en14825/` | `active_standard_engine` | R1 refactored |
+| ISO T1 default CSPF | `iso_t1_default_2point_cspf` / `iso16358.cspf` | stable facade + `_iso16358/` | `active_standard_engine` | R2 refactored |
+| India ISEER | `india_iseer_cspf` / `iso16358.cspf` | stable facade + `_iso16358/` | `active_standard_engine` | R2 refactored |
+| Hong Kong CSPF | `hong_kong_cspf` / `iso16358.cspf` | stable facade + `_iso16358/` | `active_standard_engine` | R2 refactored |
+| Hong Kong HSPF | `hong_kong_hspf` / `iso16358.hspf` | stable facade + `_iso16358/` | `active_standard_engine` | R2 refactored |
+| SASO T3 CSPF | `saso_t3_cspf` / `iso16358.cspf` | stable facade + `_iso16358/` | `active_standard_engine` | R2 refactored |
+| KS C 9306 CSPF | `ks_c9306_cspf` / `ks_c9306.cspf` | stable facade + `_ks_c9306/` | `active_standard_engine` | R3 refactored |
+| KS C 9306 HSPF | `ks_c9306_hspf` / `ks_c9306.hspf` | stable facade + `_ks_c9306/` | `active_standard_engine` | R3 refactored |
 | Brazil CSPF compliance | `brazil_cspf_compliance` / `brazil.cspf_compliance` | `capability/brazil.py` + ISO facade | `already_compliant_no_change` | R4 verification only |
 | AHRI SEER2/HSPF2 | AHRI enabled profiles/capabilities | stable facades + `_ahri/` | `already_compliant_no_change` | reference/excluded |
 | AS/NZS Excel HSPF | disabled profile, no capability/UI route | `asnzs_hspf_excel.py` | `legacy_or_retired` | retain inactive compatibility evidence; no refactor |
@@ -236,3 +236,39 @@ performance curves, seasonal loops, and result assembly to EN-private owners;
 preserve every signature, config attribute, result/detail value and exception;
 then run EN contract/golden/detail/capability/application regression before commit.
 ```
+
+## 13. Implementation Closeout
+
+R1-R3 produced three stable facades of 53-134 lines and standard-local private
+owners below the 250-line source soft limit. EN separates SEER and SCOP context,
+points, performance, seasonal, and result responsibilities. ISO uses independent
+CSPF/HSPF composite engines and splits legacy/common HSPF formula owners. KS uses
+independent CSPF/HSPF engines and never imports or calls the ISO public facade.
+
+R4 retained Brazil without formula changes because its composite policy already
+lives in core capability. AS/NZS remains disabled and unreachable from enabled
+profile resolution. Static `core.calculators.resources` resolution removed repo
+cwd dependence without module discovery, directory scanning, or plugin imports.
+
+R5 made no cross-standard commonization. Only standard-local operations already
+proven identical within one standard are shared. Similar EN/ISO/KS division and
+interpolation code remains intentionally duplicated because unit, rounding,
+boundary, fallback, and exception equivalence is not proven.
+
+No formula-correction candidate was discovered. Existing formulas, fixture and
+golden expected values, config semantics, public APIs, routes, result keys/order,
+details, diagnostics, rounding, and exception contracts were unchanged.
+
+Final evidence:
+
+- ordered contract lock: EN active branches, ISO enabled variants, KS official
+  CSPF/HSPF, and Brazil composite passed;
+- focused EN: 307 passed;
+- focused ISO/Brazil: 480 passed, one expected xfail;
+- focused KS: 214 passed;
+- cwd/resource/capability route: 56 passed;
+- complete Calculator collection: 1,246 passed, two expected xfails;
+- repository-wide pytest: 1,810 passed, two expected xfails;
+- structure guard: ten pre-existing warnings, no new warning; the EN, ISO, and
+  KS monolith warnings were removed;
+- changed-owner compilation and staged objective gates passed.
