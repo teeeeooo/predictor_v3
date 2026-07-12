@@ -2,6 +2,8 @@
 
 import warnings
 
+from .numeric import linear_interpolate, safe_div
+
 
 class HSPF2LegacyEngine:
     def __init__(self, context, point_resolver):
@@ -10,12 +12,10 @@ class HSPF2LegacyEngine:
 
     @staticmethod
     def _safe_div(num: float, den: float, fallback: float = 0.0) -> float:
-        return num / den if den != 0 else fallback
+        return safe_div(num, den, fallback)
 
     def _linear(self, x: float, x1: float, y1: float, x2: float, y2: float) -> float:
-        if x1 == x2:
-            return y1
-        return y1 + (y2 - y1) * self._safe_div(x - x1, x2 - x1)
+        return linear_interpolate(x, x1, y1, x2, y2)
 
     def _capacity_power_at_temp(self, temp_f: float, full_points: dict) -> tuple:
         h1_temp = self.context.test_point_temps.get("H1_full", 47)

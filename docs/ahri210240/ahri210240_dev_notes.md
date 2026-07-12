@@ -187,11 +187,28 @@ SEER2의 현재 variable-capacity 테스트 입력과 expected는 사용자가 A
 
 계산기 파일은 Lite 규칙상 명시 지시 없이 수정하지 않는다. 특히 `calculate_hspf2_v2()`와 `calculate_hspf2()`는 보호 대상이다.
 
+### Final internal ownership
+
+Public import path와 method/result contract는 `ahri_hspf2.py`, `ahri_seer2.py` facade가 소유한다. 구현은 `core/calculators/standards/_ahri/`의 private owner로 분리되며 application, UI, capability, ML envelope에 노출하지 않는다.
+
+| Owner | Responsibility |
+| --- | --- |
+| `hspf2_context.py` | config 로드, Region IV validation, seasonal runtime context |
+| `hspf2_points.py` | alias/case normalization, validation, H12/H22/H42 fallback metadata |
+| `hspf2_performance.py` | variable-capacity low/intermediate/full performance와 building load |
+| `hspf2_variable.py` | Case I/II/III bin loop와 seasonal accumulation |
+| `hspf2_result.py` | 기존 raw result, duplicate totals, summary, diagnostics mapping assembly |
+| `hspf2_legacy.py` | v2 validation, interpolation, seasonal loop, legacy result mapping |
+| `seer2_variable.py` | A/B/E/F curves, Case 1/2.1/2.2/3, fractional seasonal result |
+| `numeric.py` | 두 engine에서 의미가 동일함이 확인된 safe division과 linear interpolation만 공유 |
+
+Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누적하지 않고, 후속 design에서 facade 뒤의 sibling engine으로 추가한다.
+
 ## 11. HSPF2 v3 구현 현황 및 검증 기준
 
 ### 구현 현황
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
-- **핵심 엔진**: `core/calculators/standards/ahri_hspf2.py`의 `calculate_hspf2_v3` (v2 legacy 대비 정교한 canonical path)
+- **핵심 엔진**: `core/calculators/standards/_ahri/hspf2_variable.py` (stable `ahri_hspf2.py` facade를 통해 호출)
 - **입력 체계**: `legacy_to_canonical()`을 통해 다양한 입력 변수명을 표준 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
 - **상태**: Full variable-capacity path 구현 및 `tests/test_ahri_hspf2*.py` 기반 smoke/golden/edge regression 보호망 확보.
 

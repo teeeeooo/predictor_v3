@@ -105,7 +105,7 @@ entries:
 
   - type: decision
     topic: calculator standard and config ownership
-    content: ISO 16358, KS C 9306, AS/NZS compatibility, EN14825, and AHRI 210/240 remain separate calculator responsibilities. Region config is shared static data interpreted by each calculator/profile owner; routing is explicit by calculator_id/profile resolver; EN14825 owns its unified config and SCOP point contract; AHRI keeps separate SEER2/HSPF2 UI and batch contracts. Core formulas, config semantics, profile IDs, fixtures, and public result contracts must not be blended across standards.
+    content: ISO 16358, KS C 9306, AS/NZS compatibility, EN14825, and AHRI 210/240 remain separate calculator responsibilities. Region config is shared static data interpreted by each calculator/profile owner; routing is explicit by calculator_id/profile resolver; EN14825 owns its unified config and SCOP point contract; AHRI keeps separate SEER2/HSPF2 UI and batch contracts. AHRI's stable public facades delegate to private HSPF2 context/point/variable/result/legacy owners and a private SEER2 variable engine; future two-stage/triple-capacity formulas are sibling engines, not branches in current variable formulas. Existing user-confirmed expected results are official-calculator golden while deep-result fingerprints are structural characterization. Core formulas, config semantics, profile IDs, fixtures, and public result contracts must not be blended across standards.
     keywords:
       - predictor_v3
       - calculator standard
@@ -116,7 +116,7 @@ entries:
       - EN14825
       - AHRI 210/240
     assertionStatus: verified
-    source: consolidated from result_reports/legacy/summaries/033_summary-calculator-architecture-ks-profile-dispatch.md, 054_summary-calculator-ui-iso-separation.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, 404_summary-en14825-config-point-contract-ui-workflow-closeout.md, 416_summary-en14825-batch-agent-change-gate-closeout.md, and 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md
+    source: consolidated from result_reports/legacy/summaries/033_summary-calculator-architecture-ks-profile-dispatch.md, 054_summary-calculator-ui-iso-separation.md, 364_summary-pyqt-retirement-en14825-seer-owner-guard.md, 404_summary-en14825-config-point-contract-ui-workflow-closeout.md, 416_summary-en14825-batch-agent-change-gate-closeout.md, and 445_summary-ahri-calculator-ui-batch-lifecycle-closeout.md; docs/designs/2026-07-12-ahri-seer2-hspf2-core-refactor-design.md; result_reports/records/2026-07/2026-07-12-ahri-core-refactor-contract-lock.md
 
   - type: decision
     topic: calculator envelope and ML boundary

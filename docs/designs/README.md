@@ -17,6 +17,7 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
+| `2026-07-12-ahri-seer2-hspf2-core-refactor-design.md` | Implemented governing design for the stable AHRI facades and private variable/legacy engines. | Reviewing or extending AHRI SEER2/HSPF2 core ownership, including future multi-capacity sibling engines. |
 | `2026-07-12-calculator-table-architecture-design.md` | Implemented governing design for the three active Calculator table families. | Reviewing or changing Calculator table-family architecture. |
 | `2026-07-11-calculator-ui-ux-unification-slice-0.md` | Active Calculator surface audit, target table policy, and migration Slice design. | Reviewing or implementing Calculator UI/UX unification. |
 | `TEMPLATE_DESIGN_GATE.md` | Template for a new Design Gate record. | Creating a new design record. |

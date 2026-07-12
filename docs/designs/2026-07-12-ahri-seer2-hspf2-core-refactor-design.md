@@ -1,9 +1,9 @@
 # AHRI SEER2 / HSPF2 Core Refactor Design
 
-**Status:** Proposed - audit complete, implementation not started
+**Status:** Implemented - R0 through R5 complete
 **Scope:** AHRI 210/240 variable-capacity SEER2 and HSPF2 core structure
 **Primary implementation sequence:** Contract lock -> HSPF2 extraction -> SEER2 extraction -> minimal commonization -> closeout
-**Proposed canonical location:** `docs/designs/2026-07-12-ahri-seer2-hspf2-core-refactor-design.md`
+**Canonical location:** `docs/designs/2026-07-12-ahri-seer2-hspf2-core-refactor-design.md`
 
 ---
 

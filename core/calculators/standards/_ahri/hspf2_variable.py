@@ -1,6 +1,7 @@
 """AHRI 210/240-2026 variable-capacity HSPF2 seasonal engine."""
 
 from .hspf2_performance import HSPF2VariablePerformance
+from .hspf2_result import assemble_hspf2_result
 
 
 class HSPF2VariableCapacityEngine:
@@ -166,7 +167,7 @@ class HSPF2VariableCapacityEngine:
         raw_hspf2_base = p.safe_div(total_heating_btu, total_energy_wh)
         raw_hspf2 = raw_hspf2_base * seasonal.fdef_override
         rounded_hspf2 = p.round_nearest_025(raw_hspf2)
-        return self._assemble_result(
+        return assemble_hspf2_result(
             seasonal,
             resolved,
             h22_capacity,
@@ -179,94 +180,3 @@ class HSPF2VariableCapacityEngine:
             rounded_hspf2,
             bin_details,
         )
-
-    @staticmethod
-    def _assemble_result(
-        seasonal,
-        resolved,
-        h22_capacity,
-        h22_power,
-        f_def_seasonal,
-        total_heating_btu,
-        total_energy_wh,
-        raw_hspf2_base,
-        raw_hspf2,
-        rounded_hspf2,
-        bin_details,
-    ):
-        bin_table = seasonal.bin_table
-        return {
-            "raw_hspf2": raw_hspf2,
-            "raw_hspf2_base": raw_hspf2_base,
-            "rounded_hspf2": rounded_hspf2,
-            "HSPF2": rounded_hspf2,
-            "total_load": round(total_heating_btu, 3),
-            "total_energy": round(total_energy_wh, 3),
-            "total_heating_btu": round(total_heating_btu, 3),
-            "total_energy_wh": round(total_energy_wh, 3),
-            "h42_source": resolved.h42_source,
-            "bin_table": {
-                "region": bin_table.get("region"),
-                "source": bin_table.get("source", {}),
-                "heating_load_hours": seasonal.heating_load_hours,
-                "fractional_bin_hours_sum": round(sum(seasonal.fractional_bin_hours), 3),
-            },
-            "summary": {
-                "ahri_210_240_2026_ready": True,
-                "total_heating_btu": round(total_heating_btu, 3),
-                "total_energy_wh": round(total_energy_wh, 3),
-                "raw_hspf2_base": raw_hspf2_base,
-                "f_def_seasonal": f_def_seasonal,
-                "raw_hspf2": raw_hspf2,
-                "rounded_hspf2": rounded_hspf2,
-                "metadata": {
-                    "formula_path": "ahri_210_240_2026_variable_capacity_heating",
-                    "region": bin_table.get("region"),
-                    "heating_load_hours": seasonal.heating_load_hours,
-                    "h12_source": resolved.h12_source,
-                    "h22_source": resolved.h22_source,
-                    "h22_capacity": h22_capacity,
-                    "h22_power": h22_power,
-                    "h22_tested": resolved.h22_tested,
-                    "h22_for_slope_source": resolved.h22_for_slope_source,
-                    "h22_high_anchor_source": resolved.h22_high_anchor_source,
-                    "h22_high_anchor_capacity": resolved.h22_high_anchor_capacity,
-                    "h22_high_anchor_power": resolved.h22_high_anchor_power,
-                    "minimum_speed_limited": seasonal.minimum_speed_limited,
-                    "case_i_low_source": seasonal.case_i_low_source,
-                    "t_off": seasonal.t_off,
-                    "t_on": seasonal.t_on,
-                    "t_off_used": seasonal.t_off,
-                    "t_on_used": seasonal.t_on,
-                    "c_d_heating": seasonal.c_d_heating,
-                    "defrost_control_type": "demand",
-                    "defrost_t_test_minutes": seasonal.t_test,
-                    "defrost_t_max_minutes": seasonal.t_max,
-                    "defrost": {
-                        "mode": "override",
-                        "fdef_used": seasonal.fdef_override,
-                        "f_def_seasonal": f_def_seasonal,
-                        "raw_hspf2_base": raw_hspf2_base,
-                        "raw_hspf2": raw_hspf2,
-                        "seasonal_defrost_multiplier_applied": False,
-                        "t_test_input": seasonal.raw_t_test,
-                        "t_max_input": seasonal.raw_t_max,
-                        "t_test_used": seasonal.t_test,
-                        "t_max_used": seasonal.t_max,
-                        "fdef_override": seasonal.fdef_override,
-                        "clamped": seasonal.raw_t_test != seasonal.t_test
-                        or seasonal.raw_t_max != seasonal.t_max,
-                    },
-                    "t_OBO": 45,
-                },
-                "heating_load_line": {
-                    "q_h1_calc": resolved.q_a_full,
-                    "q_h1_calc_source": "A2_cooling_capacity_95F",
-                    "q_h1_calc_scope": "variable_capacity_afull_anchor_eq11106",
-                    "C_vs": seasonal.variable_capacity_slope_factor,
-                    "t_zl": seasonal.zero_load_temp_f,
-                    "t_od": seasonal.outdoor_design_temp_f,
-                },
-            },
-            "bin_details": bin_details,
-        }

@@ -1,5 +1,7 @@
 """Current AHRI variable-capacity SEER2 seasonal engine."""
 
+from .numeric import safe_div
+
 
 class SEER2VariableCapacityEngine:
     def __init__(self, config: dict):
@@ -17,7 +19,7 @@ class SEER2VariableCapacityEngine:
 
     @staticmethod
     def _safe_div(num: float, den: float, fallback: float = 0.0) -> float:
-        return num / den if den != 0 else fallback
+        return safe_div(num, den, fallback)
 
     def _compute_intermediate_slopes(self, test_points):
         q_A, P_A = test_points["A_Full"]

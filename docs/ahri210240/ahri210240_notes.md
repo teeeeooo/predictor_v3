@@ -150,14 +150,14 @@
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
 | HSPF2 entry point | `core/calculators/standards/ahri_hspf2.py` | `calculate_hspf2` | `HSPF2` | v3 production path로 연결 |
-| HSPF2 v3 path | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `raw_hspf2`, `bin_details` | AHRI 210/240-2026 variable-capacity heating |
+| HSPF2 v3 path | `core/calculators/standards/_ahri/hspf2_variable.py` | `HSPF2VariableCapacityEngine.calculate` | `raw_hspf2`, `bin_details` | facade 뒤의 AHRI 210/240-2026 variable-capacity heating |
 | Region IV bin table | `data/region_configs/usa_hspf2.json` | n/a | `bin_table` | Table 16 fractional bin hours |
-| H1Full fallback | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `summary.metadata.h12_source` | tested / eq_11_183 / eq_11_185 |
-| H22 fallback | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `summary.metadata.h22_source` | tested / eq_11_44_11_50 |
-| intermediate slope | `core/calculators/standards/ahri_hspf2.py` | `_cert_intermediate_capacity_power_at_temp` | `debug_info.intermediate_metadata` | Eq.11.199~11.204 trace |
-| Case details | `core/calculators/standards/ahri_hspf2.py` | `_calculate_hspf2_v3_ahri` | `bin_details` | Case I/II/III |
-| HSPF2 legacy | `core/calculators/standards/ahri_hspf2.py` | `calculate_hspf2_v2` | `HSPF2` | legacy reference only |
-| SEER2 current path | `core/calculators/standards/ahri_seer2.py` | `calculate_seer2` | `SEER2` | 현재 구현 확인 가능한 냉방 경로 |
+| H1Full fallback | `core/calculators/standards/_ahri/hspf2_points.py` | `resolve_variable_capacity` | `summary.metadata.h12_source` | tested / eq_11_183 / eq_11_185 |
+| H22 fallback | `core/calculators/standards/_ahri/hspf2_points.py` | `resolve_variable_capacity` | `summary.metadata.h22_source` | tested / eq_11_44_11_50 |
+| intermediate slope | `core/calculators/standards/_ahri/hspf2_performance.py` | `intermediate_capacity_power_at_temp` | `debug_info.intermediate_metadata` | Eq.11.199~11.204 trace |
+| Case details | `core/calculators/standards/_ahri/hspf2_variable.py` | `calculate` | `bin_details` | Case I/II/III |
+| HSPF2 legacy | `core/calculators/standards/_ahri/hspf2_legacy.py` | `calculate` | `HSPF2` | public v2 facade가 위임하는 legacy reference |
+| SEER2 current path | `core/calculators/standards/_ahri/seer2_variable.py` | `calculate` | `SEER2` | public SEER2 facade 뒤의 variable-capacity 냉방 경로 |
 
 ## 9. Critical Implementation Notes
 

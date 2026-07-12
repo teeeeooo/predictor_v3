@@ -2,6 +2,7 @@ import pytest
 
 from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
 from core.calculators.standards._ahri.hspf2_context import HSPF2ConfigContext
+from core.calculators.standards._ahri.numeric import linear_interpolate, safe_div
 from core.calculators.standards._ahri.hspf2_points import HSPF2PointResolver
 
 from .test_contract_lock import HSPF2_CONFIG_PATH, HSPF2_V3_KWARGS, HSPF2_V3_POINTS
@@ -69,3 +70,10 @@ def test_hspf2_facade_delegates_v2_to_legacy_engine():
     }
 
     assert calculator.calculate_hspf2_v2(points) == calculator._legacy_engine.calculate(points)
+
+
+def test_shared_numeric_primitives_keep_the_extracted_engine_semantics():
+    assert safe_div(9.0, 3.0) == 3.0
+    assert safe_div(9.0, 0.0, 7.0) == 7.0
+    assert linear_interpolate(5.0, 0.0, 10.0, 10.0, 30.0) == 20.0
+    assert linear_interpolate(5.0, 1.0, 12.0, 1.0, 99.0) == 12.0
