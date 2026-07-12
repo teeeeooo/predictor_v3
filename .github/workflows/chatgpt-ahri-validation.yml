@@ -126,14 +126,28 @@ jobs:
             pytest-main-baseline.log
           if-no-files-found: ignore
       - name: Staged change gate
+        id: staged_gate
         if: steps.calculator_tests.outcome == 'success'
         run: |
-          git fetch origin main:refs/remotes/origin/main
-          git read-tree refs/remotes/origin/main
-          git add -A
-          git diff --cached --check
-          python -B tools/check_agent_change_gate.py --cached
+          set +e
+          {
+            git fetch origin main:refs/remotes/origin/main
+            git read-tree refs/remotes/origin/main
+            git add -A
+            git diff --cached --check
+            python -B tools/check_agent_change_gate.py --cached
+          } > staged-gate.log 2>&1
+          status=$?
+          cat staged-gate.log
           git reset --mixed HEAD
+          exit $status
+      - name: Upload staged gate log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-change-gate-log
+          path: staged-gate.log
+          if-no-files-found: ignore
       - name: Structure guard
-        if: steps.calculator_tests.outcome == 'success'
+        if: always() && steps.calculator_tests.outcome == 'success'
         run: python -B tools/check_code_structure.py
