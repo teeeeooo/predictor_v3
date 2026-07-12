@@ -18,21 +18,68 @@ def _first(row: Mapping[str, object], *keys: str) -> object:
     return None
 
 
+def _is_dual_stage_row(row: Mapping[str, object]) -> bool:
+    return any(
+        key in row
+        for key in (
+            "CLF_low",
+            "clf_low",
+            "CLF_full",
+            "low_permitted",
+        )
+    )
+
+
 def format_seer2_bin_details(
     rows: Iterable[Mapping[str, object]],
 ) -> tuple[Mapping[str, object], ...]:
-    """Normalize product-specific core diagnostics into detail schemas."""
+    """Normalize rows while preserving each product schema exactly."""
     formatted = []
     for row in rows:
+        if _is_dual_stage_row(row):
+            formatted.append(
+                {
+                    "bin_no": optional_fixed_number(
+                        _first(row, "bin", "bin_no"), 0
+                    ),
+                    "tj": optional_fixed_number(row.get("temp_F"), 1),
+                    "operating_case": optional_text(
+                        _first(row, "operating_case", "case")
+                    ),
+                    "building_load": optional_fixed_number(
+                        _first(row, "BL", "building_load"), 1
+                    ),
+                    "q_low": optional_fixed_number(
+                        _first(row, "q_Low", "q_low"), 1
+                    ),
+                    "q_full": optional_fixed_number(
+                        _first(row, "q_Full", "q_full"), 1
+                    ),
+                    "low_permitted": optional_text(row.get("low_permitted")),
+                    "clf_low": optional_fixed_number(
+                        _first(row, "CLF_low", "clf_low"), 4
+                    ),
+                    "clf_full": optional_fixed_number(
+                        _first(row, "CLF_full", "clf_full"), 4
+                    ),
+                    "plf": optional_fixed_number(
+                        _first(row, "PLF", "plf"), 4
+                    ),
+                    "q_total": optional_fixed_number(row.get("q_j"), 1),
+                    "e_total": optional_fixed_number(row.get("E_j"), 1),
+                }
+            )
+            continue
         q_low = _first(row, "q_Low", "q_low")
         p_low = _first(row, "p_Low", "p_low")
         q_full = _first(row, "q_Full", "q_full")
         p_full = _first(row, "p_Full", "p_full")
         formatted.append(
             {
-                "bin_no": optional_fixed_number(_first(row, "bin", "bin_no"), 0),
+                "bin_no": optional_fixed_number(
+                    _first(row, "bin", "bin_no"), 0
+                ),
                 "tj": optional_fixed_number(row.get("temp_F"), 1),
-                "hours": optional_fixed_number(row.get("fractional_hours"), 3),
                 "operating_case": optional_text(
                     _first(row, "operating_case", "case")
                 ),
@@ -40,18 +87,8 @@ def format_seer2_bin_details(
                     _first(row, "BL", "building_load"), 1
                 ),
                 "q_low": optional_fixed_number(q_low, 1),
-                "p_low": optional_fixed_number(p_low, 1),
                 "q_int": optional_fixed_number(row.get("q_Int"), 1),
                 "q_full": optional_fixed_number(q_full, 1),
-                "p_full": optional_fixed_number(p_full, 1),
-                "low_permitted": optional_text(row.get("low_permitted")),
-                "clf_low": optional_fixed_number(
-                    _first(row, "CLF_low", "clf_low"), 4
-                ),
-                "clf_full": optional_fixed_number(
-                    _first(row, "CLF_full", "clf_full"), 4
-                ),
-                "plf": optional_fixed_number(_first(row, "PLF", "plf"), 4),
                 "eer_low": optional_fixed_number(
                     _first(row, "EER_Low")
                     if row.get("EER_Low") is not None
