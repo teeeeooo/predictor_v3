@@ -59,6 +59,8 @@ class AhriSeer2Request:
     p_w_off: float = 0.0
     cd_low: float | None = None
     profile_id: str = "ahri_usa_seer2"
+    product_classification: str = "variable_capacity"
+    parameters: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -66,3 +68,4 @@ class AhriHspf2Request:
     test_points: MeasuredPoints
     parameters: Mapping[str, object] = field(default_factory=dict)
     profile_id: str = "ahri_usa_hspf2"
+    product_classification: str = "variable_capacity"
