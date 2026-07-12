@@ -73,7 +73,7 @@ entries:
 
   - type: decision
     topic: Calculator table family architecture
-    content: Active Tk Calculator tables use three explicit families: Editable Matrix keeps existing models/controllers, Compact Result Grid owns small fixed read-only results, and Scrollable Data Table retains Treeview only for large detail data through the shared style adapter. All active single/common/profile and batch matrices consume shared grid primitives; fixed ISO/SASO/Brazil/Korea/SCOP results use compact primitives; BinTraceTable is the sole active Treeview. Profile schemas, status meaning, calculations, and export documents remain local. Every active Single result exposes Copy/Export CSV through a presentation helper while native result owners keep payload shape; top/nested Notebook tabs keep fixed geometry and AHRI/Korea visibility uses Tk widget identity.
+    content: Active Tk Calculator tables use three explicit families: Editable Matrix keeps existing models/controllers, Compact Result Grid owns small fixed read-only results, and Scrollable Data Table retains Treeview only for large detail data through the shared style adapter. All active single/common/profile and batch matrices consume shared grid primitives; fixed ISO/SASO/Brazil/Korea/SCOP results use compact primitives; BinTraceTable is the sole active Treeview. Profile schemas, status meaning, calculations, and export documents remain local. Every active Single result exposes Copy/Export CSV through a presentation helper while native result owners keep payload shape; SCOP composes its payload from active visible climate surfaces rather than the hidden compatibility ResultPanel. Top/nested Notebook tabs keep fixed geometry and AHRI/Korea visibility uses Tk widget identity.
     keywords:
       - predictor_v3
       - Calculator table
@@ -84,7 +84,7 @@ entries:
       - ISO ISEER
       - BinTraceTable
     assertionStatus: verified
-    source: docs/designs/2026-07-12-calculator-table-architecture-design.md; result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md; result_reports/records/2026-07/2026-07-12-calculator-table-slice6.md; result_reports/records/2026-07/2026-07-12-calculator-result-actions-notebook-correction.md
+    source: docs/designs/2026-07-12-calculator-table-architecture-design.md; result_reports/records/2026-07/2026-07-12-calculator-table-foundation.md; result_reports/records/2026-07/2026-07-12-calculator-table-slice6.md; result_reports/records/2026-07/2026-07-12-calculator-result-actions-notebook-correction.md; result_reports/records/2026-07/2026-07-12-calculator-scop-visible-export-correction.md
 
   - type: decision
     topic: window viewport and result-detail surface policy

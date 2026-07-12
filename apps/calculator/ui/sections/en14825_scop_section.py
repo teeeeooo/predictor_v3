@@ -298,7 +298,7 @@ class En14825ScopSection:
         self.result_actions = add_result_actions(
             action_row,
             parent=self._frame,
-            result_owner=self.result_panel,
+            result_owner=self,
             csv_filename="en14825_scop_result.csv",
             surface_prefix="en14825_scop_result",
         )
@@ -624,6 +624,30 @@ class En14825ScopSection:
 
     def _toggle_detail(self) -> None:
         self._detail_visibility.toggle()
+
+    def copy_result(self) -> bool:
+        """Copy active climate results from their current visible surfaces."""
+        rows = self.sectioned_csv_rows()
+        text = "\n".join("\t".join(row) for row in rows)
+        self._frame.clipboard_clear()
+        self._frame.clipboard_append(text)
+        return True
+
+    def sectioned_csv_rows(self) -> tuple[tuple[str, ...], ...]:
+        """Compose active climate snapshots in their visible display order."""
+        rows: list[tuple[str, ...]] = []
+        for climate in self.climates:
+            if not self.climate_active_vars[climate].get():
+                continue
+            if rows:
+                rows.append(())
+            snapshot = self._result_surfaces[climate].visible_snapshot()
+            rows.append((climate.capitalize(),))
+            if snapshot.has_result_values:
+                rows.append(snapshot.headers)
+                rows.extend(snapshot.rows)
+            rows.append(("Status", snapshot.status))
+        return tuple(rows)
 
     def _format_t_design_h(self, climate: str) -> str:
         try:

@@ -49,7 +49,8 @@
   and passes the full Tk Calculator suite without the prior order failure.
 - Every active Single result surface now exposes Copy and Excel-friendly CSV
   actions while result owners retain their native payloads and detail/Batch
-  export paths remain separate.
+  export paths remain separate. SCOP composes export directly from active
+  visible climate surfaces rather than its hidden compatibility text model.
 
 ## 2026-07-11 — Clean/hexagonal desktop refactor
 

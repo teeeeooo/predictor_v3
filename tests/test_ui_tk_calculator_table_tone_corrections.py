@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import pytest
 
 from tests.helpers.tk import destroy_tk_root
@@ -186,3 +187,133 @@ def test_treeview_style_resolves_custom_shared_policy_without_global_style_name(
     assert style.lookup(style_name, "bordercolor") == "#303132"
     assert ("selected", "#404142") in style.map(style_name, "background")
     assert tree.outer_edge_policy == "flat_low_contrast"
+
+
+def _scop_section(tk_root):
+    from apps.calculator.ui.sections.en14825_scop_section import En14825ScopSection
+
+    section = En14825ScopSection(tk_root)
+    section._auto_calc.cancel()
+    return section
+
+
+def _complete_scop_summary():
+    from apps.calculator.application.en14825.scop_models import ScopResultSummary
+
+    return ScopResultSummary(
+        declared_scop=3.2,
+        declared_qh_kwh=1000.0,
+        declared_total_kwh=312.5,
+        tested_scop=3.1,
+        tested_qh_kwh=1000.0,
+        tested_total_kwh=322.6,
+        scop_percent=96.9,
+        status_code="complete",
+    )
+
+
+def test_scop_result_actions_export_single_visible_climate_from_surface(
+    tk_root, monkeypatch, tmp_path
+) -> None:
+    section = _scop_section(tk_root)
+    section._result_surfaces["average"].update(_complete_scop_summary())
+
+    section.copy_button.invoke()
+    copied = tk_root.clipboard_get()
+    assert copied.startswith("Average\n구분\tSCOP\tQH [kWh]\tTotal [kWh]\tSCOP %")
+    assert "Declared\t3.20\t1000.0\t312.5\t-" in copied
+    assert "Status\t자동 계산 완료" in copied
+    assert "Warmer" not in copied and "Colder" not in copied
+    assert "Bin No." not in copied
+
+    path = tmp_path / "scop.csv"
+
+    def choose_path(**kwargs):
+        assert kwargs["initialfile"] == "en14825_scop_result.csv"
+        return str(path)
+
+    monkeypatch.setattr(
+        "apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",
+        choose_path,
+    )
+    section.export_button.invoke()
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.reader(handle))
+    assert rows[0] == ["Average"]
+    assert rows[1] == ["구분", "SCOP", "QH [kWh]", "Total [kWh]", "SCOP %"]
+    assert rows[-1] == ["Status", "자동 계산 완료"]
+
+
+def test_scop_invalid_transition_exports_visible_status_without_stale_values(
+    tk_root,
+) -> None:
+    section = _scop_section(tk_root)
+    surface = section._result_surfaces["average"]
+    surface.update(_complete_scop_summary())
+    surface.show_invalid("입력 오류: 숫자 입력을 확인하세요.")
+
+    rows = section.sectioned_csv_rows()
+    assert rows == (
+        ("Average",),
+        ("Status", "입력 오류: 숫자 입력을 확인하세요."),
+    )
+    section.copy_button.invoke()
+    copied = tk_root.clipboard_get()
+    assert "No results" not in copied
+    assert "3.20" not in copied
+    assert "입력 오류: 숫자 입력을 확인하세요." in copied
+
+    surface.update(_complete_scop_summary())
+    assert "3.20" in "\n".join("\t".join(row) for row in section.sectioned_csv_rows())
+
+
+def test_scop_mixed_active_climates_preserve_visible_order_and_status(tk_root) -> None:
+    section = _scop_section(tk_root)
+    section._result_surfaces["average"].update(_complete_scop_summary())
+    section.climate_active_vars["warmer"].set(True)
+    section._result_surfaces["warmer"].show_invalid("입력 오류")
+
+    rows = section.sectioned_csv_rows()
+    assert rows[0] == ("Average",)
+    assert ("Warmer",) in rows
+    assert rows.index(("Average",)) < rows.index(("Warmer",))
+    assert ("Status", "입력 오류") in rows
+    assert ("Colder",) not in rows
+
+
+def test_scop_warning_pending_and_active_transitions_use_current_surface(tk_root) -> None:
+    section = _scop_section(tk_root)
+    section._result_surfaces["average"].update(_complete_scop_summary())
+    section._result_surfaces["average"].show_error("surface failure")
+    section.climate_active_vars["warmer"].set(True)
+    section._result_surfaces["warmer"].clear()
+
+    rows = section.sectioned_csv_rows()
+    assert ("Status", "기류/설정 오류: surface failure") in rows
+    assert ("Status", "대기 중") in rows
+    assert "3.20" not in str(rows)
+    assert "PASS" not in str(rows) and "FAIL" not in str(rows)
+
+    section.climate_active_vars["average"].set(False)
+    rows = section.sectioned_csv_rows()
+    assert ("Average",) not in rows and rows[0] == ("Warmer",)
+
+    section.climate_active_vars["average"].set(True)
+    rows = section.sectioned_csv_rows()
+    assert rows[0] == ("Average",)
+    assert ("Status", "기류/설정 오류: surface failure") in rows
+
+    section._result_surfaces["average"].show_invalid("입력 오류")
+    rows = section.sectioned_csv_rows()
+    assert ("Status", "입력 오류") in rows
+    assert ("Status", "대기 중") in rows
+
+
+def test_scop_result_csv_cancel_is_noop(tk_root, monkeypatch) -> None:
+    section = _scop_section(tk_root)
+    monkeypatch.setattr(
+        "apps.calculator.ui.table_csv_export.filedialog.asksaveasfilename",
+        lambda **_kwargs: "",
+    )
+
+    assert section.export_button.invoke() == 0

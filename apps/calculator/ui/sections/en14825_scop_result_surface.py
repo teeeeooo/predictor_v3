@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import tkinter as tk
 
 from apps.calculator.ui.en14825 import ScopResultSummary
@@ -19,6 +20,19 @@ from apps.calculator.ui.table.grid_primitives import (
     create_text_label,
 )
 from apps.calculator.ui.table.visual_policy import AlignmentRole, SemanticTone
+
+
+@dataclass(frozen=True)
+class ScopVisibleResultSnapshot:
+    """One climate's current visible result table and status."""
+
+    headers: tuple[str, ...]
+    rows: tuple[tuple[str, ...], ...]
+    status: str
+
+    @property
+    def has_result_values(self) -> bool:
+        return any(value != "-" for row in self.rows for value in row[1:])
 
 
 class ScopResultSurface:
@@ -101,6 +115,14 @@ class ScopResultSurface:
 
     def manager(self) -> str:
         return self._frame.winfo_manager()
+
+    def visible_snapshot(self) -> ScopVisibleResultSnapshot:
+        """Read the latest presentation state without inferring domain meaning."""
+        return ScopVisibleResultSnapshot(
+            headers=self._grid.headers,
+            rows=self._grid.rows,
+            status=str(self._status_label.cget("text")),
+        )
 
     def update(self, summary: ScopResultSummary) -> None:
         self.show()
