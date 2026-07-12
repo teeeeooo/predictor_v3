@@ -225,8 +225,13 @@ def test_triple_northern_matches_covered_official_compressor_path_and_2026_corre
     assert result["raw_hspf2"] == pytest.approx(10.046800549191993)
     assert result["published_hspf2"] == 10.05
     assert metadata["point_sources"]["H2Low"] == (
-        "eq_11_253_11_254_from_tested_h3low"
+        "not_applicable_to_permitted_range"
     )
+    assert metadata["point_sources"]["H3Low"] == (
+        "not_applicable_to_permitted_range"
+    )
+    assert "H2Low" not in metadata["resolved_points"]
+    assert "H3Low" not in metadata["resolved_points"]
     assert [row["case"] for row in result["bin_details"]] == [
         1,
         1,
@@ -255,7 +260,7 @@ def test_triple_h3low_test_forces_equations_11_253_and_11_254():
         t_off=-45.0,
         t_on=-45.0,
         stage_ranges_f={
-            "low": (40.0, 65.0),
+            "low": (37.0, 65.0),
             "full": (20.0, 50.0),
             "boost": (-20.0, 30.0),
         },
