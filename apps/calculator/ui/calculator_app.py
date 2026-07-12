@@ -56,14 +56,6 @@ class CalculatorTkApp:
         self.iso_tab = Iso16358Tab(self.notebook)
         self.notebook.add(self.iso_tab, text="ISO 16358")
 
-        # Capture and constrain the selected startup surface before constructing
-        # wide hidden siblings. Otherwise ttk.Notebook propagates the widest
-        # hidden tab into the selected ScrollableFrame and corrupts ISO's
-        # content-hugging measurement.
-        self.root.update_idletasks()
-        initial_size = self.iso_tab.preferred_initial_size()
-        self._set_notebook_content_size(initial_size)
-
         self.en14825_tab = En14825Tab(self.notebook)
         self.notebook.add(self.en14825_tab, text="EN14825")
 
@@ -80,6 +72,7 @@ class CalculatorTkApp:
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         self.root.update_idletasks()
+        initial_size = self.iso_tab.preferred_initial_size()
         self._set_notebook_content_size(initial_size)
         center_window(self.root, initial_size)
         # Mainloop (or a test-driven update) lets the hidden widget tree settle
