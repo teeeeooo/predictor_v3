@@ -12,7 +12,9 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Callable, ContextManager, Mapping
 
-from apps.calculator.ui.layout_constants import APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO
+from apps.calculator.ui.layout_constants import (
+    APP_WINDOW_CONTENT_SAFETY_MARGIN_RATIO,
+)
 
 
 SuppressMeasurement = Callable[[], ContextManager[object]]
@@ -83,7 +85,17 @@ class TkVisibleContentMeasurement:
         self._content.update_idletasks()
         nested = self._measure_nested_notebook()
 
-        raw_content_width = self._content.winfo_reqwidth()
+        viewport_content_width = self._content.winfo_reqwidth()
+        intrinsic_width_provider = getattr(
+            self._overflow_source,
+            "intrinsic_content_reqwidth",
+            None,
+        )
+        raw_content_width = (
+            int(intrinsic_width_provider())
+            if callable(intrinsic_width_provider)
+            else viewport_content_width
+        )
         raw_content_height = self._content.winfo_reqheight()
         content_width = raw_content_width
         content_height = raw_content_height
@@ -130,14 +142,19 @@ class TkVisibleContentMeasurement:
             )
 
         margin = self._horizontal_margin_ratio
-        vertical_margin = min(int(content_height * margin), self._vertical_margin_cap)
+        vertical_margin = min(
+            int(content_height * margin),
+            self._vertical_margin_cap,
+        )
         preferred_size = (
-            int(content_width * (1 + margin)) + self._scrollbar.winfo_reqwidth(),
+            int(content_width * (1 + margin))
+            + self._scrollbar.winfo_reqwidth(),
             content_height + vertical_margin,
         )
         overflow_delta = self._overflow_source.vertical_overflow_delta()
         diagnostics = {
             "content_reqwidth": raw_content_width,
+            "viewport_content_reqwidth": viewport_content_width,
             "content_reqheight": raw_content_height,
             "adjusted_content_width": adjusted_content_width,
             "adjusted_content_height": adjusted_content_height,
@@ -175,14 +192,20 @@ class TkVisibleContentMeasurement:
         current_tab_width = current_widget.winfo_reqwidth()
         current_tab_height = current_widget.winfo_reqheight()
         tab_widths = tuple(
-            notebook.nametowidget(tab_id).winfo_reqwidth() for tab_id in tabs
+            notebook.nametowidget(tab_id).winfo_reqwidth()
+            for tab_id in tabs
         )
         tab_heights = tuple(
-            notebook.nametowidget(tab_id).winfo_reqheight() for tab_id in tabs
+            notebook.nametowidget(tab_id).winfo_reqheight()
+            for tab_id in tabs
         )
-        widest_tab_width = max((current_tab_width, *tab_widths), default=current_tab_width)
+        widest_tab_width = max(
+            (current_tab_width, *tab_widths),
+            default=current_tab_width,
+        )
         tallest_tab_height = max(
-            (current_tab_height, *tab_heights), default=current_tab_height
+            (current_tab_height, *tab_heights),
+            default=current_tab_height,
         )
         notebook_height = notebook.winfo_reqheight()
         notebook_width = notebook.winfo_reqwidth()
@@ -191,13 +214,19 @@ class TkVisibleContentMeasurement:
         # tab. Subtract the tallest known tab so sibling height is not cached as
         # tab-bar chrome for a shorter current tab.
         if self._chrome_height_estimate is None:
-            self._chrome_height_estimate = max(0, notebook_height - tallest_tab_height)
+            self._chrome_height_estimate = max(
+                0,
+                notebook_height - tallest_tab_height,
+            )
 
         # Estimate tab border/padding chrome width once. Tk notebook requested
         # width can already be sticky at a hidden wide tab, so subtract the
         # widest known tab instead of the current visible tab.
         if self._chrome_width_estimate is None:
-            self._chrome_width_estimate = max(0, notebook_width - widest_tab_width)
+            self._chrome_width_estimate = max(
+                0,
+                notebook_width - widest_tab_width,
+            )
 
         return NestedNotebookMeasurement(
             max_tab_width=current_tab_width,
