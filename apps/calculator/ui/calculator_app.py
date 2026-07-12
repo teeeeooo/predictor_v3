@@ -27,9 +27,7 @@ from apps.calculator.ui.tabs.iso16358_tab import Iso16358Tab
 from apps.calculator.ui.tabs.en14825_tab import En14825Tab
 from apps.calculator.ui.tabs.ahri210240_tab import Ahri210240Tab
 from apps.calculator.ui.tabs.korea_tab import KoreaTab
-from apps.calculator.ui.window_geometry import (
-    center_window,
-)
+from apps.calculator.ui.window_geometry import center_window
 
 
 class CalculatorTkApp:
@@ -49,11 +47,22 @@ class CalculatorTkApp:
         apply_calculator_theme(self.root)
         self._configure_top_notebook_style()
 
-        self.notebook = ttk.Notebook(self.root, style="CalculatorTop.TNotebook")
+        self.notebook = ttk.Notebook(
+            self.root,
+            style="CalculatorTop.TNotebook",
+        )
         self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.iso_tab = Iso16358Tab(self.notebook)
         self.notebook.add(self.iso_tab, text="ISO 16358")
+
+        # Capture and constrain the selected startup surface before constructing
+        # wide hidden siblings. Otherwise ttk.Notebook propagates the widest
+        # hidden tab into the selected ScrollableFrame and corrupts ISO's
+        # content-hugging measurement.
+        self.root.update_idletasks()
+        initial_size = self.iso_tab.preferred_initial_size()
+        self._set_notebook_content_size(initial_size)
 
         self.en14825_tab = En14825Tab(self.notebook)
         self.notebook.add(self.en14825_tab, text="EN14825")
@@ -71,7 +80,6 @@ class CalculatorTkApp:
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         self.root.update_idletasks()
-        initial_size = self.iso_tab.preferred_initial_size()
         self._set_notebook_content_size(initial_size)
         center_window(self.root, initial_size)
         # Mainloop (or a test-driven update) lets the hidden widget tree settle
@@ -109,16 +117,25 @@ class CalculatorTkApp:
         notebook = event.widget
         selected_tab = notebook.nametowidget(notebook.select())
         if hasattr(selected_tab, "preferred_initial_size"):
-            self._set_notebook_content_size(selected_tab.preferred_initial_size())
+            self._set_notebook_content_size(
+                selected_tab.preferred_initial_size()
+            )
         if hasattr(selected_tab, "fit_toplevel_to_current_content_once"):
             selected_tab.fit_toplevel_to_current_content_once()
-        on_parent_tab_selected = getattr(selected_tab, "on_parent_tab_selected", None)
+        on_parent_tab_selected = getattr(
+            selected_tab,
+            "on_parent_tab_selected",
+            None,
+        )
         if callable(on_parent_tab_selected):
             on_parent_tab_selected()
 
     def _set_notebook_content_size(self, size: tuple[int, int]) -> None:
         width, height = size
-        self.notebook.configure(width=max(1, width), height=max(1, height))
+        self.notebook.configure(
+            width=max(1, width),
+            height=max(1, height),
+        )
 
     def _configure_top_notebook_style(self) -> None:
         style = ttk.Style(self.root)
