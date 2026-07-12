@@ -128,6 +128,7 @@ def build_ahri_hspf2_batch_spec(
     elif product == "dual_stage":
         enabled = {
             "H2Low": active.h2_low_enabled,
+            "H3Low": active.h3_low_enabled,
             "H4Full": active.h4_full_enabled,
         }
         points.extend(
@@ -137,7 +138,7 @@ def build_ahri_hspf2_batch_spec(
         result_metrics = _multi_result_metrics()
     elif product == "triple_capacity_northern":
         enabled = {
-            "H2Low": active.h2_low_enabled and not active.h3_low_enabled,
+            "H2Low": False,
             "H2Boost": active.h2_boost_enabled,
             "H3Low": active.h3_low_enabled,
         }
@@ -218,9 +219,11 @@ class AhriHspf2BatchHandler:
         values = dict(self.common.numeric_values)
         values.update(visible)
         active = self.common.active
-        measured_h2_low = active.h2_low_enabled
-        if active.product_classification == "triple_capacity_northern":
-            measured_h2_low = measured_h2_low and not active.h3_low_enabled
+        measured_h2_low = (
+            active.h2_low_enabled
+            if active.product_classification == "dual_stage"
+            else False
+        )
         options = AhriHspf2Options(
             region=active.region,
             measured_h42=active.h42_enabled,
