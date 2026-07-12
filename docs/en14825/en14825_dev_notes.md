@@ -152,7 +152,7 @@ python3 -B -m pytest tests/test_en14825_golden.py -v --runxfail
 | SEER variable capacity exact handling | cooling raw step schema가 정의될 때까지 | Clause 6.4.2.2 closest-step/interpolation 구조 반영 | EN14825:2012 Clause 6.4.2.2 |
 | SCOPnet | 출력 요구가 생길 때까지 | Equation 10 별도 optional output 추가 | EN14825:2012 Equation 10 |
 | colder special point | 입력 schema가 확장될 때까지 | -15 °C point를 명시 입력으로 받기 | EN14825:2012 Clause 7.4 |
-| common part-load helper | 계산 결과가 바뀌지 않는 테스트 보호 후 | SEER/SCOP 공통 Cd 경로를 더 명확히 분리 | EN14825:2012 Clause 6.4.2.1, Clause 7.4.2.1 |
+| common part-load helper | 2026-07-13 behavior-preserving core refactor에서 완료 | private EN performance owner에서 SEER/SCOP Cd 경로를 공유하고 stable facade가 engine을 조립 | EN14825:2012 Clause 6.4.2.1, Clause 7.4.2.1 |
 
 리팩토링은 계산 결과가 바뀌지 않는다는 golden 보호가 먼저 있어야 한다. 이 프로젝트의 Lite 규칙상 명시 요청 없는 구조 변경은 금지다.
 

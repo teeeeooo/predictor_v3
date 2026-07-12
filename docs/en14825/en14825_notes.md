@@ -131,17 +131,17 @@
 | Standard item | File | Function | Output key | Notes |
 | --- | --- | --- | --- | --- |
 | Table 36 cooling bin hours | `data/region_configs/en14825.json` `seer` section | `_get_seer_bin_data` | n/a | missing config data fails fast |
-| Cooling load line | `core/calculators/standards/en14825.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
-| EERPL declared point | `core/calculators/standards/en14825.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
-| SEERon | `core/calculators/standards/en14825.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
+| Cooling load line | `core/calculators/standards/_en14825/performance.py` | `_cooling_load_at_temp` | internal | Tdesignc=16이면 fail-fast |
+| EERPL declared point | `core/calculators/standards/_en14825/performance.py` | `_eer_pl_at_declared_point` | internal | `_part_load_performance` 공통 사용 |
+| SEERon | `core/calculators/standards/_en14825/seer_engine.py` | `_calculate_seer_on` | `seer_on` | `seer.bin_data` 기반 bin loop |
 | SEER | `core/calculators/standards/en14825.py` | `calculate_seer` | `seer`, `seer_on`, `qc_kwh` | `seer.design`, `seer.defaults`, `seer.operational_hours` 기본값을 사용한다. |
 | Table 37 and Annex D data | `data/region_configs/en14825.json` `scop` section | n/a | source data | climate와 appliance_type별 값 |
-| SCOP point contract | `data/region_configs/en14825.json` `scop.point_contract` | `_resolve_scop_point_contract` | internal | climate별 required/mapped/inactive point 결정 |
-| SCOP point validation | `core/calculators/standards/en14825.py` | `_validate_scop_points` | internal | contract 해석과 TOL/Tbiv 제한 검증 |
-| Heating load line | `core/calculators/standards/en14825.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |
-| SCOP Cd handling | `core/calculators/standards/en14825.py` | `_scop_pl_at_declared_point` | internal | Clause 7.4.2.2를 declared-point schema에 맞춰 해석 |
-| SCOP capacity/COPPL curve | `core/calculators/standards/en14825.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | duplicate temperature는 같은 canonical curve point를 사용 |
-| SCOPon | `core/calculators/standards/en14825.py` | `_calculate_scop_on` | `scop_on`, `bin_details` | Equation 9 구조 |
+| SCOP point contract | `core/calculators/standards/_en14825/scop_points.py` | `_resolve_scop_point_contract` | internal | climate별 required/mapped/inactive point 결정 |
+| SCOP point validation | `core/calculators/standards/_en14825/scop_points.py` | `_validate_scop_points` | internal | contract 해석과 TOL/Tbiv 제한 검증 |
+| Heating load line | `core/calculators/standards/_en14825/performance.py` | `_heating_part_load` | internal | Tdesignh=16이면 fail-fast |
+| SCOP Cd handling | `core/calculators/standards/_en14825/performance.py` | `_scop_pl_at_declared_point` | internal | Clause 7.4.2.2를 declared-point schema에 맞춰 해석 |
+| SCOP capacity/COPPL curve | `core/calculators/standards/_en14825/scop_performance.py` | `_scop_capacity_curve_points`, `_scop_coppl_curve_points` | internal | duplicate temperature는 같은 canonical curve point를 사용 |
+| SCOPon | `core/calculators/standards/_en14825/scop_engine.py` | `_calculate_scop_on` | `scop_on`, `bin_details` | Equation 9 구조 |
 | SCOP | `core/calculators/standards/en14825.py` | `calculate_scop` | `scop`, `SCOP`, `qh_kwh`, `active_kwh`, `standby_kwh`, `total_kwh` | SCOPnet은 반환하지 않는다. |
 
 ## 9. Critical Implementation Notes
