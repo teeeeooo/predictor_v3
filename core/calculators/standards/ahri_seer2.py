@@ -1,7 +1,9 @@
-"""Stable AHRI 210/240 SEER2 public facade and default configuration."""
+"""Stable AHRI 210/240 SEER2 public facade and product dispatch."""
 
 import json
 
+from ._ahri.product import DUAL_STAGE, VARIABLE_CAPACITY, normalize_product_classification
+from ._ahri.seer2_dual import SEER2DualStageEngine
 from ._ahri.seer2_variable import SEER2VariableCapacityEngine
 
 
@@ -33,12 +35,13 @@ def get_default_ahri_seer2_config() -> dict:
 
 
 class AHRICalculator:
-    """Compatibility facade for the current variable-capacity SEER2 path."""
+    """Compatibility facade with explicit product dispatch under one stable method."""
 
     def __init__(self, config_path: str):
         with open(config_path, "r", encoding="utf-8") as file:
             self.config = json.load(file)
         self._variable_engine = SEER2VariableCapacityEngine(self.config)
+        self._dual_engine = SEER2DualStageEngine()
         for attribute in (
             "bin_temps",
             "bin_hours",
@@ -52,5 +55,25 @@ class AHRICalculator:
         ):
             setattr(self, attribute, getattr(self._variable_engine, attribute))
 
-    def calculate_seer2(self, test_points, system_type="HP", p_w_off=0.0, cd_low=None):
-        return self._variable_engine.calculate(test_points, system_type, p_w_off, cd_low)
+    def calculate_seer2(
+        self,
+        test_points,
+        system_type="HP",
+        p_w_off=0.0,
+        cd_low=None,
+        *,
+        product_classification=VARIABLE_CAPACITY,
+        options=None,
+    ):
+        product = normalize_product_classification(product_classification, metric="SEER2")
+        if product == VARIABLE_CAPACITY:
+            return self._variable_engine.calculate(test_points, system_type, p_w_off, cd_low)
+        if product == DUAL_STAGE:
+            return self._dual_engine.calculate(
+                test_points,
+                system_type=system_type,
+                p_w_off=p_w_off,
+                cd_low=cd_low,
+                options=options,
+            )
+        raise ValueError(f"Unsupported SEER2 product classification: {product!r}")
