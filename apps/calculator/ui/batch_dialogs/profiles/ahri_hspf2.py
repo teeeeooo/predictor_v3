@@ -5,6 +5,10 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+from apps.calculator.application.ahri.hspf2_multicapacity_adapter import (
+    dual_h3_low_required,
+    triple_h3_low_required,
+)
 from apps.calculator.application.ahri.product_defaults import (
     AHRI_HSPF2_COMMON_DEFAULTS,
     AHRI_HSPF2_TRIPLE_RANGE_DEFAULTS,
@@ -104,6 +108,7 @@ class AhriHspf2BatchSection:
         self._frame = ttk.LabelFrame(parent, text="AHRI 210/240 HSPF2 Batch")
         self._frame.columnconfigure(0, weight=1)
         self._frame.rowconfigure(1, weight=1)
+        self._syncing_conditional_state = False
         self.product_var = tk.StringVar(
             master=self._frame,
             value=next(
@@ -121,6 +126,7 @@ class AhriHspf2BatchSection:
         }
         self.status_var = tk.StringVar(master=self._frame, value="")
         self._build_common_inputs()
+        self._sync_conditional_low_point_state()
         self._table_host = ttk.Frame(self._frame)
         self._table_host.grid(
             row=1,
@@ -131,7 +137,8 @@ class AhriHspf2BatchSection:
         )
         self._table_host.columnconfigure(0, weight=1)
         self._table_host.rowconfigure(0, weight=1)
-        self._create_table(build_ahri_hspf2_batch_spec(active))
+        self._create_table(build_ahri_hspf2_batch_spec(self._draft_active_options()))
+        self._session.set_active_options(self._draft_active_options())
         self._auto_calc = DebouncedAutoCalc(
             self._frame,
             self._recalculate_now,
@@ -148,12 +155,14 @@ class AhriHspf2BatchSection:
             "h2_low_enabled",
             "h2_boost_enabled",
             "h3_low_enabled",
+            "low_stage_lockout_enabled",
+            "low_stage_lockout_temp_c",
+            "low_min_c",
         ):
             self._vars[key].trace_add("write", self._on_option_draft_changed)
         for key in (
             "h1n_h32_same_hz",
             "min_spd",
-            "low_stage_lockout_enabled",
             "defrost_mode",
             *dict(_VARIABLE_NUMERIC_FIELDS),
             *dict(_MULTI_NUMERIC_FIELDS),
@@ -234,6 +243,7 @@ class AhriHspf2BatchSection:
 
     def _build_multi_controls(self, frame: ttk.Frame) -> None:
         column = 0
+        self._multi_checkbuttons: dict[str, ttk.Checkbutton] = {}
         for key, label in (
             ("h4_full_enabled", "H4Full"),
             ("h2_low_enabled", "H2Low"),
@@ -241,13 +251,15 @@ class AhriHspf2BatchSection:
             ("h3_low_enabled", "H3Low"),
             ("low_stage_lockout_enabled", "Low Lockout"),
         ):
-            ttk.Checkbutton(
+            button = ttk.Checkbutton(
                 frame,
                 text=label,
                 variable=self._vars[key],
                 onvalue="1",
                 offvalue="0",
-            ).grid(row=1, column=column, padx=3, pady=(0, 4))
+            )
+            button.grid(row=1, column=column, padx=3, pady=(0, 4))
+            self._multi_checkbuttons[key] = button
             column += 1
         ttk.Label(frame, text="Defrost Mode").grid(
             row=0,
@@ -293,6 +305,7 @@ class AhriHspf2BatchSection:
         else:
             self._variable_controls.grid_remove()
             self._multi_controls.grid()
+        self._sync_conditional_low_point_state()
 
     def _build_actions(self) -> None:
         row = ttk.Frame(self._frame)
@@ -349,28 +362,64 @@ class AhriHspf2BatchSection:
             return False
         raise ValueError("boolean option must be 0 or 1")
 
+    def _h3_low_required(self) -> bool:
+        values = {key: variable.get() for key, variable in self._vars.items()}
+        product = self.product_classification
+        if product == "dual_stage":
+            return dual_h3_low_required(
+                values,
+                lockout_enabled=self._parse_bool(
+                    self._vars["low_stage_lockout_enabled"].get()
+                ),
+            )
+        if product == "triple_capacity_northern":
+            return triple_h3_low_required(values)
+        return True
+
+    def _sync_conditional_low_point_state(self) -> None:
+        if self._syncing_conditional_state or not hasattr(
+            self, "_multi_checkbuttons"
+        ):
+            return
+        product = self.product_classification
+        if product == "variable_capacity":
+            return
+        h3_required = self._h3_low_required()
+        self._syncing_conditional_state = True
+        try:
+            self._vars["h3_low_enabled"].set("1" if h3_required else "0")
+            if product == "triple_capacity_northern":
+                self._vars["h2_low_enabled"].set("0")
+        finally:
+            self._syncing_conditional_state = False
+        self._multi_checkbuttons["h3_low_enabled"].configure(state="disabled")
+        self._multi_checkbuttons["h2_low_enabled"].configure(
+            state="disabled" if product == "triple_capacity_northern" else "normal"
+        )
+
     def _draft_active_options(self) -> AhriHspf2BatchActiveOptions:
         region = self._vars["region"].get().strip()
         if region != "IV":
             raise ValueError("Region IV required")
+        product = self.product_classification
+        h3_required = self._h3_low_required()
+        h2_low_enabled = self._parse_bool(self._vars["h2_low_enabled"].get())
+        if product == "triple_capacity_northern":
+            h2_low_enabled = False
         return AhriHspf2BatchActiveOptions(
             region=region,
             h42_enabled=self._parse_bool(self._vars["h42_enabled"].get()),
             h12_enabled=self._parse_bool(self._vars["h12_enabled"].get()),
             h22_enabled=self._parse_bool(self._vars["h22_enabled"].get()),
-            product_classification=self.product_classification,
+            product_classification=product,
             h4_full_enabled=self._parse_bool(
                 self._vars["h4_full_enabled"].get()
             ),
-            h2_low_enabled=self._parse_bool(
-                self._vars["h2_low_enabled"].get()
-            ),
+            h2_low_enabled=h2_low_enabled,
             h2_boost_enabled=self._parse_bool(
                 self._vars["h2_boost_enabled"].get()
             ),
-            h3_low_enabled=self._parse_bool(
-                self._vars["h3_low_enabled"].get()
-            ),
+            h3_low_enabled=h3_required,
         )
 
     def _on_product_changed(self) -> None:
@@ -380,6 +429,9 @@ class AhriHspf2BatchSection:
         self._apply_options()
 
     def _on_option_draft_changed(self, *_args: object) -> None:
+        if self._syncing_conditional_state:
+            return
+        self._sync_conditional_low_point_state()
         self._set_draft_status()
 
     def _set_draft_status(self) -> bool:
@@ -394,6 +446,7 @@ class AhriHspf2BatchSection:
 
     def _apply_options(self) -> None:
         try:
+            self._sync_conditional_low_point_state()
             draft = self._draft_active_options()
             spec = build_ahri_hspf2_batch_spec(draft)
         except (TypeError, ValueError):
