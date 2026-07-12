@@ -1,0 +1,40 @@
+name: ChatGPT AHRI validation
+
+on:
+  push:
+    branches:
+      - chatgpt/ahri-multicapacity-core-gui
+
+jobs:
+  focused-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest
+      - name: Compile changed owners
+        run: |
+          python -m compileall -q core/calculators apps/calculator tests/test_ahri_multicapacity_2026.py
+      - name: Focused AHRI tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          xvfb-run -a pytest -q \
+            tests/test_ahri_multicapacity_2026.py \
+            tests/test_ahri_multicapacity_overlay.py \
+            tests/test_standard_calculation_capability.py \
+            tests/test_apps_calculator_ui_ahri_seer2.py \
+            tests/test_apps_calculator_ui_ahri_hspf2.py \
+            tests/test_ui_tk_ahri_seer2_batch.py \
+            tests/test_ui_tk_ahri_hspf2_batch.py \
+            tests/test_ui_tk_ahri_seer2_detail.py \
+            tests/test_ui_tk_ahri_hspf2_detail.py
+      - name: Structure guard
+        run: python -B tools/check_code_structure.py
