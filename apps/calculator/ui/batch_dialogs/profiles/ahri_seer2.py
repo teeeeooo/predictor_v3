@@ -39,7 +39,9 @@ _PRODUCT_LABELS = {
 class AhriSeer2BatchSnapshot:
     common_values: Mapping[str, str]
     cases: tuple[Mapping[str, str], ...]
-    product_cases: Mapping[str, tuple[Mapping[str, str], ...]] = field(default_factory=dict)
+    product_cases: Mapping[str, tuple[Mapping[str, str], ...]] = field(
+        default_factory=dict
+    )
 
 
 class AhriSeer2BatchSection:
@@ -56,7 +58,9 @@ class AhriSeer2BatchSection:
         saved = dict(initial_snapshot.common_values) if initial_snapshot else {}
         self._product_cases = {
             key: tuple(dict(case) for case in cases)
-            for key, cases in (initial_snapshot.product_cases.items() if initial_snapshot else ())
+            for key, cases in (
+                initial_snapshot.product_cases.items() if initial_snapshot else ()
+            )
         }
         initial_product = saved.get("product", "variable_capacity")
         if initial_snapshot and not self._product_cases:
@@ -67,19 +71,28 @@ class AhriSeer2BatchSection:
         self.product_var = tk.StringVar(
             master=self._frame,
             value=next(
-                (label for label, value in _PRODUCT_LABELS.items() if value == initial_product),
+                (
+                    label
+                    for label, value in _PRODUCT_LABELS.items()
+                    if value == initial_product
+                ),
                 "Variable Capacity",
             ),
         )
-        self.type_var = tk.StringVar(master=self._frame, value=saved.get("type", "HP"))
+        self.type_var = tk.StringVar(
+            master=self._frame, value=saved.get("type", "HP")
+        )
         self.cd_low_var = tk.StringVar(
-            master=self._frame, value=saved.get("cd_low", AHRI_SEER2_DUAL_DEFAULTS["cd_low"])
+            master=self._frame,
+            value=saved.get("cd_low", AHRI_SEER2_DUAL_DEFAULTS["cd_low"]),
         )
         self.cd_full_var = tk.StringVar(
-            master=self._frame, value=saved.get("cd_full", AHRI_SEER2_DUAL_DEFAULTS["cd_full"])
+            master=self._frame,
+            value=saved.get("cd_full", AHRI_SEER2_DUAL_DEFAULTS["cd_full"]),
         )
         self.lockout_var = tk.BooleanVar(
-            master=self._frame, value=saved.get("low_stage_lockout_enabled", "False") == "True"
+            master=self._frame,
+            value=saved.get("low_stage_lockout_enabled", "False") == "True",
         )
         self.lockout_temp_var = tk.StringVar(
             master=self._frame,
@@ -92,7 +105,9 @@ class AhriSeer2BatchSection:
         self._build_common_inputs()
         self.table: BatchMatrixTable
         self._build_table(self.product_classification)
-        self._auto_calc = DebouncedAutoCalc(self._frame, self._recalculate_now, delay_ms=150)
+        self._auto_calc = DebouncedAutoCalc(
+            self._frame, self._recalculate_now, delay_ms=150
+        )
         self.table.set_values_changed_callback(self._auto_calc.schedule)
         for variable in (
             self.type_var,
@@ -149,8 +164,12 @@ class AhriSeer2BatchSection:
             ("Cd Low", self.cd_low_var, 6),
             ("Cd Full", self.cd_full_var, 6),
         ):
-            ttk.Label(self._dual_controls, text=label).pack(side=tk.LEFT, padx=(4, 2))
-            ttk.Entry(self._dual_controls, textvariable=variable, width=width).pack(side=tk.LEFT)
+            ttk.Label(self._dual_controls, text=label).pack(
+                side=tk.LEFT, padx=(4, 2)
+            )
+            ttk.Entry(
+                self._dual_controls, textvariable=variable, width=width
+            ).pack(side=tk.LEFT)
 
     def _build_table(self, product: str) -> None:
         self.table = BatchMatrixTable(
@@ -197,13 +216,28 @@ class AhriSeer2BatchSection:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
         for label, command in (
-            ("Add Case", self.table.add_case),
-            ("Remove Case", self.table.remove_case),
-            ("Copy All", self.table.copy_all),
+            ("Add Case", self._add_case),
+            ("Remove Case", self._remove_case),
+            ("Copy All", self._copy_all),
             ("Export CSV", self._export_csv),
         ):
-            ttk.Button(row, text=label, command=command).pack(side=tk.LEFT, padx=(0, 6))
+            ttk.Button(row, text=label, command=command).pack(
+                side=tk.LEFT, padx=(0, 6)
+            )
         ttk.Label(row, textvariable=self.status_var).pack(side=tk.LEFT, padx=(6, 0))
+
+    def _add_case(self) -> None:
+        self.table.add_case()
+
+    def _remove_case(self) -> None:
+        self.table.remove_case()
+
+    def _copy_all(self) -> str:
+        return self.table.copy_all()
+
+    @staticmethod
+    def _parse_float(value: str) -> float:
+        return float(value.strip().replace(",", ""))
 
     def _options(self) -> AhriSeer2Options | None:
         if self.product_classification == "variable_capacity":
@@ -212,10 +246,12 @@ class AhriSeer2BatchSection:
             product_classification="dual_stage",
             low_stage_lockout_enabled=self.lockout_var.get(),
             low_stage_lockout_temp_f=(
-                float(self.lockout_temp_var.get()) if self.lockout_var.get() else None
+                self._parse_float(self.lockout_temp_var.get())
+                if self.lockout_var.get()
+                else None
             ),
-            cd_low=float(self.cd_low_var.get()),
-            cd_full=float(self.cd_full_var.get()),
+            cd_low=self._parse_float(self.cd_low_var.get()),
+            cd_full=self._parse_float(self.cd_full_var.get()),
         )
 
     def common_values(self) -> dict[str, str]:
@@ -253,9 +289,14 @@ class AhriSeer2BatchSection:
             for index in range(len(self.table.cases)):
                 self.table.set_result(
                     index,
-                    {key: "" for key, _label, _width in self.table.spec.result_metrics},
+                    {
+                        key: ""
+                        for key, _label, _width in self.table.spec.result_metrics
+                    },
                 )
-            self.status_var.set(f"0 valid / 0 pending / {len(self.table.cases)} invalid")
+            self.status_var.set(
+                f"0 valid / 0 pending / {len(self.table.cases)} invalid"
+            )
             return
         handler = AhriSeer2BatchHandler(
             AhriSeer2BatchCommonInputs(
@@ -309,7 +350,9 @@ class AhriSeer2BatchAdapter:
         return BATCH_DIALOG_SAFETY_MIN_SIZE
 
     def build_content(self, parent: tk.Widget) -> tk.Widget:
-        self.section = AhriSeer2BatchSection(parent, initial_snapshot=self.initial_snapshot)
+        self.section = AhriSeer2BatchSection(
+            parent, initial_snapshot=self.initial_snapshot
+        )
         return self.section._frame
 
     def dispose(self) -> None:
