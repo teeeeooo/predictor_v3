@@ -60,9 +60,9 @@ KS C 9306 문서는 ISO 16358 공통 CSPF/HSPF 엔진을 한국 냉난방 효율
 | KS item | Standard reference | Project behavior | Code mapping |
 | --- | --- | --- | --- |
 | declared capacity 기반 BL(tj) | KS C 9306:2017 Equation E.1.4 | `declared_capacity`를 L_c_ref로 사용한다. | `calculate_cspf` |
-| 시험값 ROUND_HALF_UP | KS C 9306:2017 Annex E | measured capacity/power와 declared capacity를 정수화한다. | `_prepare_measured_inputs`, `_round_test_value` |
-| 29/35°C 파생 규칙 | KS C 9306:2017 Annex E, Table E.2 context | configuration factor로 default point를 생성한다. | `resolve_points` |
-| `ks_intersection` power interpolation | KS C 9306:2017 Annex E | load line과 performance line의 교점 기반 전력선을 사용한다. | `_ks_intersection_power` |
+| 시험값 ROUND_HALF_UP | KS C 9306:2017 Annex E | measured capacity/power와 declared capacity를 정수화한다. | `_ks_c9306/input.py`의 `_prepare_measured_inputs`, `_round_test_value` |
+| 29/35°C 파생 규칙 | KS C 9306:2017 Annex E, Table E.2 context | configuration factor로 default point를 생성한다. | `_ks_c9306/cspf_points.py`의 `_resolve_ks_cspf_points` |
+| `ks_intersection` power interpolation | KS C 9306:2017 Annex E | load line과 performance line의 교점 기반 전력선을 사용한다. | `_ks_c9306/cspf_performance.py`의 `_ks_cspf_intersection_power` |
 | BL > max_cap 처리 | ISO common branch reused by KS | output을 highest capacity로 제한하고 power는 highest power를 사용한다. | `calculate_cspf` |
 
 ## 6.1 KS C 9306 CSPF Status

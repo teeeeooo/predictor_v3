@@ -23,6 +23,23 @@
 - **BL(t_j) 산정 기준**: KS HSPF load line 및 `BL(t_j)`는 declared/rated cooling capacity 기반 계약을 엄격히 유지한다.
 - **전력 보간 방식**: KS C 9306 전력 보간은 `ks_intersection` path를 유지하며, 타 region에 강제 적용하지 않는다.
 
+### Current private owner structure
+
+`core/calculators/standards/ks_c9306.py`는 stable facade다. Config는 private
+`_ks_c9306/context.py`에서 한 번 읽고, CSPF와 HSPF engine이 같은 context를
+사용한다.
+
+| Owner | Responsibility |
+| --- | --- |
+| `input.py`, `cspf_points.py` | ROUND_HALF_UP 전처리와 KS measured/derived point resolution |
+| `cspf_performance.py`, `cspf_engine.py` | KS interpolation/intersection과 CSPF bin loop |
+| `hspf_points.py` | KS HSPF validation, optional point, derived fallback |
+| `hspf_curves.py`, `hspf_cases.py`, `hspf_engine.py` | KS load/curve/intersection, operating case, seasonal aggregation |
+| `result.py` | CSPF/HSPF key order, rounding, detail result assembly |
+
+Application과 UI는 private owner를 import하지 않고 capability를 통해 stable
+facade를 호출한다. KS owner는 ISO public facade를 재호출하지 않는다.
+
 ## 3. `round_test_values` Application
 
 | Target | Applied | Reason |
