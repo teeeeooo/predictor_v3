@@ -1,8 +1,8 @@
-"""Profile-local superset state for dynamic AHRI HSPF2 batch matrices."""
+"""Product-local superset state for dynamic AHRI HSPF2 batch matrices."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Mapping, Sequence
 
@@ -15,12 +15,17 @@ class AhriHspf2BatchSnapshot:
     common_values: Mapping[str, str]
     active_options: AhriHspf2BatchActiveOptions
     cases: tuple[Mapping[str, str], ...]
+    product_cases: Mapping[str, tuple[Mapping[str, str], ...]] = field(default_factory=dict)
 
 
 class AhriHspf2BatchSessionState:
-    """Keep hidden optional inputs while projecting the active matrix."""
+    """Keep a separate hidden-input store for every product classification."""
 
-    _POINTS = ("H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22")
+    _POINTS = (
+        "H01", "H11", "H1N", "H2Int", "H32", "H42", "H12", "H22",
+        "H0Low", "H1Low", "H1Full", "H2Low", "H2Full", "H3Low", "H3Full",
+        "H4Full", "H2Boost", "H3Boost", "H4Boost",
+    )
     _INPUT_KEYS = frozenset(
         {"a2_capacity"}
         | {
@@ -34,9 +39,20 @@ class AhriHspf2BatchSessionState:
         self,
         active_options: AhriHspf2BatchActiveOptions,
         cases: Sequence[Mapping[str, str]] = (),
+        product_cases: Mapping[str, Sequence[Mapping[str, str]]] | None = None,
     ) -> None:
         self.active_options = active_options
-        self._case_store = [self._normalize(case) for case in cases] or [{}]
+        self._stores: dict[str, list[dict[str, str]]] = {
+            product: [self._normalize(case) for case in saved] or [{}]
+            for product, saved in (product_cases or {}).items()
+        }
+        product = active_options.product_classification
+        if product not in self._stores:
+            self._stores[product] = [self._normalize(case) for case in cases] or [{}]
+
+    @property
+    def _case_store(self) -> list[dict[str, str]]:
+        return self._stores.setdefault(self.active_options.product_classification, [{}])
 
     @property
     def case_count(self) -> int:
@@ -44,6 +60,7 @@ class AhriHspf2BatchSessionState:
 
     def set_active_options(self, active: AhriHspf2BatchActiveOptions) -> None:
         self.active_options = active
+        self._stores.setdefault(active.product_classification, [{}])
 
     def sync_visible_cases(
         self,
@@ -52,12 +69,13 @@ class AhriHspf2BatchSessionState:
     ) -> None:
         visible = self._INPUT_KEYS.intersection(visible_input_keys)
         target_count = max(1, len(cases))
-        while len(self._case_store) < target_count:
-            self._case_store.append({})
-        del self._case_store[target_count:]
+        store = self._case_store
+        while len(store) < target_count:
+            store.append({})
+        del store[target_count:]
         for index, case in enumerate(cases):
             for key in visible:
-                self._case_store[index][key] = str(case.get(key, ""))
+                store[index][key] = str(case.get(key, ""))
 
     def visible_cases(self, spec: BatchMatrixSpec) -> tuple[dict[str, str], ...]:
         visible = set(spec.input_keys)
@@ -74,10 +92,15 @@ class AhriHspf2BatchSessionState:
             self._case_store.pop()
 
     def snapshot(self, common: Mapping[str, str]) -> AhriHspf2BatchSnapshot:
+        product_cases = {
+            product: tuple(MappingProxyType(dict(case)) for case in cases)
+            for product, cases in self._stores.items()
+        }
         return AhriHspf2BatchSnapshot(
             MappingProxyType(dict(common)),
             self.active_options,
             tuple(MappingProxyType(dict(case)) for case in self._case_store),
+            MappingProxyType(product_cases),
         )
 
     @classmethod
