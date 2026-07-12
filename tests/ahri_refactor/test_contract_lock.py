@@ -52,12 +52,25 @@ def test_hspf2_public_facade_contract_is_locked():
     calculator = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH)
 
     assert str(inspect.signature(AHRIHSPF2Calculator)) == "(config_path: str)"
-    assert str(inspect.signature(calculator.calculate_hspf2)) == "(test_points: dict, **kwargs) -> dict"
-    assert str(inspect.signature(calculator.calculate_hspf2_v3)) == "(test_points: dict, **kwargs) -> dict"
-    assert str(inspect.signature(calculator.calculate_hspf2_v2)) == "(test_points: dict, **kwargs) -> dict"
-    assert str(inspect.signature(calculator.get_test_point_schema)) == "(mode: str = None) -> dict"
-    assert str(inspect.signature(calculator.legacy_to_canonical)) == "(test_points: dict) -> dict"
-    assert str(inspect.signature(calculator.canonical_to_internal_usage)) == "(test_points: dict) -> dict"
+    assert str(inspect.signature(calculator.calculate_hspf2)) == (
+        "(test_points: dict, *, product_classification: str = "
+        "'variable_capacity', **kwargs) -> dict"
+    )
+    assert str(inspect.signature(calculator.calculate_hspf2_v3)) == (
+        "(test_points: dict, **kwargs) -> dict"
+    )
+    assert str(inspect.signature(calculator.calculate_hspf2_v2)) == (
+        "(test_points: dict, **kwargs) -> dict"
+    )
+    assert str(inspect.signature(calculator.get_test_point_schema)) == (
+        "(mode: str = None) -> dict"
+    )
+    assert str(inspect.signature(calculator.legacy_to_canonical)) == (
+        "(test_points: dict) -> dict"
+    )
+    assert str(inspect.signature(calculator.canonical_to_internal_usage)) == (
+        "(test_points: dict) -> dict"
+    )
 
     for attribute in (
         "config",
@@ -99,7 +112,9 @@ def test_hspf2_v3_characterization_is_deeply_locked():
 
 
 def test_hspf2_v2_characterization_is_deeply_locked():
-    result = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH).calculate_hspf2_v2(HSPF2_V2_POINTS)
+    result = AHRIHSPF2Calculator(HSPF2_CONFIG_PATH).calculate_hspf2_v2(
+        HSPF2_V2_POINTS
+    )
 
     assert list(result) == [
         "HSPF2",
@@ -118,7 +133,8 @@ def test_seer2_public_facade_and_characterization_are_locked():
 
     assert str(inspect.signature(AHRICalculator)) == "(config_path: str)"
     assert str(inspect.signature(calculator.calculate_seer2)) == (
-        "(test_points, system_type='HP', p_w_off=0.0, cd_low=None)"
+        "(test_points, system_type='HP', p_w_off=0.0, cd_low=None, *, "
+        "product_classification='variable_capacity', options=None)"
     )
     assert isinstance(calculator.config, dict)
     assert get_default_ahri_seer2_config()["standard"] == "AHRI 210/240-2023"
@@ -139,7 +155,9 @@ def test_seer2_public_facade_and_characterization_are_locked():
 def test_seer2_p_w_off_remains_accepted_and_has_no_effect():
     calculator = AHRICalculator(SEER2_CONFIG_PATH)
 
-    assert calculator.calculate_seer2(SEER2_POINTS, p_w_off=0.0) == calculator.calculate_seer2(
+    assert calculator.calculate_seer2(
+        SEER2_POINTS, p_w_off=0.0
+    ) == calculator.calculate_seer2(
         SEER2_POINTS,
         p_w_off=123.45,
     )
@@ -149,6 +167,8 @@ def test_seer2_facade_delegates_to_variable_engine_for_hp_and_ac():
     calculator = AHRICalculator(SEER2_CONFIG_PATH)
 
     for system_type in ("HP", "AC"):
-        assert calculator.calculate_seer2(SEER2_POINTS, system_type=system_type) == (
-            calculator._variable_engine.calculate(SEER2_POINTS, system_type=system_type)
+        assert calculator.calculate_seer2(
+            SEER2_POINTS, system_type=system_type
+        ) == calculator._variable_engine.calculate(
+            SEER2_POINTS, system_type=system_type
         )
