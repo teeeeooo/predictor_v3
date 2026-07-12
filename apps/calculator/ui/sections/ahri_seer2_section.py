@@ -25,6 +25,9 @@ from apps.calculator.ui.layout_constants import (
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.sections.ahri_multicapacity_detail_schema import (
+    AHRI_DUAL_SEER2_BIN_DETAIL_SCHEMA,
+)
 from apps.calculator.ui.sections.ahri_seer2_detail import format_seer2_bin_details
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_SEER2_BIN_DETAIL_SCHEMA
@@ -34,11 +37,10 @@ _PRODUCT_LABELS = {
     "Variable Capacity": "variable_capacity",
     "Dual Stage": "dual_stage",
 }
-_PRODUCT_NAMES = {value: key for key, value in _PRODUCT_LABELS.items()}
 
 
 class AhriSeer2Section:
-    """Stable metric shell with product-specific input composition."""
+    """Stable metric shell with product-specific input and detail composition."""
 
     def __init__(
         self,
@@ -56,52 +58,7 @@ class AhriSeer2Section:
         ] = BatchDialogHandle()
         self._frame = ttk.LabelFrame(parent, text="SEER2")
         self._frame.columnconfigure(0, weight=1)
-
-        option_frame = ttk.LabelFrame(self._frame, text="Options")
-        option_frame.grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=ISO_SECTION_PADX,
-            pady=(ISO_SECTION_BLOCK_GAP, ISO_SECTION_BLOCK_GAP),
-        )
-        ttk.Label(option_frame, text="Product").pack(
-            side=tk.LEFT,
-            padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
-            pady=CONTROL_ROW_PADY,
-        )
-        self.product_var = tk.StringVar(master=self._frame, value="Variable Capacity")
-        self.product_selector = ttk.Combobox(
-            option_frame,
-            textvariable=self.product_var,
-            values=tuple(_PRODUCT_LABELS),
-            state="readonly",
-            width=22,
-        )
-        self.product_selector.pack(
-            side=tk.LEFT,
-            padx=(0, CONTROL_ROW_PADY),
-            pady=CONTROL_ROW_PADY,
-        )
-        ttk.Label(option_frame, text="Type").pack(
-            side=tk.LEFT,
-            padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
-            pady=CONTROL_ROW_PADY,
-        )
-        self.type_var = tk.StringVar(master=self._frame, value="HP")
-        self.type_selector = ttk.Combobox(
-            option_frame,
-            textvariable=self.type_var,
-            values=("HP", "AC"),
-            state="readonly",
-            width=CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
-        )
-        self.type_selector.pack(
-            side=tk.LEFT,
-            padx=(0, CONTROL_ROW_PADY),
-            pady=CONTROL_ROW_PADY,
-        )
-
+        self._build_option_bar()
         self._surface_host = ttk.Frame(self._frame)
         self._surface_host.grid(
             row=1,
@@ -112,7 +69,6 @@ class AhriSeer2Section:
         )
         self._surface: AhriSeer2ProductSurface
         self._build_product_surface("variable_capacity")
-
         self.result_panel = ResultPanel(self._frame, title="AHRI 210/240 SEER2 결과")
         self.result_panel.grid(
             row=2,
@@ -151,34 +107,58 @@ class AhriSeer2Section:
         )
         self.copy_button = self.result_actions.copy_button
         self.export_button = self.result_actions.export_button
-        self.detail_panel = BinDetailPanel(
-            self._frame,
-            source_labels=("SEER2",),
-            default_source="SEER2",
-            csv_filename="ahri_seer2_bin_detail.csv",
-            show_source_selector=False,
-            schema=AHRI_SEER2_BIN_DETAIL_SCHEMA,
-        )
-        self._detail_visibility = DetailPanelVisibility(
-            panel=self.detail_panel,
-            button=self.detail_toggle,
-            grid_options={
-                "row": 4,
-                "column": 0,
-                "sticky": "ew",
-                "padx": 0,
-                "pady": (0, ISO_SECTION_BLOCK_GAP),
-            },
-            on_change=lambda: self._on_detail_visibility_changed()
-            if self._on_detail_visibility_changed is not None
-            else None,
-        )
-
+        self._build_detail_panel(AHRI_SEER2_BIN_DETAIL_SCHEMA)
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
         self.type_var.trace_add("write", lambda *_args: self._on_input_changed())
         self.product_var.trace_add("write", lambda *_args: self._on_product_changed())
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self.recalculate_now()
+
+    def _build_option_bar(self) -> None:
+        frame = ttk.LabelFrame(self._frame, text="Options")
+        frame.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(ISO_SECTION_BLOCK_GAP, ISO_SECTION_BLOCK_GAP),
+        )
+        ttk.Label(frame, text="Product").pack(
+            side=tk.LEFT,
+            padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
+        self.product_var = tk.StringVar(master=self._frame, value="Variable Capacity")
+        self.product_selector = ttk.Combobox(
+            frame,
+            textvariable=self.product_var,
+            values=tuple(_PRODUCT_LABELS),
+            state="readonly",
+            width=22,
+        )
+        self.product_selector.pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_ROW_PADY),
+            pady=CONTROL_ROW_PADY,
+        )
+        ttk.Label(frame, text="Type").pack(
+            side=tk.LEFT,
+            padx=(CONTROL_ROW_PADY, CONTROL_LABEL_GAP),
+            pady=CONTROL_ROW_PADY,
+        )
+        self.type_var = tk.StringVar(master=self._frame, value="HP")
+        self.type_selector = ttk.Combobox(
+            frame,
+            textvariable=self.type_var,
+            values=("HP", "AC"),
+            state="readonly",
+            width=CONTROL_EQUIPMENT_TYPE_SELECTOR_WIDTH_CHARS,
+        )
+        self.type_selector.pack(
+            side=tk.LEFT,
+            padx=(0, CONTROL_ROW_PADY),
+            pady=CONTROL_ROW_PADY,
+        )
 
     @property
     def product_classification(self) -> str:
@@ -197,12 +177,50 @@ class AhriSeer2Section:
         self.input_table = self._surface.input_table
         self.input_controller = self._surface.controller
 
+    def _build_detail_panel(self, schema) -> None:
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("SEER2",),
+            default_source="SEER2",
+            csv_filename="ahri_seer2_bin_detail.csv",
+            show_source_selector=False,
+            schema=schema,
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 4,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            on_change=(
+                self._on_detail_visibility_changed
+                if self._on_detail_visibility_changed is not None
+                else None
+            ),
+        )
+
+    def _replace_detail_panel(self, schema) -> None:
+        was_visible = self._detail_visibility.visible
+        self.detail_panel._frame.destroy()
+        self._build_detail_panel(schema)
+        if was_visible:
+            self._detail_visibility.toggle()
+
     def _on_product_changed(self) -> None:
         if not hasattr(self, "_surface"):
             return
         self._product_snapshots[self._surface.product] = self._surface.snapshot()
         product = self.product_classification
         self._build_product_surface(product)
+        self._replace_detail_panel(
+            AHRI_SEER2_BIN_DETAIL_SCHEMA
+            if product == "variable_capacity"
+            else AHRI_DUAL_SEER2_BIN_DETAIL_SCHEMA
+        )
         self._clear_results("입력 대기")
         self.schedule_recalculate()
         self._request_refit()
@@ -238,16 +256,32 @@ class AhriSeer2Section:
     def _batch_snapshot(self, snapshot: AhriSeer2BatchSnapshot | None) -> None:
         self._batch_handle.snapshot = snapshot
 
+    def _initial_batch_snapshot(self) -> AhriSeer2BatchSnapshot:
+        snapshot = self._batch_handle.snapshot
+        if snapshot is not None:
+            return snapshot
+        product = self.product_classification
+        return AhriSeer2BatchSnapshot(
+            {
+                "product": product,
+                "type": self.type_var.get(),
+            },
+            (),
+            {product: ()},
+        )
+
     def _open_batch_dialog(self) -> None:
         self._batch_handle.open_or_focus(
             lambda: AhriSeer2BatchDialog(
                 self._frame.winfo_toplevel(),
-                initial_snapshot=self._batch_handle.snapshot,
+                initial_snapshot=self._initial_batch_snapshot(),
                 on_close=self._clear_batch_dialog,
             )
         )
 
-    def _clear_batch_dialog(self, snapshot: AhriSeer2BatchSnapshot | None = None) -> None:
+    def _clear_batch_dialog(
+        self, snapshot: AhriSeer2BatchSnapshot | None = None
+    ) -> None:
         self._batch_handle.clear(snapshot)
 
     def recalculate_now(self) -> None:
@@ -284,7 +318,9 @@ class AhriSeer2Section:
                 ("Total Cooling [kBtu]", f"{summary.total_cooling_kbtu:.3f}"),
                 ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
             )
-        self.result_panel.set_summaries((ResultSummary("SEER2", fields, "자동 계산 완료"),))
+        self.result_panel.set_summaries(
+            (ResultSummary("SEER2", fields, "자동 계산 완료"),)
+        )
         rows = format_seer2_bin_details(summary.bin_details)
         if rows:
             self._detail_status = "상세 데이터 없음"
