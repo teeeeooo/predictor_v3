@@ -23,6 +23,7 @@ from core.calculators.profiles import (
     CalculatorProfile,
     resolve_calculator_profile,
 )
+from core.calculators.resources import resolve_calculator_resource_path
 
 
 def create_calculator_for_profile(
@@ -60,31 +61,36 @@ def create_calculator_for_profile(
 
     calculator_id = profile.calculator_id
     config_path = profile.config_path
+    resolved_config_path = resolve_calculator_resource_path(config_path)
 
     if calculator_id == "ks_c9306":
         from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
-        return KSC9306Calculator.from_config_path(config_path)
+        calculator = KSC9306Calculator.from_config_path(resolved_config_path)
+        calculator._config_path = config_path
+        return calculator
 
     if calculator_id == "iso16358":
         from core.calculators.standards.iso16358 import ISO16358Calculator
 
-        return ISO16358Calculator(config_path)
+        return ISO16358Calculator(resolved_config_path)
 
     if calculator_id == "ahri_seer2":
         from core.calculators.standards.ahri_seer2 import AHRICalculator
 
-        return AHRICalculator(config_path)
+        return AHRICalculator(resolved_config_path)
 
     if calculator_id == "ahri_hspf2":
         from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
 
-        return AHRIHSPF2Calculator(config_path)
+        return AHRIHSPF2Calculator(resolved_config_path)
 
     if calculator_id == "en14825":
         from core.calculators.standards.en14825 import EN14825Calculator
 
-        return EN14825Calculator(config_path)
+        calculator = EN14825Calculator(resolved_config_path)
+        calculator.config_path = config_path
+        return calculator
 
     if calculator_id == "asnzs_excel_hspf":
         from core.calculators.standards.asnzs_hspf_excel import ASNZSExcelHSPFCompatibilityCalculator
