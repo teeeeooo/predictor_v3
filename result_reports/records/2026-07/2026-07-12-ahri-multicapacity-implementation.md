@@ -63,8 +63,8 @@ approved owner direction or the existing variable-capacity calculation path.
 
 # Evidence And Verification
 
-- GitHub Actions run `29195661699` passed on commit
-  `abcf16f0d9f19ce60869422bc1f6da788ef467fd`.
+- GitHub Actions run `29195763321` passed on commit
+  `3a1bd62dfd1876f4ff3c6ab2ef6efaa8cdee16ad`.
 - 82 focused formula, capability, application-adapter, Tk Single/Batch,
   conditional-input, detail-schema, state, validation, overlay, and export guards
   passed under Xvfb.
@@ -78,11 +78,10 @@ approved owner direction or the existing variable-capacity calculation path.
 - `tools/check_code_structure.py` passed.
 - Raw official AHRI Analytics evidence remains immutable; corrected or derived
   values live only in the separate 2026 overlay.
+- The user completed GUI verification and approved PR #11 for main integration.
 
-# Known Risks / Remaining Manual Evidence
+# Acceptance
 
-Native Windows/macOS visual smoke is not available through the GitHub connector.
-The requested five-path native GUI smoke therefore remains pending and must not be
-reported as completed. PR #11 is ready for final merge audit, but main integration
-remains blocked until the reviewer accepts the automated evidence and any required
-native smoke is completed.
+All reported formula, contract, validation, and GUI acceptance blockers are closed.
+The implementation is accepted for main integration with no remaining PR #11
+follow-up action.
