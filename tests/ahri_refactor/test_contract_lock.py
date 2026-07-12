@@ -143,3 +143,12 @@ def test_seer2_p_w_off_remains_accepted_and_has_no_effect():
         SEER2_POINTS,
         p_w_off=123.45,
     )
+
+
+def test_seer2_facade_delegates_to_variable_engine_for_hp_and_ac():
+    calculator = AHRICalculator(SEER2_CONFIG_PATH)
+
+    for system_type in ("HP", "AC"):
+        assert calculator.calculate_seer2(SEER2_POINTS, system_type=system_type) == (
+            calculator._variable_engine.calculate(SEER2_POINTS, system_type=system_type)
+        )
