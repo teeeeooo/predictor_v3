@@ -133,9 +133,11 @@ class ScrollableFrame(tk.Frame):
         if _event is not None and getattr(_event, "width", 0) > width:
             width = _event.width - self._scrollbar.winfo_reqwidth()
         width = max(1, width)
+        # The canvas window controls the rendered viewport width. Do not also set
+        # the embedded frame's requested width: a wide hidden sibling tab would
+        # then overwrite the intrinsic content measurement used to fit the active
+        # Calculator tab.
         self._canvas.itemconfigure(self._content_window, width=width)
-        if int(self._content.cget("width") or 0) != width:
-            self._content.configure(width=width)
 
     def _unbind_mousewheel(self, _event=None) -> None:
         if _event is not None and getattr(_event, "widget", None) is not self:
