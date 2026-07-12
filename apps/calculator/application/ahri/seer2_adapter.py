@@ -6,8 +6,13 @@ from dataclasses import dataclass
 import math
 from typing import Mapping
 
-from apps.calculator.adapters.ahri_calculator_factory import create_ahri_seer2_calculator
-from core.calculators.capability import AhriSeer2Request, execute_standard_calculation
+from apps.calculator.adapters.ahri_calculator_factory import (
+    create_ahri_seer2_calculator,
+)
+from core.calculators.capability import (
+    AhriSeer2Request,
+    execute_standard_calculation,
+)
 
 AHRI_SEER2_POINT_ORDER = ("A_Full", "B_Full", "B_Low", "E_Int", "F_Low")
 AHRI_SEER2_DUAL_POINT_ORDER = ("AFull", "BFull", "BLow", "FLow")
@@ -93,7 +98,9 @@ class AhriSeer2Adapter:
         *,
         calculator_config: Mapping[str, object] | None = None,
     ) -> None:
-        self._calculator = None if calculator_config is not None else create_ahri_seer2_calculator()
+        self._calculator = (
+            None if calculator_config is not None else create_ahri_seer2_calculator()
+        )
         self._calculator_config = calculator_config
         self._execute = capability_executor
 
@@ -107,12 +114,20 @@ class AhriSeer2Adapter:
     ) -> AhriSeer2Summary | None:
         if system_type not in {"HP", "AC"}:
             raise AhriSeer2InputError({"system_type": "HP 또는 AC 필요"})
-        options = options or AhriSeer2Options(product_classification=product_classification)
+        options = options or AhriSeer2Options(
+            product_classification=product_classification
+        )
         product = options.product_classification or product_classification
         try:
             point_order = AHRI_SEER2_PRODUCT_POINT_ORDER[product]
         except KeyError as exc:
-            raise AhriSeer2InputError({"product": "지원하지 않는 제품 형식"}) from exc
+            raise AhriSeer2InputError(
+                {"product": "지원하지 않는 제품 형식"}
+            ) from exc
+        if product == "dual_stage":
+            options = self._resolve_dual_options(text_values, options)
+            if options is None:
+                return None
 
         field_errors: dict[str, str] = {}
         points: dict[str, tuple[float, float]] = {}
@@ -164,12 +179,77 @@ class AhriSeer2Adapter:
             seer2=self._required_float(result, "SEER2"),
             total_cooling_kbtu=total_cooling * cooling_season_hours / 1000.0,
             total_energy_kwh=total_energy * cooling_season_hours / 1000.0,
-            eer2_by_point={point: points[point][0] / points[point][1] for point in point_order},
+            eer2_by_point={
+                point: points[point][0] / points[point][1]
+                for point in point_order
+            },
             bin_details=self._required_bin_details(result),
             raw_seer2=raw,
             published_seer2=published,
-            product_classification=str(result.get("product_classification", product)),
-            compressor_energy_kwh=total_energy * cooling_season_hours / 1000.0,
+            product_classification=str(
+                result.get("product_classification", product)
+            ),
+            compressor_energy_kwh=(
+                total_energy * cooling_season_hours / 1000.0
+            ),
+        )
+
+    @staticmethod
+    def _resolve_dual_options(
+        text_values: Mapping[str, str],
+        options: AhriSeer2Options,
+    ) -> AhriSeer2Options | None:
+        errors: dict[str, str] = {}
+        incomplete = False
+
+        def resolve(
+            key: str,
+            supplied: float | None,
+            *,
+            required: bool,
+        ) -> float | None:
+            nonlocal incomplete
+            if supplied is not None:
+                value = float(supplied)
+                if not math.isfinite(value):
+                    errors[key] = "숫자 입력 필요"
+                    return None
+                return value
+            if key not in text_values:
+                if required:
+                    incomplete = True
+                return None
+            text = str(text_values.get(key, "")).strip()
+            if not text:
+                if required:
+                    incomplete = True
+                return None
+            try:
+                return parse_numeric_cell(text)
+            except ValueError:
+                errors[key] = "숫자 입력 필요"
+                return None
+
+        cd_low = resolve("cd_low", options.cd_low, required=False)
+        cd_full = resolve("cd_full", options.cd_full, required=False)
+        lockout_temp = resolve(
+            "low_stage_lockout_temp_f",
+            options.low_stage_lockout_temp_f,
+            required=options.low_stage_lockout_enabled,
+        )
+        for key, value in (("cd_low", cd_low), ("cd_full", cd_full)):
+            if value is not None and value < 0:
+                errors[key] = "0 이상 필요"
+        if errors:
+            raise AhriSeer2InputError(errors)
+        if incomplete:
+            return None
+        return AhriSeer2Options(
+            product_classification="dual_stage",
+            low_stage_lockout_enabled=options.low_stage_lockout_enabled,
+            low_stage_lockout_temp_f=lockout_temp,
+            cd_low=cd_low,
+            cd_full=cd_full,
         )
 
     def _cooling_season_hours(self) -> float:
@@ -184,7 +264,9 @@ class AhriSeer2Adapter:
                 raise ValueError("must be positive")
             return value
         except (AttributeError, KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"Invalid AHRI SEER2 calculator config: {key}") from exc
+            raise ValueError(
+                f"Invalid AHRI SEER2 calculator config: {key}"
+            ) from exc
 
     @staticmethod
     def _required_float(result: Mapping[str, object], key: str) -> float:
@@ -194,13 +276,19 @@ class AhriSeer2Adapter:
             raise ValueError(f"Invalid AHRI SEER2 core result: {key}") from exc
 
     @staticmethod
-    def _optional_float(result: Mapping[str, object], key: str) -> float | None:
+    def _optional_float(
+        result: Mapping[str, object], key: str
+    ) -> float | None:
         value = result.get(key)
         return None if value is None else float(value)
 
     @staticmethod
-    def _required_bin_details(result: Mapping[str, object]) -> tuple[Mapping[str, object], ...]:
+    def _required_bin_details(
+        result: Mapping[str, object],
+    ) -> tuple[Mapping[str, object], ...]:
         rows = result.get("bin_details")
-        if not isinstance(rows, (list, tuple)) or any(not isinstance(row, Mapping) for row in rows):
+        if not isinstance(rows, (list, tuple)) or any(
+            not isinstance(row, Mapping) for row in rows
+        ):
             raise ValueError("Invalid AHRI SEER2 core result: bin_details")
         return tuple(dict(row) for row in rows)
