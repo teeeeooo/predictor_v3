@@ -15,6 +15,11 @@ AHRI_SEER2_PRODUCT_POINT_ORDER = {
     "variable_capacity": AHRI_SEER2_POINT_ORDER,
     "dual_stage": AHRI_SEER2_DUAL_POINT_ORDER,
 }
+AHRI_SEER2_DUAL_DEFAULTS = {
+    "cd_low": "0.20",
+    "cd_full": "0.20",
+    "low_stage_lockout_temp_f": "95.0",
+}
 AHRI_SEER2_TEMPERATURES_C = {
     "A_Full": 35.0,
     "B_Full": 27.8,
