@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "standard": "AHRI 210/240-2026 (I-P)",
+  "dual_stage_seer2_synthetic_01": {
+    "status": "direct_m1",
+    "raw_seer2": 12.454035205677503,
+    "published_seer2": 12.45,
+    "normalized_cooling_aggregate": 17117.202797202794,
+    "normalized_energy_aggregate": 1374.4302560987994
+  },
+  "dual_stage_hspf2_synthetic_01": {
+    "status": "recalculated_2026",
+    "raw_hspf2": 8.56889212463095,
+    "published_hspf2": 8.55,
+    "defrost_factor": 1.03,
+    "heating_load_hours": 1701.0,
+    "normalized_heating_aggregate": 10398.99,
+    "normalized_compressor_energy_wh": 934.5634003919118,
+    "normalized_resistance_energy_wh": 315.41845773088437,
+    "seasonal_heating_btu": 17688681.99,
+    "seasonal_compressor_energy_wh": 1589692.344066642,
+    "seasonal_resistance_energy_wh": 536526.7966002343,
+    "seasonal_total_energy_wh": 2126219.1406668765,
+    "resistance_btu_per_wh": 3.412
+  },
+  "dual_stage_hspf2_cutout_synthetic_01": {
+    "status": "recalculated_2026",
+    "raw_hspf2": 3.890729181034762,
+    "published_hspf2": 3.9,
+    "defrost_factor": 1.0,
+    "heating_load_hours": 1701.0,
+    "normalized_heating_aggregate": 10398.99,
+    "normalized_compressor_energy_wh": 167.7699938393656,
+    "normalized_resistance_energy_wh": 2504.9912075029306,
+    "seasonal_heating_btu": 17688681.99,
+    "seasonal_compressor_energy_wh": 285376.7595207609,
+    "seasonal_resistance_energy_wh": 4260990.043962485,
+    "seasonal_total_energy_wh": 4546366.803483246,
+    "resistance_btu_per_wh": 3.412
+  },
+  "triple_capacity_northern_hspf2_synthetic_01": {
+    "status": "partial_evidence_plus_recalculated_2026",
+    "raw_hspf2_candidate": 10.046800549191993,
+    "published_hspf2_candidate": 10.05,
+    "defrost_factor": 1.028571429,
+    "heating_load_hours": 1701.0,
+    "corrected_h2low_capacity": 16560.0,
+    "corrected_h2low_power": 1457.8,
+    "normalized_heating_aggregate": 10398.99,
+    "normalized_compressor_energy_wh": 975.3371449127085,
+    "normalized_resistance_energy_wh": 89.29073856975371,
+    "seasonal_heating_btu": 17688681.99,
+    "seasonal_compressor_energy_wh": 1659048.4834965172,
+    "seasonal_resistance_energy_wh": 151883.54630715106,
+    "seasonal_total_energy_wh": 1810932.0298036684,
+    "resistance_btu_per_wh": 3.412,
+    "defrost_factor_source": "fixture_explicit_override"
+  }
+}

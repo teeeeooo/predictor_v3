@@ -17,18 +17,18 @@
 
 ## Current Slice
 
-Calculator table architecture Slices 1-6 are complete under
-`docs/designs/2026-07-12-calculator-table-architecture-design.md`. Every active
-Calculator table now maps to Editable Matrix, Compact Result Grid, or
-Scrollable Data Table and consumes the matching shared visual foundation.
-Final corrections add stable Notebook visibility/geometry and visible
-Copy/Export CSV actions to every active Single result without changing those
-family boundaries.
+AHRI 210/240-2026 multi-capacity implementation is complete. Dual-stage SEER2,
+Dual-stage HSPF2, and Triple-capacity Northern HSPF2 are integrated through the
+existing stable capability IDs and product-specific sibling engines. All audit
+corrections, including conditional H3Low requiredness, seasonal-total contracts,
+Case 4–7 equation evidence, field validation, and overlay integrity, are complete.
+Automated validation passed and the user completed GUI verification and accepted
+the implementation for main integration.
 
 ## Next Action
 
-Calculator table architecture is accepted for automated and manual GUI scope.
-Resume the next explicitly selected workstream after main integration.
+Await the next user-selected workstream and establish its active slice from the
+owner documents. No further action remains for PR #11.
 
 ## Active Blockers
 
@@ -36,18 +36,19 @@ None.
 
 ## Active Constraints
 
-- Preserve calculator numeric results, config meaning, fixtures, and goldens.
-- Public/schema changes require a concrete boundary or UX reason and the
-  smallest compatible change.
-- Keep legacy report and summary bodies byte-preserved historical evidence.
-- Do not combine documentation cleanup with unrelated source refactoring.
-- Delete tracked files only within the user-approved scope of each slice.
-- Use focused verification and staged-gate checks for the affected surface.
+- Preserve existing variable-capacity numeric results, fixtures, and goldens.
+- Keep stable capability IDs and facade method names.
+- Keep raw official AHRI Analytics evidence immutable; use the separate 2026
+  expected overlay for corrected or derived values.
+- Multi-capacity published ratings use nearest 0.05 without changing the current
+  variable-capacity 0.025 HSPF2 behavior.
+- Keep normalized fractional-bin aggregates separate from actual seasonal totals.
+- Use the inclusive 37°F boundary for conditional H3Low requiredness in core,
+  application, Single, and Batch contracts.
 
 ## Deferred / Hold
 
-- AHRI multi-capacity remains deferred after Calculator UI/UX unification.
-- Production ML Readiness resumes after the standard-calculation sequence.
+- Production ML Readiness resumes when selected as the next active workstream.
 - ML validation gap: `model/model.pkl` is absent and training CSV is external;
   mock smoke cannot validate accuracy, trends, importance, or model quality.
 

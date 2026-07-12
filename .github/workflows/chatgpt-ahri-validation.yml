@@ -1,0 +1,155 @@
+name: ChatGPT AHRI validation
+
+on:
+  push:
+    branches:
+      - chatgpt/ahri-multicapacity-core-gui
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ahri-and-calculator-validation:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install -q --upgrade pip
+          if [ -f requirements.txt ]; then pip install -q -r requirements.txt; fi
+          pip install -q pytest
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb >/dev/null
+      - name: Compile changed owners
+        run: |
+          python -m compileall -q \
+            core/calculators \
+            apps/calculator \
+            tests/test_ahri_multicapacity_2026.py \
+            tests/test_ahri_multicapacity_overlay.py \
+            tests/test_ahri_multicapacity_audit_corrections.py
+      - name: Focused AHRI audit-correction tests
+        id: focused_tests
+        run: |
+          set +e
+          xvfb-run -a pytest -q -x \
+            tests/test_ahri_multicapacity_2026.py \
+            tests/test_ahri_multicapacity_overlay.py \
+            tests/test_ahri_multicapacity_audit_corrections.py \
+            tests/test_standard_calculation_capability.py \
+            tests/test_apps_calculator_ui_ahri_seer2.py \
+            tests/test_apps_calculator_ui_ahri_hspf2.py \
+            tests/test_ui_tk_ahri_seer2_batch.py \
+            tests/test_ui_tk_ahri_hspf2_batch.py \
+            tests/test_ui_tk_ahri_seer2_detail.py \
+            tests/test_ui_tk_ahri_hspf2_detail.py \
+            tests/test_ui_tk_ahri_multicapacity_products.py \
+            > pytest-focused.log 2>&1
+          status=$?
+          cat pytest-focused.log
+          exit $status
+      - name: Upload focused test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ahri-focused-test-log
+          path: pytest-focused.log
+      - name: Calculator regression suite
+        id: calculator_tests
+        if: steps.focused_tests.outcome == 'success'
+        run: |
+          mapfile -t calculator_tests < <(
+            find tests -type f -name 'test*.py' -print \
+              | sort \
+              | grep -E '(^tests/(ahri_refactor|calculator|calculators)/|test_.*(ahri|calculator|standard_calculation|apps_calculator|ui_tk))'
+          )
+          if [ "${#calculator_tests[@]}" -eq 0 ]; then
+            echo 'No Calculator tests were discovered.' >&2
+            exit 1
+          fi
+          printf 'Calculator test files (%s):\n' "${#calculator_tests[@]}"
+          printf '  %s\n' "${calculator_tests[@]}"
+
+          set +e
+          xvfb-run -a pytest -q "${calculator_tests[@]}" \
+            > pytest-calculator.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            cat pytest-calculator.log
+            exit 0
+          fi
+
+          baseline_test='tests/test_ui_tk_calculator_foundation.py::test_calculator_tk_app_builds_widget_tree'
+          if ! grep -Fq "$baseline_test" pytest-calculator.log \
+            || ! grep -Eq '1 failed, [0-9]+ passed' pytest-calculator.log; then
+            cat pytest-calculator.log
+            echo 'Calculator suite has a non-baseline failure.' >&2
+            exit "$status"
+          fi
+
+          git fetch origin main:refs/remotes/origin/main
+          git worktree add --detach /tmp/predictor-main refs/remotes/origin/main
+          set +e
+          (
+            cd /tmp/predictor-main
+            PYTHONPATH=. xvfb-run -a pytest -q "$baseline_test"
+          ) > pytest-main-baseline.log 2>&1
+          baseline_status=$?
+          set -e
+          if [ "$baseline_status" -eq 0 ] \
+            || ! grep -Fq "$baseline_test" pytest-main-baseline.log; then
+            cat pytest-calculator.log
+            cat pytest-main-baseline.log
+            echo 'The single PR failure is not reproduced on main.' >&2
+            exit "$status"
+          fi
+
+          cat pytest-calculator.log
+          echo
+          echo 'Accepted pre-existing Xvfb baseline failure reproduced on main:'
+          cat pytest-main-baseline.log
+      - name: Upload Calculator regression log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-regression-test-log
+          path: |
+            pytest-calculator.log
+            pytest-main-baseline.log
+          if-no-files-found: ignore
+      - name: Staged change gate
+        id: staged_gate
+        if: steps.calculator_tests.outcome == 'success'
+        run: |
+          gate_log="$RUNNER_TEMP/staged-gate.log"
+          rm -f pytest-focused.log pytest-calculator.log pytest-main-baseline.log
+          set +e
+          {
+            git fetch origin main:refs/remotes/origin/main
+            git read-tree refs/remotes/origin/main
+            git add -A
+            git diff --cached --check
+            python -B tools/check_agent_change_gate.py --cached
+          } > "$gate_log" 2>&1
+          status=$?
+          cat "$gate_log"
+          git reset --mixed HEAD
+          exit $status
+      - name: Upload staged gate log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-change-gate-log
+          path: ${{ runner.temp }}/staged-gate.log
+          if-no-files-found: ignore
+      - name: Structure guard
+        if: always() && steps.calculator_tests.outcome == 'success'
+        run: python -B tools/check_code_structure.py

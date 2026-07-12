@@ -128,12 +128,18 @@ def _invoke_calculator(request, calculator, method_name: str):
         return method(**dict(request.parameters))
     if isinstance(request, AhriSeer2Request):
         return calculator.calculate_seer2(
-            request.test_points, system_type=request.system_type,
-            p_w_off=request.p_w_off, cd_low=request.cd_low,
+            request.test_points,
+            system_type=request.system_type,
+            p_w_off=request.p_w_off,
+            cd_low=request.cd_low,
+            product_classification=request.product_classification,
+            options=dict(request.parameters),
         )
     if isinstance(request, AhriHspf2Request):
         return calculator.calculate_hspf2(
-            request.test_points, **dict(request.parameters)
+            request.test_points,
+            product_classification=request.product_classification,
+            **dict(request.parameters),
         )
     raise CapabilityConfigurationError(
         f"Unsupported built-in request type: {type(request).__name__}"

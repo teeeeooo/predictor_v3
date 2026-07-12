@@ -1,4 +1,4 @@
-"""AHRI 210/240 HSPF2 main calculation section for Tkinter."""
+"""Product-aware AHRI 210/240 HSPF2 calculation section for Tkinter."""
 
 from __future__ import annotations
 
@@ -12,16 +12,17 @@ from apps.calculator.application.ahri import (
     AhriHspf2InputError,
     AhriHspf2Options,
 )
+from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
 from apps.calculator.ui.ahri.hspf2_points import (
     AHRI_HSPF2_UI_POINT_ORDER,
     ahri_hspf2_ui_point_label,
 )
-from apps.calculator.ui.ahri.hspf2_batch_access import AhriHspf2BatchAccess
+from apps.calculator.ui.ahri.hspf2_product_surface import AhriHspf2ProductSurface
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.layout_constants import (
-    CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
     CONTROL_COMPACT_GAP,
     CONTROL_GROUP_GAP,
+    CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
     CONTROL_ROW_PADY,
     ISO_SECTION_BLOCK_GAP,
     ISO_SECTION_PADX,
@@ -32,18 +33,28 @@ from apps.calculator.ui.layout_constants import (
     METRIC_TABLE_POINT_DATA_COLUMN_CHARS,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
+from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
-from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.ahri_hspf2_detail import format_hspf2_bin_details
+from apps.calculator.ui.sections.ahri_multicapacity_detail_schema import (
+    AHRI_DUAL_HSPF2_BIN_DETAIL_SCHEMA,
+    AHRI_TRIPLE_HSPF2_BIN_DETAIL_SCHEMA,
+)
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.bin_detail_schema import AHRI_HSPF2_BIN_DETAIL_SCHEMA
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.table.controller import TkTableController
 
+_PRODUCT_LABELS = {
+    "Variable Capacity": "variable_capacity",
+    "Dual Stage": "dual_stage",
+    "Triple Stage Northern": "triple_capacity_northern",
+}
+
 
 class AhriHspf2Section:
-    """Compose HSPF2 options, anchor, heating points, and result."""
+    """Stable HSPF2 shell with variable and multi-capacity child surfaces."""
 
     def __init__(
         self,
@@ -55,20 +66,26 @@ class AhriHspf2Section:
         self.adapter = adapter or AhriHspf2Adapter()
         self._on_detail_visibility_changed = on_trace_visibility_changed
         self._detail_status = "입력 대기"
+        self._multi_snapshots: dict[str, dict[str, object]] = {}
+        self._multi_surface: AhriHspf2ProductSurface | None = None
         self._frame = ttk.LabelFrame(parent, text="HSPF2")
         self._frame.columnconfigure(0, weight=1)
         self._build_option_bar()
         self.numeric_table = self._build_numeric_table()
         self.a2_table = self._build_a2_table()
         self.heating_table = self._build_heating_table()
-        self._tables = (self.numeric_table, self.a2_table, self.heating_table)
+        self._variable_tables = (self.numeric_table, self.a2_table, self.heating_table)
+        self._tables = self._variable_tables
         self._populate_initial_values()
-        self._controllers = tuple(TkTableController(table) for table in self._tables)
+        self._controllers = tuple(TkTableController(table) for table in self._variable_tables)
 
         self.result_panel = ResultPanel(self._frame, title="AHRI 210/240 HSPF2 결과")
         self.result_panel.grid(
-            row=4, column=0, sticky="w", padx=ISO_SECTION_PADX,
-            pady=(0, ISO_SECTION_BLOCK_GAP)
+            row=4,
+            column=0,
+            sticky="w",
+            padx=ISO_SECTION_PADX,
+            pady=(0, ISO_SECTION_BLOCK_GAP),
         )
         action_row = ttk.Frame(self._frame)
         action_row.grid(
@@ -96,30 +113,10 @@ class AhriHspf2Section:
         )
         self.copy_button = self.result_actions.copy_button
         self.export_button = self.result_actions.export_button
-        self.detail_panel = BinDetailPanel(
-            self._frame,
-            source_labels=("HSPF2",),
-            default_source="HSPF2",
-            csv_filename="ahri_hspf2_bin_detail.csv",
-            show_source_selector=False,
-            schema=AHRI_HSPF2_BIN_DETAIL_SCHEMA,
-        )
-        self._detail_visibility = DetailPanelVisibility(
-            panel=self.detail_panel,
-            button=self.detail_toggle,
-            grid_options={
-                "row": 6,
-                "column": 0,
-                "sticky": "ew",
-                "padx": 0,
-                "pady": (0, ISO_SECTION_BLOCK_GAP),
-            },
-            on_change=lambda: self._on_detail_visibility_changed()
-            if self._on_detail_visibility_changed is not None
-            else None,
-        )
+        self._build_detail_panel(AHRI_HSPF2_BIN_DETAIL_SCHEMA)
+
         self._auto_calc = DebouncedAutoCalc(self._frame, self.recalculate_now)
-        for table in self._tables:
+        for table in self._variable_tables:
             table.set_values_changed_callback(self._on_input_changed)
         for variable in (
             self.region_var,
@@ -129,9 +126,14 @@ class AhriHspf2Section:
             variable.trace_add("write", lambda *_args: self.schedule_recalculate())
         for variable in self._optional_vars().values():
             variable.trace_add("write", lambda *_args: self._on_optional_changed())
+        self.product_var.trace_add("write", lambda *_args: self._on_product_changed())
         self._apply_optional_state()
         self._frame.bind("<Destroy>", self._on_destroy, add="+")
         self.recalculate_now()
+
+    @property
+    def product_classification(self) -> str:
+        return _PRODUCT_LABELS[self.product_var.get()]
 
     def _build_option_bar(self) -> None:
         frame = ttk.LabelFrame(self._frame, text="Options")
@@ -142,16 +144,28 @@ class AhriHspf2Section:
             padx=ISO_SECTION_PADX,
             pady=(ISO_SECTION_BLOCK_GAP, CONTROL_ROW_PADY),
         )
+        self.product_var = tk.StringVar(master=self._frame, value="Variable Capacity")
         self.region_var = tk.StringVar(master=self._frame, value="IV")
         self.h42_var = tk.BooleanVar(master=self._frame, value=True)
         self.h12_var = tk.BooleanVar(master=self._frame, value=False)
         self.h22_var = tk.BooleanVar(master=self._frame, value=False)
         self.h1n_same_speed_var = tk.BooleanVar(master=self._frame, value=False)
         self.minimum_speed_var = tk.BooleanVar(master=self._frame, value=True)
+        ttk.Label(frame, text="Product:").pack(
+            side=tk.LEFT, padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP), pady=CONTROL_ROW_PADY
+        )
+        self.product_selector = ttk.Combobox(
+            frame,
+            textvariable=self.product_var,
+            values=tuple(_PRODUCT_LABELS),
+            state="readonly",
+            width=22,
+        )
+        self.product_selector.pack(
+            side=tk.LEFT, padx=(0, CONTROL_GROUP_GAP), pady=CONTROL_ROW_PADY
+        )
         ttk.Label(frame, text="Region:").pack(
-            side=tk.LEFT,
-            padx=(CONTROL_ROW_PADY, CONTROL_COMPACT_GAP),
-            pady=CONTROL_ROW_PADY,
+            side=tk.LEFT, padx=(0, CONTROL_COMPACT_GAP), pady=CONTROL_ROW_PADY
         )
         ttk.Combobox(
             frame,
@@ -159,31 +173,33 @@ class AhriHspf2Section:
             values=("IV",),
             state="readonly",
             width=CONTROL_REGION_CODE_SELECTOR_WIDTH_CHARS,
-        ).pack(
-            side=tk.LEFT,
-            padx=(0, CONTROL_GROUP_GAP),
-            pady=CONTROL_ROW_PADY,
-        )
-        ttk.Label(frame, text="Measured:").pack(
-            side=tk.LEFT,
-            padx=(0, CONTROL_COMPACT_GAP),
+        ).pack(side=tk.LEFT, padx=(0, CONTROL_GROUP_GAP), pady=CONTROL_ROW_PADY)
+        self._variable_option_group = ttk.Frame(frame)
+        self._variable_option_group.pack(side=tk.LEFT)
+        ttk.Label(self._variable_option_group, text="Measured:").pack(
+            side=tk.LEFT, padx=(0, CONTROL_COMPACT_GAP)
         )
         for label, variable in (
             ("H42", self.h42_var),
             ("H12", self.h12_var),
             ("H22", self.h22_var),
         ):
-            ttk.Checkbutton(frame, text=label, variable=variable).pack(side=tk.LEFT)
-        ttk.Label(frame, text="Flags:").pack(
-            side=tk.LEFT,
-            padx=(CONTROL_GROUP_GAP, CONTROL_COMPACT_GAP),
+            ttk.Checkbutton(
+                self._variable_option_group, text=label, variable=variable
+            ).pack(side=tk.LEFT)
+        ttk.Label(self._variable_option_group, text="Flags:").pack(
+            side=tk.LEFT, padx=(CONTROL_GROUP_GAP, CONTROL_COMPACT_GAP)
         )
         ttk.Checkbutton(
-            frame, text="H1N=H32 Hz", variable=self.h1n_same_speed_var
+            self._variable_option_group,
+            text="H1N=H32 Hz",
+            variable=self.h1n_same_speed_var,
         ).pack(side=tk.LEFT)
-        ttk.Checkbutton(frame, text="MinSpd", variable=self.minimum_speed_var).pack(
-            side=tk.LEFT, padx=(0, CONTROL_ROW_PADY)
-        )
+        ttk.Checkbutton(
+            self._variable_option_group,
+            text="MinSpd",
+            variable=self.minimum_speed_var,
+        ).pack(side=tk.LEFT, padx=(0, CONTROL_ROW_PADY))
 
     def _build_numeric_table(self) -> MetricInputTable:
         table = MetricInputTable(
@@ -251,14 +267,103 @@ class AhriHspf2Section:
 
     def _populate_initial_values(self) -> None:
         self.numeric_table.set_values(
-            {"cd": "0.25", "defrost_credit": "1.0", "cut_out_c": "-40.0", "cut_in_c": "-40.0"}
+            {
+                "cd": "0.25",
+                "defrost_credit": "1.0",
+                "cut_out_c": "-40.0",
+                "cut_in_c": "-40.0",
+            }
         )
+
+    def _build_detail_panel(self, schema) -> None:
+        self.detail_panel = BinDetailPanel(
+            self._frame,
+            source_labels=("HSPF2",),
+            default_source="HSPF2",
+            csv_filename="ahri_hspf2_bin_detail.csv",
+            show_source_selector=False,
+            schema=schema,
+        )
+        self._detail_visibility = DetailPanelVisibility(
+            panel=self.detail_panel,
+            button=self.detail_toggle,
+            grid_options={
+                "row": 6,
+                "column": 0,
+                "sticky": "ew",
+                "padx": 0,
+                "pady": (0, ISO_SECTION_BLOCK_GAP),
+            },
+            on_change=lambda: self._on_detail_visibility_changed()
+            if self._on_detail_visibility_changed is not None
+            else None,
+        )
+
+    def _replace_detail_panel(self, schema) -> None:
+        was_visible = self._detail_visibility.visible
+        self.detail_panel._frame.destroy()
+        self._build_detail_panel(schema)
+        if was_visible:
+            self._detail_visibility.toggle()
+
+    def _on_product_changed(self) -> None:
+        if not hasattr(self, "_auto_calc"):
+            return
+        old_product = (
+            self._multi_surface.product
+            if self._multi_surface is not None
+            else "variable_capacity"
+        )
+        if self._multi_surface is not None:
+            self._multi_snapshots[old_product] = self._multi_surface.snapshot()
+            self._multi_surface.frame.destroy()
+            self._multi_surface = None
+        product = self.product_classification
+        if product == "variable_capacity":
+            for table in self._variable_tables:
+                table.grid()
+            self._variable_option_group.pack(side=tk.LEFT)
+            self._tables = self._variable_tables
+            schema = AHRI_HSPF2_BIN_DETAIL_SCHEMA
+        else:
+            for table in self._variable_tables:
+                table.grid_remove()
+            self._variable_option_group.pack_forget()
+            self._multi_surface = AhriHspf2ProductSurface(
+                self._frame,
+                product=product,
+                on_values_changed=self._on_input_changed,
+                snapshot=self._multi_snapshots.get(product),
+            )
+            self._multi_surface.grid(
+                row=1,
+                column=0,
+                sticky="w",
+                padx=ISO_SECTION_PADX,
+                pady=(0, ISO_SECTION_BLOCK_GAP),
+            )
+            self._tables = self._multi_surface.tables()
+            schema = (
+                AHRI_DUAL_HSPF2_BIN_DETAIL_SCHEMA
+                if product == "dual_stage"
+                else AHRI_TRIPLE_HSPF2_BIN_DETAIL_SCHEMA
+            )
+        self._replace_detail_panel(schema)
+        self.result_panel.clear()
+        self._clear_detail("입력 대기")
+        self.schedule_recalculate()
+        self._request_refit()
+
+    def _request_refit(self) -> None:
+        if self._on_detail_visibility_changed is not None:
+            self._frame.after_idle(self._on_detail_visibility_changed)
 
     def pack(self, **kwargs: object) -> None:
         self._frame.pack(**kwargs)
 
     def schedule_recalculate(self) -> None:
-        self._auto_calc.schedule()
+        if hasattr(self, "_auto_calc"):
+            self._auto_calc.schedule()
 
     def _on_input_changed(self) -> None:
         self._clear_detail("입력 대기")
@@ -268,6 +373,8 @@ class AhriHspf2Section:
         return {"H42": self.h42_var, "H12": self.h12_var, "H22": self.h22_var}
 
     def _on_optional_changed(self) -> None:
+        if self.product_classification != "variable_capacity":
+            return
         self._apply_optional_state()
         self._clear_detail("입력 대기")
         self.schedule_recalculate()
@@ -280,35 +387,47 @@ class AhriHspf2Section:
             for row in ("capacity", "power")
         }
         self.heating_table.set_readonly_addresses(
-            readonly, display_values={address: "" for address in readonly}
+            readonly,
+            display_values={address: "" for address in readonly},
         )
         if hasattr(self, "_controllers"):
             self._controllers[2].refresh()
 
     def _options(self) -> AhriHspf2Options:
-        return AhriHspf2Options(
-            region=self.region_var.get(),
-            measured_h42=self.h42_var.get(),
-            measured_h12=self.h12_var.get(),
-            measured_h22=self.h22_var.get(),
-            h1n_same_speed_as_h32=self.h1n_same_speed_var.get(),
-            minimum_speed_limited=self.minimum_speed_var.get(),
-        )
+        if self.product_classification == "variable_capacity":
+            return AhriHspf2Options(
+                region=self.region_var.get(),
+                measured_h42=self.h42_var.get(),
+                measured_h12=self.h12_var.get(),
+                measured_h22=self.h22_var.get(),
+                h1n_same_speed_as_h32=self.h1n_same_speed_var.get(),
+                minimum_speed_limited=self.minimum_speed_var.get(),
+            )
+        return self._multi_surface.options(region=self.region_var.get())
+
+    def _active_values(self) -> dict[str, str]:
+        if self._multi_surface is not None:
+            return self._multi_surface.text_values()
+        values: dict[str, str] = {}
+        for table in self._variable_tables:
+            values.update(table.get_text_values())
+        return values
 
     def recalculate_now(self) -> None:
-        values = {}
+        values = self._active_values()
         for table in self._tables:
-            values.update(table.get_text_values())
             table.clear_invalid_fields()
         options = self._options()
-        self._update_cop_rows(
-            self.adapter.compute_display_cops(values, options=options)
-        )
+        self._update_cop_rows(self.adapter.compute_display_cops(values, options=options))
         try:
             summary = self.adapter.calculate(values, options=options)
         except AhriHspf2InputError as exc:
             for table in self._tables:
-                errors = {key: value for key, value in exc.field_errors.items() if key in table.field_order}
+                errors = {
+                    key: value
+                    for key, value in exc.field_errors.items()
+                    if key in table.field_order
+                }
                 if errors:
                     table.set_invalid_fields(errors)
             self.result_panel.clear()
@@ -322,19 +441,32 @@ class AhriHspf2Section:
             self.result_panel.clear()
             self._clear_detail("입력 대기")
             return
-        fields = (
-            ("HSPF2", f"{summary.hspf2:.3f}"),
-            ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
-            ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
-        )
-        self.result_panel.set_summaries(
-            (ResultSummary("HSPF2", fields, "자동 계산 완료"),)
-        )
+        if summary.product_classification == "variable_capacity":
+            fields = (
+                ("HSPF2", f"{summary.hspf2:.3f}"),
+                ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
+                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            )
+        else:
+            fields = (
+                ("HSPF2 Raw", f"{summary.raw_hspf2:.6f}"),
+                ("HSPF2 Published", f"{summary.published_hspf2:.2f}"),
+                ("Total Heating [kBtu]", f"{summary.total_heating_kbtu:.3f}"),
+                ("Compressor Energy [kWh]", f"{summary.compressor_energy_kwh:.3f}"),
+                ("Resistance Energy [kWh]", f"{summary.resistance_energy_kwh:.3f}"),
+                ("Total Energy [kWh]", f"{summary.total_energy_kwh:.3f}"),
+            )
+        self.result_panel.set_summaries((ResultSummary("HSPF2", fields, "자동 계산 완료"),))
         rows = format_hspf2_bin_details(summary.bin_details)
         if rows:
             self._detail_status = "상세 데이터 없음"
+            source_summary = ()
+            if summary.point_sources:
+                source_summary = tuple(
+                    (key, value) for key, value in summary.point_sources.items()
+                )
             self.detail_panel.set_sources(
-                {"HSPF2": BinDetailSource(rows=rows)},
+                {"HSPF2": BinDetailSource(rows=rows, summary=source_summary)},
                 source_order=("HSPF2",),
                 panel_status=self._detail_status,
             )
@@ -350,6 +482,9 @@ class AhriHspf2Section:
         self._detail_visibility.toggle()
 
     def _update_cop_rows(self, cops: dict[str, float]) -> None:
+        if self._multi_surface is not None:
+            self._multi_surface.update_cop_rows(cops)
+            return
         for point in AHRI_HSPF2_UI_POINT_ORDER:
             self.heating_table.static_cell_labels[("cop", point)].configure(
                 text=f"{cops[point]:.2f}" if point in cops else ""
