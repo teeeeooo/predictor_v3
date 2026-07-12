@@ -61,19 +61,33 @@ class HSPF2DualStageEngine:
                 hlf_low = safe_div(load, q_low)
                 plf = max(0.01, 1.0 - low_cd * (1.0 - hlf_low))
                 e_comp = safe_div(p_low * hlf_low * delta_low * fraction, plf)
-                e_resistance = safe_div(load * (1.0 - delta_low) * fraction, RESISTANCE_BTU_PER_WH)
+                e_resistance = safe_div(
+                    load * (1.0 - delta_low) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
             elif low_permitted and load < q_full:
                 case = 2
                 hlf_low = safe_div(q_full - load, q_full - q_low)
                 hlf_full = 1.0 - hlf_low
-                e_comp = (p_low * hlf_low + p_full * hlf_full) * delta_low * fraction
-                e_resistance = safe_div(load * (1.0 - delta_low) * fraction, RESISTANCE_BTU_PER_WH)
+                e_comp = (
+                    p_low * hlf_low + p_full * hlf_full
+                ) * delta_low * fraction
+                e_resistance = safe_div(
+                    load * (1.0 - delta_low) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
             elif load < q_full:
                 case = 3
                 hlf_full = safe_div(load, q_full)
                 plf = max(0.01, 1.0 - full_cd * (1.0 - hlf_full))
-                e_comp = safe_div(p_full * hlf_full * delta_full * fraction, plf)
-                e_resistance = safe_div(load * (1.0 - delta_full) * fraction, RESISTANCE_BTU_PER_WH)
+                e_comp = safe_div(
+                    p_full * hlf_full * delta_full * fraction,
+                    plf,
+                )
+                e_resistance = safe_div(
+                    load * (1.0 - delta_full) * fraction,
+                    RESISTANCE_BTU_PER_WH,
+                )
             else:
                 case = 4
                 hlf_full = 1.0
@@ -102,13 +116,18 @@ class HSPF2DualStageEngine:
                     "full_permitted": True,
                     "delta_low": delta_low,
                     "delta_full": delta_full,
-                    "compressor_availability": self._availability_label(max(delta_low, delta_full)),
+                    "compressor_availability": self._availability_label(
+                        max(delta_low, delta_full)
+                    ),
                     "operating_case": f"Case {case}",
                     "case": case,
                     "HLF_low": hlf_low,
                     "HLF_full": hlf_full,
                     "PLF": plf,
-                    "q_comp": max(0.0, bin_heating - e_resistance * RESISTANCE_BTU_PER_WH),
+                    "q_comp": max(
+                        0.0,
+                        bin_heating - e_resistance * RESISTANCE_BTU_PER_WH,
+                    ),
                     "q_aux": e_resistance * RESISTANCE_BTU_PER_WH,
                     "e_comp": e_comp,
                     "e_aux": e_resistance,
@@ -127,6 +146,7 @@ class HSPF2DualStageEngine:
             bin_details=details,
             metadata={
                 "point_sources": point_sources,
+                "resolved_points": points,
                 "cd_low_used": low_cd,
                 "cd_full_used": full_cd,
                 "low_stage_lockout_enabled": lockout_enabled,
@@ -148,20 +168,21 @@ class HSPF2DualStageEngine:
             "H3Full": positive_point(test_points, "H3Full", "H32"),
         }
         sources = {key: "tested" for key in points}
-        h2_low = positive_point(test_points, "H2Low", "H21", "H2V", required=False)
+        h2_low = positive_point(
+            test_points,
+            "H2Low",
+            "H21",
+            "H2V",
+            required=False,
+        )
         if h2_low is None or not bool(options.get("h2_low_tested", True)):
             q_h3, p_h3 = points["H3Low"]
             q_h1, p_h1 = points["H1Low"]
-            q_h2_full, p_h2_full = points["H2Full"]
-            q_h3_full, p_h3_full = points["H3Full"]
-            q_h1_full, p_h1_full = points["H1Full"]
-            q_ratio = safe_div(q_h2_full, q_h3_full + 0.6 * (q_h1_full - q_h3_full), 1.0)
-            p_ratio = safe_div(p_h2_full, p_h3_full + 0.6 * (p_h1_full - p_h3_full), 1.0)
             h2_low = (
-                q_ratio * (q_h3 + 0.6 * (q_h1 - q_h3)),
-                p_ratio * (p_h3 + 0.6 * (p_h1 - p_h3)),
+                0.90 * (q_h3 + 0.6 * (q_h1 - q_h3)),
+                0.985 * (p_h3 + 0.6 * (p_h1 - p_h3)),
             )
-            sources["H2Low"] = "eq_11_144_11_147"
+            sources["H2Low"] = "eq_11_44_11_50"
         else:
             sources["H2Low"] = "tested"
         points["H2Low"] = h2_low
