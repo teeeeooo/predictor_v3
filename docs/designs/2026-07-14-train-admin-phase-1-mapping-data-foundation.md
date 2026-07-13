@@ -86,14 +86,20 @@ Fin type     -> Fin Type
 
 ### Condenser identity rule
 
-Runtime condenser identity is generated from:
+Runtime condenser identity is conditional on Fin Type:
 
 ```text
-ODU + Fin Type + Pi + Row
+F&T: ODU + Fin Type + Pi + Row
+PFC: ODU + Fin Type + Row
 ```
 
-`Cond Index` is validation evidence, not the authoritative runtime key. A mismatch
-must fail bootstrap rather than being silently accepted.
+The legacy PFC value in the fixed `Pi` column is a layout placeholder and is
+normalized to an absent Pi value. Runtime/editor projection must not duplicate
+`PFC` into both Fin Type and Pi or create an `ODU PFC PFC Row` key.
+
+`Cond Index` is a legacy Excel VLOOKUP helper column. It is required as part of
+the recognized legacy layout but is ignored during bootstrap normalization; it
+is neither a runtime identity source nor consistency-validation evidence.
 
 ### Strictness
 
@@ -103,7 +109,7 @@ Bootstrap rejects:
 - duplicate condenser combinations;
 - invalid numeric values;
 - unexpected or missing layout/header contracts;
-- inconsistent condenser identities.
+- duplicate conditional condenser identities.
 
 Rows with a blank key for one block are ignored only for that block, because the
 legacy file stores multiple independent tables side by side.
@@ -183,7 +189,8 @@ test explicitly requires synthetic trend behavior.
 - Implement the strict legacy-wide parser.
 - Produce deterministic, validated mapping output.
 - Cover aliases, blank-block rows, duplicates, numeric failures, and condenser
-  identity validation.
+  conditional identity normalization.
+- Ignore `Cond Index` values while preserving the required legacy layout.
 - Do not expose normal Train/Admin import.
 
 ### Slice 1B — Populated mapping fixture state
@@ -214,8 +221,9 @@ merged only after all slices and phase acceptance checks pass.
 - Data Mapping opens with all seven populated fixture-backed groups.
 - A definition-owned `Cond Inner Area` appears, accepts values, survives
   save/reload, and exports without special-case code.
-- Duplicate keys, invalid numerics, and mismatched `Cond Index` values fail with
-  exact block/row context.
+- Duplicate keys, duplicate conditional condenser identities, invalid numerics,
+  and malformed layouts fail with exact block/row context.
+- PFC condenser rows project without a Pi selection or duplicated PFC key segment.
 - Mock training consumes only valid mapping options and the active projected
   schema with preserved feature order and types.
 

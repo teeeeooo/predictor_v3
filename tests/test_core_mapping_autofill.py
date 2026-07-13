@@ -82,6 +82,50 @@ def test_cond_specs_fill_when_cascade_selection_is_complete():
     assert updates["cond_volume"] == 4.5
 
 
+def test_pfc_fin_selection_clears_and_skips_pi_options():
+    mapping = {
+        **SAMPLE_MAPPING,
+        "odu_cascade": {
+            **SAMPLE_MAPPING["odu_cascade"],
+            "ODU-A": {
+                "Available_Fins": ["F&T", "PFC"],
+                "Available_Pis": ["7"],
+                "Available_Rows": ["1", "2"],
+            },
+        },
+    }
+
+    result = build_autofill_updates(
+        {"odu": "ODU-A", "fin_type": "PFC", "pi": "old", "row": "old"},
+        "fin_type",
+        mapping,
+    )
+    updates = _updates_by_key(result)
+
+    assert updates["pi"] == ""
+    assert result.dropdown_options["pi"] == ()
+
+
+def test_pfc_cond_specs_fill_without_pi_selection():
+    mapping = {
+        **SAMPLE_MAPPING,
+        "cond_specs": {
+            **SAMPLE_MAPPING["cond_specs"],
+            "ODU-A PFC 1": {"Cond Area": 8.5, "Cond Volume": 9.5},
+        },
+    }
+
+    result = build_autofill_updates(
+        {"odu": "ODU-A", "fin_type": "PFC", "pi": "", "row": "1"},
+        "row",
+        mapping,
+    )
+    updates = _updates_by_key(result)
+
+    assert updates["cond_area"] == 8.5
+    assert updates["cond_volume"] == 9.5
+
+
 def test_cond_specs_fill_distinct_row_specific_specs():
     result = build_autofill_updates(
         {"odu": "ODU-A", "fin_type": "F&T", "pi": "7", "row": "2"},

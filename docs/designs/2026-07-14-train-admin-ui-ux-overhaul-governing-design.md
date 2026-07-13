@@ -143,6 +143,11 @@ The legacy file is not the future edit format, normal Import format, or canonica
 exchange format. The parser uses explicit tested rules rather than claiming to
 reconstruct the lost historical script exactly.
 
+`Cond Index` remains a recognized legacy-layout column but is only a historical
+Excel VLOOKUP helper; bootstrap ignores its values. Condenser runtime identity is
+Fin-Type-dependent: F&T uses ODU + Fin Type + Pi + Row, while PFC uses ODU + Fin
+Type + Row and normalizes the fixed-width legacy Pi placeholder to absent.
+
 ## 7. Mapping Exchange Direction
 
 The normal workflow is GUI-first:

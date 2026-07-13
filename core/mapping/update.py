@@ -5,6 +5,7 @@ import os
 
 import pandas as pd
 
+from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.paths import MAPPING_JSON_FILE
 
 
@@ -63,10 +64,13 @@ def update_mapping_to_json(excel_file):
                         }
 
                     if fin and fin != "None": odu_cascade[odu]["Available_Fins"].add(fin)
-                    if pi and pi != "None": odu_cascade[odu]["Available_Pis"].add(pi)
+                    if condenser_requires_pi(fin) and pi and pi != "None":
+                        odu_cascade[odu]["Available_Pis"].add(pi)
                     if row_num and row_num != "None": odu_cascade[odu]["Available_Rows"].add(row_num)
 
-                    cond_index_key = f"{odu} {fin} {pi} {row_num}"
+                    if not condenser_requires_pi(fin):
+                        pi = ""
+                    cond_index_key = condenser_spec_key(odu, fin, pi, row_num)
                     cond_specs[cond_index_key] = {
                         "Cond Area": row.get("Cond Area"),
                         "Cond Volume": row.get("Cond Volume")

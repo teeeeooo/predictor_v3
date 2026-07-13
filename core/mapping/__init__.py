@@ -17,6 +17,11 @@ from core.mapping.entity_runtime_adapter import (
     runtime_mapping_source_label,
 )
 from core.mapping.entity_validation import validate_mapping_entity_catalog
+from core.mapping.condenser_identity import (
+    condenser_identity,
+    condenser_requires_pi,
+    condenser_spec_key,
+)
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -61,6 +66,9 @@ __all__ = [
     "OWNED_RUNTIME_SECTIONS",
     "add_draft_row",
     "adapt_runtime_mapping_data",
+    "condenser_identity",
+    "condenser_requires_pi",
+    "condenser_spec_key",
     "delete_draft_row",
     "duplicate_draft_row",
     "export_mapping_editor_snapshot_json",

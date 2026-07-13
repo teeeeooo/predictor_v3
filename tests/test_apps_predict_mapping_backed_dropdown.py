@@ -257,6 +257,41 @@ def test_cond_specs_autofill_after_fin_pi_row_selection():
     assert case.autofill_values["cond_volume"] == 7.5
 
 
+def test_pfc_fin_skips_pi_selection_and_autofills_after_row_selection():
+    mapping = {
+        **SAMPLE_MAPPING,
+        "odu_cascade": {
+            **SAMPLE_MAPPING["odu_cascade"],
+            "ODU-A": {
+                "Available_Fins": ["F&T", "PFC"],
+                "Available_Pis": ["7"],
+                "Available_Rows": ["1"],
+            },
+        },
+        "cond_specs": {
+            **SAMPLE_MAPPING["cond_specs"],
+            "ODU-A PFC 1": {"Cond Area": 8.5, "Cond Volume": 9.5},
+        },
+    }
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {"odu": "ODU-A", "fin_type": "PFC", "pi": "old", "row": "old"}
+    )
+    controller = InputEditController(session, FakeMappingRepository(mapping))
+
+    controller.handle_cell_edited(case.case_id, "fin_type")
+
+    assert case.input_values["pi"] == ""
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ()
+
+    case.input_values["row"] = "1"
+    controller.handle_cell_edited(case.case_id, "row")
+
+    assert case.autofill_values["cond_area"] == 8.5
+    assert case.autofill_values["cond_volume"] == 9.5
+
+
 def test_unmatched_cond_specs_combination_clears_stale_cond_values():
     session = _session_with_case()
     case = session.case_store.get_case_at(0)

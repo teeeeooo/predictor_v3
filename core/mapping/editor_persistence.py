@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.editor_model import MappingEditorDraft
 from core.mapping.editor_projection import (
     COMPRESSOR_GROUP,
@@ -157,15 +158,17 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
         fin = _clean(draft_row.value_for("Fin Type"))
         pi = _clean(draft_row.value_for("Pi"))
         row = _clean(draft_row.value_for("Row"))
-        if not all((odu, fin, pi, row)):
+        if not all((odu, fin, row)) or (condenser_requires_pi(fin) and not pi):
             continue
         grouped[odu]["Available_Fins"].add(fin)
-        grouped[odu]["Available_Pis"].add(pi)
+        if pi:
+            grouped[odu]["Available_Pis"].add(pi)
         grouped[odu]["Available_Rows"].add(row)
         options["fin_type"].add(fin)
-        options["pi"].add(pi)
+        if pi:
+            options["pi"].add(pi)
         options["row"].add(row)
-        cond_specs[f"{odu} {fin} {pi} {row}"] = {
+        cond_specs[condenser_spec_key(odu, fin, pi, row)] = {
             "Cond Area": _coerce_number(draft_row.value_for("Cond Area")),
             "Cond Volume": _coerce_number(draft_row.value_for("Cond Volume")),
         }

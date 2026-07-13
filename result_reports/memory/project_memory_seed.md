@@ -371,7 +371,7 @@ entries:
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
-    content: Legacy single-wide CSV to mapping.json reconstruction is not recoverable enough for implementation. Data Mapping Manager uses UI CRUD over user-facing Predict mapping groups; Import remains excluded until a future compatibility-parser design exists; JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
+    content: Historical single-wide CSV conversion is not recoverable as a general import contract. The Phase 1 legacy-wide parser is a strict bootstrap-only adapter into the existing editor draft and validated runtime projection; normal Data Mapping Import remains excluded. JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
     keywords:
       - predictor_v3
       - Arc 14B
@@ -382,7 +382,7 @@ entries:
       - CRUD
       - dirty state
     assertionStatus: verified
-    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md
 
   - type: decision
     topic: Arc 14B ref exp mapping SSOT
@@ -401,7 +401,7 @@ entries:
 
   - type: decision
     topic: Arc 14C runtime cascade integration
-    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. odu_cascade, cond_specs, fin_type, pi, and row are runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
+    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. Condenser identity is Fin-Type-dependent: F&T uses ODU + Fin Type + Pi + Row, while PFC uses ODU + Fin Type + Row and requires no Pi selection. odu_cascade, cond_specs, fin_type, pi, and row remain runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
     keywords:
       - predictor_v3
       - Arc 14C
@@ -412,7 +412,7 @@ entries:
       - cond_specs
       - autofill
     assertionStatus: verified
-    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md
 
   - type: decision
     topic: dependency and Excel policy

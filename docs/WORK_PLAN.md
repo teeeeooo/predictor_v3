@@ -18,15 +18,13 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. The governing design and phased implementation boundaries are recorded
-under `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-*.md` and the matching
-Phase 1 design.
+workstream. Slice 1A established the strict legacy-wide bootstrap parser and the
+conditional F&T/PFC condenser identity contract.
 
 ## Next Action
 
-Start Phase 1 Slice 1A by auditing the current legacy mapping fixture, mapping
-projection/persistence owners, and focused tests, then implement the strict
-bootstrap parser within the bounded Phase 1 contract.
+Start Phase 1 Slice 1B by establishing repository-safe populated mapping fixture
+state without installing production/default `data/mapping.json`.
 
 ## Active Blockers
 

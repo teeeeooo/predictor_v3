@@ -7,6 +7,7 @@ from copy import deepcopy
 from itertools import product
 from typing import Any
 
+from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -240,13 +241,15 @@ def _odu_cond_specs_group(mapping_data: Mapping[str, Any]) -> MappingEditorGroup
         fins = _string_values(spec.get("Available_Fins", ()))
         pis = _string_values(spec.get("Available_Pis", ()))
         rows_values = _string_values(spec.get("Available_Rows", ()))
-        for fin, pi, row in product(fins, pis, rows_values):
-            key = _cond_spec_key(odu, fin, pi, row)
-            cond_value = cond_specs.get(key)
-            if not isinstance(cond_value, Mapping):
-                continue
-            matched.add(key)
-            rows.append(_odu_cond_specs_row(str(odu), fin, pi, row, cond_value, key))
+        for fin in fins:
+            fin_pis = pis if condenser_requires_pi(fin) else ("",)
+            for pi, row in product(fin_pis, rows_values):
+                key = condenser_spec_key(odu, fin, pi, row)
+                cond_value = cond_specs.get(key)
+                if not isinstance(cond_value, Mapping):
+                    continue
+                matched.add(key)
+                rows.append(_odu_cond_specs_row(str(odu), fin, pi, row, cond_value, key))
 
     for key in sorted(str(key) for key in cond_specs if str(key) not in matched):
         cond_value = cond_specs.get(key)
@@ -311,10 +314,6 @@ def _string_values(value: Any) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, tuple | list):
         return ()
     return tuple(str(item) for item in value if str(item).strip())
-
-
-def _cond_spec_key(odu: Any, fin: str, pi: str, row: str) -> str:
-    return f"{odu} {fin} {pi} {row}"
 
 
 def _unowned_sections(mapping_data: Mapping[str, Any]) -> dict[str, Any]:

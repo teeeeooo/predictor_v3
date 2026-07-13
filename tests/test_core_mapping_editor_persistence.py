@@ -45,6 +45,30 @@ def test_runtime_mapping_from_editor_draft_replaces_owned_and_preserves_unknown(
     assert runtime["row"] == {"1": {}}
 
 
+def test_runtime_mapping_from_editor_draft_uses_pfc_identity_without_pi():
+    draft = project_runtime_mapping_to_editor_draft(
+        {
+            **VALID_MAPPING,
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["PFC"],
+                    "Available_Pis": [],
+                    "Available_Rows": ["1"],
+                }
+            },
+            "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+        }
+    )
+
+    runtime = runtime_mapping_from_editor_draft(draft)
+
+    assert runtime["cond_specs"] == {
+        "ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}
+    }
+    assert runtime["odu_cascade"]["ODU-A"]["Available_Pis"] == []
+    assert runtime["pi"] == {}
+
+
 def test_valid_draft_saves_mapping_json_with_backup(tmp_path):
     mapping_file = tmp_path / "mapping.json"
     mapping_file.write_text(json.dumps({"legacy": {"old": True}}), encoding="utf-8")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.mapping.condenser_identity import condenser_identity, condenser_requires_pi
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -144,7 +145,10 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                     row_key=row.source_key,
                 )
             )
-        for column, value in (("Fin Type", fin), ("Pi", pi), ("Row", row_value)):
+        required_values = [("Fin Type", fin), ("Row", row_value)]
+        if condenser_requires_pi(fin):
+            required_values.insert(1, ("Pi", pi))
+        for column, value in required_values:
             if not value:
                 issues.append(
                     _issue(
@@ -156,7 +160,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         row_key=row.source_key,
                     )
                 )
-        composite = (odu, fin, pi, row_value)
+        composite = condenser_identity(odu, fin, pi, row_value)
         if all(composite):
             if composite in seen:
                 issues.append(

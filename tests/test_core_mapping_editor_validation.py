@@ -133,6 +133,33 @@ def test_duplicate_odu_cond_specs_composite_key_issue():
     ]
 
 
+def test_pfc_cond_specs_does_not_require_pi_and_detects_conditional_duplicate():
+    draft = project_runtime_mapping_to_editor_draft(
+        {
+            **VALID_MAPPING,
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["PFC"],
+                    "Available_Pis": [],
+                    "Available_Rows": ["1"],
+                }
+            },
+            "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+        }
+    )
+    group = draft.group("odu_cond_specs")
+    duplicate = replace(group, rows=(group.rows[0], group.rows[0]))
+    draft = replace(
+        draft,
+        groups=tuple(duplicate if item.group_key == group.group_key else item for item in draft.groups),
+    )
+
+    issues = validate_mapping_editor_draft(draft).issues
+
+    assert not any(issue.field == "Pi" and issue.code == "required_field_missing" for issue in issues)
+    assert "duplicate_cond_specs_key" in [issue.code for issue in issues]
+
+
 def test_general_groups_still_block_duplicate_keys():
     draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
     odu = draft.group("odu")
