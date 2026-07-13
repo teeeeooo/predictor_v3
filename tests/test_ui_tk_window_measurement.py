@@ -50,6 +50,7 @@ class FakeNotebook:
         self.notebook_height = notebook_height
         self.selected_history: list[str] = []
         self.update_calls = 0
+        self.configured_height: int | None = None
 
     def tabs(self) -> tuple[str, ...]:
         return tuple(self._tabs)
@@ -69,6 +70,9 @@ class FakeNotebook:
 
     def winfo_reqheight(self) -> int:
         return self.notebook_height
+
+    def configure(self, *, height: int) -> None:
+        self.configured_height = height
 
 
 def test_visible_measurement_uses_simple_content_size_without_nested_notebook():
@@ -132,3 +136,28 @@ def test_compatibility_methods_read_from_snapshots():
 
     assert measurement.preferred_size() == measurement.snapshot().preferred_size
     assert measurement.vertical_overflow_delta() == measurement.snapshot().vertical_overflow_delta
+
+
+def test_selected_nested_child_height_is_applied_to_notebook_allocation():
+    notebook = FakeNotebook(
+        {"small": FakeContent(450, 180), "large": FakeContent(900, 900)},
+        selected="small",
+        notebook_height=920,
+    )
+    measurement = TkVisibleContentMeasurement(
+        content=FakeContent(400, 500),
+        scrollbar=FakeScrollbar(15),
+        overflow_source=FakeOverflowSource(),
+        nested_notebook=notebook,
+    )
+
+    assert measurement.sync_selected_notebook_allocation() == 180
+    assert notebook.configured_height == 180
+
+    notebook.select("large")
+    assert measurement.sync_selected_notebook_allocation() == 900
+    assert notebook.configured_height == 900
+
+    notebook.select("small")
+    assert measurement.sync_selected_notebook_allocation() == 180
+    assert notebook.configured_height == 180

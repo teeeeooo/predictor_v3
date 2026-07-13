@@ -145,7 +145,7 @@ class TestScheduleCountAfterNativeEdit:
 
 
 class TestSetSummariesCountAfterFlush:
-    """Flush should call set_summaries exactly once per section."""
+    """Flush should update the result surface exactly once per section."""
 
     def _wrap_set_summaries(self, section):
         calls = []
@@ -158,15 +158,26 @@ class TestSetSummariesCountAfterFlush:
         section.result_panel.set_summaries = wrapper
         return calls
 
+    def _wrap_placeholder(self, section):
+        calls = []
+        original = section.result_panel.show_placeholder
+
+        def wrapper(**kwargs):
+            calls.append(None)
+            original(**kwargs)
+
+        section.result_panel.show_placeholder = wrapper
+        return calls
+
     def test_cspf_flush_calls_set_summaries_once(self, cspf_section) -> None:
-        calls = self._wrap_set_summaries(cspf_section)
+        calls = self._wrap_placeholder(cspf_section)
         cspf_section._auto_calc.flush_now()
-        assert len(calls) == 1, f"Expected 1 set_summaries call, got {len(calls)}"
+        assert len(calls) == 1, f"Expected 1 placeholder update, got {len(calls)}"
 
     def test_hspf_flush_calls_set_summaries_once(self, hspf_section) -> None:
-        calls = self._wrap_set_summaries(hspf_section)
+        calls = self._wrap_placeholder(hspf_section)
         hspf_section._auto_calc.flush_now()
-        assert len(calls) == 1, f"Expected 1 set_summaries call, got {len(calls)}"
+        assert len(calls) == 1, f"Expected 1 placeholder update, got {len(calls)}"
 
 
 class TestResultPanelStableUpdate:

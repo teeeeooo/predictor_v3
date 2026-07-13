@@ -380,7 +380,11 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text
-    assert _two_point_result_values(tab) == []
+    assert _two_point_result_values(tab) == [
+        ("ISO 16358-1", "-", "-", "-", "-", "-"),
+        ("India ISEER", "-", "-", "-", "-", "-"),
+    ]
+    assert section.result_table.rows == ()
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "two_point_result_status"
     assert section.result_table.status_label.cget("text") == "입력 오류: 숫자 입력을 확인하세요."
@@ -911,7 +915,11 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     text = _saso_text(tab)
 
     assert "입력 오류: 숫자 입력을 확인하세요." in text
-    assert _saso_tree_values(tab) == []
+    assert _saso_tree_values(tab) == [
+        ("Required only (3-point)", "-", "-", "-", "-", "-", "-", "-"),
+        ("With 35 Min (4-point)", "-", "-", "-", "-", "-", "-", "-"),
+    ]
+    assert section.result_table.rows == ()
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "saso_t3_result_status"
     assert "Traceback" not in text
@@ -1782,13 +1790,17 @@ def test_cell_change_updates_cspf_and_invalid_value_shows_input_error(tk_root):
     assert "None" not in invalid
     assert "74991.00727784102" not in invalid
     panel = cspf.result_panel
-    assert panel.summary_tables["CSPF"].surface_role == "status_surface"
+    assert panel.summary_tables["CSPF"].surface_role == "summary_table"
     assert panel.summary_tables["CSPF"].layout_policy == panel.layout_policy
-    assert "summary_title" not in _surface_roles(panel._summary_holder)
-    assert "summary_header_cell" not in _surface_roles(panel._summary_holder)
-    assert "summary_value_cell" not in _surface_roles(panel._summary_holder)
-    assert "CSPF" not in panel.summary_header_cells
-    assert "CSPF" not in panel.summary_value_cells
+    assert "summary_title" in _surface_roles(panel._summary_holder)
+    assert "summary_header_cell" in _surface_roles(panel._summary_holder)
+    assert "summary_value_cell" in _surface_roles(panel._summary_holder)
+    assert tuple(label.cget("text") for label in panel.summary_value_labels["CSPF"]) == (
+        "-",
+        "-",
+        "-",
+    )
+    assert panel._summaries == ()
     assert panel.summary_status_labels["CSPF"].cget("text") == (
         "입력 오류: 숫자 입력을 확인하세요."
     )

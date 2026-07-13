@@ -68,6 +68,25 @@ class BrazilCspfResultTable:
         self.final_status_label = self._status_label("brazil_cspf_final_status")
         self.status_label = self._status_label("brazil_cspf_result_status")
 
+    def show_placeholder(self, *, status: str = "입력 대기") -> None:
+        """Reserve result, rule, and final judgement surfaces without a result."""
+        self.rows = ()
+        self.row_labels = ()
+        self.rules = ()
+        self.final_status = None
+        self.result_grid.set_rows(
+            (("3-point", "-", "-", "-"), ("2-point", "-", "-", "-"))
+        )
+        self.rule_grid.set_rows(
+            (("Rule 1", "-", "-", "-", "-"), ("Rule 2", "-", "-", "-", "-"))
+        )
+        self.result_grid.pack(side=tk.TOP, anchor="w")
+        self.rule_grid.pack(side=tk.TOP, anchor="w")
+        self.rule_frame.pack(side=tk.TOP, anchor="w", fill=tk.X)
+        self.final_status_label.configure(text="최종 판정: -", background=RESULT_VALUE_BG)
+        self.final_status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
+        self._set_status(status)
+
     def grid(self, **kwargs: object) -> None:
         self._frame.grid(**kwargs)
 
@@ -111,8 +130,7 @@ class BrazilCspfResultTable:
         self._set_status(status)
 
     def set_status(self, status: str) -> None:
-        self.clear()
-        self._set_status(status)
+        self.show_placeholder(status=status)
 
     def clear(self) -> None:
         self.rows = ()

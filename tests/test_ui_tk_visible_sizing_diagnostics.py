@@ -107,8 +107,8 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         assert by_label["AHRI SEER2"]["snapshot_preferred_size"] == (
             by_label["AHRI SEER2 return"]["snapshot_preferred_size"]
         )
-        assert by_label["AHRI SEER2"]["nested_notebook_size"] == (
-            by_label["AHRI HSPF2"]["nested_notebook_size"]
+        assert by_label["AHRI SEER2"]["nested_notebook_size"][1] < (
+            by_label["AHRI HSPF2"]["nested_notebook_size"][1]
         )
         assert by_label["AHRI SEER2"]["nested_current_tab_size"][1] < (
             by_label["AHRI HSPF2"]["nested_current_tab_size"][1]
@@ -118,14 +118,8 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         assert by_label["AHRI SEER2"]["nested_height_gap"] == (
             by_label["AHRI SEER2 return"]["nested_height_gap"]
         )
-        for label in ("ISO HK CSPF", "EN SEER", "AHRI SEER2"):
-            row = by_label[label]
-            assert row["chrome_estimate"][1] == (
-                row["nested_notebook_size"][1]
-                - row["nested_tallest_tab_height"]
-            )
-        assert by_label["AHRI SEER2"]["chrome_estimate"][1] < (
-            by_label["AHRI SEER2"]["nested_height_gap"]
+        assert by_label["EN SEER"]["nested_height_gap"] == (
+            by_label["EN SEER return"]["nested_height_gap"]
         )
         assert by_label["AHRI HSPF2 batch open"]["root_geometry"] == (
             by_label["AHRI HSPF2 batch close"]["root_geometry"]

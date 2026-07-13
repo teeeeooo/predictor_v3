@@ -17,7 +17,7 @@ from apps.calculator.ui.layout_constants import (
     ISO_SECTION_PADX,
 )
 from apps.calculator.ui.metric_input_table import MetricInputTable
-from apps.calculator.ui.result_models import ResultSummary, result_status
+from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
@@ -101,6 +101,10 @@ class KoreaCspfSection:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
         self.result_panel = ResultPanel(self._frame, title="CSPF 결과")
+        self.result_panel.show_placeholder(
+            title="CSPF",
+            field_labels=("CSPF", "CSTL [kWh]", "CSEC [kWh]"),
+        )
         self.result_panel.grid(
             row=4,
             column=0,
@@ -233,8 +237,10 @@ class KoreaCspfSection:
             self._guide.set_status(result.guide_status, tone=tone)
         if not result.is_ok:
             self._clear_trace(result.detail_status or result.status_text)
-            self.result_panel.set_summaries(
-                (result_status(result.summary_title, result.status_text),)
+            self.result_panel.show_placeholder(
+                title=result.summary_title,
+                field_labels=("CSPF", "CSTL [kWh]", "CSEC [kWh]"),
+                status=result.status_text,
             )
             return
         self._trace_rows = list(result.detail_rows)

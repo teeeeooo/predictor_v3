@@ -36,6 +36,7 @@ class IsoSasoT3ResultTable:
         self.column_labels = SASO_T3_RESULT_COLUMNS
         self.row_labels: tuple[str, ...] = ()
         self.rows: tuple[tuple[str, ...], ...] = ()
+        self._placeholder_row_labels: tuple[str, ...] = ()
 
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
@@ -63,6 +64,20 @@ class IsoSasoT3ResultTable:
         self._text = tk.Text(self._frame, height=6, width=90, wrap="none")
         self._text.configure(state=tk.DISABLED)
 
+    def show_placeholder(self, row_labels: tuple[str, ...], *, status: str) -> None:
+        """Show reserved comparison rows without making them exportable results."""
+        self.rows = ()
+        self.row_labels = ()
+        self._placeholder_row_labels = row_labels
+        self.table.set_rows(
+            tuple((label, *("-" for _ in self.column_labels[1:])) for label in row_labels)
+        )
+        self._show_table()
+        self.status_label.configure(text=status)
+        if not self.status_label.winfo_manager():
+            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
+        self._set_copy_text(status)
+
     def grid(self, **kwargs) -> None:
         self._frame.grid(**kwargs)
 
@@ -84,14 +99,10 @@ class IsoSasoT3ResultTable:
         self._set_copy_text(self.as_text())
 
     def set_status(self, status: str) -> None:
-        self.rows = ()
-        self.row_labels = ()
-        self.table.clear()
-        self.table.pack_forget()
-        self.status_label.configure(text=status)
-        if not self.status_label.winfo_manager():
-            self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
-        self._set_copy_text(status)
+        self.show_placeholder(
+            self._placeholder_row_labels or ("Required only (3-point)",),
+            status=status,
+        )
 
     def as_text(self) -> str:
         if not self.rows:

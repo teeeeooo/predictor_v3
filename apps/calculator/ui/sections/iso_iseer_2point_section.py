@@ -22,6 +22,7 @@ from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.iso_iseer_2point_result_table import (
     IsoIseer2PointResultTable,
 )
+from apps.calculator.application.profile_resolver import two_point_profile_labels
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.iso_iseer_2point import IsoIseer2PointBatchDialog
@@ -78,6 +79,9 @@ class IsoIseer2PointSection:
         )
         self.result_table = IsoIseer2PointResultTable(
             self._frame, title="ISO / ISEER 결과"
+        )
+        self.result_table.show_placeholder(
+            tuple(two_point_profile_labels()), status="입력 대기"
         )
         self.result_panel = self.result_table
         self.result_table.grid(
@@ -157,7 +161,7 @@ class IsoIseer2PointSection:
         result = self._usecase.calculate(self.input_table.get_text_values())
         if result.status == "empty":
             self._clear_trace(result.detail_status or result.status_text)
-            self.result_table.set_rows((), status=result.status_text)
+            self.result_table.set_status(result.status_text)
             return
         if not result.is_ok:
             self._clear_trace(result.detail_status or result.status_text)

@@ -34,6 +34,7 @@ class IsoIseer2PointResultTable:
         self.column_labels = TWO_POINT_RESULT_COLUMNS
         self.row_labels: tuple[str, ...] = ()
         self.rows: tuple[tuple[str, ...], ...] = ()
+        self._placeholder_row_labels: tuple[str, ...] = ()
 
         self._frame = ttk.Frame(parent)
         self.title_label = ttk.Label(self._frame, text=title)
@@ -58,6 +59,18 @@ class IsoIseer2PointResultTable:
         self._text = tk.Text(self._frame, height=6, width=70, wrap="none")
         self._text.configure(state=tk.DISABLED)
 
+    def show_placeholder(self, row_labels: tuple[str, ...], *, status: str) -> None:
+        """Show the final table footprint while retaining an empty result state."""
+        self.rows = ()
+        self.row_labels = ()
+        self._placeholder_row_labels = row_labels
+        self.table.set_rows(
+            tuple((label, *("-" for _ in self.column_labels[1:])) for label in row_labels)
+        )
+        self._show_table()
+        self._set_status(status)
+        self._set_copy_text(status)
+
     def grid(self, **kwargs: object) -> None:
         self._frame.grid(**kwargs)
 
@@ -77,12 +90,7 @@ class IsoIseer2PointResultTable:
         self._set_copy_text(self.as_text())
 
     def set_status(self, status: str) -> None:
-        self.rows = ()
-        self.row_labels = ()
-        self.table.clear()
-        self.table.pack_forget()
-        self._set_status(status)
-        self._set_copy_text(status)
+        self.show_placeholder(self._placeholder_row_labels or ("-",), status=status)
 
     def clear(self) -> None:
         self.rows = ()

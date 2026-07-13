@@ -79,6 +79,7 @@ class BrazilCspfSection:
             pady=(0, ISO_SECTION_BLOCK_GAP),
         )
         self.result_table = BrazilCspfResultTable(self._frame)
+        self.result_table.show_placeholder()
         self.result_panel = self.result_table
         self.result_table.grid(
             row=2,

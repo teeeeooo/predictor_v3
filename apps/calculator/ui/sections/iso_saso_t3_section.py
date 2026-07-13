@@ -23,6 +23,10 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
+from apps.calculator.application.saso_t3.usecase import (
+    OPTIONAL_TRACE_LABEL,
+    REQUIRED_TRACE_LABEL,
+)
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.saso_t3 import SasoT3BatchDialog
@@ -88,6 +92,9 @@ class IsoSasoT3Section:
         )
 
         self.result_table = IsoSasoT3ResultTable(self._frame)
+        self.result_table.show_placeholder(
+            (REQUIRED_TRACE_LABEL, OPTIONAL_TRACE_LABEL), status="입력 대기"
+        )
         self.result_panel = self.result_table
         self.result_table.grid(
             row=3, column=0, sticky="w", padx=ISO_SECTION_PADX,
@@ -179,7 +186,7 @@ class IsoSasoT3Section:
         if result.rows:
             self.result_table.set_rows(result.rows, status=result.status_text)
         else:
-            self.result_table.set_rows((), status=result.status_text)
+            self.result_table.set_status(result.status_text)
 
     def _on_optional_min_toggled(self) -> None:
         self._sync_optional_min_state()

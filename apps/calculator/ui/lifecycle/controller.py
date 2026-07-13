@@ -33,6 +33,7 @@ class ProfileVisibleContentLifecycleController:
         after_fit: AfterFitHook | None = None,
     ) -> None:
         self._owner = owner
+        self._scrollable = scrollable
         self._parent_selected_settle_cycles = self._optional_positive_cycles(
             "parent_selected_settle_cycles", parent_selected_settle_cycles
         )
@@ -112,6 +113,9 @@ class ProfileVisibleContentLifecycleController:
 
     def _fit_toplevel_to_current_content(self) -> None:
         self._owner.update_idletasks()
+        self._measurement.sync_selected_notebook_allocation()
+        self._owner.update_idletasks()
+        self._scrollable.refresh_scrollregion()
         self._content_form.fit()
         self._owner.update_idletasks()
 

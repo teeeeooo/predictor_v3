@@ -96,6 +96,25 @@ class ResultPanel:
                 self._restore_focus_if_alive(external_focus)
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
+    def show_placeholder(
+        self, *, title: str, field_labels: Iterable[str], status: str = "입력 대기"
+    ) -> None:
+        """Reserve the final summary shape without creating a logical result."""
+
+        placeholder = ResultSummary(
+            title=title,
+            fields=tuple((label, "-") for label in field_labels),
+            status=status,
+        )
+        self._summaries = ()
+        self._hide_text_mode()
+        if self._can_update_in_place((placeholder,)):
+            self._update_summary_values((placeholder,))
+        else:
+            self._clear_summary_tables()
+            self._render_summary_table(0, placeholder)
+        self._set_copy_text(status)
+
     def clear(self) -> None:
         self._summaries = ()
         self._clear_summary_tables()

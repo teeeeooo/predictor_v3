@@ -161,8 +161,13 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rows == ()
     assert table.rules == ()
     assert table.final_status is None
-    assert table.result_value_labels == {}
-    assert table.rule_value_labels == {}
+    assert tuple(
+        label.cget("text") for label in table.result_value_labels.values()
+    ) == ("3-point", "-", "-", "-", "2-point", "-", "-", "-")
+    assert tuple(label.cget("text") for label in table.rule_value_labels.values()) == (
+        "Rule 1", "-", "-", "-", "-", "Rule 2", "-", "-", "-", "-"
+    )
+    assert table.final_status_label.cget("text") == "최종 판정: -"
     assert table.table_export_data() == (
         ("Status",),
         (("입력 오류: 숫자 입력을 확인하세요.",),),
