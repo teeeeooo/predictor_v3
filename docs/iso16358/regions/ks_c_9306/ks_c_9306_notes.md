@@ -18,7 +18,7 @@ KS C 9306 문서는 ISO 16358 공통 CSPF/HSPF 엔진을 한국 냉난방 효율
 | bin-hour | KS C 9306 한국 냉방 bin-hour | ISO 공통 bin accumulation |
 | HSPF profile | `hspf.profile = ks_c_9306_hspf` | [ISO HSPF current status](../../iso16358_notes.md#4-hspf-current-status) |
 | HSPF bin-hour | KS C 9306 한국 난방 31-bin, `nj` 합계 2849 h | ISO HSPF seasonal accumulation |
-| HSPF load line | `hspf.load_line.source = rated_heating_capacity`, factor `0.82` | ISO HSPF profile path |
+| HSPF load line | `hspf.load_line.source = rated_cooling_capacity`, factor `0.82` | KS HSPF profile path |
 
 ## 3. KS Input Schema
 

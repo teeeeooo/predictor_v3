@@ -36,10 +36,10 @@ class ISO16358ConfigContext:
             self.config = json.load(config_file)
         self.config.pop("_comment", None)
 
-        self._validate_optional_selector(
+        self._validate_config_selector(
             "building_load_source", self._BUILDING_LOAD_SOURCES
         )
-        self._validate_optional_selector(
+        self._validate_config_selector(
             "power_interpolation_method", self._POWER_INTERPOLATION_METHODS
         )
 
@@ -62,10 +62,21 @@ class ISO16358ConfigContext:
         self.derived_rules = self.config.get("derived_rules", {})
         self.bin_hours = self.config.get("bin_hours", [])
 
-    def _validate_optional_selector(self, field: str, supported: frozenset) -> None:
+    def _validate_config_selector(self, field: str, supported: frozenset) -> None:
         if field not in self.config:
             return
-        value = self.config[field]
+        self.validate_selector_assignment(field, self.config[field], supported)
+
+    def validate_selector_assignment(
+        self, field: str, value, supported: frozenset | None = None
+    ) -> None:
+        if supported is None:
+            supported = {
+                "building_load_source": self._BUILDING_LOAD_SOURCES,
+                "power_interpolation_method": self._POWER_INTERPOLATION_METHODS,
+            }.get(field)
+        if supported is None:
+            return
         if not isinstance(value, str) or value not in supported:
             raise ValueError(
                 f"Unsupported ISO CSPF {field}: {value!r}; "

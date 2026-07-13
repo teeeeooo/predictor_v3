@@ -1,5 +1,7 @@
 """KS C 9306 CSPF measured and derived point resolution."""
 
+import math
+
 
 class KSCSPFPointResolverMixin:
     def _validate_ks_cspf_config(self) -> None:
@@ -26,10 +28,36 @@ class KSCSPFPointResolverMixin:
             if point_type != "default":
                 continue
             rule = derived_rules.get(point)
-            if not isinstance(rule, dict) or rule.get("source") not in points:
+            if not isinstance(rule, dict):
                 raise ValueError(
                     f"Invalid KS C 9306 CSPF derived_rules for {point!r}."
                 )
+            missing = {
+                "source", "capacity_factor", "power_factor"
+            } - rule.keys()
+            if missing:
+                raise ValueError(
+                    f"Invalid KS C 9306 CSPF derived_rules for {point!r}: "
+                    f"missing {sorted(missing)}."
+                )
+            source = rule["source"]
+            if source not in points or source == point:
+                raise ValueError(
+                    f"Invalid KS C 9306 CSPF derived_rules source for {point!r}: "
+                    f"{source!r}."
+                )
+            for factor_field in ("capacity_factor", "power_factor"):
+                factor = rule[factor_field]
+                if (
+                    isinstance(factor, bool)
+                    or not isinstance(factor, (int, float))
+                    or not math.isfinite(factor)
+                    or factor <= 0
+                ):
+                    raise ValueError(
+                        f"Invalid KS C 9306 CSPF {point}.{factor_field}: "
+                        "finite positive number required."
+                    )
         building_load_source = self.config.get("building_load_source")
         if building_load_source not in {"declared", "measured"}:
             raise ValueError(
@@ -101,8 +129,8 @@ class KSCSPFPointResolverMixin:
                 if source_key not in resolved:
                     continue
                 source_data = resolved[source_key]
-                cap_factor = rule.get("capacity_factor", 1.0)
-                pow_factor = rule.get("power_factor", 1.0)
+                cap_factor = rule["capacity_factor"]
+                pow_factor = rule["power_factor"]
                 derived = {
                     "capacity": source_data["capacity"] * cap_factor,
                     "power": source_data["power"] * pow_factor,

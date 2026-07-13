@@ -106,6 +106,29 @@ def test_iso_flat_config_selector_defaults_remain_supported(tmp_path: Path) -> N
     assert calculator.power_interpolation_method == "capacity_linear"
 
 
+def test_iso_facade_selector_reassignment_uses_context_validation() -> None:
+    calculator = ISO16358Calculator(
+        str(REGIONS / "iso_t1_default_2point.json")
+    )
+    calculator.building_load_source = "declared"
+    calculator.power_interpolation_method = "capacity_linear"
+    assert calculator._context.building_load_source == "declared"
+    assert calculator._context.power_interpolation_method == "capacity_linear"
+
+    for field, invalid in (
+        ("building_load_source", "unknown"),
+        ("building_load_source", ""),
+        ("building_load_source", None),
+        ("building_load_source", 1),
+        ("power_interpolation_method", "unknown"),
+        ("power_interpolation_method", ""),
+        ("power_interpolation_method", None),
+        ("power_interpolation_method", 1),
+    ):
+        with pytest.raises(ValueError, match=field):
+            setattr(calculator, field, invalid)
+
+
 def test_ks_rejects_iso_cspf_profile_schema() -> None:
     config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
     config["cspf_test_profile"] = {
@@ -140,6 +163,48 @@ def test_ks_cspf_rejects_missing_schema_and_unknown_selectors(
 
 
 @pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("capacity_factor", None),
+        ("power_factor", None),
+        ("capacity_factor", "typo"),
+        ("power_factor", True),
+        ("capacity_factor", float("nan")),
+        ("power_factor", float("inf")),
+        ("capacity_factor", 0),
+        ("power_factor", -1),
+    ],
+)
+def test_ks_cspf_rejects_invalid_derived_factors(field: str, value) -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    rule = config["derived_rules"]["35_min"]
+    if value is None:
+        rule.pop(field)
+    else:
+        rule[field] = value
+    with pytest.raises(ValueError, match=field):
+        KSC9306Calculator(config).calculate_cspf({})
+
+
+def test_ks_cspf_rejects_self_reference_and_unresolved_cycle() -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    config["derived_rules"]["35_min"]["source"] = "35_min"
+    with pytest.raises(ValueError, match="source"):
+        KSC9306Calculator(config).calculate_cspf({})
+
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    config["derived_rules"]["35_min"]["source"] = "29_full"
+    config["derived_rules"]["29_full"]["source"] = "35_min"
+    measured = {
+        "35_full": {"capacity": 6035.8, "power": 1641.4},
+        "35_half": {"capacity": 3420.4, "power": 679.4},
+        "29_min": {"capacity": 1759.6, "power": 201.7},
+    }
+    with pytest.raises(ValueError, match="unresolved|default"):
+        KSC9306Calculator(config).calculate_cspf(measured, 6000)
+
+
+@pytest.mark.parametrize(
     ("mutation", "message"),
     [
         (lambda config: config.pop("hspf"), "hspf"),
@@ -163,6 +228,61 @@ def test_ks_hspf_rejects_invalid_profile_and_required_schema(
         KSC9306Calculator(config).calculate_hspf({})
 
 
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda rows: rows.__setitem__(0, []), r"\[0\].*dict"),
+        (lambda rows: rows[0].pop("tj"), r"\[0\].*tj"),
+        (lambda rows: rows[0].pop("nj"), r"\[0\].*nj"),
+        (lambda rows: rows[0].update(tj=True), r"\[0\].tj"),
+        (lambda rows: rows[0].update(tj=float("nan")), r"\[0\].tj"),
+        (lambda rows: rows[0].update(nj=True), r"\[0\].nj"),
+        (lambda rows: rows[0].update(nj=float("inf")), r"\[0\].nj"),
+        (lambda rows: rows[0].update(nj=-1), r"\[0\].nj"),
+        (lambda rows: rows[1].update(tj=rows[0]["tj"]), "duplicate tj"),
+    ],
+)
+def test_ks_hspf_rejects_malformed_bin_rows(mutation, message: str) -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    rows = config[config["hspf"]["bin_hours_key"]]
+    mutation(rows)
+    with pytest.raises(ValueError, match=message):
+        KSC9306Calculator(config).calculate_hspf({})
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("zero_load_temp", True),
+        ("full_load_temp", "zero"),
+        ("rated_capacity_factor", float("nan")),
+        ("rated_capacity_factor", float("inf")),
+        ("rated_capacity_factor", 0),
+        ("rated_capacity_factor", -0.1),
+    ],
+)
+def test_ks_hspf_rejects_invalid_config_load_line_numbers(
+    field: str, value
+) -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    config["hspf"]["load_line"][field] = value
+    explicit_user_line = {
+        "ks_c_9306_hspf": {"load_line": {"slope": -1, "intercept": 10}}
+    }
+    with pytest.raises(ValueError, match=field):
+        KSC9306Calculator(config).calculate_hspf(explicit_user_line)
+
+
+def test_ks_hspf_rejects_equal_config_load_line_temperatures() -> None:
+    config = json.loads((REGIONS / "korea.json").read_text(encoding="utf-8"))
+    load_line = config["hspf"]["load_line"]
+    load_line["full_load_temp"] = load_line["zero_load_temp"]
+    with pytest.raises(ValueError, match="must differ"):
+        KSC9306Calculator(config).calculate_hspf(
+            {"ks_c_9306_hspf": {"load_line": {"slope": -1, "intercept": 10}}}
+        )
+
+
 def test_ahri_active_alias_allowlist_and_retired_aliases() -> None:
     calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
     assert calculator.test_point_aliases == {
@@ -171,10 +291,19 @@ def test_ahri_active_alias_allowlist_and_retired_aliases() -> None:
     assert calculator.normalize_public_test_points(
         {"a_full": (24000, 2500)}
     ) == {"A2": (24000, 2500)}
-    for retired in ("H1_Full", "H2_Full", "H3_Full", "H21", "AFull"):
-        assert calculator.normalize_public_test_points({retired: (1, 1)}) == {
-            retired: (1, 1)
-        }
+    for retired in (
+        "H1_Full", "H2_Full", "H3_Full", "H21", "AFull",
+        "H12x", "H22x", "unrelated",
+    ):
+        with pytest.raises(ValueError, match=retired):
+            calculator.normalize_public_test_points({retired: (1, 1)})
+
+
+def test_ahri_canonical_point_keys_remain_case_insensitive() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    assert calculator.normalize_public_test_points(
+        {"h01": (12500, 980), "h2int": (13000, 1200)}
+    ) == {"H01": (12500, 980), "H2Int": (13000, 1200)}
 
 
 @pytest.mark.parametrize("field", ["unit_type", "system_type"])

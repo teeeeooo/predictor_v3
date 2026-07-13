@@ -323,7 +323,7 @@ Region config `hspf.load_line` schema:
 
 | Field | Required | Note |
 | --- | --- | --- |
-| `source` | Yes | 허용값은 `rated_heating_capacity`, `rated_cooling_capacity`, `declared_capacity`이다. |
+| `source` | Yes | 현재 KS HSPF 허용값은 `rated_cooling_capacity`다. |
 | `zero_load_temp` | Yes | zero heating load temperature이다. |
 | `full_load_temp` | Yes | full heating load temperature이다. |
 | `rated_capacity_factor` | Yes | 기준 capacity에 곱하는 계수이다. |

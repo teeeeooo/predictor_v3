@@ -23,8 +23,8 @@ class KSHSPFSeasonalMixin:
         )
 
         for bin_data in bin_hours:
-            tj = float(bin_data.get("tj", 0))
-            hours = float(bin_data.get("nj", bin_data.get("hours", 0)))
+            tj = float(bin_data["tj"])
+            hours = float(bin_data["nj"])
             if hours <= 0:
                 continue
 

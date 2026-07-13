@@ -1,5 +1,7 @@
 """KS C 9306 HSPF point validation and fallback resolution."""
 
+import math
+
 
 class KSHSPFPointResolverMixin:
     def _ks_hspf_input(self, measured_inputs: dict) -> dict:
@@ -50,6 +52,36 @@ class KSHSPFPointResolverMixin:
             raise ValueError(
                 f"Invalid KS C 9306 HSPF {bin_hours_key}: non-empty list required."
             )
+        temperatures = set()
+        for index, row in enumerate(bin_hours):
+            path = f"{bin_hours_key}[{index}]"
+            if not isinstance(row, dict):
+                raise ValueError(f"Invalid KS C 9306 HSPF {path}: dict required.")
+            for field in ("tj", "nj"):
+                if field not in row:
+                    raise ValueError(
+                        f"Invalid KS C 9306 HSPF {path}: {field} is required."
+                    )
+                value = row[field]
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                ):
+                    raise ValueError(
+                        f"Invalid KS C 9306 HSPF {path}.{field}: "
+                        "finite number required."
+                    )
+            if row["nj"] < 0:
+                raise ValueError(
+                    f"Invalid KS C 9306 HSPF {path}.nj: must be non-negative."
+                )
+            if row["tj"] in temperatures:
+                raise ValueError(
+                    f"Invalid KS C 9306 HSPF {bin_hours_key}: "
+                    f"duplicate tj {row['tj']!r}."
+                )
+            temperatures.add(row["tj"])
 
         for field in ("derived_rules", "correction"):
             value = hspf_config.get(field)
@@ -81,6 +113,30 @@ class KSHSPFPointResolverMixin:
             raise ValueError(
                 "KS C 9306 HSPF requires rated_cooling_capacity, not "
                 f"{load_line['source']!r}."
+            )
+        numeric_fields = (
+            "zero_load_temp", "full_load_temp", "rated_capacity_factor"
+        )
+        for field in numeric_fields:
+            value = load_line[field]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(
+                    f"Invalid KS C 9306 HSPF load_line.{field}: "
+                    "finite number required."
+                )
+        if load_line["zero_load_temp"] == load_line["full_load_temp"]:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF load_line: zero_load_temp and "
+                "full_load_temp must differ."
+            )
+        if load_line["rated_capacity_factor"] <= 0:
+            raise ValueError(
+                "Invalid KS C 9306 HSPF load_line.rated_capacity_factor: "
+                "must be positive."
             )
         return hspf_config
 

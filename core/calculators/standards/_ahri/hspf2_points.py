@@ -70,9 +70,15 @@ class HSPF2PointResolver:
         schema_keys = self.schema_keys()
         canonical_points = {}
         for key, value in test_points.items():
+            if not isinstance(key, str):
+                raise ValueError(f"Unsupported AHRI HSPF2 test point key: {key!r}")
             alias_key = self.match_key_case_insensitive(key, alias_map.keys())
             canonical_key = alias_map.get(alias_key, key)
             canonical_key = self.match_key_case_insensitive(canonical_key, schema_keys)
+            if canonical_key not in schema_keys:
+                raise ValueError(
+                    f"Unsupported AHRI HSPF2 variable-capacity test point key: {key!r}"
+                )
             if canonical_key in canonical_points and canonical_points[canonical_key] != value:
                 raise ValueError(
                     f"Conflicting test point values for canonical key {canonical_key}: "

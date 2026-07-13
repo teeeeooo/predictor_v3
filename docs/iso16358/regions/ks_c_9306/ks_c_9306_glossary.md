@@ -85,11 +85,11 @@ ISO 16358 공통 용어는 [`../../iso16358_glossary.md`](../../iso16358_glossar
 | `hspf.derived_rules.full_-7` | dict | `data/region_configs/korea.json` | 7°C rated/full stage에서 -7°C rated stage를 Table E.5 factor로 생성하는 규칙이다. |
 | `hspf.correction.capacity_def_over_nof` | number | `data/region_configs/korea.json` | KS HSPF capacity defrost/no-frost correction 기본값이다. 중복 적용하지 않는다. |
 | `hspf.correction.power_def_over_nof` | number | `data/region_configs/korea.json` | KS HSPF power defrost/no-frost correction 기본값이다. 중복 적용하지 않는다. |
-| `hspf.load_line.source` | string | `data/region_configs/korea.json` | KS HSPF heating load line 기준 capacity source다. 현재 한국은 공식 계산 시트 동작 기준 `rated_heating_capacity`를 사용한다. |
+| `hspf.load_line.source` | string | `data/region_configs/korea.json` | KS HSPF heating load line 기준 capacity source다. 현재 한국은 `rated_cooling_capacity`를 사용한다. |
 | `hspf.load_line.zero_load_temp` | number | `data/region_configs/korea.json` | KS HSPF heating load가 0이 되는 외기온도다. |
 | `hspf.load_line.full_load_temp` | number | `data/region_configs/korea.json` | KS HSPF heating load가 기준 부하가 되는 외기온도다. |
 | `hspf.load_line.rated_capacity_factor` | number | `data/region_configs/korea.json` | KS HSPF heating load line 기준 capacity에 곱하는 factor다. 현재 값은 0.82다. |
-| `source = "rated_heating_capacity"` | string | HSPF load line config | 공식 계산 시트 동작을 따른 현재 한국 profile 해석이다. spec text의 cooling reference와 차이가 있으므로 임의 변경 금지다. |
+| `source = "rated_cooling_capacity"` | string | HSPF load line config | 현재 한국 profile의 canonical source며 `BL_h(0°C) = rated_cooling_capacity × 0.82`를 사용한다. |
 | `35_full`, `35_half`, `29_min` | dict | CSPF measured input | KS CSPF의 필수 measured cooling point다. 각 dict에는 `capacity`, `power`가 필요하다. |
 | `full`, `half`, `min` | stage alias | HSPF required/optional points | HSPF region config에서 `full`은 rated, `half`는 intermediate, `min`은 minimum stage와 매핑된다. |
 | `max` | stage alias | HSPF required points | maximum operation stage다. -7°C와 2°C defrost anchor가 필수다. |

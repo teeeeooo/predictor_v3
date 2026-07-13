@@ -35,6 +35,6 @@
 - `hspf.load_line`을 정의할 경우 `source`, `zero_load_temp`, `full_load_temp`, `rated_capacity_factor`는 모두 필수다.
 - production region config에는 golden/sample/test fixture 값을 넣지 않는다.
 - 예:
-  - Korea / KS C 9306 HSPF: 현재 공식 계산 시트 동작 기준 `source = rated_heating_capacity`, `rated_capacity_factor = 0.82`를 사용한다. 단, spec text에는 `BLc(35) × 0.82` cooling reference가 있으므로 이 해석은 주석/문서로 유지한다.
+  - Korea / KS C 9306 HSPF: 현재 공식 계산 시트 동작 기준 `source = rated_cooling_capacity`, `rated_capacity_factor = 0.82`를 사용하며 `BL_h(0°C) = rated_cooling_capacity × 0.82`로 계산한다.
   - Australia / New Zealand: AS/NZS 3823.4.2 원문 확인 전까지 load line source 임의 구현 금지.
 - production region config에는 원문/공식 계산 시트 근거가 없는 load line 값을 넣지 않는다.

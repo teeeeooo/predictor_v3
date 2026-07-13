@@ -305,3 +305,12 @@ required points and bin table, and the rated-cooling-capacity config load line.
 AHRI derived-H12 unit type accepts split and packaged semantic aliases and
 rejects unknown or conflicting explicit selectors. The final correction record
 supersedes the earlier silent-fallback record for these remaining surfaces.
+
+The remaining-fallback closure applies the same ISO selector allowlist after
+facade reassignment, rejects unknown AHRI variable point keys before H12/H22
+fallback selection, requires complete finite-positive KS derived factors, and
+validates canonical KS `tj`/`nj` bins plus finite config load-line values before
+any explicit user load line is considered. It also aligns every active KS owner
+document on `rated_cooling_capacity × 0.82`. The dated remaining-fallback
+closure record supersedes the prior final-audit record for these validation
+details.

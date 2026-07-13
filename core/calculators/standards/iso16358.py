@@ -15,10 +15,11 @@ class ISO16358Calculator:
         self._hspf_engine = ISO16358HSPFEngine(self._context)
 
     def __setattr__(self, name: str, value) -> None:
-        object.__setattr__(self, name, value)
         context = self.__dict__.get("_context")
         if context is not None and name in CONTEXT_ATTRIBUTES:
+            context.validate_selector_assignment(name, value)
             setattr(context, name, value)
+        object.__setattr__(self, name, value)
 
     def __getattr__(self, name: str):
         for owner_name in ("_cspf_engine", "_hspf_engine"):
