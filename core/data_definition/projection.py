@@ -122,6 +122,7 @@ def extract_mapping_requirements(
             rule_id=row.rule_id,
             data_type=row.data_type,
             required=row.required,
+            model_input_enabled=row.model_input_enabled,
         )
         for row in rows
         if row.value_source == "mapping_lookup"

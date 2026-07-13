@@ -448,7 +448,7 @@ entries:
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
-    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
+    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The Phase 1 DEV alignment validator pairs selector metadata with the unchanged numeric/one-hot training frame and resolves schema-backed values from the repository runtime-equivalent mapping fixture, including conditional F&T/PFC identities; invalid options/combinations and mismatched training values fail fast. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Mock readiness does not establish model quality or production readiness.
     keywords:
       - predictor_v3
       - Arc 15
@@ -459,7 +459,7 @@ entries:
       - readiness
       - schema writer
     assertionStatus: verified
-    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
+    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1d.md
 ```
 
 ## Known Gaps

@@ -18,12 +18,13 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1C establishes definition-backed dynamic mapping attribute
-projection, validation, persistence, reload, and export round-trip.
+workstream. Slice 1D aligns the active schema, repository mapping fixture, and
+DEV mock selector/training rows with strict cross-fixture validation.
 
 ## Next Action
 
-Implement Slice 1D schema/mapping/mock-training aligned validation set.
+Run Phase 1 full validation and complete the milestone closeout while keeping
+Draft PR #14 unmerged for final audit.
 
 ## Active Blockers
 

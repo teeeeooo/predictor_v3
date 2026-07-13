@@ -222,6 +222,14 @@ test explicitly requires synthetic trend behavior.
 - Add structural checks linking schema, mapping, and mock training data.
 - Prove the mock training pipeline can consume the projected contract.
 - Keep model quality outside the result.
+- Keep selector rows as DEV validation metadata paired by row with the existing
+  numeric/one-hot training frame; do not add selector columns to the strict ML
+  training-header contract.
+- Resolve every mapping-backed numeric and one-hot value from the Slice 1B
+  runtime-equivalent fixture, including both F&T and PFC condenser rows.
+- Fail fast on invalid base options, invalid condenser combinations,
+  Fin-Type-dependent Pi violations, missing schema-backed attributes, and
+  training values that differ from their mapping resolution.
 
 Each slice is one logical commit and is pushed to the phase branch. The phase is
 merged only after all slices and phase acceptance checks pass.

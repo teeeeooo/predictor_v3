@@ -16,8 +16,10 @@ from core.ml.features import BASE_FEATURES, TARGETS
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 from core.ml.catalog_fingerprint import CATALOG_FINGERPRINT_KEY
 from core.ml.inference import load_model, predict_row
+from core.ml.training import validate_training_input_headers
 from core.predictor_schema.columns import INPUT_COLS
 from tools.dev.mock_smoke import generators as mock_generators
+from tools.dev.mock_smoke.alignment import validate_mock_alignment
 from tools.dev.mock_smoke.generators import (
     CASE_INPUT_NAME,
     MAPPING_NAME,
@@ -25,11 +27,13 @@ from tools.dev.mock_smoke.generators import (
     MANIFEST_NAME,
     TRAINING_DATA_NAME,
     cleanup_from_manifest,
+    generate_mock_training_frame,
     generate_mock_smoke_bundle,
     install_local_model,
     install_local_mapping,
     install_local_train_data,
     mock_mapping_data,
+    mock_training_selection_rows,
     sha256_file,
     write_mock_case_input,
     write_mock_mapping,
@@ -88,13 +92,13 @@ def test_mock_mapping_generator_supports_autofill(tmp_path):
         assert section in mapping
 
     row_values = {
-        "idu": "MOCK_IDU_A",
-        "evap_index": "MOCK_EVAP_A",
-        "odu": "MOCK_ODU_A",
+        "idu": "Q1",
+        "evap_index": "S1-2",
+        "odu": "N-V2MD",
         "fin_type": "F&T",
         "pi": "7",
         "row": "1",
-        "compressor": "MOCK_COMP_A",
+        "compressor": "Comp A",
     }
     updates = {}
     for key in ("idu", "evap_index", "odu", "compressor"):
@@ -103,14 +107,14 @@ def test_mock_mapping_generator_supports_autofill(tmp_path):
     cond_result = build_autofill_updates(row_values, "row", mapping)
     updates.update({update.key: update.value for update in cond_result.updates})
 
-    assert updates["id_volume"] == 0.015
-    assert updates["evap_area"] == 12.5
-    assert updates["evap_volume"] == 0.002
-    assert updates["od_volume"] == 0.045
-    assert updates["cond_area"] == 25.0
-    assert updates["cond_volume"] == 0.005
+    assert updates["id_volume"] == 52
+    assert updates["evap_area"] == 5
+    assert updates["evap_volume"] == 10
+    assert updates["od_volume"] == 70
+    assert updates["cond_area"] == 10
+    assert updates["cond_volume"] == 10
     assert updates["comp_eer"] == 3.5
-    assert updates["comp_cc"] == 10.5
+    assert updates["comp_cc"] == 13
 
 
 def test_mock_case_input_tsv_matches_input_cols_and_mapping_values(tmp_path):
@@ -120,16 +124,88 @@ def test_mock_case_input_tsv_matches_input_cols_and_mapping_values(tmp_path):
     assert len(rows) == 3
     assert all(len(row) == len(INPUT_COLS) for row in rows)
     first = dict(zip(INPUT_COLS, rows[0]))
-    assert first["idu"] == "MOCK_IDU_A"
-    assert first["evap_index"] == "MOCK_EVAP_A"
-    assert first["odu"] == "MOCK_ODU_A"
-    assert first["compressor"] == "MOCK_COMP_A"
+    assert first["idu"] == "Q1"
+    assert first["evap_index"] == "S1-2"
+    assert first["odu"] == "N-V2MD"
+    assert first["compressor"] == "Comp A"
     assert first["fin_type"] == "F&T"
     assert first["pi"] == "7"
     assert first["row"] == "1"
     assert first["ref_type"] == "R32"
     assert first["exp_type"] == "EEV"
-    assert "MOCK_IDU_A" in mock_mapping_data()["idu"]
+    assert "Q1" in mock_mapping_data()["idu"]
+
+
+def test_schema_mapping_and_mock_training_rows_are_aligned():
+    rows = 8
+    mapping = mock_mapping_data()
+    selections = mock_training_selection_rows(rows)
+    frame = generate_mock_training_frame(rows=rows, seed=7)
+
+    validate_mock_alignment(mapping, selections, frame)
+    validate_training_input_headers(frame.columns)
+
+    assert selections[0]["fin_type"] == "F&T"
+    assert selections[0]["pi"] == "7"
+    assert selections[1]["fin_type"] == "PFC"
+    assert selections[1]["pi"] == ""
+    assert frame.iloc[0]["Cond Area"] == 10
+    assert frame.iloc[1]["Cond Area"] == 21
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("idu", "INVALID-IDU"),
+        ("odu", "INVALID-ODU"),
+        ("compressor", "INVALID-COMPRESSOR"),
+        ("ref_type", "INVALID-REF"),
+        ("exp_type", "INVALID-EXPANSION"),
+    ],
+)
+def test_mock_alignment_rejects_invalid_mapping_option(field, value):
+    mapping = mock_mapping_data()
+    selections = mock_training_selection_rows(5)
+    selections[0][field] = value
+
+    with pytest.raises(ValueError, match=f"mock row 1: {field} option"):
+        validate_mock_alignment(mapping, selections, generate_mock_training_frame(5))
+
+
+def test_mock_alignment_rejects_invalid_condenser_combination():
+    selections = mock_training_selection_rows(5)
+    selections[0].update({"fin_type": "F&T", "pi": "7W", "row": "1"})
+
+    with pytest.raises(ValueError, match="condenser combination"):
+        validate_mock_alignment(
+            mock_mapping_data(), selections, generate_mock_training_frame(5)
+        )
+
+
+def test_mock_alignment_enforces_f_and_t_pi_and_empty_pfc_pi():
+    selections = mock_training_selection_rows(5)
+    selections[0]["pi"] = ""
+    with pytest.raises(ValueError, match="Pi is required for Fin Type 'F&T'"):
+        validate_mock_alignment(
+            mock_mapping_data(), selections, generate_mock_training_frame(5)
+        )
+
+    selections = mock_training_selection_rows(5)
+    selections[1]["pi"] = "stale"
+    with pytest.raises(ValueError, match="PFC Pi must be empty"):
+        validate_mock_alignment(
+            mock_mapping_data(), selections, generate_mock_training_frame(5)
+        )
+
+
+def test_mock_alignment_rejects_training_value_not_resolved_from_mapping():
+    frame = generate_mock_training_frame(5)
+    frame.loc[0, "ID Volume"] = 999
+
+    with pytest.raises(ValueError, match="training field 'ID Volume'"):
+        validate_mock_alignment(
+            mock_mapping_data(), mock_training_selection_rows(5), frame
+        )
 
 
 def test_prediction_generator_default_does_not_write_production_model(tmp_path):

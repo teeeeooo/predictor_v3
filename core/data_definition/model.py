@@ -77,6 +77,7 @@ class MappingRequirement:
     rule_id: str = ""
     data_type: str = "string"
     required: bool = True
+    model_input_enabled: bool = False
 
 
 @dataclass(frozen=True)
