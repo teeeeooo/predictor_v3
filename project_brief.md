@@ -5,15 +5,10 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-The ML / Predictor foundation through Arc 15-FU1 is complete and merged into
-`main`. Arc 13 stabilized ML features, Arc 13.5/13.5A established
-the Feature Catalog Manager, Arc 13.5R established the Predict Schema
-projection foundation, Arc 14 completed Data Mapping Manager/runtime cascade/
-snapshot export, and Arc 15 plus FU1 completed Data Definition and the
-no-behavior-change controller state-builder extraction.
-
-Next is Standard Calculation Capability Extension; afterward, Production ML
-Readiness resumes and later connects predictor outputs to calculator adapters.
+Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is complete for
+repository-automated scope on Draft PR #14 and awaits final audit. It remains
+unmerged; Phase 2 has not started. The earlier ML/Predictor foundation through
+Arc 15-FU1 remains the active owner baseline.
 
 ## Current Owner State
 
@@ -49,6 +44,9 @@ Readiness resumes and later connects predictor outputs to calculator adapters.
 - Arc 15 — Data Definition foundation: complete for automated scope.
 - Arc 15-FU1 — controller state-builder extraction: complete, validated, and
   merged into `main` without changing controller behavior.
+- Train/Admin UI/UX Overhaul Phase 1 — strict bootstrap, populated mapping
+  fixture, dynamic mapping attributes, and aligned mock readiness: complete on
+  Draft PR #14 for automated scope; final audit and merge remain pending.
 
 ### Next Workstream — Standard Calculation Capability Extension
 

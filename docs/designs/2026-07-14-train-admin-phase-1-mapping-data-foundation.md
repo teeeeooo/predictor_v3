@@ -265,3 +265,21 @@ accuracy, or production readiness.
 - Schema live reload.
 - General-purpose legacy CSV import.
 - Calculator changes.
+
+## 12. Phase 1 Closeout
+
+Phase 1 is complete for repository-automated scope on Draft PR #14 and remains
+unmerged pending final audit.
+
+- The checked-in populated mapping is synthetic runtime-equivalent fixture
+  evidence, not production mapping truth.
+- Data Definition-backed dynamic attributes carry type/required metadata and
+  round-trip through Data Mapping projection, validation, persistence, reload,
+  and review export without entering condenser identity.
+- The aligned validation set links the active schema, repository mapping
+  fixture, DEV selector metadata, and unchanged ML training headers.
+- Phase 2 Data Mapping UX, later Train/Admin phases, production migration, and
+  real-data/model-quality work remain outside this closeout.
+- Company-local follow-up must validate real mapping completeness, real
+  training headers/values, actual training execution, accuracy, physical
+  behavior, feature quality, model artifacts, and production readiness.

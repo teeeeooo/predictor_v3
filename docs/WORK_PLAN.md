@@ -18,13 +18,13 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1D aligns the active schema, repository mapping fixture, and
-DEV mock selector/training rows with strict cross-fixture validation.
+workstream. Slices 1A–1D and Phase 1 automated validation are complete on Draft
+PR #14; the phase is held unmerged for final audit.
 
 ## Next Action
 
-Run Phase 1 full validation and complete the milestone closeout while keeping
-Draft PR #14 unmerged for final audit.
+Await final audit of Draft PR #14. Do not start Phase 2 or merge without a
+separate instruction.
 
 ## Active Blockers
 

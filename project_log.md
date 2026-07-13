@@ -29,6 +29,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-14 — Train/Admin Mapping/Data Foundation Phase 1 closeout
+
+### Decision
+
+- Complete Slices 1A–1D for repository-automated scope while keeping PR #14
+  Draft and unmerged pending final audit.
+- Use the strict legacy bootstrap projection as a repository-only populated
+  mapping fixture; never install it as production `data/mapping.json`.
+- Keep Data Definition as dynamic mapping column/type/required owner and Data
+  Mapping as value/persistence owner. Dynamic condenser payload attributes do
+  not participate in conditional F&T/PFC identity.
+- Pair DEV selector metadata with unchanged ML numeric/one-hot training headers
+  and fail fast when schema, mapping options/combinations, or resolved mock
+  values diverge.
+- Treat all fixture and mock success as structural workflow evidence only. Real
+  mapping completeness, training data, model quality, and production readiness
+  remain company-local validation work.
+
 ## 2026-07-13 — Active non-AHRI Calculator core refactor closeout
 
 ### Decision
