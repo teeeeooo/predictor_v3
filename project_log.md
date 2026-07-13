@@ -40,6 +40,10 @@
 - Keep Data Definition as dynamic mapping column/type/required owner and Data
   Mapping as value/persistence owner. Dynamic condenser payload attributes do
   not participate in conditional F&T/PFC identity.
+- Apply that definition-backed payload contract to Refrigerant and Expansion
+  without changing their key-based Predict options. Persist booleans as
+  canonical JSON booleans, reject non-finite mapping numbers, and keep
+  undeclared raw payload keys hidden from editor schema.
 - Pair DEV selector metadata with unchanged ML numeric/one-hot training headers
   and fail fast when schema, mapping options/combinations, or resolved mock
   values diverge.

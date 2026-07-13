@@ -19,11 +19,12 @@
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
 workstream. Slices 1A–1D and Phase 1 automated validation are complete on Draft
-PR #14; the phase is held unmerged for final audit.
+PR #14; the dynamic option-payload/type audit correction is complete locally
+and the phase remains held unmerged for final re-audit.
 
 ## Next Action
 
-Await final audit of Draft PR #14. Do not start Phase 2 or merge without a
+Await final re-audit of Draft PR #14. Do not start Phase 2 or merge without a
 separate instruction.
 
 ## Active Blockers

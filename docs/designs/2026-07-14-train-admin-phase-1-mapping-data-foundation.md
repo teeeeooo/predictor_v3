@@ -1,6 +1,6 @@
 # Train/Admin Phase 1 — Mapping/Data Foundation
 
-Status: proposed phase design  
+Status: implemented; audit correction pending final re-audit
 Date: 2026-07-14  
 Depends on: Train/Admin UI/UX Overhaul Governing Design
 
@@ -158,6 +158,19 @@ The foundation must support:
 7. Export includes it automatically.
 8. Existing unowned runtime sections remain preserved under current policy.
 
+The same definition-backed payload contract applies to the Refrigerant and
+Expansion option groups. Their runtime section keys remain the Predict option
+identity, while declared payload attributes are restored, edited, validated,
+persisted, reloaded, and exported. Raw payload keys remain row backing data but
+do not become visible columns or schema unless Data Definition declares them.
+
+Definition-backed `boolean` values use canonical JSON booleans. Actual booleans
+and the explicit case-insensitive `true`/`false`, `1`/`0`, and `yes`/`no`
+representations are accepted; ambiguous values are rejected. Required `False`
+is present and valid. Every built-in or dynamic numeric mapping value must be a
+finite JSON number, so NaN and positive/negative infinity are rejected before
+atomic persistence. Validation and persistence share these coercion policies.
+
 Data Mapping edits values for the attribute; it does not define the attribute.
 
 ## 7. Fixture and Mock Data Contract
@@ -216,6 +229,10 @@ test explicitly requires synthetic trend behavior.
   never turn unknown raw attributes into editor columns without a requirement.
 - Persist every non-identity ODU Cond Specs column from the editor group;
   condenser identity remains limited to ODU, Fin Type, canonical Pi, and Row.
+- Preserve and round-trip Data Definition-backed Refrigerant/Expansion payload
+  attributes without changing their key-based Predict option contract.
+- Persist boolean attributes as canonical JSON booleans and accept only finite
+  values for every built-in or definition-backed numeric mapping field.
 
 ### Slice 1D — Cross-fixture consistency
 
@@ -246,6 +263,10 @@ merged only after all slices and phase acceptance checks pass.
 - PFC condenser rows project without a Pi selection or duplicated PFC key segment.
 - Mock training consumes only valid mapping options and the active projected
   schema with preserved feature order and types.
+- Refrigerant/Expansion declared payload values round-trip while undeclared raw
+  payload keys remain hidden and do not create schema.
+- Invalid booleans and non-finite built-in or dynamic numbers block Save without
+  replacing the existing mapping file.
 
 ## 10. Validation Purpose
 
@@ -276,6 +297,11 @@ unmerged pending final audit.
 - Data Definition-backed dynamic attributes carry type/required metadata and
   round-trip through Data Mapping projection, validation, persistence, reload,
   and review export without entering condenser identity.
+- That round-trip includes Refrigerant/Expansion option payloads while Predict
+  continues to consume section keys as options; undeclared raw payload remains
+  hidden and never auto-creates schema.
+- Boolean attributes persist as canonical JSON booleans and all mapping numbers
+  are finite; invalid boolean or NaN/infinite inputs block atomic Save.
 - The aligned validation set links the active schema, repository mapping
   fixture, DEV selector metadata, and unchanged ML training headers.
 - Phase 2 Data Mapping UX, later Train/Admin phases, production migration, and

@@ -206,7 +206,9 @@ def _apply_group_requirements(
 
 
 def _row_with_columns(row: MappingEditorRow, columns: tuple[str, ...]) -> MappingEditorRow:
-    values = {column: row.value_for(column, "") for column in columns}
+    values = dict(row.values)
+    for column in columns:
+        values.setdefault(column, "")
     return MappingEditorRow(
         values=values,
         source_key=row.source_key,
@@ -235,10 +237,12 @@ def _option_group(
     rows: list[MappingEditorRow] = []
     if isinstance(section, Mapping):
         key_column = columns[0]
-        rows = [
-            MappingEditorRow(values={key_column: row_key}, source_key=row_key)
-            for row_key in sorted(str(key) for key in section)
-        ]
+        for row_key in sorted(str(key) for key in section):
+            row_value = section.get(row_key)
+            values: dict[str, Any] = {key_column: row_key}
+            if isinstance(row_value, Mapping):
+                values.update({str(key): value for key, value in row_value.items()})
+            rows.append(MappingEditorRow(values=values, source_key=row_key))
     return MappingEditorGroup(
         group_key=group_key,
         label=label,

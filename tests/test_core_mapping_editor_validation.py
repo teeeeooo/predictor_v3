@@ -2,6 +2,8 @@
 
 from dataclasses import replace
 
+import pytest
+
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
@@ -63,6 +65,13 @@ def test_duplicate_key_issue():
 
 def test_invalid_number_issue():
     mapping = {**VALID_MAPPING, "idu": {"IDU-A": {"ID Volume": "bad"}}}
+
+    assert "invalid_number" in _codes(mapping)
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf", float("infinity")])
+def test_non_finite_number_issue(value):
+    mapping = {**VALID_MAPPING, "idu": {"IDU-A": {"ID Volume": value}}}
 
     assert "invalid_number" in _codes(mapping)
 

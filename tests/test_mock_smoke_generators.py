@@ -5,6 +5,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import json
+import inspect
 from pathlib import Path
 
 import pandas as pd
@@ -151,6 +152,14 @@ def test_schema_mapping_and_mock_training_rows_are_aligned():
     assert selections[1]["pi"] == ""
     assert frame.iloc[0]["Cond Area"] == 10
     assert frame.iloc[1]["Cond Area"] == 21
+
+
+def test_mock_value_resolution_uses_shared_condenser_key_policy():
+    source = inspect.getsource(mock_generators._resolved_mapping_values)
+
+    assert "canonical_condenser_pi" in source
+    assert "condenser_spec_key" in source
+    assert '" ".join' not in source
 
 
 @pytest.mark.parametrize(

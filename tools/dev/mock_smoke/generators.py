@@ -12,6 +12,10 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_spec_key,
+)
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.artifacts import MODEL_FILE
 from core.ml.artifacts import TRAIN_DATA_FILE
@@ -143,10 +147,12 @@ def _resolved_mapping_values(
     selection: dict[str, object],
     mapping: dict[str, object],
 ) -> dict[str, object]:
-    cond_key = " ".join(
-        str(selection[key]).strip()
-        for key in ("odu", "fin_type", "pi", "row")
-        if str(selection[key]).strip()
+    fin = selection["fin_type"]
+    cond_key = condenser_spec_key(
+        selection["odu"],
+        fin,
+        canonical_condenser_pi(fin, selection["pi"]),
+        selection["row"],
     )
     return {
         **mapping["idu"][selection["idu"]],

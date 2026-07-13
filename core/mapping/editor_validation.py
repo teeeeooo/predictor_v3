@@ -24,6 +24,10 @@ from core.mapping.editor_projection import (
     REFRIGERANT_GROUP,
 )
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.value_policy import (
+    is_valid_mapping_boolean,
+    is_valid_mapping_number,
+)
 
 NUMERIC_COLUMNS_BY_GROUP = {
     IDU_GROUP: ("ID Volume",),
@@ -43,6 +47,7 @@ def validate_mapping_editor_draft(
         if group.group_key != ODU_COND_SPECS_GROUP:
             issues.extend(_validate_group_keys(group))
         issues.extend(_validate_group_numbers(group))
+        issues.extend(_validate_group_booleans(group))
         issues.extend(_validate_required_columns(group))
     issues.extend(_validate_required_option_group(draft, REFRIGERANT_GROUP, "Refrigerant"))
     issues.extend(_validate_required_option_group(draft, EXPANSION_GROUP, "Expansion"))
@@ -95,7 +100,7 @@ def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidation
     for column in numeric_columns:
         for index, row in enumerate(group.rows, start=1):
             value = row.value_for(column)
-            if _clean(value) and not _is_number(value):
+            if _clean(value) and not is_valid_mapping_number(value):
                 issues.append(
                     _issue(
                         "invalid_number",
@@ -103,6 +108,27 @@ def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidation
                         index,
                         column,
                         f"{column} must be numeric.",
+                        row_key=row.source_key,
+                    )
+                )
+    return issues
+
+
+def _validate_group_booleans(group: MappingEditorGroup) -> list[MappingValidationError]:
+    issues: list[MappingValidationError] = []
+    for column in group.columns:
+        if group.column_data_types.get(column) != "boolean":
+            continue
+        for index, row in enumerate(group.rows, start=1):
+            value = row.value_for(column)
+            if _clean(value) and not is_valid_mapping_boolean(value):
+                issues.append(
+                    _issue(
+                        "invalid_boolean",
+                        group,
+                        index,
+                        column,
+                        f"{column} must be boolean.",
                         row_key=row.source_key,
                     )
                 )
@@ -223,7 +249,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         row_key=row.source_key,
                     )
                 )
-            elif not _is_number(value):
+            elif not is_valid_mapping_number(value):
                 issues.append(
                     _issue(
                         "invalid_number",
@@ -267,13 +293,3 @@ def _clean(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
-
-
-def _is_number(value: Any) -> bool:
-    if isinstance(value, bool):
-        return False
-    try:
-        float(str(value).strip())
-    except (TypeError, ValueError):
-        return False
-    return True
