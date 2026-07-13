@@ -17,6 +17,13 @@ design discovery starts at `docs/designs/legacy/README.md`.
 
 | Record | Current role | Read when |
 | --- | --- | --- |
+| `2026-07-14-train-admin-ui-ux-overhaul-document-set.md` | Navigation index for the Train/Admin overhaul governing design, four implementation phases, and deferred Predict boundary. | Locating the correct Train/Admin phase design before implementation. |
+| `2026-07-14-train-admin-ui-ux-overhaul-governing-design.md` | Governing product direction, owner boundaries, fixture/mock policy, mapping exchange contract, and delivery model for the Train/Admin overhaul. | Planning or reviewing any Train/Admin overhaul phase. |
+| `2026-07-14-train-admin-phase-1-mapping-data-foundation.md` | Phase 1 design for legacy fixture bootstrap, populated mapping state, dynamic attributes, and cross-fixture consistency. | Implementing or reviewing Train/Admin Phase 1. |
+| `2026-07-14-train-admin-phase-2-data-mapping-ux-overhaul.md` | Phase 2 design for the Data Mapping value-editor overhaul and mapping bundle exchange. | Implementing or reviewing Data Mapping UX and import/export. |
+| `2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md` | Phase 3 design for intent-driven Data Definition editing and mapping-attribute handoff. | Implementing or reviewing Data Definition UX. |
+| `2026-07-14-train-admin-phase-4-train-model-shell-ux-overhaul.md` | Phase 4 design for Train/Model, shell readiness, and shared PySide6 UI consolidation. | Implementing or reviewing Train/Model and shell integration. |
+| `2026-07-14-future-predict-ui-ux-overhaul-boundary.md` | Deferred boundary and prerequisites for the later Predict UI/UX overhaul. | Planning Predict UX after Train/Admin Phase 4. |
 | `2026-07-13-all-standards-core-refactor-design.md` | Implemented governing inventory, contract, and private-owner design for active non-AHRI Calculator standard cores. | Refactoring or reviewing EN 14825, ISO 16358, KS C 9306, Brazil, or remaining active Calculator core routes. |
 | `2026-07-12-ahri-seer2-hspf2-core-refactor-design.md` | Implemented governing design for the stable AHRI facades and private variable/legacy engines. | Reviewing or extending AHRI SEER2/HSPF2 core ownership, including future multi-capacity sibling engines. |
 | `2026-07-12-calculator-table-architecture-design.md` | Implemented governing design for the three active Calculator table families. | Reviewing or changing Calculator table-family architecture. |
@@ -40,6 +47,6 @@ Update this index when:
 - a new active design record is created at the root;
 - an active record is absorbed by an owner or moved to legacy;
 - a legacy record is explicitly re-promoted;
-- one of the six active records changes its current role.
+- an active record changes its current role.
 
 Ordinary implementation or wording changes do not update this index.
