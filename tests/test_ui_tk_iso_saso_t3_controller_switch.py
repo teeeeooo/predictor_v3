@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 
 
 @pytest.fixture
@@ -150,6 +151,26 @@ class TestRecalculate:
         assert rows[1][0] == "Required only (3-point)"
         assert rows[1][5] != "-"
 
+        tones_by_label = {
+            row[0]: {
+                section.result_table.table.value_labels[(row_index, column)].semantic_tone
+                for column in range(1, len(section.result_table.column_labels))
+            }
+            for row_index, row in enumerate(rows)
+        }
+        assert tones_by_label["With 35 Min (4-point)"] == {"invalid"}
+        assert tones_by_label["Required only (3-point)"] == {"calculated"}
+        assert section.result_table.table.value_labels[(0, 0)].semantic_tone == "default"
+
+        headers, exported_rows = section.result_table.table_export_data()
+        assert headers == section.result_table.column_labels
+        assert exported_rows == rows
+        section.result_table.copy_table()
+        assert section.result_table.table.frame.clipboard_get().splitlines() == [
+            "\t".join(headers),
+            *("\t".join(row) for row in rows),
+        ]
+
         # Verify only optional field is marked invalid
         assert section.input_table.is_field_invalid("min_35_capacity") is True
         assert section.input_table.is_field_invalid("full_46_capacity") is False
@@ -194,6 +215,14 @@ class TestRecalculate:
         })
         section.recalculate_now()
         assert section.input_table.is_field_invalid("min_35_capacity") is True
+        value_labels = section.result_table.table.value_labels
+        widget_ids = {
+            position: str(label) for position, label in value_labels.items()
+        }
+        assert {
+            value_labels[(0, column)].semantic_tone
+            for column in range(1, len(section.result_table.column_labels))
+        } == {"invalid"}
 
         # 2. Correct the optional input to a valid positive value
         section.input_table.set_values({
@@ -210,6 +239,24 @@ class TestRecalculate:
         assert len(rows) == 2
         assert rows[0][5] != "-"  # 4-point CSPF calculated
         assert rows[1][5] != "-"  # 3-point CSPF calculated
+        assert {
+            position: str(label)
+            for position, label in section.result_table.table.value_labels.items()
+        } == widget_ids
+        for row_index in range(2):
+            assert {
+                section.result_table.table.value_labels[
+                    (row_index, column)
+                ].semantic_tone
+                for column in range(1, len(section.result_table.column_labels))
+            } == {"calculated"}
+        policy = section.result_table.table.policy
+        for row_index in range(2):
+            for column in range(1, len(section.result_table.column_labels)):
+                label = section.result_table.table.value_labels[(row_index, column)]
+                assert label.cget("background") == policy.background(
+                    SemanticTone.CALCULATED
+                )
 
 
 class TestUndoBehavior:

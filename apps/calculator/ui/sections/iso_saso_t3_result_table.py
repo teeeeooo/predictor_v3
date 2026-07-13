@@ -96,20 +96,34 @@ class IsoSasoT3ResultTable:
     def grid(self, **kwargs) -> None:
         self._frame.grid(**kwargs)
 
-    def set_rows(self, rows: tuple[tuple[str, ...], ...], *, status: str) -> None:
+    def set_rows(
+        self,
+        rows: tuple[tuple[str, ...], ...],
+        *,
+        status: str,
+        invalid_row_labels: frozenset[str] = frozenset(),
+    ) -> None:
         self._show_table()
         self.rows = rows
         self.row_labels = tuple(row[0] for row in rows)
         self.table.set_rows(
             rows,
             tones={
-                (row, column): SemanticTone.CALCULATED
+                (row, column): (
+                    SemanticTone.INVALID
+                    if rows[row][0] in invalid_row_labels
+                    else SemanticTone.CALCULATED
+                )
                 for row in range(len(rows))
                 for column in range(1, len(self.column_labels))
             },
         )
         self.status_label.configure(text=status)
-        self.status_label.semantic_tone = SemanticTone.CALCULATED.value
+        self.status_label.semantic_tone = (
+            SemanticTone.INVALID.value
+            if invalid_row_labels
+            else SemanticTone.CALCULATED.value
+        )
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(self.as_text())

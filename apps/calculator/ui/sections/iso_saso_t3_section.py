@@ -181,7 +181,15 @@ class IsoSasoT3Section:
             self._trace_status = None
             self._update_detail_panel()
         if result.rows:
-            self.result_table.set_rows(result.rows, status=result.status_text)
+            self.result_table.set_rows(
+                result.rows,
+                status=result.status_text,
+                invalid_row_labels=(
+                    frozenset({OPTIONAL_TRACE_LABEL})
+                    if result.status == "partial"
+                    else frozenset()
+                ),
+            )
         else:
             self.result_table.set_status(
                 result.status_text,
