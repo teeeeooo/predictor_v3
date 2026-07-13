@@ -17,6 +17,7 @@ from apps.train.adapters.mapping._legacy_validation import (
     reject_duplicate,
 )
 from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
     condenser_identity,
     condenser_requires_pi,
     condenser_spec_key,
@@ -137,7 +138,7 @@ def _parse_condenser(
             field="Pi",
             key=odu,
         )
-    normalized_pi = pi if condenser_requires_pi(fin) else ""
+    normalized_pi = canonical_condenser_pi(fin, pi)
     identity = condenser_identity(odu, fin, normalized_pi, row_value)
     key = condenser_spec_key(odu, fin, normalized_pi, row_value)
     reject_duplicate(

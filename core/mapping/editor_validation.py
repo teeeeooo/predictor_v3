@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.mapping.condenser_identity import condenser_identity, condenser_requires_pi
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_identity,
+    condenser_requires_pi,
+)
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -115,7 +119,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
     if group is None:
         return []
     odu_values = _group_keys(draft.group(ODU_GROUP))
-    seen: set[tuple[str, str, str, str]] = set()
+    seen: set[tuple[str, ...]] = set()
     issues: list[MappingValidationError] = []
     for index, row in enumerate(group.rows, start=1):
         if row.unresolved:
@@ -132,7 +136,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
             continue
         odu = _clean(row.value_for("ODU"))
         fin = _clean(row.value_for("Fin Type"))
-        pi = _clean(row.value_for("Pi"))
+        pi = canonical_condenser_pi(fin, row.value_for("Pi"))
         row_value = _clean(row.value_for("Row"))
         if odu and odu not in odu_values:
             issues.append(
@@ -169,7 +173,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         group,
                         index,
                         "ODU",
-                        "Duplicate ODU + Fin Type + Pi + Row combination.",
+                        "Duplicate condenser specification identity.",
                         row_key=row.source_key,
                     )
                 )

@@ -18,13 +18,13 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1A established the strict legacy-wide bootstrap parser and the
-conditional F&T/PFC condenser identity contract.
+workstream. Slice 1A and its PFC Pi normalization correction establish the strict
+legacy-wide bootstrap parser and conditional F&T/PFC condenser identity contract.
 
 ## Next Action
 
-Start Phase 1 Slice 1B by establishing repository-safe populated mapping fixture
-state without installing production/default `data/mapping.json`.
+Hold before Phase 1 Slice 1B until a separate instruction authorizes populated
+mapping fixture work.
 
 ## Active Blockers
 

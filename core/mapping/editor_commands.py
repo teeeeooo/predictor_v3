@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from core.mapping.condenser_identity import canonical_condenser_pi
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -24,7 +25,7 @@ def set_draft_cell(
         return draft
     row = group.rows[row_index]
     values = dict(row.values)
-    values[column] = value
+    _set_cell_value(group, values, column, value)
     source_key = str(value).strip() if column == group.columns[0] else row.source_key
     return _replace_group(
         draft,
@@ -78,6 +79,25 @@ def delete_draft_row(
 
 def _group_or_none(draft: MappingEditorDraft, group_key: str) -> MappingEditorGroup | None:
     return draft.group(group_key)
+
+
+def _set_cell_value(
+    group: MappingEditorGroup,
+    values: dict[str, object],
+    column: str,
+    value: object,
+) -> None:
+    if group.group_key != "odu_cond_specs":
+        values[column] = value
+        return
+    if column == "Fin Type":
+        values[column] = value
+        values["Pi"] = canonical_condenser_pi(value, values.get("Pi"))
+        return
+    if column == "Pi":
+        values[column] = canonical_condenser_pi(values.get("Fin Type"), value)
+        return
+    values[column] = value
 
 
 def _replace_group(

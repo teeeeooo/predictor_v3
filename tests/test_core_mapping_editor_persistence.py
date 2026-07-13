@@ -1,6 +1,7 @@
 """Mapping editor draft persistence tests."""
 
 import json
+from dataclasses import replace
 
 from core.mapping.editor_persistence import (
     runtime_mapping_from_editor_draft,
@@ -58,6 +59,42 @@ def test_runtime_mapping_from_editor_draft_uses_pfc_identity_without_pi():
             },
             "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
         }
+    )
+
+    runtime = runtime_mapping_from_editor_draft(draft)
+
+    assert runtime["cond_specs"] == {
+        "ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}
+    }
+    assert runtime["odu_cascade"]["ODU-A"]["Available_Pis"] == []
+    assert runtime["pi"] == {}
+
+
+def test_runtime_mapping_normalizes_stale_pfc_pi_before_all_projections():
+    draft = project_runtime_mapping_to_editor_draft(
+        {
+            **VALID_MAPPING,
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["PFC"],
+                    "Available_Pis": [],
+                    "Available_Rows": ["1"],
+                }
+            },
+            "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+        }
+    )
+    group = draft.group("odu_cond_specs")
+    stale_row = replace(
+        group.rows[0],
+        values={**group.rows[0].values, "Pi": "7"},
+    )
+    draft = replace(
+        draft,
+        groups=tuple(
+            replace(group, rows=(stale_row,)) if item.group_key == group.group_key else item
+            for item in draft.groups
+        ),
     )
 
     runtime = runtime_mapping_from_editor_draft(draft)

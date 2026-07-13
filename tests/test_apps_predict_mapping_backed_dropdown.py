@@ -285,9 +285,11 @@ def test_pfc_fin_skips_pi_selection_and_autofills_after_row_selection():
     assert case.input_values["pi"] == ""
     assert controller.dropdown_options_for_case(case.case_id, "pi") == ()
 
+    case.input_values["pi"] = "7"
     case.input_values["row"] = "1"
     controller.handle_cell_edited(case.case_id, "row")
 
+    assert case.input_values["pi"] == ""
     assert case.autofill_values["cond_area"] == 8.5
     assert case.autofill_values["cond_volume"] == 9.5
 

@@ -116,12 +116,13 @@ def test_pfc_cond_specs_fill_without_pi_selection():
     }
 
     result = build_autofill_updates(
-        {"odu": "ODU-A", "fin_type": "PFC", "pi": "", "row": "1"},
+        {"odu": "ODU-A", "fin_type": "PFC", "pi": "7", "row": "1"},
         "row",
         mapping,
     )
     updates = _updates_by_key(result)
 
+    assert updates["pi"] == ""
     assert updates["cond_area"] == 8.5
     assert updates["cond_volume"] == 9.5
 

@@ -18,6 +18,7 @@ from core.mapping.entity_runtime_adapter import (
 )
 from core.mapping.entity_validation import validate_mapping_entity_catalog
 from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
     condenser_identity,
     condenser_requires_pi,
     condenser_spec_key,
@@ -66,6 +67,7 @@ __all__ = [
     "OWNED_RUNTIME_SECTIONS",
     "add_draft_row",
     "adapt_runtime_mapping_data",
+    "canonical_condenser_pi",
     "condenser_identity",
     "condenser_requires_pi",
     "condenser_spec_key",

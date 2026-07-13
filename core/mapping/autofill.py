@@ -3,7 +3,11 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_requires_pi,
+    condenser_spec_key,
+)
 from core.predictor_schema.columns import (
     COLUMNS,
     DROPDOWN_TARGET,
@@ -140,16 +144,26 @@ def _cond_spec_updates(
 ) -> list[AutofillUpdate]:
     odu = _clean(row_values.get("odu"))
     fin = _clean(row_values.get("fin_type"))
-    pi = _clean(row_values.get("pi"))
+    pi = canonical_condenser_pi(fin, row_values.get("pi"))
     row = _clean(row_values.get("row"))
+    updates = [] if condenser_requires_pi(fin) else [AutofillUpdate("pi", "")]
     if not all((odu, fin, row)) or (condenser_requires_pi(fin) and not pi):
-        return [AutofillUpdate("cond_area", ""), AutofillUpdate("cond_volume", "")]
+        return [
+            *updates,
+            AutofillUpdate("cond_area", ""),
+            AutofillUpdate("cond_volume", ""),
+        ]
 
     cond_key = condenser_spec_key(odu, fin, pi, row)
     cond_spec = _mapping_section(mapping_data, "cond_specs").get(cond_key)
     if not isinstance(cond_spec, dict):
-        return [AutofillUpdate("cond_area", ""), AutofillUpdate("cond_volume", "")]
+        return [
+            *updates,
+            AutofillUpdate("cond_area", ""),
+            AutofillUpdate("cond_volume", ""),
+        ]
     return [
+        *updates,
         AutofillUpdate("cond_area", cond_spec.get("Cond Area", "")),
         AutofillUpdate("cond_volume", cond_spec.get("Cond Volume", "")),
     ]

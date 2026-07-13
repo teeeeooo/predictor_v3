@@ -19,6 +19,20 @@ MAPPING = {
 }
 
 
+PFC_MAPPING = {
+    **MAPPING,
+    "odu": {"ODU-A": {"OD Volume": 2.5}},
+    "odu_cascade": {
+        "ODU-A": {
+            "Available_Fins": ["PFC"],
+            "Available_Pis": [],
+            "Available_Rows": ["1"],
+        }
+    },
+    "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+}
+
+
 def test_set_draft_cell_updates_row_value_and_source_key():
     draft = project_runtime_mapping_to_editor_draft(MAPPING)
 
@@ -42,3 +56,15 @@ def test_add_duplicate_and_delete_draft_rows():
 
     draft = delete_draft_row(draft, "idu", 1)
     assert len(draft.group("idu").rows) == 2
+
+
+def test_pfc_pi_edit_and_fin_type_change_clear_pi_in_draft():
+    draft = project_runtime_mapping_to_editor_draft(PFC_MAPPING)
+
+    draft = set_draft_cell(draft, "odu_cond_specs", 0, "Pi", "7")
+    assert draft.group("odu_cond_specs").rows[0].value_for("Pi") == ""
+
+    draft = set_draft_cell(draft, "odu_cond_specs", 0, "Fin Type", "F&T")
+    draft = set_draft_cell(draft, "odu_cond_specs", 0, "Pi", "7")
+    draft = set_draft_cell(draft, "odu_cond_specs", 0, "Fin Type", "PFC")
+    assert draft.group("odu_cond_specs").rows[0].value_for("Pi") == ""
