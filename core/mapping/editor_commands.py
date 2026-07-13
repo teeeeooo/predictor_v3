@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from core.mapping.condenser_identity import canonical_condenser_pi
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_spec_key,
+)
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -26,7 +29,7 @@ def set_draft_cell(
     row = group.rows[row_index]
     values = dict(row.values)
     _set_cell_value(group, values, column, value)
-    source_key = str(value).strip() if column == group.columns[0] else row.source_key
+    source_key = _source_key_after_edit(group, values, column, value, row.source_key)
     return _replace_group(
         draft,
         replace(
@@ -98,6 +101,30 @@ def _set_cell_value(
         values[column] = canonical_condenser_pi(values.get("Fin Type"), value)
         return
     values[column] = value
+
+
+def _source_key_after_edit(
+    group: MappingEditorGroup,
+    values: dict[str, object],
+    column: str,
+    value: object,
+    current_source_key: str,
+) -> str:
+    if group.group_key == "odu_cond_specs" and column in {
+        "ODU",
+        "Fin Type",
+        "Pi",
+        "Row",
+    }:
+        return condenser_spec_key(
+            values.get("ODU"),
+            values.get("Fin Type"),
+            values.get("Pi"),
+            values.get("Row"),
+        )
+    if column == group.columns[0]:
+        return str(value).strip()
+    return current_source_key
 
 
 def _replace_group(

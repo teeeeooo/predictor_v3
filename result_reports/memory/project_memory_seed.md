@@ -401,7 +401,7 @@ entries:
 
   - type: decision
     topic: Arc 14C runtime cascade integration
-    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. Condenser identity is Fin-Type-dependent: F&T and every non-PFC Fin Type use ODU + Fin Type + Pi + Row, while PFC uses ODU + Fin Type + Row. Any PFC Pi placeholder or stale value is canonically empty before editor/runtime key, cascade, option, persistence, converter, or Predict consumption. odu_cascade, cond_specs, fin_type, pi, and row remain runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
+    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. Condenser identity is Fin-Type-dependent: F&T and every non-PFC Fin Type use ODU + Fin Type + Pi + Row, while PFC uses ODU + Fin Type + Row. Any PFC Pi placeholder or stale value is canonically empty before editor/runtime key, cascade, option, persistence, converter, or Predict consumption. The Excel converter rejects incomplete condenser identities before writing, and ODU Cond Specs identity edits keep source_key synchronized with current canonical row values. odu_cascade, cond_specs, fin_type, pi, and row remain runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
     keywords:
       - predictor_v3
       - Arc 14C
@@ -412,7 +412,7 @@ entries:
       - cond_specs
       - autofill
     assertionStatus: verified
-    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a-correction.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a-final-correction.md
 
   - type: decision
     topic: dependency and Excel policy

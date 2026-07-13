@@ -5,8 +5,16 @@ import os
 
 import pandas as pd
 
-from core.mapping.condenser_identity import canonical_condenser_pi, condenser_spec_key
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_requires_pi,
+    condenser_spec_key,
+)
 from core.mapping.paths import MAPPING_JSON_FILE
+
+
+class MappingConversionError(ValueError):
+    """Strict mapping conversion failure with source row context."""
 
 
 def update_mapping_to_json(excel_file):
@@ -47,14 +55,19 @@ def update_mapping_to_json(excel_file):
                 odu_cascade = {}
                 cond_specs = {}
 
-                for _, row in df.iterrows():
-                    odu = str(row.get("ODU", "")).strip()
-                    fin = str(row.get("Fin type", "")).strip()
+                for excel_row, (_, row) in enumerate(df.iterrows(), start=2):
+                    odu = _cell_text(row.get("ODU", ""))
+                    fin = _cell_text(row.get("Fin type", ""))
                     pi = canonical_condenser_pi(fin, row.get("Pi", ""))
-                    row_num = str(row.get("Row", "")).strip()
-
-                    if not odu or odu == "None":
-                        continue
+                    row_num = _cell_text(row.get("Row", ""))
+                    _validate_condenser_identity_fields(
+                        sheet_name,
+                        excel_row,
+                        odu,
+                        fin,
+                        pi,
+                        row_num,
+                    )
 
                     if odu not in odu_cascade:
                         odu_cascade[odu] = {
@@ -102,3 +115,31 @@ def update_mapping_to_json(excel_file):
 
     except Exception as e:
         print(f"\n❌ 업데이트 중 오류 발생: {e}")
+        raise
+
+
+def _validate_condenser_identity_fields(
+    sheet_name: str,
+    excel_row: int,
+    odu: str,
+    fin: str,
+    pi: str,
+    row: str,
+) -> None:
+    context = f"{sheet_name} sheet row {excel_row}"
+    if not odu:
+        raise MappingConversionError(f"{context}: ODU is required.")
+    if not fin:
+        raise MappingConversionError(f"{context}: Fin Type is required.")
+    if not row:
+        raise MappingConversionError(f"{context}: Row is required.")
+    if condenser_requires_pi(fin) and not pi:
+        raise MappingConversionError(
+            f"{context}: Pi is required for Fin Type '{fin}'."
+        )
+
+
+def _cell_text(value) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()

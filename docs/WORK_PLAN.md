@@ -18,8 +18,8 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1A and its PFC Pi normalization correction establish the strict
-legacy-wide bootstrap parser and conditional F&T/PFC condenser identity contract.
+workstream. Slice 1A final correction completes strict legacy/bootstrap and Excel
+converter identity validation plus current ODU Cond Specs editor row identity.
 
 ## Next Action
 
