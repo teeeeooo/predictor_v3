@@ -198,6 +198,11 @@ test explicitly requires synthetic trend behavior.
 - Establish repository-safe populated mapping data for UI and integration tests.
 - Prove all seven user-facing mapping groups can be projected and displayed.
 - Keep fixture data separate from production/default user data.
+- Store the deterministic runtime-equivalent projection at
+  `tests/fixtures/mapping/mapping_runtime_equivalent.json` and compare it
+  exactly with the approved bootstrap output so projection drift is visible.
+- Use that same fixture path for Data Mapping and Predict integration tests;
+  never install it as `data/mapping.json`.
 
 ### Slice 1C — Dynamic attribute round-trip
 

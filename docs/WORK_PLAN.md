@@ -18,13 +18,12 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1A final correction completes strict legacy/bootstrap and Excel
-converter identity validation plus current ODU Cond Specs editor row identity.
+workstream. Slice 1B establishes the deterministic repository runtime-equivalent
+mapping fixture and proves populated Data Mapping and Predict consumption.
 
 ## Next Action
 
-Hold before Phase 1 Slice 1B until a separate instruction authorizes populated
-mapping fixture work.
+Implement Slice 1C dynamic definition-backed mapping attribute round-trip.
 
 ## Active Blockers
 

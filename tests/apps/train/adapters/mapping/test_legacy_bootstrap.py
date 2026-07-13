@@ -1,4 +1,5 @@
 import csv
+import json
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from core.mapping.editor_validation import validate_mapping_editor_draft
 
 
 FIXTURE = Path("tests/fixtures/mapping/mapping_tables_legacy_wide.csv")
+RUNTIME_FIXTURE = Path("tests/fixtures/mapping/mapping_runtime_equivalent.json")
 
 
 def _fixture_rows() -> list[list[str]]:
@@ -159,3 +161,10 @@ def test_parser_result_is_deterministic():
 
     assert first == second
     assert runtime_mapping_from_editor_draft(first) == runtime_mapping_from_editor_draft(second)
+
+
+def test_runtime_fixture_matches_bootstrap_projection_exactly():
+    expected = json.loads(RUNTIME_FIXTURE.read_text(encoding="utf-8"))
+    actual = runtime_mapping_from_editor_draft(parse_legacy_mapping_csv(FIXTURE))
+
+    assert actual == expected

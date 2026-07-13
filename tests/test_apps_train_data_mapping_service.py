@@ -1,6 +1,7 @@
 """Train Data Mapping service foundation tests."""
 
 import json
+from pathlib import Path
 
 from openpyxl import load_workbook
 
@@ -10,6 +11,9 @@ from apps.train.services.data_mapping_service import (
     RuntimeMappingCatalogProvider,
 )
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
+
+
+RUNTIME_FIXTURE = Path("tests/fixtures/mapping/mapping_runtime_equivalent.json")
 
 
 def test_data_mapping_service_returns_catalog_validation_and_current_actions():
@@ -35,6 +39,25 @@ def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     assert not actions["save_mapping_json"].enabled
     assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
     assert "read-only review snapshot" in actions["export_csv_v2"].reason
+
+
+def test_runtime_fixture_loads_all_populated_mapping_groups():
+    snapshot = DataMappingService(
+        RuntimeMappingCatalogProvider(str(RUNTIME_FIXTURE))
+    ).load_snapshot()
+
+    assert snapshot.is_valid
+    assert len(snapshot.draft.groups) == 7
+    assert {group.group_key: len(group.rows) for group in snapshot.draft.groups} == {
+        "idu": 9,
+        "evap_index": 13,
+        "odu": 5,
+        "compressor": 3,
+        "refrigerant": 2,
+        "expansion": 2,
+        "odu_cond_specs": 22,
+    }
+    assert all(not row.unresolved for group in snapshot.draft.groups for row in group.rows)
 
 
 def test_data_mapping_service_reports_resource_status_without_view_path_checks(tmp_path):

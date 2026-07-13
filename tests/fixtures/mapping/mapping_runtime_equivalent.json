@@ -1,0 +1,76 @@
+{
+  "compressor": {
+    "Comp A": {"Comp EER": 3.5, "Comp cc": 13},
+    "Comp B": {"Comp EER": 2.9, "Comp cc": 15},
+    "Comp C": {"Comp EER": 3.4, "Comp cc": 9}
+  },
+  "cond_specs": {
+    "N-SI F&T 5 1": {"Cond Area": 20, "Cond Volume": 30},
+    "N-SI F&T 5 2": {"Cond Area": 40, "Cond Volume": 30},
+    "N-SI F&T 7 2": {"Cond Area": 45, "Cond Volume": 35},
+    "N-SI F&T 7W 2": {"Cond Area": 48, "Cond Volume": 35},
+    "N-SI PFC 1": {"Cond Area": 46, "Cond Volume": 60},
+    "N-V2MD F&T 5 1": {"Cond Area": 9, "Cond Volume": 9},
+    "N-V2MD F&T 5 2": {"Cond Area": 18, "Cond Volume": 18},
+    "N-V2MD F&T 7 1": {"Cond Area": 10, "Cond Volume": 10},
+    "N-V2MD F&T 7 2": {"Cond Area": 20, "Cond Volume": 15},
+    "N-V2MD F&T 7W 2": {"Cond Area": 24, "Cond Volume": 15},
+    "N-V2MD PFC 1": {"Cond Area": 21, "Cond Volume": 30},
+    "N-WW F&T 7 2": {"Cond Area": 36, "Cond Volume": 30},
+    "N-WW F&T 7W 2": {"Cond Area": 40, "Cond Volume": 30},
+    "N-WW PFC 1": {"Cond Area": 39, "Cond Volume": 50},
+    "Q-480 F&T 7 2": {"Cond Area": 50, "Cond Volume": 60},
+    "Q-480 F&T 7W 2": {"Cond Area": 56, "Cond Volume": 60},
+    "Q-480 PFC 1": {"Cond Area": 55, "Cond Volume": 80},
+    "SG85 F&T 5 1": {"Cond Area": 14, "Cond Volume": 18},
+    "SG85 F&T 5 2": {"Cond Area": 28, "Cond Volume": 36},
+    "SG85 F&T 7W 1": {"Cond Area": 16, "Cond Volume": 20},
+    "SG85 F&T 7W 2": {"Cond Area": 32, "Cond Volume": 40},
+    "SG85 PFC 1": {"Cond Area": 33, "Cond Volume": 40}
+  },
+  "evap_index": {
+    "S1-2": {"Evap Area": 5, "Evap Volume": 10, "Size": "1"},
+    "S1-3": {"Evap Area": 7, "Evap Volume": 10, "Size": "1"},
+    "S2-1": {"Evap Area": 9, "Evap Volume": 15, "Size": "2"},
+    "S2-2": {"Evap Area": 10, "Evap Volume": 15, "Size": "2"},
+    "S2-3": {"Evap Area": 11, "Evap Volume": 15, "Size": "2"},
+    "S2-4": {"Evap Area": 12, "Evap Volume": 15, "Size": "2"},
+    "S3-1": {"Evap Area": 14, "Evap Volume": 20, "Size": "3"},
+    "S3-2": {"Evap Area": 14, "Evap Volume": 20, "Size": "3"},
+    "S3-3": {"Evap Area": 15, "Evap Volume": 20, "Size": "3"},
+    "S3-4": {"Evap Area": 15, "Evap Volume": 20, "Size": "3"},
+    "S3-5": {"Evap Area": 15, "Evap Volume": 20, "Size": "3"},
+    "S3-6": {"Evap Area": 15, "Evap Volume": 20, "Size": "3"},
+    "S3-7": {"Evap Area": 15, "Evap Volume": 20, "Size": "3"}
+  },
+  "exp_type": {"Capi": {}, "EEV": {}},
+  "fin_type": {"F&T": {}, "PFC": {}},
+  "idu": {
+    "MOT1": {"ID Volume": 54, "Size": "1"},
+    "MOT2": {"ID Volume": 60, "Size": "2"},
+    "MOT3": {"ID Volume": 62, "Size": "3"},
+    "Q1": {"ID Volume": 52, "Size": "1"},
+    "Q2": {"ID Volume": 57, "Size": "2"},
+    "Q3": {"ID Volume": 63, "Size": "3"},
+    "QF1": {"ID Volume": 52, "Size": "1"},
+    "QF2": {"ID Volume": 57, "Size": "2"},
+    "QF3": {"ID Volume": 63, "Size": "3"}
+  },
+  "odu": {
+    "N-SI": {"OD Volume": 122},
+    "N-V2MD": {"OD Volume": 70},
+    "N-WW": {"OD Volume": 100},
+    "Q-480": {"OD Volume": 180},
+    "SG85": {"OD Volume": 85}
+  },
+  "odu_cascade": {
+    "N-SI": {"Available_Fins": ["F&T", "PFC"], "Available_Pis": ["5", "7", "7W"], "Available_Rows": ["1", "2"]},
+    "N-V2MD": {"Available_Fins": ["F&T", "PFC"], "Available_Pis": ["5", "7", "7W"], "Available_Rows": ["1", "2"]},
+    "N-WW": {"Available_Fins": ["F&T", "PFC"], "Available_Pis": ["7", "7W"], "Available_Rows": ["1", "2"]},
+    "Q-480": {"Available_Fins": ["F&T", "PFC"], "Available_Pis": ["7", "7W"], "Available_Rows": ["1", "2"]},
+    "SG85": {"Available_Fins": ["F&T", "PFC"], "Available_Pis": ["5", "7W"], "Available_Rows": ["1", "2"]}
+  },
+  "pi": {"5": {}, "7": {}, "7W": {}},
+  "ref_type": {"R32": {}, "R410A": {}},
+  "row": {"1": {}, "2": {}}
+}
