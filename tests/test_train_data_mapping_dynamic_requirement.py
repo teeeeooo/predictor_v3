@@ -11,7 +11,8 @@ from PySide6.QtWidgets import QApplication
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
 from apps.train.ui.data_mapping_panel import DataMappingPanel
-from core.data_definition.model import MappingRequirement
+from core.data_definition.model import DataDefinitionRow, MappingRequirement
+from core.data_definition.projection import extract_mapping_requirements
 
 
 class RequirementProvider:
@@ -104,6 +105,78 @@ def test_data_mapping_panel_displays_dynamic_requirement(tmp_path):
         app.processEvents()
 
 
+def test_cond_inner_area_round_trips_through_validation_save_reload_and_export(tmp_path):
+    mapping_file = _mapping_file(tmp_path)
+    requirement = _cond_inner_area_requirement()
+    provider = RequirementProvider((requirement,))
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        provider,
+    )
+
+    initial = service.load_snapshot()
+    group = initial.draft.group("odu_cond_specs")
+    assert group.columns == (
+        "ODU", "Fin Type", "Pi", "Row", "Cond Area", "Cond Volume", "Cond Inner Area"
+    )
+    assert [issue.code for issue in initial.validation_errors] == [
+        "required_mapping_value_missing"
+    ]
+    controller = DataMappingController(service)
+    state = controller.refresh("odu_cond_specs")
+    attribute = next(
+        item for item in state.attributes if item.attribute_key == "Cond Inner Area"
+    )
+    assert attribute.data_type == "number"
+    assert attribute.required
+
+    edited = service.edit_cell("odu_cond_specs", 0, "Cond Inner Area", "2.25")
+    assert edited.is_valid
+    result, saved_snapshot = service.save_mapping()
+    assert result.success
+    assert saved_snapshot.is_valid
+
+    runtime = json.loads(mapping_file.read_text(encoding="utf-8"))
+    assert runtime["cond_specs"]["ODU-A F&T 7 1"] == {
+        "Cond Area": 3.5,
+        "Cond Volume": 4.5,
+        "Cond Inner Area": 2.25,
+    }
+
+    reloaded_service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        provider,
+    )
+    reloaded = reloaded_service.load_snapshot()
+    reloaded_group = reloaded.draft.group("odu_cond_specs")
+    assert reloaded_group.columns[-1] == "Cond Inner Area"
+    assert reloaded_group.rows[0].value_for("Cond Inner Area") == 2.25
+
+    export_file = tmp_path / "mapping-review.json"
+    export_result, _ = reloaded_service.export_snapshot(export_file)
+    export_payload = json.loads(export_file.read_text(encoding="utf-8"))
+    cond_group = next(
+        item for item in export_payload["groups"] if item["key"] == "odu_cond_specs"
+    )
+    assert export_result.success
+    assert cond_group["columns"][-1] == "Cond Inner Area"
+    assert cond_group["rows"][0]["values"]["Cond Inner Area"] == 2.25
+
+
+def test_dynamic_numeric_attribute_rejects_invalid_value(tmp_path):
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(_mapping_file(tmp_path))),
+        RequirementProvider((_cond_inner_area_requirement(),)),
+    )
+
+    snapshot = service.edit_cell(
+        "odu_cond_specs", 0, "Cond Inner Area", "not-a-number"
+    )
+
+    assert [issue.code for issue in snapshot.validation_errors] == ["invalid_number"]
+    assert snapshot.validation_errors[0].field == "Cond Inner Area"
+
+
 def _fan_requirement() -> MappingRequirement:
     return MappingRequirement(
         column_key="fan_diameter",
@@ -114,12 +187,42 @@ def _fan_requirement() -> MappingRequirement:
     )
 
 
+def _cond_inner_area_requirement() -> MappingRequirement:
+    return extract_mapping_requirements(
+        (
+            DataDefinitionRow(
+                column_key="cond_inner_area",
+                label="Cond Inner Area",
+                role="auto",
+                value_source="mapping_lookup",
+                mapping_entity="cond_specs",
+                mapping_attribute="Cond Inner Area",
+                trigger_column="odu",
+                ml_name="Cond Inner Area",
+                data_type="number",
+                required=True,
+            ),
+        )
+    )[0]
+
+
 def _mapping_file(tmp_path):
     mapping_file = tmp_path / "mapping.json"
     mapping_file.write_text(
         json.dumps(
             {
                 "idu": {"IDU-A": {"ID Volume": 1.25}},
+                "odu": {"ODU-A": {"OD Volume": 2.5}},
+                "odu_cascade": {
+                    "ODU-A": {
+                        "Available_Fins": ["F&T"],
+                        "Available_Pis": ["7"],
+                        "Available_Rows": ["1"],
+                    }
+                },
+                "cond_specs": {
+                    "ODU-A F&T 7 1": {"Cond Area": 3.5, "Cond Volume": 4.5}
+                },
                 "ref_type": {"R32": {}},
                 "exp_type": {"EEV": {}},
             }

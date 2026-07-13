@@ -21,6 +21,8 @@ class DataDefinitionRow:
     ml_name: str = ""
     one_hot_group: str = ""
     display_order: int = 0
+    data_type: str = "string"
+    required: bool = False
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,8 @@ class MappingRequirement:
     mapping_attribute: str
     trigger_column: str
     rule_id: str = ""
+    data_type: str = "string"
+    required: bool = True
 
 
 @dataclass(frozen=True)

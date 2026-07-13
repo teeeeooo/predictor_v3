@@ -18,12 +18,12 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slice 1B establishes the deterministic repository runtime-equivalent
-mapping fixture and proves populated Data Mapping and Predict consumption.
+workstream. Slice 1C establishes definition-backed dynamic mapping attribute
+projection, validation, persistence, reload, and export round-trip.
 
 ## Next Action
 
-Implement Slice 1C dynamic definition-backed mapping attribute round-trip.
+Implement Slice 1D schema/mapping/mock-training aligned validation set.
 
 ## Active Blockers
 

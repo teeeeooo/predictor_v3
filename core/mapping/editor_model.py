@@ -32,6 +32,8 @@ class MappingEditorGroup:
     rows: tuple[MappingEditorRow, ...] = ()
     runtime_sections: tuple[str, ...] = ()
     notes: str = ""
+    column_data_types: Mapping[str, str] = field(default_factory=dict)
+    required_columns: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

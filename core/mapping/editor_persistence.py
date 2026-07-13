@@ -119,6 +119,11 @@ def _simple_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
         "OD Volume",
         "Comp EER",
         "Comp cc",
+        *(
+            column
+            for column in group.columns
+            if group.column_data_types.get(column) == "number"
+        ),
     }
     section: dict[str, dict[str, Any]] = {}
     for row in group.rows:
@@ -172,9 +177,16 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
         if pi:
             options["pi"].add(pi)
         options["row"].add(row)
+        identity_columns = {"ODU", "Fin Type", "Pi", "Row"}
         cond_specs[condenser_spec_key(odu, fin, pi, row)] = {
-            "Cond Area": _coerce_number(draft_row.value_for("Cond Area")),
-            "Cond Volume": _coerce_number(draft_row.value_for("Cond Volume")),
+            column: (
+                _coerce_number(draft_row.value_for(column))
+                if column in {"Cond Area", "Cond Volume"}
+                or group.column_data_types.get(column) == "number"
+                else draft_row.value_for(column, "")
+            )
+            for column in group.columns
+            if column not in identity_columns
         }
 
     for odu, values in grouped.items():

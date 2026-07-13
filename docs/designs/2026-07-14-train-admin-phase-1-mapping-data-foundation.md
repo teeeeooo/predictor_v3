@@ -209,6 +209,13 @@ test explicitly requires synthetic trend behavior.
 - Remove fixed-attribute loss from ODU condenser and other affected paths.
 - Prove definition-required attributes appear, validate, save, reload, and export.
 - Preserve existing runtime cascade behavior.
+- Carry Data Definition `data_type` and `required` metadata on the mapping
+  requirement and editor group so validation, presentation metadata, and
+  persistence share the same definition-owned contract.
+- Preserve runtime payload values for later requirement-backed projection, but
+  never turn unknown raw attributes into editor columns without a requirement.
+- Persist every non-identity ODU Cond Specs column from the editor group;
+  condenser identity remains limited to ODU, Fin Type, canonical Pi, and Row.
 
 ### Slice 1D — Cross-fixture consistency
 

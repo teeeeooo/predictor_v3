@@ -43,6 +43,7 @@ def validate_mapping_editor_draft(
         if group.group_key != ODU_COND_SPECS_GROUP:
             issues.extend(_validate_group_keys(group))
         issues.extend(_validate_group_numbers(group))
+        issues.extend(_validate_required_columns(group))
     issues.extend(_validate_required_option_group(draft, REFRIGERANT_GROUP, "Refrigerant"))
     issues.extend(_validate_required_option_group(draft, EXPANSION_GROUP, "Expansion"))
     issues.extend(_validate_odu_cond_specs(draft))
@@ -79,7 +80,19 @@ def _validate_group_keys(group: MappingEditorGroup) -> list[MappingValidationErr
 
 def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidationError]:
     issues: list[MappingValidationError] = []
-    for column in NUMERIC_COLUMNS_BY_GROUP.get(group.group_key, ()):
+    numeric_columns = tuple(
+        dict.fromkeys(
+            (
+                *NUMERIC_COLUMNS_BY_GROUP.get(group.group_key, ()),
+                *(
+                    column
+                    for column in group.columns
+                    if group.column_data_types.get(column) == "number"
+                ),
+            )
+        )
+    )
+    for column in numeric_columns:
         for index, row in enumerate(group.rows, start=1):
             value = row.value_for(column)
             if _clean(value) and not _is_number(value):
@@ -93,6 +106,25 @@ def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidation
                         row_key=row.source_key,
                     )
                 )
+    return issues
+
+
+def _validate_required_columns(group: MappingEditorGroup) -> list[MappingValidationError]:
+    issues: list[MappingValidationError] = []
+    for column in group.required_columns:
+        for index, row in enumerate(group.rows, start=1):
+            if _clean(row.value_for(column)):
+                continue
+            issues.append(
+                _issue(
+                    "required_mapping_value_missing",
+                    group,
+                    index,
+                    column,
+                    f"{column} is required by Data Definition.",
+                    row_key=row.source_key,
+                )
+            )
     return issues
 
 
