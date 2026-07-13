@@ -89,3 +89,40 @@ def test_preferred_size_fit_and_scroll_reset_share_one_controller(tk_root) -> No
     assert preferred[0] > 0
     assert preferred[1] > 0
     assert resets == ["reset"]
+
+
+def test_fit_measures_notebook_chrome_before_selected_allocation(tk_root) -> None:
+    from tkinter import ttk
+
+    owner = ttk.Frame(tk_root)
+    owner.pack(fill="both", expand=True)
+    from apps.calculator.ui.scrollable_frame import ScrollableFrame
+    from apps.calculator.ui.lifecycle import ProfileVisibleContentLifecycleController
+
+    scrollable = ScrollableFrame(owner)
+    scrollable.pack(fill="both", expand=True)
+    notebook = ttk.Notebook(scrollable.content)
+    notebook.pack()
+    small = ttk.Frame(notebook, width=240, height=120)
+    large = ttk.Frame(notebook, width=240, height=360)
+    small.pack_propagate(False)
+    large.pack_propagate(False)
+    notebook.add(small, text="Small")
+    notebook.add(large, text="Large")
+    notebook.select(small)
+    tk_root.update_idletasks()
+    initial_chrome = notebook.winfo_reqheight() - large.winfo_reqheight()
+    assert initial_chrome > 0
+
+    controller = ProfileVisibleContentLifecycleController(
+        owner=owner,
+        content=scrollable.content,
+        scrollable=scrollable,
+        nested_notebook=notebook,
+    )
+    controller.fit_toplevel_to_current_content_once()
+    snapshot = controller.snapshot()
+
+    assert snapshot.diagnostics["chrome_height_estimate"] == initial_chrome
+    assert int(notebook.cget("height")) == small.winfo_reqheight()
+    assert notebook.winfo_reqheight() == small.winfo_reqheight() + initial_chrome

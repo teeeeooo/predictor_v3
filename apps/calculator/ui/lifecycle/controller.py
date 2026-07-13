@@ -34,6 +34,8 @@ class ProfileVisibleContentLifecycleController:
     ) -> None:
         self._owner = owner
         self._scrollable = scrollable
+        self._nested_notebook = nested_notebook
+        self._nested_notebook_active = nested_notebook_active or (lambda: True)
         self._parent_selected_settle_cycles = self._optional_positive_cycles(
             "parent_selected_settle_cycles", parent_selected_settle_cycles
         )
@@ -113,11 +115,25 @@ class ProfileVisibleContentLifecycleController:
 
     def _fit_toplevel_to_current_content(self) -> None:
         self._owner.update_idletasks()
-        self._measurement.sync_selected_notebook_allocation()
+        # Measure sticky notebook chrome before changing its client allocation.
+        self._measurement.snapshot()
+        self._sync_selected_notebook_allocation()
         self._owner.update_idletasks()
         self._scrollable.refresh_scrollregion()
         self._content_form.fit()
         self._owner.update_idletasks()
+
+    def _sync_selected_notebook_allocation(self) -> int | None:
+        notebook = self._nested_notebook
+        if notebook is None or not self._nested_notebook_active():
+            return None
+        tabs = tuple(notebook.tabs())
+        if not tabs:
+            return None
+        selected = notebook.select() or tabs[0]
+        child_height = max(1, notebook.nametowidget(selected).winfo_reqheight())
+        notebook.configure(height=child_height)
+        return child_height
 
     @staticmethod
     def _reset_scroll_after_fit(scrollable: Any) -> AfterFitHook:

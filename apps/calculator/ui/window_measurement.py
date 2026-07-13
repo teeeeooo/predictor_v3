@@ -161,19 +161,6 @@ class TkVisibleContentMeasurement:
             diagnostics=diagnostics,
         )
 
-    def sync_selected_notebook_allocation(self) -> int | None:
-        """Make the notebook request the selected child's settled client height."""
-        notebook = self._nested_notebook
-        if notebook is None or not self._nested_notebook_active():
-            return None
-        tabs = tuple(notebook.tabs())
-        if not tabs:
-            return None
-        selected = notebook.select() or tabs[0]
-        child_height = max(1, notebook.nametowidget(selected).winfo_reqheight())
-        notebook.configure(height=child_height)
-        return child_height
-
     def _measure_nested_notebook(self) -> NestedNotebookMeasurement:
         notebook = self._nested_notebook
         if notebook is None or not self._nested_notebook_active():

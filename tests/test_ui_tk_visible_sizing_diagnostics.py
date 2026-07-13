@@ -121,6 +121,10 @@ def test_en14825_vs_ahri_visible_sizing_diagnostics() -> None:
         assert by_label["EN SEER"]["nested_height_gap"] == (
             by_label["EN SEER return"]["nested_height_gap"]
         )
+        for label in ("ISO HK CSPF", "EN SEER", "AHRI SEER2"):
+            row = by_label[label]
+            assert row["chrome_estimate"][1] > 0
+            assert row["nested_height_gap"] == row["chrome_estimate"][1]
         assert by_label["AHRI HSPF2 batch open"]["root_geometry"] == (
             by_label["AHRI HSPF2 batch close"]["root_geometry"]
         )

@@ -71,6 +71,9 @@ class FakeNotebook:
     def winfo_reqheight(self) -> int:
         return self.notebook_height
 
+    def winfo_reqwidth(self) -> int:
+        return max(tab.winfo_reqwidth() for tab in self._tabs.values()) + 20
+
     def configure(self, *, height: int) -> None:
         self.configured_height = height
 
@@ -138,7 +141,7 @@ def test_compatibility_methods_read_from_snapshots():
     assert measurement.vertical_overflow_delta() == measurement.snapshot().vertical_overflow_delta
 
 
-def test_selected_nested_child_height_is_applied_to_notebook_allocation():
+def test_nested_snapshot_measures_chrome_without_selection_or_allocation_mutation():
     notebook = FakeNotebook(
         {"small": FakeContent(450, 180), "large": FakeContent(900, 900)},
         selected="small",
@@ -151,13 +154,9 @@ def test_selected_nested_child_height_is_applied_to_notebook_allocation():
         nested_notebook=notebook,
     )
 
-    assert measurement.sync_selected_notebook_allocation() == 180
-    assert notebook.configured_height == 180
+    snapshot = measurement.snapshot()
 
-    notebook.select("large")
-    assert measurement.sync_selected_notebook_allocation() == 900
-    assert notebook.configured_height == 900
-
-    notebook.select("small")
-    assert measurement.sync_selected_notebook_allocation() == 180
-    assert notebook.configured_height == 180
+    assert snapshot.diagnostics["chrome_height_estimate"] == 20
+    assert snapshot.diagnostics["nested_current_tab_height"] == 180
+    assert notebook.selected_history == []
+    assert notebook.configured_height is None
