@@ -7,6 +7,11 @@ from pathlib import Path
 import pytest
 
 from core.calculators.standards.ahri_hspf2 import AHRIHSPF2Calculator
+from core.calculators.standards._ahri.hspf2_points import (
+    VARIABLE_OPTIONAL_POINTS,
+    VARIABLE_POINT_KEYS,
+    VARIABLE_REQUIRED_POINTS,
+)
 from core.calculators.standards.iso16358 import ISO16358Calculator
 from core.calculators.standards.ks_c9306 import KSC9306Calculator
 
@@ -292,11 +297,84 @@ def test_ahri_active_alias_allowlist_and_retired_aliases() -> None:
         {"a_full": (24000, 2500)}
     ) == {"A2": (24000, 2500)}
     for retired in (
-        "H1_Full", "H2_Full", "H3_Full", "H21", "AFull",
-        "H12x", "H22x", "unrelated",
+        "H2V", "B2", "C2", "D2", "E2", "H1_Full", "H2_Full",
+        "H3_Full", "H21", "AFull", "H12x", "H22x", "unrelated",
     ):
         with pytest.raises(ValueError, match=retired):
             calculator.normalize_public_test_points({retired: (1, 1)})
+
+
+def test_ahri_variable_allowlist_is_exact_and_distinct_from_full_schema() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    assert VARIABLE_REQUIRED_POINTS == {
+        "H01", "H11", "H1N", "H2Int", "H32", "A2"
+    }
+    assert VARIABLE_OPTIONAL_POINTS == {"H12", "H22", "H42"}
+    assert VARIABLE_POINT_KEYS == {
+        "H01", "H11", "H1N", "H2Int", "H32", "A2",
+        "H12", "H22", "H42",
+    }
+    assert {"H2V", "B2", "C2", "D2", "E2"} <= (
+        calculator._point_resolver.schema_keys() - VARIABLE_POINT_KEYS
+    )
+
+
+def _ahri_required_variable_points() -> dict:
+    return {
+        "H01": (12500, 980),
+        "H11": (12000, 1000),
+        "H1N": (22000, 2000),
+        "H2Int": (13000, 1200),
+        "H32": (22000, 2100),
+        "A2": (24000, 2500),
+    }
+
+
+@pytest.mark.parametrize(
+    "unsupported",
+    [
+        "H2V", "B2", "C2", "D2", "E2", "H1_Full", "H2_Full",
+        "H12x", "H22x", "unrelated", 7,
+    ],
+)
+def test_ahri_variable_calculation_rejects_unsupported_point_before_fallback(
+    unsupported,
+) -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    points = _ahri_required_variable_points()
+    points[unsupported] = (1, 1)
+    with pytest.raises(
+        ValueError,
+        match="variable-capacity test point key",
+    ):
+        calculator.calculate_hspf2_v3(
+            points,
+            defrost_t_test_minutes=90,
+            defrost_t_max_minutes=720,
+        )
+
+
+def test_ahri_required_only_points_keep_h12_h22_standard_fallbacks() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    result = calculator.calculate_hspf2_v3(
+        _ahri_required_variable_points(),
+        defrost_t_test_minutes=90,
+        defrost_t_max_minutes=720,
+    )
+    assert result["summary"]["metadata"]["h12_source"] == "eq_11_185"
+    assert result["summary"]["metadata"]["h22_source"] == "eq_11_44_11_50"
+
+
+def test_ahri_all_optional_variable_points_are_accepted() -> None:
+    calculator = AHRIHSPF2Calculator(str(REGIONS / "usa_hspf2.json"))
+    points = {
+        **_ahri_required_variable_points(),
+        "H12": (24000, 2200),
+        "H22": (23200, 2160),
+        "H42": (18000, 1900),
+    }
+    normalized = calculator.normalize_public_test_points(points)
+    assert set(normalized) == VARIABLE_POINT_KEYS
 
 
 def test_ahri_canonical_point_keys_remain_case_insensitive() -> None:

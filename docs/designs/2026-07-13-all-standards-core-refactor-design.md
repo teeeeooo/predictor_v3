@@ -314,3 +314,10 @@ any explicit user load line is considered. It also aligns every active KS owner
 document on `rated_cooling_capacity × 0.82`. The dated remaining-fallback
 closure record supersedes the prior final-audit record for these validation
 details.
+
+AHRI variable normalization is further narrowed from the full HSPF2 schema to
+the nine points actually consumed by the engine: required H01/H11/H1N/H2Int/
+H32/A2 and optional H12/H22/H42. The full schema remains available for metadata
+and sibling products, but H2V and cooling B2/C2/D2/E2 no longer pass variable
+normalization. This exact-allowlist correction supersedes the prior closure
+record for the AHRI variable point boundary only.

@@ -211,6 +211,10 @@ Two-stage/triple-capacity는 현재 variable formula body에 조건문으로 누
 - **대상 규격**: AHRI 210/240-2026 (Region IV 기준)
 - **핵심 엔진**: `core/calculators/standards/_ahri/hspf2_variable.py` (stable `ahri_hspf2.py` facade를 통해 호출)
 - **입력 체계**: `normalize_public_test_points()`를 통해 active public alias를 canonical 키(H01, H11, H12, H1N, H22, H2Int, H32, H42, A2)로 통합 관리함.
+- **Variable exact allowlist**: required `H01`, `H11`, `H1N`, `H2Int`,
+  `H32`, `A2`; optional `H12`, `H22`, `H42`만 계산 입력으로
+  허용한다. 전체 schema의 `H2V`, `B2`, `C2`, `D2`, `E2`는
+  variable engine이 소비하지 않으므로 fail-fast한다.
 - **Unit type**: derived H12는 split(`split`, `split_system`,
   `split-system`) 또는 packaged(`single_package`, `single-package`,
   `package`, `packaged`)만 허용한다. 명시 selector 오타/null과

@@ -122,7 +122,7 @@ entries:
 
   - type: decision
     topic: calculator strict selector and retired-surface boundary
-    content: Explicit invalid calculator selectors fail fast rather than selecting another calculation. ISO CSPF allows measured/declared building load and capacity_linear/iso_boundary_eer power interpolation while preserving omitted-key defaults; facade reassignment uses the same context allowlist. KS CSPF requires its non-empty point/derived schema, measured/declared load source, and ks_intersection; every default rule requires a non-self source and finite positive capacity/power factors. KS HSPF requires ks_c_9306_hspf, required points, unique finite-numeric `tj`/`nj` bin rows, and a finite positive rated_cooling_capacity config load line before any user load-line override is considered. AHRI HSPF2 config/context/facade contains no v2 bin/temperature/constants surface; variable public alias normalization is exactly A_Full to A2 and rejects every unknown key before H12/H22 fallback, while dual/triple aliases remain product-local. Derived H12 accepts only normalized split or packaged unit types and rejects conflicts.
+    content: Explicit invalid calculator selectors fail fast rather than selecting another calculation. ISO CSPF allows measured/declared building load and capacity_linear/iso_boundary_eer power interpolation while preserving omitted-key defaults; facade reassignment uses the same context allowlist. KS CSPF requires its non-empty point/derived schema, measured/declared load source, and ks_intersection; every default rule requires a non-self source and finite positive capacity/power factors. KS HSPF requires ks_c_9306_hspf, required points, unique finite-numeric `tj`/`nj` bin rows, and a finite positive rated_cooling_capacity config load line before any user load-line override is considered. AHRI HSPF2 config/context/facade contains no v2 bin/temperature/constants surface; variable public alias normalization is exactly A_Full to A2 and accepts only required H01/H11/H1N/H2Int/H32/A2 plus optional H12/H22/H42. Full-schema H2V and B2/C2/D2/E2 are rejected before H12/H22 fallback, while dual/triple aliases remain product-local. Derived H12 accepts only normalized split or packaged unit types and rejects conflicts.
     keywords:
       - predictor_v3
       - silent selector
@@ -133,7 +133,7 @@ entries:
       - public alias
       - unit type
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-13-all-standards-final-audit-correction.md; result_reports/records/2026-07/2026-07-13-remaining-silent-fallback-closure.md
+    source: result_reports/records/2026-07/2026-07-13-all-standards-final-audit-correction.md; result_reports/records/2026-07/2026-07-13-remaining-silent-fallback-closure.md; result_reports/records/2026-07/2026-07-13-ahri-variable-exact-point-allowlist.md
 
   - type: decision
     topic: calculator envelope and ML boundary

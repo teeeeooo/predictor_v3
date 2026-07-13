@@ -6,6 +6,7 @@ Pre-cutover summaries remain the discovery layer under
 
 | Date | Topic | Tags | Decision / Reason | Record |
 | --- | --- | --- | --- | --- |
+| 2026-07-13 | AHRI variable exact point allowlist | ahri210240, hspf2, variable-capacity, point-schema, correction | Separate the full HSPF2 schema from the nine points actually consumed by variable HSPF2 so unused canonical keys cannot be silently ignored. | `result_reports/records/2026-07/2026-07-13-ahri-variable-exact-point-allowlist.md` |
 | 2026-07-13 | Remaining silent fallback closure | calculator, iso16358, ks-c9306, ahri210240, validation, correction | Close post-construction selector, unknown point, derived-rule, bin-row, and load-line schema fallbacks while preserving active standard results. | `result_reports/records/2026-07/2026-07-13-remaining-silent-fallback-closure.md` |
 | 2026-07-13 | All standards final audit correction | calculator, iso16358, ks-c9306, ahri210240, selector, schema, correction | Remove final AHRI v2 config surfaces and fail fast on explicit invalid ISO/KS/AHRI selectors without changing active golden behavior. | `result_reports/records/2026-07/2026-07-13-all-standards-final-audit-correction.md` |
 | 2026-07-13 | Silent fallback retirement | calculator, en14825, iso16358, ks-c9306, ahri210240, fail-fast, correction | Retire unsupported cross-standard and historical calculation fallbacks while preserving active formulas, aliases, routes, and golden results. | `result_reports/records/2026-07/2026-07-13-silent-fallback-retirement.md` |

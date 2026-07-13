@@ -5,6 +5,11 @@ from typing import Mapping, Optional
 
 
 CapacityPower = tuple[float, float]
+VARIABLE_REQUIRED_POINTS = frozenset(
+    {"H01", "H11", "H1N", "H2Int", "H32", "A2"}
+)
+VARIABLE_OPTIONAL_POINTS = frozenset({"H12", "H22", "H42"})
+VARIABLE_POINT_KEYS = VARIABLE_REQUIRED_POINTS | VARIABLE_OPTIONAL_POINTS
 
 
 @dataclass(frozen=True)
@@ -67,15 +72,19 @@ class HSPF2PointResolver:
 
     def normalize_public_test_points(self, test_points: dict) -> dict:
         alias_map = self.test_point_aliases.get("public_to_canonical", {})
-        schema_keys = self.schema_keys()
         canonical_points = {}
         for key, value in test_points.items():
             if not isinstance(key, str):
-                raise ValueError(f"Unsupported AHRI HSPF2 test point key: {key!r}")
+                raise ValueError(
+                    "Unsupported AHRI HSPF2 variable-capacity test point key: "
+                    f"{key!r}"
+                )
             alias_key = self.match_key_case_insensitive(key, alias_map.keys())
             canonical_key = alias_map.get(alias_key, key)
-            canonical_key = self.match_key_case_insensitive(canonical_key, schema_keys)
-            if canonical_key not in schema_keys:
+            canonical_key = self.match_key_case_insensitive(
+                canonical_key, VARIABLE_POINT_KEYS
+            )
+            if canonical_key not in VARIABLE_POINT_KEYS:
                 raise ValueError(
                     f"Unsupported AHRI HSPF2 variable-capacity test point key: {key!r}"
                 )
@@ -154,8 +163,7 @@ class HSPF2PointResolver:
         )
 
     def resolve_variable_capacity(self, canonical_points: dict, kwargs: dict) -> ResolvedHSPF2Points:
-        required_points = ("H01", "H11", "H1N", "H2Int", "H32", "A2")
-        missing = [key for key in required_points if key not in canonical_points]
+        missing = sorted(VARIABLE_REQUIRED_POINTS - canonical_points.keys())
         if missing:
             raise ValueError(
                 "HSPF2 v3 AHRI path requires canonical AHRI test points: " + ", ".join(missing)
