@@ -87,17 +87,26 @@ class ResultPanel:
         self._hide_text_mode()
         if self._can_update_in_place(summaries):
             self._update_summary_values(summaries)
+            for summary in summaries:
+                self._set_summary_value_tone(summary.title, SemanticTone.CALCULATED)
         else:
             external_focus = self._capture_external_focus()
             self._clear_summary_tables()
             for row, summary in enumerate(summaries):
-                self._render_summary_table(row, summary)
+                self._render_summary_table(
+                    row, summary, value_tone=SemanticTone.CALCULATED
+                )
             if external_focus is not None:
                 self._restore_focus_if_alive(external_focus)
         self._set_copy_text("\n\n".join(summary.as_text() for summary in summaries))
 
     def show_placeholder(
-        self, *, title: str, field_labels: Iterable[str], status: str = "입력 대기"
+        self,
+        *,
+        title: str,
+        field_labels: Iterable[str],
+        status: str = "입력 대기",
+        tone: SemanticTone = SemanticTone.PENDING,
     ) -> None:
         """Reserve the final summary shape without creating a logical result."""
 
@@ -110,9 +119,10 @@ class ResultPanel:
         self._hide_text_mode()
         if self._can_update_in_place((placeholder,)):
             self._update_summary_values((placeholder,))
+            self._set_summary_value_tone(title, tone)
         else:
             self._clear_summary_tables()
-            self._render_summary_table(0, placeholder)
+            self._render_summary_table(0, placeholder, value_tone=tone)
         self._set_copy_text(status)
 
     def clear(self) -> None:
@@ -168,7 +178,9 @@ class ResultPanel:
             uniform="summary_fields",
         )
 
-    def _render_summary_table(self, row: int, summary: ResultSummary) -> None:
+    def _render_summary_table(
+        self, row: int, summary: ResultSummary, *, value_tone: SemanticTone
+    ) -> None:
         card = create_grid_surface(self._summary_holder)
         card.grid(
             row=row,
@@ -205,7 +217,7 @@ class ResultPanel:
             pady=(0, 1),
         )
         title_label.surface_role = "summary_title"
-        self._render_result_values(card, summary)
+        self._render_result_values(card, summary, tone=value_tone)
         self._render_status(card, summary, row=3)
 
     def _render_status(
@@ -234,7 +246,9 @@ class ResultPanel:
         status.surface_role = "summary_status"
         self.summary_status_labels[summary.title] = status
 
-    def _render_result_values(self, card: tk.Frame, summary: ResultSummary) -> None:
+    def _render_result_values(
+        self, card: tk.Frame, summary: ResultSummary, *, tone: SemanticTone
+    ) -> None:
         headers = []
         values = []
         value_labels: list[tk.Label] = []
@@ -257,14 +271,14 @@ class ResultPanel:
                 card,
                 row=2,
                 column=column,
-                background=card.visual_policy.background(SemanticTone.CALCULATED),
+                background=card.visual_policy.background(tone),
             )
             value_label = create_text_label(
                 value_cell,
                 text=value,
                 width=None,
                 alignment=AlignmentRole.NUMERIC_RESULT,
-                tone=SemanticTone.CALCULATED,
+                tone=tone,
             )
             headers.append(header)
             values.append(value_cell)
@@ -272,6 +286,21 @@ class ResultPanel:
         self.summary_header_cells[summary.title] = tuple(headers)
         self.summary_value_cells[summary.title] = tuple(values)
         self.summary_value_labels[summary.title] = tuple(value_labels)
+
+    def _set_summary_value_tone(self, title: str, tone: SemanticTone) -> None:
+        card = self.summary_tables.get(title)
+        if card is None:
+            return
+        background = card.visual_policy.background(tone)
+        for cell in self.summary_value_cells.get(title, ()):
+            cell.configure(background=background)
+            cell.semantic_background = background
+        for label in self.summary_value_labels.get(title, ()):
+            label.configure(background=background)
+            label.semantic_tone = tone.value
+        status_label = self.summary_status_labels.get(title)
+        if status_label is not None:
+            status_label.semantic_tone = tone.value
 
     def _clear_summary_tables(self) -> None:
         for child in self._summary_holder.winfo_children():

@@ -388,11 +388,50 @@ def test_iso_iseer_2point_invalid_input_shows_safe_status(tk_root):
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "two_point_result_status"
     assert section.result_table.status_label.cget("text") == "입력 오류: 숫자 입력을 확인하세요."
+    assert {
+        label.semantic_tone
+        for (row, column), label in section.result_table.table.value_labels.items()
+        if column > 0
+    } == {"invalid"}
 
     assert section.input_table.set_value("full_power", "900") is True
     section._auto_calc.flush_now()
     assert len(_two_point_result_values(tab)) == 2
+    assert {
+        label.semantic_tone
+        for (row, column), label in section.result_table.table.value_labels.items()
+        if column > 0
+    } == {"calculated"}
     assert set(section.result_table.row_labels) == {"ISO 16358-1", "India ISEER"}
+
+
+def test_iso_and_saso_initial_placeholders_use_pending_canonical_rows(tk_root):
+    from apps.calculator.application.saso_t3.usecase import (
+        OPTIONAL_TRACE_LABEL,
+        REQUIRED_TRACE_LABEL,
+    )
+
+    tab = _make_tab(tk_root, with_sample=False)
+    two_point = tab._two_point_section.result_table
+    assert two_point.rows == ()
+    assert {
+        label.semantic_tone
+        for (row, column), label in two_point.table.value_labels.items()
+        if column > 0
+    } == {"pending"}
+
+    _select_mode(tab, "SASO T3")
+    saso = tab._saso_t3_section.result_table
+    assert tuple(row[0] for row in saso.table.rows) == (
+        REQUIRED_TRACE_LABEL,
+        OPTIONAL_TRACE_LABEL,
+    )
+    assert saso.rows == ()
+    assert {
+        label.semantic_tone
+        for (row, column), label in saso.table.value_labels.items()
+        if column > 0
+    } == {"pending"}
 
 
 def test_iso_iseer_detail_panel_opens_with_bin_details(tk_root):
@@ -922,6 +961,11 @@ def test_saso_t3_required_input_invalid_shows_safe_status(tk_root):
     assert section.result_table.rows == ()
     assert section.result_table.row_labels == ()
     assert section.result_table.status_label.surface_role == "saso_t3_result_status"
+    assert {
+        label.semantic_tone
+        for (row, column), label in section.result_table.table.value_labels.items()
+        if column > 0
+    } == {"invalid"}
     assert "Traceback" not in text
     assert "{" not in text
     assert "None" not in text

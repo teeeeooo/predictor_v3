@@ -13,6 +13,7 @@ from tkinter import ttk
 from apps.calculator.application.hong_kong_cspf import HongKongCspfUseCase
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.layout_constants import (
     BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
@@ -224,6 +225,11 @@ class HongKongCspfSection:
                 title=result.summary_title,
                 field_labels=("CSPF", "CSTL [kWh]", "CSEC [kWh]"),
                 status=result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
             )
             return
         self._trace_rows = list(result.detail_rows)

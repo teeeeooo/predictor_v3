@@ -9,6 +9,7 @@ from tkinter import ttk
 
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.layout_constants import (
     BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
@@ -161,7 +162,9 @@ class IsoIseer2PointSection:
         result = self._usecase.calculate(self.input_table.get_text_values())
         if result.status == "empty":
             self._clear_trace(result.detail_status or result.status_text)
-            self.result_table.set_status(result.status_text)
+            self.result_table.set_status(
+                result.status_text, tone=SemanticTone.PENDING
+            )
             return
         if not result.is_ok:
             self._clear_trace(result.detail_status or result.status_text)

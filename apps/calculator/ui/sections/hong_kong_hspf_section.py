@@ -17,6 +17,7 @@ from apps.calculator.ui.batch_dialogs.profiles.hong_kong_hspf import (
     HongKongHspfBatchDialog,
 )
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.layout_constants import (
     BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
@@ -200,6 +201,11 @@ class HongKongHspfSection:
                 title=result.summary_title,
                 field_labels=("HSPF", "HSTL [kWh]", "HSEC [kWh]"),
                 status=result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
             )
             return
         self._trace_rows = list(result.detail_rows)

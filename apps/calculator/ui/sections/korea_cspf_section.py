@@ -241,6 +241,11 @@ class KoreaCspfSection:
                 title=result.summary_title,
                 field_labels=("CSPF", "CSTL [kWh]", "CSEC [kWh]"),
                 status=result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
             )
             return
         self._trace_rows = list(result.detail_rows)

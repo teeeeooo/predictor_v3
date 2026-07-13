@@ -23,6 +23,7 @@ from apps.calculator.ui.brazil_cspf.export_adapter import (
 )
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.brazil_cspf.result_surface import BrazilCspfResultTable
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.table.controller import TkTableController
 from apps.calculator.ui.table_csv_export import export_table_to_csv
 
@@ -161,7 +162,14 @@ class BrazilCspfSection:
         result = self._usecase.calculate(self.input_table.get_text_values())
         if not result.is_ok:
             self._clear_detail(result.detail_status or result.status_text)
-            self.result_table.set_status(result.status_text)
+            self.result_table.set_status(
+                result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
+            )
             return
         self._detail_sources = dict(result.detail_sources or {})
         self._detail_summaries = dict(result.detail_summaries or {})

@@ -59,16 +59,30 @@ class IsoIseer2PointResultTable:
         self._text = tk.Text(self._frame, height=6, width=70, wrap="none")
         self._text.configure(state=tk.DISABLED)
 
-    def show_placeholder(self, row_labels: tuple[str, ...], *, status: str) -> None:
+    def show_placeholder(
+        self,
+        row_labels: tuple[str, ...],
+        *,
+        status: str,
+        tone: SemanticTone = SemanticTone.PENDING,
+    ) -> None:
         """Show the final table footprint while retaining an empty result state."""
         self.rows = ()
         self.row_labels = ()
         self._placeholder_row_labels = row_labels
+        rows = tuple(
+            (label, *("-" for _ in self.column_labels[1:])) for label in row_labels
+        )
         self.table.set_rows(
-            tuple((label, *("-" for _ in self.column_labels[1:])) for label in row_labels)
+            rows,
+            tones={
+                (row, column): tone
+                for row in range(len(rows))
+                for column in range(1, len(self.column_labels))
+            },
         )
         self._show_table()
-        self._set_status(status)
+        self._set_status(status, tone=tone)
         self._set_copy_text(status)
 
     def grid(self, **kwargs: object) -> None:
@@ -86,11 +100,17 @@ class IsoIseer2PointResultTable:
             },
         )
         self._show_table()
-        self._set_status(status)
+        self._set_status(status, tone=SemanticTone.CALCULATED)
         self._set_copy_text(self.as_text())
 
-    def set_status(self, status: str) -> None:
-        self.show_placeholder(self._placeholder_row_labels or ("-",), status=status)
+    def set_status(
+        self, status: str, *, tone: SemanticTone = SemanticTone.INVALID
+    ) -> None:
+        self.show_placeholder(
+            self._placeholder_row_labels or ("-",),
+            status=status,
+            tone=tone,
+        )
 
     def clear(self) -> None:
         self.rows = ()
@@ -131,8 +151,9 @@ class IsoIseer2PointResultTable:
         if not self.table.winfo_manager():
             self.table.pack(side=tk.TOP, anchor="w")
 
-    def _set_status(self, status: str) -> None:
+    def _set_status(self, status: str, *, tone: SemanticTone) -> None:
         self.status_label.configure(text=status)
+        self.status_label.semantic_tone = tone.value
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
 

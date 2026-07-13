@@ -9,11 +9,12 @@ from tkinter import ttk
 
 from apps.calculator.application.saso_t3 import SasoT3UseCase
 from apps.calculator.application.saso_t3.usecase import (
-    OPTIONAL_TRACE_LABEL as _OPTIONAL_TRACE_LABEL,
-    REQUIRED_TRACE_LABEL as _REQUIRED_TRACE_LABEL,
+    OPTIONAL_TRACE_LABEL,
+    REQUIRED_TRACE_LABEL,
 )
 from apps.calculator.ui.auto_calc import DebouncedAutoCalc
 from apps.calculator.ui.table.controller import TkTableController
+from apps.calculator.ui.table.visual_policy import SemanticTone
 from apps.calculator.ui.layout_constants import (
     BATCH_INPUT_BUTTON_TEXT,
     ISO_SECTION_BLOCK_GAP,
@@ -23,10 +24,6 @@ from apps.calculator.ui.metric_input_table import MetricInputTable
 from apps.calculator.ui.sections.bin_detail_panel import BinDetailPanel, BinDetailSource
 from apps.calculator.ui.sections.detail_visibility import DetailPanelVisibility
 from apps.calculator.ui.sections.iso_saso_t3_result_table import IsoSasoT3ResultTable
-from apps.calculator.application.saso_t3.usecase import (
-    OPTIONAL_TRACE_LABEL,
-    REQUIRED_TRACE_LABEL,
-)
 from apps.calculator.ui.result_actions import add_result_actions
 from apps.calculator.ui.batch_dialogs.dialog_handle import BatchDialogHandle
 from apps.calculator.ui.batch_dialogs.profiles.saso_t3 import SasoT3BatchDialog
@@ -133,8 +130,8 @@ class IsoSasoT3Section:
         self.export_button = self.result_actions.export_button
         self.detail_panel = BinDetailPanel(
             self._frame,
-            source_labels=(_REQUIRED_TRACE_LABEL, _OPTIONAL_TRACE_LABEL),
-            default_source=_OPTIONAL_TRACE_LABEL,
+            source_labels=(REQUIRED_TRACE_LABEL, OPTIONAL_TRACE_LABEL),
+            default_source=OPTIONAL_TRACE_LABEL,
             csv_filename="saso_t3_bin_detail.csv",
         )
         self._detail_visibility = DetailPanelVisibility(
@@ -186,7 +183,14 @@ class IsoSasoT3Section:
         if result.rows:
             self.result_table.set_rows(result.rows, status=result.status_text)
         else:
-            self.result_table.set_status(result.status_text)
+            self.result_table.set_status(
+                result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
+            )
 
     def _on_optional_min_toggled(self) -> None:
         self._sync_optional_min_state()
@@ -237,7 +241,7 @@ class IsoSasoT3Section:
             self.detail_panel.set_status(self._trace_status)
             return
         sources = {}
-        for label in (_OPTIONAL_TRACE_LABEL, _REQUIRED_TRACE_LABEL):
+        for label in (OPTIONAL_TRACE_LABEL, REQUIRED_TRACE_LABEL):
             if label in self._trace_results:
                 sources[label] = BinDetailSource(
                     rows=tuple(self._trace_results[label]),
@@ -247,7 +251,7 @@ class IsoSasoT3Section:
                 sources[label] = BinDetailSource(status=self._detail_statuses[label])
         self.detail_panel.set_sources(
             sources,
-            source_order=(_OPTIONAL_TRACE_LABEL, _REQUIRED_TRACE_LABEL),
+            source_order=(OPTIONAL_TRACE_LABEL, REQUIRED_TRACE_LABEL),
             panel_status="상세 데이터 없음",
         )
 

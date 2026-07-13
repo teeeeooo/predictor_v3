@@ -57,6 +57,27 @@ def _raw_values() -> dict[str, str]:
     }
 
 
+def test_brazil_initial_placeholder_is_pending_and_not_exportable(tk_root):
+    section = BrazilCspfSection(tk_root)
+    table = section.result_table
+
+    assert table.rows == ()
+    assert table.rules == ()
+    assert table.final_status is None
+    assert {
+        label.semantic_tone
+        for (row, column), label in table.result_value_labels.items()
+        if column > 0
+    } == {"pending"}
+    assert {
+        label.semantic_tone
+        for (row, column), label in table.rule_value_labels.items()
+        if column > 0
+    } == {"pending"}
+    assert table.final_status_label.semantic_tone == "pending"
+    assert table.table_export_data() == (("Status",), (("입력 대기",),))
+
+
 def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     tk_root, tmp_path, monkeypatch
 ):
@@ -110,6 +131,7 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
     assert table.rule_value_labels[(0, 4)].cget("background") == TABLE_PASS_BG
     assert table.rule_value_labels[(1, 4)].cget("background") == TABLE_ERROR_BG
     assert table.final_status_label.cget("background") == TABLE_PASS_BG
+    assert table.final_status_label.semantic_tone == "pass"
     expected_tsv = "\n".join(
         (
             "[Result]",
@@ -168,6 +190,12 @@ def test_brazil_result_surface_renders_two_rows_rules_and_export_data(
         "Rule 1", "-", "-", "-", "-", "Rule 2", "-", "-", "-", "-"
     )
     assert table.final_status_label.cget("text") == "최종 판정: -"
+    assert table.final_status_label.semantic_tone == "invalid"
+    assert {
+        label.semantic_tone
+        for (row, column), label in table.result_value_labels.items()
+        if column > 0
+    } == {"invalid"}
     assert table.table_export_data() == (
         ("Status",),
         (("입력 오류: 숫자 입력을 확인하세요.",),),

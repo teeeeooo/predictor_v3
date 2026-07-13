@@ -55,6 +55,18 @@ def test_korea_tab_contains_cspf_hspf_metric_notebook(tk_root) -> None:
     assert korea.hspf_frame.master is korea.metric_notebook
     assert korea.cspf_section.result_panel is not None
     assert korea.hspf_section.result_panel is not None
+    for metric, section in (
+        ("CSPF", korea.cspf_section),
+        ("HSPF", korea.hspf_section),
+    ):
+        panel = section.result_panel
+        assert tuple(
+            label.cget("text") for label in panel.summary_value_labels[metric]
+        ) == ("-", "-", "-")
+        assert {label.semantic_tone for label in panel.summary_value_labels[metric]} == {
+            "pending"
+        }
+        assert panel._summaries == ()
     assert korea.cspf_section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert korea.hspf_section.detail_toggle.cget("text") == "상세 보기 ↓"
     assert not korea.cspf_section.detail_panel.is_visible()

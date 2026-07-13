@@ -15,6 +15,7 @@ import pytest
 from apps.calculator.ui.layout_constants import TABLE_PASS_BG
 from apps.calculator.ui.result_models import ResultSummary
 from apps.calculator.ui.result_panel import ResultPanel
+from apps.calculator.ui.table.visual_policy import SemanticTone
 
 
 @pytest.fixture
@@ -81,6 +82,34 @@ class TestStableUpdate:
         assert value_cell.cget("background") == TABLE_PASS_BG
         assert value_cell.semantic_background == TABLE_PASS_BG
         assert value_cell.cget("background") == labels[0].cget("background")
+
+    def test_placeholder_invalid_and_valid_tones_update_in_place(
+        self, panel, tk_root
+    ) -> None:
+        panel.show_placeholder(title="CSPF", field_labels=("CSPF",))
+        tk_root.update_idletasks()
+        card = panel.summary_tables["CSPF"]
+        value = panel.summary_value_labels["CSPF"][0]
+        assert value.cget("text") == "-"
+        assert value.semantic_tone == "pending"
+        assert panel._summaries == ()
+
+        panel.show_placeholder(
+            title="CSPF",
+            field_labels=("CSPF",),
+            status="입력 오류",
+            tone=SemanticTone.INVALID,
+        )
+        assert panel.summary_tables["CSPF"] is card
+        assert value.semantic_tone == "invalid"
+        assert panel._summaries == ()
+
+        panel.set_summaries(
+            (ResultSummary(title="CSPF", fields=(("CSPF", "4.939"),)),)
+        )
+        assert panel.summary_tables["CSPF"] is card
+        assert value.cget("text") == "4.939"
+        assert value.semantic_tone == "calculated"
 
     def test_same_shape_updates_status_text(self, panel, tk_root) -> None:
         panel.set_summaries(

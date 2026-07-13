@@ -253,6 +253,11 @@ class KoreaHspfSection:
                 title=result.summary_title,
                 field_labels=("HSPF", "HSTL [kWh]", "HSEC [kWh]"),
                 status=result.status_text,
+                tone=(
+                    SemanticTone.PENDING
+                    if result.status == "empty"
+                    else SemanticTone.INVALID
+                ),
             )
             return
         self._trace_rows = list(result.detail_rows)

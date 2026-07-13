@@ -64,16 +64,31 @@ class IsoSasoT3ResultTable:
         self._text = tk.Text(self._frame, height=6, width=90, wrap="none")
         self._text.configure(state=tk.DISABLED)
 
-    def show_placeholder(self, row_labels: tuple[str, ...], *, status: str) -> None:
+    def show_placeholder(
+        self,
+        row_labels: tuple[str, ...],
+        *,
+        status: str,
+        tone: SemanticTone = SemanticTone.PENDING,
+    ) -> None:
         """Show reserved comparison rows without making them exportable results."""
         self.rows = ()
         self.row_labels = ()
         self._placeholder_row_labels = row_labels
+        rows = tuple(
+            (label, *("-" for _ in self.column_labels[1:])) for label in row_labels
+        )
         self.table.set_rows(
-            tuple((label, *("-" for _ in self.column_labels[1:])) for label in row_labels)
+            rows,
+            tones={
+                (row, column): tone
+                for row in range(len(rows))
+                for column in range(1, len(self.column_labels))
+            },
         )
         self._show_table()
         self.status_label.configure(text=status)
+        self.status_label.semantic_tone = tone.value
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(status)
@@ -94,14 +109,18 @@ class IsoSasoT3ResultTable:
             },
         )
         self.status_label.configure(text=status)
+        self.status_label.semantic_tone = SemanticTone.CALCULATED.value
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
         self._set_copy_text(self.as_text())
 
-    def set_status(self, status: str) -> None:
+    def set_status(
+        self, status: str, *, tone: SemanticTone = SemanticTone.INVALID
+    ) -> None:
         self.show_placeholder(
-            self._placeholder_row_labels or ("Required only (3-point)",),
+            self._placeholder_row_labels or ("-",),
             status=status,
+            tone=tone,
         )
 
     def as_text(self) -> str:

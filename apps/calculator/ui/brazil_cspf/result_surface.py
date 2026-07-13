@@ -68,24 +68,48 @@ class BrazilCspfResultTable:
         self.final_status_label = self._status_label("brazil_cspf_final_status")
         self.status_label = self._status_label("brazil_cspf_result_status")
 
-    def show_placeholder(self, *, status: str = "입력 대기") -> None:
+    def show_placeholder(
+        self,
+        *,
+        status: str = "입력 대기",
+        tone: SemanticTone = SemanticTone.PENDING,
+    ) -> None:
         """Reserve result, rule, and final judgement surfaces without a result."""
         self.rows = ()
         self.row_labels = ()
         self.rules = ()
         self.final_status = None
+        result_rows = (("3-point", "-", "-", "-"), ("2-point", "-", "-", "-"))
+        rule_rows = (
+            ("Rule 1", "-", "-", "-", "-"),
+            ("Rule 2", "-", "-", "-", "-"),
+        )
         self.result_grid.set_rows(
-            (("3-point", "-", "-", "-"), ("2-point", "-", "-", "-"))
+            result_rows,
+            tones={
+                (row, column): tone
+                for row in range(len(result_rows))
+                for column in range(1, len(BRAZIL_CSPF_RESULT_COLUMNS))
+            },
         )
         self.rule_grid.set_rows(
-            (("Rule 1", "-", "-", "-", "-"), ("Rule 2", "-", "-", "-", "-"))
+            rule_rows,
+            tones={
+                (row, column): tone
+                for row in range(len(rule_rows))
+                for column in range(1, len(BRAZIL_CSPF_RULE_COLUMNS))
+            },
         )
         self.result_grid.pack(side=tk.TOP, anchor="w")
         self.rule_grid.pack(side=tk.TOP, anchor="w")
         self.rule_frame.pack(side=tk.TOP, anchor="w", fill=tk.X)
-        self.final_status_label.configure(text="최종 판정: -", background=RESULT_VALUE_BG)
+        placeholder_background = self.result_grid.policy.background(tone)
+        self.final_status_label.configure(
+            text="최종 판정: -", background=placeholder_background
+        )
+        self.final_status_label.semantic_tone = tone.value
         self.final_status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
-        self._set_status(status)
+        self._set_status(status, tone=tone)
 
     def grid(self, **kwargs: object) -> None:
         self._frame.grid(**kwargs)
@@ -126,11 +150,18 @@ class BrazilCspfResultTable:
             text=f"최종 판정: {final_status}",
             background=TABLE_PASS_BG if final_status == "OK" else TABLE_ERROR_BG,
         )
+        self.final_status_label.semantic_tone = (
+            SemanticTone.PASS.value
+            if final_status == "OK"
+            else SemanticTone.FAIL.value
+        )
         self.final_status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
-        self._set_status(status)
+        self._set_status(status, tone=SemanticTone.CALCULATED)
 
-    def set_status(self, status: str) -> None:
-        self.show_placeholder(status=status)
+    def set_status(
+        self, status: str, *, tone: SemanticTone = SemanticTone.INVALID
+    ) -> None:
+        self.show_placeholder(status=status, tone=tone)
 
     def clear(self) -> None:
         self.rows = ()
@@ -198,7 +229,8 @@ class BrazilCspfResultTable:
         label.surface_role = role
         return label
 
-    def _set_status(self, status: str) -> None:
+    def _set_status(self, status: str, *, tone: SemanticTone) -> None:
         self.status_label.configure(text=status)
+        self.status_label.semantic_tone = tone.value
         if not self.status_label.winfo_manager():
             self.status_label.pack(side=tk.TOP, anchor="w", pady=(4, 0))
