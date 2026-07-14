@@ -1,6 +1,6 @@
 # Train/Admin Phase 2 — Data Mapping UX Overhaul
 
-Status: active — Slice 2A implemented; audit pending
+Status: active — Slice 2A audit corrections and native evidence complete; re-audit pending
 Date: 2026-07-14  
 Depends on: Phase 1 — Mapping/Data Foundation
 
@@ -251,10 +251,25 @@ Implemented on `phase/train-admin-data-mapping-ux`:
 - selection-preserving non-destructive refresh and current-draft projection;
 - repository-fixture-backed offscreen verification for representative states.
 
-The panel owner now exceeds the structure guard's 400 LOC soft limit. Slice 2A
-keeps the added behavior inside View composition and intent forwarding, but a
-feature-package/split audit is required before Slice 2B adds spreadsheet
-interaction responsibility to this surface.
+Audit correction on Draft PR #15 additionally establishes:
+
+- cached service-owned drafts remain visible and dirty when source availability
+  changes to missing;
+- Refresh reprojects current state without provider reload, while Reload retains
+  provider-read semantics and preserves the draft on failure;
+- empty-message load/reload exceptions use a stable class-name fallback;
+- native macOS onscreen evidence for populated, dynamic, empty, missing,
+  load-error, dirty-source-missing, compact, and collapsed-detail states under
+  `assets/train-admin-phase2-slice2a-native-audit/`;
+- safe deferred view reprojection after Qt delegate commit.
+
+The panel and controller exceed the structure guard's 400 LOC soft limit. The
+correction extracted status/workspace presentation policy into the existing UI
+model owner. Before Slice 2B adds spreadsheet interaction, split toolbar/action
+composition plus selection/model binding from the panel, and split controller
+presentation-state projection from command orchestration. This is the concrete
+trigger; Slice 2A does not prebuild a spreadsheet or generic composition
+framework.
 
 ### Slice 2B — Spreadsheet interaction and CRUD
 

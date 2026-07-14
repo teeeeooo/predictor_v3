@@ -370,6 +370,21 @@ entries:
     source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
 
   - type: decision
+    topic: Train Admin Phase 2 Slice 2A draft and source state
+    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, and dirty state; Reload alone reads the provider and preserves the current draft when missing or load failure occurs. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Before Slice 2B, toolbar/selection/model binding must leave the panel and presentation-state projection must leave controller command orchestration; no spreadsheet framework has started.
+    keywords:
+      - predictor_v3
+      - Data Mapping
+      - Phase 2
+      - Slice 2A
+      - Refresh
+      - Reload
+      - dirty draft
+      - native macOS
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md
+
+  - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
     content: Historical single-wide CSV conversion is not recoverable as a general import contract. The Phase 1 legacy-wide parser is a strict bootstrap-only adapter into the existing editor draft and validated runtime projection; normal Data Mapping Import remains excluded. JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
     keywords:

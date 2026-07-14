@@ -18,7 +18,8 @@
 ## Current Slice
 
 Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2A is
-implemented on `phase/train-admin-data-mapping-ux` and awaits Slice 2A audit.
+implemented on `phase/train-admin-data-mapping-ux`; audit corrections and native
+macOS evidence are complete and await Slice 2A re-audit.
 The change covers populated-state information architecture, group navigation,
 primary-table dominance, concise actions/status, secondary details, and
 distinct empty/missing/load-error states. Slice 2B and later work has not
@@ -26,9 +27,10 @@ started.
 
 ## Next Action
 
-Complete Slice 2A audit on the Phase 2 Draft PR. After approval, perform a
-bounded Data Mapping panel split audit before starting Slice 2B interaction
-work.
+Complete Slice 2A re-audit on the Phase 2 Draft PR. After approval and before
+Slice 2B interaction work, extract toolbar/selection/model binding from the
+panel and presentation-state projection from the controller at the recorded
+split trigger.
 
 ## Active Blockers
 
