@@ -318,6 +318,13 @@ before the application callback, so draft, dirty state, selection, and undo
 history remain unchanged. In-bounds protected targets retain partial,
 non-shifting behavior.
 
+The correction follow-up at `5b1968eb7e3b493c15cef1c06358d74d44005199`
+passed 32 focused and 285 impacted offscreen tests plus CI. A native onscreen
+window was confirmed on an unlocked desktop with Computer Use limited to state
+and screenshot inspection. Physical interaction was requested but not completed
+in the session, so the three native scenarios remain not performed and no new
+interaction PNG is claimed.
+
 ### Slice 2D — Exchange export
 
 - Generate seven group CSVs and one bundle from the same draft.

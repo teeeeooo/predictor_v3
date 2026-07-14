@@ -29,9 +29,9 @@ enforces one contiguous rectangular selection. Slice 2D has not started.
 
 ## Next Action
 
-Commit and push the focused correction, confirm CI, then prepare the native
-synthetic harness for the three bounded scenarios. Use Computer Use only for
-display/window inspection and request physical user input for table interaction.
+Submit the correction for Slice 2B+2C re-audit. When physical user input is
+available, repeat only the three bounded native scenarios in the prepared
+synthetic harness; Computer Use remains limited to display/window screenshots.
 Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
 
 ## Active Blockers
@@ -42,7 +42,9 @@ Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
   injected keyboard shortcuts did not reach the Qt table. Therefore paste/undo,
   PFC Pi, and issue-navigation/Save/Reload native interaction evidence remains
   incomplete; automated regression is recorded separately and is not treated
-  as a substitute.
+  as a substitute. The audit-correction follow-up confirmed native rendering
+  without accessibility clicks, but no physical interaction completion was
+  reported, so no new interaction PNG was added.
 
 ## Active Constraints
 
