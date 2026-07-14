@@ -20,7 +20,8 @@
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
 workstream. Slices 1A–1D and Phase 1 automated validation are complete on Draft
 PR #14; the dynamic option-payload/type audit correction is complete locally
-and the phase remains held unmerged for final re-audit.
+and the final hidden-payload persistence correction is complete locally. The
+phase remains held unmerged for final re-audit.
 
 ## Next Action
 

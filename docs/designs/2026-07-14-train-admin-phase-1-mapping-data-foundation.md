@@ -164,6 +164,20 @@ identity, while declared payload attributes are restored, edited, validated,
 persisted, reloaded, and exported. Raw payload keys remain row backing data but
 do not become visible columns or schema unless Data Definition declares them.
 
+Undeclared runtime row payload is existing data, not schema, and is not deleted
+by an unrelated edit or Save. Persistence begins from the current editor row's
+backing payload, removes only that group's key/identity control fields, and then
+overlays visible definition-backed values using their canonical types. Visible
+values are authoritative, including an optional visible field deliberately set
+to empty. Hidden payload follows its row through rename/reorder/duplicate and
+is removed only when that row is deleted; persistence never re-reads an old
+`source_key` and therefore cannot retain both old and renamed runtime keys.
+
+This preservation policy applies to IDU, Evap Index, ODU, Compressor,
+Refrigerant, Expansion, and ODU Cond Specs. Hidden payload remains absent from
+Data Mapping columns and JSON/XLSX review exports. If Data Definition later
+declares the same attribute, the preserved backing value becomes visible.
+
 Definition-backed `boolean` values use canonical JSON booleans. Actual booleans
 and the explicit case-insensitive `true`/`false`, `1`/`0`, and `yes`/`no`
 representations are accepted; ambiguous values are rejected. Required `False`
@@ -227,6 +241,8 @@ test explicitly requires synthetic trend behavior.
   persistence share the same definition-owned contract.
 - Preserve runtime payload values for later requirement-backed projection, but
   never turn unknown raw attributes into editor columns without a requirement.
+- Merge persistence from current row backing payload and visible canonical
+  overlays so undeclared runtime values survive unrelated save/reload cycles.
 - Persist every non-identity ODU Cond Specs column from the editor group;
   condenser identity remains limited to ODU, Fin Type, canonical Pi, and Row.
 - Preserve and round-trip Data Definition-backed Refrigerant/Expansion payload
@@ -267,6 +283,10 @@ merged only after all slices and phase acceptance checks pass.
   payload keys remain hidden and do not create schema.
 - Invalid booleans and non-finite built-in or dynamic numbers block Save without
   replacing the existing mapping file.
+- Undeclared row payload survives edit/save/reload and key rename without
+  becoming a visible/exported column; row deletion removes its payload.
+- A non-finite value already present in hidden payload fails atomic Save instead
+  of being silently discarded or written as non-standard JSON.
 
 ## 10. Validation Purpose
 
@@ -299,7 +319,8 @@ unmerged pending final audit.
   and review export without entering condenser identity.
 - That round-trip includes Refrigerant/Expansion option payloads while Predict
   continues to consume section keys as options; undeclared raw payload remains
-  hidden and never auto-creates schema.
+  hidden, survives persistence from its editor row backing data, and never
+  auto-creates schema or review-export columns.
 - Boolean attributes persist as canonical JSON booleans and all mapping numbers
   are finite; invalid boolean or NaN/infinite inputs block atomic Save.
 - The aligned validation set links the active schema, repository mapping

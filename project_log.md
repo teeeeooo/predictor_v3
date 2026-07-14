@@ -44,6 +44,10 @@
   without changing their key-based Predict options. Persist booleans as
   canonical JSON booleans, reject non-finite mapping numbers, and keep
   undeclared raw payload keys hidden from editor schema.
+- Preserve undeclared runtime row payload from the current editor row backing
+  data across unrelated Save/reload and key rename while overlaying only visible
+  definition-backed values. Hidden payload is not review-exported and is
+  removed with its row rather than recovered from historical source keys.
 - Pair DEV selector metadata with unchanged ML numeric/one-hot training headers
   and fail fast when schema, mapping options/combinations, or resolved mock
   values diverge.

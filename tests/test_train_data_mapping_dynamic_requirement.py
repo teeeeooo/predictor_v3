@@ -9,6 +9,7 @@ import pytest
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
+from openpyxl import load_workbook
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
@@ -186,7 +187,11 @@ def test_option_dynamic_payload_round_trips_with_canonical_types(tmp_path):
         "R32": {"GWP": 675, "Low GWP": True, "Unknown Raw": "hidden"}
     }
     runtime["exp_type"] = {
-        "EEV": {"Control Mode": "Electronic", "Enabled": False}
+        "EEV": {
+            "Control Mode": "Electronic",
+            "Enabled": False,
+            "Internal Code": "E-17",
+        }
     }
     mapping_file.write_text(json.dumps(runtime), encoding="utf-8")
     provider = RequirementProvider(_option_requirements())
@@ -216,10 +221,18 @@ def test_option_dynamic_payload_round_trips_with_canonical_types(tmp_path):
 
     persisted = json.loads(mapping_file.read_text(encoding="utf-8"))
     assert persisted["ref_type"] == {
-        "R32": {"GWP": 700.5, "Low GWP": False}
+        "R32": {
+            "GWP": 700.5,
+            "Low GWP": False,
+            "Unknown Raw": "hidden",
+        }
     }
     assert persisted["exp_type"] == {
-        "EEV": {"Control Mode": "Pulse", "Enabled": True}
+        "EEV": {
+            "Control Mode": "Pulse",
+            "Enabled": True,
+            "Internal Code": "E-17",
+        }
     }
 
     reloaded_service = DataMappingService(
@@ -238,6 +251,44 @@ def test_option_dynamic_payload_round_trips_with_canonical_types(tmp_path):
     assert groups["refrigerant"]["rows"][0]["values"]["GWP"] == 700.5
     assert groups["refrigerant"]["rows"][0]["values"]["Low GWP"] is False
     assert groups["expansion"]["rows"][0]["values"]["Control Mode"] == "Pulse"
+    assert "Unknown Raw" not in groups["refrigerant"]["columns"]
+    assert "Unknown Raw" not in groups["refrigerant"]["rows"][0]["values"]
+    assert "Internal Code" not in groups["expansion"]["columns"]
+    assert "Internal Code" not in groups["expansion"]["rows"][0]["values"]
+
+    xlsx_file = tmp_path / "mapping-review.xlsx"
+    xlsx_result, _ = reloaded_service.export_snapshot(xlsx_file, "xlsx")
+    workbook = load_workbook(xlsx_file, read_only=True)
+    try:
+        assert xlsx_result.success
+        assert "Unknown Raw" not in tuple(
+            cell.value for cell in next(workbook["Refrigerant"].iter_rows())
+        )
+        assert "Internal Code" not in tuple(
+            cell.value for cell in next(workbook["Expansion"].iter_rows())
+        )
+    finally:
+        workbook.close()
+
+    later_provider = RequirementProvider(
+        (
+            *_option_requirements(),
+            MappingRequirement(
+                column_key="unknown_raw",
+                ml_name="Unknown Raw",
+                mapping_entity="ref_type",
+                mapping_attribute="Unknown Raw",
+                trigger_column="ref_type",
+                required=False,
+            ),
+        )
+    )
+    later = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)), later_provider
+    ).load_snapshot()
+    later_ref = later.draft.group("refrigerant")
+    assert "Unknown Raw" in later_ref.columns
+    assert later_ref.rows[0].value_for("Unknown Raw") == "hidden"
 
 
 def test_invalid_option_boolean_blocks_save_and_preserves_mapping(tmp_path):

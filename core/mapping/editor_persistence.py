@@ -17,7 +17,11 @@ from core.mapping.condenser_identity import (
     condenser_requires_pi,
     condenser_spec_key,
 )
-from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.editor_model import (
+    MappingEditorDraft,
+    MappingEditorGroup,
+    MappingEditorRow,
+)
 from core.mapping.editor_projection import (
     COMPRESSOR_GROUP,
     EVAP_INDEX_GROUP,
@@ -29,7 +33,7 @@ from core.mapping.editor_projection import (
 )
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
-from core.mapping.value_policy import coerce_mapping_number, coerce_mapping_value
+from core.mapping.value_policy import coerce_mapping_value
 
 
 @dataclass(frozen=True)
@@ -131,15 +135,12 @@ def _simple_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
         key = _clean(row.value_for(key_column))
         if not key:
             continue
-        section[key] = {
-            column: coerce_mapping_value(
-                row.value_for(column),
-                "number"
-                if column in numeric_columns
-                else group.column_data_types.get(column, "string"),
-            )
-            for column in group.columns[1:]
-        }
+        section[key] = _merged_row_payload(
+            row,
+            group,
+            control_columns={key_column},
+            numeric_columns=numeric_columns,
+        )
     return section
 
 
@@ -153,13 +154,11 @@ def _option_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
         key = _clean(row.value_for(key_column))
         if not key:
             continue
-        section[key] = {
-            column: coerce_mapping_value(
-                row.value_for(column),
-                group.column_data_types.get(column, "string"),
-            )
-            for column in group.columns[1:]
-        }
+        section[key] = _merged_row_payload(
+            row,
+            group,
+            control_columns={key_column},
+        )
     return section
 
 
@@ -189,19 +188,12 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
         if pi:
             options["pi"].add(pi)
         options["row"].add(row)
-        identity_columns = {"ODU", "Fin Type", "Pi", "Row"}
-        cond_specs[condenser_spec_key(odu, fin, pi, row)] = {
-            column: (
-                coerce_mapping_number(draft_row.value_for(column))
-                if column in {"Cond Area", "Cond Volume"}
-                else coerce_mapping_value(
-                    draft_row.value_for(column),
-                    group.column_data_types.get(column, "string"),
-                )
-            )
-            for column in group.columns
-            if column not in identity_columns
-        }
+        cond_specs[condenser_spec_key(odu, fin, pi, row)] = _merged_row_payload(
+            draft_row,
+            group,
+            control_columns={"ODU", "Fin Type", "Pi", "Row"},
+            numeric_columns={"Cond Area", "Cond Volume"},
+        )
 
     for odu, values in grouped.items():
         cascade[odu] = {
@@ -216,6 +208,30 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
         "pi": {value: {} for value in sorted(options["pi"])},
         "row": {value: {} for value in sorted(options["row"])},
     }
+
+
+def _merged_row_payload(
+    row: MappingEditorRow,
+    group: MappingEditorGroup,
+    *,
+    control_columns: set[str],
+    numeric_columns: set[str] | frozenset[str] = frozenset(),
+) -> dict[str, Any]:
+    payload = {
+        str(column): value
+        for column, value in row.values.items()
+        if str(column) not in control_columns
+    }
+    for column in group.columns:
+        if column in control_columns:
+            continue
+        data_type = (
+            "number"
+            if column in numeric_columns
+            else group.column_data_types.get(column, "string")
+        )
+        payload[column] = coerce_mapping_value(row.value_for(column), data_type)
+    return payload
 
 
 def _backup_existing_file(destination: Path) -> Path:
