@@ -17,16 +17,15 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. Slices 1A–1D and Phase 1 automated validation are complete on Draft
-PR #14; the dynamic option-payload/type audit correction is complete locally
-and the final hidden-payload persistence correction is complete locally. The
-phase remains held unmerged for final re-audit.
+No implementation slice is active. Train/Admin UI/UX Overhaul Phase 1 —
+Mapping/Data Foundation Slices 1A–1D, both final corrections, and
+repository-automated validation are complete. Final audit is approved and PR
+#14 is the merge target. Phase 2 has not started.
 
 ## Next Action
 
-Await final re-audit of Draft PR #14. Do not start Phase 2 or merge without a
-separate instruction.
+After PR #14 merge closeout, await separate instruction before creating a Phase
+2 branch from merged `main`.
 
 ## Active Blockers
 

@@ -6,8 +6,9 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 ## Current Phase
 
 Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is complete for
-repository-automated scope on Draft PR #14 and awaits final audit. It remains
-unmerged; Phase 2 has not started. The earlier ML/Predictor foundation through
+repository-automated scope and its final audit is approved. PR #14 is the merge
+target. Phase 2 has not started and begins only from merged `main` on a separate
+branch after separate instruction. The earlier ML/Predictor foundation through
 Arc 15-FU1 remains the active owner baseline.
 
 ## Current Owner State
@@ -45,8 +46,9 @@ Arc 15-FU1 remains the active owner baseline.
 - Arc 15-FU1 — controller state-builder extraction: complete, validated, and
   merged into `main` without changing controller behavior.
 - Train/Admin UI/UX Overhaul Phase 1 — strict bootstrap, populated mapping
-  fixture, dynamic mapping attributes, and aligned mock readiness: complete on
-  Draft PR #14 for automated scope; final audit and merge remain pending.
+  fixture, dynamic mapping attributes, and aligned mock readiness: complete for
+  repository-automated scope with final audit approved; PR #14 is the merge
+  target.
 
 ### Next Workstream — Standard Calculation Capability Extension
 

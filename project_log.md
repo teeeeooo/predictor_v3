@@ -33,8 +33,8 @@
 
 ### Decision
 
-- Complete Slices 1A–1D for repository-automated scope while keeping PR #14
-  Draft and unmerged pending final audit.
+- Complete Slices 1A–1D and final corrections for repository-automated scope;
+  final audit is approved and PR #14 is the merge target.
 - Use the strict legacy bootstrap projection as a repository-only populated
   mapping fixture; never install it as production `data/mapping.json`.
 - Keep Data Definition as dynamic mapping column/type/required owner and Data
@@ -54,6 +54,8 @@
 - Treat all fixture and mock success as structural workflow evidence only. Real
   mapping completeness, training data, model quality, and production readiness
   remain company-local validation work.
+- Start Phase 2 only from merged `main` on a separate branch after separate
+  instruction.
 
 ## 2026-07-13 — Active non-AHRI Calculator core refactor closeout
 
