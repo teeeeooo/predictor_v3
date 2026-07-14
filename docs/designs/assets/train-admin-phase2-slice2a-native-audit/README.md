@@ -25,6 +25,30 @@
 | `08-compact-window.png` | Compact shell with all seven toolbar actions visible and navigation/table/details remaining bounded. |
 | `09-details-collapsed.png` | Collapsed secondary details and increased primary-table height with the Show details control retained. |
 
+## Table sizing correction evidence
+
+- Sizing correction verification commit: the single Git commit containing this
+  manifest update and captures `10`–`12`; its resolved SHA is recorded in PR
+  #15 after push because a commit cannot embed its own SHA.
+- Verification base: `6a3e22c0f17bc52f38d2ba8b08fb043ca4c7e132`.
+- `10-balanced-idu-columns.png`: standard-window IDU; `IDU`, `ID Volume`, and
+  `Size` use balanced bounded content widths, while `Group` stretches and
+  `Rows` remains compact.
+- `11-balanced-dynamic-columns.png`: standard-window ODU Cond Specs with the
+  dynamic `Cond Inner Area` header and value `12.5`; every identity/payload
+  column follows the same bounded policy and the final dynamic column does not
+  stretch.
+- `12-balanced-compact-columns.png`: compact 900 × 600 client request; all
+  toolbar actions remain visible, `Rows` stays compact, primary columns remain
+  bounded, and table-local scrolling remains available.
+- Computer Use interaction was limited to confirming the unlocked desktop,
+  reading the native ODU Cond Specs/dynamic table state, reading the compact
+  native controls, and clicking the Data Mapping tab.
+- The earlier populated/empty/missing/load-error/dirty/details evidence remains
+  valid and was not rerun for this sizing-only correction.
+- `tests/fixtures/mapping/mapping_runtime_equivalent.json` and
+  `data/mapping.json` were not modified.
+
 ## Native interaction performed
 
 - Launched the real Train/Admin entry point and clicked the Data Mapping top-level tab.

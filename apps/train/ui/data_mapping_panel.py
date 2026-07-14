@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -28,6 +27,12 @@ from apps.train.controllers.data_mapping_controller import (
     DataMappingControllerState,
 )
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
+from apps.train.ui.data_mapping_table_sizing import (
+    apply_group_navigation_sizing,
+    apply_primary_table_sizing,
+    apply_secondary_table_sizing,
+    configure_table_defaults,
+)
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     GROUP_HEADERS,
@@ -47,8 +52,6 @@ GROUP_NAV_MAX_WIDTH = 280
 GROUP_NAV_INITIAL_WIDTH = 230
 WORKSPACE_INITIAL_WIDTH = 1050
 DETAILS_INITIAL_HEIGHT = 210
-TABLE_COLUMN_MAX_WIDTH = 240
-ROW_COUNT_COLUMN_WIDTH = 58
 EXPORT_FILTERS = "JSON Files (*.json);;Excel Workbook (*.xlsx)"
 
 
@@ -154,9 +157,6 @@ class DataMappingPanel(QWidget):
         group_panel = self._panel("Mapping Groups", self.entity_table)
         group_panel.setMinimumWidth(GROUP_NAV_MIN_WIDTH)
         group_panel.setMaximumWidth(GROUP_NAV_MAX_WIDTH)
-        self.entity_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.entity_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.entity_table.horizontalHeader().resizeSection(1, ROW_COUNT_COLUMN_WIDTH)
         splitter.addWidget(group_panel)
 
         workspace = QWidget(splitter)
@@ -297,7 +297,16 @@ class DataMappingPanel(QWidget):
             self.validation_table.setModel(
                 ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
             )
-            _fit_table_columns(self.row_table)
+            apply_group_navigation_sizing(self.entity_table)
+            apply_primary_table_sizing(self.row_table)
+            apply_secondary_table_sizing(
+                self.attribute_table,
+                description_header="Notes",
+            )
+            apply_secondary_table_sizing(
+                self.validation_table,
+                description_header="Message",
+            )
             self._sync_action_buttons(state)
             self._bind_group_selection(state)
             self._bind_row_selection(selected_row)
@@ -485,18 +494,8 @@ def _table(accessible_name: str) -> QTableView:
     table.setSelectionMode(QAbstractItemView.SingleSelection)
     table.verticalHeader().setVisible(False)
     table.setAlternatingRowColors(True)
-    table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-    table.horizontalHeader().setStretchLastSection(True)
+    configure_table_defaults(table)
     return table
-
-
-def _fit_table_columns(table: QTableView) -> None:
-    table.resizeColumnsToContents()
-    model = table.model()
-    if model is None:
-        return
-    for column in range(model.columnCount()):
-        table.setColumnWidth(column, min(table.columnWidth(column), TABLE_COLUMN_MAX_WIDTH))
 
 
 def _resolve_export_selection(path: str, selected_filter: str) -> tuple[str, str]:

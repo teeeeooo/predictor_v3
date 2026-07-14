@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from PySide6.QtCore import QModelIndex, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QHeaderView
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import (
@@ -17,6 +17,11 @@ from apps.train.ui.data_mapping_panel import (
     EXPORT_FILTERS,
     DataMappingPanel,
     _resolve_export_selection,
+)
+from apps.train.ui.data_mapping_table_sizing import (
+    ROW_COUNT_COLUMN_WIDTH,
+    TABLE_COLUMN_MAX_WIDTH,
+    TABLE_COLUMN_MIN_WIDTH,
 )
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
@@ -181,6 +186,28 @@ def test_data_mapping_panel_builds_editable_manager_surface():
             "Reload",
         ]
         assert panel.status_label.text() == "Ready."
+        group_header = panel.entity_table.horizontalHeader()
+        attribute_header = panel.attribute_table.horizontalHeader()
+        validation_header = panel.validation_table.horizontalHeader()
+        assert not panel.row_table.horizontalHeader().stretchLastSection()
+        assert not group_header.stretchLastSection()
+        assert group_header.sectionResizeMode(0) == QHeaderView.Stretch
+        assert group_header.sectionResizeMode(1) == QHeaderView.Fixed
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
+        notes_section = ATTRIBUTE_HEADERS.index("Notes")
+        message_section = VALIDATION_HEADERS.index("Message")
+        assert attribute_header.sectionResizeMode(notes_section) == QHeaderView.Stretch
+        assert validation_header.sectionResizeMode(message_section) == QHeaderView.Stretch
+        assert all(
+            attribute_header.sectionResizeMode(section) == QHeaderView.Interactive
+            for section in range(len(ATTRIBUTE_HEADERS))
+            if section != notes_section
+        )
+        assert all(
+            validation_header.sectionResizeMode(section) == QHeaderView.Interactive
+            for section in range(len(VALIDATION_HEADERS))
+            if section != message_section
+        )
     finally:
         panel.close()
         panel.deleteLater()
@@ -211,6 +238,13 @@ def test_data_mapping_panel_populated_fixture_navigation_updates_primary_table()
         assert [group_model.cell_value(row, 1) for row in range(7)] == [
             "9", "13", "5", "3", "2", "2", "22"
         ]
+        idu_last_column = panel.row_table.model().columnCount() - 1
+        assert panel.row_table.model().headerData(idu_last_column, Qt.Horizontal) == "Size"
+        assert panel.row_table.columnWidth(idu_last_column) <= TABLE_COLUMN_MAX_WIDTH
+        assert (
+            panel.row_table.columnWidth(idu_last_column)
+            < panel.row_table.viewport().width() * 0.5
+        )
 
         panel.entity_table.setCurrentIndex(group_model.index(6, 0))
         app.processEvents()
@@ -221,6 +255,31 @@ def test_data_mapping_panel_populated_fixture_navigation_updates_primary_table()
         assert panel.primary_title.text() == "ODU Cond Specs Mapping Rows"
         assert panel.workspace_stack.currentWidget() is panel.primary_panel
         assert panel.content_splitter.sizes()[0] > panel.content_splitter.sizes()[1]
+        header = panel.row_table.horizontalHeader()
+        widths = [
+            panel.row_table.columnWidth(column)
+            for column in range(panel.row_table.model().columnCount())
+        ]
+        assert not header.stretchLastSection()
+        assert all(
+            header.sectionResizeMode(column) == QHeaderView.Interactive
+            for column in range(len(widths))
+        )
+        assert all(
+            TABLE_COLUMN_MIN_WIDTH <= width <= TABLE_COLUMN_MAX_WIDTH
+            for width in widths
+        )
+        assert widths[-1] < panel.row_table.viewport().width() * 0.5
+
+        panel.refresh()
+        app.processEvents()
+        refreshed_header = panel.row_table.horizontalHeader()
+        assert not refreshed_header.stretchLastSection()
+        assert all(
+            refreshed_header.sectionResizeMode(column) == QHeaderView.Interactive
+            for column in range(panel.row_table.model().columnCount())
+        )
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
     finally:
         panel.close()
         panel.deleteLater()
@@ -427,6 +486,13 @@ def test_data_mapping_panel_keeps_primary_workspace_at_compact_window_size():
         assert panel.width() == 900
         assert panel.entity_table.parentWidget().width() <= 280
         assert panel.row_table.viewport().width() > panel.entity_table.viewport().width()
+        assert not panel.row_table.horizontalHeader().stretchLastSection()
+        assert panel.row_table.horizontalScrollBarPolicy() == Qt.ScrollBarAsNeeded
+        assert all(
+            panel.row_table.columnWidth(column) <= TABLE_COLUMN_MAX_WIDTH
+            for column in range(panel.row_table.model().columnCount())
+        )
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
         before = panel.row_table.viewport().height()
         panel.details_toggle.click()
         app.processEvents()
