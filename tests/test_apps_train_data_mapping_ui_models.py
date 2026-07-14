@@ -610,7 +610,7 @@ def test_data_mapping_panel_reload_confirm_discards_dirty(monkeypatch):
         panel._reload()
 
         assert calls == ["confirm", "reload"]
-        assert panel.status_label.text() == "Ready."
+        assert panel.status_label.text() == "Reloaded from source."
     finally:
         panel.close()
         panel.deleteLater()

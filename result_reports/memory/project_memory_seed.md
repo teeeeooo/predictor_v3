@@ -371,7 +371,7 @@ entries:
 
   - type: decision
     topic: Train Admin Phase 2 Data Mapping interaction and source state
-    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, dirty state, and command history; Reload alone reads the provider and preserves the current draft when missing or load failure occurs. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Slice 2B places toolbar and spreadsheet selection/clipboard/key behavior in feature-local Qt owners, pure snapshot projection outside controller orchestration, and current draft plus draft-level undo history in a service-owned session. Edit, rectangular paste, clear, CRUD, and F&T-to-PFC Pi clearing are one command each; PFC Pi is protected in both UI flags and the service command boundary without shifting clipboard coordinates.
+    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, exact baseline-diff dirty state, and command history; Reload alone reads the provider and preserves current draft/baseline/history on missing or load failure. Successful Reload resets draft/baseline/history, and successful Save advances baseline while failed Save preserves it. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Slice 2B places toolbar and spreadsheet selection/clipboard/key behavior in feature-local Qt owners, pure snapshot projection outside controller orchestration, and current draft plus draft-level undo history in a service-owned session. Edit, rectangular paste, clear, CRUD, and F&T-to-PFC Pi clearing are one command each; PFC Pi is protected in both UI flags and the service command boundary without shifting clipboard coordinates. Slice 2C uses structured validation group/row/field identifiers for issue-to-cell navigation and never parses messages; source/save/reload issues have no cell target.
     keywords:
       - predictor_v3
       - Data Mapping
@@ -383,8 +383,10 @@ entries:
       - native macOS
       - spreadsheet interaction
       - grouped undo
+      - baseline diff
+      - issue navigation
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md
+    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2c-workflow.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction

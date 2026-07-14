@@ -119,7 +119,8 @@ def test_data_mapping_controller_save_clears_dirty_for_runtime_provider(tmp_path
 
     assert dirty.dirty
     assert not saved.dirty
-    assert saved.message == "Saved."
+    assert saved.message.startswith(f"Saved mapping JSON to {mapping_file}.")
+    assert "Backup:" in saved.message
 
 
 def test_data_mapping_controller_save_failure_surfaces_issue():

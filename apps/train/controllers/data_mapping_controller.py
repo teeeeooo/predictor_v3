@@ -142,13 +142,20 @@ class DataMappingController:
                 source_label=display_source_label(self._service.source_label),
                 detail_message=exception_summary(exc),
             )
-        return self._state_from_snapshot(snapshot, selected_group_key)
+        return self._state_from_snapshot(
+            snapshot,
+            selected_group_key,
+            message="Reloaded from source.",
+        )
 
     def save(self, selected_group_key: str = "") -> DataMappingControllerState:
         """Save the current draft and return refreshed state."""
         result, snapshot = self._service.save_mapping()
         if result.success:
-            return self._state_from_snapshot(snapshot, selected_group_key, message="Saved.")
+            message = result.message
+            if result.backup_path is not None:
+                message = f"{message} Backup: {result.backup_path}."
+            return self._state_from_snapshot(snapshot, selected_group_key, message=message)
         return self._state_from_snapshot(
             snapshot,
             selected_group_key,

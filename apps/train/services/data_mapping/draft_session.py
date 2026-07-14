@@ -11,7 +11,7 @@ class DataMappingDraftSession:
     def __init__(self, *, history_limit: int = 64) -> None:
         self._history_limit = history_limit
         self._draft: MappingEditorDraft | None = None
-        self._dirty = False
+        self._baseline: MappingEditorDraft | None = None
         self._undo_history: list[MappingEditorDraft] = []
 
     @property
@@ -20,17 +20,29 @@ class DataMappingDraftSession:
 
     @property
     def dirty(self) -> bool:
-        return self._dirty
+        return self._draft is not None and self._draft != self._baseline
 
-    def project(self, draft: MappingEditorDraft) -> MappingEditorDraft:
+    @property
+    def baseline(self) -> MappingEditorDraft | None:
+        return self._baseline
+
+    def project(
+        self,
+        draft: MappingEditorDraft,
+        baseline: MappingEditorDraft | None = None,
+    ) -> MappingEditorDraft:
         """Replace the current projection without creating an undo command."""
         self._draft = draft
+        if self._baseline is None:
+            self._baseline = baseline or draft
+        elif baseline is not None:
+            self._baseline = baseline
         return draft
 
     def reset(self, draft: MappingEditorDraft) -> MappingEditorDraft:
         """Install a newly loaded context and clear command history."""
         self._draft = draft
-        self._dirty = False
+        self._baseline = draft
         self._undo_history.clear()
         return draft
 
@@ -46,7 +58,6 @@ class DataMappingDraftSession:
         if len(self._undo_history) > self._history_limit:
             del self._undo_history[0]
         self._draft = next_draft
-        self._dirty = True
         return next_draft
 
     def undo(self) -> MappingEditorDraft | None:
@@ -54,9 +65,8 @@ class DataMappingDraftSession:
         if not self._undo_history:
             return None
         self._draft = self._undo_history.pop()
-        self._dirty = True
         return self._draft
 
-    def mark_clean(self) -> None:
-        """Mark the current draft saved without discarding undo history."""
-        self._dirty = False
+    def mark_saved(self) -> None:
+        """Set the successful Save result as the new baseline."""
+        self._baseline = self._draft

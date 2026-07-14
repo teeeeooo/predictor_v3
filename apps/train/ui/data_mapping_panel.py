@@ -28,6 +28,7 @@ from apps.train.controllers.data_mapping_controller import (
 )
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping import DataMappingTableView, DataMappingToolbar
+from apps.train.ui.data_mapping.issue_navigation import navigate_to_issue
 from apps.train.ui.data_mapping_table_sizing import (
     apply_group_navigation_sizing,
     apply_primary_table_sizing,
@@ -90,6 +91,8 @@ class DataMappingPanel(QWidget):
             QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
         )
         self.validation_table = _table("Issues")
+        self.validation_table.clicked.connect(self._navigate_to_issue)
+        self.validation_table.activated.connect(self._navigate_to_issue)
         self.row_table.bind_interactions(
             batch_edit=self._edit_cells,
             undo=self._undo,
@@ -251,6 +254,7 @@ class DataMappingPanel(QWidget):
     def _apply_state(self, state: DataMappingControllerState) -> None:
         selected_cell = self._selected_cell()
         self._current_state = state
+        self._issue_targets = state.issue_targets
         self.setUpdatesEnabled(False)
         blockers = tuple(QSignalBlocker(table) for table in _data_tables(self))
         try:
@@ -272,6 +276,7 @@ class DataMappingPanel(QWidget):
                     value_rows(state),
                     on_cell_changed=self._edit_cell,
                     read_only_cells=state.read_only_cells,
+                    invalid_cells=state.invalid_cells,
                 )
             )
             self.validation_table.setModel(
@@ -363,6 +368,15 @@ class DataMappingPanel(QWidget):
         self.details_toggle.setText("Hide details" if visible else "Show details")
         if visible:
             self.content_splitter.setSizes((620, DETAILS_INITIAL_HEIGHT))
+
+    def _navigate_to_issue(self, index: QModelIndex) -> None:
+        navigate_to_issue(
+            index,
+            self._issue_targets,
+            controller=self._controller,
+            apply_state=self._apply_state,
+            row_table=self.row_table,
+        )
 
     def _edit_cell(self, row: int, column: str, value: object) -> bool:
         if not self._selected_group_key:

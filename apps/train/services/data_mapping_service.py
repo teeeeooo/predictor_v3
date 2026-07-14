@@ -142,11 +142,24 @@ class DataMappingService:
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
         requirements = self._load_mapping_requirements()
+        if self._session.draft is None:
+            draft = apply_mapping_requirements_to_editor_draft(
+                self._provider.load_draft(),
+                requirements,
+            )
+            self._session.reset(draft)
+            return self._snapshot(draft, requirements)
         draft = apply_mapping_requirements_to_editor_draft(
-            self._session.draft or self._provider.load_draft(),
+            self._session.draft,
             requirements,
         )
-        self._session.project(draft)
+        baseline = self._session.baseline
+        projected_baseline = (
+            apply_mapping_requirements_to_editor_draft(baseline, requirements)
+            if baseline is not None
+            else draft
+        )
+        self._session.project(draft, projected_baseline)
         return self._snapshot(draft, requirements)
 
     def current_snapshot(self) -> DataMappingSnapshot | None:
@@ -158,7 +171,13 @@ class DataMappingService:
             self._session.draft,
             requirements,
         )
-        self._session.project(draft)
+        baseline = self._session.baseline
+        projected_baseline = (
+            apply_mapping_requirements_to_editor_draft(baseline, requirements)
+            if baseline is not None
+            else draft
+        )
+        self._session.project(draft, projected_baseline)
         return self._snapshot(draft, requirements)
 
     def reload_snapshot(self) -> DataMappingSnapshot:
@@ -265,7 +284,7 @@ class DataMappingService:
             return result, snapshot
         result = save_mapping_editor_draft(draft, mapping_file)
         if result.success:
-            self._session.mark_clean()
+            self._session.mark_saved()
         return result, self._snapshot(draft, self._load_mapping_requirements())
 
     def export_snapshot(

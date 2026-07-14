@@ -7,6 +7,8 @@ from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 
+from apps.common.ui import style
+
 
 class ReadOnlyMappingTableModel(QAbstractTableModel):
     """Small read-only table model for Data Mapping view state rows."""
@@ -93,10 +95,20 @@ class EditableMappingTableModel(ReadOnlyMappingTableModel):
         *,
         on_cell_changed: Callable[[int, str, object], bool] | None = None,
         read_only_cells: frozenset[tuple[int, int]] = frozenset(),
+        invalid_cells: frozenset[tuple[int, int]] = frozenset(),
     ) -> None:
         super().__init__(headers, rows)
         self._on_cell_changed = on_cell_changed
         self._read_only_cells = read_only_cells
+        self._invalid_cells = invalid_cells
+
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+        if self._has_cell(index) and (index.row(), index.column()) in self._invalid_cells:
+            if role == Qt.BackgroundRole:
+                return style.table_background_role("invalid")
+            if role == Qt.ToolTipRole:
+                return "Resolve the validation issue for this cell before saving."
+        return super().data(index, role)
 
     def setData(
         self,

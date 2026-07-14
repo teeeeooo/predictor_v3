@@ -36,6 +36,15 @@ class DataMappingValueRow:
 
 
 @dataclass(frozen=True)
+class DataMappingIssueTarget:
+    """Structured navigation target for one validation issue row."""
+
+    group_key: str
+    row_index: int | None = None
+    column_index: int | None = None
+
+
+@dataclass(frozen=True)
 class DataMappingControllerState:
     source_label: str
     status: str
@@ -52,6 +61,8 @@ class DataMappingControllerState:
     read_only_cells: frozenset[tuple[int, int]] = frozenset()
     operation_applied: int = 0
     operation_blocked: int = 0
+    issue_targets: tuple[DataMappingIssueTarget | None, ...] = ()
+    invalid_cells: frozenset[tuple[int, int]] = frozenset()
 
 
 def project_snapshot(
@@ -70,6 +81,8 @@ def project_snapshot(
     entities = tuple(_entity_summary(group) for group in draft.groups)
     selected = _selected_group(draft.groups, selected_group_key)
     resource_issues = (_resource_missing_issue(),) if resource_status == "missing" else ()
+    issues = (*snapshot.validation_errors, *resource_issues, *extra_issues)
+    targets = tuple(_issue_target(draft.groups, issue) for issue in issues)
     return DataMappingControllerState(
         source_label=display_source_label(snapshot.source_label),
         status=status or _snapshot_status(snapshot.is_valid, resource_status),
@@ -79,13 +92,23 @@ def project_snapshot(
         attributes=_attribute_rows(selected),
         value_headers=selected.columns,
         values=_value_rows(selected.rows, selected.columns),
-        validation_rows=(*snapshot.validation_errors, *resource_issues, *extra_issues),
+        validation_rows=issues,
         actions=snapshot.actions,
         dirty=snapshot.dirty,
         resource_status=resource_status,
         read_only_cells=_read_only_cells(selected),
         operation_applied=operation_applied,
         operation_blocked=operation_blocked,
+        issue_targets=targets,
+        invalid_cells=frozenset(
+            (target.row_index, target.column_index)
+            for issue, target in zip(issues, targets)
+            if issue.severity == "error"
+            and target is not None
+            and target.group_key == selected.group_key
+            and target.row_index is not None
+            and target.column_index is not None
+        ),
     )
 
 
@@ -234,6 +257,46 @@ def _read_only_cells(group: MappingEditorGroup) -> frozenset[tuple[int, int]]:
         for row_index, row in enumerate(group.rows)
         if not condenser_requires_pi(row.value_for("Fin Type"))
     )
+
+
+def _issue_target(
+    groups: tuple[MappingEditorGroup, ...],
+    issue: MappingValidationError,
+) -> DataMappingIssueTarget | None:
+    if issue.field in {"source", "file"} or issue.code in {
+        "load_failed",
+        "reload_failed",
+        "save_failed",
+        "resource_missing",
+    }:
+        return None
+    group = next(
+        (
+            candidate
+            for candidate in groups
+            if issue.entity_key in {candidate.group_key, candidate.label}
+        ),
+        None,
+    )
+    if group is None:
+        return None
+    field = issue.field or issue.attribute_key
+    column_index = group.columns.index(field) if field in group.columns else None
+    row_index = issue.row_index
+    if row_index is None and issue.row_key:
+        row_index = next(
+            (
+                index
+                for index, row in enumerate(group.rows)
+                if row.source_key == issue.row_key
+            ),
+            None,
+        )
+    if row_index is not None and not 0 <= row_index < len(group.rows):
+        row_index = None
+    if row_index is None and column_index is not None and group.rows:
+        row_index = 0
+    return DataMappingIssueTarget(group.group_key, row_index, column_index)
 
 
 def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:

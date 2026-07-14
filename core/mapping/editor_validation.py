@@ -286,6 +286,7 @@ def _issue(
         attribute_key=field,
         row_key=row_key or str(row_number),
         field=field,
+        row_index=max(0, row_number - 1),
     )
 
 
