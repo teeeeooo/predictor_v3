@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QMenu, QPushButton, QToolButton, QWidget
 
 from apps.common.ui import style
 from apps.train.controllers.data_mapping_controller import DataMappingControllerState
@@ -32,7 +32,8 @@ class DataMappingToolbar(QFrame):
         super().__init__(parent)
         self.setObjectName("Panel")
         self.setStyleSheet(style.panel_stylesheet())
-        self.buttons: dict[str, QPushButton] = {}
+        self.buttons: dict[str, QPushButton | QToolButton] = {}
+        self._export_menu_actions = {}
         layout = QHBoxLayout(self)
         layout.setContentsMargins(
             style.spacing("space.panel"),
@@ -42,6 +43,11 @@ class DataMappingToolbar(QFrame):
         )
         layout.setSpacing(style.spacing("space.sm"))
         for key, label in _ACTION_LABELS:
+            if key == "export_csv_v2":
+                button = self._build_export_button(callbacks or {})
+                self.buttons[key] = button
+                layout.addWidget(button)
+                continue
             button = QPushButton(label)
             button.setAccessibleName(label)
             button.setEnabled(False)
@@ -61,10 +67,44 @@ class DataMappingToolbar(QFrame):
             "Read the mapping source again; unsaved changes may be discarded."
         )
 
+    def _build_export_button(self, callbacks: dict[str, Callable[[], None]]) -> QToolButton:
+        button = QToolButton(self)
+        button.setText("Export")
+        button.setAccessibleName("Export")
+        button.setToolTip("Choose a review snapshot or mapping exchange package export.")
+        button.setEnabled(False)
+        button.setPopupMode(QToolButton.InstantPopup)
+        menu = QMenu(button)
+        exchange_action = menu.addAction("Mapping Exchange Package…")
+        review_action = menu.addAction("Review Snapshot…")
+        exchange_callback = callbacks.get("export_mapping_exchange")
+        review_callback = callbacks.get("export_csv_v2")
+        if exchange_callback is not None:
+            exchange_action.triggered.connect(exchange_callback)
+        if review_callback is not None:
+            review_action.triggered.connect(review_callback)
+        button.setMenu(menu)
+        self._export_menu_actions = {
+            "exchange": exchange_action,
+            "review": review_action,
+        }
+        return button
+
     def bind_state(self, state: DataMappingControllerState, *, has_row: bool) -> None:
         """Apply controller action and row-selection availability."""
         actions = {action.key: action for action in state.actions}
         for key, button in self.buttons.items():
+            if key == "export_csv_v2":
+                review_action = actions.get("export_csv_v2")
+                exchange_action = actions.get("export_mapping_exchange")
+                self._export_menu_actions["review"].setEnabled(
+                    bool(review_action and review_action.enabled)
+                )
+                self._export_menu_actions["exchange"].setEnabled(
+                    bool(exchange_action and exchange_action.enabled)
+                )
+                button.setEnabled(bool(review_action and review_action.enabled))
+                continue
             if key == "refresh_view":
                 button.setEnabled(True)
                 continue

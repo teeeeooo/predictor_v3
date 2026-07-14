@@ -22,6 +22,7 @@ from apps.train.services.data_mapping_types import (
     DataMappingSnapshot,
 )
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.exchange import MappingExchangeExportPlan
 
 # Compatibility aliases for the existing focused controller contract.
 _exception_summary = exception_summary
@@ -194,6 +195,36 @@ class DataMappingController:
             extra_issues=(
                 operation_issue("export_failed", "Export", "file", result.message),
             ),
+        )
+
+    def plan_exchange_export(self, destination: str | Path) -> MappingExchangeExportPlan:
+        """Return exchange targets and blockers without changing draft state."""
+        return self._service.plan_exchange_export(destination)
+
+    def export_exchange(
+        self,
+        destination: str | Path,
+        selected_group_key: str = "",
+    ) -> DataMappingControllerState:
+        """Publish the current valid draft as an exchange package."""
+        result, snapshot = self._service.export_exchange(destination)
+        if result.success:
+            return self._state_from_snapshot(
+                snapshot,
+                selected_group_key,
+                message=result.message,
+            )
+        return self._state_from_snapshot(
+            snapshot,
+            selected_group_key,
+            status="error",
+            message="Exchange export failed.",
+            extra_issues=(*result.issues, operation_issue(
+                "exchange_export_failed",
+                "Exchange Export",
+                "destination",
+                result.message,
+            )),
         )
 
     def _state_from_snapshot(

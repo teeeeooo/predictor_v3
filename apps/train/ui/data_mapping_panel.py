@@ -55,6 +55,7 @@ GROUP_NAV_INITIAL_WIDTH = 230
 WORKSPACE_INITIAL_WIDTH = 1050
 DETAILS_INITIAL_HEIGHT = 210
 EXPORT_FILTERS = "JSON Files (*.json);;Excel Workbook (*.xlsx)"
+EXCHANGE_EXPORT_FILTERS = "CSV Files (*.csv);;All files (*)"
 
 
 class DataMappingPanel(QWidget):
@@ -105,6 +106,7 @@ class DataMappingPanel(QWidget):
                 "duplicate_row": self._duplicate_row,
                 "delete_row": self._delete_row,
                 "export_csv_v2": self._export,
+                "export_mapping_exchange": self._export_exchange,
                 "save_mapping_json": self._save,
                 "refresh_view": self.refresh,
                 "reload_runtime": self._reload,
@@ -458,6 +460,41 @@ class DataMappingPanel(QWidget):
                     self._selected_group_key,
                 )
             )
+
+    def _export_exchange(self) -> None:
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export Mapping Exchange Package",
+            "mapping_bundle.csv",
+            EXCHANGE_EXPORT_FILTERS,
+        )
+        if not path:
+            return
+        plan = self._controller.plan_exchange_export(path)
+        if not plan.success:
+            self._apply_state(
+                self._controller.export_exchange(path, self._selected_group_key)
+            )
+            return
+        if plan.existing_paths and not self._confirm_exchange_overwrite(plan.existing_paths):
+            return
+        self._apply_state(
+            self._controller.export_exchange(path, self._selected_group_key)
+        )
+
+    def _confirm_exchange_overwrite(self, paths: tuple[Path, ...]) -> bool:
+        targets = "\n".join(str(path) for path in paths)
+        return (
+            QMessageBox.question(
+                self,
+                "Overwrite Mapping Exchange Package",
+                "The following files will be replaced:\n\n"
+                f"{targets}\n\nContinue with the package export?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            == QMessageBox.Yes
+        )
 
     def _selected_row(self) -> int | None:
         index = self.row_table.currentIndex()

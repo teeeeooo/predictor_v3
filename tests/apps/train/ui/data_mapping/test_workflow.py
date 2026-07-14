@@ -186,6 +186,28 @@ def test_source_operation_issue_does_not_move_primary_selection(tmp_path):
     assert panel.row_table.currentIndex().row() == before.row()
 
 
+def test_export_menu_separates_review_snapshot_and_exchange_package(tmp_path):
+    _app()
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(_copy_mapping(tmp_path))))
+    )
+    panel = DataMappingPanel(controller=controller)
+    export_button = panel.toolbar.buttons["export_csv_v2"]
+    actions = panel.toolbar._export_menu_actions
+
+    assert export_button.text() == "Export"
+    assert actions["exchange"].text() == "Mapping Exchange Package…"
+    assert actions["review"].text() == "Review Snapshot…"
+    assert actions["exchange"].isEnabled()
+    assert actions["review"].isEnabled()
+
+    invalid = controller.edit_cell("idu", 0, "ID Volume", "not-a-number")
+    panel._apply_state(invalid)
+
+    assert not actions["exchange"].isEnabled()
+    assert actions["review"].isEnabled()
+
+
 def test_refresh_preserves_baseline_undo_and_selection_without_provider_reload(tmp_path):
     _app()
     mapping_file = _copy_mapping(tmp_path)

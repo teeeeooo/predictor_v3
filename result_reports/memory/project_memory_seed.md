@@ -389,6 +389,20 @@ entries:
     source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2c-workflow.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-audit-correction.md
 
   - type: decision
+    topic: Train Admin Phase 2 exchange export boundary
+    content: Slice 2D keeps the existing JSON/XLSX review snapshot and export_csv_v2 contract separate from the official mapping exchange contract. Exchange export is owned by the Qt-free core/mapping/exchange package and consumes the service-owned current draft without provider Reload. One operation deterministically serializes the current visible seven-group projection into seven canonical group CSVs and a sectioned mapping_bundle_v1 CSV, preserves standard CSV quoting and typed canonical text, blanks PFC Pi, excludes hidden payload, and stages all eight files before rollback-aware publish. The bundle filename is user-selected but case-insensitive canonical group filenames are reserved. Initial Slice 2E import policy is exact-header: every current visible projection header must occur once; missing, unknown, or duplicate headers block the full replacement before draft/session/runtime state changes.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - mapping_bundle_v1
+      - exchange export
+      - exact header
+      - review snapshot
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2d-exchange-export.md
+
+  - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
     content: Historical single-wide CSV conversion is not recoverable as a general import contract. The Phase 1 legacy-wide parser is a strict bootstrap-only adapter into the existing editor draft and validated runtime projection; normal Data Mapping Import remains excluded. JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
     keywords:

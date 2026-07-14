@@ -17,22 +17,19 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slices 2B and 2C
-are implemented and pushed on `phase/train-admin-data-mapping-ux` after the
-approved Slice 2A head. Slice 2B adds bounded spreadsheet interaction owners,
-rectangular TSV copy/paste, clear, grouped undo, keyboard navigation, CRUD
-selection, and the PFC Pi guard. Slice 2C adds exact baseline-diff dirty state,
-structured issue-to-cell navigation, validation feedback, and transactional
-Save/Reload state handling. The Batch audit correction now canonicalizes valid
-typed cell input before dirty comparison, atomically blocks overflow paste, and
-enforces one contiguous rectangular selection. Slice 2D has not started.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2D exchange
+export is implemented on `phase/train-admin-data-mapping-ux` after the approved
+Slice 2A head and the approved Slice 2B+2C implementation. Slice 2D keeps the
+existing review snapshot contract, adds a Qt-free `mapping_bundle_v1` exchange
+serializer, and publishes seven canonical group CSVs plus one user-named bundle
+from the current service-owned draft through staging and rollback-aware publish.
+The next Slice 2E bundle import has not started.
 
 ## Next Action
 
-Submit the correction for Slice 2B+2C re-audit. When physical user input is
-available, repeat only the three bounded native scenarios in the prepared
-synthetic harness; Computer Use remains limited to display/window screenshots.
-Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
+Create and push the Slice 2D logical commit, then implement the sectioned
+`mapping_bundle_v1` import preview/apply workflow as Slice 2E. Keep Draft PR #15
+open; do not merge the phase or change PR readiness.
 
 ## Active Blockers
 
@@ -42,9 +39,10 @@ Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
   injected keyboard shortcuts did not reach the Qt table. Therefore paste/undo,
   PFC Pi, and issue-navigation/Save/Reload native interaction evidence remains
   incomplete; automated regression is recorded separately and is not treated
-  as a substitute. The audit-correction follow-up confirmed native rendering
-  without accessibility clicks, but no physical interaction completion was
-  reported, so no new interaction PNG was added.
+  as a substitute. This remains deferred and non-blocking for Slice 2D/2E. The
+  audit-correction follow-up confirmed native rendering without accessibility
+  clicks, but no physical interaction completion was reported, so no new
+  interaction PNG was added.
 
 ## Active Constraints
 
@@ -58,7 +56,8 @@ Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
   acceptance is complete.
 - Preserve the Slice 2B and Slice 2C commits as separately auditable logical
   changes and keep PR #15 Draft/Open.
-- Do not begin Slice 2D exchange export/import work.
+- Keep Slice 2D and Slice 2E as separately auditable logical commits; start Slice
+  2E only after the Slice 2D focused export gate and push succeed.
 
 ## Deferred / Hold
 

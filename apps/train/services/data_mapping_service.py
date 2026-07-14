@@ -26,6 +26,13 @@ from core.mapping.editor_persistence import MappingEditorSaveResult, save_mappin
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_runtime_adapter import runtime_mapping_source_label
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.exchange import (
+    MappingExchangeExportPlan,
+    MappingExchangeExportResult,
+    exchange_draft_structure_issues,
+    export_mapping_exchange,
+    plan_mapping_exchange_export,
+)
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.data_definition import MappingRequirement, build_data_definition_report
 from apps.train.services.data_mapping_types import (
@@ -317,6 +324,28 @@ class DataMappingService:
             )
         return result, snapshot
 
+    def plan_exchange_export(self, destination: str | Path) -> MappingExchangeExportPlan:
+        """Calculate exchange targets and validation without writing files."""
+        snapshot = self.load_snapshot()
+        return plan_mapping_exchange_export(
+            snapshot.draft,
+            destination,
+            snapshot.validation_errors,
+        )
+
+    def export_exchange(
+        self,
+        destination: str | Path,
+    ) -> tuple[MappingExchangeExportResult, DataMappingSnapshot]:
+        """Export the current service-owned draft as an exchange package."""
+        snapshot = self.load_snapshot()
+        result = export_mapping_exchange(
+            snapshot.draft,
+            destination,
+            snapshot.validation_errors,
+        )
+        return result, snapshot
+
     def _store_command_result(
         self,
         previous: MappingEditorDraft,
@@ -344,6 +373,10 @@ class DataMappingService:
             actions=_future_actions(
                 validation_result.save_enabled,
                 can_save=bool(getattr(self._provider, "mapping_file", None)),
+                exchange_enabled=(
+                    validation_result.save_enabled
+                    and not exchange_draft_structure_issues(draft)
+                ),
             ),
             dirty=self._session.dirty,
         )
@@ -373,13 +406,24 @@ def _future_actions(
     save_enabled: bool = False,
     *,
     can_save: bool = False,
+    exchange_enabled: bool | None = None,
 ) -> tuple[DataMappingAction, ...]:
+    if exchange_enabled is None:
+        exchange_enabled = save_enabled
     return (
         DataMappingAction(
             "export_csv_v2",
             "Export",
             True,
             "Export a read-only review snapshot. It cannot be imported back.",
+        ),
+        DataMappingAction(
+            "export_mapping_exchange",
+            "Mapping Exchange Package",
+            exchange_enabled,
+            "Resolve Issues or restore the seven exchange groups before exporting."
+            if not exchange_enabled
+            else "Export the current valid draft as a mapping exchange package.",
         ),
         DataMappingAction(
             "save_mapping_json",
