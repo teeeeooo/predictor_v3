@@ -17,15 +17,18 @@
 
 ## Current Slice
 
-No implementation slice is active. Train/Admin UI/UX Overhaul Phase 1 —
-Mapping/Data Foundation Slices 1A–1D, both final corrections, and
-repository-automated validation are complete. Final audit is approved and PR
-#14 is the merge target. Phase 2 has not started.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2A is
+implemented on `phase/train-admin-data-mapping-ux` and awaits Slice 2A audit.
+The change covers populated-state information architecture, group navigation,
+primary-table dominance, concise actions/status, secondary details, and
+distinct empty/missing/load-error states. Slice 2B and later work has not
+started.
 
 ## Next Action
 
-After PR #14 merge closeout, await separate instruction before creating a Phase
-2 branch from merged `main`.
+Complete Slice 2A audit on the Phase 2 Draft PR. After approval, perform a
+bounded Data Mapping panel split audit before starting Slice 2B interaction
+work.
 
 ## Active Blockers
 
@@ -41,6 +44,8 @@ None.
 - Keep Cooling and Heating models independent, including monotone constraints.
 - Commit and push each verified slice to the phase branch; merge only after phase
   acceptance is complete.
+- Do not add Slice 2B/2C spreadsheet, issue-navigation, or workflow semantics to
+  the Slice 2A audit correction scope.
 
 ## Deferred / Hold
 
@@ -52,7 +57,7 @@ None.
 ## Minimal Anchors
 
 - Governing design: `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-governing-design.md`
-- Active phase design: `docs/designs/2026-07-14-train-admin-phase-1-mapping-data-foundation.md`
+- Active phase design: `docs/designs/2026-07-14-train-admin-phase-2-data-mapping-ux-overhaul.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

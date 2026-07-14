@@ -35,6 +35,8 @@ class ReadOnlyMappingTableModel(QAbstractTableModel):
             return None
         if role in (Qt.DisplayRole, Qt.EditRole):
             return str(self._rows[index.row()][index.column()])
+        if role == Qt.ToolTipRole:
+            return str(self._rows[index.row()][index.column()])
         if role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
         return None

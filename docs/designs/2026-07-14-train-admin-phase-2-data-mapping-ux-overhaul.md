@@ -1,6 +1,6 @@
 # Train/Admin Phase 2 — Data Mapping UX Overhaul
 
-Status: proposed phase design  
+Status: active — Slice 2A implemented; audit pending
 Date: 2026-07-14  
 Depends on: Phase 1 — Mapping/Data Foundation
 
@@ -241,6 +241,20 @@ Reusable common PySide6 components are preferred over panel-specific styling.
 - Restructure the panel around group navigation and the primary table.
 - Preserve group selection and draft state.
 - Implement clear normal, empty, missing-resource, and error states.
+
+Implemented on `phase/train-admin-data-mapping-ux`:
+
+- concise group navigation with label, row count, and selected state;
+- dominant definition-backed primary mapping table;
+- compact status/source/action area and collapsible secondary field/issue details;
+- distinct populated, empty-group, missing-resource, and load-error surfaces;
+- selection-preserving non-destructive refresh and current-draft projection;
+- repository-fixture-backed offscreen verification for representative states.
+
+The panel owner now exceeds the structure guard's 400 LOC soft limit. Slice 2A
+keeps the added behavior inside View composition and intent forwarding, but a
+feature-package/split audit is required before Slice 2B adds spreadsheet
+interaction responsibility to this surface.
 
 ### Slice 2B — Spreadsheet interaction and CRUD
 

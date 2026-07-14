@@ -9,6 +9,7 @@ from apps.train.services.data_mapping_service import (
     FoundationMappingCatalogProvider,
     RuntimeMappingCatalogProvider,
 )
+from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 
 
 def test_data_mapping_controller_returns_entity_list_and_selected_details():
@@ -171,7 +172,7 @@ def test_data_mapping_controller_export_keeps_dirty_state(tmp_path):
     assert state.dirty
 
 
-def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_path):
+def test_data_mapping_controller_distinguishes_missing_runtime_source(tmp_path):
     missing_mapping = tmp_path / "missing.json"
     controller = DataMappingController(
         DataMappingService(RuntimeMappingCatalogProvider(str(missing_mapping)))
@@ -179,12 +180,82 @@ def test_data_mapping_controller_preserves_runtime_source_on_load_failure(tmp_pa
 
     state = controller.refresh()
 
-    assert state.status == "error"
+    assert state.status == "missing"
+    assert state.resource_status == "missing"
     assert state.source_label == f"File: {missing_mapping}"
-    assert state.message == "Unable to load data."
-    assert state.validation_rows[0].code == "load_failed"
+    assert state.message == "Mapping resource not found."
+    assert state.validation_rows[0].code == "resource_missing"
     assert state.validation_rows[0].field == "source"
-    assert str(missing_mapping) in state.validation_rows[0].message
+    assert [action.key for action in state.actions] == ["reload_runtime"]
+
+
+def test_data_mapping_controller_distinguishes_existing_source_load_error(tmp_path):
+    malformed_mapping = tmp_path / "mapping.json"
+    malformed_mapping.write_text("{not-json", encoding="utf-8")
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(malformed_mapping)))
+    )
+
+    state = controller.refresh()
+
+    assert state.status == "error"
+    assert state.resource_status == "load-error"
+    assert state.source_label == f"File: {malformed_mapping}"
+    assert state.message == "Unable to load mapping data."
+    assert state.validation_rows[0].code == "load_failed"
+    assert [action.key for action in state.actions] == ["reload_runtime"]
+
+
+def test_data_mapping_controller_preserves_selection_across_non_destructive_updates(tmp_path):
+    controller = DataMappingController(DataMappingService(FoundationMappingCatalogProvider()))
+    controller.edit_cell("odu_cond_specs", 0, "Cond Area", "4.25")
+
+    refreshed = controller.refresh("odu_cond_specs")
+    exported = controller.export_snapshot(
+        tmp_path / "snapshot.json",
+        "json",
+        "odu_cond_specs",
+    )
+
+    assert refreshed.selected_group_key == "odu_cond_specs"
+    assert refreshed.dirty
+    assert refreshed.values[0].values[-2:] == ("4.25", "4.5")
+    assert exported.selected_group_key == "odu_cond_specs"
+    assert exported.dirty
+
+
+def test_failed_reload_keeps_service_owned_draft_available():
+    class FlakyProvider:
+        source_label = "Flaky fixture"
+
+        def __init__(self):
+            self.fail = False
+
+        def load_draft(self):
+            if self.fail:
+                raise ValueError("fixture became unreadable")
+            return project_runtime_mapping_to_editor_draft(
+                {
+                    "idu": {"IDU-A": {"ID Volume": 1.25}},
+                    "ref_type": {"R32": {}},
+                    "exp_type": {"EEV": {}},
+                },
+                source_label=self.source_label,
+            )
+
+    provider = FlakyProvider()
+    controller = DataMappingController(DataMappingService(provider))
+    controller.edit_cell("idu", 0, "ID Volume", "2.5")
+    provider.fail = True
+
+    failed = controller.reload("idu")
+    recovered = controller.refresh("idu")
+
+    assert failed.resource_status == "load-error"
+    assert failed.message == "Unable to reload mapping data."
+    assert recovered.selected_group_key == "idu"
+    assert recovered.values[0].values[1] == "2.5"
+    assert recovered.dirty
 
 
 def test_source_display_only_removes_known_runtime_prefix():

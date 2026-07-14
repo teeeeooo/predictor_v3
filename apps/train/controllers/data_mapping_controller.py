@@ -57,6 +57,7 @@ class DataMappingControllerState:
     validation_rows: tuple[MappingValidationError, ...]
     actions: tuple[DataMappingAction, ...]
     dirty: bool = False
+    resource_status: str = "available"
 
 
 class DataMappingController:
@@ -67,12 +68,17 @@ class DataMappingController:
 
     def refresh(self, selected_entity_key: str = "") -> DataMappingControllerState:
         """Load the latest Data Mapping state."""
+        resource_status = self._service.resource_status()
+        if resource_status == "missing":
+            return _missing_state(
+                source_label=_display_source_label(self._service.source_label),
+            )
         try:
             snapshot = self._service.load_snapshot()
         except Exception as exc:
-            detail = f"Data load failed: {exc}"
+            detail = str(exc).splitlines()[0]
             return _error_state(
-                "Unable to load data.",
+                "Unable to load mapping data.",
                 source_label=_display_source_label(self._service.source_label),
                 detail_message=detail,
             )
@@ -98,6 +104,7 @@ class DataMappingController:
             validation_rows=validation_rows,
             actions=snapshot.actions,
             dirty=snapshot.dirty,
+            resource_status=resource_status,
         )
 
     def resource_status(self) -> str:
@@ -130,18 +137,30 @@ class DataMappingController:
         """Delete one row and return refreshed state."""
         return self._state_from_snapshot(self._service.delete_row(group_key, row_index), group_key)
 
-    def reload(self) -> DataMappingControllerState:
+    def reload(self, selected_group_key: str = "") -> DataMappingControllerState:
         """Discard draft edits and reload from the provider."""
-        return self._state_from_snapshot(self._service.reload_snapshot(), "")
+        if self._service.resource_status() == "missing":
+            return _missing_state(
+                source_label=_display_source_label(self._service.source_label),
+            )
+        try:
+            snapshot = self._service.reload_snapshot()
+        except Exception as exc:
+            return _error_state(
+                "Unable to reload mapping data.",
+                source_label=_display_source_label(self._service.source_label),
+                detail_message=str(exc).splitlines()[0],
+            )
+        return self._state_from_snapshot(snapshot, selected_group_key)
 
-    def save(self) -> DataMappingControllerState:
+    def save(self, selected_group_key: str = "") -> DataMappingControllerState:
         """Save the current draft and return refreshed state."""
         result, snapshot = self._service.save_mapping()
         if result.success:
-            return self._state_from_snapshot(snapshot, "", message="Saved.")
+            return self._state_from_snapshot(snapshot, selected_group_key, message="Saved.")
         return self._state_from_snapshot(
             snapshot,
-            "",
+            selected_group_key,
             status="error",
             message="Save failed.",
             extra_issues=(_operation_issue("save_failed", "Save", "file", result.message),),
@@ -159,15 +178,19 @@ class DataMappingController:
         self,
         destination: str | Path,
         export_format: str,
+        selected_group_key: str = "",
     ) -> DataMappingControllerState:
         """Export the current draft in the requested review snapshot format."""
         result, snapshot = self._service.export_snapshot(destination, export_format)
-        selected = snapshot.draft.groups[0].group_key if snapshot.draft.groups else ""
         if result.success:
-            return self._state_from_snapshot(snapshot, selected, message="Exported.")
+            return self._state_from_snapshot(
+                snapshot,
+                selected_group_key,
+                message="Exported.",
+            )
         return self._state_from_snapshot(
             snapshot,
-            selected,
+            selected_group_key,
             status="error",
             message="Export failed.",
             extra_issues=(
@@ -203,6 +226,7 @@ class DataMappingController:
             validation_rows=(*snapshot.validation_errors, *extra_issues),
             actions=snapshot.actions,
             dirty=snapshot.dirty,
+            resource_status=self._service.resource_status(),
         )
 
 
@@ -323,6 +347,30 @@ def _error_state(
                 field="source",
             ),
         ),
-        actions=(),
+        actions=(DataMappingAction("reload_runtime", "Reload", True, ""),),
         dirty=False,
+        resource_status="load-error",
+    )
+
+
+def _missing_state(*, source_label: str) -> DataMappingControllerState:
+    return DataMappingControllerState(
+        source_label=source_label,
+        status="missing",
+        message="Mapping resource not found.",
+        selected_group_key="",
+        entities=(),
+        attributes=(),
+        value_headers=(),
+        values=(),
+        validation_rows=(
+            MappingValidationError(
+                code="resource_missing",
+                message="The configured mapping file does not exist.",
+                field="source",
+            ),
+        ),
+        actions=(DataMappingAction("reload_runtime", "Reload", True, ""),),
+        dirty=False,
+        resource_status="missing",
     )

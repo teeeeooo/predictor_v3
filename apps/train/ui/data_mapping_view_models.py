@@ -5,6 +5,7 @@ from __future__ import annotations
 from apps.train.controllers.data_mapping_controller import DataMappingControllerState
 
 ENTITY_HEADERS = ("Group", "Label", "Rows", "Active", "Notes")
+GROUP_HEADERS = ("Group", "Rows")
 ATTRIBUTE_HEADERS = ("Field", "Label", "Type", "Required", "Notes")
 VALIDATION_HEADERS = ("Level", "Group", "Row", "Field", "Message")
 
@@ -21,6 +22,11 @@ def entity_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...], ...
         )
         for entity in state.entities
     )
+
+
+def group_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...], ...]:
+    """Return concise user-facing rows for group navigation."""
+    return tuple((entity.label, str(entity.row_count)) for entity in state.entities)
 
 
 def attribute_rows(state: DataMappingControllerState) -> tuple[tuple[str, ...], ...]:
