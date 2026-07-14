@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.entity_model import MappingValidationError
@@ -17,6 +17,24 @@ class DataMappingAction:
     label: str
     enabled: bool
     reason: str
+
+
+@dataclass(frozen=True)
+class DataMappingCellEdit:
+    """One visible mapping-cell mutation requested by the UI."""
+
+    row_index: int
+    column: str
+    value: Any
+
+
+@dataclass(frozen=True)
+class DataMappingMutationResult:
+    """Outcome for one grouped mapping mutation intent."""
+
+    applied: int = 0
+    blocked: int = 0
+    message: str = ""
 
 
 @dataclass(frozen=True)

@@ -30,9 +30,13 @@ from core.mapping.paths import MAPPING_JSON_FILE
 from core.data_definition import MappingRequirement, build_data_definition_report
 from apps.train.services.data_mapping_types import (
     DataMappingAction,
+    DataMappingCellEdit,
+    DataMappingMutationResult,
     DataMappingSnapshot,
     MappingDraftProvider,
 )
+from apps.train.services.data_mapping.draft_session import DataMappingDraftSession
+from core.mapping.condenser_identity import condenser_requires_pi
 
 
 class FoundationMappingCatalogProvider:
@@ -121,8 +125,7 @@ class DataMappingService:
             if provider is None else EmptyMappingRequirementProvider()
         )
         self._mapping_requirement_provider = mapping_requirement_provider or default_requirement_provider
-        self._draft: MappingEditorDraft | None = None
-        self._dirty = False
+        self._session = DataMappingDraftSession()
 
     @property
     def source_label(self) -> str:
@@ -140,32 +143,33 @@ class DataMappingService:
         """Return draft data, validation result, and disabled future actions."""
         requirements = self._load_mapping_requirements()
         draft = apply_mapping_requirements_to_editor_draft(
-            self._draft or self._provider.load_draft(),
+            self._session.draft or self._provider.load_draft(),
             requirements,
         )
-        self._draft = draft
+        self._session.project(draft)
         return self._snapshot(draft, requirements)
 
     def current_snapshot(self) -> DataMappingSnapshot | None:
         """Return the service-owned draft without reading the provider."""
-        if self._draft is None:
+        if self._session.draft is None:
             return None
         requirements = self._load_mapping_requirements()
-        self._draft = apply_mapping_requirements_to_editor_draft(
-            self._draft,
+        draft = apply_mapping_requirements_to_editor_draft(
+            self._session.draft,
             requirements,
         )
-        return self._snapshot(self._draft, requirements)
+        self._session.project(draft)
+        return self._snapshot(draft, requirements)
 
     def reload_snapshot(self) -> DataMappingSnapshot:
         """Discard draft edits and reload from the provider."""
         requirements = self._load_mapping_requirements()
-        self._draft = apply_mapping_requirements_to_editor_draft(
+        draft = apply_mapping_requirements_to_editor_draft(
             self._provider.load_draft(),
             requirements,
         )
-        self._dirty = False
-        return self._snapshot(self._draft, requirements)
+        self._session.reset(draft)
+        return self._snapshot(draft, requirements)
 
     def edit_cell(
         self,
@@ -175,9 +179,39 @@ class DataMappingService:
         value: object,
     ) -> DataMappingSnapshot:
         """Apply one cell edit to the current draft."""
+        snapshot, _result = self.edit_cells(
+            group_key,
+            (DataMappingCellEdit(row_index, column, value),),
+        )
+        return snapshot
+
+    def edit_cells(
+        self,
+        group_key: str,
+        edits: tuple[DataMappingCellEdit, ...],
+    ) -> tuple[DataMappingSnapshot, DataMappingMutationResult]:
+        """Apply one cell or rectangular batch as one undoable command."""
         draft = self.load_snapshot().draft
-        next_draft = set_draft_cell(draft, group_key, row_index, column, value)
-        return self._store_command_result(draft, next_draft)
+        next_draft = draft
+        applied = 0
+        blocked = 0
+        for edit in edits:
+            if not _cell_is_mutable(next_draft, group_key, edit.row_index, edit.column):
+                blocked += 1
+                continue
+            candidate = set_draft_cell(
+                next_draft,
+                group_key,
+                edit.row_index,
+                edit.column,
+                edit.value,
+            )
+            if candidate != next_draft:
+                applied += 1
+                next_draft = candidate
+        snapshot = self._store_command_result(draft, next_draft)
+        message = _mutation_message(applied, blocked)
+        return snapshot, DataMappingMutationResult(applied, blocked, message)
 
     def add_row(self, group_key: str) -> DataMappingSnapshot:
         """Append one blank row to a group."""
@@ -196,6 +230,19 @@ class DataMappingService:
         """Delete one group row."""
         draft = self.load_snapshot().draft
         return self._store_command_result(draft, delete_draft_row(draft, group_key, row_index))
+
+    def undo(self) -> tuple[DataMappingSnapshot, DataMappingMutationResult]:
+        """Restore the previous draft for the most recent user intent."""
+        current = self.load_snapshot().draft
+        restored = self._session.undo()
+        if restored is None:
+            return self._snapshot(current, self._load_mapping_requirements()), DataMappingMutationResult(
+                message="Nothing to undo."
+            )
+        return self._snapshot(
+            restored,
+            self._load_mapping_requirements(),
+        ), DataMappingMutationResult(applied=1, message="Undid the last change.")
 
     def save_mapping(self) -> tuple[MappingEditorSaveResult, DataMappingSnapshot]:
         """Save the current valid draft to runtime mapping JSON."""
@@ -218,7 +265,7 @@ class DataMappingService:
             return result, snapshot
         result = save_mapping_editor_draft(draft, mapping_file)
         if result.success:
-            self._dirty = False
+            self._session.mark_clean()
         return result, self._snapshot(draft, self._load_mapping_requirements())
 
     def export_snapshot(
@@ -253,10 +300,8 @@ class DataMappingService:
         previous: MappingEditorDraft,
         next_draft: MappingEditorDraft,
     ) -> DataMappingSnapshot:
-        if next_draft != previous:
-            self._draft = next_draft
-            self._dirty = True
-        return self._snapshot(self._draft or next_draft, self._load_mapping_requirements())
+        stored = self._session.store_command(previous, next_draft)
+        return self._snapshot(stored, self._load_mapping_requirements())
 
     def _snapshot(
         self,
@@ -278,7 +323,7 @@ class DataMappingService:
                 validation_result.save_enabled,
                 can_save=bool(getattr(self._provider, "mapping_file", None)),
             ),
-            dirty=self._dirty,
+            dirty=self._session.dirty,
         )
 
     def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
@@ -335,3 +380,28 @@ def _save_disabled_reason(save_enabled: bool, can_save: bool) -> str:
     if not save_enabled:
         return "Resolve Issues before saving."
     return ""
+
+
+def _cell_is_mutable(
+    draft: MappingEditorDraft,
+    group_key: str,
+    row_index: int,
+    column: str,
+) -> bool:
+    group = draft.group(group_key)
+    if group is None or column not in group.columns or not 0 <= row_index < len(group.rows):
+        return False
+    if group_key == "odu_cond_specs" and column == "Pi":
+        fin_type = group.rows[row_index].value_for("Fin Type")
+        return condenser_requires_pi(fin_type)
+    return True
+
+
+def _mutation_message(applied: int, blocked: int) -> str:
+    if applied and blocked:
+        return f"Applied {applied} cell(s); skipped {blocked} protected target(s)."
+    if applied:
+        return f"Applied {applied} cell(s)."
+    if blocked:
+        return f"No cells changed; skipped {blocked} protected target(s)."
+    return "No cells changed."

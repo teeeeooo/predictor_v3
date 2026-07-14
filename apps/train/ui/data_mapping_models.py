@@ -92,9 +92,11 @@ class EditableMappingTableModel(ReadOnlyMappingTableModel):
         rows: Sequence[Sequence[object]] = (),
         *,
         on_cell_changed: Callable[[int, str, object], bool] | None = None,
+        read_only_cells: frozenset[tuple[int, int]] = frozenset(),
     ) -> None:
         super().__init__(headers, rows)
         self._on_cell_changed = on_cell_changed
+        self._read_only_cells = read_only_cells
 
     def setData(
         self,
@@ -102,7 +104,7 @@ class EditableMappingTableModel(ReadOnlyMappingTableModel):
         value: Any,
         role: int = Qt.EditRole,
     ) -> bool:
-        if role != Qt.EditRole or not self._has_cell(index):
+        if role != Qt.EditRole or not self._has_cell(index) or self.is_read_only(index.row(), index.column()):
             return False
         header = self._headers[index.column()]
         if self._on_cell_changed is None:
@@ -118,4 +120,17 @@ class EditableMappingTableModel(ReadOnlyMappingTableModel):
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not self._has_cell(index):
             return Qt.NoItemFlags
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        if not self.is_read_only(index.row(), index.column()):
+            flags |= Qt.ItemIsEditable
+        return flags
+
+    def is_read_only(self, row: int, column: int) -> bool:
+        """Return whether one visible cell is protected from mutation."""
+        return (row, column) in self._read_only_cells
+
+    def header_for_column(self, column: int) -> str:
+        """Return the visible field key for a model column."""
+        if not 0 <= column < len(self._headers):
+            return ""
+        return self._headers[column]

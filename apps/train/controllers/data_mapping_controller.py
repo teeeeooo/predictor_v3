@@ -2,62 +2,30 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
+from apps.train.controllers.data_mapping.presentation import (
+    DataMappingAttributeRow,
+    DataMappingControllerState,
+    DataMappingEntitySummary,
+    DataMappingValueRow,
+    display_source_label,
+    error_state,
+    exception_summary,
+    missing_state,
+    operation_issue,
+    project_snapshot,
+)
 from apps.train.services.data_mapping_service import DataMappingService
-from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
-from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
+from apps.train.services.data_mapping_types import (
+    DataMappingCellEdit,
+    DataMappingSnapshot,
+)
 from core.mapping.entity_model import MappingValidationError
 
-
-@dataclass(frozen=True)
-class DataMappingEntitySummary:
-    """Group row shown in the Data Mapping group list."""
-
-    entity_key: str
-    label: str
-    row_count: int
-    active: bool
-    notes: str
-
-
-@dataclass(frozen=True)
-class DataMappingAttributeRow:
-    """Field row shown for the selected group."""
-
-    attribute_key: str
-    label: str
-    data_type: str
-    required: bool
-    notes: str
-
-
-@dataclass(frozen=True)
-class DataMappingValueRow:
-    """Row value shown for the selected group."""
-
-    row_key: str
-    values: tuple[str, ...]
-    notes: str
-
-
-@dataclass(frozen=True)
-class DataMappingControllerState:
-    """UI-facing Data Mapping state."""
-
-    source_label: str
-    status: str
-    message: str
-    selected_group_key: str
-    entities: tuple[DataMappingEntitySummary, ...]
-    attributes: tuple[DataMappingAttributeRow, ...]
-    value_headers: tuple[str, ...]
-    values: tuple[DataMappingValueRow, ...]
-    validation_rows: tuple[MappingValidationError, ...]
-    actions: tuple[DataMappingAction, ...]
-    dirty: bool = False
-    resource_status: str = "available"
+# Compatibility aliases for the existing focused controller contract.
+_exception_summary = exception_summary
+_display_source_label = display_source_label
 
 
 class DataMappingController:
@@ -73,13 +41,13 @@ class DataMappingController:
             snapshot = self._service.load_snapshot()
         except Exception as exc:
             if resource_status == "missing":
-                return _missing_state(
-                    source_label=_display_source_label(self._service.source_label),
+                return missing_state(
+                    source_label=display_source_label(self._service.source_label),
                 )
-            return _error_state(
+            return error_state(
                 "Unable to load mapping data.",
-                source_label=_display_source_label(self._service.source_label),
-                detail_message=_exception_summary(exc),
+                source_label=display_source_label(self._service.source_label),
+                detail_message=exception_summary(exc),
             )
         return self._state_from_snapshot(
             snapshot,
@@ -101,6 +69,32 @@ class DataMappingController:
         """Apply one cell edit and return refreshed state."""
         snapshot = self._service.edit_cell(group_key, row_index, column, value)
         return self._state_from_snapshot(snapshot, group_key)
+
+    def edit_cells(
+        self,
+        group_key: str,
+        edits: tuple[DataMappingCellEdit, ...],
+    ) -> DataMappingControllerState:
+        """Apply a grouped rectangular edit intent."""
+        snapshot, result = self._service.edit_cells(group_key, edits)
+        return self._state_from_snapshot(
+            snapshot,
+            group_key,
+            message=result.message,
+            operation_applied=result.applied,
+            operation_blocked=result.blocked,
+        )
+
+    def undo(self, selected_group_key: str = "") -> DataMappingControllerState:
+        """Undo the most recent service-owned draft command."""
+        snapshot, result = self._service.undo()
+        return self._state_from_snapshot(
+            snapshot,
+            selected_group_key,
+            message=result.message,
+            operation_applied=result.applied,
+            operation_blocked=result.blocked,
+        )
 
     def add_row(self, group_key: str) -> DataMappingControllerState:
         """Add one blank row and return refreshed state."""
@@ -124,14 +118,14 @@ class DataMappingController:
         except Exception as exc:
             cached_snapshot = _safe_current_snapshot(self._service)
             if cached_snapshot is not None:
-                summary = _exception_summary(exc)
+                summary = exception_summary(exc)
                 return self._state_from_snapshot(
                     cached_snapshot,
                     selected_group_key,
                     status="error",
                     message="Reload failed. Current draft preserved.",
                     extra_issues=(
-                        _operation_issue(
+                        operation_issue(
                             "reload_failed",
                             "Reload",
                             "source",
@@ -140,13 +134,13 @@ class DataMappingController:
                     ),
                 )
             if self._service.resource_status() == "missing":
-                return _missing_state(
-                    source_label=_display_source_label(self._service.source_label),
+                return missing_state(
+                    source_label=display_source_label(self._service.source_label),
                 )
-            return _error_state(
+            return error_state(
                 "Unable to reload mapping data.",
-                source_label=_display_source_label(self._service.source_label),
-                detail_message=_exception_summary(exc),
+                source_label=display_source_label(self._service.source_label),
+                detail_message=exception_summary(exc),
             )
         return self._state_from_snapshot(snapshot, selected_group_key)
 
@@ -160,7 +154,7 @@ class DataMappingController:
             selected_group_key,
             status="error",
             message="Save failed.",
-            extra_issues=(_operation_issue("save_failed", "Save", "file", result.message),),
+            extra_issues=(operation_issue("save_failed", "Save", "file", result.message),),
         )
 
     def export_json(self, destination: str | Path) -> DataMappingControllerState:
@@ -191,7 +185,7 @@ class DataMappingController:
             status="error",
             message="Export failed.",
             extra_issues=(
-                _operation_issue("export_failed", "Export", "file", result.message),
+                operation_issue("export_failed", "Export", "file", result.message),
             ),
         )
 
@@ -204,239 +198,23 @@ class DataMappingController:
         message: str | None = None,
         extra_issues: tuple[MappingValidationError, ...] = (),
         resource_status: str | None = None,
+        operation_applied: int = 0,
+        operation_blocked: int = 0,
     ) -> DataMappingControllerState:
-        draft = snapshot.draft
-        entities = tuple(_entity_summary(group) for group in draft.groups)
-        selected = _selected_group(draft.groups, selected_group_key)
-        attributes = _attribute_rows(selected)
-        value_headers = selected.columns
-        values = _value_rows(selected.rows, value_headers)
         resolved_resource_status = resource_status or self._service.resource_status()
-        resource_issues = (
-            (_resource_missing_issue(),)
-            if resolved_resource_status == "missing"
-            else ()
-        )
-        resolved_status = status or _snapshot_status(
-            snapshot.is_valid,
-            resolved_resource_status,
-        )
-        return DataMappingControllerState(
-            source_label=_display_source_label(snapshot.source_label),
-            status=resolved_status,
-            message=message
-            or _status_message(
-                snapshot.is_valid,
-                snapshot.dirty,
-                resolved_resource_status,
-            ),
-            selected_group_key=selected.group_key,
-            entities=entities,
-            attributes=attributes,
-            value_headers=value_headers,
-            values=values,
-            validation_rows=(
-                *snapshot.validation_errors,
-                *resource_issues,
-                *extra_issues,
-            ),
-            actions=snapshot.actions,
-            dirty=snapshot.dirty,
+        return project_snapshot(
+            snapshot,
+            selected_group_key,
+            status=status,
+            message=message,
+            extra_issues=extra_issues,
             resource_status=resolved_resource_status,
+            operation_applied=operation_applied,
+            operation_blocked=operation_blocked,
         )
-
-
-def _entity_summary(
-    group: MappingEditorGroup,
-) -> DataMappingEntitySummary:
-    return DataMappingEntitySummary(
-        entity_key=group.group_key,
-        label=group.label,
-        row_count=len(group.rows),
-        active=True,
-        notes=group.notes,
-    )
-
-
-def _selected_group(
-    groups: tuple[MappingEditorGroup, ...],
-    selected_group_key: str,
-) -> MappingEditorGroup:
-    selected = next((group for group in groups if group.group_key == selected_group_key), None)
-    if selected is not None:
-        return selected
-    return groups[0] if groups else _empty_group()
-
-
-def _attribute_rows(
-    group: MappingEditorGroup,
-) -> tuple[DataMappingAttributeRow, ...]:
-    required_columns = set(group.required_columns)
-    return tuple(
-        DataMappingAttributeRow(
-            column,
-            column,
-            group.column_data_types.get(column, "string"),
-            column == group.columns[0] or column in required_columns,
-            "Required by Data Definition." if column in required_columns else "",
-        )
-        for column in group.columns
-    )
-
-
-def _value_rows(
-    rows: tuple[MappingEditorRow, ...],
-    value_headers: tuple[str, ...],
-) -> tuple[DataMappingValueRow, ...]:
-    return tuple(
-        DataMappingValueRow(
-            row.source_key,
-            tuple(_display_value(row.value_for(header, "")) for header in value_headers),
-            row.notes,
-        )
-        for row in rows
-    )
-
-
-def _display_value(value: object) -> str:
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    return "" if value is None else str(value)
-
-
-def _operation_issue(
-    code: str,
-    group: str,
-    field: str,
-    message: str,
-) -> MappingValidationError:
-    return MappingValidationError(
-        code=code,
-        message=message or f"{group} failed.",
-        entity_key=group,
-        attribute_key=field,
-        field=field,
-    )
-
-
-def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:
-    if not is_valid:
-        message = "Issues found."
-    elif dirty:
-        message = "Unsaved changes."
-    else:
-        message = "Ready."
-    if resource_status == "missing":
-        return f"{message} Source missing."
-    return message
-
-
-def _snapshot_status(is_valid: bool, resource_status: str) -> str:
-    if not is_valid:
-        return "error"
-    if resource_status == "missing":
-        return "warning"
-    return "ready"
-
-
-def _resource_missing_issue() -> MappingValidationError:
-    return MappingValidationError(
-        code="resource_missing",
-        message="The mapping source is missing; the current in-memory draft is preserved.",
-        field="source",
-        severity="warning",
-    )
-
 
 def _safe_current_snapshot(service: DataMappingService) -> DataMappingSnapshot | None:
     try:
         return service.current_snapshot()
     except Exception:
         return None
-
-
-def _exception_summary(exc: Exception) -> str:
-    for line in str(exc).splitlines():
-        summary = line.strip()
-        if summary:
-            return summary
-    return type(exc).__name__ or "Unknown error"
-
-
-def _empty_group() -> MappingEditorGroup:
-    return MappingEditorGroup("", "", ())
-
-
-def _display_source_label(source_label: str) -> str:
-    if not source_label:
-        return ""
-    known_prefix = "Runtime mapping repository:"
-    if source_label.startswith(known_prefix):
-        return f"File: {source_label.removeprefix(known_prefix).strip()}"
-    return f"File: {source_label}"
-
-
-def _error_state(
-    message: str,
-    *,
-    source_label: str = "",
-    detail_message: str = "",
-) -> DataMappingControllerState:
-    issue_message = detail_message or message
-    return DataMappingControllerState(
-        source_label=source_label,
-        status="error",
-        message=message,
-        selected_group_key="",
-        entities=(),
-        attributes=(),
-        value_headers=(),
-        values=(),
-        validation_rows=(
-            MappingValidationError(
-                code="load_failed",
-                message=issue_message,
-                field="source",
-            ),
-        ),
-        actions=(
-            DataMappingAction(
-                "reload_runtime",
-                "Reload",
-                True,
-                "Read the mapping source again.",
-            ),
-        ),
-        dirty=False,
-        resource_status="load-error",
-    )
-
-
-def _missing_state(*, source_label: str) -> DataMappingControllerState:
-    return DataMappingControllerState(
-        source_label=source_label,
-        status="missing",
-        message="Mapping resource not found.",
-        selected_group_key="",
-        entities=(),
-        attributes=(),
-        value_headers=(),
-        values=(),
-        validation_rows=(
-            MappingValidationError(
-                code="resource_missing",
-                message="The configured mapping file does not exist.",
-                field="source",
-            ),
-        ),
-        actions=(
-            DataMappingAction(
-                "reload_runtime",
-                "Reload",
-                True,
-                "Read the mapping source again.",
-            ),
-        ),
-        dirty=False,
-        resource_status="missing",
-    )

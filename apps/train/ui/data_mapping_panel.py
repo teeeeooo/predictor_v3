@@ -27,6 +27,7 @@ from apps.train.controllers.data_mapping_controller import (
     DataMappingControllerState,
 )
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
+from apps.train.ui.data_mapping import DataMappingTableView, DataMappingToolbar
 from apps.train.ui.data_mapping_table_sizing import (
     apply_group_navigation_sizing,
     apply_primary_table_sizing,
@@ -81,9 +82,31 @@ class DataMappingPanel(QWidget):
         self.summary_label.setAccessibleName("Data Mapping summary")
         self.entity_table = _table("Groups")
         self.attribute_table = _table("Fields")
-        self.row_table = _table("Data")
+        self.row_table = DataMappingTableView()
+        _configure_table(self.row_table, "Data")
+        self.row_table.setSelectionBehavior(QAbstractItemView.SelectItems)
+        self.row_table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.row_table.setEditTriggers(
+            QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
+        )
         self.validation_table = _table("Issues")
-        self._buttons: dict[str, QPushButton] = {}
+        self.row_table.bind_interactions(
+            batch_edit=self._edit_cells,
+            undo=self._undo,
+        )
+        self.toolbar = DataMappingToolbar(
+            self,
+            callbacks={
+                "add_row": self._add_row,
+                "duplicate_row": self._duplicate_row,
+                "delete_row": self._delete_row,
+                "export_csv_v2": self._export,
+                "save_mapping_json": self._save,
+                "refresh_view": self.refresh,
+                "reload_runtime": self._reload,
+            },
+        )
+        self._buttons = self.toolbar.buttons
         self.details_toggle = QPushButton("Hide details")
         self.details_toggle.setAccessibleName("Toggle field and issue details")
         self.details_toggle.clicked.connect(self._toggle_details)
@@ -104,51 +127,6 @@ class DataMappingPanel(QWidget):
         """Reload state through the controller."""
         self._apply_state(self._controller.refresh(self._selected_group_key))
 
-    def _build_command_bar(self) -> QFrame:
-        panel = QFrame(self)
-        panel.setObjectName("Panel")
-        panel.setStyleSheet(style.panel_stylesheet())
-        layout = QHBoxLayout(panel)
-        layout.setContentsMargins(
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-        )
-        layout.setSpacing(style.spacing("space.sm"))
-        for key, label in (
-            ("add_row", "Add"),
-            ("duplicate_row", "Duplicate"),
-            ("delete_row", "Delete"),
-            ("export_csv_v2", "Export"),
-            ("save_mapping_json", "Save"),
-            ("refresh_view", "Refresh"),
-            ("reload_runtime", "Reload"),
-        ):
-            button = QPushButton(label)
-            button.setAccessibleName(label)
-            button.setEnabled(False)
-            self._buttons[key] = button
-            layout.addWidget(button)
-        self._buttons["add_row"].clicked.connect(self._add_row)
-        self._buttons["duplicate_row"].clicked.connect(self._duplicate_row)
-        self._buttons["delete_row"].clicked.connect(self._delete_row)
-        self._buttons["export_csv_v2"].clicked.connect(self._export)
-        self._buttons["save_mapping_json"].clicked.connect(self._save)
-        self._buttons["refresh_view"].clicked.connect(self.refresh)
-        self._buttons["reload_runtime"].clicked.connect(self._reload)
-        self._buttons["refresh_view"].setToolTip(
-            "Refresh validation and rendered state without reading the source file."
-        )
-        self._buttons["refresh_view"].setAccessibleDescription(
-            "Refresh the current in-memory draft without reading the mapping source."
-        )
-        self._buttons["reload_runtime"].setAccessibleDescription(
-            "Read the mapping source again; unsaved changes may be discarded."
-        )
-        layout.addStretch(1)
-        return panel
-
     def _build_body(self) -> QSplitter:
         splitter = QSplitter(self)
         splitter.setObjectName("DataMappingSplitter")
@@ -164,7 +142,7 @@ class DataMappingPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_status_strip())
-        layout.addWidget(self._build_command_bar())
+        layout.addWidget(self.toolbar)
 
         self.workspace_stack = QStackedWidget(workspace)
         self.primary_panel = self._panel("Mapping Rows", self.row_table)
@@ -271,7 +249,8 @@ class DataMappingPanel(QWidget):
         return panel
 
     def _apply_state(self, state: DataMappingControllerState) -> None:
-        selected_row = self._selected_row()
+        selected_cell = self._selected_cell()
+        self._current_state = state
         self.setUpdatesEnabled(False)
         blockers = tuple(QSignalBlocker(table) for table in _data_tables(self))
         try:
@@ -292,6 +271,7 @@ class DataMappingPanel(QWidget):
                     value_headers(state),
                     value_rows(state),
                     on_cell_changed=self._edit_cell,
+                    read_only_cells=state.read_only_cells,
                 )
             )
             self.validation_table.setModel(
@@ -307,9 +287,9 @@ class DataMappingPanel(QWidget):
                 self.validation_table,
                 description_header="Message",
             )
-            self._sync_action_buttons(state)
             self._bind_group_selection(state)
-            self._bind_row_selection(selected_row)
+            self._bind_row_selection(selected_cell)
+            self.toolbar.bind_state(state, has_row=self._selected_row() is not None)
             self._sync_workspace_state(state)
         finally:
             del blockers
@@ -327,15 +307,16 @@ class DataMappingPanel(QWidget):
             self.entity_table.setCurrentIndex(self.entity_table.model().index(row, 0))
             del blocker
 
-    def _bind_row_selection(self, selected_row: int | None) -> None:
+    def _bind_row_selection(self, selected_cell: tuple[int, int] | None) -> None:
         selection_model = self.row_table.selectionModel()
         if selection_model is None:
             return
         selection_model.currentRowChanged.connect(self._on_value_row_changed)
         row_count = self.row_table.model().rowCount()
-        if selected_row is not None and row_count:
-            row = min(selected_row, row_count - 1)
-            self.row_table.setCurrentIndex(self.row_table.model().index(row, 0))
+        if selected_cell is not None and row_count:
+            row = min(selected_cell[0], row_count - 1)
+            column = min(selected_cell[1], max(0, self.row_table.model().columnCount() - 1))
+            self.row_table.setCurrentIndex(self.row_table.model().index(row, column))
         self._sync_row_actions()
 
     def _on_entity_row_changed(self, current: QModelIndex, _previous: QModelIndex) -> None:
@@ -349,31 +330,10 @@ class DataMappingPanel(QWidget):
     def _on_value_row_changed(self, _current: QModelIndex, _previous: QModelIndex) -> None:
         self._sync_row_actions()
 
-    def _sync_action_buttons(self, state: DataMappingControllerState) -> None:
-        actions = {action.key: action for action in state.actions}
-        for key, button in self._buttons.items():
-            if key == "refresh_view":
-                button.setEnabled(True)
-                continue
-            if key == "add_row":
-                button.setEnabled(bool(state.selected_group_key))
-                button.setToolTip("")
-                continue
-            if key in {"duplicate_row", "delete_row"}:
-                button.setEnabled(False)
-                button.setToolTip("Select a mapping row first.")
-                continue
-            action = actions.get(key)
-            button.setEnabled(bool(action and action.enabled))
-            if action is not None:
-                button.setToolTip(action.reason)
-
     def _sync_row_actions(self) -> None:
-        has_row = self._selected_row() is not None
-        for key in ("duplicate_row", "delete_row"):
-            button = self._buttons[key]
-            button.setEnabled(bool(self._selected_group_key and has_row))
-            button.setToolTip("" if has_row else "Select a mapping row first.")
+        state = getattr(self, "_current_state", None)
+        if state is not None:
+            self.toolbar.bind_state(state, has_row=self._selected_row() is not None)
 
     def _sync_status(self, state: DataMappingControllerState) -> None:
         self.status_label.setText(state.message)
@@ -410,23 +370,38 @@ class DataMappingPanel(QWidget):
         state = self._controller.edit_cell(self._selected_group_key, row, column, value)
         self._dirty = state.dirty
         self._sync_status(state)
-        self._sync_action_buttons(state)
+        self._current_state = state
+        self.toolbar.bind_state(state, has_row=self._selected_row() is not None)
         QTimer.singleShot(0, self.refresh)
         return True
 
+    def _edit_cells(self, edits) -> DataMappingControllerState:  # noqa: ANN001
+        state = self._controller.edit_cells(self._selected_group_key, edits)
+        self._apply_state(state)
+        return state
+
+    def _undo(self) -> DataMappingControllerState:
+        state = self._controller.undo(self._selected_group_key)
+        self._apply_state(state)
+        return state
+
     def _add_row(self) -> None:
         if self._selected_group_key:
-            self._apply_state(self._controller.add_row(self._selected_group_key))
+            state = self._controller.add_row(self._selected_group_key)
+            self._apply_state(state)
+            self._select_row(max(0, len(state.values) - 1))
 
     def _duplicate_row(self) -> None:
         row = self._selected_row()
         if self._selected_group_key and row is not None:
             self._apply_state(self._controller.duplicate_row(self._selected_group_key, row))
+            self._select_row(row + 1)
 
     def _delete_row(self) -> None:
         row = self._selected_row()
         if self._selected_group_key and row is not None:
             self._apply_state(self._controller.delete_row(self._selected_group_key, row))
+            self._select_row(row)
 
     def _reload(self) -> None:
         if self._dirty and not self._confirm_reload_discard():
@@ -471,6 +446,20 @@ class DataMappingPanel(QWidget):
             return None
         return index.row()
 
+    def _selected_cell(self) -> tuple[int, int] | None:
+        index = self.row_table.currentIndex()
+        if not index.isValid():
+            return None
+        return index.row(), index.column()
+
+    def _select_row(self, row: int) -> None:
+        model = self.row_table.model()
+        if model is None or not model.rowCount() or not model.columnCount():
+            return
+        index = model.index(min(row, model.rowCount() - 1), 0)
+        self.row_table.setCurrentIndex(index)
+        self.row_table.scrollTo(index)
+
 
 def _data_tables(panel: DataMappingPanel) -> tuple[QTableView, ...]:
     return (
@@ -483,6 +472,11 @@ def _data_tables(panel: DataMappingPanel) -> tuple[QTableView, ...]:
 
 def _table(accessible_name: str) -> QTableView:
     table = QTableView()
+    _configure_table(table, accessible_name)
+    return table
+
+
+def _configure_table(table: QTableView, accessible_name: str) -> None:
     table.setObjectName(accessible_name.replace(" ", ""))
     table.setAccessibleName(accessible_name)
     table.setEditTriggers(
@@ -495,7 +489,6 @@ def _table(accessible_name: str) -> QTableView:
     table.verticalHeader().setVisible(False)
     table.setAlternatingRowColors(True)
     configure_table_defaults(table)
-    return table
 
 
 def _resolve_export_selection(path: str, selected_filter: str) -> tuple[str, str]:

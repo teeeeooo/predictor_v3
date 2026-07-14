@@ -370,8 +370,8 @@ entries:
     source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
 
   - type: decision
-    topic: Train Admin Phase 2 Slice 2A draft and source state
-    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, and dirty state; Reload alone reads the provider and preserves the current draft when missing or load failure occurs. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Before Slice 2B, toolbar/selection/model binding must leave the panel and presentation-state projection must leave controller command orchestration; no spreadsheet framework has started.
+    topic: Train Admin Phase 2 Data Mapping interaction and source state
+    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, dirty state, and command history; Reload alone reads the provider and preserves the current draft when missing or load failure occurs. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Slice 2B places toolbar and spreadsheet selection/clipboard/key behavior in feature-local Qt owners, pure snapshot projection outside controller orchestration, and current draft plus draft-level undo history in a service-owned session. Edit, rectangular paste, clear, CRUD, and F&T-to-PFC Pi clearing are one command each; PFC Pi is protected in both UI flags and the service command boundary without shifting clipboard coordinates.
     keywords:
       - predictor_v3
       - Data Mapping
@@ -381,8 +381,10 @@ entries:
       - Reload
       - dirty draft
       - native macOS
+      - spreadsheet interaction
+      - grouped undo
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md
+    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction

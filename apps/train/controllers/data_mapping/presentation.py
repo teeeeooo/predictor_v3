@@ -1,0 +1,256 @@
+"""Pure snapshot-to-presentation projection for Data Mapping."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
+from core.mapping.condenser_identity import condenser_requires_pi
+from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
+from core.mapping.entity_model import MappingValidationError
+
+
+@dataclass(frozen=True)
+class DataMappingEntitySummary:
+    entity_key: str
+    label: str
+    row_count: int
+    active: bool
+    notes: str
+
+
+@dataclass(frozen=True)
+class DataMappingAttributeRow:
+    attribute_key: str
+    label: str
+    data_type: str
+    required: bool
+    notes: str
+
+
+@dataclass(frozen=True)
+class DataMappingValueRow:
+    row_key: str
+    values: tuple[str, ...]
+    notes: str
+
+
+@dataclass(frozen=True)
+class DataMappingControllerState:
+    source_label: str
+    status: str
+    message: str
+    selected_group_key: str
+    entities: tuple[DataMappingEntitySummary, ...]
+    attributes: tuple[DataMappingAttributeRow, ...]
+    value_headers: tuple[str, ...]
+    values: tuple[DataMappingValueRow, ...]
+    validation_rows: tuple[MappingValidationError, ...]
+    actions: tuple[DataMappingAction, ...]
+    dirty: bool = False
+    resource_status: str = "available"
+    read_only_cells: frozenset[tuple[int, int]] = frozenset()
+    operation_applied: int = 0
+    operation_blocked: int = 0
+
+
+def project_snapshot(
+    snapshot: DataMappingSnapshot,
+    selected_group_key: str,
+    *,
+    resource_status: str,
+    status: str | None = None,
+    message: str | None = None,
+    extra_issues: tuple[MappingValidationError, ...] = (),
+    operation_applied: int = 0,
+    operation_blocked: int = 0,
+) -> DataMappingControllerState:
+    """Project one application snapshot into stable UI-facing rows."""
+    draft = snapshot.draft
+    entities = tuple(_entity_summary(group) for group in draft.groups)
+    selected = _selected_group(draft.groups, selected_group_key)
+    resource_issues = (_resource_missing_issue(),) if resource_status == "missing" else ()
+    return DataMappingControllerState(
+        source_label=display_source_label(snapshot.source_label),
+        status=status or _snapshot_status(snapshot.is_valid, resource_status),
+        message=message or _status_message(snapshot.is_valid, snapshot.dirty, resource_status),
+        selected_group_key=selected.group_key,
+        entities=entities,
+        attributes=_attribute_rows(selected),
+        value_headers=selected.columns,
+        values=_value_rows(selected.rows, selected.columns),
+        validation_rows=(*snapshot.validation_errors, *resource_issues, *extra_issues),
+        actions=snapshot.actions,
+        dirty=snapshot.dirty,
+        resource_status=resource_status,
+        read_only_cells=_read_only_cells(selected),
+        operation_applied=operation_applied,
+        operation_blocked=operation_blocked,
+    )
+
+
+def operation_issue(code: str, group: str, field: str, message: str) -> MappingValidationError:
+    return MappingValidationError(
+        code=code,
+        message=message or f"{group} failed.",
+        entity_key=group,
+        attribute_key=field,
+        field=field,
+    )
+
+
+def exception_summary(exc: Exception) -> str:
+    for line in str(exc).splitlines():
+        summary = line.strip()
+        if summary:
+            return summary
+    return type(exc).__name__ or "Unknown error"
+
+
+def display_source_label(source_label: str) -> str:
+    if not source_label:
+        return ""
+    known_prefix = "Runtime mapping repository:"
+    if source_label.startswith(known_prefix):
+        return f"File: {source_label.removeprefix(known_prefix).strip()}"
+    return f"File: {source_label}"
+
+
+def error_state(
+    message: str,
+    *,
+    source_label: str = "",
+    detail_message: str = "",
+) -> DataMappingControllerState:
+    return DataMappingControllerState(
+        source_label=source_label,
+        status="error",
+        message=message,
+        selected_group_key="",
+        entities=(),
+        attributes=(),
+        value_headers=(),
+        values=(),
+        validation_rows=(
+            MappingValidationError(
+                code="load_failed",
+                message=detail_message or message,
+                field="source",
+            ),
+        ),
+        actions=(
+            DataMappingAction(
+                "reload_runtime",
+                "Reload",
+                True,
+                "Read the mapping source again.",
+            ),
+        ),
+        resource_status="load-error",
+    )
+
+
+def missing_state(*, source_label: str) -> DataMappingControllerState:
+    return DataMappingControllerState(
+        source_label=source_label,
+        status="missing",
+        message="Mapping resource not found.",
+        selected_group_key="",
+        entities=(),
+        attributes=(),
+        value_headers=(),
+        values=(),
+        validation_rows=(
+            MappingValidationError(
+                code="resource_missing",
+                message="The configured mapping file does not exist.",
+                field="source",
+            ),
+        ),
+        actions=(
+            DataMappingAction(
+                "reload_runtime",
+                "Reload",
+                True,
+                "Read the mapping source again.",
+            ),
+        ),
+        resource_status="missing",
+    )
+
+
+def _entity_summary(group: MappingEditorGroup) -> DataMappingEntitySummary:
+    return DataMappingEntitySummary(group.group_key, group.label, len(group.rows), True, group.notes)
+
+
+def _selected_group(
+    groups: tuple[MappingEditorGroup, ...],
+    selected_group_key: str,
+) -> MappingEditorGroup:
+    selected = next((group for group in groups if group.group_key == selected_group_key), None)
+    return selected or (groups[0] if groups else MappingEditorGroup("", "", ()))
+
+
+def _attribute_rows(group: MappingEditorGroup) -> tuple[DataMappingAttributeRow, ...]:
+    required_columns = set(group.required_columns)
+    return tuple(
+        DataMappingAttributeRow(
+            column,
+            column,
+            group.column_data_types.get(column, "string"),
+            column == group.columns[0] or column in required_columns,
+            "Required by Data Definition." if column in required_columns else "",
+        )
+        for column in group.columns
+    )
+
+
+def _value_rows(
+    rows: tuple[MappingEditorRow, ...],
+    value_headers: tuple[str, ...],
+) -> tuple[DataMappingValueRow, ...]:
+    return tuple(
+        DataMappingValueRow(
+            row.source_key,
+            tuple(_display_value(row.value_for(header, "")) for header in value_headers),
+            row.notes,
+        )
+        for row in rows
+    )
+
+
+def _display_value(value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return "" if value is None else str(value)
+
+
+def _read_only_cells(group: MappingEditorGroup) -> frozenset[tuple[int, int]]:
+    if group.group_key != "odu_cond_specs" or "Pi" not in group.columns:
+        return frozenset()
+    pi_column = group.columns.index("Pi")
+    return frozenset(
+        (row_index, pi_column)
+        for row_index, row in enumerate(group.rows)
+        if not condenser_requires_pi(row.value_for("Fin Type"))
+    )
+
+
+def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:
+    message = "Issues found." if not is_valid else ("Unsaved changes." if dirty else "Ready.")
+    return f"{message} Source missing." if resource_status == "missing" else message
+
+
+def _snapshot_status(is_valid: bool, resource_status: str) -> str:
+    if not is_valid:
+        return "error"
+    return "warning" if resource_status == "missing" else "ready"
+
+
+def _resource_missing_issue() -> MappingValidationError:
+    return MappingValidationError(
+        code="resource_missing",
+        message="The mapping source is missing; the current in-memory draft is preserved.",
+        field="source",
+        severity="warning",
+    )
