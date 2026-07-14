@@ -276,12 +276,32 @@ framework.
 - Reach the required spreadsheet interaction baseline.
 - Integrate add, duplicate, delete, clear, paste, validation, and undo grouping.
 
+Implemented in `d22bda002bf5d1f0205a9df64a18fe8f0af0a74d`. Toolbar,
+table interaction, pure presentation projection, and service-owned draft
+history are bounded owners rather than new panel/controller responsibilities.
+The feature supports rectangular visible-cell TSV operations, grouped draft
+undo, keyboard navigation, CRUD selection, and command-boundary plus UI PFC Pi
+protection without a generic spreadsheet framework.
+
 ### Slice 2C — Validation, dirty, save, reload
 
 - Add issue-to-cell navigation.
 - Clarify Refresh versus Reload.
 - Strengthen dirty/discard/save feedback.
 - Prove atomic save and reload round-trip.
+
+Implemented in `2e9e00bdd562b5780b45eb6b9b495dde9016f745`. The service
+compares the current draft with the loaded or successfully saved baseline,
+structured validation identifiers drive cell navigation without message
+parsing, and failed Save/Reload operations preserve current draft and baseline.
+The impacted offscreen regression passed 223 tests.
+
+The bounded native macOS follow-up is blocked: the native shell renders and is
+visible on an unlocked desktop, but Computer Use interaction with the populated
+PySide6 table reproducibly terminates Python in AppKit's accessibility hierarchy
+with `EXC_BAD_ACCESS` / `SIGSEGV`. No Slice 2B+2C interaction PNG is claimed.
+See `assets/train-admin-phase2-slice2bc-native-batch/README.md`; prior Slice 2A
+native evidence was not rerun.
 
 ### Slice 2D — Exchange export
 

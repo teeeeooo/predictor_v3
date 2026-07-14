@@ -357,7 +357,7 @@ entries:
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
-    content: Data Mapping Computer Use onscreen smoke previously crashed during macOS/AppKit accessibility hierarchy reads. The later isolation found the smallest failing path was a populated entity table with initial selectRow during selection binding; removing that initial programmatic selection stabilized the standalone full panel for bounded Computer Use state, keyboard substitute, and click checks. Future UI smoke should still run focused automated owner tests first and keep Computer Use reads bounded.
+    content: Data Mapping Computer Use onscreen smoke previously crashed during macOS/AppKit accessibility hierarchy reads. Removing initial programmatic selectRow stabilized the earlier Slice 2A bounded state checks, but the Slice 2B+2C populated spreadsheet table again reproduced the failure on two independent native AX element/coordinate click attempts. Python terminated with EXC_BAD_ACCESS/SIGSEGV on the main thread in NSAccessibility hierarchy accessors, while injected keyboard shortcuts did not reach the Qt table. Native rendering alone and the passing automated owner suite do not establish the three required interaction scenarios; record them as blocked until the accessibility bridge is resolved or a separately authorized manual path supplies evidence.
     keywords:
       - predictor_v3
       - Data Mapping
@@ -367,7 +367,7 @@ entries:
       - AppKit
       - SIGSEGV
     assertionStatus: verified
-    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-native-blocker.md
 
   - type: decision
     topic: Train Admin Phase 2 Data Mapping interaction and source state

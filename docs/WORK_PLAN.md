@@ -17,24 +17,29 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2A is
-implemented on `phase/train-admin-data-mapping-ux`; audit corrections and native
-macOS evidence are complete and await Slice 2A re-audit.
-The change covers populated-state information architecture, group navigation,
-primary-table dominance, concise actions/status, secondary details, and
-distinct empty/missing/load-error states. Slice 2B and later work has not
-started.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slices 2B and 2C
+are implemented and pushed on `phase/train-admin-data-mapping-ux` after the
+approved Slice 2A head. Slice 2B adds bounded spreadsheet interaction owners,
+rectangular TSV copy/paste, clear, grouped undo, keyboard navigation, CRUD
+selection, and the PFC Pi guard. Slice 2C adds exact baseline-diff dirty state,
+structured issue-to-cell navigation, validation feedback, and transactional
+Save/Reload state handling. Slice 2D has not started.
 
 ## Next Action
 
-Complete Slice 2A re-audit on the Phase 2 Draft PR. After approval and before
-Slice 2B interaction work, extract toolbar/selection/model binding from the
-panel and presentation-state projection from the controller at the recorded
-split trigger.
+Resolve or externally bypass the macOS AppKit accessibility crash, then repeat
+the three bounded native Computer Use scenarios for Slice 2B+2C. Keep Draft PR
+#15 open for Batch audit and do not begin Slice 2D without separate approval.
 
 ## Active Blockers
 
-None.
+- Native macOS rendering succeeds, but Computer Use interaction with the
+  populated PySide6 table crashes Python in AppKit's accessibility hierarchy
+  (`EXC_BAD_ACCESS` / `SIGSEGV`). Two independent attempts reproduced it, and
+  injected keyboard shortcuts did not reach the Qt table. Therefore paste/undo,
+  PFC Pi, and issue-navigation/Save/Reload native interaction evidence remains
+  incomplete; automated regression is recorded separately and is not treated
+  as a substitute.
 
 ## Active Constraints
 
@@ -46,8 +51,9 @@ None.
 - Keep Cooling and Heating models independent, including monotone constraints.
 - Commit and push each verified slice to the phase branch; merge only after phase
   acceptance is complete.
-- Do not add Slice 2B/2C spreadsheet, issue-navigation, or workflow semantics to
-  the Slice 2A audit correction scope.
+- Preserve the Slice 2B and Slice 2C commits as separately auditable logical
+  changes and keep PR #15 Draft/Open.
+- Do not begin Slice 2D exchange export/import work.
 
 ## Deferred / Hold
 
