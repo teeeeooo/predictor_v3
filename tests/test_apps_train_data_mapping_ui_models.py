@@ -26,9 +26,12 @@ from apps.train.ui.data_mapping_view_models import (
     attribute_rows,
     entity_rows,
     group_rows,
+    status_kind,
+    status_summary,
     validation_rows,
     value_headers,
     value_rows,
+    workspace_state_copy,
 )
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 
@@ -158,6 +161,11 @@ def test_data_mapping_panel_builds_editable_manager_surface():
         assert panel._buttons["export_csv_v2"].isEnabled()
         assert not panel._buttons["save_mapping_json"].isEnabled()
         assert panel._buttons["reload_runtime"].isEnabled()
+        assert panel._buttons["refresh_view"].isEnabled()
+        assert "without reading the source" in panel._buttons["refresh_view"].toolTip()
+        assert "unsaved changes" in panel._buttons["reload_runtime"].toolTip()
+        assert "in-memory draft" in panel._buttons["refresh_view"].accessibleDescription()
+        assert "mapping source" in panel._buttons["reload_runtime"].accessibleDescription()
         panel.row_table.setCurrentIndex(panel.row_table.model().index(0, 0))
         app.processEvents()
         assert panel._buttons["duplicate_row"].isEnabled()
@@ -169,6 +177,7 @@ def test_data_mapping_panel_builds_editable_manager_surface():
             "Delete",
             "Export",
             "Save",
+            "Refresh",
             "Reload",
         ]
         assert panel.status_label.text() == "Ready."
@@ -241,6 +250,87 @@ def test_data_mapping_panel_group_refresh_preserves_selection_and_draft():
         panel.close()
         panel.deleteLater()
         app.processEvents()
+
+
+def test_data_mapping_panel_keeps_dirty_rows_visible_when_source_disappears(tmp_path):
+    app = _app()
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_bytes(RUNTIME_FIXTURE.read_bytes())
+    panel = DataMappingPanel(
+        controller=DataMappingController(
+            DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+        )
+    )
+    try:
+        app.processEvents()
+        model = panel.row_table.model()
+        assert model.setData(model.index(0, 1), "99.5", Qt.EditRole)
+        mapping_file.unlink()
+
+        panel.refresh()
+        app.processEvents()
+
+        assert panel.workspace_stack.currentWidget() is panel.primary_panel
+        assert panel._selected_group_key == "idu"
+        assert panel.row_table.model().cell_value(0, 1) == "99.5"
+        assert panel._dirty
+        assert "Source missing" in panel.status_label.text()
+        assert "Resource: Missing" in panel.summary_label.text()
+        assert panel._buttons["save_mapping_json"].isEnabled()
+        assert panel._buttons["refresh_view"].isEnabled()
+        assert panel._buttons["reload_runtime"].isEnabled()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_refresh_button_does_not_invoke_reload(monkeypatch):
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    calls = []
+    try:
+        app.processEvents()
+        original_refresh = panel._controller.refresh
+        monkeypatch.setattr(
+            panel._controller,
+            "refresh",
+            lambda selected="": calls.append(("refresh", selected))
+            or original_refresh(selected),
+        )
+        monkeypatch.setattr(
+            panel._controller,
+            "reload",
+            lambda selected="": calls.append(("reload", selected)),
+        )
+
+        panel._buttons["refresh_view"].click()
+        app.processEvents()
+
+        assert calls == [("refresh", "idu")]
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_status_and_workspace_copy_keep_cached_missing_draft_populated():
+    controller = _foundation_controller()
+    state = controller.refresh("idu")
+    missing_cached = type(state)(
+        **{
+            **state.__dict__,
+            "status": "warning",
+            "message": "Unsaved changes. Source missing.",
+            "resource_status": "missing",
+            "dirty": True,
+        }
+    )
+
+    assert status_kind(missing_cached) == "warning"
+    assert "Resource: Missing" in status_summary(missing_cached)
+    assert "Draft: Unsaved" in status_summary(missing_cached)
+    assert workspace_state_copy(missing_cached) == ("", "")
 
 
 def test_data_mapping_panel_empty_group_is_not_load_error():
@@ -380,7 +470,11 @@ def test_data_mapping_panel_programmatic_edit_marks_dirty():
         assert model.setData(model.index(0, 1), "2.5", Qt.EditRole)
 
         assert panel.status_label.text() == "Unsaved changes."
+        assert panel.row_table.model() is model
+        assert model.cell_value(0, 1) == "2.5"
         assert not panel.row_table.currentIndex().isValid()
+        app.processEvents()
+        assert panel.row_table.model() is not model
     finally:
         panel.close()
         panel.deleteLater()

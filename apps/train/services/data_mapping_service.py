@@ -146,6 +146,17 @@ class DataMappingService:
         self._draft = draft
         return self._snapshot(draft, requirements)
 
+    def current_snapshot(self) -> DataMappingSnapshot | None:
+        """Return the service-owned draft without reading the provider."""
+        if self._draft is None:
+            return None
+        requirements = self._load_mapping_requirements()
+        self._draft = apply_mapping_requirements_to_editor_draft(
+            self._draft,
+            requirements,
+        )
+        return self._snapshot(self._draft, requirements)
+
     def reload_snapshot(self) -> DataMappingSnapshot:
         """Discard draft edits and reload from the provider."""
         requirements = self._load_mapping_requirements()
@@ -309,7 +320,12 @@ def _future_actions(
             save_enabled and can_save,
             _save_disabled_reason(save_enabled, can_save),
         ),
-        DataMappingAction("reload_runtime", "Reload", True, ""),
+        DataMappingAction(
+            "reload_runtime",
+            "Reload",
+            True,
+            "Read the mapping source again; unsaved changes may be discarded.",
+        ),
     )
 
 

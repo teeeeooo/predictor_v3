@@ -67,43 +67,23 @@ class DataMappingController:
         self._service = service or DataMappingService()
 
     def refresh(self, selected_entity_key: str = "") -> DataMappingControllerState:
-        """Load the latest Data Mapping state."""
+        """Refresh derived state without replacing the service-owned draft."""
         resource_status = self._service.resource_status()
-        if resource_status == "missing":
-            return _missing_state(
-                source_label=_display_source_label(self._service.source_label),
-            )
         try:
             snapshot = self._service.load_snapshot()
         except Exception as exc:
-            detail = str(exc).splitlines()[0]
+            if resource_status == "missing":
+                return _missing_state(
+                    source_label=_display_source_label(self._service.source_label),
+                )
             return _error_state(
                 "Unable to load mapping data.",
                 source_label=_display_source_label(self._service.source_label),
-                detail_message=detail,
+                detail_message=_exception_summary(exc),
             )
-
-        draft = snapshot.draft
-        entities = tuple(_entity_summary(group) for group in draft.groups)
-        selected = _selected_group(draft.groups, selected_entity_key)
-        attributes = _attribute_rows(selected)
-        value_headers = selected.columns
-        values = _value_rows(selected.rows, value_headers)
-        validation_rows = snapshot.validation_errors
-        status = "ready" if snapshot.is_valid else "error"
-        message = _status_message(snapshot.is_valid, snapshot.dirty)
-        return DataMappingControllerState(
-            source_label=_display_source_label(snapshot.source_label),
-            status=status,
-            message=message,
-            selected_group_key=selected.group_key,
-            entities=entities,
-            attributes=attributes,
-            value_headers=value_headers,
-            values=values,
-            validation_rows=validation_rows,
-            actions=snapshot.actions,
-            dirty=snapshot.dirty,
+        return self._state_from_snapshot(
+            snapshot,
+            selected_entity_key,
             resource_status=resource_status,
         )
 
@@ -139,17 +119,34 @@ class DataMappingController:
 
     def reload(self, selected_group_key: str = "") -> DataMappingControllerState:
         """Discard draft edits and reload from the provider."""
-        if self._service.resource_status() == "missing":
-            return _missing_state(
-                source_label=_display_source_label(self._service.source_label),
-            )
         try:
             snapshot = self._service.reload_snapshot()
         except Exception as exc:
+            cached_snapshot = _safe_current_snapshot(self._service)
+            if cached_snapshot is not None:
+                summary = _exception_summary(exc)
+                return self._state_from_snapshot(
+                    cached_snapshot,
+                    selected_group_key,
+                    status="error",
+                    message="Reload failed. Current draft preserved.",
+                    extra_issues=(
+                        _operation_issue(
+                            "reload_failed",
+                            "Reload",
+                            "source",
+                            f"Reload failed: {summary}",
+                        ),
+                    ),
+                )
+            if self._service.resource_status() == "missing":
+                return _missing_state(
+                    source_label=_display_source_label(self._service.source_label),
+                )
             return _error_state(
                 "Unable to reload mapping data.",
                 source_label=_display_source_label(self._service.source_label),
-                detail_message=str(exc).splitlines()[0],
+                detail_message=_exception_summary(exc),
             )
         return self._state_from_snapshot(snapshot, selected_group_key)
 
@@ -206,6 +203,7 @@ class DataMappingController:
         status: str | None = None,
         message: str | None = None,
         extra_issues: tuple[MappingValidationError, ...] = (),
+        resource_status: str | None = None,
     ) -> DataMappingControllerState:
         draft = snapshot.draft
         entities = tuple(_entity_summary(group) for group in draft.groups)
@@ -213,20 +211,38 @@ class DataMappingController:
         attributes = _attribute_rows(selected)
         value_headers = selected.columns
         values = _value_rows(selected.rows, value_headers)
-        resolved_status = status or ("ready" if snapshot.is_valid else "error")
+        resolved_resource_status = resource_status or self._service.resource_status()
+        resource_issues = (
+            (_resource_missing_issue(),)
+            if resolved_resource_status == "missing"
+            else ()
+        )
+        resolved_status = status or _snapshot_status(
+            snapshot.is_valid,
+            resolved_resource_status,
+        )
         return DataMappingControllerState(
             source_label=_display_source_label(snapshot.source_label),
             status=resolved_status,
-            message=message or _status_message(snapshot.is_valid, snapshot.dirty),
+            message=message
+            or _status_message(
+                snapshot.is_valid,
+                snapshot.dirty,
+                resolved_resource_status,
+            ),
             selected_group_key=selected.group_key,
             entities=entities,
             attributes=attributes,
             value_headers=value_headers,
             values=values,
-            validation_rows=(*snapshot.validation_errors, *extra_issues),
+            validation_rows=(
+                *snapshot.validation_errors,
+                *resource_issues,
+                *extra_issues,
+            ),
             actions=snapshot.actions,
             dirty=snapshot.dirty,
-            resource_status=self._service.resource_status(),
+            resource_status=resolved_resource_status,
         )
 
 
@@ -303,12 +319,48 @@ def _operation_issue(
     )
 
 
-def _status_message(is_valid: bool, dirty: bool) -> str:
+def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:
     if not is_valid:
-        return "Issues found."
-    if dirty:
-        return "Unsaved changes."
-    return "Ready."
+        message = "Issues found."
+    elif dirty:
+        message = "Unsaved changes."
+    else:
+        message = "Ready."
+    if resource_status == "missing":
+        return f"{message} Source missing."
+    return message
+
+
+def _snapshot_status(is_valid: bool, resource_status: str) -> str:
+    if not is_valid:
+        return "error"
+    if resource_status == "missing":
+        return "warning"
+    return "ready"
+
+
+def _resource_missing_issue() -> MappingValidationError:
+    return MappingValidationError(
+        code="resource_missing",
+        message="The mapping source is missing; the current in-memory draft is preserved.",
+        field="source",
+        severity="warning",
+    )
+
+
+def _safe_current_snapshot(service: DataMappingService) -> DataMappingSnapshot | None:
+    try:
+        return service.current_snapshot()
+    except Exception:
+        return None
+
+
+def _exception_summary(exc: Exception) -> str:
+    for line in str(exc).splitlines():
+        summary = line.strip()
+        if summary:
+            return summary
+    return type(exc).__name__ or "Unknown error"
 
 
 def _empty_group() -> MappingEditorGroup:
@@ -347,7 +399,14 @@ def _error_state(
                 field="source",
             ),
         ),
-        actions=(DataMappingAction("reload_runtime", "Reload", True, ""),),
+        actions=(
+            DataMappingAction(
+                "reload_runtime",
+                "Reload",
+                True,
+                "Read the mapping source again.",
+            ),
+        ),
         dirty=False,
         resource_status="load-error",
     )
@@ -370,7 +429,14 @@ def _missing_state(*, source_label: str) -> DataMappingControllerState:
                 field="source",
             ),
         ),
-        actions=(DataMappingAction("reload_runtime", "Reload", True, ""),),
+        actions=(
+            DataMappingAction(
+                "reload_runtime",
+                "Reload",
+                True,
+                "Read the mapping source again.",
+            ),
+        ),
         dirty=False,
         resource_status="missing",
     )

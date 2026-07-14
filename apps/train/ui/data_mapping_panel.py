@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QModelIndex, QSignalBlocker, Qt
+from PySide6.QtCore import QModelIndex, QSignalBlocker, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
@@ -34,9 +34,12 @@ from apps.train.ui.data_mapping_view_models import (
     VALIDATION_HEADERS,
     attribute_rows,
     group_rows,
+    status_kind,
+    status_summary,
     validation_rows,
     value_headers,
     value_rows,
+    workspace_state_copy,
 )
 
 GROUP_NAV_MIN_WIDTH = 190
@@ -116,6 +119,7 @@ class DataMappingPanel(QWidget):
             ("delete_row", "Delete"),
             ("export_csv_v2", "Export"),
             ("save_mapping_json", "Save"),
+            ("refresh_view", "Refresh"),
             ("reload_runtime", "Reload"),
         ):
             button = QPushButton(label)
@@ -128,9 +132,17 @@ class DataMappingPanel(QWidget):
         self._buttons["delete_row"].clicked.connect(self._delete_row)
         self._buttons["export_csv_v2"].clicked.connect(self._export)
         self._buttons["save_mapping_json"].clicked.connect(self._save)
+        self._buttons["refresh_view"].clicked.connect(self.refresh)
         self._buttons["reload_runtime"].clicked.connect(self._reload)
-        layout.addSpacing(style.spacing("space.md"))
-        layout.addWidget(self.details_toggle)
+        self._buttons["refresh_view"].setToolTip(
+            "Refresh validation and rendered state without reading the source file."
+        )
+        self._buttons["refresh_view"].setAccessibleDescription(
+            "Refresh the current in-memory draft without reading the mapping source."
+        )
+        self._buttons["reload_runtime"].setAccessibleDescription(
+            "Read the mapping source again; unsaved changes may be discarded."
+        )
         layout.addStretch(1)
         return panel
 
@@ -194,7 +206,12 @@ class DataMappingPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.xs"))
         self.status_label.setFont(style.qfont("font.panel_title"))
-        layout.addWidget(self.status_label)
+        heading = QHBoxLayout()
+        heading.setSpacing(style.spacing("space.sm"))
+        heading.addWidget(self.status_label)
+        heading.addStretch(1)
+        heading.addWidget(self.details_toggle)
+        layout.addLayout(heading)
         layout.addWidget(self.summary_label)
         layout.addWidget(self.source_label)
         return panel
@@ -326,6 +343,9 @@ class DataMappingPanel(QWidget):
     def _sync_action_buttons(self, state: DataMappingControllerState) -> None:
         actions = {action.key: action for action in state.actions}
         for key, button in self._buttons.items():
+            if key == "refresh_view":
+                button.setEnabled(True)
+                continue
             if key == "add_row":
                 button.setEnabled(bool(state.selected_group_key))
                 button.setToolTip("")
@@ -347,53 +367,18 @@ class DataMappingPanel(QWidget):
             button.setToolTip("" if has_row else "Select a mapping row first.")
 
     def _sync_status(self, state: DataMappingControllerState) -> None:
-        entity = next(
-            (item for item in state.entities if item.entity_key == state.selected_group_key),
-            None,
-        )
-        group_text = f"{entity.label} · {entity.row_count} rows" if entity else "No group"
-        issue_count = len(state.validation_rows)
-        draft_text = "Unsaved" if state.dirty else "Saved"
-        actions = {action.key: action for action in state.actions}
-        save_action = actions.get("save_mapping_json")
-        save_text = "Available" if save_action and save_action.enabled else "Blocked"
-        resource_text = {
-            "exists": "Available",
-            "available": "Provider available",
-            "missing": "Missing",
-            "load-error": "Load error",
-        }.get(state.resource_status, state.resource_status)
         self.status_label.setText(state.message)
         self.status_label.setStyleSheet(
-            style.status_badge_stylesheet(
-                "ready" if state.status == "ready" else "error"
-            )
+            style.status_badge_stylesheet(status_kind(state))
         )
-        self.summary_label.setText(
-            f"Resource: {resource_text}  |  Group: {group_text}  |  "
-            f"Issues: {issue_count}  |  Draft: {draft_text}  |  Save: {save_text}"
-        )
+        self.summary_label.setText(status_summary(state))
 
     def _sync_workspace_state(self, state: DataMappingControllerState) -> None:
         entity = next(
             (item for item in state.entities if item.entity_key == state.selected_group_key),
             None,
         )
-        if state.status == "missing":
-            title = "Mapping resource unavailable"
-            message = "The configured mapping file was not found. Restore it, then use Reload."
-        elif state.resource_status == "load-error":
-            title = "Mapping data could not be loaded"
-            message = "Review the issue details, correct the source, then use Reload."
-        elif entity is not None and not state.values:
-            title = f"{entity.label} has no rows"
-            message = "This group is available but empty. Use Add to create its first row."
-        elif entity is None:
-            title = "No mapping groups available"
-            message = "No editable mapping groups were projected. Review the source, then Reload."
-        else:
-            title = ""
-            message = ""
+        title, message = workspace_state_copy(state)
         if title:
             self.state_title.setText(title)
             self.state_message.setText(message)
@@ -413,9 +398,11 @@ class DataMappingPanel(QWidget):
     def _edit_cell(self, row: int, column: str, value: object) -> bool:
         if not self._selected_group_key:
             return False
-        self._apply_state(
-            self._controller.edit_cell(self._selected_group_key, row, column, value)
-        )
+        state = self._controller.edit_cell(self._selected_group_key, row, column, value)
+        self._dirty = state.dirty
+        self._sync_status(state)
+        self._sync_action_buttons(state)
+        QTimer.singleShot(0, self.refresh)
         return True
 
     def _add_row(self) -> None:

@@ -109,6 +109,9 @@ class EditableMappingTableModel(ReadOnlyMappingTableModel):
             return False
         accepted = self._on_cell_changed(index.row(), header, value)
         if accepted:
+            rows = [list(row) for row in self._rows]
+            rows[index.row()][index.column()] = value
+            self._rows = tuple(tuple(row) for row in rows)
             self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
         return accepted
 

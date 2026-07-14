@@ -112,6 +112,26 @@ def test_data_mapping_service_edit_commands_set_dirty_and_rerun_validation():
     assert reloaded.is_valid
 
 
+def test_current_snapshot_returns_cached_draft_without_provider_reload():
+    class CountingProvider(FoundationMappingCatalogProvider):
+        def __init__(self):
+            self.load_calls = 0
+
+        def load_draft(self):
+            self.load_calls += 1
+            return super().load_draft()
+
+    provider = CountingProvider()
+    service = DataMappingService(provider)
+
+    assert service.current_snapshot() is None
+    loaded = service.load_snapshot()
+    cached = service.current_snapshot()
+
+    assert loaded.draft == cached.draft
+    assert provider.load_calls == 1
+
+
 def test_data_mapping_service_saves_runtime_mapping_and_clears_dirty(tmp_path):
     mapping_file = tmp_path / "mapping.json"
     mapping_file.write_text(
