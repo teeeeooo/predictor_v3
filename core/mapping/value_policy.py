@@ -5,8 +5,17 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from core.mapping.editor_model import MappingEditorGroup
+
 _TRUE_VALUES = frozenset({"true", "1", "yes"})
 _FALSE_VALUES = frozenset({"false", "0", "no"})
+_BUILTIN_NUMERIC_COLUMNS = {
+    "idu": frozenset({"ID Volume"}),
+    "evap_index": frozenset({"Evap Area", "Evap Volume"}),
+    "odu": frozenset({"OD Volume"}),
+    "compressor": frozenset({"Comp EER", "Comp cc"}),
+    "odu_cond_specs": frozenset({"Cond Area", "Cond Volume"}),
+}
 
 
 def coerce_mapping_number(value: Any) -> int | float:
@@ -43,6 +52,28 @@ def coerce_mapping_value(value: Any, data_type: str) -> Any:
     if data_type == "boolean":
         return coerce_mapping_boolean(value)
     return value
+
+
+def mapping_column_data_type(group: MappingEditorGroup, column: str) -> str:
+    """Return one canonical visible-column type for mutation and validation."""
+    declared = group.column_data_types.get(column)
+    if declared in {"string", "number", "boolean"}:
+        return declared
+    if column in _BUILTIN_NUMERIC_COLUMNS.get(group.group_key, ()):
+        return "number"
+    return "string"
+
+
+def canonicalize_mapping_cell_input(
+    group: MappingEditorGroup,
+    column: str,
+    value: Any,
+) -> Any:
+    """Canonicalize valid input while preserving invalid text for validation."""
+    try:
+        return coerce_mapping_value(value, mapping_column_data_type(group, column))
+    except ValueError:
+        return value
 
 
 def is_valid_mapping_number(value: Any) -> bool:

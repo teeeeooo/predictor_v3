@@ -303,6 +303,21 @@ with `EXC_BAD_ACCESS` / `SIGSEGV`. No Slice 2B+2C interaction PNG is claimed.
 See `assets/train-admin-phase2-slice2bc-native-batch/README.md`; prior Slice 2A
 native evidence was not rerun.
 
+#### Slice 2B+2C audit correction
+
+Valid numeric and boolean cell input is canonicalized at the service command
+boundary through the shared Qt-free mapping value/type policy. Invalid text is
+kept raw so validation, Save blocking, and Undo remain available. Dirty state
+therefore continues to be exact draft equality while semantically identical
+typed input compares clean.
+
+The primary table uses one contiguous rectangular selection. Copy and clear
+normalize to the same complete rectangle, while paste uses its top-left anchor.
+Any clipboard grid that exceeds the current row or column boundary is blocked
+before the application callback, so draft, dirty state, selection, and undo
+history remain unchanged. In-bounds protected targets retain partial,
+non-shifting behavior.
+
 ### Slice 2D — Exchange export
 
 - Generate seven group CSVs and one bundle from the same draft.

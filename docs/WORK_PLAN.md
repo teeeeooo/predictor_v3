@@ -23,13 +23,16 @@ approved Slice 2A head. Slice 2B adds bounded spreadsheet interaction owners,
 rectangular TSV copy/paste, clear, grouped undo, keyboard navigation, CRUD
 selection, and the PFC Pi guard. Slice 2C adds exact baseline-diff dirty state,
 structured issue-to-cell navigation, validation feedback, and transactional
-Save/Reload state handling. Slice 2D has not started.
+Save/Reload state handling. The Batch audit correction now canonicalizes valid
+typed cell input before dirty comparison, atomically blocks overflow paste, and
+enforces one contiguous rectangular selection. Slice 2D has not started.
 
 ## Next Action
 
-Resolve or externally bypass the macOS AppKit accessibility crash, then repeat
-the three bounded native Computer Use scenarios for Slice 2B+2C. Keep Draft PR
-#15 open for Batch audit and do not begin Slice 2D without separate approval.
+Commit and push the focused correction, confirm CI, then prepare the native
+synthetic harness for the three bounded scenarios. Use Computer Use only for
+display/window inspection and request physical user input for table interaction.
+Keep Draft PR #15 open and do not begin Slice 2D without separate approval.
 
 ## Active Blockers
 

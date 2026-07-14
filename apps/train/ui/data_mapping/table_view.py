@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtCore import QItemSelectionModel, Qt, Signal
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QAbstractItemView, QTableView
 
@@ -14,15 +14,18 @@ from apps.train.services.data_mapping_types import DataMappingCellEdit
 
 BatchEditCallback = Callable[[tuple[DataMappingCellEdit, ...]], DataMappingControllerState]
 UndoCallback = Callable[[], DataMappingControllerState]
+PASTE_OVERFLOW_MESSAGE = "Paste exceeds the available rows or columns. No cells were changed."
 
 
 class DataMappingTableView(QTableView):
     """QTableView with bounded spreadsheet behavior for visible mapping cells."""
 
+    interactionFeedback = Signal(str)
+
     def __init__(self, parent: QTableView | None = None) -> None:
         super().__init__(parent)
         self.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setSelectionMode(QAbstractItemView.ContiguousSelection)
         self.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
         self._batch_edit_callback: BatchEditCallback | None = None
         self._undo_callback: UndoCallback | None = None
@@ -41,7 +44,7 @@ class DataMappingTableView(QTableView):
     def copy_selection_tsv(self) -> str:
         """Return the selected visible rectangle as TSV."""
         model = self.model()
-        bounds = rectangular_bounds(self._selected_cells())
+        bounds = rectangular_bounds(self._selected_rectangle_cells())
         if model is None or bounds is None or not hasattr(model, "cell_value"):
             return ""
         top, left, bottom, right = bounds
@@ -62,6 +65,9 @@ class DataMappingTableView(QTableView):
         if not grid:
             return 0
         grid = self._expand_grid_for_selection(grid)
+        if self._grid_exceeds_table(anchor, grid):
+            self.interactionFeedback.emit(PASTE_OVERFLOW_MESSAGE)
+            return 0
         edits = self._edits_for_grid(anchor, grid)
         if not edits:
             return 0
@@ -74,7 +80,7 @@ class DataMappingTableView(QTableView):
             return 0
         edits = tuple(
             DataMappingCellEdit(row, model.header_for_column(col), "")
-            for row, col in self._selected_cells()
+            for row, col in self._selected_rectangle_cells()
             if hasattr(model, "header_for_column")
         )
         if not edits:
@@ -191,6 +197,18 @@ class DataMappingTableView(QTableView):
         indexes = selection.selectedIndexes() if selection is not None else []
         return sorted({(index.row(), index.column()) for index in indexes})
 
+    def _selected_rectangle_cells(self) -> list[tuple[int, int]]:
+        """Normalize any synthetic/discontinuous selection to one rectangle."""
+        bounds = rectangular_bounds(self._selected_cells())
+        if bounds is None:
+            return []
+        top, left, bottom, right = bounds
+        return [
+            (row, column)
+            for row in range(top, bottom + 1)
+            for column in range(left, right + 1)
+        ]
+
     def _selection_anchor(self) -> tuple[int, int] | None:
         bounds = rectangular_bounds(self._selected_cells())
         if bounds is not None:
@@ -210,6 +228,19 @@ class DataMappingTableView(QTableView):
         if len(grid) == 1 and len(grid[0]) == columns and rows > 1:
             return [list(grid[0]) for _row in range(rows)]
         return grid
+
+    def _grid_exceeds_table(
+        self,
+        anchor: tuple[int, int],
+        grid: list[list[str]],
+    ) -> bool:
+        model = self.model()
+        if model is None:
+            return True
+        top, left = anchor
+        height = len(grid)
+        width = max((len(row) for row in grid), default=0)
+        return top + height > model.rowCount() or left + width > model.columnCount()
 
     def _move_current_horizontal(self, *, backward: bool) -> None:
         model = self.model()

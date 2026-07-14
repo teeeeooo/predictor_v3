@@ -15,10 +15,7 @@ from core.mapping.editor_model import (
     MappingEditorValidationResult,
 )
 from core.mapping.editor_projection import (
-    COMPRESSOR_GROUP,
-    EVAP_INDEX_GROUP,
     EXPANSION_GROUP,
-    IDU_GROUP,
     ODU_COND_SPECS_GROUP,
     ODU_GROUP,
     REFRIGERANT_GROUP,
@@ -27,15 +24,8 @@ from core.mapping.entity_model import MappingValidationError
 from core.mapping.value_policy import (
     is_valid_mapping_boolean,
     is_valid_mapping_number,
+    mapping_column_data_type,
 )
-
-NUMERIC_COLUMNS_BY_GROUP = {
-    IDU_GROUP: ("ID Volume",),
-    EVAP_INDEX_GROUP: ("Evap Area", "Evap Volume"),
-    ODU_GROUP: ("OD Volume",),
-    COMPRESSOR_GROUP: ("Comp EER", "Comp cc"),
-    ODU_COND_SPECS_GROUP: ("Cond Area", "Cond Volume"),
-}
 
 
 def validate_mapping_editor_draft(
@@ -85,19 +75,9 @@ def _validate_group_keys(group: MappingEditorGroup) -> list[MappingValidationErr
 
 def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidationError]:
     issues: list[MappingValidationError] = []
-    numeric_columns = tuple(
-        dict.fromkeys(
-            (
-                *NUMERIC_COLUMNS_BY_GROUP.get(group.group_key, ()),
-                *(
-                    column
-                    for column in group.columns
-                    if group.column_data_types.get(column) == "number"
-                ),
-            )
-        )
-    )
-    for column in numeric_columns:
+    for column in group.columns:
+        if mapping_column_data_type(group, column) != "number":
+            continue
         for index, row in enumerate(group.rows, start=1):
             value = row.value_for(column)
             if _clean(value) and not is_valid_mapping_number(value):
@@ -117,7 +97,7 @@ def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidation
 def _validate_group_booleans(group: MappingEditorGroup) -> list[MappingValidationError]:
     issues: list[MappingValidationError] = []
     for column in group.columns:
-        if group.column_data_types.get(column) != "boolean":
+        if mapping_column_data_type(group, column) != "boolean":
             continue
         for index, row in enumerate(group.rows, start=1):
             value = row.value_for(column)

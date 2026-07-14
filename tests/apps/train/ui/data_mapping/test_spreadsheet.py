@@ -83,7 +83,7 @@ def test_primary_table_uses_cell_rectangular_selection_and_visible_tsv_copy():
     panel = _panel()
     assert isinstance(panel.row_table, DataMappingTableView)
     assert panel.row_table.selectionBehavior() == QAbstractItemView.SelectItems
-    assert panel.row_table.selectionMode() == QAbstractItemView.ExtendedSelection
+    assert panel.row_table.selectionMode() == QAbstractItemView.ContiguousSelection
 
     _select_rect(panel.row_table, 0, 0, 1, 1)
     copied = panel.row_table.copy_selection_tsv()

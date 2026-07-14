@@ -8,6 +8,7 @@ from apps.train.services.data_mapping_types import DataMappingAction, DataMappin
 from core.mapping.condenser_identity import condenser_requires_pi
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.value_policy import mapping_column_data_type
 
 
 @dataclass(frozen=True)
@@ -220,7 +221,7 @@ def _attribute_rows(group: MappingEditorGroup) -> tuple[DataMappingAttributeRow,
         DataMappingAttributeRow(
             column,
             column,
-            group.column_data_types.get(column, "string"),
+            mapping_column_data_type(group, column),
             column == group.columns[0] or column in required_columns,
             "Required by Data Definition." if column in required_columns else "",
         )

@@ -37,6 +37,7 @@ from apps.train.services.data_mapping_types import (
 )
 from apps.train.services.data_mapping.draft_session import DataMappingDraftSession
 from core.mapping.condenser_identity import condenser_requires_pi
+from core.mapping.value_policy import canonicalize_mapping_cell_input
 
 
 class FoundationMappingCatalogProvider:
@@ -218,12 +219,14 @@ class DataMappingService:
             if not _cell_is_mutable(next_draft, group_key, edit.row_index, edit.column):
                 blocked += 1
                 continue
+            group = next_draft.group(group_key)
+            canonical_value = canonicalize_mapping_cell_input(group, edit.column, edit.value)
             candidate = set_draft_cell(
                 next_draft,
                 group_key,
                 edit.row_index,
                 edit.column,
-                edit.value,
+                canonical_value,
             )
             if candidate != next_draft:
                 applied += 1

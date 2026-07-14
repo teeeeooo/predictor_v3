@@ -33,7 +33,7 @@ from core.mapping.editor_projection import (
 )
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
-from core.mapping.value_policy import coerce_mapping_value
+from core.mapping.value_policy import coerce_mapping_value, mapping_column_data_type
 
 
 @dataclass(frozen=True)
@@ -117,19 +117,6 @@ def _simple_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
     if group is None or not group.columns:
         return {}
     key_column = group.columns[0]
-    numeric_columns = {
-        "ID Volume",
-        "Evap Area",
-        "Evap Volume",
-        "OD Volume",
-        "Comp EER",
-        "Comp cc",
-        *(
-            column
-            for column in group.columns
-            if group.column_data_types.get(column) == "number"
-        ),
-    }
     section: dict[str, dict[str, Any]] = {}
     for row in group.rows:
         key = _clean(row.value_for(key_column))
@@ -139,7 +126,6 @@ def _simple_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
             row,
             group,
             control_columns={key_column},
-            numeric_columns=numeric_columns,
         )
     return section
 
@@ -192,7 +178,6 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
             draft_row,
             group,
             control_columns={"ODU", "Fin Type", "Pi", "Row"},
-            numeric_columns={"Cond Area", "Cond Volume"},
         )
 
     for odu, values in grouped.items():
@@ -215,7 +200,6 @@ def _merged_row_payload(
     group: MappingEditorGroup,
     *,
     control_columns: set[str],
-    numeric_columns: set[str] | frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     payload = {
         str(column): value
@@ -225,11 +209,7 @@ def _merged_row_payload(
     for column in group.columns:
         if column in control_columns:
             continue
-        data_type = (
-            "number"
-            if column in numeric_columns
-            else group.column_data_types.get(column, "string")
-        )
+        data_type = mapping_column_data_type(group, column)
         payload[column] = coerce_mapping_value(row.value_for(column), data_type)
     return payload
 

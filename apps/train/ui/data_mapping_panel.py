@@ -86,7 +86,7 @@ class DataMappingPanel(QWidget):
         self.row_table = DataMappingTableView()
         _configure_table(self.row_table, "Data")
         self.row_table.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.row_table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.row_table.setSelectionMode(QAbstractItemView.ContiguousSelection)
         self.row_table.setEditTriggers(
             QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
         )
@@ -97,6 +97,7 @@ class DataMappingPanel(QWidget):
             batch_edit=self._edit_cells,
             undo=self._undo,
         )
+        self.row_table.interactionFeedback.connect(self._show_interaction_feedback)
         self.toolbar = DataMappingToolbar(
             self,
             callbacks={
@@ -346,6 +347,10 @@ class DataMappingPanel(QWidget):
             style.status_badge_stylesheet(status_kind(state))
         )
         self.summary_label.setText(status_summary(state))
+
+    def _show_interaction_feedback(self, message: str) -> None:
+        self.status_label.setText(message)
+        self.status_label.setStyleSheet(style.status_badge_stylesheet("warning"))
 
     def _sync_workspace_state(self, state: DataMappingControllerState) -> None:
         entity = next(
