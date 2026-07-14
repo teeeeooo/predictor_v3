@@ -29,6 +29,34 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-14 — Train/Admin Mapping/Data Foundation Phase 1 closeout
+
+### Decision
+
+- Complete Slices 1A–1D and final corrections for repository-automated scope;
+  final audit is approved and PR #14 is the merge target.
+- Use the strict legacy bootstrap projection as a repository-only populated
+  mapping fixture; never install it as production `data/mapping.json`.
+- Keep Data Definition as dynamic mapping column/type/required owner and Data
+  Mapping as value/persistence owner. Dynamic condenser payload attributes do
+  not participate in conditional F&T/PFC identity.
+- Apply that definition-backed payload contract to Refrigerant and Expansion
+  without changing their key-based Predict options. Persist booleans as
+  canonical JSON booleans, reject non-finite mapping numbers, and keep
+  undeclared raw payload keys hidden from editor schema.
+- Preserve undeclared runtime row payload from the current editor row backing
+  data across unrelated Save/reload and key rename while overlaying only visible
+  definition-backed values. Hidden payload is not review-exported and is
+  removed with its row rather than recovered from historical source keys.
+- Pair DEV selector metadata with unchanged ML numeric/one-hot training headers
+  and fail fast when schema, mapping options/combinations, or resolved mock
+  values diverge.
+- Treat all fixture and mock success as structural workflow evidence only. Real
+  mapping completeness, training data, model quality, and production readiness
+  remain company-local validation work.
+- Start Phase 2 only from merged `main` on a separate branch after separate
+  instruction.
+
 ## 2026-07-13 — Active non-AHRI Calculator core refactor closeout
 
 ### Decision

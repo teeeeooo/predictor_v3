@@ -1,6 +1,6 @@
 # Train/Admin Phase 1 — Mapping/Data Foundation
 
-Status: proposed phase design  
+Status: implemented; final audit approved; PR #14 merge target
 Date: 2026-07-14  
 Depends on: Train/Admin UI/UX Overhaul Governing Design
 
@@ -86,14 +86,20 @@ Fin type     -> Fin Type
 
 ### Condenser identity rule
 
-Runtime condenser identity is generated from:
+Runtime condenser identity is conditional on Fin Type:
 
 ```text
-ODU + Fin Type + Pi + Row
+F&T: ODU + Fin Type + Pi + Row
+PFC: ODU + Fin Type + Row
 ```
 
-`Cond Index` is validation evidence, not the authoritative runtime key. A mismatch
-must fail bootstrap rather than being silently accepted.
+The legacy PFC value in the fixed `Pi` column is a layout placeholder and is
+normalized to an absent Pi value. Runtime/editor projection must not duplicate
+`PFC` into both Fin Type and Pi or create an `ODU PFC PFC Row` key.
+
+`Cond Index` is a legacy Excel VLOOKUP helper column. It is required as part of
+the recognized legacy layout but is ignored during bootstrap normalization; it
+is neither a runtime identity source nor consistency-validation evidence.
 
 ### Strictness
 
@@ -103,7 +109,7 @@ Bootstrap rejects:
 - duplicate condenser combinations;
 - invalid numeric values;
 - unexpected or missing layout/header contracts;
-- inconsistent condenser identities.
+- duplicate conditional condenser identities.
 
 Rows with a blank key for one block are ignored only for that block, because the
 legacy file stores multiple independent tables side by side.
@@ -152,6 +158,33 @@ The foundation must support:
 7. Export includes it automatically.
 8. Existing unowned runtime sections remain preserved under current policy.
 
+The same definition-backed payload contract applies to the Refrigerant and
+Expansion option groups. Their runtime section keys remain the Predict option
+identity, while declared payload attributes are restored, edited, validated,
+persisted, reloaded, and exported. Raw payload keys remain row backing data but
+do not become visible columns or schema unless Data Definition declares them.
+
+Undeclared runtime row payload is existing data, not schema, and is not deleted
+by an unrelated edit or Save. Persistence begins from the current editor row's
+backing payload, removes only that group's key/identity control fields, and then
+overlays visible definition-backed values using their canonical types. Visible
+values are authoritative, including an optional visible field deliberately set
+to empty. Hidden payload follows its row through rename/reorder/duplicate and
+is removed only when that row is deleted; persistence never re-reads an old
+`source_key` and therefore cannot retain both old and renamed runtime keys.
+
+This preservation policy applies to IDU, Evap Index, ODU, Compressor,
+Refrigerant, Expansion, and ODU Cond Specs. Hidden payload remains absent from
+Data Mapping columns and JSON/XLSX review exports. If Data Definition later
+declares the same attribute, the preserved backing value becomes visible.
+
+Definition-backed `boolean` values use canonical JSON booleans. Actual booleans
+and the explicit case-insensitive `true`/`false`, `1`/`0`, and `yes`/`no`
+representations are accepted; ambiguous values are rejected. Required `False`
+is present and valid. Every built-in or dynamic numeric mapping value must be a
+finite JSON number, so NaN and positive/negative infinity are rejected before
+atomic persistence. Validation and persistence share these coercion policies.
+
 Data Mapping edits values for the attribute; it does not define the attribute.
 
 ## 7. Fixture and Mock Data Contract
@@ -183,7 +216,8 @@ test explicitly requires synthetic trend behavior.
 - Implement the strict legacy-wide parser.
 - Produce deterministic, validated mapping output.
 - Cover aliases, blank-block rows, duplicates, numeric failures, and condenser
-  identity validation.
+  conditional identity normalization.
+- Ignore `Cond Index` values while preserving the required legacy layout.
 - Do not expose normal Train/Admin import.
 
 ### Slice 1B — Populated mapping fixture state
@@ -191,18 +225,44 @@ test explicitly requires synthetic trend behavior.
 - Establish repository-safe populated mapping data for UI and integration tests.
 - Prove all seven user-facing mapping groups can be projected and displayed.
 - Keep fixture data separate from production/default user data.
+- Store the deterministic runtime-equivalent projection at
+  `tests/fixtures/mapping/mapping_runtime_equivalent.json` and compare it
+  exactly with the approved bootstrap output so projection drift is visible.
+- Use that same fixture path for Data Mapping and Predict integration tests;
+  never install it as `data/mapping.json`.
 
 ### Slice 1C — Dynamic attribute round-trip
 
 - Remove fixed-attribute loss from ODU condenser and other affected paths.
 - Prove definition-required attributes appear, validate, save, reload, and export.
 - Preserve existing runtime cascade behavior.
+- Carry Data Definition `data_type` and `required` metadata on the mapping
+  requirement and editor group so validation, presentation metadata, and
+  persistence share the same definition-owned contract.
+- Preserve runtime payload values for later requirement-backed projection, but
+  never turn unknown raw attributes into editor columns without a requirement.
+- Merge persistence from current row backing payload and visible canonical
+  overlays so undeclared runtime values survive unrelated save/reload cycles.
+- Persist every non-identity ODU Cond Specs column from the editor group;
+  condenser identity remains limited to ODU, Fin Type, canonical Pi, and Row.
+- Preserve and round-trip Data Definition-backed Refrigerant/Expansion payload
+  attributes without changing their key-based Predict option contract.
+- Persist boolean attributes as canonical JSON booleans and accept only finite
+  values for every built-in or definition-backed numeric mapping field.
 
 ### Slice 1D — Cross-fixture consistency
 
 - Add structural checks linking schema, mapping, and mock training data.
 - Prove the mock training pipeline can consume the projected contract.
 - Keep model quality outside the result.
+- Keep selector rows as DEV validation metadata paired by row with the existing
+  numeric/one-hot training frame; do not add selector columns to the strict ML
+  training-header contract.
+- Resolve every mapping-backed numeric and one-hot value from the Slice 1B
+  runtime-equivalent fixture, including both F&T and PFC condenser rows.
+- Fail fast on invalid base options, invalid condenser combinations,
+  Fin-Type-dependent Pi violations, missing schema-backed attributes, and
+  training values that differ from their mapping resolution.
 
 Each slice is one logical commit and is pushed to the phase branch. The phase is
 merged only after all slices and phase acceptance checks pass.
@@ -214,10 +274,19 @@ merged only after all slices and phase acceptance checks pass.
 - Data Mapping opens with all seven populated fixture-backed groups.
 - A definition-owned `Cond Inner Area` appears, accepts values, survives
   save/reload, and exports without special-case code.
-- Duplicate keys, invalid numerics, and mismatched `Cond Index` values fail with
-  exact block/row context.
+- Duplicate keys, duplicate conditional condenser identities, invalid numerics,
+  and malformed layouts fail with exact block/row context.
+- PFC condenser rows project without a Pi selection or duplicated PFC key segment.
 - Mock training consumes only valid mapping options and the active projected
   schema with preserved feature order and types.
+- Refrigerant/Expansion declared payload values round-trip while undeclared raw
+  payload keys remain hidden and do not create schema.
+- Invalid booleans and non-finite built-in or dynamic numbers block Save without
+  replacing the existing mapping file.
+- Undeclared row payload survives edit/save/reload and key rename without
+  becoming a visible/exported column; row deletion removes its payload.
+- A non-finite value already present in hidden payload fails atomic Save instead
+  of being silently discarded or written as non-standard JSON.
 
 ## 10. Validation Purpose
 
@@ -237,3 +306,29 @@ accuracy, or production readiness.
 - Schema live reload.
 - General-purpose legacy CSV import.
 - Calculator changes.
+
+## 12. Phase 1 Closeout
+
+Phase 1 is complete for repository-automated scope and the final audit is
+approved. PR #14 is the merge target.
+
+- The checked-in populated mapping is synthetic runtime-equivalent fixture
+  evidence, not production mapping truth.
+- Data Definition-backed dynamic attributes carry type/required metadata and
+  round-trip through Data Mapping projection, validation, persistence, reload,
+  and review export without entering condenser identity.
+- That round-trip includes Refrigerant/Expansion option payloads while Predict
+  continues to consume section keys as options; undeclared raw payload remains
+  hidden, survives persistence from its editor row backing data, and never
+  auto-creates schema or review-export columns.
+- Boolean attributes persist as canonical JSON booleans and all mapping numbers
+  are finite; invalid boolean or NaN/infinite inputs block atomic Save.
+- The aligned validation set links the active schema, repository mapping
+  fixture, DEV selector metadata, and unchanged ML training headers.
+- Phase 2 Data Mapping UX, later Train/Admin phases, production migration, and
+  real-data/model-quality work remain outside this closeout.
+- Company-local follow-up must validate real mapping completeness, real
+  training headers/values, actual training execution, accuracy, physical
+  behavior, feature quality, model artifacts, and production readiness.
+- Phase 2 starts only from merged `main` on a separate branch after separate
+  instruction.

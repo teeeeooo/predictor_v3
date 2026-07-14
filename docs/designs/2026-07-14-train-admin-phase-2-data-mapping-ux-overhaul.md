@@ -63,6 +63,14 @@ Columns come from the current editor/definition contract and are not separately
 hard-coded in the panel. A definition-added attribute such as `Cond Inner Area`
 appears automatically.
 
+ODU Cond Specs has conditional Pi editing behavior:
+
+- a PFC row renders its Pi cell read-only or disabled;
+- changing Fin Type from F&T to PFC immediately clears the existing Pi value;
+- paste and inline edit cannot insert a Pi value into a PFC row;
+- every Fin Type other than PFC keeps Pi editable and required by default;
+- core PFC Pi normalization remains mandatory independently of these UI guards.
+
 ## 5. Spreadsheet Interaction
 
 Editable tables follow the active spreadsheet UX contract as applicable:
@@ -80,6 +88,8 @@ Editable tables follow the active spreadsheet UX contract as applicable:
 - responsive sizing.
 
 Paste validation uses the same column rules as inline edits.
+Pasting across ODU Cond Specs must skip or reject mutation of a PFC Pi cell
+without shifting values into adjacent cells.
 
 ## 6. State and Action Semantics
 
@@ -265,6 +275,9 @@ merged only after populated-state and exchange validation pass.
 - Editing one value marks the draft dirty and Save clears it after success.
 - Reload warns before discarding unsaved edits.
 - Multi-row TSV paste lands in valid cells and reports invalid values.
+- A PFC ODU Cond Specs row disables Pi editing, clears Pi when changed from F&T,
+  and cannot acquire a Pi value through paste or inline edit.
+- F&T and future non-PFC Fin Types retain required Pi editing and navigation.
 - Issue selection focuses the correct group and field.
 - `Cond Inner Area` works without panel-specific code changes.
 - Export creates seven readable group CSVs and one internally versioned bundle.

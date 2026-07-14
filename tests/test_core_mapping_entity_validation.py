@@ -1,5 +1,7 @@
 """Generic mapping entity validation tests."""
 
+import pytest
+
 from core.mapping.entity_model import (
     MappingAttributeDefinition,
     MappingEntityCatalog,
@@ -7,6 +9,7 @@ from core.mapping.entity_model import (
     MappingEntityRow,
 )
 from core.mapping.entity_validation import validate_mapping_entity_catalog
+from core.mapping.value_policy import coerce_mapping_boolean
 
 
 def _fan_motor_entity(
@@ -159,6 +162,29 @@ def test_number_and_boolean_data_types_are_validated():
         "invalid_value_type",
         "invalid_value_type",
     ]
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (True, True),
+        (False, False),
+        ("TRUE", True),
+        ("false", False),
+        ("1", True),
+        ("0", False),
+        ("yes", True),
+        ("NO", False),
+    ],
+)
+def test_boolean_policy_uses_explicit_repository_conventions(value, expected):
+    assert coerce_mapping_boolean(value) is expected
+
+
+@pytest.mark.parametrize("value", ["not-a-boolean", 2, object()])
+def test_boolean_policy_rejects_ambiguous_values(value):
+    with pytest.raises(ValueError, match="boolean"):
+        coerce_mapping_boolean(value)
 
 
 def test_inactive_attribute_skips_required_and_type_value_validation():

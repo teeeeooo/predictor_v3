@@ -120,6 +120,9 @@ def extract_mapping_requirements(
             mapping_attribute=row.mapping_attribute,
             trigger_column=row.trigger_column,
             rule_id=row.rule_id,
+            data_type=row.data_type,
+            required=row.required,
+            model_input_enabled=row.model_input_enabled,
         )
         for row in rows
         if row.value_source == "mapping_lookup"
@@ -270,6 +273,8 @@ def _definition_row(row: PredictSchemaV2Row) -> DataDefinitionRow:
         ml_name=row.ml_name,
         one_hot_group=row.one_hot_group,
         display_order=row.display_order,
+        data_type=row.data_type,
+        required=row.required,
     )
 
 

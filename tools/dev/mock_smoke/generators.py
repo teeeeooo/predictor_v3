@@ -12,6 +12,10 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_spec_key,
+)
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.ml.artifacts import MODEL_FILE
 from core.ml.artifacts import TRAIN_DATA_FILE
@@ -31,15 +35,18 @@ MAPPING_NAME = "mock_smoke_mapping.json"
 CASE_INPUT_NAME = "mock_smoke_case_input.tsv"
 MANIFEST_NAME = "mock_smoke_manifest.json"
 PREPROCESS_VERSION = "v1.0"
-MOCK_IDU = "MOCK_IDU_A"
-MOCK_EVAP = "MOCK_EVAP_A"
-MOCK_ODU = "MOCK_ODU_A"
-MOCK_COMPRESSOR = "MOCK_COMP_A"
+MOCK_IDU = "Q1"
+MOCK_EVAP = "S1-2"
+MOCK_ODU = "N-V2MD"
+MOCK_COMPRESSOR = "Comp A"
 MOCK_FIN_TYPE = "F&T"
 MOCK_PI = "7"
 MOCK_ROW = "1"
 MOCK_REF_TYPE = "R32"
 MOCK_EXP_TYPE = "EEV"
+PHASE1_MAPPING_FIXTURE = Path(__file__).resolve().parents[3] / (
+    "tests/fixtures/mapping/mapping_runtime_equivalent.json"
+)
 
 
 def repo_root() -> Path:
@@ -65,19 +72,28 @@ def generate_mock_training_frame(rows: int = DEFAULT_ROWS, seed: int = DEFAULT_S
 
     data["Cooling Capa"] = 2500.0 + index * 75.0 + rng.normal(0, 8, rows)
     data["Heating Capa"] = 2800.0 + index * 80.0 + rng.normal(0, 8, rows)
-    data["ID Volume"] = 0.012 + index * 0.0002
-    data["Evap Area"] = 10.0 + index * 0.08
-    data["Evap Volume"] = 0.0018 + index * 0.00003
-    data["OD Volume"] = 0.04 + index * 0.0004
-    data["Cond Area"] = 18.0 + index * 0.12
-    data["Cond Volume"] = 0.004 + index * 0.00005
-    data["Comp EER"] = 3.1 + (index % 5) * 0.08
-    data["Comp cc"] = 8.0 + index * 0.12
-    data["R410A"] = (index % 3 == 0).astype(float)
-    data["R32"] = (index % 3 == 1).astype(float)
-    data["R290"] = (index % 3 == 2).astype(float)
-    data["EEV"] = (index % 2 == 0).astype(float)
-    data["Capi"] = (index % 2 == 1).astype(float)
+    mapping = mock_mapping_data()
+    selections = mock_training_selection_rows(rows)
+    resolved = [_resolved_mapping_values(selection, mapping) for selection in selections]
+    for column in (
+        "ID Volume",
+        "Evap Area",
+        "Evap Volume",
+        "OD Volume",
+        "Cond Area",
+        "Cond Volume",
+        "Comp EER",
+        "Comp cc",
+    ):
+        data[column] = np.asarray([item[column] for item in resolved], dtype=float)
+    for option in ("R410A", "R32", "R290"):
+        data[option] = np.asarray(
+            [float(selection["ref_type"] == option) for selection in selections]
+        )
+    for option in ("EEV", "Capi"):
+        data[option] = np.asarray(
+            [float(selection["exp_type"] == option) for selection in selections]
+        )
 
     data["Cooling Power"] = data["Cooling Capa"] / 3.15 + rng.normal(0, 3, rows)
     data["Heating Power"] = data["Heating Capa"] / 3.25 + rng.normal(0, 3, rows)
@@ -89,24 +105,7 @@ def generate_mock_training_frame(rows: int = DEFAULT_ROWS, seed: int = DEFAULT_S
 
 
 def mock_mapping_data() -> dict[str, object]:
-    cond_key = f"{MOCK_ODU} {MOCK_FIN_TYPE} {MOCK_PI} {MOCK_ROW}"
-    return {
-        "idu": {MOCK_IDU: {"ID Volume": 0.015}},
-        "evap_index": {MOCK_EVAP: {"Evap Area": 12.5, "Evap Volume": 0.002}},
-        "odu": {MOCK_ODU: {"OD Volume": 0.045}},
-        "compressor": {MOCK_COMPRESSOR: {"Comp EER": 3.5, "Comp cc": 10.5}},
-        "fin_type": {MOCK_FIN_TYPE: {}},
-        "pi": {MOCK_PI: {}},
-        "row": {MOCK_ROW: {}},
-        "odu_cascade": {
-            MOCK_ODU: {
-                "Available_Fins": [MOCK_FIN_TYPE],
-                "Available_Pis": [MOCK_PI],
-                "Available_Rows": [MOCK_ROW],
-            }
-        },
-        "cond_specs": {cond_key: {"Cond Area": 25.0, "Cond Volume": 0.005}},
-    }
+    return json.loads(PHASE1_MAPPING_FIXTURE.read_text(encoding="utf-8"))
 
 
 def mock_case_input_rows(rows: int = 12) -> list[dict[str, object]]:
@@ -130,6 +129,38 @@ def mock_case_input_rows(rows: int = 12) -> list[dict[str, object]]:
             }
         )
     return case_rows
+
+
+def mock_training_selection_rows(rows: int = DEFAULT_ROWS) -> list[dict[str, object]]:
+    """Return mapping-backed selectors paired by row with mock training data."""
+    selections = mock_case_input_rows(rows)
+    for index, selection in enumerate(selections):
+        if index % 2 == 0:
+            continue
+        selection.update(
+            {"fin_type": "PFC", "pi": "", "ref_type": "R410A", "exp_type": "Capi"}
+        )
+    return selections
+
+
+def _resolved_mapping_values(
+    selection: dict[str, object],
+    mapping: dict[str, object],
+) -> dict[str, object]:
+    fin = selection["fin_type"]
+    cond_key = condenser_spec_key(
+        selection["odu"],
+        fin,
+        canonical_condenser_pi(fin, selection["pi"]),
+        selection["row"],
+    )
+    return {
+        **mapping["idu"][selection["idu"]],
+        **mapping["evap_index"][selection["evap_index"]],
+        **mapping["odu"][selection["odu"]],
+        **mapping["compressor"][selection["compressor"]],
+        **mapping["cond_specs"][cond_key],
+    }
 
 
 def write_mock_mapping(

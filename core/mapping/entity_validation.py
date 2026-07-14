@@ -12,10 +12,12 @@ from core.mapping.entity_model import (
     MappingEntityRow,
     MappingValidationError,
 )
+from core.mapping.value_policy import (
+    is_valid_mapping_boolean,
+    is_valid_mapping_number,
+)
 
 ALLOWED_DATA_TYPES = frozenset({"string", "number", "boolean"})
-_TRUE_VALUES = frozenset({"true", "1", "yes"})
-_FALSE_VALUES = frozenset({"false", "0", "no"})
 
 
 def validate_mapping_entity_catalog(
@@ -208,17 +210,9 @@ def _value_matches_type(
     if attribute.data_type == "string":
         return True
     if attribute.data_type == "number":
-        if isinstance(value, (int, float)):
-            return not isinstance(value, bool)
-        try:
-            float(str(value).strip())
-        except (TypeError, ValueError):
-            return False
-        return True
+        return is_valid_mapping_number(value)
     if attribute.data_type == "boolean":
-        if isinstance(value, bool):
-            return True
-        return _clean(value).lower() in _TRUE_VALUES | _FALSE_VALUES
+        return is_valid_mapping_boolean(value)
     return False
 
 

@@ -94,6 +94,27 @@ def test_odu_cond_specs_matches_cascade_combinations_without_splitting_keys():
     assert matched.value_for("Cond Area") == 3.5
 
 
+def test_pfc_cond_specs_projects_without_pi():
+    mapping = {
+        **SAMPLE_MAPPING,
+        "odu_cascade": {
+            "ODU-A": {
+                "Available_Fins": ["PFC"],
+                "Available_Pis": [],
+                "Available_Rows": ["1"],
+            }
+        },
+        "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+    }
+
+    group = project_runtime_mapping_to_editor_draft(mapping).group("odu_cond_specs")
+
+    assert group is not None
+    assert group.rows[0].source_key == "ODU-A PFC 1"
+    assert group.rows[0].value_for("Pi") == ""
+    assert group.rows[0].unresolved is False
+
+
 def test_unmatched_cond_specs_are_preserved_as_unresolved_rows():
     draft = project_runtime_mapping_to_editor_draft(SAMPLE_MAPPING)
     group = draft.group("odu_cond_specs")

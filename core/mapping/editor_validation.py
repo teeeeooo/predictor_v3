@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_identity,
+    condenser_requires_pi,
+)
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -19,6 +24,10 @@ from core.mapping.editor_projection import (
     REFRIGERANT_GROUP,
 )
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.value_policy import (
+    is_valid_mapping_boolean,
+    is_valid_mapping_number,
+)
 
 NUMERIC_COLUMNS_BY_GROUP = {
     IDU_GROUP: ("ID Volume",),
@@ -38,6 +47,8 @@ def validate_mapping_editor_draft(
         if group.group_key != ODU_COND_SPECS_GROUP:
             issues.extend(_validate_group_keys(group))
         issues.extend(_validate_group_numbers(group))
+        issues.extend(_validate_group_booleans(group))
+        issues.extend(_validate_required_columns(group))
     issues.extend(_validate_required_option_group(draft, REFRIGERANT_GROUP, "Refrigerant"))
     issues.extend(_validate_required_option_group(draft, EXPANSION_GROUP, "Expansion"))
     issues.extend(_validate_odu_cond_specs(draft))
@@ -74,10 +85,22 @@ def _validate_group_keys(group: MappingEditorGroup) -> list[MappingValidationErr
 
 def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidationError]:
     issues: list[MappingValidationError] = []
-    for column in NUMERIC_COLUMNS_BY_GROUP.get(group.group_key, ()):
+    numeric_columns = tuple(
+        dict.fromkeys(
+            (
+                *NUMERIC_COLUMNS_BY_GROUP.get(group.group_key, ()),
+                *(
+                    column
+                    for column in group.columns
+                    if group.column_data_types.get(column) == "number"
+                ),
+            )
+        )
+    )
+    for column in numeric_columns:
         for index, row in enumerate(group.rows, start=1):
             value = row.value_for(column)
-            if _clean(value) and not _is_number(value):
+            if _clean(value) and not is_valid_mapping_number(value):
                 issues.append(
                     _issue(
                         "invalid_number",
@@ -88,6 +111,46 @@ def _validate_group_numbers(group: MappingEditorGroup) -> list[MappingValidation
                         row_key=row.source_key,
                     )
                 )
+    return issues
+
+
+def _validate_group_booleans(group: MappingEditorGroup) -> list[MappingValidationError]:
+    issues: list[MappingValidationError] = []
+    for column in group.columns:
+        if group.column_data_types.get(column) != "boolean":
+            continue
+        for index, row in enumerate(group.rows, start=1):
+            value = row.value_for(column)
+            if _clean(value) and not is_valid_mapping_boolean(value):
+                issues.append(
+                    _issue(
+                        "invalid_boolean",
+                        group,
+                        index,
+                        column,
+                        f"{column} must be boolean.",
+                        row_key=row.source_key,
+                    )
+                )
+    return issues
+
+
+def _validate_required_columns(group: MappingEditorGroup) -> list[MappingValidationError]:
+    issues: list[MappingValidationError] = []
+    for column in group.required_columns:
+        for index, row in enumerate(group.rows, start=1):
+            if _clean(row.value_for(column)):
+                continue
+            issues.append(
+                _issue(
+                    "required_mapping_value_missing",
+                    group,
+                    index,
+                    column,
+                    f"{column} is required by Data Definition.",
+                    row_key=row.source_key,
+                )
+            )
     return issues
 
 
@@ -114,7 +177,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
     if group is None:
         return []
     odu_values = _group_keys(draft.group(ODU_GROUP))
-    seen: set[tuple[str, str, str, str]] = set()
+    seen: set[tuple[str, ...]] = set()
     issues: list[MappingValidationError] = []
     for index, row in enumerate(group.rows, start=1):
         if row.unresolved:
@@ -131,7 +194,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
             continue
         odu = _clean(row.value_for("ODU"))
         fin = _clean(row.value_for("Fin Type"))
-        pi = _clean(row.value_for("Pi"))
+        pi = canonical_condenser_pi(fin, row.value_for("Pi"))
         row_value = _clean(row.value_for("Row"))
         if odu and odu not in odu_values:
             issues.append(
@@ -144,7 +207,10 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                     row_key=row.source_key,
                 )
             )
-        for column, value in (("Fin Type", fin), ("Pi", pi), ("Row", row_value)):
+        required_values = [("Fin Type", fin), ("Row", row_value)]
+        if condenser_requires_pi(fin):
+            required_values.insert(1, ("Pi", pi))
+        for column, value in required_values:
             if not value:
                 issues.append(
                     _issue(
@@ -156,7 +222,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         row_key=row.source_key,
                     )
                 )
-        composite = (odu, fin, pi, row_value)
+        composite = condenser_identity(odu, fin, pi, row_value)
         if all(composite):
             if composite in seen:
                 issues.append(
@@ -165,7 +231,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         group,
                         index,
                         "ODU",
-                        "Duplicate ODU + Fin Type + Pi + Row combination.",
+                        "Duplicate condenser specification identity.",
                         row_key=row.source_key,
                     )
                 )
@@ -183,7 +249,7 @@ def _validate_odu_cond_specs(draft: MappingEditorDraft) -> list[MappingValidatio
                         row_key=row.source_key,
                     )
                 )
-            elif not _is_number(value):
+            elif not is_valid_mapping_number(value):
                 issues.append(
                     _issue(
                         "invalid_number",
@@ -227,13 +293,3 @@ def _clean(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
-
-
-def _is_number(value: Any) -> bool:
-    if isinstance(value, bool):
-        return False
-    try:
-        float(str(value).strip())
-    except (TypeError, ValueError):
-        return False
-    return True

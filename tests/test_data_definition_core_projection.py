@@ -173,6 +173,9 @@ def test_data_definition_extracts_active_mapping_lookup_requirements():
         "comp_eer",
         "comp_cc",
     }
+    cond_area = next(item for item in requirements if item.column_key == "cond_area")
+    assert cond_area.data_type == "number"
+    assert not cond_area.required
 
 
 def test_data_definition_preserves_cond_specs_semantic_and_compatibility_source():

@@ -2,6 +2,8 @@
 
 from dataclasses import replace
 
+import pytest
+
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
 from core.mapping.editor_validation import validate_mapping_editor_draft
@@ -63,6 +65,13 @@ def test_duplicate_key_issue():
 
 def test_invalid_number_issue():
     mapping = {**VALID_MAPPING, "idu": {"IDU-A": {"ID Volume": "bad"}}}
+
+    assert "invalid_number" in _codes(mapping)
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf", float("infinity")])
+def test_non_finite_number_issue(value):
+    mapping = {**VALID_MAPPING, "idu": {"IDU-A": {"ID Volume": value}}}
 
     assert "invalid_number" in _codes(mapping)
 
@@ -131,6 +140,63 @@ def test_duplicate_odu_cond_specs_composite_key_issue():
     assert "duplicate_cond_specs_key" in [
         issue.code for issue in validate_mapping_editor_draft(draft).issues
     ]
+
+
+def test_pfc_cond_specs_does_not_require_pi_and_detects_conditional_duplicate():
+    draft = project_runtime_mapping_to_editor_draft(
+        {
+            **VALID_MAPPING,
+            "odu_cascade": {
+                "ODU-A": {
+                    "Available_Fins": ["PFC"],
+                    "Available_Pis": [],
+                    "Available_Rows": ["1"],
+                }
+            },
+            "cond_specs": {"ODU-A PFC 1": {"Cond Area": 5, "Cond Volume": 6}},
+        }
+    )
+    group = draft.group("odu_cond_specs")
+    stale_placeholder = replace(
+        group.rows[0], values={**group.rows[0].values, "Pi": "PFC"}
+    )
+    stale_numeric = replace(
+        group.rows[0], values={**group.rows[0].values, "Pi": "7"}
+    )
+    duplicate = replace(group, rows=(stale_placeholder, stale_numeric))
+    draft = replace(
+        draft,
+        groups=tuple(duplicate if item.group_key == group.group_key else item for item in draft.groups),
+    )
+
+    issues = validate_mapping_editor_draft(draft).issues
+
+    assert not any(issue.field == "Pi" and issue.code == "required_field_missing" for issue in issues)
+    duplicate_issue = next(issue for issue in issues if issue.code == "duplicate_cond_specs_key")
+    assert duplicate_issue.message == "Duplicate condenser specification identity."
+
+
+def test_unregistered_fin_type_requires_pi():
+    draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
+    group = draft.group("odu_cond_specs")
+    future_fin = replace(
+        group.rows[0],
+        values={**group.rows[0].values, "Fin Type": "Future Fin", "Pi": ""},
+    )
+    draft = replace(
+        draft,
+        groups=tuple(
+            replace(group, rows=(future_fin,)) if item.group_key == group.group_key else item
+            for item in draft.groups
+        ),
+    )
+
+    issues = validate_mapping_editor_draft(draft).issues
+
+    assert any(
+        issue.code == "required_field_missing" and issue.field == "Pi"
+        for issue in issues
+    )
 
 
 def test_general_groups_still_block_duplicate_keys():

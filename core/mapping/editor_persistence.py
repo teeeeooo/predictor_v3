@@ -12,7 +12,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_requires_pi,
+    condenser_spec_key,
+)
+from core.mapping.editor_model import (
+    MappingEditorDraft,
+    MappingEditorGroup,
+    MappingEditorRow,
+)
 from core.mapping.editor_projection import (
     COMPRESSOR_GROUP,
     EVAP_INDEX_GROUP,
@@ -24,6 +33,7 @@ from core.mapping.editor_projection import (
 )
 from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
+from core.mapping.value_policy import coerce_mapping_value
 
 
 @dataclass(frozen=True)
@@ -79,7 +89,7 @@ def save_mapping_editor_draft(
             dir=str(destination.parent),
         )
         with os.fdopen(fd, "w", encoding="utf-8") as json_file:
-            json.dump(runtime, json_file, indent=2, ensure_ascii=False)
+            json.dump(runtime, json_file, indent=2, ensure_ascii=False, allow_nan=False)
             json_file.write("\n")
         os.replace(tmp_name, destination)
     except Exception as exc:
@@ -114,18 +124,23 @@ def _simple_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
         "OD Volume",
         "Comp EER",
         "Comp cc",
+        *(
+            column
+            for column in group.columns
+            if group.column_data_types.get(column) == "number"
+        ),
     }
     section: dict[str, dict[str, Any]] = {}
     for row in group.rows:
         key = _clean(row.value_for(key_column))
         if not key:
             continue
-        section[key] = {
-            column: _coerce_number(row.value_for(column))
-            if column in numeric_columns
-            else row.value_for(column, "")
-            for column in group.columns[1:]
-        }
+        section[key] = _merged_row_payload(
+            row,
+            group,
+            control_columns={key_column},
+            numeric_columns=numeric_columns,
+        )
     return section
 
 
@@ -134,11 +149,17 @@ def _option_section(draft: MappingEditorDraft, group_key: str) -> dict[str, dict
     if group is None or not group.columns:
         return {}
     key_column = group.columns[0]
-    return {
-        key: {}
-        for key in sorted({_clean(row.value_for(key_column)) for row in group.rows})
-        if key
-    }
+    section: dict[str, dict[str, Any]] = {}
+    for row in group.rows:
+        key = _clean(row.value_for(key_column))
+        if not key:
+            continue
+        section[key] = _merged_row_payload(
+            row,
+            group,
+            control_columns={key_column},
+        )
+    return section
 
 
 def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
@@ -155,20 +176,24 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
     for draft_row in group.rows:
         odu = _clean(draft_row.value_for("ODU"))
         fin = _clean(draft_row.value_for("Fin Type"))
-        pi = _clean(draft_row.value_for("Pi"))
+        pi = canonical_condenser_pi(fin, draft_row.value_for("Pi"))
         row = _clean(draft_row.value_for("Row"))
-        if not all((odu, fin, pi, row)):
+        if not all((odu, fin, row)) or (condenser_requires_pi(fin) and not pi):
             continue
         grouped[odu]["Available_Fins"].add(fin)
-        grouped[odu]["Available_Pis"].add(pi)
+        if pi:
+            grouped[odu]["Available_Pis"].add(pi)
         grouped[odu]["Available_Rows"].add(row)
         options["fin_type"].add(fin)
-        options["pi"].add(pi)
+        if pi:
+            options["pi"].add(pi)
         options["row"].add(row)
-        cond_specs[f"{odu} {fin} {pi} {row}"] = {
-            "Cond Area": _coerce_number(draft_row.value_for("Cond Area")),
-            "Cond Volume": _coerce_number(draft_row.value_for("Cond Volume")),
-        }
+        cond_specs[condenser_spec_key(odu, fin, pi, row)] = _merged_row_payload(
+            draft_row,
+            group,
+            control_columns={"ODU", "Fin Type", "Pi", "Row"},
+            numeric_columns={"Cond Area", "Cond Volume"},
+        )
 
     for odu, values in grouped.items():
         cascade[odu] = {
@@ -185,6 +210,30 @@ def _odu_cond_specs_sections(draft: MappingEditorDraft) -> dict[str, Any]:
     }
 
 
+def _merged_row_payload(
+    row: MappingEditorRow,
+    group: MappingEditorGroup,
+    *,
+    control_columns: set[str],
+    numeric_columns: set[str] | frozenset[str] = frozenset(),
+) -> dict[str, Any]:
+    payload = {
+        str(column): value
+        for column, value in row.values.items()
+        if str(column) not in control_columns
+    }
+    for column in group.columns:
+        if column in control_columns:
+            continue
+        data_type = (
+            "number"
+            if column in numeric_columns
+            else group.column_data_types.get(column, "string")
+        )
+        payload[column] = coerce_mapping_value(row.value_for(column), data_type)
+    return payload
+
+
 def _backup_existing_file(destination: Path) -> Path:
     backup_dir = destination.parent / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -192,14 +241,6 @@ def _backup_existing_file(destination: Path) -> Path:
     backup_path = backup_dir / f"{destination.stem}_{stamp}{destination.suffix}"
     shutil.copy2(destination, backup_path)
     return backup_path
-
-
-def _coerce_number(value: Any) -> Any:
-    text = _clean(value)
-    if not text:
-        return ""
-    number = float(text)
-    return int(number) if number.is_integer() else number
 
 
 def _clean(value: Any) -> str:

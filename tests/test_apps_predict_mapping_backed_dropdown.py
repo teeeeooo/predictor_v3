@@ -59,6 +59,8 @@ SAMPLE_MAPPING = {
     },
 }
 
+RUNTIME_FIXTURE = Path("tests/fixtures/mapping/mapping_runtime_equivalent.json")
+
 
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -111,6 +113,36 @@ def test_dropdown_option_adapter_returns_mapping_backed_base_options():
     assert adapter.base_options_for_key("ref_type") == ("R32", "R410A")
     assert adapter.base_options_for_key("exp_type") == ("Capi", "EEV")
     assert adapter.base_options_for_key("missing") == ()
+
+
+def test_runtime_fixture_drives_predict_f_and_t_and_pfc_cascades():
+    repository = PredictMappingRepository(str(RUNTIME_FIXTURE))
+    adapter = DropdownOptionAdapter(repository, build_case_table_column_schema())
+
+    assert adapter.base_options_for_key("idu") == (
+        "MOT1", "MOT2", "MOT3", "Q1", "Q2", "Q3", "QF1", "QF2", "QF3"
+    )
+
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    controller = InputEditController(session, repository)
+    case.input_values.update(
+        {"odu": "N-V2MD", "fin_type": "F&T", "pi": "7", "row": "1"}
+    )
+    controller.handle_cell_edited(case.case_id, "row")
+    assert case.autofill_values["cond_area"] == 10
+    assert case.autofill_values["cond_volume"] == 10
+
+    case.input_values.update(
+        {"odu": "N-V2MD", "fin_type": "PFC", "pi": "stale", "row": "1"}
+    )
+    controller.handle_cell_edited(case.case_id, "fin_type")
+    case.input_values["row"] = "1"
+    controller.handle_cell_edited(case.case_id, "row")
+    assert case.input_values["pi"] == ""
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ()
+    assert case.autofill_values["cond_area"] == 21
+    assert case.autofill_values["cond_volume"] == 30
 
 
 def test_dropdown_option_adapter_returns_empty_for_missing_ref_and_exp_sections():
@@ -255,6 +287,43 @@ def test_cond_specs_autofill_after_fin_pi_row_selection():
 
     assert case.autofill_values["cond_area"] == 6.5
     assert case.autofill_values["cond_volume"] == 7.5
+
+
+def test_pfc_fin_skips_pi_selection_and_autofills_after_row_selection():
+    mapping = {
+        **SAMPLE_MAPPING,
+        "odu_cascade": {
+            **SAMPLE_MAPPING["odu_cascade"],
+            "ODU-A": {
+                "Available_Fins": ["F&T", "PFC"],
+                "Available_Pis": ["7"],
+                "Available_Rows": ["1"],
+            },
+        },
+        "cond_specs": {
+            **SAMPLE_MAPPING["cond_specs"],
+            "ODU-A PFC 1": {"Cond Area": 8.5, "Cond Volume": 9.5},
+        },
+    }
+    session = _session_with_case()
+    case = session.case_store.get_case_at(0)
+    case.input_values.update(
+        {"odu": "ODU-A", "fin_type": "PFC", "pi": "old", "row": "old"}
+    )
+    controller = InputEditController(session, FakeMappingRepository(mapping))
+
+    controller.handle_cell_edited(case.case_id, "fin_type")
+
+    assert case.input_values["pi"] == ""
+    assert controller.dropdown_options_for_case(case.case_id, "pi") == ()
+
+    case.input_values["pi"] = "7"
+    case.input_values["row"] = "1"
+    controller.handle_cell_edited(case.case_id, "row")
+
+    assert case.input_values["pi"] == ""
+    assert case.autofill_values["cond_area"] == 8.5
+    assert case.autofill_values["cond_volume"] == 9.5
 
 
 def test_unmatched_cond_specs_combination_clears_stale_cond_values():

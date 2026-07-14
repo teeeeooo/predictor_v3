@@ -108,6 +108,14 @@ python3 -B tools/dev/mock_smoke/generate_mock_training_data.py \
 The CSV includes the current ML base features and targets. It is useful for
 future training-flow smoke preparation only; its metrics are meaningless.
 
+The generated numeric and one-hot rows are paired with DEV-only selector rows
+that reference `tests/fixtures/mapping/mapping_runtime_equivalent.json`.
+`validate_mock_alignment()` checks those selectors against the active Predict
+schema, mapping options/cascade/specifications, and resolved training values.
+Selectors remain validation metadata rather than new training CSV columns, so
+the current strict ML header contract is unchanged. This validates workflow
+readiness only, never accuracy, feature quality, or production readiness.
+
 ## Mock Mapping And Case Input
 
 Generate mapping JSON:

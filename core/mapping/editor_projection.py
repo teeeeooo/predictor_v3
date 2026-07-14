@@ -7,6 +7,7 @@ from copy import deepcopy
 from itertools import product
 from typing import Any
 
+from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
@@ -140,8 +141,7 @@ def _simple_group(
             values = {column: "" for column in columns}
             values[key_column] = row_key
             if isinstance(row_value, Mapping):
-                for column in columns[1:]:
-                    values[column] = row_value.get(column, "")
+                values.update({str(key): value for key, value in row_value.items()})
             rows.append(MappingEditorRow(values=values, source_key=row_key))
     return MappingEditorGroup(
         group_key=group_key,
@@ -154,39 +154,61 @@ def _simple_group(
 
 def _requirements_by_group(
     mapping_requirements: tuple[object, ...],
-) -> dict[str, tuple[str, ...]]:
-    grouped: dict[str, list[str]] = {}
+) -> dict[str, tuple[object, ...]]:
+    grouped: dict[str, list[object]] = {}
     for requirement in mapping_requirements:
         group_key = mapping_group_key_for_requirement(requirement)
         attribute = str(getattr(requirement, "mapping_attribute", "")).strip()
         if not group_key or not attribute:
             continue
         grouped.setdefault(group_key, [])
-        if attribute not in grouped[group_key]:
-            grouped[group_key].append(attribute)
+        if not any(
+            str(getattr(item, "mapping_attribute", "")).strip() == attribute
+            for item in grouped[group_key]
+        ):
+            grouped[group_key].append(requirement)
     return {key: tuple(values) for key, values in grouped.items()}
 
 
 def _apply_group_requirements(
     group: MappingEditorGroup,
-    required_columns: tuple[str, ...],
+    requirements: tuple[object, ...],
 ) -> MappingEditorGroup:
-    if not required_columns:
+    if not requirements:
         return group
+    required_columns = tuple(
+        str(getattr(requirement, "mapping_attribute", "")).strip()
+        for requirement in requirements
+    )
     columns = (*group.columns, *(column for column in required_columns if column not in group.columns))
     rows = tuple(_row_with_columns(row, columns) for row in group.rows)
+    column_data_types = dict(group.column_data_types)
+    required = list(group.required_columns)
+    for requirement, column in zip(requirements, required_columns):
+        data_type = str(getattr(requirement, "data_type", "string")).strip() or "string"
+        if data_type not in {"string", "number", "boolean"}:
+            raise ValueError(
+                f"unsupported mapping attribute data type '{data_type}' for '{column}'"
+            )
+        column_data_types[column] = data_type
+        if bool(getattr(requirement, "required", True)) and column not in required:
+            required.append(column)
     return MappingEditorGroup(
         group_key=group.group_key,
         label=group.label,
         columns=columns,
         rows=rows,
         runtime_sections=group.runtime_sections,
-        notes=_requirement_note(group.notes, required_columns),
+        notes=_requirement_note(group.notes, tuple(required)),
+        column_data_types=column_data_types,
+        required_columns=tuple(required),
     )
 
 
 def _row_with_columns(row: MappingEditorRow, columns: tuple[str, ...]) -> MappingEditorRow:
-    values = {column: row.value_for(column, "") for column in columns}
+    values = dict(row.values)
+    for column in columns:
+        values.setdefault(column, "")
     return MappingEditorRow(
         values=values,
         source_key=row.source_key,
@@ -215,10 +237,12 @@ def _option_group(
     rows: list[MappingEditorRow] = []
     if isinstance(section, Mapping):
         key_column = columns[0]
-        rows = [
-            MappingEditorRow(values={key_column: row_key}, source_key=row_key)
-            for row_key in sorted(str(key) for key in section)
-        ]
+        for row_key in sorted(str(key) for key in section):
+            row_value = section.get(row_key)
+            values: dict[str, Any] = {key_column: row_key}
+            if isinstance(row_value, Mapping):
+                values.update({str(key): value for key, value in row_value.items()})
+            rows.append(MappingEditorRow(values=values, source_key=row_key))
     return MappingEditorGroup(
         group_key=group_key,
         label=label,
@@ -240,13 +264,15 @@ def _odu_cond_specs_group(mapping_data: Mapping[str, Any]) -> MappingEditorGroup
         fins = _string_values(spec.get("Available_Fins", ()))
         pis = _string_values(spec.get("Available_Pis", ()))
         rows_values = _string_values(spec.get("Available_Rows", ()))
-        for fin, pi, row in product(fins, pis, rows_values):
-            key = _cond_spec_key(odu, fin, pi, row)
-            cond_value = cond_specs.get(key)
-            if not isinstance(cond_value, Mapping):
-                continue
-            matched.add(key)
-            rows.append(_odu_cond_specs_row(str(odu), fin, pi, row, cond_value, key))
+        for fin in fins:
+            fin_pis = pis if condenser_requires_pi(fin) else ("",)
+            for pi, row in product(fin_pis, rows_values):
+                key = condenser_spec_key(odu, fin, pi, row)
+                cond_value = cond_specs.get(key)
+                if not isinstance(cond_value, Mapping):
+                    continue
+                matched.add(key)
+                rows.append(_odu_cond_specs_row(str(odu), fin, pi, row, cond_value, key))
 
     for key in sorted(str(key) for key in cond_specs if str(key) not in matched):
         cond_value = cond_specs.get(key)
@@ -271,12 +297,11 @@ def _odu_cond_specs_row(
 ) -> MappingEditorRow:
     return MappingEditorRow(
         values={
+            **{str(key): value for key, value in cond_value.items()},
             "ODU": odu,
             "Fin Type": fin,
             "Pi": pi,
             "Row": row,
-            "Cond Area": cond_value.get("Cond Area", ""),
-            "Cond Volume": cond_value.get("Cond Volume", ""),
         },
         source_key=source_key,
     )
@@ -292,8 +317,7 @@ def _unresolved_cond_specs_row(key: str, cond_value: Any) -> MappingEditorRow:
         "Cond Volume": "",
     }
     if isinstance(cond_value, Mapping):
-        values["Cond Area"] = cond_value.get("Cond Area", "")
-        values["Cond Volume"] = cond_value.get("Cond Volume", "")
+        values.update({str(item): value for item, value in cond_value.items()})
     return MappingEditorRow(
         values=values,
         source_key=key,
@@ -311,10 +335,6 @@ def _string_values(value: Any) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, tuple | list):
         return ()
     return tuple(str(item) for item in value if str(item).strip())
-
-
-def _cond_spec_key(odu: Any, fin: str, pi: str, row: str) -> str:
-    return f"{odu} {fin} {pi} {row}"
 
 
 def _unowned_sections(mapping_data: Mapping[str, Any]) -> dict[str, Any]:

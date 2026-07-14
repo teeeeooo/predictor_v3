@@ -252,11 +252,12 @@ class DataMappingService:
         draft: MappingEditorDraft,
         requirements: tuple[MappingRequirement, ...],
     ) -> DataMappingSnapshot:
-        base_validation = validate_mapping_editor_draft(draft)
-        dynamic_issues = _required_mapping_value_issues(draft, requirements)
-        validation_result = type(base_validation)(
-            issues=(*base_validation.issues, *dynamic_issues)
-        )
+        validation_result = validate_mapping_editor_draft(draft)
+        missing_group_issues = _missing_requirement_group_issues(draft, requirements)
+        if missing_group_issues:
+            validation_result = type(validation_result)(
+                issues=(*validation_result.issues, *missing_group_issues)
+            )
         return DataMappingSnapshot(
             draft=draft,
             validation_errors=validation_result.issues,
@@ -273,55 +274,21 @@ class DataMappingService:
         return self._mapping_requirement_provider.load_mapping_requirements()
 
 
-def _required_mapping_value_issues(
+def _missing_requirement_group_issues(
     draft: MappingEditorDraft,
     requirements: tuple[MappingRequirement, ...],
 ) -> tuple[MappingValidationError, ...]:
-    issues: list[MappingValidationError] = []
-    for requirement in requirements:
-        group_key = mapping_group_key_for_requirement(requirement)
-        group = draft.group(group_key)
-        if group is None:
-            issues.append(
-                MappingValidationError(
-                    code="required_mapping_group_missing",
-                    message=f"{requirement.mapping_entity} mapping group is required.",
-                    entity_key=requirement.mapping_entity,
-                    attribute_key=requirement.mapping_attribute,
-                    field=requirement.mapping_attribute,
-                )
-            )
-            continue
-        issues.extend(_missing_value_issues(group, requirement.mapping_attribute))
-    return tuple(issues)
-
-
-def _missing_value_issues(group, attribute: str) -> tuple[MappingValidationError, ...]:  # noqa: ANN001
-    if not group.rows:
-        return (
-            MappingValidationError(
-                code="required_mapping_value_missing",
-                message=f"{attribute} is required by Data Definition but the group has no rows.",
-                entity_key=group.label,
-                attribute_key=attribute,
-                field=attribute,
-            ),
+    return tuple(
+        MappingValidationError(
+            code="required_mapping_group_missing",
+            message=f"{requirement.mapping_entity} mapping group is required.",
+            entity_key=requirement.mapping_entity,
+            attribute_key=requirement.mapping_attribute,
+            field=requirement.mapping_attribute,
         )
-    issues: list[MappingValidationError] = []
-    for index, row in enumerate(group.rows, start=1):
-        if str(row.value_for(attribute, "")).strip():
-            continue
-        issues.append(
-            MappingValidationError(
-                code="required_mapping_value_missing",
-                message=f"{attribute} is required by Data Definition.",
-                entity_key=group.label,
-                attribute_key=attribute,
-                row_key=row.source_key or str(index),
-                field=attribute,
-            )
-        )
-    return tuple(issues)
+        for requirement in requirements
+        if draft.group(mapping_group_key_for_requirement(requirement)) is None
+    )
 
 
 def _future_actions(

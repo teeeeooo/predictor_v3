@@ -17,16 +17,15 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is the active
-workstream. The governing design and phased implementation boundaries are recorded
-under `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-*.md` and the matching
-Phase 1 design.
+No implementation slice is active. Train/Admin UI/UX Overhaul Phase 1 —
+Mapping/Data Foundation Slices 1A–1D, both final corrections, and
+repository-automated validation are complete. Final audit is approved and PR
+#14 is the merge target. Phase 2 has not started.
 
 ## Next Action
 
-Start Phase 1 Slice 1A by auditing the current legacy mapping fixture, mapping
-projection/persistence owners, and focused tests, then implement the strict
-bootstrap parser within the bounded Phase 1 contract.
+After PR #14 merge closeout, await separate instruction before creating a Phase
+2 branch from merged `main`.
 
 ## Active Blockers
 

@@ -342,7 +342,7 @@ entries:
 
   - type: decision
     topic: Arc 14 Data Mapping foundation state
-    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager defaults to runtime mapping.json data and now supports user-facing draft projection, validation, editable row CRUD, validation-gated save with backup/temp/atomic replace, dirty reload confirmation, JSON export, and generated XLSX read-only snapshot export. row_key remains canonical row identity, key_attribute remains future import/export metadata, and active controls management visibility/eligibility rather than structural validation.
+    content: Mapping Entity / Master Data is a generic Qt-free core model separate from Predict Schema Catalog v2. Data Mapping Manager defaults to runtime mapping.json data and now supports user-facing draft projection, validation, editable row CRUD, validation-gated save with backup/temp/atomic replace, dirty reload confirmation, JSON export, and generated XLSX read-only snapshot export. Train/Admin Mapping/Data Foundation Phase 1 Slices 1A–1D plus the dynamic payload/type and hidden-payload persistence corrections are complete for repository-automated scope, the final audit is approved, and PR #14 is the merge target. Phase 2 begins only from merged main on a separate branch after separate instruction. The repository-only `tests/fixtures/mapping/mapping_runtime_equivalent.json` is the exact deterministic projection of the approved legacy bootstrap and is shared by populated Data Mapping and Predict integration tests; it is never installed as `data/mapping.json`. Definition-backed dynamic mapping attributes carry type/required metadata into editor validation and persistence across simple keyed groups, Refrigerant/Expansion option payloads, and ODU Cond Specs; boolean values persist as canonical JSON booleans and every mapping number must be finite. Undeclared runtime payload remains hidden from editor/review schema but is preserved from its current row backing data across unrelated Save/reload and key rename, while visible fields overlay canonical values and row deletion removes the payload. Non-identity attributes never join condenser identity. row_key remains canonical row identity, key_attribute remains future import/export metadata, and active controls management visibility/eligibility rather than structural validation.
     keywords:
       - predictor_v3
       - Arc 14
@@ -353,7 +353,7 @@ entries:
       - key_attribute
       - active
     assertionStatus: verified
-    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1b.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1c.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-data-foundation-phase-1-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-data-foundation-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-data-foundation-persistence-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-data-foundation-merge-closeout.md
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
@@ -371,7 +371,7 @@ entries:
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction
-    content: Legacy single-wide CSV to mapping.json reconstruction is not recoverable enough for implementation. Data Mapping Manager uses UI CRUD over user-facing Predict mapping groups; Import remains excluded until a future compatibility-parser design exists; JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
+    content: Historical single-wide CSV conversion is not recoverable as a general import contract. The Phase 1 legacy-wide parser is a strict bootstrap-only adapter into the existing editor draft and validated runtime projection; normal Data Mapping Import remains excluded. JSON and XLSX Export are read-only review snapshots rather than edit/reimport contracts; Save/Reload/dirty-state behavior stays below the UI raw JSON boundary.
     keywords:
       - predictor_v3
       - Arc 14B
@@ -382,7 +382,7 @@ entries:
       - CRUD
       - dirty state
     assertionStatus: verified
-    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md
 
   - type: decision
     topic: Arc 14B ref exp mapping SSOT
@@ -401,7 +401,7 @@ entries:
 
   - type: decision
     topic: Arc 14C runtime cascade integration
-    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. odu_cascade, cond_specs, fin_type, pi, and row are runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
+    content: Predict runtime dropdowns and autofill consume Data Mapping Manager generated mapping.json sections for ODU Cond Specs cascade behavior. Condenser identity is Fin-Type-dependent: F&T and every non-PFC Fin Type use ODU + Fin Type + Pi + Row, while PFC uses ODU + Fin Type + Row. Any PFC Pi placeholder or stale value is canonically empty before editor/runtime key, cascade, option, persistence, converter, or Predict consumption. The Excel converter rejects incomplete condenser identities before writing, and ODU Cond Specs identity edits keep source_key synchronized with current canonical row values. odu_cascade, cond_specs, fin_type, pi, and row remain runtime SSOT sections; missing or invalid mapping states remain empty/status-visible and do not recreate hard-coded fallback behavior.
     keywords:
       - predictor_v3
       - Arc 14C
@@ -412,7 +412,7 @@ entries:
       - cond_specs
       - autofill
     assertionStatus: verified
-    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md
+    source: result_reports/legacy/summaries/710_summary-arc14b-crud-cascade-xlsx-prearc15-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-bootstrap-slice-1a-final-correction.md
 
   - type: decision
     topic: dependency and Excel policy
@@ -448,7 +448,7 @@ entries:
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
-    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Readiness only performs passive explicit training-header checks while model artifact compatibility stays not_evaluated.
+    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The Phase 1 DEV alignment validator pairs selector metadata with the unchanged numeric/one-hot training frame and resolves schema-backed values from the repository runtime-equivalent mapping fixture, including conditional F&T/PFC identities; invalid options/combinations and mismatched training values fail fast. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Mock readiness does not establish model quality or production readiness.
     keywords:
       - predictor_v3
       - Arc 15
@@ -459,7 +459,7 @@ entries:
       - readiness
       - schema writer
     assertionStatus: verified
-    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md
+    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1d.md
 ```
 
 ## Known Gaps

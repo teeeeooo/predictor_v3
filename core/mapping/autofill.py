@@ -3,6 +3,11 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from core.mapping.condenser_identity import (
+    canonical_condenser_pi,
+    condenser_requires_pi,
+    condenser_spec_key,
+)
 from core.predictor_schema.columns import (
     COLUMNS,
     DROPDOWN_TARGET,
@@ -58,7 +63,17 @@ def build_autofill_updates(
             ]
         )
         dropdown_options.update(_odu_dropdown_options(row_values, mapping_data))
-    elif changed_key in {"fin_type", "pi", "row"}:
+    elif changed_key == "fin_type":
+        updates.extend(
+            [
+                AutofillUpdate("pi", ""),
+                AutofillUpdate("row", ""),
+                AutofillUpdate("cond_area", ""),
+                AutofillUpdate("cond_volume", ""),
+            ]
+        )
+        dropdown_options.update(_fin_type_dropdown_options(row_values, mapping_data))
+    elif changed_key in {"pi", "row"}:
         updates.extend(_cond_spec_updates(row_values, mapping_data))
 
     return AutofillResult(
@@ -129,19 +144,47 @@ def _cond_spec_updates(
 ) -> list[AutofillUpdate]:
     odu = _clean(row_values.get("odu"))
     fin = _clean(row_values.get("fin_type"))
-    pi = _clean(row_values.get("pi"))
+    pi = canonical_condenser_pi(fin, row_values.get("pi"))
     row = _clean(row_values.get("row"))
-    if not all((odu, fin, pi, row)):
-        return [AutofillUpdate("cond_area", ""), AutofillUpdate("cond_volume", "")]
+    updates = [] if condenser_requires_pi(fin) else [AutofillUpdate("pi", "")]
+    if not all((odu, fin, row)) or (condenser_requires_pi(fin) and not pi):
+        return [
+            *updates,
+            AutofillUpdate("cond_area", ""),
+            AutofillUpdate("cond_volume", ""),
+        ]
 
-    cond_key = f"{odu} {fin} {pi} {row}"
+    cond_key = condenser_spec_key(odu, fin, pi, row)
     cond_spec = _mapping_section(mapping_data, "cond_specs").get(cond_key)
     if not isinstance(cond_spec, dict):
-        return [AutofillUpdate("cond_area", ""), AutofillUpdate("cond_volume", "")]
+        return [
+            *updates,
+            AutofillUpdate("cond_area", ""),
+            AutofillUpdate("cond_volume", ""),
+        ]
     return [
+        *updates,
         AutofillUpdate("cond_area", cond_spec.get("Cond Area", "")),
         AutofillUpdate("cond_volume", cond_spec.get("Cond Volume", "")),
     ]
+
+
+def _fin_type_dropdown_options(
+    row_values: dict[str, Any],
+    mapping_data: dict[str, Any],
+) -> dict[str, tuple[str, ...]]:
+    selected_odu = _clean(row_values.get("odu"))
+    selected_fin = _clean(row_values.get("fin_type"))
+    odu_spec = _mapping_section(mapping_data, "odu_cascade").get(selected_odu)
+    if not isinstance(odu_spec, dict):
+        odu_spec = {}
+    pi_options = _string_options(odu_spec.get("Available_Pis", ()))
+    if not condenser_requires_pi(selected_fin):
+        pi_options = ()
+    return {
+        "pi": pi_options,
+        "row": _string_options(odu_spec.get("Available_Rows", ())),
+    }
 
 
 def _dedupe_updates(updates: list[AutofillUpdate]) -> tuple[AutofillUpdate, ...]:
