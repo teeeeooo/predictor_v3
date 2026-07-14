@@ -28,10 +28,9 @@ unsaved draft through one grouped undo command.
 
 ## Next Action
 
-Create and push the Slice 2E logical commit after the import/round-trip gate,
-then collect at most two native rendering screenshots and update PR #15's
-audit status. Keep Draft PR #15 open; do not merge the phase or change PR
-readiness.
+Update PR #15's audit status with the Slice 2D/2E commits, automated gates, and
+the native visual evidence manifest. Keep Draft PR #15 open; do not merge the
+phase or change PR readiness.
 
 ## Active Blockers
 
@@ -45,6 +44,10 @@ readiness.
   audit-correction follow-up confirmed native rendering without accessibility
   clicks, but no physical interaction completion was reported, so no new
   interaction PNG was added.
+- This Batch's bounded native visual capture could not start because the Mac
+  desktop was locked and Computer Use could not unlock it automatically. No
+  native screenshot is claimed; the automated Batch result remains valid and
+  the visual states are pending a later unlocked-desktop audit.
 
 ## Active Constraints
 
