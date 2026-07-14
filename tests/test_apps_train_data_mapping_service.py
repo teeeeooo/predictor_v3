@@ -28,12 +28,14 @@ def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     assert {action.key for action in snapshot.actions} == {
         "export_csv_v2",
         "export_mapping_exchange",
+        "import_mapping_bundle",
         "save_mapping_json",
         "reload_runtime",
     }
     assert [action.label for action in snapshot.actions] == [
         "Export",
         "Mapping Exchange Package",
+        "Import Bundle…",
         "Save",
         "Reload",
     ]
@@ -42,6 +44,7 @@ def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
     assert "read-only review snapshot" in actions["export_csv_v2"].reason
     assert actions["export_mapping_exchange"].enabled
+    assert actions["import_mapping_bundle"].enabled
 
 
 def test_runtime_fixture_loads_all_populated_mapping_groups():

@@ -9,10 +9,11 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QLabel
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
+from apps.train.ui.data_mapping.import_preview_dialog import DataMappingImportPreviewDialog
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from core.data_definition.model import MappingRequirement
 from core.mapping.editor_persistence import MappingEditorSaveResult
@@ -206,6 +207,44 @@ def test_export_menu_separates_review_snapshot_and_exchange_package(tmp_path):
 
     assert not actions["exchange"].isEnabled()
     assert actions["review"].isEnabled()
+
+
+def test_import_bundle_action_is_separate_from_review_export_and_clipboard_surface(tmp_path):
+    _app()
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(_copy_mapping(tmp_path))))
+    controller = DataMappingController(service)
+    panel = DataMappingPanel(controller=controller)
+
+    import_button = panel.toolbar.buttons["import_mapping_bundle"]
+
+    assert import_button.text() == "Import"
+    assert import_button.isEnabled()
+    assert panel.toolbar.buttons["export_csv_v2"].text() == "Export"
+    assert panel.row_table is not import_button
+
+
+def test_import_preview_dialog_shows_summary_and_draft_only_apply(tmp_path):
+    _app()
+    service = DataMappingService(RuntimeMappingCatalogProvider(str(_copy_mapping(tmp_path))))
+    controller = DataMappingController(service)
+    bundle = tmp_path / "renamed-external-tool.csv"
+    result, _snapshot = service.export_exchange(bundle)
+    assert result.success
+
+    preview = controller.preview_exchange_import(bundle)
+    dialog = DataMappingImportPreviewDialog(preview)
+    dialog.show()
+    QApplication.processEvents()
+
+    assert dialog.windowTitle() == "Import Mapping Bundle Preview"
+    assert dialog.apply_button.isEnabled()
+    assert dialog.cancel_button.isEnabled()
+    labels = {label.accessibleName() for label in dialog.findChildren(QLabel)}
+    assert "Mapping Bundle format version" in labels
+    assert "Mapping Bundle change summary" in labels
+    assert "Mapping Bundle save destination notice" in labels
+    assert dialog.accessibleName() == "Mapping Bundle Import Preview"
+    dialog.reject()
 
 
 def test_refresh_preserves_baseline_undo_and_selection_without_provider_reload(tmp_path):

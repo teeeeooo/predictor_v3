@@ -399,8 +399,25 @@ entries:
       - exchange export
       - exact header
       - review snapshot
+  assertionStatus: verified
+  source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2d-exchange-export.md
+
+  - type: decision
+    topic: Train Admin Phase 2 bundle import boundary
+    content: Slice 2E accepts only marker-owned sectioned mapping_bundle_v1 input and never infers format or section identity from filename. Exact-header policy requires every current Data Definition visible projection column exactly once, including optional dynamic columns; header order is projected by name, and missing/unknown/duplicate headers block the full import with group/column guidance to re-export. A valid seven-section bundle becomes a typed full-replacement candidate, previews visible identity/value changes, preserves matching hidden row payload and unowned sections, applies only to the service-owned unsaved draft as one undo command, rejects stale previews, and leaves runtime mapping unchanged until explicit Save. Review snapshots and clipboard TSV remain separate contracts.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - Phase 2
+      - Slice 2E
+      - mapping_bundle_v1
+      - exact header
+      - unsaved draft
+      - grouped undo
+      - hidden payload
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2d-exchange-export.md
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2e-bundle-import.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction

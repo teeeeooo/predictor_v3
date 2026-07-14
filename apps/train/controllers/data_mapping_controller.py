@@ -19,6 +19,7 @@ from apps.train.controllers.data_mapping.presentation import (
 from apps.train.services.data_mapping_service import DataMappingService
 from apps.train.services.data_mapping_types import (
     DataMappingCellEdit,
+    DataMappingImportPreview,
     DataMappingSnapshot,
 )
 from core.mapping.entity_model import MappingValidationError
@@ -225,6 +226,43 @@ class DataMappingController:
                 "destination",
                 result.message,
             )),
+        )
+
+    def preview_exchange_import(
+        self,
+        source: str | Path,
+    ) -> DataMappingImportPreview:
+        """Prepare a Qt-free exchange preview without mutating controller state."""
+        preview, _snapshot = self._service.preview_exchange_import(source)
+        return preview
+
+    def apply_exchange_import(
+        self,
+        preview: DataMappingImportPreview,
+        selected_group_key: str = "",
+    ) -> DataMappingControllerState:
+        """Apply a prepared exchange candidate to the service-owned draft only."""
+        snapshot, result = self._service.apply_exchange_import(preview)
+        if result.success:
+            return self._state_from_snapshot(
+                snapshot,
+                selected_group_key,
+                message=result.message,
+            )
+        issue_code = "import_preview_stale" if result.stale else "import_apply_blocked"
+        return self._state_from_snapshot(
+            snapshot,
+            selected_group_key,
+            status="error",
+            message="Import was not applied.",
+            extra_issues=(
+                operation_issue(
+                    issue_code,
+                    "Import",
+                    "preview",
+                    result.message,
+                ),
+            ),
         )
 
     def _state_from_snapshot(

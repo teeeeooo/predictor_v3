@@ -179,9 +179,10 @@ def test_data_mapping_panel_builds_editable_manager_surface():
         assert [button.text() for button in panel._buttons.values()] == [
             "Add",
             "Duplicate",
-            "Delete",
-            "Export",
-            "Save",
+                "Delete",
+                "Export",
+                "Import",
+                "Save",
             "Refresh",
             "Reload",
         ]

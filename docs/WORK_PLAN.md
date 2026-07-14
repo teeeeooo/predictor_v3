@@ -17,19 +17,21 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2D exchange
-export is implemented on `phase/train-admin-data-mapping-ux` after the approved
-Slice 2A head and the approved Slice 2B+2C implementation. Slice 2D keeps the
-existing review snapshot contract, adds a Qt-free `mapping_bundle_v1` exchange
-serializer, and publishes seven canonical group CSVs plus one user-named bundle
-from the current service-owned draft through staging and rollback-aware publish.
-The next Slice 2E bundle import has not started.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2E bundle
+import is implemented on `phase/train-admin-data-mapping-ux` after the approved
+Slice 2A head, Slice 2B+2C implementation, and Slice 2D exchange export. Slice
+2D keeps the existing review snapshot contract and publishes seven canonical
+group CSVs plus one user-named bundle from the current service-owned draft.
+Slice 2E parses only sectioned `mapping_bundle_v1`, enforces exact current
+visible headers, previews a full replacement, and applies valid changes to the
+unsaved draft through one grouped undo command.
 
 ## Next Action
 
-Create and push the Slice 2D logical commit, then implement the sectioned
-`mapping_bundle_v1` import preview/apply workflow as Slice 2E. Keep Draft PR #15
-open; do not merge the phase or change PR readiness.
+Create and push the Slice 2E logical commit after the import/round-trip gate,
+then collect at most two native rendering screenshots and update PR #15's
+audit status. Keep Draft PR #15 open; do not merge the phase or change PR
+readiness.
 
 ## Active Blockers
 

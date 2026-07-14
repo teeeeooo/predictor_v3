@@ -14,6 +14,7 @@ _ACTION_LABELS = (
     ("duplicate_row", "Duplicate"),
     ("delete_row", "Delete"),
     ("export_csv_v2", "Export"),
+    ("import_mapping_bundle", "Import"),
     ("save_mapping_json", "Save"),
     ("refresh_view", "Refresh"),
     ("reload_runtime", "Reload"),
@@ -41,7 +42,7 @@ class DataMappingToolbar(QFrame):
             style.spacing("space.panel"),
             style.spacing("space.sm"),
         )
-        layout.setSpacing(style.spacing("space.sm"))
+        layout.setSpacing(style.spacing("space.xs"))
         for key, label in _ACTION_LABELS:
             if key == "export_csv_v2":
                 button = self._build_export_button(callbacks or {})
@@ -71,7 +72,9 @@ class DataMappingToolbar(QFrame):
         button = QToolButton(self)
         button.setText("Export")
         button.setAccessibleName("Export")
-        button.setToolTip("Choose a review snapshot or mapping exchange package export.")
+        button.setToolTip(
+            "Choose a read-only review snapshot or mapping exchange package export."
+        )
         button.setEnabled(False)
         button.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(button)

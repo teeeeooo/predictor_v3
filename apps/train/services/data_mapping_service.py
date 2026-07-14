@@ -29,8 +29,10 @@ from core.mapping.entity_model import MappingValidationError
 from core.mapping.exchange import (
     MappingExchangeExportPlan,
     MappingExchangeExportResult,
+    diff_mapping_exchange_drafts,
     exchange_draft_structure_issues,
     export_mapping_exchange,
+    parse_mapping_exchange_bundle,
     plan_mapping_exchange_export,
 )
 from core.mapping.paths import MAPPING_JSON_FILE
@@ -38,6 +40,8 @@ from core.data_definition import MappingRequirement, build_data_definition_repor
 from apps.train.services.data_mapping_types import (
     DataMappingAction,
     DataMappingCellEdit,
+    DataMappingImportApplyResult,
+    DataMappingImportPreview,
     DataMappingMutationResult,
     DataMappingSnapshot,
     MappingDraftProvider,
@@ -346,6 +350,80 @@ class DataMappingService:
         )
         return result, snapshot
 
+    def preview_exchange_import(
+        self,
+        source: str | Path,
+    ) -> tuple[DataMappingImportPreview, DataMappingSnapshot]:
+        """Parse an exchange file and prepare a non-mutating change preview."""
+        snapshot = self.load_snapshot()
+        source_path = Path(source)
+        try:
+            payload = source_path.read_bytes()
+        except Exception as exc:
+            blocker = MappingValidationError(
+                code="import_source_read_failed",
+                message=f"Unable to read import file '{source_path}': {exc}",
+                entity_key="Import",
+                field="source",
+            )
+            return (
+                DataMappingImportPreview(
+                    source_path=source_path,
+                    format_version="",
+                    blockers=(blocker,),
+                    base_draft=snapshot.draft,
+                ),
+                snapshot,
+            )
+        parsed = parse_mapping_exchange_bundle(payload, snapshot.draft)
+        diffs = (
+            diff_mapping_exchange_drafts(snapshot.draft, parsed.candidate)
+            if parsed.candidate is not None
+            else ()
+        )
+        return (
+            DataMappingImportPreview(
+                source_path=source_path,
+                format_version=parsed.format_version,
+                group_diffs=diffs,
+                blockers=parsed.blockers,
+                warnings=parsed.warnings,
+                candidate=parsed.candidate,
+                base_draft=snapshot.draft,
+            ),
+            snapshot,
+        )
+
+    def apply_exchange_import(
+        self,
+        preview: DataMappingImportPreview,
+    ) -> tuple[DataMappingSnapshot, DataMappingImportApplyResult]:
+        """Apply one fresh valid candidate as one grouped draft undo command."""
+        snapshot = self.load_snapshot()
+        if not preview.can_apply or preview.candidate is None:
+            return snapshot, DataMappingImportApplyResult(
+                success=False,
+                message="Import is blocked; review the listed issues first.",
+            )
+        if preview.base_draft != snapshot.draft:
+            return snapshot, DataMappingImportApplyResult(
+                success=False,
+                stale=True,
+                message="Import preview is stale. Review the current draft and import again.",
+            )
+        if preview.candidate == snapshot.draft:
+            return snapshot, DataMappingImportApplyResult(
+                success=True,
+                message="Import matches the current draft; no changes were applied.",
+            )
+        stored = self._session.store_command(snapshot.draft, preview.candidate)
+        applied = self._snapshot(stored, self._load_mapping_requirements())
+        return applied, DataMappingImportApplyResult(
+            success=True,
+            changed=True,
+            message="Imported into the Unsaved draft. Review the changes, then use Save.",
+        )
+
     def _store_command_result(
         self,
         previous: MappingEditorDraft,
@@ -424,6 +502,12 @@ def _future_actions(
             "Resolve Issues or restore the seven exchange groups before exporting."
             if not exchange_enabled
             else "Export the current valid draft as a mapping exchange package.",
+        ),
+        DataMappingAction(
+            "import_mapping_bundle",
+            "Import Bundle…",
+            True,
+            "Import a sectioned mapping_bundle_v1 as an Unsaved draft after preview.",
         ),
         DataMappingAction(
             "save_mapping_json",

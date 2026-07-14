@@ -7,6 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QModelIndex, QSignalBlocker, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -28,6 +29,7 @@ from apps.train.controllers.data_mapping_controller import (
 )
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping import DataMappingTableView, DataMappingToolbar
+from apps.train.ui.data_mapping.import_preview_dialog import DataMappingImportPreviewDialog
 from apps.train.ui.data_mapping.issue_navigation import navigate_to_issue
 from apps.train.ui.data_mapping_table_sizing import (
     apply_group_navigation_sizing,
@@ -56,6 +58,7 @@ WORKSPACE_INITIAL_WIDTH = 1050
 DETAILS_INITIAL_HEIGHT = 210
 EXPORT_FILTERS = "JSON Files (*.json);;Excel Workbook (*.xlsx)"
 EXCHANGE_EXPORT_FILTERS = "CSV Files (*.csv);;All files (*)"
+EXCHANGE_IMPORT_FILTERS = "Mapping Bundle CSV (*.csv);;All files (*)"
 
 
 class DataMappingPanel(QWidget):
@@ -107,6 +110,7 @@ class DataMappingPanel(QWidget):
                 "delete_row": self._delete_row,
                 "export_csv_v2": self._export,
                 "export_mapping_exchange": self._export_exchange,
+                "import_mapping_bundle": self._import_exchange,
                 "save_mapping_json": self._save,
                 "refresh_view": self.refresh,
                 "reload_runtime": self._reload,
@@ -494,6 +498,26 @@ class DataMappingPanel(QWidget):
                 QMessageBox.No,
             )
             == QMessageBox.Yes
+        )
+
+    def _import_exchange(self) -> None:
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "Import Mapping Bundle",
+            "",
+            EXCHANGE_IMPORT_FILTERS,
+        )
+        if not path:
+            return
+        preview = self._controller.preview_exchange_import(path)
+        dialog = DataMappingImportPreviewDialog(preview, self)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        self._apply_state(
+            self._controller.apply_exchange_import(
+                preview,
+                self._selected_group_key,
+            )
         )
 
     def _selected_row(self) -> int | None:
