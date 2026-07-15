@@ -13,6 +13,9 @@ from apps.train.application.data_mapping import (
 )
 from apps.train.application.data_mapping.coverage import project_mapping_coverage
 from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
+from core.data_definition.mapping_requirement_contract import (
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.condenser_identity import condenser_requires_pi
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.entity_model import MappingValidationError
@@ -84,8 +87,17 @@ def project_snapshot(
     resource_issues = (_resource_missing_issue(),) if resource_status == "missing" else ()
     issues = (*snapshot.validation_errors, *resource_issues, *extra_issues)
     targets = tuple(_issue_target(draft.groups, issue) for issue in issues)
+    effective_requirements = snapshot.effective_mapping_requirements
+    if (
+        not effective_requirements
+        and snapshot.mapping_requirements
+        and not snapshot.mapping_requirement_conflicts
+    ):
+        effective_requirements = resolve_mapping_requirement_contracts(
+            snapshot.mapping_requirements
+        ).contracts
     coverage = project_mapping_coverage(
-        snapshot.mapping_requirements,
+        effective_requirements,
         draft,
         issues,
         targets,

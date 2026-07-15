@@ -42,6 +42,14 @@ class RequirementProvider:
         )
 
 
+class MutableRequirementProvider:
+    def __init__(self, requirements=()):  # noqa: ANN001
+        self.requirements = tuple(requirements)
+
+    def load_mapping_requirements(self):  # noqa: ANN201
+        return self.requirements
+
+
 class FailingReloadProvider(RuntimeMappingCatalogProvider):
     def __init__(self, mapping_file: str) -> None:
         super().__init__(mapping_file)
@@ -240,6 +248,113 @@ def test_duplicate_occurrence_coverage_and_issue_navigation_focus_same_exact_cel
     panel._apply_state(after_delete)
     assert not focus_cell_target(stale_target, after_delete, panel.row_table)
     assert panel.row_table.currentIndex().row() != 1
+
+
+def test_shared_requirement_contract_drives_one_offscreen_column_and_coverage(tmp_path):
+    _app()
+    requirements = (
+        MappingRequirement(
+            column_key="fan_attribute_b",
+            ml_name="",
+            mapping_entity="idu",
+            mapping_attribute="Fan Attribute",
+            trigger_column="idu",
+            data_type="number",
+            required=False,
+        ),
+        MappingRequirement(
+            column_key="fan_attribute_a",
+            ml_name="",
+            mapping_entity="idu",
+            mapping_attribute="Fan Attribute",
+            trigger_column="idu",
+            data_type="number",
+            required=True,
+        ),
+    )
+    requirement_provider = MutableRequirementProvider(requirements)
+    controller = DataMappingController(
+        DataMappingService(
+            RuntimeMappingCatalogProvider(str(_copy_mapping(tmp_path))),
+            requirement_provider,
+        )
+    )
+    panel = DataMappingPanel(controller=controller)
+    panel.show()
+    state = panel._current_state
+    fan_column = state.value_headers.index("Fan Attribute")
+    coverage = next(
+        item for item in state.coverage_items if item.mapping_attribute == "Fan Attribute"
+    )
+
+    assert state.value_headers.count("Fan Attribute") == 1
+    assert panel.coverage_panel.selector.count() == 1
+    assert coverage.required
+    assert coverage.source_definition_column_keys == (
+        "fan_attribute_a",
+        "fan_attribute_b",
+    )
+    assert not next(
+        action.enabled for action in state.actions if action.key == "save_mapping_json"
+    )
+
+    model = panel.row_table.model()
+    for row_index in range(model.rowCount()):
+        assert model.setData(model.index(row_index, fan_column), "2.5", Qt.EditRole)
+        QApplication.processEvents()
+        model = panel.row_table.model()
+    ready = panel._current_state
+    assert next(
+        item for item in ready.coverage_items if item.mapping_attribute == "Fan Attribute"
+    ).status == "ready"
+    assert next(
+        action.enabled for action in ready.actions if action.key == "save_mapping_json"
+    )
+
+
+def test_untouched_projection_blank_is_not_saved_by_offscreen_unrelated_edit(tmp_path):
+    _app()
+    mapping_file = _copy_mapping(tmp_path)
+    requirement_provider = MutableRequirementProvider(
+        (
+            MappingRequirement(
+                column_key="fan_attribute",
+                ml_name="",
+                mapping_entity="idu",
+                mapping_attribute="Fan Attribute",
+                trigger_column="idu",
+                data_type="number",
+                required=False,
+            ),
+        )
+    )
+    service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_file)),
+        requirement_provider,
+    )
+    controller = DataMappingController(service)
+    panel = DataMappingPanel(controller=controller)
+    panel.show()
+
+    assert "Fan Attribute" in panel._current_state.value_headers
+    assert not service.current_snapshot().draft.group("idu").rows[0].has_concrete_value_for(
+        "Fan Attribute"
+    )
+
+    requirement_provider.requirements = ()
+    panel._apply_state(controller.refresh("idu"))
+    assert "Fan Attribute" not in panel._current_state.value_headers
+    size_column = panel._current_state.value_headers.index("Size")
+    model = panel.row_table.model()
+    assert model.setData(model.index(0, size_column), "offscreen-edit", Qt.EditRole)
+    QApplication.processEvents()
+    panel._save()
+    QApplication.processEvents()
+
+    payload = json.loads(mapping_file.read_text(encoding="utf-8"))
+    first_key = next(iter(payload["idu"]))
+    assert payload["idu"][first_key]["Size"] == "offscreen-edit"
+    assert "Fan Attribute" not in payload["idu"][first_key]
 
 
 def test_source_operation_issue_does_not_move_primary_selection(tmp_path):

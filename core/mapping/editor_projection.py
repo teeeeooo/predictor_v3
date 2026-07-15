@@ -7,6 +7,11 @@ from copy import deepcopy
 from itertools import product
 from typing import Any
 
+from core.data_definition.mapping_requirement_contract import (
+    EffectiveMappingRequirement,
+    mapping_group_key_for_requirement,
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.editor_model import (
     MappingEditorDraft,
@@ -24,12 +29,6 @@ COMPRESSOR_GROUP = "compressor"
 REFRIGERANT_GROUP = "refrigerant"
 EXPANSION_GROUP = "expansion"
 ODU_COND_SPECS_GROUP = "odu_cond_specs"
-MAPPING_ENTITY_GROUP_ALIASES = {
-    "cond_specs": ODU_COND_SPECS_GROUP,
-    "ref_type": REFRIGERANT_GROUP,
-    "exp_type": EXPANSION_GROUP,
-}
-
 OWNED_RUNTIME_SECTIONS = (
     "idu",
     "evap_index",
@@ -106,7 +105,33 @@ def apply_mapping_requirements_to_editor_draft(
     mapping_requirements: tuple[object, ...] = (),
 ) -> MappingEditorDraft:
     """Return a draft with Data Definition-required mapping attributes visible."""
-    required_by_group = _requirements_by_group(mapping_requirements)
+    resolution = resolve_mapping_requirement_contracts(mapping_requirements)
+    unsupported = next(
+        (
+            conflict
+            for conflict in resolution.conflicts
+            if "unsupported_data_type" in conflict.reasons
+        ),
+        None,
+    )
+    if unsupported is not None:
+        data_type = unsupported.data_types[0] if unsupported.data_types else ""
+        raise ValueError(
+            "unsupported mapping attribute data type "
+            f"'{data_type}' for '{unsupported.mapping_attribute}'"
+        )
+    return apply_effective_mapping_requirements_to_editor_draft(
+        draft,
+        resolution.contracts,
+    )
+
+
+def apply_effective_mapping_requirements_to_editor_draft(
+    draft: MappingEditorDraft,
+    requirements: tuple[EffectiveMappingRequirement, ...] = (),
+) -> MappingEditorDraft:
+    """Apply already-resolved compatible mapping-cell contracts."""
+    required_by_group = _requirements_by_group(requirements)
     groups = tuple(
         _apply_group_requirements(group, required_by_group.get(group.group_key, ()))
         for group in draft.groups
@@ -116,12 +141,6 @@ def apply_mapping_requirements_to_editor_draft(
         unowned_sections=draft.unowned_sections,
         source_label=draft.source_label,
     )
-
-
-def mapping_group_key_for_requirement(requirement: object) -> str:
-    """Return the Data Mapping group key for one Data Definition requirement."""
-    entity = str(getattr(requirement, "mapping_entity", "")).strip()
-    return MAPPING_ENTITY_GROUP_ALIASES.get(entity, entity)
 
 
 def _simple_group(
@@ -151,26 +170,17 @@ def _simple_group(
 
 
 def _requirements_by_group(
-    mapping_requirements: tuple[object, ...],
-) -> dict[str, tuple[object, ...]]:
-    grouped: dict[str, list[object]] = {}
+    mapping_requirements: tuple[EffectiveMappingRequirement, ...],
+) -> dict[str, tuple[EffectiveMappingRequirement, ...]]:
+    grouped: dict[str, list[EffectiveMappingRequirement]] = {}
     for requirement in mapping_requirements:
-        group_key = mapping_group_key_for_requirement(requirement)
-        attribute = str(getattr(requirement, "mapping_attribute", "")).strip()
-        if not group_key or not attribute:
-            continue
-        grouped.setdefault(group_key, [])
-        if not any(
-            str(getattr(item, "mapping_attribute", "")).strip() == attribute
-            for item in grouped[group_key]
-        ):
-            grouped[group_key].append(requirement)
+        grouped.setdefault(requirement.resolved_group_key, []).append(requirement)
     return {key: tuple(values) for key, values in grouped.items()}
 
 
 def _apply_group_requirements(
     group: MappingEditorGroup,
-    requirements: tuple[object, ...],
+    requirements: tuple[EffectiveMappingRequirement, ...],
 ) -> MappingEditorGroup:
     if not requirements and group.requirement_projection is None:
         return group
@@ -188,7 +198,6 @@ def _apply_group_requirements(
         *provenance.base_columns,
         *(column for column in requirement_columns if column not in provenance.base_columns),
     )
-    rows = tuple(_row_with_columns(row, requirement_columns) for row in group.rows)
     column_data_types = dict(provenance.base_column_data_types)
     required = list(provenance.base_required_columns)
     requirement_required: list[str] = []
@@ -211,7 +220,7 @@ def _apply_group_requirements(
         group_key=group.group_key,
         label=group.label,
         columns=columns,
-        rows=rows,
+        rows=group.rows,
         runtime_sections=group.runtime_sections,
         notes=_requirement_note(
             provenance.base_notes,
@@ -227,18 +236,6 @@ def _apply_group_requirements(
             base_required_columns=provenance.base_required_columns,
             requirement_columns=requirement_columns,
         ),
-    )
-
-
-def _row_with_columns(row: MappingEditorRow, columns: tuple[str, ...]) -> MappingEditorRow:
-    values = dict(row.values)
-    for column in columns:
-        values.setdefault(column, "")
-    return MappingEditorRow(
-        values=values,
-        source_key=row.source_key,
-        unresolved=row.unresolved,
-        notes=row.notes,
     )
 
 

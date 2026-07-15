@@ -83,6 +83,7 @@ class MappingValidationError:
     severity: str = "error"
     row_index: int | None = None
     row_occurrence: int | None = None
+    related_definition_keys: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from core.data_definition.mapping_requirement_contract import (
+    EffectiveMappingRequirement,
+    MappingRequirementConflict,
+    MappingRequirementContractResolution,
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.editor_commands import (
     add_draft_row,
     delete_draft_row,
@@ -17,9 +23,8 @@ from core.mapping.editor_export import (
 )
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.editor_projection import (
-    apply_mapping_requirements_to_editor_draft,
+    apply_effective_mapping_requirements_to_editor_draft,
     load_runtime_mapping_editor_draft,
-    mapping_group_key_for_requirement,
     project_runtime_mapping_to_editor_draft,
 )
 from core.mapping.editor_persistence import MappingEditorSaveResult, save_mapping_editor_draft
@@ -159,67 +164,80 @@ class DataMappingService:
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
         requirements = self._load_mapping_requirements()
+        resolution = resolve_mapping_requirement_contracts(requirements)
         if self._session.draft is None:
-            draft = apply_mapping_requirements_to_editor_draft(
+            draft = apply_effective_mapping_requirements_to_editor_draft(
                 self._provider.load_draft(),
-                requirements,
+                resolution.contracts,
             )
             self._session.reset(draft)
-            return self._snapshot(draft, requirements)
-        draft = apply_mapping_requirements_to_editor_draft(
+            return self._snapshot(draft, requirements, resolution)
+        draft = apply_effective_mapping_requirements_to_editor_draft(
             self._session.draft,
-            requirements,
+            resolution.contracts,
         )
         baseline = self._session.baseline
         projected_baseline = (
-            apply_mapping_requirements_to_editor_draft(baseline, requirements)
+            apply_effective_mapping_requirements_to_editor_draft(
+                baseline,
+                resolution.contracts,
+            )
             if baseline is not None
             else draft
         )
         self._session.project(
             draft,
             projected_baseline,
-            history_projector=lambda item: apply_mapping_requirements_to_editor_draft(
-                item,
-                requirements,
+            history_projector=lambda item: (
+                apply_effective_mapping_requirements_to_editor_draft(
+                    item,
+                    resolution.contracts,
+                )
             ),
         )
-        return self._snapshot(draft, requirements)
+        return self._snapshot(draft, requirements, resolution)
 
     def current_snapshot(self) -> DataMappingSnapshot | None:
         """Return the service-owned draft without reading the provider."""
         if self._session.draft is None:
             return None
         requirements = self._load_mapping_requirements()
-        draft = apply_mapping_requirements_to_editor_draft(
+        resolution = resolve_mapping_requirement_contracts(requirements)
+        draft = apply_effective_mapping_requirements_to_editor_draft(
             self._session.draft,
-            requirements,
+            resolution.contracts,
         )
         baseline = self._session.baseline
         projected_baseline = (
-            apply_mapping_requirements_to_editor_draft(baseline, requirements)
+            apply_effective_mapping_requirements_to_editor_draft(
+                baseline,
+                resolution.contracts,
+            )
             if baseline is not None
             else draft
         )
         self._session.project(
             draft,
             projected_baseline,
-            history_projector=lambda item: apply_mapping_requirements_to_editor_draft(
-                item,
-                requirements,
+            history_projector=lambda item: (
+                apply_effective_mapping_requirements_to_editor_draft(
+                    item,
+                    resolution.contracts,
+                )
             ),
         )
-        return self._snapshot(draft, requirements)
+        return self._snapshot(draft, requirements, resolution)
 
     def reload_snapshot(self) -> DataMappingSnapshot:
         """Discard draft edits and reload from the provider."""
         requirements = self._load_mapping_requirements()
-        draft = apply_mapping_requirements_to_editor_draft(
+        resolution = resolve_mapping_requirement_contracts(requirements)
+        draft = apply_effective_mapping_requirements_to_editor_draft(
             self._provider.load_draft(),
-            requirements,
+            resolution.contracts,
         )
         self._session.reset(draft)
-        return self._snapshot(draft, requirements)
+        return self._snapshot(draft, requirements, resolution)
 
     def edit_cell(
         self,
@@ -468,8 +486,10 @@ class DataMappingService:
         self,
         draft: MappingEditorDraft,
         requirements: tuple[MappingRequirement, ...],
+        resolution: MappingRequirementContractResolution | None = None,
     ) -> DataMappingSnapshot:
-        validation_result = self._validate_draft(draft, requirements)
+        resolution = resolution or resolve_mapping_requirement_contracts(requirements)
+        validation_result = self._validate_draft(draft, requirements, resolution)
         return DataMappingSnapshot(
             draft=draft,
             validation_errors=validation_result.issues,
@@ -485,6 +505,8 @@ class DataMappingService:
             ),
             dirty=self._session.dirty,
             mapping_requirements=requirements,
+            effective_mapping_requirements=resolution.contracts,
+            mapping_requirement_conflicts=resolution.conflicts,
         )
 
     def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
@@ -494,35 +516,56 @@ class DataMappingService:
         self,
         draft: MappingEditorDraft,
         requirements: tuple[MappingRequirement, ...] | None = None,
+        resolution: MappingRequirementContractResolution | None = None,
     ) -> MappingEditorValidationResult:
         requirements = (
             requirements
             if requirements is not None
             else self._load_mapping_requirements()
         )
+        resolution = resolution or resolve_mapping_requirement_contracts(requirements)
         validation_result = validate_mapping_editor_draft(draft)
-        missing_group_issues = _missing_requirement_group_issues(draft, requirements)
-        if not missing_group_issues:
+        requirement_issues = (
+            *_missing_requirement_group_issues(draft, resolution.contracts),
+            *_requirement_conflict_issues(resolution.conflicts),
+        )
+        if not requirement_issues:
             return validation_result
         return type(validation_result)(
-            issues=(*validation_result.issues, *missing_group_issues)
+            issues=(*validation_result.issues, *requirement_issues)
         )
 
 
 def _missing_requirement_group_issues(
     draft: MappingEditorDraft,
-    requirements: tuple[MappingRequirement, ...],
+    requirements: tuple[EffectiveMappingRequirement, ...],
 ) -> tuple[MappingValidationError, ...]:
     return tuple(
         MappingValidationError(
             code="required_mapping_group_missing",
             message=f"{requirement.mapping_entity} mapping group is required.",
-            entity_key=requirement.mapping_entity,
+            entity_key=requirement.resolved_group_key,
             attribute_key=requirement.mapping_attribute,
             field=requirement.mapping_attribute,
         )
         for requirement in requirements
-        if draft.group(mapping_group_key_for_requirement(requirement)) is None
+        if draft.group(requirement.resolved_group_key) is None
+    )
+
+
+def _requirement_conflict_issues(
+    conflicts: tuple[MappingRequirementConflict, ...],
+) -> tuple[MappingValidationError, ...]:
+    return tuple(
+        MappingValidationError(
+            code="mapping_requirement_contract_conflict",
+            message=conflict.message,
+            entity_key=conflict.resolved_group_key,
+            attribute_key=conflict.mapping_attribute,
+            field=conflict.mapping_attribute,
+            related_definition_keys=conflict.definition_column_keys,
+        )
+        for conflict in conflicts
     )
 
 

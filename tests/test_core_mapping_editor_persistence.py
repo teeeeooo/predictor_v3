@@ -179,6 +179,107 @@ def test_visible_blank_overlays_backing_value_instead_of_restoring_it():
     assert runtime["idu"]["IDU-A"]["Fan Size"] == ""
 
 
+def test_untouched_simple_requirement_placeholder_never_becomes_json_payload(tmp_path):
+    requirement = MappingRequirement(
+        column_key="fan_attribute",
+        ml_name="Fan Attribute",
+        mapping_entity="idu",
+        mapping_attribute="Fan Attribute",
+        trigger_column="idu",
+        data_type="number",
+        required=False,
+    )
+    draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
+    projected = apply_mapping_requirements_to_editor_draft(draft, (requirement,))
+    projected_row = projected.group("idu").rows[0]
+
+    assert projected.group("idu").columns[-1] == "Fan Attribute"
+    assert projected_row.value_for("Fan Attribute") == ""
+    assert not projected_row.has_concrete_value_for("Fan Attribute")
+
+    removed = apply_mapping_requirements_to_editor_draft(projected, ())
+    removed = set_draft_cell(removed, "idu", 0, "Size", "S2")
+    destination = tmp_path / "mapping.json"
+    result = save_mapping_editor_draft(removed, destination)
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+
+    assert result.success
+    assert payload["idu"]["IDU-A"]["Size"] == "S2"
+    assert "Fan Attribute" not in payload["idu"]["IDU-A"]
+
+
+def test_untouched_cond_specs_placeholder_is_dropped_without_changing_identity(tmp_path):
+    requirement = MappingRequirement(
+        column_key="cond_inner_area",
+        ml_name="Cond Inner Area",
+        mapping_entity="cond_specs",
+        mapping_attribute="Cond Inner Area",
+        trigger_column="odu",
+        rule_id="cond_specs_lookup",
+        data_type="number",
+        required=False,
+    )
+    draft = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
+    projected = apply_mapping_requirements_to_editor_draft(draft, (requirement,))
+    row = projected.group("odu_cond_specs").rows[0]
+
+    assert row.value_for("Cond Inner Area") == ""
+    assert not row.has_concrete_value_for("Cond Inner Area")
+
+    removed = apply_mapping_requirements_to_editor_draft(projected, ())
+    removed = set_draft_cell(removed, "odu_cond_specs", 0, "Cond Area", "9.5")
+    destination = tmp_path / "mapping.json"
+    result = save_mapping_editor_draft(removed, destination)
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+
+    assert result.success
+    cond = payload["cond_specs"]["ODU-A F&T 7 1"]
+    assert cond["Cond Area"] == 9.5
+    assert "Cond Inner Area" not in cond
+    assert payload["odu_cascade"]["ODU-A"]["Available_Pis"] == ["7"]
+
+
+def test_removed_runtime_and_user_authored_values_remain_concrete_backing_payload():
+    requirement = MappingRequirement(
+        column_key="fan_attribute",
+        ml_name="Fan Attribute",
+        mapping_entity="idu",
+        mapping_attribute="Fan Attribute",
+        trigger_column="idu",
+        data_type="number",
+        required=False,
+    )
+    runtime_draft = project_runtime_mapping_to_editor_draft(
+        {
+            **VALID_MAPPING,
+            "idu": {"IDU-A": {"ID Volume": 1.25, "Fan Attribute": 2.5}},
+        }
+    )
+    runtime_removed = apply_mapping_requirements_to_editor_draft(
+        apply_mapping_requirements_to_editor_draft(runtime_draft, (requirement,)),
+        (),
+    )
+    assert runtime_mapping_from_editor_draft(runtime_removed)["idu"]["IDU-A"][
+        "Fan Attribute"
+    ] == 2.5
+
+    absent = project_runtime_mapping_to_editor_draft(VALID_MAPPING)
+    edited = apply_mapping_requirements_to_editor_draft(absent, (requirement,))
+    edited = set_draft_cell(edited, "idu", 0, "Fan Attribute", "3.5")
+    authored_removed = apply_mapping_requirements_to_editor_draft(edited, ())
+    assert runtime_mapping_from_editor_draft(authored_removed)["idu"]["IDU-A"][
+        "Fan Attribute"
+    ] == "3.5"
+
+    explicitly_blank = apply_mapping_requirements_to_editor_draft(absent, (requirement,))
+    explicitly_blank = set_draft_cell(explicitly_blank, "idu", 0, "Fan Attribute", "")
+    blank_removed = apply_mapping_requirements_to_editor_draft(explicitly_blank, ())
+    assert blank_removed.group("idu").rows[0].has_concrete_value_for("Fan Attribute")
+    assert runtime_mapping_from_editor_draft(blank_removed)["idu"]["IDU-A"][
+        "Fan Attribute"
+    ] == ""
+
+
 def test_key_rename_and_delete_keep_hidden_payload_owned_by_the_current_row():
     draft = project_runtime_mapping_to_editor_draft(
         {

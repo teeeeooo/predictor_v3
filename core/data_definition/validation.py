@@ -5,13 +5,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from core.data_definition.candidate_contract import (
+    DataDefinitionCandidateIssue,
+    candidate_mapping_contract_issues,
+    mapping_contract_report_issues,
+)
 from core.data_definition.command_validation import validate_complete_row
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
+from core.data_definition.mapping_requirement_contract import (
+    resolve_mapping_requirement_contracts,
+)
 from core.data_definition.model import OneHotRelationship, ProjectedFeatureRow
 from core.data_definition.report_model import DataDefinitionIssue, DataDefinitionReport
 from core.data_definition.projection import (
     data_definition_rows_from_catalog,
     extract_mapping_requirements,
+    extract_mapping_requirements_from_draft,
     project_feature_catalog_from_catalog,
     project_feature_catalog_from_draft,
     projected_row_from_catalog_row,
@@ -51,16 +60,6 @@ _PROJECTED_TO_SCHEMA_FIELD = {
 
 
 @dataclass(frozen=True)
-class DataDefinitionCandidateIssue:
-    """Structured full-candidate issue used by save planning and writing."""
-
-    code: str
-    message: str
-    row_identity: tuple[str, str] | None = None
-    field_name: str = ""
-
-
-@dataclass(frozen=True)
 class _ProjectionParityMismatch:
     code: str
     issue: DataDefinitionIssue
@@ -87,12 +86,22 @@ def build_data_definition_report(
     )
     readiness = build_readiness_checks(projected, training_data_path)
     readiness_issues = _readiness_issues(readiness)
-    issues = schema_issues + parity_issues + one_hot_issues + readiness_issues
+    mapping_requirements = extract_mapping_requirements(schema_rows)
+    contract_issues = mapping_contract_report_issues(
+        resolve_mapping_requirement_contracts(mapping_requirements).conflicts
+    )
+    issues = (
+        schema_issues
+        + parity_issues
+        + one_hot_issues
+        + readiness_issues
+        + contract_issues
+    )
     return DataDefinitionReport(
         projected_features=projected,
         catalog_features=catalog_rows,
         parity_issues=parity_issues,
-        mapping_requirements=extract_mapping_requirements(schema_rows),
+        mapping_requirements=mapping_requirements,
         one_hot_relationships=one_hot_relationships,
         readiness=readiness,
         issues=issues,
@@ -129,6 +138,10 @@ def validate_data_definition_candidate(
             )
             for issue in validate_complete_row(row)
         )
+    contract_conflicts = resolve_mapping_requirement_contracts(
+        extract_mapping_requirements_from_draft(draft)
+    ).conflicts
+    issues.extend(candidate_mapping_contract_issues(contract_conflicts))
     projected = project_feature_catalog_from_draft(draft)
     for mismatch in _projection_parity_mismatches(
         projected,

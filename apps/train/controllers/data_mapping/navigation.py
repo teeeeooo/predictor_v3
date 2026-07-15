@@ -104,7 +104,11 @@ def open_mapping_requirement(
         (
             item
             for item in state.coverage_items
-            if item.definition_column_key == request.definition_column_key
+            if request.definition_column_key
+            in (
+                item.source_definition_column_keys
+                or (item.definition_column_key,)
+            )
             and item.mapping_group_key == resolved_group
             and item.mapping_attribute == request.mapping_attribute
         ),

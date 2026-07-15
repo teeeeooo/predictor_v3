@@ -9,33 +9,40 @@ from apps.train.application.data_mapping.contracts import (
     DataMappingCoverageItem,
     DataMappingIssueTarget,
 )
-from core.data_definition import MappingRequirement
+from core.data_definition.mapping_requirement_contract import (
+    EffectiveMappingRequirement,
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorGroup
-from core.mapping.editor_projection import mapping_group_key_for_requirement
 from core.mapping.entity_model import MappingValidationError
 from core.mapping.value_policy import is_valid_mapping_boolean, is_valid_mapping_number
 
 
 def project_mapping_coverage(
-    requirements: tuple[MappingRequirement, ...],
+    requirements: tuple[EffectiveMappingRequirement, ...] | tuple[object, ...],
     draft: MappingEditorDraft,
     issues: Sequence[MappingValidationError] = (),
     issue_targets: Sequence[DataMappingIssueTarget | None] = (),
 ) -> tuple[DataMappingCoverageItem, ...]:
     """Project canonical requirement order over the current mapping draft."""
+    effective = (
+        requirements
+        if all(isinstance(item, EffectiveMappingRequirement) for item in requirements)
+        else resolve_mapping_requirement_contracts(requirements).contracts
+    )
     blocking_targets = _blocking_targets(issues, issue_targets)
     return tuple(
         _coverage_item(requirement, draft, blocking_targets)
-        for requirement in requirements
+        for requirement in effective
     )
 
 
 def _coverage_item(
-    requirement: MappingRequirement,
+    requirement: EffectiveMappingRequirement,
     draft: MappingEditorDraft,
     blocking_targets: frozenset[tuple[str, str, str, int | None, int | None]],
 ) -> DataMappingCoverageItem:
-    group_key = mapping_group_key_for_requirement(requirement)
+    group_key = requirement.resolved_group_key
     group = draft.group(group_key)
     if group is None:
         return _unavailable_item(requirement, group_key, "group_unavailable")
@@ -56,6 +63,7 @@ def _coverage_item(
             unresolved_targets=(),
             status="no_rows",
             summary="No applicable mapping rows.",
+            source_definition_column_keys=requirement.definition_column_keys,
         )
 
     missing = 0
@@ -103,11 +111,12 @@ def _coverage_item(
         unresolved_targets=tuple(unresolved),
         status=status,
         summary=_summary(requirement.required, total, ready, missing, invalid),
+        source_definition_column_keys=requirement.definition_column_keys,
     )
 
 
 def _unavailable_item(
-    requirement: MappingRequirement,
+    requirement: EffectiveMappingRequirement,
     group_key: str,
     status: str,
 ) -> DataMappingCoverageItem:
@@ -126,6 +135,7 @@ def _unavailable_item(
         unresolved_targets=(),
         status=status,
         summary=f"{subject} unavailable.",
+        source_definition_column_keys=requirement.definition_column_keys,
     )
 
 

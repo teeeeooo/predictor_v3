@@ -32,6 +32,10 @@ class MappingEditorRow:
         """Return one column value."""
         return self.values.get(column, default)
 
+    def has_concrete_value_for(self, column: str) -> bool:
+        """Return whether runtime/import/user state owns this value key."""
+        return column in self.values
+
 
 @dataclass(frozen=True)
 class MappingEditorGroup:

@@ -70,7 +70,11 @@ class DataMappingCoveragePanel(QFrame):
                 (
                     index
                     for index, item in enumerate(self._items)
-                    if item.definition_column_key == preferred_column_key
+                    if preferred_column_key
+                    in (
+                        item.source_definition_column_keys
+                        or (item.definition_column_key,)
+                    )
                 ),
                 0,
             )

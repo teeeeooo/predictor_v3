@@ -78,6 +78,7 @@ class DataMappingCoverageItem:
     unresolved_targets: tuple[DataMappingCellTarget, ...]
     status: str
     summary: str
+    source_definition_column_keys: tuple[str, ...] = ()
 
     @property
     def first_unresolved(self) -> DataMappingCellTarget | None:

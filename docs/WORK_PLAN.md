@@ -17,19 +17,23 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3D audit correction is implemented on
+Train/Admin Phase 3 Slice 3D value-contract audit correction is implemented on
 `phase/train-admin-data-definition-ux`. Data Mapping now rebuilds
 requirement-owned visibility, required/type/note metadata, coverage, and
 validation from the latest saved requirement set across draft, baseline, and
 undo history while preserving mapping-owned backing values and explicit Save.
 Coverage and issue navigation share exact group/attribute/row-key/occurrence
 identity with current-index hints, so duplicate rows do not contaminate each
-other and disappeared targets do not fall back to unrelated rows. PR #16 remains
-Draft/Open and Slice 3E remains on hold.
+other and disappeared targets do not fall back to unrelated rows. Requirements
+sharing one resolved mapping cell now use one effective required/type/relation
+contract; incompatible declarations block schema and mapping Save. Untouched
+dynamic blanks remain lazy and never become JSON payload merely through overlay,
+removal, refresh, or no-op import. PR #16 remains Draft/Open and Slice 3E remains
+on hold.
 
 ## Next Action
 
-Slice 3D final re-audit before starting Slice 3E.
+Slice 3D final approval audit before starting Slice 3E.
 
 ## Active Blockers
 
