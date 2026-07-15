@@ -5,11 +5,13 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin UI/UX Overhaul Phase 1 — Mapping/Data Foundation is complete for
-repository-automated scope and its final audit is approved. PR #14 is the merge
-target. Phase 2 has not started and begins only from merged `main` on a separate
-branch after separate instruction. The earlier ML/Predictor foundation through
-Arc 15-FU1 remains the active owner baseline.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul is complete for
+code and repository-automated acceptance. PR #15 is the Ready-for-review merge
+target; native interaction/visual acceptance is deferred under recorded
+blockers. Phase 3 — Data Definition UX Overhaul starts only after PR #15 is
+merged to `main`, from a separate branch and Draft PR following a current-state
+audit. The earlier ML/Predictor foundation through Arc 15-FU1 remains the active
+owner baseline.
 
 ## Current Owner State
 
@@ -47,33 +49,25 @@ Arc 15-FU1 remains the active owner baseline.
   merged into `main` without changing controller behavior.
 - Train/Admin UI/UX Overhaul Phase 1 — strict bootstrap, populated mapping
   fixture, dynamic mapping attributes, and aligned mock readiness: complete for
-  repository-automated scope with final audit approved; PR #14 is the merge
-  target.
+  repository-automated scope and merged before Phase 2.
+- Train/Admin UI/UX Overhaul Phase 2 — seven-group Data Mapping information
+  architecture, spreadsheet CRUD/Undo, validation and safe persistence, plus
+  exchange export/import: complete for code and repository automation; PR #15
+  is the merge target and native acceptance remains deferred.
 
-### Next Workstream — Standard Calculation Capability Extension
+### Next Workstream — Train/Admin Phase 3 Data Definition UX Overhaul
 
-Boundary: global standard logic belongs in canonical core; country/region
-behavior belongs in config, profile, handler, or adapter boundaries. Calculator
-integration follows core capability and does not become the formula owner.
+After PR #15 is merged, sync and confirm merged `main`, create a separate Phase
+3 branch and Draft PR, then audit current state before confirming Slice 3A.
+Phase 3 turns diagnostics-first Data Definition into an intent-driven manager
+while preserving these boundaries:
 
-Confirmed capability scope:
-
-- BRAZIL: reuse ISO 16358-1 core; own Brazil bins/rules as config/core
-  capability; produce 3-point and 2-point comparison results; keep Rule 1,
-  Rule 2, and final OK/NG in core.
-- AHRI: add two-stage SEER2, two-stage HSPF2, and triple-capacity northern
-  heat-pump HSPF2. Triple-capacity cooling SEER2 uses the normal two-stage
-  cooling path; product-type resolution belongs to core/application, not UI.
-
-Execution order:
-
-1. BRAZIL core/profile.
-2. BRAZIL calculator integration and department deployment.
-3. AHRI multi-capacity audit/foundation.
-4. Two-stage SEER2, then two-stage HSPF2, then triple-capacity northern
-   heat-pump HSPF2.
-5. AHRI calculator integration and department deployment.
-6. Resume ML as a new Production ML Readiness workstream.
+- Data Definition owns structure and mapping attribute definitions; Data
+  Mapping owns concrete values.
+- Existing projection, validation, save, and readiness owners remain in place.
+- Unsupported active ML rename/delete remains blocked.
+- Predict internal redesign, live schema reload, automatic retraining, and real
+  company data remain outside Phase 3.
 
 ### Later — Production ML Readiness / Calculator Integration
 

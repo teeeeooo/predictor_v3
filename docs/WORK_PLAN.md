@@ -17,22 +17,20 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2D+2E audit
-correction is implemented on `phase/train-admin-data-mapping-ux`. Import now
-runs canonical Data Mapping validation before preview and again at Apply,
-reports only groups with semantic changes, and canonicalizes exchange row order
-so order-only bundles remain no-ops. Publish rollback regression covers both
-fully existing and mixed existing/new eight-target packages, including an
-instrumented new-target creation followed by rollback deletion.
+Train/Admin Phase 2 — Data Mapping UX Overhaul is complete for code and
+repository-automated acceptance. PR #15 is ready for user review and merge.
+Native Slice 2B+2C interaction and Slice 2D+2E visual acceptance remain
+deferred under their existing blockers and do not reopen Phase 2 code scope.
 
 ## Next Action
 
-Re-audit the Slice 2D+2E correction on Draft PR #15. Keep the PR open and Draft;
-do not merge the phase, change readiness, or begin follow-up Phase work.
+The user merges PR #15 to `main`. After confirming the merged-main SHA, start
+Phase 3 — Data Definition UX Overhaul from a new branch and Draft PR. Its first
+work is a current-state audit and confirmation of the Slice 3A boundary.
 
 ## Active Blockers
 
-- Native macOS rendering succeeds, but Computer Use interaction with the
+- Deferred acceptance: native macOS rendering succeeds, but Computer Use interaction with the
   populated PySide6 table crashes Python in AppKit's accessibility hierarchy
   (`EXC_BAD_ACCESS` / `SIGSEGV`). Two independent attempts reproduced it, and
   injected keyboard shortcuts did not reach the Qt table. Therefore paste/undo,
@@ -42,10 +40,12 @@ do not merge the phase, change readiness, or begin follow-up Phase work.
   audit-correction follow-up confirmed native rendering without accessibility
   clicks, but no physical interaction completion was reported, so no new
   interaction PNG was added.
-- This Batch's bounded native visual capture could not start because the Mac
+- Deferred acceptance: the Slice 2D+2E native visual capture could not start because the Mac
   desktop was locked and Computer Use could not unlock it automatically. No
   native screenshot is claimed; the automated Batch result remains valid and
   the visual states are pending a later unlocked-desktop audit.
+- Sequencing hold: Phase 3 does not start until the user merges PR #15 to
+  `main`. This is a phase-ordering constraint, not a production defect.
 
 ## Active Constraints
 
@@ -55,12 +55,9 @@ do not merge the phase, change readiness, or begin follow-up Phase work.
   local contract; do not add company production data.
 - Do not infer model quality or production readiness from mock pipeline success.
 - Keep Cooling and Heating models independent, including monotone constraints.
-- Commit and push each verified slice to the phase branch; merge only after phase
-  acceptance is complete.
-- Preserve the Slice 2B and Slice 2C commits as separately auditable logical
-  changes and keep PR #15 Draft/Open.
-- Keep Slice 2D and Slice 2E as separately auditable logical commits; start Slice
-  2E only after the Slice 2D focused export gate and push succeed.
+- Preserve the accepted Slice 2A–2E contracts while PR #15 awaits user merge.
+- Do not create a Phase 3 branch, Draft PR, or implementation before merged
+  `main` is confirmed.
 
 ## Deferred / Hold
 
@@ -72,7 +69,7 @@ do not merge the phase, change readiness, or begin follow-up Phase work.
 ## Minimal Anchors
 
 - Governing design: `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-governing-design.md`
-- Active phase design: `docs/designs/2026-07-14-train-admin-phase-2-data-mapping-ux-overhaul.md`
+- Accepted Phase 2 design: `docs/designs/2026-07-14-train-admin-phase-2-data-mapping-ux-overhaul.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

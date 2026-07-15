@@ -1,6 +1,6 @@
 # Train/Admin Phase 2 — Data Mapping UX Overhaul
 
-Status: active — Slice 2A audit corrections and native evidence complete; re-audit pending
+Status: accepted and implemented — repository automation complete; native interaction/visual acceptance deferred
 Date: 2026-07-14  
 Depends on: Phase 1 — Mapping/Data Foundation
 
@@ -331,6 +331,14 @@ interaction PNG is claimed.
 - Support free bundle file naming.
 - Add deterministic export and round-trip fixtures.
 
+Implemented. The current unsaved draft exports through one shared serializer as
+seven canonical group CSVs plus one freely named, marker-owned bundle. Output is
+deterministic UTF-8/LF with standard CSV quoting, canonical typed values, blank
+PFC Pi, and no hidden backing payload. All eight targets are staged and verified
+before sequential publish; failure uses best-effort rollback. Automated coverage
+proves restoration of an eight-existing-target package and a mixed package after
+both existing replacement and actual new-target creation have completed.
+
 ### Slice 2E — Bundle import
 
 - Parse and validate `mapping_bundle_v1`.
@@ -338,8 +346,29 @@ interaction PNG is claimed.
 - Apply only to the unsaved draft.
 - Block unknown structural columns and unsupported merge cases.
 
-Each slice is one logical commit and is pushed to the phase branch. The phase is
-merged only after populated-state and exchange validation pass.
+Implemented. Import accepts only sectioned `mapping_bundle_v1`, independent of
+file name and section order. Exact-header policy requires every current visible
+Data Definition projection column exactly once while allowing header reordering.
+A typed candidate must pass the same canonical editor and Data Definition
+validation used by the current snapshot before preview and again at Apply.
+Apply replaces only the unsaved draft as one undo command, preserves matching
+hidden row payload and unowned sections, and rejects stale or invalid previews.
+Exchange row order is non-semantic: existing identities retain current order and
+new identities use deterministic identity order, so order-only bundles remain
+clean no-ops with zero affected groups.
+
+Slices 2A–2E and their audit corrections are implemented and accepted at the
+Phase 2 closeout head. Repository automation is complete. Slice 2B+2C physical
+table interaction and Slice 2D+2E native visual acceptance remain deferred
+because of the recorded AppKit accessibility crash and locked-desktop blocker;
+no new PNG or completed interaction claim is made, and this does not block the
+approved code/automation closeout.
+
+Repository fixtures and mock data establish workflow and contract correctness
+only. They do not establish real company mapping completeness, model quality, or
+production readiness. Phase 3 may audit and implement Data Definition UX only
+after this phase is merged to `main`; it must preserve existing projection,
+validation, persistence, readiness, mapping-value, and Predict/ML boundaries.
 
 ## 11. Acceptance Scenarios
 

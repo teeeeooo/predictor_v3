@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-15 — Train/Admin Data Mapping UX Phase 2 closeout
+
+### Decision
+
+- Accept Phase 2 Slices 2A–2E and audit corrections at approved head
+  `4fe580e1fa76a7af1f51c80e4cef163705ebe648`; PR #15 is the user merge target.
+- Close code and repository automation with seven-group editing, spreadsheet
+  CRUD/Undo, validation/dirty/Save/Reload, deterministic exchange export,
+  exact-header canonical import, semantic row-order no-op, and best-effort
+  rollback contracts intact.
+- Treat incomplete Slice 2B+2C native interaction and Slice 2D+2E native visual
+  evidence as deferred acceptance under the recorded AppKit and locked-desktop
+  blockers. No new PNG or physical-interaction claim is made.
+- Keep protected mapping data unchanged and do not infer real mapping
+  completeness, model quality, or production readiness from fixtures/mock data.
+- Mark PR #15 Ready for review after the closeout commit and CI succeed. The
+  user performs merge; Phase 3 starts only from confirmed merged `main` on a
+  separate branch and Draft PR after a current-state audit.
+
 ## 2026-07-14 — Train/Admin Mapping/Data Foundation Phase 1 closeout
 
 ### Decision

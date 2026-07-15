@@ -389,6 +389,20 @@ entries:
     source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2c-workflow.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-audit-correction.md
 
   - type: decision
+    topic: Train Admin Phase 2 Data Mapping UX closeout
+    content: Phase 2 Slices 2A–2E are accepted for code and repository automation at approved pre-closeout head 4fe580e1fa76a7af1f51c80e4cef163705ebe648 with PR #15 as the Ready-for-review user merge target. The accepted boundary covers seven-group information architecture, spreadsheet CRUD and grouped Undo, canonical typed mutation, atomic overflow paste blocking, contiguous rectangular selection, validation/dirty/Save/Reload, seven group CSVs plus one mapping_bundle_v1 export, exact-header canonical candidate validation, draft-only import, row-order semantic no-op, hidden/unowned payload preservation, and best-effort publish rollback regression. Protected mapping data is unchanged and fixture/mock success does not establish real mapping completeness, model quality, or production readiness. Slice 2B+2C physical interaction and Slice 2D+2E native visuals remain deferred under recorded AppKit accessibility and locked-desktop blockers with no new PNG. Phase 3 starts only after PR #15 is merged to main, from a separate branch and Draft PR after a current-state audit.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - Phase 2 closeout
+      - PR 15
+      - deferred native
+      - Phase 3 sequencing
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-data-mapping-ux-closeout.md
+
+  - type: decision
     topic: Train Admin Phase 2 exchange export boundary
     content: Slice 2D keeps the existing JSON/XLSX review snapshot and export_csv_v2 contract separate from the official mapping exchange contract. Exchange export is owned by the Qt-free core/mapping/exchange package and consumes the service-owned current draft without provider Reload. One operation deterministically serializes the current visible seven-group projection into seven canonical group CSVs and a sectioned mapping_bundle_v1 CSV, preserves standard CSV quoting and typed canonical text, blanks PFC Pi, excludes hidden payload, and stages all eight files before rollback-aware publish. The bundle filename is user-selected but case-insensitive canonical group filenames are reserved. Initial Slice 2E import policy is exact-header: every current visible projection header must occur once; missing, unknown, or duplicate headers block the full replacement before draft/session/runtime state changes.
     keywords:
