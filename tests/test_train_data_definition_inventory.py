@@ -113,11 +113,12 @@ def test_detail_blockers_attribute_plan_blocker_to_its_definition():
     blocked_identity = ("schema_row", "cooling_capa")
     before = _hash(service.schema_path)
     controller.edit_cell(valid_identity, "label", "Indoor Unit Label")
-    blocked = controller.edit_cell(
+    controller.edit_cell(
         blocked_identity,
         "ml_name",
         "Cooling Capacity Renamed",
     )
+    blocked = controller.edit_cell(blocked_identity, "notes", "description changed")
 
     valid_summary = dict(
         project_data_definition_inventory(
@@ -142,6 +143,7 @@ def test_detail_blockers_attribute_plan_blocker_to_its_definition():
     assert "ml_name" in blocked_summary
     assert [item.relevance for item in valid_items] == ["other_definition"]
     assert [item.relevance for item in blocked_items] == ["direct"]
+    assert [item.related_field for item in blocked_items] == ["ml_name"]
     assert not blocked.save_action_enabled
     assert _hash(service.schema_path) == before
 
@@ -156,10 +158,12 @@ def test_detail_blockers_attribute_compound_ml_activation_to_definition():
         service.schema_path,
         Path("config/ml/features.csv"),
         Path(MAPPING_JSON_FILE),
+        Path("tests/fixtures/mapping/mapping_runtime_equivalent.json"),
     )
     before = tuple(_hash(path) for path in protected_paths)
     controller.edit_cell(identity, "model_input_enabled", True)
-    blocked = controller.edit_cell(identity, "ml_name", "IDU")
+    controller.edit_cell(identity, "ml_name", "IDU")
+    blocked = controller.edit_cell(identity, "notes", "description changed")
 
     direct = project_blockers(blocked, identity)
     other = project_blockers(blocked, other_identity)
@@ -211,7 +215,8 @@ def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
     controller.refresh()
     identity = ("schema_row", "idu")
     controller.edit_cell(identity, "model_input_enabled", True)
-    blocked = controller.edit_cell(identity, "ml_name", "IDU")
+    controller.edit_cell(identity, "ml_name", "IDU")
+    blocked = controller.edit_cell(identity, "notes", "description changed")
 
     recovered = controller.edit_cell(identity, "ml_name", "")
 
@@ -223,6 +228,34 @@ def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
     assert project_blockers(recovered, identity) == ()
     assert recovered.can_save_schema
     assert recovered.save_action_enabled
+    assert any(row[2] == "notes" for row in recovered.draft_change_rows)
+
+
+def test_detail_blockers_keep_context_after_unrelated_field_revert():
+    controller = DataDefinitionController()
+    identity = ("schema_row", "idu")
+    initial = controller.refresh()
+    row_index = initial.draft_row_identities.index(identity)
+    baseline_notes = next(
+        cell.value
+        for cell in initial.draft_rows[row_index]
+        if cell.field_name == "notes"
+    )
+    controller.edit_cell(identity, "model_input_enabled", True)
+    controller.edit_cell(identity, "ml_name", "IDU")
+    blocked = controller.edit_cell(identity, "notes", "description changed")
+
+    reverted = controller.edit_cell(identity, "notes", baseline_notes)
+
+    assert [item.related_field for item in project_blockers(blocked, identity)] == [
+        "model_input_enabled",
+        "ml_name",
+    ]
+    assert [item.related_field for item in project_blockers(reverted, identity)] == [
+        "model_input_enabled",
+        "ml_name",
+    ]
+    assert not any(item.related_field == "notes" for item in reverted.blocker_items)
 
 
 def test_detail_blockers_deduplicate_only_cross_source_logical_duplicates():

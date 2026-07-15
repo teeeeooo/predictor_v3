@@ -170,9 +170,7 @@ def _projection_changing_changes(
         rows=draft.baseline_rows,
         baseline_rows=draft.baseline_rows,
     )
-    baseline_fingerprint = projected_feature_catalog_fingerprint(
-        project_feature_catalog_from_draft(baseline)
-    )
+    baseline_fingerprint = _draft_projection_fingerprint(baseline)
     baseline_identities = {row.identity for row in baseline.rows}
     changes_by_identity: dict[
         tuple[str, str], list[DataDefinitionDraftChange]
@@ -184,18 +182,70 @@ def _projection_changing_changes(
 
     contexts: list[DataDefinitionDraftChange] = []
     for identity, definition_changes in changes_by_identity.items():
-        definition_candidate = baseline
-        for change in definition_changes:
-            definition_candidate = replace_draft_row(
-                definition_candidate,
+        definition_changes_tuple = tuple(definition_changes)
+        definition_candidate = _apply_definition_changes(
+            baseline,
+            identity,
+            definition_changes_tuple,
+        )
+        definition_fingerprint = _draft_projection_fingerprint(definition_candidate)
+        if definition_fingerprint == baseline_fingerprint:
+            continue
+        contexts.extend(
+            _projection_relevant_changes(
+                baseline,
                 identity,
-                **{change.field_name: change.after},
+                definition_changes_tuple,
+                baseline_fingerprint,
+                definition_fingerprint,
             )
-        if projected_feature_catalog_fingerprint(
-            project_feature_catalog_from_draft(definition_candidate)
-        ) != baseline_fingerprint:
-            contexts.extend(definition_changes)
+        )
     return tuple(contexts)
+
+
+def _projection_relevant_changes(
+    baseline: DataDefinitionDraft,
+    identity: tuple[str, str],
+    changes: tuple[DataDefinitionDraftChange, ...],
+    baseline_fingerprint: str,
+    definition_fingerprint: str,
+) -> tuple[DataDefinitionDraftChange, ...]:
+    """Keep singleton-impactful or full-bundle-necessary field changes."""
+    relevant: list[DataDefinitionDraftChange] = []
+    for index, change in enumerate(changes):
+        singleton = _apply_definition_changes(baseline, identity, (change,))
+        if _draft_projection_fingerprint(singleton) != baseline_fingerprint:
+            relevant.append(change)
+            continue
+        without_change = _apply_definition_changes(
+            baseline,
+            identity,
+            changes[:index] + changes[index + 1:],
+        )
+        if _draft_projection_fingerprint(without_change) != definition_fingerprint:
+            relevant.append(change)
+    return tuple(relevant)
+
+
+def _apply_definition_changes(
+    baseline: DataDefinitionDraft,
+    identity: tuple[str, str],
+    changes: tuple[DataDefinitionDraftChange, ...],
+) -> DataDefinitionDraft:
+    candidate = baseline
+    for change in changes:
+        candidate = replace_draft_row(
+            candidate,
+            identity,
+            **{change.field_name: change.after},
+        )
+    return candidate
+
+
+def _draft_projection_fingerprint(draft: DataDefinitionDraft) -> str:
+    return projected_feature_catalog_fingerprint(
+        project_feature_catalog_from_draft(draft)
+    )
 
 
 def _change_blockers(

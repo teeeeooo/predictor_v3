@@ -9,6 +9,10 @@ from core.data_definition import (
     field_editability,
 )
 from core.data_definition.draft import replace_draft_row
+from core.data_definition.projection import (
+    project_feature_catalog_from_draft,
+    projected_feature_catalog_fingerprint,
+)
 from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
 
 
@@ -133,6 +137,26 @@ def test_data_definition_save_plan_blocks_ml_name_projection_change():
     assert "features.csv" in blocker.message
 
 
+def test_data_definition_save_plan_excludes_notes_from_single_projection_context():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        ml_name="Cooling Capacity Renamed",
+        notes="description changed",
+    )
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert [(item.row_identity, item.field_name) for item in blockers] == [
+        (row.identity, "ml_name"),
+    ]
+    assert blockers[0].target == "schema_csv"
+    assert "features.csv projection writer" in blockers[0].message
+
+
 def test_data_definition_save_plan_attributes_compound_projection_change_by_definition():
     draft = build_data_definition_draft()
     row = next(item for item in draft.rows if item.column_key == "idu")
@@ -141,6 +165,7 @@ def test_data_definition_save_plan_attributes_compound_projection_change_by_defi
         row.identity,
         model_input_enabled=True,
         ml_name="IDU",
+        notes="description changed",
     )
     before = (changed.rows, changed.baseline_rows, changed.changes())
 
@@ -193,6 +218,7 @@ def test_data_definition_save_plan_removes_compound_attribution_after_partial_re
         row.identity,
         model_input_enabled=True,
         ml_name="IDU",
+        notes="description changed",
     )
     partial = replace_draft_row(compound, row.identity, ml_name="")
 
@@ -202,6 +228,72 @@ def test_data_definition_save_plan_removes_compound_attribution_after_partial_re
     assert _blockers(blocked, "ml_compatibility_projection_write_required")
     assert not _blockers(recovered, "ml_compatibility_projection_write_required")
     assert recovered.can_save_schema
+    assert [change.field_name for change in recovered.changed_fields] == [
+        "model_input_enabled",
+        "notes",
+    ]
+
+
+def test_data_definition_save_plan_keeps_context_after_unrelated_field_revert():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+        notes="description changed",
+    )
+    reverted = replace_draft_row(changed, row.identity, notes=row.notes)
+
+    changed_plan = build_data_definition_save_plan(changed)
+    before = _blockers(changed_plan, "ml_compatibility_projection_write_required")
+    after = _blockers(
+        build_data_definition_save_plan(reverted),
+        "ml_compatibility_projection_write_required",
+    )
+
+    assert [(item.row_identity, item.field_name) for item in before] == [
+        (row.identity, "model_input_enabled"),
+        (row.identity, "ml_name"),
+    ]
+    assert [(item.row_identity, item.field_name) for item in after] == [
+        (row.identity, "model_input_enabled"),
+        (row.identity, "ml_name"),
+    ]
+    assert not changed_plan.can_save_schema
+
+
+def test_data_definition_save_plan_keeps_independent_singleton_impacts():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    model_only = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=False,
+    )
+    active_only = replace_draft_row(draft, row.identity, active=False)
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=False,
+        active=False,
+    )
+
+    assert (
+        _fingerprint(model_only)
+        == _fingerprint(active_only)
+        == _fingerprint(changed)
+    )
+    blockers = _blockers(
+        build_data_definition_save_plan(changed),
+        "ml_compatibility_projection_write_required",
+    )
+
+    assert [item.field_name for item in blockers] == [
+        "model_input_enabled",
+        "active",
+    ]
 
 
 def test_data_definition_save_plan_blocks_one_hot_group_projection_change():
@@ -360,3 +452,9 @@ def _blockers(plan, code):
 
 def _blocker(plan, code):
     return next(blocker for blocker in plan.blocked_reasons if blocker.code == code)
+
+
+def _fingerprint(draft):
+    return projected_feature_catalog_fingerprint(
+        project_feature_catalog_from_draft(draft)
+    )

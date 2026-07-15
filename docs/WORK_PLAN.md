@@ -17,13 +17,14 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3A compound ML projection attribution correction is
-implemented on `phase/train-admin-data-definition-ux`. The save-plan owner now
-tests all changed fields for each definition together, preserving every related
-field when a compound row change alters the compatibility fingerprint. Existing
-direct/other/global detail projection, draft, writer, mapping, Predict, retry,
-filter, and persistence owners remain unchanged. Slice 3A is waiting for final
-approval audit while PR #16 remains Draft/Open.
+Train/Admin Phase 3 Slice 3A ML projection field-relevance correction is
+implemented on `phase/train-admin-data-definition-ux`. The save-plan owner keeps
+complete per-definition impact attribution, then retains only fields with a
+singleton fingerprint impact or leave-one-out compound necessity. Unrelated
+metadata no longer appears as ML blocker context. Existing direct/other/global
+detail projection, draft, writer, mapping, Predict, retry, filter, and
+persistence owners remain unchanged. Slice 3A is waiting for final approval
+audit while PR #16 remains Draft/Open.
 
 ## Next Action
 
@@ -31,8 +32,8 @@ Slice 3A final approval audit before starting Slice 3B+3C.
 
 ## Active Blockers
 
-- No code blocker remains in the Slice 3A correction; the explicit final approval
-  audit hold prevents starting Slice 3B+3C.
+- No code blocker remains in the Slice 3A field-relevance correction; the
+  explicit final approval audit hold prevents starting Slice 3B+3C.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
