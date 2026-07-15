@@ -217,7 +217,7 @@ def test_staging_writer_failure_preserves_existing_package(tmp_path, monkeypatch
     assert not list(tmp_path.glob(".bundle.exchange-*"))
 
 
-@pytest.mark.parametrize("existing_count", (8, 3))
+@pytest.mark.parametrize("existing_count", (8, 2))
 def test_publish_mid_failure_rolls_back_existing_and_new_targets(
     tmp_path,
     monkeypatch,
@@ -233,6 +233,8 @@ def test_publish_mid_failure_rolls_back_existing_and_new_targets(
 
     real_replace = os.replace
     published: list[Path] = []
+    published_existing: list[Path] = []
+    published_new: list[Path] = []
 
     def fail_fourth_publish(source, destination):
         source_path = Path(source)
@@ -241,7 +243,14 @@ def test_publish_mid_failure_rolls_back_existing_and_new_targets(
         if is_publish:
             if len(published) == 3:
                 raise OSError("synthetic publish failure after three targets")
+            replaced_existing = destination_path.exists()
+            real_replace(source, destination)
+            assert destination_path.is_file()
             published.append(destination_path)
+            (published_existing if replaced_existing else published_new).append(
+                destination_path
+            )
+            return
         real_replace(source, destination)
 
     monkeypatch.setattr("core.mapping.exchange.export.os.replace", fail_fourth_publish)
@@ -250,6 +259,12 @@ def test_publish_mid_failure_rolls_back_existing_and_new_targets(
     assert not result.success
     assert "synthetic publish failure after three targets" in result.message
     assert len(published) == 3
+    assert len(published_existing) == min(existing_count, 3)
+    assert len(published_new) == max(0, 3 - existing_count)
+    if existing_count == 2:
+        assert published_existing == target_paths[:2]
+        assert published_new == [target_paths[2]]
     assert {path: path.read_bytes() for path in before} == before
+    assert all(not path.exists() for path in published_new)
     assert all(not path.exists() for path in target_paths[existing_count:])
     assert not list(tmp_path.glob(".bundle.exchange-*"))

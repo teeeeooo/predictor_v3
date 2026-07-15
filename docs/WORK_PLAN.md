@@ -22,7 +22,8 @@ correction is implemented on `phase/train-admin-data-mapping-ux`. Import now
 runs canonical Data Mapping validation before preview and again at Apply,
 reports only groups with semantic changes, and canonicalizes exchange row order
 so order-only bundles remain no-ops. Publish rollback regression covers both
-fully existing and mixed existing/new eight-target packages.
+fully existing and mixed existing/new eight-target packages, including an
+instrumented new-target creation followed by rollback deletion.
 
 ## Next Action
 
