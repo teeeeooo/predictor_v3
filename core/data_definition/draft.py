@@ -75,6 +75,7 @@ class DataDefinitionDraft:
     rows: tuple[DataDefinitionDraftRow, ...]
     baseline_rows: tuple[DataDefinitionDraftRow, ...]
     issues: tuple[DataDefinitionDraftIssue, ...] = ()
+    controlled_row_additions: frozenset[tuple[str, str]] = frozenset()
 
     @property
     def is_changed(self) -> bool:
@@ -98,6 +99,10 @@ class DataDefinitionDraft:
             if identity not in current:
                 changes.append(DataDefinitionDraftChange(identity, "__row__", row, None))
         return tuple(changes)
+
+    def is_controlled_row_addition(self, identity: tuple[str, str]) -> bool:
+        """Return whether a command owner authorized this new row."""
+        return identity in self.controlled_row_additions
 
 
 def build_data_definition_draft(
@@ -131,6 +136,7 @@ def replace_draft_row(
         rows=rows,
         baseline_rows=draft.baseline_rows,
         issues=draft.issues,
+        controlled_row_additions=draft.controlled_row_additions,
     )
 
 

@@ -34,8 +34,11 @@ from apps.train.ui.data_definition_diagnostics import (
     DataDefinitionDiagnostics,
     definition_table,
 )
+from apps.train.ui.data_definition_add_dialog import DataDefinitionAddDialog
+from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
+from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 
 DETAIL_HEADERS = ("Property", "Value")
 INVENTORY_INITIAL_WIDTH = 760
@@ -111,12 +114,18 @@ class DataDefinitionPanel(QWidget):
         reset_button = _button("Reset Draft", "Reset Data Definition Draft", self._reset_draft)
         layout.addWidget(refresh_button, 0, 0)
         layout.addWidget(reset_button, 0, 1)
-        for column, label in enumerate(("Add Definition", "Add Mapping Attribute", "Edit"), 2):
-            button = QPushButton(label)
-            button.setAccessibleName(f"Future Data Definition action: {label}")
-            button.setToolTip("Available in the next Phase 3 implementation slice.")
-            button.setEnabled(False)
-            layout.addWidget(button, 0, column)
+        self.add_definition_button = _button(
+            "Add Definition", "Add Data Definition", self._add_definition
+        )
+        self.add_mapping_attribute_button = _button(
+            "Add Mapping Attribute",
+            "Add Data Definition Mapping Attribute",
+            self._add_mapping_attribute,
+        )
+        self.edit_button = _button("Edit", "Edit Selected Data Definition", self._edit_definition)
+        layout.addWidget(self.add_definition_button, 0, 2)
+        layout.addWidget(self.add_mapping_attribute_button, 0, 3)
+        layout.addWidget(self.edit_button, 0, 4)
         self.save_button = _button("Save", "Save Data Definition Schema", self._save_schema)
         self.save_button.setObjectName("PrimaryButton")
         layout.addWidget(self.save_button, 0, 5)
@@ -186,6 +195,8 @@ class DataDefinitionPanel(QWidget):
 
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
         self._state = state
+        if state.focus_identity is not None:
+            self._selected_identity = state.focus_identity
         self.diagnostics.apply_state(state)
         self._apply_inventory()
 
@@ -222,6 +233,10 @@ class DataDefinitionPanel(QWidget):
         )
         self._apply_detail(projection.detail)
         self.save_button.setEnabled(projection.save_enabled)
+        self.edit_button.setEnabled(
+            projection.selected_identity is not None
+            and projection.selected_identity[0] == "schema_row"
+        )
 
     def _set_filter_options(self, projection: DataDefinitionInventoryProjection) -> None:
         _replace_options(
@@ -264,6 +279,7 @@ class DataDefinitionPanel(QWidget):
             selected_identity=identity,
         )
         self._apply_detail(projection.detail)
+        self.edit_button.setEnabled(identity[0] == "schema_row")
 
     def _apply_detail(self, detail: DataDefinitionDetailState) -> None:
         self.detail_state_label.setText(
@@ -274,6 +290,49 @@ class DataDefinitionPanel(QWidget):
 
     def _reset_draft(self) -> None:
         self._apply_state(self._controller.reset_draft())
+
+    def _add_definition(self) -> None:
+        DataDefinitionAddDialog(self._apply_add_intent, parent=self).exec()
+
+    def _add_mapping_attribute(self) -> None:
+        DataDefinitionAddDialog(
+            self._apply_add_intent,
+            standalone_mapping_attribute=True,
+            parent=self,
+        ).exec()
+
+    def _edit_definition(self) -> None:
+        values = self._selected_values()
+        if values is None or self._selected_identity is None:
+            return
+        DataDefinitionEditDialog(
+            self._selected_identity,
+            values,
+            self._apply_edit_intent,
+            self,
+        ).exec()
+
+    def _apply_add_intent(self, intent: AddDefinitionIntent) -> tuple[bool, str]:
+        state = self._controller.add_definition(intent)
+        self._apply_state(state)
+        return state.last_action_ok, state.message
+
+    def _apply_edit_intent(self, intent: EditDefinitionIntent) -> tuple[bool, str]:
+        state = self._controller.edit_definition(intent)
+        self._apply_state(state)
+        return state.last_action_ok, state.message
+
+    def _selected_values(self) -> dict[str, str] | None:
+        if self._state is None or self._selected_identity is None:
+            return None
+        try:
+            index = self._state.draft_row_identities.index(self._selected_identity)
+        except ValueError:
+            return None
+        return {
+            cell.field_name: cell.value
+            for cell in self._state.draft_rows[index]
+        }
 
     def _save_schema(self) -> None:
         self._apply_state(self._controller.save_schema())

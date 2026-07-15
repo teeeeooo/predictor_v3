@@ -13,6 +13,7 @@ from core.data_definition import (
     DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
     field_editability,
+    extract_mapping_requirements_from_draft,
 )
 
 DRAFT_FIELDS = (
@@ -113,6 +114,8 @@ class DataDefinitionControllerState:
     requires_retrain: bool
     impact_summary: str
     last_action_ok: bool = True
+    focus_identity: tuple[str, str] | None = None
+    command_issue_rows: tuple[tuple[str, str, str], ...] = ()
 
 
 def state_from_report(
@@ -124,6 +127,8 @@ def state_from_report(
     status: str | None = None,
     save_result: DataDefinitionSchemaSaveResult | None = None,
     last_action_ok: bool = True,
+    focus_identity: tuple[str, str] | None = None,
+    command_issue_rows: tuple[tuple[str, str, str], ...] = (),
 ) -> DataDefinitionControllerState:
     """Compose immutable UI-facing state from report, draft, and save plan data."""
     parity_count = len(report.parity_issues)
@@ -192,7 +197,7 @@ def state_from_report(
                 row.trigger_column,
                 row.rule_id,
             )
-            for row in report.mapping_requirements
+            for row in extract_mapping_requirements_from_draft(draft)
         ),
         one_hot_rows=tuple(
             (
@@ -213,6 +218,8 @@ def state_from_report(
         requires_retrain=save_plan.requires_retrain,
         impact_summary=save_plan.restart_impact.message,
         last_action_ok=last_action_ok,
+        focus_identity=focus_identity,
+        command_issue_rows=command_issue_rows,
     )
 
 

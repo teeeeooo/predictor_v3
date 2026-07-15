@@ -88,13 +88,13 @@ def build_data_definition_save_plan(
         *_change_blockers(draft, changes),
         *_requested_target_blockers(requested_targets),
     ]
-    requires_restart = _requires_restart(changes)
+    requires_restart = _requires_restart(draft, changes)
     requires_retrain = _requires_retrain(changes)
-    can_save_schema = any(_is_schema_change(change) for change in changes) and not any(
+    can_save_schema = any(_is_schema_change(draft, change) for change in changes) and not any(
         blocker.severity == "error" and blocker.target in {"schema_csv", ""}
         for blocker in blockers
     )
-    targets = _write_targets(changes, blockers, requested_targets)
+    targets = _write_targets(draft, changes, blockers, requested_targets)
     return DataDefinitionSavePlan(
         can_save_schema=can_save_schema,
         can_write_features_projection=False,
@@ -253,7 +253,7 @@ def _change_blockers(
     changes: tuple[DataDefinitionDraftChange, ...],
 ) -> tuple[DataDefinitionSaveBlocker, ...]:
     blockers = [
-        *_raw_row_change_blockers(changes),
+        *_raw_row_change_blockers(draft, changes),
         *_field_policy_blockers(draft),
         *_derived_policy_blockers(changes),
     ]
@@ -280,6 +280,7 @@ def _change_blockers(
 
 
 def _raw_row_change_blockers(
+    draft: DataDefinitionDraft,
     changes: tuple[DataDefinitionDraftChange, ...],
 ) -> tuple[DataDefinitionSaveBlocker, ...]:
     return tuple(
@@ -293,6 +294,10 @@ def _raw_row_change_blockers(
         )
         for change in changes
         if change.field_name == "__row__"
+        and not (
+            change.before is None
+            and draft.is_controlled_row_addition(change.row_identity)
+        )
     )
 
 
@@ -356,11 +361,12 @@ def _requested_target_blockers(
 
 
 def _write_targets(
+    draft: DataDefinitionDraft,
     changes: tuple[DataDefinitionDraftChange, ...],
     blockers: list[DataDefinitionSaveBlocker],
     requested_targets: tuple[str, ...],
 ) -> tuple[DataDefinitionWriteTarget, ...]:
-    has_schema_change = any(_is_schema_change(change) for change in changes)
+    has_schema_change = any(_is_schema_change(draft, change) for change in changes)
     schema_blocked = any(
         blocker.severity == "error" and blocker.target in {"schema_csv", ""}
         for blocker in blockers
@@ -419,16 +425,29 @@ def _target(target: str, status: WriteTargetStatus, reason: str) -> DataDefiniti
     return DataDefinitionWriteTarget(target, status, reason)
 
 
-def _requires_restart(changes: tuple[DataDefinitionDraftChange, ...]) -> bool:
-    return any(_is_schema_change(change) for change in changes)
+def _requires_restart(
+    draft: DataDefinitionDraft,
+    changes: tuple[DataDefinitionDraftChange, ...],
+) -> bool:
+    return any(_is_schema_change(draft, change) for change in changes)
 
 
 def _requires_retrain(changes: tuple[DataDefinitionDraftChange, ...]) -> bool:
     return any(change.field_name in RETRAIN_FIELDS for change in changes)
 
 
-def _is_schema_change(change: DataDefinitionDraftChange) -> bool:
-    return change.row_identity[0] == "schema_row" and change.field_name in SCHEMA_CHANGE_FIELDS
+def _is_schema_change(
+    draft: DataDefinitionDraft,
+    change: DataDefinitionDraftChange,
+) -> bool:
+    return change.row_identity[0] == "schema_row" and (
+        change.field_name in SCHEMA_CHANGE_FIELDS
+        or (
+            change.field_name == "__row__"
+            and change.before is None
+            and draft.is_controlled_row_addition(change.row_identity)
+        )
+    )
 
 
 def _impact_message(requires_restart: bool, requires_retrain: bool) -> str:

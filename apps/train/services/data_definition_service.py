@@ -6,10 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from core.data_definition import (
+    AddDefinitionIntent,
     DataDefinitionDraft,
+    DataDefinitionCommandResult,
     DataDefinitionReport,
     DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
+    EditDefinitionIntent,
+    apply_add_definition_command,
+    apply_edit_definition_command,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
@@ -94,6 +99,22 @@ class DataDefinitionService:
             return DataDefinitionDraftEditResult(draft, False, error)
         updated = replace_draft_row(draft, row_identity, **{field_name: coerced})
         return DataDefinitionDraftEditResult(updated, True, "Draft cell updated.")
+
+    def add_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: AddDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        """Apply one complete controlled Add command without file writes."""
+        return apply_add_definition_command(draft, intent)
+
+    def edit_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: EditDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        """Apply one complete controlled Edit command without file writes."""
+        return apply_edit_definition_command(draft, intent)
 
     def preview_save_plan(
         self,

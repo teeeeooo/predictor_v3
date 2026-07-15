@@ -56,13 +56,16 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
         app.processEvents()
         assert not panel.diagnostics.tabs.isHidden()
         assert panel.draft_table.editTriggers() != QAbstractItemView.NoEditTriggers
-        future_actions = [
+        controlled_actions = [
             button for button in panel.findChildren(QPushButton)
-            if button.accessibleName().startswith("Future Data Definition action:")
+            if button.accessibleName() in {
+                "Add Data Definition",
+                "Add Data Definition Mapping Attribute",
+                "Edit Selected Data Definition",
+            }
         ]
-        assert len(future_actions) == 3
-        assert all(not button.isEnabled() for button in future_actions)
-        assert all("next Phase 3" in button.toolTip() for button in future_actions)
+        assert len(controlled_actions) == 3
+        assert all(button.isEnabled() for button in controlled_actions)
     finally:
         panel.close()
         panel.deleteLater()

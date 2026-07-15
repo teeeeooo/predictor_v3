@@ -108,7 +108,10 @@ def _writer_blockers(
     if not save_plan.can_save_schema and draft.is_changed:
         blockers.append(_blocker("schema_save_plan_not_allowed", "Save plan did not allow schema write."))
     for change in draft.changes():
-        if change.field_name == "__row__":
+        if change.field_name == "__row__" and not (
+            change.before is None
+            and draft.is_controlled_row_addition(change.row_identity)
+        ):
             _append_blocker_if_missing(blockers, _blocker(
                 "raw_row_add_delete_not_allowed",
                 "Raw draft row add/delete requires a controlled Add/Remove Feature command.",
