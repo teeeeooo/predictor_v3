@@ -30,6 +30,9 @@ from apps.train.controllers.data_definition_presentation import (
     DataDefinitionInventoryProjection,
     project_data_definition_inventory,
 )
+from apps.train.controllers.data_definition_impact_projection import (
+    project_data_definition_impact,
+)
 from apps.train.ui.data_definition_diagnostics import (
     DataDefinitionDiagnostics,
     definition_table,
@@ -37,6 +40,7 @@ from apps.train.ui.data_definition_diagnostics import (
 from apps.train.ui.data_definition_add_dialog import DataDefinitionAddDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
+from apps.train.ui.data_definition_impact_view import DataDefinitionImpactView
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 
@@ -77,6 +81,7 @@ class DataDefinitionPanel(QWidget):
         self.detail_state_label.setWordWrap(True)
         self.detail_state_label.setAccessibleName("Selected Data Definition state")
         self.detail_table = definition_table("Selected Data Definition Detail")
+        self.impact_view = DataDefinitionImpactView(self)
         self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
         self._publish_diagnostic_table_aliases()
 
@@ -91,6 +96,7 @@ class DataDefinitionPanel(QWidget):
         layout.addWidget(self._build_command_bar())
         layout.addWidget(self._build_filter_bar())
         layout.addWidget(self._build_workspace(), 1)
+        layout.addWidget(self.impact_view)
         layout.addWidget(self.diagnostics)
         self._connect_filters()
         self.refresh()
@@ -232,6 +238,9 @@ class DataDefinitionPanel(QWidget):
             self._inventory_selection_changed
         )
         self._apply_detail(projection.detail)
+        self.impact_view.apply_projection(
+            project_data_definition_impact(self._state, projection.selected_identity)
+        )
         self.save_button.setEnabled(projection.save_enabled)
         self.edit_button.setEnabled(
             projection.selected_identity is not None
@@ -279,6 +288,9 @@ class DataDefinitionPanel(QWidget):
             selected_identity=identity,
         )
         self._apply_detail(projection.detail)
+        self.impact_view.apply_projection(
+            project_data_definition_impact(self._state, identity)
+        )
         self.edit_button.setEnabled(identity[0] == "schema_row")
 
     def _apply_detail(self, detail: DataDefinitionDetailState) -> None:
@@ -306,10 +318,7 @@ class DataDefinitionPanel(QWidget):
         if values is None or self._selected_identity is None:
             return
         DataDefinitionEditDialog(
-            self._selected_identity,
-            values,
-            self._apply_edit_intent,
-            self,
+            self._selected_identity, values, self._apply_edit_intent, self,
         ).exec()
 
     def _apply_add_intent(self, intent: AddDefinitionIntent) -> tuple[bool, str]:
@@ -329,10 +338,7 @@ class DataDefinitionPanel(QWidget):
             index = self._state.draft_row_identities.index(self._selected_identity)
         except ValueError:
             return None
-        return {
-            cell.field_name: cell.value
-            for cell in self._state.draft_rows[index]
-        }
+        return {cell.field_name: cell.value for cell in self._state.draft_rows[index]}
 
     def _save_schema(self) -> None:
         self._apply_state(self._controller.save_schema())
@@ -389,5 +395,4 @@ def _replace_options(
 
 
 def _tables(panel: DataDefinitionPanel) -> tuple[QTableView, ...]:
-    """Return preserved read-only diagnostic tables for compatibility tests."""
     return panel.diagnostics.read_only_tables()

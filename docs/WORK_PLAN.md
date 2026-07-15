@@ -17,22 +17,22 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3B controlled Add/Edit workflow is implemented on
-`phase/train-admin-data-definition-ux`. Qt-free commands turn supported manual,
-mapping-backed Predict, standalone mapping-attribute, and metadata-edit intent
-into one complete draft transition. Raw row/restricted-field guards remain in
-place, projection-neutral additions use the existing guarded schema writer, and
-unsupported ML projection changes remain previewable but blocked. PR #16 remains
-Draft/Open while Slice 3C is implemented as the next independent commit.
+Train/Admin Phase 3 Slices 3B and 3C are implemented as separate logical commits
+on `phase/train-admin-data-definition-ux`. Controlled Add/Edit commands produce
+complete draft transitions; the default impact preview explains definition,
+schema, mapping, restart, retrain, ML compatibility, blocker, and writer-result
+evidence. Allowed drafts use the existing candidate-validation/backup/atomic-
+replace schema writer; unsupported ML changes remain complete but blocked. PR #16
+remains Draft/Open pending the combined audit.
 
 ## Next Action
 
-Implement and validate Slice 3C impact preview and guarded schema-save workflow.
+Slice 3B+3C audit before starting Slice 3D.
 
 ## Active Blockers
 
-- No code blocker remains in Slice 3B; Slice 3C implementation is authorized by
-  the current task and must remain a separate logical commit.
+- No code blocker remains in Slices 3B+3C; the explicit combined audit hold
+  prevents starting Slice 3D.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
@@ -55,8 +55,8 @@ Implement and validate Slice 3C impact preview and guarded schema-save workflow.
 
 ## Deferred / Hold
 
-- Impact preview belongs to Slice 3C. Data Mapping handoff and native polish
-  remain deferred to Slices 3D and 3E respectively.
+- Data Mapping handoff/coverage and native polish remain deferred to Slices 3D
+  and 3E respectively.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness

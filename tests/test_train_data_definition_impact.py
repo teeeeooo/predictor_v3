@@ -1,0 +1,267 @@
+"""Qt-free Data Definition impact projection tests."""
+
+from __future__ import annotations
+
+import shutil
+from dataclasses import replace
+from pathlib import Path
+
+import pytest
+
+from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.controllers.data_definition_state_builder import DataDefinitionBlockerItem
+from apps.train.controllers.data_definition_impact_projection import (
+    project_data_definition_impact,
+)
+from apps.train.services.data_definition_service import DataDefinitionService
+from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
+import core.data_definition.schema_writer as schema_writer_module
+from core.mapping.paths import MAPPING_JSON_FILE
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
+
+
+def test_clean_and_manual_add_impact_classify_authoritative_save_state(tmp_path):
+    controller = _controller(tmp_path)
+    clean_state = controller.refresh()
+    clean = project_data_definition_impact(clean_state)
+    added_state = controller.add_definition(
+        AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
+    )
+    added = project_data_definition_impact(
+        added_state, ("schema_row", "fan_diameter")
+    )
+
+    assert clean.status == "clean"
+    assert clean.schema_write_status == "no_op"
+    assert not clean.save_enabled and clean.save_result_status == "No save attempted."
+    assert clean.change_text == "No unsaved definition changes."
+    assert added.status == "dirty"
+    assert added.schema_write_status == "planned" and added.save_enabled
+    assert [(item.action, item.identity, item.label) for item in added.definitions] == [
+        ("Add", ("schema_row", "fan_diameter"), "Fan Diameter")
+    ]
+    assert added.requires_restart and not added.requires_retrain
+    assert not added.ml_fingerprint_changed
+    assert not added.mapping_impacts
+    assert "Predict restart: required" in added.runtime_text
+    assert "ML compatibility fingerprint: unchanged" in added.runtime_text
+
+
+def test_mapping_add_impact_names_requirement_and_data_mapping_ownership(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    state = controller.add_definition(
+        AddDefinitionIntent(
+            "mapping_predict",
+            "Evap Inner Surface Area",
+            "evap_inner_surface_area",
+            "number",
+            mapping_entity="evap_index",
+            mapping_attribute="Inner Surface Area",
+            trigger_column="evap_index",
+        )
+    )
+
+    impact = project_data_definition_impact(
+        state, ("schema_row", "evap_inner_surface_area")
+    )
+
+    assert impact.save_enabled and not impact.ml_fingerprint_changed
+    assert impact.mapping_impacts == ((
+        "Required",
+        "evap_inner_surface_area",
+        "",
+        "evap_index",
+        "Inner Surface Area",
+        "evap_index",
+        "",
+        "optional",
+        "Data Mapping owns concrete values",
+    ),)
+    assert "Inner Surface Area in evap_index" in impact.mapping_text
+    assert "Concrete values remain Data Mapping-owned" in impact.mapping_text
+    assert "deferred to Slice 3D" in impact.mapping_text
+
+
+def test_ml_rename_is_complete_blocked_impact_with_selection_relevance(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    identity = ("schema_row", "cooling_capa")
+    protected = (tmp_path / "schema.csv", Path("config/ml/features.csv"))
+    before = tuple(path.read_bytes() for path in protected)
+    state = controller.edit_definition(
+        EditDefinitionIntent(
+            identity,
+            (("label", "Cooling Capacity"), ("ml_name", "Cooling Capacity Renamed")),
+        )
+    )
+
+    direct = project_data_definition_impact(state, identity)
+    other = project_data_definition_impact(state, ("schema_row", "idu"))
+
+    assert direct.status == "blocked"
+    assert direct.schema_write_status == "blocked" and not direct.save_enabled
+    assert direct.ml_fingerprint_changed and direct.requires_retrain
+    assert [field.field_name for field in direct.definitions[0].fields] == [
+        "label", "ml_name",
+    ]
+    assert [item.relevance for item in direct.blockers] == ["direct"]
+    assert [item.relevance for item in other.blockers] == ["other_definition"]
+    assert direct.definitions == other.definitions
+    assert direct.mapping_impacts == other.mapping_impacts
+    assert "ML compatibility fingerprint: changed" in direct.runtime_text
+    blocked_save = controller.save_schema()
+    assert blocked_save.status == "blocked"
+    assert tuple(path.read_bytes() for path in protected) == before
+
+
+@pytest.mark.parametrize(
+    "intent",
+    (
+        AddDefinitionIntent(
+            "mapping_predict",
+            "Evap Inner Surface Area",
+            "evap_inner_surface_area",
+            "number",
+            mapping_entity="evap_index",
+            mapping_attribute="Inner Surface Area",
+            trigger_column="evap_index",
+        ),
+        AddDefinitionIntent(
+            "mapping_attribute",
+            "Cond Inner Area",
+            "cond_inner_area",
+            "number",
+            mapping_entity="cond_specs",
+            mapping_attribute="Cond Inner Area",
+            trigger_column="odu",
+            rule_id="cond_specs_lookup",
+        ),
+    ),
+)
+def test_mapping_intent_save_writes_schema_only(tmp_path, intent):
+    mapping_path = Path(MAPPING_JSON_FILE)
+    mapping_before = mapping_path.read_bytes() if mapping_path.is_file() else None
+    features_path = Path("config/ml/features.csv")
+    features_before = features_path.read_bytes()
+    controller = _controller(tmp_path)
+    controller.refresh()
+    added = controller.add_definition(intent)
+
+    saved = controller.save_schema()
+
+    assert added.save_action_enabled
+    assert saved.status == "saved"
+    mapping_after = mapping_path.read_bytes() if mapping_path.is_file() else None
+    assert mapping_after == mapping_before
+    assert features_path.read_bytes() == features_before
+
+
+def test_candidate_failure_clears_after_correction_and_writer_error_remains_retryable(
+    tmp_path,
+    monkeypatch,
+):
+    controller = _controller(tmp_path)
+    state = controller.refresh()
+    identity = state.draft_row_identities[0]
+    controller.edit_cell(identity, "label", "Cooling Capacity")
+    controller.edit_cell(identity, "data_type", "invalid_type")
+    blocked_state = controller.save_schema()
+    blocked = project_data_definition_impact(blocked_state, identity)
+
+    assert blocked.status == "blocked"
+    assert blocked.save_result_status == "blocked"
+    assert not blocked.save_enabled
+    assert "candidate_schema_validation_failed" in blocked.result_text
+    assert any(item.related_field == "data_type" for item in blocked.blockers)
+
+    corrected_state = controller.edit_cell(identity, "data_type", "number")
+    corrected = project_data_definition_impact(corrected_state, identity)
+    assert corrected.status == "dirty" and corrected.save_enabled
+    assert corrected.save_result_status == "No save attempted."
+    assert "candidate_schema_validation_failed" not in corrected.result_text
+
+    real_replace = schema_writer_module.os.replace
+    attempts = 0
+
+    def fail_once(source, destination):  # noqa: ANN001, ANN202
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise OSError("temporary replace failure")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(schema_writer_module.os, "replace", fail_once)
+    error_state = controller.save_schema()
+    error = project_data_definition_impact(error_state, identity)
+    assert error.status == "dirty" and error.save_enabled
+    assert error.save_result_status == "error"
+    assert "retry Save" in error.result_text
+
+    written_state = controller.save_schema()
+    written = project_data_definition_impact(written_state, identity)
+    assert written.status == "clean" and not written.save_enabled
+    assert written.save_result_status == "written"
+    assert dict(written.save_result_rows)["Backup"]
+    assert "Restart Predict" in written.result_text
+
+
+def test_multiple_commands_are_deterministic_and_projection_is_non_mutating(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    controller.add_definition(
+        AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
+    )
+    state = controller.edit_definition(
+        EditDefinitionIntent(("schema_row", "idu"), (("notes", "Updated"),))
+    )
+    before = state
+
+    first = project_data_definition_impact(state, ("schema_row", "idu"))
+    second = project_data_definition_impact(state, ("schema_row", "fan_diameter"))
+
+    assert [item.identity[1] for item in first.definitions] == ["idu", "fan_diameter"]
+    assert [item.action for item in first.definitions] == ["Edit", "Add"]
+    assert first.definitions == second.definitions
+    assert state == before
+
+    saved_state = controller.save_schema()
+    saved = project_data_definition_impact(saved_state, ("schema_row", "fan_diameter"))
+    assert saved.save_result_status == "written"
+    assert not saved_state.draft_changed and not saved.save_enabled
+    loaded = load_predict_schema_catalog_v2(tmp_path / "schema.csv")
+    assert dict(saved.save_result_rows)["Rows written"] == str(len(loaded.rows))
+    assert any(row.column_key == "fan_diameter" for row in loaded.rows)
+
+
+def test_impact_renders_direct_other_and_global_blocker_groups(tmp_path):
+    state = _controller(tmp_path).refresh()
+    selected = ("schema_row", "cooling_capa")
+    fixture = replace(state, blocker_items=(
+        DataDefinitionBlockerItem(
+            "error", "direct_issue", "schema_csv", "Direct issue.", selected,
+            "label", "save_plan",
+        ),
+        DataDefinitionBlockerItem(
+            "error", "other_issue", "schema_csv", "Other issue.",
+            ("schema_row", "heating_capa"), "editor", "save_plan",
+        ),
+        DataDefinitionBlockerItem(
+            "error", "global_issue", "schema_csv", "Global issue.", None, "", "save_plan",
+        ),
+    ))
+
+    impact = project_data_definition_impact(fixture, selected)
+
+    assert [item.relevance for item in impact.blockers] == [
+        "direct", "other_definition", "global",
+    ]
+    assert "direct: direct_issue" in impact.save_text
+    assert "other_definition: other_issue" in impact.save_text
+    assert "global: global_issue" in impact.save_text
+
+
+def _controller(tmp_path) -> DataDefinitionController:
+    schema_path = tmp_path / "schema.csv"
+    shutil.copyfile(DEFAULT_SCHEMA_PATH, schema_path)
+    return DataDefinitionController(DataDefinitionService(schema_path=schema_path))

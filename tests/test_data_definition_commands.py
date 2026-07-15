@@ -2,6 +2,8 @@
 
 import shutil
 
+import pytest
+
 from apps.train.services.data_definition_service import DataDefinitionService
 
 from core.data_definition import (
@@ -127,6 +129,36 @@ def test_invalid_add_is_atomic_for_duplicate_and_unsupported_mapping_relation():
     assert _snapshot(duplicate.draft) == before == _snapshot(unsupported.draft)
 
 
+@pytest.mark.parametrize(
+    "intent, expected_code",
+    (
+        (AddDefinitionIntent("manual_predict", "   ", "blank_label", "number"), "label_required"),
+        (AddDefinitionIntent("manual_predict", "Bad Type", "bad_type", "matrix"), "data_type_unsupported"),
+        (
+            AddDefinitionIntent(
+                "mapping_predict",
+                "Incomplete",
+                "incomplete_mapping",
+                "number",
+                mapping_entity="evap_index",
+                mapping_attribute="   ",
+                trigger_column="evap_index",
+            ),
+            "mapping_attribute_required",
+        ),
+    ),
+)
+def test_add_validation_matrix_is_non_mutating(intent, expected_code):
+    draft = build_data_definition_draft()
+    before = _snapshot(draft)
+
+    result = apply_add_definition_command(draft, intent)
+
+    assert not result.accepted
+    assert expected_code in {issue.code for issue in result.issues}
+    assert _snapshot(result.draft) == before
+
+
 def test_sequential_add_allocates_stable_identity_and_order_and_reset_source_is_unchanged():
     draft = build_data_definition_draft()
     first = apply_add_definition_command(
@@ -166,6 +198,43 @@ def test_controlled_edit_is_atomic_and_restricted_fields_are_rejected():
     assert not rejected.accepted
     assert rejected.issues[0].code == "restricted_edit"
     assert _snapshot(rejected.draft) == before_restricted
+
+
+@pytest.mark.parametrize("field_name, value", (
+    ("column_key", "cooling_capacity"),
+    ("display_order", 999),
+    ("role", "auto"),
+))
+def test_controlled_edit_rejects_identity_order_and_role_without_mutation(
+    field_name,
+    value,
+):
+    draft = build_data_definition_draft()
+    before = _snapshot(draft)
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(("schema_row", "cooling_capa"), ((field_name, value),)),
+    )
+
+    assert not result.accepted
+    assert result.issues[0].code == "restricted_edit"
+    assert _snapshot(result.draft) == before
+
+
+def test_controlled_edit_rejects_derived_policy_without_mutation():
+    draft = build_data_definition_draft()
+    derived = next(item for item in draft.rows if item.source_kind == "derived_policy")
+    before = _snapshot(draft)
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(derived.identity, (("notes", "Not persistable"),)),
+    )
+
+    assert not result.accepted
+    assert result.issues[0].code == "restricted_edit"
+    assert _snapshot(result.draft) == before
 
 
 def test_projection_changing_controlled_edit_is_complete_but_save_blocked():

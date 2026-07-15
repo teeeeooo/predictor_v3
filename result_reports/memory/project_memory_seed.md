@@ -526,6 +526,23 @@ entries:
       - Slice 3A
     assertionStatus: verified
     source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1d.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-data-definition-inventory.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-blocker-attribution-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-compound-ml-attribution-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-ml-field-relevance-correction.md
+
+  - type: decision
+    topic: Train/Admin Phase 3 Slice 3B+3C controlled workflow state
+    content: Slice 3B adds Qt-free atomic commands for manual Predict, supported mapping-backed Predict, standalone mapping-attribute, and controlled metadata Edit intent. Stable normalized identity and monotonic schema order are allocated from the current draft; only command-authorized new rows bypass the raw row guard, while identity/order/role/derived-policy operations remain rejected without mutation. Slice 3C adds a separate UI-facing impact projection over existing draft changes, save plan, direct/other/global blockers, readiness, mapping requirements, and schema-writer results. Save enablement remains controller-owned, and the existing schema writer remains final authority for candidate validation, backup, atomic replace, reload, and retry. Projection-neutral schema additions never write features.csv or mapping.json; ML fingerprint changes remain staged but schema-save blocked. Mapping values, coverage, navigation, and Predict live reload remain deferred. PR #16 stays Draft/Open, and the next action is Slice 3B+3C audit before starting Slice 3D.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Data Definition
+      - Phase 3
+      - Slice 3B
+      - Slice 3C
+      - controlled command
+      - impact preview
+      - guarded save
+      - Slice 3D audit hold
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3b-controlled-definition-commands.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3c-impact-and-guarded-save.md
 ```
 
 ## Known Gaps
