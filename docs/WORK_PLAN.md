@@ -17,20 +17,17 @@
 
 ## Current Slice
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2E bundle
-import is implemented on `phase/train-admin-data-mapping-ux` after the approved
-Slice 2A head, Slice 2B+2C implementation, and Slice 2D exchange export. Slice
-2D keeps the existing review snapshot contract and publishes seven canonical
-group CSVs plus one user-named bundle from the current service-owned draft.
-Slice 2E parses only sectioned `mapping_bundle_v1`, enforces exact current
-visible headers, previews a full replacement, and applies valid changes to the
-unsaved draft through one grouped undo command.
+Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul Slice 2D+2E audit
+correction is implemented on `phase/train-admin-data-mapping-ux`. Import now
+runs canonical Data Mapping validation before preview and again at Apply,
+reports only groups with semantic changes, and canonicalizes exchange row order
+so order-only bundles remain no-ops. Publish rollback regression covers both
+fully existing and mixed existing/new eight-target packages.
 
 ## Next Action
 
-Update PR #15's audit status with the Slice 2D/2E commits, automated gates, and
-the native visual evidence manifest. Keep Draft PR #15 open; do not merge the
-phase or change PR readiness.
+Re-audit the Slice 2D+2E correction on Draft PR #15. Keep the PR open and Draft;
+do not merge the phase, change readiness, or begin follow-up Phase work.
 
 ## Active Blockers
 

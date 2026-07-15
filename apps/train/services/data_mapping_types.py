@@ -75,8 +75,11 @@ class DataMappingImportPreview:
 
     @property
     def affected_group_count(self) -> int:
-        """Return the number of groups represented in the candidate diff."""
-        return len(self.group_diffs)
+        """Return the number of groups with a visible semantic change."""
+        return sum(
+            bool(diff.added_rows or diff.removed_rows or diff.changed_rows)
+            for diff in self.group_diffs
+        )
 
 
 @dataclass(frozen=True)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -213,4 +214,42 @@ def test_staging_writer_failure_preserves_existing_package(tmp_path, monkeypatch
     assert not result.success
     assert "synthetic staging writer failure" in result.message
     assert {path: path.read_bytes() for path in target_paths} == before
+    assert not list(tmp_path.glob(".bundle.exchange-*"))
+
+
+@pytest.mark.parametrize("existing_count", (8, 3))
+def test_publish_mid_failure_rolls_back_existing_and_new_targets(
+    tmp_path,
+    monkeypatch,
+    existing_count,
+):
+    service = _service(tmp_path)
+    target_paths = [tmp_path / f"{group_key}.csv" for group_key in CANONICAL_GROUP_KEYS]
+    target_paths.append(tmp_path / "bundle.csv")
+    before: dict[Path, bytes] = {}
+    for path in target_paths[:existing_count]:
+        path.write_bytes(f"old:{path.name}".encode())
+        before[path] = path.read_bytes()
+
+    real_replace = os.replace
+    published: list[Path] = []
+
+    def fail_fourth_publish(source, destination):
+        source_path = Path(source)
+        destination_path = Path(destination)
+        is_publish = source_path.suffix == ".csv" and ".exchange-" in str(source_path.parent)
+        if is_publish:
+            if len(published) == 3:
+                raise OSError("synthetic publish failure after three targets")
+            published.append(destination_path)
+        real_replace(source, destination)
+
+    monkeypatch.setattr("core.mapping.exchange.export.os.replace", fail_fourth_publish)
+    result, _snapshot = service.export_exchange(tmp_path / "bundle.csv")
+
+    assert not result.success
+    assert "synthetic publish failure after three targets" in result.message
+    assert len(published) == 3
+    assert {path: path.read_bytes() for path in before} == before
+    assert all(not path.exists() for path in target_paths[existing_count:])
     assert not list(tmp_path.glob(".bundle.exchange-*"))

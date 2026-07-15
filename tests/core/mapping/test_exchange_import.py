@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from apps.train.services.data_mapping_service import (
     DataMappingService,
     RuntimeMappingCatalogProvider,
 )
+from apps.train.services.data_mapping_types import DataMappingImportPreview
 from core.data_definition.model import MappingRequirement
 from core.mapping.exchange import (
     CANONICAL_GROUP_KEYS,
@@ -130,7 +132,7 @@ def test_official_bundle_parses_from_arbitrary_renamed_path_and_shuffled_section
     assert names == list(CANONICAL_GROUP_KEYS)
 
 
-def test_import_accepts_blank_lines_quoted_fields_and_zero_row_section(tmp_path):
+def test_import_accepts_blank_lines_and_quoted_fields_but_blocks_empty_refrigerant(tmp_path):
     service, official = _official_bundle(tmp_path)
     _names, blocks = _blocks(official)
     idu = _block(blocks, "idu")
@@ -144,9 +146,36 @@ def test_import_accepts_blank_lines_quoted_fields_and_zero_row_section(tmp_path)
 
     preview, _snapshot = service.preview_exchange_import(source)
 
+    assert not preview.can_apply
+    issue = next(issue for issue in preview.blockers if issue.code == "required_section_missing")
+    assert issue.entity_key == "Refrigerant"
+
+
+@pytest.mark.parametrize("group_key", ("refrigerant", "expansion"))
+def test_required_zero_row_option_group_is_a_canonical_blocker(tmp_path, group_key):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    del _block(blocks, group_key)[2:]
+    source = tmp_path / f"empty-{group_key}.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+
+    assert not preview.can_apply
+    assert any(issue.code == "required_section_missing" for issue in preview.blockers)
+
+
+def test_zero_row_non_required_group_is_structurally_and_semantically_valid(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    del _block(blocks, "compressor")[2:]
+    source = tmp_path / "empty-compressor.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+
     assert preview.can_apply
-    assert preview.candidate.group("idu").rows[0].value_for("Size") == 'quoted, "value"\nnext'
-    assert preview.candidate.group("refrigerant").rows == ()
+    assert preview.candidate.group("compressor").rows == ()
 
 
 def test_import_projects_reordered_headers_to_current_definition_order(tmp_path):
@@ -292,6 +321,22 @@ def test_invalid_number_boolean_and_required_value_block(tmp_path):
     assert "import_required_value_missing" in codes
 
 
+def test_canonical_unknown_odu_reference_blocks_with_row_field_metadata(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    _block(blocks, "odu_cond_specs")[2][0] = "UNKNOWN-ODU"
+    source = tmp_path / "unknown-odu.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+
+    issue = next(issue for issue in preview.blockers if issue.code == "referenced_row_missing")
+    assert not preview.can_apply
+    assert issue.entity_key == "ODU Cond Specs"
+    assert issue.row_index is not None
+    assert issue.field == "ODU"
+
+
 def test_blocked_import_preserves_current_draft_dirty_undo_selection_and_runtime(tmp_path):
     service, official = _official_bundle(tmp_path)
     service.edit_cell("idu", 0, "Size", "before-import")
@@ -336,6 +381,7 @@ def test_preview_counts_cancel_and_apply_are_draft_only_and_one_undo_unit(tmp_pa
     applied, apply_result = service.apply_exchange_import(preview)
 
     assert (diff.existing_rows, diff.added_rows, diff.removed_rows, diff.changed_rows, diff.unchanged_rows) == (9, 1, 1, 1, 7)
+    assert preview.affected_group_count == 1
     assert canceled_state.draft == before.draft
     assert apply_result.success and apply_result.changed
     assert applied.dirty
@@ -354,9 +400,125 @@ def test_semantic_noop_import_does_not_create_dirty_or_undo_history(tmp_path):
     undone, undo_result = service.undo()
 
     assert result.success and not result.changed
+    assert preview.affected_group_count == 0
     assert not applied.dirty
     assert undo_result.applied == 0
     assert undone.draft == applied.draft
+
+
+@pytest.mark.parametrize("group_key", ("idu", "refrigerant", "odu_cond_specs"))
+def test_row_order_only_bundle_is_semantic_noop(tmp_path, group_key):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    block = _block(blocks, group_key)
+    block[2:] = reversed(block[2:])
+    source = tmp_path / f"reordered-{group_key}.csv"
+    _write_blocks(source, blocks)
+    before = service.current_snapshot().draft
+
+    preview, _snapshot = service.preview_exchange_import(source)
+    applied, result = service.apply_exchange_import(preview)
+    undone, undo_result = service.undo()
+
+    assert preview.can_apply
+    assert preview.affected_group_count == 0
+    assert all(diff.changed_rows == 0 for diff in preview.group_diffs)
+    assert preview.candidate == before
+    assert result.success and not result.changed
+    assert not applied.dirty
+    assert undo_result.applied == 0
+    assert undone.draft == before
+
+
+def test_reorder_with_two_group_value_changes_counts_only_affected_groups(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    idu = _block(blocks, "idu")
+    idu[2:] = reversed(idu[2:])
+    idu[2][1] = "999"
+    compressor = _block(blocks, "compressor")
+    compressor.append(["ZZZ-NEW", "3.5", "10"])
+    source = tmp_path / "reorder-and-change.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+
+    assert preview.can_apply
+    assert preview.affected_group_count == 2
+    idu_diff = next(diff for diff in preview.group_diffs if diff.group_key == "idu")
+    unchanged_diff = next(diff for diff in preview.group_diffs if diff.group_key == "odu")
+    assert idu_diff.changed_rows == 1
+    assert unchanged_diff.unchanged_rows == unchanged_diff.existing_rows
+
+
+def test_new_rows_follow_deterministic_identity_order_after_existing_rows(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    existing = [row.value_for("IDU") for row in service.current_snapshot().draft.group("idu").rows]
+    _names, blocks = _blocks(official)
+    idu = _block(blocks, "idu")
+    idu.extend(
+        (
+            ["ZZZ-NEW", "1", "z", "", "false"],
+            ["AAA-NEW", "2", "a", "", "true"],
+        )
+    )
+    source = tmp_path / "new-row-order.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+
+    identities = [row.value_for("IDU") for row in preview.candidate.group("idu").rows]
+    assert identities == [*existing, "AAA-NEW", "ZZZ-NEW"]
+
+
+def test_externally_constructed_invalid_candidate_is_rejected_at_apply_boundary(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    valid, snapshot = service.preview_exchange_import(official)
+    candidate = valid.candidate
+    refrigerant = candidate.group("refrigerant")
+    invalid = replace(
+        candidate,
+        groups=tuple(
+            replace(group, rows=()) if group.group_key == "refrigerant" else group
+            for group in candidate.groups
+        ),
+    )
+    preview = DataMappingImportPreview(
+        source_path=official,
+        format_version="mapping_bundle_v1",
+        candidate=invalid,
+        base_draft=snapshot.draft,
+    )
+
+    applied, result = service.apply_exchange_import(preview)
+    _undone, undo_result = service.undo()
+
+    assert refrigerant.rows
+    assert not result.success and not result.stale
+    assert "required_section_missing" in result.message
+    assert applied.draft == snapshot.draft
+    assert not applied.dirty
+    assert undo_result.applied == 0
+
+
+def test_stale_result_takes_precedence_over_candidate_validation(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    valid, snapshot = service.preview_exchange_import(official)
+    service.edit_cell("idu", 0, "Size", "newer")
+    invalid = replace(
+        valid.candidate,
+        groups=tuple(
+            replace(group, rows=()) if group.group_key == "expansion" else group
+            for group in valid.candidate.groups
+        ),
+    )
+    preview = replace(valid, candidate=invalid, base_draft=snapshot.draft)
+
+    applied, result = service.apply_exchange_import(preview)
+
+    assert not result.success and result.stale
+    assert "stale" in result.message.lower()
+    assert applied.draft.group("idu").rows[0].value_for("Size") == "newer"
 
 
 def test_apply_preserves_matching_hidden_payload_unowned_section_and_source_destination(tmp_path):

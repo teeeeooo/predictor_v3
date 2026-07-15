@@ -7,6 +7,7 @@ import io
 from dataclasses import dataclass
 
 from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.editor_validation import validate_mapping_editor_draft
 from core.mapping.entity_model import MappingValidationError
 from core.mapping.exchange.candidate import build_mapping_exchange_candidate
 from core.mapping.exchange.contract import (
@@ -132,6 +133,13 @@ def parse_mapping_exchange_bundle(
     if candidate_blockers:
         return _blocked(
             *candidate_blockers,
+            format_version=format_version,
+            section_order=section_order,
+        )
+    canonical_blockers = validate_mapping_editor_draft(candidate).issues
+    if canonical_blockers:
+        return _blocked(
+            *canonical_blockers,
             format_version=format_version,
             section_order=section_order,
         )

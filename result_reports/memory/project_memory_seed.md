@@ -404,7 +404,7 @@ entries:
 
   - type: decision
     topic: Train Admin Phase 2 bundle import boundary
-    content: Slice 2E accepts only marker-owned sectioned mapping_bundle_v1 input and never infers format or section identity from filename. Exact-header policy requires every current Data Definition visible projection column exactly once, including optional dynamic columns; header order is projected by name, and missing/unknown/duplicate headers block the full import with group/column guidance to re-export. A valid seven-section bundle becomes a typed full-replacement candidate, previews visible identity/value changes, preserves matching hidden row payload and unowned sections, applies only to the service-owned unsaved draft as one undo command, rejects stale previews, and leaves runtime mapping unchanged until explicit Save. Review snapshots and clipboard TSV remain separate contracts.
+    content: Slice 2E accepts only marker-owned sectioned mapping_bundle_v1 input and never infers format or section identity from filename. Exact-header policy requires every current Data Definition visible projection column exactly once, including optional dynamic columns; header order is projected by name, and missing/unknown/duplicate headers block the full import with group/column guidance to re-export. A structurally complete candidate must also pass the same canonical editor and Data Definition validation used by Data Mapping snapshots before preview and again at Apply; error-level issues block draft/session/runtime mutation. Exchange row order is non-semantic: matching identities retain current draft order and new identities follow deterministic identity order, so order-only bundles report zero affected groups and Apply as unchanged without dirty or undo history. A valid seven-section bundle preserves matching hidden row payload and unowned sections, applies only to the service-owned unsaved draft as one undo command, rejects stale previews, and leaves runtime mapping unchanged until explicit Save. Review snapshots and clipboard TSV remain separate contracts. Exchange publish remains best-effort rollback-aware and automated regression covers failure after partial replacement for both fully existing and mixed existing/new packages.
     keywords:
       - predictor_v3
       - Train Admin
@@ -417,7 +417,7 @@ entries:
       - grouped undo
       - hidden payload
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2e-bundle-import.md
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2e-bundle-import.md; result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2de-audit-correction.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction

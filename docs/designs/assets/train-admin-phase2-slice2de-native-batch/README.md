@@ -15,12 +15,12 @@
   exporter and successfully parsed by the production import preview service
 - Programmatically prepared preview: yes; parser/controller preview was
   prepared from the synthetic bundle and reported `mapping_bundle_v1` with
-  seven affected groups, but the production dialog was not rendered because
-  the native desktop was locked
+  zero affected groups for the semantic no-op bundle, but the production dialog
+  was not rendered because the native desktop was locked
 - Actual export/import interaction: not performed
-- Automated behavior evidence: separate from native visual evidence; Slice 2E
-  focused/import/smoke gate passed 77 tests, impacted regression passed 189
-  tests, and the full suite passed 2051 tests with 2 expected failures
+- Automated behavior evidence: separate from native visual evidence; the audit
+  correction focused gate passed 46 tests, impacted mapping/Train regression
+  passed 143 tests, and the full suite passed 2064 tests with 2 expected failures
 - Protected data: `data/mapping.json` and the protected runtime fixture were
   unchanged
 - Slice 2B+2C physical interaction acceptance remains deferred; this Batch did

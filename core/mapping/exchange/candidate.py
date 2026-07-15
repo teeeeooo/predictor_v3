@@ -39,7 +39,7 @@ def build_mapping_exchange_candidate(
             )
             continue
         existing_rows = _existing_rows_by_identity(current_group, blockers)
-        imported_rows: list[MappingEditorRow] = []
+        imported_rows: dict[tuple[str, ...], MappingEditorRow] = {}
         seen: set[tuple[str, ...]] = set()
         indexes = {column: section.header.index(column) for column in current_group.columns}
         for row_number, record in enumerate(section.rows):
@@ -83,15 +83,25 @@ def build_mapping_exchange_candidate(
             _validate_required_values(current_group, values, blockers, row_number)
             hidden = _matching_hidden_values(current_group, existing_rows.get(identity))
             hidden.update(values)
-            imported_rows.append(
-                MappingEditorRow(
-                    values=hidden,
-                    source_key=" ".join(identity),
-                    unresolved=False,
-                    notes="",
-                )
+            imported_rows[identity] = MappingEditorRow(
+                values=hidden,
+                source_key=" ".join(identity),
+                unresolved=False,
+                notes="",
             )
-        replacement_groups.append(replace(current_group, rows=tuple(imported_rows)))
+        existing_order = tuple(
+            identity
+            for row in current_group.rows
+            if (identity := exchange_row_identity(current_group, row)) in imported_rows
+        )
+        existing_identities = set(existing_order)
+        new_order = tuple(sorted(set(imported_rows) - existing_identities))
+        replacement_groups.append(
+            replace(
+                current_group,
+                rows=tuple(imported_rows[identity] for identity in (*existing_order, *new_order)),
+            )
+        )
     if blockers:
         return None, tuple(blockers)
     return replace(current_draft, groups=tuple(replacement_groups)), ()

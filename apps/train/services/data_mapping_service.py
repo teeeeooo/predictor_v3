@@ -15,7 +15,7 @@ from core.mapping.editor_export import (
     export_mapping_editor_snapshot_json,
     export_mapping_editor_snapshot_xlsx,
 )
-from core.mapping.editor_model import MappingEditorDraft
+from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.editor_projection import (
     apply_mapping_requirements_to_editor_draft,
     load_runtime_mapping_editor_draft,
@@ -376,9 +376,15 @@ class DataMappingService:
                 snapshot,
             )
         parsed = parse_mapping_exchange_bundle(payload, snapshot.draft)
-        diffs = (
-            diff_mapping_exchange_drafts(snapshot.draft, parsed.candidate)
+        candidate_blockers = (
+            self._validate_draft(parsed.candidate).issues
             if parsed.candidate is not None
+            else ()
+        )
+        candidate = parsed.candidate if not candidate_blockers else None
+        diffs = (
+            diff_mapping_exchange_drafts(snapshot.draft, candidate)
+            if candidate is not None
             else ()
         )
         return (
@@ -386,9 +392,9 @@ class DataMappingService:
                 source_path=source_path,
                 format_version=parsed.format_version,
                 group_diffs=diffs,
-                blockers=parsed.blockers,
+                blockers=(*parsed.blockers, *candidate_blockers),
                 warnings=parsed.warnings,
-                candidate=parsed.candidate,
+                candidate=candidate,
                 base_draft=snapshot.draft,
             ),
             snapshot,
@@ -400,16 +406,23 @@ class DataMappingService:
     ) -> tuple[DataMappingSnapshot, DataMappingImportApplyResult]:
         """Apply one fresh valid candidate as one grouped draft undo command."""
         snapshot = self.load_snapshot()
-        if not preview.can_apply or preview.candidate is None:
-            return snapshot, DataMappingImportApplyResult(
-                success=False,
-                message="Import is blocked; review the listed issues first.",
-            )
         if preview.base_draft != snapshot.draft:
             return snapshot, DataMappingImportApplyResult(
                 success=False,
                 stale=True,
                 message="Import preview is stale. Review the current draft and import again.",
+            )
+        if not preview.can_apply or preview.candidate is None:
+            return snapshot, DataMappingImportApplyResult(
+                success=False,
+                message="Import is blocked; review the listed issues first.",
+            )
+        candidate_issues = self._validate_draft(preview.candidate).issues
+        if candidate_issues:
+            issue = candidate_issues[0]
+            return snapshot, DataMappingImportApplyResult(
+                success=False,
+                message=f"Import candidate is invalid ({issue.code}): {issue.message}",
             )
         if preview.candidate == snapshot.draft:
             return snapshot, DataMappingImportApplyResult(
@@ -437,12 +450,7 @@ class DataMappingService:
         draft: MappingEditorDraft,
         requirements: tuple[MappingRequirement, ...],
     ) -> DataMappingSnapshot:
-        validation_result = validate_mapping_editor_draft(draft)
-        missing_group_issues = _missing_requirement_group_issues(draft, requirements)
-        if missing_group_issues:
-            validation_result = type(validation_result)(
-                issues=(*validation_result.issues, *missing_group_issues)
-            )
+        validation_result = self._validate_draft(draft, requirements)
         return DataMappingSnapshot(
             draft=draft,
             validation_errors=validation_result.issues,
@@ -461,6 +469,24 @@ class DataMappingService:
 
     def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
         return self._mapping_requirement_provider.load_mapping_requirements()
+
+    def _validate_draft(
+        self,
+        draft: MappingEditorDraft,
+        requirements: tuple[MappingRequirement, ...] | None = None,
+    ) -> MappingEditorValidationResult:
+        requirements = (
+            requirements
+            if requirements is not None
+            else self._load_mapping_requirements()
+        )
+        validation_result = validate_mapping_editor_draft(draft)
+        missing_group_issues = _missing_requirement_group_issues(draft, requirements)
+        if not missing_group_issues:
+            return validation_result
+        return type(validation_result)(
+            issues=(*validation_result.issues, *missing_group_issues)
+        )
 
 
 def _missing_requirement_group_issues(
