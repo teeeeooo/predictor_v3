@@ -62,7 +62,7 @@ def project_detail(
         ("Direct edit policy", edit_reason),
         ("Changed fields", ", ".join(changed_fields) or "None"),
         ("Restart / retrain impact", state.impact_summary),
-        ("Save blockers", _blocker_summary(state, changed_fields)),
+        ("Save blockers", _blocker_summary(state, row.identity)),
         ("Display order", values.get("display_order") or "—"),
         ("Rule ID", values.get("rule_id") or "—"),
         ("One-hot group", values.get("one_hot_group") or "—"),
@@ -73,14 +73,33 @@ def project_detail(
 
 def _blocker_summary(
     state: DataDefinitionControllerState,
-    changed_fields: tuple[str, ...],
+    selected_identity: tuple[str, str],
 ) -> str:
-    errors = tuple(row[3] for row in state.save_blocker_rows if row and row[0] == "error")
-    if not errors:
+    blockers = _deduplicated_error_blockers(state)
+    if not blockers:
         return "None"
-    if changed_fields:
-        return " | ".join(errors)
-    return "Current draft is blocked by changes to another definition."
+    summary = " | ".join(f"{code}: {message}" for code, message in blockers)
+    changed_identities = {
+        (row[0], row[1])
+        for row in state.draft_change_rows
+        if len(row) >= 2 and row[0] and row[1]
+    }
+    if selected_identity in changed_identities or not changed_identities:
+        return summary
+    return (
+        "No direct blocker for the selected definition. "
+        f"The draft is blocked by changes to another definition: {summary}"
+    )
+
+
+def _deduplicated_error_blockers(
+    state: DataDefinitionControllerState,
+) -> tuple[tuple[str, str], ...]:
+    by_code: dict[str, str] = {}
+    for row in (*state.save_blocker_rows, *state.save_result_issue_rows):
+        if len(row) >= 4 and row[0] == "error":
+            by_code.setdefault(row[1], row[3])
+    return tuple(by_code.items())
 
 
 def _ml_compatibility(

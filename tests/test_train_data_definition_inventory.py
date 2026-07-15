@@ -25,6 +25,7 @@ def test_inventory_projection_preserves_identity_order_and_projects_detail():
     assert projection.detail.identity == projection.selected_identity
     assert dict(projection.detail.rows)["Internal key"] == projection.rows[0].internal_key
     assert dict(projection.detail.rows)["Direct edit"] == "Allowed"
+    assert dict(projection.detail.rows)["Save blockers"] == "None"
     assert projection.status_key == "clean"
     assert not projection.save_enabled
     derived = next(row for row in projection.rows if row.identity[0] == "derived_policy")
@@ -64,10 +65,85 @@ def test_inventory_search_filter_and_selection_are_deterministic():
 
     assert [row.internal_key for row in searched.rows] == ["evap_area"]
     assert filtered.selected_identity == target.identity
+    assert filtered.resolved_category == "Mapping-backed Input"
+    assert filtered.resolved_source_type == "Mapping Lookup"
+    assert filtered.resolved_lifecycle_state == "Active"
     assert all(row.category == "Mapping-backed Input" for row in filtered.rows)
     assert all(row.source_type == "Mapping Lookup" for row in filtered.rows)
     assert tuple(row.identity for row in restored.rows) == state.draft_row_identities
     assert hidden.selected_identity == hidden.rows[0].identity
+
+
+def test_inventory_filter_falls_back_when_selected_option_disappears():
+    controller = DataDefinitionController()
+    state = controller.refresh()
+    rule_option_identities = (
+        ("schema_row", "fin_type"),
+        ("schema_row", "pi"),
+        ("schema_row", "row"),
+    )
+    for identity in rule_option_identities:
+        state = controller.edit_cell(identity, "value_source", "manual")
+
+    before = state
+    projection = project_data_definition_inventory(
+        state,
+        source_type="Rule Options",
+        selected_identity=rule_option_identities[-1],
+    )
+
+    assert "Rule Options" not in projection.source_types
+    assert projection.resolved_source_type == ""
+    assert tuple(row.identity for row in projection.rows) == state.draft_row_identities
+    assert projection.selected_identity == rule_option_identities[-1]
+    assert projection.detail.identity == projection.selected_identity
+    assert projection.view_state == "populated"
+    assert state == before
+
+
+def test_detail_blockers_distinguish_selected_and_other_changed_rows_and_deduplicate():
+    controller = DataDefinitionController()
+    state = controller.refresh()
+    changed_identity = ("schema_row", "cooling_capa")
+    other_identity = ("schema_row", "heating_capa")
+    blocked = controller.edit_cell(changed_identity, "ml_name", "Cooling Capacity Renamed")
+
+    selected_summary = dict(
+        project_data_definition_inventory(
+            blocked,
+            selected_identity=changed_identity,
+        ).detail.rows
+    )["Save blockers"]
+    other_summary = dict(
+        project_data_definition_inventory(
+            blocked,
+            selected_identity=other_identity,
+        ).detail.rows
+    )["Save blockers"]
+    duplicate = replace(
+        blocked,
+        save_result_issue_rows=(
+            (
+                "error",
+                "ml_compatibility_projection_write_required",
+                "schema_csv",
+                "duplicate last-result message",
+            ),
+        ),
+    )
+    deduplicated = dict(
+        project_data_definition_inventory(
+            duplicate,
+            selected_identity=changed_identity,
+        ).detail.rows
+    )["Save blockers"]
+
+    assert "ml_compatibility_projection_write_required" in selected_summary
+    assert "no features.csv projection writer is available" in selected_summary
+    assert other_summary.startswith("No direct blocker for the selected definition.")
+    assert "changes to another definition" in other_summary
+    assert deduplicated.count("ml_compatibility_projection_write_required") == 1
+    assert "duplicate last-result message" not in deduplicated
 
 
 def test_inventory_no_match_empty_and_load_error_states_are_explicit():

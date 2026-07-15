@@ -42,6 +42,9 @@ class DataDefinitionInventoryProjection:
     categories: tuple[str, ...]
     source_types: tuple[str, ...]
     lifecycle_states: tuple[str, ...]
+    resolved_category: str
+    resolved_source_type: str
+    resolved_lifecycle_state: str
     view_state: str
     view_message: str
     status_key: str
@@ -67,11 +70,23 @@ def project_data_definition_inventory(
             strict=True,
         )
     )
+    categories = tuple(sorted({row.category for row in canonical_rows}))
+    source_types = tuple(sorted({row.source_type for row in canonical_rows}))
+    lifecycle_states = tuple(sorted({row.lifecycle_state for row in canonical_rows}))
+    resolved_category = _resolved_filter(category, categories)
+    resolved_source_type = _resolved_filter(source_type, source_types)
+    resolved_lifecycle_state = _resolved_filter(lifecycle_state, lifecycle_states)
     normalized_search = search.strip().casefold()
     visible_rows = tuple(
         row
         for row in canonical_rows
-        if _matches(row, normalized_search, category, source_type, lifecycle_state)
+        if _matches(
+            row,
+            normalized_search,
+            resolved_category,
+            resolved_source_type,
+            resolved_lifecycle_state,
+        )
     )
     visible_identities = {row.identity for row in visible_rows}
     resolved_identity = (
@@ -89,14 +104,17 @@ def project_data_definition_inventory(
         rows=visible_rows,
         selected_identity=resolved_identity,
         detail=project_detail(state, selected, view_state),
-        categories=tuple(sorted({row.category for row in canonical_rows})),
-        source_types=tuple(sorted({row.source_type for row in canonical_rows})),
-        lifecycle_states=tuple(sorted({row.lifecycle_state for row in canonical_rows})),
+        categories=categories,
+        source_types=source_types,
+        lifecycle_states=lifecycle_states,
+        resolved_category=resolved_category,
+        resolved_source_type=resolved_source_type,
+        resolved_lifecycle_state=resolved_lifecycle_state,
         view_state=view_state,
         view_message=view_message,
         status_key=status_key,
         status_label=status_label,
-        save_enabled=state.draft_changed and state.can_save_schema,
+        save_enabled=state.save_action_enabled,
     )
 
 
@@ -113,7 +131,7 @@ def _inventory_row(
         "Inactive"
         if not active
         else "Blocked"
-        if not direct_editable or (changed_fields and state.draft_changed and not state.can_save_schema)
+        if not direct_editable or (changed_fields and state.draft_changed and not state.save_action_enabled)
         else "Active"
     )
     source_kind = values.get("source_kind", identity[0])
@@ -152,6 +170,10 @@ def _matches(
         and (not source_type or row.source_type == source_type)
         and (not lifecycle_state or row.lifecycle_state == lifecycle_state)
     )
+
+
+def _resolved_filter(selected: str, available: tuple[str, ...]) -> str:
+    return selected if selected in available else ""
 
 
 def _view_state(

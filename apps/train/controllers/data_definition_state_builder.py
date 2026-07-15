@@ -83,9 +83,11 @@ class DataDefinitionControllerState:
     draft_row_identities: tuple[tuple[str, str], ...]
     draft_changed: bool
     can_save_schema: bool
+    save_action_enabled: bool
     save_plan_rows: tuple[tuple[str, ...], ...]
     save_blocker_rows: tuple[tuple[str, ...], ...]
     save_result_rows: tuple[tuple[str, str], ...]
+    save_result_issue_rows: tuple[tuple[str, ...], ...]
     draft_change_rows: tuple[tuple[str, ...], ...]
     projected_feature_rows: tuple[tuple[str, ...], ...]
     mapping_requirement_rows: tuple[tuple[str, ...], ...]
@@ -136,9 +138,11 @@ def state_from_report(
         draft_rows=_draft_rows(draft),
         draft_row_identities=tuple(row.identity for row in draft.rows),
         draft_changed=draft.is_changed,
-        can_save_schema=(
-            save_plan.can_save_schema
-            and (save_result is None or save_result.status not in {"blocked", "error"})
+        can_save_schema=save_plan.can_save_schema,
+        save_action_enabled=(
+            draft.is_changed
+            and save_plan.can_save_schema
+            and (save_result is None or save_result.status != "blocked")
         ),
         save_plan_rows=tuple(
             (target.target, target.status, target.reason)
@@ -146,6 +150,7 @@ def state_from_report(
         ),
         save_blocker_rows=_save_blocker_rows(save_plan),
         save_result_rows=_save_result_rows(save_result),
+        save_result_issue_rows=_save_result_issue_rows(save_result),
         draft_change_rows=_draft_change_rows(save_plan),
         projected_feature_rows=tuple(
             (
@@ -276,6 +281,17 @@ def _save_result_rows(
     )
 
 
+def _save_result_issue_rows(
+    result: DataDefinitionSchemaSaveResult | None,
+) -> tuple[tuple[str, ...], ...]:
+    if result is None:
+        return ()
+    return tuple(
+        (issue.severity, issue.code, issue.target, issue.message)
+        for issue in result.issues
+    )
+
+
 def save_status(result: DataDefinitionSchemaSaveResult) -> str:
     """Map a schema-save result to the existing controller status string."""
     if result.status == "written":
@@ -314,9 +330,11 @@ def error_state(exc: Exception) -> DataDefinitionControllerState:
         draft_row_identities=(),
         draft_changed=False,
         can_save_schema=False,
+        save_action_enabled=False,
         save_plan_rows=(),
         save_blocker_rows=(("error", "load_failed", "Data Definition", str(exc)),),
         save_result_rows=(("Status", "Error"), ("Message", str(exc))),
+        save_result_issue_rows=(),
         draft_change_rows=(),
         projected_feature_rows=(),
         mapping_requirement_rows=(),

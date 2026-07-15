@@ -10,8 +10,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QPushButton
 
 from apps.train.controllers.data_definition_controller import DRAFT_FIELDS, DataDefinitionController
+from apps.train.controllers.data_definition_presentation import (
+    project_data_definition_inventory,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
+import core.data_definition.schema_writer as schema_writer_module
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
 
 
@@ -88,7 +92,16 @@ def test_data_definition_controller_surfaces_blocked_candidate_validation(tmp_pa
     assert ("Status", "blocked") in saved.save_result_rows
     assert "candidate_schema_validation_failed" in dict(saved.save_result_rows)["Issues"]
     assert saved.draft_changed
-    assert not saved.can_save_schema
+    assert saved.can_save_schema
+    assert not saved.save_action_enabled
+    assert saved.save_result_issue_rows == (
+        (
+            "error",
+            "candidate_schema_validation_failed",
+            "schema_csv",
+            "line 2 column_key=cooling_capa: invalid data_type 'invalid_type'",
+        ),
+    )
     assert schema_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "backups").exists()
 
@@ -186,7 +199,79 @@ def test_data_definition_panel_failed_save_reprojects_blocked_action_state(tmp_p
         assert panel.status_label.text().startswith("Blocked:")
         assert not panel.save_button.isEnabled()
         assert panel._state.draft_changed
+        assert panel._state.can_save_schema
+        assert not panel._state.save_action_enabled
+        blockers = dict(
+            project_data_definition_inventory(
+                panel._state,
+                selected_identity=("schema_row", "cooling_capa"),
+            ).detail.rows
+        )["Save blockers"]
+        assert "candidate_schema_validation_failed" in blockers
+        assert "invalid data_type 'invalid_type'" in blockers
+        assert blockers != "None"
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_definition_panel_retries_recoverable_schema_write_error(
+    tmp_path,
+    monkeypatch,
+):
+    app = _app()
+    schema_path = _copy_schema(tmp_path)
+    original = schema_path.read_text(encoding="utf-8")
+    real_replace = schema_writer_module.os.replace
+    attempts = 0
+
+    def fail_once(source, destination):  # noqa: ANN001, ANN202
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise OSError("temporary replace failure")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(schema_writer_module.os, "replace", fail_once)
+    panel = DataDefinitionPanel(
+        controller=DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    )
+    try:
+        app.processEvents()
+        label_col = DRAFT_FIELDS.index("label")
+        assert not panel.save_button.isEnabled()
+        assert panel.draft_table.model().setData(
+            panel.draft_table.model().index(0, label_col),
+            "Cooling Capacity",
+            Qt.EditRole,
+        )
+        assert panel.save_button.isEnabled()
+
+        panel.save_button.click()
+        app.processEvents()
+
+        assert dict(panel._state.save_result_rows)["Status"] == "error"
+        assert schema_path.read_text(encoding="utf-8") == original
+        assert panel._state.draft_changed
+        assert panel._state.can_save_schema
+        assert panel._state.save_action_enabled
+        assert panel.save_plan_table.model().cell_value(0, 1) == "planned"
+        assert panel.save_button.isEnabled()
+
+        panel.save_button.click()
+        app.processEvents()
+
+        assert attempts == 2
+        assert dict(panel._state.save_result_rows)["Status"] == "written"
+        assert not panel._state.draft_changed
         assert not panel._state.can_save_schema
+        assert not panel._state.save_action_enabled
+        assert not panel.save_button.isEnabled()
+        loaded = load_predict_schema_catalog_v2(schema_path)
+        assert next(row for row in loaded.rows if row.column_key == "cooling_capa").label == (
+            "Cooling Capacity"
+        )
     finally:
         panel.close()
         panel.deleteLater()

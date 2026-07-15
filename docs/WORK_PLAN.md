@@ -17,22 +17,21 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3A — Data Definition Information Architecture and
-Definition Inventory is implemented on `phase/train-admin-data-definition-ux`.
-The Data Definition tab is inventory-first with deterministic search/filter,
-stable selection, focused detail, progressively disclosed existing diagnostics,
-and Save enablement projected from dirty plus `can_save_schema`. Existing draft,
-validation, writer, mapping, and Predict owners remain unchanged. Slice 3A is
-waiting for audit while PR #16 remains Draft/Open.
+Train/Admin Phase 3 Slice 3A audit correction is implemented on
+`phase/train-admin-data-definition-ux`. Current save-plan capability is separated
+from last-attempt evidence and action enablement, candidate issues reach Focused
+Detail, and removed filter options resolve to `All` with the same final inventory
+projection. Existing draft, validation, writer, mapping, and Predict owners remain
+unchanged. Slice 3A is waiting for re-audit while PR #16 remains Draft/Open.
 
 ## Next Action
 
-Slice 3A audit before starting Slice 3B+3C.
+Slice 3A re-audit before starting Slice 3B+3C.
 
 ## Active Blockers
 
-- No code blocker remains in Slice 3A; the explicit audit hold prevents starting
-  Slice 3B+3C.
+- No code blocker remains in the Slice 3A correction; the explicit re-audit hold
+  prevents starting Slice 3B+3C.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an

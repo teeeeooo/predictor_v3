@@ -224,9 +224,24 @@ class DataDefinitionPanel(QWidget):
         self.save_button.setEnabled(projection.save_enabled)
 
     def _set_filter_options(self, projection: DataDefinitionInventoryProjection) -> None:
-        _replace_options(self.category_filter, "All categories", projection.categories)
-        _replace_options(self.source_filter, "All value sources", projection.source_types)
-        _replace_options(self.state_filter, "All states", projection.lifecycle_states)
+        _replace_options(
+            self.category_filter,
+            "All categories",
+            projection.categories,
+            projection.resolved_category,
+        )
+        _replace_options(
+            self.source_filter,
+            "All value sources",
+            projection.source_types,
+            projection.resolved_source_type,
+        )
+        _replace_options(
+            self.state_filter,
+            "All states",
+            projection.lifecycle_states,
+            projection.resolved_lifecycle_state,
+        )
 
     def _inventory_selection_changed(
         self,
@@ -299,8 +314,12 @@ def _button(
     return button
 
 
-def _replace_options(combo: QComboBox, all_label: str, options: tuple[str, ...]) -> None:
-    selected = str(combo.currentData() or "")
+def _replace_options(
+    combo: QComboBox,
+    all_label: str,
+    options: tuple[str, ...],
+    selected: str,
+) -> None:
     with QSignalBlocker(combo):
         combo.clear()
         combo.addItem(all_label, "")

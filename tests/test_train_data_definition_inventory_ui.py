@@ -17,6 +17,7 @@ from apps.train.controllers.data_definition_presentation import (
 )
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
+import apps.train.ui.data_definition_panel as data_definition_panel_module
 
 
 def _app() -> QApplication:
@@ -66,7 +67,6 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
         panel.close()
         panel.deleteLater()
         app.processEvents()
-
 
 def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
     app = _app()
@@ -146,6 +146,66 @@ def test_inventory_panel_renders_no_match_and_load_error_messages():
         panel.deleteLater()
         app.processEvents()
 
+
+def test_inventory_panel_reconciles_removed_filter_option_without_signal_recursion(
+    monkeypatch,
+):
+    app = _app()
+    panel = DataDefinitionPanel()
+    try:
+        app.processEvents()
+        value_source_col = DRAFT_FIELDS.index("value_source")
+        for identity in (("schema_row", "fin_type"), ("schema_row", "pi")):
+            row = panel._state.draft_row_identities.index(identity)
+            assert panel.draft_table.model().setData(
+                panel.draft_table.model().index(row, value_source_col),
+                "manual",
+                Qt.EditRole,
+            )
+        source_index = panel.source_filter.findData("Rule Options")
+        assert source_index >= 0
+        panel.source_filter.setCurrentIndex(source_index)
+        app.processEvents()
+        assert panel.inventory_table.model().rowCount() == 1
+        assert panel._selected_identity == ("schema_row", "row")
+
+        project_calls = 0
+        real_project = data_definition_panel_module.project_data_definition_inventory
+
+        def counted_project(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+            nonlocal project_calls
+            project_calls += 1
+            return real_project(*args, **kwargs)
+
+        monkeypatch.setattr(
+            data_definition_panel_module,
+            "project_data_definition_inventory",
+            counted_project,
+        )
+        row = panel._state.draft_row_identities.index(("schema_row", "row"))
+        assert panel.draft_table.model().setData(
+            panel.draft_table.model().index(row, value_source_col),
+            "manual",
+            Qt.EditRole,
+        )
+        app.processEvents()
+
+        assert project_calls == 1
+        assert panel.source_filter.currentText() == "All value sources"
+        assert panel.source_filter.currentData() == ""
+        model = panel.inventory_table.model()
+        assert model.rowCount() == len(panel._state.draft_rows)
+        assert tuple(model.identity_at(index) for index in range(model.rowCount())) == (
+            panel._state.draft_row_identities
+        )
+        assert "No definitions match" not in panel.inventory_state_label.text()
+        assert panel._selected_identity == ("schema_row", "row")
+        assert "row" in panel.detail_state_label.text()
+        assert len(panel._state.draft_change_rows) == 3
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
 
 class _FailingService(DataDefinitionService):
     def refresh_report(self, *, training_data_path=None):  # noqa: ANN001
