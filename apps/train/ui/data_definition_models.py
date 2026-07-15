@@ -9,8 +9,98 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 
 from apps.common.ui import style
 from apps.train.controllers.data_definition_controller import DataDefinitionDraftCellState
+from apps.train.controllers.data_definition_presentation import DataDefinitionInventoryRow
 
 DraftCellEditCallback = Callable[[tuple[str, str], str, object], bool]
+
+INVENTORY_HEADERS = (
+    "Label",
+    "Category",
+    "Data Type",
+    "Value Source",
+    "Mapping / Trigger",
+    "Predict",
+    "Model Input",
+    "State",
+)
+
+
+class DataDefinitionInventoryTableModel(QAbstractTableModel):
+    """Read-only inventory model with stable draft-row identities."""
+
+    def __init__(self, rows: Sequence[DataDefinitionInventoryRow] = ()) -> None:
+        super().__init__()
+        self._rows = tuple(rows)
+
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        return 0 if parent.isValid() else len(self._rows)
+
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        return 0 if parent.isValid() else len(INVENTORY_HEADERS)
+
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+        if not self._has_cell(index):
+            return None
+        row = self._rows[index.row()]
+        values = (
+            row.label,
+            row.category,
+            row.data_type,
+            row.source_type,
+            row.relationship,
+            row.predict_visibility,
+            row.model_input,
+            row.lifecycle_state,
+        )
+        if role in (Qt.DisplayRole, Qt.EditRole):
+            return values[index.column()]
+        if role == Qt.ToolTipRole:
+            return f"{row.internal_key}\nML name: {row.ml_name or '—'}"
+        if role == Qt.BackgroundRole and row.lifecycle_state == "Blocked":
+            return style.table_background_role("warning")
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+        return None
+
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.DisplayRole,
+    ) -> Any:
+        if role != Qt.DisplayRole:
+            return None
+        if orientation == Qt.Horizontal:
+            return INVENTORY_HEADERS[section] if 0 <= section < len(INVENTORY_HEADERS) else None
+        return section + 1 if 0 <= section < len(self._rows) else None
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        if not self._has_cell(index):
+            return Qt.NoItemFlags
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def identity_at(self, row: int) -> tuple[str, str] | None:
+        return self._rows[row].identity if 0 <= row < len(self._rows) else None
+
+    def row_for_identity(
+        self,
+        identity: tuple[str, str],
+    ) -> int | None:
+        return next(
+            (index for index, row in enumerate(self._rows) if row.identity == identity),
+            None,
+        )
+
+    def cell_value(self, row: int, column: int) -> str:
+        index = self.index(row, column)
+        return str(self.data(index, Qt.DisplayRole) or "")
+
+    def _has_cell(self, index: QModelIndex) -> bool:
+        return (
+            index.isValid()
+            and 0 <= index.row() < len(self._rows)
+            and 0 <= index.column() < len(INVENTORY_HEADERS)
+        )
 
 
 class DataDefinitionDraftTableModel(QAbstractTableModel):

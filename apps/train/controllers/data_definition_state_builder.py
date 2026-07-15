@@ -92,6 +92,9 @@ class DataDefinitionControllerState:
     one_hot_rows: tuple[tuple[str, ...], ...]
     readiness_rows: tuple[tuple[str, ...], ...]
     issue_rows: tuple[tuple[str, ...], ...]
+    requires_restart: bool
+    requires_retrain: bool
+    impact_summary: str
     last_action_ok: bool = True
 
 
@@ -133,7 +136,10 @@ def state_from_report(
         draft_rows=_draft_rows(draft),
         draft_row_identities=tuple(row.identity for row in draft.rows),
         draft_changed=draft.is_changed,
-        can_save_schema=save_plan.can_save_schema,
+        can_save_schema=(
+            save_plan.can_save_schema
+            and (save_result is None or save_result.status not in {"blocked", "error"})
+        ),
         save_plan_rows=tuple(
             (target.target, target.status, target.reason)
             for target in save_plan.planned_targets
@@ -182,6 +188,9 @@ def state_from_report(
             for row in report.readiness
         ),
         issue_rows=_issue_rows(report.issues),
+        requires_restart=save_plan.requires_restart,
+        requires_retrain=save_plan.requires_retrain,
+        impact_summary=save_plan.restart_impact.message,
         last_action_ok=last_action_ok,
     )
 
@@ -314,5 +323,8 @@ def error_state(exc: Exception) -> DataDefinitionControllerState:
         one_hot_rows=(),
         readiness_rows=(),
         issue_rows=(("error", "load_failed", "Data Definition", str(exc)),),
+        requires_restart=False,
+        requires_retrain=False,
+        impact_summary="Impact unavailable because Data Definition failed to load.",
         last_action_ok=False,
     )

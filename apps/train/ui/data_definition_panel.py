@@ -1,15 +1,20 @@
-"""Read-only Data Definition Train/Admin panel."""
+"""Inventory-first Data Definition Train/Admin panel."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
+from PySide6.QtCore import QModelIndex, QSignalBlocker, Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QFrame,
     QGridLayout,
-    QHeaderView,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
-    QScrollArea,
+    QSplitter,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -20,47 +25,25 @@ from apps.train.controllers.data_definition_controller import (
     DataDefinitionController,
     DataDefinitionControllerState,
 )
-from apps.train.ui.data_definition_models import DataDefinitionDraftTableModel
+from apps.train.controllers.data_definition_detail_projection import DataDefinitionDetailState
+from apps.train.controllers.data_definition_presentation import (
+    DataDefinitionInventoryProjection,
+    project_data_definition_inventory,
+)
+from apps.train.ui.data_definition_diagnostics import (
+    DataDefinitionDiagnostics,
+    definition_table,
+)
+from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 
-SUMMARY_HEADERS = ("Metric", "Value")
-DRAFT_CHANGE_HEADERS = ("Source", "Row Key", "Field", "Before", "After")
-SAVE_PLAN_HEADERS = ("Target", "Status", "Reason")
-SAVE_BLOCKER_HEADERS = ("Severity", "Code", "Target", "Message")
-SAVE_RESULT_HEADERS = ("Metric", "Value")
-PROJECTED_FEATURE_HEADERS = (
-    "Order",
-    "Role",
-    "ML Name",
-    "UI Key",
-    "Label",
-    "Source",
-    "Mapping Key",
-    "One-hot Group",
-    "Zero-fill",
-    "Active",
-)
-MAPPING_REQUIREMENT_HEADERS = (
-    "Column Key",
-    "ML Name",
-    "Mapping Entity",
-    "Mapping Attribute",
-    "Trigger Column",
-    "Rule ID",
-)
-ONE_HOT_HEADERS = (
-    "Selector",
-    "One-hot Group",
-    "Emitted ML Names",
-    "Catalog ML Names",
-    "Parity",
-)
-READINESS_HEADERS = ("Name", "Status", "Message")
-ISSUE_HEADERS = ("Severity", "Code", "Subject", "Message")
+DETAIL_HEADERS = ("Property", "Value")
+INVENTORY_INITIAL_WIDTH = 760
+DETAIL_INITIAL_WIDTH = 500
 
 
 class DataDefinitionPanel(QWidget):
-    """Read-only Data Definition report surface."""
+    """Inventory-first manager over the existing Data Definition lifecycle."""
 
     def __init__(
         self,
@@ -71,19 +54,28 @@ class DataDefinitionPanel(QWidget):
         self.setObjectName("DataDefinitionPanel")
         self.setAccessibleName("Data Definition")
         self._controller = controller or DataDefinitionController()
-        self.status_label = QLabel("Data Definition report pending.")
+        self._state: DataDefinitionControllerState | None = None
+        self._selected_identity: tuple[str, str] | None = None
+
+        self.status_label = QLabel("Data Definition pending.")
         self.status_label.setObjectName("PanelTitle")
-        self.summary_table = _table("Data Definition Summary")
-        self.draft_table = _table("Data Definition Draft", editable=True)
-        self.draft_changes_table = _table("Data Definition Draft Changes")
-        self.save_plan_table = _table("Data Definition Save Plan")
-        self.save_blockers_table = _table("Data Definition Save Blockers")
-        self.save_result_table = _table("Data Definition Save Result")
-        self.projected_features_table = _table("Projected Features")
-        self.mapping_requirements_table = _table("Mapping Requirements")
-        self.one_hot_table = _table("One-hot Relationships")
-        self.readiness_table = _table("Readiness")
-        self.issues_table = _table("Issues")
+        self.status_label.setAccessibleName("Data Definition application status")
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search label, key, or ML name")
+        self.search_input.setAccessibleName("Search Data Definitions")
+        self.category_filter = _filter_combo("Filter Data Definitions by category")
+        self.source_filter = _filter_combo("Filter Data Definitions by value source")
+        self.state_filter = _filter_combo("Filter Data Definitions by state")
+        self.inventory_state_label = QLabel()
+        self.inventory_state_label.setAccessibleName("Data Definition inventory state")
+        self.inventory_table = definition_table("Data Definition Inventory")
+        self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.detail_state_label = QLabel()
+        self.detail_state_label.setWordWrap(True)
+        self.detail_state_label.setAccessibleName("Selected Data Definition state")
+        self.detail_table = definition_table("Selected Data Definition Detail")
+        self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
+        self._publish_diagnostic_table_aliases()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -94,11 +86,14 @@ class DataDefinitionPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_command_bar())
-        layout.addWidget(self._build_body(), 1)
+        layout.addWidget(self._build_filter_bar())
+        layout.addWidget(self._build_workspace(), 1)
+        layout.addWidget(self.diagnostics)
+        self._connect_filters()
         self.refresh()
 
     def refresh(self) -> None:
-        """Reload report state through the controller."""
+        """Reload report and draft through the existing controller owner."""
         self._apply_state(self._controller.refresh())
 
     def _build_command_bar(self) -> QFrame:
@@ -112,45 +107,57 @@ class DataDefinitionPanel(QWidget):
             style.spacing("space.panel"),
             style.spacing("space.sm"),
         )
-        refresh_button = QPushButton("Refresh")
-        refresh_button.setAccessibleName("Refresh Data Definition")
-        refresh_button.clicked.connect(self.refresh)
-        reset_button = QPushButton("Reset Draft")
-        reset_button.setAccessibleName("Reset Data Definition Draft")
-        reset_button.clicked.connect(self._reset_draft)
-        self.save_button = QPushButton("Save")
-        self.save_button.setObjectName("PrimaryButton")
-        self.save_button.setAccessibleName("Save Data Definition Schema")
-        self.save_button.clicked.connect(self._save_schema)
+        refresh_button = _button("Refresh", "Refresh Data Definition", self.refresh)
+        reset_button = _button("Reset Draft", "Reset Data Definition Draft", self._reset_draft)
         layout.addWidget(refresh_button, 0, 0)
         layout.addWidget(reset_button, 0, 1)
-        layout.addWidget(self.save_button, 0, 2)
-        layout.addWidget(self.status_label, 0, 3)
-        layout.setColumnStretch(3, 1)
+        for column, label in enumerate(("Add Definition", "Add Mapping Attribute", "Edit"), 2):
+            button = QPushButton(label)
+            button.setAccessibleName(f"Future Data Definition action: {label}")
+            button.setToolTip("Available in the next Phase 3 implementation slice.")
+            button.setEnabled(False)
+            layout.addWidget(button, 0, column)
+        self.save_button = _button("Save", "Save Data Definition Schema", self._save_schema)
+        self.save_button.setObjectName("PrimaryButton")
+        layout.addWidget(self.save_button, 0, 5)
+        layout.addWidget(self.status_label, 0, 6)
+        layout.setColumnStretch(6, 1)
         return panel
 
-    def _build_body(self) -> QScrollArea:
-        scroll = QScrollArea(self)
-        scroll.setWidgetResizable(True)
-        container = QWidget(scroll)
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
+    def _build_filter_bar(self) -> QFrame:
+        panel = QFrame(self)
+        panel.setObjectName("Panel")
+        panel.setStyleSheet(style.panel_stylesheet())
+        layout = QHBoxLayout(panel)
+        layout.setContentsMargins(
+            style.spacing("space.panel"),
+            style.spacing("space.sm"),
+            style.spacing("space.panel"),
+            style.spacing("space.sm"),
+        )
         layout.setSpacing(style.spacing("space.sm"))
-        layout.addWidget(self._panel("Summary", self.summary_table, height=190))
-        layout.addWidget(self._panel("Draft", self.draft_table, height=320))
-        layout.addWidget(self._panel("Draft Changes", self.draft_changes_table, height=160))
-        layout.addWidget(self._panel("Save Plan Preview", self.save_plan_table, height=150))
-        layout.addWidget(self._panel("Save Blockers", self.save_blockers_table, height=170))
-        layout.addWidget(self._panel("Save Result", self.save_result_table, height=170))
-        layout.addWidget(self._panel("Projected Features", self.projected_features_table))
-        layout.addWidget(self._panel("Mapping Requirements", self.mapping_requirements_table))
-        layout.addWidget(self._panel("One-hot Relationships", self.one_hot_table, height=180))
-        layout.addWidget(self._panel("Readiness", self.readiness_table, height=180))
-        layout.addWidget(self._panel("Issues", self.issues_table, height=180))
-        scroll.setWidget(container)
-        return scroll
+        layout.addWidget(self.search_input, 2)
+        layout.addWidget(self.category_filter, 1)
+        layout.addWidget(self.source_filter, 1)
+        layout.addWidget(self.state_filter, 1)
+        return panel
 
-    def _panel(self, title: str, table: QTableView, *, height: int = 260) -> QFrame:
+    def _build_workspace(self) -> QSplitter:
+        splitter = QSplitter(self)
+        splitter.setAccessibleName("Definition inventory and focused detail")
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(
+            self._panel("Definition Inventory", self.inventory_state_label, self.inventory_table)
+        )
+        splitter.addWidget(
+            self._panel("Focused Detail", self.detail_state_label, self.detail_table)
+        )
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+        splitter.setSizes((INVENTORY_INITIAL_WIDTH, DETAIL_INITIAL_WIDTH))
+        return splitter
+
+    def _panel(self, title: str, state_label: QLabel, table: QTableView) -> QFrame:
         panel = QFrame(self)
         panel.setObjectName("Panel")
         panel.setAccessibleName(f"Data Definition {title}")
@@ -162,65 +169,93 @@ class DataDefinitionPanel(QWidget):
             style.spacing("space.panel"),
             style.spacing("space.panel"),
         )
-        layout.setSpacing(style.spacing("space.sm"))
+        layout.setSpacing(style.spacing("space.xs"))
         heading = QLabel(title)
         heading.setObjectName("PanelTitle")
         heading.setFont(style.qfont("font.panel_title"))
-        table.setMinimumHeight(height)
         layout.addWidget(heading)
+        layout.addWidget(state_label)
         layout.addWidget(table, 1)
         return panel
 
+    def _connect_filters(self) -> None:
+        self.search_input.textChanged.connect(self._apply_inventory)
+        self.category_filter.currentIndexChanged.connect(self._apply_inventory)
+        self.source_filter.currentIndexChanged.connect(self._apply_inventory)
+        self.state_filter.currentIndexChanged.connect(self._apply_inventory)
+
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
-        self.status_label.setText(f"{state.message} ({state.status})")
-        self.summary_table.setModel(
-            ReadOnlyMappingTableModel(SUMMARY_HEADERS, state.summary_rows)
+        self._state = state
+        self.diagnostics.apply_state(state)
+        self._apply_inventory()
+
+    def _apply_inventory(self) -> None:
+        if self._state is None:
+            return
+        projection = project_data_definition_inventory(
+            self._state,
+            search=self.search_input.text(),
+            category=str(self.category_filter.currentData() or ""),
+            source_type=str(self.source_filter.currentData() or ""),
+            lifecycle_state=str(self.state_filter.currentData() or ""),
+            selected_identity=self._selected_identity,
         )
-        self.draft_table.setModel(
-            DataDefinitionDraftTableModel(
-                state.draft_headers,
-                state.draft_row_identities,
-                state.draft_rows,
-                on_cell_changed=self._edit_draft_cell,
-            )
+        self._set_filter_options(projection)
+        self._selected_identity = projection.selected_identity
+        self.status_label.setText(
+            f"{projection.status_label}: {self._state.message}"
         )
-        self.draft_changes_table.setModel(
-            ReadOnlyMappingTableModel(DRAFT_CHANGE_HEADERS, state.draft_change_rows)
+        self.inventory_state_label.setText(projection.view_message)
+        model = DataDefinitionInventoryTableModel(projection.rows)
+        self.inventory_table.setModel(model)
+        self.inventory_table.resizeColumnsToContents()
+        row_index = (
+            model.row_for_identity(projection.selected_identity)
+            if projection.selected_identity is not None
+            else None
         )
-        self.save_plan_table.setModel(
-            ReadOnlyMappingTableModel(SAVE_PLAN_HEADERS, state.save_plan_rows)
+        if row_index is not None:
+            self.inventory_table.selectRow(row_index)
+            self.inventory_table.setCurrentIndex(model.index(row_index, 0))
+        self.inventory_table.selectionModel().currentRowChanged.connect(
+            self._inventory_selection_changed
         )
-        self.save_blockers_table.setModel(
-            ReadOnlyMappingTableModel(SAVE_BLOCKER_HEADERS, state.save_blocker_rows)
+        self._apply_detail(projection.detail)
+        self.save_button.setEnabled(projection.save_enabled)
+
+    def _set_filter_options(self, projection: DataDefinitionInventoryProjection) -> None:
+        _replace_options(self.category_filter, "All categories", projection.categories)
+        _replace_options(self.source_filter, "All value sources", projection.source_types)
+        _replace_options(self.state_filter, "All states", projection.lifecycle_states)
+
+    def _inventory_selection_changed(
+        self,
+        current: QModelIndex,
+        _previous: QModelIndex,
+    ) -> None:
+        model = self.inventory_table.model()
+        if not isinstance(model, DataDefinitionInventoryTableModel):
+            return
+        identity = model.identity_at(current.row())
+        if identity is None or self._state is None:
+            return
+        self._selected_identity = identity
+        projection = project_data_definition_inventory(
+            self._state,
+            search=self.search_input.text(),
+            category=str(self.category_filter.currentData() or ""),
+            source_type=str(self.source_filter.currentData() or ""),
+            lifecycle_state=str(self.state_filter.currentData() or ""),
+            selected_identity=identity,
         )
-        self.save_result_table.setModel(
-            ReadOnlyMappingTableModel(SAVE_RESULT_HEADERS, state.save_result_rows)
+        self._apply_detail(projection.detail)
+
+    def _apply_detail(self, detail: DataDefinitionDetailState) -> None:
+        self.detail_state_label.setText(
+            f"{detail.title} — {detail.message}" if detail.message else detail.title
         )
-        self.projected_features_table.setModel(
-            ReadOnlyMappingTableModel(
-                PROJECTED_FEATURE_HEADERS,
-                state.projected_feature_rows,
-            )
-        )
-        self.mapping_requirements_table.setModel(
-            ReadOnlyMappingTableModel(
-                MAPPING_REQUIREMENT_HEADERS,
-                state.mapping_requirement_rows or (("none", "", "", "", "", ""),),
-            )
-        )
-        self.one_hot_table.setModel(
-            ReadOnlyMappingTableModel(ONE_HOT_HEADERS, state.one_hot_rows)
-        )
-        self.readiness_table.setModel(
-            ReadOnlyMappingTableModel(READINESS_HEADERS, state.readiness_rows)
-        )
-        self.issues_table.setModel(
-            ReadOnlyMappingTableModel(ISSUE_HEADERS, state.issue_rows)
-        )
-        for table in _tables(self):
-            table.resizeColumnsToContents()
-        self.draft_table.resizeColumnsToContents()
-        self.save_button.setEnabled(bool(state.draft_rows))
+        self.detail_table.setModel(ReadOnlyMappingTableModel(DETAIL_HEADERS, detail.rows))
+        self.detail_table.resizeColumnsToContents()
 
     def _reset_draft(self) -> None:
         self._apply_state(self._controller.reset_draft())
@@ -238,39 +273,43 @@ class DataDefinitionPanel(QWidget):
         self._apply_state(state)
         return state.last_action_ok
 
+    def _publish_diagnostic_table_aliases(self) -> None:
+        for name in (
+            "summary_table", "draft_table", "draft_changes_table", "save_plan_table",
+            "save_blockers_table", "save_result_table", "projected_features_table",
+            "mapping_requirements_table", "one_hot_table", "readiness_table", "issues_table",
+        ):
+            setattr(self, name, getattr(self.diagnostics, name))
 
-def _table(accessible_name: str, *, editable: bool = False) -> QTableView:
-    table = QTableView()
-    table.setObjectName(accessible_name.replace(" ", ""))
-    table.setAccessibleName(accessible_name)
-    if editable:
-        table.setEditTriggers(
-            QAbstractItemView.DoubleClicked
-            | QAbstractItemView.EditKeyPressed
-            | QAbstractItemView.SelectedClicked
-        )
-        table.setSelectionBehavior(QAbstractItemView.SelectItems)
-    else:
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-    table.setSelectionMode(QAbstractItemView.ExtendedSelection)
-    table.setAlternatingRowColors(True)
-    table.verticalHeader().setVisible(True)
-    table.horizontalHeader().setStretchLastSection(True)
-    table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-    return table
+
+def _filter_combo(accessible_name: str) -> QComboBox:
+    combo = QComboBox()
+    combo.setAccessibleName(accessible_name)
+    return combo
+
+
+def _button(
+    text: str,
+    accessible_name: str,
+    callback: Callable[[], None],
+) -> QPushButton:
+    button = QPushButton(text)
+    button.setAccessibleName(accessible_name)
+    button.clicked.connect(callback)
+    return button
+
+
+def _replace_options(combo: QComboBox, all_label: str, options: tuple[str, ...]) -> None:
+    selected = str(combo.currentData() or "")
+    with QSignalBlocker(combo):
+        combo.clear()
+        combo.addItem(all_label, "")
+        for option in options:
+            combo.addItem(option, option)
+        index = combo.findData(selected)
+        combo.setCurrentIndex(index if index >= 0 else 0)
 
 
 def _tables(panel: DataDefinitionPanel) -> tuple[QTableView, ...]:
-    return (
-        panel.summary_table,
-        panel.draft_changes_table,
-        panel.save_plan_table,
-        panel.save_blockers_table,
-        panel.save_result_table,
-        panel.projected_features_table,
-        panel.mapping_requirements_table,
-        panel.one_hot_table,
-        panel.readiness_table,
-        panel.issues_table,
-    )
+    """Return preserved read-only diagnostic tables for compatibility tests."""
+    return panel.diagnostics.read_only_tables()

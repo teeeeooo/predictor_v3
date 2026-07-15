@@ -17,22 +17,22 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 — Data Definition UX Overhaul has started from merged Phase 2
-`main` at `f381c90960153600b5e218528e36914e5b093d1a`. The current-state audit is
-complete and the active Phase 3 design now reflects the actual editable draft,
-schema-only writer, ML compatibility blocker, dynamic Data Mapping requirement,
-and missing public handoff boundaries. No production code has changed.
+Train/Admin Phase 3 Slice 3A — Data Definition Information Architecture and
+Definition Inventory is implemented on `phase/train-admin-data-definition-ux`.
+The Data Definition tab is inventory-first with deterministic search/filter,
+stable selection, focused detail, progressively disclosed existing diagnostics,
+and Save enablement projected from dirty plus `can_save_schema`. Existing draft,
+validation, writer, mapping, and Predict owners remain unchanged. Slice 3A is
+waiting for audit while PR #16 remains Draft/Open.
 
 ## Next Action
 
-Implement Slice 3A on `phase/train-admin-data-definition-ux`: replace the default
-report stack with an inventory/search/filter/focused-detail presentation while
-preserving the existing draft, diagnostics, validation, Reset, and guarded Save
-owners. Slice 3A does not add controlled Add/Edit intent commands.
+Slice 3A audit before starting Slice 3B+3C.
 
 ## Active Blockers
 
-- No code blocker prevents Slice 3A.
+- No code blocker remains in Slice 3A; the explicit audit hold prevents starting
+  Slice 3B+3C.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
@@ -47,8 +47,8 @@ owners. Slice 3A does not add controlled Add/Edit intent commands.
   `mapping.json` contract.
 - Reuse the existing Qt-free draft, edit policy, projection, validation, save-plan,
   schema-writer, and readiness owners.
-- Keep Slice 3A presentation-only except for correcting visible action enablement
-  to match the existing application state.
+- Keep the accepted Slice 3A presentation owner Qt-free/presentation-only and
+  derive visible action enablement from existing controller/save-plan state.
 - Use repository fixtures and mock data; do not add company production data or
   infer model quality or production readiness.
 - Keep Cooling and Heating models independent, including monotone constraints.

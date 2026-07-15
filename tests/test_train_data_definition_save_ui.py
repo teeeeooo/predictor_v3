@@ -87,6 +87,8 @@ def test_data_definition_controller_surfaces_blocked_candidate_validation(tmp_pa
     assert saved.status == "blocked"
     assert ("Status", "blocked") in saved.save_result_rows
     assert "candidate_schema_validation_failed" in dict(saved.save_result_rows)["Issues"]
+    assert saved.draft_changed
+    assert not saved.can_save_schema
     assert schema_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "backups").exists()
 
@@ -154,6 +156,37 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
         assert result_rows["Success"] == "true"
         assert panel.save_plan_table.model().cell_value(0, 1) == "no_op"
         assert not panel.draft_table.model().is_changed_cell(0, label_col)
+        assert not panel.save_button.isEnabled()
+        assert panel.status_label.text().startswith("Saved:")
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_definition_panel_failed_save_reprojects_blocked_action_state(tmp_path):
+    app = _app()
+    schema_path = _copy_schema(tmp_path)
+    panel = DataDefinitionPanel(
+        controller=DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    )
+    try:
+        app.processEvents()
+        data_type_col = DRAFT_FIELDS.index("data_type")
+        assert panel.draft_table.model().setData(
+            panel.draft_table.model().index(0, data_type_col),
+            "invalid_type",
+            Qt.EditRole,
+        )
+        assert panel.save_button.isEnabled()
+
+        panel.save_button.click()
+        app.processEvents()
+
+        assert panel.status_label.text().startswith("Blocked:")
+        assert not panel.save_button.isEnabled()
+        assert panel._state.draft_changed
+        assert not panel._state.can_save_schema
     finally:
         panel.close()
         panel.deleteLater()
