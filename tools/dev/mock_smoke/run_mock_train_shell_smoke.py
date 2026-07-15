@@ -12,7 +12,7 @@ if __package__ in {None, ""}:
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton  # noqa: E402
+from PySide6.QtWidgets import QApplication, QAbstractButton, QLabel, QPushButton  # noqa: E402
 
 from apps.predict.ui.workspace import PredictWorkspace  # noqa: E402
 from apps.train.app import create_shell  # noqa: E402
@@ -80,11 +80,9 @@ def main() -> int:
         raise RuntimeError(f"unexpected Train controls: {sorted(train_buttons)}")
     mapping_buttons = {
         button.text(): button
-        for button in shell.tabs.widget(3).findChildren(QPushButton)
+        for button in shell.tabs.widget(3).findChildren(QAbstractButton)
     }
-    if "Import" in mapping_buttons:
-        raise RuntimeError("removed Data Mapping Import placeholder is visible")
-    for text in ("Refresh", "Add Row", "Export", "Reload"):
+    for text in ("Refresh", "Add", "Export", "Import", "Reload"):
         if not mapping_buttons[text].isEnabled():
             raise RuntimeError(f"Data Mapping control is disabled: {text}")
     print("train shell smoke: tabs/status/active controls OK")

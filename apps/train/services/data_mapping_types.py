@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Protocol
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Protocol
 
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
+from core.mapping.exchange.diff import MappingExchangeGroupDiff
 from core.mapping.entity_model import MappingValidationError
 
 
@@ -17,6 +19,24 @@ class DataMappingAction:
     label: str
     enabled: bool
     reason: str
+
+
+@dataclass(frozen=True)
+class DataMappingCellEdit:
+    """One visible mapping-cell mutation requested by the UI."""
+
+    row_index: int
+    column: str
+    value: Any
+
+
+@dataclass(frozen=True)
+class DataMappingMutationResult:
+    """Outcome for one grouped mapping mutation intent."""
+
+    applied: int = 0
+    blocked: int = 0
+    message: str = ""
 
 
 @dataclass(frozen=True)
@@ -34,6 +54,42 @@ class DataMappingSnapshot:
     def is_valid(self) -> bool:
         """Return whether the mapping editor draft has no blocking issues."""
         return self.validation_result.save_enabled
+
+
+@dataclass(frozen=True)
+class DataMappingImportPreview:
+    """Prepared, non-mutating full-snapshot import preview."""
+
+    source_path: Path
+    format_version: str
+    group_diffs: tuple[MappingExchangeGroupDiff, ...] = ()
+    blockers: tuple[MappingValidationError, ...] = ()
+    warnings: tuple[MappingValidationError, ...] = ()
+    candidate: MappingEditorDraft | None = field(default=None, repr=False, compare=False)
+    base_draft: MappingEditorDraft | None = field(default=None, repr=False, compare=False)
+
+    @property
+    def can_apply(self) -> bool:
+        """Return whether Apply to Draft is allowed."""
+        return self.candidate is not None and not self.blockers
+
+    @property
+    def affected_group_count(self) -> int:
+        """Return the number of groups with a visible semantic change."""
+        return sum(
+            bool(diff.added_rows or diff.removed_rows or diff.changed_rows)
+            for diff in self.group_diffs
+        )
+
+
+@dataclass(frozen=True)
+class DataMappingImportApplyResult:
+    """Outcome of applying a prepared import candidate."""
+
+    success: bool
+    changed: bool = False
+    stale: bool = False
+    message: str = ""
 
 
 class MappingDraftProvider(Protocol):

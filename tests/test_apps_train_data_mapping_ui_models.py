@@ -1,9 +1,10 @@
 """Train Data Mapping UI model foundation tests."""
 
 import os
+from pathlib import Path
 
 from PySide6.QtCore import QModelIndex, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QHeaderView
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import (
@@ -17,16 +18,30 @@ from apps.train.ui.data_mapping_panel import (
     DataMappingPanel,
     _resolve_export_selection,
 )
+from apps.train.ui.data_mapping_table_sizing import (
+    ROW_COUNT_COLUMN_WIDTH,
+    TABLE_COLUMN_MAX_WIDTH,
+    TABLE_COLUMN_MIN_WIDTH,
+)
 from apps.train.ui.data_mapping_view_models import (
     ATTRIBUTE_HEADERS,
     ENTITY_HEADERS,
+    GROUP_HEADERS,
     VALIDATION_HEADERS,
     attribute_rows,
     entity_rows,
+    group_rows,
+    status_kind,
+    status_summary,
     validation_rows,
     value_headers,
     value_rows,
+    workspace_state_copy,
 )
+from core.mapping.editor_projection import project_runtime_mapping_to_editor_draft
+
+
+RUNTIME_FIXTURE = Path("tests/fixtures/mapping/mapping_runtime_equivalent.json")
 
 
 def _app() -> QApplication:
@@ -57,7 +72,7 @@ def test_read_only_mapping_table_model_guards_invalid_ax_access():
     assert model.data(QModelIndex(), Qt.DisplayRole) is None
     assert model.data(model.createIndex(99, 0), Qt.DisplayRole) is None
     assert model.data(model.createIndex(0, 99), Qt.DisplayRole) is None
-    assert model.data(model.index(0, 0), Qt.ToolTipRole) is None
+    assert model.data(model.index(0, 0), Qt.ToolTipRole) == "x"
     assert model.headerData(-1, Qt.Horizontal, Qt.DisplayRole) is None
     assert model.headerData(99, Qt.Horizontal, Qt.DisplayRole) is None
     assert model.headerData(99, Qt.Vertical, Qt.DisplayRole) is None
@@ -109,6 +124,16 @@ def test_attribute_and_value_view_models_are_table_ready():
     assert value_model.cell_value(0, 2) == "8.2"
 
 
+def test_group_navigation_rows_only_expose_label_and_row_count():
+    state = _foundation_controller().refresh("odu_cond_specs")
+    model = ReadOnlyMappingTableModel(GROUP_HEADERS, group_rows(state))
+
+    assert model.columnCount() == 2
+    assert model.cell_value(0, 0) == "IDU"
+    assert model.cell_value(6, 0) == "ODU Cond Specs"
+    assert model.cell_value(6, 1) == "1"
+
+
 def test_validation_rows_represent_current_draft_state():
     state = _foundation_controller().refresh()
     validation_model = ReadOnlyMappingTableModel(
@@ -132,24 +157,347 @@ def test_data_mapping_panel_builds_editable_manager_surface():
         assert panel.accessibleName() == "Data Mapping Manager"
         assert panel.entity_table.accessibleName() == "Groups"
         assert not hasattr(panel, "actions_table")
-        assert panel.entity_table.minimumWidth() >= 380
-        assert not panel.entity_table.currentIndex().isValid()
+        assert panel.entity_table.parentWidget().minimumWidth() >= 180
+        assert panel.entity_table.parentWidget().maximumWidth() <= 300
+        assert panel.entity_table.currentIndex().isValid()
         assert panel._buttons["add_row"].isEnabled()
-        assert panel._buttons["duplicate_row"].isEnabled()
-        assert panel._buttons["delete_row"].isEnabled()
+        assert not panel._buttons["duplicate_row"].isEnabled()
+        assert not panel._buttons["delete_row"].isEnabled()
         assert panel._buttons["export_csv_v2"].isEnabled()
         assert not panel._buttons["save_mapping_json"].isEnabled()
         assert panel._buttons["reload_runtime"].isEnabled()
+        assert panel._buttons["refresh_view"].isEnabled()
+        assert "without reading the source" in panel._buttons["refresh_view"].toolTip()
+        assert "unsaved changes" in panel._buttons["reload_runtime"].toolTip()
+        assert "in-memory draft" in panel._buttons["refresh_view"].accessibleDescription()
+        assert "mapping source" in panel._buttons["reload_runtime"].accessibleDescription()
+        panel.row_table.setCurrentIndex(panel.row_table.model().index(0, 0))
+        app.processEvents()
+        assert panel._buttons["duplicate_row"].isEnabled()
+        assert panel._buttons["delete_row"].isEnabled()
         assert "read-only review snapshot" in panel._buttons["export_csv_v2"].toolTip()
         assert [button.text() for button in panel._buttons.values()] == [
-            "Add Row",
+            "Add",
             "Duplicate",
-            "Delete",
-            "Export",
-            "Save",
+                "Delete",
+                "Export",
+                "Import",
+                "Save",
+            "Refresh",
             "Reload",
         ]
         assert panel.status_label.text() == "Ready."
+        group_header = panel.entity_table.horizontalHeader()
+        attribute_header = panel.attribute_table.horizontalHeader()
+        validation_header = panel.validation_table.horizontalHeader()
+        assert not panel.row_table.horizontalHeader().stretchLastSection()
+        assert not group_header.stretchLastSection()
+        assert group_header.sectionResizeMode(0) == QHeaderView.Stretch
+        assert group_header.sectionResizeMode(1) == QHeaderView.Fixed
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
+        notes_section = ATTRIBUTE_HEADERS.index("Notes")
+        message_section = VALIDATION_HEADERS.index("Message")
+        assert attribute_header.sectionResizeMode(notes_section) == QHeaderView.Stretch
+        assert validation_header.sectionResizeMode(message_section) == QHeaderView.Stretch
+        assert all(
+            attribute_header.sectionResizeMode(section) == QHeaderView.Interactive
+            for section in range(len(ATTRIBUTE_HEADERS))
+            if section != notes_section
+        )
+        assert all(
+            validation_header.sectionResizeMode(section) == QHeaderView.Interactive
+            for section in range(len(VALIDATION_HEADERS))
+            if section != message_section
+        )
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_populated_fixture_navigation_updates_primary_table():
+    app = _app()
+    controller = DataMappingController(
+        DataMappingService(RuntimeMappingCatalogProvider(str(RUNTIME_FIXTURE)))
+    )
+    panel = DataMappingPanel(controller=controller)
+    try:
+        panel.resize(1280, 760)
+        panel.show()
+        app.processEvents()
+
+        group_model = panel.entity_table.model()
+        assert [group_model.cell_value(row, 0) for row in range(7)] == [
+            "IDU",
+            "Evap Index",
+            "ODU",
+            "Compressor",
+            "Refrigerant",
+            "Expansion",
+            "ODU Cond Specs",
+        ]
+        assert [group_model.cell_value(row, 1) for row in range(7)] == [
+            "9", "13", "5", "3", "2", "2", "22"
+        ]
+        idu_last_column = panel.row_table.model().columnCount() - 1
+        assert panel.row_table.model().headerData(idu_last_column, Qt.Horizontal) == "Size"
+        assert panel.row_table.columnWidth(idu_last_column) <= TABLE_COLUMN_MAX_WIDTH
+        assert (
+            panel.row_table.columnWidth(idu_last_column)
+            < panel.row_table.viewport().width() * 0.5
+        )
+
+        panel.entity_table.setCurrentIndex(group_model.index(6, 0))
+        app.processEvents()
+
+        assert panel._selected_group_key == "odu_cond_specs"
+        assert panel.row_table.model().rowCount() == 22
+        assert panel.row_table.model().headerData(0, Qt.Horizontal) == "ODU"
+        assert panel.primary_title.text() == "ODU Cond Specs Mapping Rows"
+        assert panel.workspace_stack.currentWidget() is panel.primary_panel
+        assert panel.content_splitter.sizes()[0] > panel.content_splitter.sizes()[1]
+        header = panel.row_table.horizontalHeader()
+        widths = [
+            panel.row_table.columnWidth(column)
+            for column in range(panel.row_table.model().columnCount())
+        ]
+        assert not header.stretchLastSection()
+        assert all(
+            header.sectionResizeMode(column) == QHeaderView.Interactive
+            for column in range(len(widths))
+        )
+        assert all(
+            TABLE_COLUMN_MIN_WIDTH <= width <= TABLE_COLUMN_MAX_WIDTH
+            for width in widths
+        )
+        assert widths[-1] < panel.row_table.viewport().width() * 0.5
+
+        panel.refresh()
+        app.processEvents()
+        refreshed_header = panel.row_table.horizontalHeader()
+        assert not refreshed_header.stretchLastSection()
+        assert all(
+            refreshed_header.sectionResizeMode(column) == QHeaderView.Interactive
+            for column in range(panel.row_table.model().columnCount())
+        )
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_group_refresh_preserves_selection_and_draft():
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    try:
+        panel.show()
+        app.processEvents()
+        group_model = panel.entity_table.model()
+        panel.entity_table.setCurrentIndex(group_model.index(6, 0))
+        app.processEvents()
+        value_model = panel.row_table.model()
+        assert value_model.setData(value_model.index(0, 4), "4.25", Qt.EditRole)
+
+        panel.refresh()
+        app.processEvents()
+
+        assert panel._selected_group_key == "odu_cond_specs"
+        assert panel.entity_table.currentIndex().row() == 6
+        assert panel.row_table.model().cell_value(0, 4) == "4.25"
+        assert panel._dirty
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_keeps_dirty_rows_visible_when_source_disappears(tmp_path):
+    app = _app()
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_bytes(RUNTIME_FIXTURE.read_bytes())
+    panel = DataMappingPanel(
+        controller=DataMappingController(
+            DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+        )
+    )
+    try:
+        app.processEvents()
+        model = panel.row_table.model()
+        assert model.setData(model.index(0, 1), "99.5", Qt.EditRole)
+        mapping_file.unlink()
+
+        panel.refresh()
+        app.processEvents()
+
+        assert panel.workspace_stack.currentWidget() is panel.primary_panel
+        assert panel._selected_group_key == "idu"
+        assert panel.row_table.model().cell_value(0, 1) == "99.5"
+        assert panel._dirty
+        assert "Source missing" in panel.status_label.text()
+        assert "Resource: Missing" in panel.summary_label.text()
+        assert panel._buttons["save_mapping_json"].isEnabled()
+        assert panel._buttons["refresh_view"].isEnabled()
+        assert panel._buttons["reload_runtime"].isEnabled()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_refresh_button_does_not_invoke_reload(monkeypatch):
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    calls = []
+    try:
+        app.processEvents()
+        original_refresh = panel._controller.refresh
+        monkeypatch.setattr(
+            panel._controller,
+            "refresh",
+            lambda selected="": calls.append(("refresh", selected))
+            or original_refresh(selected),
+        )
+        monkeypatch.setattr(
+            panel._controller,
+            "reload",
+            lambda selected="": calls.append(("reload", selected)),
+        )
+
+        panel._buttons["refresh_view"].click()
+        app.processEvents()
+
+        assert calls == [("refresh", "idu")]
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_status_and_workspace_copy_keep_cached_missing_draft_populated():
+    controller = _foundation_controller()
+    state = controller.refresh("idu")
+    missing_cached = type(state)(
+        **{
+            **state.__dict__,
+            "status": "warning",
+            "message": "Unsaved changes. Source missing.",
+            "resource_status": "missing",
+            "dirty": True,
+        }
+    )
+
+    assert status_kind(missing_cached) == "warning"
+    assert "Resource: Missing" in status_summary(missing_cached)
+    assert "Draft: Unsaved" in status_summary(missing_cached)
+    assert workspace_state_copy(missing_cached) == ("", "")
+
+
+def test_data_mapping_panel_empty_group_is_not_load_error():
+    class EmptyGroupProvider:
+        source_label = "Empty group fixture"
+
+        def load_draft(self):
+            return project_runtime_mapping_to_editor_draft(
+                {
+                    "idu": {},
+                    "evap_index": {"EVAP-A": {"Evap Area": 8.2, "Evap Volume": 2.1}},
+                    "odu": {"ODU-A": {"OD Volume": 2.5}},
+                    "compressor": {"CMP-A": {"Comp EER": 3.2, "Comp cc": 11}},
+                    "ref_type": {"R32": {}},
+                    "exp_type": {"EEV": {}},
+                },
+                source_label=self.source_label,
+            )
+
+    app = _app()
+    panel = DataMappingPanel(
+        controller=DataMappingController(DataMappingService(EmptyGroupProvider()))
+    )
+    try:
+        app.processEvents()
+
+        assert panel._selected_group_key == "idu"
+        assert panel.status_label.text() == "Ready."
+        assert panel.state_title.text() == "IDU has no rows"
+        assert "available but empty" in panel.state_message.text()
+        assert panel.workspace_stack.currentWidget() is panel.state_panel
+        assert panel._buttons["add_row"].isEnabled()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_existing_malformed_source_is_load_error(tmp_path):
+    app = _app()
+    mapping_file = tmp_path / "mapping.json"
+    mapping_file.write_text("{not-json", encoding="utf-8")
+    panel = DataMappingPanel(
+        controller=DataMappingController(
+            DataMappingService(RuntimeMappingCatalogProvider(str(mapping_file)))
+        )
+    )
+    try:
+        app.processEvents()
+
+        assert panel.status_label.text() == "Unable to load mapping data."
+        assert panel.state_title.text() == "Mapping data could not be loaded"
+        assert panel.workspace_stack.currentWidget() is panel.state_panel
+        assert panel.validation_table.model().cell_value(0, 0) == "error"
+        assert panel._buttons["reload_runtime"].isEnabled()
+        assert not panel._buttons["add_row"].isEnabled()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_secondary_details_can_collapse():
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    try:
+        panel.show()
+        app.processEvents()
+
+        assert panel.details_panel.isVisible()
+        panel.details_toggle.click()
+        app.processEvents()
+        assert not panel.details_panel.isVisible()
+        assert panel.details_toggle.text() == "Show details"
+
+        panel.details_toggle.click()
+        app.processEvents()
+        assert panel.details_panel.isVisible()
+        assert panel.details_toggle.text() == "Hide details"
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_data_mapping_panel_keeps_primary_workspace_at_compact_window_size():
+    app = _app()
+    panel = DataMappingPanel(controller=_foundation_controller())
+    try:
+        panel.resize(900, 600)
+        panel.show()
+        app.processEvents()
+
+        assert panel.width() == 900
+        assert panel.entity_table.parentWidget().width() <= 280
+        assert panel.row_table.viewport().width() > panel.entity_table.viewport().width()
+        assert not panel.row_table.horizontalHeader().stretchLastSection()
+        assert panel.row_table.horizontalScrollBarPolicy() == Qt.ScrollBarAsNeeded
+        assert all(
+            panel.row_table.columnWidth(column) <= TABLE_COLUMN_MAX_WIDTH
+            for column in range(panel.row_table.model().columnCount())
+        )
+        assert panel.entity_table.columnWidth(1) == ROW_COUNT_COLUMN_WIDTH
+        before = panel.row_table.viewport().height()
+        panel.details_toggle.click()
+        app.processEvents()
+        assert panel.row_table.viewport().height() > before
     finally:
         panel.close()
         panel.deleteLater()
@@ -189,7 +537,11 @@ def test_data_mapping_panel_programmatic_edit_marks_dirty():
         assert model.setData(model.index(0, 1), "2.5", Qt.EditRole)
 
         assert panel.status_label.text() == "Unsaved changes."
+        assert panel.row_table.model() is model
+        assert model.cell_value(0, 1) == "2.5"
         assert not panel.row_table.currentIndex().isValid()
+        app.processEvents()
+        assert panel.row_table.model() is not model
     finally:
         panel.close()
         panel.deleteLater()
@@ -207,7 +559,7 @@ def test_data_mapping_panel_reload_skips_confirm_when_clean(monkeypatch):
         monkeypatch.setattr(
             panel._controller,
             "reload",
-            lambda: calls.append("reload") or original_reload(),
+            lambda selected="": calls.append("reload") or original_reload(selected),
         )
 
         panel._reload()
@@ -253,20 +605,20 @@ def test_data_mapping_panel_reload_confirm_discards_dirty(monkeypatch):
         monkeypatch.setattr(
             panel._controller,
             "reload",
-            lambda: calls.append("reload") or original_reload(),
+            lambda selected="": calls.append("reload") or original_reload(selected),
         )
 
         panel._reload()
 
         assert calls == ["confirm", "reload"]
-        assert panel.status_label.text() == "Ready."
+        assert panel.status_label.text() == "Reloaded from source."
     finally:
         panel.close()
         panel.deleteLater()
         app.processEvents()
 
 
-def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
+def test_data_mapping_panel_shows_missing_runtime_source_state(tmp_path):
     app = _app()
     missing_mapping = tmp_path / "missing.json"
     controller = DataMappingController(
@@ -280,8 +632,13 @@ def test_data_mapping_panel_shows_runtime_source_on_load_error(tmp_path):
         assert str(missing_mapping) in panel.source_label.text()
         assert "runtime" not in panel.source_label.text().lower()
         assert "repository" not in panel.source_label.text().lower()
-        assert panel.status_label.text() == "Unable to load data."
-        assert panel.validation_table.model().cell_value(0, 4) == "Data load failed: runtime mapping data is empty or unavailable: " + str(missing_mapping)
+        assert panel.status_label.text() == "Mapping resource not found."
+        assert panel.state_title.text() == "Mapping resource unavailable"
+        assert panel.workspace_stack.currentWidget() is panel.state_panel
+        assert panel.validation_table.model().cell_value(0, 4) == "The configured mapping file does not exist."
+        assert not panel._buttons["add_row"].isEnabled()
+        assert not panel._buttons["export_csv_v2"].isEnabled()
+        assert panel._buttons["reload_runtime"].isEnabled()
         assert not panel.entity_table.currentIndex().isValid()
     finally:
         panel.close()

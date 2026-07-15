@@ -357,7 +357,7 @@ entries:
 
   - type: error
     topic: Data Mapping Computer Use accessibility crash
-    content: Data Mapping Computer Use onscreen smoke previously crashed during macOS/AppKit accessibility hierarchy reads. The later isolation found the smallest failing path was a populated entity table with initial selectRow during selection binding; removing that initial programmatic selection stabilized the standalone full panel for bounded Computer Use state, keyboard substitute, and click checks. Future UI smoke should still run focused automated owner tests first and keep Computer Use reads bounded.
+    content: Data Mapping Computer Use onscreen smoke previously crashed during macOS/AppKit accessibility hierarchy reads. Removing initial programmatic selectRow stabilized the earlier Slice 2A bounded state checks, but the Slice 2B+2C populated spreadsheet table again reproduced the failure on two independent native AX element/coordinate click attempts. Python terminated with EXC_BAD_ACCESS/SIGSEGV on the main thread in NSAccessibility hierarchy accessors, while injected keyboard shortcuts did not reach the Qt table. Native rendering alone and the passing automated owner suite do not establish the three required interaction scenarios; record them as blocked until the accessibility bridge is resolved or a separately authorized manual path supplies evidence.
     keywords:
       - predictor_v3
       - Data Mapping
@@ -367,7 +367,71 @@ entries:
       - AppKit
       - SIGSEGV
     assertionStatus: verified
-    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md
+    source: result_reports/legacy/summaries/687_summary-arc13-5r-arc14b-data-mapping-foundation-closeout.md; result_reports/legacy/summaries/700_summary-arc14b-runtime-data-mapping-crud-design-closeout.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-native-blocker.md
+
+  - type: decision
+    topic: Train Admin Phase 2 Data Mapping interaction and source state
+    content: Data Mapping cached draft existence and runtime source availability are independent. Non-destructive Refresh reprojects the service-owned draft without provider reload and preserves group selection, values, validation, exact baseline-diff dirty state, and command history; Reload alone reads the provider and preserves current draft/baseline/history on missing or load failure. Successful Reload resets draft/baseline/history, and successful Save advances baseline while failed Save preserves it. Empty-message exceptions use a stable class-name summary. Slice 2A native macOS evidence covers populated, dynamic, empty, missing, load-error, dirty-source-missing, compact, and collapsed-detail states. Slice 2B places toolbar and spreadsheet selection/clipboard/key behavior in feature-local Qt owners, pure snapshot projection outside controller orchestration, and current draft plus draft-level undo history in a service-owned session. Edit, rectangular paste, clear, CRUD, and F&T-to-PFC Pi clearing are one command each; PFC Pi is protected in both UI flags and the service command boundary without shifting clipboard coordinates. Slice 2C uses structured validation group/row/field identifiers for issue-to-cell navigation and never parses messages; source/save/reload issues have no cell target. The Batch audit correction resolves built-in and definition-backed column types through one Qt-free mapping value policy, canonicalizes only valid numeric/boolean mutation input before exact dirty comparison, keeps invalid input raw, atomically blocks any out-of-bounds paste before command history, and uses one complete rectangle for selection, copy, paste anchor, and clear.
+    keywords:
+      - predictor_v3
+      - Data Mapping
+      - Phase 2
+      - Slice 2A
+      - Refresh
+      - Reload
+      - dirty draft
+      - native macOS
+      - spreadsheet interaction
+      - grouped undo
+      - baseline diff
+      - issue navigation
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2a-native-audit-correction.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2b-spreadsheet.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2c-workflow.md; result_reports/records/2026-07/2026-07-14-train-admin-phase2-slice2bc-audit-correction.md
+
+  - type: decision
+    topic: Train Admin Phase 2 Data Mapping UX closeout
+    content: Phase 2 Slices 2A–2E are accepted for code and repository automation at approved pre-closeout head 4fe580e1fa76a7af1f51c80e4cef163705ebe648 with PR #15 as the Ready-for-review user merge target. The accepted boundary covers seven-group information architecture, spreadsheet CRUD and grouped Undo, canonical typed mutation, atomic overflow paste blocking, contiguous rectangular selection, validation/dirty/Save/Reload, seven group CSVs plus one mapping_bundle_v1 export, exact-header canonical candidate validation, draft-only import, row-order semantic no-op, hidden/unowned payload preservation, and best-effort publish rollback regression. Protected mapping data is unchanged and fixture/mock success does not establish real mapping completeness, model quality, or production readiness. Slice 2B+2C physical interaction and Slice 2D+2E native visuals remain deferred under recorded AppKit accessibility and locked-desktop blockers with no new PNG. Phase 3 starts only after PR #15 is merged to main, from a separate branch and Draft PR after a current-state audit.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - Phase 2 closeout
+      - PR 15
+      - deferred native
+      - Phase 3 sequencing
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-data-mapping-ux-closeout.md
+
+  - type: decision
+    topic: Train Admin Phase 2 exchange export boundary
+    content: Slice 2D keeps the existing JSON/XLSX review snapshot and export_csv_v2 contract separate from the official mapping exchange contract. Exchange export is owned by the Qt-free core/mapping/exchange package and consumes the service-owned current draft without provider Reload. One operation deterministically serializes the current visible seven-group projection into seven canonical group CSVs and a sectioned mapping_bundle_v1 CSV, preserves standard CSV quoting and typed canonical text, blanks PFC Pi, excludes hidden payload, and stages all eight files before rollback-aware publish. The bundle filename is user-selected but case-insensitive canonical group filenames are reserved. Initial Slice 2E import policy is exact-header: every current visible projection header must occur once; missing, unknown, or duplicate headers block the full replacement before draft/session/runtime state changes.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - mapping_bundle_v1
+      - exchange export
+      - exact header
+      - review snapshot
+  assertionStatus: verified
+  source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2d-exchange-export.md
+
+  - type: decision
+    topic: Train Admin Phase 2 bundle import boundary
+    content: Slice 2E accepts only marker-owned sectioned mapping_bundle_v1 input and never infers format or section identity from filename. Exact-header policy requires every current Data Definition visible projection column exactly once, including optional dynamic columns; header order is projected by name, and missing/unknown/duplicate headers block the full import with group/column guidance to re-export. A structurally complete candidate must also pass the same canonical editor and Data Definition validation used by Data Mapping snapshots before preview and again at Apply; error-level issues block draft/session/runtime mutation. Exchange row order is non-semantic: matching identities retain current draft order and new identities follow deterministic identity order, so order-only bundles report zero affected groups and Apply as unchanged without dirty or undo history. A valid seven-section bundle preserves matching hidden row payload and unowned sections, applies only to the service-owned unsaved draft as one undo command, rejects stale previews, and leaves runtime mapping unchanged until explicit Save. Review snapshots and clipboard TSV remain separate contracts. Exchange publish remains best-effort rollback-aware and automated regression covers failure after partial replacement for both fully existing and mixed existing/new packages.
+    keywords:
+      - predictor_v3
+      - Train Admin
+      - Data Mapping
+      - Phase 2
+      - Slice 2E
+      - mapping_bundle_v1
+      - exact header
+      - unsaved draft
+      - grouped undo
+      - hidden payload
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2e-bundle-import.md; result_reports/records/2026-07/2026-07-15-train-admin-phase2-slice2de-audit-correction.md
 
   - type: decision
     topic: Arc 14B Data Mapping import/export and CRUD direction

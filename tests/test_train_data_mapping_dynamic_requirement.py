@@ -8,12 +8,13 @@ import os
 import pytest
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QHeaderView
 from openpyxl import load_workbook
 
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.services.data_mapping_service import DataMappingService, RuntimeMappingCatalogProvider
 from apps.train.ui.data_mapping_panel import DataMappingPanel
+from apps.train.ui.data_mapping_table_sizing import TABLE_COLUMN_MAX_WIDTH
 from core.data_definition.model import DataDefinitionRow, MappingRequirement
 from core.data_definition.projection import extract_mapping_requirements
 
@@ -88,6 +89,8 @@ def test_data_mapping_panel_displays_dynamic_requirement(tmp_path):
     )
     panel = DataMappingPanel(controller=controller)
     try:
+        panel.resize(1280, 760)
+        panel.show()
         app.processEvents()
         attribute_model = panel.attribute_table.model()
         value_model = panel.row_table.model()
@@ -102,6 +105,12 @@ def test_data_mapping_panel_displays_dynamic_requirement(tmp_path):
         ) == "Fan Diameter"
         assert validation_model.cell_value(0, 0) == "error"
         assert validation_model.cell_value(0, 4) == "Fan Diameter is required by Data Definition."
+        last_column = value_model.columnCount() - 1
+        header = panel.row_table.horizontalHeader()
+        assert not header.stretchLastSection()
+        assert header.sectionResizeMode(last_column) == QHeaderView.Interactive
+        assert panel.row_table.columnWidth(last_column) <= TABLE_COLUMN_MAX_WIDTH
+        assert panel.row_table.columnWidth(last_column) < panel.row_table.viewport().width() * 0.5
     finally:
         panel.close()
         panel.deleteLater()

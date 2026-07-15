@@ -27,11 +27,15 @@ def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     assert snapshot.actions
     assert {action.key for action in snapshot.actions} == {
         "export_csv_v2",
+        "export_mapping_exchange",
+        "import_mapping_bundle",
         "save_mapping_json",
         "reload_runtime",
     }
     assert [action.label for action in snapshot.actions] == [
         "Export",
+        "Mapping Exchange Package",
+        "Import Bundle…",
         "Save",
         "Reload",
     ]
@@ -39,6 +43,8 @@ def test_data_mapping_service_returns_catalog_validation_and_current_actions():
     assert not actions["save_mapping_json"].enabled
     assert actions["save_mapping_json"].reason == "No writable mapping file is configured."
     assert "read-only review snapshot" in actions["export_csv_v2"].reason
+    assert actions["export_mapping_exchange"].enabled
+    assert actions["import_mapping_bundle"].enabled
 
 
 def test_runtime_fixture_loads_all_populated_mapping_groups():
@@ -110,6 +116,26 @@ def test_data_mapping_service_edit_commands_set_dirty_and_rerun_validation():
     reloaded = service.reload_snapshot()
     assert not reloaded.dirty
     assert reloaded.is_valid
+
+
+def test_current_snapshot_returns_cached_draft_without_provider_reload():
+    class CountingProvider(FoundationMappingCatalogProvider):
+        def __init__(self):
+            self.load_calls = 0
+
+        def load_draft(self):
+            self.load_calls += 1
+            return super().load_draft()
+
+    provider = CountingProvider()
+    service = DataMappingService(provider)
+
+    assert service.current_snapshot() is None
+    loaded = service.load_snapshot()
+    cached = service.current_snapshot()
+
+    assert loaded.draft == cached.draft
+    assert provider.load_calls == 1
 
 
 def test_data_mapping_service_saves_runtime_mapping_and_clears_dirty(tmp_path):

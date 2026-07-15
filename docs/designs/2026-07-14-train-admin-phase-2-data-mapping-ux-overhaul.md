@@ -1,6 +1,6 @@
 # Train/Admin Phase 2 — Data Mapping UX Overhaul
 
-Status: proposed phase design  
+Status: accepted and implemented — repository automation complete; native interaction/visual acceptance deferred
 Date: 2026-07-14  
 Depends on: Phase 1 — Mapping/Data Foundation
 
@@ -242,10 +242,46 @@ Reusable common PySide6 components are preferred over panel-specific styling.
 - Preserve group selection and draft state.
 - Implement clear normal, empty, missing-resource, and error states.
 
+Implemented on `phase/train-admin-data-mapping-ux`:
+
+- concise group navigation with label, row count, and selected state;
+- dominant definition-backed primary mapping table;
+- compact status/source/action area and collapsible secondary field/issue details;
+- distinct populated, empty-group, missing-resource, and load-error surfaces;
+- selection-preserving non-destructive refresh and current-draft projection;
+- repository-fixture-backed offscreen verification for representative states.
+
+Audit correction on Draft PR #15 additionally establishes:
+
+- cached service-owned drafts remain visible and dirty when source availability
+  changes to missing;
+- Refresh reprojects current state without provider reload, while Reload retains
+  provider-read semantics and preserves the draft on failure;
+- empty-message load/reload exceptions use a stable class-name fallback;
+- native macOS onscreen evidence for populated, dynamic, empty, missing,
+  load-error, dirty-source-missing, compact, and collapsed-detail states under
+  `assets/train-admin-phase2-slice2a-native-audit/`;
+- safe deferred view reprojection after Qt delegate commit.
+
+The panel and controller exceed the structure guard's 400 LOC soft limit. The
+correction extracted status/workspace presentation policy into the existing UI
+model owner. Before Slice 2B adds spreadsheet interaction, split toolbar/action
+composition plus selection/model binding from the panel, and split controller
+presentation-state projection from command orchestration. This is the concrete
+trigger; Slice 2A does not prebuild a spreadsheet or generic composition
+framework.
+
 ### Slice 2B — Spreadsheet interaction and CRUD
 
 - Reach the required spreadsheet interaction baseline.
 - Integrate add, duplicate, delete, clear, paste, validation, and undo grouping.
+
+Implemented in `d22bda002bf5d1f0205a9df64a18fe8f0af0a74d`. Toolbar,
+table interaction, pure presentation projection, and service-owned draft
+history are bounded owners rather than new panel/controller responsibilities.
+The feature supports rectangular visible-cell TSV operations, grouped draft
+undo, keyboard navigation, CRUD selection, and command-boundary plus UI PFC Pi
+protection without a generic spreadsheet framework.
 
 ### Slice 2C — Validation, dirty, save, reload
 
@@ -254,11 +290,54 @@ Reusable common PySide6 components are preferred over panel-specific styling.
 - Strengthen dirty/discard/save feedback.
 - Prove atomic save and reload round-trip.
 
+Implemented in `2e9e00bdd562b5780b45eb6b9b495dde9016f745`. The service
+compares the current draft with the loaded or successfully saved baseline,
+structured validation identifiers drive cell navigation without message
+parsing, and failed Save/Reload operations preserve current draft and baseline.
+The impacted offscreen regression passed 223 tests.
+
+The bounded native macOS follow-up is blocked: the native shell renders and is
+visible on an unlocked desktop, but Computer Use interaction with the populated
+PySide6 table reproducibly terminates Python in AppKit's accessibility hierarchy
+with `EXC_BAD_ACCESS` / `SIGSEGV`. No Slice 2B+2C interaction PNG is claimed.
+See `assets/train-admin-phase2-slice2bc-native-batch/README.md`; prior Slice 2A
+native evidence was not rerun.
+
+#### Slice 2B+2C audit correction
+
+Valid numeric and boolean cell input is canonicalized at the service command
+boundary through the shared Qt-free mapping value/type policy. Invalid text is
+kept raw so validation, Save blocking, and Undo remain available. Dirty state
+therefore continues to be exact draft equality while semantically identical
+typed input compares clean.
+
+The primary table uses one contiguous rectangular selection. Copy and clear
+normalize to the same complete rectangle, while paste uses its top-left anchor.
+Any clipboard grid that exceeds the current row or column boundary is blocked
+before the application callback, so draft, dirty state, selection, and undo
+history remain unchanged. In-bounds protected targets retain partial,
+non-shifting behavior.
+
+The correction follow-up at `5b1968eb7e3b493c15cef1c06358d74d44005199`
+passed 32 focused and 285 impacted offscreen tests plus CI. A native onscreen
+window was confirmed on an unlocked desktop with Computer Use limited to state
+and screenshot inspection. Physical interaction was requested but not completed
+in the session, so the three native scenarios remain not performed and no new
+interaction PNG is claimed.
+
 ### Slice 2D — Exchange export
 
 - Generate seven group CSVs and one bundle from the same draft.
 - Support free bundle file naming.
 - Add deterministic export and round-trip fixtures.
+
+Implemented. The current unsaved draft exports through one shared serializer as
+seven canonical group CSVs plus one freely named, marker-owned bundle. Output is
+deterministic UTF-8/LF with standard CSV quoting, canonical typed values, blank
+PFC Pi, and no hidden backing payload. All eight targets are staged and verified
+before sequential publish; failure uses best-effort rollback. Automated coverage
+proves restoration of an eight-existing-target package and a mixed package after
+both existing replacement and actual new-target creation have completed.
 
 ### Slice 2E — Bundle import
 
@@ -267,8 +346,29 @@ Reusable common PySide6 components are preferred over panel-specific styling.
 - Apply only to the unsaved draft.
 - Block unknown structural columns and unsupported merge cases.
 
-Each slice is one logical commit and is pushed to the phase branch. The phase is
-merged only after populated-state and exchange validation pass.
+Implemented. Import accepts only sectioned `mapping_bundle_v1`, independent of
+file name and section order. Exact-header policy requires every current visible
+Data Definition projection column exactly once while allowing header reordering.
+A typed candidate must pass the same canonical editor and Data Definition
+validation used by the current snapshot before preview and again at Apply.
+Apply replaces only the unsaved draft as one undo command, preserves matching
+hidden row payload and unowned sections, and rejects stale or invalid previews.
+Exchange row order is non-semantic: existing identities retain current order and
+new identities use deterministic identity order, so order-only bundles remain
+clean no-ops with zero affected groups.
+
+Slices 2A–2E and their audit corrections are implemented and accepted at the
+Phase 2 closeout head. Repository automation is complete. Slice 2B+2C physical
+table interaction and Slice 2D+2E native visual acceptance remain deferred
+because of the recorded AppKit accessibility crash and locked-desktop blocker;
+no new PNG or completed interaction claim is made, and this does not block the
+approved code/automation closeout.
+
+Repository fixtures and mock data establish workflow and contract correctness
+only. They do not establish real company mapping completeness, model quality, or
+production readiness. Phase 3 may audit and implement Data Definition UX only
+after this phase is merged to `main`; it must preserve existing projection,
+validation, persistence, readiness, mapping-value, and Predict/ML boundaries.
 
 ## 11. Acceptance Scenarios
 

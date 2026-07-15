@@ -223,9 +223,11 @@ revision counter.
 Legacy fixture bootstrap, populated mapping state, dynamic mapping attributes,
 and cross-fixture consistency.
 
-### Phase 2 — Data Mapping UX Overhaul
+### Phase 2 — Data Mapping UX Overhaul (accepted and implemented)
 Production-usable value editing, spreadsheet behavior, safe persistence, and
-mapping exchange export/import.
+mapping exchange export/import are complete for code and repository automation.
+Native table interaction and exchange visual acceptance remain explicitly
+deferred; Phase 3 starts only from the merged Phase 2 `main` state.
 
 ### Phase 3 — Data Definition UX Overhaul
 Intent-driven definition editing, mapping attribute creation, impact preview,
