@@ -209,8 +209,11 @@ def _merged_row_payload(
     for column in group.columns:
         if column in control_columns:
             continue
+        value = row.value_for(column)
+        if column not in row.values and not _clean(value):
+            continue
         data_type = mapping_column_data_type(group, column)
-        payload[column] = coerce_mapping_value(row.value_for(column), data_type)
+        payload[column] = coerce_mapping_value(value, data_type)
     return payload
 
 

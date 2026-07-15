@@ -244,3 +244,12 @@ def test_train_views_delegate_artifact_existence_checks():
 
     assert ".exists()" not in shell_source
     assert ".exists()" not in panel_source
+
+
+def test_train_shell_uses_public_data_mapping_navigation_only():
+    shell_source = Path("apps/train/ui/shell.py").read_text(encoding="utf-8")
+
+    assert "data_mapping_panel.open_requirement(request)" in shell_source
+    assert "_selected_group_key" not in shell_source
+    assert "row_table" not in shell_source
+    assert "selectionModel" not in shell_source

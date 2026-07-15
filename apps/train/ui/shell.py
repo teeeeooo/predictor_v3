@@ -19,6 +19,11 @@ from apps.predict.composition import PredictWorkspaceComposition
 from apps.predict.ui.status_widgets import model_status_badge_state
 from apps.predict.ui.workspace import PredictWorkspace
 from apps.train.controllers.data_mapping_controller import DataMappingController
+from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.application.data_mapping import (
+    DataMappingNavigationRequest,
+    DataMappingNavigationResult,
+)
 from apps.train.controllers.train_controller import TrainController
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
@@ -40,12 +45,14 @@ class TrainShell(QMainWindow):
         parent: QMainWindow | None = None,
         *,
         train_controller: TrainController | None = None,
+        data_definition_controller: DataDefinitionController | None = None,
         data_mapping_controller: DataMappingController | None = None,
         predict_composition: PredictWorkspaceComposition | None = None,
     ) -> None:
         super().__init__(parent)
         self.train_controller = train_controller or TrainController()
         self.data_mapping_controller = data_mapping_controller or DataMappingController()
+        self.data_definition_controller = data_definition_controller or DataDefinitionController()
         self.setWindowTitle("HVAC Training Studio")
         self.setStyleSheet(style.app_stylesheet())
 
@@ -77,15 +84,32 @@ class TrainShell(QMainWindow):
             self.tab_names[0],
         )
         tabs.addTab(self.train_model_panel, self.tab_names[1])
-        tabs.addTab(DataDefinitionPanel(tabs), self.tab_names[2])
+        self.data_definition_panel = DataDefinitionPanel(
+            tabs,
+            controller=self.data_definition_controller,
+            on_open_data_mapping=self.open_data_mapping,
+        )
+        tabs.addTab(self.data_definition_panel, self.tab_names[2])
+        self.data_mapping_panel = DataMappingPanel(
+            tabs,
+            controller=self.data_mapping_controller,
+        )
         tabs.addTab(
-            DataMappingPanel(tabs, controller=self.data_mapping_controller),
+            self.data_mapping_panel,
             self.tab_names[3],
         )
         layout.addWidget(tabs, 1)
         self.setCentralWidget(central)
         self.tabs = tabs
         apply_initial_window_layout(self, (1280, 820))
+
+    def open_data_mapping(
+        self,
+        request: DataMappingNavigationRequest,
+    ) -> DataMappingNavigationResult:
+        """Orchestrate tab selection and public Data Mapping navigation."""
+        self.tabs.setCurrentWidget(self.data_mapping_panel)
+        return self.data_mapping_panel.open_requirement(request)
 
     def _build_status_strip(self) -> QFrame:
         strip = QFrame(self)

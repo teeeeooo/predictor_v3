@@ -23,6 +23,11 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.train.application.data_mapping import (
+    DataMappingCellTarget,
+    DataMappingNavigationRequest,
+    DataMappingNavigationResult,
+)
 from apps.train.controllers.data_mapping_controller import (
     DataMappingController,
     DataMappingControllerState,
@@ -30,7 +35,12 @@ from apps.train.controllers.data_mapping_controller import (
 from apps.train.ui.data_mapping_models import EditableMappingTableModel, ReadOnlyMappingTableModel
 from apps.train.ui.data_mapping import DataMappingTableView, DataMappingToolbar
 from apps.train.ui.data_mapping.import_preview_dialog import DataMappingImportPreviewDialog
-from apps.train.ui.data_mapping.issue_navigation import navigate_to_issue
+from apps.train.ui.data_mapping.coverage_panel import DataMappingCoveragePanel
+from apps.train.ui.data_mapping.issue_navigation import (
+    focus_attribute,
+    focus_cell_target,
+    navigate_to_issue,
+)
 from apps.train.ui.data_mapping_table_sizing import (
     apply_group_navigation_sizing,
     apply_primary_table_sizing,
@@ -76,6 +86,7 @@ class DataMappingPanel(QWidget):
         self._selected_group_key = ""
         self._dirty = False
         self._group_keys: tuple[str, ...] = ()
+        self._preferred_coverage_key = ""
 
         self.status_label = QLabel()
         self.status_label.setAccessibleName("Data Mapping validation status")
@@ -117,6 +128,7 @@ class DataMappingPanel(QWidget):
             },
         )
         self._buttons = self.toolbar.buttons
+        self.coverage_panel = DataMappingCoveragePanel(self._navigate_to_coverage_target)
         self.details_toggle = QPushButton("Hide details")
         self.details_toggle.setAccessibleName("Toggle field and issue details")
         self.details_toggle.clicked.connect(self._toggle_details)
@@ -137,6 +149,28 @@ class DataMappingPanel(QWidget):
         """Reload state through the controller."""
         self._apply_state(self._controller.refresh(self._selected_group_key))
 
+    def open_requirement(
+        self,
+        request: DataMappingNavigationRequest,
+    ) -> DataMappingNavigationResult:
+        """Public shell entry point for one saved Mapping Requirement."""
+        state, result = self._controller.open_requirement(
+            request,
+            self._selected_group_key,
+        )
+        self._preferred_coverage_key = request.definition_column_key
+        self._apply_state(state)
+        if result.opened:
+            if result.target is not None:
+                focus_cell_target(result.target, state, self.row_table)
+            else:
+                focus_attribute(request.mapping_attribute, state, self.row_table)
+        self.status_label.setText(result.message)
+        self.status_label.setStyleSheet(
+            style.status_badge_stylesheet("ready" if result.opened else "warning")
+        )
+        return result
+
     def _build_body(self) -> QSplitter:
         splitter = QSplitter(self)
         splitter.setObjectName("DataMappingSplitter")
@@ -152,6 +186,7 @@ class DataMappingPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_status_strip())
+        layout.addWidget(self.coverage_panel)
         layout.addWidget(self.toolbar)
 
         self.workspace_stack = QStackedWidget(workspace)
@@ -289,6 +324,11 @@ class DataMappingPanel(QWidget):
             self.validation_table.setModel(
                 ReadOnlyMappingTableModel(VALIDATION_HEADERS, validation_rows(state))
             )
+            self.coverage_panel.apply_items(
+                state.coverage_items,
+                state.selected_group_key,
+                self._preferred_coverage_key,
+            )
             apply_group_navigation_sizing(self.entity_table)
             apply_primary_table_sizing(self.row_table)
             apply_secondary_table_sizing(
@@ -388,6 +428,13 @@ class DataMappingPanel(QWidget):
             apply_state=self._apply_state,
             row_table=self.row_table,
         )
+
+    def _navigate_to_coverage_target(self, target: DataMappingCellTarget) -> None:
+        if target.group_key != self._selected_group_key:
+            self._apply_state(self._controller.refresh(target.group_key))
+        state = getattr(self, "_current_state", None)
+        if state is not None:
+            focus_cell_target(target, state, self.row_table)
 
     def _edit_cell(self, row: int, column: str, value: object) -> bool:
         if not self._selected_group_key:

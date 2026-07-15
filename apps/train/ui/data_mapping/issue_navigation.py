@@ -6,10 +6,8 @@ from collections.abc import Callable, Sequence
 
 from PySide6.QtCore import QModelIndex, Qt
 
-from apps.train.controllers.data_mapping.presentation import (
-    DataMappingControllerState,
-    DataMappingIssueTarget,
-)
+from apps.train.application.data_mapping import DataMappingCellTarget, DataMappingIssueTarget
+from apps.train.controllers.data_mapping.presentation import DataMappingControllerState
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.ui.data_mapping.table_view import DataMappingTableView
 
@@ -39,3 +37,44 @@ def navigate_to_issue(
     row_table.setCurrentIndex(cell)
     row_table.scrollTo(cell)
     row_table.setFocus(Qt.OtherFocusReason)
+
+
+def focus_cell_target(
+    target: DataMappingCellTarget,
+    state: DataMappingControllerState,
+    row_table: DataMappingTableView,
+) -> bool:
+    """Resolve one stable row/attribute identity against the current snapshot."""
+    model = row_table.model()
+    if model is None:
+        return False
+    matches = tuple(
+        index for index, item in enumerate(state.values) if item.row_key == target.row_key
+    )
+    row = (
+        matches[target.row_occurrence]
+        if target.row_occurrence < len(matches)
+        else None
+    )
+    if row is None or target.attribute_key not in state.value_headers:
+        return False
+    cell = model.index(row, state.value_headers.index(target.attribute_key))
+    row_table.setCurrentIndex(cell)
+    row_table.scrollTo(cell)
+    row_table.setFocus(Qt.OtherFocusReason)
+    return True
+
+
+def focus_attribute(
+    attribute: str,
+    state: DataMappingControllerState,
+    row_table: DataMappingTableView,
+) -> bool:
+    """Display one exact attribute when coverage has no unresolved target."""
+    model = row_table.model()
+    if model is None or not model.rowCount() or attribute not in state.value_headers:
+        return False
+    cell = model.index(0, state.value_headers.index(attribute))
+    row_table.setCurrentIndex(cell)
+    row_table.scrollTo(cell)
+    return True

@@ -121,7 +121,6 @@ def test_runtime_projection_preserves_hidden_payload_for_every_owned_row_group(
     assert runtime["idu"]["IDU-A"] == {
         "ID Volume": 2.5,
         "IDU Hidden": "keep-idu",
-        "Size": "",
     }
     assert runtime["evap_index"]["EVAP-A"]["Evap Hidden"] == "keep-evap"
     assert runtime["evap_index"]["EVAP-A"]["Evap Area"] == 9.5
@@ -196,7 +195,7 @@ def test_key_rename_and_delete_keep_hidden_payload_owned_by_the_current_row():
     runtime = runtime_mapping_from_editor_draft(draft)
 
     assert runtime["idu"] == {
-        "IDU-C": {"ID Volume": 1.25, "Size": "", "Hidden": "row-a"}
+        "IDU-C": {"ID Volume": 1.25, "Hidden": "row-a"}
     }
 
 

@@ -21,6 +21,10 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.train.application.data_mapping import (
+    DataMappingNavigationRequest,
+    DataMappingNavigationResult,
+)
 from apps.train.controllers.data_definition_controller import (
     DataDefinitionController,
     DataDefinitionControllerState,
@@ -41,6 +45,7 @@ from apps.train.ui.data_definition_add_dialog import DataDefinitionAddDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
 from apps.train.ui.data_definition_impact_view import DataDefinitionImpactView
+from apps.train.ui.data_definition import DataDefinitionHandoffPanel
 from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 
@@ -56,6 +61,9 @@ class DataDefinitionPanel(QWidget):
         self,
         parent: QWidget | None = None,
         controller: DataDefinitionController | None = None,
+        on_open_data_mapping: (
+            Callable[[DataMappingNavigationRequest], DataMappingNavigationResult] | None
+        ) = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("DataDefinitionPanel")
@@ -82,6 +90,7 @@ class DataDefinitionPanel(QWidget):
         self.detail_state_label.setAccessibleName("Selected Data Definition state")
         self.detail_table = definition_table("Selected Data Definition Detail")
         self.impact_view = DataDefinitionImpactView(self)
+        self.handoff_panel = DataDefinitionHandoffPanel(on_open_data_mapping)
         self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
         self._publish_diagnostic_table_aliases()
 
@@ -97,6 +106,7 @@ class DataDefinitionPanel(QWidget):
         layout.addWidget(self._build_filter_bar())
         layout.addWidget(self._build_workspace(), 1)
         layout.addWidget(self.impact_view)
+        layout.addWidget(self.handoff_panel)
         layout.addWidget(self.diagnostics)
         self._connect_filters()
         self.refresh()
@@ -204,6 +214,7 @@ class DataDefinitionPanel(QWidget):
         if state.focus_identity is not None:
             self._selected_identity = state.focus_identity
         self.diagnostics.apply_state(state)
+        self.handoff_panel.apply_state(state)
         self._apply_inventory()
 
     def _apply_inventory(self) -> None:

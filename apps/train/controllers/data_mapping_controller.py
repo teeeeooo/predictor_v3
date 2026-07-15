@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from apps.train.application.data_mapping import (
+    DataMappingNavigationRequest,
+    DataMappingNavigationResult,
+)
+from apps.train.controllers.data_mapping.navigation import open_mapping_requirement
 from apps.train.controllers.data_mapping.presentation import (
     DataMappingAttributeRow,
     DataMappingControllerState,
@@ -60,6 +65,19 @@ class DataMappingController:
     def resource_status(self) -> str:
         """Return mapping resource availability through the service boundary."""
         return self._service.resource_status()
+
+    def open_requirement(
+        self,
+        request: DataMappingNavigationRequest,
+        current_group_key: str = "",
+    ) -> tuple[DataMappingControllerState, DataMappingNavigationResult]:
+        """Refresh requirements and resolve one public navigation request."""
+        return open_mapping_requirement(
+            self._service,
+            request,
+            current_group_key,
+            self.refresh,
+        )
 
     def edit_cell(
         self,

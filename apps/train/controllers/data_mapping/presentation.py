@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.train.application.data_mapping import (
+    DataMappingCoverageItem,
+    DataMappingIssueTarget,
+)
+from apps.train.application.data_mapping.coverage import project_mapping_coverage
 from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
 from core.mapping.condenser_identity import condenser_requires_pi
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
@@ -37,15 +42,6 @@ class DataMappingValueRow:
 
 
 @dataclass(frozen=True)
-class DataMappingIssueTarget:
-    """Structured navigation target for one validation issue row."""
-
-    group_key: str
-    row_index: int | None = None
-    column_index: int | None = None
-
-
-@dataclass(frozen=True)
 class DataMappingControllerState:
     source_label: str
     status: str
@@ -64,6 +60,7 @@ class DataMappingControllerState:
     operation_blocked: int = 0
     issue_targets: tuple[DataMappingIssueTarget | None, ...] = ()
     invalid_cells: frozenset[tuple[int, int]] = frozenset()
+    coverage_items: tuple[DataMappingCoverageItem, ...] = ()
 
 
 def project_snapshot(
@@ -84,6 +81,12 @@ def project_snapshot(
     resource_issues = (_resource_missing_issue(),) if resource_status == "missing" else ()
     issues = (*snapshot.validation_errors, *resource_issues, *extra_issues)
     targets = tuple(_issue_target(draft.groups, issue) for issue in issues)
+    coverage = project_mapping_coverage(
+        snapshot.mapping_requirements,
+        draft,
+        issues,
+        targets,
+    )
     return DataMappingControllerState(
         source_label=display_source_label(snapshot.source_label),
         status=status or _snapshot_status(snapshot.is_valid, resource_status),
@@ -110,6 +113,7 @@ def project_snapshot(
             and target.row_index is not None
             and target.column_index is not None
         ),
+        coverage_items=coverage,
     )
 
 
@@ -297,7 +301,16 @@ def _issue_target(
         row_index = None
     if row_index is None and column_index is not None and group.rows:
         row_index = 0
-    return DataMappingIssueTarget(group.group_key, row_index, column_index)
+    row_key = ""
+    if row_index is not None and 0 <= row_index < len(group.rows):
+        row_key = group.rows[row_index].source_key
+    return DataMappingIssueTarget(
+        group.group_key,
+        row_key,
+        field,
+        row_index,
+        column_index,
+    )
 
 
 def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:

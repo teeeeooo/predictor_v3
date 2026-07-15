@@ -138,8 +138,7 @@ def _simple_group(
         key_column = columns[0]
         for row_key in sorted(str(key) for key in section):
             row_value = section.get(row_key)
-            values = {column: "" for column in columns}
-            values[key_column] = row_key
+            values = {key_column: row_key}
             if isinstance(row_value, Mapping):
                 values.update({str(key): value for key, value in row_value.items()})
             rows.append(MappingEditorRow(values=values, source_key=row_key))
@@ -181,7 +180,7 @@ def _apply_group_requirements(
         for requirement in requirements
     )
     columns = (*group.columns, *(column for column in required_columns if column not in group.columns))
-    rows = tuple(_row_with_columns(row, columns) for row in group.rows)
+    rows = tuple(_row_with_columns(row, required_columns) for row in group.rows)
     column_data_types = dict(group.column_data_types)
     required = list(group.required_columns)
     for requirement, column in zip(requirements, required_columns):

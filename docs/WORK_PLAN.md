@@ -17,26 +17,24 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slices 3B and 3C are implemented as separate logical commits
-on `phase/train-admin-data-definition-ux`. Controlled Add/Edit commands produce
-complete draft transitions; the default impact preview explains definition,
-schema, mapping, restart, retrain, ML compatibility, blocker, and writer-result
-evidence. Allowed drafts use the existing candidate-validation/backup/atomic-
-replace schema writer; unsupported ML changes remain complete but blocked. PR #16
-remains Draft/Open. The combined audit correction adds role-aware complete-row
-validation and full parity, immutable controlled-Add provenance, and no-selection
-blocker preservation. The blocker-presentation correction preserves independent
-full-parity evidence beside ML compatibility blockers and renders affected
-definition identity when selection is unavailable, without starting Slice 3D.
+Train/Admin Phase 3 Slice 3D is implemented as one logical commit on
+`phase/train-admin-data-definition-ux`. Successful mapping-requirement schema
+writes expose a saved-only public handoff through the four-tab Train shell;
+Data Mapping reprojects the latest canonical requirements over its service-owned
+draft, reports required/optional coverage, and focuses stable unresolved cell
+targets without Reload, implicit Save, or undo loss. The synthetic Cond Inner
+Area workflow covers schema Save through explicit mapping Save/reload while
+preserving condenser identity, PFC Pi normalization, and unrelated mapping
+payload. PR #16 remains Draft/Open.
 
 ## Next Action
 
-Slice 3B+3C final re-audit before starting Slice 3D.
+Slice 3D audit before starting Slice 3E.
 
 ## Active Blockers
 
-- No code blocker remains in Slices 3B+3C; the explicit final re-audit hold
-  prevents starting Slice 3D.
+- No code blocker remains in Slice 3D; the explicit audit hold prevents starting
+  Slice 3E.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
@@ -59,8 +57,7 @@ Slice 3B+3C final re-audit before starting Slice 3D.
 
 ## Deferred / Hold
 
-- Data Mapping handoff/coverage and native polish remain deferred to Slices 3D
-  and 3E respectively.
+- Slice 3E keyboard/focus/native polish remains deferred until the Slice 3D audit.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness

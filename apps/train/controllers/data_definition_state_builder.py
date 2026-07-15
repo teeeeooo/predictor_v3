@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.train.application.data_mapping import DataMappingNavigationRequest
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
@@ -116,6 +117,7 @@ class DataDefinitionControllerState:
     last_action_ok: bool = True
     focus_identity: tuple[str, str] | None = None
     command_issue_rows: tuple[tuple[str, str, str], ...] = ()
+    saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = ()
 
 
 def state_from_report(
@@ -129,6 +131,7 @@ def state_from_report(
     last_action_ok: bool = True,
     focus_identity: tuple[str, str] | None = None,
     command_issue_rows: tuple[tuple[str, str, str], ...] = (),
+    saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = (),
 ) -> DataDefinitionControllerState:
     """Compose immutable UI-facing state from report, draft, and save plan data."""
     parity_count = len(report.parity_issues)
@@ -220,6 +223,7 @@ def state_from_report(
         last_action_ok=last_action_ok,
         focus_identity=focus_identity,
         command_issue_rows=command_issue_rows,
+        saved_mapping_handoffs=saved_mapping_handoffs,
     )
 
 

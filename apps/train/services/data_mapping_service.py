@@ -110,9 +110,14 @@ class RuntimeMappingCatalogProvider:
 class DataDefinitionMappingRequirementProvider:
     """Read Data Definition mapping requirements for Data Mapping UI projection."""
 
+    def __init__(self, schema_path: str | Path | None = None) -> None:
+        self._schema_path = schema_path
+
     def load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
         """Return current Data Definition mapping requirements."""
-        return build_data_definition_report().mapping_requirements
+        return build_data_definition_report(
+            schema_path=self._schema_path,
+        ).mapping_requirements
 
 
 class EmptyMappingRequirementProvider:
@@ -171,7 +176,14 @@ class DataMappingService:
             if baseline is not None
             else draft
         )
-        self._session.project(draft, projected_baseline)
+        self._session.project(
+            draft,
+            projected_baseline,
+            history_projector=lambda item: apply_mapping_requirements_to_editor_draft(
+                item,
+                requirements,
+            ),
+        )
         return self._snapshot(draft, requirements)
 
     def current_snapshot(self) -> DataMappingSnapshot | None:
@@ -189,7 +201,14 @@ class DataMappingService:
             if baseline is not None
             else draft
         )
-        self._session.project(draft, projected_baseline)
+        self._session.project(
+            draft,
+            projected_baseline,
+            history_projector=lambda item: apply_mapping_requirements_to_editor_draft(
+                item,
+                requirements,
+            ),
+        )
         return self._snapshot(draft, requirements)
 
     def reload_snapshot(self) -> DataMappingSnapshot:
@@ -465,6 +484,7 @@ class DataMappingService:
                 ),
             ),
             dirty=self._session.dirty,
+            mapping_requirements=requirements,
         )
 
     def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
