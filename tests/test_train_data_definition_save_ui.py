@@ -30,8 +30,8 @@ def test_data_definition_service_saves_schema_draft_to_explicit_tmp_path(tmp_pat
     schema_path = _copy_schema(tmp_path)
     service = DataDefinitionService(schema_path=schema_path)
     draft = service.load_draft()
-    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
-    edited = service.edit_draft_cell(draft, row.identity, "label", "Cooling Capacity")
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    edited = service.edit_draft_cell(draft, row.identity, "label", "Indoor Unit")
 
     result = service.save_schema_draft(edited.draft)
 
@@ -40,8 +40,8 @@ def test_data_definition_service_saves_schema_draft_to_explicit_tmp_path(tmp_pat
     assert result.backup_path is not None
     assert result.backup_path.exists()
     loaded = load_predict_schema_catalog_v2(schema_path)
-    assert next(item for item in loaded.rows if item.column_key == "cooling_capa").label == (
-        "Cooling Capacity"
+    assert next(item for item in loaded.rows if item.column_key == "idu").label == (
+        "Indoor Unit"
     )
     assert _file_hash(DEFAULT_SCHEMA_PATH) == before_hash
 
@@ -63,9 +63,10 @@ def test_data_definition_controller_save_reloads_after_success(tmp_path):
     schema_path = _copy_schema(tmp_path)
     controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
     state = controller.refresh()
-    row_identity = state.draft_row_identities[0]
+    row_identity = ("schema_row", "idu")
+    row_index = state.draft_row_identities.index(row_identity)
 
-    edited = controller.edit_cell(row_identity, "label", "Cooling Capacity")
+    edited = controller.edit_cell(row_identity, "label", "Indoor Unit")
     saved = controller.save_schema()
     noop = controller.save_schema()
 
@@ -74,7 +75,7 @@ def test_data_definition_controller_save_reloads_after_success(tmp_path):
     assert ("Status", "written") in saved.save_result_rows
     assert not saved.draft_changed
     assert saved.save_plan_rows[0][1] == "no_op"
-    assert saved.draft_rows[0][DRAFT_FIELDS.index("label")].value == "Cooling Capacity"
+    assert saved.draft_rows[row_index][DRAFT_FIELDS.index("label")].value == "Indoor Unit"
     assert noop.status == "ready"
     assert ("Status", "noop") in noop.save_result_rows
 
@@ -246,9 +247,10 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
     try:
         app.processEvents()
         label_col = DRAFT_FIELDS.index("label")
+        row_index = panel._state.draft_row_identities.index(("schema_row", "idu"))
         assert panel.draft_table.model().setData(
-            panel.draft_table.model().index(0, label_col),
-            "Cooling Capacity",
+            panel.draft_table.model().index(row_index, label_col),
+            "Indoor Unit",
             Qt.EditRole,
         )
         app.processEvents()
@@ -269,7 +271,7 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
         assert result_rows["Status"] == "written"
         assert result_rows["Success"] == "true"
         assert panel.save_plan_table.model().cell_value(0, 1) == "no_op"
-        assert not panel.draft_table.model().is_changed_cell(0, label_col)
+        assert not panel.draft_table.model().is_changed_cell(row_index, label_col)
         assert not panel.save_button.isEnabled()
         assert panel.status_label.text().startswith("Saved:")
     finally:
@@ -341,10 +343,11 @@ def test_data_definition_panel_retries_recoverable_schema_write_error(
     try:
         app.processEvents()
         label_col = DRAFT_FIELDS.index("label")
+        row_index = panel._state.draft_row_identities.index(("schema_row", "idu"))
         assert not panel.save_button.isEnabled()
         assert panel.draft_table.model().setData(
-            panel.draft_table.model().index(0, label_col),
-            "Cooling Capacity",
+            panel.draft_table.model().index(row_index, label_col),
+            "Indoor Unit",
             Qt.EditRole,
         )
         assert panel.save_button.isEnabled()
@@ -370,8 +373,8 @@ def test_data_definition_panel_retries_recoverable_schema_write_error(
         assert not panel._state.save_action_enabled
         assert not panel.save_button.isEnabled()
         loaded = load_predict_schema_catalog_v2(schema_path)
-        assert next(row for row in loaded.rows if row.column_key == "cooling_capa").label == (
-            "Cooling Capacity"
+        assert next(row for row in loaded.rows if row.column_key == "idu").label == (
+            "Indoor Unit"
         )
     finally:
         panel.close()

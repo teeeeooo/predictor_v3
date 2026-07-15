@@ -17,6 +17,7 @@ from core.data_definition.projection import (
 )
 from core.data_definition.report_model import DataDefinitionReport
 from core.data_definition.validation import build_data_definition_report
+from core.data_definition.validation import validate_data_definition_candidate
 
 BlockerSeverity = Literal["error", "warning", "info"]
 WriteTargetStatus = Literal["planned", "blocked", "deferred", "no_op"]
@@ -34,6 +35,12 @@ MAPPING_REQUIREMENT_FIELDS = frozenset(
     {"mapping_entity", "mapping_attribute", "trigger_column", "rule_id"}
 )
 ONE_HOT_FIELDS = frozenset({"one_hot_group", "value_source"})
+_BASIC_SCHEMA_ISSUE_CODES = frozenset(
+    {"data_type_invalid", "editor_invalid", "value_source_invalid"}
+)
+_PARITY_ISSUE_CODES = frozenset(
+    {"catalog_orphan", "projection_extra", "feature_projection_mismatch"}
+)
 
 
 @dataclass(frozen=True)
@@ -81,10 +88,11 @@ def build_data_definition_save_plan(
 ) -> DataDefinitionSavePlan:
     """Build an in-memory save plan without writing files."""
     report = current_report or build_data_definition_report()
-    changes = draft.changes()
+    changes = draft.attributed_changes()
     blockers = [
         *_report_blockers(report),
         *_candidate_projection_blockers(draft, report),
+        *_candidate_data_definition_blockers(draft, report),
         *_change_blockers(draft, changes),
         *_requested_target_blockers(requested_targets),
     ]
@@ -166,16 +174,13 @@ def _candidate_projection_blockers(
 def _projection_changing_changes(
     draft: DataDefinitionDraft,
 ) -> tuple[DataDefinitionDraftChange, ...]:
-    baseline = DataDefinitionDraft(
-        rows=draft.baseline_rows,
-        baseline_rows=draft.baseline_rows,
-    )
+    baseline = _projection_attribution_baseline(draft)
     baseline_fingerprint = _draft_projection_fingerprint(baseline)
     baseline_identities = {row.identity for row in baseline.rows}
     changes_by_identity: dict[
         tuple[str, str], list[DataDefinitionDraftChange]
     ] = {}
-    for change in draft.changes():
+    for change in draft.attributed_changes():
         if change.field_name == "__row__" or change.row_identity not in baseline_identities:
             continue
         changes_by_identity.setdefault(change.row_identity, []).append(change)
@@ -201,6 +206,27 @@ def _projection_changing_changes(
             )
         )
     return tuple(contexts)
+
+
+def _projection_attribution_baseline(
+    draft: DataDefinitionDraft,
+) -> DataDefinitionDraft:
+    schema_rows = sorted(
+        (
+            row
+            for row in (
+                *draft.baseline_rows,
+                *draft.controlled_addition_initial_rows,
+            )
+            if row.source_kind == "schema_row"
+        ),
+        key=lambda row: row.display_order,
+    )
+    other_rows = tuple(
+        row for row in draft.baseline_rows if row.source_kind != "schema_row"
+    )
+    rows = (*schema_rows, *other_rows)
+    return DataDefinitionDraft(rows=rows, baseline_rows=rows)
 
 
 def _projection_relevant_changes(
@@ -245,6 +271,34 @@ def _apply_definition_changes(
 def _draft_projection_fingerprint(draft: DataDefinitionDraft) -> str:
     return projected_feature_catalog_fingerprint(
         project_feature_catalog_from_draft(draft)
+    )
+
+
+def _candidate_data_definition_blockers(
+    draft: DataDefinitionDraft,
+    report: DataDefinitionReport,
+) -> tuple[DataDefinitionSaveBlocker, ...]:
+    issues = validate_data_definition_candidate(draft, report)
+    basic_issue_rows = {
+        issue.row_identity
+        for issue in issues
+        if issue.code in _BASIC_SCHEMA_ISSUE_CODES
+    }
+    ml_fingerprint_changed = _draft_projection_fingerprint(draft) != (
+        projected_feature_catalog_fingerprint(report.catalog_features)
+    )
+    return tuple(
+        _blocker(
+            f"candidate_{issue.code}",
+            "error",
+            issue.message,
+            "schema_csv",
+            row_identity=issue.row_identity,
+            field_name=issue.field_name,
+        )
+        for issue in issues
+        if issue.row_identity not in basic_issue_rows
+        and not (ml_fingerprint_changed and issue.code in _PARITY_ISSUE_CODES)
     )
 
 

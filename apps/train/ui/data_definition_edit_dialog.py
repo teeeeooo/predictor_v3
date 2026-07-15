@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from PySide6.QtCore import QSignalBlocker
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -24,10 +25,10 @@ from core.data_definition import (
     mapping_template,
     mapping_template_for_relation,
 )
-from core.predictor_schema.catalog_v2 import (
-    ALLOWED_DATA_TYPES,
-    ALLOWED_EDITORS,
-    ALLOWED_VALUE_SOURCES,
+from core.data_definition.command_contract import (
+    controlled_data_type_options,
+    controlled_editor_options,
+    controlled_value_source_options,
 )
 
 EditApplyCallback = Callable[[EditDefinitionIntent], tuple[bool, str]]
@@ -46,13 +47,23 @@ class DataDefinitionEditDialog(QDialog):
         super().__init__(parent)
         self._identity = identity
         self._initial = dict(values)
+        self._role = self._initial.get("role", "")
+        self._has_mapping_metadata = any(
+            self._initial.get(field_name, "")
+            for field_name in (
+                "mapping_entity",
+                "mapping_attribute",
+                "trigger_column",
+                "rule_id",
+            )
+        )
         self._on_apply = on_apply
         self.setWindowTitle("Edit Definition")
         self.setAccessibleName("Edit Data Definition")
         self.setModal(True)
         self._build()
         self._prefill()
-        self._update_mapping_fields()
+        self._update_contract_fields()
 
     def intent(self) -> EditDefinitionIntent:
         """Return every controlled form value as one atomic Edit command."""
@@ -103,10 +114,27 @@ class DataDefinitionEditDialog(QDialog):
         form = QFormLayout()
         form.setSpacing(style.spacing("space.sm"))
         self.label_input = QLineEdit()
-        self.editor_combo = _combo("Definition editor", ALLOWED_EDITORS)
-        self.data_type_combo = _combo("Definition data type", ALLOWED_DATA_TYPES)
-        self.value_source_combo = _combo("Definition value source", ALLOWED_VALUE_SOURCES)
-        self.value_source_combo.currentIndexChanged.connect(self._update_mapping_fields)
+        source = self._initial.get("value_source", "")
+        editor = self._initial.get("editor", "")
+        self.editor_combo = _combo(
+            "Definition editor",
+            controlled_editor_options(
+                self._role,
+                source,
+                editor,
+                self._has_mapping_metadata,
+            ),
+        )
+        self.data_type_combo = _combo(
+            "Definition data type",
+            controlled_data_type_options(self._role, source, editor),
+        )
+        self.value_source_combo = _combo(
+            "Definition value source",
+            controlled_value_source_options(self._role, source),
+        )
+        self.value_source_combo.currentIndexChanged.connect(self._update_contract_fields)
+        self.editor_combo.currentIndexChanged.connect(self._update_contract_fields)
         self.visible_checkbox = QCheckBox("Visible in Predict")
         self.required_checkbox = QCheckBox("Required")
         self.readonly_checkbox = QCheckBox("Read only")
@@ -182,8 +210,24 @@ class DataDefinitionEditDialog(QDialog):
         self.one_hot_input.setText(self._initial.get("one_hot_group", ""))
         self.notes_input.setText(self._initial.get("notes", ""))
 
-    def _update_mapping_fields(self) -> None:
-        visible = self.value_source_combo.currentData() == "mapping_lookup"
+    def _update_contract_fields(self) -> None:
+        source = str(self.value_source_combo.currentData() or "")
+        editor = str(self.editor_combo.currentData() or "")
+        editor_options = controlled_editor_options(
+            self._role,
+            source,
+            self._initial.get("editor", ""),
+            self._has_mapping_metadata and source == self._initial.get("value_source"),
+        )
+        _replace_options(self.editor_combo, editor_options, editor)
+        editor = str(self.editor_combo.currentData() or "")
+        _replace_options(
+            self.data_type_combo,
+            controlled_data_type_options(self._role, source, editor),
+            str(self.data_type_combo.currentData() or ""),
+        )
+
+        visible = source == "mapping_lookup"
         for widget in (
             self.mapping_label,
             self.mapping_combo,
@@ -192,6 +236,38 @@ class DataDefinitionEditDialog(QDialog):
         ):
             widget.setVisible(visible)
 
+        input_role = self._role == "input"
+        self.readonly_checkbox.setChecked(not input_role)
+        self.readonly_checkbox.setEnabled(False)
+        if self._role in {"helper", "one_hot_feature"}:
+            self.visible_checkbox.setChecked(False)
+            self.visible_checkbox.setEnabled(False)
+
+        fixed_model_input = {
+            "helper": False,
+            "result": False,
+            "status": False,
+            "one_hot_feature": True,
+        }
+        if input_role and source in {"one_hot", "rule_options"}:
+            fixed_model_input["input"] = source == "one_hot"
+        if self._role in fixed_model_input:
+            self.model_input_checkbox.setChecked(fixed_model_input[self._role])
+            self.model_input_checkbox.setEnabled(False)
+        else:
+            self.model_input_checkbox.setEnabled(True)
+
+        direct_ml_name = (
+            self._role == "auto"
+            or (input_role and source == "manual")
+            or (self._role == "result" and source == "result")
+            or self._role == "one_hot_feature"
+        )
+        self.ml_name_input.setEnabled(direct_ml_name)
+        self.one_hot_input.setEnabled(
+            self._role == "one_hot_feature" or (input_role and source == "one_hot")
+        )
+
     def _apply(self) -> None:
         accepted, message = self._on_apply(self.intent())
         self.error_label.setText("" if accepted else message)
@@ -199,7 +275,7 @@ class DataDefinitionEditDialog(QDialog):
             self.accept()
 
 
-def _combo(accessible_name: str, values: frozenset[str]) -> QComboBox:
+def _combo(accessible_name: str, values: tuple[str, ...]) -> QComboBox:
     combo = QComboBox()
     combo.setAccessibleName(accessible_name)
     for value in sorted(values):
@@ -211,3 +287,16 @@ def _select(combo: QComboBox, value: str) -> None:
     index = combo.findData(value)
     if index >= 0:
         combo.setCurrentIndex(index)
+
+
+def _replace_options(
+    combo: QComboBox,
+    values: tuple[str, ...],
+    selected: str,
+) -> None:
+    with QSignalBlocker(combo):
+        combo.clear()
+        for value in values:
+            combo.addItem(value.replace("_", " ").title(), value)
+        index = combo.findData(selected)
+        combo.setCurrentIndex(index if index >= 0 else 0)

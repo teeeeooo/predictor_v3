@@ -10,12 +10,20 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
+from core.data_definition.draft import (
+    DataDefinitionDraft,
+    DataDefinitionDraftRow,
+    build_data_definition_draft,
+)
 from core.data_definition.edit_policy import restricted_draft_field_changes
 from core.data_definition.save_contract import (
     DataDefinitionSaveBlocker,
     DataDefinitionSavePlan,
     build_data_definition_save_plan,
+)
+from core.data_definition.validation import (
+    build_data_definition_report,
+    validate_data_definition_candidate,
 )
 from core.predictor_schema.catalog_v2 import (
     REQUIRED_HEADERS,
@@ -215,17 +223,33 @@ def _backup_destination(destination: Path) -> Path:
 
 
 def _candidate_schema_issues(tmp_path: Path) -> tuple[DataDefinitionSaveBlocker, ...]:
-    issues = validate_predict_schema_catalog_v2_issues(
-        load_predict_schema_catalog_v2(tmp_path)
+    catalog_issues = validate_predict_schema_catalog_v2_issues(
+        load_predict_schema_catalog_v2(tmp_path),
+    )
+    if catalog_issues:
+        return tuple(
+            _blocker(
+                "candidate_schema_validation_failed",
+                issue.message,
+                row_identity=("schema_row", issue.column_key) if issue.column_key else None,
+                field_name=issue.field_name,
+            )
+            for issue in catalog_issues
+        )
+    candidate_draft = build_data_definition_draft(schema_path=tmp_path)
+    candidate_report = build_data_definition_report(schema_path=tmp_path)
+    candidate_issues = validate_data_definition_candidate(
+        candidate_draft,
+        candidate_report,
     )
     return tuple(
         _blocker(
-            "candidate_schema_validation_failed",
+            f"candidate_{issue.code}",
             issue.message,
-            row_identity=("schema_row", issue.column_key) if issue.column_key else None,
+            row_identity=issue.row_identity,
             field_name=issue.field_name,
         )
-        for issue in issues
+        for issue in candidate_issues
     )
 
 

@@ -16,6 +16,7 @@ from apps.train.controllers.data_definition_impact_projection import (
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 import core.data_definition.schema_writer as schema_writer_module
+from core.ml.artifacts import MODEL_FILE
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
 
@@ -115,6 +116,123 @@ def test_ml_rename_is_complete_blocked_impact_with_selection_relevance(tmp_path)
     assert tuple(path.read_bytes() for path in protected) == before
 
 
+def test_added_manual_row_ml_activation_is_attributed_to_add_fields(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    identity = ("schema_row", "fan_diameter")
+    protected = tuple(
+        path
+        for path in (
+            tmp_path / "schema.csv",
+            Path("config/ml/features.csv"),
+            Path(MODEL_FILE),
+        )
+        if path.is_file()
+    )
+    before = tuple(path.read_bytes() for path in protected)
+    controller.add_definition(
+        AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
+    )
+    state = controller.edit_definition(
+        EditDefinitionIntent(identity, (
+            ("model_input_enabled", True),
+            ("ml_name", "Fan Diameter"),
+        ))
+    )
+
+    direct = project_data_definition_impact(state, identity)
+    other = project_data_definition_impact(state, ("schema_row", "idu"))
+
+    assert state.draft_changed and not state.save_action_enabled
+    assert [(item.action, item.identity) for item in direct.definitions] == [
+        ("Add", identity),
+    ]
+    assert [field.field_name for field in direct.definitions[0].fields] == [
+        "model_input_enabled",
+        "ml_name",
+    ]
+    assert {item.relevance for item in direct.blockers} == {"direct"}
+    assert {item.relevance for item in other.blockers} == {"other_definition"}
+    assert not any(item.relevance == "global" for item in direct.blockers)
+    assert {item.related_row_identity for item in direct.blockers} == {identity}
+    assert {item.related_field for item in direct.blockers} == {
+        "model_input_enabled",
+        "ml_name",
+    }
+    controller.save_schema()
+    assert tuple(path.read_bytes() for path in protected) == before
+
+
+def test_added_row_projection_revert_removes_ml_blocker_and_preserves_add(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    identity = ("schema_row", "fan_diameter")
+    controller.add_definition(
+        AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
+    )
+    controller.edit_definition(
+        EditDefinitionIntent(identity, (
+            ("model_input_enabled", True),
+            ("ml_name", "Fan Diameter"),
+        ))
+    )
+
+    reverted_state = controller.edit_definition(
+        EditDefinitionIntent(identity, (("model_input_enabled", False),))
+    )
+    reverted = project_data_definition_impact(reverted_state, identity)
+
+    assert reverted_state.draft_changed and reverted.save_enabled
+    assert not reverted.ml_fingerprint_changed
+    assert not any(
+        item.code == "ml_compatibility_projection_write_required"
+        for item in reverted.blockers
+    )
+    assert [(item.action, item.identity) for item in reverted.definitions] == [
+        ("Add", identity),
+    ]
+    assert [field.field_name for field in reverted.definitions[0].fields] == ["ml_name"]
+
+    saved_state = controller.save_schema()
+    assert saved_state.status == "saved" and not saved_state.draft_changed
+    assert controller._draft is not None
+    assert not controller._draft.controlled_row_additions
+    assert not controller._draft.controlled_addition_initial_rows
+
+
+def test_raw_invalid_role_source_keeps_dirty_draft_and_recovers_save_state(tmp_path):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    identity = ("schema_row", "id_volume")
+    schema_path = tmp_path / "schema.csv"
+    original = schema_path.read_bytes()
+    controller.edit_cell(identity, "notes", "Keep this valid metadata edit")
+
+    blocked_state = controller.edit_cell(identity, "value_source", "manual")
+    blocked = project_data_definition_impact(blocked_state, identity)
+
+    assert blocked_state.draft_changed and not blocked.save_enabled
+    issue = next(
+        item for item in blocked.blockers
+        if item.code == "candidate_role_value_source_unsupported"
+    )
+    assert (issue.related_row_identity, issue.related_field) == (
+        identity,
+        "value_source",
+    )
+    assert controller.save_schema().status == "blocked"
+    assert schema_path.read_bytes() == original
+    assert not (tmp_path / "backups").exists()
+
+    recovered_state = controller.edit_cell(identity, "value_source", "mapping_lookup")
+    recovered = project_data_definition_impact(recovered_state, identity)
+    assert recovered_state.draft_changed and recovered.save_enabled
+    assert not any(
+        item.code == "candidate_role_value_source_unsupported"
+        for item in recovered.blockers
+    )
+
+
 @pytest.mark.parametrize(
     "intent",
     (
@@ -163,8 +281,8 @@ def test_candidate_failure_clears_after_correction_and_writer_error_remains_retr
 ):
     controller = _controller(tmp_path)
     state = controller.refresh()
-    identity = state.draft_row_identities[0]
-    controller.edit_cell(identity, "label", "Cooling Capacity")
+    identity = ("schema_row", "idu")
+    controller.edit_cell(identity, "label", "Indoor Unit")
     controller.edit_cell(identity, "data_type", "invalid_type")
     blocked_state = controller.save_schema()
     blocked = project_data_definition_impact(blocked_state, identity)
@@ -175,7 +293,7 @@ def test_candidate_failure_clears_after_correction_and_writer_error_remains_retr
     assert "candidate_schema_validation_failed" in blocked.result_text
     assert any(item.related_field == "data_type" for item in blocked.blockers)
 
-    corrected_state = controller.edit_cell(identity, "data_type", "number")
+    corrected_state = controller.edit_cell(identity, "data_type", "string")
     corrected = project_data_definition_impact(corrected_state, identity)
     assert corrected.status == "dirty" and corrected.save_enabled
     assert corrected.save_result_status == "No save attempted."
@@ -259,6 +377,21 @@ def test_impact_renders_direct_other_and_global_blocker_groups(tmp_path):
     assert "direct: direct_issue" in impact.save_text
     assert "other_definition: other_issue" in impact.save_text
     assert "global: global_issue" in impact.save_text
+
+    no_selection = project_data_definition_impact(fixture, None)
+    assert [item.relevance for item in no_selection.blockers] == [
+        "selection_unavailable",
+        "selection_unavailable",
+        "global",
+    ]
+    assert [item.code for item in no_selection.blockers] == [
+        "direct_issue",
+        "other_issue",
+        "global_issue",
+    ]
+    assert "selection_unavailable: direct_issue" in no_selection.save_text
+    assert "selection_unavailable: other_issue" in no_selection.save_text
+    assert "global: global_issue" in no_selection.save_text
 
 
 def _controller(tmp_path) -> DataDefinitionController:

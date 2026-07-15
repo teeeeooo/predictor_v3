@@ -23,15 +23,17 @@ complete draft transitions; the default impact preview explains definition,
 schema, mapping, restart, retrain, ML compatibility, blocker, and writer-result
 evidence. Allowed drafts use the existing candidate-validation/backup/atomic-
 replace schema writer; unsupported ML changes remain complete but blocked. PR #16
-remains Draft/Open pending the combined audit.
+remains Draft/Open. The combined audit correction adds role-aware complete-row
+validation and full parity, immutable controlled-Add provenance, and no-selection
+blocker preservation without starting Slice 3D.
 
 ## Next Action
 
-Slice 3B+3C audit before starting Slice 3D.
+Slice 3B+3C re-audit before starting Slice 3D.
 
 ## Active Blockers
 
-- No code blocker remains in Slices 3B+3C; the explicit combined audit hold
+- No code blocker remains in Slices 3B+3C; the explicit combined re-audit hold
   prevents starting Slice 3D.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.

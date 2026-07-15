@@ -25,7 +25,12 @@ class DataDefinitionDetailState:
     rows: tuple[tuple[str, str], ...]
 
 
-BlockerRelevance = Literal["direct", "other_definition", "global"]
+BlockerRelevance = Literal[
+    "direct",
+    "other_definition",
+    "selection_unavailable",
+    "global",
+]
 
 
 @dataclass(frozen=True)
@@ -115,9 +120,9 @@ def _blocker_summary(
 
 def project_blockers(
     state: DataDefinitionControllerState,
-    selected_identity: tuple[str, str],
+    selected_identity: tuple[str, str] | None,
 ) -> tuple[DataDefinitionFocusedBlockerItem, ...]:
-    """Deduplicate cross-source evidence and classify it for one selection."""
+    """Collect every blocker and classify only its selection relevance."""
     plan_items = tuple(
         item
         for item in state.blocker_items
@@ -137,7 +142,12 @@ def project_blockers(
     )
     return tuple(
         item
-        for relevance in ("direct", "other_definition", "global")
+        for relevance in (
+            "direct",
+            "other_definition",
+            "selection_unavailable",
+            "global",
+        )
         for item in classified
         if item.relevance == relevance
     )
@@ -155,11 +165,13 @@ def _blocker_key(item: DataDefinitionBlockerItem) -> tuple[object, ...]:
 
 def _focused_blocker(
     item: DataDefinitionBlockerItem,
-    selected_identity: tuple[str, str],
+    selected_identity: tuple[str, str] | None,
 ) -> DataDefinitionFocusedBlockerItem:
     relevance: BlockerRelevance = (
         "global"
         if item.related_row_identity is None
+        else "selection_unavailable"
+        if selected_identity is None
         else "direct"
         if item.related_row_identity == selected_identity
         else "other_definition"
@@ -186,7 +198,8 @@ def _blocker_section(
 def _blocker_line(item: DataDefinitionFocusedBlockerItem) -> str:
     definition = (
         f"{item.related_row_identity[1]} — "
-        if item.relevance == "other_definition" and item.related_row_identity
+        if item.relevance in {"other_definition", "selection_unavailable"}
+        and item.related_row_identity
         else ""
     )
     context = " / ".join(

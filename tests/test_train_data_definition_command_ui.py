@@ -148,6 +148,65 @@ def test_edit_dialog_prefills_and_applies_one_atomic_metadata_edit(tmp_path):
         app.processEvents()
 
 
+def test_edit_dialog_projects_role_aware_complete_shape_options(tmp_path):
+    app = _app()
+    panel = DataDefinitionPanel(controller=_controller(tmp_path))
+    identity = ("schema_row", "id_volume")
+    panel._selected_identity = identity
+    panel._apply_inventory()
+    values = panel._selected_values()
+    assert values is not None
+    dialog = DataDefinitionEditDialog(identity, values, panel._apply_edit_intent, panel)
+    try:
+        assert dialog.value_source_combo.count() == 1
+        assert dialog.value_source_combo.currentData() == "mapping_lookup"
+        assert dialog.value_source_combo.findData("manual") == -1
+        assert dialog.editor_combo.count() == 1
+        assert dialog.editor_combo.currentData() == "readonly"
+        assert set(
+            dialog.data_type_combo.itemData(index)
+            for index in range(dialog.data_type_combo.count())
+        ) == {"number", "string"}
+        assert dialog.readonly_checkbox.isChecked()
+        assert not dialog.readonly_checkbox.isEnabled()
+        assert dialog.one_hot_input.isEnabled() is False
+    finally:
+        dialog.reject()
+        dialog.deleteLater()
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_invalid_controlled_edit_keeps_selection_and_draft_unchanged(tmp_path):
+    app = _app()
+    panel = DataDefinitionPanel(controller=_controller(tmp_path))
+    identity = ("schema_row", "id_volume")
+    panel._selected_identity = identity
+    panel._apply_inventory()
+    before_rows = panel._state.draft_rows
+    before_changes = panel._state.draft_change_rows
+    try:
+        accepted, message = panel._apply_edit_intent(
+            EditDefinitionIntent(identity, (("value_source", "manual"),))
+        )
+        app.processEvents()
+
+        assert not accepted
+        assert "requires mapping lookup" in message
+        assert panel._selected_identity == identity
+        assert panel._state.draft_rows == before_rows
+        assert panel._state.draft_change_rows == before_changes
+        assert not panel._state.draft_changed
+        assert "role_value_source_unsupported" in {
+            row[0] for row in panel._state.command_issue_rows
+        }
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
 def test_controller_reset_removes_controlled_add_and_edit_results(tmp_path):
     controller = _controller(tmp_path)
     initial = controller.refresh()

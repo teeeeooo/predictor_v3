@@ -200,6 +200,146 @@ def test_controlled_edit_is_atomic_and_restricted_fields_are_rejected():
     assert _snapshot(rejected.draft) == before_restricted
 
 
+def test_controlled_edit_rejects_auto_to_manual_without_partial_cleanup():
+    draft = build_data_definition_draft()
+    identity = ("schema_row", "id_volume")
+    before = _snapshot(draft)
+    original = next(row for row in draft.rows if row.identity == identity)
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(identity, (("value_source", "manual"),)),
+    )
+
+    row = next(item for item in result.draft.rows if item.identity == identity)
+    assert not result.accepted
+    assert [(issue.code, issue.field_name) for issue in result.issues] == [
+        ("role_value_source_unsupported", "value_source"),
+    ]
+    assert "requires mapping lookup" in result.message
+    assert row.value_source == "mapping_lookup"
+    assert (
+        row.mapping_entity,
+        row.mapping_attribute,
+        row.trigger_column,
+        row.rule_id,
+    ) == (
+        original.mapping_entity,
+        original.mapping_attribute,
+        original.trigger_column,
+        original.rule_id,
+    )
+    assert _snapshot(result.draft) == before
+
+
+def test_supported_source_transition_cleans_source_owned_metadata_atomically():
+    draft = build_data_definition_draft()
+    identity = ("schema_row", "fin_type")
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(identity, (("value_source", "manual"),)),
+    )
+
+    row = next(item for item in result.draft.rows if item.identity == identity)
+    assert result.accepted
+    assert row.value_source == "manual"
+    assert (
+        row.mapping_entity,
+        row.mapping_attribute,
+        row.trigger_column,
+        row.rule_id,
+    ) == ("", "", "", "")
+
+
+@pytest.mark.parametrize(
+    "identity, updates, expected_code",
+    (
+        (
+            ("schema_row", "cooling_power"),
+            (("value_source", "manual"),),
+            "role_value_source_unsupported",
+        ),
+        (
+            ("schema_row", "status"),
+            (("value_source", "manual"),),
+            "status_shape_invalid",
+        ),
+        (
+            ("schema_row", "one_hot_refrigerant_r410a"),
+            (("value_source", "manual"),),
+            "one_hot_feature_shape_invalid",
+        ),
+        (
+            ("schema_row", "cooling_capa"),
+            (("editor", "readonly"), ("readonly", True)),
+            "input_readonly_invalid",
+        ),
+    ),
+)
+def test_controlled_edit_rejects_role_shape_crossovers_atomically(
+    identity,
+    updates,
+    expected_code,
+):
+    draft = build_data_definition_draft()
+    before = _snapshot(draft)
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(identity, updates),
+    )
+
+    assert not result.accepted
+    assert expected_code in {issue.code for issue in result.issues}
+    assert _snapshot(result.draft) == before
+
+
+def test_mapping_lookup_transition_requires_complete_relation_in_one_command():
+    draft = build_data_definition_draft()
+    identity = ("schema_row", "fin_type")
+    before = _snapshot(draft)
+
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(identity, (
+            ("value_source", "mapping_lookup"),
+            ("mapping_entity", "idu"),
+        )),
+    )
+
+    assert not result.accepted
+    assert result.issues[0].code == "mapping_transition_incomplete"
+    assert _snapshot(result.draft) == before
+
+
+def test_valid_mapping_relation_edit_stages_complete_row_but_full_parity_blocks_save():
+    draft = build_data_definition_draft()
+    identity = ("schema_row", "id_volume")
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(identity, (
+            ("value_source", "mapping_lookup"),
+            ("mapping_entity", "evap_index"),
+            ("mapping_attribute", "ID Volume"),
+            ("trigger_column", "evap_index"),
+            ("rule_id", ""),
+        )),
+    )
+
+    plan = build_data_definition_save_plan(result.draft)
+
+    assert result.accepted
+    assert not plan.can_save_schema
+    blockers = tuple(
+        item for item in plan.blocked_reasons
+        if item.code == "candidate_feature_projection_mismatch"
+    )
+    assert blockers
+    assert all(item.row_identity == identity for item in blockers)
+    assert {item.field_name for item in blockers} == {"trigger_column"}
+
+
 @pytest.mark.parametrize("field_name, value", (
     ("column_key", "cooling_capacity"),
     ("display_order", 999),
@@ -261,6 +401,32 @@ def test_projection_changing_controlled_edit_is_complete_but_save_blocked():
     assert blocker.row_identity == identity and blocker.field_name == "ml_name"
 
 
+def test_controlled_add_provenance_survives_edit_and_tracks_only_post_add_fields():
+    draft = build_data_definition_draft()
+    added = apply_add_definition_command(
+        draft,
+        AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number"),
+    )
+    identity = ("schema_row", "fan_diameter")
+    initial = added.draft.controlled_addition_initial_row(identity)
+
+    activated = apply_edit_definition_command(
+        added.draft,
+        EditDefinitionIntent(identity, (
+            ("model_input_enabled", True),
+            ("ml_name", "Fan Diameter"),
+        )),
+    )
+
+    assert initial is not None and not initial.model_input_enabled and not initial.ml_name
+    assert activated.draft.controlled_addition_initial_row(identity) is initial
+    assert [change.field_name for change in activated.draft.attributed_changes()] == [
+        "__row__",
+        "model_input_enabled",
+        "ml_name",
+    ]
+
+
 def test_controlled_add_uses_existing_writer_and_reload_keeps_identity_and_order(tmp_path):
     schema_path = tmp_path / "schema.csv"
     shutil.copyfile(DEFAULT_SCHEMA_PATH, schema_path)
@@ -291,5 +457,6 @@ def _snapshot(draft):
         draft.baseline_rows,
         draft.issues,
         draft.controlled_row_additions,
+        draft.controlled_addition_initial_rows,
         draft.changes(),
     )

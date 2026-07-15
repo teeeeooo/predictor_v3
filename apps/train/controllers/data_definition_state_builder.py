@@ -227,7 +227,7 @@ def _draft_rows(
     draft: DataDefinitionDraft,
 ) -> tuple[tuple[DataDefinitionDraftCellState, ...], ...]:
     changed_by_identity: dict[tuple[str, str], set[str]] = {}
-    for change in draft.changes():
+    for change in draft.attributed_changes():
         changed_by_identity.setdefault(change.row_identity, set()).add(change.field_name)
     return tuple(
         _draft_row(row, changed_by_identity.get(row.identity, set()))

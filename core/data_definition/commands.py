@@ -41,6 +41,10 @@ def apply_add_definition_command(
         controlled_row_additions=frozenset(
             (*draft.controlled_row_additions, row.identity)
         ),
+        controlled_addition_initial_rows=(
+            *draft.controlled_addition_initial_rows,
+            row,
+        ),
     )
     return DataDefinitionCommandResult(updated, True, row.identity, "Add")
 
@@ -56,6 +60,15 @@ def apply_edit_definition_command(
     updates, issues = _validated_edit_updates(row, intent.updates)
     if issues:
         return DataDefinitionCommandResult(draft, False, intent.identity, "Edit", issues)
+    updates, transition_issues = _normalize_source_transition(row, updates)
+    if transition_issues:
+        return DataDefinitionCommandResult(
+            draft,
+            False,
+            intent.identity,
+            "Edit",
+            transition_issues,
+        )
     candidate = _row_with_updates(row, updates)
     issues = validate_complete_row(candidate)
     if issues:
@@ -197,6 +210,39 @@ def _row_with_updates(
     }
     values.update(updates)
     return DataDefinitionDraftRow(**values)
+
+
+def _normalize_source_transition(
+    row: DataDefinitionDraftRow,
+    updates: dict[str, object],
+) -> tuple[dict[str, object], tuple[DataDefinitionCommandIssue, ...]]:
+    """Apply complete source-owned metadata transitions to the candidate only."""
+    before = row.value_source
+    after = str(updates.get("value_source", before))
+    if before == after:
+        return updates, ()
+    normalized = dict(updates)
+    mapping_fields = {
+        "mapping_entity",
+        "mapping_attribute",
+        "trigger_column",
+        "rule_id",
+    }
+    if after == "mapping_lookup" and not mapping_fields.issubset(updates):
+        return updates, (_issue(
+            "mapping_transition_incomplete",
+            "value_source",
+            "Changing to Mapping Lookup requires one complete supported mapping relation.",
+        ),)
+    if before in {"mapping_lookup", "rule_options", "one_hot"} and after not in {
+        "mapping_lookup",
+        "rule_options",
+        "one_hot",
+    }:
+        normalized.update({field_name: "" for field_name in mapping_fields})
+    if before == "one_hot" and after != "one_hot":
+        normalized["one_hot_group"] = ""
+    return normalized, ()
 
 
 def _next_display_order(draft: DataDefinitionDraft) -> int:

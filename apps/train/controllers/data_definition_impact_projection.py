@@ -76,7 +76,7 @@ def project_data_definition_impact(
         (row[1] for row in state.save_plan_rows if row and row[0] == "schema_csv"),
         "unavailable",
     )
-    blockers = project_blockers(state, selected_identity) if selected_identity else ()
+    blockers = project_blockers(state, selected_identity)
     warnings = tuple(
         item.message
         for item in state.blocker_items

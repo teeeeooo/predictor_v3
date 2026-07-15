@@ -220,7 +220,7 @@ def test_data_definition_save_plan_removes_compound_attribution_after_partial_re
         ml_name="IDU",
         notes="description changed",
     )
-    partial = replace_draft_row(compound, row.identity, ml_name="")
+    partial = replace_draft_row(compound, row.identity, model_input_enabled=False)
 
     blocked = build_data_definition_save_plan(compound)
     recovered = build_data_definition_save_plan(partial)
@@ -229,7 +229,7 @@ def test_data_definition_save_plan_removes_compound_attribution_after_partial_re
     assert not _blockers(recovered, "ml_compatibility_projection_write_required")
     assert recovered.can_save_schema
     assert [change.field_name for change in recovered.changed_fields] == [
-        "model_input_enabled",
+        "ml_name",
         "notes",
     ]
 
@@ -336,10 +336,12 @@ def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
 
     plan = build_data_definition_save_plan(changed)
 
-    assert plan.can_save_schema
+    assert not plan.can_save_schema
     assert _blocker_codes(plan) >= {
         "data_mapping_dynamic_requirement_deferred",
         "one_hot_runtime_owner_deferred",
+        "candidate_feature_projection_mismatch",
+        "candidate_one_hot_selector_relation_unsupported",
     }
 
 
@@ -415,8 +417,8 @@ def test_data_definition_save_plan_blocks_raw_row_delete():
 
 def test_data_definition_save_plan_allows_schema_backed_label_change():
     draft = build_data_definition_draft()
-    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
-    changed = replace_draft_row(draft, schema_row.identity, label="Cooling Capacity")
+    schema_row = next(row for row in draft.rows if row.column_key == "idu")
+    changed = replace_draft_row(draft, schema_row.identity, label="Indoor Unit")
 
     plan = build_data_definition_save_plan(changed)
 
@@ -424,6 +426,23 @@ def test_data_definition_save_plan_allows_schema_backed_label_change():
     assert _target_status(plan, "schema_csv") == "planned"
     assert "restricted_field_edit_not_allowed" not in _blocker_codes(plan)
     assert "raw_row_add_delete_not_allowed" not in _blocker_codes(plan)
+
+
+def test_full_parity_blocks_projected_label_without_expanding_ml_fingerprint():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, label="Cooling Capacity")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "candidate_feature_projection_mismatch" in _blocker_codes(plan)
+    assert "ml_compatibility_projection_write_required" not in _blocker_codes(plan)
+    blocker = _blocker(plan, "candidate_feature_projection_mismatch")
+    assert (blocker.row_identity, blocker.field_name) == (
+        schema_row.identity,
+        "label",
+    )
 
 
 def test_data_definition_save_plan_allows_notes_change_without_ml_impact():

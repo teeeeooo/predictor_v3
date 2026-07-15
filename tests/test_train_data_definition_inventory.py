@@ -218,7 +218,7 @@ def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
     controller.edit_cell(identity, "ml_name", "IDU")
     blocked = controller.edit_cell(identity, "notes", "description changed")
 
-    recovered = controller.edit_cell(identity, "ml_name", "")
+    recovered = controller.edit_cell(identity, "model_input_enabled", False)
 
     assert project_blockers(blocked, identity)
     assert not any(

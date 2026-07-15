@@ -8,6 +8,9 @@ import shutil
 from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.controllers.data_definition_impact_projection import (
+    project_data_definition_impact,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
@@ -75,6 +78,7 @@ def test_impact_view_shows_mapping_owner_and_ml_blocker_then_reset_clears_stale_
             rule_id="cond_specs_lookup",
         ))
         app.processEvents()
+
         assert accepted
         assert "Cond Inner Area in cond_specs" in panel.impact_view.mapping_label.text()
         assert "Data Mapping-owned" in panel.impact_view.mapping_label.text()
@@ -98,6 +102,86 @@ def test_impact_view_shows_mapping_owner_and_ml_blocker_then_reset_clears_stale_
         assert panel.impact_view.result_label.text() == "No save attempted."
         assert "Mapping Requirement impact" in panel.impact_view.mapping_label.text()
         assert not panel.save_button.isEnabled()
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp_path):
+    app = _app()
+    schema_path = _copy_schema(tmp_path)
+    panel = DataDefinitionPanel(controller=_controller(schema_path))
+    identity = ("schema_row", "cooling_capa")
+    try:
+        panel._selected_identity = identity
+        accepted, _message = panel._apply_edit_intent(EditDefinitionIntent(
+            identity,
+            (("ml_name", "Cooling Capacity Renamed"),),
+        ))
+        app.processEvents()
+        assert accepted
+        state_before = panel._state
+        schema_before = schema_path.read_bytes()
+        selected = project_data_definition_impact(state_before, identity)
+        evidence = tuple(
+            (
+                item.code,
+                item.target,
+                item.message,
+                item.related_row_identity,
+                item.related_field,
+            )
+            for item in selected.blockers
+        )
+        assert {item.relevance for item in selected.blockers} == {"direct"}
+
+        panel.search_input.setText("definitely-no-definition-matches")
+        app.processEvents()
+
+        assert panel.inventory_table.model().rowCount() == 0
+        assert panel._selected_identity is None
+        assert panel._state is state_before
+        assert panel._state.draft_changed
+        assert not panel.save_button.isEnabled()
+        no_selection = project_data_definition_impact(panel._state, None)
+        assert tuple(
+            (
+                item.code,
+                item.target,
+                item.message,
+                item.related_row_identity,
+                item.related_field,
+            )
+            for item in no_selection.blockers
+        ) == evidence
+        assert {item.relevance for item in no_selection.blockers} == {
+            "selection_unavailable"
+        }
+        assert "selection_unavailable: ml_compatibility_projection_write_required" in (
+            panel.impact_view.save_label.text()
+        )
+        assert schema_path.read_bytes() == schema_before
+
+        panel.search_input.clear()
+        app.processEvents()
+        restored = project_data_definition_impact(
+            panel._state,
+            panel._selected_identity,
+        )
+        assert panel._selected_identity == identity
+        assert tuple(
+            (
+                item.code,
+                item.target,
+                item.message,
+                item.related_row_identity,
+                item.related_field,
+            )
+            for item in restored.blockers
+        ) == evidence
+        assert {item.relevance for item in restored.blockers} == {"direct"}
+        assert schema_path.read_bytes() == schema_before
     finally:
         panel.close()
         panel.deleteLater()

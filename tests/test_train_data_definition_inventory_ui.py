@@ -78,9 +78,10 @@ def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
         app.processEvents()
         assert not panel.save_button.isEnabled()
         label_column = DRAFT_FIELDS.index("label")
+        idu_row = panel._state.draft_row_identities.index(("schema_row", "idu"))
         assert panel.draft_table.model().setData(
-            panel.draft_table.model().index(0, label_column),
-            "Cooling Capacity",
+            panel.draft_table.model().index(idu_row, label_column),
+            "Indoor Unit",
             Qt.EditRole,
         )
         app.processEvents()

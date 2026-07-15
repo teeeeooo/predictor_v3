@@ -60,3 +60,56 @@ def mapping_template_for_relation(
         ),
         None,
     )
+
+
+def controlled_value_source_options(role: str, current_source: str) -> tuple[str, ...]:
+    """Return conservative role-aware sources the current dialog can complete."""
+    if role == "input" and current_source in {"one_hot", "rule_options"}:
+        return (current_source, "manual")
+    supported = {
+        "input": "manual",
+        "auto": "mapping_lookup",
+        "helper": "mapping_lookup",
+        "result": current_source if current_source in {"result", "formula"} else "result",
+        "status": "status",
+        "one_hot_feature": "one_hot",
+        "hidden": current_source,
+    }
+    return (supported.get(role, current_source),)
+
+
+def controlled_editor_options(
+    role: str,
+    value_source: str,
+    current_editor: str,
+    has_mapping_metadata: bool,
+) -> tuple[str, ...]:
+    """Return editors that the dialog can keep complete for one role/source."""
+    if role == "input" and value_source == "manual":
+        if current_editor == "dropdown" or has_mapping_metadata:
+            return ("dropdown",)
+        return ("number", "text")
+    if role == "input":
+        return ("dropdown",)
+    if role == "status":
+        return ("status",)
+    return ("readonly",)
+
+
+def controlled_data_type_options(
+    role: str,
+    value_source: str,
+    editor: str,
+) -> tuple[str, ...]:
+    """Return data types compatible with the selected controlled editor."""
+    if role == "status":
+        return ("status",)
+    if role in {"result", "one_hot_feature"}:
+        return ("number",)
+    if role in {"auto", "helper", "hidden"}:
+        return ("number", "string")
+    if value_source in {"one_hot", "rule_options"} or editor == "dropdown":
+        return ("string",)
+    if editor == "number":
+        return ("number",)
+    return ("string",)
