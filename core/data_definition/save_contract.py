@@ -16,8 +16,11 @@ from core.data_definition.projection import (
     projected_feature_catalog_fingerprint,
 )
 from core.data_definition.report_model import DataDefinitionReport
-from core.data_definition.validation import build_data_definition_report
-from core.data_definition.validation import validate_data_definition_candidate
+from core.data_definition.validation import (
+    DataDefinitionCandidateIssue,
+    build_data_definition_report,
+    validate_data_definition_candidate,
+)
 
 BlockerSeverity = Literal["error", "warning", "info"]
 WriteTargetStatus = Literal["planned", "blocked", "deferred", "no_op"]
@@ -89,10 +92,11 @@ def build_data_definition_save_plan(
     """Build an in-memory save plan without writing files."""
     report = current_report or build_data_definition_report()
     changes = draft.attributed_changes()
+    projection_blockers = _candidate_projection_blockers(draft, report)
     blockers = [
         *_report_blockers(report),
-        *_candidate_projection_blockers(draft, report),
-        *_candidate_data_definition_blockers(draft, report),
+        *projection_blockers,
+        *_candidate_data_definition_blockers(draft, report, projection_blockers),
         *_change_blockers(draft, changes),
         *_requested_target_blockers(requested_targets),
     ]
@@ -277,16 +281,20 @@ def _draft_projection_fingerprint(draft: DataDefinitionDraft) -> str:
 def _candidate_data_definition_blockers(
     draft: DataDefinitionDraft,
     report: DataDefinitionReport,
+    projection_blockers: tuple[DataDefinitionSaveBlocker, ...],
 ) -> tuple[DataDefinitionSaveBlocker, ...]:
     issues = validate_data_definition_candidate(draft, report)
+    issues = _issues_without_duplicate_ml_parity(
+        draft,
+        report,
+        issues,
+        projection_blockers,
+    )
     basic_issue_rows = {
         issue.row_identity
         for issue in issues
         if issue.code in _BASIC_SCHEMA_ISSUE_CODES
     }
-    ml_fingerprint_changed = _draft_projection_fingerprint(draft) != (
-        projected_feature_catalog_fingerprint(report.catalog_features)
-    )
     return tuple(
         _blocker(
             f"candidate_{issue.code}",
@@ -298,8 +306,57 @@ def _candidate_data_definition_blockers(
         )
         for issue in issues
         if issue.row_identity not in basic_issue_rows
-        and not (ml_fingerprint_changed and issue.code in _PARITY_ISSUE_CODES)
     )
+
+
+def _issues_without_duplicate_ml_parity(
+    draft: DataDefinitionDraft,
+    report: DataDefinitionReport,
+    issues: tuple[DataDefinitionCandidateIssue, ...],
+    projection_blockers: tuple[DataDefinitionSaveBlocker, ...],
+) -> tuple[DataDefinitionCandidateIssue, ...]:
+    """Keep parity evidence that remains after attributed ML changes are reverted."""
+    reference = _draft_without_ml_projection_changes(draft, projection_blockers)
+    if reference is draft:
+        return issues
+    independent_parity = tuple(
+        issue
+        for issue in validate_data_definition_candidate(reference, report)
+        if issue.code in _PARITY_ISSUE_CODES
+    )
+    result: list[DataDefinitionCandidateIssue] = []
+    parity_inserted = False
+    for issue in issues:
+        if issue.code not in _PARITY_ISSUE_CODES:
+            result.append(issue)
+            continue
+        if not parity_inserted:
+            result.extend(independent_parity)
+            parity_inserted = True
+    return tuple(result)
+
+
+def _draft_without_ml_projection_changes(
+    draft: DataDefinitionDraft,
+    projection_blockers: tuple[DataDefinitionSaveBlocker, ...],
+) -> DataDefinitionDraft:
+    baseline_rows = {
+        row.identity: row
+        for row in _projection_attribution_baseline(draft).rows
+    }
+    reference = draft
+    reverted = False
+    for blocker in projection_blockers:
+        baseline_row = baseline_rows.get(blocker.row_identity)
+        if baseline_row is None or not blocker.field_name:
+            continue
+        reference = replace_draft_row(
+            reference,
+            blocker.row_identity,
+            **{blocker.field_name: getattr(baseline_row, blocker.field_name)},
+        )
+        reverted = True
+    return reference if reverted else draft
 
 
 def _change_blockers(

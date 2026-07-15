@@ -35,12 +35,24 @@ def save_text(
     lines = [
         f"Draft: {status}  |  schema.csv: {schema_status}  |  Save: {'enabled' if enabled else 'disabled'}"
     ]
-    lines.extend(
-        f"• {item.relevance}: {item.code} [{item.related_field or item.target}] — {item.message}"
-        for item in blockers
-    )
+    lines.extend(_blocker_text(item) for item in blockers)
     lines.extend(f"• warning: {warning}" for warning in warnings)
     return "\n".join(lines)
+
+
+def _blocker_text(item: DataDefinitionFocusedBlockerItem) -> str:
+    context: list[str] = []
+    if (
+        item.relevance in {"other_definition", "selection_unavailable"}
+        and item.related_row_identity is not None
+    ):
+        context.append(f"definition: {item.related_row_identity[1]}")
+    if item.related_field:
+        context.append(f"field: {item.related_field}")
+    if item.target and item.target != item.related_field:
+        context.append(f"target: {item.target}")
+    context_text = f" [{'; '.join(context)}]" if context else ""
+    return f"• {item.relevance}: {item.code}{context_text} — {item.message}"
 
 
 def runtime_text(

@@ -25,15 +25,17 @@ evidence. Allowed drafts use the existing candidate-validation/backup/atomic-
 replace schema writer; unsupported ML changes remain complete but blocked. PR #16
 remains Draft/Open. The combined audit correction adds role-aware complete-row
 validation and full parity, immutable controlled-Add provenance, and no-selection
-blocker preservation without starting Slice 3D.
+blocker preservation. The blocker-presentation correction preserves independent
+full-parity evidence beside ML compatibility blockers and renders affected
+definition identity when selection is unavailable, without starting Slice 3D.
 
 ## Next Action
 
-Slice 3B+3C re-audit before starting Slice 3D.
+Slice 3B+3C final re-audit before starting Slice 3D.
 
 ## Active Blockers
 
-- No code blocker remains in Slices 3B+3C; the explicit combined re-audit hold
+- No code blocker remains in Slices 3B+3C; the explicit final re-audit hold
   prevents starting Slice 3D.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.

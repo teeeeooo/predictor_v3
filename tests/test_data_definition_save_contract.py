@@ -3,6 +3,8 @@
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
+    EditDefinitionIntent,
+    apply_edit_definition_command,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
@@ -415,6 +417,89 @@ def test_data_definition_save_plan_blocks_raw_row_delete():
     assert "raw_row_add_delete_not_allowed" in _blocker_codes(plan)
 
 
+def test_independent_parity_blocker_is_present_before_and_after_ml_revert():
+    draft = build_data_definition_draft()
+    combined = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+    combined = _mapping_relation_edit(combined, "id_volume", "evap_index")
+
+    combined_plan = build_data_definition_save_plan(combined)
+    parity_before = _blocker_evidence(
+        _blocker(combined_plan, "candidate_feature_projection_mismatch")
+    )
+    reverted = _controlled_edit(
+        combined,
+        "cooling_capa",
+        (("ml_name", "Cooling Capa"),),
+    )
+    reverted_plan = build_data_definition_save_plan(reverted)
+    parity_after = _blocker_evidence(
+        _blocker(reverted_plan, "candidate_feature_projection_mismatch")
+    )
+
+    assert _blocker_codes(combined_plan) >= {
+        "ml_compatibility_projection_write_required",
+        "candidate_feature_projection_mismatch",
+    }
+    assert parity_before == parity_after
+    assert parity_before[1:3] == (("schema_row", "id_volume"), "trigger_column")
+    assert "ml_compatibility_projection_write_required" not in _blocker_codes(
+        reverted_plan
+    )
+    assert not reverted_plan.can_save_schema
+
+
+def test_same_row_field_ml_parity_duplicate_is_suppressed_deterministically():
+    draft = build_data_definition_draft()
+    changed = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+
+    first = build_data_definition_save_plan(changed)
+    second = build_data_definition_save_plan(changed)
+    projection_blockers = tuple(
+        blocker
+        for blocker in first.blocked_reasons
+        if blocker.code == "ml_compatibility_projection_write_required"
+        or blocker.code.startswith("candidate_feature_projection")
+    )
+
+    assert [(item.code, item.row_identity, item.field_name) for item in projection_blockers] == [
+        (
+            "ml_compatibility_projection_write_required",
+            ("schema_row", "cooling_capa"),
+            "ml_name",
+        ),
+    ]
+    assert first.blocked_reasons == second.blocked_reasons
+
+
+def test_ml_blocker_preserves_multiple_independent_parity_issues():
+    draft = build_data_definition_draft()
+    changed = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+    changed = _mapping_relation_edit(changed, "id_volume", "evap_index")
+    changed = _mapping_relation_edit(changed, "evap_area", "idu")
+
+    plan = build_data_definition_save_plan(changed)
+    parity = _blockers(plan, "candidate_feature_projection_mismatch")
+
+    assert [(item.row_identity, item.field_name) for item in parity] == [
+        (("schema_row", "id_volume"), "trigger_column"),
+        (("schema_row", "evap_area"), "trigger_column"),
+    ]
+    assert len(_blockers(plan, "ml_compatibility_projection_write_required")) == 1
+    assert not plan.can_save_schema
+
+
 def test_data_definition_save_plan_allows_schema_backed_label_change():
     draft = build_data_definition_draft()
     schema_row = next(row for row in draft.rows if row.column_key == "idu")
@@ -476,4 +561,34 @@ def _blocker(plan, code):
 def _fingerprint(draft):
     return projected_feature_catalog_fingerprint(
         project_feature_catalog_from_draft(draft)
+    )
+
+
+def _controlled_edit(draft, column_key, updates):
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(("schema_row", column_key), updates),
+    )
+    assert result.accepted, result.issues
+    return result.draft
+
+
+def _mapping_relation_edit(draft, column_key, mapping_entity):
+    row = next(item for item in draft.rows if item.column_key == column_key)
+    return _controlled_edit(draft, column_key, (
+        ("value_source", "mapping_lookup"),
+        ("mapping_entity", mapping_entity),
+        ("mapping_attribute", row.mapping_attribute),
+        ("trigger_column", mapping_entity),
+        ("rule_id", ""),
+    ))
+
+
+def _blocker_evidence(blocker):
+    return (
+        blocker.code,
+        blocker.row_identity,
+        blocker.field_name,
+        blocker.target,
+        blocker.message,
     )

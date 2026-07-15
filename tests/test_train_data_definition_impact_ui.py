@@ -161,6 +161,9 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
         assert "selection_unavailable: ml_compatibility_projection_write_required" in (
             panel.impact_view.save_label.text()
         )
+        assert "definition: cooling_capa" in panel.impact_view.save_label.text()
+        assert "field: ml_name" in panel.impact_view.save_label.text()
+        assert "target: schema_csv" in panel.impact_view.save_label.text()
         assert schema_path.read_bytes() == schema_before
 
         panel.search_input.clear()
@@ -181,6 +184,8 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
             for item in restored.blockers
         ) == evidence
         assert {item.relevance for item in restored.blockers} == {"direct"}
+        assert "selection_unavailable" not in panel.impact_view.save_label.text()
+        assert "definition: cooling_capa" not in panel.impact_view.save_label.text()
         assert schema_path.read_bytes() == schema_before
     finally:
         panel.close()

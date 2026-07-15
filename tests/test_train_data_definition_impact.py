@@ -106,13 +106,132 @@ def test_ml_rename_is_complete_blocked_impact_with_selection_relevance(tmp_path)
     assert [field.field_name for field in direct.definitions[0].fields] == [
         "label", "ml_name",
     ]
-    assert [item.relevance for item in direct.blockers] == ["direct"]
-    assert [item.relevance for item in other.blockers] == ["other_definition"]
+    assert [
+        (item.code, item.related_field, item.relevance)
+        for item in direct.blockers
+    ] == [
+        ("ml_compatibility_projection_write_required", "ml_name", "direct"),
+        ("candidate_feature_projection_mismatch", "label", "direct"),
+    ]
+    assert [item.relevance for item in other.blockers] == [
+        "other_definition",
+        "other_definition",
+    ]
     assert direct.definitions == other.definitions
     assert direct.mapping_impacts == other.mapping_impacts
     assert "ML compatibility fingerprint: changed" in direct.runtime_text
     blocked_save = controller.save_schema()
     assert blocked_save.status == "blocked"
+    assert tuple(path.read_bytes() for path in protected) == before
+
+
+def test_independent_ml_and_mapping_parity_blockers_reproject_and_stay_stable(
+    tmp_path,
+):
+    controller = _controller(tmp_path)
+    controller.refresh()
+    ml_identity = ("schema_row", "cooling_capa")
+    parity_identity = ("schema_row", "id_volume")
+    protected = tuple(
+        path
+        for path in (
+            tmp_path / "schema.csv",
+            Path("config/ml/features.csv"),
+            Path(MAPPING_JSON_FILE),
+            Path(MODEL_FILE),
+        )
+        if path.is_file()
+    )
+    before = tuple(path.read_bytes() for path in protected)
+    controller.edit_definition(EditDefinitionIntent(
+        ml_identity,
+        (("ml_name", "Cooling Capacity Renamed"),),
+    ))
+    combined_state = controller.edit_definition(EditDefinitionIntent(
+        parity_identity,
+        (
+            ("value_source", "mapping_lookup"),
+            ("mapping_entity", "evap_index"),
+            ("mapping_attribute", "ID Volume"),
+            ("trigger_column", "evap_index"),
+            ("rule_id", ""),
+        ),
+    ))
+
+    ml_selected = project_data_definition_impact(combined_state, ml_identity)
+    parity_selected = project_data_definition_impact(combined_state, parity_identity)
+    parity_before = next(
+        item for item in ml_selected.blockers
+        if item.code == "candidate_feature_projection_mismatch"
+    )
+
+    assert not combined_state.save_action_enabled
+    assert [
+        (item.code, item.related_row_identity, item.related_field, item.relevance)
+        for item in ml_selected.blockers
+    ] == [
+        (
+            "ml_compatibility_projection_write_required",
+            ml_identity,
+            "ml_name",
+            "direct",
+        ),
+        (
+            "candidate_feature_projection_mismatch",
+            parity_identity,
+            "trigger_column",
+            "other_definition",
+        ),
+    ]
+    assert [
+        (item.code, item.related_row_identity, item.related_field, item.relevance)
+        for item in parity_selected.blockers
+    ] == [
+        (
+            "candidate_feature_projection_mismatch",
+            parity_identity,
+            "trigger_column",
+            "direct",
+        ),
+        (
+            "ml_compatibility_projection_write_required",
+            ml_identity,
+            "ml_name",
+            "other_definition",
+        ),
+    ]
+    assert controller.save_schema().status == "blocked"
+    assert tuple(path.read_bytes() for path in protected) == before
+
+    reverted_state = controller.edit_definition(EditDefinitionIntent(
+        ml_identity,
+        (("ml_name", "Cooling Capa"),),
+    ))
+    reverted = project_data_definition_impact(reverted_state, parity_identity)
+    parity_after = next(
+        item for item in reverted.blockers
+        if item.code == "candidate_feature_projection_mismatch"
+    )
+
+    assert not any(
+        item.code == "ml_compatibility_projection_write_required"
+        for item in reverted.blockers
+    )
+    assert (
+        parity_after.code,
+        parity_after.related_row_identity,
+        parity_after.related_field,
+        parity_after.target,
+        parity_after.message,
+    ) == (
+        parity_before.code,
+        parity_before.related_row_identity,
+        parity_before.related_field,
+        parity_before.target,
+        parity_before.message,
+    )
+    assert parity_after.relevance == "direct"
+    assert not reverted.save_enabled
     assert tuple(path.read_bytes() for path in protected) == before
 
 
@@ -392,6 +511,25 @@ def test_impact_renders_direct_other_and_global_blocker_groups(tmp_path):
     assert "selection_unavailable: direct_issue" in no_selection.save_text
     assert "selection_unavailable: other_issue" in no_selection.save_text
     assert "global: global_issue" in no_selection.save_text
+    direct_line = next(
+        line for line in no_selection.save_text.splitlines() if "direct_issue" in line
+    )
+    other_line = next(
+        line for line in no_selection.save_text.splitlines() if "other_issue" in line
+    )
+    global_line = next(
+        line for line in no_selection.save_text.splitlines() if "global_issue" in line
+    )
+    assert "definition: cooling_capa" in direct_line
+    assert "field: label" in direct_line and "target: schema_csv" in direct_line
+    assert "definition: heating_capa" in other_line
+    assert "field: editor" in other_line and "target: schema_csv" in other_line
+    assert "definition:" not in global_line
+
+    restored = project_data_definition_impact(fixture, selected)
+    assert "selection_unavailable" not in restored.save_text
+    assert "definition: cooling_capa" not in restored.save_text
+    assert "definition: heating_capa" in restored.save_text
 
 
 def _controller(tmp_path) -> DataDefinitionController:
