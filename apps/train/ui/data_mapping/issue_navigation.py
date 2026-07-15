@@ -6,7 +6,11 @@ from collections.abc import Callable, Sequence
 
 from PySide6.QtCore import QModelIndex, Qt
 
-from apps.train.application.data_mapping import DataMappingCellTarget, DataMappingIssueTarget
+from apps.train.application.data_mapping import (
+    DataMappingCellTarget,
+    DataMappingIssueTarget,
+    row_index_for_identity,
+)
 from apps.train.controllers.data_mapping.presentation import DataMappingControllerState
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.ui.data_mapping.table_view import DataMappingTableView
@@ -26,13 +30,20 @@ def navigate_to_issue(
     target = targets[index.row()]
     if target is None:
         return
-    apply_state(controller.refresh(target.group_key))
+    state = controller.refresh(target.group_key)
+    apply_state(state)
     model = row_table.model()
-    if target.row_index is None or model is None or not model.rowCount():
+    if model is None or not model.rowCount() or target.attribute_key not in state.value_headers:
         return
-    column = target.column_index if target.column_index is not None else 0
-    row = min(target.row_index, model.rowCount() - 1)
-    column = min(column, model.columnCount() - 1)
+    row = _resolved_row_index(
+        tuple(item.row_key for item in state.values),
+        target.row_key,
+        target.row_occurrence,
+        target.row_index,
+    )
+    if row is None:
+        return
+    column = state.value_headers.index(target.attribute_key)
     cell = model.index(row, column)
     row_table.setCurrentIndex(cell)
     row_table.scrollTo(cell)
@@ -48,13 +59,10 @@ def focus_cell_target(
     model = row_table.model()
     if model is None:
         return False
-    matches = tuple(
-        index for index, item in enumerate(state.values) if item.row_key == target.row_key
-    )
-    row = (
-        matches[target.row_occurrence]
-        if target.row_occurrence < len(matches)
-        else None
+    row = row_index_for_identity(
+        tuple(item.row_key for item in state.values),
+        target.row_key,
+        target.row_occurrence,
     )
     if row is None or target.attribute_key not in state.value_headers:
         return False
@@ -63,6 +71,19 @@ def focus_cell_target(
     row_table.scrollTo(cell)
     row_table.setFocus(Qt.OtherFocusReason)
     return True
+
+
+def _resolved_row_index(
+    row_keys: tuple[str, ...],
+    row_key: str,
+    row_occurrence: int | None,
+    row_index: int | None,
+) -> int | None:
+    if row_occurrence is not None:
+        return row_index_for_identity(row_keys, row_key, row_occurrence)
+    if row_index is not None and 0 <= row_index < len(row_keys):
+        return row_index
+    return None
 
 
 def focus_attribute(

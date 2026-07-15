@@ -20,7 +20,7 @@ from apps.train.services.data_mapping_service import (
 from apps.train.ui.shell import TrainShell
 from apps.train.application.data_mapping import DataMappingNavigationResult
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
-from core.data_definition import AddDefinitionIntent
+from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
 
 
@@ -157,6 +157,116 @@ def test_cond_inner_area_saved_handoff_coverage_edit_save_reload(tmp_path):
         assert reloaded.values[1].values[-1] == "3.75"
         assert reloaded.values[0].values[4:6] == ("3.5", "4.5")
         assert reloaded.values[1].values[4:6] == ("5.5", "6.5")
+    finally:
+        shell.close()
+        shell.deleteLater()
+        app.processEvents()
+
+
+def test_saved_requirement_optional_remove_readd_preserves_unsaved_mapping_session(tmp_path):
+    app = _app()
+    schema_path = tmp_path / "schema.csv"
+    shutil.copyfile(DEFAULT_SCHEMA_PATH, schema_path)
+    mapping_path = _mapping_file(tmp_path)
+    mapping_before = mapping_path.read_bytes()
+    mapping_service = DataMappingService(
+        RuntimeMappingCatalogProvider(str(mapping_path)),
+        DataDefinitionMappingRequirementProvider(schema_path),
+    )
+    definition_controller = DataDefinitionController(
+        DataDefinitionService(schema_path=schema_path)
+    )
+    mapping_controller = DataMappingController(mapping_service)
+    shell = TrainShell(
+        data_definition_controller=definition_controller,
+        data_mapping_controller=mapping_controller,
+    )
+    try:
+        shell.show()
+        panel = shell.data_definition_panel
+        accepted, _message = panel._apply_add_intent(_cond_intent())
+        assert accepted
+        panel._save_schema()
+        panel.handoff_panel.open_button.click()
+        app.processEvents()
+
+        mapping_panel = shell.data_mapping_panel
+        model = mapping_panel.row_table.model()
+        dynamic_column = model.columnCount() - 1
+        assert model.setData(model.index(0, dynamic_column), "2.25", Qt.EditRole)
+        app.processEvents()
+        mapping_controller.edit_cell("idu", 0, "ID Volume", "9.5")
+        initial_request = panel._state.saved_mapping_handoffs[0]
+        assert mapping_path.read_bytes() == mapping_before
+
+        accepted, _message = panel._apply_edit_intent(
+            EditDefinitionIntent(
+                ("schema_row", "cond_inner_area"),
+                (("required", False),),
+            )
+        )
+        assert accepted
+        panel._save_schema()
+        panel.handoff_panel.open_button.click()
+        app.processEvents()
+
+        optional = mapping_panel._current_state
+        optional_coverage = _coverage(optional)
+        assert optional.dirty
+        assert not optional_coverage.required
+        assert (optional_coverage.ready_rows, optional_coverage.missing_rows) == (1, 1)
+        assert optional.values[0].values[-1] == "2.25"
+        assert _action_enabled(optional, "save_mapping_json")
+        assert not any(
+            issue.code == "required_mapping_value_missing"
+            and issue.field == "Cond Inner Area"
+            for issue in optional.validation_rows
+        )
+        assert mapping_path.read_bytes() == mapping_before
+
+        accepted, _message = panel._apply_edit_intent(
+            EditDefinitionIntent(
+                ("schema_row", "cond_inner_area"),
+                (("active", False),),
+            )
+        )
+        assert accepted
+        panel._save_schema()
+        assert not panel.handoff_panel.open_button.isEnabled()
+
+        stale = shell.open_data_mapping(initial_request)
+        app.processEvents()
+        removed = mapping_panel._current_state
+        backing_group = mapping_service.current_snapshot().draft.group("odu_cond_specs")
+        assert stale.status == "requirement_not_saved"
+        assert "Cond Inner Area" not in removed.value_headers
+        assert not any(
+            item.definition_column_key == "cond_inner_area"
+            for item in removed.coverage_items
+        )
+        assert backing_group.rows[0].value_for("Cond Inner Area") == 2.25
+        assert "Cond Inner Area" not in backing_group.notes
+        assert mapping_path.read_bytes() == mapping_before
+
+        accepted, _message = panel._apply_edit_intent(
+            EditDefinitionIntent(
+                ("schema_row", "cond_inner_area"),
+                (("active", True),),
+            )
+        )
+        assert accepted
+        panel._save_schema()
+        panel.handoff_panel.open_button.click()
+        app.processEvents()
+
+        restored = mapping_panel._current_state
+        restored_coverage = _coverage(restored)
+        assert restored.value_headers[-1] == "Cond Inner Area"
+        assert restored.values[0].values[-1] == "2.25"
+        assert (restored_coverage.ready_rows, restored_coverage.missing_rows) == (1, 1)
+        assert not restored_coverage.required
+        assert restored.dirty
+        assert mapping_path.read_bytes() == mapping_before
     finally:
         shell.close()
         shell.deleteLater()

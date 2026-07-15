@@ -7,6 +7,11 @@ from apps.train.application.data_mapping.contracts import (
     DataMappingNavigationRequest,
     DataMappingNavigationResult,
 )
+from apps.train.application.data_mapping.targeting import (
+    row_identity_at_index,
+    row_index_for_identity,
+    unique_row_identity,
+)
 
 __all__ = (
     "DataMappingCellTarget",
@@ -14,4 +19,7 @@ __all__ = (
     "DataMappingIssueTarget",
     "DataMappingNavigationRequest",
     "DataMappingNavigationResult",
+    "row_identity_at_index",
+    "row_index_for_identity",
+    "unique_row_identity",
 )

@@ -82,6 +82,7 @@ class MappingValidationError:
     field: str = ""
     severity: str = "error"
     row_index: int | None = None
+    row_occurrence: int | None = None
 
 
 @dataclass(frozen=True)

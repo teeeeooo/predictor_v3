@@ -9,6 +9,17 @@ from core.mapping.entity_model import MappingValidationError
 
 
 @dataclass(frozen=True)
+class MappingRequirementProjection:
+    """Provenance for the current Data Definition overlay on one group."""
+
+    base_columns: tuple[str, ...]
+    base_notes: str = ""
+    base_column_data_types: Mapping[str, str] = field(default_factory=dict)
+    base_required_columns: tuple[str, ...] = ()
+    requirement_columns: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class MappingEditorRow:
     """One user-facing draft row."""
 
@@ -34,6 +45,7 @@ class MappingEditorGroup:
     notes: str = ""
     column_data_types: Mapping[str, str] = field(default_factory=dict)
     required_columns: tuple[str, ...] = ()
+    requirement_projection: MappingRequirementProjection | None = None
 
 
 @dataclass(frozen=True)

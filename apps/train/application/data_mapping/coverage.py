@@ -33,7 +33,7 @@ def project_mapping_coverage(
 def _coverage_item(
     requirement: MappingRequirement,
     draft: MappingEditorDraft,
-    blocking_targets: frozenset[tuple[str, str, str, int | None]],
+    blocking_targets: frozenset[tuple[str, str, str, int | None, int | None]],
 ) -> DataMappingCoverageItem:
     group_key = mapping_group_key_for_requirement(requirement)
     group = draft.group(group_key)
@@ -71,6 +71,7 @@ def _coverage_item(
             row.source_key,
             requirement.mapping_attribute,
             occurrence,
+            row_index,
         )
         if _is_blank(value):
             missing += 1
@@ -131,16 +132,24 @@ def _unavailable_item(
 def _blocking_targets(
     issues: Sequence[MappingValidationError],
     targets: Sequence[DataMappingIssueTarget | None],
-) -> frozenset[tuple[str, str, str, int | None]]:
+) -> frozenset[tuple[str, str, str, int | None, int | None]]:
     return frozenset(
-        (target.group_key, target.row_key, target.attribute_key, target.row_index)
+        (
+            target.group_key,
+            target.row_key,
+            target.attribute_key,
+            target.row_occurrence,
+            target.row_index,
+        )
         for issue, target in zip(issues, targets)
-        if issue.severity == "error" and target is not None
+        if issue.severity == "error"
+        and target is not None
+        and (target.row_index is not None or target.row_occurrence is not None)
     )
 
 
 def _has_blocking_issue(
-    targets: frozenset[tuple[str, str, str, int | None]],
+    targets: frozenset[tuple[str, str, str, int | None, int | None]],
     group: MappingEditorGroup,
     target: DataMappingCellTarget,
     row_index: int,
@@ -148,8 +157,12 @@ def _has_blocking_issue(
     return any(
         group_key == group.group_key
         and attribute == target.attribute_key
-        and ((row_key and row_key == target.row_key) or issue_row == row_index)
-        for group_key, row_key, attribute, issue_row in targets
+        and (
+            issue_row == row_index
+            if issue_row is not None
+            else row_key == target.row_key and occurrence == target.row_occurrence
+        )
+        for group_key, row_key, attribute, occurrence, issue_row in targets
     )
 
 

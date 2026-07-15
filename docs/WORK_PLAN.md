@@ -17,24 +17,24 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3D is implemented as one logical commit on
-`phase/train-admin-data-definition-ux`. Successful mapping-requirement schema
-writes expose a saved-only public handoff through the four-tab Train shell;
-Data Mapping reprojects the latest canonical requirements over its service-owned
-draft, reports required/optional coverage, and focuses stable unresolved cell
-targets without Reload, implicit Save, or undo loss. The synthetic Cond Inner
-Area workflow covers schema Save through explicit mapping Save/reload while
-preserving condenser identity, PFC Pi normalization, and unrelated mapping
-payload. PR #16 remains Draft/Open.
+Train/Admin Phase 3 Slice 3D audit correction is implemented on
+`phase/train-admin-data-definition-ux`. Data Mapping now rebuilds
+requirement-owned visibility, required/type/note metadata, coverage, and
+validation from the latest saved requirement set across draft, baseline, and
+undo history while preserving mapping-owned backing values and explicit Save.
+Coverage and issue navigation share exact group/attribute/row-key/occurrence
+identity with current-index hints, so duplicate rows do not contaminate each
+other and disappeared targets do not fall back to unrelated rows. PR #16 remains
+Draft/Open and Slice 3E remains on hold.
 
 ## Next Action
 
-Slice 3D audit before starting Slice 3E.
+Slice 3D final re-audit before starting Slice 3E.
 
 ## Active Blockers
 
-- No code blocker remains in Slice 3D; the explicit audit hold prevents starting
-  Slice 3E.
+- No code blocker remains in Slice 3D; the explicit final re-audit hold prevents
+  starting Slice 3E.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
@@ -57,7 +57,8 @@ Slice 3D audit before starting Slice 3E.
 
 ## Deferred / Hold
 
-- Slice 3E keyboard/focus/native polish remains deferred until the Slice 3D audit.
+- Slice 3E keyboard/focus/native polish remains deferred until the Slice 3D final
+  re-audit.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness

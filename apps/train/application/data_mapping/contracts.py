@@ -7,12 +7,13 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class DataMappingCellTarget:
-    """Stable mapping-cell identity without a widget or table row index."""
+    """Stable mapping-cell identity plus a presentation-local index hint."""
 
     group_key: str
     row_key: str
     attribute_key: str
     row_occurrence: int = 0
+    row_index: int | None = None
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,7 @@ class DataMappingIssueTarget:
     attribute_key: str = ""
     row_index: int | None = None
     column_index: int | None = None
+    row_occurrence: int | None = None
 
 
 @dataclass(frozen=True)
