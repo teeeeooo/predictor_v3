@@ -39,7 +39,7 @@ class DataMappingCoveragePanel(QFrame):
             style.spacing("space.sm"),
         )
         heading = QHBoxLayout()
-        title = QLabel("Definition-backed Coverage", self)
+        title = QLabel("Mapping Requirement Coverage", self)
         title.setObjectName("PanelTitle")
         title.setFont(style.qfont("font.panel_title"))
         heading.addWidget(title)
@@ -85,12 +85,22 @@ class DataMappingCoveragePanel(QFrame):
     def _sync(self) -> None:
         item = self._selected_item()
         if item is None:
-            self.summary.setText("No definition-backed coverage for this mapping group.")
+            reason = "No Mapping Requirement coverage is available for this mapping group."
+            self.summary.setText(reason)
             self.go_button.setEnabled(False)
+            self.go_button.setToolTip(reason)
+            self.go_button.setAccessibleDescription(reason)
             return
         intent = "Required" if item.required else "Optional"
         self.summary.setText(f"{item.mapping_attribute} · {intent} · {item.summary}")
         self.go_button.setEnabled(item.first_unresolved is not None)
+        reason = (
+            "Focus the first unresolved mapping value."
+            if item.first_unresolved is not None
+            else "Coverage ready; there is no unresolved mapping value."
+        )
+        self.go_button.setToolTip(reason)
+        self.go_button.setAccessibleDescription(reason)
 
     def _go(self) -> None:
         item = self._selected_item()

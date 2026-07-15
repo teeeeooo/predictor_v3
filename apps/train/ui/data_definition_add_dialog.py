@@ -18,6 +18,12 @@ from PySide6.QtWidgets import (
 )
 
 from apps.common.ui import style
+from apps.train.ui.data_definition.dialog_support import (
+    add_labeled_row,
+    configure_validation_summary,
+    schedule_initial_focus,
+    show_validation_summary,
+)
 from core.data_definition import (
     AddDefinitionIntent,
     MAPPING_LOOKUP_TEMPLATES,
@@ -47,6 +53,10 @@ class DataDefinitionAddDialog(QDialog):
         self.setModal(True)
         self._build()
         self._update_intent_fields()
+        self.setMinimumWidth(520)
+        schedule_initial_focus(
+            self.label_input if self._standalone else self.intent_combo
+        )
 
     def intent(self) -> AddDefinitionIntent:
         """Return current constrained form values as application intent."""
@@ -88,7 +98,7 @@ class DataDefinitionAddDialog(QDialog):
         self.intent_combo.addItem("Mapping-backed Predict Column", "mapping_predict")
         self.intent_combo.currentIndexChanged.connect(self._update_intent_fields)
         if not self._standalone:
-            self.form.addRow("Intent", self.intent_combo)
+            add_labeled_row(self.form, "Intent", self.intent_combo)
 
         self.label_input = QLineEdit()
         self.label_input.setAccessibleName("Definition label")
@@ -104,12 +114,13 @@ class DataDefinitionAddDialog(QDialog):
         self.visible_checkbox.setChecked(not self._standalone)
         self.required_checkbox = QCheckBox("Required")
         self.required_checkbox.setAccessibleName("Definition required")
-        self.form.addRow("Label", self.label_input)
-        self.form.addRow("Internal key", self.key_input)
-        self.form.addRow("Data type", self.data_type_combo)
+        add_labeled_row(self.form, "Label", self.label_input)
+        add_labeled_row(self.form, "Internal key", self.key_input)
+        add_labeled_row(self.form, "Data type", self.data_type_combo)
         self.visible_label = QLabel("Visibility")
+        self.visible_label.setBuddy(self.visible_checkbox)
         self.form.addRow(self.visible_label, self.visible_checkbox)
-        self.form.addRow("Requirement", self.required_checkbox)
+        add_labeled_row(self.form, "Requirement", self.required_checkbox)
 
         self.mapping_combo = QComboBox()
         self.mapping_combo.setAccessibleName("Mapping group and lookup template")
@@ -122,26 +133,31 @@ class DataDefinitionAddDialog(QDialog):
         self.relation_label.setWordWrap(True)
         self.relation_label.setAccessibleName("Mapping trigger and rule")
         self.mapping_group_label = QLabel("Mapping group")
+        self.mapping_group_label.setBuddy(self.mapping_combo)
         self.mapping_attribute_label = QLabel("Mapping attribute")
+        self.mapping_attribute_label.setBuddy(self.attribute_input)
         self.relation_form_label = QLabel("Trigger / rule")
+        self.relation_form_label.setBuddy(self.relation_label)
         self.form.addRow(self.mapping_group_label, self.mapping_combo)
         self.form.addRow(self.mapping_attribute_label, self.attribute_input)
         self.form.addRow(self.relation_form_label, self.relation_label)
         self.notes_input = QLineEdit()
         self.notes_input.setAccessibleName("Definition notes")
-        self.form.addRow("Notes", self.notes_input)
+        add_labeled_row(self.form, "Notes", self.notes_input)
         layout.addLayout(self.form)
 
         self.error_label = QLabel()
-        self.error_label.setAccessibleName("Add Definition validation feedback")
-        self.error_label.setWordWrap(True)
+        configure_validation_summary(
+            self.error_label,
+            "Add Definition validation summary",
+        )
         layout.addWidget(self.error_label)
         actions = QHBoxLayout()
         actions.addStretch(1)
         cancel = QPushButton("Cancel")
         cancel.setAccessibleName(f"Cancel {self.windowTitle()}")
         cancel.clicked.connect(self.reject)
-        self.apply_button = QPushButton("Apply to Draft")
+        self.apply_button = QPushButton("Apply")
         self.apply_button.setAccessibleName(f"Apply {self.windowTitle()} to Draft")
         self.apply_button.setDefault(True)
         self.apply_button.clicked.connect(self._apply)
@@ -149,8 +165,24 @@ class DataDefinitionAddDialog(QDialog):
         actions.addWidget(self.apply_button)
         layout.addLayout(actions)
 
+        self.setTabOrder(self.intent_combo, self.label_input)
+        self.setTabOrder(self.label_input, self.key_input)
+        self.setTabOrder(self.key_input, self.data_type_combo)
+        self.setTabOrder(self.data_type_combo, self.visible_checkbox)
+        self.setTabOrder(self.visible_checkbox, self.required_checkbox)
+        self.setTabOrder(self.required_checkbox, self.mapping_combo)
+        self.setTabOrder(self.mapping_combo, self.attribute_input)
+        self.setTabOrder(self.attribute_input, self.notes_input)
+        self.setTabOrder(self.notes_input, cancel)
+        self.setTabOrder(cancel, self.apply_button)
+
     def _update_intent_fields(self) -> None:
         mapping = self._standalone or self.intent_combo.currentData() == "mapping_predict"
+        hidden_focus = self.focusWidget() in {
+            self.mapping_combo,
+            self.attribute_input,
+            self.relation_label,
+        }
         for widget in (
             self.mapping_group_label,
             self.mapping_combo,
@@ -163,6 +195,8 @@ class DataDefinitionAddDialog(QDialog):
         self.visible_label.setVisible(not self._standalone)
         self.visible_checkbox.setVisible(not self._standalone)
         self._update_relation_summary()
+        if hidden_focus and not mapping:
+            self.notes_input.setFocus()
 
     def _update_relation_summary(self) -> None:
         template = mapping_template(str(self.mapping_combo.currentData()))
@@ -177,3 +211,5 @@ class DataDefinitionAddDialog(QDialog):
         self.error_label.setText("" if accepted else message)
         if accepted:
             self.accept()
+        else:
+            show_validation_summary(self.error_label, message)

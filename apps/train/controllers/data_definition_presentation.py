@@ -195,12 +195,14 @@ def _application_status(state: DataDefinitionControllerState) -> tuple[str, str]
         return "load_error", "Load error"
     if state.status == "saved":
         return "saved", "Saved"
-    if state.status in {"blocked", "error"}:
+    if state.status == "error":
+        return "write_error", "Write error"
+    if state.status == "blocked":
         return "blocked", "Blocked"
     if state.draft_changed and not state.can_save_schema:
         return "blocked", "Blocked"
     if state.draft_changed:
-        return "dirty", "Unsaved / dirty"
+        return "dirty", "Unsaved changes"
     return "clean", "Clean"
 
 

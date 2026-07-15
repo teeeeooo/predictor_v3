@@ -68,6 +68,7 @@ class TrainShell(QMainWindow):
         self.status_badges: dict[str, QLabel] = {}
         layout.addWidget(self._build_status_strip())
         tabs = QTabWidget(self)
+        tabs.setAccessibleName("Train workspace tabs")
         self.predict_workspace = PredictWorkspace(
             tabs,
             show_title=False,
@@ -98,6 +99,8 @@ class TrainShell(QMainWindow):
             self.data_mapping_panel,
             self.tab_names[3],
         )
+        for index, name in enumerate(self.tab_names):
+            tabs.setTabToolTip(index, name)
         layout.addWidget(tabs, 1)
         self.setCentralWidget(central)
         self.tabs = tabs

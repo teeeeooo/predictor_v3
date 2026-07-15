@@ -86,7 +86,9 @@ def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
         )
         app.processEvents()
         assert panel.save_button.isEnabled()
-        assert panel.status_label.text().startswith("Unsaved / dirty:")
+        assert panel.status_label.text() == (
+            "Unsaved changes: Review impact, then Save schema."
+        )
 
         _find_button(panel, "Reset Data Definition Draft").click()
         app.processEvents()
@@ -203,8 +205,8 @@ def test_inventory_panel_reconciles_removed_filter_option_without_signal_recursi
             panel._state.draft_row_identities
         )
         assert "No definitions match" not in panel.inventory_state_label.text()
-        assert panel._selected_identity == ("schema_row", "row")
-        assert "row" in panel.detail_state_label.text()
+        assert panel._selected_identity == ("schema_row", "cooling_capa")
+        assert "cooling_capa" in panel.detail_state_label.text()
         assert len(panel._state.draft_change_rows) == 3
     finally:
         panel.close()

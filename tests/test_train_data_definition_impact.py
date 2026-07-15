@@ -81,7 +81,7 @@ def test_mapping_add_impact_names_requirement_and_data_mapping_ownership(tmp_pat
     ),)
     assert "Inner Surface Area in evap_index" in impact.mapping_text
     assert "Concrete values remain Data Mapping-owned" in impact.mapping_text
-    assert "deferred to Slice 3D" in impact.mapping_text
+    assert "Save schema before opening coverage" in impact.mapping_text
 
 
 def test_ml_rename_is_complete_blocked_impact_with_selection_relevance(tmp_path):
@@ -493,9 +493,9 @@ def test_impact_renders_direct_other_and_global_blocker_groups(tmp_path):
     assert [item.relevance for item in impact.blockers] == [
         "direct", "other_definition", "global",
     ]
-    assert "direct: direct_issue" in impact.save_text
-    assert "other_definition: other_issue" in impact.save_text
-    assert "global: global_issue" in impact.save_text
+    assert "Direct" in impact.save_text and "(direct_issue)" in impact.save_text
+    assert "Other Definition" in impact.save_text and "(other_issue)" in impact.save_text
+    assert "Global" in impact.save_text and "(global_issue)" in impact.save_text
 
     no_selection = project_data_definition_impact(fixture, None)
     assert [item.relevance for item in no_selection.blockers] == [
@@ -508,9 +508,10 @@ def test_impact_renders_direct_other_and_global_blocker_groups(tmp_path):
         "other_issue",
         "global_issue",
     ]
-    assert "selection_unavailable: direct_issue" in no_selection.save_text
-    assert "selection_unavailable: other_issue" in no_selection.save_text
-    assert "global: global_issue" in no_selection.save_text
+    assert "Selection Unavailable" in no_selection.save_text
+    assert "(direct_issue)" in no_selection.save_text
+    assert "(other_issue)" in no_selection.save_text
+    assert "Global" in no_selection.save_text and "(global_issue)" in no_selection.save_text
     direct_line = next(
         line for line in no_selection.save_text.splitlines() if "direct_issue" in line
     )

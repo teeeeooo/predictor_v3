@@ -39,7 +39,7 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
 
         assert accepted
         assert panel._selected_identity == identity
-        assert panel.impact_view.status_label.text() == "Dirty — schema write planned"
+        assert panel.impact_view.status_label.text() == "Dirty — Schema write: Ready"
         assert "Add Fan Diameter" in panel.impact_view.change_label.text()
         assert "Predict restart: required" in panel.impact_view.runtime_label.text()
         assert "ML compatibility fingerprint: unchanged" in panel.impact_view.runtime_label.text()
@@ -49,7 +49,7 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
         app.processEvents()
 
         assert panel._selected_identity == identity
-        assert panel.impact_view.status_label.text() == "Clean — schema write no_op"
+        assert panel.impact_view.status_label.text() == "Clean — Schema write: No changes"
         assert "Status: written" in panel.impact_view.result_label.text()
         assert "Backup path:" in panel.impact_view.result_label.text()
         assert not panel.save_button.isEnabled()
@@ -90,8 +90,9 @@ def test_impact_view_shows_mapping_owner_and_ml_blocker_then_reset_clears_stale_
         ))
         app.processEvents()
         assert accepted
-        assert panel.impact_view.status_label.text() == "Blocked — schema write blocked"
-        assert "direct: ml_compatibility_projection_write_required" in (
+        assert panel.impact_view.status_label.text() == "Blocked — Schema write: Blocked"
+        assert "Direct" in panel.impact_view.save_label.text()
+        assert "(ml_compatibility_projection_write_required)" in (
             panel.impact_view.save_label.text()
         )
         assert not panel.save_button.isEnabled()
@@ -158,7 +159,8 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
         assert {item.relevance for item in no_selection.blockers} == {
             "selection_unavailable"
         }
-        assert "selection_unavailable: ml_compatibility_projection_write_required" in (
+        assert "Selection Unavailable" in panel.impact_view.save_label.text()
+        assert "(ml_compatibility_projection_write_required)" in (
             panel.impact_view.save_label.text()
         )
         assert "definition: cooling_capa" in panel.impact_view.save_label.text()

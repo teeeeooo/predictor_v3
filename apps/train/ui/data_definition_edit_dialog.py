@@ -14,11 +14,18 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from apps.common.ui import style
+from apps.train.ui.data_definition.dialog_support import (
+    add_labeled_row,
+    configure_validation_summary,
+    schedule_initial_focus,
+    show_validation_summary,
+)
 from core.data_definition import (
     EditDefinitionIntent,
     MAPPING_LOOKUP_TEMPLATES,
@@ -64,6 +71,8 @@ class DataDefinitionEditDialog(QDialog):
         self._build()
         self._prefill()
         self._update_contract_fields()
+        self.setMinimumSize(560, 440)
+        schedule_initial_focus(self.label_input)
 
     def intent(self) -> EditDefinitionIntent:
         """Return every controlled form value as one atomic Edit command."""
@@ -111,9 +120,12 @@ class DataDefinitionEditDialog(QDialog):
         identity.setAccessibleName("Read-only definition identity")
         layout.addWidget(identity)
 
-        form = QFormLayout()
+        form_container = QWidget(self)
+        form = QFormLayout(form_container)
+        form.setContentsMargins(0, 0, 0, 0)
         form.setSpacing(style.spacing("space.sm"))
         self.label_input = QLineEdit()
+        self.label_input.setAccessibleName("Definition label")
         source = self._initial.get("value_source", "")
         editor = self._initial.get("editor", "")
         self.editor_combo = _combo(
@@ -136,17 +148,22 @@ class DataDefinitionEditDialog(QDialog):
         self.value_source_combo.currentIndexChanged.connect(self._update_contract_fields)
         self.editor_combo.currentIndexChanged.connect(self._update_contract_fields)
         self.visible_checkbox = QCheckBox("Visible in Predict")
+        self.visible_checkbox.setAccessibleName("Predict visible")
         self.required_checkbox = QCheckBox("Required")
+        self.required_checkbox.setAccessibleName("Definition required")
         self.readonly_checkbox = QCheckBox("Read only")
+        self.readonly_checkbox.setAccessibleName("Definition read only")
         self.model_input_checkbox = QCheckBox("Model input enabled")
+        self.model_input_checkbox.setAccessibleName("Model input")
         self.active_checkbox = QCheckBox("Active")
-        form.addRow("Label", self.label_input)
-        form.addRow("Editor", self.editor_combo)
-        form.addRow("Data type", self.data_type_combo)
-        form.addRow("Value source", self.value_source_combo)
-        form.addRow("Visibility", self.visible_checkbox)
-        form.addRow("Requirement", self.required_checkbox)
-        form.addRow("Editability", self.readonly_checkbox)
+        self.active_checkbox.setAccessibleName("Definition active")
+        add_labeled_row(form, "Label", self.label_input)
+        add_labeled_row(form, "Editor", self.editor_combo)
+        add_labeled_row(form, "Data type", self.data_type_combo)
+        add_labeled_row(form, "Value source", self.value_source_combo)
+        add_labeled_row(form, "Visibility", self.visible_checkbox)
+        add_labeled_row(form, "Requirement", self.required_checkbox)
+        add_labeled_row(form, "Editability", self.readonly_checkbox)
 
         self.mapping_combo = QComboBox()
         self.mapping_combo.setAccessibleName("Mapping group and lookup template")
@@ -155,35 +172,67 @@ class DataDefinitionEditDialog(QDialog):
         self.attribute_input = QLineEdit()
         self.attribute_input.setAccessibleName("Mapping attribute")
         self.mapping_label = QLabel("Mapping group")
+        self.mapping_label.setBuddy(self.mapping_combo)
         self.attribute_label = QLabel("Mapping attribute")
+        self.attribute_label.setBuddy(self.attribute_input)
         form.addRow(self.mapping_label, self.mapping_combo)
         form.addRow(self.attribute_label, self.attribute_input)
         self.ml_name_input = QLineEdit()
+        self.ml_name_input.setAccessibleName("ML name")
         self.one_hot_input = QLineEdit()
+        self.one_hot_input.setAccessibleName("One-hot group")
         self.notes_input = QLineEdit()
-        form.addRow("Model input", self.model_input_checkbox)
-        form.addRow("ML name", self.ml_name_input)
-        form.addRow("One-hot group", self.one_hot_input)
-        form.addRow("Lifecycle", self.active_checkbox)
-        form.addRow("Notes", self.notes_input)
-        layout.addLayout(form)
+        self.notes_input.setAccessibleName("Definition notes")
+        add_labeled_row(form, "Model input", self.model_input_checkbox)
+        add_labeled_row(form, "ML name", self.ml_name_input)
+        add_labeled_row(form, "One-hot group", self.one_hot_input)
+        add_labeled_row(form, "Lifecycle", self.active_checkbox)
+        add_labeled_row(form, "Notes", self.notes_input)
+        form_scroll = QScrollArea(self)
+        form_scroll.setAccessibleName("Edit Definition fields")
+        form_scroll.setWidgetResizable(True)
+        form_scroll.setFrameShape(QScrollArea.NoFrame)
+        form_scroll.setWidget(form_container)
+        layout.addWidget(form_scroll, 1)
 
         self.error_label = QLabel()
-        self.error_label.setAccessibleName("Edit Definition validation feedback")
-        self.error_label.setWordWrap(True)
+        configure_validation_summary(
+            self.error_label,
+            "Edit Definition validation summary",
+        )
         layout.addWidget(self.error_label)
         actions = QHBoxLayout()
         actions.addStretch(1)
         cancel = QPushButton("Cancel")
         cancel.setAccessibleName("Cancel Edit Definition")
         cancel.clicked.connect(self.reject)
-        apply_button = QPushButton("Apply to Draft")
-        apply_button.setAccessibleName("Apply Edit Definition to Draft")
-        apply_button.setDefault(True)
-        apply_button.clicked.connect(self._apply)
+        self.apply_button = QPushButton("Apply")
+        self.apply_button.setAccessibleName("Apply Edit Definition to Draft")
+        self.apply_button.setDefault(True)
+        self.apply_button.clicked.connect(self._apply)
         actions.addWidget(cancel)
-        actions.addWidget(apply_button)
+        actions.addWidget(self.apply_button)
         layout.addLayout(actions)
+
+        order = (
+            self.label_input,
+            self.editor_combo,
+            self.data_type_combo,
+            self.value_source_combo,
+            self.visible_checkbox,
+            self.required_checkbox,
+            self.mapping_combo,
+            self.attribute_input,
+            self.model_input_checkbox,
+            self.ml_name_input,
+            self.one_hot_input,
+            self.active_checkbox,
+            self.notes_input,
+            cancel,
+            self.apply_button,
+        )
+        for current, following in zip(order, order[1:]):
+            self.setTabOrder(current, following)
 
     def _prefill(self) -> None:
         self.label_input.setText(self._initial.get("label", ""))
@@ -213,6 +262,10 @@ class DataDefinitionEditDialog(QDialog):
     def _update_contract_fields(self) -> None:
         source = str(self.value_source_combo.currentData() or "")
         editor = str(self.editor_combo.currentData() or "")
+        hidden_mapping_focus = self.focusWidget() in {
+            self.mapping_combo,
+            self.attribute_input,
+        }
         editor_options = controlled_editor_options(
             self._role,
             source,
@@ -235,6 +288,8 @@ class DataDefinitionEditDialog(QDialog):
             self.attribute_input,
         ):
             widget.setVisible(visible)
+        if hidden_mapping_focus and not visible:
+            self.model_input_checkbox.setFocus()
 
         input_role = self._role == "input"
         self.readonly_checkbox.setChecked(not input_role)
@@ -273,6 +328,8 @@ class DataDefinitionEditDialog(QDialog):
         self.error_label.setText("" if accepted else message)
         if accepted:
             self.accept()
+        else:
+            show_validation_summary(self.error_label, message)
 
 
 def _combo(accessible_name: str, values: tuple[str, ...]) -> QComboBox:

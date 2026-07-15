@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from apps.common.ui import style
@@ -36,13 +37,20 @@ class DataDefinitionImpactView(QFrame):
 
     def apply_projection(self, projection: DataDefinitionImpactProjection) -> None:
         self.status_label.setText(
-            f"{projection.status.title()} — schema write {projection.schema_write_status}"
+            f"{projection.status.title()} — Schema write: "
+            f"{_friendly_schema_status(projection.schema_write_status)}"
         )
         self.change_label.setText(projection.change_text)
         self.save_label.setText(projection.save_text)
         self.runtime_label.setText(projection.runtime_text)
         self.mapping_label.setText(projection.mapping_text)
         self.result_label.setText(projection.result_text)
+
+    def focus_save_decision(self) -> None:
+        """Expose the current save/blocker summary to keyboard users."""
+        self.save_label.setFocusPolicy(Qt.StrongFocus)
+        self.save_label.setAccessibleDescription(self.save_label.text())
+        self.save_label.setFocus(Qt.OtherFocusReason)
 
 
 def _section(layout: QVBoxLayout, title: str, accessible_name: str) -> QLabel:
@@ -54,3 +62,12 @@ def _section(layout: QVBoxLayout, title: str, accessible_name: str) -> QLabel:
     label.setWordWrap(True)
     layout.addWidget(label)
     return label
+
+
+def _friendly_schema_status(status: str) -> str:
+    return {
+        "no_op": "No changes",
+        "planned": "Ready",
+        "blocked": "Blocked",
+        "written": "Saved",
+    }.get(status, status.replace("_", " ").title())

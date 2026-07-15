@@ -211,4 +211,4 @@ def _readiness(state: DataDefinitionControllerState, name: str) -> str:
     row = next((item for item in state.readiness_rows if item[0] == name), None)
     if row is None:
         return "unavailable — no owner evidence"
-    return f"{row[1]} — {row[2]}"
+    return row[1].replace("_", " ").title()

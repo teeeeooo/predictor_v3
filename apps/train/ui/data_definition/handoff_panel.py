@@ -68,23 +68,36 @@ class DataDefinitionHandoffPanel(QFrame):
         self.selector.setEnabled(bool(self._requests))
         self.open_button.setEnabled(bool(self._requests and self._on_open is not None))
         if self._requests:
+            self.selector.setToolTip("Choose a saved Mapping Requirement.")
+            self.selector.setAccessibleDescription(
+                "Choose a Mapping Requirement from the latest successful schema save."
+            )
+            self.open_button.setToolTip("Open the exact requirement in Data Mapping.")
+            self.open_button.setAccessibleDescription(
+                "Open the selected saved Mapping Requirement in Data Mapping."
+            )
             self.selector.setCurrentIndex(0)
             self._sync_detail()
         elif state.draft_changed and state.mapping_requirement_rows:
-            self.detail.setText(
+            reason = (
                 "Save schema first. Unsaved Mapping Requirement metadata is not active in Data Mapping."
             )
+            self.detail.setText(reason)
+            self._set_disabled_reason(reason)
         else:
-            self.detail.setText("No Mapping Requirement handoff from the latest successful save.")
+            reason = "No Mapping Requirement handoff from the latest successful save."
+            self.detail.setText(reason)
+            self._set_disabled_reason(reason)
 
     def _sync_detail(self) -> None:
         request = self._selected_request()
         if request is None:
             return
         intent = "Required" if request.required else "Optional"
+        group_label = request.resolved_group_key.replace("_", " ").title()
         self.detail.setText(
             f"{request.definition_label} [{request.definition_column_key}] — Saved · "
-            f"{request.mapping_entity} → {request.resolved_group_key} · "
+            f"Data Mapping group: {group_label} ({request.resolved_group_key}) · "
             f"{request.mapping_attribute} · {intent} · {request.data_type}. "
             "Concrete values are managed in Data Mapping. Predict restart required."
         )
@@ -101,3 +114,9 @@ class DataDefinitionHandoffPanel(QFrame):
         if not 0 <= index < len(self._requests):
             return None
         return self._requests[index]
+
+    def _set_disabled_reason(self, reason: str) -> None:
+        self.selector.setToolTip(reason)
+        self.selector.setAccessibleDescription(reason)
+        self.open_button.setToolTip(reason)
+        self.open_button.setAccessibleDescription(reason)

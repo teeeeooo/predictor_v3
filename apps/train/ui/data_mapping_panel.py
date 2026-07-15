@@ -37,7 +37,6 @@ from apps.train.ui.data_mapping import DataMappingTableView, DataMappingToolbar
 from apps.train.ui.data_mapping.import_preview_dialog import DataMappingImportPreviewDialog
 from apps.train.ui.data_mapping.coverage_panel import DataMappingCoveragePanel
 from apps.train.ui.data_mapping.issue_navigation import (
-    focus_attribute,
     focus_cell_target,
     navigate_to_issue,
 )
@@ -158,17 +157,30 @@ class DataMappingPanel(QWidget):
             request,
             self._selected_group_key,
         )
-        self._preferred_coverage_key = request.definition_column_key
+        previous_coverage_key = self._preferred_coverage_key
+        if result.opened:
+            self._preferred_coverage_key = request.definition_column_key
         self._apply_state(state)
         if result.opened:
             if result.target is not None:
                 focus_cell_target(result.target, state, self.row_table)
             else:
-                focus_attribute(request.mapping_attribute, state, self.row_table)
+                self.row_table.clearSelection()
+                self.row_table.setCurrentIndex(QModelIndex())
+                self.coverage_panel.selector.setFocus(Qt.OtherFocusReason)
+        else:
+            self._preferred_coverage_key = previous_coverage_key
+            focus_target = (
+                self.coverage_panel.selector
+                if self.coverage_panel.selector.isEnabled()
+                else self.entity_table
+            )
+            focus_target.setFocus(Qt.OtherFocusReason)
         self.status_label.setText(result.message)
         self.status_label.setStyleSheet(
             style.status_badge_stylesheet("ready" if result.opened else "warning")
         )
+        self.status_label.setAccessibleDescription(result.message)
         return result
 
     def _build_body(self) -> QSplitter:

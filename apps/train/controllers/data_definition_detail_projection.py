@@ -72,11 +72,11 @@ def project_detail(
         ("Label", row.label),
         ("Internal key", row.internal_key),
         ("Definition category", row.category),
-        ("Source kind", values.get("source_kind", row.identity[0])),
-        ("Role / type / editor", _joined(values, "role", "data_type", "editor")),
+        ("Definition origin", _friendly_value(values.get("source_kind", row.identity[0]))),
+        ("Role / type / editor", _friendly_joined(values, "role", "data_type", "editor")),
         ("Visible / required / readonly", _flags(values)),
         ("Value source", row.source_type),
-        ("Mapping entity", values.get("mapping_entity") or "—"),
+        ("Mapping group", _friendly_value(values.get("mapping_entity")) or "—"),
         ("Mapping attribute", values.get("mapping_attribute") or "—"),
         ("Trigger", values.get("trigger_column") or "—"),
         ("Model input", row.model_input),
@@ -91,7 +91,7 @@ def project_detail(
         ("Display order", values.get("display_order") or "—"),
         ("Rule ID", values.get("rule_id") or "—"),
         ("One-hot group", values.get("one_hot_group") or "—"),
-        ("Raw notes", values.get("notes") or "—"),
+        ("Notes", values.get("notes") or "—"),
     )
     return DataDefinitionDetailState("selected", row.label, row.internal_key, row.identity, rows)
 
@@ -207,6 +207,14 @@ def _blocker_line(item: DataDefinitionFocusedBlockerItem) -> str:
     )
     context_text = f" [{context}]" if context else ""
     return f"- {definition}{item.code}{context_text}: {item.message}"
+
+
+def _friendly_value(value: str | None) -> str:
+    return (value or "").replace("_", " ").strip().title()
+
+
+def _friendly_joined(values: dict[str, str], *keys: str) -> str:
+    return " / ".join(_friendly_value(values.get(key)) or "—" for key in keys)
 
 
 def _ml_compatibility(

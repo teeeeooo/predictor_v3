@@ -32,8 +32,14 @@ def save_text(
     blockers: tuple[DataDefinitionFocusedBlockerItem, ...],
     warnings: tuple[str, ...],
 ) -> str:
+    visible_status = {
+        "clean": "Clean",
+        "dirty": "Unsaved changes",
+        "blocked": "Blocked",
+    }.get(status, status.title())
     lines = [
-        f"Draft: {status}  |  schema.csv: {schema_status}  |  Save: {'enabled' if enabled else 'disabled'}"
+        f"{visible_status}  |  Schema write: {schema_status.replace('_', ' ')}  |  "
+        f"Save schema: {'available' if enabled else 'unavailable'}"
     ]
     lines.extend(_blocker_text(item) for item in blockers)
     lines.extend(f"• warning: {warning}" for warning in warnings)
@@ -52,7 +58,8 @@ def _blocker_text(item: DataDefinitionFocusedBlockerItem) -> str:
     if item.target and item.target != item.related_field:
         context.append(f"target: {item.target}")
     context_text = f" [{'; '.join(context)}]" if context else ""
-    return f"• {item.relevance}: {item.code}{context_text} — {item.message}"
+    relevance = item.relevance.replace("_", " ").title()
+    return f"• {relevance}{context_text} — {item.message} ({item.code})"
 
 
 def runtime_text(
@@ -73,12 +80,14 @@ def runtime_text(
 
 def mapping_text(rows: tuple[tuple[str, ...], ...]) -> str:
     if not rows:
-        return "No Mapping Requirement impact. Coverage and navigation are deferred to Slice 3D."
+        return "No Mapping Requirement impact. Concrete values remain unchanged."
     lines = [
         f"• {row[1]}: {row[4]} in {row[3]} ({row[7]}; trigger {row[5]}, rule {row[6] or 'simple lookup'})"
         for row in rows
     ]
-    lines.append("Concrete values remain Data Mapping-owned; coverage and navigation are deferred to Slice 3D.")
+    lines.append(
+        "Concrete values remain Data Mapping-owned. Save schema before opening coverage."
+    )
     return "\n".join(lines)
 
 
