@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-from apps.train.controllers.data_definition_state_builder import DataDefinitionControllerState
+from apps.train.controllers.data_definition_state_builder import (
+    DataDefinitionBlockerItem,
+    DataDefinitionControllerState,
+)
 
 if TYPE_CHECKING:
     from apps.train.controllers.data_definition_presentation import DataDefinitionInventoryRow
@@ -20,6 +23,23 @@ class DataDefinitionDetailState:
     message: str
     identity: tuple[str, str] | None
     rows: tuple[tuple[str, str], ...]
+
+
+BlockerRelevance = Literal["direct", "other_definition", "global"]
+
+
+@dataclass(frozen=True)
+class DataDefinitionFocusedBlockerItem:
+    """One deduplicated blocker classified for the selected definition."""
+
+    severity: str
+    code: str
+    target: str
+    message: str
+    related_row_identity: tuple[str, str] | None
+    related_field: str
+    source: str
+    relevance: BlockerRelevance
 
 
 def project_detail(
@@ -75,31 +95,105 @@ def _blocker_summary(
     state: DataDefinitionControllerState,
     selected_identity: tuple[str, str],
 ) -> str:
-    blockers = _deduplicated_error_blockers(state)
+    blockers = project_blockers(state, selected_identity)
     if not blockers:
         return "None"
-    summary = " | ".join(f"{code}: {message}" for code, message in blockers)
-    changed_identities = {
-        (row[0], row[1])
-        for row in state.draft_change_rows
-        if len(row) >= 2 and row[0] and row[1]
-    }
-    if selected_identity in changed_identities or not changed_identities:
-        return summary
-    return (
-        "No direct blocker for the selected definition. "
-        f"The draft is blocked by changes to another definition: {summary}"
+    direct = tuple(item for item in blockers if item.relevance == "direct")
+    other = tuple(item for item in blockers if item.relevance == "other_definition")
+    global_items = tuple(item for item in blockers if item.relevance == "global")
+    sections: list[str] = []
+    if direct:
+        sections.append(_blocker_section("Direct blockers", direct))
+    else:
+        sections.append("No direct blocker for this definition.")
+    if other:
+        sections.append(_blocker_section("Draft blockers from other definitions", other))
+    if global_items:
+        sections.append(_blocker_section("Global draft blockers", global_items))
+    return "\n\n".join(sections)
+
+
+def project_blockers(
+    state: DataDefinitionControllerState,
+    selected_identity: tuple[str, str],
+) -> tuple[DataDefinitionFocusedBlockerItem, ...]:
+    """Deduplicate cross-source evidence and classify it for one selection."""
+    plan_items = tuple(
+        item
+        for item in state.blocker_items
+        if item.severity == "error" and item.source == "save_plan"
+    )
+    plan_keys = {_blocker_key(item) for item in plan_items}
+    result_items = tuple(
+        item
+        for item in state.blocker_items
+        if item.severity == "error"
+        and item.source == "last_save_result"
+        and _blocker_key(item) not in plan_keys
+    )
+    classified = tuple(
+        _focused_blocker(item, selected_identity)
+        for item in (*plan_items, *result_items)
+    )
+    return tuple(
+        item
+        for relevance in ("direct", "other_definition", "global")
+        for item in classified
+        if item.relevance == relevance
     )
 
 
-def _deduplicated_error_blockers(
-    state: DataDefinitionControllerState,
-) -> tuple[tuple[str, str], ...]:
-    by_code: dict[str, str] = {}
-    for row in (*state.save_blocker_rows, *state.save_result_issue_rows):
-        if len(row) >= 4 and row[0] == "error":
-            by_code.setdefault(row[1], row[3])
-    return tuple(by_code.items())
+def _blocker_key(item: DataDefinitionBlockerItem) -> tuple[object, ...]:
+    return (
+        item.code,
+        item.target,
+        item.related_row_identity,
+        item.related_field,
+        " ".join(item.message.split()).casefold(),
+    )
+
+
+def _focused_blocker(
+    item: DataDefinitionBlockerItem,
+    selected_identity: tuple[str, str],
+) -> DataDefinitionFocusedBlockerItem:
+    relevance: BlockerRelevance = (
+        "global"
+        if item.related_row_identity is None
+        else "direct"
+        if item.related_row_identity == selected_identity
+        else "other_definition"
+    )
+    return DataDefinitionFocusedBlockerItem(
+        severity=item.severity,
+        code=item.code,
+        target=item.target,
+        message=item.message,
+        related_row_identity=item.related_row_identity,
+        related_field=item.related_field,
+        source=item.source,
+        relevance=relevance,
+    )
+
+
+def _blocker_section(
+    title: str,
+    items: tuple[DataDefinitionFocusedBlockerItem, ...],
+) -> str:
+    return "\n".join((title, *(_blocker_line(item) for item in items)))
+
+
+def _blocker_line(item: DataDefinitionFocusedBlockerItem) -> str:
+    definition = (
+        f"{item.related_row_identity[1]} — "
+        if item.relevance == "other_definition" and item.related_row_identity
+        else ""
+    )
+    context = " / ".join(
+        part for part in (item.related_field, item.target) if part
+    )
+    context_text = f" [{context}]" if context else ""
+    return f"- {definition}{item.code}{context_text}: {item.message}"
 
 
 def _ml_compatibility(

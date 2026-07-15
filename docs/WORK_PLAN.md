@@ -17,21 +17,22 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3A audit correction is implemented on
-`phase/train-admin-data-definition-ux`. Current save-plan capability is separated
-from last-attempt evidence and action enablement, candidate issues reach Focused
-Detail, and removed filter options resolve to `All` with the same final inventory
-projection. Existing draft, validation, writer, mapping, and Predict owners remain
-unchanged. Slice 3A is waiting for re-audit while PR #16 remains Draft/Open.
+Train/Admin Phase 3 Slice 3A blocker-attribution audit correction is implemented
+on `phase/train-admin-data-definition-ux`. Save-plan and candidate evidence now
+retain optional row/field context, while the UI-facing detail projection classifies
+each blocker as direct, other-definition, or global and removes only matching
+cross-source evidence. Existing draft, validation, writer, mapping, Predict,
+retry, and filter owners remain unchanged. Slice 3A is waiting for final re-audit
+while PR #16 remains Draft/Open.
 
 ## Next Action
 
-Slice 3A re-audit before starting Slice 3B+3C.
+Slice 3A final re-audit before starting Slice 3B+3C.
 
 ## Active Blockers
 
-- No code blocker remains in the Slice 3A correction; the explicit re-audit hold
-  prevents starting Slice 3B+3C.
+- No code blocker remains in the Slice 3A correction; the explicit final re-audit
+  hold prevents starting Slice 3B+3C.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an

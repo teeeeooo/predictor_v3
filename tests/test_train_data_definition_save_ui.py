@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QPushButton
 
 from apps.train.controllers.data_definition_controller import DRAFT_FIELDS, DataDefinitionController
+from apps.train.controllers.data_definition_detail_projection import project_blockers
 from apps.train.controllers.data_definition_presentation import (
     project_data_definition_inventory,
 )
@@ -102,6 +103,14 @@ def test_data_definition_controller_surfaces_blocked_candidate_validation(tmp_pa
             "line 2 column_key=cooling_capa: invalid data_type 'invalid_type'",
         ),
     )
+    candidate = next(
+        item
+        for item in saved.blocker_items
+        if item.code == "candidate_schema_validation_failed"
+    )
+    assert candidate.related_row_identity == ("schema_row", "cooling_capa")
+    assert candidate.related_field == "data_type"
+    assert candidate.source == "last_save_result"
     assert schema_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "backups").exists()
 
@@ -135,6 +144,98 @@ def test_data_definition_controller_blocks_ml_projection_change_without_write(tm
     assert "ml_compatibility_projection_write_required" in dict(saved.save_result_rows)["Issues"]
     assert schema_path.read_text(encoding="utf-8") == original
     assert not (tmp_path / "backups").exists()
+
+
+def test_candidate_blocker_is_other_for_valid_changed_row_and_direct_for_invalid_row(
+    tmp_path,
+):
+    schema_path = _copy_schema(tmp_path)
+    original = schema_path.read_text(encoding="utf-8")
+    controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    controller.refresh()
+    valid_identity = ("schema_row", "idu")
+    invalid_identity = ("schema_row", "cooling_capa")
+    controller.edit_cell(valid_identity, "label", "Indoor Unit Label")
+    controller.edit_cell(invalid_identity, "data_type", "invalid_type")
+
+    saved = controller.save_schema()
+    valid_blockers = project_blockers(saved, valid_identity)
+    invalid_blockers = project_blockers(saved, invalid_identity)
+    valid_summary = dict(
+        project_data_definition_inventory(
+            saved,
+            selected_identity=valid_identity,
+        ).detail.rows
+    )["Save blockers"]
+    invalid_summary = dict(
+        project_data_definition_inventory(
+            saved,
+            selected_identity=invalid_identity,
+        ).detail.rows
+    )["Save blockers"]
+
+    assert saved.status == "blocked"
+    assert not saved.save_action_enabled
+    assert [item.relevance for item in valid_blockers] == ["other_definition"]
+    assert [item.relevance for item in invalid_blockers] == ["direct"]
+    assert valid_summary.startswith("No direct blocker for this definition.")
+    assert "cooling_capa" in valid_summary
+    assert invalid_summary.startswith("Direct blockers")
+    assert "candidate_schema_validation_failed" in invalid_summary
+    assert "invalid data_type 'invalid_type'" in invalid_summary
+    assert schema_path.read_text(encoding="utf-8") == original
+
+
+def test_distinct_candidate_issues_with_same_code_keep_row_and_field_attribution(
+    tmp_path,
+):
+    schema_path = _copy_schema(tmp_path)
+    original = schema_path.read_text(encoding="utf-8")
+    controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    controller.refresh()
+    cooling_identity = ("schema_row", "cooling_capa")
+    heating_identity = ("schema_row", "heating_capa")
+    controller.edit_cell(cooling_identity, "data_type", "invalid_type")
+    controller.edit_cell(heating_identity, "editor", "invalid_editor")
+
+    saved = controller.save_schema()
+    result_candidates = tuple(
+        item
+        for item in saved.blocker_items
+        if item.source == "last_save_result"
+        and item.code == "candidate_schema_validation_failed"
+    )
+    cooling_blockers = project_blockers(saved, cooling_identity)
+    heating_blockers = project_blockers(saved, heating_identity)
+
+    assert len(saved.save_result_issue_rows) == 2
+    assert len(result_candidates) == 2
+    assert [item.related_row_identity for item in result_candidates] == [
+        cooling_identity,
+        heating_identity,
+    ]
+    assert [item.related_field for item in result_candidates] == ["data_type", "editor"]
+    assert [item.relevance for item in cooling_blockers] == ["direct", "other_definition"]
+    assert [item.relevance for item in heating_blockers] == ["direct", "other_definition"]
+    assert cooling_blockers[0].related_row_identity == cooling_identity
+    assert heating_blockers[0].related_row_identity == heating_identity
+    assert "invalid data_type" in saved.save_result_issue_rows[0][3]
+    assert "invalid editor" in saved.save_result_issue_rows[1][3]
+    assert schema_path.read_text(encoding="utf-8") == original
+
+    controller.edit_cell(cooling_identity, "data_type", "number")
+    remaining = controller.save_schema()
+    remaining_candidates = tuple(
+        item
+        for item in remaining.blocker_items
+        if item.code == "candidate_schema_validation_failed"
+    )
+
+    assert len(remaining_candidates) == 1
+    assert remaining_candidates[0].related_row_identity == heating_identity
+    assert remaining_candidates[0].related_field == "editor"
+    assert "invalid editor" in remaining_candidates[0].message
+    assert schema_path.read_text(encoding="utf-8") == original
 
 
 def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):

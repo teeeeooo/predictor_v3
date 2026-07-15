@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftChange
+from core.data_definition.draft import (
+    DataDefinitionDraft,
+    DataDefinitionDraftChange,
+    replace_draft_row,
+)
 from core.data_definition.edit_policy import restricted_draft_field_changes
 from core.data_definition.projection import (
     project_feature_catalog_from_draft,
@@ -45,6 +49,8 @@ class DataDefinitionSaveBlocker:
     severity: BlockerSeverity
     message: str
     target: str = ""
+    row_identity: tuple[str, str] | None = None
+    field_name: str = ""
 
 
 @dataclass(frozen=True)
@@ -132,15 +138,56 @@ def _candidate_projection_blockers(
         projected_feature_catalog_fingerprint(report.catalog_features)
     ):
         return ()
-    return (_blocker(
-        "ml_compatibility_projection_write_required",
-        "error",
-        (
-            "Schema save is blocked because the draft changes the ML compatibility "
-            "projection and no features.csv projection writer is available."
-        ),
-        "schema_csv",
-    ),)
+    message = (
+        "Schema save is blocked because the draft changes the ML compatibility "
+        "projection and no features.csv projection writer is available."
+    )
+    contexts = _projection_changing_changes(draft)
+    if not contexts:
+        return (_blocker(
+            "ml_compatibility_projection_write_required",
+            "error",
+            message,
+            "schema_csv",
+        ),)
+    return tuple(
+        _blocker(
+            "ml_compatibility_projection_write_required",
+            "error",
+            message,
+            "schema_csv",
+            row_identity=change.row_identity,
+            field_name=change.field_name,
+        )
+        for change in contexts
+    )
+
+
+def _projection_changing_changes(
+    draft: DataDefinitionDraft,
+) -> tuple[DataDefinitionDraftChange, ...]:
+    baseline = DataDefinitionDraft(
+        rows=draft.baseline_rows,
+        baseline_rows=draft.baseline_rows,
+    )
+    baseline_fingerprint = projected_feature_catalog_fingerprint(
+        project_feature_catalog_from_draft(baseline)
+    )
+    baseline_identities = {row.identity for row in baseline.rows}
+    contexts: list[DataDefinitionDraftChange] = []
+    for change in draft.changes():
+        if change.field_name == "__row__" or change.row_identity not in baseline_identities:
+            continue
+        single_change = replace_draft_row(
+            baseline,
+            change.row_identity,
+            **{change.field_name: change.after},
+        )
+        if projected_feature_catalog_fingerprint(
+            project_feature_catalog_from_draft(single_change)
+        ) != baseline_fingerprint:
+            contexts.append(change)
+    return tuple(contexts)
 
 
 def _change_blockers(
@@ -150,13 +197,9 @@ def _change_blockers(
     blockers = [
         *_raw_row_change_blockers(changes),
         *_field_policy_blockers(draft),
+        *_derived_policy_blockers(changes),
     ]
     checks = (
-        (
-            any(change.row_identity[0] == "derived_policy" for change in changes),
-            ("derived_policy_persistence_required", "error",
-             "Derived policy edits require a persistence owner before save.", "derived_policy"),
-        ),
         (
             any(change.field_name in RETRAIN_FIELDS for change in changes),
             ("retrain_required_for_new_model_input", "info",
@@ -181,13 +224,18 @@ def _change_blockers(
 def _raw_row_change_blockers(
     changes: tuple[DataDefinitionDraftChange, ...],
 ) -> tuple[DataDefinitionSaveBlocker, ...]:
-    if not any(change.field_name == "__row__" for change in changes):
-        return ()
-    return (_blocker(
-        "raw_row_add_delete_not_allowed", "error",
-        "Raw draft row add/delete requires a controlled Add/Remove Feature command.",
-        "schema_csv",
-    ),)
+    return tuple(
+        _blocker(
+            "raw_row_add_delete_not_allowed",
+            "error",
+            "Raw draft row add/delete requires a controlled Add/Remove Feature command.",
+            "schema_csv",
+            row_identity=change.row_identity,
+            field_name=change.field_name,
+        )
+        for change in changes
+        if change.field_name == "__row__"
+    )
 
 
 def _field_policy_blockers(
@@ -202,8 +250,27 @@ def _field_policy_blockers(
                 f"is blocked: {change.reason}"
             ),
             "schema_csv",
+            row_identity=change.row_identity,
+            field_name=change.field_name,
         )
         for change in restricted_draft_field_changes(draft)
+    )
+
+
+def _derived_policy_blockers(
+    changes: tuple[DataDefinitionDraftChange, ...],
+) -> tuple[DataDefinitionSaveBlocker, ...]:
+    return tuple(
+        _blocker(
+            "derived_policy_persistence_required",
+            "error",
+            "Derived policy edits require a persistence owner before save.",
+            "derived_policy",
+            row_identity=change.row_identity,
+            field_name=change.field_name,
+        )
+        for change in changes
+        if change.row_identity[0] == "derived_policy"
     )
 
 
@@ -271,8 +338,23 @@ def _write_targets(
     return tuple(targets)
 
 
-def _blocker(code: str, severity: BlockerSeverity, message: str, target: str) -> DataDefinitionSaveBlocker:
-    return DataDefinitionSaveBlocker(code, severity, message, target)
+def _blocker(
+    code: str,
+    severity: BlockerSeverity,
+    message: str,
+    target: str,
+    *,
+    row_identity: tuple[str, str] | None = None,
+    field_name: str = "",
+) -> DataDefinitionSaveBlocker:
+    return DataDefinitionSaveBlocker(
+        code,
+        severity,
+        message,
+        target,
+        row_identity,
+        field_name,
+    )
 
 
 def _target(target: str, status: WriteTargetStatus, reason: str) -> DataDefinitionWriteTarget:

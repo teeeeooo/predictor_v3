@@ -7,10 +7,14 @@ import hashlib
 from pathlib import Path
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.controllers.data_definition_detail_projection import project_blockers
 from apps.train.controllers.data_definition_presentation import (
     project_data_definition_inventory,
 )
-from apps.train.controllers.data_definition_state_builder import state_from_report
+from apps.train.controllers.data_definition_state_builder import (
+    DataDefinitionBlockerItem,
+    state_from_report,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.mapping.paths import MAPPING_JSON_FILE
 
@@ -101,49 +105,161 @@ def test_inventory_filter_falls_back_when_selected_option_disappears():
     assert state == before
 
 
-def test_detail_blockers_distinguish_selected_and_other_changed_rows_and_deduplicate():
-    controller = DataDefinitionController()
+def test_detail_blockers_attribute_plan_blocker_to_its_definition():
+    service = DataDefinitionService()
+    controller = DataDefinitionController(service)
     state = controller.refresh()
-    changed_identity = ("schema_row", "cooling_capa")
-    other_identity = ("schema_row", "heating_capa")
-    blocked = controller.edit_cell(changed_identity, "ml_name", "Cooling Capacity Renamed")
+    valid_identity = ("schema_row", "idu")
+    blocked_identity = ("schema_row", "cooling_capa")
+    before = _hash(service.schema_path)
+    controller.edit_cell(valid_identity, "label", "Indoor Unit Label")
+    blocked = controller.edit_cell(
+        blocked_identity,
+        "ml_name",
+        "Cooling Capacity Renamed",
+    )
 
-    selected_summary = dict(
+    valid_summary = dict(
         project_data_definition_inventory(
             blocked,
-            selected_identity=changed_identity,
+            selected_identity=valid_identity,
         ).detail.rows
     )["Save blockers"]
-    other_summary = dict(
+    blocked_summary = dict(
         project_data_definition_inventory(
             blocked,
-            selected_identity=other_identity,
+            selected_identity=blocked_identity,
         ).detail.rows
     )["Save blockers"]
-    duplicate = replace(
-        blocked,
-        save_result_issue_rows=(
-            (
-                "error",
-                "ml_compatibility_projection_write_required",
-                "schema_csv",
-                "duplicate last-result message",
-            ),
+    valid_items = project_blockers(blocked, valid_identity)
+    blocked_items = project_blockers(blocked, blocked_identity)
+
+    assert valid_summary.startswith("No direct blocker for this definition.")
+    assert "Draft blockers from other definitions" in valid_summary
+    assert "cooling_capa" in valid_summary
+    assert "ml_compatibility_projection_write_required" in valid_summary
+    assert blocked_summary.startswith("Direct blockers")
+    assert "ml_name" in blocked_summary
+    assert [item.relevance for item in valid_items] == ["other_definition"]
+    assert [item.relevance for item in blocked_items] == ["direct"]
+    assert not blocked.save_action_enabled
+    assert _hash(service.schema_path) == before
+
+
+def test_detail_blockers_deduplicate_only_cross_source_logical_duplicates():
+    state = DataDefinitionController().refresh()
+    selected_identity = ("schema_row", "cooling_capa")
+    duplicate = DataDefinitionBlockerItem(
+        "error",
+        "duplicate_code",
+        "schema_csv",
+        "Same logical issue.",
+        selected_identity,
+        "data_type",
+        "save_plan",
+    )
+    distinct = DataDefinitionBlockerItem(
+        "error",
+        "duplicate_code",
+        "schema_csv",
+        "Different candidate issue.",
+        ("schema_row", "heating_capa"),
+        "editor",
+        "last_save_result",
+    )
+    fixture = replace(
+        state,
+        blocker_items=(
+            duplicate,
+            replace(duplicate, source="last_save_result", message=" Same logical  issue. "),
+            distinct,
         ),
     )
-    deduplicated = dict(
+    before = fixture
+
+    blockers = project_blockers(fixture, selected_identity)
+    summary = dict(
         project_data_definition_inventory(
-            duplicate,
-            selected_identity=changed_identity,
+            fixture,
+            selected_identity=selected_identity,
         ).detail.rows
     )["Save blockers"]
 
-    assert "ml_compatibility_projection_write_required" in selected_summary
-    assert "no features.csv projection writer is available" in selected_summary
-    assert other_summary.startswith("No direct blocker for the selected definition.")
-    assert "changes to another definition" in other_summary
-    assert deduplicated.count("ml_compatibility_projection_write_required") == 1
-    assert "duplicate last-result message" not in deduplicated
+    assert len(blockers) == 2
+    assert [item.relevance for item in blockers] == ["direct", "other_definition"]
+    assert summary.count("Same logical") == 1
+    assert "Different candidate issue" in summary
+    assert fixture == before
+
+
+def test_detail_blockers_keep_global_attribution_for_every_selection():
+    state = DataDefinitionController().refresh()
+    first_identity = ("schema_row", "cooling_capa")
+    second_identity = ("schema_row", "heating_capa")
+    first_item = DataDefinitionBlockerItem(
+        "error",
+        "first_definition_blocked",
+        "schema_csv",
+        "Cooling definition is blocked.",
+        first_identity,
+        "data_type",
+        "save_plan",
+    )
+    second_item = DataDefinitionBlockerItem(
+        "error",
+        "second_definition_blocked",
+        "schema_csv",
+        "Heating definition is blocked.",
+        second_identity,
+        "editor",
+        "save_plan",
+    )
+    global_item = DataDefinitionBlockerItem(
+        "error",
+        "schema_write_target_unavailable",
+        "schema_csv",
+        "The schema write target is unavailable.",
+        None,
+        "",
+        "save_plan",
+    )
+    fixture = replace(
+        state,
+        blocker_items=(global_item, second_item, first_item),
+    )
+
+    first = project_blockers(fixture, first_identity)
+    second = project_blockers(fixture, second_identity)
+    first_summary = dict(
+        project_data_definition_inventory(
+            fixture,
+            selected_identity=first_identity,
+        ).detail.rows
+    )["Save blockers"]
+
+    assert [item.relevance for item in first] == [
+        "direct",
+        "other_definition",
+        "global",
+    ]
+    assert [item.code for item in first] == [
+        "first_definition_blocked",
+        "second_definition_blocked",
+        "schema_write_target_unavailable",
+    ]
+    assert [item.relevance for item in second] == [
+        "direct",
+        "other_definition",
+        "global",
+    ]
+    assert [item.code for item in second] == [
+        "second_definition_blocked",
+        "first_definition_blocked",
+        "schema_write_target_unavailable",
+    ]
+    assert first[-1].related_row_identity is None
+    assert "Direct blockers" in first_summary
+    assert "Global draft blockers" in first_summary
 
 
 def test_inventory_no_match_empty_and_load_error_states_are_explicit():
