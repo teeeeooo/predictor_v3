@@ -8,15 +8,146 @@ from pathlib import Path
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.controllers.data_definition_detail_projection import project_blockers
+from apps.train.controllers.data_definition_impact_projection import (
+    project_data_definition_impact,
+)
 from apps.train.controllers.data_definition_presentation import (
     project_data_definition_inventory,
+)
+from apps.train.controllers.data_definition_summary_projection import (
+    project_data_definition_summary,
 )
 from apps.train.controllers.data_definition_state_builder import (
     DataDefinitionBlockerItem,
     state_from_report,
 )
+from apps.train.controllers.data_definition_workspace_projection import (
+    project_data_definition_workspace,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.mapping.paths import MAPPING_JSON_FILE
+
+
+def test_task_inventory_uses_exact_six_user_facing_meanings():
+    state = DataDefinitionController().refresh()
+
+    projection = project_data_definition_inventory(state)
+
+    assert tuple(row.identity for row in projection.rows) == state.draft_row_identities
+    manual = next(row for row in projection.rows if row.internal_key == "cooling_capa")
+    mapping = next(row for row in projection.rows if row.internal_key == "id_volume")
+    one_hot = next(
+        row for row in projection.rows if row.internal_key == "one_hot_refrigerant_r410a"
+    )
+    derived = next(row for row in projection.rows if row.identity[0] == "derived_policy")
+    assert (
+        manual.kind,
+        manual.source_type,
+        manual.predict_visibility,
+        manual.model_input,
+        manual.lifecycle_state,
+    ) == ("Predict Input", "Manual", "Used", "Used", "Active")
+    assert (mapping.kind, mapping.source_type) == ("Mapping-backed Input", "Mapping")
+    assert (one_hot.kind, one_hot.source_type) == ("One-hot Feature", "One-hot")
+    assert (derived.kind, derived.source_type, derived.lifecycle_state) == (
+        "Derived",
+        "Derived",
+        "Read-only",
+    )
+
+
+def test_selected_summary_answers_work_questions_and_preserves_technical_metadata():
+    state = DataDefinitionController().refresh()
+    inventory = project_data_definition_inventory(
+        state,
+        selected_identity=("schema_row", "cooling_capa"),
+    )
+
+    summary = project_data_definition_summary(state, inventory)
+
+    facts = {fact.label: fact.value for fact in summary.facts}
+    technical = dict(summary.technical_details)
+    assert summary.title == "냉방능력"
+    assert summary.internal_key == "cooling_capa"
+    assert "Manual numeric input" in summary.description
+    assert facts == {
+        "Value source": "Manual input",
+        "Used in Predict": "Yes",
+        "Model input": "Yes",
+        "Required": "Yes",
+        "Data Mapping": "None",
+        "Editing": "Available",
+        "Current change": "No pending change",
+    }
+    for key in (
+        "Role / type / editor",
+        "Definition origin",
+        "Visible / required / readonly",
+        "Mapping group",
+        "Mapping attribute",
+        "Trigger",
+        "Rule ID",
+        "ML name",
+        "One-hot group",
+        "Direct edit policy",
+        "ML compatibility",
+    ):
+        assert key in technical
+
+
+def test_task_workspace_projects_clean_dirty_blocked_error_saved_and_recovery_states(
+    tmp_path,
+):
+    schema_path = tmp_path / "schema.csv"
+    schema_path.write_bytes(DataDefinitionService().schema_path.read_bytes())
+    controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    clean = controller.refresh()
+    dirty = controller.edit_cell(("schema_row", "idu"), "label", "Indoor Unit")
+    write_error = replace(
+        dirty,
+        status="error",
+        message="temporary replace failure",
+        save_result_rows=(
+            ("Status", "error"),
+            ("Message", "temporary replace failure"),
+        ),
+    )
+    saved = controller.save_schema()
+
+    assert _task_projection(clean).state == "clean"
+    dirty_task = _task_projection(dirty)
+    assert dirty_task.state == "dirty"
+    assert dirty_task.review_label == "Review changes"
+    assert dirty_task.show_reset
+    error_task = _task_projection(write_error)
+    assert error_task.state == "write_error"
+    assert error_task.save_label == "Retry Save"
+    assert "retained" in error_task.headline_detail
+    assert _task_projection(saved).state == "saved"
+
+    blocked_controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
+    blocked_controller.refresh()
+    blocked = blocked_controller.edit_cell(
+        ("schema_row", "cooling_capa"),
+        "ml_name",
+        "Cooling Capacity Renamed",
+    )
+    blocked_task = _task_projection(blocked)
+    assert blocked_task.state == "blocked"
+    assert blocked_task.review_label == "Review blocker"
+    assert "Feature Catalog writer" in blocked_task.surface_message
+
+    no_match = _task_projection(clean, search="no-definition-matches")
+    assert no_match.state == "no_match"
+    assert "canonical inventory order" in no_match.surface_message
+    load_error = _FailingController().refresh()
+    assert _task_projection(load_error).state == "load_error"
+
+
+def _task_projection(state, *, search=""):  # noqa: ANN001, ANN202
+    inventory = project_data_definition_inventory(state, search=search)
+    impact = project_data_definition_impact(state, inventory.selected_identity)
+    return project_data_definition_workspace(state, inventory, impact)
 
 
 def test_inventory_projection_preserves_identity_order_and_projects_detail():
@@ -37,8 +168,8 @@ def test_inventory_projection_preserves_identity_order_and_projects_detail():
         state,
         selected_identity=derived.identity,
     ).detail
-    assert derived.category == "Derived Policy"
-    assert derived.lifecycle_state == "Blocked"
+    assert derived.category == "Derived"
+    assert derived.lifecycle_state == "Read-only"
     assert dict(derived_detail.rows)["Direct edit"] == "Blocked"
     assert "Derived policy persistence" in dict(derived_detail.rows)["Direct edit policy"]
 
@@ -56,7 +187,7 @@ def test_inventory_search_filter_and_selection_are_deterministic():
     filtered = project_data_definition_inventory(
         state,
         category="Mapping-backed Input",
-        source_type="Mapping Lookup",
+        source_type="Mapping",
         lifecycle_state="Active",
         selected_identity=target.identity,
     )
@@ -70,10 +201,10 @@ def test_inventory_search_filter_and_selection_are_deterministic():
     assert [row.internal_key for row in searched.rows] == ["evap_area"]
     assert filtered.selected_identity == target.identity
     assert filtered.resolved_category == "Mapping-backed Input"
-    assert filtered.resolved_source_type == "Mapping Lookup"
+    assert filtered.resolved_source_type == "Mapping"
     assert filtered.resolved_lifecycle_state == "Active"
     assert all(row.category == "Mapping-backed Input" for row in filtered.rows)
-    assert all(row.source_type == "Mapping Lookup" for row in filtered.rows)
+    assert all(row.source_type == "Mapping" for row in filtered.rows)
     assert tuple(row.identity for row in restored.rows) == state.draft_row_identities
     assert hidden.selected_identity == hidden.rows[0].identity
 

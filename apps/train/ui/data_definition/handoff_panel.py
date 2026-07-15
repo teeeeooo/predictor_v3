@@ -46,7 +46,7 @@ class DataDefinitionHandoffPanel(QFrame):
             style.spacing("space.sm"),
         )
         heading = QHBoxLayout()
-        title = QLabel("Saved Mapping Requirement", self)
+        title = QLabel("Next step: Data Mapping", self)
         title.setObjectName("PanelTitle")
         title.setFont(style.qfont("font.panel_title"))
         heading.addWidget(title)
@@ -95,8 +95,13 @@ class DataDefinitionHandoffPanel(QFrame):
             return
         intent = "Required" if request.required else "Optional"
         group_label = request.resolved_group_key.replace("_", " ").title()
+        next_step = (
+            f"Mapping values are required for {request.definition_label}."
+            if request.required
+            else f"Mapping values can be supplied for {request.definition_label}."
+        )
         self.detail.setText(
-            f"{request.definition_label} [{request.definition_column_key}] — Saved · "
+            f"{next_step} {request.definition_label} [{request.definition_column_key}] — Saved · "
             f"Data Mapping group: {group_label} ({request.resolved_group_key}) · "
             f"{request.mapping_attribute} · {intent} · {request.data_type}. "
             "Concrete values are managed in Data Mapping. Predict restart required."

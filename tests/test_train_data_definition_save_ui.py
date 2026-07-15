@@ -246,6 +246,9 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
     panel = DataDefinitionPanel(controller=controller)
     try:
         app.processEvents()
+        panel.search_input.setText("idu")
+        app.processEvents()
+        assert panel._selected_identity == ("schema_row", "idu")
         label_col = DRAFT_FIELDS.index("label")
         row_index = panel._state.draft_row_identities.index(("schema_row", "idu"))
         assert panel.draft_table.model().setData(
@@ -273,7 +276,7 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
         assert panel.save_plan_table.model().cell_value(0, 1) == "no_op"
         assert not panel.draft_table.model().is_changed_cell(row_index, label_col)
         assert not panel.save_button.isEnabled()
-        assert panel.status_label.text().startswith("Saved:")
+        assert panel.status_label.text() == "Schema saved"
     finally:
         panel.close()
         panel.deleteLater()
@@ -299,7 +302,7 @@ def test_data_definition_panel_failed_save_reprojects_blocked_action_state(tmp_p
         panel.save_button.click()
         app.processEvents()
 
-        assert panel.status_label.text().startswith("Blocked:")
+        assert panel.status_label.text() == "Save blocked"
         assert not panel.save_button.isEnabled()
         assert panel._state.draft_changed
         assert panel._state.can_save_schema
@@ -342,6 +345,9 @@ def test_data_definition_panel_retries_recoverable_schema_write_error(
     )
     try:
         app.processEvents()
+        panel.search_input.setText("idu")
+        app.processEvents()
+        assert panel._selected_identity == ("schema_row", "idu")
         label_col = DRAFT_FIELDS.index("label")
         row_index = panel._state.draft_row_identities.index(("schema_row", "idu"))
         assert not panel.save_button.isEnabled()
@@ -362,6 +368,11 @@ def test_data_definition_panel_retries_recoverable_schema_write_error(
         assert panel._state.save_action_enabled
         assert panel.save_plan_table.model().cell_value(0, 1) == "planned"
         assert panel.save_button.isEnabled()
+        assert panel.status_label.text() == "Schema save failed"
+        assert panel.save_button.text() == "Retry Save"
+        assert "temporary replace failure" in panel.impact_view.concise_label.text()
+        assert panel.search_input.text() == "idu"
+        assert panel._selected_identity == ("schema_row", "idu")
 
         panel.save_button.click()
         app.processEvents()
@@ -372,6 +383,9 @@ def test_data_definition_panel_retries_recoverable_schema_write_error(
         assert not panel._state.can_save_schema
         assert not panel._state.save_action_enabled
         assert not panel.save_button.isEnabled()
+        assert panel.status_label.text() == "Schema saved"
+        assert panel.search_input.text() == "idu"
+        assert panel._selected_identity == ("schema_row", "idu")
         loaded = load_predict_schema_catalog_v2(schema_path)
         assert next(row for row in loaded.rows if row.column_key == "idu").label == (
             "Indoor Unit"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Literal
 
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -41,21 +42,33 @@ class DataDefinitionAddDialog(QDialog):
         on_apply: AddApplyCallback,
         *,
         standalone_mapping_attribute: bool = False,
+        initial_intent: Literal["manual_predict", "mapping_predict"] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._on_apply = on_apply
         self._standalone = standalone_mapping_attribute
-        self.setWindowTitle(
+        self._initial_intent = initial_intent
+        title = {
+            "manual_predict": "Add Manual Predict Input",
+            "mapping_predict": "Add Mapping-backed Predict Input",
+        }.get(initial_intent or "")
+        self.setWindowTitle(title or (
             "Add Mapping Attribute" if standalone_mapping_attribute else "Add Definition"
-        )
+        ))
         self.setAccessibleName(self.windowTitle())
         self.setModal(True)
         self._build()
+        if initial_intent is not None:
+            self.intent_combo.setCurrentIndex(self.intent_combo.findData(initial_intent))
+            self.intent_label.setVisible(False)
+            self.intent_combo.setVisible(False)
         self._update_intent_fields()
         self.setMinimumWidth(520)
         schedule_initial_focus(
-            self.label_input if self._standalone else self.intent_combo
+            self.label_input
+            if self._standalone or self._initial_intent is not None
+            else self.intent_combo
         )
 
     def intent(self) -> AddDefinitionIntent:
@@ -97,8 +110,9 @@ class DataDefinitionAddDialog(QDialog):
         self.intent_combo.addItem("Manual Predict Input", "manual_predict")
         self.intent_combo.addItem("Mapping-backed Predict Column", "mapping_predict")
         self.intent_combo.currentIndexChanged.connect(self._update_intent_fields)
-        if not self._standalone:
-            add_labeled_row(self.form, "Intent", self.intent_combo)
+        self.intent_label = add_labeled_row(self.form, "Intent", self.intent_combo)
+        self.intent_label.setVisible(not self._standalone)
+        self.intent_combo.setVisible(not self._standalone)
 
         self.label_input = QLineEdit()
         self.label_input.setAccessibleName("Definition label")

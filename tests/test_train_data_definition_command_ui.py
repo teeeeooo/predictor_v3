@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import shutil
 
+from PySide6.QtCore import QTimer
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QDialog
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
@@ -12,6 +14,7 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_add_dialog import DataDefinitionAddDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
+import apps.train.ui.data_definition_panel as data_definition_panel_module
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
@@ -56,7 +59,11 @@ def test_add_dialog_keeps_invalid_command_open_and_cancel_is_noop(tmp_path):
 def test_add_dialog_and_panel_select_complete_new_definition(tmp_path):
     app = _app()
     panel = DataDefinitionPanel(controller=_controller(tmp_path))
-    dialog = DataDefinitionAddDialog(panel._apply_add_intent, parent=panel)
+    dialog = DataDefinitionAddDialog(
+        panel._apply_add_intent,
+        initial_intent="manual_predict",
+        parent=panel,
+    )
     try:
         dialog.label_input.setText("Fan Diameter")
         dialog.key_input.setText("Fan Diameter")
@@ -72,11 +79,118 @@ def test_add_dialog_and_panel_select_complete_new_definition(tmp_path):
         assert panel._state.draft_changed
         raw_index = panel._state.draft_row_identities.index(panel._selected_identity)
         assert panel.draft_table.model().cell_value(raw_index, 2) == "fan_diameter"
+        assert dialog.intent_combo.isHidden()
     finally:
         dialog.deleteLater()
         panel.close()
         panel.deleteLater()
         app.processEvents()
+
+
+def test_unified_add_menu_routes_existing_modes_and_cancel_does_not_mutate(
+    tmp_path,
+    monkeypatch,
+):
+    app = _app()
+    panel = DataDefinitionPanel(controller=_controller(tmp_path))
+    before = panel._state.draft_rows
+    opened: list[tuple[str | None, bool]] = []
+
+    class _CancelledDialog:
+        def __init__(
+            self,
+            _on_apply,
+            *,
+            standalone_mapping_attribute=False,
+            initial_intent=None,
+            parent=None,
+        ) -> None:
+            del parent
+            opened.append((initial_intent, standalone_mapping_attribute))
+
+        def exec(self) -> int:
+            return QDialog.Rejected
+
+    monkeypatch.setattr(
+        data_definition_panel_module,
+        "DataDefinitionAddDialog",
+        _CancelledDialog,
+    )
+    try:
+        panel.add_manual_action.trigger()
+        panel.add_mapping_predict_action.trigger()
+        panel.add_mapping_attribute_action.trigger()
+        app.processEvents()
+        assert opened == [
+            ("manual_predict", False),
+            ("mapping_predict", False),
+            (None, True),
+        ]
+        assert panel._state.draft_rows == before
+        assert not panel._state.draft_changed
+    finally:
+        panel.close()
+        panel.deleteLater()
+        app.processEvents()
+
+
+def test_unified_add_menu_drives_valid_manual_submit_and_mapping_attribute_cancel(
+    tmp_path,
+):
+    app = _app()
+    panel = DataDefinitionPanel(controller=_controller(tmp_path))
+    panel.show()
+    app.processEvents()
+
+    def submit_manual() -> None:
+        dialog = app.activeModalWidget()
+        assert isinstance(dialog, DataDefinitionAddDialog)
+        assert dialog.intent_combo.currentData() == "manual_predict"
+        assert dialog.intent_combo.isHidden()
+        dialog.label_input.setText("Menu Fan Diameter")
+        dialog.key_input.setText("menu_fan_diameter")
+        dialog.apply_button.click()
+
+    QTimer.singleShot(0, submit_manual)
+    panel.add_manual_action.trigger()
+    app.processEvents()
+    app.processEvents()
+    app.processEvents()
+    QTest.qWait(5)
+
+    assert panel._selected_identity == ("schema_row", "menu_fan_diameter")
+    assert panel._state.draft_changed
+    focused = panel.window().focusWidget()
+    assert focused is panel.inventory_table, (
+        type(focused).__name__ if focused is not None else "none",
+        focused.accessibleName() if focused is not None else "",
+    )
+
+    panel._reset_draft()
+    app.processEvents()
+    before = panel._state.draft_rows
+
+    def cancel_attribute() -> None:
+        dialog = app.activeModalWidget()
+        assert isinstance(dialog, DataDefinitionAddDialog)
+        assert dialog.windowTitle() == "Add Mapping Attribute"
+        dialog.reject()
+
+    QTimer.singleShot(0, cancel_attribute)
+    panel.add_mapping_attribute_action.trigger()
+    app.processEvents()
+    app.processEvents()
+    app.processEvents()
+    QTest.qWait(5)
+
+    assert panel._state.draft_rows == before
+    assert not panel._state.draft_changed
+    focused = panel.window().focusWidget()
+    assert focused is panel.add_definition_button, (
+        type(focused).__name__ if focused is not None else "none",
+        focused.accessibleName() if focused is not None else "",
+    )
+    panel.close()
 
 
 def test_standalone_mapping_dialog_projects_hidden_requirement(tmp_path):

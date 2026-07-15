@@ -76,7 +76,7 @@ def test_data_definition_panel_builds_readonly_tables_and_refreshes():
         assert len(refresh_buttons) == 1
         refresh_buttons[0].click()
         app.processEvents()
-        assert panel.status_label.text() == "Clean: Definitions loaded."
+        assert panel.status_label.text() == "No unsaved changes"
     finally:
         panel.close()
         panel.deleteLater()

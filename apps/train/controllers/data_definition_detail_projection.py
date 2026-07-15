@@ -64,7 +64,7 @@ def project_detail(
     changed_fields = tuple(cell.field_name for cell in row.cells if cell.changed)
     editable = any(cell.editable for cell in row.cells)
     edit_reason = (
-        "Schema-backed fields can be edited in Advanced Diagnostics > Raw Draft."
+        "Supported schema-backed fields can be changed through Edit."
         if editable
         else next((cell.reason for cell in row.cells if cell.reason), "Direct editing is blocked.")
     )
@@ -227,7 +227,7 @@ def _ml_compatibility(
         return "Blocked — compatibility projection writer required"
     if "feature_projection_parity_mismatch" in blocker_codes:
         return "Mismatch"
-    if row.model_input == "Enabled" or row.ml_name:
+    if row.model_input == "Used" or row.ml_name:
         return "Compatible with current projection"
     return "Not a model input"
 

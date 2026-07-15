@@ -21,7 +21,7 @@ class DataDefinitionInventoryRow:
     identity: tuple[str, str]
     label: str
     internal_key: str
-    category: str
+    kind: str
     data_type: str
     source_type: str
     relationship: str
@@ -30,6 +30,11 @@ class DataDefinitionInventoryRow:
     lifecycle_state: str
     ml_name: str
     cells: tuple[DataDefinitionDraftCellState, ...]
+
+    @property
+    def category(self) -> str:
+        """Keep the existing filter-facing name while presenting it as Kind."""
+        return self.kind
 
 
 @dataclass(frozen=True)
@@ -127,30 +132,28 @@ def _inventory_row(
     changed_fields = tuple(cell.field_name for cell in cells if cell.changed)
     direct_editable = any(cell.editable for cell in cells)
     active = _as_bool(values.get("active", "false"))
-    lifecycle_state = (
-        "Inactive"
-        if not active
-        else "Blocked"
-        if not direct_editable or (changed_fields and state.draft_changed and not state.save_action_enabled)
-        else "Active"
-    )
     source_kind = values.get("source_kind", identity[0])
     internal_key = values.get("column_key") or values.get("ml_name") or identity[1]
     label = values.get("label") or values.get("ml_name") or internal_key
-    value_source = values.get("value_source", "")
     return DataDefinitionInventoryRow(
         identity=identity,
         label=label,
         internal_key=internal_key,
-        category=_category(values, source_kind),
+        kind=_kind(values, source_kind),
         data_type=values.get("data_type") or ("Derived" if source_kind == "derived_policy" else "—"),
-        source_type=_source_type(value_source, source_kind),
+        source_type=_source_type(values, source_kind),
         relationship=_relationship(values),
-        predict_visibility="Visible" if _as_bool(values.get("visible", "false")) else "Hidden",
+        predict_visibility="Used" if _as_bool(values.get("visible", "false")) else "Not used",
         model_input=(
-            "Enabled" if _as_bool(values.get("model_input_enabled", "false")) else "Disabled"
+            "Used" if _as_bool(values.get("model_input_enabled", "false")) else "Not used"
         ),
-        lifecycle_state=lifecycle_state,
+        lifecycle_state=_lifecycle_state(
+            identity,
+            active=active,
+            changed_fields=changed_fields,
+            direct_editable=direct_editable,
+            state=state,
+        ),
         ml_name=values.get("ml_name", ""),
         cells=cells,
     )
@@ -206,9 +209,9 @@ def _application_status(state: DataDefinitionControllerState) -> tuple[str, str]
     return "clean", "Clean"
 
 
-def _category(values: dict[str, str], source_kind: str) -> str:
+def _kind(values: dict[str, str], source_kind: str) -> str:
     if source_kind == "derived_policy":
-        return "Derived Policy"
+        return "Derived"
     role = values.get("role", "")
     if role == "result":
         return "Prediction Result"
@@ -217,16 +220,50 @@ def _category(values: dict[str, str], source_kind: str) -> str:
     if role == "one_hot_feature":
         return "One-hot Feature"
     if values.get("value_source") == "mapping_lookup":
+        if role == "helper" or not _as_bool(values.get("visible", "false")):
+            return "Mapping Attribute"
         return "Mapping-backed Input"
     if role == "input":
         return "Predict Input"
     return "Schema Definition"
 
 
-def _source_type(value_source: str, source_kind: str) -> str:
-    if source_kind == "derived_policy":
-        return "Derived Policy"
+def _source_type(values: dict[str, str], source_kind: str) -> str:
+    value_source = values.get("value_source", "")
+    role = values.get("role", "")
+    if source_kind == "derived_policy" or value_source in {"derived", "formula", "result"}:
+        return "Derived"
+    if role == "status" or value_source == "status":
+        return "Status"
+    if role == "one_hot_feature" or value_source == "one_hot":
+        return "One-hot"
+    if value_source == "mapping_lookup":
+        return "Mapping"
+    if value_source in {"manual", "rule_options"}:
+        return "Manual"
     return value_source.replace("_", " ").title() if value_source else "Unspecified"
+
+
+def _lifecycle_state(
+    identity: tuple[str, str],
+    *,
+    active: bool,
+    changed_fields: tuple[str, ...],
+    direct_editable: bool,
+    state: DataDefinitionControllerState,
+) -> str:
+    if not active:
+        return "Inactive"
+    if changed_fields:
+        blocked = any(
+            item.severity == "error"
+            and item.related_row_identity in {None, identity}
+            for item in state.blocker_items
+        )
+        return "Blocked" if blocked else "Changed"
+    if not direct_editable:
+        return "Read-only"
+    return "Active"
 
 
 def _relationship(values: dict[str, str]) -> str:

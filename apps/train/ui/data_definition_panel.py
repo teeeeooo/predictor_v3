@@ -1,21 +1,15 @@
-"""Inventory-first Data Definition Train/Admin panel."""
+"""Task-oriented Data Definition Train/Admin panel."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Literal
 
-from PySide6.QtCore import QModelIndex, QSignalBlocker, Qt
+from PySide6.QtCore import QModelIndex, Qt
 from PySide6.QtGui import QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QComboBox,
-    QFrame,
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
     QScrollArea,
-    QSplitter,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -30,7 +24,6 @@ from apps.train.controllers.data_definition_controller import (
     DataDefinitionController,
     DataDefinitionControllerState,
 )
-from apps.train.controllers.data_definition_detail_projection import DataDefinitionDetailState
 from apps.train.controllers.data_definition_presentation import (
     DataDefinitionInventoryProjection,
     project_data_definition_inventory,
@@ -41,6 +34,12 @@ from apps.train.controllers.data_definition_impact_projection import (
 from apps.train.controllers.data_definition_interaction import (
     project_data_definition_interaction,
 )
+from apps.train.controllers.data_definition_summary_projection import (
+    project_data_definition_summary,
+)
+from apps.train.controllers.data_definition_workspace_projection import (
+    project_data_definition_workspace,
+)
 from apps.train.ui.data_definition_diagnostics import (
     DataDefinitionDiagnostics,
     definition_table,
@@ -50,19 +49,18 @@ from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
 from apps.train.ui.data_definition_impact_view import DataDefinitionImpactView
 from apps.train.ui.data_definition import DataDefinitionHandoffPanel
+from apps.train.ui.data_definition.filter_bar import DataDefinitionFilterBar
+from apps.train.ui.data_definition.inventory_view import DataDefinitionInventoryView
+from apps.train.ui.data_definition.summary_card import DataDefinitionSummaryCard
+from apps.train.ui.data_definition.task_header import DataDefinitionTaskHeader
 from apps.train.ui.data_definition.workspace_behavior import (
     DataDefinitionWorkspaceBehavior,
 )
-from apps.train.ui.data_mapping_models import ReadOnlyMappingTableModel
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
-
-DETAIL_HEADERS = ("Property", "Value")
-INVENTORY_INITIAL_WIDTH = 760
-DETAIL_INITIAL_WIDTH = 500
 
 
 class DataDefinitionPanel(QWidget):
-    """Inventory-first manager over the existing Data Definition lifecycle."""
+    """Task-oriented manager over the existing Data Definition lifecycle."""
 
     def __init__(
         self,
@@ -81,28 +79,39 @@ class DataDefinitionPanel(QWidget):
         self._preferred_identity: tuple[str, str] | None = None
         self._last_projected_identity: tuple[str, str] | None = None
 
-        self.status_label = QLabel("Data Definition pending.")
-        self.status_label.setObjectName("PanelTitle")
-        self.status_label.setAccessibleName("Data Definition application status")
-        self.status_label.setWordWrap(True)
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search label, key, or ML name")
-        self.search_input.setAccessibleName("Search Data Definitions")
-        self.category_filter = _filter_combo("Filter Data Definitions by category")
-        self.source_filter = _filter_combo("Filter Data Definitions by value source")
-        self.state_filter = _filter_combo("Filter Data Definitions by state")
-        self.inventory_state_label = QLabel()
-        self.inventory_state_label.setAccessibleName("Data Definition inventory state")
+        self.filter_bar = DataDefinitionFilterBar(
+            self._apply_inventory,
+            lambda: self._behavior.focus_inventory(),
+            self,
+        )
+        self.search_input = self.filter_bar.search_input
+        self.category_filter = self.filter_bar.category_filter
+        self.source_filter = self.filter_bar.source_filter
+        self.state_filter = self.filter_bar.state_filter
         self.inventory_table = definition_table("Data Definition Inventory")
         self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.detail_state_label = QLabel()
-        self.detail_state_label.setWordWrap(True)
-        self.detail_state_label.setAccessibleName("Selected Data Definition state")
-        self.detail_table = definition_table("Selected Data Definition Detail")
+        self.inventory_view = DataDefinitionInventoryView(
+            self.inventory_table,
+            self._clear_filters,
+            self,
+        )
+        self.summary_card = DataDefinitionSummaryCard(self)
         self.impact_view = DataDefinitionImpactView(self)
         self.handoff_panel = DataDefinitionHandoffPanel(on_open_data_mapping)
         self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
         self._publish_diagnostic_table_aliases()
+        self.task_header = DataDefinitionTaskHeader(
+            on_add_manual=lambda: self._add_definition("manual_predict"),
+            on_add_mapping=lambda: self._add_definition("mapping_predict"),
+            on_add_attribute=self._add_mapping_attribute,
+            on_edit=self._edit_definition,
+            on_save=self._save_schema,
+            on_review=self._review_current_state,
+            on_refresh=self.refresh,
+            on_reset=self._reset_draft,
+            parent=self,
+        )
+        self._publish_workspace_aliases()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -112,8 +121,8 @@ class DataDefinitionPanel(QWidget):
             style.spacing("space.outer"),
         )
         layout.setSpacing(style.spacing("space.sm"))
-        layout.addWidget(self._build_command_bar())
-        layout.addWidget(self._build_filter_bar())
+        layout.addWidget(self.task_header)
+        layout.addWidget(self.filter_bar)
         self.content_scroll = QScrollArea(self)
         self.content_scroll.setAccessibleName("Data Definition workspace viewport")
         self.content_scroll.setWidgetResizable(True)
@@ -123,14 +132,14 @@ class DataDefinitionPanel(QWidget):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(style.spacing("space.sm"))
-        content_layout.addWidget(self._build_workspace(), 1)
+        content_layout.addWidget(self.inventory_view)
+        content_layout.addWidget(self.summary_card)
         content_layout.addWidget(self.impact_view)
         content_layout.addWidget(self.handoff_panel)
         content_layout.addWidget(self.diagnostics)
         self.content_scroll.setWidget(content)
         layout.addWidget(self.content_scroll, 1)
         self._behavior = DataDefinitionWorkspaceBehavior(self)
-        self._connect_filters()
         self.refresh()
 
     def refresh(self) -> None:
@@ -138,118 +147,6 @@ class DataDefinitionPanel(QWidget):
         focus = self._behavior.workspace_focus()
         self._apply_state(self._controller.refresh())
         self._behavior.restore_workspace_focus(focus)
-
-    def _build_command_bar(self) -> QFrame:
-        panel = QFrame(self)
-        panel.setObjectName("Panel")
-        panel.setStyleSheet(style.panel_stylesheet())
-        layout = QGridLayout(panel)
-        layout.setContentsMargins(
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-        )
-        self._command_layout = layout
-        self.refresh_button = _button("Refresh", "Refresh Data Definition", self.refresh)
-        self.reset_button = _button(
-            "Reset Draft", "Reset Data Definition Draft", self._reset_draft
-        )
-        layout.addWidget(self.refresh_button, 0, 0)
-        layout.addWidget(self.reset_button, 0, 1)
-        self.add_definition_button = _button(
-            "Add Definition", "Add Data Definition", self._add_definition
-        )
-        self.add_mapping_attribute_button = _button(
-            "Add Mapping Attribute",
-            "Add Data Definition Mapping Attribute",
-            self._add_mapping_attribute,
-        )
-        self.edit_button = _button("Edit", "Edit Selected Data Definition", self._edit_definition)
-        layout.addWidget(self.add_definition_button, 0, 2)
-        layout.addWidget(self.add_mapping_attribute_button, 0, 3)
-        layout.addWidget(self.edit_button, 0, 4)
-        self.save_button = _button(
-            "Save schema", "Save Data Definition Schema", self._save_schema
-        )
-        self.save_button.setObjectName("PrimaryButton")
-        layout.addWidget(self.save_button, 0, 5)
-        self.review_blockers_button = _button(
-            "Review blockers",
-            "Review Data Definition compatibility blockers",
-            lambda: self._behavior.focus_blockers(),
-        )
-        layout.addWidget(self.review_blockers_button, 0, 6)
-        layout.addWidget(self.status_label, 0, 7)
-        layout.setColumnStretch(7, 1)
-        return panel
-
-    def _build_filter_bar(self) -> QFrame:
-        panel = QFrame(self)
-        panel.setObjectName("Panel")
-        panel.setStyleSheet(style.panel_stylesheet())
-        layout = QGridLayout(panel)
-        self._filter_layout = layout
-        layout.setContentsMargins(
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-            style.spacing("space.panel"),
-            style.spacing("space.sm"),
-        )
-        layout.setSpacing(style.spacing("space.sm"))
-        layout.addWidget(self.search_input, 0, 0)
-        layout.addWidget(self.category_filter, 0, 1)
-        layout.addWidget(self.source_filter, 0, 2)
-        layout.addWidget(self.state_filter, 0, 3)
-        layout.setColumnStretch(0, 2)
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
-        layout.setColumnStretch(3, 1)
-        return panel
-
-    def _build_workspace(self) -> QSplitter:
-        splitter = QSplitter(self)
-        self.workspace_splitter = splitter
-        splitter.setAccessibleName("Definition inventory and focused detail")
-        splitter.setChildrenCollapsible(False)
-        splitter.addWidget(
-            self._panel("Definition Inventory", self.inventory_state_label, self.inventory_table)
-        )
-        splitter.addWidget(
-            self._panel("Focused Detail", self.detail_state_label, self.detail_table)
-        )
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 2)
-        splitter.setSizes((INVENTORY_INITIAL_WIDTH, DETAIL_INITIAL_WIDTH))
-        return splitter
-
-    def _panel(self, title: str, state_label: QLabel, table: QTableView) -> QFrame:
-        panel = QFrame(self)
-        panel.setObjectName("Panel")
-        panel.setAccessibleName(f"Data Definition {title}")
-        panel.setStyleSheet(style.panel_stylesheet())
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(
-            style.spacing("space.panel"),
-            style.spacing("space.panel"),
-            style.spacing("space.panel"),
-            style.spacing("space.panel"),
-        )
-        layout.setSpacing(style.spacing("space.xs"))
-        heading = QLabel(title)
-        heading.setObjectName("PanelTitle")
-        heading.setFont(style.qfont("font.panel_title"))
-        layout.addWidget(heading)
-        layout.addWidget(state_label)
-        layout.addWidget(table, 1)
-        return panel
-
-    def _connect_filters(self) -> None:
-        self.search_input.textChanged.connect(self._apply_inventory)
-        self.search_input.returnPressed.connect(self._behavior.focus_inventory)
-        self.category_filter.currentIndexChanged.connect(self._apply_inventory)
-        self.source_filter.currentIndexChanged.connect(self._apply_inventory)
-        self.state_filter.currentIndexChanged.connect(self._apply_inventory)
 
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
         self._state = state
@@ -273,24 +170,22 @@ class DataDefinitionPanel(QWidget):
             and self._selected_identity != self._last_projected_identity
         ):
             self._preferred_identity = self._selected_identity
+        search, category, source_type, lifecycle_state = self.filter_bar.current_values()
         projection = project_data_definition_inventory(
             self._state,
-            search=self.search_input.text(),
-            category=str(self.category_filter.currentData() or ""),
-            source_type=str(self.source_filter.currentData() or ""),
-            lifecycle_state=str(self.state_filter.currentData() or ""),
+            search=search,
+            category=category,
+            source_type=source_type,
+            lifecycle_state=lifecycle_state,
             selected_identity=self._preferred_identity,
         )
-        self._set_filter_options(projection)
+        self.filter_bar.apply_projection(projection)
         self._selected_identity = projection.selected_identity
         self._last_projected_identity = projection.selected_identity
         interaction = project_data_definition_interaction(self._state, projection)
-        self.status_label.setText(interaction.status_text)
-        self.status_label.setAccessibleDescription(self.status_label.text())
-        self.inventory_state_label.setText(projection.view_message)
         model = DataDefinitionInventoryTableModel(projection.rows)
         self.inventory_table.setModel(model)
-        self.inventory_table.resizeColumnsToContents()
+        self.inventory_view.refresh_column_policy()
         row_index = (
             model.row_for_identity(projection.selected_identity)
             if projection.selected_identity is not None
@@ -305,34 +200,8 @@ class DataDefinitionPanel(QWidget):
         self.inventory_table.selectionModel().currentRowChanged.connect(
             self._inventory_selection_changed
         )
-        self._apply_detail(projection.detail)
-        self.impact_view.apply_projection(
-            project_data_definition_impact(self._state, projection.selected_identity)
-        )
-        _apply_action_state(self.save_button, interaction.save)
-        _apply_action_state(self.edit_button, interaction.edit)
-        _apply_action_state(self.review_blockers_button, interaction.review_blockers)
+        self._apply_workspace_projection(projection, interaction)
         self.inventory_table.setAccessibleDescription(projection.view_message)
-
-    def _set_filter_options(self, projection: DataDefinitionInventoryProjection) -> None:
-        _replace_options(
-            self.category_filter,
-            "All categories",
-            projection.categories,
-            projection.resolved_category,
-        )
-        _replace_options(
-            self.source_filter,
-            "All value sources",
-            projection.source_types,
-            projection.resolved_source_type,
-        )
-        _replace_options(
-            self.state_filter,
-            "All states",
-            projection.lifecycle_states,
-            projection.resolved_lifecycle_state,
-        )
 
     def _inventory_selection_changed(
         self,
@@ -348,36 +217,50 @@ class DataDefinitionPanel(QWidget):
         self._selected_identity = identity
         self._preferred_identity = identity
         self._last_projected_identity = identity
+        search, category, source_type, lifecycle_state = self.filter_bar.current_values()
         projection = project_data_definition_inventory(
             self._state,
-            search=self.search_input.text(),
-            category=str(self.category_filter.currentData() or ""),
-            source_type=str(self.source_filter.currentData() or ""),
-            lifecycle_state=str(self.state_filter.currentData() or ""),
+            search=search,
+            category=category,
+            source_type=source_type,
+            lifecycle_state=lifecycle_state,
             selected_identity=identity,
         )
-        self._apply_detail(projection.detail)
-        self.impact_view.apply_projection(
-            project_data_definition_impact(self._state, identity)
-        )
         interaction = project_data_definition_interaction(self._state, projection)
-        _apply_action_state(self.edit_button, interaction.edit)
-        _apply_action_state(self.review_blockers_button, interaction.review_blockers)
+        self._apply_workspace_projection(projection, interaction)
 
-    def _apply_detail(self, detail: DataDefinitionDetailState) -> None:
-        self.detail_state_label.setText(
-            f"{detail.title} — {detail.message}" if detail.message else detail.title
+    def _apply_workspace_projection(self, projection, interaction) -> None:  # noqa: ANN001
+        if self._state is None:
+            return
+        impact = project_data_definition_impact(
+            self._state,
+            projection.selected_identity,
         )
-        self.detail_table.setModel(ReadOnlyMappingTableModel(DETAIL_HEADERS, detail.rows))
-        self.detail_table.resizeColumnsToContents()
+        workspace = project_data_definition_workspace(self._state, projection, impact)
+        summary = project_data_definition_summary(self._state, projection)
+        self.inventory_view.apply_state(
+            projection.view_message,
+            no_match=projection.view_state == "no_match",
+        )
+        self.summary_card.apply_projection(summary)
+        self.impact_view.apply_projection(impact, workspace)
+        self.task_header.apply_projection(workspace, interaction)
+        self.handoff_panel.setVisible(workspace.show_saved_handoff)
 
     def _reset_draft(self) -> None:
         focus = self._behavior.workspace_focus()
         self._apply_state(self._controller.reset_draft())
         self._behavior.restore_workspace_focus(focus)
 
-    def _add_definition(self) -> None:
-        accepted = DataDefinitionAddDialog(self._apply_add_intent, parent=self).exec()
+    def _add_definition(
+        self,
+        initial_intent: Literal["manual_predict", "mapping_predict"] | None = None,
+    ) -> None:
+        accepted = DataDefinitionAddDialog(
+            self._apply_add_intent,
+            initial_intent=initial_intent,
+            parent=self,
+        ).exec()
         self._behavior.restore_dialog_focus(bool(accepted), self.add_definition_button)
 
     def _add_mapping_attribute(self) -> None:
@@ -386,9 +269,15 @@ class DataDefinitionPanel(QWidget):
             standalone_mapping_attribute=True,
             parent=self,
         ).exec()
-        self._behavior.restore_dialog_focus(
-            bool(accepted), self.add_mapping_attribute_button
-        )
+        self._behavior.restore_dialog_focus(bool(accepted), self.add_definition_button)
+
+    def _review_current_state(self) -> None:
+        self._behavior.focus_blockers()
+
+    def _clear_filters(self) -> None:
+        self.filter_bar.clear()
+        self._apply_inventory()
+        self._behavior.restore_workspace_focus("inventory")
 
     def _edit_definition(self) -> None:
         values = self._selected_values()
@@ -445,6 +334,22 @@ class DataDefinitionPanel(QWidget):
         ):
             setattr(self, name, getattr(self.diagnostics, name))
 
+    def _publish_workspace_aliases(self) -> None:
+        self.status_label = self.task_header.status_label
+        self.refresh_button = self.task_header.refresh_button
+        self.reset_button = self.task_header.reset_button
+        self.add_definition_button = self.task_header.add_button
+        self.edit_button = self.task_header.edit_button
+        self.save_button = self.task_header.save_button
+        self.review_blockers_button = self.task_header.review_button
+        self.add_manual_action = self.task_header.add_manual_action
+        self.add_mapping_predict_action = self.task_header.add_mapping_action
+        self.add_mapping_attribute_action = self.task_header.add_attribute_action
+        self.inventory_state_label = self.inventory_view.state_label
+        self.clear_filters_button = self.inventory_view.clear_button
+        self.detail_state_label = self.summary_card.title_label
+        self.detail_table = self.summary_card.technical_table
+
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802
         super().showEvent(event)
         self._behavior.show_default_focus()
@@ -452,44 +357,6 @@ class DataDefinitionPanel(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         super().resizeEvent(event)
         self._behavior.apply_width(event.size().width())
-
-
-def _filter_combo(accessible_name: str) -> QComboBox:
-    combo = QComboBox()
-    combo.setAccessibleName(accessible_name)
-    return combo
-
-
-def _button(
-    text: str,
-    accessible_name: str,
-    callback: Callable[[], None],
-) -> QPushButton:
-    button = QPushButton(text)
-    button.setAccessibleName(accessible_name)
-    button.clicked.connect(callback)
-    return button
-
-
-def _apply_action_state(button: QPushButton, presentation) -> None:  # noqa: ANN001
-    button.setEnabled(presentation.enabled)
-    button.setToolTip(presentation.reason)
-    button.setAccessibleDescription(presentation.reason)
-
-
-def _replace_options(
-    combo: QComboBox,
-    all_label: str,
-    options: tuple[str, ...],
-    selected: str,
-) -> None:
-    with QSignalBlocker(combo):
-        combo.clear()
-        combo.addItem(all_label, "")
-        for option in options:
-            combo.addItem(option, option)
-        index = combo.findData(selected)
-        combo.setCurrentIndex(index if index >= 0 else 0)
 
 
 def _tables(panel: DataDefinitionPanel) -> tuple[QTableView, ...]:

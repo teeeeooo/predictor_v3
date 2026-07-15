@@ -5,13 +5,12 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin UI/UX Overhaul Phase 2 — Data Mapping UX Overhaul is complete for
-code and repository-automated acceptance. PR #15 is the Ready-for-review merge
-target; native interaction/visual acceptance is deferred under recorded
-blockers. Phase 3 — Data Definition UX Overhaul starts only after PR #15 is
-merged to `main`, from a separate branch and Draft PR following a current-state
-audit. The earlier ML/Predictor foundation through Arc 15-FU1 remains the active
-owner baseline.
+Train/Admin UI/UX Overhaul Phase 3 — Data Definition UX Overhaul is active on
+Draft PR #16. Slices 3A–3F are implemented for repository-automated scope, and
+Slice 3F now waits for its dedicated audit before the Phase 3 final audit.
+Merge, final approval, and Phase 4 remain deferred. The earlier ML/Predictor
+foundation through Arc 15-FU1 and the merged Phase 2 Data Mapping workflow remain
+the active owner baseline.
 
 ## Current Owner State
 
@@ -52,15 +51,14 @@ owner baseline.
   repository-automated scope and merged before Phase 2.
 - Train/Admin UI/UX Overhaul Phase 2 — seven-group Data Mapping information
   architecture, spreadsheet CRUD/Undo, validation and safe persistence, plus
-  exchange export/import: complete for code and repository automation; PR #15
-  is the merge target and native acceptance remains deferred.
+  exchange export/import: merged after repository-automated acceptance; deferred
+  native interaction evidence remains separately recorded.
 
-### Next Workstream — Train/Admin Phase 3 Data Definition UX Overhaul
+### Current Workstream — Train/Admin Phase 3 Data Definition UX Overhaul
 
-After PR #15 is merged, sync and confirm merged `main`, create a separate Phase
-3 branch and Draft PR, then audit current state before confirming Slice 3A.
-Phase 3 turns diagnostics-first Data Definition into an intent-driven manager
-while preserving these boundaries:
+Phase 3 turns diagnostics-first Data Definition into an intent-driven manager.
+Slices 3A–3F are implemented on Draft PR #16; the next gate is the Slice 3F audit
+before the Phase 3 final audit. These boundaries remain in force:
 
 - Data Definition owns structure and mapping attribute definitions; Data
   Mapping owns concrete values.

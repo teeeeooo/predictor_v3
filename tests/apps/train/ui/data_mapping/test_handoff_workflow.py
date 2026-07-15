@@ -61,6 +61,7 @@ def test_cond_inner_area_saved_handoff_coverage_edit_save_reload(tmp_path):
         assert accepted
         assert panel._state.draft_changed
         assert not panel.handoff_panel.open_button.isEnabled()
+        assert not panel.handoff_panel.isVisibleTo(panel)
         assert "Save schema first" in panel.handoff_panel.detail.text()
         assert panel._state.projected_feature_rows == before_projection
         assert mapping_path.read_bytes() == mapping_before
@@ -70,6 +71,11 @@ def test_cond_inner_area_saved_handoff_coverage_edit_save_reload(tmp_path):
 
         assert not panel._state.draft_changed
         assert panel.handoff_panel.open_button.isEnabled()
+        assert panel.handoff_panel.isVisibleTo(panel)
+        assert panel.status_label.text() == "Schema saved"
+        assert panel.handoff_panel.detail.text().startswith(
+            "Mapping values are required for Cond Inner Area."
+        )
         assert "Predict restart required" in panel.handoff_panel.detail.text()
         saved_row = next(
             row

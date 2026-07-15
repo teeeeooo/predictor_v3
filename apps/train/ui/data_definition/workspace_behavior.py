@@ -46,9 +46,9 @@ class DataDefinitionWorkspaceBehavior:
 
     def restore_dialog_focus(self, accepted: bool, action: QPushButton) -> None:
         if accepted and self.panel.inventory_table.currentIndex().isValid():
-            self.restore_workspace_focus("inventory")
+            QTimer.singleShot(1, lambda: self.restore_workspace_focus("inventory"))
         else:
-            QTimer.singleShot(0, lambda: action.setFocus(Qt.OtherFocusReason))
+            QTimer.singleShot(1, lambda: action.setFocus(Qt.OtherFocusReason))
 
     def show_default_focus(self) -> None:
         focused = self.panel.window().focusWidget()
@@ -72,6 +72,7 @@ class DataDefinitionWorkspaceBehavior:
 
     def focus_blockers(self) -> None:
         self.panel.impact_view.focus_save_decision()
+        self.panel.content_scroll.ensureWidgetVisible(self.panel.impact_view)
 
     def _clear_search_or_focus_inventory(self) -> None:
         if self.panel.search_input.text():
@@ -106,19 +107,18 @@ class DataDefinitionWorkspaceBehavior:
     def _configure_tab_order(self) -> None:
         panel = self.panel
         order = (
+            panel.add_definition_button,
+            panel.edit_button,
+            panel.review_blockers_button,
+            panel.save_button,
             panel.refresh_button,
             panel.reset_button,
-            panel.add_definition_button,
-            panel.add_mapping_attribute_button,
-            panel.edit_button,
-            panel.save_button,
-            panel.review_blockers_button,
             panel.search_input,
             panel.category_filter,
             panel.source_filter,
             panel.state_filter,
             panel.inventory_table,
-            panel.detail_table,
+            panel.summary_card.technical_toggle,
             panel.handoff_panel.selector,
             panel.handoff_panel.open_button,
             panel.diagnostics.toggle_button,
@@ -128,29 +128,7 @@ class DataDefinitionWorkspaceBehavior:
 
     def _apply_responsive_layout(self, compact: bool) -> None:
         panel = self.panel
-        buttons = (
-            panel.refresh_button,
-            panel.reset_button,
-            panel.add_definition_button,
-            panel.add_mapping_attribute_button,
-            panel.edit_button,
-            panel.save_button,
-            panel.review_blockers_button,
-        )
-        if compact:
-            positions = ((1, 0), (1, 1), (0, 0), (0, 1), (0, 2), (0, 3), (1, 2))
-            for button, (row, column) in zip(buttons, positions, strict=True):
-                panel._command_layout.addWidget(button, row, column)
-            panel._command_layout.addWidget(panel.status_label, 2, 0, 1, 4)
-            panel._filter_layout.addWidget(panel.search_input, 0, 0, 1, 3)
-            panel._filter_layout.addWidget(panel.category_filter, 1, 0)
-            panel._filter_layout.addWidget(panel.source_filter, 1, 1)
-            panel._filter_layout.addWidget(panel.state_filter, 1, 2)
-            return
-        for column, button in enumerate(buttons):
-            panel._command_layout.addWidget(button, 0, column)
-        panel._command_layout.addWidget(panel.status_label, 0, 7)
-        panel._filter_layout.addWidget(panel.search_input, 0, 0)
-        panel._filter_layout.addWidget(panel.category_filter, 0, 1)
-        panel._filter_layout.addWidget(panel.source_filter, 0, 2)
-        panel._filter_layout.addWidget(panel.state_filter, 0, 3)
+        panel.task_header.apply_compact(compact)
+        panel.filter_bar.apply_compact(compact)
+        panel.inventory_view.apply_compact(compact)
+        panel.summary_card.apply_compact(compact)

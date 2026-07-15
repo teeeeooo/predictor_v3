@@ -28,8 +28,11 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
     panel = DataDefinitionPanel(controller=_controller(schema_path))
     identity = ("schema_row", "fan_diameter")
     try:
+        panel.show()
+        app.processEvents()
         assert panel.impact_view.isVisibleTo(panel)
         assert panel.impact_view.change_label.text() == "No unsaved definition changes."
+        assert panel.impact_view.details_container.isHidden()
         assert not panel.save_button.isEnabled()
 
         accepted, _message = panel._apply_add_intent(
@@ -39,20 +42,33 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
 
         assert accepted
         assert panel._selected_identity == identity
-        assert panel.impact_view.status_label.text() == "Dirty — Schema write: Ready"
+        assert panel.impact_view.status_label.text() == "Review changes before saving"
         assert "Add Fan Diameter" in panel.impact_view.change_label.text()
         assert "Predict restart: required" in panel.impact_view.runtime_label.text()
         assert "ML compatibility fingerprint: unchanged" in panel.impact_view.runtime_label.text()
         assert panel.save_button.isEnabled()
+        assert panel.review_blockers_button.text() == "Review changes"
+        assert panel.impact_view.details_container.isHidden()
+        assert panel.add_definition_button.isHidden()
+        assert panel.edit_button.isHidden()
+        assert not panel.review_blockers_button.isHidden()
+        assert not panel.reset_button.isHidden()
+        panel.review_blockers_button.click()
+        app.processEvents()
+        assert panel.impact_view.details_container.isVisibleTo(panel)
+        assert panel.impact_view.save_label.hasFocus()
 
         panel.save_button.click()
         app.processEvents()
 
         assert panel._selected_identity == identity
-        assert panel.impact_view.status_label.text() == "Clean — Schema write: No changes"
+        assert panel.impact_view.status_label.text() == "Schema saved"
         assert "Status: written" in panel.impact_view.result_label.text()
         assert "Backup path:" in panel.impact_view.result_label.text()
         assert not panel.save_button.isEnabled()
+        assert not panel.add_definition_button.isHidden()
+        assert not panel.edit_button.isHidden()
+        assert panel.review_blockers_button.isHidden()
         loaded = load_predict_schema_catalog_v2(schema_path)
         assert next(row for row in loaded.rows if row.column_key == "fan_diameter").display_order == 420
     finally:
@@ -90,12 +106,16 @@ def test_impact_view_shows_mapping_owner_and_ml_blocker_then_reset_clears_stale_
         ))
         app.processEvents()
         assert accepted
-        assert panel.impact_view.status_label.text() == "Blocked — Schema write: Blocked"
+        assert panel.impact_view.status_label.text() == "Save blocked"
         assert "Direct" in panel.impact_view.save_label.text()
         assert "(ml_compatibility_projection_write_required)" in (
             panel.impact_view.save_label.text()
         )
         assert not panel.save_button.isEnabled()
+        assert panel.review_blockers_button.text() == "Review blocker"
+        assert "Feature Catalog writer" in panel.impact_view.concise_label.text()
+        assert panel.add_definition_button.isHidden()
+        assert not panel.reset_button.isHidden()
 
         panel._reset_draft()
         app.processEvents()
@@ -115,6 +135,8 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
     panel = DataDefinitionPanel(controller=_controller(schema_path))
     identity = ("schema_row", "cooling_capa")
     try:
+        panel.show()
+        app.processEvents()
         panel._selected_identity = identity
         accepted, _message = panel._apply_edit_intent(EditDefinitionIntent(
             identity,
@@ -142,6 +164,9 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
 
         assert panel.inventory_table.model().rowCount() == 0
         assert panel._selected_identity is None
+        assert panel.summary_card.title_label.text() == "No definition selected"
+        assert panel.summary_card.technical_table.model().rowCount() == 0
+        assert panel.clear_filters_button.isVisibleTo(panel)
         assert panel._state is state_before
         assert panel._state.draft_changed
         assert not panel.save_button.isEnabled()
@@ -168,13 +193,15 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
         assert "target: schema_csv" in panel.impact_view.save_label.text()
         assert schema_path.read_bytes() == schema_before
 
-        panel.search_input.clear()
+        panel.clear_filters_button.click()
         app.processEvents()
         restored = project_data_definition_impact(
             panel._state,
             panel._selected_identity,
         )
         assert panel._selected_identity == identity
+        assert panel.summary_card.key_label.text() == "cooling_capa"
+        assert panel.inventory_table.hasFocus()
         assert tuple(
             (
                 item.code,

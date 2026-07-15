@@ -15,13 +15,11 @@ DraftCellEditCallback = Callable[[tuple[str, str], str, object], bool]
 
 INVENTORY_HEADERS = (
     "Label",
-    "Category",
-    "Data Type",
-    "Value Source",
-    "Mapping / Trigger",
+    "Kind",
+    "Value source",
     "Predict",
-    "Model Input",
-    "State",
+    "Model input",
+    "Status",
 )
 
 
@@ -44,10 +42,8 @@ class DataDefinitionInventoryTableModel(QAbstractTableModel):
         row = self._rows[index.row()]
         values = (
             row.label,
-            row.category,
-            row.data_type,
+            row.kind,
             row.source_type,
-            row.relationship,
             row.predict_visibility,
             row.model_input,
             row.lifecycle_state,
@@ -56,10 +52,15 @@ class DataDefinitionInventoryTableModel(QAbstractTableModel):
             return values[index.column()]
         if role == Qt.ToolTipRole:
             return f"{row.internal_key}\nML name: {row.ml_name or '—'}"
-        if role == Qt.BackgroundRole and row.lifecycle_state == "Blocked":
-            return style.table_background_role("warning")
+        if role == Qt.AccessibleDescriptionRole:
+            return f"Internal key {row.internal_key}; ML name {row.ml_name or 'none'}"
+        if role == Qt.BackgroundRole:
+            if row.lifecycle_state == "Blocked":
+                return style.table_background_role("invalid")
+            if row.lifecycle_state == "Changed":
+                return style.table_background_role("warning")
         if role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignLeft | Qt.AlignVCenter if index.column() == 0 else Qt.AlignCenter
         return None
 
     def headerData(

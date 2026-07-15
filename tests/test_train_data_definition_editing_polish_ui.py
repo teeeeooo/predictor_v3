@@ -112,7 +112,7 @@ def test_keyboard_search_selection_no_match_and_deterministic_recovery(tmp_path)
     assert panel._selected_identity != first
     preferred = panel._selected_identity
     assert preferred is not None
-    assert preferred[1] in panel.detail_state_label.text()
+    assert preferred[1] == panel.summary_card.key_label.text()
 
     panel.search_input.setText("definitely-no-match")
     app.processEvents()
@@ -249,10 +249,10 @@ def test_standard_save_shortcut_writes_only_when_enabled_and_restores_focus(tmp_
 def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp_path):
     app = _app()
     panel = DataDefinitionPanel(controller=_controller(tmp_path))
-    panel.resize(820, 640)
+    panel.resize(900, 640)
     panel.show()
     app.processEvents()
-    assert (panel.width(), panel.height()) == (820, 640)
+    assert (panel.width(), panel.height()) == (900, 640)
     assert panel.content_scroll.horizontalScrollBar().maximum() == 0
 
     interactive_types = (QPushButton, QComboBox, QLineEdit, QTableView)
@@ -272,13 +272,17 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
     assert len(action_names) == len(set(action_names))
     for button in (
         panel.add_definition_button,
-        panel.add_mapping_attribute_button,
         panel.edit_button,
         panel.save_button,
     ):
         assert button.isVisible()
         assert panel.rect().intersects(button.geometry())
         assert button.geometry().width() > 0 and button.geometry().height() > 0
+    assert [action.text() for action in panel.task_header.add_menu.actions()] == [
+        "Manual Predict input",
+        "Mapping-backed Predict input",
+        "Data Mapping attribute",
+    ]
     assert panel.status_label.wordWrap()
 
     add_dialog = DataDefinitionAddDialog(panel._apply_add_intent, parent=panel)
