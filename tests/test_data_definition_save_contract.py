@@ -127,7 +127,81 @@ def test_data_definition_save_plan_blocks_ml_name_projection_change():
     assert not plan.can_save_schema
     assert blocker.severity == "error"
     assert blocker.target == "schema_csv"
+    assert blocker.row_identity == row.identity
+    assert blocker.field_name == "ml_name"
+    assert len(_blockers(plan, "ml_compatibility_projection_write_required")) == 1
     assert "features.csv" in blocker.message
+
+
+def test_data_definition_save_plan_attributes_compound_projection_change_by_definition():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+    )
+    before = (changed.rows, changed.baseline_rows, changed.changes())
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert not plan.can_save_schema
+    assert [blocker.row_identity for blocker in blockers] == [row.identity, row.identity]
+    assert [blocker.field_name for blocker in blockers] == [
+        "model_input_enabled",
+        "ml_name",
+    ]
+    assert all(blocker.target == "schema_csv" for blocker in blockers)
+    assert (changed.rows, changed.baseline_rows, changed.changes()) == before
+
+
+def test_data_definition_save_plan_attributes_compound_changes_for_each_definition():
+    draft = build_data_definition_draft()
+    first = next(item for item in draft.rows if item.column_key == "idu")
+    second = next(item for item in draft.rows if item.column_key == "evap_index")
+    changed = replace_draft_row(
+        draft,
+        first.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+    )
+    changed = replace_draft_row(
+        changed,
+        second.identity,
+        model_input_enabled=True,
+        ml_name="Evap Index",
+    )
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert [(item.row_identity, item.field_name) for item in blockers] == [
+        (first.identity, "model_input_enabled"),
+        (first.identity, "ml_name"),
+        (second.identity, "model_input_enabled"),
+        (second.identity, "ml_name"),
+    ]
+
+
+def test_data_definition_save_plan_removes_compound_attribution_after_partial_revert():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    compound = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+    )
+    partial = replace_draft_row(compound, row.identity, ml_name="")
+
+    blocked = build_data_definition_save_plan(compound)
+    recovered = build_data_definition_save_plan(partial)
+
+    assert _blockers(blocked, "ml_compatibility_projection_write_required")
+    assert not _blockers(recovered, "ml_compatibility_projection_write_required")
+    assert recovered.can_save_schema
 
 
 def test_data_definition_save_plan_blocks_one_hot_group_projection_change():
@@ -278,6 +352,10 @@ def _target_status(plan, target):
 
 def _blocker_codes(plan):
     return {blocker.code for blocker in plan.blocked_reasons}
+
+
+def _blockers(plan, code):
+    return tuple(blocker for blocker in plan.blocked_reasons if blocker.code == code)
 
 
 def _blocker(plan, code):

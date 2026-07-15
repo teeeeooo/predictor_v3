@@ -146,6 +146,85 @@ def test_detail_blockers_attribute_plan_blocker_to_its_definition():
     assert _hash(service.schema_path) == before
 
 
+def test_detail_blockers_attribute_compound_ml_activation_to_definition():
+    service = DataDefinitionService()
+    controller = DataDefinitionController(service)
+    controller.refresh()
+    identity = ("schema_row", "idu")
+    other_identity = ("schema_row", "cooling_capa")
+    protected_paths = (
+        service.schema_path,
+        Path("config/ml/features.csv"),
+        Path(MAPPING_JSON_FILE),
+    )
+    before = tuple(_hash(path) for path in protected_paths)
+    controller.edit_cell(identity, "model_input_enabled", True)
+    blocked = controller.edit_cell(identity, "ml_name", "IDU")
+
+    direct = project_blockers(blocked, identity)
+    other = project_blockers(blocked, other_identity)
+
+    assert [item.relevance for item in direct] == ["direct", "direct"]
+    assert [item.related_field for item in direct] == ["model_input_enabled", "ml_name"]
+    assert all(item.related_row_identity == identity for item in direct)
+    assert [item.relevance for item in other] == [
+        "other_definition",
+        "other_definition",
+    ]
+    assert not any(item.relevance == "global" for item in (*direct, *other))
+    assert not blocked.save_action_enabled
+    assert tuple(_hash(path) for path in protected_paths) == before
+
+
+def test_detail_blockers_attribute_compound_ml_activation_for_multiple_definitions():
+    controller = DataDefinitionController()
+    controller.refresh()
+    first_identity = ("schema_row", "idu")
+    second_identity = ("schema_row", "evap_index")
+    for identity, ml_name in (
+        (first_identity, "IDU"),
+        (second_identity, "Evap Index"),
+    ):
+        controller.edit_cell(identity, "model_input_enabled", True)
+        blocked = controller.edit_cell(identity, "ml_name", ml_name)
+
+    first = project_blockers(blocked, first_identity)
+    second = project_blockers(blocked, second_identity)
+
+    assert [(item.relevance, item.related_row_identity, item.related_field) for item in first] == [
+        ("direct", first_identity, "model_input_enabled"),
+        ("direct", first_identity, "ml_name"),
+        ("other_definition", second_identity, "model_input_enabled"),
+        ("other_definition", second_identity, "ml_name"),
+    ]
+    assert [(item.relevance, item.related_row_identity, item.related_field) for item in second] == [
+        ("direct", second_identity, "model_input_enabled"),
+        ("direct", second_identity, "ml_name"),
+        ("other_definition", first_identity, "model_input_enabled"),
+        ("other_definition", first_identity, "ml_name"),
+    ]
+    assert not any(item.relevance == "global" for item in (*first, *second))
+
+
+def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
+    controller = DataDefinitionController()
+    controller.refresh()
+    identity = ("schema_row", "idu")
+    controller.edit_cell(identity, "model_input_enabled", True)
+    blocked = controller.edit_cell(identity, "ml_name", "IDU")
+
+    recovered = controller.edit_cell(identity, "ml_name", "")
+
+    assert project_blockers(blocked, identity)
+    assert not any(
+        item.code == "ml_compatibility_projection_write_required"
+        for item in recovered.blocker_items
+    )
+    assert project_blockers(recovered, identity) == ()
+    assert recovered.can_save_schema
+    assert recovered.save_action_enabled
+
+
 def test_detail_blockers_deduplicate_only_cross_source_logical_duplicates():
     state = DataDefinitionController().refresh()
     selected_identity = ("schema_row", "cooling_capa")

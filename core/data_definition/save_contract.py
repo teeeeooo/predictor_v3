@@ -174,19 +174,27 @@ def _projection_changing_changes(
         project_feature_catalog_from_draft(baseline)
     )
     baseline_identities = {row.identity for row in baseline.rows}
-    contexts: list[DataDefinitionDraftChange] = []
+    changes_by_identity: dict[
+        tuple[str, str], list[DataDefinitionDraftChange]
+    ] = {}
     for change in draft.changes():
         if change.field_name == "__row__" or change.row_identity not in baseline_identities:
             continue
-        single_change = replace_draft_row(
-            baseline,
-            change.row_identity,
-            **{change.field_name: change.after},
-        )
+        changes_by_identity.setdefault(change.row_identity, []).append(change)
+
+    contexts: list[DataDefinitionDraftChange] = []
+    for identity, definition_changes in changes_by_identity.items():
+        definition_candidate = baseline
+        for change in definition_changes:
+            definition_candidate = replace_draft_row(
+                definition_candidate,
+                identity,
+                **{change.field_name: change.after},
+            )
         if projected_feature_catalog_fingerprint(
-            project_feature_catalog_from_draft(single_change)
+            project_feature_catalog_from_draft(definition_candidate)
         ) != baseline_fingerprint:
-            contexts.append(change)
+            contexts.extend(definition_changes)
     return tuple(contexts)
 
 
