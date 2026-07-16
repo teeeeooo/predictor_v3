@@ -5,12 +5,12 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin UI/UX Overhaul Phase 3 — Data Definition UX Overhaul is active on
-Draft PR #16. Slices 3A–3F are implemented for repository-automated scope, and
-Slice 3F now waits for its dedicated audit before the Phase 3 final audit.
-Merge, final approval, and Phase 4 remain deferred. The earlier ML/Predictor
-foundation through Arc 15-FU1 and the merged Phase 2 Data Mapping workflow remain
-the active owner baseline.
+Train/Admin UI/UX Overhaul Phase 3 — Data Definition UX Overhaul is complete and
+its final audit is approved on PR #16. PR #16 is the user merge target; Phase 4 —
+Train/Model and Shell UX Overhaul remains deferred until merged `main` is
+confirmed and the user starts the next phase explicitly. The earlier ML/Predictor
+foundation through Arc 15-FU1 and the merged Phase 1–2 Train/Admin work remain the
+active owner baseline.
 
 ## Current Owner State
 
@@ -53,19 +53,25 @@ the active owner baseline.
   architecture, spreadsheet CRUD/Undo, validation and safe persistence, plus
   exchange export/import: merged after repository-automated acceptance; deferred
   native interaction evidence remains separately recorded.
+- Train/Admin UI/UX Overhaul Phase 3 — table-first Data Definition inventory,
+  controlled Add/Edit, guarded schema Save and impact, saved-only Data Mapping
+  handoff/coverage, keyboard/accessibility polish, and bounded native evidence:
+  final audit approved; PR #16 awaits user merge.
 
-### Current Workstream — Train/Admin Phase 3 Data Definition UX Overhaul
+### Next Workstream — Train/Admin Phase 4 Train/Model and Shell UX Overhaul
 
-Phase 3 turns diagnostics-first Data Definition into an intent-driven manager.
-Slices 3A–3F are implemented on Draft PR #16; the next gate is the Slice 3F audit
-before the Phase 3 final audit. These boundaries remain in force:
+Phase 4 begins only after PR #16 is merged and merged `main` is confirmed, from a
+separate branch and Draft PR after separate instruction. It must preserve the
+accepted Phase 1–3 boundaries, including:
 
-- Data Definition owns structure and mapping attribute definitions; Data
-  Mapping owns concrete values.
-- Existing projection, validation, save, and readiness owners remain in place.
-- Unsupported active ML rename/delete remains blocked.
+- Data Definition owns structure and mapping attribute definitions; Data Mapping
+  owns concrete values.
+- Existing projection, validation, save, readiness, handoff, and persistence
+  owners remain authoritative.
+- Unsupported active ML rename/delete and projection-changing writes remain
+  blocked until an explicit compatibility owner is approved.
 - Predict internal redesign, live schema reload, automatic retraining, and real
-  company data remain outside Phase 3.
+  company data remain outside Phase 3 and are not implied by its closeout.
 
 ### Later — Production ML Readiness / Calculator Integration
 
