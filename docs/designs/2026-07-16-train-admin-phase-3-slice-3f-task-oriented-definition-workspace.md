@@ -1,6 +1,6 @@
 # Train/Admin Phase 3 Slice 3F — Task-oriented Definition Workspace
 
-Status: active design amendment — Slice 3F table-first correction
+Status: accepted design amendment — Slice 3F table-first correction
 Date: 2026-07-16
 Branch: `phase/train-admin-data-definition-ux`
 Correction baseline: `1f3d9d973f7e97a1ed123a88fd757016ccbc34ab`
@@ -12,13 +12,13 @@ Slice 3E completed the requested keyboard, focus, accessibility, state, responsi
 and bounded native-evidence work without changing the accepted Data Definition or
 Data Mapping contracts. That implementation remains valid technical foundation.
 
-The resulting native visual states do not, however, satisfy the original Phase 3
-product goal. The screen is still organized like a refined diagnostics console
-rather than a table-first Feature Manager: Label owns the remaining width,
-Selected Definition consumes default height, and clean-state surfaces compete
-with inventory browsing. Phase 3 final approval, merge, and Phase 4 are therefore
-held while this bounded Slice 3F correction replaces the default presentation
-composition.
+The resulting native visual states did not, however, satisfy the original Phase 3
+product goal. The screen was still organized like a refined diagnostics console
+rather than a table-first Feature Manager: Label owned the remaining width,
+Selected Definition consumed default height, and clean-state surfaces competed
+with inventory browsing. The bounded Slice 3F correction replaced the default
+presentation composition; the Phase 3 final audit was approved and PR #16 was
+merged. Phase 4 now starts with a current-state audit and design finalization.
 
 This document amends the default-workspace and inventory/detail direction in
 `2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`. The earlier
@@ -537,8 +537,8 @@ This table-first correction is accepted only when:
 - native correction evidence demonstrates the redesigned hierarchy honestly;
 - the existing Slice 3F evidence is retained only as superseded historical
   evidence;
-- Phase 3 final audit remains the next approval gate and is not started by this
-  correction.
+- Phase 3 final audit approval and PR #16 merge are complete; this amendment does
+  not change the Phase 4 Train/Model user-flow direction.
 
 ## 10. Non-goals
 
@@ -556,8 +556,8 @@ This table-first correction is accepted only when:
 
 ## 11. Delivery
 
-This correction is one independently auditable logical presentation commit on the
-existing Phase 3 branch and Draft PR.
+This correction was one independently auditable logical presentation commit on
+the existing Phase 3 branch and Draft PR.
 
 ```text
 Slice 3F design amendment
@@ -567,9 +567,7 @@ Slice 3F design amendment
     -> bounded native correction evidence
     -> logical commit and branch push
     -> PR #16 correction record/body update
-    -> Draft/Open handoff
-    -> Slice 3F final audit before Phase 3 final audit
+    -> Phase 3 final audit approval
+    -> PR #16 merge
+    -> Phase 4 current-state audit and design finalization
 ```
-
-PR #16 remains Draft/Open. Merge and Phase 4 remain on hold until Slice 3F and the
-Phase 3 final audit are approved.

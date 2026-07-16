@@ -29,12 +29,38 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-16 — Train/Admin Phase 4 Train UX direction
+
+### Decision
+
+- Confirm Phase 3 is complete and merged through PR #16; remove the Phase 3 merge
+  blocker from active planning.
+- Make Phase 4 user-centered around `select training data → train → check
+  progress → review results`.
+- Run schema, feature, mapping, and compatibility checks automatically inside the
+  workflow. Keep normal technical details out of the default surface; show an
+  actionable user message first for errors and reserve details for Diagnostics or
+  logs.
+- Use the existing Train/ML safe defaults for ordinary training; optional or
+  technical overrides remain behind Advanced settings and do not become required
+  to start a supported default run.
+- Separate authoritative training-start blockers from non-blocking warnings and
+  post-training artifact/Predict blockers. Existing model, restart, mapping, and
+  Predict readiness must not become Start prerequisites without an owner-contract
+  basis.
+- Center results on overall success, target-level R², optional MAE/RMSE, Optuna
+  status and best trial/score when applicable, model-save status, elapsed time,
+  and Predict availability.
+- Treat the current-state audit and design finalization as the next Phase 4 work;
+  preserve existing Data Definition, Data Mapping, Train, Predict, ML,
+  persistence, and public-contract owners.
+
 ## 2026-07-16 — Train/Admin Data Definition UX Phase 3 closeout
 
 ### Decision
 
 - Approve Phase 3 Slices 3A–3F and all audit corrections as one coherent Data
-  Definition UX milestone; PR #16 is the user merge target.
+  Definition UX milestone; PR #16 was merged to `main`.
 - Close the table-first Definition Inventory, controlled Add/Edit, guarded
   schema-only Save, impact/blocker workflow, saved-only Data Mapping handoff and
   coverage, keyboard/accessibility polish, and bounded native evidence while
@@ -48,9 +74,9 @@
 - Keep production mapping completeness, training data, model quality, and
   production readiness company-local. No production config, mapping data,
   training data, protected fixture, or model artifact changed.
-- Mark PR #16 Ready for review after closeout CI succeeds. The user performs the
-  merge; Phase 4 starts only from confirmed merged `main` on a separate branch
-  and Draft PR after separate instruction.
+- Phase 3 closeout CI passed and the user merge completed; Phase 4 starts only
+  from confirmed merged `main` on a separate branch and Draft PR after separate
+  instruction.
 
 ## 2026-07-15 — Train/Admin Data Mapping UX Phase 2 closeout
 
@@ -76,7 +102,7 @@
 ### Decision
 
 - Complete Slices 1A–1D and final corrections for repository-automated scope;
-  final audit is approved and PR #14 is the merge target.
+  final audit is approved and PR #14 was merged to `main`.
 - Use the strict legacy bootstrap projection as a repository-only populated
   mapping fixture; never install it as production `data/mapping.json`.
 - Keep Data Definition as dynamic mapping column/type/required owner and Data

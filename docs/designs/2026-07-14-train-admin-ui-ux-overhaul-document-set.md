@@ -1,14 +1,14 @@
 # Train/Admin UI/UX Overhaul — Design Document Set
 
-Status: proposed active design set  
-Date: 2026-07-14
+Status: active design set; Phases 1–3 complete and merged; Phase 4 audit/design pending
+Date: 2026-07-16
 
 ## Purpose
 
-This document set records the agreed long-term direction for `app_train.py`
-before implementation begins. It is split into one governing design, four
-implementation phases, and one later Predict boundary so that the direction is
-not lost while individual slices evolve.
+This document set records the governing direction, accepted Phase 1–3 closeouts,
+and the pending Phase 4 design direction for `app_train.py`. It is split into one
+governing design, four implementation phases, and one later Predict boundary so
+that the direction is not lost while individual slices evolve.
 
 ## Documents
 
@@ -28,7 +28,9 @@ docs/designs/
 ```
 
 Register active records in `docs/designs/README.md`. Reflect only the current
-phase and next action in `docs/WORK_PLAN.md`.
+phase and next action in `docs/WORK_PLAN.md`; Phase 1–3 entries retain their
+historical design content while their completion state is maintained here and in
+the current owner documents.
 
 ## Reading Order
 

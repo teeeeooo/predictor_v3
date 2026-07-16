@@ -5,12 +5,11 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin UI/UX Overhaul Phase 3 — Data Definition UX Overhaul is complete and
-its final audit is approved on PR #16. PR #16 is the user merge target; Phase 4 —
-Train/Model and Shell UX Overhaul remains deferred until merged `main` is
-confirmed and the user starts the next phase explicitly. The earlier ML/Predictor
-foundation through Arc 15-FU1 and the merged Phase 1–2 Train/Admin work remain the
-active owner baseline.
+Train/Admin UI/UX Overhaul Phase 4 — Train/Model and Shell UX current-state audit
+and design finalization is next. Phase 3 — Data Definition UX Overhaul is
+complete, final-audit approved, and merged through PR #16. The earlier
+ML/Predictor foundation through Arc 15-FU1 and the merged Phase 1–2 Train/Admin
+work remain the active owner baseline.
 
 ## Current Owner State
 
@@ -56,13 +55,14 @@ active owner baseline.
 - Train/Admin UI/UX Overhaul Phase 3 — table-first Data Definition inventory,
   controlled Add/Edit, guarded schema Save and impact, saved-only Data Mapping
   handoff/coverage, keyboard/accessibility polish, and bounded native evidence:
-  final audit approved; PR #16 awaits user merge.
+  final audit approved and merged through PR #16.
 
-### Next Workstream — Train/Admin Phase 4 Train/Model and Shell UX Overhaul
+### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
-Phase 4 begins only after PR #16 is merged and merged `main` is confirmed, from a
-separate branch and Draft PR after separate instruction. It must preserve the
-accepted Phase 1–3 boundaries, including:
+Phase 3 established the table-first Data Definition inventory, controlled Add/Edit,
+guarded schema-only Save, impact/blocker workflow, saved-only Data Mapping
+handoff, and keyboard/accessibility polish. It is complete and merged through PR
+#16. These boundaries remain in force:
 
 - Data Definition owns structure and mapping attribute definitions; Data Mapping
   owns concrete values.
@@ -71,7 +71,29 @@ accepted Phase 1–3 boundaries, including:
 - Unsupported active ML rename/delete and projection-changing writes remain
   blocked until an explicit compatibility owner is approved.
 - Predict internal redesign, live schema reload, automatic retraining, and real
-  company data remain outside Phase 3 and are not implied by its closeout.
+  company data remain outside this milestone.
+
+### Next Workstream — Train/Admin Phase 4 Train/Model and Shell UX Overhaul
+
+Phase 4 begins with a current-state audit and design finalization. Its primary
+user flow is:
+
+```text
+select training data → train → check progress → review results
+```
+
+Schema, feature, mapping, and compatibility validation is automatic and internal.
+The default surface presents the user's next action and outcome, not normal
+technical readiness details. Errors lead with a user-facing explanation and
+resolution action; Diagnostics/logs provide the deeper technical context.
+
+Results center on overall success, target-level R², optional MAE/RMSE, Optuna
+status with best trial/score when applicable, model-save status, elapsed time, and
+Predict availability. Existing Train, ML, persistence, artifact, and public
+contracts are preserved. Training-start blockers remain limited to authoritative
+Train/ML input and execution conditions; existing artifact, restart, mapping, or
+Predict state is non-blocking or post-training unless its owner contract says
+otherwise.
 
 ### Later — Production ML Readiness / Calculator Integration
 

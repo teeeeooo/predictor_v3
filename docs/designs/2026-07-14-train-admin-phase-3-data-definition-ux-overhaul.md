@@ -1,8 +1,9 @@
 # Train/Admin Phase 3 — Data Definition UX Overhaul
 
-Status: active audited phase design  
+Status: accepted complete phase design
 Date: 2026-07-14  
 Audit baseline: merged `main` at `f381c90960153600b5e218528e36914e5b093d1a`  
+Closeout: Phase 3 final audit approved and PR #16 merged on 2026-07-16
 Depends on: accepted Phase 1 foundation and merged Phase 2 Data Mapping workflow
 
 ## 1. Goal
@@ -408,8 +409,9 @@ Slice 3A acceptance:
 - perform bounded native visual/interaction acceptance after automated behavior is
   stable, avoiding the known deferred Data Mapping accessibility-click path.
 
-Each slice is one independently auditable logical commit on the Phase 3 branch.
-The Draft PR remains open until phase closeout.
+Each slice was one independently auditable logical commit on the Phase 3 branch.
+The Phase 3 final audit is approved and PR #16 is merged; subsequent work starts
+from the merged-main current-state audit for Phase 4.
 
 ## 9. Validation Purpose
 

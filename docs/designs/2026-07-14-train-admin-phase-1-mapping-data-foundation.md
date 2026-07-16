@@ -1,6 +1,6 @@
 # Train/Admin Phase 1 — Mapping/Data Foundation
 
-Status: implemented; final audit approved; PR #14 merge target
+Status: implemented; final audit approved; merged through PR #14
 Date: 2026-07-14  
 Depends on: Train/Admin UI/UX Overhaul Governing Design
 
@@ -309,8 +309,8 @@ accuracy, or production readiness.
 
 ## 12. Phase 1 Closeout
 
-Phase 1 is complete for repository-automated scope and the final audit is
-approved. PR #14 is the merge target.
+Phase 1 is complete for repository-automated scope, the final audit is approved,
+and PR #14 was merged to `main`.
 
 - The checked-in populated mapping is synthetic runtime-equivalent fixture
   evidence, not production mapping truth.

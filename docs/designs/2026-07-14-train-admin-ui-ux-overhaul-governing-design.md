@@ -1,7 +1,7 @@
 # Train/Admin UI/UX Overhaul — Governing Design
 
 Status: active governing design  
-Date: 2026-07-14
+Date: 2026-07-16
 
 ## 1. Purpose
 
@@ -13,9 +13,9 @@ preserving established domain, application, runtime, schema, mapping, and ML
 compatibility boundaries.
 
 The target is a Train/Admin workspace in which an engineer can define data,
-manage concrete mapping values, prepare and run training, understand readiness
-and blockers, and hand resulting artifacts to Predict without manually
-coordinating internal CSV and JSON contracts.
+manage concrete mapping values, select training data, run training, follow its
+progress, review results, and hand resulting artifacts to Predict without
+manually coordinating internal CSV and JSON contracts.
 
 ## 2. Product Surface
 
@@ -40,20 +40,22 @@ CSV exchange remains part of Data Mapping rather than becoming a fifth tab.
 
 ## 3. Current Problem
 
-The remaining surfaces expose internal state and diagnostic structures more
-prominently than the user's actual workflow.
+Phase 2–3 established and merged the core Data Mapping and Data Definition user
+flows. The remaining problem is now concentrated in Train / Model and the common
+shell rather than in the completed definition or mapping workflows.
 
-- Phase 2 completed the Data Mapping value-editing, persistence, and exchange
-  workflow for code and repository automation; its deferred native acceptance is
-  tracked separately.
-- Data Definition is already editable, but its default screen is an eleven-panel
-  report stack with a raw twenty-field draft grid rather than a practical
-  definition manager.
-- Data Definition Save, dirty state, compatibility blockers, restart impact,
-  retraining impact, and runtime readiness are available through existing owners
-  but remain fragmented in the presentation.
-- Controlled definition creation and a public Data Definition-to-Data Mapping
-  handoff do not yet exist.
+- Train / Model is organized more around configuration panels, file-existence
+  checks, isolated status values, and logs than around selecting training data,
+  running training, checking progress, and reviewing results.
+- The shell exposes model, preprocessing-version, training-data, and mapping
+  existence as separate badges, but does not clearly tell the user what to do
+  next.
+- The current Train result contract and presentation do not sufficiently project
+  target-level R², Optuna execution/results, model-save status, elapsed time, or
+  Predict availability for result judgment.
+- Technical readiness and compatibility evidence is available through existing
+  owners, but the default surface does not yet distinguish what blocks a new
+  training start from a warning or a post-training artifact/Predict issue.
 - Repository-safe validation must rely on fixtures and mock data while real
   company data remains external.
 
@@ -206,17 +208,29 @@ revision counter.
 ## 8. UX Principles
 
 1. **Task first** — primary actions and tables represent the user's workflow.
-2. **Explicit state** — clean, dirty, blocked, warning, saved,
+2. **Train flow first** — the default Train / Model flow is selecting training
+   data, training, checking progress, and reviewing results.
+3. **Automatic internal validation** — schema, feature, mapping, and
+   compatibility checks run inside the workflow without becoming a manual
+   readiness checklist.
+4. **Safe training defaults** — supported ordinary training runs use the
+   existing Train/ML defaults without requiring Advanced settings; the UI does
+   not create a separate default-value policy.
+5. **Progressive disclosure** — normal technical details do not dominate the
+   default surface. Errors lead with a user-facing explanation and the action to
+   resolve them; Diagnostics/logs expose deeper context.
+6. **Explicit state** — clean, dirty, blocked, warning, saved,
    restart-required, retrain-required, and missing-resource states are distinct.
-3. **Safe editing** — destructive actions explain their effect and issues point
+7. **Safe editing** — destructive actions explain their effect and issues point
    to the affected group, row, and field.
-4. **Spreadsheet behavior** — editable tables follow the active spreadsheet UX
+8. **Spreadsheet behavior** — editable tables follow the active spreadsheet UX
    contract.
-5. **Intent-driven definition** — users express what they want; the UI previews
+9. **Intent-driven definition** — users express what they want; the UI previews
    schema, mapping, Predict, ML, restart, and retraining impacts.
-6. **Progressive disclosure** — advanced metadata remains accessible without
-   dominating the default view.
-7. **Shared visual language** — tables, toolbars, status, issues, empty states,
+10. **Result-centered reporting** — results prioritize overall success,
+   target-level R², optional MAE/RMSE, Optuna status and best trial/score when
+   applicable, model-save status, elapsed time, and Predict availability.
+11. **Shared visual language** — tables, toolbars, status, issues, empty states,
    and dialogs use reusable common components suitable for later Predict reuse.
 
 ## 9. Phase Plan
@@ -231,16 +245,19 @@ mapping exchange export/import are complete for code and repository automation.
 Native table interaction and exchange visual acceptance remain explicitly
 deferred and do not reopen Phase 2 code scope.
 
-### Phase 3 — Data Definition UX Overhaul (active, audited)
-The merged-main current state has been audited. Work begins with Slice 3A's
-inventory-first information architecture while reusing the existing draft,
-edit-policy, projection, validation, save-plan, schema-writer, and readiness
-owners. Controlled Add/Edit commands, impact workflow, Data Mapping handoff, and
-native polish follow in later slices.
+### Phase 3 — Data Definition UX Overhaul (complete and merged)
+The table-first Data Definition workflow, controlled Add/Edit, guarded Save,
+impact workflow, Data Mapping handoff, and audit corrections are complete and
+merged through PR #16. Existing owner and compatibility boundaries remain
+authoritative.
 
-### Phase 4 — Train/Model and Shell UX Overhaul
-Training readiness/execution/results, common shell state, and shared visual
-components.
+### Phase 4 — Train/Model and Shell UX Overhaul (audit and design next)
+Begin with a merged-main current-state audit and design finalization. The
+implementation order follows the Train user flow: training-data selection and
+automatic internal validation, training execution, progress, results, then shell
+and Diagnostics/log consolidation. The default surface is user-centered rather
+than an internal readiness dashboard. Its purpose is to help a user run training
+and judge the result, not to expose more internal state.
 
 ### Deferred — Predict UX Overhaul
 Fresh audit and redesign after Train/Admin foundations are stable.
@@ -299,7 +316,14 @@ The program is complete when:
   exported, and imported safely;
 - a supported mapping attribute can be defined and populated without raw JSON;
 - definition changes expose restart, retraining, training-header, and model impact;
-- Train/Model clearly communicates readiness, execution, failures, and artifact state;
+- Train/Model leads with the training-data selection → train → progress → results
+  flow;
+- schema, feature, mapping, and compatibility checks run automatically and
+  technical detail is available through Diagnostics/logs rather than the default
+  surface;
+- Train/Model results show overall success, target-level R², optional MAE/RMSE,
+  applicable Optuna status and best trial/score, model-save status, elapsed time,
+  and Predict availability;
 - common UI components are reusable for later Predict work;
 - mock validation proves workflow and contract correctness without claiming real
   model quality.
