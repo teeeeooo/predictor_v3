@@ -90,7 +90,10 @@ resolution action; Diagnostics/logs provide the deeper technical context.
 Results center on overall success, target-level R², optional MAE/RMSE, Optuna
 status with best trial/score when applicable, model-save status, elapsed time, and
 Predict availability. Existing Train, ML, persistence, artifact, and public
-contracts are preserved.
+contracts are preserved. Training-start blockers remain limited to authoritative
+Train/ML input and execution conditions; existing artifact, restart, mapping, or
+Predict state is non-blocking or post-training unless its owner contract says
+otherwise.
 
 ### Later — Production ML Readiness / Calculator Integration
 

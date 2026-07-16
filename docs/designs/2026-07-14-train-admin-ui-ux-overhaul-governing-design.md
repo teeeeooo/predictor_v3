@@ -40,20 +40,22 @@ CSV exchange remains part of Data Mapping rather than becoming a fifth tab.
 
 ## 3. Current Problem
 
-The remaining surfaces expose internal state and diagnostic structures more
-prominently than the user's actual workflow, especially around Train / Model.
+Phase 2–3 established and merged the core Data Mapping and Data Definition user
+flows. The remaining problem is now concentrated in Train / Model and the common
+shell rather than in the completed definition or mapping workflows.
 
-- Phase 2 completed the Data Mapping value-editing, persistence, and exchange
-  workflow for code and repository automation; its deferred native acceptance is
-  tracked separately.
-- Data Definition is already editable, but its default screen is an eleven-panel
-  report stack with a raw twenty-field draft grid rather than a practical
-  definition manager.
-- Data Definition Save, dirty state, compatibility blockers, restart impact,
-  retraining impact, and runtime readiness are available through existing owners
-  but remain fragmented in the presentation.
-- Controlled definition creation and a public Data Definition-to-Data Mapping
-  handoff do not yet exist.
+- Train / Model is organized more around configuration panels, file-existence
+  checks, isolated status values, and logs than around selecting training data,
+  running training, checking progress, and reviewing results.
+- The shell exposes model, preprocessing-version, training-data, and mapping
+  existence as separate badges, but does not clearly tell the user what to do
+  next.
+- The current Train result contract and presentation do not sufficiently project
+  target-level R², Optuna execution/results, model-save status, elapsed time, or
+  Predict availability for result judgment.
+- Technical readiness and compatibility evidence is available through existing
+  owners, but the default surface does not yet distinguish what blocks a new
+  training start from a warning or a post-training artifact/Predict issue.
 - Repository-safe validation must rely on fixtures and mock data while real
   company data remains external.
 
@@ -251,7 +253,8 @@ Begin with a merged-main current-state audit and design finalization. The
 implementation order follows the Train user flow: training-data selection and
 automatic internal validation, training execution, progress, results, then shell
 and Diagnostics/log consolidation. The default surface is user-centered rather
-than an internal readiness dashboard.
+than an internal readiness dashboard. Its purpose is to help a user run training
+and judge the result, not to expose more internal state.
 
 ### Deferred — Predict UX Overhaul
 Fresh audit and redesign after Train/Admin foundations are stable.

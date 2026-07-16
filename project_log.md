@@ -41,6 +41,10 @@
   workflow. Keep normal technical details out of the default surface; show an
   actionable user message first for errors and reserve details for Diagnostics or
   logs.
+- Separate authoritative training-start blockers from non-blocking warnings and
+  post-training artifact/Predict blockers. Existing model, restart, mapping, and
+  Predict readiness must not become Start prerequisites without an owner-contract
+  basis.
 - Center results on overall success, target-level R², optional MAE/RMSE, Optuna
   status and best trial/score when applicable, model-save status, elapsed time,
   and Predict availability.

@@ -56,9 +56,12 @@ select training data
 
 Schema, feature, mapping, and compatibility checks run automatically as part of
 selection/start validation. They do not require the user to inspect technical
-metadata or complete a manual readiness checklist. When a check blocks training,
-the default surface presents a plain-language explanation and the action that
-resolves it; detailed evidence is available in Diagnostics/logs.
+metadata or complete a manual readiness checklist. Not every derived readiness
+state blocks Start; the classification in Section 5 determines whether a check
+is a training-start blocker, a non-blocking warning/state, or a post-training
+artifact/Predict blocker. When a check blocks training, the default surface
+presents a plain-language explanation and the action that resolves it; detailed
+evidence is available in Diagnostics/logs.
 
 ## 4. Train / Model Information Architecture
 
@@ -77,28 +80,67 @@ The resulting surface should provide:
 
 Mock execution success must not be presented as model-quality success.
 
-## 5. Readiness Model
+## 5. Readiness and Blocker Classification
 
-The workflow may derive at least:
+The workflow may derive technical readiness internally, but only the
+authoritative Train/ML execution boundary decides whether a state blocks a new
+training start. The UI must not turn every readiness value into a manual
+checklist or a Start blocker.
 
-- training data exists;
-- headers match active ML projection;
-- mapping requirements are sufficiently populated;
-- schema/features projection is compatible;
-- current model artifact exists;
-- current model matches active feature names/order/types;
-- retraining is required;
-- restart is required;
-- training can start;
-- Predict can use the current/resulting model.
+### 5.1 Training-start blockers
 
-These checks are internal. If a readiness issue blocks the flow, the user-facing
-message identifies the responsible action/tab:
+These are conditions under which training cannot be safely started:
 
-- definition issue -> Data Definition;
-- mapping coverage issue -> Data Mapping;
-- training input/header issue -> Train / Model;
-- restart requirement -> shell-level state.
+- the selected training-data file is missing or unreadable;
+- the file or data format is unsupported;
+- a training-required Target or feature column is missing;
+- another input condition defined by the authoritative Train/ML execution
+  contract makes the run impossible.
+
+The exact predicate is determined during the current-state audit from the
+existing Train/ML owner and execution boundary. Phase 4 does not invent a new
+policy in the UI. Only this category produces a blocked Start result.
+
+### 5.2 Non-blocking warnings and states
+
+Training may proceed when these conditions are not required by the authoritative
+Train/ML contract, although they may require a later action or explain current
+artifact state:
+
+- no existing model artifact;
+- an old model or retraining-required state;
+- restart required;
+- incomplete mapping values when the selected training input does not require
+  them for the current run;
+- no model currently available for Predict.
+
+Predict readiness, existing model existence, and existing artifact compatibility
+must not be inverted into prerequisites for new model training. An incomplete
+mapping or schema state similarly does not block Start merely because it is a
+readiness issue; the authoritative owner contract remains the source of truth.
+
+### 5.3 Post-training artifact/Predict blockers
+
+These occur after training execution completes and concern persistence or use of
+the resulting model:
+
+- model save failure;
+- artifact validation failure;
+- mismatch between the new artifact and the active feature contract;
+- Predict load or activation failure;
+- restart not completed, leaving Predict unable to use the saved result.
+
+These states are represented in the result view through model-save status,
+Predict availability, and the next action. They do not retroactively become
+training-start blockers.
+
+All three categories remain internal state. The default surface shows only the
+user-facing outcome and next action. Owner routing for a blocking issue is:
+
+- input/header issue -> Train / Model;
+- a required definition issue -> Data Definition;
+- a required mapping issue -> Data Mapping;
+- post-training artifact/Predict issue -> Train / Model or shell action.
 
 ## 6. Training Execution
 
@@ -122,17 +164,24 @@ not redesigned here.
 After completion, show:
 
 - overall success or failure;
+- success or failure for each trained Target;
 - R² for each trained target;
 - MAE/RMSE when available and useful for the result;
-- Optuna status and best trial/score when tuning ran or reported a result;
+- whether Optuna ran and its completion status;
+- best trial or best score when Optuna provides it;
 - whether the model was saved;
-- elapsed training time;
+- total elapsed training time and per-Target time when the result contract
+  provides it;
 - whether Predict can use the resulting model;
-- the next user action when restart or retraining is still needed.
+- the next user action when the result cannot be saved or used by Predict.
 
 Target names, metric labels, and optional values follow the existing Train/ML
-result contracts. Detailed logs, raw compatibility evidence, and technical
-diagnostics remain available on demand rather than in the default result view.
+result contracts. If an existing owner does not yet provide a requested result
+field, the Phase 4 audit identifies a Qt-free result projection extension; it
+does not claim the field is already implemented. The default result view excludes
+full schema details, full feature order, raw mapping coverage, raw compatibility
+evidence, the complete Optuna trial list, stack traces, and step-by-step internal
+validation output. These remain available in Diagnostics/logs or a detail view.
 
 Repository mock results carry an explicit limitation:
 
@@ -192,8 +241,10 @@ implementation audit.
 ### Slice 4B — Training-data selection and automatic validation
 
 - Make training-data selection the first user task.
-- Run schema, feature, mapping, and compatibility checks internally and present
-  only a clear proceed/block outcome with an action when blocked.
+- Run schema, feature, mapping, and compatibility checks internally.
+- Present a clear proceed/block outcome only for Section 5.1 training-start
+  blockers; present Section 5.2 states as warnings or follow-up actions without
+  blocking Start unless the authoritative Train/ML contract requires it.
 
 ### Slice 4C — Training execution and progress
 
@@ -203,8 +254,10 @@ implementation audit.
 
 ### Slice 4D — Results and Predict availability
 
-- Present the overall outcome, target-level metrics, applicable Optuna result,
-  model-save status, elapsed time, and Predict availability.
+- Present the overall outcome, per-Target success/failure and R², optional
+  MAE/RMSE, applicable Optuna status/best trial or score, model-save status,
+  elapsed time, Predict availability, and the next action for Section 5.3
+  post-training blockers.
 - Preserve existing runner/worker, artifact, and ML boundaries.
 
 ### Slice 4E — Common shell and Diagnostics/log consolidation
@@ -222,13 +275,19 @@ merged only after cross-tab workflow and mock training smoke pass.
 
 - Training-data selection is the first primary task and leads to a clear Train
   action when automatic checks pass.
-- Schema/header, feature, mapping, or compatibility problems are detected
-  automatically and show a user-facing resolution action first.
+- Only authoritative training-start blockers prevent the Train action; existing
+  model, restart, mapping, or Predict readiness does not block Start without an
+  owner-contract basis.
+- Schema/header, feature, mapping, or compatibility checks are detected
+  automatically and show a user-facing resolution action first when they block.
 - Training runs without blocking the main UI and reports progress.
 - Cancellation and failure produce distinct states.
-- Successful training shows overall success, target-level R², optional MAE/RMSE,
-  applicable Optuna status and best trial/score, model-save status, elapsed time,
-  and Predict availability without making production accuracy claims.
+- Successful training shows overall success, per-Target outcome and R², optional
+  MAE/RMSE, applicable Optuna status and best trial/score, model-save status,
+  elapsed time, and Predict availability without making production accuracy
+  claims.
+- Post-training save, artifact, activation, or restart failures are represented
+  as Predict availability and next-action states rather than Start blockers.
 - Detailed failure evidence is available in Diagnostics/logs.
 - Shell state refreshes after relevant actions without becoming a readiness
   dashboard.

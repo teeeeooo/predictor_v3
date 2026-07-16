@@ -32,11 +32,8 @@ before any UI implementation begins.
 
 ## Active Blockers
 
-- No Phase 3 merge blocker remains; PR #16 is merged.
 - Phase 4 implementation remains on hold until the current-state audit and design
   finalization are complete and the phase is explicitly started.
-- Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
-  code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
   explicit compatibility persistence owner is approved.
 
@@ -61,6 +58,8 @@ before any UI implementation begins.
 
 - Phase 4 implementation and merge remain deferred until the current-state audit
   and design finalization are approved.
+- Deferred Phase 2 native interaction acceptance remains a separate acceptance
+  item and does not block Phase 4.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness
