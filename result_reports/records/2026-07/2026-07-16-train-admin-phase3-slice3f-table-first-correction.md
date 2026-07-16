@@ -83,3 +83,27 @@ and Slice 3E interaction contracts.
   contract, not a desktop-composited or physical-interaction claim.
 - Existing repository structure warnings remain outside this bounded UI slice.
 - Phase 3 final audit, merge, and Phase 4 remain explicitly deferred.
+
+## Native Correction Evidence Follow-up
+
+The locked-desktop status above was the state when this record was created. One
+bounded retry of the existing safe Cocoa scenario subsequently succeeded and
+produced the six required correction captures with
+`native_onscreen: true`:
+
+- `01-clean-table-first-normal.png` at 1280x820
+- `02-details-modal-technical-expanded.png` at 700x580
+- `03-dirty-saveable-banner.png` at 1280x820
+- `04-blocked-save-banner.png` at 1280x820
+- `05-saved-mapping-next-step.png` at 1280x820
+- `06-clean-table-first-compact.png` at 900x640
+
+The capture used a visible Cocoa window and native backing-store/widget target
+capture with synthetic temporary schema/mapping providers. Interaction remained
+programmatic through Qt public panel/controller actions; Computer Use and
+physical interaction were not used, the known AppKit table accessibility path
+was not used, and protected/runtime fixtures were unchanged. The authoritative
+manifest is `docs/designs/assets/phase-3-slice-3f-table-first-correction/native_manifest.json`.
+
+For current acceptance, this follow-up supersedes the pending-native wording
+above; the earlier statements preserve the record's pre-retry state.

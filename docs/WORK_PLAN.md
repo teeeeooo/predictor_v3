@@ -30,8 +30,9 @@ and accessibility contracts remain in scope. PR #16 remains Draft/Open.
 
 ## Next Action
 
-Implement and validate the Slice 3F table-first correction, then hand off to the
-Slice 3F final audit before the Phase 3 final audit.
+Hand off to the Slice 3F final audit before the Phase 3 final audit after the
+native evidence is included in the correction commit and its CI/PR state is
+confirmed.
 
 ## Active Blockers
 
@@ -43,9 +44,8 @@ Slice 3F final audit before the Phase 3 final audit.
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
   explicit compatibility persistence owner is approved.
-- Native correction capture is currently blocked because Computer Use reports
-  the Mac is locked; retry the safe Cocoa scenario after manual unlock without
-  using the known AppKit table accessibility path.
+- Native table-first correction capture is complete through the bounded safe
+  Cocoa scenario; the known AppKit table accessibility path was not used.
 
 ## Active Constraints
 

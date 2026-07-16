@@ -2,10 +2,11 @@
 
 ## Status
 
-The correction evidence folder is reserved for the six-state native rerun. The
-safe Cocoa scenario was prepared, but Computer Use reported that macOS was
-locked and automatic unlock was unavailable. No native PNG is claimed from that
-attempt, and the known AppKit Qt table accessibility path was not used.
+The one-shot safe Cocoa rerun succeeded after the earlier locked-desktop
+attempt. It produced all six required native correction PNGs and
+`native_manifest.json` with `native_onscreen: true`. State transitions were
+programmatic through Qt public panel/controller APIs; no physical interaction
+or known AppKit Qt table accessibility path was used.
 
 The earlier files under `../phase-3-slice-3f/` remain preserved as superseded
 historical evidence for the previous Summary-led composition.
@@ -30,6 +31,6 @@ Required correction states:
 | `05-saved-mapping-next-step.png` | 1280x820 | Saved-only Data Mapping next step |
 | `06-clean-table-first-compact.png` | 900x640 | Clean compact table-first workspace |
 
-Until the locked-desktop rerun completes, this README and the correction record
-are the authoritative status evidence; the previous Slice 3F screenshots are
-not acceptance evidence for the amended composition.
+The current `native_manifest.json` and six PNGs are the authoritative native
+status evidence for the amended composition; the previous Slice 3F screenshots
+remain historical and are not acceptance evidence for the amended composition.
