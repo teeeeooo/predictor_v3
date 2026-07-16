@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QPushButton
+from PySide6.QtWidgets import QApplication, QAbstractItemView
 
 from apps.train.controllers.data_definition_controller import (
     DRAFT_FIELDS,
@@ -117,12 +117,7 @@ def test_data_definition_panel_builds_editable_draft_workflow_and_reset():
         assert panel.draft_table.model().is_changed_cell(row_index, label_col)
         assert panel.save_plan_table.model().cell_value(0, 1) == "planned"
 
-        reset_buttons = [
-            child for child in panel.findChildren(QPushButton)
-            if child.accessibleName() == "Reset Data Definition Draft"
-        ]
-        assert len(reset_buttons) == 1
-        reset_buttons[0].click()
+        panel.reset_action.trigger()
         app.processEvents()
 
         assert not panel.draft_table.model().is_changed_cell(row_index, label_col)

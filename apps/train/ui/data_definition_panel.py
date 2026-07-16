@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Literal
 
-from PySide6.QtCore import QModelIndex, Qt
+from PySide6.QtCore import QModelIndex
 from PySide6.QtGui import QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QScrollArea,
+    QApplication,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -24,8 +24,10 @@ from apps.train.controllers.data_definition_controller import (
     DataDefinitionController,
     DataDefinitionControllerState,
 )
+from apps.train.controllers.data_definition_details_projection import (
+    project_data_definition_details,
+)
 from apps.train.controllers.data_definition_presentation import (
-    DataDefinitionInventoryProjection,
     project_data_definition_inventory,
 )
 from apps.train.controllers.data_definition_impact_projection import (
@@ -33,9 +35,6 @@ from apps.train.controllers.data_definition_impact_projection import (
 )
 from apps.train.controllers.data_definition_interaction import (
     project_data_definition_interaction,
-)
-from apps.train.controllers.data_definition_summary_projection import (
-    project_data_definition_summary,
 )
 from apps.train.controllers.data_definition_workspace_projection import (
     project_data_definition_workspace,
@@ -46,12 +45,12 @@ from apps.train.ui.data_definition_diagnostics import (
 )
 from apps.train.ui.data_definition_add_dialog import DataDefinitionAddDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
+from apps.train.ui.data_definition_details_dialog import DataDefinitionDetailsDialog
 from apps.train.ui.data_definition_models import DataDefinitionInventoryTableModel
 from apps.train.ui.data_definition_impact_view import DataDefinitionImpactView
 from apps.train.ui.data_definition import DataDefinitionHandoffPanel
 from apps.train.ui.data_definition.filter_bar import DataDefinitionFilterBar
 from apps.train.ui.data_definition.inventory_view import DataDefinitionInventoryView
-from apps.train.ui.data_definition.summary_card import DataDefinitionSummaryCard
 from apps.train.ui.data_definition.task_header import DataDefinitionTaskHeader
 from apps.train.ui.data_definition.workspace_behavior import (
     DataDefinitionWorkspaceBehavior,
@@ -95,21 +94,27 @@ class DataDefinitionPanel(QWidget):
             self._clear_filters,
             self,
         )
-        self.summary_card = DataDefinitionSummaryCard(self)
         self.impact_view = DataDefinitionImpactView(self)
+        self.impact_view.setVisible(False)
         self.handoff_panel = DataDefinitionHandoffPanel(on_open_data_mapping)
+        self.handoff_panel.setVisible(False)
         self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
         self._publish_diagnostic_table_aliases()
         self.task_header = DataDefinitionTaskHeader(
             on_add_manual=lambda: self._add_definition("manual_predict"),
             on_add_mapping=lambda: self._add_definition("mapping_predict"),
             on_add_attribute=self._add_mapping_attribute,
+            on_details=self._show_details,
             on_edit=self._edit_definition,
             on_save=self._save_schema,
             on_review=self._review_current_state,
             on_refresh=self.refresh,
             on_reset=self._reset_draft,
+            on_diagnostics=self._toggle_diagnostics,
             parent=self,
+        )
+        self.diagnostics.toggle_button.toggled.connect(
+            self.task_header.set_diagnostics_expanded
         )
         self._publish_workspace_aliases()
 
@@ -123,22 +128,10 @@ class DataDefinitionPanel(QWidget):
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self.task_header)
         layout.addWidget(self.filter_bar)
-        self.content_scroll = QScrollArea(self)
-        self.content_scroll.setAccessibleName("Data Definition workspace viewport")
-        self.content_scroll.setWidgetResizable(True)
-        self.content_scroll.setFrameShape(QScrollArea.NoFrame)
-        self.content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        content = QWidget(self.content_scroll)
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(style.spacing("space.sm"))
-        content_layout.addWidget(self.inventory_view)
-        content_layout.addWidget(self.summary_card)
-        content_layout.addWidget(self.impact_view)
-        content_layout.addWidget(self.handoff_panel)
-        content_layout.addWidget(self.diagnostics)
-        self.content_scroll.setWidget(content)
-        layout.addWidget(self.content_scroll, 1)
+        layout.addWidget(self.inventory_view, 1)
+        layout.addWidget(self.impact_view)
+        layout.addWidget(self.handoff_panel)
+        layout.addWidget(self.diagnostics)
         self._behavior = DataDefinitionWorkspaceBehavior(self)
         self.refresh()
 
@@ -237,13 +230,12 @@ class DataDefinitionPanel(QWidget):
             projection.selected_identity,
         )
         workspace = project_data_definition_workspace(self._state, projection, impact)
-        summary = project_data_definition_summary(self._state, projection)
         self.inventory_view.apply_state(
             projection.view_message,
             no_match=projection.view_state == "no_match",
         )
-        self.summary_card.apply_projection(summary)
         self.impact_view.apply_projection(impact, workspace)
+        self.impact_view.setVisible(workspace.show_impact_surface)
         self.task_header.apply_projection(workspace, interaction)
         self.handoff_panel.setVisible(workspace.show_saved_handoff)
 
@@ -274,6 +266,11 @@ class DataDefinitionPanel(QWidget):
     def _review_current_state(self) -> None:
         self._behavior.focus_blockers()
 
+    def _toggle_diagnostics(self) -> None:
+        self.diagnostics.toggle_button.setChecked(
+            not self.diagnostics.toggle_button.isChecked()
+        )
+
     def _clear_filters(self) -> None:
         self.filter_bar.clear()
         self._apply_inventory()
@@ -288,14 +285,38 @@ class DataDefinitionPanel(QWidget):
         ).exec()
         self._behavior.restore_dialog_focus(bool(accepted), self.edit_button)
 
+    def _show_details(self) -> None:
+        if self._state is None or self._selected_identity is None:
+            return
+        search, category, source_type, lifecycle_state = self.filter_bar.current_values()
+        inventory = project_data_definition_inventory(
+            self._state,
+            search=search,
+            category=category,
+            source_type=source_type,
+            lifecycle_state=lifecycle_state,
+            selected_identity=self._selected_identity,
+        )
+        if inventory.selected_identity != self._selected_identity:
+            return
+        details = project_data_definition_details(self._state, inventory)
+        if details.identity is None:
+            return
+        DataDefinitionDetailsDialog(details, self).exec()
+        self._behavior.restore_workspace_focus("inventory")
+
     def _apply_add_intent(self, intent: AddDefinitionIntent) -> tuple[bool, str]:
         state = self._controller.add_definition(intent)
         self._apply_state(state)
+        if QApplication.activeModalWidget() is None:
+            self._behavior.restore_workspace_focus("inventory")
         return state.last_action_ok, state.message
 
     def _apply_edit_intent(self, intent: EditDefinitionIntent) -> tuple[bool, str]:
         state = self._controller.edit_definition(intent)
         self._apply_state(state)
+        if QApplication.activeModalWidget() is None:
+            self._behavior.restore_workspace_focus("inventory")
         return state.last_action_ok, state.message
 
     def _selected_values(self) -> dict[str, str] | None:
@@ -336,8 +357,10 @@ class DataDefinitionPanel(QWidget):
 
     def _publish_workspace_aliases(self) -> None:
         self.status_label = self.task_header.status_label
-        self.refresh_button = self.task_header.refresh_button
-        self.reset_button = self.task_header.reset_button
+        self.refresh_action = self.task_header.refresh_action
+        self.reset_action = self.task_header.reset_action
+        self.details_action = self.task_header.details_action
+        self.more_button = self.task_header.more_button
         self.add_definition_button = self.task_header.add_button
         self.edit_button = self.task_header.edit_button
         self.save_button = self.task_header.save_button
@@ -347,8 +370,7 @@ class DataDefinitionPanel(QWidget):
         self.add_mapping_attribute_action = self.task_header.add_attribute_action
         self.inventory_state_label = self.inventory_view.state_label
         self.clear_filters_button = self.inventory_view.clear_button
-        self.detail_state_label = self.summary_card.title_label
-        self.detail_table = self.summary_card.technical_table
+        self.detail_state_label = self.task_header.detail_label
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802
         super().showEvent(event)

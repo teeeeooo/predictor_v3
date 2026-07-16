@@ -13,17 +13,36 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTableView,
     QVBoxLayout,
+    QSizePolicy,
     QWidget,
 )
 
 from apps.common.ui import style
 
-NORMAL_WIDTHS = (0, 170, 120, 82, 96, 96)
-COMPACT_WIDTHS = (0, 145, 105, 76, 90, 84)
+NORMAL_COLUMNS = (0, 1, 2, 3, 4, 5, 6, 7)
+COMPACT_COLUMNS = (0, 1, 2, 3, 4, 7)
+NORMAL_WIDTHS = {
+    0: 180,
+    1: 178,
+    2: 92,
+    3: 128,
+    4: 84,
+    5: 104,
+    6: 80,
+    7: 100,
+}
+COMPACT_WIDTHS = {
+    0: 160,
+    1: 160,
+    2: 88,
+    3: 122,
+    4: 84,
+    7: 100,
+}
 
 
 class DataDefinitionInventoryView(QFrame):
-    """Own only the default inventory card and six-column width convention."""
+    """Own inventory visibility and bounded normal/compact column policy."""
 
     def __init__(
         self,
@@ -37,6 +56,13 @@ class DataDefinitionInventoryView(QFrame):
         self.setStyleSheet(style.panel_stylesheet())
         self.table = table
         self._compact = False
+        self._applying_widths = False
+        self._section_widths: dict[bool, dict[int, int]] = {
+            False: dict(NORMAL_WIDTHS),
+            True: dict(COMPACT_WIDTHS),
+        }
+        self.table.horizontalHeader().sectionResized.connect(self._remember_width)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.state_label = QLabel(self)
         self.state_label.setAccessibleName("Data Definition inventory state")
         self.state_label.setWordWrap(True)
@@ -85,8 +111,22 @@ class DataDefinitionInventoryView(QFrame):
 
     def _apply_widths(self) -> None:
         header = self.table.horizontalHeader()
-        widths = COMPACT_WIDTHS if self._compact else NORMAL_WIDTHS
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        for column, width in enumerate(widths[1:], start=1):
-            header.setSectionResizeMode(column, QHeaderView.Fixed)
-            header.resizeSection(column, width)
+        model = self.table.model()
+        column_count = model.columnCount() if model is not None else 0
+        visible_columns = set(COMPACT_COLUMNS if self._compact else NORMAL_COLUMNS)
+        widths = self._section_widths[self._compact]
+        self._applying_widths = True
+        try:
+            for column in range(column_count):
+                visible = column in visible_columns
+                self.table.setColumnHidden(column, not visible)
+                if not visible:
+                    continue
+                header.setSectionResizeMode(column, QHeaderView.Interactive)
+                header.resizeSection(column, widths[column])
+        finally:
+            self._applying_widths = False
+
+    def _remember_width(self, section: int, _old_size: int, new_size: int) -> None:
+        if not self._applying_widths and section in self._section_widths[self._compact]:
+            self._section_widths[self._compact][section] = new_size

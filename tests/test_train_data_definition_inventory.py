@@ -7,6 +7,9 @@ import hashlib
 from pathlib import Path
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.controllers.data_definition_details_projection import (
+    project_data_definition_details,
+)
 from apps.train.controllers.data_definition_detail_projection import project_blockers
 from apps.train.controllers.data_definition_impact_projection import (
     project_data_definition_impact,
@@ -28,7 +31,7 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from core.mapping.paths import MAPPING_JSON_FILE
 
 
-def test_task_inventory_uses_exact_six_user_facing_meanings():
+def test_task_inventory_uses_exact_user_facing_meanings():
     state = DataDefinitionController().refresh()
 
     projection = project_data_definition_inventory(state)
@@ -45,8 +48,9 @@ def test_task_inventory_uses_exact_six_user_facing_meanings():
         manual.source_type,
         manual.predict_visibility,
         manual.model_input,
+        manual.required,
         manual.lifecycle_state,
-    ) == ("Predict Input", "Manual", "Used", "Used", "Active")
+    ) == ("Predict Input", "Manual", "Used", "Used", "Yes", "Active")
     assert (mapping.kind, mapping.source_type) == ("Mapping-backed Input", "Mapping")
     assert (one_hot.kind, one_hot.source_type) == ("One-hot Feature", "One-hot")
     assert (derived.kind, derived.source_type, derived.lifecycle_state) == (
@@ -71,6 +75,8 @@ def test_selected_summary_answers_work_questions_and_preserves_technical_metadat
     assert summary.internal_key == "cooling_capa"
     assert "Manual numeric input" in summary.description
     assert facts == {
+        "Kind": "Predict Input",
+        "Data Type": "number",
         "Value source": "Manual input",
         "Used in Predict": "Yes",
         "Model input": "Yes",
@@ -94,6 +100,15 @@ def test_selected_summary_answers_work_questions_and_preserves_technical_metadat
     ):
         assert key in technical
 
+    details = project_data_definition_details(state, inventory)
+    assert details.identity == ("schema_row", "cooling_capa")
+    assert details.internal_key == "cooling_capa"
+    assert {fact.label for fact in details.facts} == set(facts)
+    technical_labels = {label for label, _value in details.technical_details}
+    assert "ML compatibility" in technical_labels
+    assert "Definition category" not in technical_labels
+    assert "Internal key" not in technical_labels
+
 
 def test_task_workspace_projects_clean_dirty_blocked_error_saved_and_recovery_states(
     tmp_path,
@@ -114,16 +129,22 @@ def test_task_workspace_projects_clean_dirty_blocked_error_saved_and_recovery_st
     )
     saved = controller.save_schema()
 
-    assert _task_projection(clean).state == "clean"
+    clean_task = _task_projection(clean)
+    assert clean_task.state == "clean"
+    assert not clean_task.show_impact_surface
     dirty_task = _task_projection(dirty)
     assert dirty_task.state == "dirty"
     assert dirty_task.review_label == "Review changes"
     assert dirty_task.show_reset
+    assert dirty_task.show_impact_surface
     error_task = _task_projection(write_error)
     assert error_task.state == "write_error"
     assert error_task.save_label == "Retry Save"
     assert "retained" in error_task.headline_detail
-    assert _task_projection(saved).state == "saved"
+    assert error_task.show_impact_surface
+    saved_task = _task_projection(saved)
+    assert saved_task.state == "saved"
+    assert not saved_task.show_impact_surface
 
     blocked_controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
     blocked_controller.refresh()
@@ -135,6 +156,7 @@ def test_task_workspace_projects_clean_dirty_blocked_error_saved_and_recovery_st
     blocked_task = _task_projection(blocked)
     assert blocked_task.state == "blocked"
     assert blocked_task.review_label == "Review blocker"
+    assert blocked_task.show_impact_surface
     assert "Feature Catalog writer" in blocked_task.surface_message
 
     no_match = _task_projection(clean, search="no-definition-matches")

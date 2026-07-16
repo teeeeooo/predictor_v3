@@ -112,14 +112,13 @@ def test_keyboard_search_selection_no_match_and_deterministic_recovery(tmp_path)
     assert panel._selected_identity != first
     preferred = panel._selected_identity
     assert preferred is not None
-    assert preferred[1] == panel.summary_card.key_label.text()
+    assert panel.inventory_table.model().row_for_identity(preferred) is not None
 
     panel.search_input.setText("definitely-no-match")
     app.processEvents()
     assert panel._selected_identity is None
     assert not panel.inventory_table.currentIndex().isValid()
-    assert panel.detail_table.model().rowCount() == 0
-    assert "No definition selected" in panel.detail_state_label.text()
+    assert not panel.details_action.isEnabled()
 
     panel.search_input.setFocus()
     QTest.keyClick(panel.search_input, Qt.Key_Escape)
@@ -194,7 +193,9 @@ def test_edit_dialog_rejection_keeps_values_then_applies_and_keeps_selection(tmp
     app.processEvents()
     assert dialog.result() == QDialog.Accepted
     assert panel._selected_identity == identity
-    assert panel.detail_state_label.text().startswith("Indoor Volume")
+    row = panel.inventory_table.model().row_for_identity(identity)
+    assert row is not None
+    assert panel.inventory_table.model().cell_value(row, 0) == "Indoor Volume"
     panel.close()
 
 
@@ -238,7 +239,7 @@ def test_standard_save_shortcut_writes_only_when_enabled_and_restores_focus(tmp_
     panel.review_blockers_button.click()
     app.processEvents()
     assert panel.impact_view.save_label.hasFocus()
-    panel.reset_button.click()
+    panel.reset_action.trigger()
     app.processEvents()
     assert not panel._state.draft_changed
     assert panel._selected_identity == ("schema_row", "cooling_capa")
@@ -253,7 +254,7 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
     panel.show()
     app.processEvents()
     assert (panel.width(), panel.height()) == (900, 640)
-    assert panel.content_scroll.horizontalScrollBar().maximum() == 0
+    assert panel.inventory_table.horizontalScrollBar().maximum() == 0
 
     interactive_types = (QPushButton, QComboBox, QLineEdit, QTableView)
     interactive = [
@@ -283,7 +284,7 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
         "Mapping-backed Predict input",
         "Data Mapping attribute",
     ]
-    assert panel.status_label.wordWrap()
+    assert not panel.status_label.wordWrap()
 
     add_dialog = DataDefinitionAddDialog(panel._apply_add_intent, parent=panel)
     for field in (

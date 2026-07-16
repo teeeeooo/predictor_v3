@@ -16,9 +16,11 @@ DraftCellEditCallback = Callable[[tuple[str, str], str, object], bool]
 INVENTORY_HEADERS = (
     "Label",
     "Kind",
+    "Data Type",
     "Value source",
     "Predict",
     "Model input",
+    "Required",
     "Status",
 )
 
@@ -43,9 +45,11 @@ class DataDefinitionInventoryTableModel(QAbstractTableModel):
         values = (
             row.label,
             row.kind,
+            row.data_type,
             row.source_type,
             row.predict_visibility,
             row.model_input,
+            row.required,
             row.lifecycle_state,
         )
         if role in (Qt.DisplayRole, Qt.EditRole):

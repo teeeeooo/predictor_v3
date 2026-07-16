@@ -73,8 +73,9 @@ def test_add_dialog_and_panel_select_complete_new_definition(tmp_path):
 
         assert dialog.result() == QDialog.Accepted
         assert panel._selected_identity == ("schema_row", "fan_diameter")
-        assert panel.inventory_table.model().row_for_identity(panel._selected_identity) is not None
-        assert panel.detail_state_label.text().startswith("Fan Diameter")
+        row = panel.inventory_table.model().row_for_identity(panel._selected_identity)
+        assert row is not None
+        assert panel.inventory_table.model().cell_value(row, 0) == "Fan Diameter"
         assert panel.save_button.isEnabled()
         assert panel._state.draft_changed
         raw_index = panel._state.draft_row_identities.index(panel._selected_identity)

@@ -30,7 +30,7 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
     try:
         panel.show()
         app.processEvents()
-        assert panel.impact_view.isVisibleTo(panel)
+        assert panel.impact_view.isHidden()
         assert panel.impact_view.change_label.text() == "No unsaved definition changes."
         assert panel.impact_view.details_container.isHidden()
         assert not panel.save_button.isEnabled()
@@ -49,10 +49,10 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
         assert panel.save_button.isEnabled()
         assert panel.review_blockers_button.text() == "Review changes"
         assert panel.impact_view.details_container.isHidden()
-        assert panel.add_definition_button.isHidden()
-        assert panel.edit_button.isHidden()
+        assert not panel.add_definition_button.isHidden()
+        assert not panel.edit_button.isHidden()
         assert not panel.review_blockers_button.isHidden()
-        assert not panel.reset_button.isHidden()
+        assert panel.reset_action.isEnabled()
         panel.review_blockers_button.click()
         app.processEvents()
         assert panel.impact_view.details_container.isVisibleTo(panel)
@@ -66,6 +66,7 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
         assert "Status: written" in panel.impact_view.result_label.text()
         assert "Backup path:" in panel.impact_view.result_label.text()
         assert not panel.save_button.isEnabled()
+        assert panel.impact_view.isHidden()
         assert not panel.add_definition_button.isHidden()
         assert not panel.edit_button.isHidden()
         assert panel.review_blockers_button.isHidden()
@@ -114,8 +115,8 @@ def test_impact_view_shows_mapping_owner_and_ml_blocker_then_reset_clears_stale_
         assert not panel.save_button.isEnabled()
         assert panel.review_blockers_button.text() == "Review blocker"
         assert "Feature Catalog writer" in panel.impact_view.concise_label.text()
-        assert panel.add_definition_button.isHidden()
-        assert not panel.reset_button.isHidden()
+        assert not panel.add_definition_button.isHidden()
+        assert panel.reset_action.isEnabled()
 
         panel._reset_draft()
         app.processEvents()
@@ -164,8 +165,7 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
 
         assert panel.inventory_table.model().rowCount() == 0
         assert panel._selected_identity is None
-        assert panel.summary_card.title_label.text() == "No definition selected"
-        assert panel.summary_card.technical_table.model().rowCount() == 0
+        assert not panel.details_action.isEnabled()
         assert panel.clear_filters_button.isVisibleTo(panel)
         assert panel._state is state_before
         assert panel._state.draft_changed
@@ -200,7 +200,7 @@ def test_no_match_search_preserves_blocker_evidence_and_reprojects_relevance(tmp
             panel._selected_identity,
         )
         assert panel._selected_identity == identity
-        assert panel.summary_card.key_label.text() == "cooling_capa"
+        assert panel.details_action.isEnabled()
         assert panel.inventory_table.hasFocus()
         assert tuple(
             (

@@ -557,6 +557,23 @@ entries:
       - Phase 3 final audit
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3b-controlled-definition-commands.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3c-impact-and-guarded-save.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3bc-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3bc-blocker-presentation-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-data-mapping-handoff-coverage.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-value-contract-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3e-editing-native-polish.md; result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-task-oriented-definition-workspace.md
+  - type: decision
+    topic: Train/Admin Phase 3 Slice 3F table-first correction state
+    content: The active Slice 3F correction supersedes the prior Summary-led default composition. Definition Inventory is the primary vertical stretch owner with eight normal user-facing columns and six compact columns, bounded Interactive widths, no stretch-last policy, and no default horizontal scrollbar at 1280x820 or 900x640. Summary remains the authority for overlapping user-facing facts and is normalized with DataDefinitionDetailState rows into an immutable read-only Details projection rendered by QDialog.exec with one outer vertical scroll area; Edit remains a separate controlled modal. Clean state has no lower impact panel, while dirty, blocked, write-error, and saved-only Mapping handoff surfaces remain conditional. Computer Use found the Mac locked during the safe native rerun, so native correction PNGs remain pending; the known AppKit table accessibility path was not used. Phase 3 final audit, merge, and Phase 4 remain deferred.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 3
+      - Slice 3F
+      - table-first
+      - Definition Inventory
+      - Details modal
+      - QDialog.exec
+      - native correction evidence
+      - locked desktop
+      - Phase 3 final audit
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-table-first-correction.md; docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md; docs/WORK_PLAN.md
 ```
 
 ## Known Gaps

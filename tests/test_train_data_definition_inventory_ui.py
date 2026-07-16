@@ -47,7 +47,8 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
         model = panel.inventory_table.model()
         assert model.rowCount() == 1
         assert model.identity_at(0) == ("schema_row", "cooling_capa")
-        assert panel.summary_card.key_label.text() == "cooling_capa"
+        assert panel.details_action.isEnabled()
+        assert not hasattr(panel, "summary_card")
 
         panel.search_input.clear()
         app.processEvents()
@@ -59,15 +60,12 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
         app.processEvents()
         assert panel._selected_identity == selected_identity
 
-        assert panel.detail_table.isHidden()
-        assert panel.detail_table.focusPolicy() == Qt.NoFocus
-        panel.summary_card.technical_toggle.click()
-        app.processEvents()
-        assert not panel.detail_table.isHidden()
-        assert panel.detail_table.model().rowCount() >= 20
-        assert panel.detail_table.focusPolicy() == Qt.StrongFocus
-        panel.summary_card.technical_toggle.click()
-        assert panel.detail_table.isHidden()
+        assert panel.details_action.isEnabled()
+        assert [
+            action.text()
+            for action in panel.task_header.more_menu.actions()
+            if not action.isSeparator()
+        ] == ["Details", "Refresh", "Reset Draft", "Advanced Diagnostics"]
 
         panel.diagnostics.toggle_button.click()
         app.processEvents()
@@ -108,26 +106,35 @@ def test_task_workspace_normal_and_compact_geometry_has_no_horizontal_split_or_s
                 for column in range(model.columnCount())
             ) == INVENTORY_HEADERS
             assert panel.findChildren(QSplitter) == []
-            assert panel.inventory_view.width() == panel.summary_card.width()
-            assert panel.summary_card.y() > panel.inventory_view.y()
+            assert panel.inventory_view.width() >= panel.width() - 48
+            assert panel.inventory_view.height() > panel.height() // 2
             assert panel.inventory_table.horizontalScrollBar().maximum() == 0
-            assert panel.content_scroll.horizontalScrollBar().maximum() == 0
             assert not header.stretchLastSection()
-            assert header.sectionResizeMode(0) == QHeaderView.Stretch
-            assert header.sectionResizeMode(5) == QHeaderView.Fixed
+            visible = {
+                column
+                for column in range(model.columnCount())
+                if not panel.inventory_table.isColumnHidden(column)
+            }
+            expected_visible = set(range(model.columnCount())) if not compact else {
+                0, 1, 2, 3, 4, 7,
+            }
+            assert visible == expected_visible
+            assert all(
+                header.sectionResizeMode(column) == QHeaderView.Interactive
+                for column in visible
+            )
+            assert all(
+                header.sectionResizeMode(column) != QHeaderView.Stretch
+                for column in visible
+            )
             assert panel.diagnostics.tabs.isHidden()
-            assert panel.impact_view.details_container.isHidden()
-            assert panel.detail_table.isHidden()
+            assert panel.impact_view.isHidden()
+            assert panel.handoff_panel.isHidden()
             assert panel.add_definition_button.isVisibleTo(panel)
+            assert panel.edit_button.isVisibleTo(panel)
             assert panel.save_button.isVisibleTo(panel)
-            fact_names = [name for name, _value in panel.summary_card._fact_labels]
-            if compact:
-                assert all(
-                    current.y() < following.y()
-                    for current, following in zip(fact_names, fact_names[1:])
-                )
-            else:
-                assert fact_names[0].y() == fact_names[1].y()
+            assert panel.more_button.isVisibleTo(panel)
+            assert panel.details_action.isEnabled()
     finally:
         panel.close()
         panel.deleteLater()
@@ -150,7 +157,7 @@ def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
         assert panel.save_button.isEnabled()
         assert panel.status_label.text() == "1 unsaved change"
 
-        _find_button(panel, "Reset Data Definition Draft").click()
+        panel.reset_action.trigger()
         app.processEvents()
         assert not panel.save_button.isEnabled()
         assert panel.status_label.text() == "No unsaved changes"
@@ -183,7 +190,7 @@ def test_inventory_panel_renders_no_match_and_load_error_messages():
         app.processEvents()
         assert panel.inventory_table.model().rowCount() == 0
         assert "failed" in panel.inventory_state_label.text().lower()
-        assert "No definition selected" in panel.detail_state_label.text()
+        assert not panel.details_action.isEnabled()
         assert not panel.save_button.isEnabled()
     finally:
         panel.close()
@@ -195,7 +202,7 @@ def test_inventory_panel_renders_no_match_and_load_error_messages():
         app.processEvents()
         assert panel.inventory_table.model().rowCount() == 0
         assert "No definitions are available" in panel.inventory_state_label.text()
-        assert "No definition selected" in panel.detail_state_label.text()
+        assert not panel.details_action.isEnabled()
     finally:
         panel.close()
         panel.deleteLater()
@@ -276,7 +283,7 @@ def test_inventory_panel_reconciles_removed_filter_option_without_signal_recursi
         )
         assert "No definitions match" not in panel.inventory_state_label.text()
         assert panel._selected_identity == ("schema_row", "cooling_capa")
-        assert panel.summary_card.key_label.text() == "cooling_capa"
+        assert panel._selected_identity == ("schema_row", "cooling_capa")
         assert not panel._state.draft_changed
     finally:
         panel.close()
@@ -297,11 +304,3 @@ class _EmptyController:
     def refresh(self):  # noqa: ANN201
         state = DataDefinitionController().refresh()
         return replace(state, draft_rows=(), draft_row_identities=())
-
-
-def _find_button(panel: DataDefinitionPanel, accessible_name: str) -> QPushButton:
-    return next(
-        button
-        for button in panel.findChildren(QPushButton)
-        if button.accessibleName() == accessible_name
-    )

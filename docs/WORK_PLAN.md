@@ -17,18 +17,21 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3F task-oriented Definition workspace is implemented on
-`phase/train-admin-data-definition-ux` and waits at the Slice 3F audit. The default
-Data Definition composition is now a vertical task flow with a full-width six-
-column Inventory, selected-definition summary, conditional change/blocker/saved
-surface, unified Add entry, and collapsed Advanced Diagnostics. Slice 3E keyboard,
-focus, accessibility, responsive, and saved-handoff behavior remains intact, as do
-all accepted Slice 3A–3E domain, validation, save, mapping, compatibility, and
-persistence contracts. PR #16 remains Draft/Open.
+Train/Admin Phase 3 Slice 3F table-first correction is active on
+`phase/train-admin-data-definition-ux`, based on
+`1f3d9d973f7e97a1ed123a88fd757016ccbc34ab`. The correction removes the
+always-visible Selected Definition Summary Card and clean lower panel, makes
+Inventory the primary vertical stretch owner, projects normal eight-column and
+compact six-column user-facing tables, and moves Summary information into an
+on-demand read-only Details modal. Unified Add, controlled Edit, conditional
+impact/blocker/saved handoff, Advanced Diagnostics, and all accepted Slice 3A–3E
+domain, validation, save, mapping, compatibility, persistence, keyboard, focus,
+and accessibility contracts remain in scope. PR #16 remains Draft/Open.
 
 ## Next Action
 
-Perform the Slice 3F audit before the Phase 3 final audit.
+Implement and validate the Slice 3F table-first correction, then hand off to the
+Slice 3F final audit before the Phase 3 final audit.
 
 ## Active Blockers
 
@@ -40,6 +43,9 @@ Perform the Slice 3F audit before the Phase 3 final audit.
   code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
   explicit compatibility persistence owner is approved.
+- Native correction capture is currently blocked because Computer Use reports
+  the Mac is locked; retry the safe Cocoa scenario after manual unlock without
+  using the known AppKit table accessibility path.
 
 ## Active Constraints
 

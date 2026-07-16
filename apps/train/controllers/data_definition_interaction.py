@@ -26,6 +26,7 @@ class DataDefinitionInteractionPresentation:
 
     save: DefinitionActionPresentation
     edit: DefinitionActionPresentation
+    details: DefinitionActionPresentation
     review_blockers: DefinitionActionPresentation
     status_text: str
 
@@ -56,6 +57,13 @@ def project_data_definition_interaction(
     else:
         edit_reason = "This Definition is read-only in the controlled editor."
 
+    details_enabled = identity is not None
+    details_reason = (
+        "Open read-only Details for the selected Definition."
+        if details_enabled
+        else "Select a Definition to open read-only Details."
+    )
+
     has_blockers = bool(
         state.draft_changed
         and any(item.severity == "error" for item in state.blocker_items)
@@ -63,6 +71,7 @@ def project_data_definition_interaction(
     return DataDefinitionInteractionPresentation(
         save=DefinitionActionPresentation(inventory.save_enabled, save_reason),
         edit=DefinitionActionPresentation(edit_enabled, edit_reason),
+        details=DefinitionActionPresentation(details_enabled, details_reason),
         review_blockers=DefinitionActionPresentation(
             has_blockers,
             "Review the blocker summary for the selected Definition."
@@ -87,4 +96,4 @@ def _status_text(
         return "Blocked: Review compatibility blockers before Save schema."
     if inventory.status_key == "dirty":
         return "Unsaved changes: Review impact, then Save schema."
-    return "Clean: Definitions loaded."
+    return "Clean: Feature inventory loaded."

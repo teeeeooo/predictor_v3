@@ -27,6 +27,7 @@ class DataDefinitionInventoryRow:
     relationship: str
     predict_visibility: str
     model_input: str
+    required: str
     lifecycle_state: str
     ml_name: str
     cells: tuple[DataDefinitionDraftCellState, ...]
@@ -147,6 +148,7 @@ def _inventory_row(
         model_input=(
             "Used" if _as_bool(values.get("model_input_enabled", "false")) else "Not used"
         ),
+        required="Yes" if _as_bool(values.get("required", "false")) else "No",
         lifecycle_state=_lifecycle_state(
             identity,
             active=active,

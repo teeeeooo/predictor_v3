@@ -63,6 +63,8 @@ def project_data_definition_summary(
         status=row.lifecycle_state,
         description=_description(row, values),
         facts=(
+            DefinitionSummaryFact("Kind", row.kind),
+            DefinitionSummaryFact("Data Type", row.data_type),
             DefinitionSummaryFact("Value source", _value_source_summary(row.source_type)),
             DefinitionSummaryFact("Used in Predict", _yes_no(row.predict_visibility == "Used")),
             DefinitionSummaryFact("Model input", _yes_no(row.model_input == "Used")),

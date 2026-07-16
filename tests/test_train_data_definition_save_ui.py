@@ -7,7 +7,7 @@ import os
 import shutil
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QPushButton
+from PySide6.QtWidgets import QApplication
 
 from apps.train.controllers.data_definition_controller import DRAFT_FIELDS, DataDefinitionController
 from apps.train.controllers.data_definition_detail_projection import project_blockers
@@ -258,12 +258,8 @@ def test_data_definition_panel_save_button_displays_guarded_result(tmp_path):
         )
         app.processEvents()
 
-        save_buttons = [
-            child for child in panel.findChildren(QPushButton)
-            if child.accessibleName() == "Save Data Definition Schema"
-        ]
-        assert len(save_buttons) == 1
-        save_buttons[0].click()
+        assert panel.save_button.accessibleName() == "Save Data Definition Schema"
+        panel.save_button.click()
         app.processEvents()
 
         result_model = panel.save_result_table.model()

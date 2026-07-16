@@ -24,6 +24,7 @@ class DataDefinitionWorkspaceProjection:
     show_add_edit: bool
     show_reset: bool
     show_refresh: bool
+    show_impact_surface: bool
     save_label: str
     show_saved_handoff: bool
 
@@ -42,6 +43,7 @@ def project_data_definition_workspace(
             "Load error",
             state.message,
             show_refresh=True,
+            show_impact_surface=False,
         )
     if mode == "write_error":
         result = dict(state.save_result_rows)
@@ -55,7 +57,9 @@ def project_data_definition_workspace(
             f"{message} Correct the write issue, then retry Save schema.",
             review_label="Review changes",
             review_enabled=True,
+            show_add_edit=True,
             show_reset=True,
+            show_impact_surface=True,
             save_label="Retry Save",
         )
     if mode == "blocked":
@@ -69,7 +73,9 @@ def project_data_definition_workspace(
             blocker_message,
             review_label="Review blocker",
             review_enabled=True,
+            show_add_edit=True,
             show_reset=True,
+            show_impact_surface=True,
         )
     if mode == "dirty":
         count = len(impact.definitions)
@@ -83,7 +89,9 @@ def project_data_definition_workspace(
             _dirty_message(impact),
             review_label="Review changes",
             review_enabled=True,
+            show_add_edit=True,
             show_reset=True,
+            show_impact_surface=True,
         )
     if mode == "saved":
         result = dict(state.save_result_rows)
@@ -97,6 +105,7 @@ def project_data_definition_workspace(
             f"{latest} Restart Predict before using the saved schema.",
             show_add_edit=True,
             show_refresh=True,
+            show_impact_surface=False,
             show_saved_handoff=bool(state.saved_mapping_handoffs),
         )
     if mode == "no_match":
@@ -109,6 +118,7 @@ def project_data_definition_workspace(
             "Clear the search and filters to return to the canonical inventory order.",
             show_add_edit=True,
             show_refresh=True,
+            show_impact_surface=False,
         )
     if mode == "no_selection":
         return _projection(
@@ -117,19 +127,21 @@ def project_data_definition_workspace(
             "No definition selected",
             "Select a definition or add a supported input.",
             "Choose the next step",
-            "Select an inventory row to understand it, or use Add to create a supported definition.",
+            "Select a feature to open Details or Edit, or use Add to create one.",
             show_add_edit=True,
             show_refresh=True,
+            show_impact_surface=False,
         )
     return _projection(
         "clean",
         "good",
         "No unsaved changes",
-        "Definitions are ready to browse.",
+        "Search the table, then use Add, Edit, or Details.",
         "No unsaved changes.",
-        "Find a definition, review its summary, then use Add or Edit when needed.",
+        "Select a feature to manage it or open its read-only Details.",
         show_add_edit=True,
         show_refresh=True,
+        show_impact_surface=False,
     )
 
 
@@ -146,6 +158,7 @@ def _projection(
     show_add_edit: bool = False,
     show_reset: bool = False,
     show_refresh: bool = False,
+    show_impact_surface: bool = False,
     save_label: str = "Save schema",
     show_saved_handoff: bool = False,
 ) -> DataDefinitionWorkspaceProjection:
@@ -161,6 +174,7 @@ def _projection(
         show_add_edit=show_add_edit,
         show_reset=show_reset,
         show_refresh=show_refresh,
+        show_impact_surface=show_impact_surface,
         save_label=save_label,
         show_saved_handoff=show_saved_handoff,
     )
