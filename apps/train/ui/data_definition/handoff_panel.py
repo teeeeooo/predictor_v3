@@ -65,13 +65,18 @@ class DataDefinitionHandoffPanel(QFrame):
                     f"{request.definition_label} ({request.definition_column_key})",
                     request.definition_column_key,
                 )
-        self.selector.setEnabled(bool(self._requests))
+        has_multiple_requests = len(self._requests) >= 2
+        self.selector.setVisible(has_multiple_requests)
+        self.selector.setEnabled(has_multiple_requests)
+        self.selector.setToolTip("")
+        self.selector.setAccessibleDescription("")
         self.open_button.setEnabled(bool(self._requests and self._on_open is not None))
         if self._requests:
-            self.selector.setToolTip("Choose a saved Mapping Requirement.")
-            self.selector.setAccessibleDescription(
-                "Choose a Mapping Requirement from the latest successful schema save."
-            )
+            if has_multiple_requests:
+                self.selector.setToolTip("Choose a saved Mapping Requirement.")
+                self.selector.setAccessibleDescription(
+                    "Choose a Mapping Requirement from the latest successful schema save."
+                )
             self.open_button.setToolTip("Open the exact requirement in Data Mapping.")
             self.open_button.setAccessibleDescription(
                 "Open the selected saved Mapping Requirement in Data Mapping."
@@ -115,6 +120,10 @@ class DataDefinitionHandoffPanel(QFrame):
         self.detail.setText(result.message)
 
     def _selected_request(self) -> DataMappingNavigationRequest | None:
+        if len(self._requests) == 1:
+            return self._requests[0]
+        if len(self._requests) < 2:
+            return None
         index = self.selector.currentIndex()
         if not 0 <= index < len(self._requests):
             return None

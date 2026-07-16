@@ -28,7 +28,7 @@ Required correction states:
 | `02-details-modal-technical-expanded.png` | dialog below 1280x820 | On-demand read-only Details modal |
 | `03-dirty-saveable-banner.png` | 1280x820 | Dirty saveable conditional surface |
 | `04-blocked-save-banner.png` | 1280x820 | Blocked conditional surface |
-| `05-saved-mapping-next-step.png` | 1280x820 | Saved-only Data Mapping next step |
+| `05-saved-mapping-next-step.png` | 1280x820 | Single saved requirement: direct Data Mapping next step, no selector |
 | `06-clean-table-first-compact.png` | 900x640 | Clean compact table-first workspace |
 
 The current `native_manifest.json` and six PNGs are the authoritative native

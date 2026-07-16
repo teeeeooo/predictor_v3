@@ -72,10 +72,14 @@ def test_cond_inner_area_saved_handoff_coverage_edit_save_reload(tmp_path):
         assert not panel._state.draft_changed
         assert panel.handoff_panel.open_button.isEnabled()
         assert panel.handoff_panel.isVisibleTo(panel)
+        assert panel.handoff_panel.selector.isHidden()
         assert panel.status_label.text() == "Schema saved"
         assert panel.handoff_panel.detail.text().startswith(
             "Mapping values are required for Cond Inner Area."
         )
+        assert "Cond Inner Area [cond_inner_area]" in panel.handoff_panel.detail.text()
+        assert "odu_cond_specs" in panel.handoff_panel.detail.text()
+        assert "Cond Inner Area · Required" in panel.handoff_panel.detail.text()
         assert "Predict restart required" in panel.handoff_panel.detail.text()
         saved_row = next(
             row
@@ -86,6 +90,7 @@ def test_cond_inner_area_saved_handoff_coverage_edit_save_reload(tmp_path):
         assert saved_row.mapping_attribute == "Cond Inner Area"
         assert mapping_path.read_bytes() == mapping_before
 
+        panel.handoff_panel.selector.setCurrentIndex(-1)
         panel.handoff_panel.open_button.click()
         app.processEvents()
 
@@ -311,16 +316,42 @@ def test_data_definition_multiple_handoffs_are_selectable_and_deterministic(tmp_
         app.processEvents()
 
         assert panel.handoff_panel.selector.count() == 2
+        assert not panel.handoff_panel.selector.isHidden()
         assert [
             panel.handoff_panel.selector.itemData(index) for index in range(2)
         ] == ["cond_inner_area", "fan_diameter"]
+        assert panel.handoff_panel.selector.currentIndex() == 0
+        assert "Cond Inner Area [cond_inner_area]" in panel.handoff_panel.detail.text()
+        assert "odu_cond_specs" in panel.handoff_panel.detail.text()
+        panel.handoff_panel.selector.setCurrentIndex(-1)
+        panel.handoff_panel.open_button.click()
+        assert opened == []
         panel.handoff_panel.selector.setCurrentIndex(1)
+        assert "Fan Diameter [fan_diameter]" in panel.handoff_panel.detail.text()
+        assert "Data Mapping group: Idu (idu)" in panel.handoff_panel.detail.text()
+        assert "Fan Diameter · Optional" in panel.handoff_panel.detail.text()
         panel.handoff_panel.open_button.click()
 
         assert len(opened) == 1
         assert opened[0].definition_column_key == "fan_diameter"
         assert opened[0].resolved_group_key == "idu"
         assert not opened[0].required
+
+        clean_controller = DataDefinitionController(
+            DataDefinitionService(schema_path=schema_path)
+        )
+        panel._apply_state(clean_controller.refresh())
+        app.processEvents()
+
+        assert panel.handoff_panel.isHidden()
+        assert panel.handoff_panel.selector.count() == 0
+        assert panel.handoff_panel.selector.currentIndex() == -1
+        assert panel.handoff_panel.selector.isHidden()
+        assert not panel.handoff_panel.open_button.isEnabled()
+        assert panel.handoff_panel._selected_request() is None
+        assert panel.handoff_panel.detail.text() == (
+            "No Mapping Requirement handoff from the latest successful save."
+        )
     finally:
         panel.close()
         panel.deleteLater()

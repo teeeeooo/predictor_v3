@@ -151,12 +151,16 @@ def main() -> int:
             raise RuntimeError(message)
         definition_panel._save_schema()
         _settle(app)
+        _assert_single_saved_handoff(definition_panel)
         _capture(
             window,
             args.output,
             "05-saved-mapping-next-step.png",
-            "saved Mapping next-step conditional surface",
-            "Saved the temporary schema copy and exposed the saved-only Mapping handoff.",
+            "single saved Mapping Requirement next-step conditional surface",
+            (
+                "Saved one Mapping Requirement to the temporary schema copy; the direct "
+                "next step showed no selector and retained the table-first Inventory."
+            ),
             captures,
         )
 
@@ -237,6 +241,24 @@ def _assert_default_layout(panel: DataDefinitionPanel, *, compact: bool) -> None
         raise RuntimeError("Saved handoff surface is visible before a saved requirement")
     if not panel.diagnostics.tabs.isHidden():
         raise RuntimeError("Advanced Diagnostics is expanded in the default workspace")
+
+
+def _assert_single_saved_handoff(panel: DataDefinitionPanel) -> None:
+    requests = panel._state.saved_mapping_handoffs
+    if len(requests) != 1:
+        raise RuntimeError(f"Expected one saved Mapping Requirement, got {len(requests)}")
+    if panel.handoff_panel.isHidden():
+        raise RuntimeError("Single saved Mapping Requirement handoff is hidden")
+    if not panel.handoff_panel.selector.isHidden():
+        raise RuntimeError("Single saved Mapping Requirement still shows a selector")
+    if not panel.handoff_panel.open_button.isEnabled():
+        raise RuntimeError("Single saved Mapping Requirement action is disabled")
+    detail = panel.handoff_panel.detail.text()
+    for expected in ("Cond Inner Area", "odu_cond_specs", "Required"):
+        if expected not in detail:
+            raise RuntimeError(f"Single saved handoff detail is missing {expected!r}")
+    if panel.inventory_view.height() <= panel.height() // 2:
+        raise RuntimeError("Inventory lost primary vertical ownership in saved handoff state")
 
 
 def _capture_details_dialog(
