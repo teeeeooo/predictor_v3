@@ -406,6 +406,29 @@ def test_semantic_noop_import_does_not_create_dirty_or_undo_history(tmp_path):
     assert undone.draft == applied.draft
 
 
+def test_import_distinguishes_lazy_blank_from_explicit_dynamic_value_changes(tmp_path):
+    service, official = _official_bundle(tmp_path)
+    _names, blocks = _blocks(official)
+    idu = _block(blocks, "idu")
+    headers = idu[1]
+    fan_column = headers.index("Fan Diameter")
+    mot1 = next(row for row in idu[2:] if row[0] == "MOT1")
+    mot2 = next(row for row in idu[2:] if row[0] == "MOT2")
+    mot1[fan_column] = ""
+    mot2[fan_column] = "63.5"
+    source = tmp_path / "explicit-dynamic-values.csv"
+    _write_blocks(source, blocks)
+
+    preview, _snapshot = service.preview_exchange_import(source)
+    rows = {row.source_key: row for row in preview.candidate.group("idu").rows}
+
+    assert preview.can_apply
+    assert rows["MOT1"].has_concrete_value_for("Fan Diameter")
+    assert rows["MOT1"].value_for("Fan Diameter") == ""
+    assert rows["MOT2"].has_concrete_value_for("Fan Diameter")
+    assert rows["MOT2"].value_for("Fan Diameter") == 63.5
+
+
 @pytest.mark.parametrize("group_key", ("idu", "refrigerant", "odu_cond_specs"))
 def test_row_order_only_bundle_is_semantic_noop(tmp_path, group_key):
     service, official = _official_bundle(tmp_path)

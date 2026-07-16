@@ -4,7 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.train.application.data_mapping import (
+    DataMappingCoverageItem,
+    DataMappingIssueTarget,
+    row_identity_at_index,
+    row_index_for_identity,
+    unique_row_identity,
+)
+from apps.train.application.data_mapping.coverage import project_mapping_coverage
 from apps.train.services.data_mapping_types import DataMappingAction, DataMappingSnapshot
+from core.data_definition.mapping_requirement_contract import (
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.condenser_identity import condenser_requires_pi
 from core.mapping.editor_model import MappingEditorGroup, MappingEditorRow
 from core.mapping.entity_model import MappingValidationError
@@ -37,15 +48,6 @@ class DataMappingValueRow:
 
 
 @dataclass(frozen=True)
-class DataMappingIssueTarget:
-    """Structured navigation target for one validation issue row."""
-
-    group_key: str
-    row_index: int | None = None
-    column_index: int | None = None
-
-
-@dataclass(frozen=True)
 class DataMappingControllerState:
     source_label: str
     status: str
@@ -64,6 +66,7 @@ class DataMappingControllerState:
     operation_blocked: int = 0
     issue_targets: tuple[DataMappingIssueTarget | None, ...] = ()
     invalid_cells: frozenset[tuple[int, int]] = frozenset()
+    coverage_items: tuple[DataMappingCoverageItem, ...] = ()
 
 
 def project_snapshot(
@@ -84,6 +87,21 @@ def project_snapshot(
     resource_issues = (_resource_missing_issue(),) if resource_status == "missing" else ()
     issues = (*snapshot.validation_errors, *resource_issues, *extra_issues)
     targets = tuple(_issue_target(draft.groups, issue) for issue in issues)
+    effective_requirements = snapshot.effective_mapping_requirements
+    if (
+        not effective_requirements
+        and snapshot.mapping_requirements
+        and not snapshot.mapping_requirement_conflicts
+    ):
+        effective_requirements = resolve_mapping_requirement_contracts(
+            snapshot.mapping_requirements
+        ).contracts
+    coverage = project_mapping_coverage(
+        effective_requirements,
+        draft,
+        issues,
+        targets,
+    )
     return DataMappingControllerState(
         source_label=display_source_label(snapshot.source_label),
         status=status or _snapshot_status(snapshot.is_valid, resource_status),
@@ -110,6 +128,7 @@ def project_snapshot(
             and target.row_index is not None
             and target.column_index is not None
         ),
+        coverage_items=coverage,
     )
 
 
@@ -283,21 +302,29 @@ def _issue_target(
         return None
     field = issue.field or issue.attribute_key
     column_index = group.columns.index(field) if field in group.columns else None
-    row_index = issue.row_index
-    if row_index is None and issue.row_key:
-        row_index = next(
-            (
-                index
-                for index, row in enumerate(group.rows)
-                if row.source_key == issue.row_key
-            ),
-            None,
+    row_keys = tuple(row.source_key for row in group.rows)
+    identity = row_identity_at_index(row_keys, issue.row_index)
+    if identity is None and issue.row_key:
+        identity = (
+            (issue.row_key, issue.row_occurrence)
+            if issue.row_occurrence is not None
+            else unique_row_identity(row_keys, issue.row_key)
         )
-    if row_index is not None and not 0 <= row_index < len(group.rows):
-        row_index = None
-    if row_index is None and column_index is not None and group.rows:
-        row_index = 0
-    return DataMappingIssueTarget(group.group_key, row_index, column_index)
+    row_index = (
+        row_index_for_identity(row_keys, identity[0], identity[1])
+        if identity is not None
+        else None
+    )
+    row_key = identity[0] if identity is not None else issue.row_key
+    row_occurrence = identity[1] if identity is not None else issue.row_occurrence
+    return DataMappingIssueTarget(
+        group.group_key,
+        row_key,
+        field,
+        row_index,
+        column_index,
+        row_occurrence,
+    )
 
 
 def _status_message(is_valid: bool, dirty: bool, resource_status: str) -> str:

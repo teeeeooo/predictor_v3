@@ -1,0 +1,106 @@
+{
+  "commit_sha": "d969807b4239b8fef264d20e003133bf77d6028c",
+  "native_onscreen": true,
+  "capture_source": "visible cocoa window and QDialog native backing-store capture",
+  "fixture_provider": "repository synthetic schema/mapping fixtures copied to a temporary provider; canonical and runtime fixtures are read-only",
+  "programmatic_interaction": true,
+  "computer_use_interaction": false,
+  "physical_interaction": false,
+  "actual_interaction": "programmatic Qt public panel/controller actions",
+  "protected_runtime_fixture_changed": false,
+  "protected_schema_fixture_changed": false,
+  "known_accessibility_table_path_used": false,
+  "superseded_historical_evidence": "Earlier Slice 3F evidence remains historical and is superseded for the default composition by this table-first correction.",
+  "captures": [
+    {
+      "file": "01-clean-table-first-normal.png",
+      "state": "clean normal table-first workspace",
+      "logical_size": [
+        1280,
+        820
+      ],
+      "pixel_size": [
+        2560,
+        1640
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Loaded the synthetic schema and selected the canonical first inventory row."
+    },
+    {
+      "file": "02-details-modal-technical-expanded.png",
+      "state": "on-demand read-only Details modal",
+      "logical_size": [
+        700,
+        580
+      ],
+      "pixel_size": [
+        1400,
+        1160
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Opened Details from the selected row, expanded Technical details, then closed."
+    },
+    {
+      "file": "03-dirty-saveable-banner.png",
+      "state": "dirty saveable conditional surface",
+      "logical_size": [
+        1280,
+        820
+      ],
+      "pixel_size": [
+        2560,
+        1640
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Applied one supported controlled Edit command; Review changes remained conditional."
+    },
+    {
+      "file": "04-blocked-save-banner.png",
+      "state": "blocked conditional surface",
+      "logical_size": [
+        1280,
+        820
+      ],
+      "pixel_size": [
+        2560,
+        1640
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Applied a controlled compatibility-impacting Edit; Save remained disabled."
+    },
+    {
+      "file": "05-saved-mapping-next-step.png",
+      "state": "single saved Mapping Requirement next-step conditional surface",
+      "logical_size": [
+        1280,
+        820
+      ],
+      "pixel_size": [
+        2560,
+        1640
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Saved one Mapping Requirement to the temporary schema copy; the direct next step showed no selector and retained the table-first Inventory."
+    },
+    {
+      "file": "06-clean-table-first-compact.png",
+      "state": "clean compact table-first workspace",
+      "logical_size": [
+        900,
+        640
+      ],
+      "pixel_size": [
+        1800,
+        1280
+      ],
+      "device_pixel_ratio": 2.0,
+      "capture_source": "visible QWidget.render target capture",
+      "actual_interaction": "Reset the draft, resized to 900x640, and kept diagnostics collapsed."
+    }
+  ]
+}

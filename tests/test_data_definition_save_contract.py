@@ -3,12 +3,18 @@
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
+    EditDefinitionIntent,
+    apply_edit_definition_command,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
     field_editability,
 )
 from core.data_definition.draft import replace_draft_row
+from core.data_definition.projection import (
+    project_feature_catalog_from_draft,
+    projected_feature_catalog_fingerprint,
+)
 from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
 
 
@@ -127,7 +133,169 @@ def test_data_definition_save_plan_blocks_ml_name_projection_change():
     assert not plan.can_save_schema
     assert blocker.severity == "error"
     assert blocker.target == "schema_csv"
+    assert blocker.row_identity == row.identity
+    assert blocker.field_name == "ml_name"
+    assert len(_blockers(plan, "ml_compatibility_projection_write_required")) == 1
     assert "features.csv" in blocker.message
+
+
+def test_data_definition_save_plan_excludes_notes_from_single_projection_context():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        ml_name="Cooling Capacity Renamed",
+        notes="description changed",
+    )
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert [(item.row_identity, item.field_name) for item in blockers] == [
+        (row.identity, "ml_name"),
+    ]
+    assert blockers[0].target == "schema_csv"
+    assert "features.csv projection writer" in blockers[0].message
+
+
+def test_data_definition_save_plan_attributes_compound_projection_change_by_definition():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+        notes="description changed",
+    )
+    before = (changed.rows, changed.baseline_rows, changed.changes())
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert not plan.can_save_schema
+    assert [blocker.row_identity for blocker in blockers] == [row.identity, row.identity]
+    assert [blocker.field_name for blocker in blockers] == [
+        "model_input_enabled",
+        "ml_name",
+    ]
+    assert all(blocker.target == "schema_csv" for blocker in blockers)
+    assert (changed.rows, changed.baseline_rows, changed.changes()) == before
+
+
+def test_data_definition_save_plan_attributes_compound_changes_for_each_definition():
+    draft = build_data_definition_draft()
+    first = next(item for item in draft.rows if item.column_key == "idu")
+    second = next(item for item in draft.rows if item.column_key == "evap_index")
+    changed = replace_draft_row(
+        draft,
+        first.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+    )
+    changed = replace_draft_row(
+        changed,
+        second.identity,
+        model_input_enabled=True,
+        ml_name="Evap Index",
+    )
+
+    plan = build_data_definition_save_plan(changed)
+    blockers = _blockers(plan, "ml_compatibility_projection_write_required")
+
+    assert [(item.row_identity, item.field_name) for item in blockers] == [
+        (first.identity, "model_input_enabled"),
+        (first.identity, "ml_name"),
+        (second.identity, "model_input_enabled"),
+        (second.identity, "ml_name"),
+    ]
+
+
+def test_data_definition_save_plan_removes_compound_attribution_after_partial_revert():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    compound = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+        notes="description changed",
+    )
+    partial = replace_draft_row(compound, row.identity, model_input_enabled=False)
+
+    blocked = build_data_definition_save_plan(compound)
+    recovered = build_data_definition_save_plan(partial)
+
+    assert _blockers(blocked, "ml_compatibility_projection_write_required")
+    assert not _blockers(recovered, "ml_compatibility_projection_write_required")
+    assert recovered.can_save_schema
+    assert [change.field_name for change in recovered.changed_fields] == [
+        "ml_name",
+        "notes",
+    ]
+
+
+def test_data_definition_save_plan_keeps_context_after_unrelated_field_revert():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=True,
+        ml_name="IDU",
+        notes="description changed",
+    )
+    reverted = replace_draft_row(changed, row.identity, notes=row.notes)
+
+    changed_plan = build_data_definition_save_plan(changed)
+    before = _blockers(changed_plan, "ml_compatibility_projection_write_required")
+    after = _blockers(
+        build_data_definition_save_plan(reverted),
+        "ml_compatibility_projection_write_required",
+    )
+
+    assert [(item.row_identity, item.field_name) for item in before] == [
+        (row.identity, "model_input_enabled"),
+        (row.identity, "ml_name"),
+    ]
+    assert [(item.row_identity, item.field_name) for item in after] == [
+        (row.identity, "model_input_enabled"),
+        (row.identity, "ml_name"),
+    ]
+    assert not changed_plan.can_save_schema
+
+
+def test_data_definition_save_plan_keeps_independent_singleton_impacts():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    model_only = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=False,
+    )
+    active_only = replace_draft_row(draft, row.identity, active=False)
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        model_input_enabled=False,
+        active=False,
+    )
+
+    assert (
+        _fingerprint(model_only)
+        == _fingerprint(active_only)
+        == _fingerprint(changed)
+    )
+    blockers = _blockers(
+        build_data_definition_save_plan(changed),
+        "ml_compatibility_projection_write_required",
+    )
+
+    assert [item.field_name for item in blockers] == [
+        "model_input_enabled",
+        "active",
+    ]
 
 
 def test_data_definition_save_plan_blocks_one_hot_group_projection_change():
@@ -170,10 +338,12 @@ def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
 
     plan = build_data_definition_save_plan(changed)
 
-    assert plan.can_save_schema
+    assert not plan.can_save_schema
     assert _blocker_codes(plan) >= {
         "data_mapping_dynamic_requirement_deferred",
         "one_hot_runtime_owner_deferred",
+        "candidate_feature_projection_mismatch",
+        "candidate_one_hot_selector_relation_unsupported",
     }
 
 
@@ -247,10 +417,93 @@ def test_data_definition_save_plan_blocks_raw_row_delete():
     assert "raw_row_add_delete_not_allowed" in _blocker_codes(plan)
 
 
+def test_independent_parity_blocker_is_present_before_and_after_ml_revert():
+    draft = build_data_definition_draft()
+    combined = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+    combined = _mapping_relation_edit(combined, "id_volume", "evap_index")
+
+    combined_plan = build_data_definition_save_plan(combined)
+    parity_before = _blocker_evidence(
+        _blocker(combined_plan, "candidate_feature_projection_mismatch")
+    )
+    reverted = _controlled_edit(
+        combined,
+        "cooling_capa",
+        (("ml_name", "Cooling Capa"),),
+    )
+    reverted_plan = build_data_definition_save_plan(reverted)
+    parity_after = _blocker_evidence(
+        _blocker(reverted_plan, "candidate_feature_projection_mismatch")
+    )
+
+    assert _blocker_codes(combined_plan) >= {
+        "ml_compatibility_projection_write_required",
+        "candidate_feature_projection_mismatch",
+    }
+    assert parity_before == parity_after
+    assert parity_before[1:3] == (("schema_row", "id_volume"), "trigger_column")
+    assert "ml_compatibility_projection_write_required" not in _blocker_codes(
+        reverted_plan
+    )
+    assert not reverted_plan.can_save_schema
+
+
+def test_same_row_field_ml_parity_duplicate_is_suppressed_deterministically():
+    draft = build_data_definition_draft()
+    changed = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+
+    first = build_data_definition_save_plan(changed)
+    second = build_data_definition_save_plan(changed)
+    projection_blockers = tuple(
+        blocker
+        for blocker in first.blocked_reasons
+        if blocker.code == "ml_compatibility_projection_write_required"
+        or blocker.code.startswith("candidate_feature_projection")
+    )
+
+    assert [(item.code, item.row_identity, item.field_name) for item in projection_blockers] == [
+        (
+            "ml_compatibility_projection_write_required",
+            ("schema_row", "cooling_capa"),
+            "ml_name",
+        ),
+    ]
+    assert first.blocked_reasons == second.blocked_reasons
+
+
+def test_ml_blocker_preserves_multiple_independent_parity_issues():
+    draft = build_data_definition_draft()
+    changed = _controlled_edit(
+        draft,
+        "cooling_capa",
+        (("ml_name", "Cooling Capacity Renamed"),),
+    )
+    changed = _mapping_relation_edit(changed, "id_volume", "evap_index")
+    changed = _mapping_relation_edit(changed, "evap_area", "idu")
+
+    plan = build_data_definition_save_plan(changed)
+    parity = _blockers(plan, "candidate_feature_projection_mismatch")
+
+    assert [(item.row_identity, item.field_name) for item in parity] == [
+        (("schema_row", "id_volume"), "trigger_column"),
+        (("schema_row", "evap_area"), "trigger_column"),
+    ]
+    assert len(_blockers(plan, "ml_compatibility_projection_write_required")) == 1
+    assert not plan.can_save_schema
+
+
 def test_data_definition_save_plan_allows_schema_backed_label_change():
     draft = build_data_definition_draft()
-    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
-    changed = replace_draft_row(draft, schema_row.identity, label="Cooling Capacity")
+    schema_row = next(row for row in draft.rows if row.column_key == "idu")
+    changed = replace_draft_row(draft, schema_row.identity, label="Indoor Unit")
 
     plan = build_data_definition_save_plan(changed)
 
@@ -258,6 +511,23 @@ def test_data_definition_save_plan_allows_schema_backed_label_change():
     assert _target_status(plan, "schema_csv") == "planned"
     assert "restricted_field_edit_not_allowed" not in _blocker_codes(plan)
     assert "raw_row_add_delete_not_allowed" not in _blocker_codes(plan)
+
+
+def test_full_parity_blocks_projected_label_without_expanding_ml_fingerprint():
+    draft = build_data_definition_draft()
+    schema_row = next(row for row in draft.rows if row.column_key == "cooling_capa")
+    changed = replace_draft_row(draft, schema_row.identity, label="Cooling Capacity")
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert "candidate_feature_projection_mismatch" in _blocker_codes(plan)
+    assert "ml_compatibility_projection_write_required" not in _blocker_codes(plan)
+    blocker = _blocker(plan, "candidate_feature_projection_mismatch")
+    assert (blocker.row_identity, blocker.field_name) == (
+        schema_row.identity,
+        "label",
+    )
 
 
 def test_data_definition_save_plan_allows_notes_change_without_ml_impact():
@@ -280,5 +550,45 @@ def _blocker_codes(plan):
     return {blocker.code for blocker in plan.blocked_reasons}
 
 
+def _blockers(plan, code):
+    return tuple(blocker for blocker in plan.blocked_reasons if blocker.code == code)
+
+
 def _blocker(plan, code):
     return next(blocker for blocker in plan.blocked_reasons if blocker.code == code)
+
+
+def _fingerprint(draft):
+    return projected_feature_catalog_fingerprint(
+        project_feature_catalog_from_draft(draft)
+    )
+
+
+def _controlled_edit(draft, column_key, updates):
+    result = apply_edit_definition_command(
+        draft,
+        EditDefinitionIntent(("schema_row", column_key), updates),
+    )
+    assert result.accepted, result.issues
+    return result.draft
+
+
+def _mapping_relation_edit(draft, column_key, mapping_entity):
+    row = next(item for item in draft.rows if item.column_key == column_key)
+    return _controlled_edit(draft, column_key, (
+        ("value_source", "mapping_lookup"),
+        ("mapping_entity", mapping_entity),
+        ("mapping_attribute", row.mapping_attribute),
+        ("trigger_column", mapping_entity),
+        ("rule_id", ""),
+    ))
+
+
+def _blocker_evidence(blocker):
+    return (
+        blocker.code,
+        blocker.row_identity,
+        blocker.field_name,
+        blocker.target,
+        blocker.message,
+    )

@@ -7,11 +7,17 @@ from copy import deepcopy
 from itertools import product
 from typing import Any
 
+from core.data_definition.mapping_requirement_contract import (
+    EffectiveMappingRequirement,
+    mapping_group_key_for_requirement,
+    resolve_mapping_requirement_contracts,
+)
 from core.mapping.condenser_identity import condenser_requires_pi, condenser_spec_key
 from core.mapping.editor_model import (
     MappingEditorDraft,
     MappingEditorGroup,
     MappingEditorRow,
+    MappingRequirementProjection,
 )
 from core.mapping.paths import MAPPING_JSON_FILE
 from core.mapping.repository import load_mapping_data
@@ -23,12 +29,6 @@ COMPRESSOR_GROUP = "compressor"
 REFRIGERANT_GROUP = "refrigerant"
 EXPANSION_GROUP = "expansion"
 ODU_COND_SPECS_GROUP = "odu_cond_specs"
-MAPPING_ENTITY_GROUP_ALIASES = {
-    "cond_specs": ODU_COND_SPECS_GROUP,
-    "ref_type": REFRIGERANT_GROUP,
-    "exp_type": EXPANSION_GROUP,
-}
-
 OWNED_RUNTIME_SECTIONS = (
     "idu",
     "evap_index",
@@ -105,9 +105,33 @@ def apply_mapping_requirements_to_editor_draft(
     mapping_requirements: tuple[object, ...] = (),
 ) -> MappingEditorDraft:
     """Return a draft with Data Definition-required mapping attributes visible."""
-    required_by_group = _requirements_by_group(mapping_requirements)
-    if not required_by_group:
-        return draft
+    resolution = resolve_mapping_requirement_contracts(mapping_requirements)
+    unsupported = next(
+        (
+            conflict
+            for conflict in resolution.conflicts
+            if "unsupported_data_type" in conflict.reasons
+        ),
+        None,
+    )
+    if unsupported is not None:
+        data_type = unsupported.data_types[0] if unsupported.data_types else ""
+        raise ValueError(
+            "unsupported mapping attribute data type "
+            f"'{data_type}' for '{unsupported.mapping_attribute}'"
+        )
+    return apply_effective_mapping_requirements_to_editor_draft(
+        draft,
+        resolution.contracts,
+    )
+
+
+def apply_effective_mapping_requirements_to_editor_draft(
+    draft: MappingEditorDraft,
+    requirements: tuple[EffectiveMappingRequirement, ...] = (),
+) -> MappingEditorDraft:
+    """Apply already-resolved compatible mapping-cell contracts."""
+    required_by_group = _requirements_by_group(requirements)
     groups = tuple(
         _apply_group_requirements(group, required_by_group.get(group.group_key, ()))
         for group in draft.groups
@@ -117,12 +141,6 @@ def apply_mapping_requirements_to_editor_draft(
         unowned_sections=draft.unowned_sections,
         source_label=draft.source_label,
     )
-
-
-def mapping_group_key_for_requirement(requirement: object) -> str:
-    """Return the Data Mapping group key for one Data Definition requirement."""
-    entity = str(getattr(requirement, "mapping_entity", "")).strip()
-    return MAPPING_ENTITY_GROUP_ALIASES.get(entity, entity)
 
 
 def _simple_group(
@@ -138,8 +156,7 @@ def _simple_group(
         key_column = columns[0]
         for row_key in sorted(str(key) for key in section):
             row_value = section.get(row_key)
-            values = {column: "" for column in columns}
-            values[key_column] = row_key
+            values = {key_column: row_key}
             if isinstance(row_value, Mapping):
                 values.update({str(key): value for key, value in row_value.items()})
             rows.append(MappingEditorRow(values=values, source_key=row_key))
@@ -153,77 +170,91 @@ def _simple_group(
 
 
 def _requirements_by_group(
-    mapping_requirements: tuple[object, ...],
-) -> dict[str, tuple[object, ...]]:
-    grouped: dict[str, list[object]] = {}
+    mapping_requirements: tuple[EffectiveMappingRequirement, ...],
+) -> dict[str, tuple[EffectiveMappingRequirement, ...]]:
+    grouped: dict[str, list[EffectiveMappingRequirement]] = {}
     for requirement in mapping_requirements:
-        group_key = mapping_group_key_for_requirement(requirement)
-        attribute = str(getattr(requirement, "mapping_attribute", "")).strip()
-        if not group_key or not attribute:
-            continue
-        grouped.setdefault(group_key, [])
-        if not any(
-            str(getattr(item, "mapping_attribute", "")).strip() == attribute
-            for item in grouped[group_key]
-        ):
-            grouped[group_key].append(requirement)
+        grouped.setdefault(requirement.resolved_group_key, []).append(requirement)
     return {key: tuple(values) for key, values in grouped.items()}
 
 
 def _apply_group_requirements(
     group: MappingEditorGroup,
-    requirements: tuple[object, ...],
+    requirements: tuple[EffectiveMappingRequirement, ...],
 ) -> MappingEditorGroup:
-    if not requirements:
+    if not requirements and group.requirement_projection is None:
         return group
-    required_columns = tuple(
+    provenance = group.requirement_projection or MappingRequirementProjection(
+        base_columns=group.columns,
+        base_notes=group.notes,
+        base_column_data_types=dict(group.column_data_types),
+        base_required_columns=group.required_columns,
+    )
+    requirement_columns = tuple(
         str(getattr(requirement, "mapping_attribute", "")).strip()
         for requirement in requirements
     )
-    columns = (*group.columns, *(column for column in required_columns if column not in group.columns))
-    rows = tuple(_row_with_columns(row, columns) for row in group.rows)
-    column_data_types = dict(group.column_data_types)
-    required = list(group.required_columns)
-    for requirement, column in zip(requirements, required_columns):
+    columns = (
+        *provenance.base_columns,
+        *(column for column in requirement_columns if column not in provenance.base_columns),
+    )
+    column_data_types = dict(provenance.base_column_data_types)
+    required = list(provenance.base_required_columns)
+    requirement_required: list[str] = []
+    optional: list[str] = []
+    for requirement, column in zip(requirements, requirement_columns):
         data_type = str(getattr(requirement, "data_type", "string")).strip() or "string"
         if data_type not in {"string", "number", "boolean"}:
             raise ValueError(
                 f"unsupported mapping attribute data type '{data_type}' for '{column}'"
             )
         column_data_types[column] = data_type
-        if bool(getattr(requirement, "required", True)) and column not in required:
-            required.append(column)
+        if bool(getattr(requirement, "required", True)):
+            if column not in required:
+                required.append(column)
+            if column not in requirement_required:
+                requirement_required.append(column)
+        elif column not in optional:
+            optional.append(column)
     return MappingEditorGroup(
         group_key=group.group_key,
         label=group.label,
         columns=columns,
-        rows=rows,
+        rows=group.rows,
         runtime_sections=group.runtime_sections,
-        notes=_requirement_note(group.notes, tuple(required)),
+        notes=_requirement_note(
+            provenance.base_notes,
+            tuple(requirement_required),
+            tuple(optional),
+        ),
         column_data_types=column_data_types,
         required_columns=tuple(required),
+        requirement_projection=MappingRequirementProjection(
+            base_columns=provenance.base_columns,
+            base_notes=provenance.base_notes,
+            base_column_data_types=provenance.base_column_data_types,
+            base_required_columns=provenance.base_required_columns,
+            requirement_columns=requirement_columns,
+        ),
     )
 
 
-def _row_with_columns(row: MappingEditorRow, columns: tuple[str, ...]) -> MappingEditorRow:
-    values = dict(row.values)
-    for column in columns:
-        values.setdefault(column, "")
-    return MappingEditorRow(
-        values=values,
-        source_key=row.source_key,
-        unresolved=row.unresolved,
-        notes=row.notes,
-    )
-
-
-def _requirement_note(existing: str, required_columns: tuple[str, ...]) -> str:
-    note = f"Required by Data Definition: {', '.join(required_columns)}"
+def _requirement_note(
+    existing: str,
+    required_columns: tuple[str, ...],
+    optional_columns: tuple[str, ...],
+) -> str:
+    parts = []
+    if required_columns:
+        parts.append(f"Required by Data Definition: {', '.join(required_columns)}.")
+    if optional_columns:
+        parts.append(f"Optional from Data Definition: {', '.join(optional_columns)}.")
+    overlay_note = " ".join(parts)
     if not existing:
-        return note
-    if note in existing:
+        return overlay_note
+    if not overlay_note:
         return existing
-    return f"{existing} {note}"
+    return f"{existing} {overlay_note}"
 
 
 def _option_group(

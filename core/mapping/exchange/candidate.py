@@ -81,7 +81,13 @@ def build_mapping_exchange_candidate(
                 )
             seen.add(identity)
             _validate_required_values(current_group, values, blockers, row_number)
-            hidden = _matching_hidden_values(current_group, existing_rows.get(identity))
+            existing = existing_rows.get(identity)
+            values = _preserve_projection_only_absence(
+                current_group,
+                existing,
+                values,
+            )
+            hidden = _matching_hidden_values(current_group, existing)
             hidden.update(values)
             imported_rows[identity] = MappingEditorRow(
                 values=hidden,
@@ -188,3 +194,22 @@ def _matching_hidden_values(
         for key, value in existing.values.items()
         if key not in group.columns
     }
+
+
+def _preserve_projection_only_absence(
+    group: MappingEditorGroup,
+    existing: MappingEditorRow | None,
+    imported: dict[str, Any],
+) -> dict[str, Any]:
+    """Keep an existing lazy requirement blank absent after a no-op import."""
+    projection = group.requirement_projection
+    if existing is None or projection is None:
+        return imported
+    values = dict(imported)
+    for column in projection.requirement_columns:
+        if (
+            not existing.has_concrete_value_for(column)
+            and not str(values.get(column, "")).strip()
+        ):
+            values.pop(column, None)
+    return values

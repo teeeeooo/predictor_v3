@@ -75,6 +75,8 @@ class DataDefinitionDraft:
     rows: tuple[DataDefinitionDraftRow, ...]
     baseline_rows: tuple[DataDefinitionDraftRow, ...]
     issues: tuple[DataDefinitionDraftIssue, ...] = ()
+    controlled_row_additions: frozenset[tuple[str, str]] = frozenset()
+    controlled_addition_initial_rows: tuple[DataDefinitionDraftRow, ...] = ()
 
     @property
     def is_changed(self) -> bool:
@@ -98,6 +100,44 @@ class DataDefinitionDraft:
             if identity not in current:
                 changes.append(DataDefinitionDraftChange(identity, "__row__", row, None))
         return tuple(changes)
+
+    def attributed_changes(self) -> tuple[DataDefinitionDraftChange, ...]:
+        """Include post-Add field changes without expanding the initial Add."""
+        initial_rows = {
+            row.identity: row for row in self.controlled_addition_initial_rows
+        }
+        current_rows = {row.identity: row for row in self.rows}
+        changes: list[DataDefinitionDraftChange] = []
+        for change in self.changes():
+            changes.append(change)
+            initial = initial_rows.get(change.row_identity)
+            current = current_rows.get(change.row_identity)
+            if (
+                change.field_name == "__row__"
+                and change.before is None
+                and initial is not None
+                and current is not None
+            ):
+                changes.extend(_row_changes(initial, current))
+        return tuple(changes)
+
+    def is_controlled_row_addition(self, identity: tuple[str, str]) -> bool:
+        """Return whether a command owner authorized this new row."""
+        return identity in self.controlled_row_additions
+
+    def controlled_addition_initial_row(
+        self,
+        identity: tuple[str, str],
+    ) -> DataDefinitionDraftRow | None:
+        """Return the immutable row first produced by a controlled Add."""
+        return next(
+            (
+                row
+                for row in self.controlled_addition_initial_rows
+                if row.identity == identity
+            ),
+            None,
+        )
 
 
 def build_data_definition_draft(
@@ -131,6 +171,8 @@ def replace_draft_row(
         rows=rows,
         baseline_rows=draft.baseline_rows,
         issues=draft.issues,
+        controlled_row_additions=draft.controlled_row_additions,
+        controlled_addition_initial_rows=draft.controlled_addition_initial_rows,
     )
 
 

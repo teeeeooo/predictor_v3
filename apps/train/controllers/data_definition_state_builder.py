@@ -4,14 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.train.application.data_mapping import DataMappingNavigationRequest
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
     DataDefinitionIssue,
     DataDefinitionReport,
+    DataDefinitionSaveBlocker,
     DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
     field_editability,
+    extract_mapping_requirements_from_draft,
 )
 
 DRAFT_FIELDS = (
@@ -72,6 +75,19 @@ class DataDefinitionDraftCellState:
 
 
 @dataclass(frozen=True)
+class DataDefinitionBlockerItem:
+    """Structured UI-facing blocker evidence before selection relevance."""
+
+    severity: str
+    code: str
+    target: str
+    message: str
+    related_row_identity: tuple[str, str] | None
+    related_field: str
+    source: str
+
+
+@dataclass(frozen=True)
 class DataDefinitionControllerState:
     """UI-facing Data Definition state."""
 
@@ -83,16 +99,25 @@ class DataDefinitionControllerState:
     draft_row_identities: tuple[tuple[str, str], ...]
     draft_changed: bool
     can_save_schema: bool
+    save_action_enabled: bool
     save_plan_rows: tuple[tuple[str, ...], ...]
     save_blocker_rows: tuple[tuple[str, ...], ...]
     save_result_rows: tuple[tuple[str, str], ...]
+    save_result_issue_rows: tuple[tuple[str, ...], ...]
+    blocker_items: tuple[DataDefinitionBlockerItem, ...]
     draft_change_rows: tuple[tuple[str, ...], ...]
     projected_feature_rows: tuple[tuple[str, ...], ...]
     mapping_requirement_rows: tuple[tuple[str, ...], ...]
     one_hot_rows: tuple[tuple[str, ...], ...]
     readiness_rows: tuple[tuple[str, ...], ...]
     issue_rows: tuple[tuple[str, ...], ...]
+    requires_restart: bool
+    requires_retrain: bool
+    impact_summary: str
     last_action_ok: bool = True
+    focus_identity: tuple[str, str] | None = None
+    command_issue_rows: tuple[tuple[str, str, str], ...] = ()
+    saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = ()
 
 
 def state_from_report(
@@ -104,6 +129,9 @@ def state_from_report(
     status: str | None = None,
     save_result: DataDefinitionSchemaSaveResult | None = None,
     last_action_ok: bool = True,
+    focus_identity: tuple[str, str] | None = None,
+    command_issue_rows: tuple[tuple[str, str, str], ...] = (),
+    saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = (),
 ) -> DataDefinitionControllerState:
     """Compose immutable UI-facing state from report, draft, and save plan data."""
     parity_count = len(report.parity_issues)
@@ -134,12 +162,19 @@ def state_from_report(
         draft_row_identities=tuple(row.identity for row in draft.rows),
         draft_changed=draft.is_changed,
         can_save_schema=save_plan.can_save_schema,
+        save_action_enabled=(
+            draft.is_changed
+            and save_plan.can_save_schema
+            and (save_result is None or save_result.status != "blocked")
+        ),
         save_plan_rows=tuple(
             (target.target, target.status, target.reason)
             for target in save_plan.planned_targets
         ),
         save_blocker_rows=_save_blocker_rows(save_plan),
         save_result_rows=_save_result_rows(save_result),
+        save_result_issue_rows=_save_result_issue_rows(save_result),
+        blocker_items=_blocker_items(save_plan, save_result),
         draft_change_rows=_draft_change_rows(save_plan),
         projected_feature_rows=tuple(
             (
@@ -165,7 +200,7 @@ def state_from_report(
                 row.trigger_column,
                 row.rule_id,
             )
-            for row in report.mapping_requirements
+            for row in extract_mapping_requirements_from_draft(draft)
         ),
         one_hot_rows=tuple(
             (
@@ -182,7 +217,13 @@ def state_from_report(
             for row in report.readiness
         ),
         issue_rows=_issue_rows(report.issues),
+        requires_restart=save_plan.requires_restart,
+        requires_retrain=save_plan.requires_retrain,
+        impact_summary=save_plan.restart_impact.message,
         last_action_ok=last_action_ok,
+        focus_identity=focus_identity,
+        command_issue_rows=command_issue_rows,
+        saved_mapping_handoffs=saved_mapping_handoffs,
     )
 
 
@@ -190,7 +231,7 @@ def _draft_rows(
     draft: DataDefinitionDraft,
 ) -> tuple[tuple[DataDefinitionDraftCellState, ...], ...]:
     changed_by_identity: dict[tuple[str, str], set[str]] = {}
-    for change in draft.changes():
+    for change in draft.attributed_changes():
         changed_by_identity.setdefault(change.row_identity, set()).add(change.field_name)
     return tuple(
         _draft_row(row, changed_by_identity.get(row.identity, set()))
@@ -267,6 +308,48 @@ def _save_result_rows(
     )
 
 
+def _save_result_issue_rows(
+    result: DataDefinitionSchemaSaveResult | None,
+) -> tuple[tuple[str, ...], ...]:
+    if result is None:
+        return ()
+    return tuple(
+        (issue.severity, issue.code, issue.target, issue.message)
+        for issue in result.issues
+    )
+
+
+def _blocker_items(
+    save_plan: DataDefinitionSavePlan,
+    result: DataDefinitionSchemaSaveResult | None,
+) -> tuple[DataDefinitionBlockerItem, ...]:
+    items = [
+        _blocker_item(blocker, "save_plan")
+        for blocker in save_plan.blocked_reasons
+    ]
+    if result is not None:
+        items.extend(
+            _blocker_item(blocker, "last_save_result")
+            for blocker in result.issues
+        )
+    return tuple(items)
+
+
+def _blocker_item(
+    blocker: DataDefinitionSaveBlocker,
+    source: str,
+) -> DataDefinitionBlockerItem:
+    return DataDefinitionBlockerItem(
+        severity=blocker.severity,
+        code=blocker.code,
+        target=blocker.target,
+        message=blocker.message,
+        related_row_identity=blocker.row_identity,
+        related_field=blocker.field_name,
+        source=source,
+    )
+
+
 def save_status(result: DataDefinitionSchemaSaveResult) -> str:
     """Map a schema-save result to the existing controller status string."""
     if result.status == "written":
@@ -305,14 +388,22 @@ def error_state(exc: Exception) -> DataDefinitionControllerState:
         draft_row_identities=(),
         draft_changed=False,
         can_save_schema=False,
+        save_action_enabled=False,
         save_plan_rows=(),
         save_blocker_rows=(("error", "load_failed", "Data Definition", str(exc)),),
         save_result_rows=(("Status", "Error"), ("Message", str(exc))),
+        save_result_issue_rows=(),
+        blocker_items=(DataDefinitionBlockerItem(
+            "error", "load_failed", "Data Definition", str(exc), None, "", "save_plan",
+        ),),
         draft_change_rows=(),
         projected_feature_rows=(),
         mapping_requirement_rows=(),
         one_hot_rows=(),
         readiness_rows=(),
         issue_rows=(("error", "load_failed", "Data Definition", str(exc)),),
+        requires_restart=False,
+        requires_retrain=False,
+        impact_summary="Impact unavailable because Data Definition failed to load.",
         last_action_ok=False,
     )

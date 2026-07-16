@@ -17,50 +17,44 @@
 
 ## Current Slice
 
-Train/Admin Phase 2 — Data Mapping UX Overhaul is complete for code and
-repository-automated acceptance. PR #15 is ready for user review and merge.
-Native Slice 2B+2C interaction and Slice 2D+2E visual acceptance remain
-deferred under their existing blockers and do not reopen Phase 2 code scope.
+Train/Admin Phase 3 — Data Definition UX Overhaul is complete and its final audit
+is approved on PR #16. Slices 3A–3F, all audit corrections, the table-first Slice
+3F correction, and the saved-handoff follow-up preserve the accepted Data
+Definition, Data Mapping, Predict, and ML compatibility boundaries. PR #16 is the
+Phase 3 merge target and is ready for user review after closeout CI succeeds.
 
 ## Next Action
 
-The user merges PR #15 to `main`. After confirming the merged-main SHA, start
-Phase 3 — Data Definition UX Overhaul from a new branch and Draft PR. Its first
-work is a current-state audit and confirmation of the Slice 3A boundary.
+The user merges PR #16 to `main`. After confirming the merged-main SHA, Phase 4 —
+Train/Model and Shell UX Overhaul may begin only from a separate branch and Draft
+PR after separate instruction.
 
 ## Active Blockers
 
-- Deferred acceptance: native macOS rendering succeeds, but Computer Use interaction with the
-  populated PySide6 table crashes Python in AppKit's accessibility hierarchy
-  (`EXC_BAD_ACCESS` / `SIGSEGV`). Two independent attempts reproduced it, and
-  injected keyboard shortcuts did not reach the Qt table. Therefore paste/undo,
-  PFC Pi, and issue-navigation/Save/Reload native interaction evidence remains
-  incomplete; automated regression is recorded separately and is not treated
-  as a substitute. This remains deferred and non-blocking for Slice 2D/2E. The
-  audit-correction follow-up confirmed native rendering without accessibility
-  clicks, but no physical interaction completion was reported, so no new
-  interaction PNG was added.
-- Deferred acceptance: the Slice 2D+2E native visual capture could not start because the Mac
-  desktop was locked and Computer Use could not unlock it automatically. No
-  native screenshot is claimed; the automated Batch result remains valid and
-  the visual states are pending a later unlocked-desktop audit.
-- Sequencing hold: Phase 3 does not start until the user merges PR #15 to
-  `main`. This is a phase-ordering constraint, not a production defect.
+- Phase 4 remains blocked until PR #16 is merged and merged `main` is confirmed.
+- Deferred Phase 2 native interaction acceptance remains separate and does not
+  reopen accepted Phase 2 or Phase 3 code.
+- ML projection-changing definition edits remain intentionally blocked until an
+  explicit compatibility persistence owner is approved.
 
 ## Active Constraints
 
+- Preserve `config/predict/schema.csv` as the canonical Data Definition source.
+- Keep `config/ml/features.csv` as a read/parity compatibility surface; do not add
+  canonical writes without a separate design.
 - Preserve the Data Definition/Data Mapping owner boundary and runtime
   `mapping.json` contract.
-- Use repository fixtures and mock training data whose structure matches the real
-  local contract; do not add company production data.
-- Do not infer model quality or production readiness from mock pipeline success.
+- Preserve the accepted Qt-free draft, command, edit policy, projection,
+  validation, save-plan, schema-writer, readiness, handoff, coverage, keyboard,
+  focus, accessibility, and exact-navigation owners.
+- Use repository fixtures and mock data; do not add company production data or
+  infer model quality or production readiness.
 - Keep Cooling and Heating models independent, including monotone constraints.
-- Preserve the accepted Slice 2A–2E contracts while PR #15 awaits user merge.
-- Do not create a Phase 3 branch, Draft PR, or implementation before merged
-  `main` is confirmed.
 
 ## Deferred / Hold
 
+- Phase 4 implementation, merge, and activation remain deferred until the Phase 3
+  merge is confirmed and the user starts the next phase explicitly.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness
@@ -69,6 +63,9 @@ work is a current-state audit and confirmation of the Slice 3A boundary.
 ## Minimal Anchors
 
 - Governing design: `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-governing-design.md`
+- Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
+- Accepted Slice 3F amendment: `docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md`
+- Final audit closeout: `result_reports/records/2026-07/2026-07-16-train-admin-phase3-final-audit-closeout.md`
 - Accepted Phase 2 design: `docs/designs/2026-07-14-train-admin-phase-2-data-mapping-ux-overhaul.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`

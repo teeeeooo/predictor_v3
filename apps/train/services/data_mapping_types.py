@@ -6,9 +6,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
+from core.data_definition.mapping_requirement_contract import (
+    EffectiveMappingRequirement,
+    MappingRequirementConflict,
+)
 from core.mapping.editor_model import MappingEditorDraft, MappingEditorValidationResult
 from core.mapping.exchange.diff import MappingExchangeGroupDiff
 from core.mapping.entity_model import MappingValidationError
+from core.data_definition import MappingRequirement
 
 
 @dataclass(frozen=True)
@@ -49,6 +54,9 @@ class DataMappingSnapshot:
     source_label: str
     actions: tuple[DataMappingAction, ...]
     dirty: bool = False
+    mapping_requirements: tuple[MappingRequirement, ...] = ()
+    effective_mapping_requirements: tuple[EffectiveMappingRequirement, ...] = ()
+    mapping_requirement_conflicts: tuple[MappingRequirementConflict, ...] = ()
 
     @property
     def is_valid(self) -> bool:

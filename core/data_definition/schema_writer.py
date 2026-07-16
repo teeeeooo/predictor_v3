@@ -10,17 +10,25 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
+from core.data_definition.draft import (
+    DataDefinitionDraft,
+    DataDefinitionDraftRow,
+    build_data_definition_draft,
+)
 from core.data_definition.edit_policy import restricted_draft_field_changes
 from core.data_definition.save_contract import (
     DataDefinitionSaveBlocker,
     DataDefinitionSavePlan,
     build_data_definition_save_plan,
 )
+from core.data_definition.validation import (
+    build_data_definition_report,
+    validate_data_definition_candidate,
+)
 from core.predictor_schema.catalog_v2 import (
     REQUIRED_HEADERS,
     load_predict_schema_catalog_v2,
-    validate_predict_schema_catalog_v2,
+    validate_predict_schema_catalog_v2_issues,
 )
 
 
@@ -107,26 +115,53 @@ def _writer_blockers(
         blockers.append(_blocker("schema_writer_target_not_allowed", f"Unsupported target: {target}"))
     if not save_plan.can_save_schema and draft.is_changed:
         blockers.append(_blocker("schema_save_plan_not_allowed", "Save plan did not allow schema write."))
-    if any(change.field_name == "__row__" for change in draft.changes()):
-        blockers.append(_blocker(
-            "raw_row_add_delete_not_allowed",
-            "Raw draft row add/delete requires a controlled Add/Remove Feature command.",
-        ))
-    if restricted_draft_field_changes(draft):
-        blockers.append(_blocker(
+    for change in draft.changes():
+        if change.field_name == "__row__" and not (
+            change.before is None
+            and draft.is_controlled_row_addition(change.row_identity)
+        ):
+            _append_blocker_if_missing(blockers, _blocker(
+                "raw_row_add_delete_not_allowed",
+                "Raw draft row add/delete requires a controlled Add/Remove Feature command.",
+                row_identity=change.row_identity,
+                field_name=change.field_name,
+            ))
+        if change.row_identity[0] == "derived_policy":
+            _append_blocker_if_missing(blockers, _blocker(
+                "derived_policy_persistence_required",
+                "Derived policy changes cannot be written to schema.csv.",
+                row_identity=change.row_identity,
+                field_name=change.field_name,
+            ))
+    for change in restricted_draft_field_changes(draft):
+        _append_blocker_if_missing(blockers, _blocker(
             "restricted_field_edit_not_allowed",
             "Restricted direct field edits require a controlled command.",
-        ))
-    if any(change.row_identity[0] == "derived_policy" for change in draft.changes()):
-        blockers.append(_blocker(
-            "derived_policy_persistence_required",
-            "Derived policy changes cannot be written to schema.csv.",
+            row_identity=change.row_identity,
+            field_name=change.field_name,
         ))
     return tuple(
         blocker
         for blocker in blockers
         if blocker.severity == "error" and blocker.target in {target, ""}
     )
+
+
+def _append_blocker_if_missing(
+    blockers: list[DataDefinitionSaveBlocker],
+    candidate: DataDefinitionSaveBlocker,
+) -> None:
+    identity = (
+        candidate.code,
+        candidate.target,
+        candidate.row_identity,
+        candidate.field_name,
+    )
+    if not any(
+        (item.code, item.target, item.row_identity, item.field_name) == identity
+        for item in blockers
+    ):
+        blockers.append(candidate)
 
 
 def _atomic_write_schema_csv(
@@ -188,10 +223,33 @@ def _backup_destination(destination: Path) -> Path:
 
 
 def _candidate_schema_issues(tmp_path: Path) -> tuple[DataDefinitionSaveBlocker, ...]:
-    errors = validate_predict_schema_catalog_v2(load_predict_schema_catalog_v2(tmp_path))
+    catalog_issues = validate_predict_schema_catalog_v2_issues(
+        load_predict_schema_catalog_v2(tmp_path),
+    )
+    if catalog_issues:
+        return tuple(
+            _blocker(
+                "candidate_schema_validation_failed",
+                issue.message,
+                row_identity=("schema_row", issue.column_key) if issue.column_key else None,
+                field_name=issue.field_name,
+            )
+            for issue in catalog_issues
+        )
+    candidate_draft = build_data_definition_draft(schema_path=tmp_path)
+    candidate_report = build_data_definition_report(schema_path=tmp_path)
+    candidate_issues = validate_data_definition_candidate(
+        candidate_draft,
+        candidate_report,
+    )
     return tuple(
-        _blocker("candidate_schema_validation_failed", error)
-        for error in errors
+        _blocker(
+            f"candidate_{issue.code}",
+            issue.message,
+            row_identity=issue.row_identity,
+            field_name=issue.field_name,
+        )
+        for issue in candidate_issues
     )
 
 
@@ -223,8 +281,21 @@ def _bool(value: bool) -> str:
     return "true" if value else "false"
 
 
-def _blocker(code: str, message: str) -> DataDefinitionSaveBlocker:
-    return DataDefinitionSaveBlocker(code, "error", message, "schema_csv")
+def _blocker(
+    code: str,
+    message: str,
+    *,
+    row_identity: tuple[str, str] | None = None,
+    field_name: str = "",
+) -> DataDefinitionSaveBlocker:
+    return DataDefinitionSaveBlocker(
+        code,
+        "error",
+        message,
+        "schema_csv",
+        row_identity,
+        field_name,
+    )
 
 
 def _blocked_result(

@@ -182,7 +182,7 @@ def test_data_mapping_panel_builds_editable_manager_surface():
                 "Delete",
                 "Export",
                 "Import",
-                "Save",
+                "Save mapping",
             "Refresh",
             "Reload",
         ]

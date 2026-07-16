@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QPushButton
+from PySide6.QtWidgets import QApplication, QAbstractItemView
 
 from apps.train.controllers.data_definition_controller import (
     DRAFT_FIELDS,
@@ -24,9 +24,9 @@ def _app() -> QApplication:
 def test_data_definition_service_edits_in_memory_draft_and_previews_plan():
     service = DataDefinitionService()
     draft = service.load_draft()
-    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
+    row = next(item for item in draft.rows if item.column_key == "idu")
 
-    edited = service.edit_draft_cell(draft, row.identity, "label", "Cooling Capacity")
+    edited = service.edit_draft_cell(draft, row.identity, "label", "Indoor Unit")
     plan = service.preview_save_plan(edited.draft)
     blocked = service.edit_draft_cell(draft, row.identity, "column_key", "cooling_capacity")
     invalid_bool = service.edit_draft_cell(draft, row.identity, "visible", "maybe")
@@ -45,7 +45,8 @@ def test_data_definition_controller_exposes_draft_rows_and_reset_state():
     controller = DataDefinitionController()
 
     state = controller.refresh()
-    schema_row = state.draft_row_identities[0]
+    schema_row = ("schema_row", "idu")
+    schema_index = state.draft_row_identities.index(schema_row)
     label_col = DRAFT_FIELDS.index("label")
     column_key_col = DRAFT_FIELDS.index("column_key")
     derived_index = next(
@@ -61,13 +62,13 @@ def test_data_definition_controller_exposes_draft_rows_and_reset_state():
     assert not state.draft_changed
     assert not state.can_save_schema
 
-    edited = controller.edit_cell(schema_row, "label", "Cooling Capacity")
+    edited = controller.edit_cell(schema_row, "label", "Indoor Unit")
 
     assert edited.status == "draft_changed"
     assert edited.draft_changed
     assert edited.can_save_schema
     assert any(row[2] == "label" for row in edited.draft_change_rows)
-    assert edited.draft_rows[0][label_col].changed
+    assert edited.draft_rows[schema_index][label_col].changed
 
     reset = controller.reset_draft()
 
@@ -101,29 +102,25 @@ def test_data_definition_panel_builds_editable_draft_workflow_and_reset():
     try:
         app.processEvents()
         label_col = DRAFT_FIELDS.index("label")
+        row_index = panel._state.draft_row_identities.index(("schema_row", "idu"))
 
         assert panel.draft_table.editTriggers() != QAbstractItemView.NoEditTriggers
         assert panel.draft_table.model().flags(
             panel.draft_table.model().index(0, label_col)
         ) & Qt.ItemIsEditable
         assert panel.draft_table.model().setData(
-            panel.draft_table.model().index(0, label_col),
-            "Cooling Capacity",
+            panel.draft_table.model().index(row_index, label_col),
+            "Indoor Unit",
             Qt.EditRole,
         )
         app.processEvents()
-        assert panel.draft_table.model().is_changed_cell(0, label_col)
+        assert panel.draft_table.model().is_changed_cell(row_index, label_col)
         assert panel.save_plan_table.model().cell_value(0, 1) == "planned"
 
-        reset_buttons = [
-            child for child in panel.findChildren(QPushButton)
-            if child.accessibleName() == "Reset Data Definition Draft"
-        ]
-        assert len(reset_buttons) == 1
-        reset_buttons[0].click()
+        panel.reset_action.trigger()
         app.processEvents()
 
-        assert not panel.draft_table.model().is_changed_cell(0, label_col)
+        assert not panel.draft_table.model().is_changed_cell(row_index, label_col)
         assert panel.save_plan_table.model().cell_value(0, 1) == "no_op"
     finally:
         panel.close()

@@ -512,7 +512,7 @@ entries:
 
   - type: decision
     topic: Arc 15 Data Definition foundation owner state
-    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides read-only/report and in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv; label and notes remain writable because they are outside that fingerprint. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The Phase 1 DEV alignment validator pairs selector metadata with the unchanged numeric/one-hot training frame and resolves schema-backed values from the repository runtime-equivalent mapping fixture, including conditional F&T/PFC identities; invalid options/combinations and mismatched training values fail fast. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Mock readiness does not establish model quality or production readiness.
+    content: Data Definition is the Train/Admin schema and feature-definition owner. It projects config/predict/schema.csv plus explicit derived policy, provides in-memory draft edit/save-preview UI, and saves schema-backed edits only through the guarded schema writer to an explicit schema path. Phase 3 Slice 3A adds a Qt-free/presentation-only inventory owner over controller draft-cell metadata: canonical identity/order, search/filter/selection, focused detail, and explicit empty/error states. Its audit corrections keep current save-plan capability separate from last Save evidence and action enablement, make recoverable write errors retryable, resolve filters before final projection, and carry optional row/field/source blocker context into selection-relative detail and impact projection without dropping row evidence when selection is unavailable. Candidate validation exposes backward-compatible structured context beside its existing messages, and blocker deduplication uses code, target, row, field, and normalized message only across save-plan/result sources so distinct same-code issues survive. ML compatibility attribution groups all changed fields by definition identity, applies each complete definition bundle to the baseline projection, and then retains only fields with singleton fingerprint impact or leave-one-out compound necessity; unrelated metadata is omitted, canonical change order is preserved, and global fallback is used only when no changed definition explains the mismatch. Raw editing and all reports remain progressively available; mutation, validation, compatibility, and persistence rules are not copied into widgets. Until a features.csv projection writer exists, a draft that changes the active ML compatibility fingerprint is blocked from saving schema.csv. The ML fingerprint remains limited to model compatibility fields; separate full candidate parity protects Feature Catalog source/mapping/label/ui-key contracts, so projected label changes can be parity-blocked while notes and projection-neutral metadata remain schema-writable. Data Mapping remains the mapping.json value owner with dynamic requirements projected from Data Definition. The Phase 1 DEV alignment validator pairs selector metadata with the unchanged numeric/one-hot training frame and resolves schema-backed values from the repository runtime-equivalent mapping fixture, including conditional F&T/PFC identities; invalid options/combinations and mismatched training values fail fast. The separate Feature Catalog UI is retired; core ML catalog compatibility remains. Mock readiness does not establish model quality or production readiness.
     keywords:
       - predictor_v3
       - Arc 15
@@ -522,8 +522,58 @@ entries:
       - Data Mapping
       - readiness
       - schema writer
+      - inventory-first
+      - Slice 3A
     assertionStatus: verified
-    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1d.md
+    source: result_reports/legacy/summaries/725_summary-arc15-data-definition-foundation-closeout.md; result_reports/records/2026-07/2026-07-11-clean-hex-mvc-ui-refactor.md; result_reports/records/2026-07/2026-07-14-train-admin-mapping-foundation-slice-1d.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-data-definition-inventory.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-blocker-attribution-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-compound-ml-attribution-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3a-ml-field-relevance-correction.md
+
+  - type: decision
+    topic: Train/Admin Phase 3 controlled workflow state
+    content: Slice 3B adds Qt-free atomic commands for manual Predict, supported mapping-backed Predict, standalone mapping-attribute, and controlled metadata Edit intent. Stable normalized identity and monotonic schema order are allocated from the current draft; only command-authorized new rows bypass the raw row guard, while identity/order/role/derived-policy operations remain rejected without mutation. The 3B+3C audit correction validates complete role/editor/type/source/readonly/mapping/model-input/one-hot shapes, limits Edit dialog choices through the same Qt-free contract, and makes supported source transitions clean source-owned metadata atomically. Controlled Add preserves an immutable initial-row snapshot so later ML activation is attributed to the added identity and actual changed fields while projection-neutral Add stays writable; Reset, Refresh, and successful reload clear provenance. Slice 3C adds a separate UI-facing impact projection over existing draft changes, save plan, selection-relative blockers, readiness, mapping requirements, and schema-writer results. Authoritative blockers survive no-match/no-selection states with row identity and field intact, then reclassify when selection returns; row blockers render their stable definition key when selection is unavailable. ML blocker deduplication revalidates a reference candidate with only attributed ML changes reverted, so same-effect parity duplicates are suppressed while independent source/mapping/label/UI parity evidence remains visible from the start. Save enablement remains controller-owned, and the schema writer validates temporary candidates against schema shape, full Feature Catalog parity, and one-hot relationships before backup/atomic replace. Slice 3D adds a Qt-free saved-requirement navigation/result contract and coverage projection. Data Definition retains only the latest successful affected-requirement handoff; Train shell owns tab orchestration; Data Mapping refreshes canonical saved requirements over the current draft/baseline/undo history, resolves groups through the existing mapping owner, and focuses stable row-key/occurrence plus attribute targets. Its audit corrections record Qt-free base-versus-requirement provenance, rebuild visibility/required/type/note metadata from the latest saved set across draft/baseline/undo snapshots, preserve removed concrete attributes as hidden row backing values until explicit mapping Save, and aggregate every compatible definition sharing one resolved group/attribute into a single effective contract with required intent computed by `any`. Type or trigger/rule conflicts block both Data Definition candidates and defensive Data Mapping validation without first-wins overlay or normal coverage. Untouched dynamic blanks remain absent from row payload, while runtime/import/user-owned values and explicit blank edits retain concrete key presence; no-op exchange import preserves that lazy absence. Required missing remains Save-blocking, optional missing remains coverage-incomplete but non-blocking, and invalid values share canonical value validation. A valid issue row index identifies one exact current occurrence; index-less duplicate keys require explicit occurrence, and both coverage and issue navigation re-resolve the same stable group/attribute/row-key/occurrence without stale-index clamping. Navigation never Reloads, discards, or saves the mapping draft. Slice 3E keeps those contracts intact while separating preferred versus filtered selection, adding standard keyboard/focus recovery, accessible controlled dialogs and state/action reasons, compact Definition/Mapping reflow, and exact incomplete versus ready handoff focus. Slice 3F replaces the default horizontal Inventory/detail diagnostics composition with a vertical task flow: state/action hierarchy, filters, full-width six-column Inventory, Qt-free selected-definition summary, conditional concise impact or saved next step, and collapsed Advanced Diagnostics. Unified Add orchestrates only existing manual, mapping-backed, and mapping-attribute commands; controller action state remains authoritative, technical and blocker evidence stays available on disclosure, and saved-only Mapping handoff authority is unchanged. Bounded Slice 3F native evidence uses visible cocoa windows, synthetic temporary providers, programmatic actions, and 2x QWidget render-target captures; macOS was locked during the Computer Use attempt, the known AppKit table accessibility path was not used, and physical interaction remains unclaimed. Projection-neutral schema additions never write features.csv or mapping.json; ML fingerprint changes remain staged but schema-save blocked. Predict live reload remains excluded. PR #16 stays Draft/Open, and the next action is the Slice 3F audit before the Phase 3 final audit, merge, or Phase 4.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Data Definition
+      - Phase 3
+      - Slice 3B
+      - Slice 3C
+      - Slice 3D
+      - Data Mapping handoff
+      - coverage
+      - controlled command
+      - impact preview
+      - guarded save
+      - Slice 3D audit hold
+      - requirement overlay reconciliation
+      - duplicate row occurrence
+      - shared mapping cell
+      - projection-only blank
+      - Slice 3E
+      - keyboard and focus
+      - accessibility
+      - native macOS
+      - Slice 3F
+      - task-oriented workspace
+      - Phase 3 final audit
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3b-controlled-definition-commands.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3c-impact-and-guarded-save.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3bc-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3bc-blocker-presentation-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-data-mapping-handoff-coverage.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3d-value-contract-audit-correction.md; result_reports/records/2026-07/2026-07-15-train-admin-phase3-slice3e-editing-native-polish.md; result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-task-oriented-definition-workspace.md
+  - type: decision
+    topic: Train/Admin Phase 3 Slice 3F table-first correction state
+    content: The active Slice 3F correction supersedes the prior Summary-led default composition. Definition Inventory is the primary vertical stretch owner with eight normal user-facing columns and six compact columns, bounded Interactive widths, no stretch-last policy, and no default horizontal scrollbar at 1280x820 or 900x640. Summary remains the authority for overlapping user-facing facts and is normalized with DataDefinitionDetailState rows into an immutable read-only Details projection rendered by QDialog.exec with one outer vertical scroll area; Edit remains a separate controlled modal. Clean state has no lower impact panel, while dirty, blocked, write-error, and saved-only Mapping handoff surfaces remain conditional. A single saved Mapping Requirement omits the selector and resolves its unique exact navigation request directly; multiple saved requirements retain deterministic explicit selection, and an empty handoff clears stale presentation state. The bounded safe Cocoa evidence has native_onscreen true, with affected capture 05 proving the single-requirement direct next step; no Computer Use, physical interaction, or known AppKit table accessibility path was used, and protected/runtime fixtures were unchanged. Slice 3F audit correction is complete; the next action is Slice 3F final re-audit before the deferred Phase 3 final audit, merge, or Phase 4.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 3
+      - Slice 3F
+      - table-first
+      - Definition Inventory
+      - Details modal
+      - QDialog.exec
+      - native correction evidence
+      - native onscreen evidence
+      - Phase 3 final audit
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-table-first-correction.md; docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md; docs/WORK_PLAN.md
 ```
 
 ## Known Gaps

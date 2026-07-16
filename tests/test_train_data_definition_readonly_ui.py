@@ -6,7 +6,7 @@ import inspect
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QPushButton
+from PySide6.QtWidgets import QApplication, QAbstractItemView
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
@@ -69,14 +69,10 @@ def test_data_definition_panel_builds_readonly_tables_and_refreshes():
             assert table.editTriggers() == QAbstractItemView.NoEditTriggers
             assert not (table.model().flags(table.model().index(0, 0)) & Qt.ItemIsEditable)
 
-        refresh_buttons = [
-            child for child in panel.findChildren(QPushButton)
-            if child.accessibleName() == "Refresh Data Definition"
-        ]
-        assert len(refresh_buttons) == 1
-        refresh_buttons[0].click()
+        assert panel.refresh_action.text() == "Refresh"
+        panel.refresh_action.trigger()
         app.processEvents()
-        assert "Data Definition report ready." in panel.status_label.text()
+        assert panel.status_label.text() == "No unsaved changes"
     finally:
         panel.close()
         panel.deleteLater()

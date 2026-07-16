@@ -170,3 +170,99 @@ def test_unsupported_mapping_attribute_type_fails_fast():
         assert "unsupported mapping attribute data type 'matrix'" in str(exc)
     else:
         raise AssertionError("unsupported mapping attribute type must fail")
+
+
+def test_latest_requirement_reconciliation_replaces_metadata_and_preserves_backing_value():
+    base = project_runtime_mapping_to_editor_draft(
+        {
+            "idu": {
+                "IDU-A": {"ID Volume": 1.25, "Fan Attribute": 2.5},
+                "IDU-B": {"ID Volume": 2.5},
+            },
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}},
+        }
+    )
+    required_number = _requirement("Fan Attribute", required=True, data_type="number")
+    optional_string = _requirement("Fan Attribute", required=False, data_type="string")
+
+    required = apply_mapping_requirements_to_editor_draft(base, (required_number,))
+    optional = apply_mapping_requirements_to_editor_draft(required, (optional_string,))
+    repeated = apply_mapping_requirements_to_editor_draft(optional, (optional_string,))
+    removed = apply_mapping_requirements_to_editor_draft(repeated, ())
+    restored = apply_mapping_requirements_to_editor_draft(removed, (required_number,))
+
+    optional_group = optional.group("idu")
+    assert optional_group.columns.count("Fan Attribute") == 1
+    assert "Fan Attribute" not in optional_group.required_columns
+    assert optional_group.column_data_types["Fan Attribute"] == "string"
+    assert "Required by Data Definition" not in optional_group.notes
+    assert optional_group.notes.count("Optional from Data Definition: Fan Attribute.") == 1
+    assert repeated == optional
+
+    removed_group = removed.group("idu")
+    assert removed_group.columns == base.group("idu").columns
+    assert "Fan Attribute" not in removed_group.column_data_types
+    assert "Data Definition" not in removed_group.notes
+    assert removed_group.rows[0].value_for("Fan Attribute") == 2.5
+    assert removed_group.rows[1].value_for("Fan Attribute") == ""
+    assert removed.group("refrigerant") == base.group("refrigerant")
+
+    restored_group = restored.group("idu")
+    assert restored_group.columns[-1] == "Fan Attribute"
+    assert restored_group.rows[0].value_for("Fan Attribute") == 2.5
+    assert restored_group.column_data_types["Fan Attribute"] == "number"
+    assert "Fan Attribute" in restored_group.required_columns
+
+
+def test_multiple_requirements_reconcile_in_latest_canonical_order():
+    base = project_runtime_mapping_to_editor_draft(
+        {
+            "idu": {
+                "IDU-A": {
+                    "Attribute A": "preserve-a",
+                    "Attribute B": "preserve-b",
+                }
+            },
+            "ref_type": {"R32": {}},
+            "exp_type": {"EEV": {}},
+        }
+    )
+    initial = apply_mapping_requirements_to_editor_draft(
+        base,
+        (
+            _requirement("Attribute A", required=True),
+            _requirement("Attribute B", required=False),
+        ),
+    )
+
+    reconciled = apply_mapping_requirements_to_editor_draft(
+        initial,
+        (
+            _requirement("Attribute B", required=True, data_type="boolean"),
+            _requirement("Attribute C", required=False, data_type="string"),
+        ),
+    )
+
+    group = reconciled.group("idu")
+    assert group.columns == (*base.group("idu").columns, "Attribute B", "Attribute C")
+    assert group.required_columns == ("Attribute B",)
+    assert group.column_data_types == {"Attribute B": "boolean", "Attribute C": "string"}
+    assert group.rows[0].value_for("Attribute A") == "preserve-a"
+    assert group.rows[0].value_for("Attribute B") == "preserve-b"
+    assert group.rows[0].value_for("Attribute C") == ""
+    assert "Attribute A" not in group.notes
+    assert group.notes.count("Attribute B") == 1
+    assert group.notes.count("Attribute C") == 1
+
+
+def _requirement(attribute, *, required, data_type="string"):  # noqa: ANN001, ANN201
+    return MappingRequirement(
+        column_key=attribute.lower().replace(" ", "_"),
+        ml_name="",
+        mapping_entity="idu",
+        mapping_attribute=attribute,
+        trigger_column="idu",
+        data_type=data_type,
+        required=required,
+    )

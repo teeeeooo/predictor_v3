@@ -133,6 +133,20 @@ def extract_mapping_requirements(
     return tuple(requirements)
 
 
+def extract_mapping_requirements_from_draft(
+    draft: DataDefinitionDraft,
+) -> tuple[MappingRequirement, ...]:
+    """Project current active draft requirements without reading mapping values."""
+    rows = tuple(
+        _definition_row(_schema_row_from_draft(row, line_number=index))
+        for index, row in enumerate(
+            (item for item in draft.rows if item.source_kind == "schema_row" and item.active),
+            start=2,
+        )
+    )
+    return extract_mapping_requirements(rows)
+
+
 def _project_rows_for_role(
     role: str,
     rows: tuple[PredictSchemaV2Row, ...],

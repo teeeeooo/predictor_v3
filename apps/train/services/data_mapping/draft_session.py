@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from core.mapping.editor_model import MappingEditorDraft
 
 
@@ -30,6 +32,8 @@ class DataMappingDraftSession:
         self,
         draft: MappingEditorDraft,
         baseline: MappingEditorDraft | None = None,
+        *,
+        history_projector: Callable[[MappingEditorDraft], MappingEditorDraft] | None = None,
     ) -> MappingEditorDraft:
         """Replace the current projection without creating an undo command."""
         self._draft = draft
@@ -37,6 +41,10 @@ class DataMappingDraftSession:
             self._baseline = baseline or draft
         elif baseline is not None:
             self._baseline = baseline
+        if history_projector is not None:
+            self._undo_history = [
+                history_projector(item) for item in self._undo_history
+            ]
         return draft
 
     def reset(self, draft: MappingEditorDraft) -> MappingEditorDraft:

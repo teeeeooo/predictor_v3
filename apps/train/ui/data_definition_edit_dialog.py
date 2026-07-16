@@ -1,0 +1,359 @@
+"""Controlled metadata Edit dialog for Data Definition."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+from PySide6.QtCore import QSignalBlocker
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
+from apps.common.ui import style
+from apps.train.ui.data_definition.dialog_support import (
+    add_labeled_row,
+    configure_validation_summary,
+    schedule_initial_focus,
+    show_validation_summary,
+)
+from core.data_definition import (
+    EditDefinitionIntent,
+    MAPPING_LOOKUP_TEMPLATES,
+    mapping_template,
+    mapping_template_for_relation,
+)
+from core.data_definition.command_contract import (
+    controlled_data_type_options,
+    controlled_editor_options,
+    controlled_value_source_options,
+)
+
+EditApplyCallback = Callable[[EditDefinitionIntent], tuple[bool, str]]
+
+
+class DataDefinitionEditDialog(QDialog):
+    """Edit schema metadata without exposing identity, order, or role."""
+
+    def __init__(
+        self,
+        identity: tuple[str, str],
+        values: dict[str, str],
+        on_apply: EditApplyCallback,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._identity = identity
+        self._initial = dict(values)
+        self._role = self._initial.get("role", "")
+        self._has_mapping_metadata = any(
+            self._initial.get(field_name, "")
+            for field_name in (
+                "mapping_entity",
+                "mapping_attribute",
+                "trigger_column",
+                "rule_id",
+            )
+        )
+        self._on_apply = on_apply
+        self.setWindowTitle("Edit Definition")
+        self.setAccessibleName("Edit Data Definition")
+        self.setModal(True)
+        self._build()
+        self._prefill()
+        self._update_contract_fields()
+        self.setMinimumSize(560, 440)
+        schedule_initial_focus(self.label_input)
+
+    def intent(self) -> EditDefinitionIntent:
+        """Return every controlled form value as one atomic Edit command."""
+        source = str(self.value_source_combo.currentData())
+        template = mapping_template(str(self.mapping_combo.currentData()))
+        updates: list[tuple[str, object]] = [
+            ("label", self.label_input.text()),
+            ("editor", self.editor_combo.currentData()),
+            ("data_type", self.data_type_combo.currentData()),
+            ("visible", self.visible_checkbox.isChecked()),
+            ("required", self.required_checkbox.isChecked()),
+            ("readonly", self.readonly_checkbox.isChecked()),
+            ("value_source", source),
+            ("model_input_enabled", self.model_input_checkbox.isChecked()),
+            ("ml_name", self.ml_name_input.text()),
+            ("one_hot_group", self.one_hot_input.text()),
+            ("active", self.active_checkbox.isChecked()),
+            ("notes", self.notes_input.text()),
+        ]
+        if source == "mapping_lookup" and template is not None:
+            updates.extend((
+                ("mapping_entity", template.mapping_entity),
+                ("mapping_attribute", self.attribute_input.text()),
+                ("trigger_column", template.trigger_column),
+                ("rule_id", template.rule_id),
+            ))
+        elif self._initial.get("value_source") == "mapping_lookup":
+            updates.extend((
+                ("mapping_entity", ""),
+                ("mapping_attribute", ""),
+                ("trigger_column", ""),
+                ("rule_id", ""),
+            ))
+        return EditDefinitionIntent(self._identity, tuple(updates))
+
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(*([style.spacing("space.outer")] * 4))
+        layout.setSpacing(style.spacing("space.sm"))
+        heading = QLabel("Edit Definition Metadata")
+        heading.setObjectName("PanelTitle")
+        heading.setFont(style.qfont("font.window_title"))
+        layout.addWidget(heading)
+        identity = QLabel(f"Internal key: {self._identity[1]}")
+        identity.setAccessibleName("Read-only definition identity")
+        layout.addWidget(identity)
+
+        form_container = QWidget(self)
+        form = QFormLayout(form_container)
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(style.spacing("space.sm"))
+        self.label_input = QLineEdit()
+        self.label_input.setAccessibleName("Definition label")
+        source = self._initial.get("value_source", "")
+        editor = self._initial.get("editor", "")
+        self.editor_combo = _combo(
+            "Definition editor",
+            controlled_editor_options(
+                self._role,
+                source,
+                editor,
+                self._has_mapping_metadata,
+            ),
+        )
+        self.data_type_combo = _combo(
+            "Definition data type",
+            controlled_data_type_options(self._role, source, editor),
+        )
+        self.value_source_combo = _combo(
+            "Definition value source",
+            controlled_value_source_options(self._role, source),
+        )
+        self.value_source_combo.currentIndexChanged.connect(self._update_contract_fields)
+        self.editor_combo.currentIndexChanged.connect(self._update_contract_fields)
+        self.visible_checkbox = QCheckBox("Visible in Predict")
+        self.visible_checkbox.setAccessibleName("Predict visible")
+        self.required_checkbox = QCheckBox("Required")
+        self.required_checkbox.setAccessibleName("Definition required")
+        self.readonly_checkbox = QCheckBox("Read only")
+        self.readonly_checkbox.setAccessibleName("Definition read only")
+        self.model_input_checkbox = QCheckBox("Model input enabled")
+        self.model_input_checkbox.setAccessibleName("Model input")
+        self.active_checkbox = QCheckBox("Active")
+        self.active_checkbox.setAccessibleName("Definition active")
+        add_labeled_row(form, "Label", self.label_input)
+        add_labeled_row(form, "Editor", self.editor_combo)
+        add_labeled_row(form, "Data type", self.data_type_combo)
+        add_labeled_row(form, "Value source", self.value_source_combo)
+        add_labeled_row(form, "Visibility", self.visible_checkbox)
+        add_labeled_row(form, "Requirement", self.required_checkbox)
+        add_labeled_row(form, "Editability", self.readonly_checkbox)
+
+        self.mapping_combo = QComboBox()
+        self.mapping_combo.setAccessibleName("Mapping group and lookup template")
+        for template in MAPPING_LOOKUP_TEMPLATES:
+            self.mapping_combo.addItem(template.label, template.key)
+        self.attribute_input = QLineEdit()
+        self.attribute_input.setAccessibleName("Mapping attribute")
+        self.mapping_label = QLabel("Mapping group")
+        self.mapping_label.setBuddy(self.mapping_combo)
+        self.attribute_label = QLabel("Mapping attribute")
+        self.attribute_label.setBuddy(self.attribute_input)
+        form.addRow(self.mapping_label, self.mapping_combo)
+        form.addRow(self.attribute_label, self.attribute_input)
+        self.ml_name_input = QLineEdit()
+        self.ml_name_input.setAccessibleName("ML name")
+        self.one_hot_input = QLineEdit()
+        self.one_hot_input.setAccessibleName("One-hot group")
+        self.notes_input = QLineEdit()
+        self.notes_input.setAccessibleName("Definition notes")
+        add_labeled_row(form, "Model input", self.model_input_checkbox)
+        add_labeled_row(form, "ML name", self.ml_name_input)
+        add_labeled_row(form, "One-hot group", self.one_hot_input)
+        add_labeled_row(form, "Lifecycle", self.active_checkbox)
+        add_labeled_row(form, "Notes", self.notes_input)
+        form_scroll = QScrollArea(self)
+        form_scroll.setAccessibleName("Edit Definition fields")
+        form_scroll.setWidgetResizable(True)
+        form_scroll.setFrameShape(QScrollArea.NoFrame)
+        form_scroll.setWidget(form_container)
+        layout.addWidget(form_scroll, 1)
+
+        self.error_label = QLabel()
+        configure_validation_summary(
+            self.error_label,
+            "Edit Definition validation summary",
+        )
+        layout.addWidget(self.error_label)
+        actions = QHBoxLayout()
+        actions.addStretch(1)
+        cancel = QPushButton("Cancel")
+        cancel.setAccessibleName("Cancel Edit Definition")
+        cancel.clicked.connect(self.reject)
+        self.apply_button = QPushButton("Apply")
+        self.apply_button.setAccessibleName("Apply Edit Definition to Draft")
+        self.apply_button.setDefault(True)
+        self.apply_button.clicked.connect(self._apply)
+        actions.addWidget(cancel)
+        actions.addWidget(self.apply_button)
+        layout.addLayout(actions)
+
+        order = (
+            self.label_input,
+            self.editor_combo,
+            self.data_type_combo,
+            self.value_source_combo,
+            self.visible_checkbox,
+            self.required_checkbox,
+            self.mapping_combo,
+            self.attribute_input,
+            self.model_input_checkbox,
+            self.ml_name_input,
+            self.one_hot_input,
+            self.active_checkbox,
+            self.notes_input,
+            cancel,
+            self.apply_button,
+        )
+        for current, following in zip(order, order[1:]):
+            self.setTabOrder(current, following)
+
+    def _prefill(self) -> None:
+        self.label_input.setText(self._initial.get("label", ""))
+        _select(self.editor_combo, self._initial.get("editor", ""))
+        _select(self.data_type_combo, self._initial.get("data_type", ""))
+        _select(self.value_source_combo, self._initial.get("value_source", ""))
+        for field, checkbox in (
+            ("visible", self.visible_checkbox),
+            ("required", self.required_checkbox),
+            ("readonly", self.readonly_checkbox),
+            ("model_input_enabled", self.model_input_checkbox),
+            ("active", self.active_checkbox),
+        ):
+            checkbox.setChecked(self._initial.get(field, "false").casefold() == "true")
+        relation = mapping_template_for_relation(
+            self._initial.get("mapping_entity", ""),
+            self._initial.get("trigger_column", ""),
+            self._initial.get("rule_id", ""),
+        )
+        if relation is not None:
+            _select(self.mapping_combo, relation.key)
+        self.attribute_input.setText(self._initial.get("mapping_attribute", ""))
+        self.ml_name_input.setText(self._initial.get("ml_name", ""))
+        self.one_hot_input.setText(self._initial.get("one_hot_group", ""))
+        self.notes_input.setText(self._initial.get("notes", ""))
+
+    def _update_contract_fields(self) -> None:
+        source = str(self.value_source_combo.currentData() or "")
+        editor = str(self.editor_combo.currentData() or "")
+        hidden_mapping_focus = self.focusWidget() in {
+            self.mapping_combo,
+            self.attribute_input,
+        }
+        editor_options = controlled_editor_options(
+            self._role,
+            source,
+            self._initial.get("editor", ""),
+            self._has_mapping_metadata and source == self._initial.get("value_source"),
+        )
+        _replace_options(self.editor_combo, editor_options, editor)
+        editor = str(self.editor_combo.currentData() or "")
+        _replace_options(
+            self.data_type_combo,
+            controlled_data_type_options(self._role, source, editor),
+            str(self.data_type_combo.currentData() or ""),
+        )
+
+        visible = source == "mapping_lookup"
+        for widget in (
+            self.mapping_label,
+            self.mapping_combo,
+            self.attribute_label,
+            self.attribute_input,
+        ):
+            widget.setVisible(visible)
+        if hidden_mapping_focus and not visible:
+            self.model_input_checkbox.setFocus()
+
+        input_role = self._role == "input"
+        self.readonly_checkbox.setChecked(not input_role)
+        self.readonly_checkbox.setEnabled(False)
+        if self._role in {"helper", "one_hot_feature"}:
+            self.visible_checkbox.setChecked(False)
+            self.visible_checkbox.setEnabled(False)
+
+        fixed_model_input = {
+            "helper": False,
+            "result": False,
+            "status": False,
+            "one_hot_feature": True,
+        }
+        if input_role and source in {"one_hot", "rule_options"}:
+            fixed_model_input["input"] = source == "one_hot"
+        if self._role in fixed_model_input:
+            self.model_input_checkbox.setChecked(fixed_model_input[self._role])
+            self.model_input_checkbox.setEnabled(False)
+        else:
+            self.model_input_checkbox.setEnabled(True)
+
+        direct_ml_name = (
+            self._role == "auto"
+            or (input_role and source == "manual")
+            or (self._role == "result" and source == "result")
+            or self._role == "one_hot_feature"
+        )
+        self.ml_name_input.setEnabled(direct_ml_name)
+        self.one_hot_input.setEnabled(
+            self._role == "one_hot_feature" or (input_role and source == "one_hot")
+        )
+
+    def _apply(self) -> None:
+        accepted, message = self._on_apply(self.intent())
+        self.error_label.setText("" if accepted else message)
+        if accepted:
+            self.accept()
+        else:
+            show_validation_summary(self.error_label, message)
+
+
+def _combo(accessible_name: str, values: tuple[str, ...]) -> QComboBox:
+    combo = QComboBox()
+    combo.setAccessibleName(accessible_name)
+    for value in sorted(values):
+        combo.addItem(value.replace("_", " ").title(), value)
+    return combo
+
+
+def _select(combo: QComboBox, value: str) -> None:
+    index = combo.findData(value)
+    if index >= 0:
+        combo.setCurrentIndex(index)
+
+
+def _replace_options(
+    combo: QComboBox,
+    values: tuple[str, ...],
+    selected: str,
+) -> None:
+    with QSignalBlocker(combo):
+        combo.clear()
+        for value in values:
+            combo.addItem(value.replace("_", " ").title(), value)
+        index = combo.findData(selected)
+        combo.setCurrentIndex(index if index >= 0 else 0)

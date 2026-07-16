@@ -34,9 +34,30 @@ from core.data_definition.schema_writer import (
     schema_csv_rows_from_draft,
 )
 from core.data_definition.validation import build_data_definition_report
+from core.data_definition.projection import extract_mapping_requirements_from_draft
+from core.data_definition.command_contract import (
+    MAPPING_LOOKUP_TEMPLATES,
+    MappingLookupTemplate,
+    mapping_template,
+    mapping_template_for_relation,
+    normalize_column_key,
+)
+from core.data_definition.command_types import (
+    AddDefinitionIntent,
+    DataDefinitionCommandIssue,
+    DataDefinitionCommandResult,
+    EditDefinitionIntent,
+)
+from core.data_definition.commands import (
+    apply_add_definition_command,
+    apply_edit_definition_command,
+)
 
 __all__ = [
     "DataDefinitionDraft",
+    "AddDefinitionIntent",
+    "DataDefinitionCommandIssue",
+    "DataDefinitionCommandResult",
     "DataDefinitionDraftChange",
     "DataDefinitionDraftIssue",
     "DataDefinitionDraftRow",
@@ -51,6 +72,9 @@ __all__ = [
     "DerivedFeatureDefinition",
     "DataDefinitionWriteTarget",
     "FieldEditability",
+    "EditDefinitionIntent",
+    "MAPPING_LOOKUP_TEMPLATES",
+    "MappingLookupTemplate",
     "MappingRequirement",
     "OneHotRelationship",
     "ProjectedFeatureRow",
@@ -58,7 +82,13 @@ __all__ = [
     "build_data_definition_draft",
     "build_data_definition_report",
     "build_data_definition_save_plan",
+    "apply_add_definition_command",
+    "apply_edit_definition_command",
     "field_editability",
+    "extract_mapping_requirements_from_draft",
+    "mapping_template",
+    "mapping_template_for_relation",
+    "normalize_column_key",
     "save_data_definition_schema_draft",
     "schema_csv_rows_from_draft",
 ]

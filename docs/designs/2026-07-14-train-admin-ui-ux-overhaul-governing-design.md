@@ -1,6 +1,6 @@
 # Train/Admin UI/UX Overhaul — Governing Design
 
-Status: proposed active governing design  
+Status: active governing design  
 Date: 2026-07-14
 
 ## 1. Purpose
@@ -40,18 +40,20 @@ CSV exchange remains part of Data Mapping rather than becoming a fifth tab.
 
 ## 3. Current Problem
 
-The existing surfaces expose internal state and diagnostic structures more
+The remaining surfaces expose internal state and diagnostic structures more
 prominently than the user's actual workflow.
 
-- Data Definition behaves like a schema/projection report rather than a practical
+- Phase 2 completed the Data Mapping value-editing, persistence, and exchange
+  workflow for code and repository automation; its deferred native acceptance is
+  tracked separately.
+- Data Definition is already editable, but its default screen is an eleven-panel
+  report stack with a raw twenty-field draft grid rather than a practical
   definition manager.
-- Data Mapping cannot be properly designed or validated when `mapping.json` is
-  absent.
-- Some mapping projection and persistence paths still assume fixed attributes.
-- Save, Reload, dirty state, validation, restart impact, retraining impact, and
-  runtime readiness are fragmented or too implicit.
-- Current tables do not yet provide spreadsheet-quality interaction for frequent
-  data work.
+- Data Definition Save, dirty state, compatibility blockers, restart impact,
+  retraining impact, and runtime readiness are available through existing owners
+  but remain fragmented in the presentation.
+- Controlled definition creation and a public Data Definition-to-Data Mapping
+  handoff do not yet exist.
 - Repository-safe validation must rely on fixtures and mock data while real
   company data remains external.
 
@@ -62,10 +64,10 @@ information architecture, state communication, recovery, and editing efficiency.
 
 | Area | Owner responsibility |
 | --- | --- |
-| Data Definition | Defines columns, features, mapping requirements, mapping attributes, projection intent, and readiness impact. |
+| Data Definition | Defines columns, mapping requirements, mapping attributes, projection intent, and readiness impact within approved compatibility boundaries. |
 | Data Mapping | Edits concrete mapping rows and values for already-defined mapping structures. |
-| `config/predict/schema.csv` | Primary Predict/Data Definition source under the active staged owner-switch design. |
-| `config/ml/features.csv` | ML compatibility/projection contract under the active Arc 15 staging. |
+| `config/predict/schema.csv` | Canonical Predict/Data Definition schema source. |
+| `config/ml/features.csv` | Legacy ML compatibility/parity surface; canonical default writes are blocked. |
 | `data/mapping.json` | Runtime mapping value source of truth. |
 | Mapping exchange files | Human-readable exchange and backup representation of the Data Mapping draft. |
 | Legacy wide CSV fixture | One-time bootstrap/migration evidence only. |
@@ -227,11 +229,14 @@ and cross-fixture consistency.
 Production-usable value editing, spreadsheet behavior, safe persistence, and
 mapping exchange export/import are complete for code and repository automation.
 Native table interaction and exchange visual acceptance remain explicitly
-deferred; Phase 3 starts only from the merged Phase 2 `main` state.
+deferred and do not reopen Phase 2 code scope.
 
-### Phase 3 — Data Definition UX Overhaul
-Intent-driven definition editing, mapping attribute creation, impact preview,
-and controlled compatibility boundaries.
+### Phase 3 — Data Definition UX Overhaul (active, audited)
+The merged-main current state has been audited. Work begins with Slice 3A's
+inventory-first information architecture while reusing the existing draft,
+edit-policy, projection, validation, save-plan, schema-writer, and readiness
+owners. Controlled Add/Edit commands, impact workflow, Data Mapping handoff, and
+native polish follow in later slices.
 
 ### Phase 4 — Train/Model and Shell UX Overhaul
 Training readiness/execution/results, common shell state, and shared visual

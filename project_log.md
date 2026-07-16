@@ -29,6 +29,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-16 — Train/Admin Data Definition UX Phase 3 closeout
+
+### Decision
+
+- Approve Phase 3 Slices 3A–3F and all audit corrections as one coherent Data
+  Definition UX milestone; PR #16 is the user merge target.
+- Close the table-first Definition Inventory, controlled Add/Edit, guarded
+  schema-only Save, impact/blocker workflow, saved-only Data Mapping handoff and
+  coverage, keyboard/accessibility polish, and bounded native evidence while
+  preserving their established owners.
+- Keep `config/predict/schema.csv` as the canonical Data Definition write target
+  and `config/ml/features.csv` as compatibility/parity-only. Projection-changing
+  ML edits remain intentionally blocked without an approved projection writer.
+- Accept visible-Cocoa/programmatic native evidence without claiming physical
+  interaction; the known unsafe AppKit accessibility table-click path remains
+  unused. Deferred Phase 2 native interaction remains separate.
+- Keep production mapping completeness, training data, model quality, and
+  production readiness company-local. No production config, mapping data,
+  training data, protected fixture, or model artifact changed.
+- Mark PR #16 Ready for review after closeout CI succeeds. The user performs the
+  merge; Phase 4 starts only from confirmed merged `main` on a separate branch
+  and Draft PR after separate instruction.
+
 ## 2026-07-15 — Train/Admin Data Mapping UX Phase 2 closeout
 
 ### Decision

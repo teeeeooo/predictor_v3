@@ -78,10 +78,21 @@ class PredictSchemaCatalogV2:
     headers: tuple[str, ...] = REQUIRED_HEADERS
     path: Path | None = None
     load_errors: tuple[str, ...] = field(default_factory=tuple)
+    load_issues: tuple[PredictSchemaValidationIssue, ...] = field(default_factory=tuple)
 
     @property
     def active_rows(self) -> tuple[PredictSchemaV2Row, ...]:
         return tuple(row for row in self.rows if row.active)
+
+
+@dataclass(frozen=True)
+class PredictSchemaValidationIssue:
+    """One schema validation issue with optional row and field context."""
+
+    message: str
+    line_number: int | None = None
+    column_key: str = ""
+    field_name: str = ""
 
 
 def load_predict_schema_catalog_v2(
@@ -95,10 +106,12 @@ def load_predict_schema_catalog_v2(
             headers = tuple(reader.fieldnames or ())
             rows: list[PredictSchemaV2Row] = []
             load_errors: list[str] = []
+            load_issues: list[PredictSchemaValidationIssue] = []
             for line_number, raw in enumerate(reader, start=2):
-                row, errors = _row_from_csv(line_number, raw)
+                row, issues = _row_from_csv(line_number, raw)
                 rows.append(row)
-                load_errors.extend(errors)
+                load_errors.extend(issue.message for issue in issues)
+                load_issues.extend(issues)
     except FileNotFoundError as exc:
         raise FileNotFoundError(f"Predict schema v2 draft not found: {schema_path}") from exc
     return PredictSchemaCatalogV2(
@@ -106,63 +119,122 @@ def load_predict_schema_catalog_v2(
         headers=headers,
         path=schema_path,
         load_errors=tuple(load_errors),
+        load_issues=tuple(load_issues),
     )
 
 
 def validate_predict_schema_catalog_v2(catalog: PredictSchemaCatalogV2) -> list[str]:
     """Return validation errors for the read-only v2 draft."""
-    errors = list(catalog.load_errors)
+    return [issue.message for issue in validate_predict_schema_catalog_v2_issues(catalog)]
+
+
+def validate_predict_schema_catalog_v2_issues(
+    catalog: PredictSchemaCatalogV2,
+) -> tuple[PredictSchemaValidationIssue, ...]:
+    """Return validation issues with row/field context when it is available."""
+    issues = list(catalog.load_issues) or [
+        PredictSchemaValidationIssue(message) for message in catalog.load_errors
+    ]
     headers = set(catalog.headers)
     required_headers = set(REQUIRED_HEADERS)
     missing = sorted(required_headers - headers)
     unknown = sorted(headers - required_headers)
     if missing:
-        errors.append(f"missing required header(s): {', '.join(missing)}")
+        issues.append(PredictSchemaValidationIssue(
+            f"missing required header(s): {', '.join(missing)}"
+        ))
     if unknown:
-        errors.append(f"unknown header(s): {', '.join(unknown)}")
+        issues.append(PredictSchemaValidationIssue(
+            f"unknown header(s): {', '.join(unknown)}"
+        ))
 
     seen_keys: dict[str, int] = {}
     for row in catalog.rows:
         prefix = _row_prefix(row)
         if row.active:
             if not row.column_key:
-                errors.append(f"{prefix}: active row requires column_key")
+                issues.append(_validation_issue(
+                    row,
+                    "column_key",
+                    f"{prefix}: active row requires column_key",
+                ))
             elif row.column_key in seen_keys:
-                errors.append(
+                issues.append(_validation_issue(
+                    row,
+                    "column_key",
                     f"{prefix}: duplicate active column_key '{row.column_key}' "
-                    f"(first seen on line {seen_keys[row.column_key]})"
-                )
+                    f"(first seen on line {seen_keys[row.column_key]})",
+                ))
             else:
                 seen_keys[row.column_key] = row.line_number
         if row.role not in ALLOWED_ROLES:
-            errors.append(f"{prefix}: invalid role '{row.role}'")
+            issues.append(_validation_issue(
+                row, "role", f"{prefix}: invalid role '{row.role}'"
+            ))
         if row.editor not in ALLOWED_EDITORS:
-            errors.append(f"{prefix}: invalid editor '{row.editor}'")
+            issues.append(_validation_issue(
+                row, "editor", f"{prefix}: invalid editor '{row.editor}'"
+            ))
         if row.data_type not in ALLOWED_DATA_TYPES:
-            errors.append(f"{prefix}: invalid data_type '{row.data_type}'")
+            issues.append(_validation_issue(
+                row, "data_type", f"{prefix}: invalid data_type '{row.data_type}'"
+            ))
         if row.value_source not in ALLOWED_VALUE_SOURCES:
-            errors.append(f"{prefix}: invalid value_source '{row.value_source}'")
+            issues.append(_validation_issue(
+                row,
+                "value_source",
+                f"{prefix}: invalid value_source '{row.value_source}'",
+            ))
         if row.visible and not row.label:
-            errors.append(f"{prefix}: visible row requires label")
+            issues.append(_validation_issue(
+                row, "label", f"{prefix}: visible row requires label"
+            ))
         if row.value_source == "mapping_lookup" and not row.rule_id:
             if not row.mapping_entity:
-                errors.append(f"{prefix}: mapping_lookup requires mapping_entity")
+                issues.append(_validation_issue(
+                    row,
+                    "mapping_entity",
+                    f"{prefix}: mapping_lookup requires mapping_entity",
+                ))
             if not row.mapping_attribute:
-                errors.append(f"{prefix}: mapping_lookup requires mapping_attribute")
+                issues.append(_validation_issue(
+                    row,
+                    "mapping_attribute",
+                    f"{prefix}: mapping_lookup requires mapping_attribute",
+                ))
             if not row.trigger_column:
-                errors.append(f"{prefix}: mapping_lookup requires trigger_column")
+                issues.append(_validation_issue(
+                    row,
+                    "trigger_column",
+                    f"{prefix}: mapping_lookup requires trigger_column",
+                ))
         if row.model_input_enabled and not (row.ml_name or row.one_hot_group):
-            errors.append(
-                f"{prefix}: model_input_enabled requires ml_name or one_hot_group"
-            )
-    return errors
+            issues.append(_validation_issue(
+                row,
+                "model_input_enabled",
+                f"{prefix}: model_input_enabled requires ml_name or one_hot_group",
+            ))
+    return tuple(issues)
+
+
+def _validation_issue(
+    row: PredictSchemaV2Row,
+    field_name: str,
+    message: str,
+) -> PredictSchemaValidationIssue:
+    return PredictSchemaValidationIssue(
+        message=message,
+        line_number=row.line_number,
+        column_key=row.column_key,
+        field_name=field_name,
+    )
 
 
 def _row_from_csv(
     line_number: int,
     raw: dict[str, str | None],
-) -> tuple[PredictSchemaV2Row, tuple[str, ...]]:
-    errors: list[str] = []
+) -> tuple[PredictSchemaV2Row, tuple[PredictSchemaValidationIssue, ...]]:
+    errors: list[tuple[str, str]] = []
     order = _parse_int(raw.get("display_order"), line_number, "display_order", errors)
     row = PredictSchemaV2Row(
         line_number=line_number,
@@ -191,20 +263,26 @@ def _row_from_csv(
         active=_parse_bool(raw.get("active"), line_number, "active", errors),
         notes=_clean(raw.get("notes")),
     )
-    return row, tuple(errors)
+    return row, tuple(
+        PredictSchemaValidationIssue(message, line_number, row.column_key, field_name)
+        for field_name, message in errors
+    )
 
 
 def _parse_int(
     raw_value: str | None,
     line_number: int,
     field_name: str,
-    errors: list[str],
+    errors: list[tuple[str, str]],
 ) -> int:
     value = _clean(raw_value)
     try:
         return int(value)
     except ValueError:
-        errors.append(f"line {line_number}: {field_name} must be an integer")
+        errors.append((
+            field_name,
+            f"line {line_number}: {field_name} must be an integer",
+        ))
         return 0
 
 
@@ -212,14 +290,17 @@ def _parse_bool(
     raw_value: str | None,
     line_number: int,
     field_name: str,
-    errors: list[str],
+    errors: list[tuple[str, str]],
 ) -> bool:
     value = _clean(raw_value).lower()
     if value in _TRUE_VALUES:
         return True
     if value in _FALSE_VALUES:
         return False
-    errors.append(f"line {line_number}: {field_name} must be a boolean")
+    errors.append((
+        field_name,
+        f"line {line_number}: {field_name} must be a boolean",
+    ))
     return False
 
 

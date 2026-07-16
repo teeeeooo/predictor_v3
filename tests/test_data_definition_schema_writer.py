@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -10,20 +12,28 @@ import core.data_definition.schema_writer as schema_writer
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
+    build_data_definition_save_plan,
     build_data_definition_draft,
     build_data_definition_report,
     save_data_definition_schema_draft,
     schema_csv_rows_from_draft,
 )
 from core.data_definition.draft import replace_draft_row
+from core.mapping.paths import MAPPING_JSON_FILE
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
 
 
 def test_guarded_writer_writes_allowed_label_change_to_tmp_schema(tmp_path):
     before_hash = _file_hash(DEFAULT_SCHEMA_PATH)
     draft = build_data_definition_draft()
-    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
-    changed = replace_draft_row(draft, row.identity, label="Cooling Capacity")
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(
+        draft,
+        row.identity,
+        label="Indoor Unit",
+        notes="Controlled metadata edit",
+        required=True,
+    )
     destination = tmp_path / "schema.csv"
 
     result = save_data_definition_schema_draft(changed, destination)
@@ -32,8 +42,11 @@ def test_guarded_writer_writes_allowed_label_change_to_tmp_schema(tmp_path):
     assert result.status == "written"
     assert result.rows_written > 0
     loaded = load_predict_schema_catalog_v2(destination)
-    assert next(item for item in loaded.rows if item.column_key == "cooling_capa").label == (
-        "Cooling Capacity"
+    loaded_row = next(item for item in loaded.rows if item.column_key == "idu")
+    assert (loaded_row.label, loaded_row.notes, loaded_row.required) == (
+        "Indoor Unit",
+        "Controlled metadata edit",
+        True,
     )
     assert _file_hash(DEFAULT_SCHEMA_PATH) == before_hash
 
@@ -155,6 +168,109 @@ def test_candidate_validation_failure_does_not_overwrite_existing_destination(tm
     assert not (tmp_path / "backups").exists()
 
 
+def test_raw_cross_contract_shape_is_blocked_with_context_before_write(tmp_path):
+    destination = tmp_path / "schema.csv"
+    destination.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
+    original = destination.read_bytes()
+    features_path = Path("config/ml/features.csv")
+    mapping_path = Path(MAPPING_JSON_FILE)
+    protected_before = (
+        features_path.read_bytes(),
+        mapping_path.read_bytes() if mapping_path.is_file() else None,
+    )
+    draft = build_data_definition_draft(schema_path=destination)
+    changed = replace_draft_row(
+        draft,
+        ("schema_row", "id_volume"),
+        value_source="manual",
+    )
+
+    result = save_data_definition_schema_draft(changed, destination)
+
+    issue = next(
+        item for item in result.issues
+        if item.code == "candidate_role_value_source_unsupported"
+    )
+    assert result.status == "blocked" and not result.success
+    assert issue.row_identity == ("schema_row", "id_volume")
+    assert issue.field_name == "value_source"
+    assert destination.read_bytes() == original
+    assert not (tmp_path / "backups").exists()
+    assert not list(tmp_path.glob(".schema.csv.*.tmp"))
+    assert (
+        features_path.read_bytes(),
+        mapping_path.read_bytes() if mapping_path.is_file() else None,
+    ) == protected_before
+
+
+def test_writer_revalidates_full_cross_contract_candidate_before_backup(tmp_path):
+    destination = tmp_path / "schema.csv"
+    destination.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
+    original = destination.read_bytes()
+    draft = build_data_definition_draft(schema_path=destination)
+    changed = replace_draft_row(
+        draft,
+        ("schema_row", "id_volume"),
+        value_source="manual",
+    )
+    forged_plan = replace(
+        build_data_definition_save_plan(changed),
+        can_save_schema=True,
+        blocked_reasons=(),
+    )
+
+    result = save_data_definition_schema_draft(
+        changed,
+        destination,
+        save_plan=forged_plan,
+    )
+
+    issue = next(
+        item for item in result.issues
+        if item.code == "candidate_role_value_source_unsupported"
+    )
+    assert result.status == "blocked"
+    assert (issue.row_identity, issue.field_name) == (
+        ("schema_row", "id_volume"),
+        "value_source",
+    )
+    assert destination.read_bytes() == original
+    assert not (tmp_path / "backups").exists()
+    assert not list(tmp_path.glob(".schema.csv.*.tmp"))
+
+
+def test_writer_revalidates_full_feature_parity_before_backup(tmp_path):
+    destination = tmp_path / "schema.csv"
+    destination.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
+    original = destination.read_bytes()
+    draft = build_data_definition_draft(schema_path=destination)
+    changed = replace_draft_row(
+        draft,
+        ("schema_row", "cooling_capa"),
+        label="Cooling Capacity",
+    )
+    forged_plan = replace(
+        build_data_definition_save_plan(changed),
+        can_save_schema=True,
+        blocked_reasons=(),
+    )
+
+    result = save_data_definition_schema_draft(
+        changed,
+        destination,
+        save_plan=forged_plan,
+    )
+
+    issue = next(
+        item for item in result.issues
+        if item.code == "candidate_feature_projection_mismatch"
+        and item.row_identity == ("schema_row", "cooling_capa")
+    )
+    assert issue.field_name == "label"
+    assert destination.read_bytes() == original
+    assert not (tmp_path / "backups").exists()
+
+
 def test_ml_projection_guard_does_not_overwrite_existing_schema(tmp_path):
     destination = tmp_path / "schema.csv"
     destination.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
@@ -181,12 +297,12 @@ def test_ml_projection_guard_does_not_overwrite_existing_schema(tmp_path):
 def test_existing_destination_is_backed_up_and_replaced(tmp_path):
     initial = tmp_path / "initial_schema.csv"
     first_draft = build_data_definition_draft()
-    first_row = next(item for item in first_draft.rows if item.column_key == "cooling_capa")
+    first_row = next(item for item in first_draft.rows if item.column_key == "idu")
     first_changed = replace_draft_row(first_draft, first_row.identity, label="First Label")
     first_result = save_data_definition_schema_draft(first_changed, initial)
 
     second_draft = build_data_definition_draft(schema_path=initial)
-    second_row = next(item for item in second_draft.rows if item.column_key == "cooling_capa")
+    second_row = next(item for item in second_draft.rows if item.column_key == "idu")
     second_changed = replace_draft_row(second_draft, second_row.identity, label="Second Label")
     second_result = save_data_definition_schema_draft(second_changed, initial)
 
@@ -196,7 +312,7 @@ def test_existing_destination_is_backed_up_and_replaced(tmp_path):
     assert second_result.backup_path.exists()
     assert load_predict_schema_catalog_v2(second_result.backup_path).rows
     loaded = load_predict_schema_catalog_v2(initial)
-    assert next(item for item in loaded.rows if item.column_key == "cooling_capa").label == (
+    assert next(item for item in loaded.rows if item.column_key == "idu").label == (
         "Second Label"
     )
 
@@ -205,8 +321,8 @@ def test_write_failure_cleans_tmp_without_replacing_destination(tmp_path, monkey
     destination = tmp_path / "schema.csv"
     destination.write_text("original-content\n", encoding="utf-8")
     draft = build_data_definition_draft()
-    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
-    changed = replace_draft_row(draft, row.identity, label="Cooling Capacity")
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(draft, row.identity, label="Indoor Unit")
 
     def fail_replace(src, dst):
         raise OSError("replace failed")
@@ -232,8 +348,8 @@ def test_schema_rows_exclude_derived_policy_rows():
 
 def test_round_trip_report_runs_for_allowed_schema_edit(tmp_path):
     draft = build_data_definition_draft()
-    row = next(item for item in draft.rows if item.column_key == "cooling_capa")
-    changed = replace_draft_row(draft, row.identity, label="Cooling Capacity")
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    changed = replace_draft_row(draft, row.identity, label="Indoor Unit")
     destination = tmp_path / "schema.csv"
 
     result = save_data_definition_schema_draft(changed, destination)
@@ -241,7 +357,7 @@ def test_round_trip_report_runs_for_allowed_schema_edit(tmp_path):
 
     assert result.success
     assert report.projected_features
-    assert "feature_projection_mismatch" in {issue.code for issue in report.parity_issues}
+    assert not report.parity_issues
 
 
 def _issue_codes(result):
