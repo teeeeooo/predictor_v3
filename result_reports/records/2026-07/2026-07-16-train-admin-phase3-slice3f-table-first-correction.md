@@ -3,7 +3,7 @@ record:
   topic: train-admin-phase3-slice3f-table-first-correction
   tags: train-admin, data-definition, phase-3, slice-3f, table-first, details-modal, native-macos, correction
   memory_review: updated
-  memory_reason: The active Slice 3F composition is now table-first with on-demand Details; native rerun remains blocked by the locked desktop.
+  memory_reason: Slice 3F table-first correction and its single-requirement saved handoff now have complete automated and native evidence before final re-audit.
 change_gate:
   new_source: split
   hotspot_delta: accepted-for-slice
@@ -39,26 +39,40 @@ and Slice 3E interaction contracts.
   blocker, and saved-only Open Data Mapping surfaced conditionally. Clean state
   has no lower impact panel; dirty/blocked/write-error/saved handoff surfaces
   remain conditional.
+- A single saved Mapping Requirement now omits the selector and resolves its
+  unique saved request directly. Multiple saved requirements retain
+  deterministic explicit selection, while a no-handoff state clears selector,
+  request, and detail presentation state.
 - The production-path Summary Card widget was removed because its normalized
   projection is now consumed by Details.
 
 # Evidence And Verification
 
-- Full repository pytest suite passed: 2,204 tests passed and 2 expected xfails.
-- Focused table-first Details tests passed: 4 tests covering normal modal
-  snapshot/scroll/focus, Enter editable/read-only routing, Escape recovery, and
-  double-click controlled routing. The impacted Data Definition suite passed
-  56 tests before the additional Escape test; the final full suite includes it.
-- `python3 -m py_compile` passed for the changed Details, projection, header,
-  behavior, and native scenario modules. `git diff --check` passed.
+- The final authoritative repository run passed: 2,205 tests passed and 2
+  expected xfails in 63.45 seconds.
+- The focused and impacted Slice 3D handoff, coverage, navigation,
+  reconciliation, shared-cell contract, and Data Definition/Data Mapping UI
+  run passed. Its focused handoff workflow covers single, multiple,
+  invalid-selection, exact-navigation, and clean-state transitions.
+- `python3 -m py_compile` passed for the affected handoff presentation and
+  native scenario modules. `git diff --check` passed.
 - `tools/check_code_structure.py` completed with only the repository's existing
   unrelated soft warnings; no new hard finding was reported. Offscreen scenario
   layout assertions passed at 1280x820 and 900x640.
-- Native correction assets are reserved under
-  `docs/designs/assets/phase-3-slice-3f-table-first-correction/`. The safe Cocoa
-  runner was prepared, but Computer Use reported the Mac was locked and could
-  not unlock it. No native onscreen PNG or physical interaction is claimed.
-  The known AppKit Qt table accessibility click/hit-test path was not used.
+- The affected native capture `05-saved-mapping-next-step.png` was regenerated
+  from audit-correction commit `d969807b4239b8fef264d20e003133bf77d6028c`
+  at 1280x820 logical / 2560x1640 pixels. It shows one saved requirement,
+  concise direct guidance, no selector, the enabled Open Data Mapping action,
+  and the Inventory-first layout without unused selector space.
+- The native manifest reports a visible Cocoa window, `native_onscreen: true`,
+  visible QWidget render-target capture, programmatic Qt public actions, no
+  Computer Use or physical interaction, no known AppKit accessibility table
+  path, and no protected schema/runtime fixture changes. The other five
+  unaffected native images remain valid.
+- Commit lineage is explicit: logical table-first correction
+  `b9bd4e84a751147cab78021082e6c4edde6dbe4e`, native evidence follow-up
+  `260a712aacabd314940aa5404a9a195086340efe`, and final-audit correction
+  `d969807b4239b8fef264d20e003133bf77d6028c`.
 
 # Changed Files
 
@@ -75,35 +89,16 @@ and Slice 3E interaction contracts.
 - removed `apps/train/ui/data_definition/summary_card.py`
 - focused Data Definition tests and `tools/dev/native_acceptance/run_phase3f_native_scenarios.py`
 - active design, work plan, correction evidence README, memory, and report index
+- final-audit handoff presentation tests, affected native capture/manifest, and
+  authoritative record/Work Plan reconciliation
 
 # Known Risks
 
-- Native onscreen correction acceptance is still pending a manual desktop
-  unlock. The current evidence is automated/offscreen and a native scenario
-  contract, not a desktop-composited or physical-interaction claim.
+- Native evidence is programmatic visible-Cocoa evidence and does not claim
+  physical interaction; physical interaction is not required for this bounded
+  correction.
 - Existing repository structure warnings remain outside this bounded UI slice.
 - Phase 3 final audit, merge, and Phase 4 remain explicitly deferred.
 
-## Native Correction Evidence Follow-up
-
-The locked-desktop status above was the state when this record was created. One
-bounded retry of the existing safe Cocoa scenario subsequently succeeded and
-produced the six required correction captures with
-`native_onscreen: true`:
-
-- `01-clean-table-first-normal.png` at 1280x820
-- `02-details-modal-technical-expanded.png` at 700x580
-- `03-dirty-saveable-banner.png` at 1280x820
-- `04-blocked-save-banner.png` at 1280x820
-- `05-saved-mapping-next-step.png` at 1280x820
-- `06-clean-table-first-compact.png` at 900x640
-
-The capture used a visible Cocoa window and native backing-store/widget target
-capture with synthetic temporary schema/mapping providers. Interaction remained
-programmatic through Qt public panel/controller actions; Computer Use and
-physical interaction were not used, the known AppKit table accessibility path
-was not used, and protected/runtime fixtures were unchanged. The authoritative
-manifest is `docs/designs/assets/phase-3-slice-3f-table-first-correction/native_manifest.json`.
-
-For current acceptance, this follow-up supersedes the pending-native wording
-above; the earlier statements preserve the record's pre-retry state.
+Historical note: an earlier locked-desktop attempt preceded the successful
+native follow-up. It is resolved history, not an active blocker or risk.

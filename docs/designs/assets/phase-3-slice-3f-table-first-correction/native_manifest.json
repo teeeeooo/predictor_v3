@@ -1,5 +1,5 @@
 {
-  "commit_sha": "b9bd4e84a751147cab78021082e6c4edde6dbe4e",
+  "commit_sha": "d969807b4239b8fef264d20e003133bf77d6028c",
   "native_onscreen": true,
   "capture_source": "visible cocoa window and QDialog native backing-store capture",
   "fixture_provider": "repository synthetic schema/mapping fixtures copied to a temporary provider; canonical and runtime fixtures are read-only",
@@ -74,7 +74,7 @@
     },
     {
       "file": "05-saved-mapping-next-step.png",
-      "state": "saved Mapping next-step conditional surface",
+      "state": "single saved Mapping Requirement next-step conditional surface",
       "logical_size": [
         1280,
         820
@@ -85,7 +85,7 @@
       ],
       "device_pixel_ratio": 2.0,
       "capture_source": "visible QWidget.render target capture",
-      "actual_interaction": "Saved the temporary schema copy and exposed the saved-only Mapping handoff."
+      "actual_interaction": "Saved one Mapping Requirement to the temporary schema copy; the direct next step showed no selector and retained the table-first Inventory."
     },
     {
       "file": "06-clean-table-first-compact.png",

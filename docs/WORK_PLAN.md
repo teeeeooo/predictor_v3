@@ -17,9 +17,10 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 Slice 3F table-first correction is active on
-`phase/train-admin-data-definition-ux`, based on
-`1f3d9d973f7e97a1ed123a88fd757016ccbc34ab`. The correction removes the
+Train/Admin Phase 3 Slice 3F final-audit correction is complete on
+`phase/train-admin-data-definition-ux` through audit-correction commit
+`d969807b4239b8fef264d20e003133bf77d6028c` and its affected native/document
+follow-up at the current branch head. The correction removes the
 always-visible Selected Definition Summary Card and clean lower panel, makes
 Inventory the primary vertical stretch owner, projects normal eight-column and
 compact six-column user-facing tables, and moves Summary information into an
@@ -30,14 +31,13 @@ and accessibility contracts remain in scope. PR #16 remains Draft/Open.
 
 ## Next Action
 
-Hand off to the Slice 3F final audit before the Phase 3 final audit after the
-native evidence is included in the correction commit and its CI/PR state is
-confirmed.
+Slice 3F final re-audit before Phase 3 final audit. PR #16 remains Draft/Open;
+Phase 3 final audit, merge, and Phase 4 remain on hold.
 
 ## Active Blockers
 
-- Phase 3 final approval and merge are blocked until the implemented Slice 3F
-  presentation passes its dedicated audit.
+- Phase 3 final approval and merge are blocked until the completed Slice 3F
+  correction passes its final re-audit.
 - Slice 3E remains the accepted interaction foundation; the Slice 3F audit does not
   reopen accepted domain or persistence contracts.
 - Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
