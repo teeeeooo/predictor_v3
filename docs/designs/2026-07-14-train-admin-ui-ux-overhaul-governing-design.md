@@ -213,21 +213,24 @@ revision counter.
 3. **Automatic internal validation** — schema, feature, mapping, and
    compatibility checks run inside the workflow without becoming a manual
    readiness checklist.
-4. **Progressive disclosure** — normal technical details do not dominate the
+4. **Safe training defaults** — supported ordinary training runs use the
+   existing Train/ML defaults without requiring Advanced settings; the UI does
+   not create a separate default-value policy.
+5. **Progressive disclosure** — normal technical details do not dominate the
    default surface. Errors lead with a user-facing explanation and the action to
    resolve them; Diagnostics/logs expose deeper context.
-5. **Explicit state** — clean, dirty, blocked, warning, saved,
+6. **Explicit state** — clean, dirty, blocked, warning, saved,
    restart-required, retrain-required, and missing-resource states are distinct.
-6. **Safe editing** — destructive actions explain their effect and issues point
+7. **Safe editing** — destructive actions explain their effect and issues point
    to the affected group, row, and field.
-7. **Spreadsheet behavior** — editable tables follow the active spreadsheet UX
+8. **Spreadsheet behavior** — editable tables follow the active spreadsheet UX
    contract.
-8. **Intent-driven definition** — users express what they want; the UI previews
+9. **Intent-driven definition** — users express what they want; the UI previews
    schema, mapping, Predict, ML, restart, and retraining impacts.
-9. **Result-centered reporting** — results prioritize overall success,
+10. **Result-centered reporting** — results prioritize overall success,
    target-level R², optional MAE/RMSE, Optuna status and best trial/score when
    applicable, model-save status, elapsed time, and Predict availability.
-10. **Shared visual language** — tables, toolbars, status, issues, empty states,
+11. **Shared visual language** — tables, toolbars, status, issues, empty states,
    and dialogs use reusable common components suitable for later Predict reuse.
 
 ## 9. Phase Plan

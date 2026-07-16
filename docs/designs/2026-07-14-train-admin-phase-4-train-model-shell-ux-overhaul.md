@@ -69,7 +69,8 @@ The resulting surface should provide:
 
 - resource selection/status;
 - a clear Train action when the selected data can proceed;
-- supported training configuration;
+- supported training configuration as a compact summary, with optional overrides
+  in Advanced settings;
 - start/cancel controls;
 - progress and current stage;
 - user-facing failure context and its resolution action;
@@ -79,6 +80,24 @@ The resulting surface should provide:
 - Diagnostics/log access for advanced technical details.
 
 Mock execution success must not be presented as model-quality success.
+
+### Default and Advanced training settings
+
+The normal flow uses the safe defaults already provided by the authoritative
+Train/ML settings owner and execution contract. Phase 4 does not create a
+second UI-owned default policy.
+
+- Only values that the existing Train/ML contract requires the user to decide
+  before a run appear in the default surface.
+- Supported training can start without opening Advanced settings when those
+  required decisions are already satisfied.
+- Optional or technical settings belong in a collapsed `Advanced settings`
+  area, or an equivalent progressive-disclosure surface.
+- The default surface does not list preprocessing-version internals, full
+  feature-policy details, Optuna parameter details, or RFECV configuration just
+  because those settings are valid.
+- When an optional setting is changed, show a concise summary of the change;
+  do not expand the normal flow into a settings-management screen.
 
 ## 5. Readiness and Blocker Classification
 
@@ -275,6 +294,11 @@ merged only after cross-tab workflow and mock training smoke pass.
 
 - Training-data selection is the first primary task and leads to a clear Train
   action when automatic checks pass.
+- A supported default training run starts without opening Advanced settings.
+- Train asks for input before Start only when an existing Train/ML contract
+  requires a user decision that cannot be satisfied by its safe defaults.
+- The default surface remains centered on data selection, execution, progress,
+  and results rather than configuration management.
 - Only authoritative training-start blockers prevent the Train action; existing
   model, restart, mapping, or Predict readiness does not block Start without an
   owner-contract basis.

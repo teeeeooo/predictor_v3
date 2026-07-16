@@ -41,6 +41,9 @@
   workflow. Keep normal technical details out of the default surface; show an
   actionable user message first for errors and reserve details for Diagnostics or
   logs.
+- Use the existing Train/ML safe defaults for ordinary training; optional or
+  technical overrides remain behind Advanced settings and do not become required
+  to start a supported default run.
 - Separate authoritative training-start blockers from non-blocking warnings and
   post-training artifact/Predict blockers. Existing model, restart, mapping, and
   Predict readiness must not become Start prerequisites without an owner-contract
@@ -99,7 +102,7 @@
 ### Decision
 
 - Complete Slices 1A–1D and final corrections for repository-automated scope;
-  final audit is approved and PR #14 is the merge target.
+  final audit is approved and PR #14 was merged to `main`.
 - Use the strict legacy bootstrap projection as a repository-only populated
   mapping fixture; never install it as production `data/mapping.json`.
 - Keep Data Definition as dynamic mapping column/type/required owner and Data
