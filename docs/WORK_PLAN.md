@@ -17,23 +17,26 @@
 
 ## Current Slice
 
-Train/Admin Phase 3 — Data Definition UX Overhaul is complete and its final audit
-is approved on PR #16. Slices 3A–3F, all audit corrections, the table-first Slice
-3F correction, and the saved-handoff follow-up preserve the accepted Data
-Definition, Data Mapping, Predict, and ML compatibility boundaries. PR #16 is the
-Phase 3 merge target and is ready for user review after closeout CI succeeds.
+Train/Admin Phase 3 — Data Definition UX Overhaul is complete and merged to
+`main` through PR #16. The current workstream is the Phase 4 current-state audit
+and design finalization for the Train/Model and common shell UX. This is a
+documentation and planning slice only; the existing Data Definition, Data
+Mapping, Train, Predict, ML, persistence, and public-contract owners remain
+unchanged.
 
 ## Next Action
 
-The user merges PR #16 to `main`. After confirming the merged-main SHA, Phase 4 —
-Train/Model and Shell UX Overhaul may begin only from a separate branch and Draft
-PR after separate instruction.
+Audit the merged-main Train/Model and shell surfaces against the existing owner
+contracts, then finalize the Phase 4 design and ordered implementation slices
+before any UI implementation begins.
 
 ## Active Blockers
 
-- Phase 4 remains blocked until PR #16 is merged and merged `main` is confirmed.
-- Deferred Phase 2 native interaction acceptance remains separate and does not
-  reopen accepted Phase 2 or Phase 3 code.
+- No Phase 3 merge blocker remains; PR #16 is merged.
+- Phase 4 implementation remains on hold until the current-state audit and design
+  finalization are complete and the phase is explicitly started.
+- Deferred Phase 2 native acceptance remains separate and does not reopen Phase 2
+  code or block Phase 3 automated work.
 - ML projection-changing definition edits remain intentionally blocked until an
   explicit compatibility persistence owner is approved.
 
@@ -47,14 +50,17 @@ PR after separate instruction.
 - Preserve the accepted Qt-free draft, command, edit policy, projection,
   validation, save-plan, schema-writer, readiness, handoff, coverage, keyboard,
   focus, accessibility, and exact-navigation owners.
+- In Phase 4, schema, feature, mapping, and compatibility checks run internally
+  and automatically; the default Train view leads with the user's next action
+  rather than raw readiness metadata.
 - Use repository fixtures and mock data; do not add company production data or
   infer model quality or production readiness.
 - Keep Cooling and Heating models independent, including monotone constraints.
 
 ## Deferred / Hold
 
-- Phase 4 implementation, merge, and activation remain deferred until the Phase 3
-  merge is confirmed and the user starts the next phase explicitly.
+- Phase 4 implementation and merge remain deferred until the current-state audit
+  and design finalization are approved.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 4 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness
@@ -63,6 +69,7 @@ PR after separate instruction.
 ## Minimal Anchors
 
 - Governing design: `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-governing-design.md`
+- Phase 4 design: `docs/designs/2026-07-14-train-admin-phase-4-train-model-shell-ux-overhaul.md`
 - Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 - Accepted Slice 3F amendment: `docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md`
 - Final audit closeout: `result_reports/records/2026-07/2026-07-16-train-admin-phase3-final-audit-closeout.md`
