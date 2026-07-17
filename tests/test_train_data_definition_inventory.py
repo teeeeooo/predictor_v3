@@ -29,10 +29,19 @@ from apps.train.controllers.data_definition_workspace_projection import (
 )
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.mapping.paths import MAPPING_JSON_FILE
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+
+
+def _service() -> DataDefinitionService:
+    return DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+
+
+def _controller() -> DataDefinitionController:
+    return DataDefinitionController(_service())
 
 
 def test_task_inventory_uses_exact_user_facing_meanings():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
 
     projection = project_data_definition_inventory(state)
 
@@ -61,7 +70,7 @@ def test_task_inventory_uses_exact_user_facing_meanings():
 
 
 def test_selected_summary_answers_work_questions_and_preserves_technical_metadata():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     inventory = project_data_definition_inventory(
         state,
         selected_identity=("schema_row", "cooling_capa"),
@@ -114,7 +123,7 @@ def test_task_workspace_projects_clean_dirty_blocked_error_saved_and_recovery_st
     tmp_path,
 ):
     schema_path = tmp_path / "schema.csv"
-    schema_path.write_bytes(DataDefinitionService().schema_path.read_bytes())
+    schema_path.write_bytes(DEFAULT_SCHEMA_PATH.read_bytes())
     controller = DataDefinitionController(DataDefinitionService(schema_path=schema_path))
     clean = controller.refresh()
     dirty = controller.edit_cell(("schema_row", "idu"), "label", "Indoor Unit")
@@ -173,7 +182,7 @@ def _task_projection(state, *, search=""):  # noqa: ANN001, ANN202
 
 
 def test_inventory_projection_preserves_identity_order_and_projects_detail():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
 
     projection = project_data_definition_inventory(state)
 
@@ -197,7 +206,7 @@ def test_inventory_projection_preserves_identity_order_and_projects_detail():
 
 
 def test_inventory_search_filter_and_selection_are_deterministic():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     base = project_data_definition_inventory(state)
     target = next(row for row in base.rows if row.internal_key == "evap_area")
 
@@ -232,7 +241,7 @@ def test_inventory_search_filter_and_selection_are_deterministic():
 
 
 def test_inventory_filter_falls_back_when_selected_option_disappears():
-    controller = DataDefinitionController()
+    controller = _controller()
     state = controller.refresh()
     rule_option_identities = (
         ("schema_row", "fin_type"),
@@ -259,7 +268,7 @@ def test_inventory_filter_falls_back_when_selected_option_disappears():
 
 
 def test_detail_blockers_attribute_plan_blocker_to_its_definition():
-    service = DataDefinitionService()
+    service = _service()
     controller = DataDefinitionController(service)
     state = controller.refresh()
     valid_identity = ("schema_row", "idu")
@@ -302,7 +311,7 @@ def test_detail_blockers_attribute_plan_blocker_to_its_definition():
 
 
 def test_detail_blockers_attribute_compound_ml_activation_to_definition():
-    service = DataDefinitionService()
+    service = _service()
     controller = DataDefinitionController(service)
     controller.refresh()
     identity = ("schema_row", "idu")
@@ -334,7 +343,7 @@ def test_detail_blockers_attribute_compound_ml_activation_to_definition():
 
 
 def test_detail_blockers_attribute_compound_ml_activation_for_multiple_definitions():
-    controller = DataDefinitionController()
+    controller = _controller()
     controller.refresh()
     first_identity = ("schema_row", "idu")
     second_identity = ("schema_row", "evap_index")
@@ -364,7 +373,7 @@ def test_detail_blockers_attribute_compound_ml_activation_for_multiple_definitio
 
 
 def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
-    controller = DataDefinitionController()
+    controller = _controller()
     controller.refresh()
     identity = ("schema_row", "idu")
     controller.edit_cell(identity, "model_input_enabled", True)
@@ -385,7 +394,7 @@ def test_detail_blockers_remove_compound_ml_attribution_after_partial_revert():
 
 
 def test_detail_blockers_keep_context_after_unrelated_field_revert():
-    controller = DataDefinitionController()
+    controller = _controller()
     identity = ("schema_row", "idu")
     initial = controller.refresh()
     row_index = initial.draft_row_identities.index(identity)
@@ -412,7 +421,7 @@ def test_detail_blockers_keep_context_after_unrelated_field_revert():
 
 
 def test_detail_blockers_deduplicate_only_cross_source_logical_duplicates():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     selected_identity = ("schema_row", "cooling_capa")
     duplicate = DataDefinitionBlockerItem(
         "error",
@@ -458,7 +467,7 @@ def test_detail_blockers_deduplicate_only_cross_source_logical_duplicates():
 
 
 def test_detail_blockers_keep_global_attribution_for_every_selection():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     first_identity = ("schema_row", "cooling_capa")
     second_identity = ("schema_row", "heating_capa")
     first_item = DataDefinitionBlockerItem(
@@ -528,7 +537,7 @@ def test_detail_blockers_keep_global_attribution_for_every_selection():
 
 
 def test_inventory_no_match_empty_and_load_error_states_are_explicit():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     no_match = project_data_definition_inventory(state, search="definitely-not-present")
     empty = project_data_definition_inventory(
         replace(state, draft_rows=(), draft_row_identities=()),
@@ -545,7 +554,7 @@ def test_inventory_no_match_empty_and_load_error_states_are_explicit():
 
 
 def test_inventory_projection_does_not_mutate_definition_or_mapping_sources():
-    service = DataDefinitionService()
+    service = _service()
     draft = service.load_draft()
     report = service.load_report()
     plan = service.preview_save_plan(draft, current_report=report)
@@ -589,7 +598,7 @@ class _FailingService(DataDefinitionService):
 
 class _FailingController(DataDefinitionController):
     def __init__(self) -> None:
-        super().__init__(_FailingService())
+        super().__init__(_FailingService(schema_path=DEFAULT_SCHEMA_PATH))
 
 
 def _hash(path: Path) -> str:

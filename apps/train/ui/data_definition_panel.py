@@ -69,10 +69,12 @@ class DataDefinitionPanel(QWidget):
             Callable[[DataMappingNavigationRequest], DataMappingNavigationResult] | None
         ) = None,
     ) -> None:
+        if controller is None:
+            raise ValueError("DataDefinitionPanel requires an explicit controller")
         super().__init__(parent)
         self.setObjectName("DataDefinitionPanel")
         self.setAccessibleName("Data Definition")
-        self._controller = controller or DataDefinitionController()
+        self._controller = controller
         self._state: DataDefinitionControllerState | None = None
         self._selected_identity: tuple[str, str] | None = None
         self._preferred_identity: tuple[str, str] | None = None

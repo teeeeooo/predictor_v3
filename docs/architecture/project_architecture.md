@@ -155,10 +155,34 @@ Migration principles:
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
-Canonical editable schema SSOT는 `config/predict/schema.csv`이다.
-Runtime compatibility projection은
+Canonical Data Definition contract는
+`config/data_definition/manifest.json`의 versioned structured manifest와
+published immutable generation bundle이다. `config/predict/schema.csv`와
+`config/ml/features.csv`는 canonical contract에서 생성되는 compatibility
+projection이며 독립적인 user-edit owner가 아니다. Runtime compatibility projection은
 `core/predictor_schema/columns.py::COLUMNS`가 제공하며, 현재 UI/runtime
 호환 컬럼은 크게 세 그룹으로 나뉩니다.
+
+Production Train composition은 `apps/train/app.py::create_shell()`에서 승인된
+bootstrap manifest와 filesystem generation adapter를 구성한 뒤 작은
+`DataDefinitionGenerationRepositoryPort`를 통해 application service에 주입한다.
+Production Data Definition Save는 이 immutable generation transaction을 기본
+경로로 사용하고, explicit `schema_path` service 구성만 legacy 호환
+writer를 사용한다. 무인자 service/controller/shell 구성은 fail-fast한다.
+Draft는 로드한 base generation에 바인딩되며, filesystem adapter는 POSIX의
+`flock` 또는 Windows의 `msvcrt.locking` process lock 안에서 parent와 active
+generation을 비교한 후 pointer를 교체하여 stale Save를 차단한다. Runtime
+generation history와 active pointer는 source config가 아니라 사용자별 state
+root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다.
+
+Ordering owner는 Predict=`ordering.predict`, ordered ML=`ordering.ml`,
+Derived DAG=`ordering.derived`, One-hot emitted category=`category.order`, Target
+presentation=`ordering.targets`다. Feature `display_order`, Derived/Target storage
+order, category storage order, Target `presentation_order`처럼 호환을 위해
+중복 저장된 필드는 whole-contract validation으로 canonical owner와의
+일치를 강제한다. Predict `display_order`는 inactive Feature를 포함한 전체
+Predict order 계약에서 유일하고 양의 32-bit signed 범위여야 한다.
+
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).

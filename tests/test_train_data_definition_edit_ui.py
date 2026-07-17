@@ -14,6 +14,7 @@ from apps.train.controllers.data_definition_controller import (
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_models import DataDefinitionDraftTableModel
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _app() -> QApplication:
@@ -21,8 +22,16 @@ def _app() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
+def _service() -> DataDefinitionService:
+    return DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+
+
+def _controller() -> DataDefinitionController:
+    return DataDefinitionController(_service())
+
+
 def test_data_definition_service_edits_in_memory_draft_and_previews_plan():
-    service = DataDefinitionService()
+    service = _service()
     draft = service.load_draft()
     row = next(item for item in draft.rows if item.column_key == "idu")
 
@@ -42,7 +51,7 @@ def test_data_definition_service_edits_in_memory_draft_and_previews_plan():
 
 
 def test_data_definition_controller_exposes_draft_rows_and_reset_state():
-    controller = DataDefinitionController()
+    controller = _controller()
 
     state = controller.refresh()
     schema_row = ("schema_row", "idu")
@@ -78,7 +87,7 @@ def test_data_definition_controller_exposes_draft_rows_and_reset_state():
 
 
 def test_data_definition_draft_table_model_enforces_field_editability():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
     accepted: list[tuple[tuple[str, str], str, object]] = []
     model = DataDefinitionDraftTableModel(
         state.draft_headers,
@@ -98,7 +107,7 @@ def test_data_definition_draft_table_model_enforces_field_editability():
 
 def test_data_definition_panel_builds_editable_draft_workflow_and_reset():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = DataDefinitionPanel(controller=_controller())
     try:
         app.processEvents()
         label_col = DRAFT_FIELDS.index("label")

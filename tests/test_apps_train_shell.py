@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
 
 from apps.predict.ui.shell import PredictShell
 from apps.predict.ui.workspace import PredictWorkspace
+from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.state.training_run_state import (
     TrainingLogEvent,
     TrainingProgress,
@@ -26,11 +28,19 @@ from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.shell import TrainShell
 from apps.train.ui.train_model_panel import TrainModelPanel
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+def _train_shell() -> TrainShell:
+    service = DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+    return TrainShell(
+        data_definition_controller=DataDefinitionController(service)
+    )
 
 
 class FakeTrainController:
@@ -112,7 +122,7 @@ def _cleanup_qt_widgets():
 
 def test_train_shell_tabs_and_predict_workspace_reuse():
     _app()
-    shell = TrainShell()
+    shell = _train_shell()
 
     assert shell.tabs.count() == 4
     assert [shell.tabs.tabText(index) for index in range(4)] == [
@@ -137,7 +147,7 @@ def test_predict_shell_keeps_standalone_title_and_status_strip():
 
 def test_train_embedded_predict_workspace_hides_duplicate_title_and_status_strip():
     _app()
-    shell = TrainShell()
+    shell = _train_shell()
     workspace = shell.tabs.widget(0)
 
     assert isinstance(workspace, PredictWorkspace)

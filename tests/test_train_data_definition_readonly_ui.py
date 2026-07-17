@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import os
 
+import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QAbstractItemView
 
@@ -16,6 +17,7 @@ from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.shell import TrainShell
 from core.data_definition import DataDefinitionReport
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _app() -> QApplication:
@@ -23,8 +25,24 @@ def _app() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
+def _service() -> DataDefinitionService:
+    return DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+
+
+def _controller() -> DataDefinitionController:
+    return DataDefinitionController(_service())
+
+
+def _panel() -> DataDefinitionPanel:
+    return DataDefinitionPanel(controller=_controller())
+
+
+def _shell() -> TrainShell:
+    return TrainShell(data_definition_controller=_controller())
+
+
 def test_data_definition_service_returns_report_without_training_filename_default():
-    service = DataDefinitionService()
+    service = _service()
 
     report = service.load_report()
 
@@ -35,7 +53,7 @@ def test_data_definition_service_returns_report_without_training_filename_defaul
 
 
 def test_data_definition_controller_returns_readonly_view_state():
-    state = DataDefinitionController().refresh()
+    state = _controller().refresh()
 
     assert state.status == "ready"
     assert ("Projected features", "28") in state.summary_rows
@@ -54,7 +72,7 @@ def test_data_definition_controller_returns_readonly_view_state():
 
 def test_data_definition_panel_builds_readonly_tables_and_refreshes():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         app.processEvents()
 
@@ -81,10 +99,9 @@ def test_data_definition_panel_builds_readonly_tables_and_refreshes():
 
 def test_train_shell_registers_data_definition_tab_and_keeps_existing_tabs():
     app = _app()
-    shell = TrainShell()
+    shell = _shell()
     try:
         app.processEvents()
-
         tab_names = [shell.tabs.tabText(index) for index in range(shell.tabs.count())]
         assert tab_names == [
             "Predict",
@@ -98,3 +115,11 @@ def test_train_shell_registers_data_definition_tab_and_keeps_existing_tabs():
         shell.close()
         shell.deleteLater()
         app.processEvents()
+
+
+def test_data_definition_panel_and_shell_require_explicit_persistence_composition():
+    _app()
+    with pytest.raises(ValueError, match="explicit controller"):
+        DataDefinitionPanel()
+    with pytest.raises(ValueError, match="explicit Data Definition controller"):
+        TrainShell()

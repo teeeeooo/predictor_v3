@@ -596,6 +596,24 @@ entries:
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md
 
   - type: decision
+    topic: Train/Admin Phase 4B canonical persistence foundation
+    content: Phase 4B implements a versioned canonical Unified Feature manifest with deterministic opaque identities and complete-semantic generation hashing, generation-scoped Predict/ordered-ML/Derived/One-hot/Target-registry/Mapping-requirement projections, whole-contract validation, and scoped fingerprints. Production Train create_shell bootstraps the approved manifest and injects the filesystem adapter through a small application repository port; explicit schema_path construction is the legacy compatibility-only path, and no-argument service/controller/shell construction fails fast. Drafts retain their base generation, and the adapter holds a native POSIX or Windows cross-process file lock across parent validation and active-pointer replacement, so stale Save cannot replace a newer generation. Runtime generations and the active pointer live in per-user state rather than source-controlled config; the tracked manifest remains the bootstrap seed. Predict, ML, dependency-topological Derived, One-hot category, and Target presentation ordering are projected from their canonical owners and duplicate storage fields are cross-validated. Predict display_order is unique and bounded across the complete active-plus-inactive Predict ordering contract. Failures preserve the draft, active pointer, and immutable history; rollback remains available. schema.csv/features.csv are generated compatibility surfaces, while mapping.json, model artifacts, promotion, and runtime cutover remain outside the transaction. Windows native smoke remains a packaging/CI verification item; the final audit used Windows-path simulation plus import isolation and POSIX cross-process execution. Phase 4C starts only after the corrected PR is merged.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4B
+      - canonical manifest
+      - immutable generation
+      - atomic active pointer
+      - scoped fingerprints
+      - protected consumer guard
+      - production composition
+      - stale writer
+      - canonical ordering
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4b-audit-correction.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4b-final-audit-correction.md; docs/WORK_PLAN.md
+
+  - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
     content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
     keywords:

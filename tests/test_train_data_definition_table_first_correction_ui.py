@@ -8,14 +8,24 @@ from PySide6.QtCore import QTimer, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QLineEdit, QScrollArea
 
+from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_details_dialog import DataDefinitionDetailsDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _app() -> QApplication:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication([])
+
+
+def _panel() -> DataDefinitionPanel:
+    controller = DataDefinitionController(
+        DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+    )
+    return DataDefinitionPanel(controller=controller)
 
 
 def _close_active_modal(observed: dict[str, object]) -> None:
@@ -27,7 +37,7 @@ def _close_active_modal(observed: dict[str, object]) -> None:
 
 def test_details_is_read_only_snapshot_with_one_outer_scroll_and_focus_restore():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     panel.resize(900, 640)
     panel.show()
     app.processEvents()
@@ -83,7 +93,7 @@ def test_details_is_read_only_snapshot_with_one_outer_scroll_and_focus_restore()
 
 def test_enter_routes_edit_and_read_only_rows_to_separate_modal_workflows():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     panel.show()
     app.processEvents()
 
@@ -123,7 +133,7 @@ def test_enter_routes_edit_and_read_only_rows_to_separate_modal_workflows():
 
 def test_details_escape_is_non_mutating_and_restores_inventory_focus():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     panel.show()
     app.processEvents()
     before_rows = panel._state.draft_rows
@@ -155,7 +165,7 @@ def test_details_escape_is_non_mutating_and_restores_inventory_focus():
 
 def test_double_click_uses_the_same_controlled_open_path_for_selected_row():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     panel.show()
     app.processEvents()
     panel.inventory_table.setFocus()

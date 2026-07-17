@@ -49,10 +49,12 @@ class TrainShell(QMainWindow):
         data_mapping_controller: DataMappingController | None = None,
         predict_composition: PredictWorkspaceComposition | None = None,
     ) -> None:
+        if data_definition_controller is None:
+            raise ValueError("TrainShell requires an explicit Data Definition controller")
         super().__init__(parent)
         self.train_controller = train_controller or TrainController()
         self.data_mapping_controller = data_mapping_controller or DataMappingController()
-        self.data_definition_controller = data_definition_controller or DataDefinitionController()
+        self.data_definition_controller = data_definition_controller
         self.setWindowTitle("HVAC Training Studio")
         self.setStyleSheet(style.app_stylesheet())
 

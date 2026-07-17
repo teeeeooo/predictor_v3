@@ -45,6 +45,7 @@ def apply_add_definition_command(
             *draft.controlled_addition_initial_rows,
             row,
         ),
+        base_generation_id=draft.base_generation_id,
     )
     return DataDefinitionCommandResult(updated, True, row.identity, "Add")
 

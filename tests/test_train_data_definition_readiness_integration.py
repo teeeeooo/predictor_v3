@@ -1,10 +1,18 @@
 """Train Data Definition readiness preview integration tests."""
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.services.data_definition_service import DataDefinitionService
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+
+
+def _controller() -> DataDefinitionController:
+    return DataDefinitionController(
+        DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+    )
 
 
 def test_controller_surfaces_retrain_required_preview_for_model_input_change():
-    controller = DataDefinitionController()
+    controller = _controller()
     state = controller.refresh()
 
     edited = controller.edit_cell(
@@ -27,7 +35,7 @@ def test_controller_surfaces_retrain_required_preview_for_model_input_change():
 
 
 def test_controller_surfaces_restart_only_preview_for_visible_change():
-    controller = DataDefinitionController()
+    controller = _controller()
     state = controller.refresh()
     visible_col = next(
         index for index, cell in enumerate(state.draft_rows[0])

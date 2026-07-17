@@ -8,6 +8,11 @@
 ## Current status
 - 현재 프로젝트에 완전 자동화된 packaging workflow나 전용 빌드 스크립트는 존재하지 않는다.
 - 명확히 확정된 build command나 `.spec` 파일은 없으므로, 아래 원칙은 패키징 파이프라인 구축 시의 가이드라인으로 작용한다.
+- Train 애플리케이션의 주 지원 환경은 Windows다. Data Definition runtime
+  generation state는 `%LOCALAPPDATA%\\predictor_v3\\data_definition`에 저장하며,
+  tracked bootstrap seed는 `config/data_definition/manifest.json`에 유지한다.
+  POSIX 개발 환경은 `$XDG_STATE_HOME/predictor_v3/data_definition` 또는
+  `~/.local/state/predictor_v3/data_definition`을 사용한다.
 
 ## Packaging principles
 - **클린 배포 환경**: 일반 개발 환경과 섞이지 않도록, 배포용 빌드는 반드시 독립된 깨끗한 환경에서 수행한다.
@@ -41,7 +46,6 @@
 - 아직 동작 확인이 되지 않은 추측성 build command를 canonical 가이드로 문서화 금지.
 
 ## Open questions
-- 최종 패키징 대상 플랫폼 (Windows 전용인지, 다중 플랫폼인지).
 - PyInstaller 배포 최적 형태 (onefile vs onedir 성능/로딩 속도 트레이드오프).
 - XGBoost/scikit-learn/NumPy 외에 명시적 매핑이 필요한 실제 binary dependency 목록.
 - 생성된 crash log의 저장 위치(AppData 등) 및 보존 주기(retention policy).

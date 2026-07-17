@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from apps.train.application.data_definition import (
+    DataDefinitionGenerationRepositoryPort,
+)
 from core.data_definition import (
     AddDefinitionIntent,
     DataDefinitionDraft,
@@ -22,7 +25,9 @@ from core.data_definition import (
     save_data_definition_schema_draft,
 )
 from core.data_definition.draft import replace_draft_row
-from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+from apps.train.services.data_definition_persistence_service import (
+    DataDefinitionPersistenceService,
+)
 
 BOOLEAN_DRAFT_FIELDS = frozenset(
     {"visible", "required", "readonly", "model_input_enabled", "active"}
@@ -41,13 +46,27 @@ class DataDefinitionDraftEditResult:
 class DataDefinitionService:
     """Load and mutate in-memory Data Definition state."""
 
-    def __init__(self, *, schema_path: str | Path | None = None) -> None:
-        self._schema_path = Path(schema_path) if schema_path is not None else DEFAULT_SCHEMA_PATH
+    def __init__(
+        self,
+        *,
+        schema_path: str | Path | None = None,
+        generation_repository: DataDefinitionGenerationRepositoryPort | None = None,
+    ) -> None:
+        if (schema_path is None) == (generation_repository is None):
+            raise ValueError(
+                "DataDefinitionService requires exactly one persistence owner: "
+                "generation_repository or explicit schema_path"
+            )
+        self._schema_path = Path(schema_path) if schema_path is not None else None
+        self._persistence = (
+            DataDefinitionPersistenceService(generation_repository)
+            if generation_repository is not None else None
+        )
 
     @property
     def schema_path(self) -> Path:
         """Return the explicit schema path owned by the Train service."""
-        return self._schema_path
+        return self._active_schema_path()
 
     def load_report(
         self,
@@ -56,7 +75,11 @@ class DataDefinitionService:
     ) -> DataDefinitionReport:
         """Return the current read-only Data Definition report."""
         return build_data_definition_report(
-            schema_path=self._schema_path,
+            schema_path=self._active_schema_path(),
+            feature_catalog_path=(
+                self._persistence.active_feature_catalog_path
+                if self._persistence is not None else None
+            ),
             training_data_path=training_data_path,
         )
 
@@ -70,7 +93,9 @@ class DataDefinitionService:
 
     def load_draft(self) -> DataDefinitionDraft:
         """Return an in-memory editable draft loaded from the schema owner path."""
-        return build_data_definition_draft(schema_path=self._schema_path)
+        if self._persistence is not None:
+            return self._persistence.load_draft()
+        return build_data_definition_draft(schema_path=self._active_schema_path())
 
     def refresh_draft(self) -> DataDefinitionDraft:
         """Discard in-memory edits and reload the draft."""
@@ -135,11 +160,23 @@ class DataDefinitionService:
         """Save the draft through the guarded schema writer."""
         report = current_report or self.load_report()
         save_plan = self.preview_save_plan(draft, current_report=report)
+        if self._persistence is not None:
+            return self._persistence.save(draft, save_plan)
         return save_data_definition_schema_draft(
             draft,
-            self._schema_path,
+            self._legacy_schema_path(),
             save_plan=save_plan,
         )
+
+    def _active_schema_path(self) -> Path:
+        if self._persistence is not None:
+            return self._persistence.active_schema_path
+        return self._legacy_schema_path()
+
+    def _legacy_schema_path(self) -> Path:
+        if self._schema_path is None:
+            raise RuntimeError("legacy schema path is unavailable in canonical mode")
+        return self._schema_path
 
 
 def _coerce_draft_value(field_name: str, value: object) -> tuple[object, str]:

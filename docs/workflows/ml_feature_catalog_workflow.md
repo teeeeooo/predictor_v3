@@ -2,13 +2,14 @@
 
 > **Current owner boundary:** Data Definition owns user-facing schema and
 > feature-definition changes. The former Train/Admin Feature Catalog UI has
-> been retired. `core/ml/feature_catalog*` and `config/ml/features.csv` remain
-> an internal ML compatibility contract for training headers, projections, and
-> model fingerprints.
+> been retired. `config/ml/features.csv` is a generated compatibility projection
+> from the canonical Unified Feature manifest. `core/ml/feature_catalog*`
+> remains the temporary import-time compatibility facade for training headers,
+> projections, and model fingerprints.
 
 ## Purpose
 
-`config/ml/features.csv` remains the compatibility contract for ML feature,
+`config/ml/features.csv` remains a generated compatibility contract for ML feature,
 target, and one-hot feature names. Normal schema changes are made through the
 `Data Definition` tab in `app_train.py`; there is no separate Feature Catalog
 manager or canonical-save UI. Direct catalog editing is an exceptional,
@@ -32,8 +33,9 @@ For normal schema/feature-definition changes:
    validation before editing.
 3. Use only the guarded Data Definition draft/save flow. Respect any blocked
    field, restart-required, or retrain-required result.
-4. Stop if the change requires a `features.csv` compatibility projection write;
-   the current Data Definition writer does not own that write target.
+4. Stop if the change affects protected ML/import-time dependencies; Phase 4B
+   publishes complete generation projections but does not migrate every protected
+   consumer or authorize fixed-string Rename/Remove.
 5. Align raw training headers to the active catalog `ml_name` contract.
 6. Run the focused catalog, Data Definition, and ML guard tests.
 7. Restart or retrain when the validated change reports that impact.

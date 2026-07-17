@@ -77,6 +77,7 @@ class DataDefinitionDraft:
     issues: tuple[DataDefinitionDraftIssue, ...] = ()
     controlled_row_additions: frozenset[tuple[str, str]] = frozenset()
     controlled_addition_initial_rows: tuple[DataDefinitionDraftRow, ...] = ()
+    base_generation_id: str = ""
 
     @property
     def is_changed(self) -> bool:
@@ -173,6 +174,7 @@ def replace_draft_row(
         issues=draft.issues,
         controlled_row_additions=draft.controlled_row_additions,
         controlled_addition_initial_rows=draft.controlled_addition_initial_rows,
+        base_generation_id=draft.base_generation_id,
     )
 
 

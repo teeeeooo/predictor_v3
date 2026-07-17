@@ -4,6 +4,7 @@ import csv
 
 from core.ml.feature_catalog import load_feature_catalog
 from core.predictor_schema.catalog_v2 import (
+    MAX_DISPLAY_ORDER,
     REQUIRED_HEADERS,
     load_predict_schema_catalog_v2,
     validate_predict_schema_catalog_v2,
@@ -53,6 +54,38 @@ def test_predict_schema_catalog_v2_validation_rejects_duplicate_active_keys(tmp_
     errors = validate_predict_schema_catalog_v2(load_predict_schema_catalog_v2(path))
 
     assert any("duplicate active column_key 'cooling_capa'" in error for error in errors)
+
+
+def test_predict_schema_validation_rejects_duplicate_order_including_inactive_rows(
+    tmp_path,
+):
+    source = load_predict_schema_catalog_v2()
+    path = tmp_path / "schema.csv"
+    rows = [row_to_csv_dict(row) for row in source.rows[:2]]
+    rows[1]["display_order"] = rows[0]["display_order"]
+    rows[1]["active"] = "false"
+    write_schema(path, rows)
+
+    errors = validate_predict_schema_catalog_v2(load_predict_schema_catalog_v2(path))
+
+    assert any("duplicate display_order '10'" in error for error in errors)
+
+
+def test_predict_schema_validation_rejects_display_order_outside_supported_range(
+    tmp_path,
+):
+    source = load_predict_schema_catalog_v2()
+    for value in ("0", str(MAX_DISPLAY_ORDER + 1)):
+        path = tmp_path / f"schema-{value}.csv"
+        rows = [row_to_csv_dict(source.rows[0])]
+        rows[0]["display_order"] = value
+        write_schema(path, rows)
+
+        errors = validate_predict_schema_catalog_v2(
+            load_predict_schema_catalog_v2(path)
+        )
+
+        assert any("display_order must be between" in error for error in errors)
 
 
 def test_predict_schema_catalog_v2_validation_rejects_invalid_enums_and_booleans(tmp_path):

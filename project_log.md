@@ -29,6 +29,34 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-17 — Train/Admin Phase 4B persistence foundation
+
+### Decision
+
+- Adopt `config/data_definition/manifest.json` as the deterministic bootstrap
+  seed for the versioned canonical Definition contract and publish runtime state
+  only as immutable generation bundles plus one atomic active pointer.
+- Generate Predict, ordered ML, Derived, One-hot, Target/registry, and Mapping
+  requirement projections from one validated manifest and retain scoped model-
+  compatibility fingerprints distinct from Predict presentation changes.
+- Keep `mapping.json`, model artifacts, promotion, and runtime cutover outside the
+  Definition transaction. Preserve protected ML/fixed-string Save blockers until
+  explicit consumer migration; only a fully generated presentation-compatible
+  projection path may replace the legacy parity blocker.
+- Compose generation persistence from the production Train root through an
+  application repository port. Bind every editable draft to its source
+  generation and serialize parent validation with active-pointer replacement so
+  stale writers cannot publish over a newer generation.
+- Derive bootstrap and candidate identities from the same complete semantic
+  manifest hash. Enforce Predict, ordered ML, Derived DAG, One-hot category, and
+  Target presentation ordering in projections and whole-contract validation.
+- Use native POSIX/Windows process file locks around parent validation through
+  pointer replacement, and require callers to choose canonical repository or an
+  explicit legacy schema path. Keep active runtime generations in per-user state
+  rather than source-controlled config, and validate Predict display order as a
+  unique bounded ordering field across active and inactive Features.
+- Advance to Phase 4C only after Phase 4B audit and merge.
+
 ## 2026-07-17 — Train/Admin Unified Feature Manager phase insertion
 
 ### Decision
