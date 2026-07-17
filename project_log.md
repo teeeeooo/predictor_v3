@@ -29,28 +29,6 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
-## 2026-07-17 — Train/Admin Phase 4A contract audit closeout
-
-### Decision
-
-- Approve the merged-main current-state audit and close Phase 4A without production
-  changes.
-- Use one versioned structured JSON manifest as the canonical Data Definition
-  contract; keep Predict schema, ML Feature Catalog, Derived/One-hot,
-  Target/registry, and Mapping requirements as generated projections.
-- Require stable opaque identities independent of display keys and ML names, and
-  isolate Predict, ordered ML, One-hot emitted, Derived DAG, and Target
-  presentation ordering.
-- Make Slice 4B the next implementation slice for bootstrap migration, immutable
-  generation bundles, atomic active-generation publication, cross-contract
-  validation, rollback, and scoped fingerprints.
-- Keep TrainShell cutover staged and generation-consistent, require standalone
-  Predict boundary checks, preserve dirty Mapping drafts through pending-update
-  reconciliation, and keep candidate artifact promotion under the Phase 5
-  artifact/model owner.
-- Preserve current ML-projection-changing Save guards and protected fixed-string
-  consumers until their approved Phase 4B or later migration is accepted.
-
 ## 2026-07-17 — Train/Admin Unified Feature Manager phase insertion
 
 ### Decision
@@ -231,20 +209,149 @@
   actions while result owners retain their native payloads and detail/Batch
   export paths remain separate. SCOP composes export directly from active
   visible climate surfaces rather than its hidden compatibility text model.
-- ISO/KS Single surfaces reserve their final table structure with non-exportable
-  pending placeholders; validation placeholders are invalid, while successful
-  values restore calculated or Brazil pass/fail presentation in place. SASO
-  partial results retain both exportable rows, keep the required row calculated,
-  and mark only the optional error row's non-identity cells invalid before
-  in-place recovery.
-- Nested Notebook lifecycle measures and preserves real chrome before applying
-  the selected child's client allocation, then refreshes the scrollregion and
-  fits the shell; measurement snapshots do not select or configure widgets.
-- AHRI/Korea visibility uses Tk widget identity.
+- The user completed final GUI review and approved the feature branch for
+  integration to `main`; the Calculator table architecture workstream is
+  closed with no remaining merge blocker.
 
 ## 2026-07-11 — Clean/hexagonal desktop refactor
 
 ### Decision
 
 - Preserve calculator and fixed-artifact ML numeric behavior while removing
-  hidden app-level ownership and direct toolkit coupling from core routes.
+  retired calculator code, stale legacy tests, dead Predict split-table UI, and
+  the superseded Train Feature Catalog Manager UI.
+- Keep `app_train.py` and `app_predict.py` separate and thin. Runtime-neutral
+  ports, DTOs, and usecases are assembled in composition roots; PySide runners
+  own toolkit/process lifecycle.
+- Keep `config/ml/features.csv` and the core ML feature catalog as compatibility
+  contracts without adding incomplete ML functionality. Arc 15 Data Definition
+  remains the active Train/Admin schema surface.
+- Use shared semantic visual tokens and screen-aware window policy, hidden-first
+  calculator startup, multi-monitor-safe dialog placement, and two-axis batch
+  table scrolling as the conservative desktop UX baseline.
+
+## 2026-07-10 — Agent harness report and memory lifecycle redesign
+
+### Decision
+
+- Ordinary tracked-file changes no longer require result reports.
+- Durable compact records are limited to contract/policy/migration/manual
+  evidence and non-obvious regression triggers, and are committed with their
+  source changes.
+- New records use date-based final paths plus `REPORT_INDEX.md`; terminal
+  output owns commit hash and push status.
+- Memory Review Gate replaces active-count/summary/archive cleanup as the
+  memory-update checkpoint.
+- Existing archive and summary reports now reside under read-only
+  `result_reports/legacy/` while historical bodies remain unchanged.
+- Stale generated reference-map/read-budget layers were retired; targeted
+  owner/reuse search plus objective structure and staged gates remain.
+- `ACTIVE_DOCUMENTS.md` is an owner-route map; child-document completeness
+  belongs to local indexes and filesystem search.
+- The active design root now contains only current/governing/future-unabsorbed
+  decisions; 45 historical records are under an indexed legacy boundary.
+- The audited harness branch was merged into `main` after pre-merge corrections.
+
+## 2026-07-06 — Pre-Arc 15 config/mapping source audit decision
+
+### Decision
+- Do not proceed directly from Arc 14D-R into Arc 15 real dataset readiness or a
+  `Unified Data Definition Manager` direction.
+- First run a Pre-Arc 15 audit of `config/ml/features.csv`,
+  `config/predict/schema.csv`, the existing legacy mapping fixture
+  `tests/fixtures/mapping/mapping_tables_legacy_wide.csv`, and Data Mapping
+  Manager output relationships.
+- The user clarified that the legacy mapping CSV was already in the repo, while
+  real training CSV data is still outside the repo on the user's local PC.
+- Do not decide whether the current ML feature contract and Predict schema CSV
+  split is final design or duplication debt until that audit is complete.
+
+## 2026-07-03 — Arc 14/15 numbering sync
+
+### Decision
+- Renumbered Data Mapping Manager / Mapping Update Execution as Arc 14 because
+  `app_train.py` Data Mapping is still a placeholder; moved ML catalog-aligned
+  real dataset readiness audit to Arc 15.
+
+## 2026-07-03 — Arc 13.5A feature catalog correction closeout
+
+### Decision
+- Completed Arc 13.5A Feature Catalog Manager correction: dropdown UX bugfix,
+  user-confirmed GUI smoke, narrowed ML model compatibility fingerprint, and
+  active payload dedup are closed out.
+- Active report lifecycle cleanup is complete in
+  `result_reports/legacy/summaries/673_summary-arc13-5a-feature-catalog-manager-closeout.md`.
+- No Arc 13.5A blocker remains; next action is Arc 14 Data Mapping Manager /
+  Mapping Update Execution after the Arc 14/15 numbering sync.
+
+## 2026-07-02 — Arc 13.5 feature catalog editor closeout
+
+### Decision
+- Completed Arc 13.5 Feature Catalog Editor Bridge for automated scope.
+- `app_train.py` now exposes a top-level `Feature Catalog` Train/Admin tab with
+  catalog/project consistency validation, read-only review, Excel-safe
+  UTF-8-SIG export, whitelisted edit fields, validation-gated save, and
+  canonical UTF-8 without BOM safe-write.
+- Direct `config/ml/features.csv` editing is no longer the default user
+  workflow; it remains an advanced/developer fallback for row add/delete or
+  recovery work.
+- Arc 14 real dataset readiness audit is the next recommended arc.
+- Real desktop GUI manual smoke remains pending; automated Qt validation used
+  offscreen mode.
+
+## 2026-07-01 — Calculator Sub-Arc KOREA notebook entry closeout
+
+### Decision
+- Completed the bounded KOREA calculator notebook sub-arc before Arc 13.5.
+- KOREA is now a top-level calculator tab with CSPF/HSPF single calculation,
+  midpoint guide tables, batch table dialogs, and official-result detail views.
+- KS C 9306 core formula/config/profile/public result contracts and golden
+  expected values were preserved.
+- Next near-term action returns to Arc 13.5 Slice 0 Feature Catalog Editor
+  Design Gate.
+
+## 2026-07-01 — Arc 13.5 feature catalog editor direction
+
+### Decision
+- After Arc 13 closeout, practical review found that opening `features.csv` in
+  Excel can display Korean labels incorrectly because Excel may not
+  automatically detect UTF-8 CSV encoding.
+- The preferred user workflow is not direct CSV editing in Excel or Numbers.
+  Arc 13.5 should design the feature catalog workflow around an
+  `app_train.py` Feature Catalog viewer/editor surface.
+- CSV export remains useful for storage, sharing, and Excel/Numbers review, and
+  the implementation design should evaluate an export encoding policy such as
+  UTF-8-SIG.
+- Arc 14, the real catalog-aligned dataset readiness audit, is deferred until
+  after Arc 13.5 viewer/editor/export/save work.
+- The Calculator Sub-Arc - KOREA Notebook Entry is the next action before Arc
+  13.5 starts.
+
+## 2026-06-30 — Arc 13 feature catalog closeout
+
+### Decision
+- Arc 13 is complete for automated scope. `config/ml/features.csv` is the ML
+  feature contract; `ml_name` is the raw training header and internal ML name.
+- ML feature exports, predictor ML-visible columns, one-hot lists, training
+  header runtime guard, inference zero-fill policy, and registry/catalog
+  consistency guards now share the catalog contract.
+- Arc 13 reports 624-632 are covered by
+  `result_reports/legacy/summaries/633_summary-arc13-feature-catalog-closeout.md` and
+  archived.
+- Next recommended work is an ML catalog-aligned real dataset readiness audit.
+
+## 2026-06-29 — Arc 12 calculator application boundary closeout
+
+### Decision
+- Arc 12 Calculator UI/Application Boundary Correction is complete for
+  automated scope.
+- ISO/ISEER, SASO T3, Hong Kong CSPF/HSPF, EN14825 SEER/SCOP, and AHRI
+  SEER2/HSPF2 now route calculation orchestration through
+  `apps.calculator.application` / `apps.calculator.adapters` boundaries or thin
+  UI shims.
+- Matching batch paths reuse application usecases/adapters where applicable,
+  and guard tests now prevent completed UI/batch surfaces from importing the
+  core dispatcher or mutating calculator config.
+- No calculator formulas, config semantics, profile IDs, fixtures/golden
+  expected, or public result dict contracts changed.
+- Arc 13 ML Pipeline Stabilization is unblocked as the next recommended arc.
