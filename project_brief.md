@@ -5,32 +5,38 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin Phase 4 — Unified Feature Manager current-state audit and design
-finalization is the current workstream. Production implementation has not
-started. Phase 3 — Data Definition UX Foundation is complete, final-audit
-approved, and merged through PR #16. The earlier
-ML/Predictor foundation through Arc 15-FU1 and the merged Phase 1–2 Train/Admin
-work remain the active owner baseline.
+Train/Admin Phase 4A — Unified Feature Manager Current-state and Contract Audit is
+approved and complete. No production implementation was included. Phase 4B —
+Unified Contract and Multi-artifact Persistence is the next implementation slice
+after the Phase 4A closeout is merged to `main`.
+
+Phase 3 — Data Definition UX Foundation is complete, final-audit approved, and
+merged through PR #16. The earlier ML/Predictor foundation through Arc 15-FU1 and
+the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 
 ## Current Owner State
 
-- Data Definition is the canonical user-edit owner for Feature definition. Phase
-  4 proposes extending it across Predict/ML Feature structure, Derived/One-hot,
-  Target/registry, ordering, validation, impact, and safe related-contract Save.
+- Data Definition is the canonical user-edit owner for Feature definition. The
+  approved Phase 4A direction extends it across Predict/ML Feature structure,
+  Derived/One-hot, Target/registry, ordering, validation, impact, and safe
+  related-contract Save through one versioned structured manifest.
 - Data Mapping Manager owns concrete `mapping.json` values and runtime mapping
   cascade; Phase 4 does not move value editing into Data Definition.
-- `core/ml/feature_catalog*` and `config/ml/features.csv` remain the ML
-  compatibility contract; the former Feature Catalog Manager UI is retired.
-- `config/ml/features.csv` is the current ML contract file and the proposed ML
-  compatibility/projection surface, not an independent user-edit owner. Existing
-  write guards remain until Phase 4 approves and implements persistence.
-- Train owns explicit training-data selection and training execution. Phase 4
-  proposes dynamic validated Feature/Target consumption but no automatic
-  retraining.
-- Predict consumes saved schema/Feature contracts, mapping values, and compatible
-  model artifacts; its internal UI redesign remains deferred.
-- Train and Predict remain separate PySide6 applications under `apps/train/`
-  and `apps/predict/`; the calculator shell and Tkinter path stay separate.
+- `config/predict/schema.csv`, `config/ml/features.csv`, Derived/One-hot runtime
+  policy, Target/registry, and Mapping requirements become generated compatibility
+  or consumer projections under Phase 4 rather than independent user-edit owners.
+- Existing Data Definition write guards remain until Phase 4B implements and
+  validates canonical migration, generation publication, and rollback.
+- Train owns explicit training-data selection and training execution. It consumes
+  validated dynamic Feature/Target snapshots and never starts automatically from
+  Data Definition Save.
+- Predict consumes saved contract snapshots, mapping values, and a promoted
+  compatible active model; its internal UI redesign remains deferred.
+- Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
+  explicit validated promotion workflow. Training success does not itself replace
+  the active model.
+- Train and Predict remain separate PySide6 applications under `apps/train/` and
+  `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
   `apps.calculator.app:main`.
 - Calculator implementation ownership is under `core/calculators`; calculator
@@ -40,8 +46,8 @@ work remain the active owner baseline.
   `core.calculators` remain UI-toolkit independent.
 - Standard calculation core and standard/region config are calculator-neutral.
   Calculator and ML/Predict reuse their contracts without copying formulas.
-- Region config, HW candidate input, ML feature schema, calculator result
-  schema, and UI table schema remain separate contracts.
+- Region config, HW candidate input, ML feature schema, calculator result schema,
+  and UI table schema remain separate contracts.
 
 ## Milestone Map
 
@@ -67,6 +73,10 @@ work remain the active owner baseline.
   controlled Add/Edit, guarded schema Save and impact, saved-only Data Mapping
   handoff/coverage, keyboard/accessibility polish, and bounded native evidence:
   final audit approved and merged through PR #16.
+- Train/Admin UI/UX Overhaul Phase 4A — merged-main current-state and contract
+  audit: approved for design scope, with canonical manifest, stable identity,
+  isolated ordering, generation persistence, runtime snapshot, dirty Mapping,
+  One-hot, Target, and artifact boundaries fixed before implementation.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -78,36 +88,48 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
 - Data Definition owns structure and mapping attribute definitions; Data Mapping
   owns concrete values.
 - Existing projection, validation, save, readiness, handoff, and persistence
-  owners remain authoritative.
+  owners remain authoritative until approved Phase 4 replacements are accepted.
 - Unsupported active ML rename/delete and projection-changing writes, Remove/
   Reorder, Derived authoring, One-hot group CRUD, Target/registry management, and
-  live reload were outside Phase 3 and are owned by the proposed Phase 4.
+  live reload were outside Phase 3 and are owned by Phase 4.
 - Automatic retraining, automatic activation, Predict internal redesign, and real
   company data remain excluded.
 
 ### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
 
-Phase 4 begins with a current-state and contract audit. Its final workflow lets a
-user manage Predict and ML Feature contracts without directly editing internal
-CSV, JSON, Python registry, or projection files:
+The Phase 4A audit is approved. The final workflow lets a user manage Predict and
+ML Feature contracts without directly editing internal CSV, JSON, Python registry,
+or projection files:
 
 ```text
-Unified Data Definition
-    → validated Predict/ML/Derived/One-hot/Target candidates
-    → all-or-nothing publish
-    → Predict, Train, and Data Mapping owner refresh
+Unified Data Definition manifest
+    → validated Predict/ML/Derived/One-hot/Target projections
+    → immutable generation bundle and atomic active pointer
+    → Predict, Train, Data Definition, and Data Mapping owner preflight/cutover
 ```
 
-Concrete mapping values remain in Data Mapping. Training remains an explicit
-user action in Train. Data Definition does not trigger training or automatic
-model activation, and Predict internal redesign is not part of Phase 4. Train
-owns candidate artifact creation and explicit validated promotion; Predict
-consumes only the promoted compatible active model. Phase 4A must finalize one
-TrainShell process-wide generation cutover, standalone Predict persisted-
-generation detection, immutable training-run snapshots, promotion metadata and
-owner boundaries, dirty Mapping draft reconciliation, One-hot source-mode
-ownership, and the boundary between Target CRUD and new model-group/model-level
-policy creation.
+Phase 4A fixes these implementation boundaries:
+
+- stable opaque identity is independent of `column_key`, `ml_name`, labels, and
+  category values;
+- Predict, ML, One-hot emitted, Derived DAG, and Target presentation orders are
+  separate contracts;
+- dirty Mapping drafts retain state and expose pending-generation reconciliation;
+- static, mapping-backed, and external One-hot sources retain distinct owners;
+- initial Target CRUD associates only with validated existing model groups and
+  target-level policy;
+- training runs and candidates preserve scoped start-contract fingerprints;
+- candidate and active artifacts remain separate, with explicit Phase 5 promotion;
+- one TrainShell process uses staged generation cutover, while standalone Predict
+  performs persisted-generation checks at startup and execution boundaries.
+
+Concrete mapping values remain in Data Mapping. Training remains an explicit user
+action in Train. Data Definition does not trigger training or automatic model
+activation, and Predict internal redesign is not part of Phase 4.
+
+The next slice is Phase 4B, which establishes the canonical structured manifest,
+bootstrap migration, generated projections, immutable generation bundle, atomic
+active pointer, cross-contract validation, rollback, and scoped fingerprints.
 
 ### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
 
@@ -117,19 +139,18 @@ Phase 5 retains this primary user flow:
 select training data → train → check progress → review results
 ```
 
-Schema, Feature, mapping, and compatibility validation is automatic and
-internal. The default surface presents the user's next action and outcome, not
-normal technical readiness details. Errors lead with a user-facing explanation
-and resolution action; Diagnostics/logs provide deeper technical context.
+Schema, Feature, mapping, and compatibility validation is automatic and internal.
+The default surface presents the user's next action and outcome, not normal
+technical readiness details. Errors lead with a user-facing explanation and
+resolution action; Diagnostics/logs provide deeper technical context.
 
 Results center on overall success, target-level R², optional MAE/RMSE, Optuna
 status with best trial/score when applicable, model-save status, elapsed time, and
 Predict availability. Existing Train, ML, persistence, artifact, and public
 contracts plus the Phase 4 dynamic Feature/Target provider are preserved.
-Training-start blockers remain limited to authoritative
-Train/ML input and execution conditions; existing artifact, restart, mapping, or
-Predict state is non-blocking or post-training unless its owner contract says
-otherwise.
+Training-start blockers remain limited to authoritative Train/ML input and
+execution conditions; existing artifact, restart, mapping, or Predict state is
+non-blocking or post-training unless its owner contract says otherwise.
 
 ### Later — Predict UI/UX Overhaul
 
@@ -146,12 +167,14 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
+- Slices 4C–4I remain deferred until Phase 4B establishes the approved canonical
+  contract and persistence foundation.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
-- Internal formula trace remains on hold unless a separate core/data contract
-  is approved.
+- Internal formula trace remains on hold unless a separate core/data contract is
+  approved.
 - Broad refactors remain trigger-based under `docs/REFACTOR_PLAN.md`.
-- Packaging, deployment, and hook integration remain separate workstreams
-  unless explicitly promoted.
+- Packaging, deployment, and hook integration remain separate workstreams unless
+  explicitly promoted.
 
 ## State Navigation
 
@@ -159,6 +182,8 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 - Read `docs/WORK_PLAN.md` for the current slice, one next action, blockers,
   constraints, and explicit handoff pointers.
 - Read this brief when phase, owner state, or milestone direction is needed.
+- Read `docs/designs/2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md`
+  before Phase 4B or later Unified Feature Manager implementation.
 - Read `result_reports/memory/project_memory_seed.md` only for relevant prior
   decisions, failures, open questions, or workstream recovery.
 - Use the log/records/legacy evidence for history, not to reconstruct priority.
