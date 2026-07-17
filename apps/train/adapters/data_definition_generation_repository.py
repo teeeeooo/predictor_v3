@@ -6,10 +6,13 @@ import hashlib
 import json
 import os
 import shutil
+from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterator
 from uuid import uuid4
+
+import fcntl
 
 from apps.train.application.data_definition import (
     GenerationPublishResult,
@@ -46,18 +49,35 @@ class DataDefinitionGenerationRepository:
         generation_id = manifest.generation.generation_id
         if not generation_id or "/" in generation_id or generation_id.startswith("."):
             raise ValueError("generation_id is not a safe immutable bundle name")
-        previous = self.active_generation_id(optional=True)
-        self.generations_path.mkdir(parents=True, exist_ok=True)
-        final_path = self.generations_path / generation_id
-        if final_path.exists():
-            existing = self.read_generation(generation_id)
-            if existing.fingerprints.combined != fingerprints.combined:
-                raise FileExistsError(f"immutable generation already exists: {generation_id}")
-        else:
-            self._stage_and_publish(manifest, projections, fingerprints, final_path)
-        self._failure_hook("before_pointer_replace")
-        self._replace_active_pointer(generation_id)
-        return GenerationPublishResult(generation_id, previous, final_path)
+        with self._single_writer():
+            previous = self.active_generation_id(optional=True)
+            parent = manifest.generation.parent_generation_id
+            if parent != previous:
+                if parent == "" and previous == generation_id:
+                    existing = self.read_generation(generation_id)
+                    if existing.fingerprints.combined == fingerprints.combined:
+                        return GenerationPublishResult(
+                            generation_id,
+                            previous,
+                            existing.path,
+                        )
+                raise ValueError(
+                    "stale generation parent: "
+                    f"candidate={parent or '<none>'}, active={previous or '<none>'}"
+                )
+            self.generations_path.mkdir(parents=True, exist_ok=True)
+            final_path = self.generations_path / generation_id
+            if final_path.exists():
+                existing = self.read_generation(generation_id)
+                if existing.fingerprints.combined != fingerprints.combined:
+                    raise FileExistsError(
+                        f"immutable generation already exists: {generation_id}"
+                    )
+            else:
+                self._stage_and_publish(manifest, projections, fingerprints, final_path)
+            self._failure_hook("before_pointer_replace")
+            self._replace_active_pointer(generation_id)
+            return GenerationPublishResult(generation_id, previous, final_path)
 
     def active_generation_id(self, *, optional: bool = False) -> str:
         try:
@@ -106,10 +126,23 @@ class DataDefinitionGenerationRepository:
         return GenerationSnapshot(manifest, projections, fingerprints, path)
 
     def rollback(self, generation_id: str) -> GenerationSnapshot:
-        snapshot = self.read_generation(generation_id)
-        self._failure_hook("before_pointer_replace")
-        self._replace_active_pointer(generation_id)
-        return snapshot
+        with self._single_writer():
+            snapshot = self.read_generation(generation_id)
+            self._failure_hook("before_pointer_replace")
+            self._replace_active_pointer(generation_id)
+            return snapshot
+
+    @contextmanager
+    def _single_writer(self) -> Iterator[None]:
+        """Serialize parent validation and active-pointer replacement on POSIX."""
+        self.root.mkdir(parents=True, exist_ok=True)
+        descriptor = os.open(self.root, os.O_RDONLY)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+            os.close(descriptor)
 
     def _stage_and_publish(self, manifest, projections, fingerprints, final_path) -> None:  # noqa: ANN001
         staging = self.generations_path / f".staging-{uuid4().hex}"

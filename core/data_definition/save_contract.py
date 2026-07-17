@@ -230,7 +230,11 @@ def _projection_attribution_baseline(
         row for row in draft.baseline_rows if row.source_kind != "schema_row"
     )
     rows = (*schema_rows, *other_rows)
-    return DataDefinitionDraft(rows=rows, baseline_rows=rows)
+    return DataDefinitionDraft(
+        rows=rows,
+        baseline_rows=rows,
+        base_generation_id=draft.base_generation_id,
+    )
 
 
 def _projection_relevant_changes(

@@ -3,7 +3,12 @@
 from core.data_definition.contract.bootstrap import bootstrap_manifest
 from core.data_definition.contract.candidate import candidate_manifest_from_draft
 from core.data_definition.contract.codec import dump_manifest, load_manifest, manifest_payload
-from core.data_definition.contract.fingerprints import ScopedFingerprints, scoped_fingerprints
+from core.data_definition.contract.fingerprints import (
+    ScopedFingerprints,
+    scoped_fingerprints,
+    semantic_generation_id,
+    semantic_manifest_fingerprint,
+)
 from core.data_definition.contract.model import (
     ContractGeneration,
     DerivedDefinition,
@@ -52,5 +57,7 @@ __all__ = [
     "predict_csv_text",
     "require_valid_contract",
     "scoped_fingerprints",
+    "semantic_generation_id",
+    "semantic_manifest_fingerprint",
     "validate_contract",
 ]

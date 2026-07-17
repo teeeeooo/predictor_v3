@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
+from dataclasses import replace
 from pathlib import Path
 
+from core.data_definition.contract.fingerprints import semantic_generation_id
 from core.data_definition.contract.identity import bootstrap_identity
 from core.data_definition.contract.model import (
     ContractGeneration,
@@ -59,20 +59,9 @@ def bootstrap_manifest(
         derived=tuple(item.identity for item in derived),
         targets=tuple(item.identity for item in targets),
     )
-    semantic_seed = json.dumps(
-        {
-            "features": [item.identity for item in features],
-            "ml": ml_order,
-            "derived": [item.identity for item in derived],
-            "targets": [item.identity for item in targets],
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    generation_id = "bootstrap-" + hashlib.sha256(semantic_seed.encode()).hexdigest()[:20]
-    return UnifiedFeatureManifest(
+    manifest = UnifiedFeatureManifest(
         contract_version="unified_feature_contract.v1",
-        generation=ContractGeneration(generation_id=generation_id),
+        generation=ContractGeneration(generation_id="bootstrap-pending"),
         preprocessing_version="v1.0",
         features=features,
         derived=derived,
@@ -81,6 +70,13 @@ def bootstrap_manifest(
         model_groups=model_groups,
         mapping_requirements=requirements,
         ordering=ordering,
+    )
+    return replace(
+        manifest,
+        generation=replace(
+            manifest.generation,
+            generation_id=semantic_generation_id(manifest, prefix="bootstrap"),
+        ),
     )
 
 

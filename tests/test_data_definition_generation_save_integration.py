@@ -87,6 +87,27 @@ def test_protected_ml_name_change_remains_blocked_without_consumer_migration(tmp
     assert changed.is_changed
 
 
+def test_stale_application_save_preserves_first_generation_and_stale_draft(tmp_path):
+    first_service, repository = _service(tmp_path)
+    stale_service = DataDefinitionService(generation_repository=repository)
+    first_draft = first_service.load_draft()
+    stale_draft = stale_service.load_draft()
+    identity = next(
+        row.identity for row in first_draft.rows if row.column_key == "cooling_capa"
+    )
+    first_changed = replace_draft_row(first_draft, identity, label="First save")
+    stale_changed = replace_draft_row(stale_draft, identity, label="Stale save")
+
+    first_result = first_service.save_schema_draft(first_changed)
+    stale_result = stale_service.save_schema_draft(stale_changed)
+
+    assert first_result.status == "written"
+    assert stale_result.status == "error"
+    assert "stale generation parent" in stale_result.message
+    assert repository.read_active().projections.predict[0].label == "First save"
+    assert stale_changed.is_changed
+
+
 def test_rejected_generation_save_preserves_draft_and_does_not_touch_external_owners(tmp_path):
     service, repository = _service(tmp_path)
     mapping_path = tmp_path / "mapping.json"

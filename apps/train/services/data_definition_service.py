@@ -89,6 +89,8 @@ class DataDefinitionService:
 
     def load_draft(self) -> DataDefinitionDraft:
         """Return an in-memory editable draft loaded from the schema owner path."""
+        if self._persistence is not None:
+            return self._persistence.load_draft()
         return build_data_definition_draft(schema_path=self._active_schema_path())
 
     def refresh_draft(self) -> DataDefinitionDraft:

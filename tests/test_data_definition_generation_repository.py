@@ -1,5 +1,6 @@
 """Phase 4B immutable generation publication and recovery tests."""
 
+import threading
 from dataclasses import replace
 
 import pytest
@@ -91,3 +92,61 @@ def test_published_generation_is_immutable(tmp_path):
     with pytest.raises(FileExistsError, match="immutable generation"):
         repository.publish(conflicting)
     assert repository.read_active().manifest == initial
+
+
+def test_stale_candidate_cannot_replace_first_published_generation(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+    first = _candidate(initial, "generation-first", label="First writer")
+    stale = _candidate(initial, "generation-stale", label="Stale writer")
+
+    repository.publish(first)
+    with pytest.raises(ValueError, match="stale generation parent"):
+        repository.publish(stale)
+
+    assert repository.read_active().manifest == first
+    assert not (repository.generations_path / "generation-stale").exists()
+    assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.root.glob(".active-generation-*.tmp"))
+
+
+def test_concurrent_stale_writers_are_serialized_across_parent_check_and_replace(tmp_path):
+    root = tmp_path / "store"
+    repository = DataDefinitionGenerationRepository(root)
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+    candidates = (
+        _candidate(initial, "generation-a", label="Writer A"),
+        _candidate(initial, "generation-b", label="Writer B"),
+    )
+    barrier = threading.Barrier(2)
+    outcomes: list[tuple[str, str]] = []
+
+    def publish(candidate) -> None:  # noqa: ANN001
+        contender = DataDefinitionGenerationRepository(root)
+        barrier.wait()
+        try:
+            contender.publish(candidate)
+        except ValueError as exc:
+            outcomes.append((candidate.generation.generation_id, str(exc)))
+        else:
+            outcomes.append((candidate.generation.generation_id, "published"))
+
+    threads = [threading.Thread(target=publish, args=(item,)) for item in candidates]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert not any(thread.is_alive() for thread in threads)
+    assert len([result for _generation, result in outcomes if result == "published"]) == 1
+    stale_results = [
+        result
+        for _generation, result in outcomes
+        if "stale generation parent" in result
+    ]
+    assert len(stale_results) == 1
+    assert repository.active_generation_id() in {"generation-a", "generation-b"}
+    assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.root.glob(".active-generation-*.tmp"))

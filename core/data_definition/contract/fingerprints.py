@@ -53,10 +53,8 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
     target_payload = list(projections.target_registry)
     mapping_payload = [asdict(item) for item in projections.mapping_requirements]
     preprocessing_payload = {"version": manifest.preprocessing_version}
-    semantic_manifest = manifest_payload(manifest)
-    semantic_manifest.pop("generation")
     return ScopedFingerprints(
-        combined=_hash(semantic_manifest),
+        combined=semantic_manifest_fingerprint(manifest),
         predict=_hash(predict_payload),
         ordered_ml=_hash(ml_payload),
         derived=_hash(derived_payload),
@@ -65,6 +63,22 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
         mapping_requirements=_hash(mapping_payload),
         preprocessing=_hash(preprocessing_payload),
     )
+
+
+def semantic_manifest_fingerprint(manifest: UnifiedFeatureManifest) -> str:
+    """Hash the complete canonical semantic payload, excluding generation metadata."""
+    semantic_manifest = manifest_payload(manifest)
+    semantic_manifest.pop("generation")
+    return _hash(semantic_manifest)
+
+
+def semantic_generation_id(
+    manifest: UnifiedFeatureManifest,
+    *,
+    prefix: str,
+) -> str:
+    """Return a deterministic generation name using the shared semantic hash."""
+    return f"{prefix}-{semantic_manifest_fingerprint(manifest)[:20]}"
 
 
 def _hash(payload: object) -> str:

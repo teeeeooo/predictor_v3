@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from apps.train.application.data_definition import (
     DataDefinitionGenerationRepositoryPort,
 )
@@ -11,6 +13,7 @@ from core.data_definition.contract import (
     scoped_fingerprints,
 )
 from core.data_definition.draft import DataDefinitionDraft
+from core.data_definition.draft import build_data_definition_draft
 from core.data_definition.save_contract import (
     DataDefinitionSaveBlocker,
     DataDefinitionSavePlan,
@@ -34,6 +37,17 @@ class DataDefinitionPersistenceService:
     def active_feature_catalog_path(self):  # noqa: ANN201
         return self._repository.read_active().path / "projections" / "features.csv"
 
+    def load_draft(self) -> DataDefinitionDraft:
+        """Bind a new draft to the exact active generation snapshot it loaded."""
+        active = self._repository.read_active()
+        draft = build_data_definition_draft(
+            schema_path=active.path / "projections" / "schema.csv"
+        )
+        return replace(
+            draft,
+            base_generation_id=active.manifest.generation.generation_id,
+        )
+
     def save(
         self,
         draft: DataDefinitionDraft,
@@ -48,7 +62,12 @@ class DataDefinitionPersistenceService:
                 "Draft is unchanged; generation publication skipped.",
                 status="noop",
             )
-        active = self._repository.read_active()
+        if not draft.base_generation_id:
+            return self._blocked(
+                "draft_generation_missing",
+                "Canonical generation draft has no base generation identity.",
+            )
+        base = self._repository.read_generation(draft.base_generation_id)
         protected_blockers = tuple(
             item for item in save_plan.blocked_reasons
             if item.severity == "error"
@@ -64,14 +83,14 @@ class DataDefinitionPersistenceService:
                 status="blocked",
             )
         try:
-            candidate = candidate_manifest_from_draft(draft, active.manifest)
+            candidate = candidate_manifest_from_draft(draft, base.manifest)
             require_valid_contract(candidate)
         except (KeyError, ValueError) as exc:
             return self._blocked(
                 "canonical_candidate_invalid",
                 f"Canonical generation candidate is invalid: {exc}",
             )
-        blockers = self._effective_blockers(save_plan, active.manifest, candidate)
+        blockers = self._effective_blockers(save_plan, base.manifest, candidate)
         if blockers:
             return DataDefinitionSchemaSaveResult(
                 False,

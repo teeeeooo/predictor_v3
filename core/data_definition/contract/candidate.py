@@ -11,7 +11,7 @@ from core.data_definition.contract.model import (
     OrderingContract,
     UnifiedFeatureManifest,
 )
-from core.data_definition.contract.fingerprints import scoped_fingerprints
+from core.data_definition.contract.fingerprints import semantic_generation_id
 from core.data_definition.draft import DataDefinitionDraft
 from core.data_definition.projection import project_feature_catalog_from_draft
 
@@ -62,7 +62,7 @@ def candidate_manifest_from_draft(
             targets=base.ordering.targets,
         ),
     )
-    generation_id = "generation-" + scoped_fingerprints(candidate).combined[:20]
+    generation_id = semantic_generation_id(candidate, prefix="generation")
     return replace(candidate, generation=replace(candidate.generation, generation_id=generation_id))
 
 
