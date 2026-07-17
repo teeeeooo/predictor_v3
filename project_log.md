@@ -29,6 +29,44 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-17 — Train/Admin Unified Feature Manager phase insertion
+
+### Decision
+
+- Preserve completed Phases 1–3 and PR #16 history, but define the completed
+  Phase 3 scope as the table-first Data Definition UX foundation.
+- Make Phase 4 the proposed/current Unified Feature Manager workstream for
+  complete Predict/ML Feature lifecycle and ordering, Derived/One-hot/Target
+  authoring, transaction-safe multi-contract persistence, and live owner refresh.
+- Move the unstarted Train/Model and Shell UX design to Phase 5; start it only
+  after Phase 4 stabilization and a fresh dynamic Feature/Target contract audit.
+- Keep Data Mapping as concrete value owner, Train as explicit training-execution
+  owner, and Predict as saved-contract/compatible-model consumer. Exclude
+  automatic retraining, automatic model activation, and Predict internal redesign
+  from Phase 4.
+- Keep current ML-projection-changing Save guards until Phase 4 approves and
+  implements a persistence and compatibility migration/rollback boundary.
+- Require one immutable persisted contract generation and coordinated consumer
+  preflight/cutover; mixed-generation normal operation is forbidden and disk Save
+  success remains distinct from runtime activation success.
+- Bind every training run/result/artifact to its immutable start-generation
+  Feature/Target/preprocessing snapshot. Definition Save does not retroactively
+  alter an active run, and stale artifacts are not current-compatible by default.
+- Preserve dirty Data Mapping drafts and expose pending requirement updates rather
+  than silently reloading them. Separate static, mapping-backed, and external
+  One-hot vocabulary owners.
+- Keep initial Target CRUD limited to validated existing model-group association
+  and target-level policies; new model groups and model-level training policy
+  require a separately approved advanced contract.
+- Separate run/generation-scoped candidate artifacts from the active model.
+  Training completion cannot replace the active model; only validated explicit
+  promotion by the artifact/model owner may do so, and failure preserves the
+  previous compatible model.
+- Limit atomic generation cutover to required owners inside one TrainShell
+  process. Standalone Predict and other processes independently detect persisted-
+  generation mismatch at startup/execution/reload boundaries and block new work
+  when safe reload cannot succeed.
+
 ## 2026-07-16 — Train/Admin Phase 4 Train UX direction
 
 ### Decision

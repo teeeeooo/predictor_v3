@@ -574,6 +574,60 @@ entries:
       - Phase 3 final audit
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-table-first-correction.md; docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md; docs/WORK_PLAN.md
+
+  - type: decision
+    topic: Train/Admin Phase 4 Unified Feature Manager direction
+    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. The proposed/current Phase 4 is Unified Feature Manager current-state audit and design finalization: Data Definition becomes the canonical user-edit workflow for Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Result/Target registry candidates, cross-contract validation, all-or-nothing persistence, and owner-preserving live reload. Current ML-projection-changing Save guards remain until Phase 4 approves and implements persistence plus compatibility migration/rollback. Concrete mapping.json values remain owned by Data Mapping; Train owns explicit training execution and dynamically consumes validated Feature/Target contracts; Predict consumes saved contracts and compatible models. Automatic retraining, automatic model activation, training from Data Definition, and Predict internal redesign are excluded. The unstarted Train/Model and Shell UX design moves to deferred Phase 5 and begins only after Phase 4 stabilization and a fresh dynamic-contract audit; Predict redesign follows Phase 5.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4
+      - Unified Feature Manager
+      - Phase 5
+      - Data Definition
+      - Data Mapping
+      - Derived Feature
+      - One-hot group
+      - Target registry
+      - multi-contract persistence
+      - live reload
+      - automatic retraining
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md
+
+  - type: decision
+    topic: Train/Admin Feature contract cutover and concurrency boundaries
+    content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4
+      - contract generation
+      - mixed generation
+      - training snapshot
+      - stale artifact
+      - dirty Data Mapping draft
+      - One-hot category source
+      - Target CRUD
+      - model group
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-feature-contract-cutover-boundaries.md
+
+  - type: decision
+    topic: Train/Admin model promotion and standalone Predict generation boundaries
+    content: Proposed Phase 4 separates Definition contract publication, training candidate publication, and active-model promotion. Training output is a run/generation-scoped candidate distinct from the active model; only the artifact/model owner may explicitly promote a validated current-compatible candidate, promotion failure preserves the prior compatible model, and automatic promotion/activation is excluded. Phase 4 owns compatibility metadata/classification while Phase 5 owns candidate results and explicit promotion workflow. Atomic generation cutover applies only inside one TrainShell process composition. Standalone Predict and other processes independently compare persisted, process-active, and promoted-model generations at startup, prediction, explicit reload, and model reload/promotion; a stale process preserves existing rows/results but blocks new prediction when safe reload fails. One-hot acceptance follows source-mode owners: Data Definition CRUD for static vocabulary, Data Mapping reconciliation for mapping-backed options, and read-only or bounded policy for external/provider vocabulary.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - candidate artifact
+      - active model
+      - explicit promotion
+      - process-wide generation
+      - standalone Predict
+      - stale process
+      - One-hot acceptance
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-model-promotion-predict-generation-boundaries.md
 ```
 
 ## Known Gaps

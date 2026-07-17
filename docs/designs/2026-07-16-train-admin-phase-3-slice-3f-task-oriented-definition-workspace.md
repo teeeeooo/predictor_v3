@@ -6,6 +6,12 @@ Branch: `phase/train-admin-data-definition-ux`
 Correction baseline: `1f3d9d973f7e97a1ed123a88fd757016ccbc34ab`
 Depends on: accepted Slice 3A–3D contracts and technically completed Slice 3E interaction/accessibility work
 
+Follow-up (2026-07-17): this amendment remains accepted Phase 3 foundation and
+its historical scope is unchanged. Complete Feature lifecycle/ordering, ML
+persistence, Derived and One-hot group authoring, Target/registry management, and
+live reload are owned by Phase 4 — Unified Feature Manager; Phase 3 final audit
+and PR #16 merge history remain intact.
+
 ## 1. Decision
 
 Slice 3E completed the requested keyboard, focus, accessibility, state, responsive,

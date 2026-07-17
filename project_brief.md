@@ -5,19 +5,30 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin UI/UX Overhaul Phase 4 — Train/Model and Shell UX current-state audit
-and design finalization is next. Phase 3 — Data Definition UX Overhaul is
-complete, final-audit approved, and merged through PR #16. The earlier
+Train/Admin Phase 4 — Unified Feature Manager current-state audit and design
+finalization is the current workstream. Production implementation has not
+started. Phase 3 — Data Definition UX Foundation is complete, final-audit
+approved, and merged through PR #16. The earlier
 ML/Predictor foundation through Arc 15-FU1 and the merged Phase 1–2 Train/Admin
 work remain the active owner baseline.
 
 ## Current Owner State
 
-- Data Definition is the canonical schema and feature-definition owner.
-- Data Mapping Manager owns `mapping.json` values and runtime mapping cascade.
+- Data Definition is the canonical user-edit owner for Feature definition. Phase
+  4 proposes extending it across Predict/ML Feature structure, Derived/One-hot,
+  Target/registry, ordering, validation, impact, and safe related-contract Save.
+- Data Mapping Manager owns concrete `mapping.json` values and runtime mapping
+  cascade; Phase 4 does not move value editing into Data Definition.
 - `core/ml/feature_catalog*` and `config/ml/features.csv` remain the ML
   compatibility contract; the former Feature Catalog Manager UI is retired.
-- `config/ml/features.csv` remains the ML feature storage and contract file.
+- `config/ml/features.csv` is the current ML contract file and the proposed ML
+  compatibility/projection surface, not an independent user-edit owner. Existing
+  write guards remain until Phase 4 approves and implements persistence.
+- Train owns explicit training-data selection and training execution. Phase 4
+  proposes dynamic validated Feature/Target consumption but no automatic
+  retraining.
+- Predict consumes saved schema/Feature contracts, mapping values, and compatible
+  model artifacts; its internal UI redesign remains deferred.
 - Train and Predict remain separate PySide6 applications under `apps/train/`
   and `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
@@ -68,32 +79,61 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
   owns concrete values.
 - Existing projection, validation, save, readiness, handoff, and persistence
   owners remain authoritative.
-- Unsupported active ML rename/delete and projection-changing writes remain
-  blocked until an explicit compatibility owner is approved.
-- Predict internal redesign, live schema reload, automatic retraining, and real
-  company data remain outside this milestone.
+- Unsupported active ML rename/delete and projection-changing writes, Remove/
+  Reorder, Derived authoring, One-hot group CRUD, Target/registry management, and
+  live reload were outside Phase 3 and are owned by the proposed Phase 4.
+- Automatic retraining, automatic activation, Predict internal redesign, and real
+  company data remain excluded.
 
-### Next Workstream — Train/Admin Phase 4 Train/Model and Shell UX Overhaul
+### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
 
-Phase 4 begins with a current-state audit and design finalization. Its primary
-user flow is:
+Phase 4 begins with a current-state and contract audit. Its final workflow lets a
+user manage Predict and ML Feature contracts without directly editing internal
+CSV, JSON, Python registry, or projection files:
+
+```text
+Unified Data Definition
+    → validated Predict/ML/Derived/One-hot/Target candidates
+    → all-or-nothing publish
+    → Predict, Train, and Data Mapping owner refresh
+```
+
+Concrete mapping values remain in Data Mapping. Training remains an explicit
+user action in Train. Data Definition does not trigger training or automatic
+model activation, and Predict internal redesign is not part of Phase 4. Train
+owns candidate artifact creation and explicit validated promotion; Predict
+consumes only the promoted compatible active model. Phase 4A must finalize one
+TrainShell process-wide generation cutover, standalone Predict persisted-
+generation detection, immutable training-run snapshots, promotion metadata and
+owner boundaries, dirty Mapping draft reconciliation, One-hot source-mode
+ownership, and the boundary between Target CRUD and new model-group/model-level
+policy creation.
+
+### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
+
+Phase 5 retains this primary user flow:
 
 ```text
 select training data → train → check progress → review results
 ```
 
-Schema, feature, mapping, and compatibility validation is automatic and internal.
-The default surface presents the user's next action and outcome, not normal
-technical readiness details. Errors lead with a user-facing explanation and
-resolution action; Diagnostics/logs provide the deeper technical context.
+Schema, Feature, mapping, and compatibility validation is automatic and
+internal. The default surface presents the user's next action and outcome, not
+normal technical readiness details. Errors lead with a user-facing explanation
+and resolution action; Diagnostics/logs provide deeper technical context.
 
 Results center on overall success, target-level R², optional MAE/RMSE, Optuna
 status with best trial/score when applicable, model-save status, elapsed time, and
 Predict availability. Existing Train, ML, persistence, artifact, and public
-contracts are preserved. Training-start blockers remain limited to authoritative
+contracts plus the Phase 4 dynamic Feature/Target provider are preserved.
+Training-start blockers remain limited to authoritative
 Train/ML input and execution conditions; existing artifact, restart, mapping, or
 Predict state is non-blocking or post-training unless its owner contract says
 otherwise.
+
+### Later — Predict UI/UX Overhaul
+
+Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ### Later — Production ML Readiness / Calculator Integration
 

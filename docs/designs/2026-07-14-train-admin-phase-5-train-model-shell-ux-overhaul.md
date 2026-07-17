@@ -1,8 +1,8 @@
-# Train/Admin Phase 4 — Train/Model and Shell UX Overhaul
+# Train/Admin Phase 5 — Train/Model and Shell UX Overhaul
 
-Status: proposed phase design; current-state audit and finalization pending
-Date: 2026-07-16
-Depends on: Phases 1–3
+Status: deferred proposed phase design; begin after Phase 4 stabilization
+Date: 2026-07-17
+Depends on: completed Phases 1–4
 
 ## 1. Goal
 
@@ -11,6 +11,11 @@ Train / Model workflow around the user's task: selecting training data, training
 checking progress, and reviewing results. Readiness, safe execution, recovery,
 and cross-tab state support that flow without turning the default surface into an
 internal state dashboard.
+
+Phase 5 begins only after the Unified Feature Manager is stable. Its opening
+current-state audit uses the dynamic Feature/Target contract delivered by Phase
+4, including any replacement of hard-coded Train Target lists or static registry
+consumption. It does not add a second Feature-authoring surface.
 
 This phase does not change ML algorithms unless a separately approved defect or
 compatibility requirement demands it.
@@ -49,9 +54,11 @@ logs.
 
 ```text
 select training data
-    -> train
+    -> train to candidate artifact
     -> check progress
+    -> validate candidate and compare contracts
     -> review results
+    -> explicitly promote a compatible candidate
 ```
 
 Schema, feature, mapping, and compatibility checks run automatically as part of
@@ -75,8 +82,9 @@ The resulting surface should provide:
 - progress and current stage;
 - user-facing failure context and its resolution action;
 - a result summary centered on the completed training outcome;
-- produced model save status and elapsed time;
-- Predict availability after existing activation conditions pass;
+- candidate artifact save/validation/compatibility status and elapsed time;
+- explicit promotion action and active-model replacement result;
+- Predict availability only after compatible promotion conditions pass;
 - Diagnostics/log access for advanced technical details.
 
 Mock execution success must not be presented as model-quality success.
@@ -84,7 +92,7 @@ Mock execution success must not be presented as model-quality success.
 ### Default and Advanced training settings
 
 The normal flow uses the safe defaults already provided by the authoritative
-Train/ML settings owner and execution contract. Phase 4 does not create a
+Train/ML settings owner and execution contract. Phase 5 does not create a
 second UI-owned default policy.
 
 - Only values that the existing Train/ML contract requires the user to decide
@@ -117,7 +125,7 @@ These are conditions under which training cannot be safely started:
   contract makes the run impossible.
 
 The exact predicate is determined during the current-state audit from the
-existing Train/ML owner and execution boundary. Phase 4 does not invent a new
+existing Train/ML owner and execution boundary. Phase 5 does not invent a new
 policy in the UI. Only this category produces a blocked Start result.
 
 ### 5.2 Non-blocking warnings and states
@@ -143,9 +151,10 @@ readiness issue; the authoritative owner contract remains the source of truth.
 These occur after training execution completes and concern persistence or use of
 the resulting model:
 
-- model save failure;
+- candidate artifact save or validation failure;
 - artifact validation failure;
 - mismatch between the new artifact and the active feature contract;
+- explicit promotion or active-model replacement failure;
 - Predict load or activation failure;
 - restart not completed, leaving Predict unable to use the saved result.
 
@@ -164,6 +173,24 @@ user-facing outcome and next action. Owner routing for a blocking issue is:
 ## 6. Training Execution
 
 Preserve existing execution boundaries and Cooling/Heating independence.
+
+Train starts each run from the immutable Feature/Target contract snapshot
+provided by Phase 4, including its generation and relevant preprocessing/
+registry fingerprints. A later active Definition generation does not mutate an
+in-flight run. Completion compares the run contract with the current contract;
+run success, artifact persistence, current compatibility, and Predict
+availability remain separate outcomes. An older-generation artifact is stale
+unless compatibility is explicitly proven and is not shown as Predict-compatible
+or automatically activated. The prior compatible model remains available until
+the new artifact passes the established checks.
+
+Training completion publishes a run/generation-scoped candidate artifact at a
+path separate from the active model. It does not replace the active model.
+Candidate validation and contract compatibility precede an explicit user-facing
+promotion action owned by the established artifact/model boundary. Promotion is
+atomic where supported; failure preserves the prior compatible model and Predict
+availability. The current production fixed-path replacement behavior is a Phase
+5 audit/migration input, not the target lifecycle.
 
 The UX must:
 
@@ -188,15 +215,18 @@ After completion, show:
 - MAE/RMSE when available and useful for the result;
 - whether Optuna ran and its completion status;
 - best trial or best score when Optuna provides it;
-- whether the model was saved;
+- whether the candidate artifact was saved and validated;
+- candidate path/state and its promotion eligibility;
+- whether explicit promotion and active-model replacement succeeded;
 - total elapsed training time and per-Target time when the result contract
   provides it;
 - whether Predict can use the resulting model;
+- the run contract generation and whether it matches the current active contract;
 - the next user action when the result cannot be saved or used by Predict.
 
 Target names, metric labels, and optional values follow the existing Train/ML
 result contracts. If an existing owner does not yet provide a requested result
-field, the Phase 4 audit identifies a Qt-free result projection extension; it
+field, the Phase 5 audit identifies a Qt-free result projection extension; it
 does not claim the field is already implemented. The default result view excludes
 full schema details, full feature order, raw mapping coverage, raw compatibility
 evidence, the complete Optuna trial list, stack traces, and step-by-step internal
@@ -249,15 +279,19 @@ implementation audit.
 
 ## 10. Implementation Slices
 
-### Slice 4A — Current-state audit and design finalization
+### Slice 5A — Current-state audit and design finalization
 
-- Audit the merged-main Train/Model and shell surfaces against current owner and
-  public-contract boundaries.
+- Audit the merged-main Train/Model and shell surfaces against the stable Phase 4
+  dynamic Feature/Target contract and current public-owner boundaries.
+- Confirm Train consumes validated dynamic Feature/Target/registry providers
+  rather than retaining hard-coded Target choices or static registry assumptions.
+- Audit and migrate the current training-completion fixed-path replacement into
+  candidate publication, validation, and explicit promotion boundaries.
 - Freeze the user-flow, automatic-validation, progressive-disclosure, error-
   recovery, and result-summary contracts before implementation.
 - Keep this slice documentation/planning only.
 
-### Slice 4B — Training-data selection and automatic validation
+### Slice 5B — Training-data selection and automatic validation
 
 - Make training-data selection the first user task.
 - Run schema, feature, mapping, and compatibility checks internally.
@@ -265,21 +299,26 @@ implementation audit.
   blockers; present Section 5.2 states as warnings or follow-up actions without
   blocking Start unless the authoritative Train/ML contract requires it.
 
-### Slice 4C — Training execution and progress
+### Slice 5C — Training execution and progress
 
 - Start/cancel training through the existing execution boundary.
 - Show current stage, progress, completion, cancellation, and failure states
   without freezing the main UI.
+- Publish successful output only as an identifiable candidate artifact; do not
+  replace the active model on training completion.
 
-### Slice 4D — Results and Predict availability
+### Slice 5D — Results and Predict availability
 
 - Present the overall outcome, per-Target success/failure and R², optional
-  MAE/RMSE, applicable Optuna status/best trial or score, model-save status,
+  MAE/RMSE, applicable Optuna status/best trial or score, candidate save and
+  validation status, contract compatibility, explicit promotion action/result,
   elapsed time, Predict availability, and the next action for Section 5.3
   post-training blockers.
+- Permit promotion only for validated compatible candidates; preserve the
+  existing model and Predict availability on failure.
 - Preserve existing runner/worker, artifact, and ML boundaries.
 
-### Slice 4E — Common shell and Diagnostics/log consolidation
+### Slice 5E — Common shell and Diagnostics/log consolidation
 
 - Make shell state and shared visual components support the user flow without
   exposing internal readiness by default.
@@ -307,9 +346,15 @@ merged only after cross-tab workflow and mock training smoke pass.
 - Training runs without blocking the main UI and reports progress.
 - Cancellation and failure produce distinct states.
 - Successful training shows overall success, per-Target outcome and R², optional
-  MAE/RMSE, applicable Optuna status and best trial/score, model-save status,
-  elapsed time, and Predict availability without making production accuracy
-  claims.
+  MAE/RMSE, applicable Optuna status and best trial/score, candidate-save status,
+  elapsed time, and separately evaluated Predict availability without making
+  production accuracy claims.
+- Training completion leaves the active model unchanged and reports a separate
+  candidate artifact.
+- Only a validated current-compatible candidate can be explicitly promoted.
+- Stale or incompatible candidates cannot become the active model.
+- Promotion failure preserves the existing compatible model and Predict
+  availability.
 - Post-training save, artifact, activation, or restart failures are represented
   as Predict availability and next-action states rather than Start blockers.
 - Detailed failure evidence is available in Diagnostics/logs.
@@ -322,6 +367,10 @@ merged only after cross-tab workflow and mock training smoke pass.
 ## 12. Non-goals
 
 - Predict internal redesign.
+- Feature authoring or a duplicate Feature Manager in Train / Model.
+- Running training from Data Definition.
+- Automatic retraining, automatic promotion, or automatic model activation
+  orchestration.
 - New ML algorithms.
 - Automatic real-data transformation.
 - Production model-quality certification.
