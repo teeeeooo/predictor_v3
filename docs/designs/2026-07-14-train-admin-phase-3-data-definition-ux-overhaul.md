@@ -6,6 +6,12 @@ Audit baseline: merged `main` at `f381c90960153600b5e218528e36914e5b093d1a`
 Closeout: Phase 3 final audit approved and PR #16 merged on 2026-07-16
 Depends on: accepted Phase 1 foundation and merged Phase 2 Data Mapping workflow
 
+Follow-up (2026-07-17): Phase 3 remains the completed table-first Data Definition
+UX foundation. Broader Feature CRUD/ordering, ML persistence, Derived authoring,
+One-hot group CRUD, Target/registry management, and live reload belong to Phase 4
+— Unified Feature Manager. This follow-up does not change Phase 3 acceptance,
+final-audit evidence, or PR #16 merge history.
+
 ## 1. Goal
 
 Replace the current diagnostics-first Data Definition surface with an

@@ -2,6 +2,13 @@
 
 Status: active reference
 
+Follow-up (2026-07-17): Arc 15's unified user-edit owner and projection direction
+remains the foundation for Train/Admin Phase 4 — Unified Feature Manager. Phase 4
+extends it with Feature authoring, transaction-safe persistence, and owner-
+preserving live reload. Concrete mapping values remain owned by Data Mapping;
+training remains an explicit user action in Train; automatic retraining is out
+of scope. Arc 15's historical slice plan and exclusions are unchanged.
+
 ## Purpose
 
 Arc 15 establishes the Unified Data Definition Manager direction. The goal is

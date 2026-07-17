@@ -1,7 +1,7 @@
 # Train/Admin UI/UX Overhaul — Governing Design
 
 Status: active governing design  
-Date: 2026-07-16
+Date: 2026-07-17
 
 ## 1. Purpose
 
@@ -40,9 +40,15 @@ CSV exchange remains part of Data Mapping rather than becoming a fifth tab.
 
 ## 3. Current Problem
 
-Phase 2–3 established and merged the core Data Mapping and Data Definition user
-flows. The remaining problem is now concentrated in Train / Model and the common
-shell rather than in the completed definition or mapping workflows.
+Phase 2–3 established and merged the core Data Mapping workflow and the
+table-first Data Definition UX foundation. The next gap is a Unified Feature
+Manager that extends that completed foundation before Train / Model and common
+shell work begins.
+
+- Data Definition cannot yet manage the complete Predict/ML Feature lifecycle:
+  Remove, Duplicate, ordering, Derived authoring, One-hot group CRUD,
+  Result/Target registry management, transactional multi-contract persistence,
+  and live cross-tab refresh remain unimplemented.
 
 - Train / Model is organized more around configuration panels, file-existence
   checks, isolated status values, and logs than around selecting training data,
@@ -66,15 +72,15 @@ information architecture, state communication, recovery, and editing efficiency.
 
 | Area | Owner responsibility |
 | --- | --- |
-| Data Definition | Defines columns, mapping requirements, mapping attributes, projection intent, and readiness impact within approved compatibility boundaries. |
+| Data Definition | Canonical user-edit owner for Feature structure/identity, Predict and ML intent, Derived/One-hot/Target definitions, ordering, validation, impact, and safe related-contract persistence. Phase 4 target; current writes remain bounded by existing guards until implemented. |
 | Data Mapping | Edits concrete mapping rows and values for already-defined mapping structures. |
-| `config/predict/schema.csv` | Canonical Predict/Data Definition schema source. |
-| `config/ml/features.csv` | Legacy ML compatibility/parity surface; canonical default writes are blocked. |
+| `config/predict/schema.csv` | Current primary Predict/Data Definition source and a future projection candidate; exact Phase 4 canonical storage is finalized after audit. |
+| `config/ml/features.csv` | ML projection/compatibility surface, not an independent user-edit owner; current canonical writes remain blocked until Phase 4 persistence is approved. |
 | `data/mapping.json` | Runtime mapping value source of truth. |
 | Mapping exchange files | Human-readable exchange and backup representation of the Data Mapping draft. |
 | Legacy wide CSV fixture | One-time bootstrap/migration evidence only. |
-| Train / Model | Training execution, artifact status, readiness visibility, and results workflow. |
-| Predict | Runtime case entry and prediction workflow; internal UX redesign deferred. |
+| Train / Model | Dynamic Feature/Target consumption, training-data selection, explicit training execution, artifact status, readiness visibility, and results workflow. |
+| Predict | Saved schema/Feature and compatible-model consumer; runtime case entry and prediction workflow; internal UX redesign deferred. |
 
 ### Structural versus value changes
 
@@ -231,7 +237,12 @@ revision counter.
    target-level R², optional MAE/RMSE, Optuna status and best trial/score when
    applicable, model-save status, elapsed time, and Predict availability.
 11. **Shared visual language** — tables, toolbars, status, issues, empty states,
-   and dialogs use reusable common components suitable for later Predict reuse.
+    and dialogs use reusable common components suitable for later Predict reuse.
+12. **Transactional contracts** — one accepted Definition draft validates and
+    publishes every related candidate contract or preserves the prior valid set.
+13. **Owner-preserving refresh** — successful Definition Save notifies Predict,
+    Train, and Data Mapping through a shell/composition contract without merging
+    tab responsibilities.
 
 ## 9. Phase Plan
 
@@ -251,13 +262,20 @@ impact workflow, Data Mapping handoff, and audit corrections are complete and
 merged through PR #16. Existing owner and compatibility boundaries remain
 authoritative.
 
-### Phase 4 — Train/Model and Shell UX Overhaul (audit and design next)
-Begin with a merged-main current-state audit and design finalization. The
-implementation order follows the Train user flow: training-data selection and
-automatic internal validation, training execution, progress, results, then shell
-and Diagnostics/log consolidation. The default surface is user-centered rather
-than an internal readiness dashboard. Its purpose is to help a user run training
-and judge the result, not to expose more internal state.
+### Phase 4 — Unified Feature Manager (proposed active phase)
+Begin with a merged-main current-state and contract audit. Extend the completed
+Phase 3 table-first foundation into the canonical Predict/ML Feature-authoring
+workflow: complete Feature mutation and ordering, Derived and One-hot authoring,
+Result/Target registry management, safe multi-contract persistence, and
+owner-preserving live reload. Data Mapping retains concrete values; Train retains
+explicit training execution. Automatic retraining and activation are excluded.
+
+### Phase 5 — Train/Model and Shell UX Overhaul (deferred)
+Begin after Phase 4 stabilization with a new current-state audit against its
+dynamic Feature/Target contract. Follow the Train user flow: training-data
+selection and automatic internal validation, training execution, progress,
+results, then shell and Diagnostics/log consolidation. Do not duplicate Feature
+authoring in Train or require automatic retraining.
 
 ### Deferred — Predict UX Overhaul
 Fresh audit and redesign after Train/Admin foundations are stable.
@@ -316,6 +334,17 @@ The program is complete when:
   exported, and imported safely;
 - a supported mapping attribute can be defined and populated without raw JSON;
 - definition changes expose restart, retraining, training-header, and model impact;
+- complete Feature CRUD, Enable/Disable, Duplicate, and explicit ordering work
+  without direct internal-file editing;
+- Predict-only and ML-only Features are independently manageable;
+- Derived Features and One-hot groups/categories are safely authored;
+- Result/Target and model-registry candidates are managed and validated together;
+- all related Definition contracts publish atomically with cross-contract
+  validation and preserve prior artifacts on failure;
+- Predict, Train, and Data Mapping live-refresh their owned projections after a
+  successful Save without merging controller responsibilities;
+- Train dynamically consumes current Feature/Target contracts and reports
+  retraining required for an incompatible existing model;
 - Train/Model leads with the training-data selection → train → progress → results
   flow;
 - schema, feature, mapping, and compatibility checks run automatically and
@@ -333,7 +362,8 @@ The program is complete when:
 - Calculator UI or formula changes.
 - Production data inclusion in the repository.
 - Automatic production model retraining.
-- Predict internal redesign during Phases 1–4.
-- Schema live reload unless separately designed.
+- Automatic model activation orchestration.
+- Training execution from Data Definition.
+- Predict internal redesign during Phases 1–5.
 - Silent definition creation from imported CSV columns.
 - Reusing the legacy wide CSV as the future exchange format.

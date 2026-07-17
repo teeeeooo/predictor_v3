@@ -2,7 +2,7 @@
 
 Status: deferred design boundary  
 Date: 2026-07-14  
-Prerequisite: Train/Admin Phases 1–4 complete
+Prerequisite: Train/Admin Phases 1–5 complete
 
 ## 1. Purpose
 
@@ -57,7 +57,7 @@ Before detailed Predict design:
 
 ## 5. Boundary with Current Program
 
-Train/Admin Phases 1–4 may:
+Train/Admin Phases 1–5 may:
 
 - create reusable components intended for Predict;
 - correct shared component defects;
@@ -72,7 +72,7 @@ They must not:
 
 ## 6. Detailed Design Trigger
 
-Create the detailed Predict design only after Phase 4 closeout confirms:
+Create the detailed Predict design only after Phase 5 closeout confirms:
 
 - shared component inventory;
 - current Predict adoption gaps;

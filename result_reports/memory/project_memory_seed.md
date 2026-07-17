@@ -574,6 +574,26 @@ entries:
       - Phase 3 final audit
     assertionStatus: verified
     source: result_reports/records/2026-07/2026-07-16-train-admin-phase3-slice3f-table-first-correction.md; docs/designs/2026-07-16-train-admin-phase-3-slice-3f-task-oriented-definition-workspace.md; docs/WORK_PLAN.md
+
+  - type: decision
+    topic: Train/Admin Phase 4 Unified Feature Manager direction
+    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. The proposed/current Phase 4 is Unified Feature Manager current-state audit and design finalization: Data Definition becomes the canonical user-edit workflow for Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Result/Target registry candidates, cross-contract validation, all-or-nothing persistence, and owner-preserving live reload. Current ML-projection-changing Save guards remain until Phase 4 approves and implements persistence plus compatibility migration/rollback. Concrete mapping.json values remain owned by Data Mapping; Train owns explicit training execution and dynamically consumes validated Feature/Target contracts; Predict consumes saved contracts and compatible models. Automatic retraining, automatic model activation, training from Data Definition, and Predict internal redesign are excluded. The unstarted Train/Model and Shell UX design moves to deferred Phase 5 and begins only after Phase 4 stabilization and a fresh dynamic-contract audit; Predict redesign follows Phase 5.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4
+      - Unified Feature Manager
+      - Phase 5
+      - Data Definition
+      - Data Mapping
+      - Derived Feature
+      - One-hot group
+      - Target registry
+      - multi-contract persistence
+      - live reload
+      - automatic retraining
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md
 ```
 
 ## Known Gaps
