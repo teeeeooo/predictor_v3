@@ -168,16 +168,20 @@ bootstrap manifest와 filesystem generation adapter를 구성한 뒤 작은
 `DataDefinitionGenerationRepositoryPort`를 통해 application service에 주입한다.
 Production Data Definition Save는 이 immutable generation transaction을 기본
 경로로 사용하고, explicit `schema_path` service 구성만 legacy 호환
-writer를 사용한다. Draft는 로드한 base generation에 바인딩되며,
-filesystem adapter는 POSIX single-writer lock 안에서 parent와 active generation을
-비교한 후 pointer를 교체하여 stale Save를 차단한다.
+writer를 사용한다. 무인자 service/controller/shell 구성은 fail-fast한다.
+Draft는 로드한 base generation에 바인딩되며, filesystem adapter는 POSIX의
+`flock` 또는 Windows의 `msvcrt.locking` process lock 안에서 parent와 active
+generation을 비교한 후 pointer를 교체하여 stale Save를 차단한다. Runtime
+generation history와 active pointer는 source config가 아니라 사용자별 state
+root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다.
 
 Ordering owner는 Predict=`ordering.predict`, ordered ML=`ordering.ml`,
 Derived DAG=`ordering.derived`, One-hot emitted category=`category.order`, Target
 presentation=`ordering.targets`다. Feature `display_order`, Derived/Target storage
 order, category storage order, Target `presentation_order`처럼 호환을 위해
 중복 저장된 필드는 whole-contract validation으로 canonical owner와의
-일치를 강제한다.
+일치를 강제한다. Predict `display_order`는 inactive Feature를 포함한 전체
+Predict order 계약에서 유일하고 양의 32-bit signed 범위여야 한다.
 
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).

@@ -1,6 +1,8 @@
 """Trainer application bootstrap for the PySide6 rewrite."""
 
+import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
@@ -18,8 +20,26 @@ from core.data_definition.contract import load_manifest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DEFINITION_ROOT = PROJECT_ROOT / "config" / "data_definition"
-DEFAULT_GENERATION_ROOT = DEFAULT_DEFINITION_ROOT / "generation_store"
 DEFAULT_BOOTSTRAP_MANIFEST_PATH = DEFAULT_DEFINITION_ROOT / "manifest.json"
+
+
+def default_generation_root(
+    *,
+    platform_name: str | None = None,
+    environment: Mapping[str, str] | None = None,
+    home: Path | None = None,
+) -> Path:
+    """Return the per-user runtime root without mixing state into source config."""
+    resolved_platform = platform_name or os.name
+    resolved_environment = environment if environment is not None else os.environ
+    resolved_home = home or Path.home()
+    if resolved_platform == "nt":
+        fallback = resolved_home / "AppData" / "Local"
+        base = Path(resolved_environment.get("LOCALAPPDATA", fallback))
+    else:
+        fallback = resolved_home / ".local" / "state"
+        base = Path(resolved_environment.get("XDG_STATE_HOME", fallback))
+    return base / "predictor_v3" / "data_definition"
 
 
 def create_shell(
@@ -28,9 +48,8 @@ def create_shell(
     bootstrap_manifest_path: str | Path | None = None,
 ) -> TrainShell:
     """Compose the Trainer shell with the production execution adapter."""
-    repository = DataDefinitionGenerationRepository(
-        generation_root or DEFAULT_GENERATION_ROOT
-    )
+    root = generation_root if generation_root is not None else default_generation_root()
+    repository = DataDefinitionGenerationRepository(root)
     try:
         repository.read_active()
     except FileNotFoundError:

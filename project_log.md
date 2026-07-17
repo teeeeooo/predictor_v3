@@ -50,6 +50,11 @@
 - Derive bootstrap and candidate identities from the same complete semantic
   manifest hash. Enforce Predict, ordered ML, Derived DAG, One-hot category, and
   Target presentation ordering in projections and whole-contract validation.
+- Use native POSIX/Windows process file locks around parent validation through
+  pointer replacement, and require callers to choose canonical repository or an
+  explicit legacy schema path. Keep active runtime generations in per-user state
+  rather than source-controlled config, and validate Predict display order as a
+  unique bounded ordering field across active and inactive Features.
 - Advance to Phase 4C only after Phase 4B audit and merge.
 
 ## 2026-07-17 — Train/Admin Unified Feature Manager phase insertion

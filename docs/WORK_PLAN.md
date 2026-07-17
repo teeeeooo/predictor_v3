@@ -20,10 +20,13 @@
 Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
 implemented and audit-corrected on its dedicated Draft PR branch. Production
 `create_shell()` now bootstraps and injects canonical generation persistence;
-draft generation binding plus a store-level single-writer boundary rejects stale
-Save. Complete semantic identity, canonical ordering projections, stronger
-One-hot/Mapping/Target cross-validation, immutable history, rollback, and the
-existing protected-consumer guards are covered by focused acceptance tests.
+draft generation binding plus Windows/POSIX cross-process single-writer locking
+rejects stale Save. Persistence construction is explicit, runtime generations
+live under per-user state instead of source config, and duplicate Predict
+`display_order` is rejected across active and inactive Features. Complete
+semantic identity, canonical ordering projections, stronger One-hot/Mapping/
+Target cross-validation, immutable history, rollback, and the existing
+protected-consumer guards are covered by focused acceptance tests.
 
 ## Next Action
 
@@ -105,6 +108,7 @@ model promotion runtime work into the 4B branch.
 - Arc 15 owner foundation: `docs/designs/2026-07-06-arc15-unified-data-definition-manager-foundation.md`
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`
 - Phase 4B result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md`
+- Phase 4B final audit correction: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-final-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

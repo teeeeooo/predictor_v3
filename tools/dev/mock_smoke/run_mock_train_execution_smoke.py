@@ -16,11 +16,16 @@ from PySide6.QtCore import QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner  # noqa: E402
+from apps.train.controllers.data_definition_controller import (  # noqa: E402
+    DataDefinitionController,
+)
 from apps.train.controllers.train_controller import TrainController  # noqa: E402
+from apps.train.services.data_definition_service import DataDefinitionService  # noqa: E402
 from apps.train.state.training_run_state import TrainingRequest  # noqa: E402
 from apps.train.ui.shell import TrainShell  # noqa: E402
 from core.ml.artifacts import MODEL_FILE  # noqa: E402
 from core.ml.inference import load_model  # noqa: E402
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH  # noqa: E402
 from tools.dev.mock_smoke.generators import (  # noqa: E402
     CASE_INPUT_NAME,
     cleanup_from_manifest,
@@ -70,7 +75,13 @@ def _run_train_ui_smoke(rows: int, predict_delay_ms: int) -> TrainShell:
         )
     )
     controller = TrainController(execution=runner)
-    shell = TrainShell(train_controller=controller)
+    definition_controller = DataDefinitionController(
+        DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+    )
+    shell = TrainShell(
+        train_controller=controller,
+        data_definition_controller=definition_controller,
+    )
     panel = shell.train_model_panel
     app.processEvents()
     if not panel.run_button.isEnabled():

@@ -2,11 +2,15 @@
 
 import hashlib
 import json
+import multiprocessing
+import sys
 import threading
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
+from apps.train.adapters import data_definition_generation_repository as repository_module
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
@@ -27,6 +31,17 @@ def _candidate(manifest, generation_id: str, *, label: str | None = None):  # no
         ),
         features=features,
     )
+
+
+def _publish_process(root, candidate, barrier, results) -> None:  # noqa: ANN001
+    repository = DataDefinitionGenerationRepository(root)
+    barrier.wait()
+    try:
+        repository.publish(candidate)
+    except ValueError as exc:
+        results.put((candidate.generation.generation_id, str(exc)))
+    else:
+        results.put((candidate.generation.generation_id, "published"))
 
 
 def test_publish_exposes_only_one_complete_generation_and_preserves_history(tmp_path):
@@ -54,6 +69,36 @@ def test_invalid_candidate_does_not_create_files_or_change_active_pointer(tmp_pa
     assert {item.name for item in repository.generations_path.iterdir()} == {
         initial.generation.generation_id
     }
+
+
+def test_duplicate_predict_display_order_is_blocked_before_publication(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+    invalid = replace(
+        initial,
+        generation=replace(
+            initial.generation,
+            generation_id="generation-duplicate-display-order",
+            parent_generation_id=initial.generation.generation_id,
+        ),
+        features=(
+            initial.features[0],
+            replace(
+                initial.features[1],
+                display_order=initial.features[0].display_order,
+            ),
+            *initial.features[2:],
+        ),
+    )
+
+    with pytest.raises(ValueError, match="predict_display_order_duplicate"):
+        repository.publish(invalid)
+
+    assert repository.active_generation_id() == initial.generation.generation_id
+    assert not (
+        repository.generations_path / "generation-duplicate-display-order"
+    ).exists()
 
 
 @pytest.mark.parametrize("failure_stage", ["after_staging", "before_pointer_replace"])
@@ -150,6 +195,92 @@ def test_concurrent_stale_writers_are_serialized_across_parent_check_and_replace
     ]
     assert len(stale_results) == 1
     assert repository.active_generation_id() in {"generation-a", "generation-b"}
+    assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.root.glob(".active-generation-*.tmp"))
+
+
+def test_cross_process_writers_are_serialized_across_parent_check_and_replace(tmp_path):
+    root = tmp_path / "store"
+    repository = DataDefinitionGenerationRepository(root)
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+    candidates = (
+        _candidate(initial, "generation-process-a", label="Process A"),
+        _candidate(initial, "generation-process-b", label="Process B"),
+    )
+    context = multiprocessing.get_context("spawn")
+    barrier = context.Barrier(2)
+    results = context.Queue()
+    processes = [
+        context.Process(
+            target=_publish_process,
+            args=(str(root), candidate, barrier, results),
+        )
+        for candidate in candidates
+    ]
+
+    for process in processes:
+        process.start()
+    outcomes = [results.get(timeout=20) for _process in processes]
+    for process in processes:
+        process.join(timeout=20)
+
+    assert not any(process.is_alive() for process in processes)
+    assert all(process.exitcode == 0 for process in processes)
+    assert len([result for _generation, result in outcomes if result == "published"]) == 1
+    assert len([
+        result for _generation, result in outcomes if "stale generation parent" in result
+    ]) == 1
+    assert repository.active_generation_id() in {
+        "generation-process-a",
+        "generation-process-b",
+    }
+
+
+def test_lock_acquisition_failure_preserves_active_generation(tmp_path, monkeypatch):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+
+    def fail_lock(_descriptor: int) -> None:
+        raise OSError("injected lock acquisition failure")
+
+    monkeypatch.setattr(repository_module, "_lock_descriptor", fail_lock)
+    with pytest.raises(OSError, match="lock acquisition"):
+        repository.publish(_candidate(initial, "generation-lock-failed"))
+
+    assert repository.read_active().manifest == initial
+    assert not (repository.generations_path / "generation-lock-failed").exists()
+    assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.root.glob(".active-generation-*.tmp"))
+
+
+def test_windows_lock_backend_supports_publication_stale_rejection_and_rollback(
+    tmp_path,
+    monkeypatch,
+):
+    calls: list[int] = []
+    fake_msvcrt = SimpleNamespace(
+        LK_LOCK=1,
+        LK_UNLCK=2,
+        locking=lambda _descriptor, operation, _count: calls.append(operation),
+    )
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
+    monkeypatch.setattr(repository_module, "_platform_name", lambda: "nt")
+    repository = DataDefinitionGenerationRepository(tmp_path / "windows-store")
+    initial = bootstrap_manifest()
+
+    repository.publish(initial)
+    first = _candidate(initial, "generation-windows-first", label="Windows")
+    repository.publish(first)
+    with pytest.raises(ValueError, match="stale generation parent"):
+        repository.publish(_candidate(initial, "generation-windows-stale"))
+    restored = repository.rollback(initial.generation.generation_id)
+
+    assert restored.manifest == initial
+    assert repository.read_active().manifest == initial
+    assert calls.count(fake_msvcrt.LK_LOCK) == calls.count(fake_msvcrt.LK_UNLCK)
+    assert calls.count(fake_msvcrt.LK_LOCK) >= 4
     assert not list(repository.generations_path.glob(".staging-*"))
     assert not list(repository.root.glob(".active-generation-*.tmp"))
 

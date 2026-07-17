@@ -28,7 +28,9 @@ class DataDefinitionController:
     """Coordinate Data Definition report and draft refresh for the UI."""
 
     def __init__(self, service: DataDefinitionService | None = None) -> None:
-        self._service = service or DataDefinitionService()
+        if service is None:
+            raise ValueError("DataDefinitionController requires an explicit service")
+        self._service = service
         self._draft: DataDefinitionDraft | None = None
         self._saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = ()
 

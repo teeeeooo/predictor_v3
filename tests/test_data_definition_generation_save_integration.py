@@ -1,14 +1,18 @@
 """Phase 4B Data Definition application persistence integration tests."""
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
+import pytest
 from PySide6.QtWidgets import QApplication
 
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
-from apps.train.app import create_shell
+from apps.train.app import PROJECT_ROOT, create_shell, default_generation_root
+from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.draft import replace_draft_row
@@ -67,6 +71,75 @@ def test_application_persistence_depends_on_repository_port_not_filesystem_adapt
         text = source.read_text(encoding="utf-8")
         assert "DataDefinitionGenerationRepositoryPort" in text
         assert "apps.train.adapters.data_definition_generation_repository" not in text
+
+
+def test_train_app_and_generation_adapter_import_without_posix_fcntl_dependency():
+    script = """
+import builtins
+original_import = builtins.__import__
+def guarded_import(name, *args, **kwargs):
+    if name == 'fcntl':
+        raise ModuleNotFoundError('fcntl blocked for Windows import simulation')
+    return original_import(name, *args, **kwargs)
+builtins.__import__ = guarded_import
+import apps.train.adapters.data_definition_generation_repository
+import apps.train.app
+"""
+    subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=PROJECT_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_default_generation_root_is_per_user_runtime_state(tmp_path):
+    windows_root = default_generation_root(
+        platform_name="nt",
+        environment={"LOCALAPPDATA": str(tmp_path / "LocalAppData")},
+        home=tmp_path / "home",
+    )
+    posix_root = default_generation_root(
+        platform_name="posix",
+        environment={"XDG_STATE_HOME": str(tmp_path / "state")},
+        home=tmp_path / "home",
+    )
+
+    assert windows_root == tmp_path / "LocalAppData" / "predictor_v3" / "data_definition"
+    assert posix_root == tmp_path / "state" / "predictor_v3" / "data_definition"
+    assert PROJECT_ROOT not in windows_root.parents
+    assert PROJECT_ROOT not in posix_root.parents
+
+
+def test_legacy_source_config_generation_store_is_git_ignored():
+    result = subprocess.run(
+        [
+            "git",
+            "check-ignore",
+            "config/data_definition/generation_store/active_generation.json",
+        ],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+
+
+def test_persistence_owner_selection_is_explicit(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    repository.publish(bootstrap_manifest())
+
+    with pytest.raises(ValueError, match="exactly one persistence owner"):
+        DataDefinitionService()
+    with pytest.raises(ValueError, match="exactly one persistence owner"):
+        DataDefinitionService(
+            schema_path=tmp_path / "schema.csv",
+            generation_repository=repository,
+        )
+    with pytest.raises(ValueError, match="explicit service"):
+        DataDefinitionController()
 
 
 def test_canonical_save_publishes_predict_presentation_change_as_complete_generation(tmp_path):

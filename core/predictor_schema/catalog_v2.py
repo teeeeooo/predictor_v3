@@ -8,6 +8,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SCHEMA_PATH = PROJECT_ROOT / "config" / "predict" / "schema.csv"
+MIN_DISPLAY_ORDER = 1
+MAX_DISPLAY_ORDER = 2_147_483_647
 
 REQUIRED_HEADERS = (
     "display_order",
@@ -149,8 +151,25 @@ def validate_predict_schema_catalog_v2_issues(
         ))
 
     seen_keys: dict[str, int] = {}
+    seen_display_orders: dict[int, int] = {}
     for row in catalog.rows:
         prefix = _row_prefix(row)
+        if not MIN_DISPLAY_ORDER <= row.display_order <= MAX_DISPLAY_ORDER:
+            issues.append(_validation_issue(
+                row,
+                "display_order",
+                f"{prefix}: display_order must be between "
+                f"{MIN_DISPLAY_ORDER} and {MAX_DISPLAY_ORDER}",
+            ))
+        elif row.display_order in seen_display_orders:
+            issues.append(_validation_issue(
+                row,
+                "display_order",
+                f"{prefix}: duplicate display_order '{row.display_order}' "
+                f"(first seen on line {seen_display_orders[row.display_order]})",
+            ))
+        else:
+            seen_display_orders[row.display_order] = row.line_number
         if row.active:
             if not row.column_key:
                 issues.append(_validation_issue(

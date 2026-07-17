@@ -13,6 +13,8 @@ from core.data_definition.contract.validation_types import ContractValidationIss
 from core.ml.feature_catalog import FeatureCatalog
 from core.ml.feature_catalog_validation import validate_feature_catalog
 from core.predictor_schema.catalog_v2 import (
+    MAX_DISPLAY_ORDER,
+    MIN_DISPLAY_ORDER,
     PredictSchemaCatalogV2,
     validate_predict_schema_catalog_v2,
 )
@@ -143,6 +145,19 @@ def _validate_derived(issues, manifest) -> None:  # noqa: ANN001
 
 
 def _validate_storage_order(issues, manifest) -> None:  # noqa: ANN001
+    _duplicates(issues, "predict_display_order_duplicate", [
+        item.display_order for item in manifest.features
+    ])
+    for item in manifest.features:
+        if (
+            type(item.display_order) is not int
+            or not MIN_DISPLAY_ORDER <= item.display_order <= MAX_DISPLAY_ORDER
+        ):
+            issues.append(ContractValidationIssue(
+                "predict_display_order_invalid",
+                f"{item.identity}: display_order must be between "
+                f"{MIN_DISPLAY_ORDER} and {MAX_DISPLAY_ORDER}",
+            ))
     if tuple(item.identity for item in manifest.features) != manifest.ordering.predict:
         issues.append(ContractValidationIssue(
             "predict_storage_order_mismatch",

@@ -12,8 +12,6 @@ from pathlib import Path
 from typing import Callable, Iterator
 from uuid import uuid4
 
-import fcntl
-
 from apps.train.application.data_definition import (
     GenerationPublishResult,
     GenerationSnapshot,
@@ -41,6 +39,7 @@ class DataDefinitionGenerationRepository:
         self.root = Path(root)
         self.generations_path = self.root / "generations"
         self.active_pointer_path = self.root / "active_generation.json"
+        self.writer_lock_path = self.root / ".generation-write.lock"
         self._failure_hook = failure_hook or (lambda _stage: None)
 
     def publish(self, manifest: UnifiedFeatureManifest) -> GenerationPublishResult:
@@ -134,15 +133,9 @@ class DataDefinitionGenerationRepository:
 
     @contextmanager
     def _single_writer(self) -> Iterator[None]:
-        """Serialize parent validation and active-pointer replacement on POSIX."""
-        self.root.mkdir(parents=True, exist_ok=True)
-        descriptor = os.open(self.root, os.O_RDONLY)
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        """Serialize parent validation and pointer replacement across processes."""
+        with _exclusive_file_lock(self.writer_lock_path):
             yield
-        finally:
-            fcntl.flock(descriptor, fcntl.LOCK_UN)
-            os.close(descriptor)
 
     def _stage_and_publish(self, manifest, projections, fingerprints, final_path) -> None:  # noqa: ANN001
         staging = self.generations_path / f".staging-{uuid4().hex}"
@@ -233,6 +226,8 @@ class DataDefinitionGenerationRepository:
 
     @staticmethod
     def _fsync_directory(path: Path) -> None:
+        if _platform_name() == "nt":
+            return
         descriptor = os.open(path, os.O_RDONLY)
         try:
             os.fsync(descriptor)
@@ -257,3 +252,50 @@ def _projection_json_text(generation_id: str, rows: object) -> str:
         {"generation_id": generation_id, "rows": rows},
         default=_json_default,
     )
+
+
+@contextmanager
+def _exclusive_file_lock(path: Path) -> Iterator[None]:
+    """Hold one persistent coordination file with the native process lock API."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    locked = False
+    try:
+        if os.fstat(descriptor).st_size == 0:
+            os.write(descriptor, b"\0")
+            os.fsync(descriptor)
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        _lock_descriptor(descriptor)
+        locked = True
+        yield
+    finally:
+        if locked:
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            _unlock_descriptor(descriptor)
+        os.close(descriptor)
+
+
+def _lock_descriptor(descriptor: int) -> None:
+    if _platform_name() == "nt":
+        import msvcrt
+
+        msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+        return
+    import fcntl
+
+    fcntl.flock(descriptor, fcntl.LOCK_EX)
+
+
+def _unlock_descriptor(descriptor: int) -> None:
+    if _platform_name() == "nt":
+        import msvcrt
+
+        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+        return
+    import fcntl
+
+    fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+
+def _platform_name() -> str:
+    return os.name

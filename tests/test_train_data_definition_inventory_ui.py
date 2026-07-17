@@ -25,6 +25,7 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_definition_models import INVENTORY_HEADERS
 import apps.train.ui.data_definition_panel as data_definition_panel_module
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _app() -> QApplication:
@@ -32,9 +33,19 @@ def _app() -> QApplication:
     return QApplication.instance() or QApplication([])
 
 
+def _controller() -> DataDefinitionController:
+    return DataDefinitionController(
+        DataDefinitionService(schema_path=DEFAULT_SCHEMA_PATH)
+    )
+
+
+def _panel() -> DataDefinitionPanel:
+    return DataDefinitionPanel(controller=_controller())
+
+
 def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         app.processEvents()
         assert panel.inventory_table.model().rowCount() == len(panel._state.draft_rows)
@@ -93,7 +104,7 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
 
 def test_task_workspace_normal_and_compact_geometry_has_no_horizontal_split_or_scroll():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         for size, compact in (((1280, 820), False), ((900, 640), True)):
             panel.resize(*size)
@@ -142,7 +153,7 @@ def test_task_workspace_normal_and_compact_geometry_has_no_horizontal_split_or_s
 
 def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         app.processEvents()
         assert not panel.save_button.isEnabled()
@@ -208,7 +219,7 @@ def test_inventory_panel_renders_no_match_and_load_error_messages():
         panel.deleteLater()
         app.processEvents()
 
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         panel.search_input.setText("definitely-not-present")
         app.processEvents()
@@ -224,7 +235,7 @@ def test_inventory_panel_reconciles_removed_filter_option_without_signal_recursi
     monkeypatch,
 ):
     app = _app()
-    panel = DataDefinitionPanel()
+    panel = _panel()
     try:
         app.processEvents()
         label_col = DRAFT_FIELDS.index("label")
@@ -297,10 +308,10 @@ class _FailingService(DataDefinitionService):
 
 class _FailingController(DataDefinitionController):
     def __init__(self) -> None:
-        super().__init__(_FailingService())
+        super().__init__(_FailingService(schema_path=DEFAULT_SCHEMA_PATH))
 
 
 class _EmptyController:
     def refresh(self):  # noqa: ANN201
-        state = DataDefinitionController().refresh()
+        state = _controller().refresh()
         return replace(state, draft_rows=(), draft_row_identities=())

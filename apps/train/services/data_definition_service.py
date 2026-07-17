@@ -25,7 +25,6 @@ from core.data_definition import (
     save_data_definition_schema_draft,
 )
 from core.data_definition.draft import replace_draft_row
-from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
 )
@@ -53,7 +52,12 @@ class DataDefinitionService:
         schema_path: str | Path | None = None,
         generation_repository: DataDefinitionGenerationRepositoryPort | None = None,
     ) -> None:
-        self._schema_path = Path(schema_path) if schema_path is not None else DEFAULT_SCHEMA_PATH
+        if (schema_path is None) == (generation_repository is None):
+            raise ValueError(
+                "DataDefinitionService requires exactly one persistence owner: "
+                "generation_repository or explicit schema_path"
+            )
+        self._schema_path = Path(schema_path) if schema_path is not None else None
         self._persistence = (
             DataDefinitionPersistenceService(generation_repository)
             if generation_repository is not None else None
@@ -160,13 +164,18 @@ class DataDefinitionService:
             return self._persistence.save(draft, save_plan)
         return save_data_definition_schema_draft(
             draft,
-            self._schema_path,
+            self._legacy_schema_path(),
             save_plan=save_plan,
         )
 
     def _active_schema_path(self) -> Path:
         if self._persistence is not None:
             return self._persistence.active_schema_path
+        return self._legacy_schema_path()
+
+    def _legacy_schema_path(self) -> Path:
+        if self._schema_path is None:
+            raise RuntimeError("legacy schema path is unavailable in canonical mode")
         return self._schema_path
 
 

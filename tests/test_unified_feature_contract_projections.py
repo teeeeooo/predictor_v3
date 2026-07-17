@@ -17,13 +17,18 @@ from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
 
 
 def test_generated_predict_and_ml_projections_preserve_current_contract(tmp_path):
-    projections = generate_projections(bootstrap_manifest())
+    manifest = bootstrap_manifest()
+    projections = generate_projections(manifest)
     predict_path = tmp_path / "schema.csv"
     predict_path.write_text(predict_csv_text(projections), encoding="utf-8")
     generated_predict = load_predict_schema_catalog_v2(predict_path)
     current_predict = load_predict_schema_catalog_v2()
     assert [replace(row, line_number=0) for row in generated_predict.rows] == [
         replace(row, line_number=0) for row in current_predict.rows
+    ]
+    feature_by_id = {item.identity: item for item in manifest.features}
+    assert [row.column_key for row in generated_predict.rows] == [
+        feature_by_id[identity].column_key for identity in manifest.ordering.predict
     ]
 
     ml_path = tmp_path / "features.csv"
@@ -207,6 +212,31 @@ def test_cross_validation_rejects_ordering_one_hot_mapping_and_target_mismatches
     )
     assert "predict_display_order_mismatch" in {
         item.code for item in validate_contract(feature_order)
+    }
+    duplicate_display_order = replace(
+        manifest,
+        features=(
+            manifest.features[0],
+            replace(
+                manifest.features[1],
+                display_order=manifest.features[0].display_order,
+                active=False,
+            ),
+            *manifest.features[2:],
+        ),
+    )
+    assert "predict_display_order_duplicate" in {
+        item.code for item in validate_contract(duplicate_display_order)
+    }
+    invalid_display_order = replace(
+        manifest,
+        features=(
+            replace(manifest.features[0], display_order=0),
+            *manifest.features[1:],
+        ),
+    )
+    assert "predict_display_order_invalid" in {
+        item.code for item in validate_contract(invalid_display_order)
     }
 
     group = manifest.one_hot_groups[0]

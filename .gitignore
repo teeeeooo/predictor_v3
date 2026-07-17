@@ -15,6 +15,7 @@ temporary_info.md
 .dev_artifacts/
 .mock_smoke/
 predictor_v3_mock_smoke/
+config/data_definition/generation_store/
 mock_smoke_*.csv
 mock_smoke_*.tsv
 mock_smoke_*.xlsx
