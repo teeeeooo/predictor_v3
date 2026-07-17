@@ -26,6 +26,7 @@ from core.data_definition.contract.projections import (
     generate_projections,
     ml_csv_text,
     predict_csv_text,
+    topological_derived_identities,
 )
 from core.data_definition.contract.validation import (
     ContractValidationIssue,
@@ -59,5 +60,6 @@ __all__ = [
     "scoped_fingerprints",
     "semantic_generation_id",
     "semantic_manifest_fingerprint",
+    "topological_derived_identities",
     "validate_contract",
 ]

@@ -1,6 +1,7 @@
 """Phase 4B Data Definition application persistence integration tests."""
 
 import os
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
@@ -49,7 +50,23 @@ def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_pa
         "Production generation presentation"
     )
     assert DEFAULT_SCHEMA_PATH.read_bytes() == legacy_schema_before
+    restarted_shell = create_shell(generation_root=root)
+    assert repository.read_active().projections.predict[0].label == (
+        "Production generation presentation"
+    )
+    restarted_shell.close()
     shell.close()
+
+
+def test_application_persistence_depends_on_repository_port_not_filesystem_adapter():
+    sources = (
+        Path("apps/train/services/data_definition_persistence_service.py"),
+        Path("apps/train/services/data_definition_service.py"),
+    )
+    for source in sources:
+        text = source.read_text(encoding="utf-8")
+        assert "DataDefinitionGenerationRepositoryPort" in text
+        assert "apps.train.adapters.data_definition_generation_repository" not in text
 
 
 def test_canonical_save_publishes_predict_presentation_change_as_complete_generation(tmp_path):
@@ -125,7 +142,7 @@ def test_rejected_generation_save_preserves_draft_and_does_not_touch_external_ow
     assert repository.read_active().manifest == bootstrap_manifest()
 
 
-def test_legacy_schema_writer_remains_default_compatibility_path(tmp_path):
+def test_explicit_service_without_repository_uses_legacy_compatibility_path(tmp_path):
     schema = tmp_path / "schema.csv"
     service = DataDefinitionService(schema_path=schema)
     assert service.schema_path == schema

@@ -71,6 +71,103 @@ def test_ml_order_changes_only_order_sensitive_model_fingerprint():
     assert before.predict == after.predict
 
 
+def test_derived_one_hot_and_target_projections_use_canonical_ordering():
+    manifest = bootstrap_manifest()
+    first_derived, second_derived = manifest.derived[:2]
+    dependent = replace(
+        second_derived,
+        numerator_ml_name=first_derived.ml_name,
+    )
+    reversed_derived = replace(
+        manifest,
+        derived=(dependent, first_derived, *manifest.derived[2:]),
+        ordering=replace(
+            manifest.ordering,
+            derived=(dependent.identity, first_derived.identity, *manifest.ordering.derived[2:]),
+        ),
+    )
+    derived_projection = generate_projections(reversed_derived)
+    assert [item.identity for item in derived_projection.derived[:2]] == [
+        first_derived.identity,
+        dependent.identity,
+    ]
+
+    first_group = manifest.one_hot_groups[0]
+    scrambled_one_hot = replace(
+        manifest,
+        one_hot_groups=(
+            replace(first_group, categories=tuple(reversed(first_group.categories))),
+            *manifest.one_hot_groups[1:],
+        ),
+    )
+    one_hot_projection = generate_projections(scrambled_one_hot)
+    assert [item.order for item in one_hot_projection.one_hot[0].categories] == [1, 2, 3]
+
+    reordered_targets = (
+        manifest.targets[2],
+        manifest.targets[0],
+        manifest.targets[1],
+        *manifest.targets[3:],
+    )
+    reordered_targets = tuple(
+        replace(item, presentation_order=index)
+        for index, item in enumerate(reordered_targets, 1)
+    )
+    target_ordered = replace(
+        manifest,
+        targets=reordered_targets,
+        ordering=replace(
+            manifest.ordering,
+            targets=tuple(item.identity for item in reordered_targets),
+        ),
+    )
+    target_projection = generate_projections(target_ordered)
+    assert [key for key, _payload in target_projection.target_registry] == [
+        "ref_model",
+        "power_model",
+        "hz_model",
+    ]
+    assert [
+        name
+        for _key, payload in target_projection.target_registry
+        for name in payload["targets"]
+    ] == [item.ml_name for item in reordered_targets]
+
+
+def test_one_hot_and_target_presentation_order_change_scoped_fingerprints():
+    manifest = bootstrap_manifest()
+    group = manifest.one_hot_groups[0]
+    categories = (
+        replace(group.categories[1], order=1),
+        replace(group.categories[0], order=2),
+        *group.categories[2:],
+    )
+    one_hot_changed = replace(
+        manifest,
+        one_hot_groups=(replace(group, categories=categories), *manifest.one_hot_groups[1:]),
+    )
+    targets = (
+        replace(manifest.targets[1], presentation_order=1),
+        replace(manifest.targets[0], presentation_order=2),
+        *manifest.targets[2:],
+    )
+    target_changed = replace(
+        manifest,
+        targets=targets,
+        ordering=replace(
+            manifest.ordering,
+            targets=tuple(item.identity for item in targets),
+        ),
+    )
+
+    assert validate_contract(one_hot_changed) == ()
+    assert validate_contract(target_changed) == ()
+    assert scoped_fingerprints(one_hot_changed).one_hot != scoped_fingerprints(manifest).one_hot
+    assert scoped_fingerprints(target_changed).target_registry != (
+        scoped_fingerprints(manifest).target_registry
+    )
+
+
 def test_predict_presentation_change_does_not_break_model_compatibility():
     manifest = bootstrap_manifest()
     features = list(manifest.features)
@@ -97,6 +194,138 @@ def test_cross_validation_rejects_duplicate_identity_incomplete_order_and_cycle(
     cycle_rows[1] = replace(cycle_rows[1], numerator_ml_name=cycle_rows[0].ml_name)
     cycle = replace(manifest, derived=tuple(cycle_rows))
     assert "derived_dependency_cycle" in {item.code for item in validate_contract(cycle)}
+
+
+def test_cross_validation_rejects_ordering_one_hot_mapping_and_target_mismatches():
+    manifest = bootstrap_manifest()
+    feature_order = replace(
+        manifest,
+        features=(
+            replace(manifest.features[0], display_order=999),
+            *manifest.features[1:],
+        ),
+    )
+    assert "predict_display_order_mismatch" in {
+        item.code for item in validate_contract(feature_order)
+    }
+
+    group = manifest.one_hot_groups[0]
+    duplicate_category = replace(
+        group.categories[1],
+        source_value=group.categories[0].source_value,
+        emitted_ml_name=group.categories[0].emitted_ml_name,
+        order=group.categories[0].order,
+    )
+    invalid_one_hot = replace(
+        manifest,
+        one_hot_groups=(
+            replace(
+                group,
+                category_source="unsupported",
+                unknown_policy="unsupported",
+                missing_policy="unsupported",
+                categories=(group.categories[0], duplicate_category, *group.categories[2:]),
+            ),
+            *manifest.one_hot_groups[1:],
+        ),
+    )
+    one_hot_codes = {item.code for item in validate_contract(invalid_one_hot)}
+    assert {
+        "one_hot_category_source_invalid",
+        "one_hot_unknown_policy_invalid",
+        "one_hot_missing_policy_invalid",
+        "one_hot_category_emitted_duplicate",
+        "one_hot_category_source_duplicate",
+        "one_hot_category_order_duplicate",
+    } <= one_hot_codes
+    orphan_one_hot = replace(
+        manifest,
+        one_hot_groups=(
+            replace(group, categories=group.categories[1:]),
+            *manifest.one_hot_groups[1:],
+        ),
+    )
+    assert "one_hot_emitted_membership_invalid" in {
+        item.code for item in validate_contract(orphan_one_hot)
+    }
+
+    requirement = manifest.mapping_requirements[0]
+    mapping_mismatch = replace(
+        manifest,
+        mapping_requirements=(
+            replace(requirement, mapping_entity="wrong"),
+            *manifest.mapping_requirements[1:],
+        ),
+    )
+    assert "mapping_requirement_feature_mismatch" in {
+        item.code for item in validate_contract(mapping_mismatch)
+    }
+    for field_name, value in (
+        ("mapping_attribute", "wrong"),
+        ("rule_id", "wrong"),
+        ("data_type", "string"),
+        ("required", not requirement.required),
+    ):
+        changed_requirement = replace(requirement, **{field_name: value})
+        changed_manifest = replace(
+            manifest,
+            mapping_requirements=(
+                changed_requirement,
+                *manifest.mapping_requirements[1:],
+            ),
+        )
+        assert "mapping_requirement_feature_mismatch" in {
+            item.code for item in validate_contract(changed_manifest)
+        }
+    duplicate_mapping = replace(
+        manifest,
+        mapping_requirements=(
+            *manifest.mapping_requirements,
+            replace(requirement, identity="duplicate-requirement"),
+        ),
+    )
+    mapping_codes = {item.code for item in validate_contract(duplicate_mapping)}
+    assert "mapping_requirement_relation_duplicate" in mapping_codes
+    assert "mapping_requirement_coverage_invalid" in mapping_codes
+    orphan_mapping = replace(
+        manifest,
+        mapping_requirements=manifest.mapping_requirements[1:],
+    )
+    assert "mapping_requirement_coverage_invalid" in {
+        item.code for item in validate_contract(orphan_mapping)
+    }
+
+    target_order = replace(
+        manifest,
+        targets=(
+            replace(manifest.targets[0], presentation_order=2),
+            *manifest.targets[1:],
+        ),
+    )
+    target_codes = {item.code for item in validate_contract(target_order)}
+    assert "target_presentation_order_duplicate" in target_codes
+    assert "target_presentation_order_mismatch" in target_codes
+    extra_membership = replace(
+        manifest.model_groups[1],
+        target_identities=(
+            *manifest.model_groups[1].target_identities,
+            manifest.targets[0].identity,
+        ),
+    )
+    target_association = replace(
+        manifest,
+        model_groups=(
+            manifest.model_groups[0],
+            extra_membership,
+            *manifest.model_groups[2:],
+        ),
+    )
+    assert "target_model_group_invalid" in {
+        item.code for item in validate_contract(target_association)
+    }
+    assert "model_group_target_rule_incomplete" in {
+        item.code for item in validate_contract(target_association)
+    }
 
 
 def test_current_bootstrap_passes_whole_contract_validation():

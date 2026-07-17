@@ -2,29 +2,33 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from core.data_definition.contract.model import UnifiedFeatureManifest
-from core.data_definition.contract.projections import ContractProjections, generate_projections
+from core.data_definition.contract.projections import (
+    ContractProjections,
+    generate_projections,
+    topological_derived_identities,
+)
+from core.data_definition.contract.relations_validation import validate_relations
+from core.data_definition.contract.validation_types import ContractValidationIssue
 from core.ml.feature_catalog import FeatureCatalog
 from core.ml.feature_catalog_validation import validate_feature_catalog
-from core.predictor_schema.catalog_v2 import PredictSchemaCatalogV2, validate_predict_schema_catalog_v2
-
-
-@dataclass(frozen=True)
-class ContractValidationIssue:
-    code: str
-    message: str
-
+from core.predictor_schema.catalog_v2 import (
+    PredictSchemaCatalogV2,
+    validate_predict_schema_catalog_v2,
+)
 
 def validate_contract(manifest: UnifiedFeatureManifest) -> tuple[ContractValidationIssue, ...]:
     """Validate all owners together; any issue blocks publication."""
     issues: list[ContractValidationIssue] = []
     identities = _all_identities(manifest)
     _duplicates(issues, "stable_identity_duplicate", identities)
-    _duplicates(issues, "predict_key_collision", [item.column_key for item in manifest.features if item.active])
+    _duplicates(issues, "predict_key_collision", [
+        item.column_key for item in manifest.features if item.active
+    ])
     _duplicates(issues, "ml_name_collision", [
-        item.ml_name for item in (*manifest.features, *manifest.derived) if item.active and item.ml_name
+        item.ml_name
+        for item in (*manifest.features, *manifest.derived)
+        if item.active and item.ml_name
     ])
     feature_ids = {item.identity for item in manifest.features}
     derived_ids = {item.identity for item in manifest.derived}
@@ -39,10 +43,9 @@ def validate_contract(manifest: UnifiedFeatureManifest) -> tuple[ContractValidat
     _validate_order(issues, "ml", manifest.ordering.ml, ml_expected)
     _validate_order(issues, "derived", manifest.ordering.derived, derived_ids)
     _validate_order(issues, "targets", manifest.ordering.targets, target_ids)
+    _validate_storage_order(issues, manifest)
     _validate_derived(issues, manifest)
-    _validate_one_hot(issues, manifest)
-    _validate_targets(issues, manifest)
-    _validate_mapping(issues, manifest)
+    validate_relations(issues, manifest)
     if issues:
         return tuple(issues)
     try:
@@ -61,13 +64,19 @@ def require_valid_contract(manifest: UnifiedFeatureManifest) -> ContractProjecti
 
 
 def _all_identities(manifest: UnifiedFeatureManifest) -> list[str]:
-    return [item.identity for item in manifest.features] + [item.identity for item in manifest.derived] + [
-        item.identity for item in manifest.one_hot_groups
-    ] + [item.identity for group in manifest.one_hot_groups for item in group.categories] + [
-        item.identity for item in manifest.targets
-    ] + [item.identity for item in manifest.model_groups] + [
-        item.identity for item in manifest.mapping_requirements
-    ]
+    return (
+        [item.identity for item in manifest.features]
+        + [item.identity for item in manifest.derived]
+        + [item.identity for item in manifest.one_hot_groups]
+        + [
+            item.identity
+            for group in manifest.one_hot_groups
+            for item in group.categories
+        ]
+        + [item.identity for item in manifest.targets]
+        + [item.identity for item in manifest.model_groups]
+        + [item.identity for item in manifest.mapping_requirements]
+    )
 
 
 def _duplicates(issues, code: str, values) -> None:  # noqa: ANN001
@@ -80,9 +89,15 @@ def _duplicates(issues, code: str, values) -> None:  # noqa: ANN001
 
 def _validate_order(issues, name: str, order, expected: set[str]) -> None:  # noqa: ANN001
     if len(order) != len(set(order)):
-        issues.append(ContractValidationIssue(f"{name}_order_duplicate", f"{name} order contains duplicates"))
+        issues.append(ContractValidationIssue(
+            f"{name}_order_duplicate",
+            f"{name} order contains duplicates",
+        ))
     if set(order) != expected:
-        issues.append(ContractValidationIssue(f"{name}_order_incomplete", f"{name} order does not exactly cover its objects"))
+        issues.append(ContractValidationIssue(
+            f"{name}_order_incomplete",
+            f"{name} order does not exactly cover its objects",
+        ))
 
 
 def _validate_derived(issues, manifest) -> None:  # noqa: ANN001
@@ -94,7 +109,10 @@ def _validate_derived(issues, manifest) -> None:  # noqa: ANN001
     for name, refs in dependencies.items():
         for ref in refs:
             if ref not in known:
-                issues.append(ContractValidationIssue("derived_dependency_missing", f"{name} references {ref}"))
+                issues.append(ContractValidationIssue(
+                    "derived_dependency_missing",
+                    f"{name} references {ref}",
+                ))
     visiting: set[str] = set()
     visited: set[str] = set()
 
@@ -113,56 +131,92 @@ def _validate_derived(issues, manifest) -> None:  # noqa: ANN001
 
     for name in dependencies:
         visit(name)
+    try:
+        topological = topological_derived_identities(manifest)
+    except (KeyError, ValueError):
+        return
+    if topological != manifest.ordering.derived:
+        issues.append(ContractValidationIssue(
+            "derived_order_not_topological",
+            "derived canonical order does not satisfy its dependency DAG",
+        ))
 
 
-def _validate_one_hot(issues, manifest) -> None:  # noqa: ANN001
-    feature_by_id = {item.identity: item for item in manifest.features}
-    emitted = {item.ml_name: item for item in manifest.features if item.role == "one_hot_feature"}
-    for group in manifest.one_hot_groups:
-        selector = feature_by_id.get(group.selector_feature_identity)
-        if selector is None or selector.value_source != "one_hot" or selector.one_hot_group != group.group_key:
-            issues.append(ContractValidationIssue("one_hot_selector_invalid", group.group_key))
-        names = [item.emitted_ml_name for item in group.categories if item.active]
-        _duplicates(issues, "one_hot_category_emitted_duplicate", names)
-        for name in names:
-            row = emitted.get(name)
-            if row is None or row.one_hot_group != group.group_key:
-                issues.append(ContractValidationIssue("one_hot_emitted_invalid", f"{group.group_key}: {name}"))
-
-
-def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
-    features = {item.identity: item for item in manifest.features}
-    groups = {item.identity: item for item in manifest.model_groups}
-    for target in manifest.targets:
-        feature = features.get(target.feature_identity)
-        group = groups.get(target.model_group_identity)
-        if feature is None or feature.role != "result" or feature.ml_name != target.ml_name:
-            issues.append(ContractValidationIssue("target_feature_invalid", target.ml_name))
-        if group is None or target.identity not in group.target_identities:
-            issues.append(ContractValidationIssue("target_model_group_invalid", target.ml_name))
-
-
-def _validate_mapping(issues, manifest) -> None:  # noqa: ANN001
-    features = {item.identity: item for item in manifest.features}
-    declarations: dict[tuple[str, str], tuple[str, bool]] = {}
-    for requirement in manifest.mapping_requirements:
-        feature = features.get(requirement.feature_identity)
-        trigger = features.get(requirement.trigger_feature_identity)
-        if feature is None or trigger is None or feature.value_source != "mapping_lookup":
-            issues.append(ContractValidationIssue("mapping_requirement_relation_invalid", requirement.identity))
-            continue
-        key = (requirement.mapping_entity, requirement.mapping_attribute)
-        shape = (requirement.data_type, requirement.required)
-        if key in declarations and declarations[key] != shape:
-            issues.append(ContractValidationIssue("mapping_requirement_type_conflict", f"{key}"))
-        declarations[key] = shape
+def _validate_storage_order(issues, manifest) -> None:  # noqa: ANN001
+    if tuple(item.identity for item in manifest.features) != manifest.ordering.predict:
+        issues.append(ContractValidationIssue(
+            "predict_storage_order_mismatch",
+            "Feature storage order does not match canonical Predict order",
+        ))
+    display_order = tuple(
+        item.identity for item in sorted(
+            manifest.features,
+            key=lambda item: (item.display_order, item.identity),
+        )
+    )
+    if display_order != manifest.ordering.predict:
+        issues.append(ContractValidationIssue(
+            "predict_display_order_mismatch",
+            "Feature display_order contradicts canonical Predict order",
+        ))
+    if tuple(item.identity for item in manifest.derived) != manifest.ordering.derived:
+        issues.append(ContractValidationIssue(
+            "derived_storage_order_mismatch",
+            "Derived storage order does not match canonical Derived order",
+        ))
+    if tuple(item.identity for item in manifest.targets) != manifest.ordering.targets:
+        issues.append(ContractValidationIssue(
+            "target_storage_order_mismatch",
+            "Target storage order does not match canonical target order",
+        ))
 
 
 def _projection_issues(manifest, projections) -> list[ContractValidationIssue]:  # noqa: ANN001
     issues = []
     if projections.generation_id != manifest.generation.generation_id:
-        issues.append(ContractValidationIssue("projection_generation_mismatch", projections.generation_id))
-    for message in validate_predict_schema_catalog_v2(PredictSchemaCatalogV2(rows=projections.predict)):
+        issues.append(ContractValidationIssue(
+            "projection_generation_mismatch",
+            projections.generation_id,
+        ))
+    feature_by_id = {item.identity: item for item in manifest.features}
+    ml_by_id = {item.identity: item for item in (*manifest.features, *manifest.derived)}
+    target_by_id = {item.identity: item for item in manifest.targets}
+    if tuple(item.column_key for item in projections.predict) != tuple(
+        feature_by_id[identity].column_key for identity in manifest.ordering.predict
+    ):
+        issues.append(ContractValidationIssue(
+            "predict_projection_order_mismatch", "Predict projection order is not canonical"
+        ))
+    if tuple(item.ml_name for item in projections.ml) != tuple(
+        ml_by_id[identity].ml_name for identity in manifest.ordering.ml
+    ):
+        issues.append(ContractValidationIssue(
+            "ml_projection_order_mismatch", "ML projection order is not canonical"
+        ))
+    if tuple(item.identity for item in projections.derived) != tuple(
+        identity
+        for identity in manifest.ordering.derived
+        if next(item for item in manifest.derived if item.identity == identity).active
+    ):
+        issues.append(ContractValidationIssue(
+            "derived_projection_order_mismatch", "Derived projection order is not canonical"
+        ))
+    projected_targets = tuple(
+        name
+        for _group, payload in projections.target_registry
+        for name in payload["targets"]
+    )
+    canonical_targets = tuple(
+        target_by_id[identity].ml_name for identity in manifest.ordering.targets
+    )
+    if projected_targets != canonical_targets:
+        issues.append(ContractValidationIssue(
+            "target_projection_order_mismatch",
+            "Target registry projection does not preserve presentation order",
+        ))
+    for message in validate_predict_schema_catalog_v2(
+        PredictSchemaCatalogV2(rows=projections.predict)
+    ):
         issues.append(ContractValidationIssue("predict_projection_invalid", message))
     for message in validate_feature_catalog(FeatureCatalog(rows=projections.ml)):
         issues.append(ContractValidationIssue("ml_projection_invalid", message))

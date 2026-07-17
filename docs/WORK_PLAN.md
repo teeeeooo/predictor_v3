@@ -18,15 +18,16 @@
 ## Current Slice
 
 Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
-implemented on its dedicated Draft PR branch. It establishes the canonical
-structured manifest, deterministic stable identities and bootstrap, generated
-projection providers, cross-contract validation, scoped fingerprints, immutable
-generation bundles, atomic active pointer, rollback, and the guarded Data
-Definition application transaction.
+implemented and audit-corrected on its dedicated Draft PR branch. Production
+`create_shell()` now bootstraps and injects canonical generation persistence;
+draft generation binding plus a store-level single-writer boundary rejects stale
+Save. Complete semantic identity, canonical ordering projections, stronger
+One-hot/Mapping/Target cross-validation, immutable history, rollback, and the
+existing protected-consumer guards are covered by focused acceptance tests.
 
 ## Next Action
 
-Audit and merge the Phase 4B Draft PR. After merge, start Phase 4C stable-ID
+Merge the audit-corrected Phase 4B Draft PR. After merge, start Phase 4C stable-ID
 Feature mutation and dependency-safe Rename/Remove work from updated `main`.
 Do not mix Feature Manager UI, Derived/One-hot/Target authoring, live cutover, or
 model promotion runtime work into the 4B branch.

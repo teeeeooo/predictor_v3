@@ -1,5 +1,7 @@
 """Phase 4B immutable generation publication and recovery tests."""
 
+import hashlib
+import json
 import threading
 from dataclasses import replace
 
@@ -150,3 +152,29 @@ def test_concurrent_stale_writers_are_serialized_across_parent_check_and_replace
     assert repository.active_generation_id() in {"generation-a", "generation-b"}
     assert not list(repository.generations_path.glob(".staging-*"))
     assert not list(repository.root.glob(".active-generation-*.tmp"))
+
+
+def test_bundle_read_rejects_projection_from_a_different_generation(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    manifest = bootstrap_manifest()
+    repository.publish(manifest)
+    generation_path = repository.generations_path / manifest.generation.generation_id
+    projection_path = generation_path / "projections" / "one_hot.json"
+    projection = json.loads(projection_path.read_text(encoding="utf-8"))
+    projection["generation_id"] = "different-generation"
+    projection_path.write_text(
+        json.dumps(projection, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    bundle_path = generation_path / "bundle.json"
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle["files"]["projections/one_hot.json"] = hashlib.sha256(
+        projection_path.read_bytes()
+    ).hexdigest()
+    bundle_path.write_text(
+        json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="generated projection does not match manifest"):
+        repository.read_generation(manifest.generation.generation_id)

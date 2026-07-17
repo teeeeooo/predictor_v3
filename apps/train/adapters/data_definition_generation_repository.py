@@ -189,16 +189,29 @@ class DataDefinitionGenerationRepository:
 
     @staticmethod
     def _write_projection_json(path: Path, generation_id: str, rows: object) -> None:
-        path.write_text(
-            _json({"generation_id": generation_id, "rows": rows}, default=_json_default),
-            encoding="utf-8",
-        )
+        path.write_text(_projection_json_text(generation_id, rows), encoding="utf-8")
 
     @staticmethod
     def _verify_projection_bytes(path: Path, projections: ContractProjections) -> None:
         expected = {
             "schema.csv": predict_csv_text(projections),
             "features.csv": ml_csv_text(projections),
+            "derived.json": _projection_json_text(
+                projections.generation_id,
+                projections.derived,
+            ),
+            "one_hot.json": _projection_json_text(
+                projections.generation_id,
+                projections.one_hot,
+            ),
+            "target_registry.json": _projection_json_text(
+                projections.generation_id,
+                projections.target_registry,
+            ),
+            "mapping_requirements.json": _projection_json_text(
+                projections.generation_id,
+                projections.mapping_requirements,
+            ),
         }
         for name, value in expected.items():
             if (path / "projections" / name).read_text(encoding="utf-8") != value:
@@ -237,3 +250,10 @@ def _json_default(value: object) -> object:
     if isinstance(value, tuple):
         return list(value)
     raise TypeError(f"not JSON serializable: {type(value).__name__}")
+
+
+def _projection_json_text(generation_id: str, rows: object) -> str:
+    return _json(
+        {"generation_id": generation_id, "rows": rows},
+        default=_json_default,
+    )

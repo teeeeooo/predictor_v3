@@ -50,7 +50,13 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
     ]
     derived_payload = [asdict(item) for item in projections.derived]
     one_hot_payload = [asdict(item) for item in projections.one_hot]
-    target_payload = list(projections.target_registry)
+    target_by_id = {item.identity: item for item in manifest.targets}
+    target_payload = {
+        "presentation": [
+            asdict(target_by_id[identity]) for identity in manifest.ordering.targets
+        ],
+        "registry": list(projections.target_registry),
+    }
     mapping_payload = [asdict(item) for item in projections.mapping_requirements]
     preprocessing_payload = {"version": manifest.preprocessing_version}
     return ScopedFingerprints(

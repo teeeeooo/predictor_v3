@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation
-    content: Phase 4B implements a versioned canonical Unified Feature manifest with deterministic opaque bootstrap identities, generation-scoped Predict/ordered-ML/Derived/One-hot/Target-registry/Mapping-requirement projections, whole-contract validation, and scoped fingerprints. The Train filesystem adapter publishes a complete same-filesystem staging directory as an immutable generation and atomically replaces only the active-generation pointer; failures preserve the previous pointer and prior bundles, which remain readable and rollback-capable. Data Definition has an application transaction that publishes validated presentation-compatible changes while retaining protected ML/import-time/fixed-string blockers. schema.csv and features.csv are generated compatibility surfaces; mapping.json, model artifacts, promotion, and runtime cutover remain outside the transaction. Phase 4C starts only after 4B audit and merge.
+    content: Phase 4B implements a versioned canonical Unified Feature manifest with deterministic opaque identities and complete-semantic generation hashing, generation-scoped Predict/ordered-ML/Derived/One-hot/Target-registry/Mapping-requirement projections, whole-contract validation, and scoped fingerprints. Production Train create_shell bootstraps the approved manifest and injects the filesystem adapter through a small application repository port; explicit schema_path construction is the legacy compatibility-only path. Drafts retain their base generation, and the adapter holds a POSIX single-writer boundary across parent validation and active-pointer replacement, so stale Save cannot replace a newer generation. Predict, ML, dependency-topological Derived, One-hot category, and Target presentation ordering are projected from their canonical owners and duplicate storage fields are cross-validated. Failures preserve the draft, active pointer, and immutable history; rollback remains available. schema.csv/features.csv are generated compatibility surfaces, while mapping.json, model artifacts, promotion, and runtime cutover remain outside the transaction. Phase 4C starts only after the corrected PR is merged.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -607,8 +607,11 @@ entries:
       - atomic active pointer
       - scoped fingerprints
       - protected consumer guard
+      - production composition
+      - stale writer
+      - canonical ordering
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md; docs/WORK_PLAN.md
+    source: result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4b-audit-correction.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries

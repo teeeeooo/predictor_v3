@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import csv
+import heapq
 import io
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from core.data_definition.contract.model import (
     DerivedDefinition,
@@ -61,21 +62,36 @@ def generate_projections(manifest: UnifiedFeatureManifest) -> ContractProjection
         _ml_row(ml_owners[identity], index)
         for index, identity in enumerate(manifest.ordering.ml, 1)
     )
-    groups_by_id = {item.identity: item for item in manifest.model_groups}
     targets_by_id = {item.identity: item for item in manifest.targets}
+    target_position = {
+        identity: index for index, identity in enumerate(manifest.ordering.targets)
+    }
+    ordered_groups = sorted(
+        manifest.model_groups,
+        key=lambda group: min(
+            (target_position[identity] for identity in group.target_identities),
+            default=len(target_position),
+        ),
+    )
     registry = tuple(
         (
             group.registry_key,
             {
                 "name": group.name,
-                "targets": [targets_by_id[item].ml_name for item in group.target_identities],
+                "targets": [
+                    targets_by_id[item].ml_name
+                    for item in sorted(
+                        group.target_identities,
+                        key=target_position.__getitem__,
+                    )
+                ],
                 "use_rfe": group.use_rfe,
                 "target_rules": {
                     name: {policy: list(values)} for name, policy, values in group.target_rules
                 },
             },
         )
-        for group in manifest.model_groups
+        for group in ordered_groups
     )
     feature_by_id = {item.identity: item for item in manifest.features}
     requirements = tuple(
@@ -96,11 +112,67 @@ def generate_projections(manifest: UnifiedFeatureManifest) -> ContractProjection
         generation_id=manifest.generation.generation_id,
         predict=predict,
         ml=ml,
-        derived=tuple(item for item in manifest.derived if item.active),
-        one_hot=manifest.one_hot_groups,
+        derived=tuple(
+            item for item in _topological_derived(manifest) if item.active
+        ),
+        one_hot=tuple(
+            replace(
+                group,
+                categories=tuple(sorted(group.categories, key=lambda item: item.order)),
+            )
+            for group in manifest.one_hot_groups
+        ),
         target_registry=registry,
         mapping_requirements=requirements,
     )
+
+
+def topological_derived_identities(
+    manifest: UnifiedFeatureManifest,
+) -> tuple[str, ...]:
+    """Return deterministic dependency order using canonical order as tie-break."""
+    return tuple(item.identity for item in _topological_derived(manifest))
+
+
+def _topological_derived(
+    manifest: UnifiedFeatureManifest,
+) -> tuple[DerivedDefinition, ...]:
+    derived_by_id = {item.identity: item for item in manifest.derived}
+    derived_id_by_name = {item.ml_name: item.identity for item in manifest.derived}
+    priority = {
+        identity: index for index, identity in enumerate(manifest.ordering.derived)
+    }
+    dependencies: dict[str, set[str]] = {}
+    dependents: dict[str, set[str]] = {identity: set() for identity in derived_by_id}
+    for identity, item in derived_by_id.items():
+        refs = {
+            derived_id_by_name[name]
+            for name in (item.numerator_ml_name, item.denominator_ml_name)
+            if name in derived_id_by_name
+        }
+        dependencies[identity] = refs
+        for ref in refs:
+            dependents[ref].add(identity)
+    ready = [
+        (priority.get(identity, len(priority)), identity)
+        for identity, refs in dependencies.items()
+        if not refs
+    ]
+    heapq.heapify(ready)
+    ordered: list[DerivedDefinition] = []
+    while ready:
+        _position, identity = heapq.heappop(ready)
+        ordered.append(derived_by_id[identity])
+        for dependent in sorted(dependents[identity]):
+            dependencies[dependent].discard(identity)
+            if not dependencies[dependent]:
+                heapq.heappush(
+                    ready,
+                    (priority.get(dependent, len(priority)), dependent),
+                )
+    if len(ordered) != len(derived_by_id):
+        raise ValueError("derived dependency graph contains a cycle")
+    return tuple(ordered)
 
 
 def predict_csv_text(projection: ContractProjections) -> str:

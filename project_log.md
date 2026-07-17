@@ -43,6 +43,13 @@
   Definition transaction. Preserve protected ML/fixed-string Save blockers until
   explicit consumer migration; only a fully generated presentation-compatible
   projection path may replace the legacy parity blocker.
+- Compose generation persistence from the production Train root through an
+  application repository port. Bind every editable draft to its source
+  generation and serialize parent validation with active-pointer replacement so
+  stale writers cannot publish over a newer generation.
+- Derive bootstrap and candidate identities from the same complete semantic
+  manifest hash. Enforce Predict, ordered ML, Derived DAG, One-hot category, and
+  Target presentation ordering in projections and whole-contract validation.
 - Advance to Phase 4C only after Phase 4B audit and merge.
 
 ## 2026-07-17 — Train/Admin Unified Feature Manager phase insertion
