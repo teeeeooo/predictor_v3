@@ -29,7 +29,9 @@ preserving current production guards.
 Audit merged `main` Data Definition, Predict schema, ML Feature Catalog, Derived
 policy, One-hot contracts, model registry, Train Target consumption, and live
 reload boundaries. Finalize the Phase 4 contract and ordered implementation
-slices. Do not start Phase 4 production implementation before audit/design
+slices, including application-wide generation cutover, training-run snapshots,
+dirty Mapping draft reconciliation, category source modes, and Target/model-group
+scope. Do not start Phase 4 production implementation before audit/design
 approval.
 
 ## Active Blockers
@@ -54,6 +56,12 @@ approval.
 - Preserve the accepted Qt-free draft, command, edit policy, projection,
   validation, save-plan, schema-writer, readiness, handoff, coverage, keyboard,
   focus, accessibility, and exact-navigation owners.
+- Require one active contract generation across required consumers; keep disk
+  publication, consumer preflight, and runtime cutover as distinct states.
+- Preserve active training-run snapshots and Data Mapping unsaved drafts across
+  Definition changes. Do not classify stale artifacts as current-compatible.
+- Separate static/mapping-backed/external One-hot category mutation owners and
+  Target CRUD from new model-group/model-level policy creation.
 - Data Mapping remains the concrete `mapping.json` value owner; Train remains the
   explicit training-execution owner; Predict remains a saved-contract and
   compatible-model consumer.

@@ -170,6 +170,16 @@ user-facing outcome and next action. Owner routing for a blocking issue is:
 
 Preserve existing execution boundaries and Cooling/Heating independence.
 
+Train starts each run from the immutable Feature/Target contract snapshot
+provided by Phase 4, including its generation and relevant preprocessing/
+registry fingerprints. A later active Definition generation does not mutate an
+in-flight run. Completion compares the run contract with the current contract;
+run success, artifact persistence, current compatibility, and Predict
+availability remain separate outcomes. An older-generation artifact is stale
+unless compatibility is explicitly proven and is not shown as Predict-compatible
+or automatically activated. The prior compatible model remains available until
+the new artifact passes the established checks.
+
 The UX must:
 
 - prevent duplicate starts;
@@ -197,6 +207,7 @@ After completion, show:
 - total elapsed training time and per-Target time when the result contract
   provides it;
 - whether Predict can use the resulting model;
+- the run contract generation and whether it matches the current active contract;
 - the next user action when the result cannot be saved or used by Predict.
 
 Target names, metric labels, and optional values follow the existing Train/ML

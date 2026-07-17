@@ -594,6 +594,24 @@ entries:
       - automatic retraining
     assertionStatus: proposed
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md
+
+  - type: decision
+    topic: Train/Admin Feature contract cutover and concurrency boundaries
+    content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4
+      - contract generation
+      - mixed generation
+      - training snapshot
+      - stale artifact
+      - dirty Data Mapping draft
+      - One-hot category source
+      - Target CRUD
+      - model group
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-feature-contract-cutover-boundaries.md
 ```
 
 ## Known Gaps

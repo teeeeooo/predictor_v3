@@ -46,6 +46,18 @@
   from Phase 4.
 - Keep current ML-projection-changing Save guards until Phase 4 approves and
   implements a persistence and compatibility migration/rollback boundary.
+- Require one immutable persisted contract generation and coordinated consumer
+  preflight/cutover; mixed-generation normal operation is forbidden and disk Save
+  success remains distinct from runtime activation success.
+- Bind every training run/result/artifact to its immutable start-generation
+  Feature/Target/preprocessing snapshot. Definition Save does not retroactively
+  alter an active run, and stale artifacts are not current-compatible by default.
+- Preserve dirty Data Mapping drafts and expose pending requirement updates rather
+  than silently reloading them. Separate static, mapping-backed, and external
+  One-hot vocabulary owners.
+- Keep initial Target CRUD limited to validated existing model-group association
+  and target-level policies; new model groups and model-level training policy
+  require a separately approved advanced contract.
 
 ## 2026-07-16 — Train/Admin Phase 4 Train UX direction
 

@@ -103,9 +103,9 @@ Data Definition is the canonical user-edit owner for:
 - data type and value source;
 - mapping requirement definition;
 - Derived expression;
-- One-hot selector, group, and category definition;
+- One-hot selector/group policy and source-mode-owned category definition;
 - Result/Target definition;
-- Model/Target registry definition;
+- Target registry definition and association to validated existing model groups;
 - ordering contracts;
 - validation, impact, and safe persistence of related contracts.
 
@@ -212,9 +212,26 @@ selector assignment, category add/edit/delete/order, emitted ML Feature Preview,
 unknown/missing-value policies, dependency-safe rename/delete, and training
 header/model compatibility impact.
 
-Selector option source and emitted ML Feature lists remain distinct contracts.
-Users manage the group and categories rather than manually aligning raw emitted
-rows in a table.
+Selector option vocabulary and emitted ML Feature lists remain distinct
+contracts. A group declares one category source mode with an explicit mutation
+owner:
+
+- **Static category vocabulary** — Data Definition owns category identity,
+  definition, and ordering. Categories are independent of concrete Data Mapping
+  values, and emitted ML Features derive from this Definition contract.
+- **Mapping-backed category vocabulary** — Data Mapping concrete option values
+  are the selector vocabulary source. Data Definition owns selector identity,
+  One-hot group identity, emitted-name policy, category-to-emitted mapping rules,
+  and validation. Removing or renaming a Definition rule never silently deletes
+  Data Mapping rows. Mapping option changes produce Preview, validation, and
+  compatibility impact rather than implicit Definition-row mutation.
+- **External/provider-backed vocabulary** — the provider owns category identity
+  and values. Data Definition exposes them read-only or permits only bounded
+  policy edits and cannot persist categories absent from the provider.
+
+Phase 4A finalizes canonical category identity, ordering, unknown/missing policy,
+and allowed mutations for each source mode. Users manage the applicable policy
+or owned vocabulary rather than manually aligning raw emitted rows.
 
 ## 12. Result/Target and Registry Management
 
@@ -228,31 +245,83 @@ dependencies and model artifact compatibility. Users do not edit a Python
 registry directly. The audit evaluates a validated provider or projection while
 preserving existing runtime consumer APIs where practical.
 
+The initial Phase 4 boundary supports Result/Target CRUD, association to a
+validated existing model group, and target-level allowed/exclude policy. Target
+CRUD does not imply arbitrary model-family creation. New model groups,
+trainer/algorithm binding, artifact naming, `use_rfe`, and other model-level
+training policy remain a separate advanced contract and are not editable through
+the default Feature Manager. Phase 4A may expand this only by approving a
+separate explicit workflow, validation contract, and artifact owner; otherwise
+unsupported group creation/reference is blocked with an actionable reason.
+
 ## 13. Multi-artifact Persistence
 
-One Save operation:
+Disk publication and application runtime activation are separate stages:
+
+```text
+definition draft validation
+    → persisted artifact transaction
+    → consumer reload preflight
+    → application-wide generation cutover
+```
+
+The persisted artifact transaction:
 
 1. snapshots one immutable candidate draft;
 2. produces every required candidate artifact;
 3. validates each artifact independently;
 4. performs cross-contract validation and impact projection;
-5. publishes the complete valid set atomically or equivalently transactionally;
-6. preserves the previous valid set on any failure.
+5. assigns one immutable generation/version identity and combined fingerprint;
+6. publishes the complete valid set atomically or equivalently transactionally;
+7. preserves the previous valid set on any failure.
 
 Concrete `mapping.json` values are never part of this transaction. Compatibility
 migration and rollback details remain an explicit Phase 4A/4B design question;
 existing guards remain active until that owner is approved and implemented.
+Persistence success does not mean runtime cutover success. The consumer preflight
+and application-wide cutover contract belongs to Slice 4H and consumes the
+persisted generation identity defined by Slice 4B. A post-persistence cutover
+failure leaves an explicit stale-runtime/restart-required recovery state; it is
+never reported as fully applied.
 
 ## 14. Live Contract Reload
 
-After a successful Save, the shell or composition boundary emits a public
-definition-changed event, or an equivalent contract, to the existing owners. It
-does not merge controllers or let Data Definition perform their work.
+Every persisted contract set has one immutable generation/version identity or an
+equivalent fingerprint. Predict schema, ML projection, Derived policy, One-hot
+policy, Mapping requirements, and Target/registry projection share that identity
+or carry proof that they derive from it. Each consumer reports its currently
+active generation. A definition-changed event, or equivalent coordination
+contract, carries the persisted generation and relevant fingerprints without
+merging controllers or letting Data Definition perform their work.
+
+Normal active state never mixes generations across required owners. Live reload
+uses a staged cutover:
+
+```text
+new persisted generation
+    → consumer reload preflight
+    → candidate in-memory projections
+    → every required owner ready
+    → application-wide generation commit
+```
+
+If any required owner cannot prepare, Phase 4A must approve one explicit policy:
+all owners retain the previous active generation, or the persisted generation
+remains on disk while the entire application enters a visible stale-runtime/
+restart-required state. Some owners silently activating the new generation while
+others retain the old one is forbidden. Persistence failure, consumer preflight
+failure, in-memory cutover failure, stale runtime generation, and restart-required
+recovery are distinct user-facing states. Save success and runtime-apply success
+are never presented as the same outcome.
+
+The refresh responsibilities below prepare candidate state only. No required
+owner swaps its active projection before the application-wide generation commit.
 
 ### Data Definition refresh
 
-- load the saved baseline and clear dirty state;
-- reflect the Save result;
+- prepare the saved baseline and activate it only at generation commit;
+- distinguish persisted Save from active runtime application before clearing or
+  relabeling state;
 - show current impact and compatibility.
 
 ### Predict refresh
@@ -275,8 +344,22 @@ does not merge controllers or let Data Definition perform their work.
 - preserve existing mapping values;
 - reevaluate coverage for added requirements.
 
-Reload failure preserves the previous valid in-memory state and provides an
-actionable error rather than partially refreshing tabs.
+Definition reload never silently discards a Data Mapping unsaved draft. Clean
+Data Mapping may prepare the new requirement generation immediately. Dirty Data
+Mapping retains its draft and reports a visible pending contract update with
+Review, Save Mapping, and Discard and Reload paths. Automatic draft replacement
+is forbidden while dirty.
+
+Phase 4A decides whether stable group/attribute identity can safely rebase a
+dirty draft, how new requirements preserve unsaved rows, how rename/delete
+conflicts with unsaved cells are resolved, whether such a conflict blocks the
+application-wide cutover, and how a stale Data Mapping generation affects the
+whole runtime state. Until reconciliation succeeds, the pending update is not
+hidden and the application cannot claim a fully active mixed generation.
+
+Reload or cutover failure preserves the previous valid in-memory state and user
+drafts where applicable, then provides an actionable stale/restart-required
+recovery state rather than partially refreshing tabs.
 
 ## 15. Train Boundary
 
@@ -285,6 +368,29 @@ Feature/Target contract, validate selected training data against it, and show
 retraining-required state for an incompatible existing model. The user still
 starts training explicitly in Train. After success, existing Train/Predict owners
 may reevaluate artifact compatibility.
+
+At training start, Train freezes an immutable run contract snapshot containing,
+or proving equivalently:
+
+- Data Definition generation;
+- ML Feature projection fingerprint;
+- Target/model-registry fingerprint;
+- Derived/One-hot preprocessing fingerprint or one combined contract fingerprint;
+- preprocessing version.
+
+The Training result and model artifact preserve the same run identity. An active
+run continues using its start snapshot even if Data Definition persists a newer
+generation. The recommended default is not to block Definition Save solely
+because training is active; changes never apply retroactively to that run. Phase
+4A must explicitly confirm this concurrency policy or justify a stronger Save
+block and its cross-tab coupling.
+
+At completion, Train distinguishes run success, artifact-save success, current-
+contract compatibility, and Predict availability by comparing the run contract
+fingerprint with the current active fingerprint. An artifact trained under an
+older generation is stale/incompatible unless separately proven compatible; it
+is never automatically activated for the current contract. The existing
+compatible model remains preserved until the new artifact passes compatibility.
 
 Phase 4 does not include:
 
@@ -308,22 +414,29 @@ registry, Train Target consumption, reload, canonical/projection owners, runtime
 consumers, protected dependencies, and migration risks.
 
 Required outcome: an approved contract map, ordering semantics, open-decision
-resolution, and an ordered implementation plan without production changes.
+resolution, application-wide generation contract, immutable training snapshot
+contract, dirty Mapping draft reconciliation policy, One-hot category source
+modes, Target/model-group scope, and an ordered implementation plan without
+production changes.
 
 Validation purpose: prove later slices do not start from a false owner or
-consumer assumption and do not omit protected dependencies.
+consumer assumption and do not omit protected dependencies, training races,
+dirty-draft conflicts, or runtime cutover failure states.
 
 ### 4B — Unified Contract and Multi-artifact Persistence
 
 Purpose: generate all candidate contracts from one draft, validate each artifact
-and the cross-contract set, and provide an all-or-nothing publish/rollback
-boundary.
+and the cross-contract set, assign the persisted generation identity, and provide
+an all-or-nothing disk publish/rollback boundary. Slice 4B exposes the persisted
+generation and candidate-loader contract consumed by Slice 4H; it does not own
+application-wide in-memory cutover.
 
 Required outcome: successful Save makes every artifact reflect the same draft;
 failed Save preserves every previous artifact.
 
-Validation purpose: inject validation and write failures at each boundary and
-prove there is no partial publication.
+Validation purpose: distinguish candidate validation, disk artifact publication,
+persisted generation identity, consumer preflight input, and runtime cutover;
+inject write failures and prove there is no partial disk publication.
 
 ### 4C — Controlled Feature Mutation Commands
 
@@ -363,22 +476,28 @@ rejected atomically and formula changes report compatibility impact.
 Purpose: provide group-centered One-hot CRUD, category ordering, policies, and
 emitted Feature projection.
 
-Required outcome: selector source, categories, emitted ML contract, training
-headers, and compatibility impact remain consistent.
+Required outcome: static category CRUD, mapping-backed option reconciliation,
+external/provider restrictions, emitted ML contract, training headers, and
+compatibility impact remain consistent without cross-owner deletion.
 
-Validation purpose: prove dependency-safe group/category mutation and
-deterministic emitted order without raw-row coordination.
+Validation purpose: prove static category mutation, deterministic category and
+emitted ordering, unknown/missing policies, and that Mapping option changes do
+not silently delete or rewrite Data Definition category contracts.
 
 ### 4G — Result/Target and Registry Management
 
 Purpose: manage Result/Target and model-registry mutation together and make Train
 consume a dynamic Target contract.
 
-Required outcome: schema, Target, registry, policies, and training contract are
-generated and validated consistently.
+Required outcome: schema, Target, registry, target/registry fingerprint,
+target-level policies, existing model-group association, and training contract
+are generated and validated consistently.
 
 Validation purpose: prove dynamic Train Target refresh, dependency-safe
-rename/delete, policy enforcement, and model compatibility impact.
+rename/delete, allowed existing-group association, rejection of unknown group
+references, explicit blocking of new model-group creation when out of scope, and
+model compatibility impact. Any approved new-group workflow requires separate
+model-level contract validation.
 
 ### 4H — Live Reload and Cross-tab Contract Refresh
 
@@ -386,11 +505,16 @@ Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
 
-Required outcome: every owner reflects one newly published contract or retains
-its prior valid state when reload fails.
+Required outcome: every required owner reports one active generation. On failure,
+all owners retain the prior generation or the whole application reports the
+approved stale/restart-required state; mixed generation is never normal.
 
-Validation purpose: prove cross-tab refresh, stable-input preservation, mapping
-coverage refresh, training-data revalidation, and compatibility reevaluation.
+Validation purpose: prove consumer preflight and atomic cutover, generation
+agreement, explicit stable-input preservation failure, dirty Mapping draft
+preservation and visible pending update, stale runtime reporting, training-data
+revalidation, and compatibility reevaluation. An active run keeps its start
+generation, and an artifact completed from an older generation is not
+automatically activated for the current generation.
 
 ### 4I — Diagnostics Simplification and Final Acceptance
 
@@ -422,6 +546,25 @@ cross-tab acceptance, and honest fixture/mock limitations.
 15. Show retraining required when an existing model is incompatible.
 16. Complete the workflow without directly editing internal CSV, JSON, or Python
     registry files.
+17. After Definition Save, Predict, Train, and Data Mapping consume the same
+    active contract generation.
+18. A consumer preflight failure leaves no mixed-generation normal state.
+19. Persisted success followed by cutover failure displays an explicit stale/
+    restart-required recovery state.
+20. A dirty Data Mapping draft survives a Definition requirement update and
+    exposes a pending contract update workflow.
+21. Static categories and mapping-backed option vocabulary follow their distinct
+    mutation owners without implicit cross-owner deletion.
+22. An active training run continues using its immutable start snapshot after a
+    newer Definition generation is persisted.
+23. Training results and artifacts identify their source generation and contract
+    fingerprints.
+24. An older-generation artifact is not treated as current-contract compatible
+    without explicit compatibility proof.
+25. The existing compatible model is preserved until a new artifact passes
+    compatibility checks.
+26. Target CRUD permits validated existing model-group association and clearly
+    blocks or separately gates new model-group creation.
 
 ## 18. Non-goals
 
@@ -446,3 +589,14 @@ cross-tab acceptance, and honest fixture/mock limitations.
 - How are the five ordering contracts represented without accidental coupling?
 - Which protected runtime columns, target rules, and registry entries require
   explicit migration policies rather than ordinary mutation?
+- How do all required live owners commit one generation, and does cutover failure
+  retain the old generation or enter application-wide stale/restart-required
+  recovery after disk publication?
+- Can dirty Data Mapping drafts rebase by stable group/attribute identity, and
+  which add/rename/delete conflicts block generation cutover?
+- What exact immutable identity crosses TrainingRequest, TrainingResult, and
+  model artifacts, and how is stale-artifact compatibility proven?
+- What canonical identity, ordering, unknown/missing policy, and mutation set
+  applies to static, mapping-backed, and external One-hot category sources?
+- Does Phase 4 remain limited to existing model-group association, or is a
+  separately validated model-group creation workflow explicitly approved?

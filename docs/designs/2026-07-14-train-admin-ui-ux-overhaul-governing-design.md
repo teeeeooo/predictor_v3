@@ -82,6 +82,11 @@ information architecture, state communication, recovery, and editing efficiency.
 | Train / Model | Dynamic Feature/Target consumption, training-data selection, explicit training execution, artifact status, readiness visibility, and results workflow. |
 | Predict | Saved schema/Feature and compatible-model consumer; runtime case entry and prediction workflow; internal UX redesign deferred. |
 
+All related persisted projections belong to one immutable contract generation.
+Required consumers must not silently run mixed generations. Disk publication and
+application-wide runtime cutover are distinct outcomes, and an active training
+run is bound to its immutable start-generation snapshot.
+
 ### Structural versus value changes
 
 - Adding a mapping row or changing a value belongs to Data Mapping.
@@ -339,12 +344,22 @@ The program is complete when:
 - Predict-only and ML-only Features are independently manageable;
 - Derived Features and One-hot groups/categories are safely authored;
 - Result/Target and model-registry candidates are managed and validated together;
+- Target CRUD is distinct from model-group creation and model-level training
+  policy; default management associates Targets only with validated existing
+  groups unless a separate advanced contract is approved;
+- static, mapping-backed, and external One-hot category vocabularies have
+  explicit and non-overlapping mutation owners;
 - all related Definition contracts publish atomically with cross-contract
   validation and preserve prior artifacts on failure;
-- Predict, Train, and Data Mapping live-refresh their owned projections after a
-  successful Save without merging controller responsibilities;
+- Predict, Train, and Data Mapping activate one application-wide contract
+  generation after consumer preflight; mixed-generation normal state is
+  forbidden and persistence/cutover outcomes remain distinguishable;
+- a Data Mapping unsaved draft is preserved across Definition requirement
+  updates and exposes a visible pending-update/reconciliation state;
 - Train dynamically consumes current Feature/Target contracts and reports
   retraining required for an incompatible existing model;
+- each training run and resulting artifact retain their start-generation contract
+  snapshot, and stale artifacts are not presented as current-compatible;
 - Train/Model leads with the training-data selection → train → progress → results
   flow;
 - schema, feature, mapping, and compatibility checks run automatically and
