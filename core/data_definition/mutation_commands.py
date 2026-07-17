@@ -150,5 +150,8 @@ def apply_set_definition_active_command(
             for item in draft.rows
         ),
         ml_order=ml_order,
+        controlled_field_changes=frozenset(
+            (*draft.controlled_field_changes, (row.identity, "active"))
+        ),
     )
     return DataDefinitionCommandResult(updated, True, row.identity, action)

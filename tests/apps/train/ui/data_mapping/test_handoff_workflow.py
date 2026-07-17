@@ -20,7 +20,11 @@ from apps.train.services.data_mapping_service import (
 from apps.train.ui.shell import TrainShell
 from apps.train.application.data_mapping import DataMappingNavigationResult
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
-from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
+from core.data_definition import (
+    AddDefinitionIntent,
+    EditDefinitionIntent,
+    SetDefinitionActiveIntent,
+)
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
 
 
@@ -235,13 +239,11 @@ def test_saved_requirement_optional_remove_readd_preserves_unsaved_mapping_sessi
         )
         assert mapping_path.read_bytes() == mapping_before
 
-        accepted, _message = panel._apply_edit_intent(
-            EditDefinitionIntent(
-                ("schema_row", "cond_inner_area"),
-                (("active", False),),
-            )
+        state = definition_controller.set_definition_active(
+            SetDefinitionActiveIntent(("schema_row", "cond_inner_area"), False)
         )
-        assert accepted
+        panel._apply_state(state)
+        assert state.last_action_ok
         panel._save_schema()
         assert not panel.handoff_panel.open_button.isEnabled()
 
@@ -259,13 +261,11 @@ def test_saved_requirement_optional_remove_readd_preserves_unsaved_mapping_sessi
         assert "Cond Inner Area" not in backing_group.notes
         assert mapping_path.read_bytes() == mapping_before
 
-        accepted, _message = panel._apply_edit_intent(
-            EditDefinitionIntent(
-                ("schema_row", "cond_inner_area"),
-                (("active", True),),
-            )
+        state = definition_controller.set_definition_active(
+            SetDefinitionActiveIntent(("schema_row", "cond_inner_area"), True)
         )
-        assert accepted
+        panel._apply_state(state)
+        assert state.last_action_ok
         panel._save_schema()
         panel.handoff_panel.open_button.click()
         app.processEvents()

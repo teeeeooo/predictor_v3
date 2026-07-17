@@ -185,8 +185,13 @@ class DataDefinitionController:
         """Run the guarded schema save workflow and return updated UI state."""
         try:
             draft = self._draft or self._service.load_draft()
-            changed_identities = frozenset(
+            changed_identities = {
                 change.row_identity for change in draft.changes()
+            }
+            changed_identities.update(
+                (row.source_kind, row.column_key)
+                for row in draft.rows
+                if row.identity in changed_identities and row.column_key
             )
             report_before = self._service.refresh_report()
             result = self._service.save_schema_draft(draft, current_report=report_before)
@@ -199,7 +204,7 @@ class DataDefinitionController:
                 self._saved_mapping_handoffs = build_saved_mapping_handoffs(
                     report_after,
                     self._draft,
-                    changed_identities,
+                    frozenset(changed_identities),
                 )
             plan = self._service.preview_save_plan(self._draft, current_report=report_after)
         except Exception as exc:
