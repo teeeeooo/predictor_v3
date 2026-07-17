@@ -183,6 +183,16 @@ order, category storage order, Target `presentation_order`처럼 호환을 위�
 일치를 강제한다. Predict `display_order`는 inactive Feature를 포함한 전체
 Predict order 계약에서 유일하고 양의 32-bit signed 범위여야 한다.
 
+Basic Feature mutation은 `column_key`, `ml_name`, label과 분리된 immutable
+stable identity를 기준으로 한다. Add/Edit/Rename/Duplicate/Remove/Enable/
+Disable 및 Predict/ML Move는 `core/data_definition` command만 draft를
+변경하며, controller가 side-effect-free dependency Preview, selection, dirty
+state, Reset, Save를 조정한다. Rename은 Predict key 또는 ML name 변경을
+최소 하나 요구하는 선택적 원자 payload이고 label-only 변경은 Edit다.
+Predict display order와 ordered ML contract order는 서로를 암묵적으로
+변경하지 않는다. View는 intent를 수집하고 결과를 표시할 뿐 repository나
+filesystem adapter를 직접 호출하지 않는다.
+
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).

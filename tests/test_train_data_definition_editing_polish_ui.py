@@ -160,7 +160,8 @@ def test_dialog_invalid_focus_correction_apply_and_escape_cancel(tmp_path):
     QTest.mouseClick(dialog.apply_button, Qt.LeftButton)
     app.processEvents()
     assert dialog.result() == QDialog.Accepted
-    assert panel._selected_identity == ("schema_row", "keyboard_definition")
+    assert panel._selected_identity[1].startswith("ufm_feature_")
+    assert panel._selected_values()["column_key"] == "keyboard_definition"
     assert panel.inventory_table.model().row_for_identity(panel._selected_identity) is not None
     panel.close()
 
@@ -279,11 +280,14 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
         assert button.isVisible()
         assert panel.rect().intersects(button.geometry())
         assert button.geometry().width() > 0 and button.geometry().height() > 0
-    assert [action.text() for action in panel.task_header.add_menu.actions()] == [
-        "Manual Predict input",
-        "Mapping-backed Predict input",
-        "Data Mapping attribute",
-    ]
+        assert [action.text() for action in panel.task_header.add_menu.actions()] == [
+            "Manual Predict input",
+            "Mapping-backed Predict input",
+            "Data Mapping attribute",
+            "Predict-only Feature",
+            "ML-only Feature",
+            "Helper / Hidden Feature",
+        ]
     assert not panel.status_label.wordWrap()
 
     add_dialog = DataDefinitionAddDialog(panel._apply_add_intent, parent=panel)

@@ -1,6 +1,6 @@
 # Train/Admin Phase 4 — Unified Feature Manager
 
-Status: proposed active phase design — current-state audit and finalization pending
+Status: active phase — Slices 4A–4D complete; Slice 4E next
 Date: 2026-07-17
 Depends on: completed Phases 1–3, especially the Phase 3 Data Definition UX foundation
 
@@ -553,11 +553,65 @@ identity, dependency protection, and isolated ordering semantics.
 Purpose: connect full basic Feature lifecycle actions to the table-first
 workspace and provide Predict/ML-intent-centered dialogs without raw fields.
 
-Required outcome: users manage manual, mapping-backed, Predict-only, and ML-only
-Features through the GUI.
+Required outcome: users manage manual, mapping-backed, Predict-only, ML-only,
+and helper/hidden Features through the GUI.
 
 Validation purpose: prove complete GUI workflows, draft/selection preservation,
-impact Preview, Reset, unsaved-draft Export, and safe Save.
+impact Preview, Reset, and safe Save. Unsaved-draft Export remains part of the
+final manager workflow but is not required by the bounded 4D basic-manager slice.
+
+#### 4C+4D closeout
+
+The bounded basic Feature lifecycle is implemented over the Phase 4B canonical
+generation transaction. Add/Edit/Rename/Duplicate/Remove/Enable/Disable and
+explicit Predict/ML Move commands are immutable domain transitions; widgets and
+table models do not mutate rows. Rename accepts one optional atomic payload for
+`label`, `column_key`, and `ml_name`, requires at least one key/name change, keeps
+stable identity, and routes label-only changes to Edit. Duplicate allocates a new
+stable identity and does not redirect contracts that reference the source.
+
+Predict display order includes inactive Features and remains independent from
+ordered ML projection. Command Preview is side-effect-free and reports Predict,
+ML, Mapping, model compatibility, retraining, affected references, blockers, and
+Save eligibility. Safe identity-owned references may be updated atomically;
+fixed-string/import-time Predict consumers and unapproved ML, Derived, One-hot,
+Target/registry, model compatibility, or training-header migrations remain
+actionable blockers. Concrete `mapping.json` values and model artifacts are not
+mutated.
+
+The existing table-first workspace now exposes the lifecycle actions, preserves
+selection and dirty state on rejection, selects duplicates and remove neighbors,
+reloads the persisted active generation on Reset and successful Save, and keeps
+the unsaved draft on stale-parent or publication failure. Repository automation
+passes on macOS, while Windows native smoke remains an explicit pre-release item.
+Phase 4E may begin after this slice is merged without weakening these dependency
+guards.
+
+#### 4C+4D audit correction
+
+PR #21 correction narrows Predict protection to the actual fixed-index/import-
+time owner contract; manifest membership, visibility, role, and persistence of a
+user-created Basic Feature do not create a protected dependency. Canonical
+candidate matching uses stable identity exclusively whenever present. Key-based
+matching remains only for explicit identityless legacy rows, so Remove followed
+by same-key Add creates a new Feature and new dependent identities.
+
+Command Preview now retains one application-owned prepared transition. Duplicate
+identity allocation therefore occurs once, approval applies the exact previewed
+draft/candidate, and controller revision plus source-generation checks reject a
+Preview made stale by another command, Reset, or reload. Structured evidence
+includes affected Feature/reference identities, dependency owner/code,
+Predict-key or ML-name change, automatic reference updates, blockers,
+resolution, model compatibility, retraining, candidate fingerprint, and Save
+eligibility. The View formats this evidence but does not reconstruct it.
+
+The final Save-path correction makes restricted-field validation identity-first:
+shared identities are field-compared, while exact controlled removals and exact
+controlled additions remain separate lifecycle events even when their keys are
+equal and row counts are unchanged. Inconsistent lifecycle evidence, direct
+stable-identity replacement, raw row insertion/deletion, and reuse of a removed
+identity remain blocked. Save Preview, canonical publication, and reload now
+agree on the new Feature and Mapping requirement identities.
 
 ### 4E — Derived Feature Authoring
 

@@ -20,13 +20,13 @@ SCHEMA_BACKED_EDITABLE_FIELDS = frozenset(
         "trigger_column",
         "rule_id",
         "model_input_enabled",
-        "ml_name",
         "one_hot_group",
-        "active",
         "notes",
     }
 )
-SCHEMA_BACKED_RESTRICTED_FIELDS = frozenset({"display_order", "column_key", "role"})
+SCHEMA_BACKED_RESTRICTED_FIELDS = frozenset(
+    {"display_order", "column_key", "ml_name", "role", "stable_identity", "active"}
+)
 MAPPING_VALUE_FIELDS = frozenset(
     {"mapping_value", "mapping_row", "row_value", "value", "mapping_json"}
 )
@@ -85,10 +85,16 @@ def field_editability(
             reason="Schema-backed field is editable after validation.",
         )
     if field_name in SCHEMA_BACKED_RESTRICTED_FIELDS:
+        if field_name in {"column_key", "ml_name"}:
+            reason = "Predict key and ML name changes require the controlled Rename command."
+        elif field_name == "active":
+            reason = "Active-state changes require the controlled Enable or Disable command."
+        else:
+            reason = "Field requires a dedicated controlled Feature command, not direct editing."
         return _blocked(
             field_name,
             "schema_backed_restricted",
-            "Field requires a controlled Add Feature command, not direct editing.",
+            reason,
         )
     return _blocked(field_name, "unsupported_field", "Field is not part of the edit policy.")
 
@@ -104,15 +110,77 @@ def restricted_draft_field_changes(
     """Return direct draft edits that violate the field edit policy."""
     changes: list[RestrictedDraftFieldChange] = []
     baseline_by_identity = {row.identity: row for row in draft.baseline_rows}
+    current_by_identity = {row.identity: row for row in draft.rows}
     for row in draft.rows:
         before = baseline_by_identity.get(row.identity)
         if before is not None:
-            changes.extend(_restricted_field_changes(before, row))
-    if len(draft.rows) == len(draft.baseline_rows):
-        for before, after in zip(draft.baseline_rows, draft.rows, strict=True):
-            if before.identity != after.identity:
-                changes.extend(_restricted_field_changes(before, after))
+            changes.extend(_restricted_field_changes(draft, before, row))
+    baseline_only = tuple(
+        row for row in draft.baseline_rows if row.identity not in current_by_identity
+    )
+    current_only = tuple(
+        row for row in draft.rows if row.identity not in baseline_by_identity
+    )
+    changes.extend(_invalid_lifecycle_identity_changes(
+        draft,
+        frozenset(baseline_by_identity),
+        frozenset(current_by_identity),
+    ))
+    changes.extend(_unmatched_identity_changes(draft, baseline_only, current_only))
     return _dedupe_restricted_changes(changes)
+
+
+def _invalid_lifecycle_identity_changes(
+    draft: DataDefinitionDraft,
+    baseline_identities: frozenset[tuple[str, str]],
+    current_identities: frozenset[tuple[str, str]],
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    expected_removals = baseline_identities - current_identities
+    expected_additions = current_identities - baseline_identities
+    invalid = (
+        draft.controlled_row_removals - expected_removals
+        | draft.controlled_row_additions - expected_additions
+    )
+    return tuple(
+        RestrictedDraftFieldChange(
+            identity,
+            "stable_identity",
+            "Controlled Add/Remove identity evidence does not match the draft lifecycle.",
+        )
+        for identity in sorted(invalid)
+    )
+
+
+def _unmatched_identity_changes(
+    draft: DataDefinitionDraft,
+    baseline_only: tuple[DataDefinitionDraftRow, ...],
+    current_only: tuple[DataDefinitionDraftRow, ...],
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    """Detect raw identity replacement without pairing independent lifecycles."""
+    additions = {
+        row.identity: row for row in current_only
+        if row.identity not in draft.controlled_row_additions
+    }
+    changes: list[RestrictedDraftFieldChange] = []
+    for before in baseline_only:
+        if before.identity in draft.controlled_row_removals:
+            continue
+        after = next(
+            (
+                row for row in additions.values()
+                if row.source_kind == before.source_kind
+                and (
+                    bool(before.column_key and row.column_key == before.column_key)
+                    or bool(before.ml_name and row.ml_name == before.ml_name)
+                )
+            ),
+            None,
+        )
+        if after is None:
+            continue
+        changes.extend(_restricted_field_changes(draft, before, after))
+        additions.pop(after.identity, None)
+    return tuple(changes)
 
 
 def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:
@@ -125,12 +193,15 @@ def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:
 
 
 def _restricted_field_changes(
+    draft: DataDefinitionDraft,
     before: DataDefinitionDraftRow,
     after: DataDefinitionDraftRow,
 ) -> tuple[RestrictedDraftFieldChange, ...]:
     changes: list[RestrictedDraftFieldChange] = []
     for field_name in DataDefinitionDraftRow.__dataclass_fields__:
         if getattr(before, field_name) == getattr(after, field_name):
+            continue
+        if draft.is_controlled_field_change(before.identity, field_name):
             continue
         editability = field_editability(before, field_name)
         if not editability.editable:

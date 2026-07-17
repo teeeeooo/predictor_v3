@@ -13,6 +13,12 @@ def build_saved_mapping_handoffs(
     changed_identities: frozenset[tuple[str, str]],
 ) -> tuple[DataMappingNavigationRequest, ...]:
     """Return canonical saved requirements affected by one successful write."""
+    changed_column_keys = {
+        row.column_key
+        for row in saved_draft.rows
+        if row.identity in changed_identities
+        or (row.source_kind, row.column_key) in changed_identities
+    }
     labels = {
         row.column_key: row.label
         for row in saved_draft.rows
@@ -30,5 +36,5 @@ def build_saved_mapping_handoffs(
             data_type=requirement.data_type,
         )
         for requirement in saved_report.mapping_requirements
-        if ("schema_row", requirement.column_key) in changed_identities
+        if requirement.column_key in changed_column_keys
     )

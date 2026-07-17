@@ -1,10 +1,14 @@
 """Arc 15C-1 Data Definition draft and save contract tests."""
 
+from dataclasses import replace
+
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
     EditDefinitionIntent,
+    RenameDefinitionIntent,
     apply_edit_definition_command,
+    apply_rename_definition_command,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
@@ -229,7 +233,12 @@ def test_data_definition_save_plan_removes_compound_attribution_after_partial_re
 
     assert _blockers(blocked, "ml_compatibility_projection_write_required")
     assert not _blockers(recovered, "ml_compatibility_projection_write_required")
-    assert recovered.can_save_schema
+    assert not recovered.can_save_schema
+    assert any(
+        item.code == "restricted_field_edit_not_allowed"
+        and item.field_name == "ml_name"
+        for item in recovered.blocked_reasons
+    )
     assert [change.field_name for change in recovered.changed_fields] == [
         "ml_name",
         "notes",
@@ -382,6 +391,25 @@ def test_data_definition_save_plan_blocks_role_direct_edit():
 
     assert not plan.can_save_schema
     assert "restricted_field_edit_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_direct_stable_identity_replacement():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    forged = replace(row, stable_identity="forged_identity")
+    changed = replace(
+        draft,
+        rows=tuple(forged if item.identity == row.identity else item for item in draft.rows),
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert any(
+        item.code == "restricted_field_edit_not_allowed"
+        and item.field_name == "stable_identity"
+        for item in plan.blocked_reasons
+    )
 
 
 def test_data_definition_save_plan_blocks_raw_row_add():
@@ -565,9 +593,20 @@ def _fingerprint(draft):
 
 
 def _controlled_edit(draft, column_key, updates):
+    ml_name = next((value for field, value in updates if field == "ml_name"), None)
+    remaining = tuple(item for item in updates if item[0] != "ml_name")
+    if ml_name is not None:
+        renamed = apply_rename_definition_command(
+            draft,
+            RenameDefinitionIntent(("schema_row", column_key), ml_name=str(ml_name)),
+        )
+        assert renamed.accepted, renamed.issues
+        draft = renamed.draft
+    if not remaining:
+        return draft
     result = apply_edit_definition_command(
         draft,
-        EditDefinitionIntent(("schema_row", column_key), updates),
+        EditDefinitionIntent(("schema_row", column_key), remaining),
     )
     assert result.accepted, result.issues
     return result.draft

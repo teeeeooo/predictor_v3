@@ -21,13 +21,27 @@ def candidate_manifest_from_draft(
     base: UnifiedFeatureManifest,
 ) -> UnifiedFeatureManifest:
     """Return a new immutable generation candidate without mutating either input."""
+    base_by_identity = {item.identity: item for item in base.features}
     base_by_key = {item.column_key: item for item in base.features}
+    schema_rows = tuple(item for item in draft.rows if item.source_kind == "schema_row")
+    rows_by_identity = {item.identity: item for item in schema_rows}
+    ordered_rows = tuple(
+        rows_by_identity[identity]
+        for identity in draft.predict_order
+        if identity in rows_by_identity
+    )
+    ordered_rows += tuple(item for item in schema_rows if item not in ordered_rows)
     features = tuple(
-        _feature_from_draft(row, base_by_key.get(row.column_key), base.generation.generation_id)
-        for row in sorted(
-            (item for item in draft.rows if item.source_kind == "schema_row"),
-            key=lambda item: item.display_order,
+        _feature_from_draft(
+            row,
+            (
+                base_by_identity.get(row.stable_identity)
+                if row.stable_identity
+                else base_by_key.get(row.column_key)
+            ),
+            base.generation.generation_id,
         )
+        for row in ordered_rows
     )
     feature_by_key = {item.column_key: item for item in features}
     feature_by_ml = {item.ml_name: item for item in features if item.ml_name}
@@ -38,8 +52,9 @@ def candidate_manifest_from_draft(
         for item in projected_ml
     )
     projected_set = set(projected_ids)
-    ml_order = tuple(item for item in base.ordering.ml if item in projected_set) + tuple(
-        item for item in projected_ids if item not in base.ordering.ml
+    requested_ml_order = tuple(identity[1] for identity in draft.ml_order)
+    ml_order = tuple(item for item in requested_ml_order if item in projected_set) + tuple(
+        item for item in projected_ids if item not in requested_ml_order
     )
     requirements = tuple(
         _mapping_requirement(item, feature_by_key, base)
@@ -67,8 +82,11 @@ def candidate_manifest_from_draft(
 
 
 def _feature_from_draft(row, existing, parent_generation_id: str) -> FeatureDefinition:  # noqa: ANN001
-    identity = existing.identity if existing is not None else bootstrap_identity(
-        "feature", f"generation-add:{parent_generation_id}:{row.column_key}"
+    identity = (
+        existing.identity
+        if existing is not None
+        else row.stable_identity
+        or bootstrap_identity("feature", f"generation-add:{parent_generation_id}:{row.column_key}")
     )
     zero_fill = existing.zero_fill_policy if existing is not None else "disallow"
     return FeatureDefinition(

@@ -26,7 +26,6 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
     app = _app()
     schema_path = _copy_schema(tmp_path)
     panel = DataDefinitionPanel(controller=_controller(schema_path))
-    identity = ("schema_row", "fan_diameter")
     try:
         panel.show()
         app.processEvents()
@@ -41,7 +40,9 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
         app.processEvents()
 
         assert accepted
-        assert panel._selected_identity == identity
+        added_identity = panel._selected_identity
+        assert added_identity[1].startswith("ufm_feature_")
+        assert panel._selected_values()["column_key"] == "fan_diameter"
         assert panel.impact_view.status_label.text() == "Review changes before saving"
         assert "Add Fan Diameter" in panel.impact_view.change_label.text()
         assert "Predict restart: required" in panel.impact_view.runtime_label.text()
@@ -61,7 +62,7 @@ def test_impact_view_updates_through_add_save_reload_and_preserves_selection(tmp
         panel.save_button.click()
         app.processEvents()
 
-        assert panel._selected_identity == identity
+        assert panel._selected_values()["column_key"] == "fan_diameter"
         assert panel.impact_view.status_label.text() == "Schema saved"
         assert "Status: written" in panel.impact_view.result_label.text()
         assert "Backup path:" in panel.impact_view.result_label.text()

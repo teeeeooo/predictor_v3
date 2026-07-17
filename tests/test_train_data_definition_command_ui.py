@@ -72,7 +72,9 @@ def test_add_dialog_and_panel_select_complete_new_definition(tmp_path):
         app.processEvents()
 
         assert dialog.result() == QDialog.Accepted
-        assert panel._selected_identity == ("schema_row", "fan_diameter")
+        assert panel._selected_identity[0] == "schema_row"
+        assert panel._selected_identity[1].startswith("ufm_feature_")
+        assert panel._selected_values()["column_key"] == "fan_diameter"
         row = panel.inventory_table.model().row_for_identity(panel._selected_identity)
         assert row is not None
         assert panel.inventory_table.model().cell_value(row, 0) == "Fan Diameter"
@@ -159,7 +161,8 @@ def test_unified_add_menu_drives_valid_manual_submit_and_mapping_attribute_cance
     app.processEvents()
     QTest.qWait(5)
 
-    assert panel._selected_identity == ("schema_row", "menu_fan_diameter")
+    assert panel._selected_identity[0] == "schema_row"
+    assert panel._selected_values()["column_key"] == "menu_fan_diameter"
     assert panel._state.draft_changed
     focused = panel.window().focusWidget()
     assert focused is panel.inventory_table, (
@@ -213,7 +216,15 @@ def test_standalone_mapping_dialog_projects_hidden_requirement(tmp_path):
         app.processEvents()
 
         assert dialog.result() == QDialog.Accepted
-        identity = ("schema_row", "cond_inner_area")
+        identity = next(
+            identity
+            for identity, cells in zip(
+                panel._state.draft_row_identities,
+                panel._state.draft_rows,
+                strict=True,
+            )
+            if {cell.field_name: cell.value for cell in cells}["column_key"] == "cond_inner_area"
+        )
         index = panel._state.draft_row_identities.index(identity)
         values = {cell.field_name: cell.value for cell in panel._state.draft_rows[index]}
         assert values["visible"] == "false"

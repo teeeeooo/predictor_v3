@@ -25,12 +25,12 @@ def validate_contract(manifest: UnifiedFeatureManifest) -> tuple[ContractValidat
     identities = _all_identities(manifest)
     _duplicates(issues, "stable_identity_duplicate", identities)
     _duplicates(issues, "predict_key_collision", [
-        item.column_key for item in manifest.features if item.active
+        item.column_key for item in manifest.features
     ])
     _duplicates(issues, "ml_name_collision", [
         item.ml_name
         for item in (*manifest.features, *manifest.derived)
-        if item.active and item.ml_name
+        if item.ml_name
     ])
     feature_ids = {item.identity for item in manifest.features}
     derived_ids = {item.identity for item in manifest.derived}

@@ -38,6 +38,7 @@ class ImpactDefinitionChange:
     identity: tuple[str, str]
     action: str
     label: str
+    column_key: str
     fields: tuple[ImpactFieldChange, ...]
 
 
@@ -125,12 +126,14 @@ def _definition_changes(
 ) -> tuple[ImpactDefinitionChange, ...]:
     grouped: dict[tuple[str, str], list[ImpactFieldChange]] = {}
     actions: dict[tuple[str, str], str] = {}
+    row_keys: dict[tuple[str, str], str] = {}
     for source, key, field_name, before, after in state.draft_change_rows:
         if not field_name or source not in {"schema_row", "derived_policy", "feature_projection"}:
             continue
         identity = (source, key)
         if field_name == "__row__":
             actions[identity] = "Add" if not before else "Remove"
+            row_keys[identity] = after or before
             grouped.setdefault(identity, [])
         else:
             actions.setdefault(identity, "Edit")
@@ -152,6 +155,7 @@ def _definition_changes(
                 or current_values.get(identity, {}).get("ml_name")
                 or identity[1]
             ),
+            column_key=current_values.get(identity, {}).get("column_key") or row_keys.get(identity, ""),
             fields=tuple(grouped[identity]),
         )
         for identity in ordered
@@ -178,9 +182,9 @@ def _mapping_impacts(
     requirement_keys = {row[0] for row in state.mapping_requirement_rows}
     values = _current_values(state)
     affected = {
-        item.identity[1]
+        item.column_key
         for item in definitions
-        if item.identity[1] in requirement_keys
+        if item.column_key in requirement_keys
         or any(field.field_name in _MAPPING_FIELDS for field in item.fields)
     }
     current = tuple(
@@ -188,7 +192,14 @@ def _mapping_impacts(
             "Required",
             *row,
             "required"
-            if values.get(("schema_row", row[0]), {}).get("required") == "true"
+            if next(
+                (
+                    item.get("required")
+                    for item in values.values()
+                    if item.get("column_key") == row[0]
+                ),
+                "false",
+            ) == "true"
             else "optional",
             "Data Mapping owns concrete values",
         )
@@ -198,11 +209,11 @@ def _mapping_impacts(
     current_keys = {row[1] for row in current}
     removed = tuple(
         (
-            "Removed or incomplete", item.identity[1], "", "", "", "", "", "unknown",
+            "Removed or incomplete", item.column_key, "", "", "", "", "", "unknown",
             "Data Mapping values unchanged",
         )
         for item in definitions
-        if item.identity[1] in affected and item.identity[1] not in current_keys
+        if item.column_key in affected and item.column_key not in current_keys
     )
     return (*current, *removed)
 

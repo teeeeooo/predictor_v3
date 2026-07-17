@@ -26,6 +26,8 @@ class DataDefinitionInteractionPresentation:
 
     save: DefinitionActionPresentation
     edit: DefinitionActionPresentation
+    manage: DefinitionActionPresentation
+    preview: DefinitionActionPresentation
     details: DefinitionActionPresentation
     review_blockers: DefinitionActionPresentation
     status_text: str
@@ -68,9 +70,22 @@ def project_data_definition_interaction(
         state.draft_changed
         and any(item.severity == "error" for item in state.blocker_items)
     )
+    manage_enabled = identity in state.manageable_feature_identities
+    manage_reason = (
+        "Manage the selected Basic Feature through controlled commands."
+        if manage_enabled
+        else "Select a supported Manual, Mapping-backed, Predict-only, ML-only, or Helper Feature."
+    )
     return DataDefinitionInteractionPresentation(
         save=DefinitionActionPresentation(inventory.save_enabled, save_reason),
         edit=DefinitionActionPresentation(edit_enabled, edit_reason),
+        manage=DefinitionActionPresentation(manage_enabled, manage_reason),
+        preview=DefinitionActionPresentation(
+            state.draft_changed,
+            "Review the current unsaved draft and Save impact."
+            if state.draft_changed
+            else "No unsaved draft impact to preview; command previews open before mutation.",
+        ),
         details=DefinitionActionPresentation(details_enabled, details_reason),
         review_blockers=DefinitionActionPresentation(
             has_blockers,

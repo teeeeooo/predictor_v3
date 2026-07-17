@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+from uuid import uuid4
+
 from core.data_definition.draft import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
@@ -34,10 +37,9 @@ def apply_add_definition_command(
         return DataDefinitionCommandResult(draft, False, None, "Add", issues)
     schema_rows = tuple(item for item in draft.rows if item.source_kind == "schema_row")
     other_rows = tuple(item for item in draft.rows if item.source_kind != "schema_row")
-    updated = DataDefinitionDraft(
+    updated = replace(
+        draft,
         rows=(*schema_rows, row, *other_rows),
-        baseline_rows=draft.baseline_rows,
-        issues=draft.issues,
         controlled_row_additions=frozenset(
             (*draft.controlled_row_additions, row.identity)
         ),
@@ -45,7 +47,8 @@ def apply_add_definition_command(
             *draft.controlled_addition_initial_rows,
             row,
         ),
-        base_generation_id=draft.base_generation_id,
+        predict_order=(*draft.predict_order, row.identity),
+        ml_order=_append_ml_identity(draft, row),
     )
     return DataDefinitionCommandResult(updated, True, row.identity, "Add")
 
@@ -55,27 +58,28 @@ def apply_edit_definition_command(
     intent: EditDefinitionIntent,
 ) -> DataDefinitionCommandResult:
     """Validate a complete Edit intent before applying any field."""
-    row = next((item for item in draft.rows if item.identity == intent.identity), None)
+    resolved_identity = draft.resolve_identity(intent.identity)
+    row = next((item for item in draft.rows if item.identity == resolved_identity), None)
     if row is None:
         return _rejected(draft, "Edit", "definition_not_found", "identity", "Definition not found.")
     updates, issues = _validated_edit_updates(row, intent.updates)
     if issues:
-        return DataDefinitionCommandResult(draft, False, intent.identity, "Edit", issues)
+        return DataDefinitionCommandResult(draft, False, resolved_identity, "Edit", issues)
     updates, transition_issues = _normalize_source_transition(row, updates)
     if transition_issues:
         return DataDefinitionCommandResult(
             draft,
             False,
-            intent.identity,
+            resolved_identity,
             "Edit",
             transition_issues,
         )
     candidate = _row_with_updates(row, updates)
     issues = validate_complete_row(candidate)
     if issues:
-        return DataDefinitionCommandResult(draft, False, intent.identity, "Edit", issues)
-    updated = replace_draft_row(draft, intent.identity, **updates)
-    return DataDefinitionCommandResult(updated, True, intent.identity, "Edit")
+        return DataDefinitionCommandResult(draft, False, resolved_identity, "Edit", issues)
+    updated = replace_draft_row(draft, resolved_identity, **updates)
+    return DataDefinitionCommandResult(updated, True, resolved_identity, "Edit")
 
 
 def _row_from_add_intent(
@@ -94,11 +98,7 @@ def _row_from_add_intent(
             "column_key",
             "Internal key must normalize to snake_case and start with a letter.",
         ))
-    existing_keys = {
-        row.column_key
-        for row in (*draft.rows, *draft.baseline_rows)
-        if row.column_key
-    }
+    existing_keys = {row.column_key for row in draft.rows if row.column_key}
     if column_key and column_key in existing_keys:
         issues.append(_issue(
             "column_key_duplicate",
@@ -111,10 +111,15 @@ def _row_from_add_intent(
             "data_type",
             "Add supports current string or number schema types.",
         ))
-    if intent.kind not in {"manual_predict", "mapping_predict", "mapping_attribute"}:
+    supported_kinds = {
+        "manual_predict", "mapping_predict", "mapping_attribute",
+        "predict_only", "ml_only", "mapping_backed", "helper_hidden",
+    }
+    if intent.kind not in supported_kinds:
         issues.append(_issue("intent_unsupported", "kind", "Unsupported definition intent."))
     relation = None
-    if intent.kind != "manual_predict":
+    mapping = intent.kind in {"mapping_predict", "mapping_attribute", "mapping_backed"}
+    if mapping:
         if not intent.mapping_attribute.strip():
             issues.append(_issue(
                 "mapping_attribute_required",
@@ -148,28 +153,47 @@ def _row_from_add_intent(
         ))
     if issues:
         return None, tuple(issues)
-    mapping = intent.kind != "manual_predict"
-    predict_visible = intent.visible if intent.kind != "mapping_attribute" else False
+    ml_name = intent.ml_name.strip()
+    model_input_enabled = bool(intent.model_input_enabled or intent.kind == "ml_only")
+    if model_input_enabled and not ml_name:
+        issues.append(_issue(
+            "ml_name_required",
+            "ml_name",
+            "ML input intent requires an explicit ML name.",
+        ))
+    if ml_name and any(item.ml_name == ml_name for item in draft.rows):
+        issues.append(_issue(
+            "ml_name_duplicate",
+            "ml_name",
+            f"ML name '{ml_name}' already exists in the current draft.",
+        ))
+    if issues:
+        return None, tuple(issues)
+    helper = intent.kind in {"mapping_attribute", "helper_hidden"}
+    predict_visible = False if helper or intent.kind == "ml_only" else bool(intent.visible)
+    role = "helper" if mapping and helper else "auto" if mapping else "hidden" if helper else "input"
+    readonly = mapping or helper
     row = DataDefinitionDraftRow(
         source_kind="schema_row",
+        stable_identity=f"ufm_feature_{uuid4().hex}",
         display_order=_next_display_order(draft),
         column_key=column_key,
         label=label,
-        role=("input" if not mapping else "auto" if intent.kind == "mapping_predict" else "helper"),
-        editor=("number" if data_type == "number" else "text") if not mapping else "readonly",
+        role=role,
+        editor="readonly" if readonly else ("number" if data_type == "number" else "text"),
         data_type=data_type,
         visible=predict_visible,
         required=bool(intent.required),
-        readonly=mapping,
+        readonly=readonly,
         value_source="mapping_lookup" if mapping else "manual",
         mapping_entity=relation.mapping_entity if relation else "",
         mapping_attribute=intent.mapping_attribute.strip() if mapping else "",
         trigger_column=relation.trigger_column if relation else "",
         rule_id=relation.rule_id if relation else "",
-        model_input_enabled=False,
-        ml_name="",
+        model_input_enabled=model_input_enabled,
+        ml_name=ml_name,
         one_hot_group="",
-        active=True,
+        active=bool(intent.active),
         notes=intent.notes.strip(),
     )
     return row, validate_complete_row(row)
@@ -253,6 +277,19 @@ def _next_display_order(draft: DataDefinitionDraft) -> int:
         if row.source_kind == "schema_row"
     ]
     return (max(existing, default=0) // 10 + 1) * 10
+
+
+def _append_ml_identity(
+    draft: DataDefinitionDraft,
+    row: DataDefinitionDraftRow,
+) -> tuple[tuple[str, str], ...]:
+    if not row.active or not row.ml_name or not row.model_input_enabled:
+        return draft.ml_order
+    first_derived = next(
+        (index for index, identity in enumerate(draft.ml_order) if identity[0] == "derived_policy"),
+        len(draft.ml_order),
+    )
+    return (*draft.ml_order[:first_derived], row.identity, *draft.ml_order[first_derived:])
 
 
 def _issue(code: str, field_name: str, message: str) -> DataDefinitionCommandIssue:

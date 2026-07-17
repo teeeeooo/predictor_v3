@@ -17,32 +17,36 @@
 
 ## Current Slice
 
-Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
-implemented and audit-corrected on its dedicated Draft PR branch. Production
-`create_shell()` now bootstraps and injects canonical generation persistence;
-draft generation binding plus Windows/POSIX cross-process single-writer locking
-rejects stale Save. Persistence construction is explicit, runtime generations
-live under per-user state instead of source config, and duplicate Predict
-`display_order` is rejected across active and inactive Features. Complete
-semantic identity, canonical ordering projections, stronger One-hot/Mapping/
-Target cross-validation, immutable history, rollback, and the existing
-protected-consumer guards are covered by focused acceptance tests.
+Train/Admin Phase 4C+4D — Feature Mutation and Basic Feature Manager plus its
+PR #21 audit correction is implemented over the merged Phase 4B baseline.
+Basic Feature Add/Edit/Rename/Duplicate/Remove/Enable/Disable and independent
+Predict/ML Move commands now mutate only immutable drafts through domain
+commands. Stable identity is independent from label, Predict key, and ML name;
+the table-first Data Definition workspace owns selection, command Preview,
+Reset, and canonical generation Save orchestration. Protection now follows the
+actual fixed-index/import-time consumer provider rather than manifest membership
+or visibility. Prepared Preview/Apply uses one exact candidate transition with
+revision stale protection, and identity matching cannot resurrect a removed
+Feature through key reuse. Save validation treats controlled Remove and Add as
+independent lifecycle events rather than a positional identity edit, so same-key
+recreation publishes and reloads with the new identity. Model compatibility,
+stale-parent, immutable history, and atomic publication guards remain in force.
 
 ## Next Action
 
-Merge the audit-corrected Phase 4B Draft PR. After merge, start Phase 4C stable-ID
-Feature mutation and dependency-safe Rename/Remove work from updated `main`.
-Do not mix Feature Manager UI, Derived/One-hot/Target authoring, live cutover, or
-model promotion runtime work into the 4B branch.
+Review and merge the Phase 4C+4D Draft PR. After merge, start Phase 4E restricted
+Derived Feature authoring from updated `main`. Keep One-hot/Target authoring,
+runtime cutover, model candidate generation, training, and promotion outside the
+4E slice.
 
 ## Active Blockers
 
-- Phase 4C must not begin before Phase 4B audit and merge.
-- Protected ML/import-time/fixed-string consumers still block ordinary
+- Actual protected ML/import-time/fixed-string consumers still block ordinary
   ML-name/order/One-hot/Derived/Target changes until their explicit migration.
-- Existing import-time/fixed-string consumers remain protected migration targets;
-  ordinary Rename/Delete is not enabled before their approved provider or atomic
-  migration boundary exists.
+- Existing fixed-index Predict keys remain protected migration targets; saved
+  user-created Features without those dependencies remain renameable/removable.
+- Windows native Feature Manager smoke remains a pre-release verification item;
+  automated macOS/offscreen coverage is not a substitute for that evidence.
 - Phase 5 Train/Model and Shell UX remains on hold until Phase 4 is stable.
 
 ## Active Constraints
@@ -88,7 +92,7 @@ model promotion runtime work into the 4B branch.
 
 ## Deferred / Hold
 
-- Slices 4D–4I remain deferred; Slice 4C begins only after Phase 4B merge.
+- Slices 4E–4I remain deferred; Slice 4E begins only after Phase 4C+4D merge.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
   Manager stabilization and a fresh dynamic-contract audit.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
@@ -109,6 +113,7 @@ model promotion runtime work into the 4B branch.
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`
 - Phase 4B result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md`
 - Phase 4B final audit correction: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-final-audit-correction.md`
+- Phase 4C+4D closeout: `result_reports/records/2026-07/2026-07-17-train-admin-phase4c-4d-feature-manager.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

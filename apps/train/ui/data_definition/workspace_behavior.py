@@ -133,6 +133,7 @@ class DataDefinitionWorkspaceBehavior:
         order = (
             panel.add_definition_button,
             panel.edit_button,
+            panel.impact_preview_button,
             panel.review_blockers_button,
             panel.save_button,
             panel.more_button,

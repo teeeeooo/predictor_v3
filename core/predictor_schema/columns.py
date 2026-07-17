@@ -46,6 +46,21 @@ COL_REF_QTY       = next(i for i, c in enumerate(COLUMNS) if c["key"] == "ref_qt
 COL_COOLING_HZ    = next(i for i, c in enumerate(COLUMNS) if c["key"] == "cooling_hz")
 COL_HEATING_HZ    = next(i for i, c in enumerate(COLUMNS) if c["key"] == "heating_hz")
 
+# Compatibility owner for import-time/fixed-index Predict consumers.  Data
+# Definition protection must follow this actual code contract, not manifest
+# membership, visibility, or role.
+FIXED_INDEX_COLUMN_KEYS = frozenset(
+    COLUMNS[index]["key"]
+    for index in (
+        COL_COOLING_CAPA, COL_HEATING_CAPA, COL_IDU, COL_EVAP_INDEX, COL_ODU,
+        COL_FIN_TYPE, COL_PI, COL_ROW, COL_COMPRESSOR, COL_REF_TYPE, COL_EXP_TYPE,
+        COL_ID_VOLUME, COL_EVAP_AREA, COL_EVAP_VOLUME, COL_OD_VOLUME,
+        COL_COND_AREA, COL_COND_VOLUME, COL_COMP_EER, COL_COMP_CC,
+        COL_COOLING_POWER, COL_EER, COL_CSPF, COL_HEATING_POWER, COL_COP,
+        COL_HSPF2, COL_REF_QTY, COL_COOLING_HZ, COL_HEATING_HZ,
+    )
+)
+
 # =============================================================================
 # 그룹별 키 리스트 및 설정
 # =============================================================================

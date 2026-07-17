@@ -87,9 +87,6 @@ class DataDefinitionEditDialog(QDialog):
             ("readonly", self.readonly_checkbox.isChecked()),
             ("value_source", source),
             ("model_input_enabled", self.model_input_checkbox.isChecked()),
-            ("ml_name", self.ml_name_input.text()),
-            ("one_hot_group", self.one_hot_input.text()),
-            ("active", self.active_checkbox.isChecked()),
             ("notes", self.notes_input.text()),
         ]
         if source == "mapping_lookup" and template is not None:
@@ -157,6 +154,8 @@ class DataDefinitionEditDialog(QDialog):
         self.model_input_checkbox.setAccessibleName("Model input")
         self.active_checkbox = QCheckBox("Active")
         self.active_checkbox.setAccessibleName("Definition active")
+        self.active_checkbox.setEnabled(False)
+        self.active_checkbox.setToolTip("Use Enable Feature or Disable Feature.")
         add_labeled_row(form, "Label", self.label_input)
         add_labeled_row(form, "Editor", self.editor_combo)
         add_labeled_row(form, "Data type", self.data_type_combo)
@@ -179,8 +178,12 @@ class DataDefinitionEditDialog(QDialog):
         form.addRow(self.attribute_label, self.attribute_input)
         self.ml_name_input = QLineEdit()
         self.ml_name_input.setAccessibleName("ML name")
+        self.ml_name_input.setEnabled(False)
+        self.ml_name_input.setToolTip("Use Rename Feature to change an ML name.")
         self.one_hot_input = QLineEdit()
         self.one_hot_input.setAccessibleName("One-hot group")
+        self.one_hot_input.setEnabled(False)
+        self.one_hot_input.setToolTip("One-hot group authoring is deferred to Phase 4F.")
         self.notes_input = QLineEdit()
         self.notes_input.setAccessibleName("Definition notes")
         add_labeled_row(form, "Model input", self.model_input_checkbox)
@@ -312,16 +315,8 @@ class DataDefinitionEditDialog(QDialog):
         else:
             self.model_input_checkbox.setEnabled(True)
 
-        direct_ml_name = (
-            self._role == "auto"
-            or (input_role and source == "manual")
-            or (self._role == "result" and source == "result")
-            or self._role == "one_hot_feature"
-        )
-        self.ml_name_input.setEnabled(direct_ml_name)
-        self.one_hot_input.setEnabled(
-            self._role == "one_hot_feature" or (input_role and source == "one_hot")
-        )
+        self.ml_name_input.setEnabled(False)
+        self.one_hot_input.setEnabled(False)
 
     def _apply(self) -> None:
         accepted, message = self._on_apply(self.intent())

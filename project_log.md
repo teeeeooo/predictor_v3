@@ -29,6 +29,45 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-18 — Train/Admin Phase 4C+4D audit correction
+
+### Decision
+
+- Protect Basic Features only from evidence supplied by actual fixed-string or
+  import-time consumer owners; canonical presence, visibility, and role do not
+  imply a protected dependency.
+- Match canonical rows by stable identity whenever present and reserve key
+  fallback for explicit identityless legacy compatibility rows, preventing
+  Remove/same-key Add from inheriting old Feature or Mapping identities.
+- Prepare identity-allocating commands once in the application layer and apply
+  the exact previewed transition only while controller revision and source
+  generation remain current.
+- Expose affected Feature/reference identity, owner/code, automatic migration,
+  blocker resolution, compatibility, fingerprint, retraining, and Save evidence
+  as application data; keep the View presentation-only.
+- Treat exact controlled Remove and Add as independent lifecycle evidence during
+  Save validation instead of comparing same-position rows. Require lifecycle
+  evidence to match baseline/current identity set differences so direct identity
+  replacement and removed-identity reuse remain blocked.
+
+## 2026-07-17 — Train/Admin Phase 4C+4D Feature Manager
+
+### Decision
+
+- Use immutable stable Feature identity for selection, dependency resolution,
+  Rename, and persistence; Predict key, ML name, and label remain mutable aliases.
+- Route every basic lifecycle mutation through atomic domain commands and keep
+  Predict display ordering independent from ordered ML contract ordering.
+- Define Rename as one optional atomic label/Predict-key/ML-name payload that
+  requires at least one identifier change; label-only changes remain Edit.
+- Permit only identity-safe reference updates. Keep fixed-string/import-time,
+  Derived, One-hot, Target/registry, training-header, and model-compatibility
+  changes blocked until their approved migration or retraining boundary.
+- Preserve Data Mapping concrete values and model artifacts. Save accepted drafts
+  only through the Phase 4B generation transaction and keep stale/failed drafts.
+- Advance to restricted Derived authoring in Phase 4E after this slice merges;
+  Windows native Feature Manager smoke remains a pre-release verification item.
+
 ## 2026-07-17 — Train/Admin Phase 4B persistence foundation
 
 ### Decision

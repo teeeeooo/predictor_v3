@@ -14,6 +14,7 @@ from core.predictor_schema.catalog_v2 import (
 )
 
 DataDefinitionSourceKind = Literal["schema_row", "derived_policy", "feature_projection"]
+DataDefinitionRowIdentity = tuple[str, str]
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,7 @@ class DataDefinitionDraftRow:
     """In-memory editable candidate row for a Data Definition surface."""
 
     source_kind: DataDefinitionSourceKind
+    stable_identity: str = ""
     display_order: int = 0
     column_key: str = ""
     label: str = ""
@@ -42,9 +44,9 @@ class DataDefinitionDraftRow:
     notes: str = ""
 
     @property
-    def identity(self) -> tuple[str, str]:
+    def identity(self) -> DataDefinitionRowIdentity:
         """Return a stable in-memory identity for diffing draft rows."""
-        key = self.column_key or self.ml_name
+        key = self.stable_identity or self.column_key or self.ml_name
         return (self.source_kind, key)
 
 
@@ -76,8 +78,15 @@ class DataDefinitionDraft:
     baseline_rows: tuple[DataDefinitionDraftRow, ...]
     issues: tuple[DataDefinitionDraftIssue, ...] = ()
     controlled_row_additions: frozenset[tuple[str, str]] = frozenset()
+    controlled_row_removals: frozenset[tuple[str, str]] = frozenset()
+    controlled_field_changes: frozenset[tuple[tuple[str, str], str]] = frozenset()
     controlled_addition_initial_rows: tuple[DataDefinitionDraftRow, ...] = ()
     base_generation_id: str = ""
+    base_manifest: object | None = None
+    predict_order: tuple[DataDefinitionRowIdentity, ...] = ()
+    baseline_predict_order: tuple[DataDefinitionRowIdentity, ...] = ()
+    ml_order: tuple[DataDefinitionRowIdentity, ...] = ()
+    baseline_ml_order: tuple[DataDefinitionRowIdentity, ...] = ()
 
     @property
     def is_changed(self) -> bool:
@@ -100,6 +109,20 @@ class DataDefinitionDraft:
         for identity, row in baseline.items():
             if identity not in current:
                 changes.append(DataDefinitionDraftChange(identity, "__row__", row, None))
+        if self.predict_order != self.baseline_predict_order:
+            changes.append(DataDefinitionDraftChange(
+                ("ordering", "predict"),
+                "__order__",
+                self.baseline_predict_order,
+                self.predict_order,
+            ))
+        if self.ml_order != self.baseline_ml_order:
+            changes.append(DataDefinitionDraftChange(
+                ("ordering", "ml"),
+                "__order__",
+                self.baseline_ml_order,
+                self.ml_order,
+            ))
         return tuple(changes)
 
     def attributed_changes(self) -> tuple[DataDefinitionDraftChange, ...]:
@@ -124,18 +147,50 @@ class DataDefinitionDraft:
 
     def is_controlled_row_addition(self, identity: tuple[str, str]) -> bool:
         """Return whether a command owner authorized this new row."""
-        return identity in self.controlled_row_additions
+        return self.resolve_identity(identity) in self.controlled_row_additions
+
+    def is_controlled_row_removal(self, identity: tuple[str, str]) -> bool:
+        """Return whether a command owner authorized this baseline removal."""
+        return self.resolve_identity(identity) in self.controlled_row_removals
+
+    def is_controlled_field_change(
+        self,
+        identity: tuple[str, str],
+        field_name: str,
+    ) -> bool:
+        """Return whether a dedicated command authorized a restricted change."""
+        return (self.resolve_identity(identity), field_name) in self.controlled_field_changes
+
+    def resolve_identity(
+        self,
+        identity: DataDefinitionRowIdentity,
+    ) -> DataDefinitionRowIdentity:
+        """Resolve a legacy alias only at the compatibility boundary."""
+        if any(row.identity == identity for row in (*self.rows, *self.baseline_rows)):
+            return identity
+        source_kind, alias = identity
+        row = next(
+            (
+                item
+                for item in (*self.rows, *self.baseline_rows)
+                if item.source_kind == source_kind
+                and alias in {item.column_key, item.ml_name}
+            ),
+            None,
+        )
+        return row.identity if row is not None else identity
 
     def controlled_addition_initial_row(
         self,
         identity: tuple[str, str],
     ) -> DataDefinitionDraftRow | None:
         """Return the immutable row first produced by a controlled Add."""
+        resolved = self.resolve_identity(identity)
         return next(
             (
                 row
                 for row in self.controlled_addition_initial_rows
-                if row.identity == identity
+                if row.identity == resolved
             ),
             None,
         )
@@ -144,18 +199,47 @@ class DataDefinitionDraft:
 def build_data_definition_draft(
     schema_path: str | Path | None = None,
     derived_policy: tuple[DerivedFeatureDefinition, ...] | None = None,
+    *,
+    manifest: object | None = None,
 ) -> DataDefinitionDraft:
     """Build an in-memory draft from current schema rows and derived policy."""
+    feature_ids = {
+        item.column_key: item.identity
+        for item in getattr(manifest, "features", ())
+    }
+    derived_ids = {
+        item.ml_name: item.identity
+        for item in getattr(manifest, "derived", ())
+    }
     schema_rows = tuple(
-        _schema_draft_row(row)
+        _schema_draft_row(row, stable_identity=feature_ids.get(row.column_key, ""))
         for row in load_predict_schema_catalog_v2(schema_path).rows
     )
     derived_rows = tuple(
-        _derived_draft_row(row)
+        _derived_draft_row(row, stable_identity=derived_ids.get(row.ml_name, ""))
         for row in (derived_policy or load_current_derived_feature_policy())
     )
     rows = (*schema_rows, *derived_rows)
-    return DataDefinitionDraft(rows=rows, baseline_rows=rows)
+    by_stable_id = {row.stable_identity: row.identity for row in rows if row.stable_identity}
+    predict_order = tuple(
+        by_stable_id[identity]
+        for identity in getattr(getattr(manifest, "ordering", None), "predict", ())
+        if identity in by_stable_id
+    ) or tuple(row.identity for row in schema_rows)
+    ml_order = tuple(
+        by_stable_id[identity]
+        for identity in getattr(getattr(manifest, "ordering", None), "ml", ())
+        if identity in by_stable_id
+    ) or _legacy_ml_order(rows)
+    return DataDefinitionDraft(
+        rows=rows,
+        baseline_rows=rows,
+        base_manifest=manifest,
+        predict_order=predict_order,
+        baseline_predict_order=predict_order,
+        ml_order=ml_order,
+        baseline_ml_order=ml_order,
+    )
 
 
 def replace_draft_row(
@@ -164,8 +248,9 @@ def replace_draft_row(
     **updates: object,
 ) -> DataDefinitionDraft:
     """Return a copy of the draft with one row replaced for tests/future UI."""
+    resolved = draft.resolve_identity(row_identity)
     rows = tuple(
-        _replace_row(row, updates) if row.identity == row_identity else row
+        _replace_row(row, updates) if row.identity == resolved else row
         for row in draft.rows
     )
     return DataDefinitionDraft(
@@ -173,14 +258,26 @@ def replace_draft_row(
         baseline_rows=draft.baseline_rows,
         issues=draft.issues,
         controlled_row_additions=draft.controlled_row_additions,
+        controlled_row_removals=draft.controlled_row_removals,
+        controlled_field_changes=draft.controlled_field_changes,
         controlled_addition_initial_rows=draft.controlled_addition_initial_rows,
         base_generation_id=draft.base_generation_id,
+        base_manifest=draft.base_manifest,
+        predict_order=draft.predict_order,
+        baseline_predict_order=draft.baseline_predict_order,
+        ml_order=draft.ml_order,
+        baseline_ml_order=draft.baseline_ml_order,
     )
 
 
-def _schema_draft_row(row: PredictSchemaV2Row) -> DataDefinitionDraftRow:
+def _schema_draft_row(
+    row: PredictSchemaV2Row,
+    *,
+    stable_identity: str = "",
+) -> DataDefinitionDraftRow:
     return DataDefinitionDraftRow(
         source_kind="schema_row",
+        stable_identity=stable_identity,
         display_order=row.display_order,
         column_key=row.column_key,
         label=row.label,
@@ -203,9 +300,14 @@ def _schema_draft_row(row: PredictSchemaV2Row) -> DataDefinitionDraftRow:
     )
 
 
-def _derived_draft_row(row: DerivedFeatureDefinition) -> DataDefinitionDraftRow:
+def _derived_draft_row(
+    row: DerivedFeatureDefinition,
+    *,
+    stable_identity: str = "",
+) -> DataDefinitionDraftRow:
     return DataDefinitionDraftRow(
         source_kind="derived_policy",
+        stable_identity=stable_identity,
         role="derived",
         ml_name=row.ml_name,
         active=row.active,
@@ -243,3 +345,27 @@ def _replace_row(
     }
     values.update(updates)
     return DataDefinitionDraftRow(**values)
+
+
+def _legacy_ml_order(
+    rows: tuple[DataDefinitionDraftRow, ...],
+) -> tuple[DataDefinitionRowIdentity, ...]:
+    role_order = {"input": 0, "auto": 1, "one_hot_feature": 2, "result": 3, "derived": 4}
+    eligible = [
+        row
+        for row in rows
+        if row.active and (
+            row.source_kind == "derived_policy"
+            or bool(row.ml_name) and (row.model_input_enabled or row.role == "result")
+        )
+    ]
+    return tuple(
+        row.identity
+        for row in sorted(
+            eligible,
+            key=lambda item: (
+                role_order.get("derived" if item.source_kind == "derived_policy" else item.role, 99),
+                item.display_order,
+            ),
+        )
+    )

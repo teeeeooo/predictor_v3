@@ -592,6 +592,12 @@ owns guarded schema draft edits, validation/readiness projection, and explicit
 save/restart/retrain feedback. The retired Feature Catalog manager is not a
 top-level UI surface.
 
+The existing table-first workspace also hosts the Basic Feature Manager actions:
+controlled Add/Edit/Rename/Duplicate/Remove/Enable/Disable, explicit Predict or
+ML Move, dependency Impact Preview, Reset Draft, and canonical Save. Selection
+uses stable Feature identity; the view does not insert, delete, reorder, or
+persist rows directly.
+
 ### 7.6 Data Mapping tab
 
 The Data Mapping tab includes:
