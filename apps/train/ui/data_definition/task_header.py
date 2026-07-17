@@ -34,8 +34,20 @@ class DataDefinitionTaskHeader(QFrame):
         on_add_manual: Callable[[], None],
         on_add_mapping: Callable[[], None],
         on_add_attribute: Callable[[], None],
+        on_add_predict_only: Callable[[], None],
+        on_add_ml_only: Callable[[], None],
+        on_add_helper: Callable[[], None],
         on_details: Callable[[], None],
         on_edit: Callable[[], None],
+        on_rename: Callable[[], None],
+        on_duplicate: Callable[[], None],
+        on_remove: Callable[[], None],
+        on_toggle_active: Callable[[], None],
+        on_move_predict_up: Callable[[], None],
+        on_move_predict_down: Callable[[], None],
+        on_move_ml_up: Callable[[], None],
+        on_move_ml_down: Callable[[], None],
+        on_preview: Callable[[], None],
         on_save: Callable[[], None],
         on_review: Callable[[], None],
         on_refresh: Callable[[], None],
@@ -88,10 +100,31 @@ class DataDefinitionTaskHeader(QFrame):
             "Add a Data Mapping attribute without a visible Predict input",
             on_add_attribute,
         )
+        self.add_predict_only_action = _menu_action(
+            self.add_menu,
+            "Predict-only Feature",
+            "Add a Feature displayed in Predict but excluded from ML",
+            on_add_predict_only,
+        )
+        self.add_ml_only_action = _menu_action(
+            self.add_menu,
+            "ML-only Feature",
+            "Add a hidden ordered ML input Feature",
+            on_add_ml_only,
+        )
+        self.add_helper_action = _menu_action(
+            self.add_menu,
+            "Helper / Hidden Feature",
+            "Add a projection-neutral Helper or Hidden Feature",
+            on_add_helper,
+        )
         self.add_button.setMenu(self.add_menu)
 
         self.edit_button = _button(
             "Edit", "Edit Selected Data Definition", on_edit, primary=True, parent=self
+        )
+        self.preview_button = _button(
+            "Impact Preview", "Preview selected Feature impact", on_preview, parent=self
         )
         self.review_button = _button(
             "Review changes", "Review Data Definition changes", on_review, parent=self
@@ -104,6 +137,32 @@ class DataDefinitionTaskHeader(QFrame):
         self.more_button.setAccessibleName("More Data Definition actions")
         self.more_menu = QMenu(self.more_button)
         self.more_menu.setAccessibleName("More Data Definition actions")
+        self.rename_action = _menu_action(
+            self.more_menu, "Rename Feature", "Rename Predict key or ML name", on_rename,
+        )
+        self.duplicate_action = _menu_action(
+            self.more_menu, "Duplicate Feature", "Duplicate the selected Basic Feature", on_duplicate,
+        )
+        self.remove_action = _menu_action(
+            self.more_menu, "Remove Feature", "Remove the selected Basic Feature", on_remove,
+        )
+        self.toggle_active_action = _menu_action(
+            self.more_menu, "Disable Feature", "Enable or disable the selected Feature", on_toggle_active,
+        )
+        self.more_menu.addSeparator()
+        self.move_predict_up_action = _menu_action(
+            self.more_menu, "Move Up — Predict Order", "Move in Predict display order only", on_move_predict_up,
+        )
+        self.move_predict_down_action = _menu_action(
+            self.more_menu, "Move Down — Predict Order", "Move in Predict display order only", on_move_predict_down,
+        )
+        self.move_ml_up_action = _menu_action(
+            self.more_menu, "Move Up — ML Order", "Move in ordered ML contract only", on_move_ml_up,
+        )
+        self.move_ml_down_action = _menu_action(
+            self.more_menu, "Move Down — ML Order", "Move in ordered ML contract only", on_move_ml_down,
+        )
+        self.more_menu.addSeparator()
         self.details_action = _menu_action(
             self.more_menu,
             "Details",
@@ -146,6 +205,18 @@ class DataDefinitionTaskHeader(QFrame):
         self.detail_label.setAccessibleDescription(workspace.headline_detail)
         _apply_action_state(self.save_button, interaction.save)
         _apply_action_state(self.edit_button, interaction.edit)
+        _apply_action_state(self.preview_button, interaction.preview)
+        for action in (
+            self.rename_action,
+            self.duplicate_action,
+            self.remove_action,
+            self.toggle_active_action,
+            self.move_predict_up_action,
+            self.move_predict_down_action,
+            self.move_ml_up_action,
+            self.move_ml_down_action,
+        ):
+            _apply_action_state(action, interaction.manage)
         _apply_action_state(self.details_action, interaction.details)
         self.save_button.setText(workspace.save_label)
         self.review_button.setText(workspace.review_label)
@@ -162,6 +233,7 @@ class DataDefinitionTaskHeader(QFrame):
 
         self.add_button.setVisible(workspace.show_add_edit)
         self.edit_button.setVisible(workspace.show_add_edit)
+        self.preview_button.setVisible(workspace.show_add_edit)
         self.save_button.setVisible(True)
         self.review_button.setVisible(workspace.review_enabled)
         self.more_button.setVisible(True)
@@ -191,6 +263,7 @@ class DataDefinitionTaskHeader(QFrame):
             self.detail_label,
             self.add_button,
             self.edit_button,
+            self.preview_button,
             self.review_button,
             self.save_button,
             self.more_button,
@@ -205,6 +278,7 @@ class DataDefinitionTaskHeader(QFrame):
             for button in (
                 self.add_button,
                 self.edit_button,
+                self.preview_button,
                 self.review_button,
                 self.save_button,
                 self.more_button,
@@ -223,6 +297,13 @@ class DataDefinitionTaskHeader(QFrame):
             for column, button in enumerate(actions, start=2):
                 self.layout_grid.addWidget(button, 0, column)
             self.layout_grid.setColumnStretch(1, 1)
+
+    def set_selected_active(self, active: bool) -> None:
+        """Keep the active-state command label aligned with selection."""
+        self.toggle_active_action.setText("Disable Feature" if active else "Enable Feature")
+        self.toggle_active_action.setStatusTip(
+            "Disable selected Feature" if active else "Enable selected Feature"
+        )
 
 
 def _button(

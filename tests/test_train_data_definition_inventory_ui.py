@@ -26,6 +26,7 @@ from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_definition_models import INVENTORY_HEADERS
 import apps.train.ui.data_definition_panel as data_definition_panel_module
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
+from core.data_definition import RenameDefinitionIntent
 
 
 def _app() -> QApplication:
@@ -76,7 +77,12 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
             action.text()
             for action in panel.task_header.more_menu.actions()
             if not action.isSeparator()
-        ] == ["Details", "Refresh", "Reset Draft", "Advanced Diagnostics"]
+        ] == [
+            "Rename Feature", "Duplicate Feature", "Remove Feature", "Disable Feature",
+            "Move Up — Predict Order", "Move Down — Predict Order",
+            "Move Up — ML Order", "Move Down — ML Order",
+            "Details", "Refresh", "Reset Draft", "Advanced Diagnostics",
+        ]
 
         panel.diagnostics.toggle_button.click()
         app.processEvents()
@@ -95,6 +101,9 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
             "Manual Predict input",
             "Mapping-backed Predict input",
             "Data Mapping attribute",
+            "Predict-only Feature",
+            "ML-only Feature",
+            "Helper / Hidden Feature",
         ]
     finally:
         panel.close()
@@ -174,11 +183,15 @@ def test_inventory_panel_save_enablement_tracks_clean_dirty_blocked_and_reset():
         assert panel.status_label.text() == "No unsaved changes"
 
         ml_name_column = DRAFT_FIELDS.index("ml_name")
-        assert panel.draft_table.model().setData(
+        assert not panel.draft_table.model().setData(
             panel.draft_table.model().index(0, ml_name_column),
             "Cooling Capacity Renamed",
             Qt.EditRole,
         )
+        panel._apply_state(panel._controller.rename_definition(RenameDefinitionIntent(
+            ("schema_row", "cooling_capa"),
+            ml_name="Cooling Capacity Renamed",
+        )))
         app.processEvents()
         assert not panel.save_button.isEnabled()
         assert panel.status_label.text() == "Save blocked"

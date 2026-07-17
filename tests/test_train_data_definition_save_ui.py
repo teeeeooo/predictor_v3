@@ -18,6 +18,7 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 import core.data_definition.schema_writer as schema_writer_module
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH, load_predict_schema_catalog_v2
+from core.data_definition import RenameDefinitionIntent
 
 
 def _app() -> QApplication:
@@ -127,10 +128,11 @@ def test_data_definition_controller_blocks_ml_projection_change_without_write(tm
         if identity == ("schema_row", "cooling_capa")
     )
 
-    edited = controller.edit_cell(
-        state.draft_row_identities[row_index],
-        "ml_name",
-        "Cooling Capacity Renamed",
+    edited = controller.rename_definition(
+        RenameDefinitionIntent(
+            state.draft_row_identities[row_index],
+            ml_name="Cooling Capacity Renamed",
+        )
     )
     saved = controller.save_schema()
 

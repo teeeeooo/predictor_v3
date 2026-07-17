@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal
 
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -42,7 +41,7 @@ class DataDefinitionAddDialog(QDialog):
         on_apply: AddApplyCallback,
         *,
         standalone_mapping_attribute: bool = False,
-        initial_intent: Literal["manual_predict", "mapping_predict"] | None = None,
+        initial_intent: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -52,6 +51,10 @@ class DataDefinitionAddDialog(QDialog):
         title = {
             "manual_predict": "Add Manual Predict Input",
             "mapping_predict": "Add Mapping-backed Predict Input",
+            "predict_only": "Add Predict-only Feature",
+            "ml_only": "Add ML-only Feature",
+            "mapping_backed": "Add Mapping-backed Feature",
+            "helper_hidden": "Add Helper / Hidden Feature",
         }.get(initial_intent or "")
         self.setWindowTitle(title or (
             "Add Mapping Attribute" if standalone_mapping_attribute else "Add Definition"
@@ -79,7 +82,7 @@ class DataDefinitionAddDialog(QDialog):
             else str(self.intent_combo.currentData())
         )
         template = mapping_template(str(self.mapping_combo.currentData()))
-        mapping = kind != "manual_predict" and template is not None
+        mapping = kind in {"mapping_predict", "mapping_attribute", "mapping_backed"} and template is not None
         return AddDefinitionIntent(
             kind=kind,  # type: ignore[arg-type]
             label=self.label_input.text(),
@@ -92,6 +95,8 @@ class DataDefinitionAddDialog(QDialog):
             trigger_column=template.trigger_column if mapping else "",
             rule_id=template.rule_id if mapping else "",
             notes=self.notes_input.text(),
+            model_input_enabled=self.model_input_checkbox.isChecked(),
+            ml_name=self.ml_name_input.text(),
         )
 
     def _build(self) -> None:
@@ -109,6 +114,10 @@ class DataDefinitionAddDialog(QDialog):
         self.intent_combo.setAccessibleName("Definition intent")
         self.intent_combo.addItem("Manual Predict Input", "manual_predict")
         self.intent_combo.addItem("Mapping-backed Predict Column", "mapping_predict")
+        self.intent_combo.addItem("Predict-only Feature", "predict_only")
+        self.intent_combo.addItem("ML-only Feature", "ml_only")
+        self.intent_combo.addItem("Mapping-backed Feature", "mapping_backed")
+        self.intent_combo.addItem("Helper / Hidden Feature", "helper_hidden")
         self.intent_combo.currentIndexChanged.connect(self._update_intent_fields)
         self.intent_label = add_labeled_row(self.form, "Intent", self.intent_combo)
         self.intent_label.setVisible(not self._standalone)
@@ -135,6 +144,16 @@ class DataDefinitionAddDialog(QDialog):
         self.visible_label.setBuddy(self.visible_checkbox)
         self.form.addRow(self.visible_label, self.visible_checkbox)
         add_labeled_row(self.form, "Requirement", self.required_checkbox)
+        self.model_input_checkbox = QCheckBox("Use as ordered ML input")
+        self.model_input_checkbox.setAccessibleName("Use Feature as ML input")
+        self.model_input_checkbox.toggled.connect(self._update_intent_fields)
+        self.ml_name_input = QLineEdit()
+        self.ml_name_input.setAccessibleName("Feature ML name")
+        self.ml_name_input.setPlaceholderText("Required for ML input")
+        self.model_input_label = add_labeled_row(
+            self.form, "ML input intent", self.model_input_checkbox
+        )
+        self.ml_name_label = add_labeled_row(self.form, "ML name", self.ml_name_input)
 
         self.mapping_combo = QComboBox()
         self.mapping_combo.setAccessibleName("Mapping group and lookup template")
@@ -185,13 +204,17 @@ class DataDefinitionAddDialog(QDialog):
         self.setTabOrder(self.data_type_combo, self.visible_checkbox)
         self.setTabOrder(self.visible_checkbox, self.required_checkbox)
         self.setTabOrder(self.required_checkbox, self.mapping_combo)
+        self.setTabOrder(self.required_checkbox, self.model_input_checkbox)
+        self.setTabOrder(self.model_input_checkbox, self.ml_name_input)
+        self.setTabOrder(self.ml_name_input, self.mapping_combo)
         self.setTabOrder(self.mapping_combo, self.attribute_input)
         self.setTabOrder(self.attribute_input, self.notes_input)
         self.setTabOrder(self.notes_input, cancel)
         self.setTabOrder(cancel, self.apply_button)
 
     def _update_intent_fields(self) -> None:
-        mapping = self._standalone or self.intent_combo.currentData() == "mapping_predict"
+        kind = "mapping_attribute" if self._standalone else str(self.intent_combo.currentData())
+        mapping = kind in {"mapping_predict", "mapping_attribute", "mapping_backed"}
         hidden_focus = self.focusWidget() in {
             self.mapping_combo,
             self.attribute_input,
@@ -208,6 +231,18 @@ class DataDefinitionAddDialog(QDialog):
             widget.setVisible(mapping)
         self.visible_label.setVisible(not self._standalone)
         self.visible_checkbox.setVisible(not self._standalone)
+        fixed_ml = kind == "ml_only"
+        fixed_non_ml = kind in {"predict_only", "helper_hidden", "mapping_attribute"}
+        if fixed_ml:
+            self.model_input_checkbox.setChecked(True)
+        elif fixed_non_ml:
+            self.model_input_checkbox.setChecked(False)
+        self.model_input_checkbox.setEnabled(not (fixed_ml or fixed_non_ml))
+        self.ml_name_input.setEnabled(self.model_input_checkbox.isChecked())
+        hidden = kind in {"ml_only", "helper_hidden", "mapping_attribute"}
+        if hidden:
+            self.visible_checkbox.setChecked(False)
+        self.visible_checkbox.setEnabled(not hidden)
         self._update_relation_summary()
         if hidden_focus and not mapping:
             self.notes_input.setFocus()

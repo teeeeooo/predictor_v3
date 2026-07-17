@@ -14,7 +14,11 @@ from apps.train.controllers.data_definition_impact_projection import (
     project_data_definition_impact,
 )
 from apps.train.services.data_definition_service import DataDefinitionService
-from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
+from core.data_definition import (
+    AddDefinitionIntent,
+    EditDefinitionIntent,
+    RenameDefinitionIntent,
+)
 import core.data_definition.schema_writer as schema_writer_module
 from core.ml.artifacts import MODEL_FILE
 from core.mapping.paths import MAPPING_JSON_FILE
@@ -38,9 +42,10 @@ def test_clean_and_manual_add_impact_classify_authoritative_save_state(tmp_path)
     assert clean.change_text == "No unsaved definition changes."
     assert added.status == "dirty"
     assert added.schema_write_status == "planned" and added.save_enabled
-    assert [(item.action, item.identity, item.label) for item in added.definitions] == [
-        ("Add", ("schema_row", "fan_diameter"), "Fan Diameter")
+    assert [(item.action, item.column_key, item.label) for item in added.definitions] == [
+        ("Add", "fan_diameter", "Fan Diameter")
     ]
+    assert added.definitions[0].identity[1].startswith("ufm_feature_")
     assert added.requires_restart and not added.requires_retrain
     assert not added.ml_fingerprint_changed
     assert not added.mapping_impacts
@@ -249,13 +254,16 @@ def test_added_manual_row_ml_activation_is_attributed_to_add_fields(tmp_path):
         if path.is_file()
     )
     before = tuple(path.read_bytes() for path in protected)
-    controller.add_definition(
+    added = controller.add_definition(
         AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
+    )
+    identity = added.focus_identity
+    controller.rename_definition(
+        RenameDefinitionIntent(identity, ml_name="Fan Diameter")
     )
     state = controller.edit_definition(
         EditDefinitionIntent(identity, (
             ("model_input_enabled", True),
-            ("ml_name", "Fan Diameter"),
         ))
     )
 
@@ -286,13 +294,14 @@ def test_added_row_projection_revert_removes_ml_blocker_and_preserves_add(tmp_pa
     controller = _controller(tmp_path)
     controller.refresh()
     identity = ("schema_row", "fan_diameter")
-    controller.add_definition(
+    added = controller.add_definition(
         AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number")
     )
+    identity = added.focus_identity
+    controller.rename_definition(RenameDefinitionIntent(identity, ml_name="Fan Diameter"))
     controller.edit_definition(
         EditDefinitionIntent(identity, (
             ("model_input_enabled", True),
-            ("ml_name", "Fan Diameter"),
         ))
     )
 
@@ -457,7 +466,7 @@ def test_multiple_commands_are_deterministic_and_projection_is_non_mutating(tmp_
     first = project_data_definition_impact(state, ("schema_row", "idu"))
     second = project_data_definition_impact(state, ("schema_row", "fan_diameter"))
 
-    assert [item.identity[1] for item in first.definitions] == ["idu", "fan_diameter"]
+    assert [item.column_key for item in first.definitions] == ["idu", "fan_diameter"]
     assert [item.action for item in first.definitions] == ["Edit", "Add"]
     assert first.definitions == second.definitions
     assert state == before

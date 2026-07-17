@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal
 
 from PySide6.QtCore import QModelIndex
 from PySide6.QtGui import QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
-    QTableView,
     QVBoxLayout,
     QWidget,
 )
@@ -55,8 +53,14 @@ from apps.train.ui.data_definition.task_header import DataDefinitionTaskHeader
 from apps.train.ui.data_definition.workspace_behavior import (
     DataDefinitionWorkspaceBehavior,
 )
+from apps.train.ui.data_definition.feature_actions import FeatureManagerActions
+from apps.train.ui.data_definition.panel_compat import (
+    publish_diagnostic_aliases,
+    publish_workspace_aliases,
+    read_only_tables as _tables,
+    selected_values,
+)
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
-
 
 class DataDefinitionPanel(QWidget):
     """Task-oriented manager over the existing Data Definition lifecycle."""
@@ -79,6 +83,12 @@ class DataDefinitionPanel(QWidget):
         self._selected_identity: tuple[str, str] | None = None
         self._preferred_identity: tuple[str, str] | None = None
         self._last_projected_identity: tuple[str, str] | None = None
+        self._feature_actions = FeatureManagerActions(
+            controller,
+            self._selected_feature,
+            self._apply_state,
+            self,
+        )
 
         self.filter_bar = DataDefinitionFilterBar(
             self._apply_inventory,
@@ -101,13 +111,25 @@ class DataDefinitionPanel(QWidget):
         self.handoff_panel = DataDefinitionHandoffPanel(on_open_data_mapping)
         self.handoff_panel.setVisible(False)
         self.diagnostics = DataDefinitionDiagnostics(self._edit_draft_cell, self)
-        self._publish_diagnostic_table_aliases()
+        publish_diagnostic_aliases(self)
         self.task_header = DataDefinitionTaskHeader(
             on_add_manual=lambda: self._add_definition("manual_predict"),
             on_add_mapping=lambda: self._add_definition("mapping_predict"),
             on_add_attribute=self._add_mapping_attribute,
+            on_add_predict_only=lambda: self._add_definition("predict_only"),
+            on_add_ml_only=lambda: self._add_definition("ml_only"),
+            on_add_helper=lambda: self._add_definition("helper_hidden"),
             on_details=self._show_details,
             on_edit=self._edit_definition,
+            on_rename=self._feature_actions.rename,
+            on_duplicate=self._feature_actions.duplicate,
+            on_remove=self._feature_actions.remove,
+            on_toggle_active=self._feature_actions.toggle_active,
+            on_move_predict_up=lambda: self._feature_actions.move("predict", "up"),
+            on_move_predict_down=lambda: self._feature_actions.move("predict", "down"),
+            on_move_ml_up=lambda: self._feature_actions.move("ml", "up"),
+            on_move_ml_down=lambda: self._feature_actions.move("ml", "down"),
+            on_preview=self._review_current_state,
             on_save=self._save_schema,
             on_review=self._review_current_state,
             on_refresh=self.refresh,
@@ -118,7 +140,7 @@ class DataDefinitionPanel(QWidget):
         self.diagnostics.toggle_button.toggled.connect(
             self.task_header.set_diagnostics_expanded
         )
-        self._publish_workspace_aliases()
+        publish_workspace_aliases(self)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -144,6 +166,8 @@ class DataDefinitionPanel(QWidget):
         self._behavior.restore_workspace_focus(focus)
 
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
+        previous_values = self._selected_values()
+        previous_key = previous_values.get("column_key", "") if previous_values else ""
         self._state = state
         if state.focus_identity is not None:
             self._selected_identity = state.focus_identity
@@ -152,7 +176,20 @@ class DataDefinitionPanel(QWidget):
             self._preferred_identity is not None
             and self._preferred_identity not in state.draft_row_identities
         ):
-            self._preferred_identity = None
+            self._preferred_identity = next(
+                (
+                    identity
+                    for identity, cells in zip(
+                        state.draft_row_identities,
+                        state.draft_rows,
+                        strict=True,
+                    )
+                    if previous_key
+                    and {cell.field_name: cell.value for cell in cells}.get("column_key")
+                    == previous_key
+                ),
+                None,
+            )
         self.diagnostics.apply_state(state)
         self.handoff_panel.apply_state(state)
         self._apply_inventory()
@@ -239,6 +276,11 @@ class DataDefinitionPanel(QWidget):
         self.impact_view.apply_projection(impact, workspace)
         self.impact_view.setVisible(workspace.show_impact_surface)
         self.task_header.apply_projection(workspace, interaction)
+        selected = self._selected_values()
+        if selected is not None:
+            self.task_header.set_selected_active(
+                selected.get("active", "false").casefold() == "true"
+            )
         self.handoff_panel.setVisible(workspace.show_saved_handoff)
 
     def _reset_draft(self) -> None:
@@ -248,7 +290,7 @@ class DataDefinitionPanel(QWidget):
 
     def _add_definition(
         self,
-        initial_intent: Literal["manual_predict", "mapping_predict"] | None = None,
+        initial_intent: str | None = None,
     ) -> None:
         accepted = DataDefinitionAddDialog(
             self._apply_add_intent,
@@ -322,13 +364,13 @@ class DataDefinitionPanel(QWidget):
         return state.last_action_ok, state.message
 
     def _selected_values(self) -> dict[str, str] | None:
-        if self._state is None or self._selected_identity is None:
+        return selected_values(self._state, self._selected_identity)
+
+    def _selected_feature(self):  # noqa: ANN202
+        values = self._selected_values()
+        if values is None or self._selected_identity is None:
             return None
-        try:
-            index = self._state.draft_row_identities.index(self._selected_identity)
-        except ValueError:
-            return None
-        return {cell.field_name: cell.value for cell in self._state.draft_rows[index]}
+        return self._selected_identity, values
 
     def _save_schema(self) -> None:
         if not self.save_button.isEnabled():
@@ -349,31 +391,6 @@ class DataDefinitionPanel(QWidget):
         self._apply_state(state)
         return state.last_action_ok
 
-    def _publish_diagnostic_table_aliases(self) -> None:
-        for name in (
-            "summary_table", "draft_table", "draft_changes_table", "save_plan_table",
-            "save_blockers_table", "save_result_table", "projected_features_table",
-            "mapping_requirements_table", "one_hot_table", "readiness_table", "issues_table",
-        ):
-            setattr(self, name, getattr(self.diagnostics, name))
-
-    def _publish_workspace_aliases(self) -> None:
-        self.status_label = self.task_header.status_label
-        self.refresh_action = self.task_header.refresh_action
-        self.reset_action = self.task_header.reset_action
-        self.details_action = self.task_header.details_action
-        self.more_button = self.task_header.more_button
-        self.add_definition_button = self.task_header.add_button
-        self.edit_button = self.task_header.edit_button
-        self.save_button = self.task_header.save_button
-        self.review_blockers_button = self.task_header.review_button
-        self.add_manual_action = self.task_header.add_manual_action
-        self.add_mapping_predict_action = self.task_header.add_mapping_action
-        self.add_mapping_attribute_action = self.task_header.add_attribute_action
-        self.inventory_state_label = self.inventory_view.state_label
-        self.clear_filters_button = self.inventory_view.clear_button
-        self.detail_state_label = self.task_header.detail_label
-
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802
         super().showEvent(event)
         self._behavior.show_default_focus()
@@ -381,7 +398,3 @@ class DataDefinitionPanel(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         super().resizeEvent(event)
         self._behavior.apply_width(event.size().width())
-
-
-def _tables(panel: DataDefinitionPanel) -> tuple[QTableView, ...]:
-    return panel.diagnostics.read_only_tables()
