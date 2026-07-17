@@ -72,7 +72,6 @@ remain the PR validation target.
 - Train/Admin design discovery and phase-state documents
 - `docs/WORK_PLAN.md`
 - `project_brief.md`
-- `project_log.md`
 - `result_reports/REPORT_INDEX.md`
 - this result record
 
