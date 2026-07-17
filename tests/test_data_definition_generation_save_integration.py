@@ -1,17 +1,55 @@
 """Phase 4B Data Definition application persistence integration tests."""
 
+import os
+
+from PySide6.QtWidgets import QApplication
+
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
+from apps.train.app import create_shell
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.draft import replace_draft_row
+from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
 def _service(tmp_path):  # noqa: ANN001
     repository = DataDefinitionGenerationRepository(tmp_path / "definition-store")
     repository.publish(bootstrap_manifest())
     return DataDefinitionService(generation_repository=repository), repository
+
+
+def _app() -> QApplication:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return QApplication.instance() or QApplication([])
+
+
+def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_path):
+    _app()
+    legacy_schema_before = DEFAULT_SCHEMA_PATH.read_bytes()
+    root = tmp_path / "production-definition-store"
+
+    shell = create_shell(generation_root=root)
+    repository = DataDefinitionGenerationRepository(root)
+    initial_generation = repository.active_generation_id()
+    shell.data_definition_controller.refresh()
+    changed = shell.data_definition_controller.edit_cell(
+        ("schema_row", "cooling_capa"),
+        "label",
+        "Production generation presentation",
+    )
+    saved = shell.data_definition_controller.save_schema()
+
+    assert initial_generation.startswith("bootstrap-")
+    assert changed.draft_changed
+    assert saved.status == "saved"
+    assert repository.active_generation_id() != initial_generation
+    assert repository.read_active().projections.predict[0].label == (
+        "Production generation presentation"
+    )
+    assert DEFAULT_SCHEMA_PATH.read_bytes() == legacy_schema_before
+    shell.close()
 
 
 def test_canonical_save_publishes_predict_presentation_change_as_complete_generation(tmp_path):

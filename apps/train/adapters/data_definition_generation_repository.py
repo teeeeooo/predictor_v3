@@ -6,11 +6,15 @@ import hashlib
 import json
 import os
 import shutil
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import Callable
 from uuid import uuid4
 
+from apps.train.application.data_definition import (
+    GenerationPublishResult,
+    GenerationSnapshot,
+)
 from core.data_definition.contract import (
     ContractProjections,
     ScopedFingerprints,
@@ -25,21 +29,6 @@ from core.data_definition.contract import (
 )
 
 FailureHook = Callable[[str], None]
-
-
-@dataclass(frozen=True)
-class GenerationSnapshot:
-    manifest: UnifiedFeatureManifest
-    projections: ContractProjections
-    fingerprints: ScopedFingerprints
-    path: Path
-
-
-@dataclass(frozen=True)
-class GenerationPublishResult:
-    generation_id: str
-    previous_generation_id: str
-    generation_path: Path
 
 
 class DataDefinitionGenerationRepository:

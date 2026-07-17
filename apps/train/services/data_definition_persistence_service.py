@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from apps.train.adapters.data_definition_generation_repository import (
-    DataDefinitionGenerationRepository,
+from apps.train.application.data_definition import (
+    DataDefinitionGenerationRepositoryPort,
 )
 from core.data_definition.contract import (
     candidate_manifest_from_draft,
@@ -23,7 +23,7 @@ _CANONICAL_PROJECTION_BLOCKERS = frozenset({"candidate_feature_projection_mismat
 class DataDefinitionPersistenceService:
     """Validate and publish a complete candidate while preserving legacy guards."""
 
-    def __init__(self, repository: DataDefinitionGenerationRepository) -> None:
+    def __init__(self, repository: DataDefinitionGenerationRepositoryPort) -> None:
         self._repository = repository
 
     @property

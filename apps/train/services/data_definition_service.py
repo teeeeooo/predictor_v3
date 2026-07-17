@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from apps.train.application.data_definition import (
+    DataDefinitionGenerationRepositoryPort,
+)
 from core.data_definition import (
     AddDefinitionIntent,
     DataDefinitionDraft,
@@ -23,9 +26,6 @@ from core.data_definition import (
 )
 from core.data_definition.draft import replace_draft_row
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
-from apps.train.adapters.data_definition_generation_repository import (
-    DataDefinitionGenerationRepository,
-)
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
 )
@@ -51,7 +51,7 @@ class DataDefinitionService:
         self,
         *,
         schema_path: str | Path | None = None,
-        generation_repository: DataDefinitionGenerationRepository | None = None,
+        generation_repository: DataDefinitionGenerationRepositoryPort | None = None,
     ) -> None:
         self._schema_path = Path(schema_path) if schema_path is not None else DEFAULT_SCHEMA_PATH
         self._persistence = (
