@@ -41,7 +41,8 @@ class DataDefinitionPersistenceService:
         """Bind a new draft to the exact active generation snapshot it loaded."""
         active = self._repository.read_active()
         draft = build_data_definition_draft(
-            schema_path=active.path / "projections" / "schema.csv"
+            schema_path=active.path / "projections" / "schema.csv",
+            manifest=active.manifest,
         )
         return replace(
             draft,
@@ -125,12 +126,26 @@ class DataDefinitionPersistenceService:
         before = scoped_fingerprints(active)
         after = scoped_fingerprints(candidate)
         model_compatible = before.model_compatibility == after.model_compatibility
-        return tuple(
+        blockers = tuple(
             item for item in save_plan.blocked_reasons
             if item.severity == "error" and not (
                 model_compatible and item.code in _CANONICAL_PROJECTION_BLOCKERS
             )
         )
+        if not model_compatible and not any(
+            item.code in {
+                "ml_compatibility_projection_write_required",
+                "model_compatibility_migration_required",
+            }
+            for item in blockers
+        ):
+            blockers = (*blockers, DataDefinitionSaveBlocker(
+                "model_compatibility_migration_required",
+                "error",
+                "Ordered ML/model compatibility changed; complete retraining or consumer migration before publication.",
+                "model_artifact",
+            ))
+        return blockers
 
     def _blocked(self, code: str, message: str) -> DataDefinitionSchemaSaveResult:
         blocker = DataDefinitionSaveBlocker(code, "error", message, "generation_bundle")

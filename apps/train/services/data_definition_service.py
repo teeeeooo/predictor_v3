@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from apps.train.application.data_definition import (
@@ -15,15 +15,31 @@ from core.data_definition import (
     DataDefinitionReport,
     DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
+    DataDefinitionSaveBlocker,
+    DataDefinitionRestartImpact,
+    FeatureCommandIntent,
+    FeatureImpactPreview,
     EditDefinitionIntent,
+    DuplicateDefinitionIntent,
+    MoveDefinitionIntent,
+    RemoveDefinitionIntent,
+    RenameDefinitionIntent,
+    SetDefinitionActiveIntent,
     apply_add_definition_command,
     apply_edit_definition_command,
+    apply_duplicate_definition_command,
+    apply_remove_definition_command,
+    apply_rename_definition_command,
+    apply_set_definition_active_command,
+    apply_move_definition_command,
     build_data_definition_draft,
     build_data_definition_report,
     build_data_definition_save_plan,
+    build_feature_impact_preview,
     field_editability,
     save_data_definition_schema_draft,
 )
+from core.data_definition.contract import candidate_manifest_from_draft, scoped_fingerprints
 from core.data_definition.draft import replace_draft_row
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
@@ -109,12 +125,26 @@ class DataDefinitionService:
         value: object,
     ) -> DataDefinitionDraftEditResult:
         """Return a new draft after applying one UI-originated cell edit."""
-        row = next((item for item in draft.rows if item.identity == row_identity), None)
+        resolved_identity = draft.resolve_identity(row_identity)
+        row = next((item for item in draft.rows if item.identity == resolved_identity), None)
         if row is None:
             return DataDefinitionDraftEditResult(
                 draft,
                 False,
                 f"Draft row not found: {row_identity}",
+            )
+        if field_name == "ml_name":
+            rename = self.rename_definition(
+                draft,
+                RenameDefinitionIntent(
+                    resolved_identity,
+                    ml_name=str(value),
+                ),
+            )
+            return DataDefinitionDraftEditResult(
+                rename.draft,
+                rename.accepted,
+                rename.message,
             )
         editability = field_editability(row, field_name)
         if not editability.editable:
@@ -122,7 +152,7 @@ class DataDefinitionService:
         coerced, error = _coerce_draft_value(field_name, value)
         if error:
             return DataDefinitionDraftEditResult(draft, False, error)
-        updated = replace_draft_row(draft, row_identity, **{field_name: coerced})
+        updated = replace_draft_row(draft, resolved_identity, **{field_name: coerced})
         return DataDefinitionDraftEditResult(updated, True, "Draft cell updated.")
 
     def add_definition(
@@ -139,7 +169,93 @@ class DataDefinitionService:
         intent: EditDefinitionIntent,
     ) -> DataDefinitionCommandResult:
         """Apply one complete controlled Edit command without file writes."""
+        updates = dict(intent.updates)
+        if (
+            "column_key" in updates or "ml_name" in updates
+        ) and not (set(updates) - {"label", "column_key", "ml_name"}):
+            return apply_rename_definition_command(
+                draft,
+                RenameDefinitionIntent(
+                    intent.identity,
+                    label=str(updates["label"]) if "label" in updates else None,
+                    column_key=(
+                        str(updates["column_key"]) if "column_key" in updates else None
+                    ),
+                    ml_name=str(updates["ml_name"]) if "ml_name" in updates else None,
+                ),
+            )
         return apply_edit_definition_command(draft, intent)
+
+    def rename_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: RenameDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        return apply_rename_definition_command(draft, intent)
+
+    def duplicate_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: DuplicateDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        return apply_duplicate_definition_command(draft, intent)
+
+    def remove_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: RemoveDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        return apply_remove_definition_command(draft, intent)
+
+    def set_definition_active(
+        self,
+        draft: DataDefinitionDraft,
+        intent: SetDefinitionActiveIntent,
+    ) -> DataDefinitionCommandResult:
+        return apply_set_definition_active_command(draft, intent)
+
+    def move_definition(
+        self,
+        draft: DataDefinitionDraft,
+        intent: MoveDefinitionIntent,
+    ) -> DataDefinitionCommandResult:
+        return apply_move_definition_command(draft, intent)
+
+    def apply_feature_command(
+        self,
+        draft: DataDefinitionDraft,
+        intent: FeatureCommandIntent,
+    ) -> DataDefinitionCommandResult:
+        """Dispatch one controlled command without I/O."""
+        if isinstance(intent, AddDefinitionIntent):
+            return self.add_definition(draft, intent)
+        if isinstance(intent, EditDefinitionIntent):
+            return self.edit_definition(draft, intent)
+        if isinstance(intent, RenameDefinitionIntent):
+            return self.rename_definition(draft, intent)
+        if isinstance(intent, DuplicateDefinitionIntent):
+            return self.duplicate_definition(draft, intent)
+        if isinstance(intent, RemoveDefinitionIntent):
+            return self.remove_definition(draft, intent)
+        if isinstance(intent, SetDefinitionActiveIntent):
+            return self.set_definition_active(draft, intent)
+        if isinstance(intent, MoveDefinitionIntent):
+            return self.move_definition(draft, intent)
+        raise TypeError(f"Unsupported Feature command intent: {type(intent).__name__}")
+
+    def preview_feature_command(
+        self,
+        draft: DataDefinitionDraft,
+        intent: FeatureCommandIntent,
+        *,
+        current_report: DataDefinitionReport | None = None,
+    ) -> FeatureImpactPreview:
+        """Preview the exact hypothetical command without changing draft state."""
+        result = self.apply_feature_command(draft, intent)
+        report = current_report or self.load_report()
+        plan = self.preview_save_plan(result.draft, current_report=report)
+        base = draft.base_manifest if hasattr(draft.base_manifest, "features") else None
+        return build_feature_impact_preview(base, result, plan)
 
     def preview_save_plan(
         self,
@@ -149,7 +265,8 @@ class DataDefinitionService:
     ) -> DataDefinitionSavePlan:
         """Build the current draft save-plan preview without writing files."""
         report = current_report or self.load_report()
-        return build_data_definition_save_plan(draft, current_report=report)
+        plan = build_data_definition_save_plan(draft, current_report=report)
+        return self._canonical_save_impact(draft, plan)
 
     def save_schema_draft(
         self,
@@ -177,6 +294,48 @@ class DataDefinitionService:
         if self._schema_path is None:
             raise RuntimeError("legacy schema path is unavailable in canonical mode")
         return self._schema_path
+
+    def _canonical_save_impact(
+        self,
+        draft: DataDefinitionDraft,
+        plan: DataDefinitionSavePlan,
+    ) -> DataDefinitionSavePlan:
+        """Expose Phase 4B compatibility protection in the pre-write UI plan."""
+        if self._persistence is None or not draft.is_changed or draft.base_manifest is None:
+            return plan
+        try:
+            candidate = candidate_manifest_from_draft(draft, draft.base_manifest)
+            changed = (
+                scoped_fingerprints(draft.base_manifest).model_compatibility
+                != scoped_fingerprints(candidate).model_compatibility
+            )
+        except (KeyError, ValueError):
+            return plan
+        if not changed:
+            return plan
+        blockers = plan.blocked_reasons
+        if not any(item.code == "model_compatibility_migration_required" for item in blockers):
+            blockers = (*blockers, DataDefinitionSaveBlocker(
+                "model_compatibility_migration_required",
+                "error",
+                "Ordered ML/model compatibility changed; complete retraining or consumer migration before publication.",
+                "model_artifact",
+            ))
+        return replace(
+            plan,
+            can_save_schema=False,
+            requires_retrain=True,
+            blocked_reasons=blockers,
+            restart_impact=DataDefinitionRestartImpact(
+                requires_restart=plan.requires_restart,
+                requires_retrain=True,
+                message=(
+                    "Schema restart and model retrain are required before activation."
+                    if plan.requires_restart
+                    else "Model retraining or consumer migration is required before publication."
+                ),
+            ),
+        )
 
 
 def _coerce_draft_value(field_name: str, value: object) -> tuple[object, str]:

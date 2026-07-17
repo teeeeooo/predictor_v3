@@ -21,7 +21,7 @@ def change_text(definitions: tuple[ImpactDefinitionChange, ...]) -> str:
             f"{field.field_name}: {field.before or '—'} → {field.after or '—'}"
             for field in item.fields
         )
-        lines.append(f"• {item.action} {item.label} ({item.identity[1]})" + (f" — {fields}" if fields else ""))
+        lines.append(f"• {item.action} {item.label} ({item.column_key})" + (f" — {fields}" if fields else ""))
     return "\n".join(lines)
 
 
@@ -52,7 +52,7 @@ def _blocker_text(item: DataDefinitionFocusedBlockerItem) -> str:
         item.relevance in {"other_definition", "selection_unavailable"}
         and item.related_row_identity is not None
     ):
-        context.append(f"definition: {item.related_row_identity[1]}")
+        context.append(f"definition: {item.related_definition_name}")
     if item.related_field:
         context.append(f"field: {item.related_field}")
     if item.target and item.target != item.related_field:

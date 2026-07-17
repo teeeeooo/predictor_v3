@@ -45,6 +45,7 @@ class DataDefinitionFocusedBlockerItem:
     related_field: str
     source: str
     relevance: BlockerRelevance
+    related_definition_name: str
 
 
 def project_detail(
@@ -123,6 +124,7 @@ def project_blockers(
     selected_identity: tuple[str, str] | None,
 ) -> tuple[DataDefinitionFocusedBlockerItem, ...]:
     """Collect every blocker and classify only its selection relevance."""
+    selected_identity = _resolve_identity(state, selected_identity)
     plan_items = tuple(
         item
         for item in state.blocker_items
@@ -137,7 +139,7 @@ def project_blockers(
         and _blocker_key(item) not in plan_keys
     )
     classified = tuple(
-        _focused_blocker(item, selected_identity)
+        _focused_blocker(state, item, selected_identity)
         for item in (*plan_items, *result_items)
     )
     return tuple(
@@ -153,6 +155,21 @@ def project_blockers(
     )
 
 
+def _resolve_identity(
+    state: DataDefinitionControllerState,
+    identity: tuple[str, str] | None,
+) -> tuple[str, str] | None:
+    if identity is None or identity in state.draft_row_identities:
+        return identity
+    for candidate, cells in zip(state.draft_row_identities, state.draft_rows, strict=True):
+        values = {cell.field_name: cell.value for cell in cells}
+        if identity[0] == candidate[0] and identity[1] in {
+            values.get("column_key", ""), values.get("ml_name", ""),
+        }:
+            return candidate
+    return identity
+
+
 def _blocker_key(item: DataDefinitionBlockerItem) -> tuple[object, ...]:
     return (
         item.code,
@@ -164,6 +181,7 @@ def _blocker_key(item: DataDefinitionBlockerItem) -> tuple[object, ...]:
 
 
 def _focused_blocker(
+    state: DataDefinitionControllerState,
     item: DataDefinitionBlockerItem,
     selected_identity: tuple[str, str] | None,
 ) -> DataDefinitionFocusedBlockerItem:
@@ -185,6 +203,7 @@ def _focused_blocker(
         related_field=item.related_field,
         source=item.source,
         relevance=relevance,
+        related_definition_name=_definition_name(state, item.related_row_identity),
     )
 
 
@@ -197,7 +216,7 @@ def _blocker_section(
 
 def _blocker_line(item: DataDefinitionFocusedBlockerItem) -> str:
     definition = (
-        f"{item.related_row_identity[1]} — "
+        f"{item.related_definition_name} — "
         if item.relevance in {"other_definition", "selection_unavailable"}
         and item.related_row_identity
         else ""
@@ -207,6 +226,20 @@ def _blocker_line(item: DataDefinitionFocusedBlockerItem) -> str:
     )
     context_text = f" [{context}]" if context else ""
     return f"- {definition}{item.code}{context_text}: {item.message}"
+
+
+def _definition_name(
+    state: DataDefinitionControllerState,
+    identity: tuple[str, str] | None,
+) -> str:
+    if identity is None:
+        return ""
+    try:
+        index = state.draft_row_identities.index(identity)
+    except ValueError:
+        return identity[1]
+    values = {cell.field_name: cell.value for cell in state.draft_rows[index]}
+    return values.get("column_key") or values.get("label") or identity[1]
 
 
 def _friendly_value(value: str | None) -> str:

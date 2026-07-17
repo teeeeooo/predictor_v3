@@ -95,9 +95,21 @@ def project_data_definition_inventory(
         )
     )
     visible_identities = {row.identity for row in visible_rows}
+    alias_identity = next(
+        (
+            row.identity
+            for row in visible_rows
+            if selected_identity is not None
+            and selected_identity[0] == row.identity[0]
+            and selected_identity[1] in {row.internal_key, row.ml_name}
+        ),
+        None,
+    )
     resolved_identity = (
         selected_identity
         if selected_identity in visible_identities
+        else alias_identity
+        if alias_identity is not None
         else (visible_rows[0].identity if visible_rows else None)
     )
     selected = next(

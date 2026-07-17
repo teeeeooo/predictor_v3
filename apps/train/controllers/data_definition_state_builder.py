@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from apps.train.application.data_mapping import DataMappingNavigationRequest
+from apps.train.controllers.data_definition_change_rows import draft_change_rows
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
@@ -15,6 +16,7 @@ from core.data_definition import (
     DataDefinitionSavePlan,
     field_editability,
     extract_mapping_requirements_from_draft,
+    is_supported_basic_feature,
 )
 
 DRAFT_FIELDS = (
@@ -114,6 +116,7 @@ class DataDefinitionControllerState:
     requires_restart: bool
     requires_retrain: bool
     impact_summary: str
+    manageable_feature_identities: frozenset[tuple[str, str]]
     last_action_ok: bool = True
     focus_identity: tuple[str, str] | None = None
     command_issue_rows: tuple[tuple[str, str, str], ...] = ()
@@ -175,7 +178,7 @@ def state_from_report(
         save_result_rows=_save_result_rows(save_result),
         save_result_issue_rows=_save_result_issue_rows(save_result),
         blocker_items=_blocker_items(save_plan, save_result),
-        draft_change_rows=_draft_change_rows(save_plan),
+        draft_change_rows=draft_change_rows(save_plan),
         projected_feature_rows=tuple(
             (
                 str(row.order),
@@ -220,6 +223,9 @@ def state_from_report(
         requires_restart=save_plan.requires_restart,
         requires_retrain=save_plan.requires_retrain,
         impact_summary=save_plan.restart_impact.message,
+        manageable_feature_identities=frozenset(
+            row.identity for row in draft.rows if is_supported_basic_feature(row)
+        ),
         last_action_ok=last_action_ok,
         focus_identity=focus_identity,
         command_issue_rows=command_issue_rows,
@@ -272,23 +278,6 @@ def _save_blocker_rows(
     return tuple(
         (blocker.severity, blocker.code, blocker.target, blocker.message)
         for blocker in save_plan.blocked_reasons
-    )
-
-
-def _draft_change_rows(
-    save_plan: DataDefinitionSavePlan,
-) -> tuple[tuple[str, ...], ...]:
-    if not save_plan.changed_fields:
-        return (("info", "", "", "", "No draft changes."),)
-    return tuple(
-        (
-            change.row_identity[0],
-            change.row_identity[1],
-            change.field_name,
-            _display_value(change.before),
-            _display_value(change.after),
-        )
-        for change in save_plan.changed_fields
     )
 
 
@@ -405,5 +394,6 @@ def error_state(exc: Exception) -> DataDefinitionControllerState:
         requires_restart=False,
         requires_retrain=False,
         impact_summary="Impact unavailable because Data Definition failed to load.",
+        manageable_feature_identities=frozenset(),
         last_action_ok=False,
     )

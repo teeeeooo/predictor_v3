@@ -20,7 +20,14 @@ from core.data_definition import (
     AddDefinitionIntent,
     DataDefinitionCommandResult,
     DataDefinitionDraft,
+    DuplicateDefinitionIntent,
     EditDefinitionIntent,
+    FeatureCommandIntent,
+    FeatureImpactPreview,
+    MoveDefinitionIntent,
+    RemoveDefinitionIntent,
+    RenameDefinitionIntent,
+    SetDefinitionActiveIntent,
 )
 
 
@@ -81,21 +88,62 @@ class DataDefinitionController:
         """Apply one controlled Edit intent and return its projected draft state."""
         return self._apply_command("edit", intent)
 
+    def rename_definition(self, intent: RenameDefinitionIntent) -> DataDefinitionControllerState:
+        return self._apply_command("rename", intent)
+
+    def duplicate_definition(self, intent: DuplicateDefinitionIntent) -> DataDefinitionControllerState:
+        return self._apply_command("duplicate", intent)
+
+    def remove_definition(self, intent: RemoveDefinitionIntent) -> DataDefinitionControllerState:
+        return self._apply_command("remove", intent)
+
+    def set_definition_active(
+        self,
+        intent: SetDefinitionActiveIntent,
+    ) -> DataDefinitionControllerState:
+        return self._apply_command("active", intent)
+
+    def move_definition(self, intent: MoveDefinitionIntent) -> DataDefinitionControllerState:
+        return self._apply_command("move", intent)
+
+    def preview_feature_command(self, intent: FeatureCommandIntent) -> FeatureImpactPreview:
+        """Preview a command while preserving the controller's current draft."""
+        draft = self._draft or self._service.load_draft()
+        report = self._service.refresh_report()
+        return self._service.preview_feature_command(
+            draft,
+            intent,
+            current_report=report,
+        )
+
+    def apply_feature_command(
+        self,
+        intent: FeatureCommandIntent,
+    ) -> DataDefinitionControllerState:
+        return self._apply_command("feature", intent)
+
     def _apply_command(
         self,
         operation: str,
-        intent: AddDefinitionIntent | EditDefinitionIntent,
+        intent: FeatureCommandIntent,
     ) -> DataDefinitionControllerState:
         try:
             draft = self._draft or self._service.load_draft()
-            result: DataDefinitionCommandResult = (
-                self._service.add_definition(draft, intent)
-                if operation == "add" and isinstance(intent, AddDefinitionIntent)
-                else self._service.edit_definition(draft, intent)
-                if operation == "edit" and isinstance(intent, EditDefinitionIntent)
-                else raise_type_error(operation)
+            before_identities = tuple(row.identity for row in draft.rows)
+            result: DataDefinitionCommandResult = self._service.apply_feature_command(
+                draft,
+                intent,
             )
             self._draft = result.draft
+            focus_identity = result.identity if result.accepted else None
+            if result.accepted and (operation == "remove" or result.action == "Remove"):
+                removed = result.affected_identities[0] if result.affected_identities else None
+                if removed in before_identities:
+                    index = before_identities.index(removed)
+                    remaining = tuple(row.identity for row in self._draft.rows)
+                    focus_identity = (
+                        remaining[min(index, len(remaining) - 1)] if remaining else None
+                    )
             report = self._service.refresh_report()
             return _state_from_report(
                 report,
@@ -104,9 +152,13 @@ class DataDefinitionController:
                 message=result.message,
                 status="draft_changed" if result.accepted and self._draft.is_changed else None,
                 last_action_ok=result.accepted,
-                focus_identity=result.identity if result.accepted else None,
+                focus_identity=focus_identity,
                 command_issue_rows=tuple(
-                    (issue.code, issue.field_name, issue.message)
+                    (
+                        issue.code,
+                        issue.field_name,
+                        issue.message + (f" Next: {issue.resolution}" if issue.resolution else ""),
+                    )
                     for issue in result.issues
                 ),
                 saved_mapping_handoffs=self._saved_mapping_handoffs,
@@ -169,8 +221,3 @@ class DataDefinitionController:
             _error_state(exc),
             saved_mapping_handoffs=self._saved_mapping_handoffs,
         )
-
-
-def raise_type_error(operation: str) -> DataDefinitionCommandResult:
-    """Fail fast on an internal controller/intent routing mismatch."""
-    raise TypeError(f"Invalid controlled command intent for operation: {operation}")
