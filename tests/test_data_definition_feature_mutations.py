@@ -326,7 +326,7 @@ def test_saved_user_feature_remains_renameable_and_removable_after_reload(tmp_pa
 
 
 def test_remove_saved_mapping_feature_then_readd_same_key_never_resurrects_identity(tmp_path):
-    service, _repository = _service(tmp_path)
+    service, repository = _service(tmp_path)
     added = service.add_definition(
         service.load_draft(),
         AddDefinitionIntent(
@@ -345,20 +345,32 @@ def test_remove_saved_mapping_feature_then_readd_same_key_never_resurrects_ident
     )
 
     removed = service.remove_definition(baseline, RemoveDefinitionIntent(old_row.identity))
-    recreated = service.add_definition(
-        removed.draft,
-        AddDefinitionIntent(
-            "mapping_backed", "Extra ID volume", "extra_id_volume", "number",
-            mapping_entity="evap_index", mapping_attribute="ID Volume",
-            trigger_column="evap_index",
-        ),
+    recreate_intent = AddDefinitionIntent(
+        "mapping_backed", "Extra ID volume", "extra_id_volume", "number",
+        mapping_entity="evap_index", mapping_attribute="ID Volume",
+        trigger_column="evap_index",
     )
+    prepared = service.prepare_feature_command(
+        removed.draft,
+        recreate_intent,
+        source_revision=1,
+    )
+    recreated = prepared.result
     new_row = next(item for item in recreated.draft.rows if item.column_key == "extra_id_volume")
     candidate = candidate_manifest_from_draft(recreated.draft, old_manifest)
     projected = next(item for item in candidate.features if item.column_key == "extra_id_volume")
     new_requirement = next(
         item for item in candidate.mapping_requirements
         if item.feature_identity == projected.identity
+    )
+    save_plan = service.preview_save_plan(recreated.draft)
+    saved = service.save_schema_draft(recreated.draft)
+    reloaded = service.load_draft()
+    reloaded_row = next(item for item in reloaded.rows if item.column_key == "extra_id_volume")
+    active = repository.read_active().manifest
+    reloaded_requirement = next(
+        item for item in active.mapping_requirements
+        if item.feature_identity == reloaded_row.stable_identity
     )
 
     assert recreated.accepted and new_row.stable_identity != old_row.stable_identity
@@ -369,6 +381,53 @@ def test_remove_saved_mapping_feature_then_readd_same_key_never_resurrects_ident
     assert new_requirement.identity != old_requirement.identity
     assert old_requirement.identity not in {item.identity for item in candidate.mapping_requirements}
     assert candidate.generation.generation_id != old_manifest.generation.generation_id
+    assert save_plan.can_save_schema
+    assert prepared.save_allowed
+    assert "restricted_field_edit_not_allowed" not in {
+        item.code for item in save_plan.blocked_reasons
+    }
+    assert saved.status == "written"
+    assert reloaded_row.stable_identity == new_row.stable_identity
+    assert reloaded_requirement.identity == new_requirement.identity
+    assert old_row.stable_identity not in {item.identity for item in active.features}
+    assert old_requirement.identity not in {
+        item.identity for item in active.mapping_requirements
+    }
+    assert old_row.stable_identity not in active.ordering.predict
+    assert old_row.stable_identity not in active.ordering.ml
+    assert active.generation.generation_id != old_manifest.generation.generation_id
+
+
+def test_same_key_recreation_rejects_forced_reuse_of_removed_identity(tmp_path):
+    service, _repository = _service(tmp_path)
+    added = service.add_definition(
+        service.load_draft(),
+        AddDefinitionIntent("predict_only", "Reusable", "reusable_key", "string"),
+    )
+    assert service.save_schema_draft(added.draft).status == "written"
+    baseline = service.load_draft()
+    old = next(item for item in baseline.rows if item.column_key == "reusable_key")
+    removed = service.remove_definition(baseline, RemoveDefinitionIntent(old.identity))
+    recreated = service.add_definition(
+        removed.draft,
+        AddDefinitionIntent("predict_only", "Reusable", "reusable_key", "string"),
+    )
+    new = next(item for item in recreated.draft.rows if item.column_key == "reusable_key")
+    forged_row = replace(new, stable_identity=old.stable_identity)
+    forged = replace(
+        recreated.draft,
+        rows=tuple(
+            forged_row if item.identity == new.identity else item
+            for item in recreated.draft.rows
+        ),
+    )
+
+    plan = service.preview_save_plan(forged)
+
+    assert not plan.can_save_schema
+    assert "restricted_field_edit_not_allowed" in {
+        item.code for item in plan.blocked_reasons
+    }
 
 
 def test_candidate_key_fallback_is_limited_to_explicit_identityless_legacy_row():

@@ -45,6 +45,10 @@
 - Expose affected Feature/reference identity, owner/code, automatic migration,
   blocker resolution, compatibility, fingerprint, retraining, and Save evidence
   as application data; keep the View presentation-only.
+- Treat exact controlled Remove and Add as independent lifecycle evidence during
+  Save validation instead of comparing same-position rows. Require lifecycle
+  evidence to match baseline/current identity set differences so direct identity
+  replacement and removed-identity reuse remain blocked.
 
 ## 2026-07-17 — Train/Admin Phase 4C+4D Feature Manager
 

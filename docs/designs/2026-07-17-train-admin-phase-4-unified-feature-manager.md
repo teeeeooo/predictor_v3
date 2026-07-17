@@ -605,6 +605,14 @@ Predict-key or ML-name change, automatic reference updates, blockers,
 resolution, model compatibility, retraining, candidate fingerprint, and Save
 eligibility. The View formats this evidence but does not reconstruct it.
 
+The final Save-path correction makes restricted-field validation identity-first:
+shared identities are field-compared, while exact controlled removals and exact
+controlled additions remain separate lifecycle events even when their keys are
+equal and row counts are unchanged. Inconsistent lifecycle evidence, direct
+stable-identity replacement, raw row insertion/deletion, and reuse of a removed
+identity remain blocked. Save Preview, canonical publication, and reload now
+agree on the new Feature and Mapping requirement identities.
+
 ### 4E — Derived Feature Authoring
 
 Purpose: provide the restricted expression and dependency-aware Derived Feature

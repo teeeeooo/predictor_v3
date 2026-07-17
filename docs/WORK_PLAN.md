@@ -27,8 +27,10 @@ Reset, and canonical generation Save orchestration. Protection now follows the
 actual fixed-index/import-time consumer provider rather than manifest membership
 or visibility. Prepared Preview/Apply uses one exact candidate transition with
 revision stale protection, and identity matching cannot resurrect a removed
-Feature through key reuse. Model compatibility, stale-parent, immutable history,
-and atomic publication guards remain in force.
+Feature through key reuse. Save validation treats controlled Remove and Add as
+independent lifecycle events rather than a positional identity edit, so same-key
+recreation publishes and reloads with the new identity. Model compatibility,
+stale-parent, immutable history, and atomic publication guards remain in force.
 
 ## Next Action
 

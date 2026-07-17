@@ -110,15 +110,77 @@ def restricted_draft_field_changes(
     """Return direct draft edits that violate the field edit policy."""
     changes: list[RestrictedDraftFieldChange] = []
     baseline_by_identity = {row.identity: row for row in draft.baseline_rows}
+    current_by_identity = {row.identity: row for row in draft.rows}
     for row in draft.rows:
         before = baseline_by_identity.get(row.identity)
         if before is not None:
             changes.extend(_restricted_field_changes(draft, before, row))
-    if len(draft.rows) == len(draft.baseline_rows):
-        for before, after in zip(draft.baseline_rows, draft.rows, strict=True):
-            if before.identity != after.identity:
-                changes.extend(_restricted_field_changes(draft, before, after))
+    baseline_only = tuple(
+        row for row in draft.baseline_rows if row.identity not in current_by_identity
+    )
+    current_only = tuple(
+        row for row in draft.rows if row.identity not in baseline_by_identity
+    )
+    changes.extend(_invalid_lifecycle_identity_changes(
+        draft,
+        frozenset(baseline_by_identity),
+        frozenset(current_by_identity),
+    ))
+    changes.extend(_unmatched_identity_changes(draft, baseline_only, current_only))
     return _dedupe_restricted_changes(changes)
+
+
+def _invalid_lifecycle_identity_changes(
+    draft: DataDefinitionDraft,
+    baseline_identities: frozenset[tuple[str, str]],
+    current_identities: frozenset[tuple[str, str]],
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    expected_removals = baseline_identities - current_identities
+    expected_additions = current_identities - baseline_identities
+    invalid = (
+        draft.controlled_row_removals - expected_removals
+        | draft.controlled_row_additions - expected_additions
+    )
+    return tuple(
+        RestrictedDraftFieldChange(
+            identity,
+            "stable_identity",
+            "Controlled Add/Remove identity evidence does not match the draft lifecycle.",
+        )
+        for identity in sorted(invalid)
+    )
+
+
+def _unmatched_identity_changes(
+    draft: DataDefinitionDraft,
+    baseline_only: tuple[DataDefinitionDraftRow, ...],
+    current_only: tuple[DataDefinitionDraftRow, ...],
+) -> tuple[RestrictedDraftFieldChange, ...]:
+    """Detect raw identity replacement without pairing independent lifecycles."""
+    additions = {
+        row.identity: row for row in current_only
+        if row.identity not in draft.controlled_row_additions
+    }
+    changes: list[RestrictedDraftFieldChange] = []
+    for before in baseline_only:
+        if before.identity in draft.controlled_row_removals:
+            continue
+        after = next(
+            (
+                row for row in additions.values()
+                if row.source_kind == before.source_kind
+                and (
+                    bool(before.column_key and row.column_key == before.column_key)
+                    or bool(before.ml_name and row.ml_name == before.ml_name)
+                )
+            ),
+            None,
+        )
+        if after is None:
+            continue
+        changes.extend(_restricted_field_changes(draft, before, after))
+        additions.pop(after.identity, None)
+    return tuple(changes)
 
 
 def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:

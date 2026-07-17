@@ -1,5 +1,7 @@
 """Arc 15C-1 Data Definition draft and save contract tests."""
 
+from dataclasses import replace
+
 from core.data_definition import (
     DataDefinitionDraft,
     DataDefinitionDraftRow,
@@ -389,6 +391,25 @@ def test_data_definition_save_plan_blocks_role_direct_edit():
 
     assert not plan.can_save_schema
     assert "restricted_field_edit_not_allowed" in _blocker_codes(plan)
+
+
+def test_data_definition_save_plan_blocks_direct_stable_identity_replacement():
+    draft = build_data_definition_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    forged = replace(row, stable_identity="forged_identity")
+    changed = replace(
+        draft,
+        rows=tuple(forged if item.identity == row.identity else item for item in draft.rows),
+    )
+
+    plan = build_data_definition_save_plan(changed)
+
+    assert not plan.can_save_schema
+    assert any(
+        item.code == "restricted_field_edit_not_allowed"
+        and item.field_name == "stable_identity"
+        for item in plan.blocked_reasons
+    )
 
 
 def test_data_definition_save_plan_blocks_raw_row_add():
