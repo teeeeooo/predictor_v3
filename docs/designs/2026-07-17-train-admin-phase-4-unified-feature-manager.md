@@ -674,12 +674,17 @@ cross-tab acceptance, and honest fixture/mock limitations.
     compatibility checks.
 26. Target CRUD permits validated existing model-group association and clearly
     blocks or separately gates new model-group creation.
-27. A completed training run produces a separate identifiable candidate artifact
-    and does not replace the active model merely because training succeeded.
-28. Only a validated current-compatible candidate can be explicitly promoted;
-    stale/incompatible candidates cannot become active.
-29. Promotion failure preserves the existing compatible model and its Predict
-    availability.
+27. The Phase 4 contract provides the immutable Definition generation, Feature,
+    Target/registry, Derived/One-hot/preprocessing fingerprints, and preprocessing
+    version needed for future TrainingRequest, TrainingResult, and candidate
+    artifacts to identify the same start contract without running training.
+28. Compatibility projection distinguishes active-compatible, candidate, stale
+    candidate, incompatible candidate, promotion-eligible, and retraining-required
+    states without creating or promoting a model artifact.
+29. Phase 4 exposes the pre-promotion compatibility metadata and prior-compatible-
+    model preservation invariant consumed by Phase 5; candidate generation,
+    validation presentation, explicit promotion, and active-model replacement
+    remain Phase 5 runtime acceptance.
 30. Standalone Predict detects a newer persisted generation at startup,
     prediction, explicit reload, or model-reload boundaries.
 31. A stale standalone Predict process preserves existing rows/results for
