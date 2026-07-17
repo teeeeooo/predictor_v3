@@ -1,5 +1,7 @@
 """Phase 4C atomic basic Feature mutation command tests."""
 
+from dataclasses import replace
+
 from core.data_definition import (
     AddDefinitionIntent,
     DuplicateDefinitionIntent,
@@ -19,6 +21,7 @@ from core.data_definition.contract import (
     bootstrap_manifest,
     candidate_manifest_from_draft,
     require_valid_contract,
+    scoped_fingerprints,
 )
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
@@ -298,3 +301,178 @@ def test_controller_rejected_command_and_preview_preserve_unsaved_draft(tmp_path
     assert rejected.draft_row_identities == before
     assert rejected.draft_changed
     assert any("Next:" in row[2] for row in rejected.command_issue_rows)
+
+
+def test_saved_user_feature_remains_renameable_and_removable_after_reload(tmp_path):
+    service, _repository = _service(tmp_path)
+    added = service.add_definition(
+        service.load_draft(),
+        AddDefinitionIntent("predict_only", "Session Note", "session_note", "string"),
+    )
+    assert service.save_schema_draft(added.draft).status == "written"
+
+    reloaded = service.load_draft()
+    row = next(item for item in reloaded.rows if item.column_key == "session_note")
+    renamed = service.rename_definition(
+        reloaded,
+        RenameDefinitionIntent(row.identity, column_key="session_note_renamed"),
+    )
+    assert renamed.accepted
+    assert next(item for item in renamed.draft.rows if item.identity == row.identity).stable_identity == row.stable_identity
+
+    removed = service.remove_definition(reloaded, RemoveDefinitionIntent(row.identity))
+    assert removed.accepted
+    assert row.identity not in {item.identity for item in removed.draft.rows}
+
+
+def test_remove_saved_mapping_feature_then_readd_same_key_never_resurrects_identity(tmp_path):
+    service, _repository = _service(tmp_path)
+    added = service.add_definition(
+        service.load_draft(),
+        AddDefinitionIntent(
+            "mapping_backed", "Extra ID volume", "extra_id_volume", "number",
+            mapping_entity="evap_index", mapping_attribute="ID Volume",
+            trigger_column="evap_index",
+        ),
+    )
+    assert service.save_schema_draft(added.draft).status == "written"
+    baseline = service.load_draft()
+    old_row = next(item for item in baseline.rows if item.column_key == "extra_id_volume")
+    old_manifest = baseline.base_manifest
+    old_requirement = next(
+        item for item in old_manifest.mapping_requirements
+        if item.feature_identity == old_row.stable_identity
+    )
+
+    removed = service.remove_definition(baseline, RemoveDefinitionIntent(old_row.identity))
+    recreated = service.add_definition(
+        removed.draft,
+        AddDefinitionIntent(
+            "mapping_backed", "Extra ID volume", "extra_id_volume", "number",
+            mapping_entity="evap_index", mapping_attribute="ID Volume",
+            trigger_column="evap_index",
+        ),
+    )
+    new_row = next(item for item in recreated.draft.rows if item.column_key == "extra_id_volume")
+    candidate = candidate_manifest_from_draft(recreated.draft, old_manifest)
+    projected = next(item for item in candidate.features if item.column_key == "extra_id_volume")
+    new_requirement = next(
+        item for item in candidate.mapping_requirements
+        if item.feature_identity == projected.identity
+    )
+
+    assert recreated.accepted and new_row.stable_identity != old_row.stable_identity
+    assert projected.identity == new_row.stable_identity
+    assert old_row.stable_identity not in {item.identity for item in candidate.features}
+    assert old_row.stable_identity not in candidate.ordering.predict
+    assert old_row.stable_identity not in candidate.ordering.ml
+    assert new_requirement.identity != old_requirement.identity
+    assert old_requirement.identity not in {item.identity for item in candidate.mapping_requirements}
+    assert candidate.generation.generation_id != old_manifest.generation.generation_id
+
+
+def test_candidate_key_fallback_is_limited_to_explicit_identityless_legacy_row():
+    draft = _canonical_draft()
+    row = next(item for item in draft.rows if item.column_key == "idu")
+    legacy_row = replace(row, stable_identity="")
+    legacy_identity = legacy_row.identity
+    legacy = replace(
+        draft,
+        rows=tuple(legacy_row if item.identity == row.identity else item for item in draft.rows),
+        predict_order=tuple(legacy_identity if item == row.identity else item for item in draft.predict_order),
+        ml_order=tuple(legacy_identity if item == row.identity else item for item in draft.ml_order),
+    )
+
+    candidate = candidate_manifest_from_draft(legacy, draft.base_manifest)
+
+    assert next(item for item in candidate.features if item.column_key == "idu").identity == row.stable_identity
+
+
+def test_prepared_duplicate_applies_exact_identity_and_candidate_fingerprint(tmp_path):
+    service, _repository = _service(tmp_path)
+    controller = DataDefinitionController(service)
+    state = controller.refresh()
+    source = next(
+        identity for identity, cells in zip(state.draft_row_identities, state.draft_rows, strict=True)
+        if {cell.field_name: cell.value for cell in cells}["column_key"] == "idu"
+    )
+    prepared = controller.preview_feature_command(
+        DuplicateDefinitionIntent(source, "Indoor Unit Alternate", "idu_alternate")
+    )
+    before = controller._draft
+    candidate = candidate_manifest_from_draft(prepared.result.draft, before.base_manifest)
+
+    applied = controller.apply_prepared_feature_command(prepared)
+
+    assert prepared.result.identity == applied.focus_identity
+    assert controller._draft is prepared.result.draft
+    assert prepared.candidate_generation_id == candidate.generation.generation_id
+    assert prepared.candidate_fingerprint == scoped_fingerprints(candidate).combined
+
+
+def test_prepared_preview_cancel_and_stale_command_or_reset_leave_draft_atomic(tmp_path):
+    service, _repository = _service(tmp_path)
+    controller = DataDefinitionController(service)
+    state = controller.refresh()
+    source = next(
+        identity for identity, cells in zip(state.draft_row_identities, state.draft_rows, strict=True)
+        if {cell.field_name: cell.value for cell in cells}["column_key"] == "idu"
+    )
+    cancelled = controller.preview_feature_command(
+        DuplicateDefinitionIntent(source, "Cancelled", "cancelled_duplicate")
+    )
+    original = controller._draft
+    assert controller._draft is original and cancelled.result.draft is not original
+
+    controller.add_definition(
+        AddDefinitionIntent("predict_only", "Intervening", "intervening", "string")
+    )
+    after_command = controller._draft
+    stale_command = controller.apply_prepared_feature_command(cancelled)
+    assert not stale_command.last_action_ok
+    assert stale_command.command_issue_rows[0][0] == "prepared_preview_stale"
+    assert controller._draft is after_command
+
+    fresh = controller.preview_feature_command(
+        DuplicateDefinitionIntent(source, "Reset stale", "reset_stale")
+    )
+    controller.reset_draft()
+    after_reset = controller._draft
+    stale_reset = controller.apply_prepared_feature_command(fresh)
+    assert not stale_reset.last_action_ok
+    assert controller._draft is after_reset
+
+
+def test_rename_preview_structures_auto_updated_trigger_reference_evidence(tmp_path):
+    service, _repository = _service(tmp_path)
+    draft = service.load_draft()
+    source = service.add_definition(
+        draft,
+        AddDefinitionIntent("predict_only", "Custom selector", "custom_selector", "string"),
+    )
+    dependent = service.add_definition(
+        source.draft,
+        AddDefinitionIntent("predict_only", "Dependent", "dependent", "string"),
+    )
+    dependent_row = next(item for item in dependent.draft.rows if item.identity == dependent.identity)
+    linked = replace(
+        dependent.draft,
+        rows=tuple(
+            replace(item, trigger_column="custom_selector")
+            if item.identity == dependent_row.identity else item
+            for item in dependent.draft.rows
+        ),
+    )
+    preview = service.preview_feature_command(
+        linked,
+        RenameDefinitionIntent(source.identity, column_key="custom_selector_renamed"),
+    )
+    reference = next(item for item in preview.evidence if item.dependency_code == "feature_trigger_reference")
+
+    assert preview.command_accepted
+    assert reference.feature_identity == source.identity[1]
+    assert reference.reference_identity == dependent.identity[1]
+    assert reference.dependency_owner == "Data Definition"
+    assert reference.predict_key_change == ("custom_selector", "custom_selector_renamed")
+    assert reference.automatically_updated and not reference.blocked
+    assert reference.resolution

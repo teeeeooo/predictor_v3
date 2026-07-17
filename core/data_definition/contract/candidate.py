@@ -34,7 +34,11 @@ def candidate_manifest_from_draft(
     features = tuple(
         _feature_from_draft(
             row,
-            base_by_identity.get(row.stable_identity) or base_by_key.get(row.column_key),
+            (
+                base_by_identity.get(row.stable_identity)
+                if row.stable_identity
+                else base_by_key.get(row.column_key)
+            ),
             base.generation.generation_id,
         )
         for row in ordered_rows

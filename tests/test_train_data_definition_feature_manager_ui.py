@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QPushButton
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
@@ -119,6 +119,12 @@ def test_duplicate_preview_flow_selects_new_stable_identity(tmp_path):
             preview = app.activeModalWidget()
             assert isinstance(preview, FeatureCommandPreviewDialog)
             assert preview.apply_button.accessibleName() == "Apply previewed command to Draft"
+            affected = next(
+                item for item in preview.findChildren(QLabel)
+                if item.accessibleName() == "Affected Feature and dependency evidence"
+            )
+            assert "Indoor Unit Alternate" in affected.text()
+            assert "feature_transition" in affected.text()
             preview.apply_button.click()
 
         QTimer.singleShot(0, accept_preview)
@@ -148,6 +154,7 @@ def test_blocked_rename_preserves_selection_and_remove_moves_to_neighbor(tmp_pat
     cooling_row = panel._state.draft_row_identities.index(cooling)
     panel.inventory_table.selectRow(cooling_row)
     app.processEvents()
+    QTimer.singleShot(0, lambda: app.activeModalWidget().reject())
     accepted, _message = panel._feature_actions._preview_and_apply(
         RenameDefinitionIntent(cooling, ml_name="Cooling Capacity Renamed")
     )

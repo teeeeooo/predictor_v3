@@ -15,6 +15,23 @@ from core.data_definition.contract import (
     validate_contract,
 )
 from core.data_definition.save_contract import DataDefinitionSavePlan
+from core.data_definition.dependency_policy import feature_dependencies
+from core.data_definition.draft import DataDefinitionDraft
+
+
+@dataclass(frozen=True)
+class FeatureImpactEvidence:
+    feature_identity: str
+    feature_display_name: str
+    reference_identity: str
+    dependency_owner: str
+    dependency_code: str
+    predict_key_change: tuple[str, str] | None = None
+    ml_name_change: tuple[str, str] | None = None
+    automatically_updated: bool = False
+    blocked: bool = False
+    resolution: str = ""
+    message: str = ""
 
 
 @dataclass(frozen=True)
@@ -28,7 +45,10 @@ class FeatureImpactPreview:
     requires_retraining: bool
     save_allowed: bool
     affected_identities: tuple[tuple[str, str], ...]
+    evidence: tuple[FeatureImpactEvidence, ...]
     blockers: tuple[DataDefinitionCommandIssue, ...]
+    candidate_generation_id: str
+    candidate_fingerprint: str
     summary: str
 
 
@@ -36,6 +56,8 @@ def build_feature_impact_preview(
     base: UnifiedFeatureManifest | None,
     result: DataDefinitionCommandResult,
     save_plan: DataDefinitionSavePlan,
+    *,
+    source_draft: DataDefinitionDraft | None = None,
 ) -> FeatureImpactPreview:
     """Compare the exact hypothetical command draft with its canonical base."""
     if not result.accepted:
@@ -49,7 +71,10 @@ def build_feature_impact_preview(
             False,
             False,
             result.affected_identities,
+            _impact_evidence(source_draft, result),
             result.issues,
+            "",
+            "",
             result.message,
         )
     predict_changed = False
@@ -57,9 +82,12 @@ def build_feature_impact_preview(
     mapping_changed = False
     compatibility_changed = save_plan.requires_retrain
     validation_issues: tuple[DataDefinitionCommandIssue, ...] = ()
+    candidate_generation_id = ""
+    candidate_fingerprint = ""
     if base is not None:
         try:
             candidate = candidate_manifest_from_draft(result.draft, base)
+            candidate_generation_id = candidate.generation.generation_id
             contract_issues = validate_contract(candidate)
             if contract_issues:
                 validation_issues = tuple(
@@ -73,6 +101,7 @@ def build_feature_impact_preview(
                 )
             before = scoped_fingerprints(base)
             after = scoped_fingerprints(candidate)
+            candidate_fingerprint = after.combined
             predict_changed = before.predict != after.predict
             ml_changed = before.ordered_ml != after.ordered_ml
             mapping_changed = before.mapping_requirements != after.mapping_requirements
@@ -109,9 +138,65 @@ def build_feature_impact_preview(
         retraining,
         save_allowed,
         result.affected_identities or ((result.identity,) if result.identity else ()),
+        _impact_evidence(source_draft, result),
         tuple(blockers),
+        candidate_generation_id,
+        candidate_fingerprint,
         summary,
     )
+
+
+def _impact_evidence(
+    source_draft: DataDefinitionDraft | None,
+    result: DataDefinitionCommandResult,
+) -> tuple[FeatureImpactEvidence, ...]:
+    if source_draft is None:
+        return ()
+    identity = result.identity or (
+        result.affected_identities[0] if result.affected_identities else None
+    )
+    source = next((row for row in source_draft.rows if row.identity == identity), None)
+    current = next((row for row in result.draft.rows if row.identity == identity), None)
+    feature = current or source
+    if feature is None:
+        return ()
+    key_change = None
+    ml_change = None
+    if source is not None and current is not None:
+        if source.column_key != current.column_key:
+            key_change = (source.column_key, current.column_key)
+        if source.ml_name != current.ml_name:
+            ml_change = (source.ml_name, current.ml_name)
+    blocked_codes = {item.code for item in result.issues}
+    evidence = [FeatureImpactEvidence(
+        feature.stable_identity or feature.identity[1],
+        feature.label or feature.column_key or feature.ml_name,
+        feature.stable_identity or feature.identity[1],
+        "Data Definition",
+        "feature_transition",
+        key_change,
+        ml_change,
+        message=f"{result.action} affects this Feature.",
+    )]
+    if source is None:
+        return tuple(evidence)
+    affected = set(result.affected_identities)
+    for dependency in feature_dependencies(source_draft, source):
+        evidence.append(FeatureImpactEvidence(
+            source.stable_identity or source.identity[1],
+            source.label or source.column_key or source.ml_name,
+            dependency.affected_identity,
+            dependency.owner,
+            dependency.code,
+            key_change,
+            ml_change,
+            dependency.code == "feature_trigger_reference"
+            and ("schema_row", dependency.affected_identity) in affected,
+            dependency.code in blocked_codes,
+            dependency.resolution,
+            dependency.message,
+        ))
+    return tuple(evidence)
 
 
 def _save_blockers(

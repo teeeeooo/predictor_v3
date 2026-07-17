@@ -17,15 +17,18 @@
 
 ## Current Slice
 
-Train/Admin Phase 4C+4D — Feature Mutation and Basic Feature Manager is
-implemented on its dedicated Draft PR branch over the merged Phase 4B baseline.
+Train/Admin Phase 4C+4D — Feature Mutation and Basic Feature Manager plus its
+PR #21 audit correction is implemented over the merged Phase 4B baseline.
 Basic Feature Add/Edit/Rename/Duplicate/Remove/Enable/Disable and independent
 Predict/ML Move commands now mutate only immutable drafts through domain
 commands. Stable identity is independent from label, Predict key, and ML name;
 the table-first Data Definition workspace owns selection, command Preview,
-Reset, and canonical generation Save orchestration. Existing protected consumer,
-model compatibility, stale-parent, immutable history, and atomic publication
-guards remain in force.
+Reset, and canonical generation Save orchestration. Protection now follows the
+actual fixed-index/import-time consumer provider rather than manifest membership
+or visibility. Prepared Preview/Apply uses one exact candidate transition with
+revision stale protection, and identity matching cannot resurrect a removed
+Feature through key reuse. Model compatibility, stale-parent, immutable history,
+and atomic publication guards remain in force.
 
 ## Next Action
 
@@ -36,11 +39,10 @@ runtime cutover, model candidate generation, training, and promotion outside the
 
 ## Active Blockers
 
-- Protected ML/import-time/fixed-string consumers still block ordinary
+- Actual protected ML/import-time/fixed-string consumers still block ordinary
   ML-name/order/One-hot/Derived/Target changes until their explicit migration.
-- Existing import-time/fixed-string consumers remain protected migration targets;
-  ordinary Rename/Delete is not enabled before their approved provider or atomic
-  migration boundary exists.
+- Existing fixed-index Predict keys remain protected migration targets; saved
+  user-created Features without those dependencies remain renameable/removable.
 - Windows native Feature Manager smoke remains a pre-release verification item;
   automated macOS/offscreen coverage is not a substitute for that evidence.
 - Phase 5 Train/Model and Shell UX remains on hold until Phase 4 is stable.

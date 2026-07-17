@@ -587,6 +587,24 @@ passes on macOS, while Windows native smoke remains an explicit pre-release item
 Phase 4E may begin after this slice is merged without weakening these dependency
 guards.
 
+#### 4C+4D audit correction
+
+PR #21 correction narrows Predict protection to the actual fixed-index/import-
+time owner contract; manifest membership, visibility, role, and persistence of a
+user-created Basic Feature do not create a protected dependency. Canonical
+candidate matching uses stable identity exclusively whenever present. Key-based
+matching remains only for explicit identityless legacy rows, so Remove followed
+by same-key Add creates a new Feature and new dependent identities.
+
+Command Preview now retains one application-owned prepared transition. Duplicate
+identity allocation therefore occurs once, approval applies the exact previewed
+draft/candidate, and controller revision plus source-generation checks reject a
+Preview made stale by another command, Reset, or reload. Structured evidence
+includes affected Feature/reference identities, dependency owner/code,
+Predict-key or ML-name change, automatic reference updates, blockers,
+resolution, model compatibility, retraining, candidate fingerprint, and Save
+eligibility. The View formats this evidence but does not reconstruct it.
+
 ### 4E — Derived Feature Authoring
 
 Purpose: provide the restricted expression and dependency-aware Derived Feature

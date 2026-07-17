@@ -36,6 +36,12 @@ class FeatureCommandPreviewDialog(QDialog):
         evidence.setAccessibleName("Feature command impact evidence")
         evidence.setWordWrap(True)
         layout.addWidget(evidence)
+        affected = QLabel("\n".join(
+            _evidence_line(item) for item in preview.evidence
+        ) or "No affected Feature or dependency references.")
+        affected.setAccessibleName("Affected Feature and dependency evidence")
+        affected.setWordWrap(True)
+        layout.addWidget(affected)
         blockers = QLabel("\n".join(
             f"• {item.message}" + (f" Next: {item.resolution}" if item.resolution else "")
             for item in preview.blockers
@@ -60,3 +66,24 @@ class FeatureCommandPreviewDialog(QDialog):
 
 def _changed(value: bool) -> str:
     return "Changed" if value else "Unchanged"
+
+
+def _evidence_line(item) -> str:  # noqa: ANN001
+    changes = []
+    if item.predict_key_change:
+        changes.append(f"Predict key {item.predict_key_change[0]} → {item.predict_key_change[1]}")
+    if item.ml_name_change:
+        changes.append(f"ML name {item.ml_name_change[0]} → {item.ml_name_change[1]}")
+    if item.automatically_updated:
+        changes.append("reference updated automatically")
+    if item.blocked:
+        changes.append("blocked")
+    detail = "; ".join(changes)
+    resolution = f" Resolution: {item.resolution}" if item.resolution else ""
+    return (
+        f"• {item.feature_display_name} [{item.feature_identity}] → "
+        f"{item.dependency_owner}/{item.dependency_code} "
+        f"[{item.reference_identity}]"
+        + (f": {detail}" if detail else "")
+        + resolution
+    )

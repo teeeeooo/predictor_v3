@@ -68,6 +68,7 @@ from core.data_definition.mutation_commands import (
 from core.data_definition.rename_command import apply_rename_definition_command
 from core.data_definition.ordering_commands import apply_move_definition_command
 from core.data_definition.impact_preview import (
+    FeatureImpactEvidence,
     FeatureImpactPreview,
     build_feature_impact_preview,
 )
@@ -80,6 +81,7 @@ __all__ = [
     "DataDefinitionCommandResult",
     "FeatureCommandIntent",
     "FeatureImpactPreview",
+    "FeatureImpactEvidence",
     "DataDefinitionDraftChange",
     "DataDefinitionDraftIssue",
     "DataDefinitionDraftRow",

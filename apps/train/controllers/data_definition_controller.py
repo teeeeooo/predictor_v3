@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from apps.train.application.data_mapping import DataMappingNavigationRequest
 from apps.train.application.data_mapping.handoff import build_saved_mapping_handoffs
+from apps.train.application.data_definition import PreparedFeatureCommand
 from apps.train.controllers.data_definition_state_builder import (
     DRAFT_FIELDS,
     DRAFT_HEADERS,
@@ -19,11 +20,11 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import (
     AddDefinitionIntent,
     DataDefinitionCommandResult,
+    DataDefinitionCommandIssue,
     DataDefinitionDraft,
     DuplicateDefinitionIntent,
     EditDefinitionIntent,
     FeatureCommandIntent,
-    FeatureImpactPreview,
     MoveDefinitionIntent,
     RemoveDefinitionIntent,
     RenameDefinitionIntent,
@@ -39,6 +40,7 @@ class DataDefinitionController:
             raise ValueError("DataDefinitionController requires an explicit service")
         self._service = service
         self._draft: DataDefinitionDraft | None = None
+        self._draft_revision = 0
         self._saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = ()
 
     def refresh(self) -> DataDefinitionControllerState:
@@ -46,6 +48,7 @@ class DataDefinitionController:
         try:
             report = self._service.refresh_report()
             self._draft = self._service.refresh_draft()
+            self._draft_revision += 1
         except Exception as exc:
             return self._error_state(exc)
         return _state_from_report(
@@ -66,6 +69,8 @@ class DataDefinitionController:
             draft = self._draft or self._service.load_draft()
             result = self._service.edit_draft_cell(draft, row_identity, field_name, value)
             self._draft = result.draft
+            if result.accepted:
+                self._draft_revision += 1
             report = self._service.refresh_report()
             state = _state_from_report(
                 report,
@@ -106,15 +111,46 @@ class DataDefinitionController:
     def move_definition(self, intent: MoveDefinitionIntent) -> DataDefinitionControllerState:
         return self._apply_command("move", intent)
 
-    def preview_feature_command(self, intent: FeatureCommandIntent) -> FeatureImpactPreview:
+    def preview_feature_command(self, intent: FeatureCommandIntent) -> PreparedFeatureCommand:
         """Preview a command while preserving the controller's current draft."""
-        draft = self._draft or self._service.load_draft()
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        draft = self._draft
         report = self._service.refresh_report()
-        return self._service.preview_feature_command(
+        return self._service.prepare_feature_command(
             draft,
             intent,
+            source_revision=self._draft_revision,
             current_report=report,
         )
+
+    def apply_prepared_feature_command(
+        self,
+        prepared: PreparedFeatureCommand,
+    ) -> DataDefinitionControllerState:
+        """Apply exactly the previewed result when its source revision is current."""
+        draft = self._draft or self._service.load_draft()
+        if (
+            prepared.source_revision != self._draft_revision
+            or prepared.source_generation_id != draft.base_generation_id
+            or prepared.source_draft is not draft
+        ):
+            issue = DataDefinitionCommandIssue(
+                "prepared_preview_stale",
+                "draft",
+                "This Impact Preview no longer matches the current draft.",
+                "Open a new Impact Preview and confirm it again.",
+            )
+            result = DataDefinitionCommandResult(
+                draft,
+                False,
+                None,
+                prepared.result.action,
+                (issue,),
+            )
+            return self._state_from_command_result(draft, result, "feature")
+        return self._state_from_command_result(draft, prepared.result, "feature")
 
     def apply_feature_command(
         self,
@@ -129,12 +165,25 @@ class DataDefinitionController:
     ) -> DataDefinitionControllerState:
         try:
             draft = self._draft or self._service.load_draft()
-            before_identities = tuple(row.identity for row in draft.rows)
             result: DataDefinitionCommandResult = self._service.apply_feature_command(
                 draft,
                 intent,
             )
+            return self._state_from_command_result(draft, result, operation)
+        except Exception as exc:
+            return self._error_state(exc)
+
+    def _state_from_command_result(
+        self,
+        draft: DataDefinitionDraft,
+        result: DataDefinitionCommandResult,
+        operation: str,
+    ) -> DataDefinitionControllerState:
+        try:
+            before_identities = tuple(row.identity for row in draft.rows)
             self._draft = result.draft
+            if result.accepted:
+                self._draft_revision += 1
             focus_identity = result.identity if result.accepted else None
             if result.accepted and (operation == "remove" or result.action == "Remove"):
                 removed = result.affected_identities[0] if result.affected_identities else None
@@ -171,6 +220,7 @@ class DataDefinitionController:
         try:
             report = self._service.refresh_report()
             self._draft = self._service.refresh_draft()
+            self._draft_revision += 1
         except Exception as exc:
             return self._error_state(exc)
         return _state_from_report(
@@ -199,6 +249,7 @@ class DataDefinitionController:
                 self._draft = self._service.refresh_draft()
             else:
                 self._draft = draft
+            self._draft_revision += 1
             report_after = self._service.refresh_report()
             if result.status == "written":
                 self._saved_mapping_handoffs = build_saved_mapping_handoffs(

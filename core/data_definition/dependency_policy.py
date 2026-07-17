@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from core.data_definition.contract.model import UnifiedFeatureManifest
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
+from core.predictor_schema.columns import FIXED_INDEX_COLUMN_KEYS
 
 
 @dataclass(frozen=True)
@@ -173,24 +174,18 @@ def _model_dependencies(manifest, row):  # noqa: ANN001
     return dependencies
 
 
-def _fixed_consumer_dependencies(manifest, row):  # noqa: ANN001
-    baseline = next(
-        (item for item in manifest.features if item.identity == row.stable_identity),
-        None,
-    )
-    if baseline is None:
-        return []
-    if baseline.role in {"helper", "hidden"} and not baseline.visible:
+def _fixed_consumer_dependencies(_manifest, row):  # noqa: ANN001
+    if row.column_key not in FIXED_INDEX_COLUMN_KEYS:
         return []
     return [FeatureDependency(
         "protected_predict_consumer",
-        "Predict runtime",
-        baseline.identity,
-        f"Predict currently consumes fixed column key '{baseline.column_key}'.",
+        "core.predictor_schema.columns",
+        row.stable_identity or row.identity[1],
+        f"Predict import-time indexes require fixed column key '{row.column_key}'.",
         True,
         True,
         False,
-        "Keep the Predict key or migrate the fixed/runtime consumer in a later approved slice.",
+        "Migrate the fixed-index Predict consumer to a generation provider before changing this key.",
     )]
 
 

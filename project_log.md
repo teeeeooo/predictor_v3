@@ -29,6 +29,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-18 — Train/Admin Phase 4C+4D audit correction
+
+### Decision
+
+- Protect Basic Features only from evidence supplied by actual fixed-string or
+  import-time consumer owners; canonical presence, visibility, and role do not
+  imply a protected dependency.
+- Match canonical rows by stable identity whenever present and reserve key
+  fallback for explicit identityless legacy compatibility rows, preventing
+  Remove/same-key Add from inheriting old Feature or Mapping identities.
+- Prepare identity-allocating commands once in the application layer and apply
+  the exact previewed transition only while controller revision and source
+  generation remain current.
+- Expose affected Feature/reference identity, owner/code, automatic migration,
+  blocker resolution, compatibility, fingerprint, retraining, and Save evidence
+  as application data; keep the View presentation-only.
+
 ## 2026-07-17 — Train/Admin Phase 4C+4D Feature Manager
 
 ### Decision

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from apps.train.application.data_definition import (
     DataDefinitionGenerationRepositoryPort,
+    PreparedFeatureCommand,
 )
 from core.data_definition import (
     AddDefinitionIntent,
@@ -251,11 +252,39 @@ class DataDefinitionService:
         current_report: DataDefinitionReport | None = None,
     ) -> FeatureImpactPreview:
         """Preview the exact hypothetical command without changing draft state."""
+        return self.prepare_feature_command(
+            draft,
+            intent,
+            source_revision=0,
+            current_report=current_report,
+        ).preview
+
+    def prepare_feature_command(
+        self,
+        draft: DataDefinitionDraft,
+        intent: FeatureCommandIntent,
+        *,
+        source_revision: int,
+        current_report: DataDefinitionReport | None = None,
+    ) -> PreparedFeatureCommand:
+        """Execute once and retain the exact immutable transition for approval."""
         result = self.apply_feature_command(draft, intent)
         report = current_report or self.load_report()
         plan = self.preview_save_plan(result.draft, current_report=report)
         base = draft.base_manifest if hasattr(draft.base_manifest, "features") else None
-        return build_feature_impact_preview(base, result, plan)
+        preview = build_feature_impact_preview(
+            base,
+            result,
+            plan,
+            source_draft=draft,
+        )
+        return PreparedFeatureCommand(
+            source_revision,
+            draft.base_generation_id,
+            draft,
+            result,
+            preview,
+        )
 
     def preview_save_plan(
         self,

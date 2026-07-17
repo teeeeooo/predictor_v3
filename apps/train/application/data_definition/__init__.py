@@ -5,9 +5,11 @@ from apps.train.application.data_definition.ports import (
     GenerationPublishResult,
     GenerationSnapshot,
 )
+from apps.train.application.data_definition.prepared_command import PreparedFeatureCommand
 
 __all__ = [
     "DataDefinitionGenerationRepositoryPort",
     "GenerationPublishResult",
     "GenerationSnapshot",
+    "PreparedFeatureCommand",
 ]

@@ -91,13 +91,14 @@ class FeatureManagerActions:
         self,
         intent: FeatureCommandIntent,
     ) -> tuple[bool, str]:
-        preview = self._controller.preview_feature_command(intent)
-        if not preview.command_accepted:
-            state = self._controller.apply_feature_command(intent)
+        prepared = self._controller.preview_feature_command(intent)
+        if not prepared.command_accepted:
+            FeatureCommandPreviewDialog(prepared.preview, self._parent).exec()
+            state = self._controller.apply_prepared_feature_command(prepared)
             self._apply_state(state)
             return False, state.message
-        if not FeatureCommandPreviewDialog(preview, self._parent).exec():
+        if not FeatureCommandPreviewDialog(prepared.preview, self._parent).exec():
             return False, "Command cancelled after Impact Preview."
-        state = self._controller.apply_feature_command(intent)
+        state = self._controller.apply_prepared_feature_command(prepared)
         self._apply_state(state)
         return state.last_action_ok, state.message
