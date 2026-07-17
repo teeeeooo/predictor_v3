@@ -188,7 +188,11 @@ def _target_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[tuple[
             target_identities=tuple(target_id[name] for name in config["targets"]),
             use_rfe=bool(config["use_rfe"]),
             target_rules=tuple(
-                (name, tuple(rule.get("allowed", rule.get("exclude", ()))))
+                (
+                    name,
+                    "allowed" if "allowed" in rule else "exclude",
+                    tuple(rule.get("allowed", rule.get("exclude", ()))),
+                )
                 for name, rule in config["target_rules"].items()
             ),
         )

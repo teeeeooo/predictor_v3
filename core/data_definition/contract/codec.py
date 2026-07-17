@@ -54,7 +54,7 @@ def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
             **{key: value for key, value in group.items() if key not in {"target_identities", "target_rules"}},
             target_identities=tuple(group["target_identities"]),
             target_rules=tuple(
-                (item[0], tuple(item[1])) for item in group["target_rules"]
+                (item[0], item[1], tuple(item[2])) for item in group["target_rules"]
             ),
         )
         for group in raw["model_groups"]

@@ -2,6 +2,7 @@
 
 from core.data_definition.contract.bootstrap import bootstrap_manifest
 from core.data_definition.contract.codec import dump_manifest, load_manifest, manifest_payload
+from core.data_definition.contract.fingerprints import ScopedFingerprints, scoped_fingerprints
 from core.data_definition.contract.model import (
     ContractGeneration,
     DerivedDefinition,
@@ -14,9 +15,22 @@ from core.data_definition.contract.model import (
     TargetDefinition,
     UnifiedFeatureManifest,
 )
+from core.data_definition.contract.projections import (
+    ContractProjections,
+    generate_projections,
+    ml_csv_text,
+    predict_csv_text,
+)
+from core.data_definition.contract.validation import (
+    ContractValidationIssue,
+    require_valid_contract,
+    validate_contract,
+)
 
 __all__ = [
     "ContractGeneration",
+    "ContractProjections",
+    "ContractValidationIssue",
     "DerivedDefinition",
     "FeatureDefinition",
     "MappingRequirementDefinition",
@@ -24,10 +38,17 @@ __all__ = [
     "OneHotCategoryDefinition",
     "OneHotGroupDefinition",
     "OrderingContract",
+    "ScopedFingerprints",
     "TargetDefinition",
     "UnifiedFeatureManifest",
     "bootstrap_manifest",
     "dump_manifest",
+    "generate_projections",
     "load_manifest",
     "manifest_payload",
+    "ml_csv_text",
+    "predict_csv_text",
+    "require_valid_contract",
+    "scoped_fingerprints",
+    "validate_contract",
 ]

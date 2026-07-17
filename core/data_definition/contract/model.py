@@ -86,7 +86,7 @@ class ModelGroupDefinition:
     name: str
     target_identities: tuple[str, ...]
     use_rfe: bool
-    target_rules: tuple[tuple[str, tuple[str, ...]], ...]
+    target_rules: tuple[tuple[str, str, tuple[str, ...]], ...]
 
 
 @dataclass(frozen=True)
