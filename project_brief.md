@@ -100,10 +100,14 @@ Unified Data Definition
 
 Concrete mapping values remain in Data Mapping. Training remains an explicit
 user action in Train. Data Definition does not trigger training or automatic
-model activation, and Predict internal redesign is not part of Phase 4. Phase 4A
-must finalize one application-wide generation cutover, immutable training-run
-snapshots, dirty Mapping draft reconciliation, One-hot source-mode ownership, and
-the boundary between Target CRUD and new model-group/model-level policy creation.
+model activation, and Predict internal redesign is not part of Phase 4. Train
+owns candidate artifact creation and explicit validated promotion; Predict
+consumes only the promoted compatible active model. Phase 4A must finalize one
+TrainShell process-wide generation cutover, standalone Predict persisted-
+generation detection, immutable training-run snapshots, promotion metadata and
+owner boundaries, dirty Mapping draft reconciliation, One-hot source-mode
+ownership, and the boundary between Target CRUD and new model-group/model-level
+policy creation.
 
 ### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
 

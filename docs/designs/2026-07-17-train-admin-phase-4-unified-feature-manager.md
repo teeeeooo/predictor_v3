@@ -86,7 +86,11 @@ implementation is frozen:
 - the model registry is fixed in Python constants;
 - some Predict and ML projections are fixed at import time;
 - Predict display order and ML projection order are not sufficiently separated;
-- no cross-contract dependency command for Feature rename/delete.
+- no cross-contract dependency command for Feature rename/delete;
+- the current training publication path replaces the fixed active model path at
+  completion instead of preserving a validated candidate/promotion boundary;
+- standalone Predict has no cross-process persisted-generation detection
+  boundary.
 
 These are audit hypotheses, not permission to bypass current guards. Current
 production paths continue blocking ML-projection-changing definition saves until
@@ -119,15 +123,18 @@ values are outside the multi-artifact definition Save.
 ### Train / Model
 
 Train owns training-data selection, explicit training start, progress, cancel,
-result review, and model artifact creation. Data Definition never starts
-training and does not call the Train controller directly.
+result review, candidate model artifact creation, and the explicit owner-
+controlled promotion workflow. Data Definition defines compatibility metadata
+needed to classify an artifact but never starts training, promotes a candidate,
+activates a model, or calls the Train controller directly.
 
 ### Predict
 
-Predict consumes the saved Predict schema, saved Feature contract, compatible
-model artifact, and mapping runtime values. When a saved Feature contract makes
-an existing model incompatible, Predict exposes a retraining-required state.
-Predict's internal UI redesign remains deferred.
+Predict consumes the saved Predict schema, saved Feature contract, promoted
+compatible active model, and mapping runtime values. It never treats training
+success or an unpromoted candidate as active-model availability. When a saved
+Feature contract makes the active model incompatible, Predict exposes a
+retraining-required state. Predict's internal UI redesign remains deferred.
 
 ## 7. Canonical and Projection Direction
 
@@ -262,7 +269,7 @@ Disk publication and application runtime activation are separate stages:
 definition draft validation
     → persisted artifact transaction
     → consumer reload preflight
-    → application-wide generation cutover
+    → process-wide generation cutover
 ```
 
 The persisted artifact transaction:
@@ -279,12 +286,26 @@ Concrete `mapping.json` values are never part of this transaction. Compatibility
 migration and rollback details remain an explicit Phase 4A/4B design question;
 existing guards remain active until that owner is approved and implemented.
 Persistence success does not mean runtime cutover success. The consumer preflight
-and application-wide cutover contract belongs to Slice 4H and consumes the
+and process-wide cutover contract belongs to Slice 4H and consumes the
 persisted generation identity defined by Slice 4B. A post-persistence cutover
 failure leaves an explicit stale-runtime/restart-required recovery state; it is
 never reported as fully applied.
 
-## 14. Live Contract Reload
+Definition persistence and model artifact lifecycle are separate transactions:
+
+```text
+Definition contract transaction
+    ≠ training candidate artifact publication
+    ≠ active model promotion
+```
+
+Slice 4B owns only the Definition contract transaction. Phase 4 defines the
+generation/fingerprint and Target/registry metadata required to validate model
+compatibility, but does not publish a training candidate or replace the active
+model. Those artifact operations remain isolated under the established model/
+artifact owner and the Phase 5 workflow.
+
+## 14. Live Contract Reload and Process Scope
 
 Every persisted contract set has one immutable generation/version identity or an
 equivalent fingerprint. Predict schema, ML projection, Derived policy, One-hot
@@ -294,20 +315,24 @@ active generation. A definition-changed event, or equivalent coordination
 contract, carries the persisted generation and relevant fingerprints without
 merging controllers or letting Data Definition perform their work.
 
-Normal active state never mixes generations across required owners. Live reload
-uses a staged cutover:
+### In-process generation cutover
+
+Within one TrainShell process composition, embedded Predict, Train / Model, Data
+Definition, and Data Mapping share one process-wide active generation. Normal
+state never mixes generations across these required owners. Live reload uses a
+staged cutover:
 
 ```text
 new persisted generation
     → consumer reload preflight
     → candidate in-memory projections
     → every required owner ready
-    → application-wide generation commit
+    → process-wide generation commit
 ```
 
 If any required owner cannot prepare, Phase 4A must approve one explicit policy:
 all owners retain the previous active generation, or the persisted generation
-remains on disk while the entire application enters a visible stale-runtime/
+remains on disk while the entire process composition enters a visible stale-/
 restart-required state. Some owners silently activating the new generation while
 others retain the old one is forbidden. Persistence failure, consumer preflight
 failure, in-memory cutover failure, stale runtime generation, and restart-required
@@ -315,7 +340,7 @@ recovery are distinct user-facing states. Save success and runtime-apply success
 are never presented as the same outcome.
 
 The refresh responsibilities below prepare candidate state only. No required
-owner swaps its active projection before the application-wide generation commit.
+owner swaps its active projection before the process-wide generation commit.
 
 ### Data Definition refresh
 
@@ -353,13 +378,47 @@ is forbidden while dirty.
 Phase 4A decides whether stable group/attribute identity can safely rebase a
 dirty draft, how new requirements preserve unsaved rows, how rename/delete
 conflicts with unsaved cells are resolved, whether such a conflict blocks the
-application-wide cutover, and how a stale Data Mapping generation affects the
+process-wide cutover, and how a stale Data Mapping generation affects the
 whole runtime state. Until reconciliation succeeds, the pending update is not
 hidden and the application cannot claim a fully active mixed generation.
 
 Reload or cutover failure preserves the previous valid in-memory state and user
 drafts where applicable, then provides an actionable stale/restart-required
 recovery state rather than partially refreshing tabs.
+
+### Cross-process generation detection
+
+Process-wide cutover does not promise atomic simultaneous activation across OS
+processes. Standalone `app_predict` and any separately launched Train/Predict
+instance independently track:
+
+- persisted contract generation;
+- the process-wide active generation;
+- promoted model artifact generation/fingerprints;
+- mapping/provider generation when required by its consumer contract.
+
+Standalone Predict checks for a newer persisted generation at application
+startup, immediately before prediction execution, on explicit Refresh/Reload,
+and after model reload or artifact promotion. Prediction follows this boundary:
+
+```text
+prediction requested
+    → read persisted generation
+    → compare with process-wide active generation
+    → equal: validate promoted model compatibility and execute
+    → different: full consumer reload preflight
+        → success: process-wide cutover, then execute
+        → failure: preserve rows/results, mark stale/restart-required,
+          and block the new prediction
+```
+
+A stale process never silently continues new prediction. Existing input rows and
+results may remain available for review and safe recovery, but reload failure
+must not quietly discard them or imply execution availability. A promoted model
+whose generation/fingerprints do not match the active Definition contract is not
+Predict-compatible. IPC or file watching is optional Phase 4A design scope;
+startup and prediction-boundary generation validation remain required even
+without them.
 
 ## 15. Train Boundary
 
@@ -392,6 +451,42 @@ older generation is stale/incompatible unless separately proven compatible; it
 is never automatically activated for the current contract. The existing
 compatible model remains preserved until the new artifact passes compatibility.
 
+Training output is first a candidate artifact, not the active model:
+
+```text
+training run
+    → run/generation-scoped candidate artifact
+    → artifact structure and metadata validation
+    → run-contract versus current-contract compatibility
+    → recorded candidate state
+    → explicit owner-controlled promotion
+    → atomic active-model replacement where supported
+```
+
+The candidate lives separately from the active model path, is identifiable by
+run ID and generation/fingerprints, and preserves the start contract identity in
+its metadata and TrainingResult projection. Training success alone never
+overwrites or activates the active model.
+
+Before promotion, the artifact/model owner validates loadability, artifact
+format/version where applicable, run generation and fingerprints, compatibility
+with the current Feature/Target/Derived/One-hot/preprocessing contract,
+Target/model-group association, and expected output contract. Training success,
+candidate Save success, compatibility, promotion success, and Predict
+availability remain separate states.
+
+Promotion is an explicit Phase 5 Train/Model action owned by the established
+artifact/model boundary. Only a validated compatible candidate may atomically or
+equivalently replace the active model. Promotion failure preserves the existing
+compatible model. Stale/incompatible candidates remain reviewable or removable
+under the future artifact lifecycle but cannot be promoted. Automatic promotion
+and automatic activation are excluded.
+
+Phase 4 owns the compatibility metadata contract, stale/incompatible
+classification, current-model preservation invariant, and relationship between
+Target/registry fingerprints and artifact metadata. It does not own the training
+UI, candidate generation execution, or promotion action.
+
 Phase 4 does not include:
 
 - automatic retraining after Data Definition Save;
@@ -414,14 +509,16 @@ registry, Train Target consumption, reload, canonical/projection owners, runtime
 consumers, protected dependencies, and migration risks.
 
 Required outcome: an approved contract map, ordering semantics, open-decision
-resolution, application-wide generation contract, immutable training snapshot
-contract, dirty Mapping draft reconciliation policy, One-hot category source
-modes, Target/model-group scope, and an ordered implementation plan without
-production changes.
+resolution, process-wide generation contract, standalone Predict detection
+policy, immutable training snapshot contract, candidate-versus-active artifact
+lifecycle and promotion owner/rollback, dirty Mapping draft reconciliation
+policy, One-hot category source modes, Target/model-group scope, and an ordered
+implementation plan without production changes.
 
 Validation purpose: prove later slices do not start from a false owner or
 consumer assumption and do not omit protected dependencies, training races,
-dirty-draft conflicts, or runtime cutover failure states.
+dirty-draft conflicts, runtime cutover failure states, current fixed-path model
+overwrite migration, or stale standalone prediction.
 
 ### 4B — Unified Contract and Multi-artifact Persistence
 
@@ -429,7 +526,9 @@ Purpose: generate all candidate contracts from one draft, validate each artifact
 and the cross-contract set, assign the persisted generation identity, and provide
 an all-or-nothing disk publish/rollback boundary. Slice 4B exposes the persisted
 generation and candidate-loader contract consumed by Slice 4H; it does not own
-application-wide in-memory cutover.
+process-wide in-memory cutover, model candidate publication, or active-model
+promotion. It may expose only the Definition generation/compatibility metadata
+provider required by the later artifact lifecycle.
 
 Required outcome: successful Save makes every artifact reflect the same draft;
 failed Save preserves every previous artifact.
@@ -491,7 +590,8 @@ consume a dynamic Target contract.
 
 Required outcome: schema, Target, registry, target/registry fingerprint,
 target-level policies, existing model-group association, and training contract
-are generated and validated consistently.
+are generated and validated consistently, with the Target/registry fingerprint
+available to candidate artifact metadata validation.
 
 Validation purpose: prove dynamic Train Target refresh, dependency-safe
 rename/delete, allowed existing-group association, rejection of unknown group
@@ -505,16 +605,21 @@ Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
 
-Required outcome: every required owner reports one active generation. On failure,
-all owners retain the prior generation or the whole application reports the
-approved stale/restart-required state; mixed generation is never normal.
+Required outcome: every required TrainShell owner reports one process-wide active
+generation. On failure, all in-process owners retain the prior generation or the
+whole process reports the approved stale/restart-required state; mixed generation
+is never normal. Standalone Predict independently detects persisted-generation
+mismatch at required execution boundaries.
 
 Validation purpose: prove consumer preflight and atomic cutover, generation
 agreement, explicit stable-input preservation failure, dirty Mapping draft
 preservation and visible pending update, stale runtime reporting, training-data
 revalidation, and compatibility reevaluation. An active run keeps its start
 generation, and an artifact completed from an older generation is not
-automatically activated for the current generation.
+automatically activated for the current generation. Standalone Predict detects a
+new generation at startup or prediction boundary, blocks new prediction when
+reload fails, reports stale/restart-required state, and does not claim unsupported
+cross-process atomic cutover.
 
 ### 4I — Diagnostics Simplification and Final Acceptance
 
@@ -536,7 +641,8 @@ cross-tab acceptance, and honest fixture/mock limitations.
 5. Validate dependencies before Remove or Rename.
 6. Manage Predict display and ML contract order under explicit isolated policies.
 7. Author a Derived formula that passes reference, type, and cycle validation.
-8. Create, edit, delete, and reorder a One-hot group and its categories.
+8. Create, edit, delete, and reorder a supported One-hot group without assuming
+   that Data Definition owns every source vocabulary.
 9. Define a Result/Target consistently with the model registry.
 10. Preserve all prior artifacts when Save fails.
 11. Refresh Predict, Train, and Data Mapping after successful Save.
@@ -546,15 +652,18 @@ cross-tab acceptance, and honest fixture/mock limitations.
 15. Show retraining required when an existing model is incompatible.
 16. Complete the workflow without directly editing internal CSV, JSON, or Python
     registry files.
-17. After Definition Save, Predict, Train, and Data Mapping consume the same
-    active contract generation.
+17. After Definition Save, embedded Predict, Train, Data Definition, and Data
+    Mapping consume the same TrainShell process-wide active generation.
 18. A consumer preflight failure leaves no mixed-generation normal state.
 19. Persisted success followed by cutover failure displays an explicit stale/
     restart-required recovery state.
 20. A dirty Data Mapping draft survives a Definition requirement update and
     exposes a pending contract update workflow.
-21. Static categories and mapping-backed option vocabulary follow their distinct
-    mutation owners without implicit cross-owner deletion.
+21. Static category vocabulary supports Data Definition CRUD and ordering;
+    mapping-backed options reconcile with Data Mapping without implicit row
+    mutation; external/provider vocabulary remains read-only or policy-limited.
+    Every mode exposes emitted Feature Preview, unknown/missing policy, and
+    compatibility impact.
 22. An active training run continues using its immutable start snapshot after a
     newer Definition generation is persisted.
 23. Training results and artifacts identify their source generation and contract
@@ -565,6 +674,16 @@ cross-tab acceptance, and honest fixture/mock limitations.
     compatibility checks.
 26. Target CRUD permits validated existing model-group association and clearly
     blocks or separately gates new model-group creation.
+27. A completed training run produces a separate identifiable candidate artifact
+    and does not replace the active model merely because training succeeded.
+28. Only a validated current-compatible candidate can be explicitly promoted;
+    stale/incompatible candidates cannot become active.
+29. Promotion failure preserves the existing compatible model and its Predict
+    availability.
+30. Standalone Predict detects a newer persisted generation at startup,
+    prediction, explicit reload, or model-reload boundaries.
+31. A stale standalone Predict process preserves existing rows/results for
+    recovery but blocks new prediction when generation reload cannot succeed.
 
 ## 18. Non-goals
 
@@ -589,9 +708,9 @@ cross-tab acceptance, and honest fixture/mock limitations.
 - How are the five ordering contracts represented without accidental coupling?
 - Which protected runtime columns, target rules, and registry entries require
   explicit migration policies rather than ordinary mutation?
-- How do all required live owners commit one generation, and does cutover failure
-  retain the old generation or enter application-wide stale/restart-required
-  recovery after disk publication?
+- Which consumers participate in one TrainShell process-wide generation commit,
+  and does cutover failure retain the old generation or enter process-wide
+  stale/restart-required recovery after disk publication?
 - Can dirty Data Mapping drafts rebase by stable group/attribute identity, and
   which add/rename/delete conflicts block generation cutover?
 - What exact immutable identity crosses TrainingRequest, TrainingResult, and
@@ -600,3 +719,13 @@ cross-tab acceptance, and honest fixture/mock limitations.
   applies to static, mapping-backed, and external One-hot category sources?
 - Does Phase 4 remain limited to existing model-group association, or is a
   separately validated model-group creation workflow explicitly approved?
+- What owner stores run/generation-scoped candidate model artifacts and promotes
+  one validated candidate to the active model?
+- What metadata and atomic primitive are required for candidate-to-active
+  promotion, and which validation/compatibility checks must pass before replacing
+  the existing compatible model?
+- At which startup, prediction, explicit reload, and model-reload boundaries does
+  standalone Predict detect a newer persisted generation?
+- Does optional cross-process detection use IPC, file watching, or only the
+  required boundary checks, and does failed reload require restart in addition to
+  blocking new prediction?

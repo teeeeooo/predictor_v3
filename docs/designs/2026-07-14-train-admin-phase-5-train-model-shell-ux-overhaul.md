@@ -54,9 +54,11 @@ logs.
 
 ```text
 select training data
-    -> train
+    -> train to candidate artifact
     -> check progress
+    -> validate candidate and compare contracts
     -> review results
+    -> explicitly promote a compatible candidate
 ```
 
 Schema, feature, mapping, and compatibility checks run automatically as part of
@@ -80,8 +82,9 @@ The resulting surface should provide:
 - progress and current stage;
 - user-facing failure context and its resolution action;
 - a result summary centered on the completed training outcome;
-- produced model save status and elapsed time;
-- Predict availability after existing activation conditions pass;
+- candidate artifact save/validation/compatibility status and elapsed time;
+- explicit promotion action and active-model replacement result;
+- Predict availability only after compatible promotion conditions pass;
 - Diagnostics/log access for advanced technical details.
 
 Mock execution success must not be presented as model-quality success.
@@ -148,9 +151,10 @@ readiness issue; the authoritative owner contract remains the source of truth.
 These occur after training execution completes and concern persistence or use of
 the resulting model:
 
-- model save failure;
+- candidate artifact save or validation failure;
 - artifact validation failure;
 - mismatch between the new artifact and the active feature contract;
+- explicit promotion or active-model replacement failure;
 - Predict load or activation failure;
 - restart not completed, leaving Predict unable to use the saved result.
 
@@ -180,6 +184,14 @@ unless compatibility is explicitly proven and is not shown as Predict-compatible
 or automatically activated. The prior compatible model remains available until
 the new artifact passes the established checks.
 
+Training completion publishes a run/generation-scoped candidate artifact at a
+path separate from the active model. It does not replace the active model.
+Candidate validation and contract compatibility precede an explicit user-facing
+promotion action owned by the established artifact/model boundary. Promotion is
+atomic where supported; failure preserves the prior compatible model and Predict
+availability. The current production fixed-path replacement behavior is a Phase
+5 audit/migration input, not the target lifecycle.
+
 The UX must:
 
 - prevent duplicate starts;
@@ -203,7 +215,9 @@ After completion, show:
 - MAE/RMSE when available and useful for the result;
 - whether Optuna ran and its completion status;
 - best trial or best score when Optuna provides it;
-- whether the model was saved;
+- whether the candidate artifact was saved and validated;
+- candidate path/state and its promotion eligibility;
+- whether explicit promotion and active-model replacement succeeded;
 - total elapsed training time and per-Target time when the result contract
   provides it;
 - whether Predict can use the resulting model;
@@ -271,6 +285,8 @@ implementation audit.
   dynamic Feature/Target contract and current public-owner boundaries.
 - Confirm Train consumes validated dynamic Feature/Target/registry providers
   rather than retaining hard-coded Target choices or static registry assumptions.
+- Audit and migrate the current training-completion fixed-path replacement into
+  candidate publication, validation, and explicit promotion boundaries.
 - Freeze the user-flow, automatic-validation, progressive-disclosure, error-
   recovery, and result-summary contracts before implementation.
 - Keep this slice documentation/planning only.
@@ -288,13 +304,18 @@ implementation audit.
 - Start/cancel training through the existing execution boundary.
 - Show current stage, progress, completion, cancellation, and failure states
   without freezing the main UI.
+- Publish successful output only as an identifiable candidate artifact; do not
+  replace the active model on training completion.
 
 ### Slice 5D — Results and Predict availability
 
 - Present the overall outcome, per-Target success/failure and R², optional
-  MAE/RMSE, applicable Optuna status/best trial or score, model-save status,
+  MAE/RMSE, applicable Optuna status/best trial or score, candidate save and
+  validation status, contract compatibility, explicit promotion action/result,
   elapsed time, Predict availability, and the next action for Section 5.3
   post-training blockers.
+- Permit promotion only for validated compatible candidates; preserve the
+  existing model and Predict availability on failure.
 - Preserve existing runner/worker, artifact, and ML boundaries.
 
 ### Slice 5E — Common shell and Diagnostics/log consolidation
@@ -325,9 +346,15 @@ merged only after cross-tab workflow and mock training smoke pass.
 - Training runs without blocking the main UI and reports progress.
 - Cancellation and failure produce distinct states.
 - Successful training shows overall success, per-Target outcome and R², optional
-  MAE/RMSE, applicable Optuna status and best trial/score, model-save status,
-  elapsed time, and Predict availability without making production accuracy
-  claims.
+  MAE/RMSE, applicable Optuna status and best trial/score, candidate-save status,
+  elapsed time, and separately evaluated Predict availability without making
+  production accuracy claims.
+- Training completion leaves the active model unchanged and reports a separate
+  candidate artifact.
+- Only a validated current-compatible candidate can be explicitly promoted.
+- Stale or incompatible candidates cannot become the active model.
+- Promotion failure preserves the existing compatible model and Predict
+  availability.
 - Post-training save, artifact, activation, or restart failures are represented
   as Predict availability and next-action states rather than Start blockers.
 - Detailed failure evidence is available in Diagnostics/logs.
@@ -342,7 +369,8 @@ merged only after cross-tab workflow and mock training smoke pass.
 - Predict internal redesign.
 - Feature authoring or a duplicate Feature Manager in Train / Model.
 - Running training from Data Definition.
-- Automatic retraining or automatic model activation orchestration.
+- Automatic retraining, automatic promotion, or automatic model activation
+  orchestration.
 - New ML algorithms.
 - Automatic real-data transformation.
 - Production model-quality certification.

@@ -79,13 +79,15 @@ information architecture, state communication, recovery, and editing efficiency.
 | `data/mapping.json` | Runtime mapping value source of truth. |
 | Mapping exchange files | Human-readable exchange and backup representation of the Data Mapping draft. |
 | Legacy wide CSV fixture | One-time bootstrap/migration evidence only. |
-| Train / Model | Dynamic Feature/Target consumption, training-data selection, explicit training execution, artifact status, readiness visibility, and results workflow. |
-| Predict | Saved schema/Feature and compatible-model consumer; runtime case entry and prediction workflow; internal UX redesign deferred. |
+| Train / Model | Dynamic Feature/Target consumption, explicit training, candidate artifact results, validated explicit promotion, active-model status, readiness, and results workflow. |
+| Predict | Saved schema/Feature and promoted-compatible-active-model consumer; runtime case entry and prediction workflow; internal UX redesign deferred. |
 
 All related persisted projections belong to one immutable contract generation.
-Required consumers must not silently run mixed generations. Disk publication and
-application-wide runtime cutover are distinct outcomes, and an active training
-run is bound to its immutable start-generation snapshot.
+Required consumers inside one process composition must not silently run mixed
+generations. Disk publication and process-wide runtime cutover are distinct
+outcomes, and an active training run is bound to its immutable start-generation
+snapshot. Separate processes independently detect persisted-generation mismatch;
+they do not claim simultaneous cross-process atomic cutover.
 
 ### Structural versus value changes
 
@@ -351,15 +353,21 @@ The program is complete when:
   explicit and non-overlapping mutation owners;
 - all related Definition contracts publish atomically with cross-contract
   validation and preserve prior artifacts on failure;
-- Predict, Train, and Data Mapping activate one application-wide contract
-  generation after consumer preflight; mixed-generation normal state is
-  forbidden and persistence/cutover outcomes remain distinguishable;
+- embedded Predict, Train, Data Definition, and Data Mapping activate one
+  process-wide contract generation after consumer preflight; mixed-generation
+  normal state is forbidden and persistence/cutover outcomes remain distinct;
+- standalone Predict detects persisted-generation mismatch at startup,
+  prediction, explicit reload, and model-reload boundaries and blocks new
+  execution when safe reload cannot succeed;
 - a Data Mapping unsaved draft is preserved across Definition requirement
   updates and exposes a visible pending-update/reconciliation state;
 - Train dynamically consumes current Feature/Target contracts and reports
   retraining required for an incompatible existing model;
 - each training run and resulting artifact retain their start-generation contract
   snapshot, and stale artifacts are not presented as current-compatible;
+- training completion produces a separate candidate artifact; only a validated
+  compatible candidate can be explicitly promoted to replace the active model,
+  and promotion failure preserves the prior compatible model;
 - Train/Model leads with the training-data selection → train → progress → results
   flow;
 - schema, feature, mapping, and compatibility checks run automatically and

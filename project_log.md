@@ -58,6 +58,14 @@
 - Keep initial Target CRUD limited to validated existing model-group association
   and target-level policies; new model groups and model-level training policy
   require a separately approved advanced contract.
+- Separate run/generation-scoped candidate artifacts from the active model.
+  Training completion cannot replace the active model; only validated explicit
+  promotion by the artifact/model owner may do so, and failure preserves the
+  previous compatible model.
+- Limit atomic generation cutover to required owners inside one TrainShell
+  process. Standalone Predict and other processes independently detect persisted-
+  generation mismatch at startup/execution/reload boundaries and block new work
+  when safe reload cannot succeed.
 
 ## 2026-07-16 — Train/Admin Phase 4 Train UX direction
 

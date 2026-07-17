@@ -29,8 +29,9 @@ preserving current production guards.
 Audit merged `main` Data Definition, Predict schema, ML Feature Catalog, Derived
 policy, One-hot contracts, model registry, Train Target consumption, and live
 reload boundaries. Finalize the Phase 4 contract and ordered implementation
-slices, including application-wide generation cutover, training-run snapshots,
-dirty Mapping draft reconciliation, category source modes, and Target/model-group
+slices, including process-wide generation cutover, standalone Predict generation
+detection, training-run snapshots, candidate artifact promotion ownership, dirty
+Mapping draft reconciliation, category source modes, and Target/model-group
 scope. Do not start Phase 4 production implementation before audit/design
 approval.
 
@@ -60,6 +61,9 @@ approval.
   publication, consumer preflight, and runtime cutover as distinct states.
 - Preserve active training-run snapshots and Data Mapping unsaved drafts across
   Definition changes. Do not classify stale artifacts as current-compatible.
+- Separate training candidate publication from validated explicit active-model
+  promotion, and distinguish TrainShell process-wide cutover from standalone
+  Predict cross-process generation detection.
 - Separate static/mapping-backed/external One-hot category mutation owners and
   Target CRUD from new model-group/model-level policy creation.
 - Data Mapping remains the concrete `mapping.json` value owner; Train remains the

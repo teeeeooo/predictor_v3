@@ -612,6 +612,22 @@ entries:
       - model group
     assertionStatus: proposed
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-feature-contract-cutover-boundaries.md
+
+  - type: decision
+    topic: Train/Admin model promotion and standalone Predict generation boundaries
+    content: Proposed Phase 4 separates Definition contract publication, training candidate publication, and active-model promotion. Training output is a run/generation-scoped candidate distinct from the active model; only the artifact/model owner may explicitly promote a validated current-compatible candidate, promotion failure preserves the prior compatible model, and automatic promotion/activation is excluded. Phase 4 owns compatibility metadata/classification while Phase 5 owns candidate results and explicit promotion workflow. Atomic generation cutover applies only inside one TrainShell process composition. Standalone Predict and other processes independently compare persisted, process-active, and promoted-model generations at startup, prediction, explicit reload, and model reload/promotion; a stale process preserves existing rows/results but blocks new prediction when safe reload fails. One-hot acceptance follows source-mode owners: Data Definition CRUD for static vocabulary, Data Mapping reconciliation for mapping-backed options, and read-only or bounded policy for external/provider vocabulary.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - candidate artifact
+      - active model
+      - explicit promotion
+      - process-wide generation
+      - standalone Predict
+      - stale process
+      - One-hot acceptance
+    assertionStatus: proposed
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-model-promotion-predict-generation-boundaries.md
 ```
 
 ## Known Gaps
