@@ -30,7 +30,7 @@ SCHEMA_CHANGE_FIELDS = frozenset(
         "label", "editor", "data_type", "visible", "required", "readonly",
         "value_source", "mapping_entity", "mapping_attribute", "trigger_column",
         "rule_id", "model_input_enabled", "ml_name", "one_hot_group", "active",
-        "notes",
+        "notes", "column_key", "display_order", "role",
     }
 )
 RETRAIN_FIELDS = frozenset({"model_input_enabled", "ml_name", "value_source"})
@@ -413,6 +413,10 @@ def _raw_row_change_blockers(
             change.before is None
             and draft.is_controlled_row_addition(change.row_identity)
         )
+        and not (
+            change.after is None
+            and draft.is_controlled_row_removal(change.row_identity)
+        )
     )
 
 
@@ -559,8 +563,10 @@ def _is_schema_change(
         change.field_name in SCHEMA_CHANGE_FIELDS
         or (
             change.field_name == "__row__"
-            and change.before is None
-            and draft.is_controlled_row_addition(change.row_identity)
+            and (
+                (change.before is None and draft.is_controlled_row_addition(change.row_identity))
+                or (change.after is None and draft.is_controlled_row_removal(change.row_identity))
+            )
         )
     )
 

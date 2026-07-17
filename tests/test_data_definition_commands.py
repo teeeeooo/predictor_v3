@@ -9,8 +9,10 @@ from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import (
     AddDefinitionIntent,
     EditDefinitionIntent,
+    RenameDefinitionIntent,
     apply_add_definition_command,
     apply_edit_definition_command,
+    apply_rename_definition_command,
     build_data_definition_draft,
     build_data_definition_save_plan,
     extract_mapping_requirements_from_draft,
@@ -41,7 +43,9 @@ def test_manual_predict_add_is_complete_projection_neutral_and_writable():
     row = next(item for item in result.draft.rows if item.column_key == "fan_diameter")
     plan = build_data_definition_save_plan(result.draft)
     assert result.accepted
-    assert row.identity == ("schema_row", "fan_diameter")
+    assert row.identity[0] == "schema_row"
+    assert row.identity[1].startswith("ufm_feature_")
+    assert row.identity[1] != row.column_key
     assert (row.role, row.editor, row.value_source) == ("input", "number", "manual")
     assert row.visible and not row.readonly and not row.model_input_enabled
     assert not row.ml_name and not row.one_hot_group
@@ -377,14 +381,15 @@ def test_controlled_edit_rejects_derived_policy_without_mutation():
     assert _snapshot(result.draft) == before
 
 
-def test_projection_changing_controlled_edit_is_complete_but_save_blocked():
+def test_projection_changing_controlled_rename_is_complete_but_save_blocked():
     draft = build_data_definition_draft()
     identity = ("schema_row", "cooling_capa")
-    result = apply_edit_definition_command(
+    result = apply_rename_definition_command(
         draft,
-        EditDefinitionIntent(
+        RenameDefinitionIntent(
             identity,
-            (("label", "Cooling Capacity"), ("ml_name", "Cooling Capacity Renamed")),
+            label="Cooling Capacity",
+            ml_name="Cooling Capacity Renamed",
         ),
     )
     plan = build_data_definition_save_plan(result.draft)
@@ -407,23 +412,24 @@ def test_controlled_add_provenance_survives_edit_and_tracks_only_post_add_fields
         draft,
         AddDefinitionIntent("manual_predict", "Fan Diameter", "fan_diameter", "number"),
     )
-    identity = ("schema_row", "fan_diameter")
+    identity = added.identity
     initial = added.draft.controlled_addition_initial_row(identity)
 
-    activated = apply_edit_definition_command(
+    edited = apply_edit_definition_command(
         added.draft,
         EditDefinitionIntent(identity, (
-            ("model_input_enabled", True),
-            ("ml_name", "Fan Diameter"),
+            ("visible", False),
+            ("notes", "Optional hidden Predict input"),
         )),
     )
 
     assert initial is not None and not initial.model_input_enabled and not initial.ml_name
-    assert activated.draft.controlled_addition_initial_row(identity) is initial
-    assert [change.field_name for change in activated.draft.attributed_changes()] == [
+    assert edited.draft.controlled_addition_initial_row(identity) is initial
+    assert [change.field_name for change in edited.draft.attributed_changes()] == [
         "__row__",
-        "model_input_enabled",
-        "ml_name",
+        "visible",
+        "notes",
+        "__order__",
     ]
 
 

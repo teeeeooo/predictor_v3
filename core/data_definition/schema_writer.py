@@ -119,6 +119,9 @@ def _writer_blockers(
         if change.field_name == "__row__" and not (
             change.before is None
             and draft.is_controlled_row_addition(change.row_identity)
+        ) and not (
+            change.after is None
+            and draft.is_controlled_row_removal(change.row_identity)
         ):
             _append_blocker_if_missing(blockers, _blocker(
                 "raw_row_add_delete_not_allowed",

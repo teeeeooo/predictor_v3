@@ -11,6 +11,10 @@ DefinitionIntentKind = Literal[
     "manual_predict",
     "mapping_predict",
     "mapping_attribute",
+    "predict_only",
+    "ml_only",
+    "mapping_backed",
+    "helper_hidden",
 ]
 
 
@@ -29,6 +33,9 @@ class AddDefinitionIntent:
     trigger_column: str = ""
     rule_id: str = ""
     notes: str = ""
+    model_input_enabled: bool = False
+    ml_name: str = ""
+    active: bool = True
 
 
 @dataclass(frozen=True)
@@ -39,6 +46,8 @@ class EditDefinitionIntent:
     updates: tuple[tuple[str, object], ...]
 
 
+
+
 @dataclass(frozen=True)
 class DataDefinitionCommandIssue:
     """User-understandable command validation issue."""
@@ -46,6 +55,7 @@ class DataDefinitionCommandIssue:
     code: str
     field_name: str
     message: str
+    resolution: str = ""
 
 
 @dataclass(frozen=True)
@@ -57,6 +67,7 @@ class DataDefinitionCommandResult:
     identity: tuple[str, str] | None
     action: str
     issues: tuple[DataDefinitionCommandIssue, ...] = ()
+    affected_identities: tuple[tuple[str, str], ...] = ()
 
     @property
     def message(self) -> str:

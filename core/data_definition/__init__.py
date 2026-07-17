@@ -48,16 +48,38 @@ from core.data_definition.command_types import (
     DataDefinitionCommandResult,
     EditDefinitionIntent,
 )
+from core.data_definition.feature_command_types import (
+    FeatureCommandIntent,
+    DuplicateDefinitionIntent,
+    MoveDefinitionIntent,
+    RemoveDefinitionIntent,
+    RenameDefinitionIntent,
+    SetDefinitionActiveIntent,
+)
 from core.data_definition.commands import (
     apply_add_definition_command,
     apply_edit_definition_command,
 )
+from core.data_definition.mutation_commands import (
+    apply_duplicate_definition_command,
+    apply_remove_definition_command,
+    apply_set_definition_active_command,
+)
+from core.data_definition.rename_command import apply_rename_definition_command
+from core.data_definition.ordering_commands import apply_move_definition_command
+from core.data_definition.impact_preview import (
+    FeatureImpactPreview,
+    build_feature_impact_preview,
+)
+from core.data_definition.dependency_policy import is_supported_basic_feature
 
 __all__ = [
     "DataDefinitionDraft",
     "AddDefinitionIntent",
     "DataDefinitionCommandIssue",
     "DataDefinitionCommandResult",
+    "FeatureCommandIntent",
+    "FeatureImpactPreview",
     "DataDefinitionDraftChange",
     "DataDefinitionDraftIssue",
     "DataDefinitionDraftRow",
@@ -73,6 +95,11 @@ __all__ = [
     "DataDefinitionWriteTarget",
     "FieldEditability",
     "EditDefinitionIntent",
+    "DuplicateDefinitionIntent",
+    "MoveDefinitionIntent",
+    "RemoveDefinitionIntent",
+    "RenameDefinitionIntent",
+    "SetDefinitionActiveIntent",
     "MAPPING_LOOKUP_TEMPLATES",
     "MappingLookupTemplate",
     "MappingRequirement",
@@ -84,6 +111,13 @@ __all__ = [
     "build_data_definition_save_plan",
     "apply_add_definition_command",
     "apply_edit_definition_command",
+    "apply_duplicate_definition_command",
+    "apply_remove_definition_command",
+    "apply_rename_definition_command",
+    "apply_set_definition_active_command",
+    "apply_move_definition_command",
+    "build_feature_impact_preview",
+    "is_supported_basic_feature",
     "field_editability",
     "extract_mapping_requirements_from_draft",
     "mapping_template",

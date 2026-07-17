@@ -20,13 +20,13 @@ SCHEMA_BACKED_EDITABLE_FIELDS = frozenset(
         "trigger_column",
         "rule_id",
         "model_input_enabled",
-        "ml_name",
         "one_hot_group",
-        "active",
         "notes",
     }
 )
-SCHEMA_BACKED_RESTRICTED_FIELDS = frozenset({"display_order", "column_key", "role"})
+SCHEMA_BACKED_RESTRICTED_FIELDS = frozenset(
+    {"display_order", "column_key", "ml_name", "role", "stable_identity", "active"}
+)
 MAPPING_VALUE_FIELDS = frozenset(
     {"mapping_value", "mapping_row", "row_value", "value", "mapping_json"}
 )
@@ -85,10 +85,16 @@ def field_editability(
             reason="Schema-backed field is editable after validation.",
         )
     if field_name in SCHEMA_BACKED_RESTRICTED_FIELDS:
+        if field_name in {"column_key", "ml_name"}:
+            reason = "Predict key and ML name changes require the controlled Rename command."
+        elif field_name == "active":
+            reason = "Active-state changes require the controlled Enable or Disable command."
+        else:
+            reason = "Field requires a dedicated controlled Feature command, not direct editing."
         return _blocked(
             field_name,
             "schema_backed_restricted",
-            "Field requires a controlled Add Feature command, not direct editing.",
+            reason,
         )
     return _blocked(field_name, "unsupported_field", "Field is not part of the edit policy.")
 
@@ -107,11 +113,11 @@ def restricted_draft_field_changes(
     for row in draft.rows:
         before = baseline_by_identity.get(row.identity)
         if before is not None:
-            changes.extend(_restricted_field_changes(before, row))
+            changes.extend(_restricted_field_changes(draft, before, row))
     if len(draft.rows) == len(draft.baseline_rows):
         for before, after in zip(draft.baseline_rows, draft.rows, strict=True):
             if before.identity != after.identity:
-                changes.extend(_restricted_field_changes(before, after))
+                changes.extend(_restricted_field_changes(draft, before, after))
     return _dedupe_restricted_changes(changes)
 
 
@@ -125,12 +131,15 @@ def _blocked(field_name: str, category: str, reason: str) -> FieldEditability:
 
 
 def _restricted_field_changes(
+    draft: DataDefinitionDraft,
     before: DataDefinitionDraftRow,
     after: DataDefinitionDraftRow,
 ) -> tuple[RestrictedDraftFieldChange, ...]:
     changes: list[RestrictedDraftFieldChange] = []
     for field_name in DataDefinitionDraftRow.__dataclass_fields__:
         if getattr(before, field_name) == getattr(after, field_name):
+            continue
+        if draft.is_controlled_field_change(before.identity, field_name):
             continue
         editability = field_editability(before, field_name)
         if not editability.editable:
