@@ -155,8 +155,11 @@ Migration principles:
 ## 3. UI 및 데이터 흐름
 
 ### UI 컬럼 구조 (COLUMNS)
-Canonical editable schema SSOT는 `config/predict/schema.csv`이다.
-Runtime compatibility projection은
+Canonical Data Definition contract는
+`config/data_definition/manifest.json`의 versioned structured manifest와
+published immutable generation bundle이다. `config/predict/schema.csv`와
+`config/ml/features.csv`는 canonical contract에서 생성되는 compatibility
+projection이며 독립적인 user-edit owner가 아니다. Runtime compatibility projection은
 `core/predictor_schema/columns.py::COLUMNS`가 제공하며, 현재 UI/runtime
 호환 컬럼은 크게 세 그룹으로 나뉩니다.
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).

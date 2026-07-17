@@ -17,35 +17,25 @@
 
 ## Current Slice
 
-Train/Admin Phase 4A — Current-state and Contract Audit is approved and closed by
-`docs/designs/2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md`.
-No production implementation was included. The next implementation slice is
-Phase 4B — Unified Contract and Multi-artifact Persistence.
-
-Phase 4B must establish the canonical structured manifest, stable identities,
-bootstrap migration, generated projection providers, immutable generation
-bundle, atomic active-generation pointer, cross-contract validation, rollback,
-and scoped fingerprints before broader Feature mutation or UI work begins.
+Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
+implemented on its dedicated Draft PR branch. It establishes the canonical
+structured manifest, deterministic stable identities and bootstrap, generated
+projection providers, cross-contract validation, scoped fingerprints, immutable
+generation bundles, atomic active pointer, rollback, and the guarded Data
+Definition application transaction.
 
 ## Next Action
 
-After this closeout is merged to `main`, start Phase 4B on a separate branch and
-Draft PR from the merged closeout baseline. Audit the existing Data Definition,
-Predict schema, ML Feature Catalog, Derived policy, registry, mapping-requirement,
-and runtime consumers only as needed to choose the minimum consistent package and
-migration shape required by the approved Phase 4A contract.
-
-Do not start Slice 4C mutation commands, Feature Manager UI, Derived/One-hot/
-Target authoring, live cutover, or model promotion runtime work inside the 4B
-foundation slice.
+Audit and merge the Phase 4B Draft PR. After merge, start Phase 4C stable-ID
+Feature mutation and dependency-safe Rename/Remove work from updated `main`.
+Do not mix Feature Manager UI, Derived/One-hot/Target authoring, live cutover, or
+model promotion runtime work into the 4B branch.
 
 ## Active Blockers
 
-- Phase 4B production implementation must not begin from an unmerged Phase 4A
-  closeout branch.
-- Current production paths continue blocking ML-projection-changing Definition
-  saves until Phase 4B implements and validates the canonical persistence owner,
-  migration, all-or-nothing publication, and rollback boundary.
+- Phase 4C must not begin before Phase 4B audit and merge.
+- Protected ML/import-time/fixed-string consumers still block ordinary
+  ML-name/order/One-hot/Derived/Target changes until their explicit migration.
 - Existing import-time/fixed-string consumers remain protected migration targets;
   ordinary Rename/Delete is not enabled before their approved provider or atomic
   migration boundary exists.
@@ -94,8 +84,7 @@ foundation slice.
 
 ## Deferred / Hold
 
-- Slices 4C–4I remain deferred until Phase 4B establishes the approved canonical
-  contract and persistence foundation.
+- Slices 4D–4I remain deferred; Slice 4C begins only after Phase 4B merge.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
   Manager stabilization and a fresh dynamic-contract audit.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
@@ -114,6 +103,7 @@ foundation slice.
 - Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 - Arc 15 owner foundation: `docs/designs/2026-07-06-arc15-unified-data-definition-manager-foundation.md`
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`
+- Phase 4B result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

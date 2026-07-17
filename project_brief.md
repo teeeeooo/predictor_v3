@@ -5,10 +5,9 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin Phase 4A — Unified Feature Manager Current-state and Contract Audit is
-approved and complete. No production implementation was included. Phase 4B —
-Unified Contract and Multi-artifact Persistence is the next implementation slice
-after the Phase 4A closeout is merged to `main`.
+Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
+implemented on its dedicated Draft PR branch. Phase 4C stable-ID Feature mutation
+is next after Phase 4B audit and merge.
 
 Phase 3 — Data Definition UX Foundation is complete, final-audit approved, and
 merged through PR #16. The earlier ML/Predictor foundation through Arc 15-FU1 and
@@ -25,8 +24,9 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - `config/predict/schema.csv`, `config/ml/features.csv`, Derived/One-hot runtime
   policy, Target/registry, and Mapping requirements become generated compatibility
   or consumer projections under Phase 4 rather than independent user-edit owners.
-- Existing Data Definition write guards remain until Phase 4B implements and
-  validates canonical migration, generation publication, and rollback.
+- Canonical generation publication now replaces the legacy full-parity blocker
+  for validated presentation-only Save. Protected ML/fixed-string changes remain
+  blocked until their consumer migration is accepted.
 - Train owns explicit training-data selection and training execution. It consumes
   validated dynamic Feature/Target snapshots and never starts automatically from
   Data Definition Save.
@@ -77,6 +77,9 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   audit: approved for design scope, with canonical manifest, stable identity,
   isolated ordering, generation persistence, runtime snapshot, dirty Mapping,
   One-hot, Target, and artifact boundaries fixed before implementation.
+- Train/Admin UI/UX Overhaul Phase 4B — canonical manifest/bootstrap, generated
+  projections, cross-validation, scoped fingerprints, immutable generation
+  publication, rollback, and guarded Save transaction implemented on Draft PR.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -97,7 +100,8 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
 
 ### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
 
-The Phase 4A audit is approved. The final workflow lets a user manage Predict and
+The Phase 4A audit is approved and the Phase 4B persistence foundation is
+implemented. The final workflow lets a user manage Predict and
 ML Feature contracts without directly editing internal CSV, JSON, Python registry,
 or projection files:
 

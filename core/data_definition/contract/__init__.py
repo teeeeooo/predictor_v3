@@ -1,6 +1,7 @@
 """Canonical Unified Feature contract models and bootstrap helpers."""
 
 from core.data_definition.contract.bootstrap import bootstrap_manifest
+from core.data_definition.contract.candidate import candidate_manifest_from_draft
 from core.data_definition.contract.codec import dump_manifest, load_manifest, manifest_payload
 from core.data_definition.contract.fingerprints import ScopedFingerprints, scoped_fingerprints
 from core.data_definition.contract.model import (
@@ -42,6 +43,7 @@ __all__ = [
     "TargetDefinition",
     "UnifiedFeatureManifest",
     "bootstrap_manifest",
+    "candidate_manifest_from_draft",
     "dump_manifest",
     "generate_projections",
     "load_manifest",
