@@ -615,11 +615,12 @@ Validation purpose: prove consumer preflight and atomic cutover, generation
 agreement, explicit stable-input preservation failure, dirty Mapping draft
 preservation and visible pending update, stale runtime reporting, training-data
 revalidation, and compatibility reevaluation. An active run keeps its start
-generation, and an artifact completed from an older generation is not
-automatically activated for the current generation. Standalone Predict detects a
-new generation at startup or prediction boundary, blocks new prediction when
-reload fails, reports stale/restart-required state, and does not claim unsupported
-cross-process atomic cutover.
+generation. An older-generation training result is classified by the
+compatibility projection as stale or promotion-ineligible and is not reported as
+current-compatible. Standalone Predict detects a new generation at startup or
+prediction boundary, blocks new prediction when reload fails, reports stale/
+restart-required state, and does not claim unsupported cross-process atomic
+cutover.
 
 ### 4I — Diagnostics Simplification and Final Acceptance
 
@@ -670,24 +671,22 @@ cross-tab acceptance, and honest fixture/mock limitations.
     fingerprints.
 24. An older-generation artifact is not treated as current-contract compatible
     without explicit compatibility proof.
-25. The existing compatible model is preserved until a new artifact passes
-    compatibility checks.
-26. Target CRUD permits validated existing model-group association and clearly
+25. Target CRUD permits validated existing model-group association and clearly
     blocks or separately gates new model-group creation.
-27. The Phase 4 contract provides the immutable Definition generation, Feature,
+26. The Phase 4 contract provides the immutable Definition generation, Feature,
     Target/registry, Derived/One-hot/preprocessing fingerprints, and preprocessing
     version needed for future TrainingRequest, TrainingResult, and candidate
     artifacts to identify the same start contract without running training.
-28. Compatibility projection distinguishes active-compatible, candidate, stale
+27. Compatibility projection distinguishes active-compatible, candidate, stale
     candidate, incompatible candidate, promotion-eligible, and retraining-required
     states without creating or promoting a model artifact.
-29. Phase 4 exposes the pre-promotion compatibility metadata and prior-compatible-
+28. Phase 4 exposes the pre-promotion compatibility metadata and prior-compatible-
     model preservation invariant consumed by Phase 5; candidate generation,
     validation presentation, explicit promotion, and active-model replacement
     remain Phase 5 runtime acceptance.
-30. Standalone Predict detects a newer persisted generation at startup,
+29. Standalone Predict detects a newer persisted generation at startup,
     prediction, explicit reload, or model-reload boundaries.
-31. A stale standalone Predict process preserves existing rows/results for
+30. A stale standalone Predict process preserves existing rows/results for
     recovery but blocks new prediction when generation reload cannot succeed.
 
 ## 18. Non-goals
