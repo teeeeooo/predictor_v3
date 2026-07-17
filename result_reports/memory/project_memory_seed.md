@@ -614,6 +614,24 @@ entries:
     source: result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4b-audit-correction.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4b-final-audit-correction.md; docs/WORK_PLAN.md
 
   - type: decision
+    topic: Train/Admin Phase 4C+4D basic Feature mutation
+    content: Phase 4C+4D extends the Phase 4B immutable draft with controlled Add/Edit/Rename/Duplicate/Remove/Enable/Disable and explicit Predict/ML Move commands for manual Predict, mapping-backed, Predict-only, ML-only, and helper/hidden Features. Stable identity is independent from label, column_key, and ml_name; Rename preserves identity and requires at least one key/name change in one optional atomic payload, label-only uses Edit, and Duplicate creates a new identity without redirecting source dependencies. Predict order includes inactive Features and never changes ML order implicitly; ML moves never change Predict order. Side-effect-free Preview compares the exact candidate projections and exposes Mapping, model compatibility, retraining, affected references, blockers, and Save eligibility. Only approved identity-safe references update atomically; fixed-string/import-time Predict, Derived, One-hot, Target/registry, training-header, existing-model compatibility, and other unapproved migrations remain blocked. The table-first controller preserves selection/draft on rejection or failed/stale Save and canonical Save still uses the Phase 4B generation transaction. Concrete mapping values and model artifacts remain untouched. Phase 4E restricted Derived authoring is next after merge; Windows native smoke remains pre-release evidence.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4C
+      - Phase 4D
+      - Feature mutation
+      - stable identity
+      - Rename command
+      - dependency preview
+      - Predict order
+      - ML order
+      - Basic Feature Manager
+    assertionStatus: verified
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4c-4d-feature-manager.md; docs/WORK_PLAN.md
+
+  - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
     content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
     keywords:
