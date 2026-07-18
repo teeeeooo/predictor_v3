@@ -16,6 +16,7 @@ from apps.train.ui.data_definition.derived_dialogs import DerivedDefinitionDialo
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from core.data_definition import AddDerivedIntent
 from core.data_definition.contract import bootstrap_manifest
+from core.data_definition.draft import replace_draft_row
 
 
 def _app():
@@ -101,5 +102,39 @@ def test_application_projection_owns_selectability_and_edit_self_exclusion(tmp_p
         self_option = next(item for item in editing if item.identity == first.stable_identity)
         assert not self_option.selectable
         assert self_option.blocked_code == "derived_self_reference"
+    finally:
+        panel.close()
+
+
+def test_runtime_shape_mismatch_is_disabled_with_policy_reason(tmp_path):
+    app = _app()
+    panel = _panel(tmp_path)
+    try:
+        draft = panel._controller._draft
+        assert draft is not None
+        source = next(
+            item for item in draft.rows if item.ml_name == "Cooling Capa"
+        )
+        disguised = replace_draft_row(
+            draft,
+            source.identity,
+            role="input",
+            value_source="formula",
+        )
+        options = project_derived_operand_options(disguised)
+        option = next(item for item in options if item.identity == source.stable_identity)
+        assert not option.selectable
+        assert option.blocked_code == "derived_operand_runtime_unavailable"
+        assert "role=input" in option.blocked_reason
+        assert "value_source=formula" in option.blocked_reason
+
+        dialog = DerivedDefinitionDialog(lambda _intent: (False, ""), options, parent=panel)
+        index = dialog.numerator.findData(source.stable_identity)
+        item = dialog.numerator.model().item(index)
+        assert not item.isEnabled()
+        assert option.blocked_code in item.toolTip()
+        assert option.blocked_reason in item.toolTip()
+        dialog.close()
+        app.processEvents()
     finally:
         panel.close()

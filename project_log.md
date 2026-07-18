@@ -42,6 +42,9 @@
 - Use one core policy for Derived operand eligibility across commands, raw contract
   validation, and application presentation; Result/Target and post-model outputs
   are never valid operands, including for inactive authoring.
+- Treat role and value source as one runtime shape. Only `input/manual`,
+  `auto/mapping_lookup`, and `one_hot_feature/one_hot` can provide Feature operands;
+  model-input flags cannot make a mismatched or post-evaluator source eligible.
 - Project requested Derived outputs to deterministic transitive base Feature inputs
   from the same immutable evaluator snapshot. Train and Predict share missing-input
   classification, while Predict no longer owns a fixed six-name dependency list.

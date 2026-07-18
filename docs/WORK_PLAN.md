@@ -30,10 +30,13 @@ remain blocked by the retraining/migration Save guard. The Phase 4E audit correc
 also centralizes pre-evaluator operand eligibility and transitive base dependency
 projection in the same immutable core snapshot, blocks Result/Target leakage in
 commands and whole-contract validation, and removes View/Predict policy duplication.
+The final audit correction restricts runtime Feature operands to exact
+`input/manual`, `auto/mapping_lookup`, and `one_hot_feature/one_hot` shapes, so raw
+or historical manifests cannot disguise post-evaluator values behind a supported role.
 
 ## Next Action
 
-Reaudit and integrate the corrected Phase 4E change in Draft PR #22. After its
+Reaudit and integrate the final corrected Phase 4E change in Draft PR #22. After its
 audit/merge boundary, start
 Phase 4F One-hot group/category CRUD. Keep Target/registry authoring, runtime
 cutover, model candidate generation, training, and promotion outside Phase 4F.
@@ -118,6 +121,7 @@ cutover, model candidate generation, training, and promotion outside Phase 4F.
 - Phase 4E contract: `docs/designs/2026-07-18-derived-feature-authoring-shared-evaluator.md`
 - Phase 4E result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md`
 - Phase 4E audit correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md`
+- Phase 4E final runtime-shape correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

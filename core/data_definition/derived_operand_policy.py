@@ -19,7 +19,11 @@ class DerivedOperandEligibility:
     reason: str = ""
 
 
-_RUNTIME_FEATURE_ROLES = frozenset({"input", "auto", "one_hot_feature"})
+_RUNTIME_FEATURE_SHAPES = frozenset({
+    ("input", "manual"),
+    ("auto", "mapping_lookup"),
+    ("one_hot_feature", "one_hot"),
+})
 
 
 def derived_operand_eligibility(
@@ -130,7 +134,7 @@ def _feature_eligibility(
             "derived_operand_type_invalid",
             "Derived operands must have a non-empty ML name.",
         )
-    if role not in _RUNTIME_FEATURE_ROLES or not bool(
+    if (role, value_source) not in _RUNTIME_FEATURE_SHAPES or not bool(
         getattr(feature, "model_input_enabled", False)
     ):
         return _blocked(
@@ -139,7 +143,9 @@ def _feature_eligibility(
             "feature",
             source_kind,
             "derived_operand_runtime_unavailable",
-            "This Feature is not provided to both Train and Predict before Derived evaluation.",
+            "Feature runtime shape "
+            f"role={role or '<blank>'}, value_source={value_source or '<blank>'} "
+            "is not provided to both Train and Predict before Derived evaluation.",
         )
     return DerivedOperandEligibility(
         True, identity, ml_name, "feature", source_kind

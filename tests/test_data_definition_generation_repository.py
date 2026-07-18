@@ -71,6 +71,37 @@ def test_invalid_candidate_does_not_create_files_or_change_active_pointer(tmp_pa
     }
 
 
+def test_runtime_unavailable_derived_operand_is_blocked_before_staging(tmp_path):
+    repository = DataDefinitionGenerationRepository(tmp_path / "store")
+    initial = bootstrap_manifest()
+    repository.publish(initial)
+    source = next(item for item in initial.features if item.ml_name == "Cooling Capa")
+    invalid = replace(
+        initial,
+        generation=replace(
+            initial.generation,
+            generation_id="generation-runtime-shape-invalid",
+            parent_generation_id=initial.generation.generation_id,
+        ),
+        features=tuple(
+            replace(item, ml_name="Calculated Later", value_source="formula")
+            if item.identity == source.identity else item
+            for item in initial.features
+        ),
+    )
+
+    with pytest.raises(ValueError, match="derived_operand_runtime_unavailable"):
+        repository.publish(invalid)
+
+    assert repository.active_generation_id() == initial.generation.generation_id
+    assert repository.read_active().manifest == initial
+    assert {item.name for item in repository.generations_path.iterdir()} == {
+        initial.generation.generation_id
+    }
+    assert not list(repository.generations_path.glob(".staging-*"))
+    assert not list(repository.root.glob(".active-generation-*.tmp"))
+
+
 def test_duplicate_predict_display_order_is_blocked_before_publication(tmp_path):
     repository = DataDefinitionGenerationRepository(tmp_path / "store")
     initial = bootstrap_manifest()

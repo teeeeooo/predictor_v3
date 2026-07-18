@@ -198,9 +198,11 @@ Restricted Derived operand eligibility와 transitive evaluator-input dependency�
 Result/Target와 evaluator 이전에 Train/Predict 양쪽에서 제공되지 않는 Feature는
 inactive Derived authoring에서도 차단한다. Application/controller는 이 판정의
 selectable/code/reason presentation projection만 제공하고, View와 Predict adapter는
-role/type 목록 또는 별도 DAG를 소유하지 않는다. 현재 one-hot numeric output은
-Predict row adapter와 raw Train matrix에서 Derived 평가 전에 존재하므로 동일
-eligibility owner를 통해 허용한다.
+role/type 목록 또는 별도 DAG를 소유하지 않는다. Runtime Feature operand shape는
+`input/manual`, `auto/mapping_lookup`, `one_hot_feature/one_hot`만 허용한다.
+One-hot numeric output은 Predict row adapter와 raw Train matrix에서 Derived 평가
+전에 존재하며, role/value_source가 다른 후행 또는 위장 shape는 model-input flag와
+관계없이 차단한다.
 
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).

@@ -13,9 +13,11 @@ from core.data_definition.contract import (
     LegacyDerivedDefinition,
     bootstrap_manifest,
     current_derived_definitions,
+    validate_contract,
     operand_ml_name,
     scoped_fingerprints,
 )
+from core.data_definition.derived.evaluator import evaluation_snapshot
 
 
 def _legacy_manifest():
@@ -68,6 +70,26 @@ def test_legacy_missing_and_ambiguous_names_are_actionable_failures():
     )
     with pytest.raises(ValueError, match="is ambiguous"):
         current_derived_definitions(ambiguous)
+
+
+def test_legacy_decode_succeeds_but_invalid_runtime_shape_cannot_execute():
+    _current, legacy = _legacy_manifest()
+    source_name = legacy.derived[0].numerator_ml_name
+    disguised = replace(
+        legacy,
+        features=tuple(
+            replace(item, value_source="formula")
+            if item.ml_name == source_name else item
+            for item in legacy.features
+        ),
+    )
+
+    assert current_derived_definitions(disguised)[0].numerator_identity
+    assert "derived_operand_runtime_unavailable" in {
+        item.code for item in validate_contract(disguised)
+    }
+    with pytest.raises(ValueError, match="derived_operand_runtime_unavailable"):
+        evaluation_snapshot(disguised)
 
 
 def test_historical_v1_bundle_without_new_metadata_field_reads_and_rolls_back(tmp_path):
