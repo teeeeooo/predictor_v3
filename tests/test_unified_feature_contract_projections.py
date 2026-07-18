@@ -156,9 +156,22 @@ def test_one_hot_and_target_presentation_order_change_scoped_fingerprints():
         replace(group.categories[0], order=2),
         *group.categories[2:],
     )
+    group_feature_ids = {
+        item.emitted_feature_identity for item in group.categories
+    }
+    reordered_feature_ids = iter(
+        item.emitted_feature_identity for item in categories
+    )
     one_hot_changed = replace(
         manifest,
         one_hot_groups=(replace(group, categories=categories), *manifest.one_hot_groups[1:]),
+        ordering=replace(
+            manifest.ordering,
+            ml=tuple(
+                next(reordered_feature_ids) if identity in group_feature_ids else identity
+                for identity in manifest.ordering.ml
+            ),
+        ),
     )
     targets = (
         replace(manifest.targets[1], presentation_order=1),

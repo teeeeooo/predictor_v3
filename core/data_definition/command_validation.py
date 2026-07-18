@@ -39,12 +39,6 @@ _RULE_OPTION_RELATIONS = frozenset({
     ("odu_cascade", "Available_Pis", "odu", "odu_cond_filter"),
     ("odu_cascade", "Available_Rows", "odu", "odu_cond_filter"),
 })
-_ONE_HOT_SELECTOR_RELATIONS = frozenset({
-    ("ref_type", "one_hot_refrigerant", "refrigerant"),
-    ("exp_type", "one_hot_expansion_device", "expansion_device"),
-})
-
-
 def validate_complete_row(
     row: DataDefinitionDraftRow,
 ) -> tuple[DataDefinitionCommandIssue, ...]:
@@ -191,7 +185,6 @@ def _validate_rule_options_input(
 def _validate_one_hot_selector(
     row: DataDefinitionDraftRow,
 ) -> tuple[DataDefinitionCommandIssue, ...]:
-    relation = (row.mapping_entity, row.rule_id, row.one_hot_group)
     issues: list[DataDefinitionCommandIssue] = []
     if row.editor != "dropdown" or row.data_type != "string":
         issues.append(_shape_issue(
@@ -199,11 +192,11 @@ def _validate_one_hot_selector(
             "editor",
             "One-hot selectors require an editable string dropdown.",
         ))
-    if relation not in _ONE_HOT_SELECTOR_RELATIONS:
+    if not row.one_hot_group.strip():
         issues.append(_shape_issue(
-            "one_hot_selector_relation_unsupported",
+            "one_hot_selector_group_required",
             "one_hot_group",
-            "One-hot selector metadata must match a current supported group relation.",
+            "One-hot selectors require a canonical group relation.",
         ))
     if not row.model_input_enabled or row.ml_name:
         issues.append(_shape_issue(

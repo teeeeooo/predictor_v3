@@ -20,6 +20,10 @@ from apps.train.controllers.derived_operand_projection import (
     DerivedOperandOption,
     project_derived_operand_options,
 )
+from apps.train.controllers.one_hot_authoring_projection import (
+    OneHotAuthoringProjection,
+    project_one_hot_authoring,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import (
     AddDefinitionIntent,
@@ -34,6 +38,7 @@ from core.data_definition import (
     RenameDefinitionIntent,
     SetDefinitionActiveIntent,
     DerivedCommandIntent,
+    OneHotCommandIntent,
 )
 
 
@@ -143,6 +148,35 @@ class DataDefinitionController:
             current_report=report,
         )
 
+    def preview_one_hot_command(self, intent: OneHotCommandIntent) -> PreparedFeatureCommand:
+        """Preview one exact group/category transition."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        report = self._service.refresh_report()
+        return self._service.prepare_feature_command(
+            self._draft,
+            intent,
+            source_revision=self._draft_revision,
+            current_report=report,
+        )
+
+    def one_hot_authoring_snapshot(self) -> tuple[tuple[object, ...], tuple[object, ...]]:
+        """Return immutable canonical groups and vocabulary evidence for presentation."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        return tuple(self._draft.one_hot_groups), self._service.vocabulary_snapshots
+
+    def one_hot_authoring_projection(self) -> OneHotAuthoringProjection:
+        """Return application-owned group/category/source presentation."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        return project_one_hot_authoring(
+            self._draft, self._service.vocabulary_snapshots
+        )
+
     def derived_operand_options(
         self,
         consumer_identity: str = "",
@@ -157,6 +191,12 @@ class DataDefinitionController:
         )
 
     def apply_prepared_derived_command(
+        self,
+        prepared: PreparedFeatureCommand,
+    ) -> DataDefinitionControllerState:
+        return self.apply_prepared_feature_command(prepared)
+
+    def apply_prepared_one_hot_command(
         self,
         prepared: PreparedFeatureCommand,
     ) -> DataDefinitionControllerState:

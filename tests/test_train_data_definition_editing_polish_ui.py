@@ -288,6 +288,7 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
             "ML-only Feature",
                 "Helper / Hidden Feature",
                 "Derived Feature",
+                "One-hot Group / Category",
             ]
     assert not panel.status_label.wordWrap()
 

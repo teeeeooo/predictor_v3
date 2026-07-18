@@ -92,6 +92,8 @@ class DataDefinitionDraft:
     baseline_predict_order: tuple[DataDefinitionRowIdentity, ...] = ()
     ml_order: tuple[DataDefinitionRowIdentity, ...] = ()
     baseline_ml_order: tuple[DataDefinitionRowIdentity, ...] = ()
+    one_hot_groups: tuple[object, ...] = ()
+    baseline_one_hot_groups: tuple[object, ...] = ()
 
     @property
     def is_changed(self) -> bool:
@@ -116,18 +118,18 @@ class DataDefinitionDraft:
                 changes.append(DataDefinitionDraftChange(identity, "__row__", row, None))
         if self.predict_order != self.baseline_predict_order:
             changes.append(DataDefinitionDraftChange(
-                ("ordering", "predict"),
-                "__order__",
-                self.baseline_predict_order,
-                self.predict_order,
+                ("ordering", "predict"), "__order__",
+                self.baseline_predict_order, self.predict_order,
             ))
         if self.ml_order != self.baseline_ml_order:
             changes.append(DataDefinitionDraftChange(
-                ("ordering", "ml"),
-                "__order__",
-                self.baseline_ml_order,
-                self.ml_order,
+                ("ordering", "ml"), "__order__",
+                self.baseline_ml_order, self.ml_order,
             ))
+        if self.one_hot_groups != self.baseline_one_hot_groups:
+            changes.append(DataDefinitionDraftChange(
+                ("one_hot", "groups"), "__one_hot__", self.baseline_one_hot_groups,
+                self.one_hot_groups))
         return tuple(changes)
 
     def attributed_changes(self) -> tuple[DataDefinitionDraftChange, ...]:
@@ -246,6 +248,8 @@ def build_data_definition_draft(
         for identity in getattr(getattr(manifest, "ordering", None), "ml", ())
         if identity in by_stable_id
     ) or _legacy_ml_order(rows)
+    from core.data_definition.contract.compatibility import current_one_hot_definitions
+    one_hot_groups = current_one_hot_definitions(manifest) if manifest is not None else ()
     return DataDefinitionDraft(
         rows=rows,
         baseline_rows=rows,
@@ -254,6 +258,8 @@ def build_data_definition_draft(
         baseline_predict_order=predict_order,
         ml_order=ml_order,
         baseline_ml_order=ml_order,
+        one_hot_groups=one_hot_groups,
+        baseline_one_hot_groups=one_hot_groups,
     )
 
 
@@ -282,6 +288,8 @@ def replace_draft_row(
         baseline_predict_order=draft.baseline_predict_order,
         ml_order=draft.ml_order,
         baseline_ml_order=draft.baseline_ml_order,
+        one_hot_groups=draft.one_hot_groups,
+        baseline_one_hot_groups=draft.baseline_one_hot_groups,
     )
 
 

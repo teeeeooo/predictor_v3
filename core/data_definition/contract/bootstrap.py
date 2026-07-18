@@ -150,11 +150,13 @@ def _one_hot_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[OneHo
                 OneHotCategoryDefinition(
                     identity=bootstrap_identity("onehot_category", f"{group_key}:{row.ml_name}"),
                     source_value=row.ml_name,
+                    emitted_feature_identity=row.identity,
                     emitted_ml_name=row.ml_name,
                     order=index,
                 )
                 for index, row in enumerate(sorted(emitted[group_key], key=lambda item: item.display_order), 1)
             ),
+            source_binding=selector.mapping_entity,
         )
         for group_key, selector in sorted(selectors.items(), key=lambda item: item[1].display_order)
     )

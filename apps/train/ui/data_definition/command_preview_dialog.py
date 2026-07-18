@@ -37,6 +37,27 @@ class FeatureCommandPreviewDialog(QDialog):
         evidence.setAccessibleName("Feature command impact evidence")
         evidence.setWordWrap(True)
         layout.addWidget(evidence)
+        if preview.one_hot_evidence:
+            one_hot = QLabel("\n".join(
+                f"• {item.group_key} / {item.source_value or '<group>'} → "
+                f"{item.emitted_ml_name or '<no emitted Feature>'}; "
+                f"order {item.order_before} → {item.order_after}; "
+                f"active {item.active_before} → {item.active_after}; "
+                f"owner: {item.vocabulary_owner}; Mapping values changed: No"
+                for item in preview.one_hot_evidence
+            ))
+            one_hot.setAccessibleName("One-hot identity source order and owner evidence")
+            one_hot.setWordWrap(True)
+            layout.addWidget(one_hot)
+        if preview.one_hot_drift_evidence:
+            drift = QLabel("\n".join(
+                f"• {item.code}: {item.source_binding}/{item.source_value or '<unavailable>'}. "
+                f"{item.resolution}"
+                for item in preview.one_hot_drift_evidence
+            ))
+            drift.setAccessibleName("One-hot Mapping and provider drift evidence")
+            drift.setWordWrap(True)
+            layout.addWidget(drift)
         if preview.execution_order_before or preview.execution_order_after:
             order = QLabel(
                 "Execution order before: " + ", ".join(preview.execution_order_before)

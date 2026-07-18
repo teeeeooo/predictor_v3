@@ -13,6 +13,8 @@ from core.data_definition.contract.model import (
     FeatureDefinition,
     MappingRequirementDefinition,
     ModelGroupDefinition,
+    LegacyOneHotCategoryDefinition,
+    LegacyOneHotGroupDefinition,
     OneHotCategoryDefinition,
     OneHotGroupDefinition,
     OrderingContract,
@@ -44,10 +46,18 @@ def load_manifest(path: str | Path) -> UnifiedFeatureManifest:
 
 
 def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
+    current_one_hot = raw["contract_version"].endswith(".v3") or any(
+        "emitted_feature_identity" in category
+        for group in raw["one_hot_groups"]
+        for category in group["categories"]
+    )
     groups = tuple(
-        OneHotGroupDefinition(
+        (OneHotGroupDefinition if current_one_hot else LegacyOneHotGroupDefinition)(
             **{key: value for key, value in group.items() if key != "categories"},
-            categories=tuple(OneHotCategoryDefinition(**item) for item in group["categories"]),
+            categories=tuple(
+                (OneHotCategoryDefinition if current_one_hot else LegacyOneHotCategoryDefinition)(**item)
+                for item in group["categories"]
+            ),
         )
         for group in raw["one_hot_groups"]
     )

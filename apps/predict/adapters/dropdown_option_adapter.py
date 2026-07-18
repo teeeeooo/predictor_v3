@@ -8,6 +8,7 @@ from pathlib import Path
 
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.schema.case_table_schema_adapter import UnifiedCaseColumn
+from core.data_definition.one_hot import OneHotRuntimeSnapshot
 
 
 @dataclass(frozen=True)
@@ -26,9 +27,14 @@ class DropdownOptionAdapter:
         self,
         mapping_repository: PredictMappingRepository,
         columns: Sequence[UnifiedCaseColumn],
+        one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
     ) -> None:
         self._mapping_repository = mapping_repository
         self._columns_by_key = {column.key: column for column in columns}
+        self._one_hot_groups_by_selector = {
+            group.selector_column_key: group
+            for group in (one_hot_snapshot.groups if one_hot_snapshot else ())
+        }
 
     def options_for_key(
         self,
@@ -45,6 +51,9 @@ class DropdownOptionAdapter:
         column = self._columns_by_key.get(key)
         if column is None:
             return ()
+        one_hot_group = self._one_hot_groups_by_selector.get(key)
+        if one_hot_group is not None and one_hot_group.source_mode in {"static", "external"}:
+            return tuple(item.source_value for item in one_hot_group.categories)
         section_name = column.dropdown_target or column.mapping
         if not section_name:
             return ()

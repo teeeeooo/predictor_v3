@@ -1,6 +1,7 @@
 """Convert Predict session rows into core predictor inputs."""
 
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import Any
 
 from apps.predict.application.models import (
@@ -12,27 +13,33 @@ from apps.predict.schema.column_schema_adapter import (
     build_input_column_schema,
 )
 from apps.predict.state.case_row import CaseRow
-from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
-from core.ml.feature_catalog_projection import one_hot_group
+from core.data_definition.contract import bootstrap_manifest
+from core.data_definition.one_hot import (
+    OneHotRuntimeCategory,
+    OneHotRuntimeSnapshot,
+    encode_one_hot_values,
+    one_hot_runtime_snapshot,
+)
 
 class RowToMlInputAdapter:
     """Build core predictor input dictionaries without importing Qt."""
-
-    _ONE_HOT_INPUT_GROUPS = {
-        "ref_type": "refrigerant",
-        "exp_type": "expansion_device",
-    }
 
     def __init__(
         self,
         columns: tuple[PredictColumn, ...] | None = None,
         one_hot_groups: Mapping[str, Sequence[str]] | None = None,
+        one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
     ) -> None:
+        if one_hot_groups is not None and one_hot_snapshot is not None:
+            raise ValueError("provide one_hot_snapshot or legacy one_hot_groups, not both")
         self._columns = columns or build_input_column_schema()
-        self._one_hot_groups = (
-            self._normalize_one_hot_groups(one_hot_groups)
+        default_snapshot = one_hot_runtime_snapshot(bootstrap_manifest())
+        self._one_hot_snapshot = (
+            one_hot_snapshot
+            if one_hot_snapshot is not None
+            else self._legacy_snapshot(default_snapshot, one_hot_groups)
             if one_hot_groups is not None
-            else self._load_default_one_hot_groups()
+            else default_snapshot
         )
 
     def build_request(self, case: CaseRow) -> PredictionInputOutcome:
@@ -58,13 +65,9 @@ class RowToMlInputAdapter:
                 continue
             row_input[column.ml_feature] = converted
 
-        for input_key, group_name in self._ONE_HOT_INPUT_GROUPS.items():
-            self._apply_one_hot(
-                values.get(input_key),
-                self._one_hot_groups[group_name],
-                row_input,
-                warnings,
-            )
+        encoded = encode_one_hot_values(self._one_hot_snapshot, values)
+        row_input.update(encoded.values)
+        warnings.extend(encoded.warnings)
 
         if errors:
             return PredictionInputOutcome(
@@ -82,52 +85,38 @@ class RowToMlInputAdapter:
         """Build request outcomes for several case rows."""
         return [self.build_request(case) for case in cases]
 
-    def _apply_one_hot(
+    def _legacy_snapshot(
         self,
-        raw_value: Any,
-        features: tuple[str, ...],
-        row_input: dict[str, Any],
-        warnings: list[str],
-    ) -> None:
-        for feature in features:
-            row_input[feature] = 0.0
-        if self._is_blank(raw_value):
-            return
-        selected = str(raw_value).strip()
-        if selected in features:
-            row_input[selected] = 1.0
-        else:
-            warnings.append(f"Unsupported option ignored: {selected}")
-
-    def _load_default_one_hot_groups(self) -> dict[str, tuple[str, ...]]:
-        catalog = load_feature_catalog()
-        errors = validate_feature_catalog(catalog)
-        if errors:
-            joined = "; ".join(errors)
-            raise RuntimeError(f"invalid predictor one-hot feature catalog: {joined}")
-        return {
-            group_name: one_hot_group(catalog.rows, group_name)
-            for group_name in self._ONE_HOT_INPUT_GROUPS.values()
-        }
-
-    def _normalize_one_hot_groups(
-        self,
+        default: OneHotRuntimeSnapshot,
         groups: Mapping[str, Sequence[str]],
-    ) -> dict[str, tuple[str, ...]]:
-        normalized: dict[str, tuple[str, ...]] = {}
-        for group_name in self._ONE_HOT_INPUT_GROUPS.values():
+    ) -> OneHotRuntimeSnapshot:
+        """Adapt the pre-4F test seam without retaining a runtime group table."""
+        normalized = []
+        for group in default.groups:
             try:
-                features = tuple(groups[group_name])
+                features = tuple(groups[group.group_key])
             except KeyError as exc:
                 raise ValueError(
-                    f"missing one-hot group '{group_name}' in feature catalog"
+                    f"missing one-hot group '{group.group_key}' in feature catalog"
                 ) from exc
             if not features:
                 raise ValueError(
-                    f"missing one-hot feature(s) for group '{group_name}'"
+                    f"missing one-hot feature(s) for group '{group.group_key}'"
                 )
-            normalized[group_name] = features
-        return normalized
+            normalized.append(replace(
+                group,
+                categories=tuple(
+                    OneHotRuntimeCategory(
+                        f"legacy:{group.group_identity}:{index}",
+                        name,
+                        f"legacy:{group.group_identity}:{index}",
+                        name,
+                        index,
+                    )
+                    for index, name in enumerate(features, 1)
+                ),
+            ))
+        return OneHotRuntimeSnapshot(default.generation_id, tuple(normalized))
 
     def _is_blank(self, value: Any) -> bool:
         return value is None or str(value).strip() == ""

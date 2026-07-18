@@ -2,6 +2,7 @@
 
 import inspect
 import os
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -15,6 +16,8 @@ from apps.predict.state.predict_session import PredictSession
 from apps.predict.ui.status_widgets import mapping_status_badge_state
 from apps.predict.ui.tables import case_table_model, case_table_view, delegates
 from apps.predict.ui.workspace import PredictWorkspace
+from core.data_definition.contract import bootstrap_manifest
+from core.data_definition.one_hot.runtime import one_hot_runtime_snapshot
 
 
 class FakeMappingRepository:
@@ -113,6 +116,21 @@ def test_dropdown_option_adapter_returns_mapping_backed_base_options():
     assert adapter.base_options_for_key("ref_type") == ("R32", "R410A")
     assert adapter.base_options_for_key("exp_type") == ("Capi", "EEV")
     assert adapter.base_options_for_key("missing") == ()
+
+
+def test_dropdown_option_adapter_projects_static_selector_values_from_canonical_snapshot():
+    manifest = bootstrap_manifest()
+    group = manifest.one_hot_groups[0]
+    static = replace(group, category_source="static", source_binding="")
+    snapshot = one_hot_runtime_snapshot(replace(
+        manifest, one_hot_groups=(static, *manifest.one_hot_groups[1:])
+    ))
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository({"ref_type": {"mapping-owned": {}}}),
+        build_case_table_column_schema(),
+        one_hot_snapshot=snapshot,
+    )
+    assert adapter.base_options_for_key("ref_type") == ("R410A", "R32", "R290")
 
 
 def test_runtime_fixture_drives_predict_f_and_t_and_pfc_cascades():

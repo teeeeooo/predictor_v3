@@ -23,6 +23,7 @@ from core.data_definition.contract import (
     dump_manifest,
     generate_projections,
     load_manifest,
+    legacy_bundle_fingerprint_payload,
     ml_csv_text,
     predict_csv_text,
     require_valid_contract,
@@ -121,13 +122,15 @@ class DataDefinitionGenerationRepository:
         fingerprints = scoped_fingerprints(manifest)
         expected_fingerprints = asdict(fingerprints)
         stored_fingerprints = metadata.get("fingerprints")
-        if (
-            manifest.contract_version.endswith(".v1")
-            and isinstance(stored_fingerprints, dict)
-            and "derived_semantics" not in stored_fingerprints
-        ):
-            expected_fingerprints.pop("derived_semantics")
-        if expected_fingerprints != stored_fingerprints:
+        candidates = [expected_fingerprints]
+        if not manifest.contract_version.endswith(".v3"):
+            candidates.append(legacy_bundle_fingerprint_payload(manifest))
+        if isinstance(stored_fingerprints, dict) and "derived_semantics" not in stored_fingerprints:
+            candidates = [
+                {key: value for key, value in item.items() if key != "derived_semantics"}
+                for item in candidates
+            ]
+        if stored_fingerprints not in candidates:
             raise ValueError("bundle fingerprint metadata mismatch")
         self._verify_projection_bytes(path, projections)
         return GenerationSnapshot(manifest, projections, fingerprints, path)

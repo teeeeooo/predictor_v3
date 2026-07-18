@@ -37,7 +37,6 @@ RETRAIN_FIELDS = frozenset({"model_input_enabled", "ml_name", "value_source"})
 MAPPING_REQUIREMENT_FIELDS = frozenset(
     {"mapping_entity", "mapping_attribute", "trigger_column", "rule_id"}
 )
-ONE_HOT_FIELDS = frozenset({"one_hot_group", "value_source"})
 _BASIC_SCHEMA_ISSUE_CODES = frozenset(
     {"data_type_invalid", "editor_invalid", "value_source_invalid"}
 )
@@ -103,7 +102,8 @@ def build_data_definition_save_plan(
     requires_restart = _requires_restart(draft, changes)
     requires_retrain = _requires_retrain(changes)
     has_generation_change = any(
-        _is_schema_change(draft, change) or change.row_identity[0] == "derived_policy"
+        _is_schema_change(draft, change)
+        or change.row_identity[0] in {"derived_policy", "one_hot"}
         for change in changes
     )
     can_save_schema = has_generation_change and not any(
@@ -384,11 +384,6 @@ def _change_blockers(
              "Model input changes require retraining before activation.", "model_artifact"),
         ),
         (
-            any(change.field_name in ONE_HOT_FIELDS for change in changes),
-            ("one_hot_runtime_owner_deferred", "warning",
-             "Generic one-hot runtime owner switch is deferred to Arc 15E.", "one_hot_runtime"),
-        ),
-        (
             any(change.field_name in MAPPING_REQUIREMENT_FIELDS for change in changes),
             ("data_mapping_dynamic_requirement_deferred", "warning",
              "Dynamic Data Mapping requirement injection is deferred to Arc 15D.",
@@ -472,6 +467,9 @@ def _write_targets(
     has_derived_change = any(
         change.row_identity[0] == "derived_policy" for change in changes
     )
+    has_one_hot_change = any(
+        change.row_identity[0] == "one_hot" for change in changes
+    )
     schema_blocked = any(
         blocker.severity == "error" and blocker.target in {"schema_csv", ""}
         for blocker in blockers
@@ -495,6 +493,11 @@ def _write_targets(
         _target(
             "derived_policy",
             "blocked" if has_derived_change and schema_blocked else "planned" if has_derived_change else "no_op",
+            "Published with the canonical immutable generation bundle.",
+        ),
+        _target(
+            "one_hot_runtime",
+            "blocked" if has_one_hot_change and schema_blocked else "planned" if has_one_hot_change else "no_op",
             "Published with the canonical immutable generation bundle.",
         ),
     ]
@@ -538,7 +541,10 @@ def _requires_restart(
     draft: DataDefinitionDraft,
     changes: tuple[DataDefinitionDraftChange, ...],
 ) -> bool:
-    return any(_is_schema_change(draft, change) for change in changes)
+    return any(
+        _is_schema_change(draft, change) or change.row_identity[0] == "one_hot"
+        for change in changes
+    )
 
 
 def _requires_retrain(changes: tuple[DataDefinitionDraftChange, ...]) -> bool:

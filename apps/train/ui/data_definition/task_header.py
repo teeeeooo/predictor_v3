@@ -38,6 +38,7 @@ class DataDefinitionTaskHeader(QFrame):
         on_add_ml_only: Callable[[], None],
         on_add_helper: Callable[[], None],
         on_add_derived: Callable[[], None],
+        on_manage_one_hot: Callable[[], None],
         on_details: Callable[[], None],
         on_edit: Callable[[], None],
         on_rename: Callable[[], None],
@@ -124,6 +125,12 @@ class DataDefinitionTaskHeader(QFrame):
             "Derived Feature",
             "Add an inactive restricted safe_ratio Derived definition",
             on_add_derived,
+        )
+        self.manage_one_hot_action = _menu_action(
+            self.add_menu,
+            "One-hot Group / Category",
+            "Open group-centered One-hot authoring and emitted Feature preview",
+            on_manage_one_hot,
         )
         self.add_button.setMenu(self.add_menu)
 

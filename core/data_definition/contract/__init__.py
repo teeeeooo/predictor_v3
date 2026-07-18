@@ -8,6 +8,7 @@ from core.data_definition.contract.fingerprints import (
     scoped_fingerprints,
     semantic_generation_id,
     semantic_manifest_fingerprint,
+    legacy_bundle_fingerprint_payload,
 )
 from core.data_definition.contract.model import (
     ContractGeneration,
@@ -15,6 +16,8 @@ from core.data_definition.contract.model import (
     FeatureDefinition,
     MappingRequirementDefinition,
     ModelGroupDefinition,
+    LegacyOneHotCategoryDefinition,
+    LegacyOneHotGroupDefinition,
     OneHotCategoryDefinition,
     OneHotGroupDefinition,
     OrderingContract,
@@ -25,7 +28,9 @@ from core.data_definition.contract.model import (
 from core.data_definition.contract.compatibility import (
     CURRENT_CONTRACT_VERSION,
     LEGACY_CONTRACT_VERSION,
+    ONE_HOT_LEGACY_CONTRACT_VERSION,
     current_derived_definitions,
+    current_one_hot_definitions,
     migrate_manifest,
     operand_ml_name,
 )
@@ -48,8 +53,11 @@ __all__ = [
     "ContractValidationIssue",
     "DerivedDefinition",
     "LegacyDerivedDefinition",
+    "LegacyOneHotCategoryDefinition",
+    "LegacyOneHotGroupDefinition",
     "CURRENT_CONTRACT_VERSION",
     "LEGACY_CONTRACT_VERSION",
+    "ONE_HOT_LEGACY_CONTRACT_VERSION",
     "FeatureDefinition",
     "MappingRequirementDefinition",
     "ModelGroupDefinition",
@@ -71,9 +79,11 @@ __all__ = [
     "scoped_fingerprints",
     "semantic_generation_id",
     "semantic_manifest_fingerprint",
+    "legacy_bundle_fingerprint_payload",
     "topological_derived_identities",
     "validate_contract",
     "current_derived_definitions",
+    "current_one_hot_definitions",
     "migrate_manifest",
     "operand_ml_name",
 ]

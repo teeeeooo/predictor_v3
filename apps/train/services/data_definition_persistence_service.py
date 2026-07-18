@@ -20,7 +20,10 @@ from core.data_definition.save_contract import (
 )
 from core.data_definition.schema_writer import DataDefinitionSchemaSaveResult
 
-_CANONICAL_PROJECTION_BLOCKERS = frozenset({"candidate_feature_projection_mismatch"})
+_CANONICAL_PROJECTION_BLOCKERS = frozenset({
+    "candidate_feature_projection_mismatch",
+    "ml_compatibility_projection_write_required",
+})
 
 
 class DataDefinitionPersistenceService:
@@ -74,6 +77,13 @@ class DataDefinitionPersistenceService:
             if item.severity == "error"
             and item.code not in _CANONICAL_PROJECTION_BLOCKERS
         )
+        if save_plan.requires_retrain:
+            protected_blockers = (
+                *protected_blockers,
+                *(item for item in save_plan.blocked_reasons
+                  if item.severity == "error"
+                  and item.code == "ml_compatibility_projection_write_required"),
+            )
         if protected_blockers:
             return DataDefinitionSchemaSaveResult(
                 False,
