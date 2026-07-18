@@ -54,6 +54,10 @@ from apps.train.ui.data_definition.workspace_behavior import (
     DataDefinitionWorkspaceBehavior,
 )
 from apps.train.ui.data_definition.feature_actions import FeatureManagerActions
+from apps.train.ui.data_definition.derived_actions import (
+    DefinitionManagerActions,
+    DerivedManagerActions,
+)
 from apps.train.ui.data_definition.panel_compat import (
     publish_diagnostic_aliases,
     publish_workspace_aliases,
@@ -89,6 +93,18 @@ class DataDefinitionPanel(QWidget):
             self._apply_state,
             self,
         )
+        self._derived_actions = DerivedManagerActions(
+            controller,
+            self._selected_feature,
+            self._apply_state,
+            self,
+        )
+        self._definition_actions = DefinitionManagerActions(
+            self._feature_actions,
+            self._derived_actions,
+            self._selected_feature,
+            self._edit_definition,
+        )
 
         self.filter_bar = DataDefinitionFilterBar(
             self._apply_inventory,
@@ -119,12 +135,13 @@ class DataDefinitionPanel(QWidget):
             on_add_predict_only=lambda: self._add_definition("predict_only"),
             on_add_ml_only=lambda: self._add_definition("ml_only"),
             on_add_helper=lambda: self._add_definition("helper_hidden"),
+            on_add_derived=self._derived_actions.add,
             on_details=self._show_details,
-            on_edit=self._edit_definition,
-            on_rename=self._feature_actions.rename,
-            on_duplicate=self._feature_actions.duplicate,
-            on_remove=self._feature_actions.remove,
-            on_toggle_active=self._feature_actions.toggle_active,
+            on_edit=self._definition_actions.edit,
+            on_rename=self._definition_actions.rename,
+            on_duplicate=self._definition_actions.duplicate,
+            on_remove=self._definition_actions.remove,
+            on_toggle_active=self._definition_actions.toggle_active,
             on_move_predict_up=lambda: self._feature_actions.move("predict", "up"),
             on_move_predict_down=lambda: self._feature_actions.move("predict", "down"),
             on_move_ml_up=lambda: self._feature_actions.move("ml", "up"),
@@ -281,6 +298,7 @@ class DataDefinitionPanel(QWidget):
             self.task_header.set_selected_active(
                 selected.get("active", "false").casefold() == "true"
             )
+            self.task_header.set_selected_kind(selected.get("source_kind", ""))
         self.handoff_panel.setVisible(workspace.show_saved_handoff)
 
     def _reset_draft(self) -> None:
@@ -328,6 +346,7 @@ class DataDefinitionPanel(QWidget):
             self._selected_identity, values, self._apply_edit_intent, self,
         ).exec()
         self._behavior.restore_dialog_focus(bool(accepted), self.edit_button)
+
 
     def _show_details(self) -> None:
         if self._state is None or self._selected_identity is None:

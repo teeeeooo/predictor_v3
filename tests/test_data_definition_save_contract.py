@@ -77,7 +77,7 @@ def test_data_definition_save_plan_blocks_features_csv_dual_writer_risk():
     assert _blocker_codes(plan) >= {"features_csv_dual_writer_not_resolved"}
 
 
-def test_data_definition_save_plan_blocks_derived_policy_persistence():
+def test_raw_derived_edit_is_blocked_without_controlled_command():
     draft = build_data_definition_draft()
     derived_row = next(row for row in draft.rows if row.source_kind == "derived_policy")
     changed = replace_draft_row(
@@ -90,7 +90,7 @@ def test_data_definition_save_plan_blocks_derived_policy_persistence():
 
     assert not plan.can_save_schema
     assert not plan.can_write_derived_policy
-    assert _blocker_codes(plan) >= {"derived_policy_persistence_required"}
+    assert _blocker_codes(plan) >= {"raw_row_add_delete_not_allowed"}
     assert _target_status(plan, "derived_policy") == "blocked"
 
 

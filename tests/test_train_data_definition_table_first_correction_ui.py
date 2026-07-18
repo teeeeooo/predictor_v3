@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QApplication, QLineEdit, QScrollArea
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition_details_dialog import DataDefinitionDetailsDialog
+from apps.train.ui.data_definition.derived_dialogs import DerivedDefinitionDialog
 from apps.train.ui.data_definition_edit_dialog import DataDefinitionEditDialog
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
@@ -123,7 +124,7 @@ def test_enter_routes_edit_and_read_only_rows_to_separate_modal_workflows():
             if identity is not None and identity[0] != "schema_row"
         )
         readonly = open_with_enter(readonly_identity)
-        assert isinstance(readonly, DataDefinitionDetailsDialog)
+        assert isinstance(readonly, DerivedDefinitionDialog)
         assert panel._selected_identity == readonly_identity
     finally:
         panel.close()

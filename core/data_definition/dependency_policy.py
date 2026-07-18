@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core.data_definition.contract.model import UnifiedFeatureManifest
+from core.data_definition.contract.compatibility import current_derived_definitions
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
 from core.predictor_schema.columns import FIXED_INDEX_COLUMN_KEYS
 
@@ -57,14 +58,14 @@ def _derived_dependencies(manifest, row):  # noqa: ANN001
             "derived_expression_reference",
             "Derived",
             item.identity,
-            f"Derived Feature '{item.ml_name}' references ML name '{row.ml_name}'.",
+            f"Derived Feature '{item.ml_name}' references this stable Feature identity.",
+            False,
             True,
-            True,
-            True,
-            "Migrate the Derived expression in Phase 4E before changing this Feature.",
+            item.active,
+            "Remove, disable, or retarget the dependent Derived definition first.",
         )
-        for item in manifest.derived
-        if row.ml_name and row.ml_name in {item.numerator_ml_name, item.denominator_ml_name}
+        for item in current_derived_definitions(manifest)
+        if row.stable_identity in {item.numerator_identity, item.denominator_identity}
     ]
 
 
@@ -154,7 +155,7 @@ def _model_dependencies(manifest, row):  # noqa: ANN001
             "ML contract",
             row.stable_identity,
             f"'{row.ml_name}' is part of the ordered training/inference projection.",
-            True,
+            False,
             True,
             False,
             "Keep the current name or complete an explicit model migration/retraining workflow.",

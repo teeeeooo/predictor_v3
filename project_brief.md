@@ -5,9 +5,9 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin Phase 4B — Unified Contract and Multi-artifact Persistence is
-implemented on its dedicated Draft PR branch. Phase 4C stable-ID Feature mutation
-is next after Phase 4B audit and merge.
+Train/Admin Phase 4E — Restricted Derived Feature Authoring and Shared Evaluator
+is implemented over the Phase 4B–4D foundation. Phase 4F One-hot group/category
+CRUD is next after the Phase 4E integration boundary.
 
 Phase 3 — Data Definition UX Foundation is complete, final-audit approved, and
 merged through PR #16. The earlier ML/Predictor foundation through Arc 15-FU1 and
@@ -80,6 +80,12 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train/Admin UI/UX Overhaul Phase 4B — canonical manifest/bootstrap, generated
   projections, cross-validation, scoped fingerprints, immutable generation
   publication, rollback, and guarded Save transaction implemented on Draft PR.
+- Train/Admin UI/UX Overhaul Phase 4C+4D — stable-ID Basic Feature lifecycle,
+  independent Predict/ML ordering, exact prepared Preview/Apply, and generation
+  Save validation implemented.
+- Train/Admin UI/UX Overhaul Phase 4E — identity-based Derived operands,
+  restricted safe-ratio authoring, deterministic DAG ordering, versioned legacy
+  generation decode, and one Train/Predict shared evaluator implemented.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -100,8 +106,8 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
 
 ### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
 
-The Phase 4A audit is approved and the Phase 4B persistence foundation is
-implemented. The final workflow lets a user manage Predict and
+The Phase 4A audit is approved and Phases 4B–4E are implemented. The final
+workflow lets a user manage Predict and
 ML Feature contracts without directly editing internal CSV, JSON, Python registry,
 or projection files:
 
@@ -131,9 +137,8 @@ Concrete mapping values remain in Data Mapping. Training remains an explicit use
 action in Train. Data Definition does not trigger training or automatic model
 activation, and Predict internal redesign is not part of Phase 4.
 
-The next slice is Phase 4B, which establishes the canonical structured manifest,
-bootstrap migration, generated projections, immutable generation bundle, atomic
-active pointer, cross-contract validation, rollback, and scoped fingerprints.
+The next slice is Phase 4F, which adds bounded One-hot group/category lifecycle
+without changing Mapping values, Target/registry ownership, or runtime cutover.
 
 ### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
 

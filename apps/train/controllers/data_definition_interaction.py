@@ -51,9 +51,9 @@ def project_data_definition_interaction(
         save_reason = "Resolve the compatibility blockers before saving the schema."
 
     identity = inventory.selected_identity
-    edit_enabled = bool(identity and identity[0] == "schema_row")
+    edit_enabled = bool(identity and identity[0] in {"schema_row", "derived_policy"})
     if edit_enabled:
-        edit_reason = "Edit the selected Definition."
+        edit_reason = "Edit the selected Feature or restricted Derived definition."
     elif identity is None:
         edit_reason = "Select a schema-backed Definition first."
     else:

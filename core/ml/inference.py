@@ -8,23 +8,17 @@ import numpy as np
 
 # 데이터 전처리 로직 재사용 (sklearn 의존성 없음)
 from core.ml.preprocessing import calculate_derived_features
-from core.ml.features import TARGETS, BASE_FEATURES, DERIVED_FEATURES
+from core.ml.features import TARGETS, BASE_FEATURES
+from core.ml.derived_adapter import current_derived_evaluation_snapshot
+from core.data_definition.derived.evaluator import (
+    project_derived_input_dependencies,
+)
 from core.ml.catalog_fingerprint import validate_model_catalog_fingerprint
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 
 # 현재 시스템의 전처리 버전 (Lite 안전장치 v1.0)
 CURRENT_PREPROCESS_VERSION = "v1.0"
 ZERO_FILL_ALLOWED_POLICY = "mode_missing_allowed"
-DERIVED_FEATURE_DEPENDENCIES = frozenset(
-    {
-        "Cooling Capa",
-        "Heating Capa",
-        "Comp EER",
-        "Cond Area",
-        "Evap Area",
-        "Comp cc",
-    }
-)
 
 def load_model(model_file):
     """
@@ -58,7 +52,21 @@ def build_input_df(row_dict, required_features=None):
     df = pd.DataFrame([row_dict])
     zero_fill_policies = _load_zero_fill_policies()
     missing_required = []
-    required_base_features = _required_base_features(required_features)
+    snapshot = current_derived_evaluation_snapshot()
+    requested_outputs = (
+        tuple(item.output_ml_name for item in snapshot.definitions)
+        if required_features is None
+        else tuple(required_features)
+    )
+    dependency_projection = project_derived_input_dependencies(
+        snapshot,
+        requested_outputs,
+    )
+    required_base_features = _required_base_features(
+        required_features,
+        snapshot=snapshot,
+        dependency_projection=dependency_projection,
+    )
 
     # 2. 누락된 기본 피처가 있는지 확인
     for feature in required_base_features:
@@ -75,7 +83,11 @@ def build_input_df(row_dict, required_features=None):
         )
 
     # 3. 파생 피처 계산 (safe_divide 및 벡터 연산 적용됨)
-    df_processed = calculate_derived_features(df)
+    df_processed = calculate_derived_features(
+        df,
+        snapshot,
+        requested_outputs=requested_outputs,
+    )
 
     return df_processed
 
@@ -90,13 +102,23 @@ def _load_zero_fill_policies():
     return catalog.zero_fill_policies()
 
 
-def _required_base_features(required_features):
+def _required_base_features(
+    required_features,
+    *,
+    snapshot=None,
+    dependency_projection=None,
+):  # noqa: ANN001
     if required_features is None:
-        return BASE_FEATURES
-    required = set(required_features)
-    if required.intersection(DERIVED_FEATURES):
-        required.update(DERIVED_FEATURE_DEPENDENCIES)
-    return [feature for feature in BASE_FEATURES if feature in required]
+        return list(BASE_FEATURES)
+    snapshot = snapshot or current_derived_evaluation_snapshot()
+    dependency_projection = dependency_projection or project_derived_input_dependencies(
+        snapshot,
+        required_features,
+    )
+    derived_names = {item.output_ml_name for item in snapshot.definitions}
+    ordered = [item for item in required_features if item not in derived_names]
+    ordered.extend(item.ml_name for item in dependency_projection.base_inputs)
+    return list(dict.fromkeys(ordered))
 
 
 def predict_row(model_data, row_dict):

@@ -119,7 +119,15 @@ class DataDefinitionGenerationRepository:
             raise ValueError("manifest generation does not match bundle")
         projections = require_valid_contract(manifest)
         fingerprints = scoped_fingerprints(manifest)
-        if asdict(fingerprints) != metadata.get("fingerprints"):
+        expected_fingerprints = asdict(fingerprints)
+        stored_fingerprints = metadata.get("fingerprints")
+        if (
+            manifest.contract_version.endswith(".v1")
+            and isinstance(stored_fingerprints, dict)
+            and "derived_semantics" not in stored_fingerprints
+        ):
+            expected_fingerprints.pop("derived_semantics")
+        if expected_fingerprints != stored_fingerprints:
             raise ValueError("bundle fingerprint metadata mismatch")
         self._verify_projection_bytes(path, projections)
         return GenerationSnapshot(manifest, projections, fingerprints, path)

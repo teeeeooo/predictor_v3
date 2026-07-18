@@ -69,6 +69,19 @@ def project_detail(
         if editable
         else next((cell.reason for cell in row.cells if cell.reason), "Direct editing is blocked.")
     )
+    derived_rows = (
+        (
+            "Derived formula",
+            f"{values.get('operation') or '—'}("
+            f"{values.get('numerator_identity') or '—'}, "
+            f"{values.get('denominator_identity') or '—'})",
+        ),
+        (
+            "Zero denominator",
+            f"{values.get('zero_denominator_policy') or '—'} → "
+            f"{values.get('zero_value') or '0.0'}",
+        ),
+    ) if row.identity[0] == "derived_policy" else ()
     rows = (
         ("Label", row.label),
         ("Internal key", row.internal_key),
@@ -93,6 +106,7 @@ def project_detail(
         ("Rule ID", values.get("rule_id") or "—"),
         ("One-hot group", values.get("one_hot_group") or "—"),
         ("Notes", values.get("notes") or "—"),
+        *derived_rows,
     )
     return DataDefinitionDetailState("selected", row.label, row.internal_key, row.identity, rows)
 

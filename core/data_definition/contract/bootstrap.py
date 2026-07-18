@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from core.data_definition.contract.fingerprints import semantic_generation_id
+from core.data_definition.contract.compatibility import CURRENT_CONTRACT_VERSION
 from core.data_definition.contract.identity import bootstrap_identity
 from core.data_definition.contract.model import (
     ContractGeneration,
@@ -48,7 +49,7 @@ def bootstrap_manifest(
     features = tuple(_feature(row) for row in schema.rows)
     feature_by_key = {item.column_key: item for item in features}
     feature_by_ml = {item.ml_name: item for item in features if item.ml_name}
-    derived = _derived_definitions()
+    derived = _derived_definitions(feature_by_ml)
     one_hot_groups = _one_hot_definitions(features)
     targets, model_groups = _target_definitions(features)
     requirements = _mapping_requirements(features, feature_by_key)
@@ -60,7 +61,7 @@ def bootstrap_manifest(
         targets=tuple(item.identity for item in targets),
     )
     manifest = UnifiedFeatureManifest(
-        contract_version="unified_feature_contract.v1",
+        contract_version=CURRENT_CONTRACT_VERSION,
         generation=ContractGeneration(generation_id="bootstrap-pending"),
         preprocessing_version="v1.0",
         features=features,
@@ -106,7 +107,7 @@ def _feature(row) -> FeatureDefinition:  # noqa: ANN001
     )
 
 
-def _derived_definitions() -> tuple[DerivedDefinition, ...]:
+def _derived_definitions(feature_by_ml) -> tuple[DerivedDefinition, ...]:  # noqa: ANN001
     rows = load_current_derived_feature_policy()
     unknown = [row.ml_name for row in rows if row.ml_name not in _DERIVED_OPERANDS]
     if unknown:
@@ -116,8 +117,9 @@ def _derived_definitions() -> tuple[DerivedDefinition, ...]:
             identity=bootstrap_identity("derived", row.ml_name),
             ml_name=row.ml_name,
             operation="safe_ratio",
-            numerator_ml_name=_DERIVED_OPERANDS[row.ml_name][0],
-            denominator_ml_name=_DERIVED_OPERANDS[row.ml_name][1],
+            numerator_identity=feature_by_ml[_DERIVED_OPERANDS[row.ml_name][0]].identity,
+            denominator_identity=feature_by_ml[_DERIVED_OPERANDS[row.ml_name][1]].identity,
+            zero_denominator_policy="constant",
             zero_fill_policy=row.zero_fill_policy,
             active=row.active,
         )

@@ -18,7 +18,9 @@ from core.data_definition.contract.model import (
     OrderingContract,
     TargetDefinition,
     UnifiedFeatureManifest,
+    LegacyDerivedDefinition,
 )
+from core.data_definition.contract.compatibility import SUPPORTED_CONTRACT_VERSIONS
 
 
 def manifest_payload(manifest: UnifiedFeatureManifest) -> dict[str, Any]:
@@ -36,7 +38,7 @@ def dump_manifest(manifest: UnifiedFeatureManifest, path: str | Path) -> None:
 def load_manifest(path: str | Path) -> UnifiedFeatureManifest:
     """Load a canonical manifest and reject unsupported top-level versions."""
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    if payload.get("contract_version") != "unified_feature_contract.v1":
+    if payload.get("contract_version") not in SUPPORTED_CONTRACT_VERSIONS:
         raise ValueError(f"unsupported contract_version: {payload.get('contract_version')!r}")
     return _manifest_from_payload(payload)
 
@@ -65,7 +67,10 @@ def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
         generation=ContractGeneration(**raw["generation"]),
         preprocessing_version=raw["preprocessing_version"],
         features=tuple(FeatureDefinition(**item) for item in raw["features"]),
-        derived=tuple(DerivedDefinition(**item) for item in raw["derived"]),
+        derived=tuple(
+            (LegacyDerivedDefinition if raw["contract_version"].endswith(".v1") else DerivedDefinition)(**item)
+            for item in raw["derived"]
+        ),
         one_hot_groups=groups,
         targets=tuple(TargetDefinition(**item) for item in raw["targets"]),
         model_groups=model_groups,

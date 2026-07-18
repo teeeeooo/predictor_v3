@@ -67,7 +67,7 @@ def field_editability(
         return _blocked(
             field_name,
             "derived_policy_blocked",
-            "Derived policy persistence is required before editing derived rows.",
+            "Derived fields require the controlled Derived command and Impact Preview.",
         )
     if row.source_kind == "feature_projection":
         return _blocked(

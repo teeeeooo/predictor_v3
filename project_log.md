@@ -29,6 +29,31 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-18 — Train/Admin Phase 4E restricted Derived authoring
+
+### Decision
+
+- Store canonical Derived operands as Feature/Derived stable identities and use
+  explicit versioned decoding for historical name-based generations.
+- Restrict authoring to `safe_ratio` with constant finite `zero_value`; keep the
+  existing eight outputs, `0.0` behavior, and deterministic compatibility order.
+- Derive execution order from one validated dependency DAG and centralize Train/
+  Predict formula semantics in one pure shared evaluator.
+- Use one core policy for Derived operand eligibility across commands, raw contract
+  validation, and application presentation; Result/Target and post-model outputs
+  are never valid operands, including for inactive authoring.
+- Treat role and value source as one runtime shape. Only `input/manual`,
+  `auto/mapping_lookup`, and `one_hot_feature/one_hot` can provide Feature operands;
+  model-input flags cannot make a mismatched or post-evaluator source eligible.
+- Project requested Derived outputs to deterministic transitive base Feature inputs
+  from the same immutable evaluator snapshot. Train and Predict share missing-input
+  classification, while Predict no longer owns a fixed six-name dependency list.
+- Default Add/Duplicate to inactive, distinguish canonical Derived semantics from
+  active model compatibility, and preserve retraining/migration Save guards for
+  activation or active semantic changes.
+- Keep Phase 4H runtime generation cutover, mapping values, model artifacts,
+  training, promotion, One-hot, and Target CRUD outside Phase 4E.
+
 ## 2026-07-18 — Train/Admin Phase 4C+4D audit correction
 
 ### Decision

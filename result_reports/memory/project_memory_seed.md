@@ -632,6 +632,23 @@ entries:
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; result_reports/records/2026-07/2026-07-17-train-admin-phase4c-4d-feature-manager.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4c-4d-audit-correction.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4c-4d-final-save-path-correction.md; docs/WORK_PLAN.md
 
   - type: decision
+    topic: Train/Admin Phase 4E restricted Derived authoring
+    content: Phase 4E upgrades the canonical manifest to identity-based Derived operands while preserving explicit version-1 name DTO decoding for immutable historical bundle reads and rollback. Legacy names must resolve to exactly one Feature or Derived identity; missing or ambiguous references fail actionably, and representation-only migration preserves Derived runtime and model-compatibility fingerprints. Restricted safe_ratio is the only operation. It owns numerator/denominator identity, constant zero-denominator policy, finite numeric zero_value, output ML name, active state, and deterministic DAG order; existing eight definitions keep 0.0 and compatibility order. Add and Duplicate allocate new inactive identities, Rename preserves identity, downstream/cycle/type/active-dependency failures reject atomically, and prepared Preview/Apply retains exact-candidate stale protection. One pure shared evaluator owns production formula semantics for both Train and Predict; the preprocessing facade contains no formula fallback. Its immutable snapshot also owns evaluator-input eligibility and requested-output-to-transitive-base dependency projection. Active numeric Features with ML names and model input enabled are eligible only for exact runtime shapes `input/manual`, `auto/mapping_lookup`, and `one_hot_feature/one_hot`; Result/Target, mismatched or post-evaluator role/source shapes, inactive, nonnumeric, nameless, and runtime-unavailable Features are blocked even for inactive authoring. Commands, whole-contract validation, application operand presentation, Train, and Predict consume that owner; Predict has no fixed six-name dependency decision. Canonical Derived semantics are fingerprinted separately from active model compatibility, so inactive authoring can publish through the Phase 4B generation transaction while active activation or semantic edits remain blocked by retraining/migration guards. Phase 4H still owns process-wide runtime generation cutover, and Windows native UI smoke remains pre-release evidence.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4E
+      - Derived Feature
+      - stable identity operand
+      - safe_ratio
+      - dependency DAG
+      - shared evaluator
+      - legacy generation migration
+      - model compatibility fingerprint
+    assertionStatus: verified
+    source: docs/designs/2026-07-18-derived-feature-authoring-shared-evaluator.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md; docs/WORK_PLAN.md
+
+  - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
     content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
     keywords:

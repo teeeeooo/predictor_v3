@@ -120,7 +120,7 @@ def test_rename_requires_identifier_and_rejects_collisions_atomically():
     assert label_only.draft.rows == collision.draft.rows == snapshot
 
 
-def test_protected_predict_and_ml_dependencies_block_rename_remove_disable():
+def test_stable_derived_identity_allows_ml_rename_but_remove_disable_stay_blocked():
     draft = _canonical_draft()
     cooling = next(row for row in draft.rows if row.column_key == "cooling_capa")
 
@@ -134,11 +134,12 @@ def test_protected_predict_and_ml_dependencies_block_rename_remove_disable():
         SetDefinitionActiveIntent(cooling.identity, False),
     )
 
-    assert not rename.accepted and not remove.accepted and not disable.accepted
-    assert "derived_expression_reference" in {item.code for item in rename.issues}
+    assert rename.accepted and not remove.accepted and not disable.accepted
+    renamed = next(item for item in rename.draft.rows if item.identity == cooling.identity)
+    assert renamed.stable_identity == cooling.stable_identity
     assert "protected_predict_consumer" in {item.code for item in remove.issues}
     assert "derived_expression_reference" in {item.code for item in disable.issues}
-    assert rename.draft is remove.draft is disable.draft is draft
+    assert remove.draft is disable.draft is draft
 
 
 def test_enable_disable_is_distinct_from_remove_for_unreferenced_unsaved_feature():
@@ -277,7 +278,7 @@ def test_controller_selection_dirty_and_remove_neighbor_workflow(tmp_path):
     assert first_identity not in removed.draft_row_identities
 
 
-def test_controller_rejected_command_and_preview_preserve_unsaved_draft(tmp_path):
+def test_controller_model_impacting_rename_preview_preserves_then_applies_draft(tmp_path):
     service, _repository = _service(tmp_path)
     controller = DataDefinitionController(service)
     initial = controller.refresh()
@@ -297,10 +298,15 @@ def test_controller_rejected_command_and_preview_preserve_unsaved_draft(tmp_path
         RenameDefinitionIntent(cooling, ml_name="Cooling Capacity")
     )
 
-    assert not preview.command_accepted and not rejected.last_action_ok
+    assert preview.command_accepted and rejected.last_action_ok
+    assert preview.model_compatibility_changed
+    assert not preview.save_allowed
     assert rejected.draft_row_identities == before
     assert rejected.draft_changed
-    assert any("Next:" in row[2] for row in rejected.command_issue_rows)
+    assert not rejected.command_issue_rows
+    assert "model_compatibility_migration_required" in {
+        row[1] for row in rejected.save_blocker_rows
+    }
 
 
 def test_saved_user_feature_remains_renameable_and_removable_after_reload(tmp_path):

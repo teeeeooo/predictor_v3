@@ -38,6 +38,11 @@ DRAFT_FIELDS = (
     "model_input_enabled",
     "ml_name",
     "one_hot_group",
+    "operation",
+    "numerator_identity",
+    "denominator_identity",
+    "zero_denominator_policy",
+    "zero_value",
     "active",
     "notes",
 )
@@ -60,6 +65,11 @@ DRAFT_HEADERS = (
     "Model Input",
     "ML Name",
     "One-hot Group",
+    "Operation",
+    "Numerator Identity",
+    "Denominator Identity",
+    "Zero Policy",
+    "Zero Value",
     "Active",
     "Notes",
 )
@@ -224,7 +234,9 @@ def state_from_report(
         requires_retrain=save_plan.requires_retrain,
         impact_summary=save_plan.restart_impact.message,
         manageable_feature_identities=frozenset(
-            row.identity for row in draft.rows if is_supported_basic_feature(row)
+            row.identity
+            for row in draft.rows
+            if is_supported_basic_feature(row) or row.source_kind == "derived_policy"
         ),
         last_action_ok=last_action_ok,
         focus_identity=focus_identity,

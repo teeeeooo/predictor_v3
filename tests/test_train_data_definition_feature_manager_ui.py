@@ -147,7 +147,7 @@ def test_duplicate_preview_flow_selects_new_stable_identity(tmp_path):
         panel.close()
 
 
-def test_blocked_rename_preserves_selection_and_remove_moves_to_neighbor(tmp_path):
+def test_cancelled_model_impacting_rename_preserves_selection_and_remove_moves_to_neighbor(tmp_path):
     app = _app()
     panel = _panel(tmp_path)
     cooling = _identity(panel, "cooling_capa")
@@ -162,7 +162,7 @@ def test_blocked_rename_preserves_selection_and_remove_moves_to_neighbor(tmp_pat
     assert not accepted
     assert panel._selected_identity == cooling
     assert not panel._state.draft_changed
-    assert panel._state.command_issue_rows
+    assert not panel._state.command_issue_rows
 
     first = panel._controller.add_definition(
         AddDefinitionIntent("predict_only", "First", "first_neighbor", "string")

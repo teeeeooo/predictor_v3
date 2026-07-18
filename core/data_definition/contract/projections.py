@@ -9,9 +9,11 @@ from dataclasses import dataclass, replace
 
 from core.data_definition.contract.model import (
     DerivedDefinition,
+    LegacyDerivedDefinition,
     OneHotGroupDefinition,
     UnifiedFeatureManifest,
 )
+from core.data_definition.contract.compatibility import current_derived_definitions
 from core.data_definition.model import MappingRequirement, ProjectedFeatureRow
 from core.ml.feature_catalog import REQUIRED_HEADERS as ML_HEADERS
 from core.predictor_schema.catalog_v2 import PredictSchemaV2Row, REQUIRED_HEADERS
@@ -22,7 +24,7 @@ class ContractProjections:
     generation_id: str
     predict: tuple[PredictSchemaV2Row, ...]
     ml: tuple[ProjectedFeatureRow, ...]
-    derived: tuple[DerivedDefinition, ...]
+    derived: tuple[DerivedDefinition | LegacyDerivedDefinition, ...]
     one_hot: tuple[OneHotGroupDefinition, ...]
     target_registry: tuple[tuple[str, dict[str, object]], ...]
     mapping_requirements: tuple[MappingRequirement, ...]
@@ -136,9 +138,9 @@ def topological_derived_identities(
 
 def _topological_derived(
     manifest: UnifiedFeatureManifest,
-) -> tuple[DerivedDefinition, ...]:
-    derived_by_id = {item.identity: item for item in manifest.derived}
-    derived_id_by_name = {item.ml_name: item.identity for item in manifest.derived}
+) -> tuple[DerivedDefinition | LegacyDerivedDefinition, ...]:
+    current = current_derived_definitions(manifest)
+    derived_by_id = {item.identity: item for item in current}
     priority = {
         identity: index for index, identity in enumerate(manifest.ordering.derived)
     }
@@ -146,9 +148,9 @@ def _topological_derived(
     dependents: dict[str, set[str]] = {identity: set() for identity in derived_by_id}
     for identity, item in derived_by_id.items():
         refs = {
-            derived_id_by_name[name]
-            for name in (item.numerator_ml_name, item.denominator_ml_name)
-            if name in derived_id_by_name
+            ref
+            for ref in (item.numerator_identity, item.denominator_identity)
+            if ref in derived_by_id
         }
         dependencies[identity] = refs
         for ref in refs:
@@ -172,6 +174,9 @@ def _topological_derived(
                 )
     if len(ordered) != len(derived_by_id):
         raise ValueError("derived dependency graph contains a cycle")
+    if manifest.contract_version.endswith(".v1"):
+        legacy_by_id = {item.identity: item for item in manifest.derived}
+        return tuple(legacy_by_id[item.identity] for item in ordered)
     return tuple(ordered)
 
 
@@ -184,7 +189,7 @@ def ml_csv_text(projection: ContractProjections) -> str:
 
 
 def _ml_row(owner, index: int) -> ProjectedFeatureRow:  # noqa: ANN001
-    if isinstance(owner, DerivedDefinition):
+    if isinstance(owner, (DerivedDefinition, LegacyDerivedDefinition)):
         return ProjectedFeatureRow(
             order=index * 10,
             ml_name=owner.ml_name,

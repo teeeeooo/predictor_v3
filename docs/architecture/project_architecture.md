@@ -193,6 +193,17 @@ Predict display order와 ordered ML contract order는 서로를 암묵적으로
 변경하지 않는다. View는 intent를 수집하고 결과를 표시할 뿐 repository나
 filesystem adapter를 직접 호출하지 않는다.
 
+Restricted Derived operand eligibility와 transitive evaluator-input dependency는
+`core/data_definition`의 pure Derived policy/evaluation snapshot이 단일 owner다.
+Result/Target와 evaluator 이전에 Train/Predict 양쪽에서 제공되지 않는 Feature는
+inactive Derived authoring에서도 차단한다. Application/controller는 이 판정의
+selectable/code/reason presentation projection만 제공하고, View와 Predict adapter는
+role/type 목록 또는 별도 DAG를 소유하지 않는다. Runtime Feature operand shape는
+`input/manual`, `auto/mapping_lookup`, `one_hot_feature/one_hot`만 허용한다.
+One-hot numeric output은 Predict row adapter와 raw Train matrix에서 Derived 평가
+전에 존재하며, role/value_source가 다른 후행 또는 위장 shape는 model-input flag와
+관계없이 차단한다.
+
 1. **INPUT_COLS (0~10)**: 사용자 입력 및 드롭다운 선택 (Capa, IDU, ODU 등).
 2. **AUTO_COLS (11~18)**: 선택된 하드웨어 사양에 따른 자동 완성 필드 (Volume, Area, Comp 사양).
 3. **RESULT_COLS (19~27)**: ML 예측 결과 및 Rule-based 계산값 (Power, EER, CSPF, HSPF2, Ref Qty, Hz 등).

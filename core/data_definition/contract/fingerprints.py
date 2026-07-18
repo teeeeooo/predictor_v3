@@ -9,6 +9,10 @@ from dataclasses import asdict, dataclass
 from core.data_definition.contract.codec import manifest_payload
 from core.data_definition.contract.model import UnifiedFeatureManifest
 from core.data_definition.contract.projections import generate_projections
+from core.data_definition.contract.compatibility import (
+    current_derived_definitions,
+    operand_ml_name,
+)
 
 
 @dataclass(frozen=True)
@@ -21,6 +25,7 @@ class ScopedFingerprints:
     target_registry: str
     mapping_requirements: str
     preprocessing: str
+    derived_semantics: str = ""
 
     @property
     def model_compatibility(self) -> tuple[str, str, str, str, str]:
@@ -48,7 +53,11 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
         }
         for row in projections.ml if row.active
     ]
-    derived_payload = [asdict(item) for item in projections.derived]
+    all_derived_payload = _derived_semantic_payload(manifest)
+    active_ids = {item.identity for item in current_derived_definitions(manifest) if item.active}
+    derived_payload = [
+        item for item in all_derived_payload if item["identity"] in active_ids
+    ]
     one_hot_payload = [asdict(item) for item in projections.one_hot]
     target_by_id = {item.identity: item for item in manifest.targets}
     target_payload = {
@@ -68,7 +77,24 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
         target_registry=_hash(target_payload),
         mapping_requirements=_hash(mapping_payload),
         preprocessing=_hash(preprocessing_payload),
+        derived_semantics=_hash(all_derived_payload),
     )
+
+
+def _derived_semantic_payload(manifest: UnifiedFeatureManifest) -> list[dict[str, object]]:
+    return [
+        {
+            "identity": item.identity,
+            "ml_name": item.ml_name,
+            "operation": item.operation,
+            "numerator_ml_name": operand_ml_name(manifest, item.numerator_identity),
+            "denominator_ml_name": operand_ml_name(manifest, item.denominator_identity),
+            "zero_value": float(item.zero_value),
+            "zero_fill_policy": item.zero_fill_policy,
+            "active": item.active,
+        }
+        for item in current_derived_definitions(manifest)
+    ]
 
 
 def semantic_manifest_fingerprint(manifest: UnifiedFeatureManifest) -> str:

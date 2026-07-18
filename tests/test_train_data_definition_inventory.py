@@ -65,7 +65,7 @@ def test_task_inventory_uses_exact_user_facing_meanings():
     assert (derived.kind, derived.source_type, derived.lifecycle_state) == (
         "Derived",
         "Derived",
-        "Read-only",
+        "Active",
     )
 
 
@@ -200,9 +200,9 @@ def test_inventory_projection_preserves_identity_order_and_projects_detail():
         selected_identity=derived.identity,
     ).detail
     assert derived.category == "Derived"
-    assert derived.lifecycle_state == "Read-only"
+    assert derived.lifecycle_state == "Active"
     assert dict(derived_detail.rows)["Direct edit"] == "Blocked"
-    assert "Derived policy persistence" in dict(derived_detail.rows)["Direct edit policy"]
+    assert "controlled Derived command" in dict(derived_detail.rows)["Direct edit policy"]
 
 
 def test_inventory_search_filter_and_selection_are_deterministic():

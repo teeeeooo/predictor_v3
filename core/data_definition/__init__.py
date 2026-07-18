@@ -73,6 +73,17 @@ from core.data_definition.impact_preview import (
     build_feature_impact_preview,
 )
 from core.data_definition.dependency_policy import is_supported_basic_feature
+from core.data_definition.derived import (
+    AddDerivedIntent,
+    DerivedCommandIntent,
+    DuplicateDerivedIntent,
+    EditDerivedIntent,
+    RemoveDerivedIntent,
+    RenameDerivedIntent,
+    SetDerivedActiveIntent,
+    apply_derived_command,
+    derived_downstream_identities,
+)
 
 __all__ = [
     "DataDefinitionDraft",
@@ -127,4 +138,13 @@ __all__ = [
     "normalize_column_key",
     "save_data_definition_schema_draft",
     "schema_csv_rows_from_draft",
+    "AddDerivedIntent",
+    "DerivedCommandIntent",
+    "DuplicateDerivedIntent",
+    "EditDerivedIntent",
+    "RemoveDerivedIntent",
+    "RenameDerivedIntent",
+    "SetDerivedActiveIntent",
+    "apply_derived_command",
+    "derived_downstream_identities",
 ]

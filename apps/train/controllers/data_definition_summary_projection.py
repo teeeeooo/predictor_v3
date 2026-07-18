@@ -48,7 +48,7 @@ def project_data_definition_summary(
 
     values = {cell.field_name: cell.value for cell in row.cells}
     required = _as_bool(values.get("required", "false"))
-    editable = row.identity[0] == "schema_row"
+    editable = row.identity in state.manageable_feature_identities
     mapping = _mapping_summary(values)
     change_summary = {
         "Changed": "Unsaved change",
@@ -76,7 +76,7 @@ def project_data_definition_summary(
         technical_details=inventory.detail.rows,
         edit_enabled=editable,
         edit_reason=(
-            "Edit the selected Definition through the supported controlled fields."
+            "Edit the selected Definition through its supported controlled command."
             if editable
             else "This Definition is read-only in the controlled editor."
         ),
@@ -128,7 +128,7 @@ def _description(row: DataDefinitionInventoryRow, values: dict[str, str]) -> str
     if row.kind == "Prediction Result":
         return "Calculated Predict result produced from the current schema and model workflow."
     if row.kind == "Derived":
-        return "Derived model feature maintained by the current compatibility contract."
+        return "Restricted Derived model feature owned by the canonical safe_ratio contract."
     if row.source_type == "Manual":
         usage = "Predict and the active model" if row.model_input == "Used" else "Predict"
         return f"Manual {value_type} input used by {usage}."

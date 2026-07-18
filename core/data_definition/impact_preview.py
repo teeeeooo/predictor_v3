@@ -17,6 +17,8 @@ from core.data_definition.contract import (
 from core.data_definition.save_contract import DataDefinitionSavePlan
 from core.data_definition.dependency_policy import feature_dependencies
 from core.data_definition.draft import DataDefinitionDraft
+from core.data_definition.derived.commands import derived_downstream_identities
+from core.data_definition.contract.compatibility import current_derived_definitions
 
 
 @dataclass(frozen=True)
@@ -49,6 +51,11 @@ class FeatureImpactPreview:
     blockers: tuple[DataDefinitionCommandIssue, ...]
     candidate_generation_id: str
     candidate_fingerprint: str
+    derived_semantics_changed: bool
+    derived_semantics_fingerprint: str
+    execution_order_before: tuple[str, ...]
+    execution_order_after: tuple[str, ...]
+    downstream_identities: tuple[str, ...]
     summary: str
 
 
@@ -75,6 +82,11 @@ def build_feature_impact_preview(
             result.issues,
             "",
             "",
+            False,
+            "",
+            (),
+            (),
+            (),
             result.message,
         )
     predict_changed = False
@@ -84,6 +96,10 @@ def build_feature_impact_preview(
     validation_issues: tuple[DataDefinitionCommandIssue, ...] = ()
     candidate_generation_id = ""
     candidate_fingerprint = ""
+    derived_semantics_changed = False
+    derived_semantics_fingerprint = ""
+    execution_before: tuple[str, ...] = ()
+    execution_after: tuple[str, ...] = ()
     if base is not None:
         try:
             candidate = candidate_manifest_from_draft(result.draft, base)
@@ -106,6 +122,14 @@ def build_feature_impact_preview(
             ml_changed = before.ordered_ml != after.ordered_ml
             mapping_changed = before.mapping_requirements != after.mapping_requirements
             compatibility_changed = before.model_compatibility != after.model_compatibility
+            derived_semantics_changed = before.derived_semantics != after.derived_semantics
+            derived_semantics_fingerprint = after.derived_semantics
+            execution_before = tuple(
+                item.ml_name for item in current_derived_definitions(base) if item.active
+            )
+            execution_after = tuple(
+                item.ml_name for item in current_derived_definitions(candidate) if item.active
+            )
         except (KeyError, ValueError) as exc:
             validation_issues = (DataDefinitionCommandIssue(
                 "canonical_candidate_invalid",
@@ -123,6 +147,8 @@ def build_feature_impact_preview(
         changed.append("ordered ML projection")
     if mapping_changed:
         changed.append("Mapping requirements")
+    if derived_semantics_changed:
+        changed.append("Derived semantics")
     summary = ", ".join(changed) if changed else "presentation-only or no projection change"
     if retraining:
         summary += "; retraining or model migration required"
@@ -142,6 +168,11 @@ def build_feature_impact_preview(
         tuple(blockers),
         candidate_generation_id,
         candidate_fingerprint,
+        derived_semantics_changed,
+        derived_semantics_fingerprint,
+        execution_before,
+        execution_after,
+        _downstream(source_draft, result),
         summary,
     )
 
@@ -178,6 +209,27 @@ def _impact_evidence(
         ml_change,
         message=f"{result.action} affects this Feature.",
     )]
+    if feature.source_kind == "derived_policy":
+        owners = {
+            row.stable_identity: row for row in source_draft.rows if row.stable_identity
+        }
+        for role, reference in (
+            ("numerator", feature.numerator_identity),
+            ("denominator", feature.denominator_identity),
+        ):
+            operand = owners.get(reference)
+            evidence.append(FeatureImpactEvidence(
+                feature.stable_identity,
+                feature.ml_name,
+                reference,
+                "Derived operand",
+                role,
+                message=(
+                    f"{role.title()} uses "
+                    f"{(operand.label or operand.ml_name) if operand else reference}."
+                ),
+            ))
+        return tuple(evidence)
     if source is None:
         return tuple(evidence)
     affected = set(result.affected_identities)
@@ -197,6 +249,21 @@ def _impact_evidence(
             dependency.message,
         ))
     return tuple(evidence)
+
+
+def _downstream(
+    draft: DataDefinitionDraft | None,
+    result: DataDefinitionCommandResult,
+) -> tuple[str, ...]:
+    if draft is None:
+        return ()
+    identity = result.identity or (
+        result.affected_identities[0] if result.affected_identities else None
+    )
+    row = next((item for item in draft.rows if item.identity == identity), None)
+    if row is None or row.source_kind != "derived_policy":
+        return ()
+    return derived_downstream_identities(draft, row.stable_identity)
 
 
 def _save_blockers(

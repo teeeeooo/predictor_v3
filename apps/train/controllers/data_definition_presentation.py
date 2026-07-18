@@ -155,7 +155,7 @@ def _inventory_row(
         kind=_kind(values, source_kind),
         data_type=values.get("data_type") or ("Derived" if source_kind == "derived_policy" else "—"),
         source_type=_source_type(values, source_kind),
-        relationship=_relationship(values),
+        relationship=_relationship(values, state),
         predict_visibility="Used" if _as_bool(values.get("visible", "false")) else "Not used",
         model_input=(
             "Used" if _as_bool(values.get("model_input_enabled", "false")) else "Not used"
@@ -165,7 +165,7 @@ def _inventory_row(
             identity,
             active=active,
             changed_fields=changed_fields,
-            direct_editable=direct_editable,
+            direct_editable=(direct_editable or identity in state.manageable_feature_identities),
             state=state,
         ),
         ml_name=values.get("ml_name", ""),
@@ -280,7 +280,13 @@ def _lifecycle_state(
     return "Active"
 
 
-def _relationship(values: dict[str, str]) -> str:
+def _relationship(values: dict[str, str], state: DataDefinitionControllerState) -> str:
+    if values.get("operation"):
+        return (
+            f"{values['operation']}: {_operand_label(state, values.get('numerator_identity'))} / "
+            f"{_operand_label(state, values.get('denominator_identity'))}; "
+            f"zero → {values.get('zero_value') or '0.0'}"
+        )
     parts = [value for value in (values.get("mapping_entity"), values.get("mapping_attribute")) if value]
     relationship = " / ".join(parts)
     trigger = values.get("trigger_column", "")
@@ -289,6 +295,21 @@ def _relationship(values: dict[str, str]) -> str:
     if not relationship and values.get("one_hot_group"):
         relationship = f"One-hot: {values['one_hot_group']}"
     return relationship or "—"
+
+
+def _operand_label(state: DataDefinitionControllerState, stable_identity: str | None) -> str:
+    if not stable_identity:
+        return "—"
+    for identity, cells in zip(
+        state.draft_row_identities,
+        state.draft_rows,
+        strict=True,
+    ):
+        if identity[1] != stable_identity:
+            continue
+        values = {cell.field_name: cell.value for cell in cells}
+        return values.get("label") or values.get("ml_name") or stable_identity
+    return stable_identity
 
 
 def _as_bool(value: str) -> bool:

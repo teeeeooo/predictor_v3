@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from core.data_definition.contract.model import UnifiedFeatureManifest
 from core.data_definition.contract.projections import (
     ContractProjections,
@@ -9,7 +11,9 @@ from core.data_definition.contract.projections import (
     topological_derived_identities,
 )
 from core.data_definition.contract.relations_validation import validate_relations
+from core.data_definition.contract.compatibility import current_derived_definitions
 from core.data_definition.contract.validation_types import ContractValidationIssue
+from core.data_definition.derived_operand_policy import derived_operand_eligibility
 from core.ml.feature_catalog import FeatureCatalog
 from core.ml.feature_catalog_validation import validate_feature_catalog
 from core.predictor_schema.catalog_v2 import (
@@ -103,36 +107,72 @@ def _validate_order(issues, name: str, order, expected: set[str]) -> None:  # no
 
 
 def _validate_derived(issues, manifest) -> None:  # noqa: ANN001
-    known = {item.ml_name for item in (*manifest.features, *manifest.derived) if item.ml_name}
-    dependencies = {
-        item.ml_name: (item.numerator_ml_name, item.denominator_ml_name)
-        for item in manifest.derived if item.active
-    }
-    for name, refs in dependencies.items():
+    try:
+        definitions = current_derived_definitions(manifest)
+    except ValueError as exc:
+        issues.append(ContractValidationIssue("derived_legacy_reference_invalid", str(exc)))
+        return
+    derived_by_id = {item.identity: item for item in definitions}
+    target_feature_ids = {item.feature_identity for item in manifest.targets}
+    dependencies: dict[str, tuple[str, str]] = {}
+    for item in definitions:
+        if item.operation != "safe_ratio":
+            issues.append(ContractValidationIssue(
+                "derived_operation_invalid", f"{item.ml_name}: {item.operation}"
+            ))
+        if item.zero_denominator_policy != "constant":
+            issues.append(ContractValidationIssue(
+                "derived_zero_policy_invalid", item.ml_name
+            ))
+        if (
+            isinstance(item.zero_value, bool)
+            or not isinstance(item.zero_value, (int, float))
+            or not math.isfinite(float(item.zero_value))
+        ):
+            issues.append(ContractValidationIssue(
+                "derived_zero_value_invalid", f"{item.ml_name}: finite numeric required"
+            ))
+        refs = (item.numerator_identity, item.denominator_identity)
+        dependencies[item.identity] = refs
+        if item.identity in refs:
+            issues.append(ContractValidationIssue(
+                "derived_self_reference", item.ml_name
+            ))
         for ref in refs:
-            if ref not in known:
+            eligibility = derived_operand_eligibility(
+                manifest.features,
+                definitions,
+                ref,
+                target_feature_identities=target_feature_ids,
+                consumer_identity=item.identity,
+                consumer_active=item.active,
+            )
+            if not eligibility.eligible:
                 issues.append(ContractValidationIssue(
-                    "derived_dependency_missing",
-                    f"{name} references {ref}",
+                    eligibility.code,
+                    f"{item.ml_name}: {eligibility.reason} ({ref})",
                 ))
+
     visiting: set[str] = set()
     visited: set[str] = set()
 
-    def visit(name: str) -> None:
-        if name in visiting:
-            issues.append(ContractValidationIssue("derived_dependency_cycle", f"cycle at {name}"))
+    def visit(identity: str) -> None:
+        if identity in visiting:
+            issues.append(ContractValidationIssue(
+                "derived_dependency_cycle", f"cycle at {derived_by_id[identity].ml_name}"
+            ))
             return
-        if name in visited:
+        if identity in visited:
             return
-        visiting.add(name)
-        for ref in dependencies.get(name, ()):
-            if ref in dependencies:
+        visiting.add(identity)
+        for ref in dependencies.get(identity, ()):
+            if ref in derived_by_id:
                 visit(ref)
-        visiting.remove(name)
-        visited.add(name)
+        visiting.remove(identity)
+        visited.add(identity)
 
-    for name in dependencies:
-        visit(name)
+    for identity in dependencies:
+        visit(identity)
     try:
         topological = topological_derived_identities(manifest)
     except (KeyError, ValueError):

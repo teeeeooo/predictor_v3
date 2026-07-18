@@ -26,6 +26,8 @@ from core.data_definition import (
     RemoveDefinitionIntent,
     RenameDefinitionIntent,
     SetDefinitionActiveIntent,
+    DerivedCommandIntent,
+    apply_derived_command,
     apply_add_definition_command,
     apply_edit_definition_command,
     apply_duplicate_definition_command,
@@ -41,6 +43,7 @@ from core.data_definition import (
     save_data_definition_schema_draft,
 )
 from core.data_definition.contract import candidate_manifest_from_draft, scoped_fingerprints
+from core.data_definition.derived.intents import DERIVED_INTENT_TYPES
 from core.data_definition.draft import replace_draft_row
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
@@ -244,6 +247,14 @@ class DataDefinitionService:
             return self.move_definition(draft, intent)
         raise TypeError(f"Unsupported Feature command intent: {type(intent).__name__}")
 
+    def apply_derived_command(
+        self,
+        draft: DataDefinitionDraft,
+        intent: DerivedCommandIntent,
+    ) -> DataDefinitionCommandResult:
+        """Dispatch one restricted Derived command without I/O."""
+        return apply_derived_command(draft, intent)
+
     def preview_feature_command(
         self,
         draft: DataDefinitionDraft,
@@ -262,13 +273,17 @@ class DataDefinitionService:
     def prepare_feature_command(
         self,
         draft: DataDefinitionDraft,
-        intent: FeatureCommandIntent,
+        intent: FeatureCommandIntent | DerivedCommandIntent,
         *,
         source_revision: int,
         current_report: DataDefinitionReport | None = None,
     ) -> PreparedFeatureCommand:
         """Execute once and retain the exact immutable transition for approval."""
-        result = self.apply_feature_command(draft, intent)
+        result = (
+            self.apply_derived_command(draft, intent)
+            if isinstance(intent, DERIVED_INTENT_TYPES)
+            else self.apply_feature_command(draft, intent)
+        )
         report = current_report or self.load_report()
         plan = self.preview_save_plan(result.draft, current_report=report)
         base = draft.base_manifest if hasattr(draft.base_manifest, "features") else None
