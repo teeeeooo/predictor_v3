@@ -104,6 +104,7 @@ def test_inventory_panel_wires_search_selection_and_advanced_diagnostics():
             "Predict-only Feature",
             "ML-only Feature",
             "Helper / Hidden Feature",
+            "Derived Feature",
         ]
     finally:
         panel.close()

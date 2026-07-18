@@ -38,12 +38,29 @@ class FeatureDefinition:
 
 
 @dataclass(frozen=True)
-class DerivedDefinition:
+class LegacyDerivedDefinition:
+    """Version-1 name-based DTO retained only for historical bundle reads."""
+
     identity: str
     ml_name: str
     operation: str
     numerator_ml_name: str
     denominator_ml_name: str
+    zero_value: float = 0.0
+    zero_fill_policy: str = "disallow"
+    active: bool = True
+
+
+@dataclass(frozen=True)
+class DerivedDefinition:
+    """Version-2 identity-based canonical Derived definition."""
+
+    identity: str
+    ml_name: str
+    operation: str
+    numerator_identity: str
+    denominator_identity: str
+    zero_denominator_policy: str = "constant"
     zero_value: float = 0.0
     zero_fill_policy: str = "disallow"
     active: bool = True
@@ -115,7 +132,7 @@ class UnifiedFeatureManifest:
     generation: ContractGeneration
     preprocessing_version: str
     features: tuple[FeatureDefinition, ...]
-    derived: tuple[DerivedDefinition, ...]
+    derived: tuple[DerivedDefinition | LegacyDerivedDefinition, ...]
     one_hot_groups: tuple[OneHotGroupDefinition, ...]
     targets: tuple[TargetDefinition, ...]
     model_groups: tuple[ModelGroupDefinition, ...]

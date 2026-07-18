@@ -28,6 +28,7 @@ class FeatureCommandPreviewDialog(QDialog):
             f"Predict projection: {_changed(preview.predict_projection_changed)}\n"
             f"Ordered ML projection: {_changed(preview.ordered_ml_projection_changed)}\n"
             f"Mapping requirements: {_changed(preview.mapping_requirements_changed)}\n"
+            f"Derived semantics: {_changed(preview.derived_semantics_changed)}\n"
             f"Model compatibility: {_changed(preview.model_compatibility_changed)}\n"
             f"Retraining required: {'Yes' if preview.requires_retraining else 'No'}\n"
             f"Save possible: {'Yes' if preview.save_allowed else 'No'}"
@@ -36,6 +37,18 @@ class FeatureCommandPreviewDialog(QDialog):
         evidence.setAccessibleName("Feature command impact evidence")
         evidence.setWordWrap(True)
         layout.addWidget(evidence)
+        if preview.execution_order_before or preview.execution_order_after:
+            order = QLabel(
+                "Execution order before: " + ", ".join(preview.execution_order_before)
+                + "\nExecution order after: " + ", ".join(preview.execution_order_after)
+                + "\nDownstream identities: "
+                + (", ".join(preview.downstream_identities) or "None")
+                + "\nDerived semantics fingerprint: "
+                + (preview.derived_semantics_fingerprint or "Unavailable")
+            )
+            order.setAccessibleName("Derived dependency and execution order evidence")
+            order.setWordWrap(True)
+            layout.addWidget(order)
         affected = QLabel("\n".join(
             _evidence_line(item) for item in preview.evidence
         ) or "No affected Feature or dependency references.")

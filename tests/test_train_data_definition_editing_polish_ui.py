@@ -286,8 +286,9 @@ def test_accessible_names_label_relations_and_compact_actions_remain_visible(tmp
             "Data Mapping attribute",
             "Predict-only Feature",
             "ML-only Feature",
-            "Helper / Hidden Feature",
-        ]
+                "Helper / Hidden Feature",
+                "Derived Feature",
+            ]
     assert not panel.status_label.wordWrap()
 
     add_dialog = DataDefinitionAddDialog(panel._apply_add_intent, parent=panel)

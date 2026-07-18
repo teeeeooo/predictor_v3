@@ -20,6 +20,14 @@ from core.data_definition.contract.model import (
     OrderingContract,
     TargetDefinition,
     UnifiedFeatureManifest,
+    LegacyDerivedDefinition,
+)
+from core.data_definition.contract.compatibility import (
+    CURRENT_CONTRACT_VERSION,
+    LEGACY_CONTRACT_VERSION,
+    current_derived_definitions,
+    migrate_manifest,
+    operand_ml_name,
 )
 from core.data_definition.contract.projections import (
     ContractProjections,
@@ -39,6 +47,9 @@ __all__ = [
     "ContractProjections",
     "ContractValidationIssue",
     "DerivedDefinition",
+    "LegacyDerivedDefinition",
+    "CURRENT_CONTRACT_VERSION",
+    "LEGACY_CONTRACT_VERSION",
     "FeatureDefinition",
     "MappingRequirementDefinition",
     "ModelGroupDefinition",
@@ -62,4 +73,7 @@ __all__ = [
     "semantic_manifest_fingerprint",
     "topological_derived_identities",
     "validate_contract",
+    "current_derived_definitions",
+    "migrate_manifest",
+    "operand_ml_name",
 ]

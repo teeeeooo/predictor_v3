@@ -102,7 +102,11 @@ def build_data_definition_save_plan(
     ]
     requires_restart = _requires_restart(draft, changes)
     requires_retrain = _requires_retrain(changes)
-    can_save_schema = any(_is_schema_change(draft, change) for change in changes) and not any(
+    has_generation_change = any(
+        _is_schema_change(draft, change) or change.row_identity[0] == "derived_policy"
+        for change in changes
+    )
+    can_save_schema = has_generation_change and not any(
         blocker.severity == "error" and blocker.target in {"schema_csv", ""}
         for blocker in blockers
     )
@@ -110,7 +114,9 @@ def build_data_definition_save_plan(
     return DataDefinitionSavePlan(
         can_save_schema=can_save_schema,
         can_write_features_projection=False,
-        can_write_derived_policy=False,
+        can_write_derived_policy=has_generation_change and not any(
+            blocker.severity == "error" for blocker in blockers
+        ),
         requires_restart=requires_restart,
         requires_retrain=requires_retrain,
         changed_fields=changes,
@@ -370,7 +376,6 @@ def _change_blockers(
     blockers = [
         *_raw_row_change_blockers(draft, changes),
         *_field_policy_blockers(draft),
-        *_derived_policy_blockers(changes),
     ]
     checks = (
         (
@@ -439,23 +444,6 @@ def _field_policy_blockers(
     )
 
 
-def _derived_policy_blockers(
-    changes: tuple[DataDefinitionDraftChange, ...],
-) -> tuple[DataDefinitionSaveBlocker, ...]:
-    return tuple(
-        _blocker(
-            "derived_policy_persistence_required",
-            "error",
-            "Derived policy edits require a persistence owner before save.",
-            "derived_policy",
-            row_identity=change.row_identity,
-            field_name=change.field_name,
-        )
-        for change in changes
-        if change.row_identity[0] == "derived_policy"
-    )
-
-
 def _requested_target_blockers(
     requested_targets: tuple[str, ...],
 ) -> tuple[DataDefinitionSaveBlocker, ...]:
@@ -465,11 +453,6 @@ def _requested_target_blockers(
             "features_csv_dual_writer_not_resolved", "error",
             "features.csv write is blocked until Data Definition-to-ML catalog persistence is defined.",
             "features_csv",
-        ))
-    if "derived_policy" in requested_targets:
-        blockers.append(_blocker(
-            "derived_policy_persistence_required", "error",
-            "Derived policy write target is not defined in Arc 15C-1.", "derived_policy",
         ))
     if "mapping_json" in requested_targets:
         blockers.append(_blocker(
@@ -486,6 +469,9 @@ def _write_targets(
     requested_targets: tuple[str, ...],
 ) -> tuple[DataDefinitionWriteTarget, ...]:
     has_schema_change = any(_is_schema_change(draft, change) for change in changes)
+    has_derived_change = any(
+        change.row_identity[0] == "derived_policy" for change in changes
+    )
     schema_blocked = any(
         blocker.severity == "error" and blocker.target in {"schema_csv", ""}
         for blocker in blockers
@@ -506,7 +492,11 @@ def _write_targets(
             "blocked",
             "The independent ML catalog remains read-only; no projection writer is defined.",
         ),
-        _target("derived_policy", "blocked", "Derived policy persistence owner is not defined."),
+        _target(
+            "derived_policy",
+            "blocked" if has_derived_change and schema_blocked else "planned" if has_derived_change else "no_op",
+            "Published with the canonical immutable generation bundle.",
+        ),
     ]
     if "mapping_json" in requested_targets or any(
         blocker.target == "mapping_json" for blocker in blockers

@@ -1,29 +1,17 @@
 # core/ml/preprocessing.py — 전처리 및 데이터 공급 전용
 import pandas as pd
-import numpy as np
 # 학습 라이브러리(sklearn 등) 임포트 금지 (배포 환경 최적화)
 from core.ml.features import BASE_FEATURES, TARGETS, DERIVED_FEATURES
+from core.ml.derived_adapter import current_derived_evaluation_snapshot
+from core.data_definition.derived.evaluator import evaluate_derived_features
 
-def calculate_derived_features(df):
+def calculate_derived_features(df, definitions=None):
     """
     8가지 파생 피처(DERIVED_FEATURES)를 계산합니다.
     Pandas/Numpy 벡터 연산만 사용하여 가볍고 빠릅니다.
     """
-    res = df.copy()
-
-    # 0 나누기 방지 및 파생 피처 계산 (Cooling 기반)
-    res["Cool_Capa_per_EER"] = np.where(res["Comp EER"] != 0, res["Cooling Capa"] / res["Comp EER"], 0)
-    res["Cool_Capa_per_CondArea"] = np.where(res["Cond Area"] != 0, res["Cooling Capa"] / res["Cond Area"], 0)
-    res["Cool_Capa_per_EvapArea"] = np.where(res["Evap Area"] != 0, res["Cooling Capa"] / res["Evap Area"], 0)
-    res["Cool_Capa_per_cc"] = np.where(res["Comp cc"] != 0, res["Cooling Capa"] / res["Comp cc"], 0)
-
-    # 0 나누기 방지 및 파생 피처 계산 (Heating 기반)
-    res["Heat_Capa_per_EER"] = np.where(res["Comp EER"] != 0, res["Heating Capa"] / res["Comp EER"], 0)
-    res["Heat_Capa_per_CondArea"] = np.where(res["Cond Area"] != 0, res["Heating Capa"] / res["Cond Area"], 0)
-    res["Heat_Capa_per_EvapArea"] = np.where(res["Evap Area"] != 0, res["Heating Capa"] / res["Evap Area"], 0)
-    res["Heat_Capa_per_cc"] = np.where(res["Comp cc"] != 0, res["Heating Capa"] / res["Comp cc"], 0)
-
-    return res
+    snapshot = definitions or current_derived_evaluation_snapshot()
+    return evaluate_derived_features(df, snapshot)
 
 def prepare_pipeline(df, config):
     """

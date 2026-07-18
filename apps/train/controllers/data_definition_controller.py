@@ -29,6 +29,7 @@ from core.data_definition import (
     RemoveDefinitionIntent,
     RenameDefinitionIntent,
     SetDefinitionActiveIntent,
+    DerivedCommandIntent,
 )
 
 
@@ -124,6 +125,25 @@ class DataDefinitionController:
             source_revision=self._draft_revision,
             current_report=report,
         )
+
+    def preview_derived_command(self, intent: DerivedCommandIntent) -> PreparedFeatureCommand:
+        """Preview the exact restricted Derived transition."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        report = self._service.refresh_report()
+        return self._service.prepare_feature_command(
+            self._draft,
+            intent,
+            source_revision=self._draft_revision,
+            current_report=report,
+        )
+
+    def apply_prepared_derived_command(
+        self,
+        prepared: PreparedFeatureCommand,
+    ) -> DataDefinitionControllerState:
+        return self.apply_prepared_feature_command(prepared)
 
     def apply_prepared_feature_command(
         self,

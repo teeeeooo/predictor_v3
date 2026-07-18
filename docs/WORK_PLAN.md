@@ -17,32 +17,29 @@
 
 ## Current Slice
 
-Train/Admin Phase 4C+4D — Feature Mutation and Basic Feature Manager plus its
-PR #21 audit correction is implemented over the merged Phase 4B baseline.
-Basic Feature Add/Edit/Rename/Duplicate/Remove/Enable/Disable and independent
-Predict/ML Move commands now mutate only immutable drafts through domain
-commands. Stable identity is independent from label, Predict key, and ML name;
-the table-first Data Definition workspace owns selection, command Preview,
-Reset, and canonical generation Save orchestration. Protection now follows the
-actual fixed-index/import-time consumer provider rather than manifest membership
-or visibility. Prepared Preview/Apply uses one exact candidate transition with
-revision stale protection, and identity matching cannot resurrect a removed
-Feature through key reuse. Save validation treats controlled Remove and Add as
-independent lifecycle events rather than a positional identity edit, so same-key
-recreation publishes and reloads with the new identity. Model compatibility,
-stale-parent, immutable history, and atomic publication guards remain in force.
+Train/Admin Phase 4E — Restricted Derived Feature Authoring and Shared Evaluator
+is implemented over the Phase 4B–4D baseline. Canonical v2 Derived operands use
+Feature/Derived stable identities; historical v1 name-based generations remain
+readable and rollback-safe through explicit compatibility decoding. Restricted
+`safe_ratio` Add/Edit/Rename/Duplicate/Remove/Enable/Disable commands, deterministic
+DAG ordering, prepared Preview/Apply, inactive-safe generation Save, and table-first
+authoring are connected. One pure evaluator now owns the existing eight production
+formula semantics for both Train and Predict. Derived semantics and active model
+compatibility fingerprints are separate, while active semantic/activation changes
+remain blocked by the retraining/migration Save guard.
 
 ## Next Action
 
-Review and merge the Phase 4C+4D Draft PR. After merge, start Phase 4E restricted
-Derived Feature authoring from updated `main`. Keep One-hot/Target authoring,
-runtime cutover, model candidate generation, training, and promotion outside the
-4E slice.
+Review and integrate the Phase 4E change. After its audit/merge boundary, start
+Phase 4F One-hot group/category CRUD. Keep Target/registry authoring, runtime
+cutover, model candidate generation, training, and promotion outside Phase 4F.
 
 ## Active Blockers
 
+- Active Derived activation or semantic changes remain Save-blocked until an
+  approved retraining/migration boundary; inactive definitions are publishable.
 - Actual protected ML/import-time/fixed-string consumers still block ordinary
-  ML-name/order/One-hot/Derived/Target changes until their explicit migration.
+  ML-name/order/One-hot/Target changes until their explicit migration.
 - Existing fixed-index Predict keys remain protected migration targets; saved
   user-created Features without those dependencies remain renameable/removable.
 - Windows native Feature Manager smoke remains a pre-release verification item;
@@ -92,7 +89,7 @@ runtime cutover, model candidate generation, training, and promotion outside the
 
 ## Deferred / Hold
 
-- Slices 4E–4I remain deferred; Slice 4E begins only after Phase 4C+4D merge.
+- Slices 4F–4I remain deferred; Slice 4F begins only after Phase 4E integration.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
   Manager stabilization and a fresh dynamic-contract audit.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
@@ -114,6 +111,8 @@ runtime cutover, model candidate generation, training, and promotion outside the
 - Phase 4B result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-unified-contract-persistence.md`
 - Phase 4B final audit correction: `result_reports/records/2026-07/2026-07-17-train-admin-phase4b-final-audit-correction.md`
 - Phase 4C+4D closeout: `result_reports/records/2026-07/2026-07-17-train-admin-phase4c-4d-feature-manager.md`
+- Phase 4E contract: `docs/designs/2026-07-18-derived-feature-authoring-shared-evaluator.md`
+- Phase 4E result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

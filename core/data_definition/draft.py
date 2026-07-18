@@ -40,6 +40,11 @@ class DataDefinitionDraftRow:
     model_input_enabled: bool = False
     ml_name: str = ""
     one_hot_group: str = ""
+    operation: str = ""
+    numerator_identity: str = ""
+    denominator_identity: str = ""
+    zero_denominator_policy: str = ""
+    zero_value: float = 0.0
     active: bool = True
     notes: str = ""
 
@@ -215,9 +220,19 @@ def build_data_definition_draft(
         _schema_draft_row(row, stable_identity=feature_ids.get(row.column_key, ""))
         for row in load_predict_schema_catalog_v2(schema_path).rows
     )
+    if manifest is not None:
+        from core.data_definition.contract.compatibility import current_derived_definitions
+
+        canonical_derived = current_derived_definitions(manifest)
+    else:
+        canonical_derived = ()
     derived_rows = tuple(
         _derived_draft_row(row, stable_identity=derived_ids.get(row.ml_name, ""))
-        for row in (derived_policy or load_current_derived_feature_policy())
+        for row in (
+            canonical_derived
+            or derived_policy
+            or load_current_derived_feature_policy()
+        )
     )
     rows = (*schema_rows, *derived_rows)
     by_stable_id = {row.stable_identity: row.identity for row in rows if row.stable_identity}
@@ -301,7 +316,7 @@ def _schema_draft_row(
 
 
 def _derived_draft_row(
-    row: DerivedFeatureDefinition,
+    row: object,
     *,
     stable_identity: str = "",
 ) -> DataDefinitionDraftRow:
@@ -309,9 +324,15 @@ def _derived_draft_row(
         source_kind="derived_policy",
         stable_identity=stable_identity,
         role="derived",
+        data_type="number",
         ml_name=row.ml_name,
+        operation=getattr(row, "operation", "safe_ratio"),
+        numerator_identity=getattr(row, "numerator_identity", ""),
+        denominator_identity=getattr(row, "denominator_identity", ""),
+        zero_denominator_policy=getattr(row, "zero_denominator_policy", "constant"),
+        zero_value=float(getattr(row, "zero_value", 0.0)),
         active=row.active,
-        notes="Derived feature policy has no persistence owner in Arc 15C-1.",
+        notes="Canonical restricted Derived definition.",
     )
 
 

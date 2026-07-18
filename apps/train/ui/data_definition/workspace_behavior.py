@@ -93,7 +93,7 @@ class DataDefinitionWorkspaceBehavior:
 
     def _open_selected_definition(self) -> None:
         if self.panel.edit_button.isEnabled():
-            self.panel._edit_definition()
+            self.panel._definition_actions.edit()
         elif self.panel.details_action.isEnabled():
             self.panel._show_details()
 

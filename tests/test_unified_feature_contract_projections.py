@@ -9,6 +9,7 @@ from core.data_definition.contract import (
     predict_csv_text,
     scoped_fingerprints,
     validate_contract,
+    operand_ml_name,
 )
 from core.data_definition.projection import extract_mapping_requirements, load_data_definition_rows
 from core.ml.feature_catalog import load_feature_catalog
@@ -41,7 +42,15 @@ def test_generated_predict_and_ml_projections_preserve_current_contract(tmp_path
 def test_generated_runtime_projections_preserve_derived_one_hot_registry_and_mapping():
     manifest = bootstrap_manifest()
     projections = generate_projections(manifest)
-    assert [(item.ml_name, item.operation, item.numerator_ml_name, item.denominator_ml_name) for item in projections.derived] == [
+    assert [
+        (
+            item.ml_name,
+            item.operation,
+            operand_ml_name(manifest, item.numerator_identity),
+            operand_ml_name(manifest, item.denominator_identity),
+        )
+        for item in projections.derived
+    ] == [
         ("Cool_Capa_per_EER", "safe_ratio", "Cooling Capa", "Comp EER"),
         ("Cool_Capa_per_CondArea", "safe_ratio", "Cooling Capa", "Cond Area"),
         ("Cool_Capa_per_EvapArea", "safe_ratio", "Cooling Capa", "Evap Area"),
@@ -81,7 +90,7 @@ def test_derived_one_hot_and_target_projections_use_canonical_ordering():
     first_derived, second_derived = manifest.derived[:2]
     dependent = replace(
         second_derived,
-        numerator_ml_name=first_derived.ml_name,
+        numerator_identity=first_derived.identity,
     )
     reversed_derived = replace(
         manifest,
@@ -195,8 +204,8 @@ def test_cross_validation_rejects_duplicate_identity_incomplete_order_and_cycle(
     incomplete = replace(manifest, ordering=replace(manifest.ordering, ml=manifest.ordering.ml[:-1]))
     assert "ml_order_incomplete" in {item.code for item in validate_contract(incomplete)}
     cycle_rows = list(manifest.derived)
-    cycle_rows[0] = replace(cycle_rows[0], numerator_ml_name=cycle_rows[1].ml_name)
-    cycle_rows[1] = replace(cycle_rows[1], numerator_ml_name=cycle_rows[0].ml_name)
+    cycle_rows[0] = replace(cycle_rows[0], numerator_identity=cycle_rows[1].identity)
+    cycle_rows[1] = replace(cycle_rows[1], numerator_identity=cycle_rows[0].identity)
     cycle = replace(manifest, derived=tuple(cycle_rows))
     assert "derived_dependency_cycle" in {item.code for item in validate_contract(cycle)}
 

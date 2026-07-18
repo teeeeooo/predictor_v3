@@ -37,6 +37,7 @@ class DataDefinitionTaskHeader(QFrame):
         on_add_predict_only: Callable[[], None],
         on_add_ml_only: Callable[[], None],
         on_add_helper: Callable[[], None],
+        on_add_derived: Callable[[], None],
         on_details: Callable[[], None],
         on_edit: Callable[[], None],
         on_rename: Callable[[], None],
@@ -117,6 +118,12 @@ class DataDefinitionTaskHeader(QFrame):
             "Helper / Hidden Feature",
             "Add a projection-neutral Helper or Hidden Feature",
             on_add_helper,
+        )
+        self.add_derived_action = _menu_action(
+            self.add_menu,
+            "Derived Feature",
+            "Add an inactive restricted safe_ratio Derived definition",
+            on_add_derived,
         )
         self.add_button.setMenu(self.add_menu)
 
@@ -304,6 +311,24 @@ class DataDefinitionTaskHeader(QFrame):
         self.toggle_active_action.setStatusTip(
             "Disable selected Feature" if active else "Enable selected Feature"
         )
+
+    def set_selected_kind(self, source_kind: str) -> None:
+        """Adapt labels and remove manual ordering for Derived selection."""
+        derived = source_kind == "derived_policy"
+        self.rename_action.setText("Rename Derived" if derived else "Rename Feature")
+        self.duplicate_action.setText("Duplicate Derived" if derived else "Duplicate Feature")
+        self.remove_action.setText("Remove Derived" if derived else "Remove Feature")
+        active = self.toggle_active_action.text().startswith("Disable")
+        self.toggle_active_action.setText(
+            ("Disable" if active else "Enable") + (" Derived" if derived else " Feature")
+        )
+        for action in (
+            self.move_predict_up_action,
+            self.move_predict_down_action,
+            self.move_ml_up_action,
+            self.move_ml_down_action,
+        ):
+            action.setEnabled(action.isEnabled() and not derived)
 
 
 def _button(
