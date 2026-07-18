@@ -29,6 +29,31 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-18 — Train/Admin Phase 4F One-hot authoring
+
+### Decision
+
+- Store group, selector, category, and emitted Feature relations by stable
+  identity in canonical contract v3; retain explicit v2 name-relation decode for
+  immutable historical generation reads and rollback.
+- Separate Static Data Definition values, Mapping-owned persisted vocabulary,
+  and External provider-owned identity/value. Mapping/provider snapshots are
+  immutable application inputs and never hidden fingerprint inputs.
+- Make category order its own domain and project only the active relative group
+  block into global ML order; Predict display order remains unchanged.
+- Use controlled group/category commands with exact prepared Preview/Apply,
+  atomic selector/emitted-Feature transitions, dependency guards, and inactive
+  Add/Duplicate defaults.
+- Remove Predict's fixed selector/group table. Encoding and selector options
+  consume the same immutable canonical runtime snapshot, while Train retains the
+  canonical emitted-header projection.
+- Preserve current `warn_all_zero`/`all_zero` behavior and five emitted headers.
+  Inactive authoring is publishable; active semantic changes require the existing
+  retraining/migration boundary.
+- Keep concrete Mapping mutation, dirty Mapping reconciliation, process-wide
+  runtime cutover, Target/registry CRUD, training, and model promotion outside
+  Phase 4F.
+
 ## 2026-07-18 — Train/Admin Phase 4E restricted Derived authoring
 
 ### Decision
