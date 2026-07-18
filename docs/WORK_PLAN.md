@@ -26,11 +26,15 @@ DAG ordering, prepared Preview/Apply, inactive-safe generation Save, and table-f
 authoring are connected. One pure evaluator now owns the existing eight production
 formula semantics for both Train and Predict. Derived semantics and active model
 compatibility fingerprints are separate, while active semantic/activation changes
-remain blocked by the retraining/migration Save guard.
+remain blocked by the retraining/migration Save guard. The Phase 4E audit correction
+also centralizes pre-evaluator operand eligibility and transitive base dependency
+projection in the same immutable core snapshot, blocks Result/Target leakage in
+commands and whole-contract validation, and removes View/Predict policy duplication.
 
 ## Next Action
 
-Review and integrate the Phase 4E change. After its audit/merge boundary, start
+Reaudit and integrate the corrected Phase 4E change in Draft PR #22. After its
+audit/merge boundary, start
 Phase 4F One-hot group/category CRUD. Keep Target/registry authoring, runtime
 cutover, model candidate generation, training, and promotion outside Phase 4F.
 
@@ -113,6 +117,7 @@ cutover, model candidate generation, training, and promotion outside Phase 4F.
 - Phase 4C+4D closeout: `result_reports/records/2026-07/2026-07-17-train-admin-phase4c-4d-feature-manager.md`
 - Phase 4E contract: `docs/designs/2026-07-18-derived-feature-authoring-shared-evaluator.md`
 - Phase 4E result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md`
+- Phase 4E audit correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

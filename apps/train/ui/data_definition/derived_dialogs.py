@@ -16,9 +16,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from apps.train.controllers.derived_operand_projection import DerivedOperandOption
 from core.data_definition import AddDerivedIntent, EditDerivedIntent
 
-OperandOptions = tuple[tuple[str, str], ...]
+OperandOptions = tuple[DerivedOperandOption, ...]
 
 
 class DerivedDefinitionDialog(QDialog):
@@ -93,8 +94,15 @@ class DerivedDefinitionDialog(QDialog):
 def _operand_combo(options, selected, parent):  # noqa: ANN001
     combo = QComboBox(parent)
     combo.addItem("Select a numeric Feature or Derived", "")
-    for identity, label in options:
-        combo.addItem(label, identity)
+    for option in options:
+        label = f"{option.display_name} [{option.identity}]"
+        combo.addItem(label, option.identity)
+        item = combo.model().item(combo.count() - 1)
+        item.setEnabled(option.selectable)
+        if option.blocked_reason:
+            item.setToolTip(
+                f"{option.blocked_reason} ({option.blocked_code})"
+            )
     index = combo.findData(selected)
     if index >= 0:
         combo.setCurrentIndex(index)

@@ -16,6 +16,10 @@ from apps.train.controllers.data_definition_state_builder import (
     save_status as _save_status,
     state_from_report as _state_from_report,
 )
+from apps.train.controllers.derived_operand_projection import (
+    DerivedOperandOption,
+    project_derived_operand_options,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import (
     AddDefinitionIntent,
@@ -137,6 +141,19 @@ class DataDefinitionController:
             intent,
             source_revision=self._draft_revision,
             current_report=report,
+        )
+
+    def derived_operand_options(
+        self,
+        consumer_identity: str = "",
+    ) -> tuple[DerivedOperandOption, ...]:
+        """Return application-owned operand presentation for Add or Edit."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        return project_derived_operand_options(
+            self._draft,
+            consumer_identity=consumer_identity,
         )
 
     def apply_prepared_derived_command(

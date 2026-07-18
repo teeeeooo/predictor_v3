@@ -39,6 +39,12 @@
   existing eight outputs, `0.0` behavior, and deterministic compatibility order.
 - Derive execution order from one validated dependency DAG and centralize Train/
   Predict formula semantics in one pure shared evaluator.
+- Use one core policy for Derived operand eligibility across commands, raw contract
+  validation, and application presentation; Result/Target and post-model outputs
+  are never valid operands, including for inactive authoring.
+- Project requested Derived outputs to deterministic transitive base Feature inputs
+  from the same immutable evaluator snapshot. Train and Predict share missing-input
+  classification, while Predict no longer owns a fixed six-name dependency list.
 - Default Add/Duplicate to inactive, distinguish canonical Derived semantics from
   active model compatibility, and preserve retraining/migration Save guards for
   activation or active semantic changes.

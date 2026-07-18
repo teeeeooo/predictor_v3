@@ -8,9 +8,11 @@ from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
 from apps.train.controllers.data_definition_controller import DataDefinitionController
+from apps.train.controllers.derived_operand_projection import (
+    project_derived_operand_options,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.data_definition.derived_dialogs import DerivedDefinitionDialog
-from apps.train.ui.data_definition.derived_actions import project_derived_operand_options
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from core.data_definition import AddDerivedIntent
 from core.data_definition.contract import bootstrap_manifest
@@ -57,7 +59,7 @@ def test_add_dialog_collects_only_canonical_candidates_and_defaults_inactive(tmp
     captured = []
     dialog = DerivedDefinitionDialog(
         lambda intent: (captured.append(intent) is None, ""),
-        project_derived_operand_options(panel._state),
+        panel._controller.derived_operand_options(),
         parent=panel,
     )
     try:
@@ -75,4 +77,29 @@ def test_add_dialog_collects_only_canonical_candidates_and_defaults_inactive(tmp
         assert captured[0].numerator_identity.startswith("ufm_")
     finally:
         dialog.close()
+        panel.close()
+
+
+def test_application_projection_owns_selectability_and_edit_self_exclusion(tmp_path):
+    panel = _panel(tmp_path)
+    try:
+        draft = panel._controller._draft
+        assert draft is not None
+        options = project_derived_operand_options(draft)
+        by_name = {item.ml_name: item for item in options if item.ml_name}
+        assert by_name["Cooling Capa"].selectable
+        assert by_name["Cond Area"].selectable
+        assert by_name["R32"].selectable
+        assert not by_name["Cooling Power"].selectable
+        assert by_name["Cooling Power"].blocked_code == "derived_operand_target_or_result"
+
+        first = next(item for item in draft.rows if item.source_kind == "derived_policy")
+        editing = project_derived_operand_options(
+            draft,
+            consumer_identity=first.stable_identity,
+        )
+        self_option = next(item for item in editing if item.identity == first.stable_identity)
+        assert not self_option.selectable
+        assert self_option.blocked_code == "derived_self_reference"
+    finally:
         panel.close()

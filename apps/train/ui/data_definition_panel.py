@@ -57,7 +57,6 @@ from apps.train.ui.data_definition.feature_actions import FeatureManagerActions
 from apps.train.ui.data_definition.derived_actions import (
     DefinitionManagerActions,
     DerivedManagerActions,
-    project_derived_operand_options,
 )
 from apps.train.ui.data_definition.panel_compat import (
     publish_diagnostic_aliases,
@@ -97,7 +96,6 @@ class DataDefinitionPanel(QWidget):
         self._derived_actions = DerivedManagerActions(
             controller,
             self._selected_feature,
-            lambda: project_derived_operand_options(self._state),
             self._apply_state,
             self,
         )

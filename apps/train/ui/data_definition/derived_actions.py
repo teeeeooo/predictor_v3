@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QInputDialog, QWidget
 
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.ui.data_definition.command_preview_dialog import FeatureCommandPreviewDialog
-from apps.train.ui.data_definition.derived_dialogs import DerivedDefinitionDialog, OperandOptions
+from apps.train.ui.data_definition.derived_dialogs import DerivedDefinitionDialog
 from core.data_definition import (
     DuplicateDerivedIntent,
     RemoveDerivedIntent,
@@ -22,19 +22,19 @@ class DerivedManagerActions:
         self,
         controller: DataDefinitionController,
         selected: Callable[[], tuple[tuple[str, str], dict[str, str]] | None],
-        operands: Callable[[], OperandOptions],
         apply_state: Callable[[object], None],
         parent: QWidget,
     ) -> None:
         self._controller = controller
         self._selected = selected
-        self._operands = operands
         self._apply_state = apply_state
         self._parent = parent
 
     def add(self) -> bool:
         return bool(DerivedDefinitionDialog(
-            self._preview_and_apply, self._operands(), parent=self._parent
+            self._preview_and_apply,
+            self._controller.derived_operand_options(),
+            parent=self._parent,
         ).exec())
 
     def edit(self) -> bool:
@@ -42,10 +42,9 @@ class DerivedManagerActions:
         if selected is None:
             return False
         identity, values = selected
-        options = tuple(item for item in self._operands() if item[0] != identity[1])
         return bool(DerivedDefinitionDialog(
             self._preview_and_apply,
-            options,
+            self._controller.derived_operand_options(identity[1]),
             identity=identity,
             values=values,
             parent=self._parent,
@@ -127,25 +126,3 @@ class DefinitionManagerActions:
     def _is_derived(self) -> bool:
         selected = self._selected()
         return bool(selected and selected[1].get("source_kind") == "derived_policy")
-
-
-def project_derived_operand_options(state) -> OperandOptions:  # noqa: ANN001
-    """Project numeric canonical identities for the View dropdown."""
-    if state is None:
-        return ()
-    options = []
-    for identity, cells in zip(
-        state.draft_row_identities,
-        state.draft_rows,
-        strict=True,
-    ):
-        values = {cell.field_name: cell.value for cell in cells}
-        if values.get("source_kind") == "schema_row" and (
-            values.get("data_type") != "number" or not values.get("ml_name")
-        ):
-            continue
-        if values.get("source_kind") not in {"schema_row", "derived_policy"}:
-            continue
-        label = values.get("label") or values.get("ml_name") or identity[1]
-        options.append((identity[1], f"{label} [{identity[1]}]"))
-    return tuple(options)

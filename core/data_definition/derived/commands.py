@@ -22,6 +22,7 @@ from core.data_definition.derived.intents import (
     SetDerivedActiveIntent,
 )
 from core.data_definition.derived.graph import derived_downstream_identities
+from core.data_definition.derived_operand_policy import derived_operand_eligibility
 
 
 def apply_derived_command(
@@ -176,6 +177,9 @@ def _validated(original, candidate, identity, action, affected=()):  # noqa: ANN
             "Derived authoring requires a canonical generation draft.",
             "Reload through the generation repository.",
         ))
+    operand_issue = _operand_issue(candidate, identity)
+    if operand_issue is not None:
+        return _reject(original, _find(original, identity), action, operand_issue)
     try:
         manifest = candidate_manifest_from_draft(candidate, candidate.base_manifest)
         issues = validate_contract(manifest)
@@ -197,6 +201,35 @@ def _validated(original, candidate, identity, action, affected=()):  # noqa: ANN
     return DataDefinitionCommandResult(
         candidate, True, identity, action, affected_identities=affected
     )
+
+
+def _operand_issue(draft, identity):  # noqa: ANN001
+    row = _find(draft, identity)
+    if row is None or row.source_kind != "derived_policy":
+        return None
+    features = tuple(item for item in draft.rows if item.source_kind == "schema_row")
+    derived = tuple(item for item in draft.rows if item.source_kind == "derived_policy")
+    target_ids = {
+        item.feature_identity
+        for item in getattr(draft.base_manifest, "targets", ())
+    }
+    for field_name in ("numerator_identity", "denominator_identity"):
+        eligibility = derived_operand_eligibility(
+            features,
+            derived,
+            getattr(row, field_name),
+            target_feature_identities=target_ids,
+            consumer_identity=row.stable_identity,
+            consumer_active=row.active,
+        )
+        if not eligibility.eligible:
+            return _issue(
+                eligibility.code,
+                field_name,
+                eligibility.reason,
+                "Choose an operand available before Train and Predict Derived evaluation.",
+            )
+    return None
 
 
 def _selected(draft, identity, action):  # noqa: ANN001
