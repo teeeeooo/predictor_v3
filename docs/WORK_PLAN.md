@@ -34,6 +34,13 @@ review on exact affected unsaved values. Dirty Definition drafts require explici
 Save/Reset and fresh retry; embedded and standalone Predict share the same runtime
 snapshot owner.
 
+The final PR #25 correction additionally migrates existing Predict ResultRow
+values by stable Result Feature identity as part of the same atomic session
+transition and restores the complete result state on rollback. Train idle Target
+list/count/order/Summary/waiting metrics now share the committed registry; a
+running request retains its frozen presentation until terminal, then the pending
+process generation becomes the idle presentation.
+
 ## Next Action
 
 Perform final audit of the Phase 4H+4I Draft PR. After merge, Phase 5 Train/Model
@@ -124,6 +131,7 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
 - Phase 4G result: `result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md`
 - Phase 4H+4I closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-runtime-closeout.md`
 - Phase 4H+4I audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-audit-correction.md`
+- Phase 4H+4I final audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-final-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

@@ -674,6 +674,14 @@ Save/Reset and fresh retry. Mapping review compares stable-identity affected
 column values against its baseline, so unrelated dirtiness cannot turn a clean
 removed requirement into a dirty removal.
 
+Final audit correction: the Predict candidate carries one complete case/result
+projection. Existing user-facing result values migrate only through stable active
+Result Feature identity, and rollback restores the full prior ResultRow. Train
+idle Target inventory, order, count, waiting metrics, and Summary rows project
+from one committed registry snapshot. A running request keeps its start-generation
+Target presentation until terminal while the status distinguishes process-active
+generation; the pending idle projection then applies before the next run.
+
 Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
@@ -776,6 +784,12 @@ cross-tab acceptance, and honest fixture/mock limitations.
     recovery.
 34. Mapping dirty removal evidence requires an unsaved change in the exact
     affected stable-identity column or relation.
+35. Result column-key or Target ML-name rename preserves existing user-facing
+    values by stable Result Feature identity through table/model commit and exact
+    rollback; added, removed, and hidden-active results follow canonical ownership.
+36. Train Target list, order, count, waiting metrics, and Summary rows share one
+    committed registry when idle. A running request retains its start-generation
+    presentation until terminal, and the next request freezes the new registry.
 
 Phase 4 acceptance is closed for automated repository scope. Windows-native
 Train/Predict/Mapping smoke remains an explicit pre-release verification item and

@@ -92,7 +92,8 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   cutover, standalone Predict drift detection, dirty Mapping reconciliation,
   generation-bound Predict inference, complete participant stale evidence, actual
   Definition controller cutover, exact dirty Mapping evidence, recovery
-  diagnostics, and Phase 4 automated closeout implemented for audit.
+  diagnostics, stable Result migration, committed-registry Train Target
+  presentation parity, and Phase 4 automated closeout implemented for audit.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 

@@ -54,6 +54,12 @@
   selected file/header, Definition draft/base/controller state, and Mapping
   draft/provider state. Dirty Definition recovery is explicit, and Mapping dirty
   removal requires exact affected draft-versus-baseline value evidence.
+- Final audit correction makes Predict case and ResultRow projection one atomic
+  session transition. Result values migrate only by stable active Result Feature
+  identity, and reverse rollback restores the exact A key/status/value/message.
+- Train idle Target list, order, count, waiting metrics, and Summary now consume
+  one committed registry snapshot. Running A presentation remains frozen while
+  process B is explicit, then B idle presentation applies after terminal state.
 
 ## 2026-07-22 — Train/Admin Phase 4G Target registry authoring
 
