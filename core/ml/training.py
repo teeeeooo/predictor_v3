@@ -14,7 +14,11 @@ from core.ml.artifacts import TRAIN_DATA_FILE, MODEL_FILE, MODEL_DIR
 from core.ml.catalog_fingerprint import attach_catalog_fingerprint
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 from core.ml.feature_catalog_projection import validate_training_headers
-from core.ml.registry import MODEL_REGISTRY, get_model_config
+from core.ml.registry import compatibility_registry_snapshot
+from core.data_definition.target_registry.runtime import (
+    ModelRegistrySnapshot,
+    apply_target_policy,
+)
 from core.ml.preprocessing import load_and_preprocess, prepare_pipeline
 from core.utils import save_train_log_to_excel
 
@@ -95,7 +99,10 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
 
     return final_model, selected_cols, cv_r2, cv_rmse, feature_ranking
 
-def train_all_models(data_path=None, log_callback=None, model_output_path=None):
+def train_all_models(
+    data_path=None, log_callback=None, model_output_path=None,
+    *, registry_snapshot: ModelRegistrySnapshot | None = None,
+):
     def custom_log(msg):
         if log_callback: log_callback(msg)
         else: print(msg)
@@ -103,42 +110,52 @@ def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     file = data_path or TRAIN_DATA_FILE
     custom_log(f"📦 데이터 로드 및 전처리 시작... ({os.path.basename(file)})")
     df = load_and_preprocess(file)
-    validate_training_input_headers(df.columns)
+    snapshot = registry_snapshot or compatibility_registry_snapshot()
+    validate_training_input_headers(df.columns, registry_snapshot=snapshot)
 
     model_data = attach_catalog_fingerprint(
-        {"models": {}, "features": {}, "preprocess_version": "v1.0"}
+        {
+            "models": {}, "features": {},
+            "preprocess_version": snapshot.preprocessing_version,
+            "training_contract": {
+                "generation_id": snapshot.generation_id,
+                "registry_fingerprint": snapshot.registry_fingerprint,
+                "ordered_ml_fingerprint": snapshot.ordered_ml_fingerprint,
+                "derived_semantics_fingerprint": snapshot.derived_semantics_fingerprint,
+                "one_hot_fingerprint": snapshot.one_hot_fingerprint,
+            },
+        }
     )
     summary_report = "📊 [최종 학습 모델 성능 요약]\n\n"
     all_results_for_excel = []
 
-    for model_key in MODEL_REGISTRY:
-        config = get_model_config(model_key)
+    for group in snapshot.groups:
+        config = {
+            "name": group.name,
+            "targets": [item.ml_name for item in group.targets],
+            "use_rfe": group.use_rfe,
+        }
+        if not group.targets:
+            continue
         custom_log(f"\n==============================================")
         custom_log(f"🚀 [{config['name']}] 학습 준비 중...")
 
-        X_full, y_full = prepare_pipeline(df, config)
+        X_full, y_full = prepare_pipeline(df, config, registry_snapshot=snapshot)
         mandatory_features = config.get("mandatory_features", [])
         use_rfe = config.get("use_rfe", False)
 
-        for target in config["targets"]:
+        for target_definition in group.targets:
+            target = target_definition.ml_name
             custom_log(f"\n🎯 Target: {target}")
             y_target = y_full[target]
 
             # --- [핵심 추가] 피처 격리 (Data Leakage 차단) 로직 ---
-            target_rules = config.get("target_rules", {}).get(target, {})
-            X_target = X_full.copy()
-
-            # 1. 제외 리스트(exclude) 처리
-            if "exclude" in target_rules:
-                to_drop = [c for c in target_rules["exclude"] if c in X_target.columns]
-                X_target = X_target.drop(columns=to_drop)
-                if to_drop:
-                    custom_log(f"       🚫 데이터 누수 방지: {len(to_drop)}개 부적절 피처 제외 완료")
-
-            # 2. 허용 리스트(allowed) 처리 (Ref Qty 전용)
-            if "allowed" in target_rules:
-                X_target = X_target[[c for c in X_target.columns if c in target_rules["allowed"]]]
-                custom_log(f"       ⚪ 화이트리스트 적용: {X_target.shape[1]}개 핵심 피처만 사용")
+            selected_columns = apply_target_policy(X_full.columns, target_definition)
+            X_target = X_full.loc[:, list(selected_columns)].copy()
+            custom_log(
+                f"       {'⚪ 화이트리스트 적용' if target_definition.policy_mode == 'allowed' else '🚫 제외 정책 적용'}: "
+                f"{X_target.shape[1]}개 학습 피처"
+            )
             # --------------------------------------------------
 
             final_model, final_features, r2, rmse, feature_ranking = optimize_and_train(
@@ -170,8 +187,22 @@ def train_all_models(data_path=None, log_callback=None, model_output_path=None):
     return summary_report
 
 
-def validate_training_input_headers(headers):
+def validate_training_input_headers(headers, *, registry_snapshot=None):
     """Fail fast when raw training columns do not match catalog ml_name values."""
+    if registry_snapshot is not None:
+        observed = {str(header).strip() for header in headers if str(header).strip()}
+        required = set(registry_snapshot.training_headers)
+        known = set(registry_snapshot.known_ml_names)
+        errors = []
+        unknown = sorted(observed - known)
+        missing = sorted(required - observed)
+        if unknown:
+            errors.append(f"unknown training header(s): {', '.join(unknown)}")
+        if missing:
+            errors.append(f"missing required training header(s): {', '.join(missing)}")
+        if errors:
+            raise ValueError("Training data header contract violation: " + "; ".join(errors))
+        return
     catalog = load_feature_catalog()
     catalog_errors = validate_feature_catalog(catalog)
     if catalog_errors:

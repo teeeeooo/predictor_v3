@@ -53,6 +53,7 @@ def validate_feature_catalog(catalog) -> list[str]:
         if (
             row.zero_fill_policy == "mode_missing_allowed"
             and row.ml_name not in MODE_MISSING_ALLOWED_FEATURES
+            and row.role != "result"
         ):
             errors.append(f"{prefix}: mode_missing_allowed is not allowed for '{row.ml_name}'")
         if row.active and row.role in UI_VISIBLE_ROLES:

@@ -108,6 +108,20 @@ from core.data_definition.one_hot.model import VocabularyCategory, VocabularySna
 from core.data_definition.one_hot.category_commands import apply_category_command
 from core.data_definition.one_hot.group_commands import apply_group_command
 from core.data_definition.one_hot.drift import one_hot_drift_evidence
+from core.data_definition.target_registry.commands import apply_target_command
+from core.data_definition.target_registry.intents import (
+    TARGET_INTENT_TYPES,
+    AddTargetIntent,
+    ChangeTargetModelGroupIntent,
+    ChangeTargetPolicyIntent,
+    DuplicateTargetIntent,
+    EditTargetIntent,
+    MoveTargetIntent,
+    RemoveTargetIntent,
+    RenameTargetIntent,
+    SetTargetActiveIntent,
+    TargetCommandIntent,
+)
 
 __all__ = [
     "DataDefinitionDraft",
@@ -162,6 +176,10 @@ __all__ = [
     "normalize_column_key",
     "save_data_definition_schema_draft",
     "schema_csv_rows_from_draft",
+    "AddTargetIntent", "EditTargetIntent", "RenameTargetIntent",
+    "DuplicateTargetIntent", "RemoveTargetIntent", "SetTargetActiveIntent",
+    "MoveTargetIntent", "ChangeTargetModelGroupIntent", "ChangeTargetPolicyIntent",
+    "TargetCommandIntent", "TARGET_INTENT_TYPES", "apply_target_command",
     "AddDerivedIntent",
     "DerivedCommandIntent",
     "DuplicateDerivedIntent",

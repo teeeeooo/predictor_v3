@@ -22,6 +22,8 @@ from core.predictor_schema.catalog_v2 import (
     PredictSchemaCatalogV2,
     validate_predict_schema_catalog_v2,
 )
+from core.data_definition.contract.compatibility import current_target_definitions
+from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 
 def validate_contract(manifest: UnifiedFeatureManifest) -> tuple[ContractValidationIssue, ...]:
     """Validate all owners together; any issue blocks publication."""
@@ -261,13 +263,26 @@ def _projection_issues(manifest, projections) -> list[ContractValidationIssue]: 
         for _group, payload in projections.target_registry
         for name in payload["targets"]
     )
-    canonical_targets = tuple(
-        target_by_id[identity].ml_name for identity in manifest.ordering.targets
-    )
+    targets = current_target_definitions(manifest)
+    if manifest.contract_version.endswith(".v4"):
+        group_by_key = {item.registry_key: item.identity for item in manifest.model_groups}
+        canonical_targets = tuple(
+            target.ml_name
+            for supported in VALIDATED_MODEL_GROUPS
+            for target in sorted(
+                (item for item in targets if item.active and item.model_group_identity == group_by_key[supported.registry_key]),
+                key=lambda item: (item.registry_order, item.identity),
+            )
+        )
+    else:
+        canonical_targets = tuple(
+            target_by_id[identity].ml_name for identity in manifest.ordering.targets
+            if target_by_id[identity].active
+        )
     if projected_targets != canonical_targets:
         issues.append(ContractValidationIssue(
             "target_projection_order_mismatch",
-            "Target registry projection does not preserve presentation order",
+            "Target registry projection does not preserve registry iteration order",
         ))
     for message in validate_predict_schema_catalog_v2(
         PredictSchemaCatalogV2(rows=projections.predict)

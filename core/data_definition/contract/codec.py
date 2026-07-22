@@ -13,6 +13,8 @@ from core.data_definition.contract.model import (
     FeatureDefinition,
     MappingRequirementDefinition,
     ModelGroupDefinition,
+    LegacyModelGroupDefinition,
+    LegacyTargetDefinition,
     LegacyOneHotCategoryDefinition,
     LegacyOneHotGroupDefinition,
     OneHotCategoryDefinition,
@@ -47,7 +49,7 @@ def load_manifest(path: str | Path) -> UnifiedFeatureManifest:
 
 
 def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
-    current_one_hot = raw["contract_version"].endswith(".v3") or any(
+    current_one_hot = raw["contract_version"].endswith((".v3", ".v4")) or any(
         "emitted_feature_identity" in category
         for group in raw["one_hot_groups"]
         for category in group["categories"]
@@ -70,16 +72,29 @@ def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
         )
         for group in raw["one_hot_groups"]
     )
-    model_groups = tuple(
-        ModelGroupDefinition(
-            **{key: value for key, value in group.items() if key not in {"target_identities", "target_rules"}},
-            target_identities=tuple(group["target_identities"]),
-            target_rules=tuple(
-                (item[0], item[1], tuple(item[2])) for item in group["target_rules"]
-            ),
-        )
-        for group in raw["model_groups"]
+    current_targets = raw["contract_version"].endswith(".v4") or all(
+        "policy_mode" in item for item in raw["targets"]
     )
+    if current_targets:
+        model_groups = tuple(ModelGroupDefinition(**group) for group in raw["model_groups"])
+        targets = tuple(TargetDefinition(
+            **{key: value for key, value in item.items()
+               if key not in {"policy_owner_identities", "legacy_noop_result_identities"}},
+            policy_owner_identities=tuple(item["policy_owner_identities"]),
+            legacy_noop_result_identities=tuple(item.get("legacy_noop_result_identities", ())),
+        ) for item in raw["targets"])
+    else:
+        model_groups = tuple(
+            LegacyModelGroupDefinition(
+                **{key: value for key, value in group.items() if key not in {"target_identities", "target_rules"}},
+                target_identities=tuple(group["target_identities"]),
+                target_rules=tuple(
+                    (item[0], item[1], tuple(item[2])) for item in group["target_rules"]
+                ),
+            )
+            for group in raw["model_groups"]
+        )
+        targets = tuple(LegacyTargetDefinition(**item) for item in raw["targets"])
     ordering = raw["ordering"]
     return UnifiedFeatureManifest(
         contract_version=raw["contract_version"],
@@ -91,7 +106,7 @@ def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
             for item in raw["derived"]
         ),
         one_hot_groups=groups,
-        targets=tuple(TargetDefinition(**item) for item in raw["targets"]),
+        targets=targets,
         model_groups=model_groups,
         mapping_requirements=tuple(
             MappingRequirementDefinition(**item) for item in raw["mapping_requirements"]

@@ -12,8 +12,11 @@ from core.data_definition.contract.projections import generate_projections
 from core.data_definition.contract.compatibility import (
     current_derived_definitions,
     current_one_hot_definitions,
+    current_model_group_definitions,
+    current_target_definitions,
     operand_ml_name,
 )
+from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 
 
 @dataclass(frozen=True)
@@ -24,6 +27,7 @@ class ScopedFingerprints:
     derived: str
     one_hot: str
     target_registry: str
+    target_presentation: str
     mapping_requirements: str
     preprocessing: str
     derived_semantics: str = ""
@@ -67,12 +71,17 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
     ]
     one_hot_payload = _one_hot_semantic_payload(manifest)
     target_by_id = {item.identity: item for item in manifest.targets}
-    target_payload = {
-        "presentation": [
-            asdict(target_by_id[identity]) for identity in manifest.ordering.targets
-        ],
-        "registry": list(projections.target_registry),
-    }
+    feature_by_id = {item.identity: item for item in manifest.features}
+    target_presentation_payload = [
+        {
+            "target_identity": target_by_id[identity].identity,
+            "result_feature_identity": target_by_id[identity].feature_identity,
+            "label": feature_by_id[target_by_id[identity].feature_identity].label,
+            "visible": feature_by_id[target_by_id[identity].feature_identity].visible,
+            "order": index,
+        }
+        for index, identity in enumerate(manifest.ordering.targets, 1)
+    ]
     mapping_payload = [asdict(item) for item in projections.mapping_requirements]
     preprocessing_payload = {"version": manifest.preprocessing_version}
     return ScopedFingerprints(
@@ -81,7 +90,8 @@ def scoped_fingerprints(manifest: UnifiedFeatureManifest) -> ScopedFingerprints:
         ordered_ml=_hash(ml_payload),
         derived=_hash(derived_payload),
         one_hot=_hash(one_hot_payload),
-        target_registry=_hash(target_payload),
+        target_registry=_hash(_target_registry_semantic_payload(manifest)),
+        target_presentation=_hash(target_presentation_payload),
         mapping_requirements=_hash(mapping_payload),
         preprocessing=_hash(preprocessing_payload),
         derived_semantics=_hash(all_derived_payload),
@@ -132,6 +142,41 @@ def _one_hot_semantic_payload(manifest: UnifiedFeatureManifest) -> list[dict[str
     return payload
 
 
+def _target_registry_semantic_payload(manifest: UnifiedFeatureManifest) -> list[dict[str, object]]:
+    targets = current_target_definitions(manifest)
+    groups = {item.registry_key: item for item in current_model_group_definitions(manifest)}
+    owner_names = {
+        item.identity: item.ml_name
+        for item in (*manifest.features, *current_derived_definitions(manifest))
+        if item.ml_name
+    }
+    payload = []
+    for supported in VALIDATED_MODEL_GROUPS:
+        group = groups[supported.registry_key]
+        payload.append({
+            "group_identity": group.identity,
+            "registry_key": group.registry_key,
+            "use_rfe": group.use_rfe,
+            "targets": [
+                {
+                    "target_identity": target.identity,
+                    "result_feature_identity": target.feature_identity,
+                    "ml_name": target.ml_name,
+                    "policy_mode": target.policy_mode,
+                    "policy_ml_names": [
+                        owner_names[identity] for identity in target.policy_owner_identities
+                    ],
+                    "legacy_noop_result_identities": list(target.legacy_noop_result_identities),
+                }
+                for target in sorted(
+                    (item for item in targets if item.active and item.model_group_identity == group.identity),
+                    key=lambda item: (item.registry_order, item.identity),
+                )
+            ],
+        })
+    return payload
+
+
 def legacy_bundle_fingerprint_payload(manifest: UnifiedFeatureManifest) -> dict[str, str]:
     """Return pre-v3 hashes accepted only when verifying historical bundles."""
     current = scoped_fingerprints(manifest)
@@ -146,6 +191,14 @@ def legacy_bundle_fingerprint_payload(manifest: UnifiedFeatureManifest) -> dict[
         for row in projections.ml if row.active
     ]
     payload = asdict(current)
+    target_by_id = {item.identity: item for item in manifest.targets}
+    payload["target_registry"] = _hash({
+        "presentation": [
+            asdict(target_by_id[identity]) for identity in manifest.ordering.targets
+        ],
+        "registry": list(projections.target_registry),
+    })
+    payload.pop("target_presentation", None)
     payload["ordered_ml"] = _hash(ml_payload)
     payload["one_hot"] = _hash([asdict(item) for item in projections.one_hot])
     return payload

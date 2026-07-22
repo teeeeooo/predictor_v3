@@ -85,12 +85,14 @@ def candidate_manifest_from_draft(
         features=features,
         derived=derived,
         one_hot_groups=tuple(draft.one_hot_groups),
+        targets=tuple(draft.targets),
+        model_groups=tuple(draft.model_groups),
         mapping_requirements=requirements,
         ordering=OrderingContract(
             predict=tuple(item.identity for item in features),
             ml=ml_order,
             derived=tuple(item.identity for item in derived),
-            targets=base.ordering.targets,
+            targets=tuple(item.identity for item in draft.targets),
         ),
     )
     derived_order = topological_derived_identities(candidate)

@@ -23,7 +23,7 @@ from core.data_definition.contract.model import (
 from core.data_definition.derived_policy import load_current_derived_feature_policy
 from core.data_definition.projection import MODE_MISSING_ALLOWED
 from core.ml.feature_catalog import load_feature_catalog
-from core.ml.registry import MODEL_REGISTRY
+from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
 
 _DERIVED_OPERANDS = {
@@ -165,38 +165,55 @@ def _one_hot_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[OneHo
 def _target_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[tuple[TargetDefinition, ...], tuple[ModelGroupDefinition, ...]]:
     result_by_ml = {item.ml_name: item for item in features if item.role == "result" and item.ml_name}
     target_to_group = {
-        target: key for key, config in MODEL_REGISTRY.items() for target in config["targets"]
+        target: group.registry_key
+        for group in VALIDATED_MODEL_GROUPS for target in group.targets
     }
     if set(target_to_group) != set(result_by_ml):
         raise ValueError("schema result targets and MODEL_REGISTRY targets do not match")
-    targets = tuple(
-        TargetDefinition(
+    eligible_by_ml = {
+        item.ml_name: item.identity
+        for item in (*features, *_derived_definitions({item.ml_name: item for item in features if item.ml_name}))
+        if item.ml_name and getattr(item, "role", "") != "result"
+    }
+    result_names = set(result_by_ml)
+    rules = {
+        target: (mode, values)
+        for group in VALIDATED_MODEL_GROUPS
+        for target, mode, values in group.rules
+    }
+    registry_positions = {
+        target: index
+        for group in VALIDATED_MODEL_GROUPS
+        for index, target in enumerate(group.targets, 1)
+    }
+    targets = []
+    for index, feature in enumerate(sorted(result_by_ml.values(), key=lambda item: item.display_order), 1):
+        mode, values = rules[feature.ml_name]
+        owner_ids = tuple(eligible_by_ml[name] for name in values if name in eligible_by_ml)
+        noops = tuple(result_by_ml[name].identity for name in values if name in result_names)
+        unknown = set(values) - set(eligible_by_ml) - result_names
+        if unknown:
+            raise ValueError(f"Target policy references unknown inputs: {sorted(unknown)}")
+        targets.append(TargetDefinition(
             identity=bootstrap_identity("target", feature.ml_name),
             feature_identity=feature.identity,
             ml_name=feature.ml_name,
             model_group_identity=bootstrap_identity("model_group", target_to_group[feature.ml_name]),
             presentation_order=index,
-        )
-        for index, feature in enumerate(sorted(result_by_ml.values(), key=lambda item: item.display_order), 1)
-    )
-    target_id = {item.ml_name: item.identity for item in targets}
+            policy_mode=mode,
+            policy_owner_identities=owner_ids,
+            registry_order=registry_positions[feature.ml_name],
+            legacy_noop_result_identities=noops,
+        ))
+    targets = tuple(targets)
     groups = tuple(
         ModelGroupDefinition(
-            identity=bootstrap_identity("model_group", key),
-            registry_key=key,
-            name=config["name"],
-            target_identities=tuple(target_id[name] for name in config["targets"]),
-            use_rfe=bool(config["use_rfe"]),
-            target_rules=tuple(
-                (
-                    name,
-                    "allowed" if "allowed" in rule else "exclude",
-                    tuple(rule.get("allowed", rule.get("exclude", ()))),
-                )
-                for name, rule in config["target_rules"].items()
-            ),
+            identity=bootstrap_identity("model_group", group.registry_key),
+            registry_key=group.registry_key,
+            name=group.name,
+            use_rfe=group.use_rfe,
         )
-        for key, config in MODEL_REGISTRY.items()
+        for group in VALIDATED_MODEL_GROUPS
     )
     return targets, groups
 
