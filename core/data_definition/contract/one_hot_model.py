@@ -30,6 +30,33 @@ class OneHotCategoryDefinition:
 
 
 @dataclass(frozen=True)
+class OneHotSelectorRestore:
+    """Exact ordinary Feature shape reserved before selector takeover."""
+
+    identity: str
+    display_order: int
+    column_key: str
+    label: str
+    role: str
+    editor: str
+    data_type: str
+    visible: bool
+    required: bool
+    readonly: bool
+    value_source: str
+    mapping_entity: str = ""
+    mapping_attribute: str = ""
+    trigger_column: str = ""
+    rule_id: str = ""
+    model_input_enabled: bool = False
+    ml_name: str = ""
+    one_hot_group: str = ""
+    active: bool = True
+    notes: str = ""
+    zero_fill_policy: str = "disallow"
+
+
+@dataclass(frozen=True)
 class LegacyOneHotGroupDefinition:
     """Version-2 One-hot group shape retained for byte-compatible reads."""
 
@@ -53,6 +80,7 @@ class OneHotGroupDefinition:
     categories: tuple[OneHotCategoryDefinition | LegacyOneHotCategoryDefinition, ...]
     source_binding: str = ""
     active: bool = True
+    selector_restore: OneHotSelectorRestore | None = None
 
     @property
     def source_mode(self) -> str:

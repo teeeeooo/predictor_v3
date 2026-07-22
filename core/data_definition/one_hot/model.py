@@ -58,3 +58,19 @@ def vocabulary_snapshot_for(
         if item.source_mode == source_mode and item.source_binding == source_binding
     )
     return matches[0] if len(matches) == 1 else None
+
+
+def vocabulary_revision_token(
+    snapshots: tuple[VocabularySnapshot, ...],
+) -> tuple[tuple[object, ...], ...]:
+    """Return deterministic immutable evidence used by prepared commands."""
+    return tuple(
+        (
+            item.source_mode,
+            item.source_binding,
+            item.source_revision,
+            item.available,
+            tuple((category.identity, category.value) for category in item.categories),
+        )
+        for item in snapshots
+    )

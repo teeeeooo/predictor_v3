@@ -40,6 +40,7 @@ from core.data_definition import (
     DerivedCommandIntent,
     OneHotCommandIntent,
 )
+from core.data_definition.one_hot.model import vocabulary_revision_token
 
 
 class DataDefinitionController:
@@ -218,6 +219,25 @@ class DataDefinitionController:
                 "draft",
                 "This Impact Preview no longer matches the current draft.",
                 "Open a new Impact Preview and confirm it again.",
+            )
+            result = DataDefinitionCommandResult(
+                draft,
+                False,
+                None,
+                prepared.result.action,
+                (issue,),
+            )
+            return self._state_from_command_result(draft, result, "feature")
+        if (
+            prepared.vocabulary_revision_token
+            and prepared.vocabulary_revision_token
+            != vocabulary_revision_token(self._service.vocabulary_snapshots)
+        ):
+            issue = DataDefinitionCommandIssue(
+                "one_hot_provider_snapshot_stale",
+                "source_revision",
+                "The vocabulary snapshot changed after this Impact Preview.",
+                "Refresh provider/Mapping vocabulary and open a new Impact Preview.",
             )
             result = DataDefinitionCommandResult(
                 draft,

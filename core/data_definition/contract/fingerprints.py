@@ -155,6 +155,9 @@ def semantic_manifest_fingerprint(manifest: UnifiedFeatureManifest) -> str:
     """Hash the complete canonical semantic payload, excluding generation metadata."""
     semantic_manifest = manifest_payload(manifest)
     semantic_manifest.pop("generation")
+    for group in semantic_manifest["one_hot_groups"]:
+        if group.get("selector_restore") is None:
+            group.pop("selector_restore", None)
     return _hash(semantic_manifest)
 
 

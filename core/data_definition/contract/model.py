@@ -9,6 +9,7 @@ from core.data_definition.contract.one_hot_model import (
     LegacyOneHotGroupDefinition,
     OneHotCategoryDefinition,
     OneHotGroupDefinition,
+    OneHotSelectorRestore,
 )
 
 

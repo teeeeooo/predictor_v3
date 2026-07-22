@@ -17,6 +17,7 @@ from core.data_definition.contract.model import (
     LegacyOneHotGroupDefinition,
     OneHotCategoryDefinition,
     OneHotGroupDefinition,
+    OneHotSelectorRestore,
     OrderingContract,
     TargetDefinition,
     UnifiedFeatureManifest,
@@ -53,10 +54,18 @@ def _manifest_from_payload(raw: dict[str, Any]) -> UnifiedFeatureManifest:
     )
     groups = tuple(
         (OneHotGroupDefinition if current_one_hot else LegacyOneHotGroupDefinition)(
-            **{key: value for key, value in group.items() if key != "categories"},
+            **{
+                key: value for key, value in group.items()
+                if key not in {"categories", "selector_restore"}
+            },
             categories=tuple(
                 (OneHotCategoryDefinition if current_one_hot else LegacyOneHotCategoryDefinition)(**item)
                 for item in group["categories"]
+            ),
+            **(
+                {"selector_restore": OneHotSelectorRestore(**group["selector_restore"])
+                 if group.get("selector_restore") else None}
+                if current_one_hot else {}
             ),
         )
         for group in raw["one_hot_groups"]

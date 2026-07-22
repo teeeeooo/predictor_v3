@@ -42,6 +42,22 @@ class OneHotImpactEvidence:
     external_provider_available: bool | None = None
     affected_derived_identities: tuple[str, ...] = ()
     mapping_concrete_values_changed: bool = False
+    selector_column_key: str = ""
+    selector_shape_before: tuple[tuple[str, object], ...] = ()
+    selector_shape_after: tuple[tuple[str, object], ...] = ()
+    selector_restore_shape: tuple[tuple[str, object], ...] = ()
+    selector_changed_fields: tuple[str, ...] = ()
+    selector_restore_available: bool = False
+    predict_available_before: bool | None = None
+    predict_available_after: bool | None = None
+    source_binding_before: str = ""
+    source_binding_after: str = ""
+    dropdown_vocabulary_owner: str = "canonical One-hot group"
+    runtime_encoder_source_owner: str = "canonical One-hot group"
+    encoder_dropdown_parity: bool = True
+    available_option_count: int | None = None
+    provider_snapshot_revision: str = ""
+    affected_dependency_summaries: tuple[str, ...] = ()
 
 
 def build_one_hot_impact_evidence(
@@ -70,6 +86,28 @@ def build_one_hot_impact_evidence(
         selector = (
             after_features.get(group.selector_feature_identity)
             or before_features.get(group.selector_feature_identity)
+        )
+        old_selector = (
+            before_features.get(
+                old_group.selector_feature_identity
+                if old_group else group.selector_feature_identity
+            )
+        )
+        new_selector = (
+            after_features.get(
+                new_group.selector_feature_identity
+                if new_group else group.selector_feature_identity
+            )
+        )
+        selector_before_shape = _selector_shape(old_selector)
+        selector_after_shape = _selector_shape(new_selector)
+        restore = getattr(group, "selector_restore", None)
+        restore_shape = _selector_shape(restore)
+        before_values = dict(selector_before_shape)
+        after_values = dict(selector_after_shape)
+        changed_fields = tuple(
+            field for field in dict.fromkeys((*before_values, *after_values))
+            if before_values.get(field) != after_values.get(field)
         )
         old_categories = {
             item.identity: item for item in old_group.categories
@@ -121,6 +159,27 @@ def build_one_hot_impact_evidence(
                 missing_policy_after=new_group.missing_policy if new_group else "",
                 external_provider_available=provider_available,
                 affected_derived_identities=affected_derived,
+                selector_column_key=selector.column_key if selector else "",
+                selector_shape_before=selector_before_shape,
+                selector_shape_after=selector_after_shape,
+                selector_restore_shape=restore_shape,
+                selector_changed_fields=changed_fields,
+                selector_restore_available=restore is not None,
+                predict_available_before=(
+                    bool(old_selector.active and old_selector.visible)
+                    if old_selector else None
+                ),
+                predict_available_after=(
+                    bool(new_selector.active and new_selector.visible)
+                    if new_selector else None
+                ),
+                source_binding_before=old_group.source_binding if old_group else "",
+                source_binding_after=new_group.source_binding if new_group else "",
+                available_option_count=len(snapshot.categories) if snapshot else None,
+                provider_snapshot_revision=snapshot.source_revision if snapshot else "",
+                affected_dependency_summaries=_dependency_summaries(
+                    before, after, group.selector_feature_identity, emitted_identity
+                ),
             ))
     return (
         tuple(evidence),
@@ -135,3 +194,45 @@ def _ml_headers(manifest: UnifiedFeatureManifest) -> tuple[str, ...]:
         item.ml_name for item in generate_projections(manifest).ml
         if item.active and item.ml_name
     )
+
+
+def _selector_shape(item) -> tuple[tuple[str, object], ...]:  # noqa: ANN001
+    if item is None:
+        return ()
+    return tuple(
+        (field, getattr(item, field))
+        for field in (
+            "active",
+            "role",
+            "editor",
+            "data_type",
+            "visible",
+            "readonly",
+            "value_source",
+            "mapping_entity",
+            "mapping_attribute",
+            "trigger_column",
+            "rule_id",
+            "model_input_enabled",
+            "ml_name",
+            "one_hot_group",
+            "notes",
+        )
+    )
+
+
+def _dependency_summaries(before, after, selector_identity, emitted_identity):  # noqa: ANN001
+    summaries = []
+    for owner in (before, after):
+        summaries.extend(
+            f"Mapping/{item.identity}"
+            for item in owner.mapping_requirements
+            if selector_identity in {item.feature_identity, item.trigger_feature_identity}
+        )
+        summaries.extend(
+            f"Derived/{item.identity}"
+            for item in current_derived_definitions(owner)
+            if emitted_identity
+            and emitted_identity in {item.numerator_identity, item.denominator_identity}
+        )
+    return tuple(dict.fromkeys(summaries))

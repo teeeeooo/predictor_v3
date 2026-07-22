@@ -43,6 +43,17 @@ class FeatureCommandPreviewDialog(QDialog):
                 f"{item.emitted_ml_name or '<no emitted Feature>'}; "
                 f"order {item.order_before} → {item.order_after}; "
                 f"active {item.active_before} → {item.active_after}; "
+                f"selector {item.selector_column_key or '<missing>'}; "
+                f"takeover fields: {', '.join(item.selector_changed_fields) or 'none'}; "
+                f"restore: {'available' if item.selector_restore_available else 'not available'}; "
+                f"Predict available {item.predict_available_before} → {item.predict_available_after}; "
+                f"binding {item.source_binding_before or 'none'} → "
+                f"{item.source_binding_after or 'none'}; "
+                f"dropdown/encoder owner: canonical One-hot group "
+                f"(parity: {'Yes' if item.encoder_dropdown_parity else 'No'}); "
+                f"options: {item.available_option_count}; "
+                f"provider revision: {item.provider_snapshot_revision or 'none'}; "
+                f"dependencies: {', '.join(item.affected_dependency_summaries) or 'none'}; "
                 f"owner: {item.vocabulary_owner}; Mapping values changed: No"
                 for item in preview.one_hot_evidence
             ))

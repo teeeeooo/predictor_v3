@@ -28,7 +28,11 @@ and drives only the group's relative ML block. Predict encoding and selector
 options consume one immutable canonical snapshot without the former fixed
 selector/group table. Inactive authoring remains model-compatible and publishable;
 active encoding, membership, name, policy, source-mode, and order changes remain
-blocked by the retraining/migration Save guard.
+blocked by the retraining/migration Save guard. The audit correction makes ordinary
+selector assignment an inactive reservation with exact persisted restoration,
+applies dependency-validated takeover only on activation, makes Mapping-backed
+dropdowns use the runtime group's canonical source binding, and converts invalid or
+stale External provider relations into atomic structured rejection.
 
 ## Next Action
 
@@ -118,6 +122,7 @@ cutover, model candidate generation, training, and promotion outside Phase 4G.
 - Phase 4E audit correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md`
 - Phase 4E final runtime-shape correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md`
 - Phase 4F result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4f-one-hot-authoring.md`
+- Phase 4F audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from core.data_definition.draft import DataDefinitionDraft
 from core.data_definition.one_hot import VocabularySnapshot
 from core.data_definition.one_hot.drift import one_hot_drift_evidence
+from core.data_definition.one_hot.group_policy import selector_eligibility
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,10 @@ class OneHotSelectorOption:
     column_key: str
     assigned_group_key: str = ""
     selectable: bool = True
+    takeover_state: str = "eligible"
+    blocker_code: str = ""
+    actionable_reason: str = ""
+    affected_owners: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -69,20 +74,27 @@ def project_one_hot_authoring(
     assigned = {
         item.selector_feature_identity: item.group_key for item in draft.one_hot_groups
     }
-    selectors = tuple(
-        OneHotSelectorOption(
+    selectors = []
+    for row in draft.rows:
+        if row.source_kind != "schema_row":
+            continue
+        eligibility = selector_eligibility(draft, row.stable_identity)
+        if not eligibility.selectable and eligibility.blocker_code in {
+            "one_hot_selector_missing",
+            "one_hot_selector_incompatible",
+        }:
+            continue
+        selectors.append(OneHotSelectorOption(
             row.stable_identity,
             row.label or row.column_key,
             row.column_key,
             assigned.get(row.stable_identity, ""),
-            not assigned.get(row.stable_identity),
-        )
-        for row in draft.rows
-        if row.source_kind == "schema_row"
-        and row.role == "input"
-        and row.data_type == "string"
-        and not row.ml_name
-    )
+            eligibility.selectable,
+            eligibility.takeover_state,
+            eligibility.blocker_code,
+            eligibility.reason,
+            eligibility.affected_owners,
+        ))
     drift = one_hot_drift_evidence(tuple(draft.one_hot_groups), snapshots)
     drift_by_category = {
         item.category_identity: item for item in drift if item.category_identity
@@ -137,7 +149,7 @@ def project_one_hot_authoring(
     )
     return OneHotAuthoringProjection(
         tuple(groups),
-        selectors,
+        tuple(selectors),
         snapshots,
         external_available,
         "No production external One-hot provider is registered."

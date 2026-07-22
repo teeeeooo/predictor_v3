@@ -14,7 +14,6 @@ from core.data_definition.one_hot.command_support import (
     SOURCE_MODES,
     UNKNOWN_POLICIES,
     add_emitted_row,
-    detached_selector_row,
     find_group,
     find_row_by_stable_id,
     group_identity,
@@ -24,6 +23,9 @@ from core.data_definition.one_hot.command_support import (
     remove_row,
     replace_group,
     replace_row,
+    restored_selector_row,
+    selector_restore,
+    selector_restore_issue,
     selector_row,
     validate_transition,
     vocabulary_issue,
@@ -44,6 +46,7 @@ from core.data_definition.one_hot.group_policy import (
     dependency_blockers as _dependency_blockers,
     group_values_issue as _group_values_issue,
     source_available as _source_available,
+    takeover_blockers as _takeover_blockers,
 )
 
 
@@ -107,9 +110,9 @@ def _add(draft, intent, snapshots):  # noqa: ANN001
         missing_policy=intent.missing_policy.strip(),
         categories=(),
         active=False,
+        selector_restore=selector_restore(draft, selector),
     )
     candidate = replace(draft, one_hot_groups=(*draft.one_hot_groups, group))
-    candidate = replace_row(candidate, selector, selector_row(selector, group))
     return validate_transition(draft, candidate, action, group_identity(group.identity))
 
 
@@ -140,9 +143,9 @@ def _rename(draft, group, intent):  # noqa: ANN001
         ), group_identity(group.identity))
     updated = replace(group, group_key=key)
     candidate = replace_group(draft, group, updated)
-    related = {group.selector_feature_identity, *(
-        item.emitted_feature_identity for item in group.categories
-    )}
+    related = {item.emitted_feature_identity for item in group.categories}
+    if group.active or group.selector_restore is None:
+        related.add(group.selector_feature_identity)
     for stable_id in related:
         row = find_row_by_stable_id(candidate, stable_id)
         if row is not None:
@@ -173,9 +176,9 @@ def _duplicate(draft, group, intent, snapshots):  # noqa: ANN001
         selector_feature_identity=selector.stable_identity,
         categories=(),
         active=False,
+        selector_restore=selector_restore(draft, selector),
     )
     candidate = replace(draft, one_hot_groups=(*draft.one_hot_groups, duplicate))
-    candidate = replace_row(candidate, selector, selector_row(selector, duplicate))
     categories = []
     for original in group.categories:
         candidate, row = add_emitted_row(
@@ -208,18 +211,29 @@ def _remove(draft, group, intent):  # noqa: ANN001
     candidate = draft
     for category in group.categories:
         row = find_row_by_stable_id(candidate, category.emitted_feature_identity)
-        blockers = _dependency_blockers(candidate, row, "Remove")
+        blockers = _dependency_blockers(
+            candidate, row, "Remove", (category.identity,)
+        )
         if blockers:
             return reject(draft, action, blockers[0], group_identity(group.identity))
         candidate = remove_row(candidate, row)
     selector = find_row_by_stable_id(candidate, group.selector_feature_identity)
     if intent.selector_disposition == "remove":
-        blockers = _dependency_blockers(candidate, selector, "Remove")
+        blockers = _dependency_blockers(
+            candidate, selector, "Remove", (group.identity,)
+        )
         if blockers:
             return reject(draft, action, blockers[0], group_identity(group.identity))
         candidate = remove_row(candidate, selector)
     else:
-        candidate = replace_row(candidate, selector, detached_selector_row(selector))
+        problem = selector_restore_issue(
+            selector, group, taken_over=group.active
+        )
+        if problem:
+            return reject(draft, action, problem, group_identity(group.identity))
+        candidate = replace_row(
+            candidate, selector, restored_selector_row(selector, group.selector_restore)
+        )
     candidate = replace(
         candidate,
         one_hot_groups=tuple(item for item in candidate.one_hot_groups
@@ -247,10 +261,35 @@ def _set_active(draft, group, intent, snapshots):  # noqa: ANN001
                 group, category.source_value, category.provider_category_identity, snapshots
             )):
                 return reject(draft, action, problem, group_identity(group.identity))
+    selector = find_row_by_stable_id(draft, group.selector_feature_identity)
+    if group.selector_restore is not None:
+        problem = selector_restore_issue(
+            selector, group, taken_over=group.active
+        )
+        if problem:
+            return reject(draft, action, problem, group_identity(group.identity))
+        if intent.active:
+            blockers = _takeover_blockers(draft, selector)
+            if blockers:
+                first = blockers[0]
+                return reject(draft, action, issue(
+                    first.code,
+                    "selector",
+                    f"Selector takeover would break {first.owner}: {first.message}",
+                    first.resolution,
+                ), group_identity(group.identity))
     updated = replace(group, active=intent.active)
     candidate = replace_group(draft, group, updated)
     selector = find_row_by_stable_id(candidate, group.selector_feature_identity)
-    candidate = replace_row(candidate, selector, replace(selector, active=intent.active))
+    if group.selector_restore is not None:
+        selector_after = (
+            selector_row(selector, updated)
+            if intent.active
+            else restored_selector_row(selector, group.selector_restore)
+        )
+    else:
+        selector_after = replace(selector, active=intent.active)
+    candidate = replace_row(candidate, selector, selector_after)
     for category in updated.categories:
         row = find_row_by_stable_id(candidate, category.emitted_feature_identity)
         candidate = replace_row(
@@ -272,12 +311,11 @@ def _change_source(draft, group, intent, snapshots):  # noqa: ANN001
     categories = list(group.categories)
     if intent.source_mode == "external":
         snapshot = vocabulary_snapshot_for(snapshots, "external", intent.source_binding.strip())
-        provider_map = dict(intent.provider_categories)
-        if set(provider_map) != {item.identity for item in categories}:
-            return reject(draft, action, issue(
-                "one_hot_external_overlay_incomplete", "provider_categories",
-                "Map every preserved category identity to one provider category.",
-            ), group_identity(group.identity))
+        provider_map, problem = _external_provider_map(
+            categories, intent.provider_categories, snapshot
+        )
+        if problem:
+            return reject(draft, action, problem, group_identity(group.identity))
         categories = [
             replace(
                 item,
@@ -305,7 +343,16 @@ def _change_source(draft, group, intent, snapshots):  # noqa: ANN001
     )
     candidate = replace_group(draft, group, updated)
     selector = find_row_by_stable_id(candidate, group.selector_feature_identity)
-    candidate = replace_row(candidate, selector, selector_row(selector, updated))
+    if group.active and group.selector_restore is not None:
+        candidate = replace_row(candidate, selector, selector_row(selector, updated))
+    elif group.selector_restore is None:
+        candidate = replace_row(candidate, selector, replace(
+            selector,
+            mapping_entity=(
+                updated.source_binding
+                if updated.category_source == "mapping_backed" else ""
+            ),
+        ))
     return validate_transition(draft, candidate, action, group_identity(group.identity))
 
 
@@ -324,16 +371,115 @@ def _assign_selector(draft, group, intent):  # noqa: ANN001
             "Choose detach or remove for the previous selector.",
         ), group_identity(group.identity))
     if intent.previous_selector_disposition == "remove":
-        blockers = _dependency_blockers(candidate, old_selector, "Remove")
+        blockers = _dependency_blockers(
+            candidate, old_selector, "Remove", (group.identity,)
+        )
         if blockers:
             return reject(draft, action, blockers[0], group_identity(group.identity))
         candidate = remove_row(candidate, old_selector)
     else:
-        candidate = replace_row(candidate, old_selector, detached_selector_row(old_selector))
-    updated = replace(group, selector_feature_identity=new_selector.stable_identity)
+        problem = selector_restore_issue(
+            old_selector, group, taken_over=group.active
+        )
+        if problem:
+            return reject(draft, action, problem, group_identity(group.identity))
+        candidate = replace_row(
+            candidate,
+            old_selector,
+            restored_selector_row(old_selector, group.selector_restore),
+        )
+    new_restore = selector_restore(candidate, new_selector)
+    if group.active:
+        blockers = _takeover_blockers(candidate, new_selector)
+        if blockers:
+            first = blockers[0]
+            return reject(draft, action, issue(
+                first.code,
+                "selector",
+                f"Selector takeover would break {first.owner}: {first.message}",
+                first.resolution,
+            ), group_identity(group.identity))
+    updated = replace(
+        group,
+        selector_feature_identity=new_selector.stable_identity,
+        selector_restore=new_restore,
+    )
     candidate = replace_group(candidate, group, updated)
-    candidate = replace_row(candidate, new_selector, selector_row(new_selector, updated))
+    if group.active:
+        candidate = replace_row(candidate, new_selector, selector_row(new_selector, updated))
     return validate_transition(draft, candidate, action, group_identity(group.identity))
+
+
+def _external_provider_map(categories, assignments, snapshot):  # noqa: ANN001
+    if snapshot is None or not snapshot.available:
+        return {}, issue(
+            "one_hot_provider_unavailable",
+            "source_binding",
+            "The external provider snapshot is unavailable.",
+            "Refresh the provider snapshot and preview the command again.",
+        )
+    snapshot_ids = [item.identity for item in snapshot.categories]
+    if len(snapshot_ids) != len(set(snapshot_ids)):
+        return {}, issue(
+            "one_hot_provider_category_duplicate",
+            "provider_categories",
+            "The provider snapshot contains duplicate category identities.",
+            "Correct and refresh the provider snapshot before retrying.",
+        )
+    category_ids = {item.identity for item in categories}
+    assignment_ids = [identity for identity, _provider in assignments]
+    if len(assignment_ids) != len(set(assignment_ids)):
+        return {}, issue(
+            "one_hot_provider_category_duplicate",
+            "provider_categories",
+            "A preserved category identity was assigned more than once.",
+        )
+    unknown = set(assignment_ids) - category_ids
+    if unknown:
+        return {}, issue(
+            "one_hot_provider_category_missing",
+            "provider_categories",
+            f"Unknown preserved category identity: {sorted(unknown)[0]}",
+            "Refresh the group and map only current category identities.",
+        )
+    if set(assignment_ids) != category_ids:
+        return {}, issue(
+            "one_hot_external_overlay_incomplete",
+            "provider_categories",
+            "Map every preserved category identity exactly once.",
+        )
+    provider_ids = [provider for _identity, provider in assignments]
+    if len(provider_ids) != len(set(provider_ids)):
+        return {}, issue(
+            "one_hot_provider_category_duplicate",
+            "provider_categories",
+            "A provider category identity cannot be assigned more than once.",
+        )
+    provider_map = dict(assignments)
+    for provider_identity in provider_ids:
+        provider = snapshot.category_by_identity(provider_identity)
+        if provider is None:
+            return {}, issue(
+                "one_hot_provider_category_missing",
+                "provider_categories",
+                f"Provider category identity '{provider_identity}' does not exist.",
+                "Refresh the provider snapshot and choose an available category.",
+            )
+        if not provider.value.strip():
+            return {}, issue(
+                "one_hot_provider_category_missing",
+                "provider_categories",
+                f"Provider category '{provider_identity}' has no runtime value.",
+                "Correct the provider snapshot before retrying.",
+            )
+    values = [snapshot.category_by_identity(item).value for item in provider_ids]
+    if len(values) != len(set(values)):
+        return {}, issue(
+            "one_hot_provider_category_duplicate",
+            "provider_categories",
+            "Provider assignments do not produce unique runtime category values.",
+        )
+    return provider_map, None
 
 
 def _action(intent):  # noqa: ANN001

@@ -1,8 +1,12 @@
 """Raw-manifest One-hot whole-contract validation tests."""
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 
-from core.data_definition.contract import bootstrap_manifest, validate_contract
+from core.data_definition.contract import (
+    OneHotSelectorRestore,
+    bootstrap_manifest,
+    validate_contract,
+)
 
 
 def _codes(manifest):
@@ -108,3 +112,55 @@ def test_raw_manifest_rejects_static_binding_and_category_ml_order_mismatch():
     codes = _codes(invalid)
     assert "one_hot_source_binding_invalid" in codes
     assert "one_hot_ml_order_mismatch" in codes
+
+
+def test_raw_manifest_rejects_restore_mismatch_dangling_takeover_and_mapping_projection():
+    manifest = bootstrap_manifest()
+    group = manifest.one_hot_groups[0]
+    selector = next(item for item in manifest.features
+                    if item.identity == group.selector_feature_identity)
+    restore = OneHotSelectorRestore(**asdict(selector))
+
+    inactive = replace(group, active=False, selector_restore=restore)
+    inactive_features = tuple(
+        replace(item, active=False)
+        if item.identity == selector.identity
+        or item.identity in {category.emitted_feature_identity for category in group.categories}
+        else item
+        for item in manifest.features
+    )
+    inactive_order = tuple(
+        identity for identity in manifest.ordering.ml
+        if identity not in {item.emitted_feature_identity for item in group.categories}
+    )
+    codes = _codes(replace(
+        manifest,
+        features=inactive_features,
+        one_hot_groups=(inactive, *manifest.one_hot_groups[1:]),
+        ordering=replace(manifest.ordering, ml=inactive_order),
+    ))
+    assert "one_hot_inactive_selector_mutated" in codes
+
+    dangling_selector = replace(selector, rule_id=f"one_hot:{group.identity}")
+    dangling = replace(manifest, features=tuple(
+        dangling_selector if item.identity == selector.identity else item
+        for item in manifest.features
+    ))
+    assert "one_hot_selector_restore_missing" in _codes(dangling)
+
+    mismatch_selector = replace(selector, mapping_entity="idu")
+    mismatch = replace(manifest, features=tuple(
+        mismatch_selector if item.identity == selector.identity else item
+        for item in manifest.features
+    ))
+    assert "one_hot_selector_mapping_binding_mismatch" in _codes(mismatch)
+
+    invalid_restore = replace(inactive, selector_restore=replace(
+        restore, active=False, value_source="one_hot", one_hot_group=group.group_key
+    ))
+    assert "one_hot_selector_restore_invalid" in _codes(replace(
+        manifest,
+        features=inactive_features,
+        one_hot_groups=(invalid_restore, *manifest.one_hot_groups[1:]),
+        ordering=replace(manifest.ordering, ml=inactive_order),
+    ))

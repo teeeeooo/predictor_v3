@@ -28,8 +28,18 @@ class OneHotGroupIntentDialog(QDialog):
         self.group_key = QLineEdit(group.group_key if group else "", self)
         self.selector = QComboBox(self)
         for item in projection.selectors:
-            if item.selectable or (group and item.identity == group.selector_feature_identity):
-                self.selector.addItem(f"{item.label} ({item.column_key})", item.identity)
+            current = bool(group and item.identity == group.selector_feature_identity)
+            status = "" if item.selectable or current else f" — {item.takeover_state}"
+            self.selector.addItem(
+                f"{item.label} ({item.column_key}){status}", item.identity
+            )
+            model_item = self.selector.model().item(self.selector.count() - 1)
+            model_item.setEnabled(item.selectable or current)
+            if item.actionable_reason:
+                owners = ", ".join(item.affected_owners)
+                model_item.setToolTip(
+                    item.actionable_reason + (f" Affected: {owners}." if owners else "")
+                )
         if group:
             self.selector.setCurrentIndex(max(0, self.selector.findData(group.selector_feature_identity)))
         self.mode = QComboBox(self)

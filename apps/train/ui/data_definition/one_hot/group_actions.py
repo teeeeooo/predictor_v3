@@ -171,9 +171,15 @@ class OneHotGroupActions:
             if item.selectable
         )
         if not choices:
+            reasons = tuple(
+                item.actionable_reason for item in self.projection.selectors
+                if item.actionable_reason
+            )
             QMessageBox.information(
                 self.parent, title,
-                "No unassigned compatible string selector is available. Prepare one through Feature workflow first.",
+                "No unassigned compatible string selector is available. "
+                + (reasons[0] if reasons else
+                   "Prepare one through Feature workflow first."),
             )
             return ""
         label, ok = QInputDialog.getItem(self.parent, title, "Selector Feature", choices, 0, False)

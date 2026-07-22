@@ -18,6 +18,7 @@ from apps.predict.ui.tables import case_table_model, case_table_view, delegates
 from apps.predict.ui.workspace import PredictWorkspace
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.one_hot.runtime import one_hot_runtime_snapshot
+from core.data_definition.one_hot.runtime import encode_one_hot_values
 
 
 class FakeMappingRepository:
@@ -133,6 +134,26 @@ def test_dropdown_option_adapter_projects_static_selector_values_from_canonical_
     assert adapter.base_options_for_key("ref_type") == ("R410A", "R32", "R290")
 
 
+def test_mapping_backed_one_hot_dropdown_and_encoder_share_group_source_binding():
+    manifest = bootstrap_manifest()
+    group = manifest.one_hot_groups[0]
+    idu = next(item for item in manifest.features if item.column_key == "idu")
+    rebound = replace(group, selector_feature_identity=idu.identity, source_binding="ref_type")
+    snapshot = one_hot_runtime_snapshot(replace(
+        manifest, one_hot_groups=(rebound, *manifest.one_hot_groups[1:])
+    ))
+    adapter = DropdownOptionAdapter(
+        FakeMappingRepository(SAMPLE_MAPPING),
+        build_case_table_column_schema(),
+        one_hot_snapshot=snapshot,
+    )
+
+    assert adapter.base_options_for_key("idu") == ("R32", "R410A")
+    assert "IDU-A" not in adapter.base_options_for_key("idu")
+    encoded = dict(encode_one_hot_values(snapshot, {"idu": "R32"}).values)
+    assert encoded["R32"] == 1.0
+
+
 def test_runtime_fixture_drives_predict_f_and_t_and_pfc_cascades():
     repository = PredictMappingRepository(str(RUNTIME_FIXTURE))
     adapter = DropdownOptionAdapter(repository, build_case_table_column_schema())
@@ -218,6 +239,25 @@ def test_dropdown_option_adapter_reports_invalid_cached_mapping_status(tmp_path)
 
     assert status.status == "invalid"
     assert adapter.base_options_for_key("ref_type") == ()
+
+
+def test_one_hot_missing_source_binding_section_is_actionable(tmp_path):
+    manifest = bootstrap_manifest()
+    snapshot = one_hot_runtime_snapshot(manifest)
+    repository = FakeMappingRepository({"idu": {"IDU-A": {}}})
+    repository.mapping_file = str(tmp_path / "mapping.json")
+    Path(repository.mapping_file).write_text("{}", encoding="utf-8")
+    adapter = DropdownOptionAdapter(
+        repository,
+        build_case_table_column_schema(),
+        one_hot_snapshot=snapshot,
+    )
+
+    assert adapter.base_options_for_key("ref_type") == ()
+    status = adapter.mapping_status()
+    assert status.status == "invalid"
+    assert "ref_type" in status.message
+    assert "mapping.json" in status.message
 
 
 def test_mapping_status_badge_distinguishes_invalid_from_missing():

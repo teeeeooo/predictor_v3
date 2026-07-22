@@ -46,6 +46,7 @@ from core.data_definition.derived.intents import DERIVED_INTENT_TYPES
 from core.data_definition.one_hot.intents import (
     ONE_HOT_INTENT_TYPES,
 )
+from core.data_definition.one_hot.model import vocabulary_revision_token
 from core.data_definition.draft import replace_draft_row
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
@@ -327,6 +328,8 @@ class DataDefinitionService:
             draft,
             result,
             preview,
+            vocabulary_revision_token(self._one_hot.snapshots)
+            if isinstance(intent, ONE_HOT_INTENT_TYPES) else (),
         )
 
     def preview_save_plan(

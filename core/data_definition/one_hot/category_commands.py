@@ -194,9 +194,28 @@ def _remove(draft, group, category):  # noqa: ANN001
             "Disable the group or enable another category before removal.",
         ), category_identity(category.identity))
     row = find_row_by_stable_id(draft, category.emitted_feature_identity)
+    draft_derived = next(
+        (
+            item for item in draft.rows
+            if item.source_kind == "derived_policy"
+            and row is not None
+            and row.stable_identity in {
+                item.numerator_identity,
+                item.denominator_identity,
+            }
+        ),
+        None,
+    )
+    if draft_derived is not None:
+        return reject(draft, action, issue(
+            "derived_operand_reference",
+            "dependency",
+            f"Derived Feature '{draft_derived.ml_name}' references this emitted Feature.",
+            "Remove or retarget the dependent Derived definition first.",
+        ), category_identity(category.identity))
     blockers = tuple(
         dependency for dependency in feature_dependencies(draft, row)
-        if dependency.blocks_remove
+        if dependency.blocks_remove and dependency.affected_identity != category.identity
     )
     if blockers:
         first = blockers[0]

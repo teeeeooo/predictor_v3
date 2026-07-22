@@ -42,20 +42,40 @@ def _validate_one_hot(issues, manifest) -> None:  # noqa: ANN001
     emitted_memberships: dict[str, int] = {}
     for group in groups:
         selector = feature_by_id.get(group.selector_feature_identity)
-        if (
-            selector is None
-            or selector.active != group.active
-            or selector.role != "input"
-            or selector.editor != "dropdown"
-            or selector.data_type != "string"
-            or selector.readonly
-            or not selector.visible
-            or selector.value_source != "one_hot"
-            or bool(selector.ml_name)
-            or selector.one_hot_group != group.group_key
+        restore = group.selector_restore
+        if restore is not None and (
+            not restore.active
+            or restore.role != "input"
+            or restore.data_type != "string"
+            or bool(restore.ml_name)
+            or restore.value_source == "one_hot"
+            or bool(restore.one_hot_group)
         ):
             issues.append(ContractValidationIssue(
+                "one_hot_selector_restore_invalid", group.group_key
+            ))
+        if restore is not None and (
+            selector is None or restore.identity != group.selector_feature_identity
+        ):
+            issues.append(ContractValidationIssue(
+                "one_hot_selector_restore_missing", group.group_key
+            ))
+        elif restore is not None and not group.active:
+            if not _selector_matches_restore(selector, restore):
+                issues.append(ContractValidationIssue(
+                    "one_hot_inactive_selector_mutated", group.group_key
+                ))
+        elif not _valid_runtime_selector(selector, group):
+            issues.append(ContractValidationIssue(
                 "one_hot_selector_invalid", group.group_key
+            ))
+        if (
+            restore is None
+            and selector is not None
+            and selector.rule_id == f"one_hot:{group.identity}"
+        ):
+            issues.append(ContractValidationIssue(
+                "one_hot_selector_restore_missing", group.group_key
             ))
         if group.category_source not in _ALLOWED_CATEGORY_SOURCES:
             issues.append(ContractValidationIssue(
@@ -68,6 +88,15 @@ def _validate_one_hot(issues, manifest) -> None:  # noqa: ANN001
         if group.category_source == "static" and group.source_binding:
             issues.append(ContractValidationIssue(
                 "one_hot_source_binding_invalid", group.group_key
+            ))
+        if (
+            (group.active or restore is None)
+            and group.category_source == "mapping_backed"
+            and selector is not None
+            and selector.mapping_entity != group.source_binding
+        ):
+            issues.append(ContractValidationIssue(
+                "one_hot_selector_mapping_binding_mismatch", group.group_key
             ))
         if group.unknown_policy not in _ALLOWED_UNKNOWN_POLICIES:
             issues.append(ContractValidationIssue(
@@ -171,6 +200,52 @@ def _validate_one_hot(issues, manifest) -> None:  # noqa: ANN001
                 "one_hot_emitted_membership_invalid",
                 f"{identity} must belong to exactly one category",
             ))
+
+
+def _valid_runtime_selector(selector, group) -> bool:  # noqa: ANN001
+    return bool(
+        selector is not None
+        and selector.active == group.active
+        and selector.role == "input"
+        and selector.editor == "dropdown"
+        and selector.data_type == "string"
+        and not selector.readonly
+        and selector.visible
+        and selector.value_source == "one_hot"
+        and not selector.ml_name
+        and selector.one_hot_group == group.group_key
+    )
+
+
+def _selector_matches_restore(selector, restore) -> bool:  # noqa: ANN001
+    if selector is None:
+        return False
+    return all(
+        getattr(selector, field) == getattr(restore, field)
+        for field in (
+            "identity",
+            "display_order",
+            "column_key",
+            "label",
+            "role",
+            "editor",
+            "data_type",
+            "visible",
+            "required",
+            "readonly",
+            "value_source",
+            "mapping_entity",
+            "mapping_attribute",
+            "trigger_column",
+            "rule_id",
+            "model_input_enabled",
+            "ml_name",
+            "one_hot_group",
+            "active",
+            "notes",
+            "zero_fill_policy",
+        )
+    )
 
 
 def _validate_targets(issues, manifest) -> None:  # noqa: ANN001

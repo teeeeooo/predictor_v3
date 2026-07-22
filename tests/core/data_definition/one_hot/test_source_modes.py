@@ -14,6 +14,7 @@ from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.one_hot.intents import (
     AddOneHotCategoryIntent,
     AddOneHotGroupIntent,
+    ChangeOneHotSourceModeIntent,
     EditOneHotCategoryIntent,
     SetOneHotCategoryActiveIntent,
     SetOneHotGroupActiveIntent,
@@ -126,8 +127,9 @@ def test_external_provider_identity_value_are_read_only_and_unavailable_blocks(t
     active = controller.preview_one_hot_command(
         SetOneHotGroupActiveIntent(group.identity, True)
     )
-    assert active.command_accepted
-    active_draft = active.result.draft
+    assert not active.command_accepted
+    assert active.blockers[0].code == "mapping_trigger_reference"
+    active_draft = controller._draft
     without_provider = DataDefinitionService(
         generation_repository=repository,
         vocabulary_snapshots=(),
@@ -161,3 +163,87 @@ def test_mapping_value_rename_does_not_replace_canonical_category_identity(tmp_p
     assert category.identity == identity
     assert category.source_value == "R32"
     assert category.drift_status == "one_hot_mapping_rule_stale"
+
+
+def test_external_unknown_duplicate_and_incomplete_relations_reject_atomically(tmp_path):
+    repository = _repository(tmp_path)
+    external = VocabularySnapshot(
+        "external",
+        "provider:ref",
+        (
+            VocabularyCategory("provider:r410a", "R410A"),
+            VocabularyCategory("provider:r32", "R32"),
+            VocabularyCategory("provider:r290", "R290"),
+        ),
+        source_revision="provider-rev-1",
+    )
+    controller = _controller(repository, (external,))
+    group = controller.one_hot_authoring_projection().groups[0]
+    original = controller._draft
+    category_ids = tuple(item.identity for item in group.categories)
+
+    invalid_cases = (
+        (
+            tuple(zip(category_ids, ("provider:r410a", "provider:r32", "missing"), strict=True)),
+            "one_hot_provider_category_missing",
+        ),
+        (
+            tuple(zip(category_ids, ("provider:r410a", "provider:r410a", "provider:r290"), strict=True)),
+            "one_hot_provider_category_duplicate",
+        ),
+        (
+            ((category_ids[0], "provider:r410a"),),
+            "one_hot_external_overlay_incomplete",
+        ),
+        (
+            (("unknown-category", "provider:r410a"), *tuple(
+                zip(category_ids[1:], ("provider:r32", "provider:r290"), strict=True)
+            )),
+            "one_hot_provider_category_missing",
+        ),
+    )
+    for assignments, code in invalid_cases:
+        prepared = controller.preview_one_hot_command(ChangeOneHotSourceModeIntent(
+            group.identity, "external", external.source_binding, assignments
+        ))
+        assert not prepared.command_accepted
+        assert prepared.blockers[0].code == code
+        assert prepared.result.draft is original
+        assert controller._draft is original
+
+    valid = controller.preview_one_hot_command(ChangeOneHotSourceModeIntent(
+        group.identity,
+        "external",
+        external.source_binding,
+        tuple(zip(
+            category_ids,
+            ("provider:r410a", "provider:r32", "provider:r290"),
+            strict=True,
+        )),
+    ))
+    assert valid.command_accepted
+
+
+def test_provider_revision_change_rejects_prepared_candidate(tmp_path):
+    repository = _repository(tmp_path)
+    first = VocabularySnapshot(
+        "mapping_backed",
+        "ref_type",
+        (VocabularyCategory("ref:r410a", "R410A"),),
+        source_revision="mapping-rev-1",
+    )
+    controller = _controller(repository, (first,))
+    group = controller.one_hot_authoring_projection().groups[0]
+    prepared = controller.preview_one_hot_command(
+        ChangeOneHotSourceModeIntent(group.identity, "static", "")
+    )
+    assert prepared.command_accepted
+    controller._service._one_hot.snapshots = (replace(
+        first, source_revision="mapping-rev-2"
+    ),)
+
+    state = controller.apply_prepared_one_hot_command(prepared)
+
+    assert not state.last_action_ok
+    assert state.command_issue_rows[0][0] == "one_hot_provider_snapshot_stale"
+    assert controller._draft is prepared.source_draft

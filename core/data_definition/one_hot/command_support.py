@@ -14,6 +14,7 @@ from core.data_definition.contract import candidate_manifest_from_draft, validat
 from core.data_definition.contract.model import (
     OneHotCategoryDefinition,
     OneHotGroupDefinition,
+    OneHotSelectorRestore,
 )
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
 from core.data_definition.one_hot.model import (
@@ -190,18 +191,112 @@ def selector_row(
     )
 
 
-def detached_selector_row(row: DataDefinitionDraftRow) -> DataDefinitionDraftRow:
+def selector_restore(
+    draft: DataDefinitionDraft,
+    row: DataDefinitionDraftRow,
+) -> OneHotSelectorRestore:
+    """Capture the exact canonical Feature shape before any takeover."""
+    base_feature = next(
+        (
+            item for item in getattr(draft.base_manifest, "features", ())
+            if item.identity == row.stable_identity
+        ),
+        None,
+    )
+    return OneHotSelectorRestore(
+        identity=row.stable_identity,
+        display_order=row.display_order,
+        column_key=row.column_key,
+        label=row.label,
+        role=row.role,
+        editor=row.editor,
+        data_type=row.data_type,
+        visible=row.visible,
+        required=row.required,
+        readonly=row.readonly,
+        value_source=row.value_source,
+        mapping_entity=row.mapping_entity,
+        mapping_attribute=row.mapping_attribute,
+        trigger_column=row.trigger_column,
+        rule_id=row.rule_id,
+        model_input_enabled=row.model_input_enabled,
+        ml_name=row.ml_name,
+        one_hot_group=row.one_hot_group,
+        active=row.active,
+        notes=row.notes,
+        zero_fill_policy=(
+            base_feature.zero_fill_policy if base_feature is not None else "disallow"
+        ),
+    )
+
+
+def selector_matches_restore(
+    row: DataDefinitionDraftRow,
+    restore: OneHotSelectorRestore,
+) -> bool:
+    return restored_selector_row(row, restore) == row
+
+
+def restored_selector_row(
+    row: DataDefinitionDraftRow,
+    restore: OneHotSelectorRestore,
+) -> DataDefinitionDraftRow:
+    """Restore every draft-visible Feature field from canonical evidence."""
     return replace(
         row,
-        value_source="manual",
-        mapping_attribute="",
-        trigger_column="",
-        rule_id="",
-        model_input_enabled=False,
-        ml_name="",
-        one_hot_group="",
-        active=True,
+        stable_identity=restore.identity,
+        display_order=restore.display_order,
+        column_key=restore.column_key,
+        label=restore.label,
+        role=restore.role,
+        editor=restore.editor,
+        data_type=restore.data_type,
+        visible=restore.visible,
+        required=restore.required,
+        readonly=restore.readonly,
+        value_source=restore.value_source,
+        mapping_entity=restore.mapping_entity,
+        mapping_attribute=restore.mapping_attribute,
+        trigger_column=restore.trigger_column,
+        rule_id=restore.rule_id,
+        model_input_enabled=restore.model_input_enabled,
+        ml_name=restore.ml_name,
+        one_hot_group=restore.one_hot_group,
+        active=restore.active,
+        notes=restore.notes,
     )
+
+
+def selector_restore_issue(
+    row: DataDefinitionDraftRow | None,
+    group: OneHotGroupDefinition,
+    *,
+    taken_over: bool,
+) -> DataDefinitionCommandIssue | None:
+    restore = group.selector_restore
+    if restore is None:
+        return issue(
+            "one_hot_selector_restore_missing",
+            "selector_restore",
+            "The selector has no exact ordinary Feature restoration metadata.",
+            "Keep the dedicated selector or remove it; do not detach it as an ordinary Feature.",
+        )
+    if row is None or row.stable_identity != restore.identity:
+        return issue(
+            "one_hot_selector_restore_missing",
+            "selector_restore",
+            "The selector restoration relation is missing or points to another Feature.",
+            "Refresh the draft and reassign a selector with complete restoration metadata.",
+        )
+    expected = selector_row(restored_selector_row(row, restore), group) if taken_over else restored_selector_row(row, restore)
+    if row != expected:
+        return issue(
+            "one_hot_selector_restore_stale",
+            "selector_restore",
+            "The selector changed after its takeover/restoration candidate was prepared.",
+            "Resolve the conflicting Feature edit and open a new Impact Preview.",
+        )
+    return None
 
 
 def rebuild_group_ml_order(

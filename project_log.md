@@ -29,6 +29,21 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-22 — Train/Admin Phase 4F audit correction
+
+### Decision
+
+- Treat ordinary selector assignment as an inactive reservation backed by the
+  exact original Feature shape; perform takeover only on validated activation and
+  restore exactly on disable/detach. Dedicated historical selectors without restore
+  evidence cannot be guessed into ordinary Features.
+- Keep selector eligibility and dependency impact in the core policy. Preserve
+  IDU/ODU/Mapping/cascade behavior during inactive authoring and block activation
+  until affected runtime relations are explicitly migrated.
+- Make the canonical runtime group's `source_binding` the shared Mapping-backed
+  dropdown/encoder owner, and validate all External provider identities plus
+  snapshot revision before producing a prepared candidate.
+
 ## 2026-07-18 — Train/Admin Phase 4F One-hot authoring
 
 ### Decision
