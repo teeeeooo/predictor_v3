@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from apps.train.application.data_mapping import DataMappingNavigationRequest
 from apps.train.application.data_mapping.handoff import build_saved_mapping_handoffs
 from apps.train.application.data_definition import PreparedFeatureCommand
+from apps.train.application.data_definition import GenerationSnapshot
 from apps.train.controllers.data_definition_state_builder import (
     DRAFT_FIELDS,
     DRAFT_HEADERS,
@@ -48,6 +49,14 @@ from core.data_definition import (
 from core.data_definition.one_hot.model import vocabulary_revision_token
 
 
+@dataclass(frozen=True)
+class PreparedDefinitionRuntime:
+    snapshot: GenerationSnapshot
+    draft: DataDefinitionDraft
+    report: object
+    source_revision: str
+
+
 class DataDefinitionController:
     """Coordinate Data Definition report and draft refresh for the UI."""
 
@@ -58,6 +67,97 @@ class DataDefinitionController:
         self._draft: DataDefinitionDraft | None = None
         self._draft_revision = 0
         self._saved_mapping_handoffs: tuple[DataMappingNavigationRequest, ...] = ()
+        self._runtime_snapshot: GenerationSnapshot | None = None
+        self._runtime_state: DataDefinitionControllerState | None = None
+
+    @property
+    def runtime_generation_id(self) -> str:
+        if self._runtime_snapshot is not None:
+            return self._runtime_snapshot.manifest.generation.generation_id
+        if self._draft is not None:
+            return self._draft.base_generation_id
+        return ""
+
+    @property
+    def runtime_controller_state(self) -> DataDefinitionControllerState | None:
+        return self._runtime_state
+
+    @property
+    def draft_evidence(self) -> tuple[str, int, bool]:
+        draft = self._draft
+        return (
+            draft.base_generation_id if draft is not None else "",
+            self._draft_revision,
+            bool(draft is not None and draft.is_changed),
+        )
+
+    def bind_runtime_generation(self, snapshot: GenerationSnapshot) -> None:
+        """Bind the initial process generation before the panel loads its draft."""
+        if self._runtime_snapshot is not None:
+            raise RuntimeError("Data Definition runtime generation is already bound")
+        self._runtime_snapshot = snapshot
+
+    def runtime_revision_token(self) -> str:
+        draft = self._draft
+        return (
+            f"{self.runtime_generation_id}:draft={self._draft_revision}:"
+            f"base={draft.base_generation_id if draft is not None else '<unloaded>'}:"
+            f"dirty={int(bool(draft is not None and draft.is_changed))}"
+        )
+
+    def prepare_runtime_generation(
+        self, snapshot: GenerationSnapshot
+    ) -> PreparedDefinitionRuntime:
+        """Prepare a clean immutable controller baseline without visible mutation."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        if self._draft.is_changed:
+            raise RuntimeError("definition_draft_reconciliation_required")
+        draft = self._service.draft_from_generation(snapshot)
+        report = self._service.report_from_generation(snapshot)
+        return PreparedDefinitionRuntime(
+            snapshot,
+            draft,
+            report,
+            self.runtime_revision_token(),
+        )
+
+    def commit_runtime_generation(
+        self, prepared: PreparedDefinitionRuntime
+    ) -> object:
+        if prepared.source_revision != self.runtime_revision_token():
+            raise RuntimeError("definition_runtime_revision_stale")
+        prior = (
+            self._runtime_snapshot,
+            self._draft,
+            self._draft_revision,
+            self._runtime_state,
+            self._saved_mapping_handoffs,
+        )
+        self._runtime_snapshot = prepared.snapshot
+        self._draft = prepared.draft
+        self._draft_revision += 1
+        self._runtime_state = _state_from_report(
+            prepared.report,
+            self._draft,
+            self._service.preview_save_plan(
+                self._draft, current_report=prepared.report
+            ),
+            message="Runtime generation applied.",
+            saved_mapping_handoffs=self._saved_mapping_handoffs,
+        )
+        return prior
+
+    def rollback_runtime_generation(self, prior: object) -> None:
+        (
+            self._runtime_snapshot,
+            self._draft,
+            prior_revision,
+            self._runtime_state,
+            self._saved_mapping_handoffs,
+        ) = prior
+        self._draft_revision = prior_revision + 1
 
     def refresh(self) -> DataDefinitionControllerState:
         """Return current Data Definition view state and reload the draft."""
@@ -67,12 +167,14 @@ class DataDefinitionController:
             self._draft_revision += 1
         except Exception as exc:
             return self._error_state(exc)
-        return _state_from_report(
+        state = _state_from_report(
             report,
             self._draft,
             self._service.preview_save_plan(self._draft, current_report=report),
             saved_mapping_handoffs=self._saved_mapping_handoffs,
         )
+        self._runtime_state = state
+        return state
 
     def edit_cell(
         self,

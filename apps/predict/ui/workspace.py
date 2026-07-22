@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -33,6 +34,7 @@ from apps.predict.ui.status_widgets import (
 from apps.predict.ui.tables.case_table_model import CaseTableModel
 from apps.predict.ui.tables.case_table_view import CaseTableView
 from apps.predict.ui.tables.group_header import TableLinkedGroupHeader
+from apps.predict.ui.runtime_generation import apply_runtime_composition
 
 if TYPE_CHECKING:
     from apps.predict.mapping.mapping_repository import PredictMappingRepository
@@ -54,6 +56,7 @@ class PredictWorkspace(QWidget):
         show_title: bool = True,
         show_status_strip: bool = True,
         composition: PredictWorkspaceComposition | None = None,
+        generation_refresh: Callable[[], bool] | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("PredictWorkspace")
@@ -73,6 +76,8 @@ class PredictWorkspace(QWidget):
         self.prediction_controller = resolved.prediction_controller
         self.dropdown_option_adapter = resolved.dropdown_option_adapter
         self.generation_id = resolved.generation_id
+        self._generation_refresh = generation_refresh
+        self._generation_status_provider: Callable[[], str] | None = None
 
         self.case_model = CaseTableModel(
             self.session,
@@ -112,6 +117,7 @@ class PredictWorkspace(QWidget):
         )
         self.command_bar.paste_button.clicked.connect(self._paste_from_clipboard)
         self.command_bar.copy_results_button.clicked.connect(self._copy_results_selection)
+        self.command_bar.refresh_button.clicked.connect(self._refresh_generation)
         self.command_bar.copy_results_button.setText("선택 복사")
 
         table_panel = self._build_table_panel("예측 케이스", self.case_table)
@@ -151,6 +157,24 @@ class PredictWorkspace(QWidget):
         layout.addWidget(table_panel, 1)
         layout.addWidget(self.bottom_status)
         self._refresh()
+
+    def apply_runtime_composition(
+        self, composition: PredictWorkspaceComposition
+    ) -> None:
+        """Swap one already-prepared Predict runtime while retaining case state."""
+        apply_runtime_composition(self, composition)
+
+    def configure_generation_refresh(
+        self,
+        refresh: Callable[[], bool],
+        status_provider: Callable[[], str],
+    ) -> None:
+        self._generation_refresh = refresh
+        self._generation_status_provider = status_provider
+
+    def show_generation_status(self) -> None:
+        if self._generation_status_provider is not None:
+            self.status_label.setText(self._generation_status_provider())
 
     def _configure_tables(self) -> None:
         self.case_table.setAlternatingRowColors(True)
@@ -299,6 +323,9 @@ class PredictWorkspace(QWidget):
         if self.prediction_controller.is_running:
             self.status_label.setText("예측이 이미 실행 중입니다.")
             return
+        if self._generation_refresh is not None and not self._generation_refresh():
+            self.show_generation_status()
+            return
         self._set_running_state(True)
         self.status_label.setText("예측 실행 중...")
         try:
@@ -311,6 +338,15 @@ class PredictWorkspace(QWidget):
             self._set_running_state(False)
             self.status_label.setText(f"예측 실행 오류: {str(exc).splitlines()[0]}")
             return
+
+    def _refresh_generation(self) -> None:
+        if self._generation_refresh is None:
+            self.status_label.setText("Up to date")
+            return
+        if self._generation_refresh():
+            self.show_generation_status()
+        else:
+            self.show_generation_status()
 
     def _cancel_prediction(self) -> None:
         self.prediction_controller.cancel()

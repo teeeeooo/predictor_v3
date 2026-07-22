@@ -10,15 +10,26 @@ from apps.predict.application.models import (
 )
 from core.ml.artifacts import MODEL_FILE
 from core.ml.inference import load_model, predict_row
+from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
 
 
 class PredictionService:
     """Wrap existing core predictor route without changing core behavior."""
 
-    def __init__(self, model_file: str = MODEL_FILE) -> None:
+    def __init__(
+        self,
+        model_file: str = MODEL_FILE,
+        *,
+        runtime_snapshot: PredictRuntimeSnapshot | None = None,
+    ) -> None:
         self._model_file = model_file
+        self._runtime_snapshot = runtime_snapshot
         self._model_data: Any | None = None
         self._load_error: str = ""
+
+    @property
+    def generation_id(self) -> str:
+        return self._runtime_snapshot.generation_id if self._runtime_snapshot else "legacy"
 
     def model_status(self) -> PredictionModelStatus:
         """Return model artifact status without loading the model."""
@@ -75,7 +86,19 @@ class PredictionService:
                 message=self._load_error,
             )
         try:
-            predictions = predict_row(model_data, request.row_input)
+            runtime = self._runtime_snapshot
+            predictions = predict_row(
+                model_data,
+                request.row_input,
+                targets=runtime.active_targets if runtime is not None else None,
+                derived_snapshot=runtime.derived if runtime is not None else None,
+                zero_fill_policies=(
+                    runtime.zero_fill_policy_by_ml_name if runtime is not None else None
+                ),
+                ordered_input_features=(
+                    runtime.ordered_input_ml_names if runtime is not None else None
+                ),
+            )
         except Exception as exc:
             return PredictionServiceResult(
                 case_id=request.case_id,
@@ -94,8 +117,40 @@ class PredictionService:
         if self._load_error:
             return None
         try:
-            self._model_data = load_model(self._model_file)
+            runtime = self._runtime_snapshot
+            model_data = (
+                load_model(
+                    self._model_file,
+                    preprocess_version=runtime.preprocessing_version,
+                    validate_static_catalog=False,
+                )
+                if runtime is not None
+                else load_model(self._model_file)
+            )
+            if runtime is not None:
+                self._validate_runtime_contract(model_data, runtime)
+            self._model_data = model_data
         except Exception as exc:
             self._load_error = str(exc)
             return None
         return self._model_data
+
+    @staticmethod
+    def _validate_runtime_contract(
+        model_data: Any,
+        runtime: PredictRuntimeSnapshot,
+    ) -> None:
+        contract = model_data.get("training_contract") if isinstance(model_data, dict) else None
+        if not isinstance(contract, dict):
+            raise ValueError(
+                "Active model metadata cannot prove runtime generation compatibility."
+            )
+        mismatched = tuple(
+            key
+            for key, expected in runtime.expected_model_contract.items()
+            if contract.get(key) != expected
+        )
+        if mismatched:
+            raise ValueError(
+                "Active model runtime contract differs: " + ", ".join(mismatched)
+            )

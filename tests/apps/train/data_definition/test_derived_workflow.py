@@ -41,7 +41,7 @@ def test_inactive_add_prepared_candidate_applies_and_publishes_same_generation(t
     assert active.manifest.generation.generation_id == prepared.candidate_generation_id
 
 
-def test_active_semantics_edit_previews_but_save_guard_remains_blocked(tmp_path):
+def test_active_semantics_edit_previews_with_retraining_required(tmp_path):
     controller, _repository, manifest = _controller(tmp_path)
     state = controller.refresh()
     first = manifest.derived[0]
@@ -59,10 +59,10 @@ def test_active_semantics_edit_previews_but_save_guard_remains_blocked(tmp_path)
     assert prepared.derived_semantics_changed
     assert prepared.model_compatibility_changed
     assert prepared.requires_retraining
-    assert not prepared.save_allowed
+    assert prepared.save_allowed
     applied = controller.apply_prepared_derived_command(prepared)
     assert applied.last_action_ok and applied.draft_changed
-    assert not applied.save_action_enabled
+    assert applied.save_action_enabled
     assert "model_compatibility_migration_required" in {
         item[1] for item in applied.save_blocker_rows
     }

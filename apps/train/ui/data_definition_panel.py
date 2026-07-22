@@ -79,6 +79,7 @@ class DataDefinitionPanel(QWidget):
         on_open_data_mapping: (
             Callable[[DataMappingNavigationRequest], DataMappingNavigationResult] | None
         ) = None,
+        on_generation_persisted: Callable[[], None] | None = None,
     ) -> None:
         if controller is None:
             raise ValueError("DataDefinitionPanel requires an explicit controller")
@@ -86,6 +87,7 @@ class DataDefinitionPanel(QWidget):
         self.setObjectName("DataDefinitionPanel")
         self.setAccessibleName("Data Definition")
         self._controller = controller
+        self._on_generation_persisted = on_generation_persisted
         self._state: DataDefinitionControllerState | None = None
         self._selected_identity: tuple[str, str] | None = None
         self._preferred_identity: tuple[str, str] | None = None
@@ -191,6 +193,12 @@ class DataDefinitionPanel(QWidget):
         """Reload report and draft through the existing controller owner."""
         focus = self._behavior.workspace_focus()
         self._apply_state(self._controller.refresh())
+        self._behavior.restore_workspace_focus(focus)
+
+    def apply_runtime_state(self, state: DataDefinitionControllerState) -> None:
+        """Render one coordinator-committed controller state without reloading."""
+        focus = self._behavior.workspace_focus()
+        self._apply_state(state)
         self._behavior.restore_workspace_focus(focus)
 
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
@@ -413,7 +421,10 @@ class DataDefinitionPanel(QWidget):
     def _save_schema(self) -> None:
         if not self.save_button.isEnabled():
             return
-        self._apply_state(self._controller.save_schema())
+        state = self._controller.save_schema()
+        self._apply_state(state)
+        if state.status == "saved" and self._on_generation_persisted is not None:
+            self._on_generation_persisted()
         if self.review_blockers_button.isEnabled():
             self._behavior.restore_workspace_focus("blockers")
         else:

@@ -309,7 +309,7 @@ def test_visibility_preview_is_complete_and_presentation_only(tmp_path):
     assert evidence.active_targets_before == evidence.active_targets_after
 
 
-def test_inactive_save_is_allowed_active_enable_keeps_model_guard(tmp_path):
+def test_inactive_save_and_active_enable_publish_with_retraining_evidence(tmp_path):
     repository = DataDefinitionGenerationRepository(tmp_path / "definitions")
     repository.publish(bootstrap_manifest())
     service = DataDefinitionService(generation_repository=repository)
@@ -325,8 +325,10 @@ def test_inactive_save_is_allowed_active_enable_keeps_model_guard(tmp_path):
     )
     assert enable.command_accepted
     assert enable.model_compatibility_changed
-    assert not enable.save_allowed
-    assert "model_compatibility_migration_required" in {item.code for item in enable.blockers}
+    assert enable.save_allowed
+    assert enable.requires_retraining
+    enabled = service.save_schema_draft(enable.result.draft)
+    assert enabled.success
 
 
 class _CaptureExecution:

@@ -47,6 +47,7 @@ class TrainController:
         self._registry_provider = registry_provider
         self._is_running = False
         self._last_result: TrainingResult | None = None
+        self._active_request: TrainingRequest | None = None
         self._status_callback: StatusCallback | None = None
         self._log_callback: LogCallback | None = None
         self._progress_callback: ProgressCallback | None = None
@@ -63,6 +64,11 @@ class TrainController:
     def last_result(self) -> TrainingResult | None:
         """Return the latest terminal training result."""
         return self._last_result
+
+    @property
+    def active_request(self) -> TrainingRequest | None:
+        """Return the frozen request while a run is in progress."""
+        return self._active_request
 
     def resource_status(
         self,
@@ -103,6 +109,7 @@ class TrainController:
             return invalid
 
         self._notify(status_callback, "Training run starting.")
+        self._active_request = training_request
         self._status_callback = status_callback
         self._log_callback = log_callback
         self._progress_callback = progress_callback
@@ -160,6 +167,7 @@ class TrainController:
                 message="Training execution adapter is not configured.",
             )
             self._last_result = result
+            self._active_request = None
             self._notify(self._status_callback, result.message)
             if self._failed_callback is not None:
                 self._failed_callback(result)
@@ -199,6 +207,7 @@ class TrainController:
 
     def _handle_finished(self, result: TrainingResult) -> None:
         self._is_running = False
+        self._active_request = None
         self._last_result = result
         self._notify(self._status_callback, "Training run finished.")
         if self._finished_callback is not None:
@@ -207,6 +216,7 @@ class TrainController:
 
     def _handle_failed(self, result: TrainingResult) -> None:
         self._is_running = False
+        self._active_request = None
         self._last_result = result
         self._notify(self._status_callback, f"Training run failed: {result.message}")
         if self._failed_callback is not None:
@@ -215,6 +225,7 @@ class TrainController:
 
     def _handle_cancelled(self, result: TrainingResult) -> None:
         self._is_running = False
+        self._active_request = None
         self._last_result = result
         self._notify(self._status_callback, "Training run cancelled.")
         if self._cancelled_callback is not None:

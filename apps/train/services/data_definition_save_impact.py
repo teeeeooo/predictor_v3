@@ -68,21 +68,30 @@ class DataDefinitionSaveImpactService:
         if not any(item.code == "model_compatibility_migration_required" for item in blockers):
             blockers = (*blockers, DataDefinitionSaveBlocker(
                 "model_compatibility_migration_required",
-                "error",
-                "Ordered ML/model compatibility changed; complete retraining or consumer migration before publication.",
+                "warning",
+                "Ordered ML/model compatibility changed; runtime prediction requires retraining.",
                 "model_artifact",
             ))
+        blocking = any(
+            item.severity == "error"
+            and item.code not in {
+                "candidate_feature_projection_mismatch",
+                "ml_compatibility_projection_write_required",
+            }
+            and item.target in {"schema_csv", ""}
+            for item in blockers
+        )
         return replace(
             plan,
-            can_save_schema=False,
+            can_save_schema=draft.is_changed and not blocking,
             requires_retrain=True,
             blocked_reasons=blockers,
             restart_impact=DataDefinitionRestartImpact(
                 plan.requires_restart,
                 True,
-                "Schema restart and model retrain are required before activation."
+                "Runtime apply and model retraining are required."
                 if plan.requires_restart
-                else "Model retraining or consumer migration is required before publication.",
+                else "Model retraining is required after runtime apply.",
             ),
         )
 

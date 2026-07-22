@@ -1,6 +1,6 @@
 # Train/Admin Phase 4 — Unified Feature Manager
 
-Status: active phase — Slices 4A–4D complete; Slice 4E next
+Status: Phase 4A–4I implemented for final audit; Phase 5 remains deferred
 Date: 2026-07-17
 Depends on: completed Phases 1–3, especially the Phase 3 Data Definition UX foundation
 
@@ -655,6 +655,33 @@ model-level contract validation.
 
 ### 4H — Live Reload and Cross-tab Contract Refresh
 
+Implementation closeout (2026-07-22): complete for repository-automated scope.
+The application coordinator freezes one validated repository snapshot, prepares
+all four required participants without active mutation, rejects pointer/revision
+drift, and commits only after all are ready. Commit failure rolls back prior state;
+rollback or abort failure becomes Restart required. Mapping reconciliation remains
+inside its owner, and standalone Predict checks generation drift at startup,
+Refresh, and prediction boundaries.
+
+Audit correction: embedded and standalone Predict share one immutable execution
+snapshot containing Predict/ordered-ML projections, Derived, One-hot, zero-fill,
+Target/result mapping, preprocessing, and scoped fingerprints. Candidate prepare
+builds that entire composition and commit swaps it as one unit. Predict session
+mutation/running state, selected Train path/file/header, Definition draft/base/
+controller state, and Mapping draft/provider state are participant revision
+boundaries. Dirty Definition updates preserve the controller draft for explicit
+Save/Reset and fresh retry. Mapping review compares stable-identity affected
+column values against its baseline, so unrelated dirtiness cannot turn a clean
+removed requirement into a dirty removal.
+
+Final audit correction: the Predict candidate carries one complete case/result
+projection. Existing user-facing result values migrate only through stable active
+Result Feature identity, and rollback restores the full prior ResultRow. Train
+idle Target inventory, order, count, waiting metrics, and Summary rows project
+from one committed registry snapshot. A running request keeps its start-generation
+Target presentation until terminal while the status distinguishes process-active
+generation; the pending idle projection then applies before the next run.
+
 Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
@@ -677,6 +704,12 @@ restart-required state, and does not claim unsupported cross-process atomic
 cutover.
 
 ### 4I — Diagnostics Simplification and Final Acceptance
+
+Implementation closeout (2026-07-22): complete for repository-automated scope.
+Default statuses are concise (`Up to date`, `Saved and applied`, `Saved; update
+pending`, `Mapping review required`, `Reload failed`, `Restart required`, and
+`Retraining required`). Bounded details expose generation, stage, participant,
+blocker, recovery, model, and Mapping evidence without raw JSON or tracebacks.
 
 Purpose: separate ordinary Feature management from advanced diagnostic evidence
 and complete automated plus bounded native acceptance.
@@ -742,6 +775,25 @@ cross-tab acceptance, and honest fixture/mock limitations.
     prediction, explicit reload, or model-reload boundaries.
 30. A stale standalone Predict process preserves existing rows/results for
     recovery but blocks new prediction when generation reload cannot succeed.
+31. Predict participant generation equals the actual Derived, One-hot, ordered
+    input, zero-fill, Target/result, and preprocessing execution generation.
+32. Case/session or selected-training-file mutation after prepare rejects commit
+    without overwriting the latest user state.
+33. Data Definition participant, controller baseline, draft base, and displayed
+    generation transition and rollback together; dirty drafts require explicit
+    recovery.
+34. Mapping dirty removal evidence requires an unsaved change in the exact
+    affected stable-identity column or relation.
+35. Result column-key or Target ML-name rename preserves existing user-facing
+    values by stable Result Feature identity through table/model commit and exact
+    rollback; added, removed, and hidden-active results follow canonical ownership.
+36. Train Target list, order, count, waiting metrics, and Summary rows share one
+    committed registry when idle. A running request retains its start-generation
+    presentation until terminal, and the next request freezes the new registry.
+
+Phase 4 acceptance is closed for automated repository scope. Windows-native
+Train/Predict/Mapping smoke remains an explicit pre-release verification item and
+is not claimed by this closeout. Phase 5 is next and is not implemented here.
 
 ## 18. Non-goals
 

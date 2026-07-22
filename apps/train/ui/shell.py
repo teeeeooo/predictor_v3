@@ -28,6 +28,14 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.train_model_panel import TrainModelPanel
+from apps.train.application.runtime_generation import (
+    DefinitionRuntimeParticipant,
+    MappingRuntimeParticipant,
+    PredictRuntimeParticipant,
+    RuntimeGenerationCoordinator,
+    TrainRuntimeParticipant,
+)
+from apps.train.ui.runtime_generation import RuntimeGenerationPanel
 
 
 class TrainShell(QMainWindow):
@@ -48,6 +56,11 @@ class TrainShell(QMainWindow):
         data_definition_controller: DataDefinitionController | None = None,
         data_mapping_controller: DataMappingController | None = None,
         predict_composition: PredictWorkspaceComposition | None = None,
+        generation_coordinator: RuntimeGenerationCoordinator | None = None,
+        definition_participant: DefinitionRuntimeParticipant | None = None,
+        predict_participant: PredictRuntimeParticipant | None = None,
+        train_participant: TrainRuntimeParticipant | None = None,
+        mapping_participant: MappingRuntimeParticipant | None = None,
     ) -> None:
         if data_definition_controller is None:
             raise ValueError("TrainShell requires an explicit Data Definition controller")
@@ -55,6 +68,11 @@ class TrainShell(QMainWindow):
         self.train_controller = train_controller or TrainController()
         self.data_mapping_controller = data_mapping_controller or DataMappingController()
         self.data_definition_controller = data_definition_controller
+        self.generation_coordinator = generation_coordinator
+        self.definition_participant = definition_participant
+        self.predict_participant = predict_participant
+        self.train_participant = train_participant
+        self.mapping_participant = mapping_participant
         self.setWindowTitle("HVAC Training Studio")
         self.setStyleSheet(style.app_stylesheet())
 
@@ -69,6 +87,18 @@ class TrainShell(QMainWindow):
         layout.setSpacing(style.spacing("space.sm"))
         self.status_badges: dict[str, QLabel] = {}
         layout.addWidget(self._build_status_strip())
+        if generation_coordinator is not None:
+            self.runtime_generation_panel = RuntimeGenerationPanel(
+                on_retry=self.retry_generation_apply,
+                on_review_mapping=self.review_mapping_update,
+                on_save_mapping=self.save_mapping_then_retry,
+                on_discard_mapping=self.discard_mapping_then_retry,
+                parent=self,
+            )
+            self.runtime_generation_panel.apply_status(generation_coordinator.inspect_status())
+            layout.addWidget(self.runtime_generation_panel)
+        else:
+            self.runtime_generation_panel = None
         tabs = QTabWidget(self)
         tabs.setAccessibleName("Train workspace tabs")
         self.predict_workspace = PredictWorkspace(
@@ -82,6 +112,20 @@ class TrainShell(QMainWindow):
             controller=self.train_controller,
             on_model_status_changed=self.refresh_status_strip,
         )
+        if self.train_participant is not None:
+            self.train_participant.set_selected_data_path_provider(
+                lambda: self.train_model_panel.data_path_line.text()
+            )
+            self.train_participant.set_execution_state_provider(
+                lambda: (
+                    f"running:{self.train_controller.active_request.run_id}:"
+                    f"{self.train_controller.active_request.generation_id}"
+                    if self.train_controller.active_request is not None else "idle"
+                )
+            )
+            self.train_model_panel.set_data_selection_changed_callback(
+                self.train_participant.note_selected_data_changed
+            )
         tabs.addTab(
             self.predict_workspace,
             self.tab_names[0],
@@ -91,6 +135,7 @@ class TrainShell(QMainWindow):
             tabs,
             controller=self.data_definition_controller,
             on_open_data_mapping=self.open_data_mapping,
+            on_generation_persisted=self.retry_generation_apply,
         )
         tabs.addTab(self.data_definition_panel, self.tab_names[2])
         self.data_mapping_panel = DataMappingPanel(
@@ -107,6 +152,58 @@ class TrainShell(QMainWindow):
         self.setCentralWidget(central)
         self.tabs = tabs
         apply_initial_window_layout(self, (1280, 820))
+
+    def retry_generation_apply(self) -> None:
+        if self.generation_coordinator is None:
+            return
+        status = self.generation_coordinator.retry_pending_generation()
+        self._apply_generation_status(status)
+
+    def review_mapping_update(self) -> None:
+        if self.mapping_participant is None:
+            return
+        self.tabs.setCurrentWidget(self.data_mapping_panel)
+        evidence = self.mapping_participant.review_update()
+        summary = "; ".join(item.classification for item in evidence[:8])
+        self.data_mapping_panel.status_label.setText(summary or "No pending Mapping differences.")
+
+    def save_mapping_then_retry(self) -> None:
+        if self.mapping_participant is None:
+            return
+        if self.mapping_participant.save_mapping():
+            self.retry_generation_apply()
+
+    def discard_mapping_then_retry(self) -> None:
+        if self.mapping_participant is None:
+            return
+        self.mapping_participant.discard_and_reload()
+        self.data_mapping_panel.refresh()
+        self.retry_generation_apply()
+
+    def _apply_generation_status(self, status) -> None:  # noqa: ANN001
+        if self.runtime_generation_panel is not None:
+            self.runtime_generation_panel.apply_status(status)
+        if status.blocker_code == "definition_draft_reconciliation_required":
+            self.tabs.setCurrentWidget(self.data_definition_panel)
+        if (
+            self.predict_participant is not None
+            and self.predict_workspace.generation_id
+            != self.predict_participant.active_generation_id
+        ):
+            self.predict_workspace.apply_runtime_composition(
+                self.predict_participant.composition
+            )
+        if (
+            self.definition_participant is not None
+            and self.definition_participant.controller_state is not None
+            and status.code in {"applied", "retraining_required"}
+        ):
+            self.data_definition_panel.apply_runtime_state(
+                self.definition_participant.controller_state
+            )
+        self.data_mapping_panel.refresh()
+        self.train_model_panel.refresh_runtime_registry()
+        self.refresh_status_strip()
 
     def open_data_mapping(
         self,

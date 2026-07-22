@@ -10,7 +10,6 @@ from apps.train.application.data_definition import (
 from core.data_definition.contract import (
     candidate_manifest_from_draft,
     require_valid_contract,
-    scoped_fingerprints,
 )
 from core.data_definition.draft import DataDefinitionDraft
 from core.data_definition.draft import build_data_definition_draft
@@ -77,13 +76,6 @@ class DataDefinitionPersistenceService:
             if item.severity == "error"
             and item.code not in _CANONICAL_PROJECTION_BLOCKERS
         )
-        if save_plan.requires_retrain:
-            protected_blockers = (
-                *protected_blockers,
-                *(item for item in save_plan.blocked_reasons
-                  if item.severity == "error"
-                  and item.code == "ml_compatibility_projection_write_required"),
-            )
         if protected_blockers:
             return DataDefinitionSchemaSaveResult(
                 False,
@@ -133,28 +125,11 @@ class DataDefinitionPersistenceService:
 
     @staticmethod
     def _effective_blockers(save_plan, active, candidate):  # noqa: ANN001
-        before = scoped_fingerprints(active)
-        after = scoped_fingerprints(candidate)
-        model_compatible = before.model_compatibility == after.model_compatibility
         blockers = tuple(
             item for item in save_plan.blocked_reasons
-            if item.severity == "error" and not (
-                model_compatible and item.code in _CANONICAL_PROJECTION_BLOCKERS
-            )
+            if item.severity == "error"
+            and item.code not in _CANONICAL_PROJECTION_BLOCKERS
         )
-        if not model_compatible and not any(
-            item.code in {
-                "ml_compatibility_projection_write_required",
-                "model_compatibility_migration_required",
-            }
-            for item in blockers
-        ):
-            blockers = (*blockers, DataDefinitionSaveBlocker(
-                "model_compatibility_migration_required",
-                "error",
-                "Ordered ML/model compatibility changed; complete retraining or consumer migration before publication.",
-                "model_artifact",
-            ))
         return blockers
 
     def _blocked(self, code: str, message: str) -> DataDefinitionSchemaSaveResult:

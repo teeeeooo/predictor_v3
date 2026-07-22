@@ -6,6 +6,7 @@ from apps.predict.schema.column_schema_adapter import (
     PredictColumn,
     build_predict_column_schema,
 )
+from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
 
 
 @dataclass(frozen=True)
@@ -75,11 +76,13 @@ STATUS_COLUMNS = (
 )
 
 
-def build_case_table_column_schema() -> tuple[UnifiedCaseColumn, ...]:
+def build_case_table_column_schema(
+    rows: tuple[PredictSchemaV2Row, ...] | None = None,
+) -> tuple[UnifiedCaseColumn, ...]:
     """Return unified case-table columns in display order."""
     columns = [
         _from_predict_column(index, column)
-        for index, column in enumerate(build_predict_column_schema())
+        for index, column in enumerate(build_predict_column_schema(rows))
     ]
     start = len(columns)
     columns.extend(

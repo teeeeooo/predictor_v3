@@ -321,6 +321,35 @@ Must not:
 - Own Predict table data.
 - Duplicate Predict workspace implementation.
 
+### 4.5 Runtime generation composition
+
+Production embedded and standalone Predict composition must receive an immutable
+generation-bound runtime snapshot. That snapshot is the execution owner for
+schema/input mapping, Derived evaluation, One-hot encoding, ordered ML input,
+zero-fill, active Target/result mapping, preprocessing, and compatibility
+fingerprints. Default constructors and static catalogs are compatibility facades;
+they must not be re-read by a production generation transition.
+
+TrainShell owns one coordinator for equal Data Definition, Predict, Train, and
+Data Mapping participants. Prepare is non-mutating, commit follows all-ready, and
+rollback restores actual owner state. Participant revision evidence includes the
+mutable user or resource boundary it prepared: Predict session/running state,
+Train selection/file/header, Definition draft/base/controller state, and Mapping
+draft/provider state. Standalone Predict uses the same Predict snapshot owner and
+performs its own persisted-generation check at startup, Refresh, and immediately
+before prediction.
+
+Predict generation prepare owns one complete session projection: case order,
+input/autofill/dirty fields, and ResultRow status/value/message. Result keys migrate
+only through stable active Result Feature identity. Commit validates revision and
+case structure before installing that projection; rollback restores the complete
+prior projection.
+
+Train Target presentation consumes `TrainController.registry_snapshot()`. When
+idle, list, order, count, waiting metrics, and Summary rows refresh together. A
+running request keeps its frozen Target presentation; a newer process registry is
+shown as distinct status and becomes the idle presentation after terminal state.
+
 ## 5. Dependency Rules
 
 ### 5.1 Allowed imports

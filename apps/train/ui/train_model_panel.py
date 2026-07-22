@@ -51,6 +51,7 @@ class TrainModelPanel(QWidget):
             self.training_controller.registry_snapshot().active_target_names
             if hasattr(self.training_controller, "registry_snapshot") else TARGETS
         )
+        self._pending_runtime_targets: tuple[str, ...] | None = None
         self._on_model_status_changed = on_model_status_changed
 
         layout = QVBoxLayout(self)
@@ -114,11 +115,35 @@ class TrainModelPanel(QWidget):
         body.addWidget(self.model_path_line)
         body.addWidget(QLabel("preprocess version"))
         body.addWidget(_readonly_line("v1.0"))
-        body.addWidget(QLabel(f"모델/타겟 목록 ({len(self.targets)})"))
-        for index, target in enumerate(self.targets, start=1):
-            body.addWidget(_target_row(index, target))
+        self.target_count_heading = QLabel(f"모델/타겟 목록 ({len(self.targets)})")
+        body.addWidget(self.target_count_heading)
+        self.target_list_layout = QVBoxLayout()
+        body.addLayout(self.target_list_layout)
+        self._render_target_list()
         body.addStretch(1)
         return panel
+
+    def refresh_runtime_registry(self) -> None:
+        """Reflect the active process generation without changing a running request."""
+        snapshot = self.training_controller.registry_snapshot()
+        targets = snapshot.active_target_names
+        running = self.training_controller.active_request
+        if running is not None:
+            self._pending_runtime_targets = targets
+            self._set_status_text(
+                f"Running generation {running.generation_id}; process active {snapshot.generation_id}."
+            )
+            return
+        self._pending_runtime_targets = None
+        self._apply_idle_target_presentation(targets)
+
+    def _render_target_list(self) -> None:
+        while self.target_list_layout.count():
+            item = self.target_list_layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+        for index, target in enumerate(self.targets, start=1):
+            self.target_list_layout.addWidget(_target_row(index, target))
 
     def _build_progress_panel(self) -> QFrame:
         panel, body = _panel("학습 진행 상황")
@@ -132,9 +157,18 @@ class TrainModelPanel(QWidget):
         self.status_label = _status_label("현재 단계", "대기", "neutral")
         body.addWidget(self.status_label)
         cards = QHBoxLayout()
-        cards.addWidget(_metric_tile("완료", "0", "targets", "ready"))
-        cards.addWidget(_metric_tile("진행 중", "0", "target", "running"))
-        cards.addWidget(_metric_tile("대기 중", str(len(self.targets)), "targets", "missing"))
+        complete_tile, self.complete_metric_value = _metric_tile_with_value(
+            "완료", "0", "targets", "ready"
+        )
+        running_tile, self.running_metric_value = _metric_tile_with_value(
+            "진행 중", "0", "target", "running"
+        )
+        waiting_tile, self.waiting_metric_value = _metric_tile_with_value(
+            "대기 중", str(len(self.targets)), "targets", "missing"
+        )
+        cards.addWidget(complete_tile)
+        cards.addWidget(running_tile)
+        cards.addWidget(waiting_tile)
         body.addLayout(cards)
         body.addStretch(1)
         return panel
@@ -160,11 +194,17 @@ class TrainModelPanel(QWidget):
         grid = QGridLayout()
         grid.setSpacing(style.spacing("space.sm"))
         values = (
-            ("총 데이터 행 수", "0"), ("특성 수", "0"), ("타겟 수", str(len(self.targets))),
-            ("CV 폴드 수", "5"), ("Optuna Trials", "30"), ("예상 남은 시간", "--:--"),
+            ("총 데이터 행 수", "0"), ("특성 수", "0"),
+            ("타겟 수", str(len(self.targets))), ("CV 폴드 수", "5"),
+            ("Optuna Trials", "30"), ("예상 남은 시간", "--:--"),
         )
         for index, (label, value) in enumerate(values):
-            grid.addWidget(_metric_tile(label, value, "", "neutral"), index // 3, index % 3)
+            tile, value_label = _metric_tile_with_value(
+                label, value, "", "neutral"
+            )
+            if label == "타겟 수":
+                self.target_count_metric_value = value_label
+            grid.addWidget(tile, index // 3, index % 3)
         body.addLayout(grid)
         body.addStretch(1)
         return panel
@@ -172,7 +212,13 @@ class TrainModelPanel(QWidget):
     def set_data_path(self, data_path: str) -> None:
         """Set training data path without depending on a file dialog."""
         self.data_path_line.setText(data_path)
+        callback = getattr(self, "_data_selection_changed", None)
+        if callback is not None:
+            callback()
         self._update_control_state()
+
+    def set_data_selection_changed_callback(self, callback) -> None:  # noqa: ANN001
+        self._data_selection_changed = callback
 
     def _select_training_data(self) -> None:
         selected, _ = QFileDialog.getOpenFileName(
@@ -253,6 +299,7 @@ class TrainModelPanel(QWidget):
         self.progress_bar.setFormat(f"{progress_value}%")
         if self._on_model_status_changed is not None:
             self._on_model_status_changed()
+        self._apply_pending_runtime_targets()
 
     def _set_running(self, running: bool) -> None:
         self.run_button.setEnabled(False)
@@ -289,6 +336,35 @@ class TrainModelPanel(QWidget):
             StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows)
         )
         self.summary_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        if status == "대기 중":
+            self._set_target_metrics(0, 0, len(self.targets))
+        elif status == "진행 중":
+            self._set_target_metrics(0, len(self.targets), 0)
+        elif status == "완료":
+            self._set_target_metrics(len(self.targets), 0, 0)
+        else:
+            self._set_target_metrics(0, 0, 0)
+
+    def _apply_idle_target_presentation(self, targets: tuple[str, ...]) -> None:
+        self.targets = tuple(targets)
+        self.target_count_heading.setText(f"모델/타겟 목록 ({len(self.targets)})")
+        self.target_count_metric_value.setText(str(len(self.targets)))
+        self._render_target_list()
+        self._set_summary_state("대기 중")
+
+    def _apply_pending_runtime_targets(self) -> None:
+        if self._pending_runtime_targets is None:
+            return
+        targets = self._pending_runtime_targets
+        self._pending_runtime_targets = None
+        self._apply_idle_target_presentation(targets)
+
+    def _set_target_metrics(
+        self, completed: int, running: int, waiting: int
+    ) -> None:
+        self.complete_metric_value.setText(str(completed))
+        self.running_metric_value.setText(str(running))
+        self.waiting_metric_value.setText(str(waiting))
 
 
 def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:
@@ -349,7 +425,9 @@ def _target_row(index: int, target: str) -> QFrame:
     return row
 
 
-def _metric_tile(label: str, value: str, detail: str, kind: str) -> QFrame:
+def _metric_tile_with_value(
+    label: str, value: str, detail: str, kind: str
+) -> tuple[QFrame, QLabel]:
     tile = QFrame()
     tile.setObjectName("MetricTile")
     tile.setStyleSheet(_tile_stylesheet(kind))
@@ -369,7 +447,7 @@ def _metric_tile(label: str, value: str, detail: str, kind: str) -> QFrame:
     layout.addWidget(value_widget)
     if detail:
         layout.addWidget(QLabel(detail))
-    return tile
+    return tile, value_widget
 
 
 def _summary_table(targets: tuple[str, ...]) -> QTableView:

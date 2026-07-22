@@ -239,7 +239,7 @@ def test_command_preview_matches_published_predict_only_candidate(tmp_path):
     assert any(row.column_key == "optional_ambient_note" for row in active.projections.predict)
 
 
-def test_ml_order_preview_reports_compatibility_and_existing_save_guard(tmp_path):
+def test_ml_order_preview_reports_compatibility_and_retraining_requirement(tmp_path):
     service, repository = _service(tmp_path)
     draft = service.load_draft()
     cooling = next(row for row in draft.rows if row.column_key == "cooling_capa")
@@ -252,9 +252,9 @@ def test_ml_order_preview_reports_compatibility_and_existing_save_guard(tmp_path
     assert preview.command_accepted
     assert preview.ordered_ml_projection_changed
     assert preview.model_compatibility_changed and preview.requires_retraining
-    assert not preview.save_allowed
-    assert saved.status == "blocked"
-    assert repository.read_active().manifest == draft.base_manifest
+    assert preview.save_allowed
+    assert saved.status == "written"
+    assert repository.read_active().manifest != draft.base_manifest
 
 
 def test_controller_selection_dirty_and_remove_neighbor_workflow(tmp_path):

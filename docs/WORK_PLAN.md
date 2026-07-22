@@ -17,33 +17,40 @@
 
 ## Current Slice
 
-Train/Admin Phase 4G — Result/Target and Canonical Model Registry Management is
-implemented on its audit branch. Contract v4 makes Target the single writable owner
-of Result Feature identity, validated model-group association, identity-based
-allowed/exclude policy, independent presentation order, and active lifecycle. The
-three trainer groups have fixed identity/key/name/use_rfe facts. v1/v2/v3 generations remain readable and
-rollback-safe; name-based policy references normalize to stable owners while legacy
-Result exclusions are retained as stable compatibility no-op evidence. TrainShell
-selects one immutable process generation at startup for embedded Predict and Train;
-each training request freezes that same snapshot, while Save alone cannot advance
-Train before Phase 4H cutover. Policy validation, structured UI choices, Preview, and
-runtime filtering share the canonical ordered training-input identity pool. Production
-training no longer iterates the Python registry or import-time Target constant. Presentation
-changes remain model-compatible; active membership/name/group/policy changes retain
-the retraining/migration Save guard.
+Train/Admin Phase 4H+4I is implemented for audit. Definition publication and
+runtime application are separate outcomes. TrainShell coordinates Data Definition,
+embedded Predict, Train / Model, and Data Mapping through one immutable candidate,
+all-participant prepare, stale guard, and atomic commit/rollback. Dirty Mapping
+drafts retain baseline, values, and history behind Review Update, Save Mapping, and
+Discard and Reload. Standalone Predict reads the persisted generation at startup,
+explicit Refresh, and immediately before prediction; failed or incompatible reload
+preserves rows/results and blocks new prediction. Phase 4A–4I acceptance and concise
+diagnostics are closed for repository-automated scope.
+
+The PR #25 audit correction binds actual Predict inference to the coordinated
+generation, extends stale evidence across Predict cases/running state, Train CSV,
+Definition draft/controller, and Mapping provider state, and bases Mapping removal
+review on exact affected unsaved values. Dirty Definition drafts require explicit
+Save/Reset and fresh retry; embedded and standalone Predict share the same runtime
+snapshot owner.
+
+The final PR #25 correction additionally migrates existing Predict ResultRow
+values by stable Result Feature identity as part of the same atomic session
+transition and restores the complete result state on rollback. Train idle Target
+list/count/order/Summary/waiting metrics now share the committed registry; a
+running request retains its frozen presentation until terminal, then the pending
+process generation becomes the idle presentation.
 
 ## Next Action
 
-Perform correction re-audit of the Phase 4G Draft PR. Keep Phase 4H process-wide runtime
-cutover, model candidate generation, automatic training, and promotion outside this
-slice.
+Perform final audit of the Phase 4H+4I Draft PR. After merge, Phase 5 Train/Model
+and Shell UX is the next implementation phase; do not begin it in this slice.
 
 ## Active Blockers
 
-- Active Derived or One-hot activation/semantic changes remain Save-blocked until
-  an approved retraining/migration boundary; inactive definitions are publishable.
-- Actual protected ML/import-time/fixed-string consumers still block ordinary
-  ML-name/order/One-hot/Target changes until their explicit migration.
+- Model-incompatible Definition generations may publish and cut over, but Predict
+  remains blocked with Retraining required until compatibility is proven. No model
+  artifact is automatically replaced or promoted.
 - Existing fixed-index Predict keys remain protected migration targets; saved
   user-created Features without those dependencies remain renameable/removable.
 - Windows native Feature Manager smoke remains a pre-release verification item;
@@ -93,9 +100,8 @@ slice.
 
 ## Deferred / Hold
 
-- Slices 4H–4I remain deferred until Phase 4G audit and integration.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
-  Manager stabilization and a fresh dynamic-contract audit.
+  Manager Phase 4H+4I audit and merge.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
   item and does not block Phase 4.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh
@@ -122,6 +128,10 @@ slice.
 - Phase 4F result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4f-one-hot-authoring.md`
 - Phase 4F audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-audit-correction.md`
 - Phase 4F merge closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-merge-closeout.md`
+- Phase 4G result: `result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md`
+- Phase 4H+4I closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-runtime-closeout.md`
+- Phase 4H+4I audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-audit-correction.md`
+- Phase 4H+4I final audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-final-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

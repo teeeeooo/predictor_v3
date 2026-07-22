@@ -269,13 +269,14 @@ impact workflow, Data Mapping handoff, and audit corrections are complete and
 merged through PR #16. Existing owner and compatibility boundaries remain
 authoritative.
 
-### Phase 4 — Unified Feature Manager (proposed active phase)
-Begin with a merged-main current-state and contract audit. Extend the completed
-Phase 3 table-first foundation into the canonical Predict/ML Feature-authoring
-workflow: complete Feature mutation and ordering, Derived and One-hot authoring,
-Result/Target registry management, safe multi-contract persistence, and
-owner-preserving live reload. Data Mapping retains concrete values; Train retains
-explicit training execution. Automatic retraining and activation are excluded.
+### Phase 4 — Unified Feature Manager (implemented; final audit)
+Phase 4A–4I extend the Phase 3 table-first foundation into the canonical
+Predict/ML Feature-authoring workflow: Feature mutation and independent ordering,
+Derived and One-hot authoring, Result/Target registry management, immutable
+multi-contract publication, process-wide atomic cutover, standalone Predict drift
+detection, and dirty Mapping reconciliation. Data Mapping retains concrete values;
+Train retains explicit training execution. Automatic retraining and activation
+remain excluded. Windows-native smoke remains pre-release verification.
 
 ### Phase 5 — Train/Model and Shell UX Overhaul (deferred)
 Begin after Phase 4 stabilization with a new current-state audit against its

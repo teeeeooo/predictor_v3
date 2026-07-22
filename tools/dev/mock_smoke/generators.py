@@ -12,6 +12,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from core.data_definition.contract import bootstrap_manifest, scoped_fingerprints
 from core.mapping.condenser_identity import (
     canonical_condenser_pi,
     condenser_spec_key,
@@ -256,11 +257,18 @@ def build_mock_prediction_artifact(
 ) -> dict[str, object]:
     """Create an inference-compatible deterministic mock model artifact."""
     df = generate_mock_training_frame(rows=rows, seed=seed)
+    fingerprints = scoped_fingerprints(bootstrap_manifest())
     artifact: dict[str, object] = attach_catalog_fingerprint(
         {
             "models": {},
             "features": {},
             "preprocess_version": PREPROCESS_VERSION,
+            "training_contract": {
+                "registry_fingerprint": fingerprints.target_registry,
+                "ordered_ml_fingerprint": fingerprints.ordered_ml,
+                "derived_semantics_fingerprint": fingerprints.derived_semantics,
+                "one_hot_fingerprint": fingerprints.one_hot,
+            },
         }
     )
     models = artifact["models"]

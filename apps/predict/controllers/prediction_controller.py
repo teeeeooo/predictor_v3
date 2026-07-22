@@ -56,6 +56,12 @@ class PredictionController:
         """Return Qt-free model status through the service boundary."""
         return self._service.model_status()
 
+    def runtime_dependencies(
+        self,
+    ) -> tuple[PredictionServicePort, PredictionRunnerFactory | None]:
+        """Expose immutable composition dependencies for staged generation rebuilds."""
+        return self._service, self._runner_factory
+
     def start_all(
         self,
         status_callback: StatusCallback | None = None,

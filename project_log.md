@@ -29,6 +29,38 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-22 — Train/Admin Phase 4 runtime generation closeout
+
+### Decision
+
+- Separate immutable Definition publication from process runtime application and
+  make one application coordinator the staged owner for Data Definition, embedded
+  Predict, Train / Model, and Data Mapping.
+- Preserve all active A state until every B prepare succeeds; reject pointer,
+  participant, model, and Mapping revision drift before commit. Roll back completed
+  swaps on commit failure and require restart when abort/rollback cannot be proven.
+- Keep dirty Mapping concrete values, baseline, and history in the Mapping owner
+  behind explicit reconciliation actions. Standalone Predict independently checks
+  persisted generation at startup, Refresh, and prediction boundaries and blocks
+  stale execution without clearing rows or prior results.
+- Close Phase 4 for repository-automated scope and advance planning to Phase 5
+  only after final audit/merge. Windows-native Train/Predict/Mapping smoke remains
+  pre-release verification, not claimed closeout evidence.
+- Audit correction binds the reported Predict generation to one immutable actual
+  inference snapshot (Derived, One-hot, ordered input, zero-fill, Target/result,
+  preprocessing), makes embedded and standalone composition share that owner,
+  and retains static/bootstrap paths only as compatibility facades.
+- The prepare revision boundary now includes Predict cases/running state, Train
+  selected file/header, Definition draft/base/controller state, and Mapping
+  draft/provider state. Dirty Definition recovery is explicit, and Mapping dirty
+  removal requires exact affected draft-versus-baseline value evidence.
+- Final audit correction makes Predict case and ResultRow projection one atomic
+  session transition. Result values migrate only by stable active Result Feature
+  identity, and reverse rollback restores the exact A key/status/value/message.
+- Train idle Target list, order, count, waiting metrics, and Summary now consume
+  one committed registry snapshot. Running A presentation remains frozen while
+  process B is explicit, then B idle presentation applies after terminal state.
+
 ## 2026-07-22 — Train/Admin Phase 4G Target registry authoring
 
 ### Decision

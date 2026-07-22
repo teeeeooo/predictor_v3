@@ -193,7 +193,7 @@ def test_protected_ml_name_change_remains_blocked_without_consumer_migration(tmp
     changed = replace_draft_row(draft, identity, ml_name="Cooling Capacity Renamed")
     result = service.save_schema_draft(changed)
     assert result.status == "blocked"
-    assert "ml_compatibility_projection_write_required" in {
+    assert "restricted_field_edit_not_allowed" in {
         item.code for item in result.issues
     }
     assert repository.active_generation_id() == initial_generation

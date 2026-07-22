@@ -1,7 +1,11 @@
 """Qt-free predictor column schema adapter."""
 
 from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Any
+
+from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
+from core.predictor_schema.catalog_v2_projection import project_schema_v2_rows
 
 from core.predictor_schema.columns import (
     AUTO_COLS,
@@ -48,22 +52,30 @@ class PredictColumn:
         return self.group == "result"
 
 
-def build_predict_column_schema() -> tuple[PredictColumn, ...]:
+def build_predict_column_schema(
+    rows: Sequence[PredictSchemaV2Row] | None = None,
+) -> tuple[PredictColumn, ...]:
     """Return every predictor column descriptor in core schema order."""
+    metadata_rows = COLUMNS if rows is None else project_schema_v2_rows(tuple(rows))
     return tuple(
         _column_from_metadata(index, metadata)
-        for index, metadata in enumerate(COLUMNS)
+        for index, metadata in enumerate(metadata_rows)
     )
 
 
-def build_input_column_schema() -> tuple[PredictColumn, ...]:
+def build_input_column_schema(
+    rows: Sequence[PredictSchemaV2Row] | None = None,
+) -> tuple[PredictColumn, ...]:
     """Return user-input and auto-filled columns for the input table."""
-    return tuple(column for column in build_predict_column_schema() if column.key in _INPUT_KEYS)
+    columns = build_predict_column_schema(rows)
+    return tuple(column for column in columns if column.group in {"input", "auto"})
 
 
-def build_result_column_schema() -> tuple[PredictColumn, ...]:
+def build_result_column_schema(
+    rows: Sequence[PredictSchemaV2Row] | None = None,
+) -> tuple[PredictColumn, ...]:
     """Return result columns for the result table."""
-    return tuple(column for column in build_predict_column_schema() if column.key in _RESULT_KEYS)
+    return tuple(column for column in build_predict_column_schema(rows) if column.is_result)
 
 
 def dropdown_columns() -> tuple[PredictColumn, ...]:

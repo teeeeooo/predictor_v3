@@ -15,6 +15,7 @@ class DataMappingDraftSession:
         self._draft: MappingEditorDraft | None = None
         self._baseline: MappingEditorDraft | None = None
         self._undo_history: list[MappingEditorDraft] = []
+        self._revision = 0
 
     @property
     def draft(self) -> MappingEditorDraft | None:
@@ -27,6 +28,11 @@ class DataMappingDraftSession:
     @property
     def baseline(self) -> MappingEditorDraft | None:
         return self._baseline
+
+    @property
+    def revision(self) -> int:
+        """Return a monotonic draft/history revision for stale prepare guards."""
+        return self._revision
 
     def project(
         self,
@@ -45,6 +51,7 @@ class DataMappingDraftSession:
             self._undo_history = [
                 history_projector(item) for item in self._undo_history
             ]
+        self._revision += 1
         return draft
 
     def reset(self, draft: MappingEditorDraft) -> MappingEditorDraft:
@@ -52,6 +59,7 @@ class DataMappingDraftSession:
         self._draft = draft
         self._baseline = draft
         self._undo_history.clear()
+        self._revision += 1
         return draft
 
     def store_command(
@@ -66,6 +74,7 @@ class DataMappingDraftSession:
         if len(self._undo_history) > self._history_limit:
             del self._undo_history[0]
         self._draft = next_draft
+        self._revision += 1
         return next_draft
 
     def undo(self) -> MappingEditorDraft | None:
@@ -73,8 +82,25 @@ class DataMappingDraftSession:
         if not self._undo_history:
             return None
         self._draft = self._undo_history.pop()
+        self._revision += 1
         return self._draft
 
     def mark_saved(self) -> None:
         """Set the successful Save result as the new baseline."""
         self._baseline = self._draft
+        self._revision += 1
+
+    def restore(
+        self,
+        draft: MappingEditorDraft | None,
+        baseline: MappingEditorDraft | None,
+        history: tuple[MappingEditorDraft, ...],
+    ) -> None:
+        """Restore a coordinator rollback token without losing user state."""
+        self._draft = draft
+        self._baseline = baseline
+        self._undo_history = list(history)
+        self._revision += 1
+
+    def state_token(self) -> tuple[MappingEditorDraft | None, MappingEditorDraft | None, tuple[MappingEditorDraft, ...]]:
+        return self._draft, self._baseline, tuple(self._undo_history)

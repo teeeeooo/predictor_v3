@@ -311,7 +311,7 @@ def _save_blockers(
     ignored = {
         "candidate_feature_projection_mismatch",
         "ml_compatibility_projection_write_required",
-    } if not compatibility_changed else set()
+    }
     blockers = tuple(
         DataDefinitionCommandIssue(
             item.code,
@@ -322,17 +322,4 @@ def _save_blockers(
         for item in plan.blocked_reasons
         if item.severity == "error" and item.code not in ignored
     )
-    if compatibility_changed and not any(
-        item.code in {
-            "ml_compatibility_projection_write_required",
-            "model_compatibility_migration_required",
-        }
-        for item in blockers
-    ):
-        blockers = (*blockers, DataDefinitionCommandIssue(
-            "model_compatibility_migration_required",
-            "model_artifact",
-            "Ordered ML/model compatibility changed; publication remains blocked.",
-            "Complete retraining or consumer migration before publication.",
-        ))
     return blockers
