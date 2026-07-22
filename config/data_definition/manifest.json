@@ -1,7 +1,7 @@
 {
-  "contract_version": "unified_feature_contract.v2",
+  "contract_version": "unified_feature_contract.v3",
   "generation": {
-    "generation_id": "bootstrap-4ecf9ef4d208807bc360",
+    "generation_id": "bootstrap-023b73ec24fcc2fee247",
     "parent_generation_id": "",
     "source": "repository_bootstrap"
   },
@@ -915,25 +915,33 @@
         {
           "identity": "ufm_onehot_category_d1565527adb75e468d9a35b8a424ade8",
           "source_value": "R410A",
+          "emitted_feature_identity": "ufm_feature_ede283025c3651928ed64f82726f2450",
           "emitted_ml_name": "R410A",
           "order": 1,
-          "active": true
+          "active": true,
+          "provider_category_identity": ""
         },
         {
           "identity": "ufm_onehot_category_20399e7eacfb59fd98134e7f8ed7fe79",
           "source_value": "R32",
+          "emitted_feature_identity": "ufm_feature_d3cfbd4b81be564b895a93301613c5e8",
           "emitted_ml_name": "R32",
           "order": 2,
-          "active": true
+          "active": true,
+          "provider_category_identity": ""
         },
         {
           "identity": "ufm_onehot_category_739aad1ea0f55255a3412be3337f023f",
           "source_value": "R290",
+          "emitted_feature_identity": "ufm_feature_6d10df242e185abebbf96bc379daaa2f",
           "emitted_ml_name": "R290",
           "order": 3,
-          "active": true
+          "active": true,
+          "provider_category_identity": ""
         }
-      ]
+      ],
+      "source_binding": "ref_type",
+      "active": true
     },
     {
       "identity": "ufm_onehot_group_da70a662c0855da1ad1f971136b2db30",
@@ -946,18 +954,24 @@
         {
           "identity": "ufm_onehot_category_b8b72d98114a571b9768da028f047345",
           "source_value": "EEV",
+          "emitted_feature_identity": "ufm_feature_6be57499c40a5f10bd71dd422214e8dc",
           "emitted_ml_name": "EEV",
           "order": 1,
-          "active": true
+          "active": true,
+          "provider_category_identity": ""
         },
         {
           "identity": "ufm_onehot_category_28c6415318ea55cbbd8b2ec1ea1d0fe3",
           "source_value": "Capi",
+          "emitted_feature_identity": "ufm_feature_ebf97a72058f592db35fa3a7a67ff9e9",
           "emitted_ml_name": "Capi",
           "order": 2,
-          "active": true
+          "active": true,
+          "provider_category_identity": ""
         }
-      ]
+      ],
+      "source_binding": "exp_type",
+      "active": true
     }
   ],
   "targets": [

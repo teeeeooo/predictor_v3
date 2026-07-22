@@ -19,6 +19,11 @@ from core.data_definition.dependency_policy import feature_dependencies
 from core.data_definition.draft import DataDefinitionDraft
 from core.data_definition.derived.commands import derived_downstream_identities
 from core.data_definition.contract.compatibility import current_derived_definitions
+from core.data_definition.one_hot.impact import (
+    OneHotImpactEvidence,
+    build_one_hot_impact_evidence,
+)
+from core.data_definition.one_hot.model import OneHotDriftEvidence, VocabularySnapshot
 
 
 @dataclass(frozen=True)
@@ -57,6 +62,12 @@ class FeatureImpactPreview:
     execution_order_after: tuple[str, ...]
     downstream_identities: tuple[str, ...]
     summary: str
+    one_hot_fingerprint_changed: bool = False
+    one_hot_evidence: tuple[OneHotImpactEvidence, ...] = ()
+    one_hot_drift_evidence: tuple[OneHotDriftEvidence, ...] = ()
+    mapping_concrete_values_changed: bool = False
+    training_headers_before: tuple[str, ...] = ()
+    training_headers_after: tuple[str, ...] = ()
 
 
 def build_feature_impact_preview(
@@ -65,6 +76,7 @@ def build_feature_impact_preview(
     save_plan: DataDefinitionSavePlan,
     *,
     source_draft: DataDefinitionDraft | None = None,
+    vocabulary_snapshots: tuple[VocabularySnapshot, ...] = (),
 ) -> FeatureImpactPreview:
     """Compare the exact hypothetical command draft with its canonical base."""
     if not result.accepted:
@@ -100,6 +112,11 @@ def build_feature_impact_preview(
     derived_semantics_fingerprint = ""
     execution_before: tuple[str, ...] = ()
     execution_after: tuple[str, ...] = ()
+    one_hot_changed = False
+    one_hot_evidence: tuple[OneHotImpactEvidence, ...] = ()
+    drift_evidence: tuple[OneHotDriftEvidence, ...] = ()
+    training_before: tuple[str, ...] = ()
+    training_after: tuple[str, ...] = ()
     if base is not None:
         try:
             candidate = candidate_manifest_from_draft(result.draft, base)
@@ -130,6 +147,13 @@ def build_feature_impact_preview(
             execution_after = tuple(
                 item.ml_name for item in current_derived_definitions(candidate) if item.active
             )
+            one_hot_changed = before.one_hot != after.one_hot
+            (
+                one_hot_evidence,
+                drift_evidence,
+                training_before,
+                training_after,
+            ) = build_one_hot_impact_evidence(base, candidate, vocabulary_snapshots)
         except (KeyError, ValueError) as exc:
             validation_issues = (DataDefinitionCommandIssue(
                 "canonical_candidate_invalid",
@@ -174,6 +198,12 @@ def build_feature_impact_preview(
         execution_after,
         _downstream(source_draft, result),
         summary,
+        one_hot_changed,
+        one_hot_evidence,
+        drift_evidence,
+        False,
+        training_before,
+        training_after,
     )
 
 
@@ -270,7 +300,10 @@ def _save_blockers(
     plan: DataDefinitionSavePlan,
     compatibility_changed: bool,
 ) -> tuple[DataDefinitionCommandIssue, ...]:
-    ignored = {"candidate_feature_projection_mismatch"} if not compatibility_changed else set()
+    ignored = {
+        "candidate_feature_projection_mismatch",
+        "ml_compatibility_projection_write_required",
+    } if not compatibility_changed else set()
     blockers = tuple(
         DataDefinitionCommandIssue(
             item.code,

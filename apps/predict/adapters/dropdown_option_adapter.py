@@ -8,6 +8,7 @@ from pathlib import Path
 
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
 from apps.predict.schema.case_table_schema_adapter import UnifiedCaseColumn
+from core.data_definition.one_hot import OneHotRuntimeSnapshot
 
 
 @dataclass(frozen=True)
@@ -26,9 +27,19 @@ class DropdownOptionAdapter:
         self,
         mapping_repository: PredictMappingRepository,
         columns: Sequence[UnifiedCaseColumn],
+        one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
     ) -> None:
         self._mapping_repository = mapping_repository
         self._columns_by_key = {column.key: column for column in columns}
+        self._one_hot_groups_by_selector = {
+            group.selector_column_key: group
+            for group in (one_hot_snapshot.groups if one_hot_snapshot else ())
+        }
+        self._one_hot_mapping_bindings = tuple(
+            group.source_binding
+            for group in self._one_hot_groups_by_selector.values()
+            if group.source_mode == "mapping_backed"
+        )
 
     def options_for_key(
         self,
@@ -45,7 +56,16 @@ class DropdownOptionAdapter:
         column = self._columns_by_key.get(key)
         if column is None:
             return ()
-        section_name = column.dropdown_target or column.mapping
+        one_hot_group = self._one_hot_groups_by_selector.get(key)
+        if one_hot_group is not None:
+            if one_hot_group.source_mode in {"static", "external"}:
+                return tuple(item.source_value for item in one_hot_group.categories)
+            if one_hot_group.source_mode == "mapping_backed":
+                section_name = one_hot_group.source_binding
+            else:
+                return ()
+        else:
+            section_name = column.dropdown_target or column.mapping
         if not section_name:
             return ()
         section = self._mapping_section(section_name)
@@ -70,6 +90,20 @@ class DropdownOptionAdapter:
                 message="Mapping data shape is invalid.",
             )
         if cached_mapping is not None:
+            missing_bindings = tuple(
+                binding for binding in self._one_hot_mapping_bindings
+                if not isinstance(cached_mapping.get(binding), dict)
+            )
+            if missing_bindings:
+                return MappingResourceStatus(
+                    mapping_path=str(mapping_path),
+                    status="invalid",
+                    message=(
+                        "One-hot Mapping source section is missing: "
+                        + ", ".join(missing_bindings)
+                        + ". Refresh or restore mapping.json before Predict input."
+                    ),
+                )
             return MappingResourceStatus(
                 mapping_path=str(mapping_path),
                 status="loaded",

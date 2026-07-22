@@ -84,6 +84,7 @@ def candidate_manifest_from_draft(
         ),
         features=features,
         derived=derived,
+        one_hot_groups=tuple(draft.one_hot_groups),
         mapping_requirements=requirements,
         ordering=OrderingContract(
             predict=tuple(item.identity for item in features),

@@ -12,6 +12,9 @@ from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
+from apps.train.adapters.one_hot_vocabulary import (
+    load_persisted_mapping_vocabulary_snapshots,
+)
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.controllers.train_controller import TrainController
 from apps.train.services.data_definition_service import DataDefinitionService
@@ -56,14 +59,18 @@ def create_shell(
         repository.publish(
             load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH)
         )
-    data_definition_controller = DataDefinitionController(
-        DataDefinitionService(generation_repository=repository)
-    )
+    active = repository.read_active()
+    data_definition_controller = DataDefinitionController(DataDefinitionService(
+        generation_repository=repository,
+        vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
+    ))
     controller = TrainController(execution_factory=QProcessTrainingRunner)
     return TrainShell(
         train_controller=controller,
         data_definition_controller=data_definition_controller,
-        predict_composition=build_predict_workspace_composition(),
+        predict_composition=build_predict_workspace_composition(
+            one_hot_snapshot=active.projections.one_hot_runtime
+        ),
     )
 
 

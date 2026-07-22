@@ -10,10 +10,15 @@ from dataclasses import dataclass, replace
 from core.data_definition.contract.model import (
     DerivedDefinition,
     LegacyDerivedDefinition,
+    LegacyOneHotGroupDefinition,
     OneHotGroupDefinition,
     UnifiedFeatureManifest,
 )
 from core.data_definition.contract.compatibility import current_derived_definitions
+from core.data_definition.one_hot.runtime import (
+    OneHotRuntimeSnapshot,
+    one_hot_runtime_snapshot,
+)
 from core.data_definition.model import MappingRequirement, ProjectedFeatureRow
 from core.ml.feature_catalog import REQUIRED_HEADERS as ML_HEADERS
 from core.predictor_schema.catalog_v2 import PredictSchemaV2Row, REQUIRED_HEADERS
@@ -25,7 +30,8 @@ class ContractProjections:
     predict: tuple[PredictSchemaV2Row, ...]
     ml: tuple[ProjectedFeatureRow, ...]
     derived: tuple[DerivedDefinition | LegacyDerivedDefinition, ...]
-    one_hot: tuple[OneHotGroupDefinition, ...]
+    one_hot: tuple[OneHotGroupDefinition | LegacyOneHotGroupDefinition, ...]
+    one_hot_runtime: OneHotRuntimeSnapshot
     target_registry: tuple[tuple[str, dict[str, object]], ...]
     mapping_requirements: tuple[MappingRequirement, ...]
 
@@ -124,6 +130,7 @@ def generate_projections(manifest: UnifiedFeatureManifest) -> ContractProjection
             )
             for group in manifest.one_hot_groups
         ),
+        one_hot_runtime=one_hot_runtime_snapshot(manifest),
         target_registry=registry,
         mapping_requirements=requirements,
     )

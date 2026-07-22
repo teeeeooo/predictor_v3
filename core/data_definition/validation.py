@@ -334,7 +334,10 @@ def validate_one_hot_relationships(
         )
         if not emitted_names:
             issues.append(_issue("error", "one_hot_missing_emitted", group_name, selector))
-        if emitted_names != catalog_names:
+        # Display order and global ML/category order are independent domains.
+        # This legacy parity view checks membership only; the canonical v3
+        # contract validates category-relative ML order by stable identity.
+        if set(emitted_names) != set(catalog_names):
             issues.append(_issue("error", "one_hot_catalog_mismatch", group_name, selector))
     for group_name in sorted(set(emitted) - set(selectors)):
         issues.append(_issue("error", "one_hot_missing_selector", group_name, group_name))

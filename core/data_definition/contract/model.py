@@ -4,6 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from core.data_definition.contract.one_hot_model import (
+    LegacyOneHotCategoryDefinition,
+    LegacyOneHotGroupDefinition,
+    OneHotCategoryDefinition,
+    OneHotGroupDefinition,
+    OneHotSelectorRestore,
+)
+
 
 @dataclass(frozen=True)
 class ContractGeneration:
@@ -67,26 +75,6 @@ class DerivedDefinition:
 
 
 @dataclass(frozen=True)
-class OneHotCategoryDefinition:
-    identity: str
-    source_value: str
-    emitted_ml_name: str
-    order: int
-    active: bool = True
-
-
-@dataclass(frozen=True)
-class OneHotGroupDefinition:
-    identity: str
-    group_key: str
-    selector_feature_identity: str
-    category_source: str
-    unknown_policy: str
-    missing_policy: str
-    categories: tuple[OneHotCategoryDefinition, ...]
-
-
-@dataclass(frozen=True)
 class TargetDefinition:
     identity: str
     feature_identity: str
@@ -133,7 +121,7 @@ class UnifiedFeatureManifest:
     preprocessing_version: str
     features: tuple[FeatureDefinition, ...]
     derived: tuple[DerivedDefinition | LegacyDerivedDefinition, ...]
-    one_hot_groups: tuple[OneHotGroupDefinition, ...]
+    one_hot_groups: tuple[OneHotGroupDefinition | LegacyOneHotGroupDefinition, ...]
     targets: tuple[TargetDefinition, ...]
     model_groups: tuple[ModelGroupDefinition, ...]
     mapping_requirements: tuple[MappingRequirementDefinition, ...]

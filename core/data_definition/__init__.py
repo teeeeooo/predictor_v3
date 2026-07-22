@@ -84,6 +84,30 @@ from core.data_definition.derived import (
     apply_derived_command,
     derived_downstream_identities,
 )
+from core.data_definition.one_hot.intents import (
+    AddOneHotCategoryIntent,
+    AddOneHotGroupIntent,
+    AssignOneHotSelectorIntent,
+    ChangeOneHotSourceModeIntent,
+    DuplicateOneHotCategoryIntent,
+    DuplicateOneHotGroupIntent,
+    EditOneHotCategoryIntent,
+    EditOneHotGroupIntent,
+    MoveOneHotCategoryIntent,
+    OneHotCategoryIntent,
+    OneHotCommandIntent,
+    OneHotGroupIntent,
+    RemoveOneHotCategoryIntent,
+    RemoveOneHotGroupIntent,
+    RenameOneHotEmittedFeatureIntent,
+    RenameOneHotGroupIntent,
+    SetOneHotCategoryActiveIntent,
+    SetOneHotGroupActiveIntent,
+)
+from core.data_definition.one_hot.model import VocabularyCategory, VocabularySnapshot
+from core.data_definition.one_hot.category_commands import apply_category_command
+from core.data_definition.one_hot.group_commands import apply_group_command
+from core.data_definition.one_hot.drift import one_hot_drift_evidence
 
 __all__ = [
     "DataDefinitionDraft",
@@ -147,4 +171,27 @@ __all__ = [
     "SetDerivedActiveIntent",
     "apply_derived_command",
     "derived_downstream_identities",
+    "AddOneHotCategoryIntent",
+    "AddOneHotGroupIntent",
+    "AssignOneHotSelectorIntent",
+    "ChangeOneHotSourceModeIntent",
+    "DuplicateOneHotCategoryIntent",
+    "DuplicateOneHotGroupIntent",
+    "EditOneHotCategoryIntent",
+    "EditOneHotGroupIntent",
+    "MoveOneHotCategoryIntent",
+    "OneHotCategoryIntent",
+    "OneHotCommandIntent",
+    "OneHotGroupIntent",
+    "RemoveOneHotCategoryIntent",
+    "RemoveOneHotGroupIntent",
+    "RenameOneHotEmittedFeatureIntent",
+    "RenameOneHotGroupIntent",
+    "SetOneHotCategoryActiveIntent",
+    "SetOneHotGroupActiveIntent",
+    "VocabularyCategory",
+    "VocabularySnapshot",
+    "apply_category_command",
+    "apply_group_command",
+    "one_hot_drift_evidence",
 ]

@@ -17,34 +17,33 @@
 
 ## Current Slice
 
-Train/Admin Phase 4E — Restricted Derived Feature Authoring and Shared Evaluator
-is implemented over the Phase 4B–4D baseline. Canonical v2 Derived operands use
-Feature/Derived stable identities; historical v1 name-based generations remain
-readable and rollback-safe through explicit compatibility decoding. Restricted
-`safe_ratio` Add/Edit/Rename/Duplicate/Remove/Enable/Disable commands, deterministic
-DAG ordering, prepared Preview/Apply, inactive-safe generation Save, and table-first
-authoring are connected. One pure evaluator now owns the existing eight production
-formula semantics for both Train and Predict. Derived semantics and active model
-compatibility fingerprints are separate, while active semantic/activation changes
-remain blocked by the retraining/migration Save guard. The Phase 4E audit correction
-also centralizes pre-evaluator operand eligibility and transitive base dependency
-projection in the same immutable core snapshot, blocks Result/Target leakage in
-commands and whole-contract validation, and removes View/Predict policy duplication.
-The final audit correction restricts runtime Feature operands to exact
-`input/manual`, `auto/mapping_lookup`, and `one_hot_feature/one_hot` shapes, so raw
-or historical manifests cannot disguise post-evaluator values behind a supported role.
+Train/Admin Phase 4F — One-hot Group/Category Management and Canonical Runtime
+Projection is implemented over the Phase 4B–4E baseline. Canonical contract v3
+links group, selector, category, and emitted Feature by stable identity while v2
+name relations remain readable and rollback-safe through explicit compatibility
+decode. Static full lifecycle, Mapping-backed read-only vocabulary rules/drift,
+and bounded External provider overlays use controlled immutable commands with
+prepared Preview/Apply. Category order is independent from Predict display order
+and drives only the group's relative ML block. Predict encoding and selector
+options consume one immutable canonical snapshot without the former fixed
+selector/group table. Inactive authoring remains model-compatible and publishable;
+active encoding, membership, name, policy, source-mode, and order changes remain
+blocked by the retraining/migration Save guard. The audit correction makes ordinary
+selector assignment an inactive reservation with exact persisted restoration,
+applies dependency-validated takeover only on activation, makes Mapping-backed
+dropdowns use the runtime group's canonical source binding, and converts invalid or
+stale External provider relations into atomic structured rejection.
 
 ## Next Action
 
-Reaudit and integrate the final corrected Phase 4E change in Draft PR #22. After its
-audit/merge boundary, start
-Phase 4F One-hot group/category CRUD. Keep Target/registry authoring, runtime
-cutover, model candidate generation, training, and promotion outside Phase 4F.
+Reaudit and integrate Phase 4F through its Draft PR. After its audit/merge
+boundary, start Phase 4G Target/registry CRUD from merged `main`. Keep runtime
+cutover, model candidate generation, training, and promotion outside Phase 4G.
 
 ## Active Blockers
 
-- Active Derived activation or semantic changes remain Save-blocked until an
-  approved retraining/migration boundary; inactive definitions are publishable.
+- Active Derived or One-hot activation/semantic changes remain Save-blocked until
+  an approved retraining/migration boundary; inactive definitions are publishable.
 - Actual protected ML/import-time/fixed-string consumers still block ordinary
   ML-name/order/One-hot/Target changes until their explicit migration.
 - Existing fixed-index Predict keys remain protected migration targets; saved
@@ -96,7 +95,7 @@ cutover, model candidate generation, training, and promotion outside Phase 4F.
 
 ## Deferred / Hold
 
-- Slices 4F–4I remain deferred; Slice 4F begins only after Phase 4E integration.
+- Slices 4G–4I remain deferred; Slice 4G begins only after Phase 4F integration.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
   Manager stabilization and a fresh dynamic-contract audit.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
@@ -122,6 +121,8 @@ cutover, model candidate generation, training, and promotion outside Phase 4F.
 - Phase 4E result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md`
 - Phase 4E audit correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md`
 - Phase 4E final runtime-shape correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md`
+- Phase 4F result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4f-one-hot-authoring.md`
+- Phase 4F audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

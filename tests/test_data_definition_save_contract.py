@@ -350,9 +350,7 @@ def test_data_definition_save_plan_marks_deferred_mapping_and_one_hot_work():
     assert not plan.can_save_schema
     assert _blocker_codes(plan) >= {
         "data_mapping_dynamic_requirement_deferred",
-        "one_hot_runtime_owner_deferred",
         "candidate_feature_projection_mismatch",
-        "candidate_one_hot_selector_relation_unsupported",
     }
 
 

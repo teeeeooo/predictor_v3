@@ -64,6 +64,7 @@ from apps.train.ui.data_definition.panel_compat import (
     read_only_tables as _tables,
     selected_values,
 )
+from apps.train.ui.data_definition.one_hot import OneHotManagerDialog
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 
 class DataDefinitionPanel(QWidget):
@@ -136,6 +137,7 @@ class DataDefinitionPanel(QWidget):
             on_add_ml_only=lambda: self._add_definition("ml_only"),
             on_add_helper=lambda: self._add_definition("helper_hidden"),
             on_add_derived=self._derived_actions.add,
+            on_manage_one_hot=self._manage_one_hot,
             on_details=self._show_details,
             on_edit=self._definition_actions.edit,
             on_rename=self._definition_actions.rename,
@@ -324,6 +326,10 @@ class DataDefinitionPanel(QWidget):
             parent=self,
         ).exec()
         self._behavior.restore_dialog_focus(bool(accepted), self.add_definition_button)
+
+    def _manage_one_hot(self) -> None:
+        OneHotManagerDialog(self._controller, self._apply_state, self).exec()
+        self._behavior.restore_workspace_focus("inventory")
 
     def _review_current_state(self) -> None:
         self._behavior.focus_blockers()

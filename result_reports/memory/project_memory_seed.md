@@ -649,6 +649,23 @@ entries:
     source: docs/designs/2026-07-18-derived-feature-authoring-shared-evaluator.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-authoring.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-derived-eligibility-correction.md; result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md; docs/WORK_PLAN.md
 
   - type: decision
+    topic: Train/Admin Phase 4F canonical One-hot authoring
+    content: Phase 4F upgrades the canonical manifest to contract v3 so every One-hot group, selector Feature, category rule, and emitted Feature is connected by stable identity while v2 name relations remain readable and rollback-safe through explicit compatibility decode. Existing Refrigerant and Expansion identities, five emitted names, relative ML order, known/missing/unknown behavior, and Train headers remain unchanged. Static values belong to Data Definition; Mapping-backed concrete vocabulary remains read-only Data Mapping evidence; External identity/value remains provider-owned through immutable application snapshots. Ordinary selector Add/Duplicate is an inactive reservation: the group persists the exact original Feature shape, activation alone performs dependency-validated atomic takeover, and disable/detach restores that shape exactly; missing or stale restore evidence rejects, while existing native One-hot selectors without an ordinary predecessor remain dedicated. IDU/ODU/Mapping/cascade dependencies can be reserved harmlessly but block activation until migrated. One core policy owns eligibility and actionable affected-owner projection. Mapping-backed Predict dropdowns and encoding both derive from the canonical runtime group's source_binding, never the selector column mapping; ordinary dropdown ownership is unchanged. External overlays validate complete unique category/provider relations and immutable snapshot revision before dereference, returning structured rejection without draft mutation. Mapping drift remains warning-level, unavailable External ownership blocks publication, and prepared Preview/Apply retains exact-candidate stale protection. One scoped fingerprint covers active selector/source/mapping/order/policies without transient vocabulary; null restore representation does not change existing bootstrap identity. Inactive authoring can publish, while active semantic changes retain retraining/migration Save guards. Phase 4H still owns process-wide generation cutover, and Windows native UI smoke remains pre-release evidence.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 4F
+      - One-hot group
+      - category identity
+      - emitted Feature identity
+      - source mode ownership
+      - Mapping drift
+      - runtime snapshot
+      - model compatibility fingerprint
+    assertionStatus: verified
+    source: result_reports/records/2026-07/2026-07-18-train-admin-phase4f-one-hot-authoring.md; result_reports/records/2026-07/2026-07-22-train-admin-phase4f-audit-correction.md; docs/WORK_PLAN.md
+
+  - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
     content: Proposed Phase 4 treats every persisted Predict/ML/Derived/One-hot/Mapping-requirement/Target projection as one immutable contract generation. Disk publication, consumer preflight, and application-wide in-memory cutover are distinct; required owners never silently operate mixed generations, and post-persistence failure must retain the old active generation or expose an application-wide stale/restart-required state. Each training run, result, and artifact is bound to its immutable start-generation Feature/Target/preprocessing fingerprints; Definition Save does not retroactively alter active training, stale artifacts are not current-compatible by default, and the previous compatible model remains until replacement compatibility passes. Dirty Data Mapping drafts are never silently discarded by requirement reload and instead expose a pending-update/reconciliation state. One-hot static vocabulary belongs to Data Definition, mapping-backed option vocabulary to Data Mapping concrete values, and external vocabulary to its provider, while Data Definition owns selector/group/emitted policy. Initial Target CRUD associates only with validated existing model groups and target-level policies; new groups, algorithm/trainer binding, artifact naming, use_rfe, and model-level policy require a separate approved advanced contract.
     keywords:

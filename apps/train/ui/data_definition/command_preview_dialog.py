@@ -37,6 +37,38 @@ class FeatureCommandPreviewDialog(QDialog):
         evidence.setAccessibleName("Feature command impact evidence")
         evidence.setWordWrap(True)
         layout.addWidget(evidence)
+        if preview.one_hot_evidence:
+            one_hot = QLabel("\n".join(
+                f"• {item.group_key} / {item.source_value or '<group>'} → "
+                f"{item.emitted_ml_name or '<no emitted Feature>'}; "
+                f"order {item.order_before} → {item.order_after}; "
+                f"active {item.active_before} → {item.active_after}; "
+                f"selector {item.selector_column_key or '<missing>'}; "
+                f"takeover fields: {', '.join(item.selector_changed_fields) or 'none'}; "
+                f"restore: {'available' if item.selector_restore_available else 'not available'}; "
+                f"Predict available {item.predict_available_before} → {item.predict_available_after}; "
+                f"binding {item.source_binding_before or 'none'} → "
+                f"{item.source_binding_after or 'none'}; "
+                f"dropdown/encoder owner: canonical One-hot group "
+                f"(parity: {'Yes' if item.encoder_dropdown_parity else 'No'}); "
+                f"options: {item.available_option_count}; "
+                f"provider revision: {item.provider_snapshot_revision or 'none'}; "
+                f"dependencies: {', '.join(item.affected_dependency_summaries) or 'none'}; "
+                f"owner: {item.vocabulary_owner}; Mapping values changed: No"
+                for item in preview.one_hot_evidence
+            ))
+            one_hot.setAccessibleName("One-hot identity source order and owner evidence")
+            one_hot.setWordWrap(True)
+            layout.addWidget(one_hot)
+        if preview.one_hot_drift_evidence:
+            drift = QLabel("\n".join(
+                f"• {item.code}: {item.source_binding}/{item.source_value or '<unavailable>'}. "
+                f"{item.resolution}"
+                for item in preview.one_hot_drift_evidence
+            ))
+            drift.setAccessibleName("One-hot Mapping and provider drift evidence")
+            drift.setWordWrap(True)
+            layout.addWidget(drift)
         if preview.execution_order_before or preview.execution_order_after:
             order = QLabel(
                 "Execution order before: " + ", ".join(preview.execution_order_before)

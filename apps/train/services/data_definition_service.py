@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 from apps.train.application.data_definition import (
@@ -16,8 +16,6 @@ from core.data_definition import (
     DataDefinitionReport,
     DataDefinitionSchemaSaveResult,
     DataDefinitionSavePlan,
-    DataDefinitionSaveBlocker,
-    DataDefinitionRestartImpact,
     FeatureCommandIntent,
     FeatureImpactPreview,
     EditDefinitionIntent,
@@ -27,6 +25,8 @@ from core.data_definition import (
     RenameDefinitionIntent,
     SetDefinitionActiveIntent,
     DerivedCommandIntent,
+    OneHotCommandIntent,
+    VocabularySnapshot,
     apply_derived_command,
     apply_add_definition_command,
     apply_edit_definition_command,
@@ -42,11 +42,20 @@ from core.data_definition import (
     field_editability,
     save_data_definition_schema_draft,
 )
-from core.data_definition.contract import candidate_manifest_from_draft, scoped_fingerprints
 from core.data_definition.derived.intents import DERIVED_INTENT_TYPES
+from core.data_definition.one_hot.intents import (
+    ONE_HOT_INTENT_TYPES,
+)
+from core.data_definition.one_hot.model import vocabulary_revision_token
 from core.data_definition.draft import replace_draft_row
 from apps.train.services.data_definition_persistence_service import (
     DataDefinitionPersistenceService,
+)
+from apps.train.services.data_definition_save_impact import (
+    DataDefinitionSaveImpactService,
+)
+from apps.train.services.one_hot_definition_coordinator import (
+    OneHotDefinitionCoordinator,
 )
 
 BOOLEAN_DRAFT_FIELDS = frozenset(
@@ -71,6 +80,7 @@ class DataDefinitionService:
         *,
         schema_path: str | Path | None = None,
         generation_repository: DataDefinitionGenerationRepositoryPort | None = None,
+        vocabulary_snapshots: tuple[VocabularySnapshot, ...] = (),
     ) -> None:
         if (schema_path is None) == (generation_repository is None):
             raise ValueError(
@@ -81,6 +91,11 @@ class DataDefinitionService:
         self._persistence = (
             DataDefinitionPersistenceService(generation_repository)
             if generation_repository is not None else None
+        )
+        self._one_hot = OneHotDefinitionCoordinator(vocabulary_snapshots)
+        self._save_impact = DataDefinitionSaveImpactService(
+            canonical_persistence=self._persistence is not None,
+            vocabulary_snapshots=vocabulary_snapshots,
         )
 
     @property
@@ -255,6 +270,18 @@ class DataDefinitionService:
         """Dispatch one restricted Derived command without I/O."""
         return apply_derived_command(draft, intent)
 
+    @property
+    def vocabulary_snapshots(self) -> tuple[VocabularySnapshot, ...]:
+        return self._one_hot.snapshots
+
+    def apply_one_hot_command(
+        self,
+        draft: DataDefinitionDraft,
+        intent: OneHotCommandIntent,
+    ) -> DataDefinitionCommandResult:
+        """Dispatch one group/category transition without external mutation."""
+        return self._one_hot.apply(draft, intent)
+
     def preview_feature_command(
         self,
         draft: DataDefinitionDraft,
@@ -273,17 +300,18 @@ class DataDefinitionService:
     def prepare_feature_command(
         self,
         draft: DataDefinitionDraft,
-        intent: FeatureCommandIntent | DerivedCommandIntent,
+        intent: FeatureCommandIntent | DerivedCommandIntent | OneHotCommandIntent,
         *,
         source_revision: int,
         current_report: DataDefinitionReport | None = None,
     ) -> PreparedFeatureCommand:
         """Execute once and retain the exact immutable transition for approval."""
-        result = (
-            self.apply_derived_command(draft, intent)
-            if isinstance(intent, DERIVED_INTENT_TYPES)
-            else self.apply_feature_command(draft, intent)
-        )
+        if isinstance(intent, DERIVED_INTENT_TYPES):
+            result = self.apply_derived_command(draft, intent)
+        elif isinstance(intent, ONE_HOT_INTENT_TYPES):
+            result = self.apply_one_hot_command(draft, intent)
+        else:
+            result = self.apply_feature_command(draft, intent)
         report = current_report or self.load_report()
         plan = self.preview_save_plan(result.draft, current_report=report)
         base = draft.base_manifest if hasattr(draft.base_manifest, "features") else None
@@ -292,6 +320,7 @@ class DataDefinitionService:
             result,
             plan,
             source_draft=draft,
+            vocabulary_snapshots=self._one_hot.snapshots,
         )
         return PreparedFeatureCommand(
             source_revision,
@@ -299,6 +328,8 @@ class DataDefinitionService:
             draft,
             result,
             preview,
+            vocabulary_revision_token(self._one_hot.snapshots)
+            if isinstance(intent, ONE_HOT_INTENT_TYPES) else (),
         )
 
     def preview_save_plan(
@@ -310,7 +341,7 @@ class DataDefinitionService:
         """Build the current draft save-plan preview without writing files."""
         report = current_report or self.load_report()
         plan = build_data_definition_save_plan(draft, current_report=report)
-        return self._canonical_save_impact(draft, plan)
+        return self._save_impact.apply(draft, plan)
 
     def save_schema_draft(
         self,
@@ -338,49 +369,6 @@ class DataDefinitionService:
         if self._schema_path is None:
             raise RuntimeError("legacy schema path is unavailable in canonical mode")
         return self._schema_path
-
-    def _canonical_save_impact(
-        self,
-        draft: DataDefinitionDraft,
-        plan: DataDefinitionSavePlan,
-    ) -> DataDefinitionSavePlan:
-        """Expose Phase 4B compatibility protection in the pre-write UI plan."""
-        if self._persistence is None or not draft.is_changed or draft.base_manifest is None:
-            return plan
-        try:
-            candidate = candidate_manifest_from_draft(draft, draft.base_manifest)
-            changed = (
-                scoped_fingerprints(draft.base_manifest).model_compatibility
-                != scoped_fingerprints(candidate).model_compatibility
-            )
-        except (KeyError, ValueError):
-            return plan
-        if not changed:
-            return plan
-        blockers = plan.blocked_reasons
-        if not any(item.code == "model_compatibility_migration_required" for item in blockers):
-            blockers = (*blockers, DataDefinitionSaveBlocker(
-                "model_compatibility_migration_required",
-                "error",
-                "Ordered ML/model compatibility changed; complete retraining or consumer migration before publication.",
-                "model_artifact",
-            ))
-        return replace(
-            plan,
-            can_save_schema=False,
-            requires_retrain=True,
-            blocked_reasons=blockers,
-            restart_impact=DataDefinitionRestartImpact(
-                requires_restart=plan.requires_restart,
-                requires_retrain=True,
-                message=(
-                    "Schema restart and model retrain are required before activation."
-                    if plan.requires_restart
-                    else "Model retraining or consumer migration is required before publication."
-                ),
-            ),
-        )
-
 
 def _coerce_draft_value(field_name: str, value: object) -> tuple[object, str]:
     if field_name not in BOOLEAN_DRAFT_FIELDS:

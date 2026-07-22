@@ -1,7 +1,11 @@
 """Predict Schema Catalog v2 draft projection parity tests."""
 
+import inspect
+
 from apps.predict.adapters.row_to_ml_input_adapter import RowToMlInputAdapter
 from core.ml.feature_catalog import load_feature_catalog
+from core.data_definition.contract import bootstrap_manifest
+from core.data_definition.one_hot.runtime import one_hot_runtime_snapshot
 from core.predictor_schema.catalog_v2 import load_predict_schema_catalog_v2
 from core.predictor_schema.catalog_v2_projection import (
     load_projected_columns_v2,
@@ -135,10 +139,16 @@ def test_predict_schema_catalog_v2_projection_preserves_current_column_groups():
     ]
 
 
-def test_predict_schema_catalog_v2_one_hot_selector_mapping_matches_current_adapter():
+def test_predict_schema_catalog_v2_one_hot_selector_mapping_comes_from_canonical_snapshot():
     catalog = load_predict_schema_catalog_v2()
-
-    assert one_hot_selector_groups(catalog) == RowToMlInputAdapter._ONE_HOT_INPUT_GROUPS
+    snapshot = one_hot_runtime_snapshot(bootstrap_manifest())
+    assert one_hot_selector_groups(catalog) == {
+        item.selector_column_key: item.group_key for item in snapshot.groups
+    }
+    assert not hasattr(RowToMlInputAdapter, "_ONE_HOT_INPUT_GROUPS")
+    source = inspect.getsource(RowToMlInputAdapter)
+    assert '"ref_type": "refrigerant"' not in source
+    assert '"exp_type": "expansion_device"' not in source
 
 
 def test_predict_schema_catalog_v2_one_hot_feature_rows_match_feature_catalog():

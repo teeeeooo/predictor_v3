@@ -18,6 +18,7 @@ class PreparedFeatureCommand:
     source_draft: DataDefinitionDraft
     result: DataDefinitionCommandResult
     preview: FeatureImpactPreview
+    vocabulary_revision_token: tuple[tuple[object, ...], ...] = ()
 
     def __getattr__(self, name: str):  # noqa: ANN204
         """Keep the existing read-only Preview surface source-compatible."""

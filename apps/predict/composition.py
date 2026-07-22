@@ -28,6 +28,11 @@ from apps.predict.schema.case_table_schema_adapter import (
 )
 from apps.predict.services.prediction_service import PredictionService
 from apps.predict.state.predict_session import PredictSession
+from core.data_definition.contract import bootstrap_manifest
+from core.data_definition.one_hot import (
+    OneHotRuntimeSnapshot,
+    one_hot_runtime_snapshot,
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,7 @@ def build_predict_workspace_composition(
     result_mapper: PredictionResultMapper | None = None,
     prediction_service: PredictionServicePort | None = None,
     runner_factory: PredictionRunnerFactory | None = None,
+    one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
 ) -> PredictWorkspaceComposition:
     """Build the concrete Predict object graph without constructing widgets."""
 
@@ -60,11 +66,16 @@ def build_predict_workspace_composition(
     table_edit_controller.ensure_initial_rows(initial_empty_rows)
 
     resolved_repository = mapping_repository or PredictMappingRepository()
+    resolved_one_hot_snapshot = one_hot_snapshot or one_hot_runtime_snapshot(
+        bootstrap_manifest()
+    )
     input_edit_controller = InputEditController(
         resolved_session,
         mapping_repository=resolved_repository,
     )
-    resolved_input_mapper = input_mapper or RowToMlInputAdapter()
+    resolved_input_mapper = input_mapper or RowToMlInputAdapter(
+        one_hot_snapshot=resolved_one_hot_snapshot
+    )
     resolved_result_mapper = result_mapper or PredictionResultAdapter()
     usecase = PredictionUseCase(
         resolved_session,
@@ -79,7 +90,9 @@ def build_predict_workspace_composition(
         runner_factory=runner_factory or _build_pyside_runner,
     )
     columns = build_case_table_column_schema()
-    dropdown_option_adapter = DropdownOptionAdapter(resolved_repository, columns)
+    dropdown_option_adapter = DropdownOptionAdapter(
+        resolved_repository, columns, one_hot_snapshot=resolved_one_hot_snapshot
+    )
     return PredictWorkspaceComposition(
         session=resolved_session,
         table_edit_controller=table_edit_controller,
