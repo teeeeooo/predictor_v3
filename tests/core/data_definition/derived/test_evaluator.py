@@ -89,6 +89,16 @@ def test_preexisting_output_keeps_column_position_and_inactive_is_not_evaluated(
     inactive = replace(
         manifest,
         derived=(replace(first, active=False), *manifest.derived[1:]),
+        targets=tuple(
+            replace(
+                target,
+                policy_owner_identities=tuple(
+                    identity for identity in target.policy_owner_identities
+                    if identity != first.identity
+                ),
+            )
+            for target in manifest.targets
+        ),
         ordering=replace(
             manifest.ordering,
             ml=tuple(item for item in manifest.ordering.ml if item != first.identity),

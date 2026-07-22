@@ -229,20 +229,12 @@ def test_group_duplicate_disable_enable_and_remove_are_atomic(tmp_path):
         if item.stable_identity == selector.stable_identity
     )
 
-    disabled = _apply(controller, SetOneHotGroupActiveIntent(original.identity, False))
-    assert disabled.model_compatibility_changed
-    preserved = controller.one_hot_authoring_projection().groups[0]
-    assert not preserved.active and all(item.active for item in preserved.categories)
-    assert all(not next(row for row in controller._draft.rows
-                        if row.stable_identity == item.emitted_feature_identity).active
-               for item in preserved.categories)
-    enabled = controller.preview_one_hot_command(
-        SetOneHotGroupActiveIntent(original.identity, True)
+    disabled = controller.preview_one_hot_command(
+        SetOneHotGroupActiveIntent(original.identity, False)
     )
-    assert enabled.command_accepted
-    assert [item.identity for item in enabled.result.draft.one_hot_groups[0].categories] == [
-        item.identity for item in original.categories
-    ]
+    assert not disabled.command_accepted
+    assert "target_policy_owner_invalid" in {item.code for item in disabled.blockers}
+    assert controller.one_hot_authoring_projection().groups[0].active
 
 
 def test_inactive_reservation_remove_detach_restores_exact_clean_baseline(tmp_path):

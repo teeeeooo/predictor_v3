@@ -945,8 +945,10 @@ Responsibility:
 - return structured validation/resource-status contracts
 
 The service must not run training or change core ML algorithms, preprocessing,
-`MODEL_REGISTRY`, target behavior, or the single `model/model.pkl` artifact
-contract. Execution failures are translated at the process adapter/job boundary.
+canonical Target registry semantics, or the single `model/model.pkl` artifact
+contract. Production composition freezes the immutable canonical registry snapshot
+into `TrainingRequest`; execution failures are translated at the process
+adapter/job boundary.
 
 Arc 11 correction: production Train execution must not be accepted as a direct
 in-process `train_all_models()` call behind QThread. Production training must

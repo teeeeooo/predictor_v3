@@ -125,7 +125,7 @@ def test_v2_relation_migration_is_identity_based_and_fingerprint_neutral():
     legacy = _v2_manifest()
     migrated = migrate_manifest(legacy)
     resolved = current_one_hot_definitions(legacy)
-    assert migrated.contract_version.endswith(".v3")
+    assert migrated.contract_version.endswith(".v4")
     assert [item.identity for item in resolved] == [
         item.identity for item in migrated.one_hot_groups
     ]

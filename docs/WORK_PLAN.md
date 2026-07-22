@@ -17,28 +17,23 @@
 
 ## Current Slice
 
-Train/Admin Phase 4F — One-hot Group/Category Management and Canonical Runtime
-Projection is complete and integrated on `main` through PR #23. Canonical contract v3
-links group, selector, category, and emitted Feature by stable identity while v2
-name relations remain readable and rollback-safe through explicit compatibility
-decode. Static full lifecycle, Mapping-backed read-only vocabulary rules/drift,
-and bounded External provider overlays use controlled immutable commands with
-prepared Preview/Apply. Category order is independent from Predict display order
-and drives only the group's relative ML block. Predict encoding and selector
-options consume one immutable canonical snapshot without the former fixed
-selector/group table. Inactive authoring remains model-compatible and publishable;
-active encoding, membership, name, policy, source-mode, and order changes remain
-blocked by the retraining/migration Save guard. The audit correction makes ordinary
-selector assignment an inactive reservation with exact persisted restoration,
-applies dependency-validated takeover only on activation, makes Mapping-backed
-dropdowns use the runtime group's canonical source binding, and converts invalid or
-stale External provider relations into atomic structured rejection.
+Train/Admin Phase 4G — Result/Target and Canonical Model Registry Management is
+implemented on its audit branch. Contract v4 makes Target the single writable owner
+of Result Feature identity, validated model-group association, identity-based
+allowed/exclude policy, independent presentation order, and active lifecycle. The
+three trainer groups remain read-only. v1/v2/v3 generations remain readable and
+rollback-safe; name-based policy references normalize to stable owners while legacy
+Result exclusions are retained as stable compatibility no-op evidence. Train freezes
+one immutable generation/registry payload at explicit start, and production training
+no longer iterates the Python registry or import-time Target constant. Presentation
+changes remain model-compatible; active membership/name/group/policy changes retain
+the retraining/migration Save guard.
 
 ## Next Action
 
-Start Phase 4G Target/registry CRUD from synchronized `main`, beginning with its
-bounded owner/contract audit. Keep runtime cutover, model candidate generation,
-training, and promotion outside Phase 4G.
+Perform remote audit of the Phase 4G Draft PR. Keep Phase 4H process-wide runtime
+cutover, model candidate generation, automatic training, and promotion outside this
+slice.
 
 ## Active Blockers
 
@@ -95,7 +90,7 @@ training, and promotion outside Phase 4G.
 
 ## Deferred / Hold
 
-- Slices 4G–4I remain deferred; Slice 4G begins only after Phase 4F integration.
+- Slices 4H–4I remain deferred until Phase 4G audit and integration.
 - Phase 5 Train/Model and Shell implementation begins only after Unified Feature
   Manager stabilization and a fresh dynamic-contract audit.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
