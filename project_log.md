@@ -29,6 +29,27 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-22 — Train/Admin Phase 4G Target registry authoring
+
+### Decision
+
+- Upgrade new publications to contract v4 with Target-owned Result identity,
+  validated group association, identity policy, registry order, presentation order,
+  and active lifecycle; keep the three model groups immutable.
+- Preserve v1/v2/v3 read and rollback, existing identities, registry membership,
+  use_rfe, training iteration, and final per-Target input columns. Retain legacy
+  Result-name exclusions as stable compatibility evidence rather than silently
+  dropping them.
+- Make TrainShell select one canonical generation snapshot at process composition,
+  share it with embedded Predict and Train, and freeze it again into each request.
+  Definition Save cannot advance Train alone before Phase 4H coordinated cutover.
+- Use one ordered training-input identity pool for policy eligibility, UI, Preview,
+  validation, and runtime filtering; pin identity/key/name/use_rfe for all three
+  validated model groups and include Predict visibility in presentation evidence.
+  Keep `MODEL_REGISTRY` only as a generated compatibility facade and defer
+  process-wide cutover, model candidate lifecycle, training activation, and
+  promotion to their later owners.
+
 ## 2026-07-22 — Train/Admin Phase 4F merge closeout
 
 ### Decision

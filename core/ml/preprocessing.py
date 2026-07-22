@@ -33,7 +33,7 @@ def calculate_derived_features(df, definitions=None, *, requested_outputs=None):
         snapshot_for_dependency_projection(snapshot, projection),
     )
 
-def prepare_pipeline(df, config):
+def prepare_pipeline(df, config, *, registry_snapshot=None):
     """
     모델 설정에 맞춰 피처/타겟 분리 및 Leakage 제거.
     이 함수는 'Pipeline' 객체를 반환하는 것이 아니라 데이터를 정제하여 반환합니다.
@@ -43,10 +43,17 @@ def prepare_pipeline(df, config):
 
     # 2. 제거할 컬럼 리스트 생성 (현재 타겟 + 전체 타겟 목록 합치기)
     # 다른 모델의 결과값이 피처로 들어가는 Data Leakage를 원천 차단합니다.
-    drop_cols = list(set(config["targets"] + TARGETS))
+    active_targets = (
+        list(registry_snapshot.active_target_names)
+        if registry_snapshot is not None else TARGETS
+    )
+    drop_cols = list(set(config["targets"] + active_targets))
 
     # 3. 학습용 피처 풀 구성 (BASE + DERIVED 중 drop_cols 제외)
-    all_potential_features = BASE_FEATURES + DERIVED_FEATURES
+    all_potential_features = (
+        list(registry_snapshot.input_ml_names)
+        if registry_snapshot is not None else BASE_FEATURES + DERIVED_FEATURES
+    )
     final_features = [f for f in all_potential_features if f in df_processed.columns and f not in drop_cols]
 
     # 4. Mandatory Features(필수 피처) 누락 검증

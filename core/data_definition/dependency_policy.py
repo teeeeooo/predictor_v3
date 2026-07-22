@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core.data_definition.contract.model import UnifiedFeatureManifest
-from core.data_definition.contract.compatibility import current_derived_definitions
+from core.data_definition.contract.compatibility import (
+    current_derived_definitions,
+    current_target_definitions,
+)
 from core.data_definition.draft import DataDefinitionDraft, DataDefinitionDraftRow
 from core.predictor_schema.columns import FIXED_INDEX_COLUMN_KEYS
 
@@ -160,17 +163,17 @@ def _model_dependencies(manifest, row):  # noqa: ANN001
             False,
             "Keep the current name or complete an explicit model migration/retraining workflow.",
         ))
-    for group in manifest.model_groups:
-        if any(name == row.ml_name for name, _policy, _values in group.target_rules):
+    for target in current_target_definitions(manifest):
+        if row.stable_identity in target.policy_owner_identities:
             dependencies.append(FeatureDependency(
-                "model_group_target_rule",
-                "Model registry",
-                group.identity,
-                f"Model group '{group.registry_key}' has a fixed rule for '{row.ml_name}'.",
+                "target_policy_owner_reference",
+                "Target policy",
+                target.identity,
+                f"Target '{target.ml_name}' policy references '{row.ml_name}' by stable identity.",
+                False,
                 True,
                 True,
-                True,
-                "Migrate the Target/model-group rule in Phase 4G.",
+                "Remove or retarget the Target policy reference first.",
             ))
     return dependencies
 

@@ -26,6 +26,9 @@ from core.data_definition import (
     SetDefinitionActiveIntent,
     DerivedCommandIntent,
     OneHotCommandIntent,
+    TargetCommandIntent,
+    TARGET_INTENT_TYPES,
+    apply_target_command,
     VocabularySnapshot,
     apply_derived_command,
     apply_add_definition_command,
@@ -300,7 +303,7 @@ class DataDefinitionService:
     def prepare_feature_command(
         self,
         draft: DataDefinitionDraft,
-        intent: FeatureCommandIntent | DerivedCommandIntent | OneHotCommandIntent,
+        intent: FeatureCommandIntent | DerivedCommandIntent | OneHotCommandIntent | TargetCommandIntent,
         *,
         source_revision: int,
         current_report: DataDefinitionReport | None = None,
@@ -310,6 +313,8 @@ class DataDefinitionService:
             result = self.apply_derived_command(draft, intent)
         elif isinstance(intent, ONE_HOT_INTENT_TYPES):
             result = self.apply_one_hot_command(draft, intent)
+        elif isinstance(intent, TARGET_INTENT_TYPES):
+            result = apply_target_command(draft, intent)
         else:
             result = self.apply_feature_command(draft, intent)
         report = current_report or self.load_report()

@@ -15,6 +15,7 @@ from apps.train.app import PROJECT_ROOT, create_shell, default_generation_root
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition.contract import bootstrap_manifest
+from apps.train.state.training_run_state import TrainingRequest
 from core.data_definition.draft import replace_draft_row
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
@@ -38,6 +39,9 @@ def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_pa
     shell = create_shell(generation_root=root)
     repository = DataDefinitionGenerationRepository(root)
     initial_generation = repository.active_generation_id()
+    initial_registry = shell.train_controller.registry_snapshot()
+    assert initial_registry.generation_id == initial_generation
+    assert shell.predict_workspace.generation_id == initial_generation
     shell.data_definition_controller.refresh()
     changed = shell.data_definition_controller.edit_cell(
         ("schema_row", "cooling_capa"),
@@ -50,11 +54,30 @@ def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_pa
     assert changed.draft_changed
     assert saved.status == "saved"
     assert repository.active_generation_id() != initial_generation
+    assert shell.train_controller.registry_snapshot() == initial_registry
+    assert shell.predict_workspace.generation_id == initial_generation
+    captured = []
+
+    class CaptureExecution:
+        def start(self, request, callbacks=None):  # noqa: ANN001
+            captured.append(request)
+
+        def cancel(self):
+            return True
+
+    data = tmp_path / "process-a.csv"
+    data.write_text("sentinel\n", encoding="utf-8")
+    shell.train_controller._execution = CaptureExecution()
+    shell.train_controller.start(TrainingRequest("process-a", str(data)))
+    assert captured[0].generation_id == initial_generation
+    assert captured[0].registry_fingerprint == initial_registry.registry_fingerprint
     assert repository.read_active().projections.predict[0].label == (
         "Production generation presentation"
     )
     assert DEFAULT_SCHEMA_PATH.read_bytes() == legacy_schema_before
     restarted_shell = create_shell(generation_root=root)
+    assert restarted_shell.train_controller.registry_snapshot().generation_id == repository.active_generation_id()
+    assert restarted_shell.predict_workspace.generation_id == repository.active_generation_id()
     assert repository.read_active().projections.predict[0].label == (
         "Production generation presentation"
     )

@@ -126,6 +126,8 @@ class QProcessTrainingRunner(QObject):
             request.model_output_path,
             "--temp-model-output-path",
             str(self._temp_artifact_path),
+            *(["--registry-payload-json", request.registry_payload_json]
+              if request.registry_payload_json else []),
             *self._extra_args,
         ]
 
@@ -191,6 +193,8 @@ class QProcessTrainingRunner(QObject):
                         status="cancelled",
                         model_path=self._request.model_output_path,
                         message="Training process cancelled.",
+                        generation_id=self._request.generation_id,
+                        registry_fingerprint=self._request.registry_fingerprint,
                     )
                 )
             elif exit_code == 0:
@@ -200,6 +204,8 @@ class QProcessTrainingRunner(QObject):
                         status="complete",
                         model_path=self._request.model_output_path,
                         message="Training process completed.",
+                        generation_id=self._request.generation_id,
+                        registry_fingerprint=self._request.registry_fingerprint,
                     )
                 )
             else:
@@ -210,6 +216,8 @@ class QProcessTrainingRunner(QObject):
                         status="error",
                         model_path=self._request.model_output_path,
                         message=f"Training process exited with code {exit_code}.",
+                        generation_id=self._request.generation_id,
+                        registry_fingerprint=self._request.registry_fingerprint,
                     )
                 )
         self._process = None
@@ -227,6 +235,8 @@ class QProcessTrainingRunner(QObject):
                 status="error",
                 model_path=self._request.model_output_path,
                 message="Training process failed to start.",
+                generation_id=self._request.generation_id,
+                registry_fingerprint=self._request.registry_fingerprint,
             )
         )
 

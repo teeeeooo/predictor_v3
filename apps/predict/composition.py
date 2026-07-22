@@ -46,6 +46,7 @@ class PredictWorkspaceComposition:
     dropdown_option_adapter: DropdownOptionAdapter
     mapping_repository: PredictMappingRepository
     columns: tuple[UnifiedCaseColumn, ...]
+    generation_id: str
 
 
 def build_predict_workspace_composition(
@@ -101,6 +102,7 @@ def build_predict_workspace_composition(
         dropdown_option_adapter=dropdown_option_adapter,
         mapping_repository=resolved_repository,
         columns=columns,
+        generation_id=resolved_one_hot_snapshot.generation_id,
     )
 
 

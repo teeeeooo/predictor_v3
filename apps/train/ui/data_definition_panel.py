@@ -9,6 +9,7 @@ from PySide6.QtGui import QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -65,6 +66,7 @@ from apps.train.ui.data_definition.panel_compat import (
     selected_values,
 )
 from apps.train.ui.data_definition.one_hot import OneHotManagerDialog
+from apps.train.ui.data_definition.target_manager_dialog import TargetManagerDialog
 from core.data_definition import AddDefinitionIntent, EditDefinitionIntent
 
 class DataDefinitionPanel(QWidget):
@@ -170,6 +172,13 @@ class DataDefinitionPanel(QWidget):
         )
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self.task_header)
+        self.target_manager_button = QPushButton("Manage Result / Targets", self)
+        self.target_manager_button.setAccessibleName("Manage Result and Targets")
+        self.target_manager_button.setToolTip(
+            "Manage atomic Result Feature and canonical Target registry lifecycle"
+        )
+        self.target_manager_button.clicked.connect(self._manage_targets)
+        layout.addWidget(self.target_manager_button)
         layout.addWidget(self.filter_bar)
         layout.addWidget(self.inventory_view, 1)
         layout.addWidget(self.impact_view)
@@ -329,6 +338,10 @@ class DataDefinitionPanel(QWidget):
 
     def _manage_one_hot(self) -> None:
         OneHotManagerDialog(self._controller, self._apply_state, self).exec()
+        self._behavior.restore_workspace_focus("inventory")
+
+    def _manage_targets(self) -> None:
+        TargetManagerDialog(self._controller, self._apply_state, self).exec()
         self._behavior.restore_workspace_focus("inventory")
 
     def _review_current_state(self) -> None:

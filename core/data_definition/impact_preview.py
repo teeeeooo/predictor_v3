@@ -24,6 +24,10 @@ from core.data_definition.one_hot.impact import (
     build_one_hot_impact_evidence,
 )
 from core.data_definition.one_hot.model import OneHotDriftEvidence, VocabularySnapshot
+from core.data_definition.target_registry.impact import (
+    TargetImpactEvidence,
+    build_target_impact_evidence,
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +72,7 @@ class FeatureImpactPreview:
     mapping_concrete_values_changed: bool = False
     training_headers_before: tuple[str, ...] = ()
     training_headers_after: tuple[str, ...] = ()
+    target_evidence: TargetImpactEvidence | None = None
 
 
 def build_feature_impact_preview(
@@ -117,6 +122,7 @@ def build_feature_impact_preview(
     drift_evidence: tuple[OneHotDriftEvidence, ...] = ()
     training_before: tuple[str, ...] = ()
     training_after: tuple[str, ...] = ()
+    target_evidence = None
     if base is not None:
         try:
             candidate = candidate_manifest_from_draft(result.draft, base)
@@ -154,6 +160,7 @@ def build_feature_impact_preview(
                 training_before,
                 training_after,
             ) = build_one_hot_impact_evidence(base, candidate, vocabulary_snapshots)
+            target_evidence = build_target_impact_evidence(base, candidate, result, before, after)
         except (KeyError, ValueError) as exc:
             validation_issues = (DataDefinitionCommandIssue(
                 "canonical_candidate_invalid",
@@ -204,6 +211,7 @@ def build_feature_impact_preview(
         False,
         training_before,
         training_after,
+        target_evidence,
     )
 
 

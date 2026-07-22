@@ -24,6 +24,10 @@ from apps.train.controllers.one_hot_authoring_projection import (
     OneHotAuthoringProjection,
     project_one_hot_authoring,
 )
+from apps.train.controllers.target_authoring_projection import (
+    TargetAuthoringProjection,
+    project_target_authoring,
+)
 from apps.train.services.data_definition_service import DataDefinitionService
 from core.data_definition import (
     AddDefinitionIntent,
@@ -39,6 +43,7 @@ from core.data_definition import (
     SetDefinitionActiveIntent,
     DerivedCommandIntent,
     OneHotCommandIntent,
+    TargetCommandIntent,
 )
 from core.data_definition.one_hot.model import vocabulary_revision_token
 
@@ -162,6 +167,23 @@ class DataDefinitionController:
             current_report=report,
         )
 
+    def preview_target_command(self, intent: TargetCommandIntent) -> PreparedFeatureCommand:
+        """Preview one atomic Result/Target transition."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        return self._service.prepare_feature_command(
+            self._draft,
+            intent,
+            source_revision=self._draft_revision,
+            current_report=self._service.refresh_report(),
+        )
+
+    def apply_prepared_target_command(
+        self, prepared: PreparedFeatureCommand,
+    ) -> DataDefinitionControllerState:
+        return self.apply_prepared_feature_command(prepared)
+
     def one_hot_authoring_snapshot(self) -> tuple[tuple[object, ...], tuple[object, ...]]:
         """Return immutable canonical groups and vocabulary evidence for presentation."""
         if self._draft is None:
@@ -190,6 +212,13 @@ class DataDefinitionController:
             self._draft,
             consumer_identity=consumer_identity,
         )
+
+    def target_authoring_projection(self) -> TargetAuthoringProjection:
+        """Return Result/Target inventory and structured policy options."""
+        if self._draft is None:
+            self._draft = self._service.load_draft()
+            self._draft_revision += 1
+        return project_target_authoring(self._draft)
 
     def apply_prepared_derived_command(
         self,

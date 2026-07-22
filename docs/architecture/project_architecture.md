@@ -143,14 +143,24 @@ Migration principles:
   UI/runtime-neutral usecase or port boundaries when the same workflow may run
   under PySide6, Tkinter, another GUI toolkit, Web UI, CLI smoke runner, remote
   worker, or automation shell.
-- **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 `MODEL_REGISTRY.target_rules`와 train/predict feature alignment contract를 따른다.
+- **Target별 학습 독립성**: target별 모델 학습은 독립적인 XGBoost model 및 독립적인 RFE feature set을 유지한다. Cooling/Heating 또는 target별 feature boundary는 canonical immutable Target registry snapshot과 train/predict feature alignment contract를 따른다.
 
-### MODEL_REGISTRY 확장성 패턴
-- **SSOT**: target별 mandatory, excluded, leakage, RFE 사용 여부, result key는 `core/ml/registry.py`의 `MODEL_REGISTRY`를 기준으로 관리한다.
-- **확장 규칙**: 새 모델 target 추가 시 trainer, predictor, feature tests에 하드코딩 분기를 반복하지 않고 registry entry를 통해 순회 가능하게 유지한다.
+### Canonical Target registry 확장성 패턴
+- **SSOT**: contract v4 `TargetDefinition`이 Result Feature, validated model group,
+  allowed/exclude input-owner identity policy, registry order, presentation order,
+  active state를 소유한다. Group key/name/use_rfe는 세 validated group의 read-only
+  metadata다.
+- **Runtime**: `core/data_definition/target_registry`가 filesystem/Qt/model artifact를
+  읽지 않는 immutable snapshot을 만든다. Train start는 generation과 scoped
+  fingerprint를 포함한 snapshot을 freeze한다. `core/ml/registry.py`는 legacy caller용
+  generated facade일 뿐 production owner가 아니다.
+- **확장 규칙**: 새 validated active Target는 snapshot projection을 통해 Train에
+  나타나며 inactive Target는 제외된다. 새 model group/algorithm binding은 이 slice의
+  확장점이 아니다.
 - **단일 artifact**: V2에서 target별 artifact를 분리했다가 버전 불일치 위험이 커졌으므로, 기본 저장 단위는 `model.pkl` 단일 artifact 계약을 유지한다.
 - **호환성 주의**: pkl 저장 구조를 단순 dict로 바꾸면 SHAP 등 외부 라이브러리 호환성이 깨질 수 있다. 모델 dict value는 `OptimalModel` 같은 wrapper object로 유지하고, save-data root에 metadata를 추가하는 방향을 우선한다.
-- **자동 테스트 방향**: feature/leakage 테스트는 target별 하드코딩보다 `MODEL_REGISTRY`를 순회해 mandatory/leakage/snapshot contract를 확인한다.
+- **자동 테스트 방향**: feature/leakage 테스트는 canonical registry snapshot을 순회해
+  membership, use_rfe, policy 결과, generation freeze contract를 확인한다.
 
 ## 3. UI 및 데이터 흐름
 
@@ -177,7 +187,8 @@ root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다
 
 Ordering owner는 Predict=`ordering.predict`, ordered ML=`ordering.ml`,
 Derived DAG=`ordering.derived`, One-hot emitted category=`category.order`, Target
-presentation=`ordering.targets`다. Feature `display_order`, Derived/Target storage
+presentation=`ordering.targets`, model-group 내 Train Target iteration=`registry_order`다.
+Target presentation fingerprint는 registry/model compatibility와 분리된다. Feature `display_order`, Derived/Target storage
 order, category storage order, Target `presentation_order`처럼 호환을 위해
 중복 저장된 필드는 whole-contract validation으로 canonical owner와의
 일치를 강제한다. Predict `display_order`는 inactive Feature를 포함한 전체

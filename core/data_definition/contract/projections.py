@@ -13,8 +13,13 @@ from core.data_definition.contract.model import (
     LegacyOneHotGroupDefinition,
     OneHotGroupDefinition,
     UnifiedFeatureManifest,
+    LegacyModelGroupDefinition,
 )
-from core.data_definition.contract.compatibility import current_derived_definitions
+from core.data_definition.contract.compatibility import (
+    current_derived_definitions,
+    current_model_group_definitions,
+    current_target_definitions,
+)
 from core.data_definition.one_hot.runtime import (
     OneHotRuntimeSnapshot,
     one_hot_runtime_snapshot,
@@ -22,6 +27,7 @@ from core.data_definition.one_hot.runtime import (
 from core.data_definition.model import MappingRequirement, ProjectedFeatureRow
 from core.ml.feature_catalog import REQUIRED_HEADERS as ML_HEADERS
 from core.predictor_schema.catalog_v2 import PredictSchemaV2Row, REQUIRED_HEADERS
+from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 
 
 @dataclass(frozen=True)
@@ -70,37 +76,70 @@ def generate_projections(manifest: UnifiedFeatureManifest) -> ContractProjection
         _ml_row(ml_owners[identity], index)
         for index, identity in enumerate(manifest.ordering.ml, 1)
     )
-    targets_by_id = {item.identity: item for item in manifest.targets}
+    targets = current_target_definitions(manifest)
+    groups = current_model_group_definitions(manifest)
+    targets_by_id = {item.identity: item for item in targets}
     target_position = {
         identity: index for index, identity in enumerate(manifest.ordering.targets)
     }
-    ordered_groups = sorted(
-        manifest.model_groups,
-        key=lambda group: min(
-            (target_position[identity] for identity in group.target_identities),
-            default=len(target_position),
-        ),
-    )
+    owner_by_id = {
+        item.identity: item.ml_name
+        for item in (*manifest.features, *current_derived_definitions(manifest))
+        if item.ml_name
+    }
+    group_by_key = {item.registry_key: item for item in groups}
+    if manifest.contract_version.endswith(".v4"):
+        ordered_groups = tuple(group_by_key[item.registry_key] for item in VALIDATED_MODEL_GROUPS)
+        target_sort_key = lambda item: (item.registry_order, item.identity)
+    else:
+        ordered_groups = tuple(sorted(
+            groups,
+            key=lambda group: min(
+                (target_position[item.identity] for item in targets
+                 if item.model_group_identity == group.identity),
+                default=len(target_position),
+            ),
+        ))
+        target_sort_key = lambda item: target_position[item.identity]
     registry = tuple(
         (
             group.registry_key,
             {
                 "name": group.name,
-                "targets": [
-                    targets_by_id[item].ml_name
-                    for item in sorted(
-                        group.target_identities,
-                        key=target_position.__getitem__,
-                    )
-                ],
+                "targets": [target.ml_name for target in sorted(
+                    (item for item in targets if item.active and item.model_group_identity == group.identity),
+                    key=target_sort_key,
+                )],
                 "use_rfe": group.use_rfe,
                 "target_rules": {
-                    name: {policy: list(values)} for name, policy, values in group.target_rules
+                    **(
+                        {
+                            name: {policy: list(values)}
+                            for name, policy, values in next(
+                                raw for raw in manifest.model_groups
+                                if isinstance(raw, LegacyModelGroupDefinition)
+                                and raw.identity == group.identity
+                            ).target_rules
+                        }
+                        if any(
+                            isinstance(raw, LegacyModelGroupDefinition) and raw.identity == group.identity
+                            for raw in manifest.model_groups
+                        )
+                        else {
+                            target.ml_name: {target.policy_mode: [
+                                *(owner_by_id[identity] for identity in target.policy_owner_identities),
+                                *(owner_by_id[identity] for identity in target.legacy_noop_result_identities),
+                            ]}
+                            for target in targets
+                            if target.active and target.model_group_identity == group.identity
+                        }
+                    )
                 },
             },
         )
         for group in ordered_groups
     )
+
     feature_by_id = {item.identity: item for item in manifest.features}
     requirements = tuple(
         MappingRequirement(

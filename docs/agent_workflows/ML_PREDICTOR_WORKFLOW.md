@@ -16,8 +16,10 @@ the short routing gate.
   production Train/Predict code.
 - Do not import `optuna`, `sklearn`, `shap`, or `matplotlib` from
   `core/predictor.py`.
-- Until package-boundary migration changes the approved owner, keep `COLUMNS`
-  in `core/constants.py` and `MODEL_REGISTRY` in `core/models.py`.
+- Canonical Data Definition owns Target/Result association and target-level policy.
+  Production Train consumes an immutable registry snapshot for one generation;
+  `core/ml/registry.py::MODEL_REGISTRY` is compatibility-only and must not become
+  a second writable owner.
 - After the core package boundary foundation exists, new ML/Predictor code must
   follow the approved package owner paths from `docs/architecture/project_architecture.md`.
 - Preserve `feature_names_in_`; do not add `.values` conversion before

@@ -123,8 +123,13 @@ class DataDefinitionGenerationRepository:
         expected_fingerprints = asdict(fingerprints)
         stored_fingerprints = metadata.get("fingerprints")
         candidates = [expected_fingerprints]
-        if not manifest.contract_version.endswith(".v3"):
+        if not manifest.contract_version.endswith(".v4"):
             candidates.append(legacy_bundle_fingerprint_payload(manifest))
+        if isinstance(stored_fingerprints, dict) and "target_presentation" not in stored_fingerprints:
+            candidates = [
+                {key: value for key, value in item.items() if key != "target_presentation"}
+                for item in candidates
+            ]
         if isinstance(stored_fingerprints, dict) and "derived_semantics" not in stored_fingerprints:
             candidates = [
                 {key: value for key, value in item.items() if key != "derived_semantics"}

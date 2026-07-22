@@ -75,7 +75,7 @@ class DerivedDefinition:
 
 
 @dataclass(frozen=True)
-class TargetDefinition:
+class LegacyTargetDefinition:
     identity: str
     feature_identity: str
     ml_name: str
@@ -85,13 +85,37 @@ class TargetDefinition:
 
 
 @dataclass(frozen=True)
-class ModelGroupDefinition:
+class TargetDefinition:
+    identity: str
+    feature_identity: str
+    ml_name: str
+    model_group_identity: str
+    presentation_order: int
+    policy_mode: str
+    policy_owner_identities: tuple[str, ...]
+    registry_order: int
+    active: bool = True
+    legacy_noop_result_identities: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class LegacyModelGroupDefinition:
     identity: str
     registry_key: str
     name: str
     target_identities: tuple[str, ...]
     use_rfe: bool
     target_rules: tuple[tuple[str, str, tuple[str, ...]], ...]
+
+
+@dataclass(frozen=True)
+class ModelGroupDefinition:
+    """Read-only metadata for one supported production trainer family."""
+
+    identity: str
+    registry_key: str
+    name: str
+    use_rfe: bool
 
 
 @dataclass(frozen=True)
@@ -122,7 +146,7 @@ class UnifiedFeatureManifest:
     features: tuple[FeatureDefinition, ...]
     derived: tuple[DerivedDefinition | LegacyDerivedDefinition, ...]
     one_hot_groups: tuple[OneHotGroupDefinition | LegacyOneHotGroupDefinition, ...]
-    targets: tuple[TargetDefinition, ...]
-    model_groups: tuple[ModelGroupDefinition, ...]
+    targets: tuple[TargetDefinition | LegacyTargetDefinition, ...]
+    model_groups: tuple[ModelGroupDefinition | LegacyModelGroupDefinition, ...]
     mapping_requirements: tuple[MappingRequirementDefinition, ...]
     ordering: OrderingContract

@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from core.data_definition.contract.compatibility import current_one_hot_definitions
+from core.data_definition.contract.compatibility import (
+    current_model_group_definitions,
+    current_one_hot_definitions,
+    current_target_definitions,
+)
+from core.data_definition.contract.model import LegacyModelGroupDefinition
+from core.data_definition.target_registry.defaults import VALIDATED_GROUP_BY_KEY
 from core.data_definition.contract.model import UnifiedFeatureManifest
 from core.data_definition.contract.validation_types import ContractValidationIssue
 
@@ -250,14 +256,25 @@ def _selector_matches_restore(selector, restore) -> bool:  # noqa: ANN001
 
 def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
     features = {item.identity: item for item in manifest.features}
-    groups = {item.identity: item for item in manifest.model_groups}
-    targets = {item.identity: item for item in manifest.targets}
+    try:
+        definitions = current_target_definitions(manifest)
+        group_definitions = current_model_group_definitions(manifest)
+    except ValueError as exc:
+        issues.append(ContractValidationIssue("target_legacy_relation_invalid", str(exc)))
+        return
+    groups = {item.identity: item for item in group_definitions}
+    targets = {item.identity: item for item in definitions}
+    _duplicates(issues, "target_identity_duplicate", [item.identity for item in definitions])
+    _duplicates(issues, "target_result_feature_duplicate", [item.feature_identity for item in definitions])
+    _duplicates(issues, "target_active_ml_name_duplicate", [
+        item.ml_name for item in definitions if item.active
+    ])
     _duplicates(issues, "target_presentation_order_duplicate", [
-        item.presentation_order for item in manifest.targets
+        item.presentation_order for item in definitions
     ])
     presentation = tuple(
         item.identity for item in sorted(
-            manifest.targets,
+            definitions,
             key=lambda item: (item.presentation_order, item.identity),
         )
     )
@@ -266,43 +283,96 @@ def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
             "target_presentation_order_mismatch",
             "target presentation_order does not match canonical target ordering",
         ))
-    memberships: dict[str, list[str]] = {}
-    for group in manifest.model_groups:
-        _duplicates(issues, "model_group_target_duplicate", group.target_identities)
-        group_target_names = []
-        for identity in group.target_identities:
-            target = targets.get(identity)
-            if target is None:
-                issues.append(ContractValidationIssue(
-                    "model_group_target_orphan", f"{group.registry_key}: {identity}"
-                ))
-                continue
-            memberships.setdefault(identity, []).append(group.identity)
-            group_target_names.append(target.ml_name)
-        rule_targets = [name for name, _policy, _values in group.target_rules]
-        _duplicates(issues, "model_group_target_rule_duplicate", rule_targets)
-        if set(rule_targets) != set(group_target_names):
+    _duplicates(issues, "model_group_registry_key_duplicate", [
+        item.registry_key for item in group_definitions
+    ])
+    if set(item.registry_key for item in group_definitions) != set(VALIDATED_GROUP_BY_KEY):
+        issues.append(ContractValidationIssue(
+            "model_group_catalog_invalid", "exactly the three validated model groups are required"
+        ))
+    for group in group_definitions:
+        supported = VALIDATED_GROUP_BY_KEY.get(group.registry_key)
+        if supported is not None and group.identity != supported.identity:
             issues.append(ContractValidationIssue(
-                "model_group_target_rule_incomplete", group.registry_key
+                "model_group_identity_mutation", group.registry_key
             ))
-    for target in manifest.targets:
+        if supported is None or group.name != supported.name or group.use_rfe != supported.use_rfe:
+            issues.append(ContractValidationIssue(
+                "model_group_metadata_mutation", group.registry_key
+            ))
+        members = [item.registry_order for item in definitions if item.model_group_identity == group.identity]
+        _duplicates(issues, "target_registry_order_duplicate", members)
+        if sorted(members) != list(range(1, len(members) + 1)):
+            issues.append(ContractValidationIssue("target_registry_order_invalid", group.registry_key))
+    from core.data_definition.target_registry.runtime import (
+        apply_ordered_target_policy,
+        ordered_training_input_pool,
+    )
+
+    input_pool = ordered_training_input_pool(manifest)
+    eligible_owners = {item.identity: item for item in input_pool.eligible_owners}
+    result_feature_ids = {
+        item.identity for item in manifest.features if item.role == "result" and item.ml_name
+    }
+    target_feature_ids = {item.feature_identity for item in definitions}
+    for orphan in sorted(result_feature_ids - target_feature_ids):
+        issues.append(ContractValidationIssue("target_result_orphan", orphan))
+    for target in definitions:
         feature = features.get(target.feature_identity)
         group = groups.get(target.model_group_identity)
         if (
             feature is None
             or feature.role != "result"
+            or feature.editor != "readonly"
+            or feature.data_type != "number"
+            or not feature.readonly
+            or feature.value_source != "result"
+            or feature.model_input_enabled
             or feature.ml_name != target.ml_name
+            or feature.active != target.active
         ):
             issues.append(ContractValidationIssue(
                 "target_feature_invalid", target.ml_name
             ))
         if (
             group is None
-            or memberships.get(target.identity) != [target.model_group_identity]
         ):
             issues.append(ContractValidationIssue(
                 "target_model_group_invalid", target.ml_name
             ))
+        if target.policy_mode not in {"allowed", "exclude"}:
+            issues.append(ContractValidationIssue("target_policy_mode_invalid", target.ml_name))
+        _duplicates(issues, "target_policy_owner_duplicate", target.policy_owner_identities)
+        for identity in target.policy_owner_identities:
+            if identity in result_feature_ids or identity not in eligible_owners:
+                issues.append(ContractValidationIssue(
+                    "target_policy_owner_invalid", f"{target.ml_name}: {identity}"
+                ))
+        if target.policy_mode == "allowed" and not target.policy_owner_identities:
+            issues.append(ContractValidationIssue("target_policy_allowed_empty", target.ml_name))
+        policy_result = (
+            apply_ordered_target_policy(
+                input_pool.identities, target.policy_mode, target.policy_owner_identities,
+            )
+            if target.policy_mode in {"allowed", "exclude"} else ()
+        )
+        if target.policy_mode in {"allowed", "exclude"} and not policy_result:
+            issues.append(ContractValidationIssue("target_policy_result_empty", target.ml_name))
+        if target.legacy_noop_result_identities and target.policy_mode != "exclude":
+            issues.append(ContractValidationIssue("target_policy_legacy_noop_invalid", target.ml_name))
+        if any(identity not in result_feature_ids for identity in target.legacy_noop_result_identities):
+            issues.append(ContractValidationIssue("target_policy_legacy_noop_invalid", target.ml_name))
+
+    # Historical manifests must also prove their duplicated relation was internally exact.
+    for group in manifest.model_groups:
+        if not isinstance(group, LegacyModelGroupDefinition):
+            continue
+        _duplicates(issues, "model_group_target_duplicate", group.target_identities)
+        associated = tuple(
+            item.identity for item in definitions if item.model_group_identity == group.identity
+        )
+        if set(group.target_identities) != set(associated):
+            issues.append(ContractValidationIssue("model_group_target_projection_mismatch", group.registry_key))
 
 
 def _validate_mapping(issues, manifest) -> None:  # noqa: ANN001

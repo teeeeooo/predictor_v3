@@ -137,15 +137,15 @@ def test_derived_one_hot_and_target_projections_use_canonical_ordering():
     )
     target_projection = generate_projections(target_ordered)
     assert [key for key, _payload in target_projection.target_registry] == [
-        "ref_model",
         "power_model",
         "hz_model",
+        "ref_model",
     ]
     assert [
         name
         for _key, payload in target_projection.target_registry
         for name in payload["targets"]
-    ] == [item.ml_name for item in reordered_targets]
+    ] == ["Cooling Power", "Heating Power", "Cooling Hz", "Heating Hz", "Ref Qty"]
 
 
 def test_one_hot_and_target_presentation_order_change_scoped_fingerprints():
@@ -190,8 +190,14 @@ def test_one_hot_and_target_presentation_order_change_scoped_fingerprints():
     assert validate_contract(one_hot_changed) == ()
     assert validate_contract(target_changed) == ()
     assert scoped_fingerprints(one_hot_changed).one_hot != scoped_fingerprints(manifest).one_hot
-    assert scoped_fingerprints(target_changed).target_registry != (
+    assert scoped_fingerprints(target_changed).target_registry == (
         scoped_fingerprints(manifest).target_registry
+    )
+    assert scoped_fingerprints(target_changed).target_presentation != (
+        scoped_fingerprints(manifest).target_presentation
+    )
+    assert scoped_fingerprints(target_changed).model_compatibility == (
+        scoped_fingerprints(manifest).model_compatibility
     )
 
 
@@ -357,25 +363,17 @@ def test_cross_validation_rejects_ordering_one_hot_mapping_and_target_mismatches
     target_codes = {item.code for item in validate_contract(target_order)}
     assert "target_presentation_order_duplicate" in target_codes
     assert "target_presentation_order_mismatch" in target_codes
-    extra_membership = replace(
-        manifest.model_groups[1],
-        target_identities=(
-            *manifest.model_groups[1].target_identities,
-            manifest.targets[0].identity,
-        ),
-    )
     target_association = replace(
         manifest,
-        model_groups=(
-            manifest.model_groups[0],
-            extra_membership,
-            *manifest.model_groups[2:],
+        targets=(
+            replace(
+                manifest.targets[0],
+                model_group_identity="unknown-group",
+            ),
+            *manifest.targets[1:],
         ),
     )
     assert "target_model_group_invalid" in {
-        item.code for item in validate_contract(target_association)
-    }
-    assert "model_group_target_rule_incomplete" in {
         item.code for item in validate_contract(target_association)
     }
 

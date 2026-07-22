@@ -94,6 +94,9 @@ class DataDefinitionDraft:
     baseline_ml_order: tuple[DataDefinitionRowIdentity, ...] = ()
     one_hot_groups: tuple[object, ...] = ()
     baseline_one_hot_groups: tuple[object, ...] = ()
+    targets: tuple[object, ...] = ()
+    baseline_targets: tuple[object, ...] = ()
+    model_groups: tuple[object, ...] = ()
 
     @property
     def is_changed(self) -> bool:
@@ -130,6 +133,11 @@ class DataDefinitionDraft:
             changes.append(DataDefinitionDraftChange(
                 ("one_hot", "groups"), "__one_hot__", self.baseline_one_hot_groups,
                 self.one_hot_groups))
+        if self.targets != self.baseline_targets:
+            changes.append(DataDefinitionDraftChange(
+                ("target", "definitions"), "__targets__", self.baseline_targets,
+                self.targets,
+            ))
         return tuple(changes)
 
     def attributed_changes(self) -> tuple[DataDefinitionDraftChange, ...]:
@@ -250,6 +258,12 @@ def build_data_definition_draft(
     ) or _legacy_ml_order(rows)
     from core.data_definition.contract.compatibility import current_one_hot_definitions
     one_hot_groups = current_one_hot_definitions(manifest) if manifest is not None else ()
+    from core.data_definition.contract.compatibility import (
+        current_model_group_definitions,
+        current_target_definitions,
+    )
+    targets = current_target_definitions(manifest) if manifest is not None else ()
+    model_groups = current_model_group_definitions(manifest) if manifest is not None else ()
     return DataDefinitionDraft(
         rows=rows,
         baseline_rows=rows,
@@ -260,6 +274,9 @@ def build_data_definition_draft(
         baseline_ml_order=ml_order,
         one_hot_groups=one_hot_groups,
         baseline_one_hot_groups=one_hot_groups,
+        targets=targets,
+        baseline_targets=targets,
+        model_groups=model_groups,
     )
 
 
@@ -290,6 +307,9 @@ def replace_draft_row(
         baseline_ml_order=draft.baseline_ml_order,
         one_hot_groups=draft.one_hot_groups,
         baseline_one_hot_groups=draft.baseline_one_hot_groups,
+        targets=draft.targets,
+        baseline_targets=draft.baseline_targets,
+        model_groups=draft.model_groups,
     )
 
 

@@ -7,6 +7,7 @@ from core.data_definition.contract import (
     bootstrap_manifest,
     dump_manifest,
     load_manifest,
+    migrate_manifest,
     semantic_generation_id,
 )
 
@@ -28,7 +29,9 @@ def test_repository_bootstrap_manifest_matches_deterministic_semantic_identity()
         / "data_definition"
         / "manifest.json"
     )
-    assert load_manifest(path) == bootstrap_manifest()
+    stored = migrate_manifest(load_manifest(path))
+    expected = bootstrap_manifest()
+    assert replace(stored, generation=expected.generation) == expected
 
 
 def test_bootstrap_uses_opaque_unique_stable_identities():

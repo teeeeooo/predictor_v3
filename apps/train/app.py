@@ -20,6 +20,7 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.shell import TrainShell
 from core.data_definition.contract import load_manifest
+from core.data_definition.target_registry.runtime import model_registry_snapshot
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DEFINITION_ROOT = PROJECT_ROOT / "config" / "data_definition"
@@ -54,17 +55,21 @@ def create_shell(
     root = generation_root if generation_root is not None else default_generation_root()
     repository = DataDefinitionGenerationRepository(root)
     try:
-        repository.read_active()
+        active = repository.read_active()
     except FileNotFoundError:
         repository.publish(
             load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH)
         )
-    active = repository.read_active()
+        active = repository.read_active()
+    process_registry_snapshot = model_registry_snapshot(active.manifest)
     data_definition_controller = DataDefinitionController(DataDefinitionService(
         generation_repository=repository,
         vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
     ))
-    controller = TrainController(execution_factory=QProcessTrainingRunner)
+    controller = TrainController(
+        execution_factory=QProcessTrainingRunner,
+        registry_provider=lambda: process_registry_snapshot,
+    )
     return TrainShell(
         train_controller=controller,
         data_definition_controller=data_definition_controller,
