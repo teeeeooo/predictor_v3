@@ -90,7 +90,9 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   Target/registry authoring implemented and merged through PR #24.
 - Train/Admin UI/UX Overhaul Phase 4H+4I — process-wide atomic generation
   cutover, standalone Predict drift detection, dirty Mapping reconciliation,
-  recovery diagnostics, and Phase 4 automated closeout implemented for audit.
+  generation-bound Predict inference, complete participant stale evidence, actual
+  Definition controller cutover, exact dirty Mapping evidence, recovery
+  diagnostics, and Phase 4 automated closeout implemented for audit.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -137,6 +139,9 @@ Phase 4A fixes these implementation boundaries:
 - candidate and active artifacts remain separate, with explicit Phase 5 promotion;
 - one TrainShell process uses staged generation cutover, while standalone Predict
   performs persisted-generation checks at startup and execution boundaries.
+- embedded and standalone Predict execute one generation-bound snapshot for
+  Derived, One-hot, ordered input, zero-fill, Target/result, and preprocessing;
+  compatibility-only static/bootstrap facades are not production runtime owners.
 
 Concrete mapping values remain in Data Mapping. Training remains an explicit user
 action in Train. Data Definition does not trigger training or automatic model

@@ -46,6 +46,14 @@
 - Close Phase 4 for repository-automated scope and advance planning to Phase 5
   only after final audit/merge. Windows-native Train/Predict/Mapping smoke remains
   pre-release verification, not claimed closeout evidence.
+- Audit correction binds the reported Predict generation to one immutable actual
+  inference snapshot (Derived, One-hot, ordered input, zero-fill, Target/result,
+  preprocessing), makes embedded and standalone composition share that owner,
+  and retains static/bootstrap paths only as compatibility facades.
+- The prepare revision boundary now includes Predict cases/running state, Train
+  selected file/header, Definition draft/base/controller state, and Mapping
+  draft/provider state. Dirty Definition recovery is explicit, and Mapping dirty
+  removal requires exact affected draft-versus-baseline value evidence.
 
 ## 2026-07-22 — Train/Admin Phase 4G Target registry authoring
 

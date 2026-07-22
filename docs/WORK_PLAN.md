@@ -27,6 +27,13 @@ explicit Refresh, and immediately before prediction; failed or incompatible relo
 preserves rows/results and blocks new prediction. Phase 4A–4I acceptance and concise
 diagnostics are closed for repository-automated scope.
 
+The PR #25 audit correction binds actual Predict inference to the coordinated
+generation, extends stale evidence across Predict cases/running state, Train CSV,
+Definition draft/controller, and Mapping provider state, and bases Mapping removal
+review on exact affected unsaved values. Dirty Definition drafts require explicit
+Save/Reset and fresh retry; embedded and standalone Predict share the same runtime
+snapshot owner.
+
 ## Next Action
 
 Perform final audit of the Phase 4H+4I Draft PR. After merge, Phase 5 Train/Model
@@ -116,6 +123,7 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
 - Phase 4F merge closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-merge-closeout.md`
 - Phase 4G result: `result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md`
 - Phase 4H+4I closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-runtime-closeout.md`
+- Phase 4H+4I audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4h-4i-audit-correction.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`

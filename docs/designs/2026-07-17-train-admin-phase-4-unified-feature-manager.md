@@ -663,6 +663,17 @@ rollback or abort failure becomes Restart required. Mapping reconciliation remai
 inside its owner, and standalone Predict checks generation drift at startup,
 Refresh, and prediction boundaries.
 
+Audit correction: embedded and standalone Predict share one immutable execution
+snapshot containing Predict/ordered-ML projections, Derived, One-hot, zero-fill,
+Target/result mapping, preprocessing, and scoped fingerprints. Candidate prepare
+builds that entire composition and commit swaps it as one unit. Predict session
+mutation/running state, selected Train path/file/header, Definition draft/base/
+controller state, and Mapping draft/provider state are participant revision
+boundaries. Dirty Definition updates preserve the controller draft for explicit
+Save/Reset and fresh retry. Mapping review compares stable-identity affected
+column values against its baseline, so unrelated dirtiness cannot turn a clean
+removed requirement into a dirty removal.
+
 Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
@@ -756,6 +767,15 @@ cross-tab acceptance, and honest fixture/mock limitations.
     prediction, explicit reload, or model-reload boundaries.
 30. A stale standalone Predict process preserves existing rows/results for
     recovery but blocks new prediction when generation reload cannot succeed.
+31. Predict participant generation equals the actual Derived, One-hot, ordered
+    input, zero-fill, Target/result, and preprocessing execution generation.
+32. Case/session or selected-training-file mutation after prepare rejects commit
+    without overwriting the latest user state.
+33. Data Definition participant, controller baseline, draft base, and displayed
+    generation transition and rollback together; dirty drafts require explicit
+    recovery.
+34. Mapping dirty removal evidence requires an unsaved change in the exact
+    affected stable-identity column or relation.
 
 Phase 4 acceptance is closed for automated repository scope. Windows-native
 Train/Predict/Mapping smoke remains an explicit pre-release verification item and
