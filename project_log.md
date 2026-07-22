@@ -29,6 +29,19 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-22 — Train/Admin Phase 4F merge closeout
+
+### Decision
+
+- Accept Phase 4F and its audit correction on `main` after PR #23 Ready transition,
+  successful PR-head CI, and merge completion.
+- Preserve contract v3, selector restore lifecycle, canonical Mapping-backed runtime
+  source ownership, provider rejection, v2 rollback, and prepared Preview/Apply as
+  the completed Phase 4F baseline.
+- Advance the Unified Feature Manager workstream to bounded Phase 4G Target/registry
+  CRUD design and implementation; keep Phase 4H cutover and model lifecycle work
+  deferred.
+
 ## 2026-07-22 — Train/Admin Phase 4F audit correction
 
 ### Decision

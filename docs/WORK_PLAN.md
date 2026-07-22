@@ -18,7 +18,7 @@
 ## Current Slice
 
 Train/Admin Phase 4F — One-hot Group/Category Management and Canonical Runtime
-Projection is implemented over the Phase 4B–4E baseline. Canonical contract v3
+Projection is complete and integrated on `main` through PR #23. Canonical contract v3
 links group, selector, category, and emitted Feature by stable identity while v2
 name relations remain readable and rollback-safe through explicit compatibility
 decode. Static full lifecycle, Mapping-backed read-only vocabulary rules/drift,
@@ -36,9 +36,9 @@ stale External provider relations into atomic structured rejection.
 
 ## Next Action
 
-Reaudit and integrate Phase 4F through its Draft PR. After its audit/merge
-boundary, start Phase 4G Target/registry CRUD from merged `main`. Keep runtime
-cutover, model candidate generation, training, and promotion outside Phase 4G.
+Start Phase 4G Target/registry CRUD from synchronized `main`, beginning with its
+bounded owner/contract audit. Keep runtime cutover, model candidate generation,
+training, and promotion outside Phase 4G.
 
 ## Active Blockers
 
@@ -123,6 +123,7 @@ cutover, model candidate generation, training, and promotion outside Phase 4G.
 - Phase 4E final runtime-shape correction: `result_reports/records/2026-07/2026-07-18-train-admin-phase4e-runtime-shape-correction.md`
 - Phase 4F result: `result_reports/records/2026-07/2026-07-18-train-admin-phase4f-one-hot-authoring.md`
 - Phase 4F audit correction: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-audit-correction.md`
+- Phase 4F merge closeout: `result_reports/records/2026-07/2026-07-22-train-admin-phase4f-merge-closeout.md`
 - Phase and milestone direction: `project_brief.md`
 - Durable milestone history: `project_log.md`
 - Active memory: `result_reports/memory/project_memory_seed.md`
