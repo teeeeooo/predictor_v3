@@ -1,6 +1,7 @@
 """Train/Model runtime-generation participant."""
 
 import csv
+import hashlib
 from pathlib import Path
 from typing import Callable
 
@@ -26,10 +27,19 @@ class TrainRuntimeParticipant:
         self._active = active
         self._registry = model_registry_snapshot(active.manifest)
         self._selected_data_path_provider = selected_data_path_provider
+        self._selection_revision = 0
+        self._execution_state_provider: Callable[[], str] = lambda: "idle"
 
     def set_selected_data_path_provider(self, provider: Callable[[], str]) -> None:
         """Attach the shell-owned selection without making Train depend on Qt."""
         self._selected_data_path_provider = provider
+        self._selection_revision += 1
+
+    def note_selected_data_changed(self) -> None:
+        self._selection_revision += 1
+
+    def set_execution_state_provider(self, provider: Callable[[], str]) -> None:
+        self._execution_state_provider = provider
 
     @property
     def active_generation_id(self) -> str:
@@ -40,7 +50,12 @@ class TrainRuntimeParticipant:
         return self._registry
 
     def revision_token(self) -> str:
-        return self.active_generation_id
+        evidence = self._selected_data_evidence()
+        return (
+            f"{self.active_generation_id}:selection={self._selection_revision}:"
+            f"data={'|'.join(str(item) for item in evidence)}:"
+            f"execution={self._execution_state_provider()}"
+        )
 
     def prepare(self, candidate: GenerationCandidate) -> PreparedParticipant:
         registry = model_registry_snapshot(candidate.snapshot.manifest)
@@ -53,6 +68,12 @@ class TrainRuntimeParticipant:
         )
 
     def commit(self, prepared: PreparedParticipant) -> object:
+        if prepared.source_revision != self.revision_token():
+            raise ParticipantPrepareError(
+                "training_data_revision_stale",
+                "Training selection or execution state changed after prepare.",
+                "Retry Apply",
+            )
         prior = self._active, self._registry
         self._active, self._registry = prepared.payload
         return prior
@@ -87,3 +108,28 @@ class TrainRuntimeParticipant:
                 "Update the training data selection or headers and retry.",
                 missing[:12],
             )
+
+    def _selected_data_evidence(self) -> tuple[object, ...]:
+        selected = (
+            self._selected_data_path_provider().strip()
+            if self._selected_data_path_provider is not None else ""
+        )
+        if not selected:
+            return ("", "unselected")
+        path = Path(selected)
+        if not path.is_file():
+            return (selected, "missing")
+        try:
+            stat = path.stat()
+            with path.open("rb") as source:
+                header = source.readline()
+        except OSError:
+            return (selected, "unreadable")
+        return (
+            selected,
+            "file",
+            stat.st_size,
+            stat.st_mtime_ns,
+            stat.st_ctime_ns,
+            hashlib.sha256(header).hexdigest(),
+        )

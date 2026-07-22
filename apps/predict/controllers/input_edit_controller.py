@@ -45,10 +45,9 @@ class InputEditController:
             if target is None:
                 continue
             if target.is_auto:
-                case.autofill_values[update.key] = update.value
+                self._session.set_autofill_value(case_id, update.key, update.value)
             elif target.is_input:
-                case.input_values[update.key] = update.value
-                case.dirty_fields.add(update.key)
+                case.set_input_value(update.key, update.value)
 
         if result.updates:
             self._session.clear_result(case_id)

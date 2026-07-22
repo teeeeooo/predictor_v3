@@ -192,7 +192,13 @@ class TrainModelPanel(QWidget):
     def set_data_path(self, data_path: str) -> None:
         """Set training data path without depending on a file dialog."""
         self.data_path_line.setText(data_path)
+        callback = getattr(self, "_data_selection_changed", None)
+        if callback is not None:
+            callback()
         self._update_control_state()
+
+    def set_data_selection_changed_callback(self, callback) -> None:  # noqa: ANN001
+        self._data_selection_changed = callback
 
     def _select_training_data(self) -> None:
         selected, _ = QFileDialog.getOpenFileName(

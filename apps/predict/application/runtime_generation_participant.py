@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -20,8 +19,8 @@ from apps.predict.composition import (
     PredictWorkspaceComposition,
     build_predict_workspace_composition,
 )
+from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.predict.state.predict_session import PredictSession
-from core.data_definition.derived.evaluator import evaluation_snapshot
 
 
 @dataclass(frozen=True)
@@ -30,7 +29,7 @@ class _PredictPrepared:
     composition: PredictWorkspaceComposition
     migrated_rows: tuple[tuple[str, dict, dict, set], ...]
     compatibility: ModelCompatibilityEvidence
-    evaluator: object
+    session_revision: int
 
 
 class PredictRuntimeParticipant:
@@ -67,9 +66,19 @@ class PredictRuntimeParticipant:
             f"{path.stat().st_mtime_ns}:{path.stat().st_size}"
             if path.exists() else "missing"
         )
-        return f"{self.active_generation_id}:{artifact}"
+        running = self._composition.prediction_controller.is_running
+        return (
+            f"{self.active_generation_id}:{artifact}:"
+            f"session={self._composition.session.revision}:running={int(running)}"
+        )
 
     def prepare(self, candidate: GenerationCandidate) -> PreparedParticipant:
+        if self._composition.prediction_controller.is_running:
+            raise ParticipantPrepareError(
+                "prediction_in_progress",
+                "Prediction is running on the active generation.",
+                "Wait for prediction to finish, then Retry Apply.",
+            )
         compatibility = self._compatibility_inspector(
             self._model_file, candidate.snapshot
         )
@@ -77,22 +86,22 @@ class PredictRuntimeParticipant:
             self._composition.session, self._active, candidate.snapshot
         )
         controller = self._composition.prediction_controller
-        prediction_service, runner_factory = controller.runtime_dependencies()
+        _prediction_service, runner_factory = controller.runtime_dependencies()
+        runtime = build_predict_runtime_snapshot(candidate.snapshot)
         composition = build_predict_workspace_composition(
             session=self._composition.session,
             initial_empty_rows=0,
             mapping_repository=self._composition.mapping_repository,
-            prediction_service=prediction_service,
             runner_factory=runner_factory,
-            one_hot_snapshot=candidate.snapshot.projections.one_hot_runtime,
-            predict_projection=candidate.snapshot.projections.predict,
+            runtime_snapshot=runtime,
+            model_file=self._model_file,
         )
         payload = _PredictPrepared(
             candidate.snapshot,
             composition,
             migrated,
             compatibility,
-            evaluation_snapshot(candidate.snapshot.manifest),
+            self._composition.session.revision,
         )
         return PreparedParticipant(
             self.name,
@@ -103,13 +112,34 @@ class PredictRuntimeParticipant:
         )
 
     def commit(self, prepared: PreparedParticipant) -> object:
+        if prepared.source_revision != self.revision_token():
+            raise ParticipantPrepareError(
+                "predict_revision_stale",
+                "Predict cases, model, or execution state changed after prepare.",
+                "Retry Apply",
+            )
         prior = self._active, self._composition, _case_state(self._composition.session)
         payload: _PredictPrepared = prepared.payload
-        for case_id, inputs, autofill, dirty in payload.migrated_rows:
-            case = self._composition.session.case_store.get_case(case_id)
-            case.input_values = inputs
-            case.autofill_values = autofill
-            case.dirty_fields = dirty
+        runtime_generation = payload.composition.runtime_snapshot.generation_id
+        semantic_generations = {
+            runtime_generation,
+            payload.composition.generation_id,
+            payload.composition.input_mapper.generation_id,
+            payload.composition.result_mapper.generation_id,
+            payload.composition.prediction_service.generation_id,
+            payload.composition.runtime_snapshot.derived.generation_id,
+            payload.composition.runtime_snapshot.one_hot.generation_id,
+        }
+        if semantic_generations != {prepared.generation_id}:
+            raise ParticipantPrepareError(
+                "predict_runtime_generation_mismatch",
+                "Prepared Predict execution semantics do not share one generation.",
+                "Restart Required",
+            )
+        self._composition.session.apply_case_projection(
+            payload.migrated_rows,
+            expected_revision=payload.session_revision,
+        )
         self._composition = payload.composition
         self._active = payload.snapshot
         return prior
@@ -163,14 +193,15 @@ def _migrated_case_rows(
 
 def _case_state(session: PredictSession) -> object:
     return tuple(
-        (case_id, deepcopy(session.case_store.get_case(case_id)))
+        (
+            case_id,
+            dict(session.case_store.get_case(case_id).input_values),
+            dict(session.case_store.get_case(case_id).autofill_values),
+            set(session.case_store.get_case(case_id).dirty_fields),
+        )
         for case_id in session.case_order
     )
 
 
 def _restore_case_state(session: PredictSession, state: object) -> None:
-    for case_id, saved in state:
-        case = session.case_store.get_case(case_id)
-        case.input_values = saved.input_values
-        case.autofill_values = saved.autofill_values
-        case.dirty_fields = saved.dirty_fields
+    session.restore_case_projection(state)

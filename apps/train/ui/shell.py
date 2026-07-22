@@ -29,6 +29,7 @@ from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.train_model_panel import TrainModelPanel
 from apps.train.application.runtime_generation import (
+    DefinitionRuntimeParticipant,
     MappingRuntimeParticipant,
     PredictRuntimeParticipant,
     RuntimeGenerationCoordinator,
@@ -56,6 +57,7 @@ class TrainShell(QMainWindow):
         data_mapping_controller: DataMappingController | None = None,
         predict_composition: PredictWorkspaceComposition | None = None,
         generation_coordinator: RuntimeGenerationCoordinator | None = None,
+        definition_participant: DefinitionRuntimeParticipant | None = None,
         predict_participant: PredictRuntimeParticipant | None = None,
         train_participant: TrainRuntimeParticipant | None = None,
         mapping_participant: MappingRuntimeParticipant | None = None,
@@ -67,6 +69,7 @@ class TrainShell(QMainWindow):
         self.data_mapping_controller = data_mapping_controller or DataMappingController()
         self.data_definition_controller = data_definition_controller
         self.generation_coordinator = generation_coordinator
+        self.definition_participant = definition_participant
         self.predict_participant = predict_participant
         self.train_participant = train_participant
         self.mapping_participant = mapping_participant
@@ -112,6 +115,16 @@ class TrainShell(QMainWindow):
         if self.train_participant is not None:
             self.train_participant.set_selected_data_path_provider(
                 lambda: self.train_model_panel.data_path_line.text()
+            )
+            self.train_participant.set_execution_state_provider(
+                lambda: (
+                    f"running:{self.train_controller.active_request.run_id}:"
+                    f"{self.train_controller.active_request.generation_id}"
+                    if self.train_controller.active_request is not None else "idle"
+                )
+            )
+            self.train_model_panel.set_data_selection_changed_callback(
+                self.train_participant.note_selected_data_changed
             )
         tabs.addTab(
             self.predict_workspace,
@@ -170,6 +183,8 @@ class TrainShell(QMainWindow):
     def _apply_generation_status(self, status) -> None:  # noqa: ANN001
         if self.runtime_generation_panel is not None:
             self.runtime_generation_panel.apply_status(status)
+        if status.blocker_code == "definition_draft_reconciliation_required":
+            self.tabs.setCurrentWidget(self.data_definition_panel)
         if (
             self.predict_participant is not None
             and self.predict_workspace.generation_id
@@ -177,6 +192,14 @@ class TrainShell(QMainWindow):
         ):
             self.predict_workspace.apply_runtime_composition(
                 self.predict_participant.composition
+            )
+        if (
+            self.definition_participant is not None
+            and self.definition_participant.controller_state is not None
+            and status.code in {"applied", "retraining_required"}
+        ):
+            self.data_definition_panel.apply_runtime_state(
+                self.definition_participant.controller_state
             )
         self.data_mapping_panel.refresh()
         self.train_model_panel.refresh_runtime_registry()

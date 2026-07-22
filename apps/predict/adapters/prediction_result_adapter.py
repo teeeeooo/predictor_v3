@@ -9,17 +9,35 @@ from apps.predict.schema.column_schema_adapter import (
     build_result_column_schema,
 )
 from apps.predict.state.result_row import ResultRow
-from core.ml.features import TARGETS
 
 
 class PredictionResultAdapter:
     """Map service results to user-facing ResultRow values."""
 
-    def __init__(self, columns: tuple[PredictColumn, ...] | None = None) -> None:
+    def __init__(
+        self,
+        columns: tuple[PredictColumn, ...] | None = None,
+        *,
+        active_targets: tuple[str, ...] | None = None,
+        target_result_keys: tuple[tuple[str, str], ...] | None = None,
+        generation_id: str = "legacy",
+    ) -> None:
         self._columns = columns or build_result_column_schema()
-        self._target_to_result_key = {
+        self._target_to_result_key = dict(target_result_keys) if target_result_keys is not None else {
             column.ml_target: column.key for column in self._columns if column.ml_target
         }
+        self._active_targets = (
+            active_targets if active_targets is not None else tuple(self._target_to_result_key)
+        )
+        self._generation_id = generation_id
+
+    @property
+    def generation_id(self) -> str:
+        return self._generation_id
+
+    @property
+    def active_targets(self) -> tuple[str, ...]:
+        return self._active_targets
 
     def from_service_result(self, result: PredictionServiceResult) -> ResultRow:
         """Convert one service result into a ResultRow."""
@@ -32,7 +50,7 @@ class PredictionResultAdapter:
 
         missing_targets = [
             target
-            for target in TARGETS
+            for target in self._active_targets
             if target in self._target_to_result_key and target not in result.predictions
         ]
         values = {

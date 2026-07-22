@@ -8,8 +8,59 @@ class PredictSession:
     """Qt-free state container for a Predict workspace."""
 
     def __init__(self, case_store: CaseStore | None = None) -> None:
+        self._revision = 0
         self.case_store = case_store or CaseStore()
+        self.case_store.bind_mutation_callback(self._touch)
         self.results_by_case_id: dict[str, ResultRow] = {}
+
+    @property
+    def revision(self) -> int:
+        return self._revision
+
+    def _touch(self) -> None:
+        self._revision += 1
+
+    def set_autofill_value(
+        self, case_id: str, key: str, value: object, *, dirty: bool = False
+    ) -> None:
+        case = self.case_store.get_case(case_id)
+        changed = case.autofill_values.get(key) != value
+        case.autofill_values[key] = value
+        if dirty:
+            changed = changed or key not in case.dirty_fields
+            case.dirty_fields.add(key)
+        if changed:
+            self._touch()
+
+    def apply_case_projection(
+        self,
+        rows: tuple[tuple[str, dict, dict, set], ...],
+        *,
+        expected_revision: int,
+    ) -> None:
+        """Install a fully validated generation migration as one session mutation."""
+        if self._revision != expected_revision:
+            raise ValueError("Predict session changed after prepare")
+        if tuple(item[0] for item in rows) != self.case_order:
+            raise ValueError("Predict case structure changed after prepare")
+        cases = tuple(self.case_store.get_case(item[0]) for item in rows)
+        for case, (_case_id, inputs, autofill, dirty) in zip(cases, rows, strict=True):
+            case.input_values = dict(inputs)
+            case.autofill_values = dict(autofill)
+            case.dirty_fields = set(dirty)
+        self._touch()
+
+    def restore_case_projection(
+        self, rows: tuple[tuple[str, dict, dict, set], ...]
+    ) -> None:
+        if tuple(item[0] for item in rows) != self.case_order:
+            raise ValueError("Predict case structure changed before rollback")
+        for case_id, inputs, autofill, dirty in rows:
+            case = self.case_store.get_case(case_id)
+            case.input_values = dict(inputs)
+            case.autofill_values = dict(autofill)
+            case.dirty_fields = set(dirty)
+        self._touch()
 
     @property
     def case_order(self) -> tuple[str, ...]:
@@ -23,7 +74,9 @@ class PredictSession:
     def set_result(self, result: ResultRow) -> None:
         """Attach result state by case_id."""
         self.case_store.get_case(result.case_id)
-        self.results_by_case_id[result.case_id] = result
+        if self.results_by_case_id.get(result.case_id) != result:
+            self.results_by_case_id[result.case_id] = result
+            self._touch()
 
     def set_results(self, results: list[ResultRow]) -> None:
         """Attach several result states by case_id."""
@@ -32,16 +85,19 @@ class PredictSession:
 
     def clear_result(self, case_id: str) -> None:
         """Clear result state for one case."""
-        self.results_by_case_id.pop(case_id, None)
+        if self.results_by_case_id.pop(case_id, None) is not None:
+            self._touch()
 
     def clear_all_results(self) -> None:
         """Clear every result state."""
-        self.results_by_case_id.clear()
+        if self.results_by_case_id:
+            self.results_by_case_id.clear()
+            self._touch()
 
     def remove_results_for_cases(self, case_ids: list[str]) -> None:
         """Drop result state for removed cases."""
         for case_id in case_ids:
-            self.results_by_case_id.pop(case_id, None)
+            self.clear_result(case_id)
 
     def summary_counts(self) -> dict[str, int]:
         """Return lightweight status counts for the workspace status bar."""

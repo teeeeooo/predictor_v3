@@ -71,9 +71,11 @@ def build_input_column_schema(
     return tuple(column for column in columns if column.group in {"input", "auto"})
 
 
-def build_result_column_schema() -> tuple[PredictColumn, ...]:
+def build_result_column_schema(
+    rows: Sequence[PredictSchemaV2Row] | None = None,
+) -> tuple[PredictColumn, ...]:
     """Return result columns for the result table."""
-    return tuple(column for column in build_predict_column_schema() if column.key in _RESULT_KEYS)
+    return tuple(column for column in build_predict_column_schema(rows) if column.is_result)
 
 
 def dropdown_columns() -> tuple[PredictColumn, ...]:

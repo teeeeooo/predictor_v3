@@ -45,6 +45,13 @@ class StandalonePredictGenerationGuard:
         )
         try:
             prepared = self._participant.prepare(candidate)
+            if prepared.compatibility != "compatible":
+                self._participant.abort(prepared)
+                return self._block(
+                    "Retraining required",
+                    "model_incompatible",
+                    "Retrain or reload a compatible model",
+                )
             if (
                 self._repository.read_active().manifest.generation.generation_id != persisted
                 or self._participant.revision_token() != revision
@@ -56,19 +63,18 @@ class StandalonePredictGenerationGuard:
                 self._participant.rollback(prior)
                 return self._block("Restart required", "mixed_generation_detected", "Restart Required")
         except Exception:
+            if "prepared" in locals():
+                try:
+                    self._participant.abort(prepared)
+                except Exception:
+                    return self._block(
+                        "Restart required", "predict_abort_failed", "Restart Required"
+                    )
             return self._block("Reload failed", "predict_reload_failed", "Retry Reload")
-        self.status = (
-            "Retraining required"
-            if prepared.compatibility != "compatible" else "Up to date"
-        )
-        self.blocker_code = (
-            "model_incompatible" if prepared.compatibility != "compatible" else ""
-        )
-        self.recommended_action = (
-            "Retrain or reload a compatible model"
-            if prepared.compatibility != "compatible" else ""
-        )
-        return prepared.compatibility == "compatible"
+        self.status = "Up to date"
+        self.blocker_code = ""
+        self.recommended_action = ""
+        return True
 
     def _block(self, status: str, blocker: str, action: str) -> bool:
         self.status = status

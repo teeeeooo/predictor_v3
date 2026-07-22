@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import hashlib
 
 from core.data_definition.mapping_requirement_contract import (
     EffectiveMappingRequirement,
@@ -169,6 +170,28 @@ class DataMappingService:
     @property
     def is_dirty(self) -> bool:
         return self._session.dirty
+
+    @property
+    def draft_baseline(self):  # noqa: ANN201
+        return self._session.draft, self._session.baseline
+
+    def mapping_resource_revision(self) -> str:
+        """Return bounded concrete-provider evidence for transition stale guards."""
+        mapping_file = getattr(self._provider, "mapping_file", None)
+        if not mapping_file:
+            return "provider:memory"
+        path = Path(mapping_file)
+        if not path.is_file():
+            return "provider:missing"
+        try:
+            content = path.read_bytes()
+            stat = path.stat()
+        except OSError:
+            return "provider:unreadable"
+        return (
+            f"provider:file:{stat.st_size}:{stat.st_mtime_ns}:"
+            f"{hashlib.sha256(content).hexdigest()}"
+        )
 
     def activate_initial_requirements(
         self, requirements: tuple[MappingRequirement, ...]

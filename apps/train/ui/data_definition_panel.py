@@ -195,6 +195,12 @@ class DataDefinitionPanel(QWidget):
         self._apply_state(self._controller.refresh())
         self._behavior.restore_workspace_focus(focus)
 
+    def apply_runtime_state(self, state: DataDefinitionControllerState) -> None:
+        """Render one coordinator-committed controller state without reloading."""
+        focus = self._behavior.workspace_focus()
+        self._apply_state(state)
+        self._behavior.restore_workspace_focus(focus)
+
     def _apply_state(self, state: DataDefinitionControllerState) -> None:
         previous_values = self._selected_values()
         previous_key = previous_values.get("column_key", "") if previous_values else ""

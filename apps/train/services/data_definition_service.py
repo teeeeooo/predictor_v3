@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from apps.train.application.data_definition import (
     DataDefinitionGenerationRepositoryPort,
+    GenerationSnapshot,
     PreparedFeatureCommand,
 )
 from core.data_definition import (
@@ -138,6 +139,24 @@ class DataDefinitionService:
     def refresh_draft(self) -> DataDefinitionDraft:
         """Discard in-memory edits and reload the draft."""
         return self.load_draft()
+
+    def draft_from_generation(self, snapshot: GenerationSnapshot) -> DataDefinitionDraft:
+        """Build a candidate controller baseline without reading the active pointer."""
+        draft = build_data_definition_draft(
+            schema_path=snapshot.path / "projections" / "schema.csv",
+            manifest=snapshot.manifest,
+        )
+        return replace(
+            draft,
+            base_generation_id=snapshot.manifest.generation.generation_id,
+        )
+
+    def report_from_generation(self, snapshot: GenerationSnapshot) -> DataDefinitionReport:
+        """Build candidate report evidence from the same immutable bundle."""
+        return build_data_definition_report(
+            schema_path=snapshot.path / "projections" / "schema.csv",
+            feature_catalog_path=snapshot.path / "projections" / "features.csv",
+        )
 
     def edit_draft_cell(
         self,

@@ -10,6 +10,7 @@ from apps.predict.ui.shell import PredictShell
 from apps.common.runtime_generation.paths import default_generation_root
 from apps.common.runtime_generation.repository import DataDefinitionGenerationRepository
 from apps.predict.application.runtime_generation_participant import PredictRuntimeParticipant
+from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from core.data_definition.contract import load_manifest
 from core.ml.artifacts import MODEL_FILE
 from pathlib import Path
@@ -32,8 +33,8 @@ def create_shell(
         repository.publish(load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH))
         active = repository.read_active()
     composition = build_predict_workspace_composition(
-        one_hot_snapshot=active.projections.one_hot_runtime,
-        predict_projection=active.projections.predict,
+        runtime_snapshot=build_predict_runtime_snapshot(active),
+        model_file=MODEL_FILE,
     )
     participant = PredictRuntimeParticipant(
         active, composition, model_file=MODEL_FILE

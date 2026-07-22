@@ -1,6 +1,6 @@
 """Qt-free variable-size case storage."""
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from apps.predict.state.case_row import CaseRow
 
@@ -8,10 +8,16 @@ from apps.predict.state.case_row import CaseRow
 class CaseStore:
     """Own ordered prediction cases without assuming a fixed row count."""
 
-    def __init__(self) -> None:
+    def __init__(self, mutation_callback: Callable[[], None] | None = None) -> None:
         self._cases_by_id: dict[str, CaseRow] = {}
         self._case_order: list[str] = []
         self._next_case_number = 1
+        self._mutation_callback = mutation_callback or (lambda: None)
+
+    def bind_mutation_callback(self, callback: Callable[[], None]) -> None:
+        self._mutation_callback = callback
+        for case in self._cases_by_id.values():
+            case.bind_mutation_callback(callback)
 
     @property
     def case_order(self) -> tuple[str, ...]:
@@ -25,7 +31,10 @@ class CaseStore:
         """Append empty case rows and return the created rows."""
         if count < 0:
             raise ValueError("count must be non-negative")
-        return [self._append_case() for _ in range(count)]
+        rows = [self._append_case() for _ in range(count)]
+        if rows:
+            self._mutation_callback()
+        return rows
 
     def insert_empty_rows(self, index: int, count: int = 1) -> list[CaseRow]:
         """Insert empty case rows at index and return the created rows."""
@@ -36,6 +45,8 @@ class CaseStore:
         for offset, row in enumerate(rows):
             self._cases_by_id[row.case_id] = row
             self._case_order.insert(insert_at + offset, row.case_id)
+        if rows:
+            self._mutation_callback()
         return rows
 
     def remove_rows(self, case_ids: Iterable[str]) -> list[str]:
@@ -50,6 +61,8 @@ class CaseStore:
             else:
                 kept_order.append(case_id)
         self._case_order = kept_order
+        if removed:
+            self._mutation_callback()
         return removed
 
     def remove_row_indexes(self, indexes: Iterable[int]) -> list[str]:
@@ -85,4 +98,4 @@ class CaseStore:
     def _create_case(self) -> CaseRow:
         case_id = f"case-{self._next_case_number:04d}"
         self._next_case_number += 1
-        return CaseRow(case_id=case_id)
+        return CaseRow(case_id=case_id, _mutation_callback=self._mutation_callback)

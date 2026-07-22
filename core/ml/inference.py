@@ -20,7 +20,12 @@ from core.ml.feature_catalog import load_feature_catalog, validate_feature_catal
 CURRENT_PREPROCESS_VERSION = "v1.0"
 ZERO_FILL_ALLOWED_POLICY = "mode_missing_allowed"
 
-def load_model(model_file):
+def load_model(
+    model_file,
+    *,
+    preprocess_version=CURRENT_PREPROCESS_VERSION,
+    validate_static_catalog=True,
+):
     """
     통합 모델 파일(model.pkl)을 로드하고 버전을 검증합니다.
     """
@@ -34,25 +39,36 @@ def load_model(model_file):
 
     # 1. preprocess_version 체크 (Lite 안전장치)
     model_version = model_data.get("preprocess_version")
-    if model_version != CURRENT_PREPROCESS_VERSION:
+    if model_version != preprocess_version:
         raise ValueError(
-            f"모델 버전 불일치 (모델: {model_version}, 코드: {CURRENT_PREPROCESS_VERSION}). "
+            f"모델 버전 불일치 (모델: {model_version}, 코드: {preprocess_version}). "
             "데이터 파이프라인이 변경되었으므로 재학습이 필요합니다."
         )
-    validate_model_catalog_fingerprint(model_data)
+    if validate_static_catalog:
+        validate_model_catalog_fingerprint(model_data)
 
     return model_data
 
-def build_input_df(row_dict, required_features=None):
+def build_input_df(
+    row_dict,
+    required_features=None,
+    *,
+    derived_snapshot=None,
+    zero_fill_policies=None,
+    ordered_input_features=None,
+):
     """
     UI에서 전달된 딕셔너리를 바탕으로 파생 피처가 포함된 DataFrame을 생성합니다.
     row_dict: {"Cooling Capa": 3500, "R32": 1, ...} 형태 (ml_feature 기준)
     """
     # 1. 딕셔너리를 단일 행 DataFrame으로 변환
     df = pd.DataFrame([row_dict])
-    zero_fill_policies = _load_zero_fill_policies()
+    zero_fill_policies = (
+        _load_zero_fill_policies()
+        if zero_fill_policies is None else dict(zero_fill_policies)
+    )
     missing_required = []
-    snapshot = current_derived_evaluation_snapshot()
+    snapshot = derived_snapshot or current_derived_evaluation_snapshot()
     requested_outputs = (
         tuple(item.output_ml_name for item in snapshot.definitions)
         if required_features is None
@@ -66,6 +82,7 @@ def build_input_df(row_dict, required_features=None):
         required_features,
         snapshot=snapshot,
         dependency_projection=dependency_projection,
+        ordered_input_features=ordered_input_features,
     )
 
     # 2. 누락된 기본 피처가 있는지 확인
@@ -107,36 +124,59 @@ def _required_base_features(
     *,
     snapshot=None,
     dependency_projection=None,
+    ordered_input_features=None,
 ):  # noqa: ANN001
-    if required_features is None:
-        return list(BASE_FEATURES)
     snapshot = snapshot or current_derived_evaluation_snapshot()
     dependency_projection = dependency_projection or project_derived_input_dependencies(
         snapshot,
-        required_features,
+        (
+            tuple(item.output_ml_name for item in snapshot.definitions)
+            if required_features is None else required_features
+        ),
     )
     derived_names = {item.output_ml_name for item in snapshot.definitions}
-    ordered = [item for item in required_features if item not in derived_names]
+    source_order = (
+        BASE_FEATURES if ordered_input_features is None else ordered_input_features
+    )
+    ordered = [
+        item for item in (source_order if required_features is None else required_features)
+        if item not in derived_names
+    ]
     ordered.extend(item.ml_name for item in dependency_projection.base_inputs)
     return list(dict.fromkeys(ordered))
 
 
-def predict_row(model_data, row_dict):
+def predict_row(
+    model_data,
+    row_dict,
+    *,
+    targets=None,
+    derived_snapshot=None,
+    zero_fill_policies=None,
+    ordered_input_features=None,
+):
     """
     로드된 모델 데이터와 입력 딕셔너리를 사용하여 모든 타겟에 대한 예측을 수행합니다.
     """
     # 1. 입력 데이터 가공
     required_input_features = []
-    for target in TARGETS:
+    active_targets = tuple(TARGETS if targets is None else targets)
+    for target in active_targets:
         required_features = model_data["features"].get(target)
         if required_features:
             required_input_features.extend(required_features)
-    input_df = build_input_df(row_dict, required_input_features or None)
+    input_df = build_input_df(
+        row_dict,
+        required_input_features or None,
+        derived_snapshot=derived_snapshot,
+        zero_fill_policies=zero_fill_policies,
+        ordered_input_features=ordered_input_features,
+    )
 
     results = {}
 
     # 2. 각 타겟별로 개별 모델 예측 수행
-    for target in TARGETS:
+    for target in active_targets:
         # 해당 타겟 학습 시 사용된 피처 리스트 로드
         required_features = model_data["features"].get(target)
         model = model_data["models"].get(target)

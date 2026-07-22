@@ -163,11 +163,19 @@ class RuntimeGenerationCoordinator:
                 candidate.generation_id,
             )
         if any(item.active_generation_id != candidate.generation_id for item in self._participants):
+            rollback_failed = False
             for participant, prior in reversed(prior_states):
-                participant.rollback(prior)
+                try:
+                    participant.rollback(prior)
+                except Exception:
+                    rollback_failed = True
             return self._failed(
-                "mixed_generation", "Restart required", "post-commit",
-                "mixed_generation_detected", "Restart Required", candidate.generation_id,
+                "rollback_failed" if rollback_failed else "mixed_generation",
+                "Restart required",
+                "rollback" if rollback_failed else "post-commit",
+                "rollback_failed" if rollback_failed else "mixed_generation_detected",
+                "Restart Required",
+                candidate.generation_id,
             )
         compatibility = next(
             (item.compatibility for item in prepared if item.compatibility != "compatible"),

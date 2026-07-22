@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from apps.predict.composition import build_predict_workspace_composition
+from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.common.runtime_generation.paths import default_generation_root
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
@@ -44,11 +45,17 @@ def create_shell(
         active = repository.read_active()
 
     predict_composition = build_predict_workspace_composition(
-        one_hot_snapshot=active.projections.one_hot_runtime,
-        predict_projection=active.projections.predict,
+        runtime_snapshot=build_predict_runtime_snapshot(active),
+        model_file=MODEL_FILE,
     )
     mapping_service = DataMappingService()
-    definition_participant = DefinitionRuntimeParticipant(active)
+    definition_controller = DataDefinitionController(DataDefinitionService(
+        generation_repository=repository,
+        vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
+    ))
+    definition_participant = DefinitionRuntimeParticipant(
+        active, definition_controller
+    )
     predict_participant = PredictRuntimeParticipant(
         active, predict_composition, model_file=MODEL_FILE
     )
@@ -60,10 +67,6 @@ def create_shell(
         train_participant,
         mapping_participant,
     ))
-    definition_controller = DataDefinitionController(DataDefinitionService(
-        generation_repository=repository,
-        vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
-    ))
     train_controller = TrainController(
         execution_factory=QProcessTrainingRunner,
         registry_provider=lambda: train_participant.registry_snapshot,
@@ -74,6 +77,7 @@ def create_shell(
         data_mapping_controller=DataMappingController(mapping_service),
         predict_composition=predict_composition,
         generation_coordinator=coordinator,
+        definition_participant=definition_participant,
         predict_participant=predict_participant,
         train_participant=train_participant,
         mapping_participant=mapping_participant,

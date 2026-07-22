@@ -21,6 +21,7 @@ from core.data_definition.one_hot import (
     one_hot_runtime_snapshot,
 )
 
+
 class RowToMlInputAdapter:
     """Build core predictor input dictionaries without importing Qt."""
 
@@ -41,6 +42,10 @@ class RowToMlInputAdapter:
             if one_hot_groups is not None
             else default_snapshot
         )
+
+    @property
+    def generation_id(self) -> str:
+        return self._one_hot_snapshot.generation_id
 
     def build_request(self, case: CaseRow) -> PredictionInputOutcome:
         """Return a structured request or row-level validation errors."""
