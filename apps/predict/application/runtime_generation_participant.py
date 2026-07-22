@@ -20,14 +20,18 @@ from apps.predict.composition import (
     build_predict_workspace_composition,
 )
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
-from apps.predict.state.predict_session import PredictSession
+from apps.predict.state.predict_session import (
+    PredictSession,
+    PredictSessionProjection,
+)
+from apps.predict.state.result_row import ResultRow
 
 
 @dataclass(frozen=True)
 class _PredictPrepared:
     snapshot: object
     composition: PredictWorkspaceComposition
-    migrated_rows: tuple[tuple[str, dict, dict, set], ...]
+    session_projection: PredictSessionProjection
     compatibility: ModelCompatibilityEvidence
     session_revision: int
 
@@ -82,7 +86,10 @@ class PredictRuntimeParticipant:
         compatibility = self._compatibility_inspector(
             self._model_file, candidate.snapshot
         )
-        migrated = _migrated_case_rows(
+        migrated_cases = _migrated_case_rows(
+            self._composition.session, self._active, candidate.snapshot
+        )
+        migrated_results = _migrated_result_rows(
             self._composition.session, self._active, candidate.snapshot
         )
         controller = self._composition.prediction_controller
@@ -99,7 +106,11 @@ class PredictRuntimeParticipant:
         payload = _PredictPrepared(
             candidate.snapshot,
             composition,
-            migrated,
+            PredictSessionProjection(
+                self._composition.session.case_order,
+                migrated_cases,
+                migrated_results,
+            ),
             compatibility,
             self._composition.session.revision,
         )
@@ -118,7 +129,11 @@ class PredictRuntimeParticipant:
                 "Predict cases, model, or execution state changed after prepare.",
                 "Retry Apply",
             )
-        prior = self._active, self._composition, _case_state(self._composition.session)
+        prior = (
+            self._active,
+            self._composition,
+            self._composition.session.snapshot_runtime_projection(),
+        )
         payload: _PredictPrepared = prepared.payload
         runtime_generation = payload.composition.runtime_snapshot.generation_id
         semantic_generations = {
@@ -136,8 +151,8 @@ class PredictRuntimeParticipant:
                 "Prepared Predict execution semantics do not share one generation.",
                 "Restart Required",
             )
-        self._composition.session.apply_case_projection(
-            payload.migrated_rows,
+        self._composition.session.apply_runtime_projection(
+            payload.session_projection,
             expected_revision=payload.session_revision,
         )
         self._composition = payload.composition
@@ -145,10 +160,10 @@ class PredictRuntimeParticipant:
         return prior
 
     def rollback(self, prior_state: object) -> None:
-        active, composition, cases = prior_state
+        active, composition, session_state = prior_state
         self._active = active
         self._composition = composition
-        _restore_case_state(composition.session, cases)
+        composition.session.restore_runtime_projection(session_state)
 
     def abort(self, prepared: PreparedParticipant) -> None:
         return None
@@ -191,17 +206,37 @@ def _migrated_case_rows(
     return tuple(migrated)
 
 
-def _case_state(session: PredictSession) -> object:
-    return tuple(
-        (
-            case_id,
-            dict(session.case_store.get_case(case_id).input_values),
-            dict(session.case_store.get_case(case_id).autofill_values),
-            set(session.case_store.get_case(case_id).dirty_fields),
-        )
-        for case_id in session.case_order
-    )
+def _migrated_result_rows(
+    session: PredictSession,
+    active,
+    candidate,
+) -> tuple[ResultRow, ...]:  # noqa: ANN001
+    active_keys = _active_result_keys_by_identity(active)
+    candidate_keys = _active_result_keys_by_identity(candidate)
+    shared_identities = active_keys.keys() & candidate_keys.keys()
+    migrated = []
+    for case_id in session.case_order:
+        existing = session.results_by_case_id.get(case_id)
+        if existing is None:
+            continue
+        values = {
+            candidate_keys[identity]: existing.result_values[active_keys[identity]]
+            for identity in shared_identities
+            if active_keys[identity] in existing.result_values
+        }
+        migrated.append(ResultRow(
+            case_id=case_id,
+            status=existing.status,
+            result_values=values,
+            message=existing.message,
+        ))
+    return tuple(migrated)
 
 
-def _restore_case_state(session: PredictSession, state: object) -> None:
-    session.restore_case_projection(state)
+def _active_result_keys_by_identity(snapshot) -> dict[str, str]:  # noqa: ANN001
+    features = {item.identity: item for item in snapshot.manifest.features}
+    return {
+        target.feature_identity: features[target.feature_identity].column_key
+        for target in snapshot.manifest.targets
+        if target.active and target.feature_identity in features
+    }

@@ -1,7 +1,18 @@
 """Predict workspace session state."""
 
+from dataclasses import dataclass
+
 from apps.predict.state.case_store import CaseStore
 from apps.predict.state.result_row import ResultRow
+
+
+@dataclass(frozen=True)
+class PredictSessionProjection:
+    """Complete case/result state for one generation transition."""
+
+    case_order: tuple[str, ...]
+    cases: tuple[tuple[str, dict, dict, set], ...]
+    results: tuple[ResultRow, ...]
 
 
 class PredictSession:
@@ -32,35 +43,75 @@ class PredictSession:
         if changed:
             self._touch()
 
-    def apply_case_projection(
+    def apply_runtime_projection(
         self,
-        rows: tuple[tuple[str, dict, dict, set], ...],
+        projection: PredictSessionProjection,
         *,
         expected_revision: int,
     ) -> None:
-        """Install a fully validated generation migration as one session mutation."""
+        """Install a validated case/result migration as one session mutation."""
         if self._revision != expected_revision:
             raise ValueError("Predict session changed after prepare")
-        if tuple(item[0] for item in rows) != self.case_order:
-            raise ValueError("Predict case structure changed after prepare")
-        cases = tuple(self.case_store.get_case(item[0]) for item in rows)
-        for case, (_case_id, inputs, autofill, dirty) in zip(cases, rows, strict=True):
-            case.input_values = dict(inputs)
-            case.autofill_values = dict(autofill)
-            case.dirty_fields = set(dirty)
+        self._validate_projection(projection)
+        cases = tuple(
+            self.case_store.get_case(item[0]) for item in projection.cases
+        )
+        case_values = tuple(
+            (dict(inputs), dict(autofill), set(dirty))
+            for _case_id, inputs, autofill, dirty in projection.cases
+        )
+        results = {
+            result.case_id: _copy_result(result) for result in projection.results
+        }
+        for case, (inputs, autofill, dirty) in zip(
+            cases, case_values, strict=True
+        ):
+            case.input_values = inputs
+            case.autofill_values = autofill
+            case.dirty_fields = dirty
+        self.results_by_case_id = results
         self._touch()
 
-    def restore_case_projection(
-        self, rows: tuple[tuple[str, dict, dict, set], ...]
+    def restore_runtime_projection(
+        self, projection: PredictSessionProjection
     ) -> None:
-        if tuple(item[0] for item in rows) != self.case_order:
-            raise ValueError("Predict case structure changed before rollback")
-        for case_id, inputs, autofill, dirty in rows:
-            case = self.case_store.get_case(case_id)
-            case.input_values = dict(inputs)
-            case.autofill_values = dict(autofill)
-            case.dirty_fields = set(dirty)
-        self._touch()
+        """Restore one complete rollback snapshot without changing case identity."""
+        self._validate_projection(projection)
+        self.apply_runtime_projection(
+            projection,
+            expected_revision=self._revision,
+        )
+
+    def snapshot_runtime_projection(self) -> PredictSessionProjection:
+        """Copy all mutable case and result state for exact rollback."""
+        return PredictSessionProjection(
+            case_order=self.case_order,
+            cases=tuple(
+                (
+                    case_id,
+                    dict(self.case_store.get_case(case_id).input_values),
+                    dict(self.case_store.get_case(case_id).autofill_values),
+                    set(self.case_store.get_case(case_id).dirty_fields),
+                )
+                for case_id in self.case_order
+            ),
+            results=tuple(
+                _copy_result(self.results_by_case_id[case_id])
+                for case_id in self.case_order
+                if case_id in self.results_by_case_id
+            ),
+        )
+
+    def _validate_projection(self, projection: PredictSessionProjection) -> None:
+        if projection.case_order != self.case_order:
+            raise ValueError("Predict case structure changed after prepare")
+        if tuple(item[0] for item in projection.cases) != projection.case_order:
+            raise ValueError("Predict case projection order is invalid")
+        result_ids = tuple(result.case_id for result in projection.results)
+        if len(result_ids) != len(set(result_ids)) or not set(result_ids).issubset(
+            projection.case_order
+        ):
+            raise ValueError("Predict result projection identity is invalid")
 
     @property
     def case_order(self) -> tuple[str, ...]:
@@ -137,3 +188,12 @@ class PredictSession:
             "warnings": warnings,
             "dirty": dirty,
         }
+
+
+def _copy_result(result: ResultRow) -> ResultRow:
+    return ResultRow(
+        case_id=result.case_id,
+        status=result.status,
+        result_values=dict(result.result_values),
+        message=result.message,
+    )

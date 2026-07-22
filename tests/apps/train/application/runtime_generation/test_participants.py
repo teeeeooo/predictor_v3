@@ -60,7 +60,11 @@ def test_predict_prepare_preserves_rows_results_and_commit_keeps_identity_values
     case_id = composition.session.case_order[0]
     case = composition.session.case_store.get_case(case_id)
     case.set_input_value("cooling_capa", "3500")
-    result = ResultRow(case_id=case_id, status="complete", result_values={"Cooling Power": 1.0})
+    result = ResultRow(
+        case_id=case_id,
+        status="complete",
+        result_values={"cooling_power": 1.0},
+    )
     composition.session.set_result(result)
     participant = PredictRuntimeParticipant(
         active,

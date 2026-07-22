@@ -27,6 +27,7 @@ from core.data_definition.contract import bootstrap_manifest
 from apps.predict.application.model_compatibility import ModelCompatibilityEvidence
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.predict.composition import build_predict_workspace_composition
+from apps.predict.state.result_row import ResultRow
 
 
 def _candidate(snapshot, participant):  # noqa: ANN001
@@ -261,6 +262,7 @@ def _coordinator_setup(tmp_path, *, failing_train=False):  # noqa: ANN001
     coordinator = RuntimeGenerationCoordinator(
         repository, (definition, predict, train, mapping)
     )
+    first_target = first.targets[0]
     second = replace(
         first,
         generation=replace(
@@ -268,7 +270,20 @@ def _coordinator_setup(tmp_path, *, failing_train=False):  # noqa: ANN001
             generation_id="generation-b",
             parent_generation_id=first.generation.generation_id,
         ),
+        features=tuple(
+            replace(
+                item,
+                column_key="cooling_power_runtime_b",
+                ml_name="Cooling Power Runtime B",
+            )
+            if item.identity == first_target.feature_identity else item
+            for item in first.features
+        ),
         derived=(replace(first.derived[0], zero_value=4.0), *first.derived[1:]),
+        targets=(
+            replace(first_target, ml_name="Cooling Power Runtime B"),
+            *first.targets[1:],
+        ),
     )
     repository.publish(second)
     return coordinator, (definition, predict, train, mapping), controller
@@ -277,6 +292,11 @@ def _coordinator_setup(tmp_path, *, failing_train=False):  # noqa: ANN001
 def test_real_participants_prepare_a_then_commit_b_with_owner_parity(tmp_path):
     coordinator, participants, controller = _coordinator_setup(tmp_path)
     definition, predict, train, mapping = participants
+    session = predict.composition.session
+    case_id = session.case_order[0]
+    session.set_result(ResultRow(
+        case_id, "complete", {"cooling_power": "123"}, "before cutover"
+    ))
 
     assert coordinator.prepare_all().code == "prepared"
     assert len({item.active_generation_id for item in participants}) == 1
@@ -288,6 +308,12 @@ def test_real_participants_prepare_a_then_commit_b_with_owner_parity(tmp_path):
     assert {item.active_generation_id for item in participants} == {"generation-b"}
     assert controller.runtime_generation_id == "generation-b"
     assert predict.composition.runtime_snapshot.derived.definitions[0].zero_value == 4.0
+    assert session.result_for_case(case_id) == ResultRow(
+        case_id,
+        "complete",
+        {"cooling_power_runtime_b": "123"},
+        "before cutover",
+    )
     assert train.registry_snapshot.generation_id == "generation-b"
     assert mapping.active_snapshot.manifest.generation.generation_id == "generation-b"
 
@@ -297,6 +323,12 @@ def test_real_participant_commit_failure_rolls_definition_and_predict_back_to_a(
         tmp_path, failing_train=True
     )
     _definition, predict, _train, _mapping = participants
+    session = predict.composition.session
+    case_id = session.case_order[0]
+    original = ResultRow(
+        case_id, "partial", {"cooling_power": "321"}, "original warning"
+    )
+    session.set_result(original)
 
     status = coordinator.request_cutover()
 
@@ -305,3 +337,5 @@ def test_real_participant_commit_failure_rolls_definition_and_predict_back_to_a(
     assert "generation-b" not in {item.active_generation_id for item in participants}
     assert controller.runtime_generation_id != "generation-b"
     assert predict.composition.runtime_snapshot.derived.definitions[0].zero_value == 0.0
+    assert predict.composition.runtime_snapshot.target_result_keys[0][1] == "cooling_power"
+    assert session.result_for_case(case_id) == original
