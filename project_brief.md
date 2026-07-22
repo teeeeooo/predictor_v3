@@ -5,9 +5,9 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin Phase 4E — Restricted Derived Feature Authoring and Shared Evaluator
-is implemented over the Phase 4B–4D foundation. Phase 4F One-hot group/category
-CRUD is next after the Phase 4E integration boundary.
+Train/Admin Phase 4 Unified Feature Manager is implemented through Phase 4H+4I
+for final audit. Phase 5 Train/Model and Shell UX is next after merge; it has not
+started.
 
 Phase 3 — Data Definition UX Foundation is complete, final-audit approved, and
 merged through PR #16. The earlier ML/Predictor foundation through Arc 15-FU1 and
@@ -86,6 +86,11 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train/Admin UI/UX Overhaul Phase 4E — identity-based Derived operands,
   restricted safe-ratio authoring, deterministic DAG ordering, versioned legacy
   generation decode, and one Train/Predict shared evaluator implemented.
+- Train/Admin UI/UX Overhaul Phase 4F–4G — stable-identity One-hot and canonical
+  Target/registry authoring implemented and merged through PR #24.
+- Train/Admin UI/UX Overhaul Phase 4H+4I — process-wide atomic generation
+  cutover, standalone Predict drift detection, dirty Mapping reconciliation,
+  recovery diagnostics, and Phase 4 automated closeout implemented for audit.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -106,7 +111,7 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
 
 ### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
 
-The Phase 4A audit is approved and Phases 4B–4E are implemented. The final
+The Phase 4A audit is approved and Phases 4B–4I are implemented. The final
 workflow lets a user manage Predict and
 ML Feature contracts without directly editing internal CSV, JSON, Python registry,
 or projection files:
@@ -137,8 +142,8 @@ Concrete mapping values remain in Data Mapping. Training remains an explicit use
 action in Train. Data Definition does not trigger training or automatic model
 activation, and Predict internal redesign is not part of Phase 4.
 
-The next slice is Phase 4F, which adds bounded One-hot group/category lifecycle
-without changing Mapping values, Target/registry ownership, or runtime cutover.
+Phase 4 now waits for final audit and merge. Phase 5 is the next code workstream;
+no Phase 5 UX or model-promotion implementation is included in this closeout.
 
 ### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
 
@@ -176,8 +181,7 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Slices 4C–4I remain deferred until Phase 4B establishes the approved canonical
-  contract and persistence foundation.
+- Phase 5 remains deferred until Phase 4H+4I final audit and merge.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.

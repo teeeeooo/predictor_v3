@@ -1,6 +1,6 @@
 # Train/Admin Phase 4 — Unified Feature Manager
 
-Status: active phase — Slices 4A–4D complete; Slice 4E next
+Status: Phase 4A–4I implemented for final audit; Phase 5 remains deferred
 Date: 2026-07-17
 Depends on: completed Phases 1–3, especially the Phase 3 Data Definition UX foundation
 
@@ -655,6 +655,14 @@ model-level contract validation.
 
 ### 4H — Live Reload and Cross-tab Contract Refresh
 
+Implementation closeout (2026-07-22): complete for repository-automated scope.
+The application coordinator freezes one validated repository snapshot, prepares
+all four required participants without active mutation, rejects pointer/revision
+drift, and commits only after all are ready. Commit failure rolls back prior state;
+rollback or abort failure becomes Restart required. Mapping reconciliation remains
+inside its owner, and standalone Predict checks generation drift at startup,
+Refresh, and prediction boundaries.
+
 Purpose: let Predict, Train, and Data Mapping consume the saved contract without
 restart while preserving each owner's responsibility and user state by stable
 identity.
@@ -677,6 +685,12 @@ restart-required state, and does not claim unsupported cross-process atomic
 cutover.
 
 ### 4I — Diagnostics Simplification and Final Acceptance
+
+Implementation closeout (2026-07-22): complete for repository-automated scope.
+Default statuses are concise (`Up to date`, `Saved and applied`, `Saved; update
+pending`, `Mapping review required`, `Reload failed`, `Restart required`, and
+`Retraining required`). Bounded details expose generation, stage, participant,
+blocker, recovery, model, and Mapping evidence without raw JSON or tracebacks.
 
 Purpose: separate ordinary Feature management from advanced diagnostic evidence
 and complete automated plus bounded native acceptance.
@@ -742,6 +756,10 @@ cross-tab acceptance, and honest fixture/mock limitations.
     prediction, explicit reload, or model-reload boundaries.
 30. A stale standalone Predict process preserves existing rows/results for
     recovery but blocks new prediction when generation reload cannot succeed.
+
+Phase 4 acceptance is closed for automated repository scope. Windows-native
+Train/Predict/Mapping smoke remains an explicit pre-release verification item and
+is not claimed by this closeout. Phase 5 is next and is not implemented here.
 
 ## 18. Non-goals
 
