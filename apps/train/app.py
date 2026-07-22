@@ -20,6 +20,7 @@ from apps.train.controllers.train_controller import TrainController
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.ui.shell import TrainShell
 from core.data_definition.contract import load_manifest
+from core.data_definition.target_registry.runtime import model_registry_snapshot
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DEFINITION_ROOT = PROJECT_ROOT / "config" / "data_definition"
@@ -64,7 +65,10 @@ def create_shell(
         generation_repository=repository,
         vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
     ))
-    controller = TrainController(execution_factory=QProcessTrainingRunner)
+    controller = TrainController(
+        execution_factory=QProcessTrainingRunner,
+        registry_provider=lambda: model_registry_snapshot(repository.read_active().manifest),
+    )
     return TrainShell(
         train_controller=controller,
         data_definition_controller=data_definition_controller,

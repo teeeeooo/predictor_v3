@@ -19,6 +19,12 @@ class TrainingRequest:
     data_path: str = TRAIN_DATA_FILE
     model_output_path: str = MODEL_FILE
     preprocess_version: str = DEFAULT_PREPROCESS_VERSION
+    generation_id: str = ""
+    registry_fingerprint: str = ""
+    ordered_ml_fingerprint: str = ""
+    derived_semantics_fingerprint: str = ""
+    one_hot_fingerprint: str = ""
+    registry_payload_json: str = ""
 
 
 @dataclass(frozen=True)
@@ -51,6 +57,8 @@ class TrainingResult:
     model_path: str = ""
     log_path: str = ""
     message: str = ""
+    generation_id: str = ""
+    registry_fingerprint: str = ""
 
 
 @dataclass(frozen=True)

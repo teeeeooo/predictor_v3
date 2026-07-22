@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
+import json
 from uuid import uuid4
 
 from apps.train.ports.training_execution_port import (
@@ -19,6 +21,8 @@ from apps.train.state.training_run_state import (
     TrainingResult,
 )
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
+from core.data_definition.target_registry.runtime import ModelRegistrySnapshot
+from core.ml.registry import compatibility_registry_snapshot
 
 
 StatusCallback = Callable[[str], None]
@@ -35,10 +39,12 @@ class TrainController:
         service: TrainingService | None = None,
         execution: TrainingExecutionPort | None = None,
         execution_factory: TrainingExecutionFactory | None = None,
+        registry_provider: Callable[[], ModelRegistrySnapshot] | None = None,
     ) -> None:
         self._service = service or TrainingService()
         self._execution = execution
         self._execution_factory = execution_factory
+        self._registry_provider = registry_provider
         self._is_running = False
         self._last_result: TrainingResult | None = None
         self._status_callback: StatusCallback | None = None
@@ -65,6 +71,10 @@ class TrainController:
     ) -> TrainingResourceStatus:
         """Return data/model status through the service boundary."""
         return self._service.resource_status(data_path, model_output_path)
+
+    def registry_snapshot(self) -> ModelRegistrySnapshot:
+        """Return the immutable registry choice that a new run will freeze."""
+        return self._registry_provider() if self._registry_provider else compatibility_registry_snapshot()
 
     def start(
         self,
@@ -114,12 +124,27 @@ class TrainController:
         model_output_path: str | None,
     ) -> TrainingRequest:
         if isinstance(request, TrainingRequest):
-            return request
+            return self._freeze_registry(request)
         resolved_data_path = data_path or request or TRAIN_DATA_FILE
-        return TrainingRequest(
+        return self._freeze_registry(TrainingRequest(
             run_id=f"train-{uuid4().hex}",
             data_path=str(resolved_data_path),
             model_output_path=str(model_output_path or MODEL_FILE),
+        ))
+
+    def _freeze_registry(self, request: TrainingRequest) -> TrainingRequest:
+        if request.registry_payload_json or self._registry_provider is None:
+            return request
+        snapshot = self._registry_provider()
+        return replace(
+            request,
+            preprocess_version=snapshot.preprocessing_version,
+            generation_id=snapshot.generation_id,
+            registry_fingerprint=snapshot.registry_fingerprint,
+            ordered_ml_fingerprint=snapshot.ordered_ml_fingerprint,
+            derived_semantics_fingerprint=snapshot.derived_semantics_fingerprint,
+            one_hot_fingerprint=snapshot.one_hot_fingerprint,
+            registry_payload_json=json.dumps(snapshot.to_payload(), ensure_ascii=False, separators=(",", ":")),
         )
 
     def _start_execution(self, request: TrainingRequest) -> TrainingResult | None:

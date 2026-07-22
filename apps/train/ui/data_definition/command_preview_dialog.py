@@ -37,6 +37,24 @@ class FeatureCommandPreviewDialog(QDialog):
         evidence.setAccessibleName("Feature command impact evidence")
         evidence.setWordWrap(True)
         layout.addWidget(evidence)
+        if preview.target_evidence is not None:
+            target = preview.target_evidence
+            target_label = QLabel(
+                f"Target identity: {target.target_identity}\n"
+                f"Result Feature: {target.result_feature_identity}\n"
+                f"Shape: {target.before or 'new'} → {target.after or 'removed'}\n"
+                f"Model group: {target.model_group_before or 'none'} → {target.model_group_after or 'none'}\n"
+                f"Policy: {target.policy_before or 'none'} → {target.policy_after or 'none'}\n"
+                f"Final training inputs: {', '.join(target.training_inputs_before) or 'none'} → "
+                f"{', '.join(target.training_inputs_after) or 'none'}\n"
+                f"Active Train Targets: {', '.join(target.active_targets_before)} → "
+                f"{', '.join(target.active_targets_after)}\n"
+                f"Presentation fingerprint changed: {target.presentation_fingerprint_changed}; "
+                f"registry fingerprint changed: {target.registry_fingerprint_changed}"
+            )
+            target_label.setAccessibleName("Target registry policy and training input impact")
+            target_label.setWordWrap(True)
+            layout.addWidget(target_label)
         if preview.one_hot_evidence:
             one_hot = QLabel("\n".join(
                 f"• {item.group_key} / {item.source_value or '<group>'} → "

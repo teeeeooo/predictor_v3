@@ -31,6 +31,7 @@ from apps.train.ui.models.static_table_model import StaticTableModel
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
+# Compatibility-only golden. Production instances render controller.registry_snapshot().
 TARGETS = ("Cooling Power", "Heating Power", "Ref Qty", "Cooling Hz", "Heating Hz")
 
 
@@ -46,6 +47,10 @@ class TrainModelPanel(QWidget):
         super().__init__(parent)
         self.setObjectName("TrainModelPanel")
         self.training_controller = controller or TrainController()
+        self.targets = (
+            self.training_controller.registry_snapshot().active_target_names
+            if hasattr(self.training_controller, "registry_snapshot") else TARGETS
+        )
         self._on_model_status_changed = on_model_status_changed
 
         layout = QVBoxLayout(self)
@@ -109,8 +114,8 @@ class TrainModelPanel(QWidget):
         body.addWidget(self.model_path_line)
         body.addWidget(QLabel("preprocess version"))
         body.addWidget(_readonly_line("v1.0"))
-        body.addWidget(QLabel(f"모델/타겟 목록 ({len(TARGETS)})"))
-        for index, target in enumerate(TARGETS, start=1):
+        body.addWidget(QLabel(f"모델/타겟 목록 ({len(self.targets)})"))
+        for index, target in enumerate(self.targets, start=1):
             body.addWidget(_target_row(index, target))
         body.addStretch(1)
         return panel
@@ -129,14 +134,14 @@ class TrainModelPanel(QWidget):
         cards = QHBoxLayout()
         cards.addWidget(_metric_tile("완료", "0", "targets", "ready"))
         cards.addWidget(_metric_tile("진행 중", "0", "target", "running"))
-        cards.addWidget(_metric_tile("대기 중", str(len(TARGETS)), "targets", "missing"))
+        cards.addWidget(_metric_tile("대기 중", str(len(self.targets)), "targets", "missing"))
         body.addLayout(cards)
         body.addStretch(1)
         return panel
 
     def _build_summary_panel(self) -> QFrame:
         panel, body = _panel("Training Summary")
-        self.summary_table = _summary_table()
+        self.summary_table = _summary_table(self.targets)
         body.addWidget(self.summary_table)
         return panel
 
@@ -155,7 +160,7 @@ class TrainModelPanel(QWidget):
         grid = QGridLayout()
         grid.setSpacing(style.spacing("space.sm"))
         values = (
-            ("총 데이터 행 수", "0"), ("특성 수", "0"), ("타겟 수", str(len(TARGETS))),
+            ("총 데이터 행 수", "0"), ("특성 수", "0"), ("타겟 수", str(len(self.targets))),
             ("CV 폴드 수", "5"), ("Optuna Trials", "30"), ("예상 남은 시간", "--:--"),
         )
         for index, (label, value) in enumerate(values):
@@ -278,7 +283,7 @@ class TrainModelPanel(QWidget):
 
     def _set_summary_state(self, status: str) -> None:
         rows = tuple(
-            (str(row + 1), target, status, "-", "-") for row, target in enumerate(TARGETS)
+            (str(row + 1), target, status, "-", "-") for row, target in enumerate(self.targets)
         )
         self.summary_table.setModel(
             StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows)
@@ -367,8 +372,8 @@ def _metric_tile(label: str, value: str, detail: str, kind: str) -> QFrame:
     return tile
 
 
-def _summary_table() -> QTableView:
-    rows = tuple((str(row + 1), target, "대기 중", "-", "-") for row, target in enumerate(TARGETS))
+def _summary_table(targets: tuple[str, ...]) -> QTableView:
+    rows = tuple((str(row + 1), target, "대기 중", "-", "-") for row, target in enumerate(targets))
     table = QTableView()
     table.setModel(StaticTableModel(("#", "Target", "Status", "CV Mean", "Time"), rows))
     table.verticalHeader().setVisible(False)

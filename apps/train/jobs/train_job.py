@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dev-rows", type=int, default=12)
     parser.add_argument("--dev-predict-delay-ms", type=int, default=0)
     parser.add_argument("--hang-before-start", action="store_true")
+    parser.add_argument("--registry-payload-json", default="")
     return parser.parse_args()
 
 
@@ -80,6 +81,8 @@ def emit_result(
             "model_path": request.model_output_path,
             "log_path": log_path,
             "message": message,
+            "generation_id": request.generation_id,
+            "registry_fingerprint": request.registry_fingerprint,
         }
     )
 
@@ -87,10 +90,18 @@ def emit_result(
 def main() -> int:
     signal.signal(signal.SIGTERM, _handle_signal)
     args = parse_args()
+    registry_payload = json.loads(args.registry_payload_json) if args.registry_payload_json else {}
     request = TrainingRequest(
         run_id=args.run_id,
         data_path=args.data_path,
         model_output_path=args.model_output_path,
+        registry_payload_json=args.registry_payload_json,
+        preprocess_version=str(registry_payload.get("preprocessing_version", "v1.0")),
+        generation_id=str(registry_payload.get("generation_id", "")),
+        registry_fingerprint=str(registry_payload.get("registry_fingerprint", "")),
+        ordered_ml_fingerprint=str(registry_payload.get("ordered_ml_fingerprint", "")),
+        derived_semantics_fingerprint=str(registry_payload.get("derived_semantics_fingerprint", "")),
+        one_hot_fingerprint=str(registry_payload.get("one_hot_fingerprint", "")),
     )
     temp_model_path = Path(
         args.temp_model_output_path
@@ -125,11 +136,16 @@ def main() -> int:
             summary = _run_dev_fast(request, temp_model_path, args)
         else:
             from core.ml.training import train_all_models
+            from core.data_definition.target_registry.runtime import ModelRegistrySnapshot
 
             summary = train_all_models(
                 data_path=request.data_path,
                 log_callback=_log,
                 model_output_path=str(temp_model_path),
+                registry_snapshot=(
+                    ModelRegistrySnapshot.from_payload(json.loads(request.registry_payload_json))
+                    if request.registry_payload_json else None
+                ),
             )
         if _CANCELLED:
             cleanup_temp(temp_model_path)
