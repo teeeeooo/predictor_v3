@@ -3,7 +3,7 @@
 from core.mapping.autofill import build_autofill_updates
 
 from apps.predict.mapping.mapping_repository import PredictMappingRepository
-from apps.predict.schema.column_schema_adapter import column_by_key
+from apps.predict.schema.column_schema_adapter import PredictColumn, build_predict_column_schema
 from apps.predict.state.predict_session import PredictSession
 
 
@@ -14,9 +14,13 @@ class InputEditController:
         self,
         session: PredictSession,
         mapping_repository: PredictMappingRepository | None = None,
+        columns: tuple[PredictColumn, ...] | None = None,
     ) -> None:
         self._session = session
         self._mapping_repository = mapping_repository or PredictMappingRepository()
+        self._columns_by_key = {
+            item.key: item for item in (columns or build_predict_column_schema())
+        }
         self._dropdown_options: dict[str, tuple[str, ...]] = {}
         self._dropdown_options_by_case_id: dict[str, dict[str, tuple[str, ...]]] = {}
 
@@ -37,7 +41,9 @@ class InputEditController:
         result = build_autofill_updates(row_values, changed_key, mapping_data)
 
         for update in result.updates:
-            target = column_by_key(update.key)
+            target = self._columns_by_key.get(update.key)
+            if target is None:
+                continue
             if target.is_auto:
                 case.autofill_values[update.key] = update.value
             elif target.is_input:

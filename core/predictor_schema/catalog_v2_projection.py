@@ -35,6 +35,15 @@ def project_schema_v2_columns(catalog: PredictSchemaCatalogV2) -> list[dict]:
     return [_project_row(row) for row in sorted(rows, key=lambda row: row.display_order)]
 
 
+def project_schema_v2_rows(rows: tuple[PredictSchemaV2Row, ...]) -> list[dict]:
+    """Project an already validated immutable generation projection."""
+    visible = (
+        row for row in rows
+        if row.active and row.visible and row.role in CORE_PROJECTED_ROLES
+    )
+    return [_project_row(row) for row in sorted(visible, key=lambda row: row.display_order)]
+
+
 def one_hot_selector_groups(catalog: PredictSchemaCatalogV2) -> dict[str, str]:
     """Return selector column keys mapped to one-hot group names."""
     return {

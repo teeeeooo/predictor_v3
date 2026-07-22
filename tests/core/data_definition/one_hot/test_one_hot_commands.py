@@ -301,7 +301,8 @@ def test_source_mode_change_preserves_identities_and_is_model_sensitive(tmp_path
     ))
     assert preview.command_accepted
     assert preview.model_compatibility_changed
-    assert not preview.save_allowed
+    assert preview.requires_retraining
+    assert preview.save_allowed
     controller.apply_prepared_one_hot_command(preview)
     changed = controller.one_hot_authoring_projection().groups[0]
     assert changed.identity == group.identity

@@ -185,6 +185,17 @@ generation을 비교한 후 pointer를 교체하여 stale Save를 차단한다. 
 generation history와 active pointer는 source config가 아니라 사용자별 state
 root(`%LOCALAPPDATA%` 또는 `$XDG_STATE_HOME`/`~/.local/state`)에 저장한다.
 
+Runtime activation은 application-level generation coordinator가 소유한다.
+Coordinator는 검증된 immutable snapshot 하나만 candidate로 고정하고 Data
+Definition, embedded Predict, Train / Model, Data Mapping을 동등하게 prepare한
+뒤 pointer와 participant revision을 다시 확인한다. Prepare는 active state를
+교체하지 않으며 commit은 사전 계산된 state swap만 수행한다. Commit failure는
+이미 교체된 participant를 rollback하고, 복구를 증명할 수 없으면 mixed state를
+정상으로 노출하지 않고 Restart required로 승격한다. Standalone Predict는 shared
+repository adapter를 사용하되 startup/Refresh/prediction boundary reload를 독립
+소유한다. Concrete Mapping values와 model artifact는 Definition transaction 밖에
+남는다.
+
 Ordering owner는 Predict=`ordering.predict`, ordered ML=`ordering.ml`,
 Derived DAG=`ordering.derived`, One-hot emitted category=`category.order`, Target
 presentation=`ordering.targets`, model-group 내 Train Target iteration=`registry_order`다.

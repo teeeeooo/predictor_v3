@@ -23,6 +23,7 @@ class PredictCommandBar(QFrame):
         self.delete_row_button = QPushButton("행 삭제", self)
         self.paste_button = QPushButton("입력 붙여넣기", self)
         self.copy_results_button = QPushButton("결과 복사", self)
+        self.refresh_button = QPushButton("Refresh", self)
 
         self.cancel_button.setEnabled(False)
 
@@ -43,6 +44,7 @@ class PredictCommandBar(QFrame):
         layout.addSpacing(style.spacing("space.md"))
         layout.addWidget(self.paste_button)
         layout.addWidget(self.copy_results_button)
+        layout.addWidget(self.refresh_button)
         layout.addStretch(1)
 
     def set_running(self, running: bool) -> None:
@@ -53,3 +55,4 @@ class PredictCommandBar(QFrame):
         self.add_row_button.setEnabled(not running)
         self.delete_row_button.setEnabled(not running)
         self.paste_button.setEnabled(not running)
+        self.refresh_button.setEnabled(not running)

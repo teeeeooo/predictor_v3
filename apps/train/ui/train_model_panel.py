@@ -115,10 +115,30 @@ class TrainModelPanel(QWidget):
         body.addWidget(QLabel("preprocess version"))
         body.addWidget(_readonly_line("v1.0"))
         body.addWidget(QLabel(f"모델/타겟 목록 ({len(self.targets)})"))
-        for index, target in enumerate(self.targets, start=1):
-            body.addWidget(_target_row(index, target))
+        self.target_list_layout = QVBoxLayout()
+        body.addLayout(self.target_list_layout)
+        self._render_target_list()
         body.addStretch(1)
         return panel
+
+    def refresh_runtime_registry(self) -> None:
+        """Reflect the active process generation without changing a running request."""
+        self.targets = self.training_controller.registry_snapshot().active_target_names
+        self._render_target_list()
+        running = self.training_controller.active_request
+        if running is not None:
+            active = self.training_controller.registry_snapshot().generation_id
+            self._set_status_text(
+                f"Running generation {running.generation_id}; process active {active}."
+            )
+
+    def _render_target_list(self) -> None:
+        while self.target_list_layout.count():
+            item = self.target_list_layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+        for index, target in enumerate(self.targets, start=1):
+            self.target_list_layout.addWidget(_target_row(index, target))
 
     def _build_progress_panel(self) -> QFrame:
         panel, body = _panel("학습 진행 상황")

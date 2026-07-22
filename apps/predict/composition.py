@@ -26,9 +26,11 @@ from apps.predict.schema.case_table_schema_adapter import (
     UnifiedCaseColumn,
     build_case_table_column_schema,
 )
+from apps.predict.schema.column_schema_adapter import build_predict_column_schema
 from apps.predict.services.prediction_service import PredictionService
 from apps.predict.state.predict_session import PredictSession
 from core.data_definition.contract import bootstrap_manifest
+from core.predictor_schema.catalog_v2 import PredictSchemaV2Row
 from core.data_definition.one_hot import (
     OneHotRuntimeSnapshot,
     one_hot_runtime_snapshot,
@@ -59,6 +61,7 @@ def build_predict_workspace_composition(
     prediction_service: PredictionServicePort | None = None,
     runner_factory: PredictionRunnerFactory | None = None,
     one_hot_snapshot: OneHotRuntimeSnapshot | None = None,
+    predict_projection: tuple[PredictSchemaV2Row, ...] | None = None,
 ) -> PredictWorkspaceComposition:
     """Build the concrete Predict object graph without constructing widgets."""
 
@@ -70,11 +73,14 @@ def build_predict_workspace_composition(
     resolved_one_hot_snapshot = one_hot_snapshot or one_hot_runtime_snapshot(
         bootstrap_manifest()
     )
+    predict_columns = build_predict_column_schema(predict_projection)
     input_edit_controller = InputEditController(
         resolved_session,
         mapping_repository=resolved_repository,
+        columns=predict_columns,
     )
     resolved_input_mapper = input_mapper or RowToMlInputAdapter(
+        columns=tuple(item for item in predict_columns if item.group in {"input", "auto"}),
         one_hot_snapshot=resolved_one_hot_snapshot
     )
     resolved_result_mapper = result_mapper or PredictionResultAdapter()
@@ -90,7 +96,7 @@ def build_predict_workspace_composition(
         service=service,
         runner_factory=runner_factory or _build_pyside_runner,
     )
-    columns = build_case_table_column_schema()
+    columns = build_case_table_column_schema(predict_projection)
     dropdown_option_adapter = DropdownOptionAdapter(
         resolved_repository, columns, one_hot_snapshot=resolved_one_hot_snapshot
     )

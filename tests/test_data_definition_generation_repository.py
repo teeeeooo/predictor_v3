@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from apps.train.adapters import data_definition_generation_repository as repository_module
+from apps.common.runtime_generation import repository as repository_module
 from apps.train.adapters.data_definition_generation_repository import (
     DataDefinitionGenerationRepository,
 )

@@ -1,0 +1,176 @@
+"""Staged Predict runtime generation and stable-identity case migration."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable
+
+from apps.common.runtime_generation import (
+    GenerationCandidate,
+    ParticipantPrepareError,
+    PreparedParticipant,
+)
+from apps.predict.application.model_compatibility import (
+    ModelCompatibilityEvidence,
+    inspect_model_compatibility,
+)
+from apps.predict.composition import (
+    PredictWorkspaceComposition,
+    build_predict_workspace_composition,
+)
+from apps.predict.state.predict_session import PredictSession
+from core.data_definition.derived.evaluator import evaluation_snapshot
+
+
+@dataclass(frozen=True)
+class _PredictPrepared:
+    snapshot: object
+    composition: PredictWorkspaceComposition
+    migrated_rows: tuple[tuple[str, dict, dict, set], ...]
+    compatibility: ModelCompatibilityEvidence
+    evaluator: object
+
+
+class PredictRuntimeParticipant:
+    name = "Predict"
+
+    def __init__(
+        self,
+        active,
+        composition: PredictWorkspaceComposition,
+        *,
+        model_file: str,
+        compatibility_inspector: Callable[[str, object], ModelCompatibilityEvidence] = inspect_model_compatibility,
+    ) -> None:
+        self._active = active
+        self._composition = composition
+        self._model_file = model_file
+        self._compatibility_inspector = compatibility_inspector
+
+    @property
+    def active_generation_id(self) -> str:
+        return self._active.manifest.generation.generation_id
+
+    @property
+    def composition(self) -> PredictWorkspaceComposition:
+        return self._composition
+
+    @property
+    def model_compatibility(self) -> ModelCompatibilityEvidence:
+        return self._compatibility_inspector(self._model_file, self._active)
+
+    def revision_token(self) -> str:
+        path = Path(self._model_file)
+        artifact = (
+            f"{path.stat().st_mtime_ns}:{path.stat().st_size}"
+            if path.exists() else "missing"
+        )
+        return f"{self.active_generation_id}:{artifact}"
+
+    def prepare(self, candidate: GenerationCandidate) -> PreparedParticipant:
+        compatibility = self._compatibility_inspector(
+            self._model_file, candidate.snapshot
+        )
+        migrated = _migrated_case_rows(
+            self._composition.session, self._active, candidate.snapshot
+        )
+        controller = self._composition.prediction_controller
+        prediction_service, runner_factory = controller.runtime_dependencies()
+        composition = build_predict_workspace_composition(
+            session=self._composition.session,
+            initial_empty_rows=0,
+            mapping_repository=self._composition.mapping_repository,
+            prediction_service=prediction_service,
+            runner_factory=runner_factory,
+            one_hot_snapshot=candidate.snapshot.projections.one_hot_runtime,
+            predict_projection=candidate.snapshot.projections.predict,
+        )
+        payload = _PredictPrepared(
+            candidate.snapshot,
+            composition,
+            migrated,
+            compatibility,
+            evaluation_snapshot(candidate.snapshot.manifest),
+        )
+        return PreparedParticipant(
+            self.name,
+            candidate.generation_id,
+            self.revision_token(),
+            payload,
+            compatibility=compatibility.status,
+        )
+
+    def commit(self, prepared: PreparedParticipant) -> object:
+        prior = self._active, self._composition, _case_state(self._composition.session)
+        payload: _PredictPrepared = prepared.payload
+        for case_id, inputs, autofill, dirty in payload.migrated_rows:
+            case = self._composition.session.case_store.get_case(case_id)
+            case.input_values = inputs
+            case.autofill_values = autofill
+            case.dirty_fields = dirty
+        self._composition = payload.composition
+        self._active = payload.snapshot
+        return prior
+
+    def rollback(self, prior_state: object) -> None:
+        active, composition, cases = prior_state
+        self._active = active
+        self._composition = composition
+        _restore_case_state(composition.session, cases)
+
+    def abort(self, prepared: PreparedParticipant) -> None:
+        return None
+
+
+def _migrated_case_rows(
+    session: PredictSession,
+    active,
+    candidate,
+) -> tuple[tuple[str, dict, dict, set], ...]:  # noqa: ANN001
+    old_by_id = {item.identity: item for item in active.manifest.features}
+    new_by_id = {item.identity: item for item in candidate.manifest.features}
+    migrated = []
+    for case_id in session.case_order:
+        case = session.case_store.get_case(case_id)
+        inputs, autofill, dirty = {}, {}, set()
+        for identity in old_by_id.keys() & new_by_id.keys():
+            before, after = old_by_id[identity], new_by_id[identity]
+            old_values = (
+                case.input_values if before.role == "input" else case.autofill_values
+            )
+            if before.column_key not in old_values:
+                continue
+            value = old_values[before.column_key]
+            if before.data_type != after.data_type and value != "" and value is not None:
+                raise ParticipantPrepareError(
+                    "predict_case_type_incompatible",
+                    f"Case value cannot migrate for Feature identity {identity}.",
+                )
+            target = (
+                inputs if after.role == "input"
+                else autofill if after.role == "auto"
+                else None
+            )
+            if target is not None:
+                target[after.column_key] = value
+                if before.column_key in case.dirty_fields:
+                    dirty.add(after.column_key)
+        migrated.append((case_id, inputs, autofill, dirty))
+    return tuple(migrated)
+
+
+def _case_state(session: PredictSession) -> object:
+    return tuple(
+        (case_id, deepcopy(session.case_store.get_case(case_id)))
+        for case_id in session.case_order
+    )
+
+
+def _restore_case_state(session: PredictSession, state: object) -> None:
+    for case_id, saved in state:
+        case = session.case_store.get_case(case_id)
+        case.input_values = saved.input_values
+        case.autofill_values = saved.autofill_values
+        case.dirty_fields = saved.dirty_fields

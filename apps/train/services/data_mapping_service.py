@@ -148,6 +148,7 @@ class DataMappingService:
         )
         self._mapping_requirement_provider = mapping_requirement_provider or default_requirement_provider
         self._session = DataMappingDraftSession()
+        self._runtime_requirements: tuple[MappingRequirement, ...] | None = None
 
     @property
     def source_label(self) -> str:
@@ -160,6 +161,68 @@ class DataMappingService:
         if not mapping_file:
             return "available"
         return "exists" if Path(mapping_file).is_file() else "missing"
+
+    @property
+    def draft_revision(self) -> int:
+        return self._session.revision
+
+    @property
+    def is_dirty(self) -> bool:
+        return self._session.dirty
+
+    def activate_initial_requirements(
+        self, requirements: tuple[MappingRequirement, ...]
+    ) -> None:
+        """Bind startup requirements before the first Mapping draft is loaded."""
+        if self._session.draft is not None:
+            raise RuntimeError("initial Mapping requirements must be bound before load")
+        self._runtime_requirements = requirements
+
+    def preview_requirement_projection(
+        self,
+        requirements: tuple[MappingRequirement, ...],
+    ) -> DataMappingSnapshot:
+        """Project candidate requirements without mutating draft, baseline, or history."""
+        current = self._session.draft
+        if current is None:
+            current = self._provider.load_draft()
+        resolution = resolve_mapping_requirement_contracts(requirements)
+        projected = apply_effective_mapping_requirements_to_editor_draft(
+            current, resolution.contracts
+        )
+        return self._snapshot_without_session(projected, requirements, resolution)
+
+    def commit_requirement_projection(
+        self,
+        requirements: tuple[MappingRequirement, ...],
+        *,
+        expected_revision: int,
+    ) -> tuple[object, DataMappingSnapshot]:
+        """Install a prepared clean projection after the coordinator stale guard."""
+        if self._session.revision != expected_revision:
+            raise ValueError("mapping draft revision changed after prepare")
+        prior = self._session.state_token(), self._runtime_requirements
+        snapshot = self.preview_requirement_projection(requirements)
+        baseline = self._session.baseline
+        projected_baseline = (
+            apply_effective_mapping_requirements_to_editor_draft(
+                baseline, resolve_mapping_requirement_contracts(requirements).contracts
+            )
+            if baseline is not None else snapshot.draft
+        )
+        self._session.project(snapshot.draft, projected_baseline)
+        self._runtime_requirements = requirements
+        return prior, self._snapshot(snapshot.draft, requirements)
+
+    def rollback_requirement_projection(self, token: object) -> None:
+        session_token, runtime_requirements = token
+        draft, baseline, history = session_token
+        self._session.restore(draft, baseline, history)
+        self._runtime_requirements = runtime_requirements
+
+    def discard_dirty_draft(self) -> DataMappingSnapshot:
+        """Explicit reconciliation action that reloads concrete values."""
+        return self.reload_snapshot()
 
     def load_snapshot(self) -> DataMappingSnapshot:
         """Return draft data, validation result, and disabled future actions."""
@@ -509,7 +572,28 @@ class DataMappingService:
             mapping_requirement_conflicts=resolution.conflicts,
         )
 
+    def _snapshot_without_session(
+        self,
+        draft: MappingEditorDraft,
+        requirements: tuple[MappingRequirement, ...],
+        resolution: MappingRequirementContractResolution,
+    ) -> DataMappingSnapshot:
+        validation_result = self._validate_draft(draft, requirements, resolution)
+        return DataMappingSnapshot(
+            draft=draft,
+            validation_errors=validation_result.issues,
+            validation_result=validation_result,
+            source_label=self.source_label,
+            actions=(),
+            dirty=self._session.dirty,
+            mapping_requirements=requirements,
+            effective_mapping_requirements=resolution.contracts,
+            mapping_requirement_conflicts=resolution.conflicts,
+        )
+
     def _load_mapping_requirements(self) -> tuple[MappingRequirement, ...]:
+        if self._runtime_requirements is not None:
+            return self._runtime_requirements
         return self._mapping_requirement_provider.load_mapping_requirements()
 
     def _validate_draft(
