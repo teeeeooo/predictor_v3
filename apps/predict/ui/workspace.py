@@ -72,6 +72,7 @@ class PredictWorkspace(QWidget):
         self.input_edit_controller = resolved.input_edit_controller
         self.prediction_controller = resolved.prediction_controller
         self.dropdown_option_adapter = resolved.dropdown_option_adapter
+        self.generation_id = resolved.generation_id
 
         self.case_model = CaseTableModel(
             self.session,

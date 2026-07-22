@@ -40,7 +40,12 @@
   use_rfe, training iteration, and final per-Target input columns. Retain legacy
   Result-name exclusions as stable compatibility evidence rather than silently
   dropping them.
-- Make Train freeze the canonical registry/generation snapshot at explicit start.
+- Make TrainShell select one canonical generation snapshot at process composition,
+  share it with embedded Predict and Train, and freeze it again into each request.
+  Definition Save cannot advance Train alone before Phase 4H coordinated cutover.
+- Use one ordered training-input identity pool for policy eligibility, UI, Preview,
+  validation, and runtime filtering; pin identity/key/name/use_rfe for all three
+  validated model groups and include Predict visibility in presentation evidence.
   Keep `MODEL_REGISTRY` only as a generated compatibility facade and defer
   process-wide cutover, model candidate lifecycle, training activation, and
   promotion to their later owners.

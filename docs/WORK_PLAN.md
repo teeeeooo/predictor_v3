@@ -21,17 +21,20 @@ Train/Admin Phase 4G — Result/Target and Canonical Model Registry Management i
 implemented on its audit branch. Contract v4 makes Target the single writable owner
 of Result Feature identity, validated model-group association, identity-based
 allowed/exclude policy, independent presentation order, and active lifecycle. The
-three trainer groups remain read-only. v1/v2/v3 generations remain readable and
+three trainer groups have fixed identity/key/name/use_rfe facts. v1/v2/v3 generations remain readable and
 rollback-safe; name-based policy references normalize to stable owners while legacy
-Result exclusions are retained as stable compatibility no-op evidence. Train freezes
-one immutable generation/registry payload at explicit start, and production training
-no longer iterates the Python registry or import-time Target constant. Presentation
+Result exclusions are retained as stable compatibility no-op evidence. TrainShell
+selects one immutable process generation at startup for embedded Predict and Train;
+each training request freezes that same snapshot, while Save alone cannot advance
+Train before Phase 4H cutover. Policy validation, structured UI choices, Preview, and
+runtime filtering share the canonical ordered training-input identity pool. Production
+training no longer iterates the Python registry or import-time Target constant. Presentation
 changes remain model-compatible; active membership/name/group/policy changes retain
 the retraining/migration Save guard.
 
 ## Next Action
 
-Perform remote audit of the Phase 4G Draft PR. Keep Phase 4H process-wide runtime
+Perform correction re-audit of the Phase 4G Draft PR. Keep Phase 4H process-wide runtime
 cutover, model candidate generation, automatic training, and promotion outside this
 slice.
 

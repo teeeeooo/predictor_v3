@@ -11,8 +11,8 @@ from core.data_definition.target_registry.runtime import apply_target_policy, mo
 class TargetImpactEvidence:
     target_identity: str
     result_feature_identity: str
-    before: tuple[str, str, str, bool, int] | None
-    after: tuple[str, str, str, bool, int] | None
+    before: tuple[str, str, str, bool, bool, int] | None
+    after: tuple[str, str, str, bool, bool, int] | None
     model_group_before: str
     model_group_after: str
     policy_before: tuple[str, tuple[str, ...]] | None
@@ -49,7 +49,10 @@ def build_target_impact_evidence(base, candidate, result, before_fp, after_fp): 
         if target is None:
             return None
         row = next(item for item in manifest.features if item.identity == target.feature_identity)
-        return (row.label, row.column_key, target.ml_name, target.active, target.presentation_order)
+        return (
+            row.label, row.column_key, target.ml_name, row.visible,
+            target.active, target.presentation_order,
+        )
 
     def policy(target, manifest, snapshot):  # noqa: ANN001
         if target is None:

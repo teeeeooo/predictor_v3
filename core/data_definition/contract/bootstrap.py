@@ -198,7 +198,10 @@ def _target_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[tuple[
             identity=bootstrap_identity("target", feature.ml_name),
             feature_identity=feature.identity,
             ml_name=feature.ml_name,
-            model_group_identity=bootstrap_identity("model_group", target_to_group[feature.ml_name]),
+            model_group_identity=next(
+                group.identity for group in VALIDATED_MODEL_GROUPS
+                if group.registry_key == target_to_group[feature.ml_name]
+            ),
             presentation_order=index,
             policy_mode=mode,
             policy_owner_identities=owner_ids,
@@ -208,7 +211,7 @@ def _target_definitions(features: tuple[FeatureDefinition, ...]) -> tuple[tuple[
     targets = tuple(targets)
     groups = tuple(
         ModelGroupDefinition(
-            identity=bootstrap_identity("model_group", group.registry_key),
+            identity=group.identity,
             registry_key=group.registry_key,
             name=group.name,
             use_rfe=group.use_rfe,

@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core.data_definition.contract.candidate import candidate_manifest_from_draft
-from core.data_definition.target_registry.runtime import apply_target_policy, model_registry_snapshot
+from core.data_definition.target_registry.runtime import (
+    apply_target_policy,
+    model_registry_snapshot,
+    ordered_training_input_pool,
+)
 
 
 @dataclass(frozen=True)
@@ -55,21 +59,16 @@ def project_target_authoring(draft) -> TargetAuthoringProjection:  # noqa: ANN00
     runtime_target_by_id = {
         item.identity: item for group in snapshot.groups for item in group.targets
     }
-    owner_options = []
-    ordered_pool = []
+    input_pool = ordered_training_input_pool(manifest)
+    ordered_pool = input_pool.ml_names
     owners = {item.identity: item for item in (*manifest.features, *manifest.derived)}
-    for identity in manifest.ordering.ml:
-        owner = owners[identity]
-        role = getattr(owner, "role", "derived")
-        if not getattr(owner, "active", True) or role == "result" or not owner.ml_name:
-            continue
-        ordered_pool.append(owner.ml_name)
-        owner_options.append(TargetPolicyOwnerOption(
-            identity=owner.identity,
-            ml_name=owner.ml_name,
-            owner_kind=role,
-            selectable=True,
-        ))
+    owner_options = tuple(TargetPolicyOwnerOption(
+        identity=item.identity,
+        ml_name=item.ml_name,
+        owner_kind=item.owner_kind,
+        selectable=item.eligible,
+        reason=item.reason,
+    ) for item in input_pool.owners)
     rows = []
     for target in draft.targets:
         result = row_by_feature[target.feature_identity]
@@ -104,6 +103,6 @@ def project_target_authoring(draft) -> TargetAuthoringProjection:  # noqa: ANN00
             final_training_inputs=final_inputs,
         ))
     return TargetAuthoringProjection(
-        tuple(rows), tuple(owner_options), snapshot.active_target_names,
+        tuple(rows), owner_options, snapshot.active_target_names,
         tuple((group.identity, group.registry_key, group.name, group.use_rfe) for group in snapshot.groups),
     )

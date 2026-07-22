@@ -292,6 +292,10 @@ def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
         ))
     for group in group_definitions:
         supported = VALIDATED_GROUP_BY_KEY.get(group.registry_key)
+        if supported is not None and group.identity != supported.identity:
+            issues.append(ContractValidationIssue(
+                "model_group_identity_mutation", group.registry_key
+            ))
         if supported is None or group.name != supported.name or group.use_rfe != supported.use_rfe:
             issues.append(ContractValidationIssue(
                 "model_group_metadata_mutation", group.registry_key
@@ -300,11 +304,13 @@ def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
         _duplicates(issues, "target_registry_order_duplicate", members)
         if sorted(members) != list(range(1, len(members) + 1)):
             issues.append(ContractValidationIssue("target_registry_order_invalid", group.registry_key))
-    eligible_owners = {
-        item.identity: item
-        for item in (*manifest.features, *manifest.derived)
-        if item.active and item.ml_name and getattr(item, "role", "") != "result"
-    }
+    from core.data_definition.target_registry.runtime import (
+        apply_ordered_target_policy,
+        ordered_training_input_pool,
+    )
+
+    input_pool = ordered_training_input_pool(manifest)
+    eligible_owners = {item.identity: item for item in input_pool.eligible_owners}
     result_feature_ids = {
         item.identity for item in manifest.features if item.role == "result" and item.ml_name
     }
@@ -344,12 +350,11 @@ def _validate_targets(issues, manifest) -> None:  # noqa: ANN001
                 ))
         if target.policy_mode == "allowed" and not target.policy_owner_identities:
             issues.append(ContractValidationIssue("target_policy_allowed_empty", target.ml_name))
-        available_ids = set(eligible_owners)
-        resolved_ids = set(target.policy_owner_identities)
         policy_result = (
-            available_ids & resolved_ids
-            if target.policy_mode == "allowed"
-            else available_ids - resolved_ids
+            apply_ordered_target_policy(
+                input_pool.identities, target.policy_mode, target.policy_owner_identities,
+            )
+            if target.policy_mode in {"allowed", "exclude"} else ()
         )
         if target.policy_mode in {"allowed", "exclude"} and not policy_result:
             issues.append(ContractValidationIssue("target_policy_result_empty", target.ml_name))

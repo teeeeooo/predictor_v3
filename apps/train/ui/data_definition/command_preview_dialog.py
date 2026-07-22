@@ -39,10 +39,13 @@ class FeatureCommandPreviewDialog(QDialog):
         layout.addWidget(evidence)
         if preview.target_evidence is not None:
             target = preview.target_evidence
+            before_visible = target.before[3] if target.before is not None else None
+            after_visible = target.after[3] if target.after is not None else None
             target_label = QLabel(
                 f"Target identity: {target.target_identity}\n"
                 f"Result Feature: {target.result_feature_identity}\n"
                 f"Shape: {target.before or 'new'} → {target.after or 'removed'}\n"
+                f"Predict visible: {_optional_bool(before_visible)} → {_optional_bool(after_visible)}\n"
                 f"Model group: {target.model_group_before or 'none'} → {target.model_group_after or 'none'}\n"
                 f"Policy: {target.policy_before or 'none'} → {target.policy_after or 'none'}\n"
                 f"Final training inputs: {', '.join(target.training_inputs_before) or 'none'} → "
@@ -129,6 +132,10 @@ class FeatureCommandPreviewDialog(QDialog):
 
 def _changed(value: bool) -> str:
     return "Changed" if value else "Unchanged"
+
+
+def _optional_bool(value: bool | None) -> str:
+    return "none" if value is None else str(value).lower()
 
 
 def _evidence_line(item) -> str:  # noqa: ANN001

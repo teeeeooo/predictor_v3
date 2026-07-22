@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ValidatedModelGroup:
+    identity: str
     registry_key: str
     name: str
     use_rfe: bool
@@ -16,6 +17,7 @@ class ValidatedModelGroup:
 
 VALIDATED_MODEL_GROUPS = (
     ValidatedModelGroup(
+        "ufm_model_group_9e71f4a75bd15c1e80688d21d2732208",
         "power_model", "소비전력 예측 모델", True,
         ("Cooling Power", "Heating Power"),
         (
@@ -30,6 +32,7 @@ VALIDATED_MODEL_GROUPS = (
         ),
     ),
     ValidatedModelGroup(
+        "ufm_model_group_2187461a19525b55aa639d0aa48b5332",
         "hz_model", "운전 주파수 예측 모델", True,
         ("Cooling Hz", "Heating Hz"),
         (
@@ -44,6 +47,7 @@ VALIDATED_MODEL_GROUPS = (
         ),
     ),
     ValidatedModelGroup(
+        "ufm_model_group_70a181ec4f605f3293554f59756c4607",
         "ref_model", "냉매량 예측 모델", False,
         ("Ref Qty",),
         (("Ref Qty", "allowed", (
@@ -53,3 +57,4 @@ VALIDATED_MODEL_GROUPS = (
 )
 
 VALIDATED_GROUP_BY_KEY = {item.registry_key: item for item in VALIDATED_MODEL_GROUPS}
+VALIDATED_GROUP_BY_IDENTITY = {item.identity: item for item in VALIDATED_MODEL_GROUPS}

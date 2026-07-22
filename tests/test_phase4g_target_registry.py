@@ -7,6 +7,7 @@ from dataclasses import replace
 
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
 from apps.train.controllers.train_controller import TrainController
+from apps.train.controllers.target_authoring_projection import project_target_authoring
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.state.training_run_state import TrainingRequest
 from core.data_definition.contract import (
@@ -17,12 +18,14 @@ from core.data_definition.draft import build_data_definition_draft
 from core.data_definition.target_registry.commands import apply_target_command
 from core.data_definition.target_registry.intents import (
     AddTargetIntent, ChangeTargetModelGroupIntent, ChangeTargetPolicyIntent,
-    DuplicateTargetIntent, MoveTargetIntent, RemoveTargetIntent, RenameTargetIntent,
+    DuplicateTargetIntent, EditTargetIntent, MoveTargetIntent, RemoveTargetIntent, RenameTargetIntent,
     SetTargetActiveIntent,
 )
 from core.data_definition.target_registry.runtime import (
     ModelRegistrySnapshot, apply_target_policy, model_registry_snapshot,
+    ordered_training_input_pool,
 )
+from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 from core.ml.features import BASE_FEATURES, DERIVED_FEATURES, TARGETS
 from core.ml.registry import MODEL_REGISTRY
 
@@ -152,6 +155,158 @@ def test_policy_validation_blocks_missing_duplicate_result_and_empty_references(
     for changed, code in zip(cases, expected, strict=True):
         raw = replace(manifest, targets=(changed, *manifest.targets[1:]))
         assert code in {item.code for item in validate_contract(raw)}
+
+
+def test_ordered_training_input_pool_is_the_policy_ui_and_runtime_owner():
+    manifest, draft = _draft()
+    pool = ordered_training_input_pool(manifest)
+    snapshot = model_registry_snapshot(manifest)
+    projection = project_target_authoring(draft)
+    by_id = {item.identity: item for item in pool.owners}
+
+    assert pool.ml_names == snapshot.input_ml_names
+    assert tuple(item.identity for item in projection.policy_owner_options if item.selectable) == pool.identities
+    assert any(item.owner_kind == "derived" and item.eligible for item in pool.owners)
+    assert any(item.owner_kind == "one_hot_feature" and item.eligible for item in pool.owners)
+    assert any(item.owner_kind in {"input", "auto"} and item.eligible for item in pool.owners)
+    for target in snapshot.groups[0].targets:
+        row = next(item for item in projection.rows if item.identity == target.identity)
+        assert row.final_training_inputs == apply_target_policy(pool.ml_names, target)
+    assert all(not by_id[item.feature_identity].eligible for item in manifest.targets)
+
+
+def test_policy_rejects_owners_outside_actual_ordered_runtime_pool():
+    manifest = bootstrap_manifest()
+    target = manifest.targets[0]
+    owner = next(
+        item for item in manifest.features
+        if item.identity in manifest.ordering.ml and item.role == "input"
+    )
+
+    def issues_for(changed_owner, *, keep_order):  # noqa: ANN001
+        features = tuple(
+            changed_owner if item.identity == owner.identity else item
+            for item in manifest.features
+        )
+        ml_order = manifest.ordering.ml if keep_order else tuple(
+            identity for identity in manifest.ordering.ml if identity != owner.identity
+        )
+        raw = replace(
+            manifest,
+            features=features,
+            ordering=replace(manifest.ordering, ml=ml_order),
+            targets=(replace(
+                target, policy_mode="allowed", policy_owner_identities=(owner.identity,),
+            ), *manifest.targets[1:]),
+        )
+        return {item.code for item in validate_contract(raw)}
+
+    assert "target_policy_owner_invalid" in issues_for(
+        replace(owner, model_input_enabled=False), keep_order=False,
+    )
+    assert "target_policy_owner_invalid" in issues_for(owner, keep_order=False)
+    assert "target_policy_owner_invalid" in issues_for(
+        replace(owner, active=False), keep_order=False,
+    )
+    assert "target_policy_owner_invalid" in issues_for(
+        replace(owner, role="helper"), keep_order=True,
+    )
+
+    all_inputs = ordered_training_input_pool(manifest).identities
+    exclude_all = replace(
+        target, policy_mode="exclude", policy_owner_identities=all_inputs,
+    )
+    assert "target_policy_result_empty" in {
+        item.code for item in validate_contract(replace(
+            manifest, targets=(exclude_all, *manifest.targets[1:]),
+        ))
+    }
+    command = apply_target_command(
+        build_data_definition_draft(manifest=manifest),
+        ChangeTargetPolicyIntent(target.identity, "allowed", (manifest.targets[1].feature_identity,)),
+    )
+    assert not command.accepted
+    assert command.draft == build_data_definition_draft(manifest=manifest)
+    assert "target_policy_owner_invalid" in {item.code for item in command.issues}
+
+
+def test_validated_model_group_identities_are_immutable_catalog_facts():
+    manifest = bootstrap_manifest()
+    expected = tuple(item.identity for item in VALIDATED_MODEL_GROUPS)
+    assert tuple(item.identity for item in manifest.model_groups) == expected
+
+    replacement = "ufm_model_group_replacement"
+    replaced_groups = (
+        replace(manifest.model_groups[0], identity=replacement),
+        *manifest.model_groups[1:],
+    )
+    replaced_targets = tuple(
+        replace(item, model_group_identity=replacement)
+        if item.model_group_identity == expected[0] else item
+        for item in manifest.targets
+    )
+    assert "model_group_identity_mutation" in {
+        item.code for item in validate_contract(replace(
+            manifest, model_groups=replaced_groups, targets=replaced_targets,
+        ))
+    }
+
+    swapped_groups = (
+        replace(manifest.model_groups[0], identity=expected[1]),
+        replace(manifest.model_groups[1], identity=expected[0]),
+        manifest.model_groups[2],
+    )
+    swapped_targets = tuple(replace(
+        item,
+        model_group_identity=(
+            expected[1] if item.model_group_identity == expected[0]
+            else expected[0] if item.model_group_identity == expected[1]
+            else item.model_group_identity
+        ),
+    ) for item in manifest.targets)
+    assert "model_group_identity_mutation" in {
+        item.code for item in validate_contract(replace(
+            manifest, model_groups=swapped_groups, targets=swapped_targets,
+        ))
+    }
+    assert "stable_identity_duplicate" in {
+        item.code for item in validate_contract(replace(
+            manifest,
+            model_groups=(manifest.model_groups[0], replace(
+                manifest.model_groups[1], identity=expected[0],
+            ), manifest.model_groups[2]),
+        ))
+    }
+    assert "model_group_catalog_invalid" in {
+        item.code for item in validate_contract(replace(
+            manifest,
+            model_groups=(*manifest.model_groups, replace(
+                manifest.model_groups[0],
+                identity="ufm_model_group_fourth", registry_key="fourth_model",
+            )),
+        ))
+    }
+
+
+def test_visibility_preview_is_complete_and_presentation_only(tmp_path):
+    manifest, draft = _draft()
+    target = manifest.targets[0]
+    row = next(item for item in draft.rows if item.stable_identity == target.feature_identity)
+    repository = DataDefinitionGenerationRepository(tmp_path / "definitions")
+    repository.publish(manifest)
+    service = DataDefinitionService(generation_repository=repository)
+    prepared = service.prepare_feature_command(
+        draft, EditTargetIntent(target.identity, row.label, not row.visible), source_revision=1,
+    )
+    evidence = prepared.preview.target_evidence
+    assert prepared.command_accepted and evidence is not None
+    assert evidence.before[3] is row.visible
+    assert evidence.after[3] is (not row.visible)
+    assert evidence.presentation_fingerprint_changed
+    assert not evidence.registry_fingerprint_changed
+    assert not prepared.model_compatibility_changed
+    assert evidence.training_inputs_before == evidence.training_inputs_after
+    assert evidence.active_targets_before == evidence.active_targets_after
 
 
 def test_inactive_save_is_allowed_active_enable_keeps_model_guard(tmp_path):

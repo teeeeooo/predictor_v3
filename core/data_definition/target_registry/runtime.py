@@ -8,6 +8,33 @@ from core.data_definition.target_registry.defaults import VALIDATED_MODEL_GROUPS
 
 
 @dataclass(frozen=True)
+class TrainingInputOwner:
+    identity: str
+    ml_name: str
+    owner_kind: str
+    eligible: bool
+    blocker_code: str = ""
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class OrderedTrainingInputPool:
+    owners: tuple[TrainingInputOwner, ...]
+
+    @property
+    def eligible_owners(self) -> tuple[TrainingInputOwner, ...]:
+        return tuple(item for item in self.owners if item.eligible)
+
+    @property
+    def identities(self) -> tuple[str, ...]:
+        return tuple(item.identity for item in self.eligible_owners)
+
+    @property
+    def ml_names(self) -> tuple[str, ...]:
+        return tuple(item.ml_name for item in self.eligible_owners)
+
+
+@dataclass(frozen=True)
 class RuntimeTarget:
     identity: str
     result_feature_identity: str
@@ -106,13 +133,8 @@ def model_registry_snapshot(manifest) -> ModelRegistrySnapshot:  # noqa: ANN001
         if item.ml_name
     }
     owner_objects = {item.identity: item for item in (*manifest.features, *manifest.derived)}
-    input_ml_names = tuple(
-        owner_objects[identity].ml_name
-        for identity in manifest.ordering.ml
-        if getattr(owner_objects[identity], "active", True)
-        and getattr(owner_objects[identity], "role", "derived") != "result"
-        and owner_objects[identity].ml_name
-    )
+    input_pool = ordered_training_input_pool(manifest)
+    input_ml_names = input_pool.ml_names
     training_headers = tuple(
         item.ml_name for item in manifest.features
         if item.active and item.ml_name and item.role in {"input", "auto", "one_hot_feature", "result"}
@@ -171,10 +193,70 @@ def model_registry_snapshot(manifest) -> ModelRegistrySnapshot:  # noqa: ANN001
 
 def apply_target_policy(columns, target: RuntimeTarget) -> tuple[str, ...]:  # noqa: ANN001
     """Apply the closed policy catalog deterministically to an ordered input pool."""
-    ordered = tuple(columns)
-    selected = set(target.policy_ml_names)
-    if target.policy_mode == "allowed":
-        return tuple(name for name in ordered if name in selected)
-    if target.policy_mode == "exclude":
-        return tuple(name for name in ordered if name not in selected)
-    raise ValueError(f"unsupported Target policy mode: {target.policy_mode}")
+    return apply_ordered_target_policy(
+        columns, target.policy_mode, target.policy_ml_names,
+    )
+
+
+def apply_ordered_target_policy(ordered_values, mode: str, selected_values) -> tuple[str, ...]:  # noqa: ANN001
+    """Apply one policy to ordered identity or ML-name values without reordering."""
+    ordered = tuple(ordered_values)
+    selected = set(selected_values)
+    if mode == "allowed":
+        return tuple(value for value in ordered if value in selected)
+    if mode == "exclude":
+        return tuple(value for value in ordered if value not in selected)
+    raise ValueError(f"unsupported Target policy mode: {mode}")
+
+
+def ordered_training_input_pool(manifest) -> OrderedTrainingInputPool:  # noqa: ANN001
+    """Project the one ordered identity pool shared by policy and Train runtime."""
+    from core.data_definition.contract.model import DerivedDefinition, LegacyDerivedDefinition
+
+    all_owners = tuple((*manifest.features, *manifest.derived))
+    owner_by_id = {item.identity: item for item in all_owners}
+    ordered_ids = tuple(manifest.ordering.ml)
+    ordered_set = set(ordered_ids)
+    storage_ids = tuple(item.identity for item in all_owners if item.ml_name)
+    candidate_ids = (*ordered_ids, *(identity for identity in storage_ids if identity not in ordered_set))
+    ml_name_counts: dict[str, int] = {}
+    for owner in all_owners:
+        if owner.ml_name:
+            ml_name_counts[owner.ml_name] = ml_name_counts.get(owner.ml_name, 0) + 1
+
+    projected = []
+    for identity in candidate_ids:
+        owner = owner_by_id.get(identity)
+        if owner is None:
+            projected.append(TrainingInputOwner(
+                identity, "", "missing", False, "training_input_owner_missing",
+                "Canonical ML order references a missing owner.",
+            ))
+            continue
+        is_derived = isinstance(owner, (DerivedDefinition, LegacyDerivedDefinition))
+        role = "derived" if is_derived else owner.role
+        reason = ""
+        code = ""
+        if not getattr(owner, "active", True):
+            code, reason = "training_input_owner_inactive", "Owner is inactive."
+        elif not owner.ml_name:
+            code, reason = "training_input_ml_name_missing", "Owner has no ML name."
+        elif identity not in ordered_set:
+            code, reason = "training_input_owner_unordered", "Owner is not in canonical ML order."
+        elif role == "result":
+            code, reason = "training_input_result_leakage", "Result Features cannot be training inputs."
+        elif ml_name_counts.get(owner.ml_name, 0) != 1:
+            code, reason = "training_input_ml_name_duplicate", "ML name projection is not unique."
+        elif not is_derived and role not in {"input", "auto", "one_hot_feature"}:
+            code, reason = "training_input_shape_unsupported", "Feature runtime role is not supported by Train."
+        elif not is_derived and not owner.model_input_enabled:
+            code, reason = "training_input_intent_disabled", "Feature is not enabled as a model input."
+        projected.append(TrainingInputOwner(
+            identity=identity,
+            ml_name=owner.ml_name,
+            owner_kind=role,
+            eligible=not code,
+            blocker_code=code,
+            reason=reason,
+        ))
+    return OrderedTrainingInputPool(tuple(projected))

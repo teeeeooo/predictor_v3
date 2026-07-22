@@ -225,9 +225,16 @@ class _PolicyDialog(QDialog):
         layout.addWidget(self.mode)
         self.owners = QListWidget(self)
         for option in projection.policy_owner_options:
-            item = QListWidgetItem(f"{option.ml_name} — {option.owner_kind}", self.owners)
+            suffix = "" if option.selectable else f" — unavailable: {option.reason}"
+            item = QListWidgetItem(
+                f"{option.ml_name or option.identity} — {option.owner_kind}{suffix}",
+                self.owners,
+            )
             item.setData(Qt.UserRole, option.identity)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            flags = item.flags() | Qt.ItemIsUserCheckable
+            if not option.selectable:
+                flags &= ~Qt.ItemIsEnabled
+            item.setFlags(flags)
             item.setCheckState(Qt.Checked if option.identity in selected else Qt.Unchecked)
             item.setToolTip(option.reason)
         layout.addWidget(self.owners)

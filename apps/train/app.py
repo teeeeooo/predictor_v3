@@ -55,19 +55,20 @@ def create_shell(
     root = generation_root if generation_root is not None else default_generation_root()
     repository = DataDefinitionGenerationRepository(root)
     try:
-        repository.read_active()
+        active = repository.read_active()
     except FileNotFoundError:
         repository.publish(
             load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH)
         )
-    active = repository.read_active()
+        active = repository.read_active()
+    process_registry_snapshot = model_registry_snapshot(active.manifest)
     data_definition_controller = DataDefinitionController(DataDefinitionService(
         generation_repository=repository,
         vocabulary_snapshots=load_persisted_mapping_vocabulary_snapshots(),
     ))
     controller = TrainController(
         execution_factory=QProcessTrainingRunner,
-        registry_provider=lambda: model_registry_snapshot(repository.read_active().manifest),
+        registry_provider=lambda: process_registry_snapshot,
     )
     return TrainShell(
         train_controller=controller,

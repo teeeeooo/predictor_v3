@@ -667,7 +667,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 4G canonical Target registry authoring
-    content: Phase 4G upgrades new publications to contract v4. Target is the single writable owner of its stable Result Feature relation, one validated model-group identity, identity-based allowed/exclude input policy, independent registry and presentation order, and active state; model-group registry key, display name, and use_rfe remain read-only. v1/v2/v3 generations remain readable and rollback-safe, preserving all existing identities and normalizing real policy inputs to stable owners. Legacy exclusions of other Result names are retained as stable compatibility no-op relations because leakage protection removed them before policy evaluation. Target/Result lifecycle commands are atomic and prepared; Add/Duplicate are inactive, presentation-only edits stay model-compatible, and active membership/name/group/policy changes retain the retraining/migration Save guard. The immutable registry snapshot carries generation and scoped fingerprints, fixed groups, ordered active Targets, resolved policy names, training headers, and pre-Target inputs. Production Train freezes that snapshot into each request/child process; MODEL_REGISTRY is only a generated compatibility facade. Phase 4H still owns process-wide runtime cutover, and Windows native UI smoke remains pre-release evidence.
+    content: Phase 4G upgrades new publications to contract v4. Target is the single writable owner of its stable Result Feature relation, one validated model-group identity, identity-based allowed/exclude input policy, independent registry and presentation order, and active state; the three validated groups pin identity, registry key, display name, and use_rfe. v1/v2/v3 generations remain readable and rollback-safe, preserving all existing identities and normalizing real policy inputs to stable owners. Legacy exclusions of other Result names are retained as stable compatibility no-op relations because leakage protection removed them before policy evaluation. Target/Result lifecycle commands are atomic and prepared; Add/Duplicate are inactive, presentation-only edits stay model-compatible, and active membership/name/group/policy changes retain the retraining/migration Save guard. TrainShell selects one immutable generation snapshot at process composition for embedded Predict and Train, and each request freezes that same generation; Definition Save cannot advance Train alone before Phase 4H cutover. One ordered training-input identity pool owns policy eligibility, UI choices, Preview, validation, registry projection, preprocessing, and actual Train filtering. Predict visibility before/after is explicit presentation evidence. MODEL_REGISTRY is only a generated compatibility facade. Phase 4H still owns process-wide runtime cutover, and Windows native UI smoke remains pre-release evidence.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -679,7 +679,7 @@ entries:
       - immutable training snapshot
       - MODEL_REGISTRY facade
     assertionStatus: verified
-    source: result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md; docs/WORK_PLAN.md
+    source: result_reports/records/2026-07/2026-07-22-train-admin-phase4g-target-registry-authoring.md; result_reports/records/2026-07/2026-07-22-train-admin-phase4g-audit-correction.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Feature contract cutover and concurrency boundaries
