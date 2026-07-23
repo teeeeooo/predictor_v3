@@ -36,6 +36,56 @@ def test_stale_activation_revision_is_rejected(repository, registry_snapshot):
     assert repository.read_active().candidate_id == "candidate-a"
 
 
+def test_active_revision_guard_is_required_and_cannot_be_null(
+    repository, registry_snapshot
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+
+    with pytest.raises(TypeError, match="expected_revision"):
+        service.promote("candidate-a")
+    blocked = service.promote("candidate-a", expected_revision=None)
+    with pytest.raises(TypeError, match="expected_revision"):
+        repository.replace_active(
+            "candidate-a",
+            activated_at="2026-07-23T00:00:00+00:00",
+            source="test",
+        )
+    with pytest.raises(ValueError, match="non-negative integer"):
+        repository.replace_active(
+            "candidate-a",
+            activated_at="2026-07-23T00:00:00+00:00",
+            source="test",
+            expected_revision=None,
+        )
+
+    assert blocked.status == "blocked"
+    assert "non-negative integer" in blocked.message
+    assert repository.read_active(optional=True) is None
+
+
+def test_competing_promotions_and_stale_rollback_preserve_latest_active(
+    repository, registry_snapshot
+):
+    for candidate_id in ("candidate-a", "candidate-b", "candidate-c"):
+        publish_candidate(repository, registry_snapshot, candidate_id)
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+
+    assert service.promote("candidate-a", expected_revision=0).revision == 1
+    assert service.promote("candidate-b", expected_revision=1).revision == 2
+    stale_promotion = service.promote("candidate-c", expected_revision=1)
+    stale_rollback = service.rollback("candidate-a", expected_revision=1)
+
+    assert stale_promotion.status == "blocked"
+    assert stale_rollback.status == "blocked"
+    active = repository.read_active()
+    assert (active.candidate_id, active.revision) == ("candidate-b", 2)
+    assert [item.candidate_id for item in active.history] == [
+        "candidate-a",
+        "candidate-b",
+    ]
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     (
@@ -51,7 +101,9 @@ def test_current_compatibility_mismatch_blocks_promotion(
     publish_candidate(repository, registry_snapshot, "candidate-a")
     current = incompatible_snapshot(registry_snapshot, field, value)
 
-    result = ModelPromotionService(repository, lambda: current).promote("candidate-a")
+    result = ModelPromotionService(repository, lambda: current).promote(
+        "candidate-a", expected_revision=0
+    )
 
     assert result.status == "blocked"
     assert message in result.message
@@ -63,7 +115,7 @@ def test_feature_order_tamper_blocks_without_changing_active(
 ):
     publish_candidate(repository, registry_snapshot, "candidate-a")
     service = ModelPromotionService(repository, lambda: registry_snapshot)
-    assert service.promote("candidate-a").status == "active"
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
     second = publish_candidate(repository, registry_snapshot, "candidate-b")
     payload = __import__("json").loads(
         (second.path / "manifest.json").read_text(encoding="utf-8")
@@ -93,7 +145,7 @@ def test_unpublished_experimental_feature_candidate_is_blocked(
 
     result = ModelPromotionService(
         repository, lambda: registry_snapshot
-    ).promote("candidate-a")
+    ).promote("candidate-a", expected_revision=0)
 
     assert result.status == "blocked"
     assert "unpublished experimental features" in result.message
@@ -112,7 +164,7 @@ def test_pointer_write_failure_preserves_existing_active(tmp_path, registry_snap
     publish_candidate(repository, registry_snapshot, "candidate-a")
     publish_candidate(repository, registry_snapshot, "candidate-b")
     service = ModelPromotionService(repository, lambda: registry_snapshot)
-    assert service.promote("candidate-a").status == "active"
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
     fail["enabled"] = True
 
     result = service.promote("candidate-b", expected_revision=1)
@@ -127,7 +179,7 @@ def test_rollback_revalidates_current_compatibility(repository, registry_snapsho
     publish_candidate(repository, registry_snapshot, "candidate-b")
     current = {"snapshot": registry_snapshot}
     service = ModelPromotionService(repository, lambda: current["snapshot"])
-    assert service.promote("candidate-a").status == "active"
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
     assert service.promote("candidate-b", expected_revision=1).status == "active"
     current["snapshot"] = replace(registry_snapshot, generation_id="new")
 

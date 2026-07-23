@@ -1026,14 +1026,22 @@ Responsibility:
   the repository path as permanent workspace identity
 - publish hash-checked, deserializable, versioned Candidate bundles through
   same-filesystem staging, fsync, writer serialization, and atomic rename
+- reject symlinked or non-regular staging, Candidate, model, and metadata
+  objects, and verify lexical plus resolved containment beneath the exact
+  lifecycle workspace before reads, writes, or publication
 - keep Candidate publication separate from Active selection
 - store an atomic revision-guarded Active reference with traceable activation
   history
+- require every Active mutation, including first activation, rollback, and
+  legacy continuity, to supply the caller-observed current revision; omission,
+  null, and stale revisions fail closed
 - revalidate current Definition/runtime fingerprints, preprocessing, production
   Targets, feature order, experimental-feature policy, deserialize integrity, and
   bounded prediction smoke before promotion or rollback re-promotion
 - import a legacy `model.pkl` idempotently without moving, deleting, or modifying
   the original, and activate it only when full compatibility is proven
+- report known corruption of an existing deterministic legacy Candidate as a
+  controlled retraining-required state rather than a startup exception
 - resolve Predict startup to one immutable Active Candidate path or a controlled
   missing/invalid Active status
 
@@ -1042,6 +1050,11 @@ not import lifecycle infrastructure. The QProcess adapter, child job, Train UI,
 and Predict UI do not write the Active reference. An already constructed
 `PredictionService` retains its loaded model/path; a later Active revision is
 resolved only by a newly composed Predict process in Phase 5B.
+
+The QProcess adapter owns one terminal arbiter. Accepted cancellation produces
+exactly one `cancelled` callback even when error and finished signals race;
+genuine launch failure produces `failed`, and terminal cleanup releases the
+process and its escalation timer before application callbacks run.
 
 ### 11.6 Data Mapping service
 

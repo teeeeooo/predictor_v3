@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -231,7 +230,8 @@ class TrainingLifecycleService:
 
     def _discard_staging(self) -> None:
         if self._staging is not None:
-            shutil.rmtree(self._staging, ignore_errors=True)
+            assert self._repository is not None
+            self._repository.discard_staging(self._staging)
             self._staging = None
 
 

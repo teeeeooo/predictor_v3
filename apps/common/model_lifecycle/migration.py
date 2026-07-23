@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +19,12 @@ from .candidate_contracts import (
     CandidateResult,
     TargetArtifactContract,
 )
+from .errors import (
+    ActiveReferenceCorruptionError,
+    CandidateCorruptionError,
+    LegacyArtifactError,
+    ModelLifecycleError,
+)
 from .promotion import ModelPromotionService
 from .repository import ModelLifecycleRepository
 
@@ -29,6 +34,7 @@ class LegacyMigrationResult:
     status: str
     candidate_id: str = ""
     message: str = ""
+    reason_code: str = ""
 
 
 class LegacyModelMigrationService:
@@ -43,38 +49,68 @@ class LegacyModelMigrationService:
     def migrate_if_needed(self, legacy_model: str | Path) -> LegacyMigrationResult:
         try:
             active = self._repository.read_active(optional=True)
-        except Exception as exc:
+        except ActiveReferenceCorruptionError as exc:
             return LegacyMigrationResult(
                 "invalid-active",
                 message=f"Existing lifecycle Active is invalid: {str(exc).splitlines()[0]}",
+                reason_code="active_reference_corrupt",
             )
         if active is not None:
             return LegacyMigrationResult("not-needed", message="Lifecycle Active already exists.")
         source = Path(legacy_model)
-        if not source.is_file():
+        try:
+            source_available = source.is_file()
+        except OSError as exc:
+            return LegacyMigrationResult(
+                "bootstrap",
+                message=f"Legacy model is unreadable: {str(exc).splitlines()[0]}",
+                reason_code="legacy_source_unreadable",
+            )
+        if not source_available:
             return LegacyMigrationResult("bootstrap", message="No legacy model is available.")
-        original_hash = _sha256(source)
+        try:
+            original_hash = _sha256(source)
+        except OSError as exc:
+            return LegacyMigrationResult(
+                "bootstrap",
+                message=f"Legacy model is unreadable: {str(exc).splitlines()[0]}",
+                reason_code="legacy_source_unreadable",
+            )
         candidate_id = f"legacy-{original_hash[:24]}"
         try:
             existing = self._repository.read_candidate(candidate_id)
         except FileNotFoundError:
             try:
                 existing = self._import(source, original_hash, candidate_id)
-            except Exception as exc:
+            except _LEGACY_ARTIFACT_FAILURES as exc:
                 return LegacyMigrationResult(
                     "bootstrap", candidate_id,
                     f"Legacy model was preserved but could not be imported: {str(exc).splitlines()[0]}",
+                    "legacy_import_failed",
                 )
+        except CandidateCorruptionError as exc:
+            return LegacyMigrationResult(
+                "retraining-required",
+                candidate_id,
+                f"Imported legacy Candidate is corrupt: {str(exc).splitlines()[0]}",
+                "legacy_candidate_corrupt",
+            )
         if not existing.manifest.promotion_eligible:
             return LegacyMigrationResult(
                 "retraining-required", candidate_id,
                 "Legacy model metadata cannot prove current compatibility.",
+                "legacy_compatibility_unproven",
             )
         promotion = ModelPromotionService(
             self._repository, self._registry_provider
         ).promote(candidate_id, expected_revision=0, source="legacy-migration")
         if promotion.status != "active":
-            return LegacyMigrationResult("bootstrap", candidate_id, promotion.message)
+            return LegacyMigrationResult(
+                "bootstrap",
+                candidate_id,
+                promotion.message,
+                "legacy_activation_blocked",
+            )
         return LegacyMigrationResult(
             "active", candidate_id, "Compatible legacy model imported as lifecycle Active."
         )
@@ -82,21 +118,31 @@ class LegacyModelMigrationService:
     def _import(
         self, source: Path, original_hash: str, candidate_id: str
     ):  # noqa: ANN202
-        payload = joblib.load(source)
+        try:
+            payload = joblib.load(source)
+        except Exception as exc:
+            # This catch is limited to the untrusted deserialize operation.
+            raise LegacyArtifactError(
+                f"legacy model cannot be deserialized: {str(exc).splitlines()[0]}"
+            ) from exc
         if not isinstance(payload, dict):
-            raise ValueError("legacy model bundle is invalid")
+            raise LegacyArtifactError("legacy model bundle is invalid")
         models, features = payload.get("models"), payload.get("features")
         if not isinstance(models, dict) or not isinstance(features, dict):
-            raise ValueError("legacy model bundle is incomplete")
+            raise LegacyArtifactError("legacy model bundle is incomplete")
         snapshot: ModelRegistrySnapshot = self._registry_provider()
         targets = _ordered_targets(snapshot)
-        blockers = _legacy_blockers(payload, snapshot, targets)
+        try:
+            blockers = _legacy_blockers(payload, snapshot, targets)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise LegacyArtifactError(
+                f"legacy compatibility metadata is invalid: {str(exc).splitlines()[0]}"
+            ) from exc
         staging = self._repository.create_staging(candidate_id)
         try:
-            shutil.copy2(source, staging / "model.pkl")
-            imported_hash = _sha256(staging / "model.pkl")
+            imported_hash = self._repository.copy_model_to_staging(staging, source)
             if imported_hash != original_hash:
-                raise ValueError("legacy copy hash mismatch")
+                raise LegacyArtifactError("legacy copy hash mismatch")
             manifest = CandidateManifest(
                 candidate_id=candidate_id,
                 run_id=candidate_id,
@@ -123,8 +169,8 @@ class LegacyModelMigrationService:
                 not blockers, blockers,
             )
             return self._repository.publish(staging, manifest, result)
-        except Exception:
-            shutil.rmtree(staging, ignore_errors=True)
+        except _LEGACY_ARTIFACT_FAILURES:
+            self._repository.discard_staging(staging)
             raise
 
 
@@ -172,3 +218,10 @@ def _ordered_targets(snapshot: ModelRegistrySnapshot):  # noqa: ANN202
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+_LEGACY_ARTIFACT_FAILURES = (
+    LegacyArtifactError,
+    ModelLifecycleError,
+    OSError,
+)

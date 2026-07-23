@@ -1,9 +1,14 @@
 """QProcessTrainingRunner process-boundary tests."""
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QEventLoop, QTimer
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+import pytest
+from PySide6.QtCore import QEventLoop, QProcess, QTimer
 from PySide6.QtWidgets import QApplication
 
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
@@ -15,30 +20,12 @@ from apps.train.state.training_run_state import TrainingRequest
 from tools.dev.mock_smoke.generators import write_mock_training_data
 
 
-def _app() -> QApplication:
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    return QApplication.instance() or QApplication([])
-
-
-def _wait_until(predicate, timeout_ms: int = 4000) -> None:  # noqa: ANN001
-    app = _app()
-    if predicate():
-        app.processEvents()
-        return
-    loop = QEventLoop()
-    poll = QTimer()
-    timeout = QTimer()
-    poll.setInterval(10)
-    timeout.setSingleShot(True)
-    poll.timeout.connect(lambda: loop.quit() if predicate() else None)
-    timeout.timeout.connect(loop.quit)
-    poll.start()
-    timeout.start(timeout_ms)
-    loop.exec()
-    poll.stop()
-    timeout.stop()
+@pytest.fixture(scope="module", autouse=True)
+def qt_app():
+    """Keep one strong QApplication reference for every child-process test."""
+    app = QApplication.instance() or QApplication([])
+    yield app
     app.processEvents()
-    assert predicate()
 
 
 def _request(tmp_path, run_id: str) -> TrainingRequest:  # noqa: ANN001
@@ -50,48 +37,108 @@ def _request(tmp_path, run_id: str) -> TrainingRequest:  # noqa: ANN001
     )
 
 
-def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path):
-    _app()
+def _run_to_terminal(
+    qt_app,
+    runner,
+    request,
+    *,
+    after_start=None,
+    timeout_ms: int = 8000,
+):  # noqa: ANN001
+    terminal = []
+    progress = []
+    loop = QEventLoop()
+    timeout = QTimer()
+    timeout.setSingleShot(True)
+
+    def record(kind, result):  # noqa: ANN001
+        terminal.append((kind, result))
+        loop.quit()
+
+    callbacks = TrainingExecutionCallbacks(
+        log=lambda _event: None,
+        progress=progress.append,
+        finished=lambda result: record("finished", result),
+        failed=lambda result: record("failed", result),
+        cancelled=lambda result: record("cancelled", result),
+    )
+    timeout.timeout.connect(loop.quit)
+    runner.start(request, callbacks)
+    if after_start is not None:
+        after_start(runner)
+    if not terminal:
+        timeout.start(timeout_ms)
+        loop.exec()
+        timeout.stop()
+    qt_app.processEvents()
+
+    assert terminal, "QProcess did not produce a terminal event"
+    assert len(terminal) == 1
+    assert runner._process is None
+    assert not runner.is_running
+    return terminal[0], progress
+
+
+def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path, qt_app):
     request = _request(tmp_path, "run-process-success")
     runner = QProcessTrainingRunner(extra_args=("--dev-fast", "--dev-rows", "8"))
-    finished = []
-    progress = []
 
-    runner.start(
-        request,
-        TrainingExecutionCallbacks(
-            log=lambda _event: None,
-            progress=progress.append,
-            finished=finished.append,
-            failed=lambda _result: None,
-            cancelled=lambda _result: None,
-        ),
-    )
+    (kind, result), progress = _run_to_terminal(qt_app, runner, request)
 
-    _wait_until(lambda: finished and not runner.is_running)
-
-    assert finished[0].status == "complete"
+    assert (kind, result.status) == ("finished", "complete")
     assert Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
     assert progress[-1].completed == progress[-1].total
     assert isinstance(runner, TrainingExecutionPort)
+    runner.dispose()
 
 
-def test_qprocess_runner_cancel_kills_hanging_process_and_removes_temp(tmp_path):
-    _app()
-    request = _request(tmp_path, "run-process-cancel")
+@pytest.mark.parametrize("cancel_phase", ("starting", "running"))
+def test_qprocess_cancel_is_exactly_once_cancelled(
+    tmp_path, qt_app, cancel_phase
+):
+    request = _request(tmp_path, f"run-process-cancel-{cancel_phase}")
     runner = QProcessTrainingRunner(
         extra_args=("--hang-before-start",),
         terminate_timeout_ms=100,
     )
-    cancelled = []
 
-    runner.cancelled.connect(cancelled.append)
-    runner.start(request)
-    QTimer.singleShot(100, runner.cancel)
+    def schedule_cancel(active_runner):  # noqa: ANN001
+        def cancel_twice():
+            assert active_runner.cancel()
+            assert active_runner.cancel()
 
-    _wait_until(lambda: cancelled and not runner.is_running)
+        if cancel_phase == "starting":
+            cancel_twice()
+            return
+        process = active_runner._process
+        assert process is not None
+        if process.state() == QProcess.Running:
+            cancel_twice()
+        else:
+            process.started.connect(cancel_twice)
 
-    assert cancelled[0].status == "cancelled"
+    (kind, result), _progress = _run_to_terminal(
+        qt_app, runner, request, after_start=schedule_cancel
+    )
+
+    assert (kind, result.status) == ("cancelled", "cancelled")
+    assert result.message == "Training process cancelled."
     assert not Path(request.model_output_path).exists()
     assert not list(tmp_path.glob("*.tmp"))
+    runner.dispose()
+
+
+def test_qprocess_genuine_launch_failure_is_failed(tmp_path, qt_app):
+    request = _request(tmp_path, "run-process-launch-failure")
+    runner = QProcessTrainingRunner(
+        python_executable=str(tmp_path / "does-not-exist-python")
+    )
+
+    (kind, result), _progress = _run_to_terminal(qt_app, runner, request)
+
+    assert (kind, result.status) == ("failed", "error")
+    assert result.message == "Training process failed to start."
+    assert not Path(request.model_output_path).exists()
+    assert not list(tmp_path.glob("*.tmp"))
+    runner.dispose()

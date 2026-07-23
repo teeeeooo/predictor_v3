@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
-
-import joblib
 
 from apps.common.model_lifecycle.candidate_contracts import (
     CandidateManifest,
@@ -30,8 +27,9 @@ class CandidatePublisher:
         result: TrainingResult,
         staging: Path,
     ) -> TrainingResult:
-        model_path = staging / "model.pkl"
-        payload = joblib.load(model_path)
+        model_sha256, payload = self._repository.inspect_staged_model(staging)
+        if not isinstance(payload, dict):
+            raise ValueError("Candidate model bundle is invalid")
         snapshot = ModelRegistrySnapshot.from_payload(
             json.loads(request.registry_payload_json)
         )
@@ -49,7 +47,7 @@ class CandidatePublisher:
             run_id=request.run_id,
             created_at=datetime.now(timezone.utc).isoformat(),
             source="training",
-            model_sha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
+            model_sha256=model_sha256,
             definition_generation_id=request.generation_id,
             registry_fingerprint=request.registry_fingerprint,
             ordered_ml_fingerprint=request.ordered_ml_fingerprint,

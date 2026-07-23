@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import joblib
 import pytest
 from PySide6.QtCore import QEventLoop, QTimer
@@ -21,6 +23,13 @@ from core.data_definition.target_registry.runtime import model_registry_snapshot
 @pytest.fixture
 def registry_snapshot():
     return model_registry_snapshot(bootstrap_manifest())
+
+
+@pytest.fixture(scope="module")
+def qt_app():
+    app = QApplication.instance() or QApplication([])
+    yield app
+    app.processEvents()
 
 
 class ArtifactExecution:
@@ -67,7 +76,10 @@ def test_success_publishes_candidate_and_preserves_active(
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
     publish_candidate(repository, registry_snapshot, "candidate-active")
     repository.replace_active(
-        "candidate-active", activated_at="2026-01-01T00:00:00+00:00", source="test"
+        "candidate-active",
+        activated_at="2026-01-01T00:00:00+00:00",
+        source="test",
+        expected_revision=0,
     )
     execution = ArtifactExecution(artifact_for(registry_snapshot))
     service = TrainingLifecycleService(
@@ -92,7 +104,10 @@ def test_failure_and_cancel_preserve_active_and_publish_nothing(
         repository = ModelLifecycleRepository(tmp_path / terminal)
         publish_candidate(repository, registry_snapshot, "candidate-active")
         repository.replace_active(
-            "candidate-active", activated_at="2026-01-01T00:00:00+00:00", source="test"
+            "candidate-active",
+            activated_at="2026-01-01T00:00:00+00:00",
+            source="test",
+            expected_revision=0,
         )
         service = TrainingLifecycleService(
             execution=ArtifactExecution(artifact_for(registry_snapshot), terminal),
@@ -160,10 +175,8 @@ def test_shared_application_boundary_has_no_pyside_or_train_only_imports():
 
 
 def test_qprocess_success_publishes_candidate_without_auto_activation(
-    tmp_path, registry_snapshot
+    tmp_path, registry_snapshot, qt_app
 ):
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    app = QApplication.instance() or QApplication([])
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
     service = TrainingLifecycleService(
         execution=QProcessTrainingRunner(
@@ -173,24 +186,27 @@ def test_qprocess_success_publishes_candidate_without_auto_activation(
         repository=repository,
     )
     finished = []
+    loop = QEventLoop()
+    timeout = QTimer()
+    timeout.setSingleShot(True)
+    timeout.timeout.connect(loop.quit)
+
+    def record_finished(result):  # noqa: ANN001
+        finished.append(result)
+        loop.quit()
+
     service.start(
         _request(tmp_path, registry_snapshot, "candidate-qprocess"),
-        finished_callback=finished.append,
+        finished_callback=record_finished,
     )
-    loop = QEventLoop()
-    poll = QTimer()
-    timeout = QTimer()
-    poll.setInterval(10)
-    timeout.setSingleShot(True)
-    poll.timeout.connect(lambda: loop.quit() if finished else None)
-    timeout.timeout.connect(loop.quit)
-    poll.start()
-    timeout.start(5000)
-    loop.exec()
-    poll.stop()
-    timeout.stop()
-    app.processEvents()
+    if not finished:
+        timeout.start(8000)
+        loop.exec()
+        timeout.stop()
+    qt_app.processEvents()
 
     assert finished and finished[0].publication_outcome == "published"
+    assert not service.is_running
+    assert service._execution is None
     assert repository.read_active(optional=True) is None
     assert repository.read_candidate("candidate-qprocess").model_path.is_file()

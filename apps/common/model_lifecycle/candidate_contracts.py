@@ -80,3 +80,16 @@ class CandidateResult:
 
     def to_payload(self) -> dict[str, object]:
         return asdict(self)
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, object]) -> "CandidateResult":
+        if payload.get("schema_version") != RESULT_SCHEMA_VERSION:
+            raise ValueError("unsupported Candidate result schema version")
+        return cls(
+            run_id=str(payload["run_id"]),
+            candidate_id=str(payload["candidate_id"]),
+            status=str(payload["status"]),
+            publication_outcome=str(payload["publication_outcome"]),
+            promotion_eligible=bool(payload["promotion_eligible"]),
+            blocking_reasons=tuple(payload.get("blocking_reasons", ())),
+        )

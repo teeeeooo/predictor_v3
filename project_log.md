@@ -29,6 +29,28 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-23 — Train/Admin Phase 5B independent-audit repair
+
+### Decision
+
+- Treat the independent audit of PR #28 head
+  `61856fe47dab2ea32aa9315c85c450b5ed5f466a` as a merge-blocking failure
+  that supersedes the earlier local PASS evidence.
+- Keep lifecycle filesystem writes and reads within validated regular objects
+  below the exact workspace root; symlink/path-escape states fail closed without
+  touching external files.
+- Require an explicit current Active revision for promotion, rollback, bootstrap
+  activation, and legacy continuity. No nullable or omitted guard is accepted.
+- Convert known corrupt legacy-import artifacts to structured Bootstrap or
+  Retraining-required outcomes while allowing unexpected programmer errors to
+  remain visible.
+- Arbitrate QProcess terminal signals once, with an accepted user cancellation
+  taking precedence over racing process error/finished signals and genuine launch
+  failures remaining failed.
+- Hold Phase 5C and any merge-ready claim until the repaired exact head receives
+  independent re-audit. Local repair validation is evidence for that audit, not
+  final approval.
+
 ## 2026-07-23 — Train/Admin Phase 5B model lifecycle foundation
 
 ### Decision

@@ -44,7 +44,7 @@ class ModelPromotionService:
         self,
         candidate_id: str,
         *,
-        expected_revision: int | None = None,
+        expected_revision: int,
         source: str = "user-promotion",
     ) -> PromotionResult:
         try:
@@ -62,7 +62,7 @@ class ModelPromotionService:
         return PromotionResult("active", candidate_id, reference.revision, "Candidate promoted.")
 
     def rollback(
-        self, candidate_id: str, *, expected_revision: int | None = None
+        self, candidate_id: str, *, expected_revision: int
     ) -> PromotionResult:
         return self.promote(
             candidate_id,

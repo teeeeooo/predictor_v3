@@ -17,8 +17,13 @@
 
 ## Current Slice
 
-Phase 5B lifecycle foundation is implemented for repository-automated scope. The authoritative
-Phase 5 design is
+Phase 5B lifecycle foundation remains the current slice. Independent audit of
+PR #28 head `61856fe47dab2ea32aa9315c85c450b5ed5f466a` rejected the earlier
+acceptance evidence because Candidate filesystem ownership, mandatory Active
+revision guarding, corrupt legacy-import handling, and QProcess cancellation
+arbitration were incomplete. The repair is implemented and locally validated;
+the Draft PR requires a new exact-head independent audit before Phase 5B can
+close. Phase 5C has not started. The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
@@ -27,18 +32,22 @@ implementation order.
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
 Candidate repository, explicit Active reference, promotion/rollback service,
 Bootstrap state, fail-closed legacy import, shared training application boundary,
-and Predict startup resolver now exist to make that UI safe. The agent-assisted
-experiment loop is an important later capability and must not delay the UI/UX
-workstream.
+and Predict startup resolver remain the foundation for that UI. The repair adds
+symlink/path-escape rejection, non-optional revision guards, controlled corrupt
+legacy state, and exactly-once QProcess terminal arbitration without expanding
+the Phase 5B product scope.
 
 ## Next Action
 
-Implement Phase 5C training result and analysis artifacts on the Phase 5B
-Candidate contract. Preserve Train/Model UI/UX as the primary product direction;
-do not pull CLI, campaigns, or the agent loop ahead of the analysis and UI slices.
+Commit and push the Phase 5B audit repair to Draft PR #28, then hand the new
+exact head to an independent auditor. Do not start Phase 5C or call Phase 5B
+merge-ready before that re-audit.
 
 ## Active Blockers
 
+- Phase 5B closure is held for independent exact-head re-audit of Draft PR #28.
+  Local focused, canonical, structure, and change-gate evidence is repair
+  evidence, not independent approval.
 - Model-incompatible Definition generations may publish and cut over, but Predict
   remains blocked with Retraining required until compatibility is proven. No model
   artifact is automatically replaced or promoted.
