@@ -1,0 +1,158 @@
+"""Promotion, rollback, Bootstrap, and atomic pointer tests."""
+
+from dataclasses import replace
+
+import pytest
+
+from apps.common.model_lifecycle import (
+    ActiveModelResolver,
+    ModelLifecycleRepository,
+    ModelPromotionService,
+)
+
+from .conftest import incompatible_snapshot, publish_candidate
+
+
+def test_only_compatible_candidate_promotes(repository, registry_snapshot):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    result = ModelPromotionService(
+        repository, lambda: registry_snapshot
+    ).promote("candidate-a", expected_revision=0)
+
+    assert result.status == "active"
+    assert repository.read_active().candidate_id == "candidate-a"
+
+
+def test_stale_activation_revision_is_rejected(repository, registry_snapshot):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+
+    result = service.promote("candidate-b", expected_revision=0)
+
+    assert result.status == "blocked"
+    assert "stale Active reference revision" in result.message
+    assert repository.read_active().candidate_id == "candidate-a"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("generation_id", "stale", "Definition generation"),
+        ("registry_fingerprint", "stale", "registry fingerprint"),
+        ("ordered_ml_fingerprint", "stale", "ordered ML fingerprint"),
+        ("preprocessing_version", "v-next", "preprocessing version"),
+    ),
+)
+def test_current_compatibility_mismatch_blocks_promotion(
+    repository, registry_snapshot, field, value, message
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    current = incompatible_snapshot(registry_snapshot, field, value)
+
+    result = ModelPromotionService(repository, lambda: current).promote("candidate-a")
+
+    assert result.status == "blocked"
+    assert message in result.message
+    assert repository.read_active(optional=True) is None
+
+
+def test_feature_order_tamper_blocks_without_changing_active(
+    repository, registry_snapshot
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a").status == "active"
+    second = publish_candidate(repository, registry_snapshot, "candidate-b")
+    payload = __import__("json").loads(
+        (second.path / "manifest.json").read_text(encoding="utf-8")
+    )
+    payload["targets"][0]["feature_names"].reverse()
+    (second.path / "manifest.json").write_text(
+        __import__("json").dumps(payload), encoding="utf-8"
+    )
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert result.status == "blocked"
+    assert repository.read_active().candidate_id == "candidate-a"
+
+
+def test_unpublished_experimental_feature_candidate_is_blocked(
+    repository, registry_snapshot
+):
+    candidate = publish_candidate(repository, registry_snapshot, "candidate-a")
+    payload = __import__("json").loads(
+        (candidate.path / "manifest.json").read_text(encoding="utf-8")
+    )
+    payload["contains_unpublished_features"] = True
+    (candidate.path / "manifest.json").write_text(
+        __import__("json").dumps(payload), encoding="utf-8"
+    )
+
+    result = ModelPromotionService(
+        repository, lambda: registry_snapshot
+    ).promote("candidate-a")
+
+    assert result.status == "blocked"
+    assert "unpublished experimental features" in result.message
+    assert repository.read_active(optional=True) is None
+
+
+def test_pointer_write_failure_preserves_existing_active(tmp_path, registry_snapshot):
+    fail = {"enabled": False}
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle",
+        failure_hook=lambda stage: (
+            (_ for _ in ()).throw(OSError("pointer failure"))
+            if fail["enabled"] and stage == "before_active_replace" else None
+        ),
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a").status == "active"
+    fail["enabled"] = True
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert result.status == "blocked"
+    assert repository.read_active().candidate_id == "candidate-a"
+    assert repository.read_active().revision == 1
+
+
+def test_rollback_revalidates_current_compatibility(repository, registry_snapshot):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    current = {"snapshot": registry_snapshot}
+    service = ModelPromotionService(repository, lambda: current["snapshot"])
+    assert service.promote("candidate-a").status == "active"
+    assert service.promote("candidate-b", expected_revision=1).status == "active"
+    current["snapshot"] = replace(registry_snapshot, generation_id="new")
+
+    result = service.rollback("candidate-a", expected_revision=2)
+
+    assert result.status == "blocked"
+    assert repository.read_active().candidate_id == "candidate-b"
+
+
+def test_bootstrap_resolver_is_controlled_and_candidate_is_not_auto_active(
+    repository, registry_snapshot
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+
+    resolution = ActiveModelResolver(repository).resolve()
+
+    assert resolution.status == "missing-active"
+    assert "No Active model" in resolution.message
+
+
+def test_invalid_active_reference_is_controlled(repository):
+    repository.root.mkdir(parents=True)
+    repository.active_reference_path.write_text("{invalid", encoding="utf-8")
+
+    resolution = ActiveModelResolver(repository).resolve()
+
+    assert resolution.status == "invalid-active"
+    assert resolution.message.startswith("Active model is unavailable:")

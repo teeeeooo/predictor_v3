@@ -7,6 +7,12 @@ from pathlib import Path
 from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from apps.common.runtime_generation.paths import default_generation_root
+from apps.common.model_lifecycle import (
+    ActiveModelResolver,
+    LegacyModelMigrationService,
+    ModelLifecycleRepository,
+    default_model_lifecycle_root,
+)
 from apps.train.adapters.data_definition_generation_repository import DataDefinitionGenerationRepository
 from apps.train.adapters.one_hot_vocabulary import load_persisted_mapping_vocabulary_snapshots
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
@@ -35,6 +41,7 @@ def create_shell(
     *,
     generation_root: str | Path | None = None,
     bootstrap_manifest_path: str | Path | None = None,
+    lifecycle_root: str | Path | None = None,
 ) -> TrainShell:
     root = generation_root if generation_root is not None else default_generation_root()
     repository = DataDefinitionGenerationRepository(root)
@@ -44,9 +51,24 @@ def create_shell(
         repository.publish(load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH))
         active = repository.read_active()
 
+    train_participant = TrainRuntimeParticipant(active)
+    lifecycle_repository = ModelLifecycleRepository(
+        lifecycle_root or default_model_lifecycle_root()
+    )
+    registry_provider = lambda: train_participant.registry_snapshot
+    LegacyModelMigrationService(
+        lifecycle_repository, registry_provider
+    ).migrate_if_needed(MODEL_FILE)
+    resolution = ActiveModelResolver(lifecycle_repository).resolve()
+    resolved_model_path = (
+        resolution.model_path
+        if resolution.status == "resolved"
+        else str(lifecycle_repository.root / ".missing-active-model.pkl")
+    )
+
     predict_composition = build_predict_workspace_composition(
         runtime_snapshot=build_predict_runtime_snapshot(active),
-        model_file=MODEL_FILE,
+        model_file=resolved_model_path,
     )
     mapping_service = DataMappingService()
     definition_controller = DataDefinitionController(DataDefinitionService(
@@ -57,9 +79,8 @@ def create_shell(
         active, definition_controller
     )
     predict_participant = PredictRuntimeParticipant(
-        active, predict_composition, model_file=MODEL_FILE
+        active, predict_composition, model_file=resolved_model_path
     )
-    train_participant = TrainRuntimeParticipant(active)
     mapping_participant = MappingRuntimeParticipant(active, mapping_service)
     coordinator = RuntimeGenerationCoordinator(repository, (
         definition_participant,
@@ -69,7 +90,8 @@ def create_shell(
     ))
     train_controller = TrainController(
         execution_factory=QProcessTrainingRunner,
-        registry_provider=lambda: train_participant.registry_snapshot,
+        registry_provider=registry_provider,
+        lifecycle_repository=lifecycle_repository,
     )
     return TrainShell(
         train_controller=train_controller,

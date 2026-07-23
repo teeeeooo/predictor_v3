@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -45,7 +46,12 @@ def main() -> int:
         force=args.force,
     )
     app = QApplication.instance() or QApplication([])
-    shell = create_shell()
+    definition_state = output_dir / "definition-state"
+    lifecycle_state = output_dir / "lifecycle-state"
+    shell = create_shell(
+        generation_root=definition_state,
+        lifecycle_root=lifecycle_state,
+    )
     app.processEvents()
     tabs = [shell.tabs.tabText(index) for index in range(shell.tabs.count())]
     expected = ["Predict", "Train / Model", "Data Definition", "Data Mapping"]
@@ -87,6 +93,8 @@ def main() -> int:
             raise RuntimeError(f"Data Mapping control is disabled: {text}")
     print("train shell smoke: tabs/status/active controls OK")
     print("trainer execution: production adapter composed")
+    shell.close()
+    app.processEvents()
     if args.cleanup:
         removed = cleanup_from_manifest(
             paths["manifest"],
@@ -96,6 +104,8 @@ def main() -> int:
         )
         for path in removed:
             print(f"removed: {path}")
+        shutil.rmtree(definition_state, ignore_errors=True)
+        shutil.rmtree(lifecycle_state, ignore_errors=True)
     return 0
 
 

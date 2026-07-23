@@ -973,11 +973,12 @@ Responsibility:
 - validate the training data path before execution
 - return structured validation/resource-status contracts
 
-The service must not run training or change core ML algorithms, preprocessing,
-canonical Target registry semantics, or the single `model/model.pkl` artifact
-contract. Production composition freezes the immutable canonical registry snapshot
-into `TrainingRequest`; execution failures are translated at the process
-adapter/job boundary.
+The validation service must not run training or change core ML algorithms,
+preprocessing, or canonical Target registry semantics. Production composition
+freezes the immutable canonical registry snapshot into `TrainingRequest`.
+`apps/train/application/training_lifecycle.py` is the shared Qt-free application
+boundary that coordinates validation, execution, cancellation, terminal results,
+and Candidate publication. `TrainController` is a UI adapter over that boundary.
 
 Arc 11 correction: production Train execution must not be accepted as a direct
 in-process `train_all_models()` call behind QThread. Production training must
@@ -1004,12 +1005,43 @@ Responsibility:
 - let the `QProcessTrainingRunner` adapter own `QProcess`, Qt signal wiring,
   cancellation escalation, and Qt resource disposal
 - run real core training only in the child-process job
-- promote a completed temporary model artifact atomically and remove temporary
-  output on cancellation or failure
+- write the completed bundle only to the caller-provided Candidate staging path
+  and remove process-owned temporary output on cancellation or failure
 - compose the production adapter in `apps/train/app.py`
 
 The controller must not import PySide6 or a concrete process runner. A runner
 instance is single-run and is disposed after a terminal callback.
+
+### 11.5A Model lifecycle repository and application boundary
+
+Files:
+
+- `apps/common/model_lifecycle/`
+- `apps/train/application/training_lifecycle.py`
+- `apps/train/application/candidate_publication.py`
+
+Responsibility:
+
+- resolve one default workspace below the platform user-state root without using
+  the repository path as permanent workspace identity
+- publish hash-checked, deserializable, versioned Candidate bundles through
+  same-filesystem staging, fsync, writer serialization, and atomic rename
+- keep Candidate publication separate from Active selection
+- store an atomic revision-guarded Active reference with traceable activation
+  history
+- revalidate current Definition/runtime fingerprints, preprocessing, production
+  Targets, feature order, experimental-feature policy, deserialize integrity, and
+  bounded prediction smoke before promotion or rollback re-promotion
+- import a legacy `model.pkl` idempotently without moving, deleting, or modifying
+  the original, and activate it only when full compatibility is proven
+- resolve Predict startup to one immutable Active Candidate path or a controlled
+  missing/invalid Active status
+
+Core ML writes one multi-target bundle to a caller-selected staging path and does
+not import lifecycle infrastructure. The QProcess adapter, child job, Train UI,
+and Predict UI do not write the Active reference. An already constructed
+`PredictionService` retains its loaded model/path; a later Active revision is
+resolved only by a newly composed Predict process in Phase 5B.
 
 ### 11.6 Data Mapping service
 

@@ -17,7 +17,7 @@
 
 ## Current Slice
 
-Phase 5A Architecture Audit is complete with final result `PASS`. The authoritative
+Phase 5B lifecycle foundation is implemented for repository-automated scope. The authoritative
 Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
@@ -25,16 +25,17 @@ the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
-lifecycle foundation exists to make that UI safe, while the agent-assisted
+Candidate repository, explicit Active reference, promotion/rollback service,
+Bootstrap state, fail-closed legacy import, shared training application boundary,
+and Predict startup resolver now exist to make that UI safe. The agent-assisted
 experiment loop is an important later capability and must not delay the UI/UX
 workstream.
 
 ## Next Action
 
-Implement Phase 5B lifecycle foundation from the authoritative Phase 5 design.
-Start with the minimum safe workspace/candidate/active-model boundary needed by
-the Train/Model UX; do not pull the later campaign or agent loop ahead of the UI
-priority.
+Implement Phase 5C training result and analysis artifacts on the Phase 5B
+Candidate contract. Preserve Train/Model UI/UX as the primary product direction;
+do not pull CLI, campaigns, or the agent loop ahead of the analysis and UI slices.
 
 ## Active Blockers
 

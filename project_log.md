@@ -29,6 +29,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-23 — Train/Admin Phase 5B model lifecycle foundation
+
+### Decision
+
+- Replace successful fixed-path model activation with immutable Candidate
+  publication beneath one default user-state workspace; publication never changes
+  Active.
+- Make Active a revision-guarded atomic reference with activation history.
+  Promotion and rollback both revalidate the current Definition/runtime contract,
+  artifact integrity, production Targets, feature order, preprocessing, and
+  prediction smoke before changing the reference.
+- Preserve Bootstrap as normal state. Import legacy `model.pkl` by deterministic
+  hash identity without modifying the original, and create continuity Active only
+  when complete current compatibility is proven.
+- Make Qt-free training lifecycle orchestration the shared application boundary,
+  with TrainController as adapter and QProcess limited to process execution/event
+  transport. Core ML writes only to a caller-provided staging path.
+- Resolve newly composed Predict processes through the lifecycle Active reference.
+  Existing PredictionService instances keep their loaded immutable path; silent
+  hot-swap and reload UI remain later work.
+- Advance the next implementation action to Phase 5C analysis artifacts while
+  preserving Train/Model UI/UX priority over CLI, campaigns, and the agent loop.
+
 ## 2026-07-23 — Train/Admin Phase 5A architecture audit closeout
 
 ### Decision

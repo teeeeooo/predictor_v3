@@ -7,7 +7,8 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 Train/Admin Phase 4 Unified Feature Manager is complete for repository-automated
 scope. Phase 5A architecture audit is complete with `PASS`, and Phase 5B candidate
-store and active-model lifecycle foundation is the current implementation slice.
+store and active-model lifecycle foundation is complete for repository-automated
+scope. Phase 5C training result and analysis artifacts are next.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -107,6 +108,10 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train/Admin Phase 5A — architecture audit and contract freeze complete with
   `PASS`; authoritative design, workspace identity, legacy-model migration, and
   UI/UX priority are fixed for Phase 5B.
+- Train/Admin Phase 5B — immutable Candidate publication, revisioned Active
+  reference/history, explicit promotion and rollback re-promotion, Bootstrap,
+  fail-closed idempotent legacy import, shared Qt-free training orchestration, and
+  Predict startup resolution implemented for repository-automated scope.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 

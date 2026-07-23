@@ -1,0 +1,36 @@
+"""Shared Qt-free model lifecycle contracts and services."""
+
+from .active_contracts import (
+    ActiveModelReference,
+    ActivationRecord,
+    ModelResolution,
+)
+from .candidate_contracts import (
+    CandidateManifest,
+    CandidateResult,
+    TargetArtifactContract,
+)
+from .repository_contracts import CandidateSnapshot
+from .paths import DEFAULT_WORKSPACE_ID, default_model_lifecycle_root
+from .migration import LegacyMigrationResult, LegacyModelMigrationService
+from .promotion import ModelPromotionService, PromotionResult
+from .repository import ModelLifecycleRepository
+from .resolver import ActiveModelResolver
+
+__all__ = [
+    "ActiveModelReference",
+    "ActivationRecord",
+    "ActiveModelResolver",
+    "CandidateManifest",
+    "CandidateResult",
+    "CandidateSnapshot",
+    "DEFAULT_WORKSPACE_ID",
+    "ModelLifecycleRepository",
+    "LegacyMigrationResult",
+    "LegacyModelMigrationService",
+    "ModelPromotionService",
+    "ModelResolution",
+    "PromotionResult",
+    "TargetArtifactContract",
+    "default_model_lifecycle_root",
+]
