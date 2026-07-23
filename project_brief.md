@@ -5,9 +5,13 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 
 ## Current Phase
 
-Train/Admin Phase 4 Unified Feature Manager is implemented through Phase 4H+4I
-for final audit. Phase 5 Train/Model and Shell UX is next after merge; it has not
-started.
+Train/Admin Phase 4 Unified Feature Manager is complete for repository-automated
+scope. Phase 5A architecture audit is complete with `PASS`, and Phase 5B candidate
+store and active-model lifecycle foundation is the current implementation slice.
+
+The authoritative Phase 5 contract is
+`docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
+The earlier Phase 5 Train/Model document remains supporting UI/UX guidance only.
 
 Phase 3 — Data Definition UX Foundation is complete, final-audit approved, and
 merged through PR #16. The earlier ML/Predictor foundation through Arc 15-FU1 and
@@ -35,6 +39,12 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
+- Phase 5 lifecycle state lives below the user-state root under a stable workspace
+  identity. A repository absolute path is not permanent identity, and Phase 5B
+  supports one default workspace only.
+- A pre-Phase-5 `model.pkl` becomes the initial Active model only when complete
+  compatibility is proven. Otherwise the original is preserved and the workspace
+  begins in Bootstrap / Retraining required state.
 - Train and Predict remain separate PySide6 applications under `apps/train/` and
   `apps/predict/`; the calculator shell and Tkinter path stay separate.
 - Canonical calculator launch remains `app_calculator.py` →
@@ -93,7 +103,10 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   generation-bound Predict inference, complete participant stale evidence, actual
   Definition controller cutover, exact dirty Mapping evidence, recovery
   diagnostics, stable Result migration, committed-registry Train Target
-  presentation parity, and Phase 4 automated closeout implemented for audit.
+  presentation parity, and Phase 4 automated closeout complete.
+- Train/Admin Phase 5A — architecture audit and contract freeze complete with
+  `PASS`; authoritative design, workspace identity, legacy-model migration, and
+  UI/UX priority are fixed for Phase 5B.
 
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
@@ -112,7 +125,7 @@ handoff, and keyboard/accessibility polish. It is complete and merged through PR
 - Automatic retraining, automatic activation, Predict internal redesign, and real
   company data remain excluded.
 
-### Current Workstream — Train/Admin Phase 4 Unified Feature Manager
+### Closed — Train/Admin Phase 4 Unified Feature Manager
 
 The Phase 4A audit is approved and Phases 4B–4I are implemented. The final
 workflow lets a user manage Predict and
@@ -148,16 +161,28 @@ Concrete mapping values remain in Data Mapping. Training remains an explicit use
 action in Train. Data Definition does not trigger training or automatic model
 activation, and Predict internal redesign is not part of Phase 4.
 
-Phase 4 now waits for final audit and merge. Phase 5 is the next code workstream;
-no Phase 5 UX or model-promotion implementation is included in this closeout.
+Phase 4 is complete for repository-automated scope. Its owner and compatibility
+boundaries remain the baseline for Phase 5.
 
-### Next Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
+### Current Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
 
 Phase 5 retains this primary user flow:
 
 ```text
 select training data → train → check progress → review results
 ```
+
+Train/Model UI/UX improvement is the primary product goal. The lifecycle
+foundation makes that workflow safe; the headless campaign and agent-assisted
+experiment loop remain important later capabilities and must not delay the UI/UX
+workstream.
+
+Phase 5B starts from the audit-frozen default-workspace and legacy-model migration
+contracts. Lifecycle state uses stable workspace identity under the user-state
+root, never the repository absolute path as permanent identity. Existing
+`model.pkl` continuity is accepted only after complete compatibility proof;
+otherwise the original remains untouched and Bootstrap / Retraining required is
+shown.
 
 Schema, Feature, mapping, and compatibility validation is automatic and internal.
 The default surface presents the user's next action and outcome, not normal
@@ -187,7 +212,8 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 
 ## Deferred / Hold
 
-- Phase 5 remains deferred until Phase 4H+4I final audit and merge.
+- Phase 5F–5G headless campaign and agent-assisted loop work remains ordered
+  after the lifecycle and Train/Model UI slices.
 - AS/NZS Excel compatibility and historical reconstruction remain deferred.
 - Internal formula trace remains on hold unless a separate core/data contract is
   approved.
@@ -201,8 +227,9 @@ Predict internal redesign follows Phase 5 and a fresh populated-state audit.
 - Read `docs/WORK_PLAN.md` for the current slice, one next action, blockers,
   constraints, and explicit handoff pointers.
 - Read this brief when phase, owner state, or milestone direction is needed.
-- Read `docs/designs/2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md`
-  before Phase 4B or later Unified Feature Manager implementation.
+- Read `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`
+  before Phase 5B or later Phase 5 implementation. Use the older Phase 5 document
+  only as supporting Train/Model and shell UI/UX guidance.
 - Read `result_reports/memory/project_memory_seed.md` only for relevant prior
   decisions, failures, open questions, or workstream recovery.
 - Use the log/records/legacy evidence for history, not to reconstruct priority.

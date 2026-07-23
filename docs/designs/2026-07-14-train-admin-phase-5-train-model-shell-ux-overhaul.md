@@ -1,8 +1,13 @@
 # Train/Admin Phase 5 — Train/Model and Shell UX Overhaul
 
-Status: deferred proposed phase design; begin after Phase 4 stabilization
+Status: supporting Train UI/UX design; Phase 5A audit complete
 Date: 2026-07-17
 Depends on: completed Phases 1–4
+
+> **Authority:** This document remains valid for the Train/Model and shell UI/UX
+> direction. `2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`
+> is authoritative for model lifecycle, storage, CLI, campaigns, the agent loop,
+> migration, and implementation order.
 
 ## 1. Goal
 

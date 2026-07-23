@@ -29,6 +29,28 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-23 — Train/Admin Phase 5A architecture audit closeout
+
+### Decision
+
+- Close the merged-main Phase 5A architecture audit with final result `PASS` and
+  advance the next implementation action to Phase 5B lifecycle foundation.
+- Make the 2026-07-22 Train/Model lifecycle and agent-assisted experiment design
+  authoritative. Retain the earlier Phase 5 Train/Model document as supporting
+  UI/UX guidance only where it does not conflict with lifecycle, CLI, campaign,
+  agent-loop, migration, or implementation order.
+- Store lifecycle state below the user-state root through a stable workspace
+  identity. Do not use a repository absolute path as permanent identity, and
+  support only one default workspace in Phase 5B.
+- Register a pre-Phase-5 `model.pkl` as the initial Active model only after complete
+  compatibility proof. Otherwise preserve the original and start in Bootstrap /
+  Retraining required state.
+- Keep Train/Model UI/UX improvement as the primary Phase 5 product goal. Treat
+  lifecycle as its safety foundation and the agent-assisted loop as a later
+  capability that cannot delay the UI workstream.
+- Defer architecture and packaging documentation changes until the implementation
+  slice that establishes the corresponding current behavior.
+
 ## 2026-07-22 — Train/Admin Phase 4 runtime generation closeout
 
 ### Decision

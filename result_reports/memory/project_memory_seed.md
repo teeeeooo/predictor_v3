@@ -577,7 +577,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 4 Unified Feature Manager direction
-    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I implements the Unified Feature Manager: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded. Phase 5 Train/Model and Shell UX is next after Phase 4 final audit and merge.
+    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I completes the Unified Feature Manager for repository-automated scope: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded. Phase 5A architecture audit is complete with PASS and Phase 5B lifecycle foundation is next.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -593,7 +593,26 @@ entries:
       - live reload
       - automatic retraining
     assertionStatus: verified
-    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md
+
+  - type: decision
+    topic: Train/Admin Phase 5A architecture audit and lifecycle start
+    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. The older Phase 5 Train/Model document remains supporting UI/UX guidance and cannot override lifecycle, CLI, campaign, agent-loop, migration, or implementation order. Phase 5B stores lifecycle state below the user-state root under stable workspace identity, never treats the repository absolute path as permanent identity, and supports one default workspace. A legacy `model.pkl` becomes initial Active only after complete compatibility proof; otherwise the original is preserved and the workspace starts Bootstrap / Retraining required. Train/Model UI/UX improvement is the primary Phase 5 product goal; lifecycle is its safety foundation and agent-assisted campaigns remain later.
+    keywords:
+      - predictor_v3
+      - Train/Admin
+      - Phase 5A
+      - Phase 5B
+      - model lifecycle
+      - workspace identity
+      - user-state root
+      - legacy model
+      - Bootstrap
+      - retraining required
+      - Train UI UX
+      - agent-assisted experiment
+    assertionStatus: verified
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation
@@ -712,8 +731,8 @@ entries:
       - standalone Predict
       - stale process
       - One-hot acceptance
-    assertionStatus: proposed
-    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-model-promotion-predict-generation-boundaries.md
+    assertionStatus: verified
+    source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-17-train-admin-model-promotion-predict-generation-boundaries.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md
 ```
 
 ## Known Gaps
