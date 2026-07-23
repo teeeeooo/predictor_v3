@@ -17,34 +17,24 @@
 
 ## Current Slice
 
-Train/Admin Phase 4H+4I is implemented for audit. Definition publication and
-runtime application are separate outcomes. TrainShell coordinates Data Definition,
-embedded Predict, Train / Model, and Data Mapping through one immutable candidate,
-all-participant prepare, stale guard, and atomic commit/rollback. Dirty Mapping
-drafts retain baseline, values, and history behind Review Update, Save Mapping, and
-Discard and Reload. Standalone Predict reads the persisted generation at startup,
-explicit Refresh, and immediately before prediction; failed or incompatible reload
-preserves rows/results and blocks new prediction. Phase 4A–4I acceptance and concise
-diagnostics are closed for repository-automated scope.
+Phase 5A Architecture Audit is complete with final result `PASS`. The authoritative
+Phase 5 design is
+`docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
+The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
+the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
+implementation order.
 
-The PR #25 audit correction binds actual Predict inference to the coordinated
-generation, extends stale evidence across Predict cases/running state, Train CSV,
-Definition draft/controller, and Mapping provider state, and bases Mapping removal
-review on exact affected unsaved values. Dirty Definition drafts require explicit
-Save/Reset and fresh retry; embedded and standalone Predict share the same runtime
-snapshot owner.
-
-The final PR #25 correction additionally migrates existing Predict ResultRow
-values by stable Result Feature identity as part of the same atomic session
-transition and restores the complete result state on rollback. Train idle Target
-list/count/order/Summary/waiting metrics now share the committed registry; a
-running request retains its frozen presentation until terminal, then the pending
-process generation becomes the idle presentation.
+Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
+lifecycle foundation exists to make that UI safe, while the agent-assisted
+experiment loop is an important later capability and must not delay the UI/UX
+workstream.
 
 ## Next Action
 
-Perform final audit of the Phase 4H+4I Draft PR. After merge, Phase 5 Train/Model
-and Shell UX is the next implementation phase; do not begin it in this slice.
+Implement Phase 5B lifecycle foundation from the authoritative Phase 5 design.
+Start with the minimum safe workspace/candidate/active-model boundary needed by
+the Train/Model UX; do not pull the later campaign or agent loop ahead of the UI
+priority.
 
 ## Active Blockers
 
@@ -55,7 +45,6 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
   user-created Features without those dependencies remain renameable/removable.
 - Windows native Feature Manager smoke remains a pre-release verification item;
   automated macOS/offscreen coverage is not a substitute for that evidence.
-- Phase 5 Train/Model and Shell UX remains on hold until Phase 4 is stable.
 
 ## Active Constraints
 
@@ -87,6 +76,12 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
 - Separate training candidate publication from validated explicit active-model
   promotion, and distinguish TrainShell process-wide cutover from standalone
   Predict cross-process generation detection.
+- Phase 5B must resolve lifecycle state beneath the user-state root through a
+  stable workspace identity. A repository absolute path is not a permanent
+  workspace identity, and Phase 5B supports one default workspace only.
+- Import an existing `model.pkl` as the initial Active model only when complete
+  compatibility is proven. Otherwise preserve the original artifact and begin in
+  Bootstrap / Retraining required state.
 - Separate static/mapping-backed/external One-hot category mutation owners and
   Target CRUD from new model-group/model-level policy creation.
 - Data Mapping remains the concrete `mapping.json` value owner; Train remains the
@@ -100,10 +95,10 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
 
 ## Deferred / Hold
 
-- Phase 5 Train/Model and Shell implementation begins only after Unified Feature
-  Manager Phase 4H+4I audit and merge.
+- Phase 5F–5G CLI/campaign and agent-assisted loop work remains later than the
+  lifecycle and Train/Model UI slices; it must not displace the UI/UX priority.
 - Deferred Phase 2 native interaction acceptance remains a separate acceptance
-  item and does not block Phase 4.
+  item and does not block Phase 5B.
 - Predict internal UI/UX overhaul begins only after Train/Admin Phase 5 and a fresh
   populated-state audit.
 - Real mapping values, training data, model quality, and production-readiness
@@ -114,7 +109,9 @@ and Shell UX is the next implementation phase; do not begin it in this slice.
 - Governing design: `docs/designs/2026-07-14-train-admin-ui-ux-overhaul-governing-design.md`
 - Phase 4 design: `docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md`
 - Approved Phase 4A closeout: `docs/designs/2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md`
-- Deferred Phase 5 design: `docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
+- Authoritative Phase 5 design: `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`
+- Supporting Phase 5 UI/UX design: `docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
+- Phase 5A decision record: `result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md`
 - Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 - Arc 15 owner foundation: `docs/designs/2026-07-06-arc15-unified-data-definition-manager-foundation.md`
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`

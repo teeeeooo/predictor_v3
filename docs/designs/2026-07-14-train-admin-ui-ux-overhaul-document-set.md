@@ -1,16 +1,15 @@
 # Train/Admin UI/UX Overhaul — Design Document Set
 
-Status: active design set; Phases 1–3 complete; Phase 4A approved; Phase 4B next; Phase 5 deferred
-Date: 2026-07-17
+Status: active design set; Phase 4 complete; Phase 5A audit PASS; Phase 5B next
+Date: 2026-07-22
 
 ## Purpose
 
-This document set records the governing direction, accepted Phase 1–3 closeouts,
-the current Phase 4 Unified Feature Manager plus its approved Phase 4A contract
-audit closeout, and the deferred Phase 5 Train/Model direction for
-`app_train.py`. It is split into one governing design, five implementation
-phases, one Phase 4A decision amendment, and one later Predict boundary so that
-the direction is not lost while individual slices evolve.
+This document set records the governing direction, accepted Phase 1–4 work,
+the authoritative Phase 5 Train/Model lifecycle and experiment design, the
+supporting Phase 5 Train/Model UI/UX direction, and the later Predict boundary.
+The Phase 5A architecture audit is complete with `PASS`; Phase 5B is the next
+implementation slice.
 
 ## Documents
 
@@ -20,8 +19,9 @@ the direction is not lost while individual slices evolve.
 4. `2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 5. `2026-07-17-train-admin-phase-4-unified-feature-manager.md`
 6. `2026-07-17-train-admin-phase-4a-current-state-contract-audit-closeout.md`
-7. `2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
-8. `2026-07-14-future-predict-ui-ux-overhaul-boundary.md`
+7. `2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`
+8. `2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
+9. `2026-07-14-future-predict-ui-ux-overhaul-boundary.md`
 
 ## Intended Repository Location
 
@@ -38,6 +38,7 @@ the current owner documents.
 
 ## Reading Order
 
-Read the governing design, then the Phase 4 parent design and approved Phase 4A
-closeout before Slice 4B implementation. Read Phase 5 only for its deferred
-boundary or when Phase 4 has stabilized. Predict redesign remains later.
+For Phase 5B and later work, read the 2026-07-22 authoritative Phase 5 design
+first. Use the 2026-07-14 Phase 5 document as supporting Train/Model and shell
+UI/UX detail; it does not override lifecycle, CLI, campaign, agent-loop,
+migration, or implementation-order decisions. Predict redesign remains later.
