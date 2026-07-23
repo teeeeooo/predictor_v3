@@ -9,7 +9,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from PySide6.QtCore import QEventLoop, QProcess, QTimer
-from PySide6.QtWidgets import QApplication
 
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
 from apps.train.ports.training_execution_port import (
@@ -18,14 +17,6 @@ from apps.train.ports.training_execution_port import (
 )
 from apps.train.state.training_run_state import TrainingRequest
 from tools.dev.mock_smoke.generators import write_mock_training_data
-
-
-@pytest.fixture(scope="module", autouse=True)
-def qt_app():
-    """Keep one strong QApplication reference for every child-process test."""
-    app = QApplication.instance() or QApplication([])
-    yield app
-    app.processEvents()
 
 
 def _request(tmp_path, run_id: str) -> TrainingRequest:  # noqa: ANN001
@@ -38,12 +29,12 @@ def _request(tmp_path, run_id: str) -> TrainingRequest:  # noqa: ANN001
 
 
 def _run_to_terminal(
-    qt_app,
+    qprocess_app,
     runner,
     request,
     *,
     after_start=None,
-    timeout_ms: int = 8000,
+    timeout_ms: int = 20000,
 ):  # noqa: ANN001
     terminal = []
     progress = []
@@ -70,20 +61,36 @@ def _run_to_terminal(
         timeout.start(timeout_ms)
         loop.exec()
         timeout.stop()
-    qt_app.processEvents()
+    qprocess_app.processEvents()
 
-    assert terminal, "QProcess did not produce a terminal event"
+    if not terminal:
+        runner.cancel()
+        cleanup = QEventLoop()
+        cleanup_timeout = QTimer()
+        cleanup_timeout.setSingleShot(True)
+        cleanup_timeout.timeout.connect(cleanup.quit)
+        process = runner._process
+        if process is not None:
+            process.finished.connect(cleanup.quit)
+        cleanup_timeout.start(3000)
+        cleanup.exec()
+        cleanup_timeout.stop()
+        runner.dispose()
+        qprocess_app.processEvents()
+        pytest.fail("QProcess did not produce a terminal event")
     assert len(terminal) == 1
     assert runner._process is None
     assert not runner.is_running
     return terminal[0], progress
 
 
-def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path, qt_app):
+def test_qprocess_runner_dev_fast_success_promotes_final_artifact(
+    tmp_path, qprocess_app
+):
     request = _request(tmp_path, "run-process-success")
     runner = QProcessTrainingRunner(extra_args=("--dev-fast", "--dev-rows", "8"))
 
-    (kind, result), progress = _run_to_terminal(qt_app, runner, request)
+    (kind, result), progress = _run_to_terminal(qprocess_app, runner, request)
 
     assert (kind, result.status) == ("finished", "complete")
     assert Path(request.model_output_path).exists()
@@ -95,7 +102,7 @@ def test_qprocess_runner_dev_fast_success_promotes_final_artifact(tmp_path, qt_a
 
 @pytest.mark.parametrize("cancel_phase", ("starting", "running"))
 def test_qprocess_cancel_is_exactly_once_cancelled(
-    tmp_path, qt_app, cancel_phase
+    tmp_path, qprocess_app, cancel_phase
 ):
     request = _request(tmp_path, f"run-process-cancel-{cancel_phase}")
     runner = QProcessTrainingRunner(
@@ -119,7 +126,7 @@ def test_qprocess_cancel_is_exactly_once_cancelled(
             process.started.connect(cancel_twice)
 
     (kind, result), _progress = _run_to_terminal(
-        qt_app, runner, request, after_start=schedule_cancel
+        qprocess_app, runner, request, after_start=schedule_cancel
     )
 
     assert (kind, result.status) == ("cancelled", "cancelled")
@@ -129,13 +136,13 @@ def test_qprocess_cancel_is_exactly_once_cancelled(
     runner.dispose()
 
 
-def test_qprocess_genuine_launch_failure_is_failed(tmp_path, qt_app):
+def test_qprocess_genuine_launch_failure_is_failed(tmp_path, qprocess_app):
     request = _request(tmp_path, "run-process-launch-failure")
     runner = QProcessTrainingRunner(
         python_executable=str(tmp_path / "does-not-exist-python")
     )
 
-    (kind, result), _progress = _run_to_terminal(qt_app, runner, request)
+    (kind, result), _progress = _run_to_terminal(qprocess_app, runner, request)
 
     assert (kind, result.status) == ("failed", "error")
     assert result.message == "Training process failed to start."

@@ -94,6 +94,7 @@ def main() -> int:
     print("train shell smoke: tabs/status/active controls OK")
     print("trainer execution: production adapter composed")
     shell.close()
+    shell.deleteLater()
     app.processEvents()
     if args.cleanup:
         removed = cleanup_from_manifest(

@@ -8,8 +8,10 @@ Execution belongs to `docs/WORK_PLAN.md`; history belongs to the log and records
 Train/Admin Phase 4 Unified Feature Manager is complete for repository-automated
 scope. Phase 5A architecture audit is complete with `PASS`, and Phase 5B candidate
 store and active-model lifecycle foundation is under audit repair on Draft PR
-#28. Local repair validation is complete, but independent exact-head re-audit is
-still required before Phase 5B closes. Phase 5C has not started.
+#28. Two independent audits rejected the implementation and first-repair heads.
+The bounded second repair has local implementation evidence, but independent
+exact-head re-audit is still required before Phase 5B closes. Phase 5C has not
+started.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.

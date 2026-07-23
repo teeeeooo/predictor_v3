@@ -5,7 +5,11 @@ from dataclasses import replace
 import joblib
 import pytest
 
-from apps.common.model_lifecycle import ModelLifecycleRepository
+from apps.common.model_lifecycle import (
+    LifecycleDurabilityError,
+    LifecycleRecoveryRequiredError,
+    ModelLifecycleRepository,
+)
 
 from .conftest import artifact_for, publish_candidate
 
@@ -89,3 +93,73 @@ def test_default_workspace_path_is_not_repository_identity(tmp_path):
     )
     with pytest.raises(ValueError, match="only the default workspace"):
         default_model_lifecycle_root(workspace_id="another")
+
+
+def test_candidate_failure_before_final_rename_is_not_visible(
+    tmp_path, registry_snapshot
+):
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle",
+        failure_hook=lambda stage: (
+            (_ for _ in ()).throw(OSError("before rename"))
+            if stage == "before_candidate_replace" else None
+        ),
+    )
+    with pytest.raises(OSError, match="before rename"):
+        publish_candidate(repository, registry_snapshot, "candidate-a")
+
+    assert repository.list_candidates() == ()
+    assert not (repository.candidates_path / "candidate-a").exists()
+    assert not list(repository.root.glob(".candidate-recovery-*"))
+
+
+def test_candidate_post_rename_durability_failure_rolls_back_visibility(
+    tmp_path, registry_snapshot
+):
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle",
+        failure_hook=lambda stage: (
+            (_ for _ in ()).throw(OSError("candidate fsync"))
+            if stage == "after_candidate_replace" else None
+        ),
+    )
+    with pytest.raises(LifecycleDurabilityError, match="rolled back"):
+        publish_candidate(repository, registry_snapshot, "candidate-a")
+
+    assert repository.list_candidates() == ()
+    assert not (repository.candidates_path / "candidate-a").exists()
+    assert len(list(repository.staging_path.iterdir())) == 1
+    assert not list(repository.root.glob(".candidate-recovery-*"))
+
+
+def test_candidate_failed_rollback_is_hidden_and_requires_recovery(
+    tmp_path, registry_snapshot
+):
+    enabled = {"value": True}
+
+    def fail(stage):  # noqa: ANN001
+        if enabled["value"] and stage in {
+            "after_candidate_replace",
+            "before_candidate_rollback",
+        }:
+            raise OSError(stage)
+
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle", failure_hook=fail
+    )
+    with pytest.raises(LifecycleRecoveryRequiredError):
+        publish_candidate(repository, registry_snapshot, "candidate-a")
+
+    assert (repository.candidates_path / "candidate-a").is_dir()
+    assert repository.list_candidates() == ()
+    with pytest.raises(LifecycleRecoveryRequiredError):
+        repository.read_candidate("candidate-a")
+    assert list(repository.root.glob(".candidate-recovery-candidate-a.json"))
+    enabled["value"] = False
+
+    repository.recover_candidate_publication("candidate-a")
+
+    assert repository.list_candidates() == ()
+    assert not (repository.candidates_path / "candidate-a").exists()
+    assert len(list(repository.staging_path.iterdir())) == 1
+    assert not list(repository.root.glob(".candidate-recovery-*"))

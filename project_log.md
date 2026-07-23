@@ -29,6 +29,27 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-23 — Train/Admin Phase 5B second independent-audit repair
+
+### Decision
+
+- Treat the independent audit of first-repair head
+  `6fb25e86b1e420f18ff98b60b1dc7ac5acbf8045` as a second merge-blocking
+  `FAIL`; the implementation and first-repair PASS counts are historical only.
+- Anchor POSIX lifecycle lock creation to a validated root descriptor so a root
+  symlink replacement cannot redirect the lock write outside the workspace.
+- Use rollback-first post-rename semantics for Candidate and Active. When
+  rollback cannot be made durable, retain a marker, return
+  `recovery-required`, hide the indeterminate state from normal reads, and
+  require deterministic repository reconciliation.
+- Keep Active pointer and activation history as one atomic revisioned unit;
+  preserve mandatory stale-revision guards on promotion, rollback, bootstrap,
+  and legacy continuity.
+- Keep one QApplication identity across canonical tests and require QProcess
+  timeout cleanup to cancel, reap, and release the runner.
+- Hold Phase 5C, merge readiness, and final Phase 5B PASS until a new exact-head
+  independent audit. Windows-native and packaging validation remain unrun.
+
 ## 2026-07-23 — Train/Admin Phase 5B independent-audit repair
 
 ### Decision

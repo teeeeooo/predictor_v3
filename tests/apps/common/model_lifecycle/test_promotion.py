@@ -1,6 +1,7 @@
 """Promotion, rollback, Bootstrap, and atomic pointer tests."""
 
 from dataclasses import replace
+import json
 
 import pytest
 
@@ -172,6 +173,108 @@ def test_pointer_write_failure_preserves_existing_active(tmp_path, registry_snap
     assert result.status == "blocked"
     assert repository.read_active().candidate_id == "candidate-a"
     assert repository.read_active().revision == 1
+
+
+@pytest.mark.parametrize(
+    "failure_stage",
+    ("before_active_temporary_write", "after_active_temporary_fsync", "before_active_replace"),
+)
+def test_active_pre_rename_failures_preserve_pointer_and_history(
+    tmp_path, registry_snapshot, failure_stage
+):
+    fail = {"enabled": False}
+
+    def inject(stage):  # noqa: ANN001
+        if fail["enabled"] and stage == failure_stage:
+            raise OSError(stage)
+
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle", failure_hook=inject
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    before = repository.read_active()
+    fail["enabled"] = True
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert result.status == "blocked"
+    assert repository.read_active() == before
+    assert not list(repository.root.glob(".active-model-*.tmp"))
+    assert not list(repository.root.glob(".active-model-*.backup"))
+    assert not repository.active_recovery_path.exists()
+
+
+def test_active_post_rename_durability_failure_rolls_back_pointer_and_history(
+    tmp_path, registry_snapshot
+):
+    fail = {"enabled": False}
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle",
+        failure_hook=lambda stage: (
+            (_ for _ in ()).throw(OSError("active fsync"))
+            if fail["enabled"] and stage == "after_active_replace" else None
+        ),
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    before = repository.read_active()
+    fail["enabled"] = True
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert result.status == "blocked"
+    assert "rolled back" in result.message
+    assert repository.read_active() == before
+    assert not repository.active_recovery_path.exists()
+
+
+def test_active_failed_rollback_is_controlled_recovery_required(
+    tmp_path, registry_snapshot
+):
+    fail = {"enabled": False}
+
+    def inject(stage):  # noqa: ANN001
+        if fail["enabled"] and stage in {
+            "after_active_replace",
+            "before_active_rollback",
+        }:
+            raise OSError(stage)
+
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle", failure_hook=inject
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    fail["enabled"] = True
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert result.status == "recovery-required"
+    assert repository.active_recovery_path.is_file()
+    with pytest.raises(ValueError, match="recovery is required"):
+        repository.read_active()
+    assert ActiveModelResolver(repository).resolve().status == "recovery-required"
+    raw = json.loads(repository.active_reference_path.read_text(encoding="utf-8"))
+    assert (raw["candidate_id"], raw["revision"]) == ("candidate-b", 2)
+    assert [item["candidate_id"] for item in raw["history"]] == [
+        "candidate-a",
+        "candidate-b",
+    ]
+    fail["enabled"] = False
+
+    recovered = repository.recover_active_reference()
+
+    assert recovered is not None
+    assert (recovered.candidate_id, recovered.revision) == ("candidate-a", 1)
+    assert [item.candidate_id for item in recovered.history] == ["candidate-a"]
+    assert not repository.active_recovery_path.exists()
 
 
 def test_rollback_revalidates_current_compatibility(repository, registry_snapshot):

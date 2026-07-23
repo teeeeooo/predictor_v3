@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .errors import LifecycleFilesystemError
+from .durability_errors import PostRenameDurabilityError
 
 
 class LifecycleFilesystem:
@@ -137,7 +138,13 @@ class LifecycleFilesystem:
             return False
         return True
 
-    def publish_directory(self, staging: Path, final: Path) -> None:
+    def publish_directory(
+        self,
+        staging: Path,
+        final: Path,
+        *,
+        after_replace=None,  # noqa: ANN001
+    ) -> None:
         stage_entry = self.require_directory(staging)
         self.fsync_tree(staging)
         self.require_directory(staging.parent)
@@ -164,9 +171,22 @@ class LifecycleFilesystem:
                 src_dir_fd=source_fd,
                 dst_dir_fd=target_fd,
             )
-            os.fsync(target_fd)
+            try:
+                if after_replace is not None:
+                    after_replace()
+                os.fsync(target_fd)
+            except Exception as exc:
+                raise PostRenameDurabilityError(
+                    "Candidate rename completed but directory durability failed"
+                ) from exc
 
-    def replace_file(self, temporary: Path, destination: Path) -> None:
+    def replace_file(
+        self,
+        temporary: Path,
+        destination: Path,
+        *,
+        after_replace=None,  # noqa: ANN001
+    ) -> None:
         self.require_regular_file(temporary)
         self.require_directory(temporary.parent)
         if self.entry_exists(destination):
@@ -178,7 +198,61 @@ class LifecycleFilesystem:
                 src_dir_fd=parent_fd,
                 dst_dir_fd=parent_fd,
             )
+            try:
+                if after_replace is not None:
+                    after_replace()
+                os.fsync(parent_fd)
+            except Exception as exc:
+                raise PostRenameDurabilityError(
+                    "Active rename completed but directory durability failed"
+                ) from exc
+
+    def rollback_directory(self, final: Path, staging: Path) -> None:
+        self.require_directory(final)
+        self.require_directory(final.parent)
+        self.require_directory(staging.parent)
+        if self.entry_exists(staging):
+            raise LifecycleFilesystemError(
+                f"Candidate rollback staging already exists: {staging.name}"
+            )
+        with self._directory_fd(final.parent) as source_fd, (
+            self._directory_fd(staging.parent)
+        ) as target_fd:
+            os.replace(
+                final.name,
+                staging.name,
+                src_dir_fd=source_fd,
+                dst_dir_fd=target_fd,
+            )
+            os.fsync(source_fd)
+            if target_fd != source_fd:
+                os.fsync(target_fd)
+
+    def remove_file(self, path: Path, *, missing_ok: bool = False) -> None:
+        self._require_lexical_owner(path)
+        self.require_directory(path.parent)
+        with self._directory_fd(path.parent) as parent_fd:
+            try:
+                current = os.stat(
+                    path.name, dir_fd=parent_fd, follow_symlinks=False
+                )
+            except FileNotFoundError:
+                if missing_ok:
+                    return
+                raise
+            if stat.S_ISLNK(current.st_mode) or not stat.S_ISREG(current.st_mode):
+                raise LifecycleFilesystemError(
+                    f"lifecycle artifact is not an owned regular file: {path.name}"
+                )
+            os.unlink(path.name, dir_fd=parent_fd)
             os.fsync(parent_fd)
+
+    def copy_regular_exclusive(self, source: Path, destination: Path) -> None:
+        with self.open_regular(source) as source_file, (
+            self.open_exclusive(destination)
+        ) as target:
+            while chunk := source_file.read(1024 * 1024):
+                target.write(chunk)
 
     def fsync_tree(self, path: Path) -> None:
         self.require_directory(path)
@@ -225,6 +299,12 @@ class LifecycleFilesystem:
             yield descriptor
         finally:
             os.close(descriptor)
+
+    @contextmanager
+    def trusted_directory(self, path: Path):
+        """Yield a descriptor whose identity was checked with lstat/open/fstat."""
+        with self._directory_fd(path) as descriptor:
+            yield descriptor
 
     def _require_lexical_owner(self, path: Path, *, allow_root: bool = False) -> None:
         absolute = Path(os.path.abspath(path))

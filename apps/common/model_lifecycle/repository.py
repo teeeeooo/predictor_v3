@@ -23,8 +23,10 @@ from .errors import (
     CandidateCorruptionError,
     LifecycleFilesystemError,
 )
+from .durability_errors import PostRenameDurabilityError
 from .filesystem import LifecycleFilesystem
 from .locking import lifecycle_lock
+from .recovery import LifecycleRecovery
 from .repository_contracts import CandidateSnapshot
 
 
@@ -39,6 +41,13 @@ class ModelLifecycleRepository:
         self.active_reference_path = self.root / "active_model.json"
         self.writer_lock_path = self.root / ".lifecycle-write.lock"
         self._failure_hook = failure_hook or (lambda _stage: None)
+        self._recovery = LifecycleRecovery(
+            self._filesystem,
+            candidates_path=self.candidates_path,
+            staging_path=self.staging_path,
+            active_reference_path=self.active_reference_path,
+        )
+        self.active_recovery_path = self._recovery.active_marker
 
     def create_staging(self, candidate_id: str) -> Path:
         _require_safe_identity(candidate_id)
@@ -61,10 +70,12 @@ class ModelLifecycleRepository:
             raise ValueError("Candidate publication identity metadata mismatch")
         stage = self._owned_staging(staging)
         self._filesystem.ensure_directory(self.root)
-        with lifecycle_lock(self.writer_lock_path, root=self.root):
+        self._failure_hook("before_lifecycle_lock")
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
             validate_candidate_files(self._filesystem, stage, manifest)
             self._filesystem.ensure_directory(self.candidates_path)
             final = self.candidates_path / manifest.candidate_id
+            self._recovery.require_candidate_clear(manifest.candidate_id)
             if self._filesystem.entry_exists(final):
                 existing = self.read_candidate(manifest.candidate_id)
                 if existing.manifest == manifest and existing.result == result:
@@ -81,11 +92,35 @@ class ModelLifecycleRepository:
             )
             self._filesystem.fsync_tree(stage)
             self._failure_hook("before_candidate_replace")
-            self._filesystem.publish_directory(stage, final)
+            recovery = self._recovery.begin_candidate(
+                manifest.candidate_id, stage
+            )
+            try:
+                self._filesystem.publish_directory(
+                    stage,
+                    final,
+                    after_replace=lambda: self._failure_hook(
+                        "after_candidate_replace"
+                    ),
+                )
+            except PostRenameDurabilityError as exc:
+                self._recovery.rollback_candidate(
+                    final,
+                    stage,
+                    before_rollback=lambda: self._failure_hook(
+                        "before_candidate_rollback"
+                    ),
+                    cause=exc,
+                )
+            except Exception:
+                self._filesystem.remove_file(recovery, missing_ok=True)
+                raise
+            self._recovery.finish_candidate(manifest.candidate_id)
             return self.read_candidate(manifest.candidate_id)
 
     def read_candidate(self, candidate_id: str) -> CandidateSnapshot:
         _require_safe_identity(candidate_id)
+        self._recovery.require_candidate_clear(candidate_id)
         path = self.candidates_path / candidate_id
         if not self._filesystem.entry_exists(path):
             raise FileNotFoundError(f"Candidate does not exist: {candidate_id}")
@@ -144,12 +179,16 @@ class ModelLifecycleRepository:
         for path in sorted(self.candidates_path.iterdir()):
             if (
                 not path.name.startswith(".")
+                and not self._filesystem.entry_exists(
+                    self._recovery.candidate_marker(path.name)
+                )
                 and self._filesystem.is_owned_directory(path)
             ):
                 snapshots.append(self.read_candidate(path.name))
         return tuple(snapshots)
 
     def read_active(self, *, optional: bool = False) -> ActiveModelReference | None:
+        self._recovery.require_active_clear()
         if not self._filesystem.entry_exists(self.active_reference_path):
             if optional:
                 return None
@@ -187,7 +226,8 @@ class ModelLifecycleRepository:
         if type(expected_revision) is not int or expected_revision < 0:
             raise ValueError("expected Active revision must be a non-negative integer")
         self._filesystem.ensure_directory(self.root)
-        with lifecycle_lock(self.writer_lock_path, root=self.root):
+        self._failure_hook("before_lifecycle_lock")
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
             previous = self.read_active(optional=True)
             current_revision = previous.revision if previous else 0
             if expected_revision != current_revision:
@@ -201,15 +241,62 @@ class ModelLifecycleRepository:
                 (*previous.history, record) if previous else (record,),
             )
             temporary = self.root / f".active-model-{uuid4().hex}.tmp"
+            backup = self.root / f".active-model-{uuid4().hex}.backup"
             try:
+                self._failure_hook("before_active_temporary_write")
                 self._filesystem.write_json_exclusive(
                     temporary, reference.to_payload()
                 )
+                self._failure_hook("after_active_temporary_fsync")
                 self._failure_hook("before_active_replace")
-                self._filesystem.replace_file(temporary, self.active_reference_path)
+                self._recovery.begin_active(
+                    backup,
+                    previous_exists=previous is not None,
+                    expected_revision=current_revision,
+                    intended_revision=revision,
+                )
+                try:
+                    self._filesystem.replace_file(
+                        temporary,
+                        self.active_reference_path,
+                        after_replace=lambda: self._failure_hook(
+                            "after_active_replace"
+                        ),
+                    )
+                except PostRenameDurabilityError as exc:
+                    self._recovery.rollback_active(
+                        backup,
+                        previous_exists=previous is not None,
+                        before_rollback=lambda: self._failure_hook(
+                            "before_active_rollback"
+                        ),
+                        cause=exc,
+                    )
+                except Exception:
+                    self._recovery.abort_active_before_rename(backup)
+                    raise
+                self._recovery.finish_active(backup)
             finally:
-                temporary.unlink(missing_ok=True)
+                self._recovery.cleanup_temporary(temporary, backup)
             return reference
+
+    def recover_candidate_publication(self, candidate_id: str) -> None:
+        """Restore a failed publication to staging before removing its marker."""
+        _require_safe_identity(candidate_id)
+        self._filesystem.ensure_directory(self.root)
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
+            self._recovery.recover_candidate(candidate_id)
+
+    def recover_active_reference(self) -> ActiveModelReference | None:
+        """Restore the pre-mutation Active pointer recorded by the marker."""
+        self._filesystem.ensure_directory(self.root)
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
+            if not self._filesystem.entry_exists(
+                self.active_recovery_path
+            ):
+                return self.read_active(optional=True)
+            self._recovery.recover_active()
+            return self.read_active(optional=True)
 
     def _remove_owned_staging(self, stage: Path) -> None:
         self.discard_staging(stage)
@@ -221,7 +308,6 @@ class ModelLifecycleRepository:
                 "Candidate staging must belong to this repository"
             )
         return stage
-
 
 def _require_safe_identity(value: str) -> None:
     if not value or value.startswith(".") or "/" in value or "\\" in value:

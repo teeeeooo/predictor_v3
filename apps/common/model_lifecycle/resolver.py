@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .active_contracts import ModelResolution
+from .durability_errors import LifecycleRecoveryRequiredError
 from .repository import ModelLifecycleRepository
 
 
@@ -19,6 +20,11 @@ class ActiveModelResolver:
                     message="No Active model has been selected. Training can continue in Bootstrap mode.",
                 )
             candidate = self._repository.read_candidate(reference.candidate_id)
+        except LifecycleRecoveryRequiredError as exc:
+            return ModelResolution(
+                "recovery-required",
+                message=f"Active model recovery is required: {str(exc).splitlines()[0]}",
+            )
         except Exception as exc:
             return ModelResolution(
                 "invalid-active",

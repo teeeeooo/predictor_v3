@@ -10,6 +10,9 @@ from uuid import uuid4
 
 from apps.common.model_lifecycle.resolver import ActiveModelResolver
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
+from apps.common.model_lifecycle.durability_errors import (
+    LifecycleRecoveryRequiredError,
+)
 from apps.train.application.candidate_publication import CandidatePublisher
 from apps.train.ports.training_execution_port import (
     TrainingExecutionCallbacks,
@@ -201,6 +204,16 @@ class TrainingLifecycleService:
             try:
                 assert self._publisher is not None and self._staging is not None
                 result = self._publisher.publish(request, result, self._staging)
+                self._staging = None
+            except LifecycleRecoveryRequiredError as exc:
+                terminal = "failed"
+                result = replace(
+                    result,
+                    status="error",
+                    message=f"Candidate publication recovery required: {str(exc).splitlines()[0]}",
+                    candidate_id=request.candidate_id,
+                    publication_outcome="recovery-required",
+                )
                 self._staging = None
             except Exception as exc:
                 terminal = "failed"

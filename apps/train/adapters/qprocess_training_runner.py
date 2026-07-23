@@ -110,6 +110,13 @@ class QProcessTrainingRunner(QObject):
 
     def dispose(self) -> None:
         """Release Qt-owned runner resources after terminal cleanup."""
+        process = self._process
+        if process is not None and process.state() != QProcess.NotRunning:
+            self._terminal_emitted = True
+            process.kill()
+            process.waitForFinished(max(self._terminate_timeout_ms, 1000))
+            self._cleanup_temp_artifact()
+        self._release_process()
         self._stop_kill_timer()
         self.deleteLater()
 

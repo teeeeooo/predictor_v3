@@ -411,6 +411,7 @@ def test_train_shell_smoke_runner_cli_succeeds_and_cleans_up(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        timeout=30,
     )
 
     assert "train shell smoke: tabs/status/active controls OK" in result.stdout

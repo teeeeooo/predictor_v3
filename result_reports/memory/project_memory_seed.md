@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5A architecture audit and lifecycle start
-    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. Phase 5B remains under independent audit on Draft PR #28: the audit rejected head `61856fe47dab2ea32aa9315c85c450b5ed5f466a` because Candidate filesystem ownership, mandatory Active revision guarding, corrupt deterministic legacy-import handling, and QProcess cancellation arbitration were incomplete. The repair validates regular non-symlink objects within the exact workspace, requires an explicit current revision for every Active mutation, returns structured retraining-required state for known imported-Candidate corruption, and emits exactly one cancellation terminal event while preserving genuine launch failure. Local focused/canonical validation supports a new exact-head re-audit but is not final approval. Phase 5C has not started; Train/Model UI/UX remains primary and CLI/campaign/agent-loop work stays later.
+    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. Phase 5B remains under independent audit on Draft PR #28. The first audit rejected implementation head `61856fe47dab2ea32aa9315c85c450b5ed5f466a`; the second rejected first-repair head `6fb25e86b1e420f18ff98b60b1dc7ac5acbf8045` because root replacement could redirect lock creation, post-rename Candidate/Active failures could disagree with visible state, and QProcess tests depended on canonical Qt ownership/order. The second repair uses descriptor-relative POSIX locking, rollback-first durability with recovery markers and deterministic reconciliation, mandatory Active revisions, fail-closed legacy handling, and one session QApplication plus terminal cleanup/reap. Local focused/canonical validation is implementation evidence for a new exact-head re-audit, not final approval. Phase 5C has not started; Train/Model UI/UX remains primary and CLI/campaign/agent-loop work stays later.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -612,7 +612,7 @@ entries:
       - Train UI UX
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5b-audit-repair.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5b-second-audit-repair.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

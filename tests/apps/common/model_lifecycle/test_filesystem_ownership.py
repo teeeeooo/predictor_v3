@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import multiprocessing
 import shutil
+import time
 from dataclasses import replace
 
 import joblib
 import pytest
 
 from apps.common.model_lifecycle import ModelLifecycleRepository
+from apps.common.model_lifecycle.filesystem import LifecycleFilesystem
+from apps.common.model_lifecycle.locking import lifecycle_lock
 
 from .conftest import artifact_for, publish_candidate
 
@@ -50,6 +54,17 @@ def _active_repository(tmp_path, snapshot, *, failure_hook=None):  # noqa: ANN00
 def _assert_active_preserved(repository) -> None:  # noqa: ANN001
     active = repository.read_active()
     assert (active.candidate_id, active.revision) == ("candidate-active", 1)
+
+
+def _hold_lifecycle_lock(root, acquired, release) -> None:  # noqa: ANN001
+    filesystem = LifecycleFilesystem(root)
+    filesystem.ensure_directory(filesystem.root)
+    with lifecycle_lock(
+        filesystem.root / ".lifecycle-write.lock",
+        filesystem=filesystem,
+    ):
+        acquired.set()
+        release.wait(10)
 
 
 def test_staging_directory_symlink_swap_cannot_write_external(
@@ -214,3 +229,73 @@ def test_prefix_similar_external_staging_is_not_owned(
 
     assert sentinel.read_text(encoding="utf-8") == "preserve"
     _assert_active_preserved(repository)
+
+
+def test_root_symlink_replacement_before_lock_never_writes_external(
+    tmp_path, registry_snapshot
+):
+    swap = {"enabled": False}
+    root = tmp_path / "lifecycle"
+    backup = tmp_path / "lifecycle-preserved"
+    external = tmp_path / "external-root"
+    external.mkdir()
+    sentinel = external / "sentinel.txt"
+    sentinel.write_text("preserve", encoding="utf-8")
+
+    def replace_root(stage):  # noqa: ANN001
+        if stage == "before_lifecycle_lock" and swap["enabled"]:
+            root.rename(backup)
+            root.symlink_to(external, target_is_directory=True)
+
+    repository = ModelLifecycleRepository(root, failure_hook=replace_root)
+    publish_candidate(repository, registry_snapshot, "candidate-active")
+    repository.replace_active(
+        "candidate-active",
+        activated_at="2026-07-23T00:00:00+00:00",
+        source="test",
+        expected_revision=0,
+    )
+    staging, manifest, result = _publication_input(
+        repository, registry_snapshot, "candidate-new"
+    )
+    swap["enabled"] = True
+
+    with pytest.raises(ValueError, match="owned regular directory"):
+        repository.publish(staging, manifest, result)
+
+    assert sentinel.read_text(encoding="utf-8") == "preserve"
+    assert not (external / ".lifecycle-write.lock").exists()
+    assert set(path.name for path in external.iterdir()) == {"sentinel.txt"}
+    preserved = ModelLifecycleRepository(backup)
+    assert [item.manifest.candidate_id for item in preserved.list_candidates()] == [
+        "candidate-active"
+    ]
+    _assert_active_preserved(preserved)
+
+
+def test_normal_root_lock_still_serializes_processes(tmp_path):
+    context = multiprocessing.get_context("spawn")
+    root = tmp_path / "lifecycle"
+    first_acquired = context.Event()
+    first_release = context.Event()
+    second_acquired = context.Event()
+    second_release = context.Event()
+    first = context.Process(
+        target=_hold_lifecycle_lock,
+        args=(root, first_acquired, first_release),
+    )
+    second = context.Process(
+        target=_hold_lifecycle_lock,
+        args=(root, second_acquired, second_release),
+    )
+    first.start()
+    assert first_acquired.wait(10)
+    second.start()
+    time.sleep(0.2)
+    assert not second_acquired.is_set()
+    first_release.set()
+    assert second_acquired.wait(10)
+    second_release.set()
+    first.join(10)
+    second.join(10)
+    assert first.exitcode == second.exitcode == 0

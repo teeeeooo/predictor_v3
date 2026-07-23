@@ -16,6 +16,7 @@ from core.data_definition.target_registry.runtime import (
 
 from .repository_contracts import CandidateSnapshot
 from .repository import ModelLifecycleRepository
+from .durability_errors import LifecycleRecoveryRequiredError
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,12 @@ class ModelPromotionService:
                 activated_at=self._clock().isoformat(),
                 source=source,
                 expected_revision=expected_revision,
+            )
+        except LifecycleRecoveryRequiredError as exc:
+            return PromotionResult(
+                "recovery-required",
+                candidate_id,
+                message=str(exc).splitlines()[0],
             )
         except Exception as exc:
             return PromotionResult("blocked", candidate_id, message=str(exc).splitlines()[0])
