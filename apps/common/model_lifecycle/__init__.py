@@ -18,7 +18,11 @@ from .durability_errors import (
 )
 from .paths import DEFAULT_WORKSPACE_ID, default_model_lifecycle_root
 from .migration import LegacyMigrationResult, LegacyModelMigrationService
-from .promotion import ModelPromotionService, PromotionResult
+from .promotion import (
+    CandidateCompatibilityReview,
+    ModelPromotionService,
+    PromotionResult,
+)
 from .repository import ModelLifecycleRepository
 from .resolver import ActiveModelResolver
 
@@ -27,6 +31,7 @@ __all__ = [
     "ActivationRecord",
     "ActiveModelResolver",
     "CandidateManifest",
+    "CandidateCompatibilityReview",
     "CandidateArtifactReference",
     "CandidateResult",
     "CandidateSnapshot",

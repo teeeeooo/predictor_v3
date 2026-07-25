@@ -1,7 +1,7 @@
 # Train/Admin UI/UX Overhaul — Design Document Set
 
-Status: active design set; Phase 4–5C complete; Phase 5D Draft PR implementation awaits independent audit
-Date: 2026-07-25
+Status: active design set; Phase 4–5C complete; Phase 5D first audit FAIL repaired and awaits exact-head re-audit
+Date: 2026-07-26
 
 ## Purpose
 
@@ -11,8 +11,10 @@ supporting Phase 5 Train/Model UI/UX direction, and the later Predict boundary.
 The Phase 5B lifecycle foundation and Phase 5C Training Result & Analysis are
 independently audited, merged, and complete. Phase 5D connects those persisted
 contracts to the Train/Model Candidate/Active review and explicit promotion UI
-on a dedicated Draft PR branch. Its exact head awaits independent L4 audit;
-Phase 5E and later scope has not started.
+on a dedicated Draft PR branch. The first independent L4 audit returned `FAIL`
+at `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; its five UI state/projection
+blockers are repaired on the same branch, whose new exact head awaits
+independent re-audit. Phase 5E and later scope has not started.
 
 ## Documents
 

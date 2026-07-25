@@ -27,6 +27,8 @@ from apps.train.application.model_management import (
 )
 from apps.train.ui.models.static_table_model import StaticTableModel
 from apps.train.ui.model_management_text import (
+    candidate_availability_message,
+    candidate_status_text,
     comparison_value,
     display_value,
     promotion_failure_message,
@@ -150,9 +152,7 @@ class ModelManagementPanel(QFrame):
                 item.candidate_id,
                 item.created_at,
                 item.run_id,
-                "사용 중" if item.is_active else (
-                    "사용 가능" if item.promotion_eligible else "사용 불가"
-                ),
+                candidate_status_text(item),
             )
             for item in self._snapshot.candidates
         )
@@ -255,7 +255,7 @@ class ModelManagementPanel(QFrame):
     ) -> None:
         visible = bool(
             candidate
-            and candidate.promotion_eligible
+            and candidate.promotion_status == "compatible"
             and not candidate.is_active
         )
         self.promote_button.setVisible(visible)
@@ -264,11 +264,8 @@ class ModelManagementPanel(QFrame):
             message = ""
         elif candidate.is_active:
             message = "현재 사용 중인 모델입니다."
-        elif not candidate.promotion_eligible:
-            reason = " · ".join(candidate.blocking_reasons)
-            message = "현재 상태에서는 적용할 수 없습니다."
-            if reason:
-                message += f" {reason}"
+        elif candidate.promotion_status != "compatible":
+            message = candidate_availability_message(candidate)
         elif self._training_running:
             message = "학습 실행 중에는 사용 모델을 변경할 수 없습니다."
         else:
@@ -277,7 +274,11 @@ class ModelManagementPanel(QFrame):
 
     def _promote_selected(self) -> None:
         candidate = self._selected()
-        if candidate is None or not candidate.promotion_eligible or candidate.is_active:
+        if (
+            candidate is None
+            or candidate.promotion_status != "compatible"
+            or candidate.is_active
+        ):
             return
         current = self._snapshot.active_candidate_id or "선택되지 않음"
         if not self._confirm(candidate.candidate_id, current):
@@ -303,8 +304,8 @@ class ModelManagementPanel(QFrame):
         if self._snapshot.status == "corrupt":
             return (
                 "모델 lifecycle 상태를 안전하게 읽을 수 없습니다. "
-                "모델을 변경하지 않았습니다. 진단 로그를 확인하세요. "
-                + self._snapshot.message
+                "기존 사용 모델은 변경되지 않았습니다. "
+                "진단 로그를 확인하고 기존 복구 절차를 진행하세요."
             )
         return self._snapshot.message
 

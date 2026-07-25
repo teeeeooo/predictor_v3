@@ -20,6 +20,11 @@ from .durability_errors import (
     ActiveCommittedCleanupError,
     LifecycleRecoveryRequiredError,
 )
+from .errors import (
+    CandidateCorruptionError,
+    ModelLifecycleError,
+    StaleActiveRevisionError,
+)
 
 
 @dataclass(frozen=True)
@@ -28,6 +33,14 @@ class PromotionResult:
     candidate_id: str
     revision: int = 0
     message: str = ""
+    reason_code: str = ""
+
+
+@dataclass(frozen=True)
+class CandidateCompatibilityReview:
+    status: str
+    reason_code: str = ""
+    diagnostic_message: str = ""
 
 
 class ModelPromotionService:
@@ -53,7 +66,16 @@ class ModelPromotionService:
     ) -> PromotionResult:
         try:
             snapshot = self._repository.read_candidate(candidate_id)
-            self._validate_compatibility(snapshot, self._registry_provider())
+            compatibility = self._compatibility_review(
+                snapshot, self._registry_provider()
+            )
+            if compatibility.status != "compatible":
+                return PromotionResult(
+                    "blocked",
+                    candidate_id,
+                    message=compatibility.diagnostic_message,
+                    reason_code=compatibility.reason_code,
+                )
             self._prediction_smoke(snapshot)
             reference = self._repository.replace_active(
                 candidate_id,
@@ -67,18 +89,75 @@ class ModelPromotionService:
                 candidate_id,
                 revision=exc.revision,
                 message=str(exc).splitlines()[0],
+                reason_code="recovery_required",
             )
         except LifecycleRecoveryRequiredError as exc:
             return PromotionResult(
                 "recovery-required",
                 candidate_id,
                 message=str(exc).splitlines()[0],
+                reason_code="recovery_required",
+            )
+        except StaleActiveRevisionError as exc:
+            return PromotionResult(
+                "blocked",
+                candidate_id,
+                message=str(exc),
+                reason_code="stale_active_revision",
+            )
+        except CandidateCorruptionError as exc:
+            return PromotionResult(
+                "blocked",
+                candidate_id,
+                message=str(exc).splitlines()[0],
+                reason_code="candidate_corrupt",
             )
         except (TypeError, AttributeError):
             raise
         except Exception as exc:
-            return PromotionResult("blocked", candidate_id, message=str(exc).splitlines()[0])
-        return PromotionResult("active", candidate_id, reference.revision, "Candidate promoted.")
+            return PromotionResult(
+                "blocked",
+                candidate_id,
+                message=str(exc).splitlines()[0],
+                reason_code="candidate_unusable",
+            )
+        return PromotionResult(
+            "active",
+            candidate_id,
+            reference.revision,
+            "Candidate promoted.",
+        )
+
+    def inspect_compatibility(
+        self,
+        candidate_id: str,
+    ) -> CandidateCompatibilityReview:
+        """Read current promotion compatibility without mutating lifecycle state."""
+        try:
+            snapshot = self._repository.read_candidate(candidate_id)
+            return self._compatibility_review(
+                snapshot, self._registry_provider()
+            )
+        except LifecycleRecoveryRequiredError as exc:
+            return CandidateCompatibilityReview(
+                "recovery-required",
+                "recovery_required",
+                str(exc).splitlines()[0],
+            )
+        except (CandidateCorruptionError, FileNotFoundError, OSError) as exc:
+            return CandidateCompatibilityReview(
+                "corrupt",
+                "candidate_corrupt",
+                str(exc).splitlines()[0],
+            )
+        except (TypeError, AttributeError):
+            raise
+        except ModelLifecycleError as exc:
+            return CandidateCompatibilityReview(
+                "corrupt",
+                "candidate_corrupt",
+                str(exc).splitlines()[0],
+            )
 
     def rollback(
         self, candidate_id: str, *, expected_revision: int
@@ -90,15 +169,23 @@ class ModelPromotionService:
         )
 
     @staticmethod
-    def _validate_compatibility(
+    def _compatibility_review(
         candidate: CandidateSnapshot,
         current: ModelRegistrySnapshot,
-    ) -> None:
+    ) -> CandidateCompatibilityReview:
         manifest = candidate.manifest
         if not manifest.promotion_eligible or manifest.blocking_reasons:
-            raise ValueError("Candidate is not promotion eligible")
+            return CandidateCompatibilityReview(
+                "non-promotable",
+                "training_result_not_promotable",
+                "Candidate is not promotion eligible",
+            )
         if manifest.contains_unpublished_features:
-            raise ValueError("Candidate contains unpublished experimental features")
+            return CandidateCompatibilityReview(
+                "non-promotable",
+                "training_result_not_promotable",
+                "Candidate contains unpublished experimental features",
+            )
         checks = {
             "Definition generation": (manifest.definition_generation_id, current.generation_id),
             "registry fingerprint": (manifest.registry_fingerprint, current.registry_fingerprint),
@@ -112,7 +199,11 @@ class ModelPromotionService:
         }
         mismatched = [name for name, values in checks.items() if values[0] != values[1]]
         if mismatched:
-            raise ValueError("Candidate compatibility mismatch: " + ", ".join(mismatched))
+            return CandidateCompatibilityReview(
+                "incompatible",
+                "current_contract_incompatible",
+                "Candidate compatibility mismatch: " + ", ".join(mismatched),
+            )
         by_identity = {
             target.identity: target
             for group in current.groups for target in group.targets
@@ -125,7 +216,11 @@ class ModelPromotionService:
         if tuple(
             (item.identity, item.ml_name) for item in manifest.targets
         ) != tuple((item.identity, item.ml_name) for item in targets):
-            raise ValueError("Candidate production target identity/order mismatch")
+            return CandidateCompatibilityReview(
+                "incompatible",
+                "current_contract_incompatible",
+                "Candidate production target identity/order mismatch",
+            )
         expected_inputs = current.input_ml_names
         for artifact, target in zip(manifest.targets, targets):
             allowed = apply_target_policy(expected_inputs, target)
@@ -135,7 +230,12 @@ class ModelPromotionService:
                 or len(set(artifact.feature_names)) != len(artifact.feature_names)
                 or positions != sorted(positions)
             ):
-                raise ValueError(f"Candidate feature order is incompatible: {artifact.ml_name}")
+                return CandidateCompatibilityReview(
+                    "incompatible",
+                    "current_contract_incompatible",
+                    f"Candidate feature order is incompatible: {artifact.ml_name}",
+                )
+        return CandidateCompatibilityReview("compatible")
 
 
 def _bounded_structural_smoke(candidate: CandidateSnapshot) -> None:

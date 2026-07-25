@@ -22,6 +22,7 @@ from .errors import (
     ActiveReferenceCorruptionError,
     CandidateCorruptionError,
     LifecycleFilesystemError,
+    StaleActiveRevisionError,
 )
 from .publication_errors import CandidatePublicationValidationError
 from .durability_errors import PostRenameDurabilityError
@@ -275,7 +276,9 @@ class ModelLifecycleRepository:
             previous = self.read_active(optional=True)
             current_revision = previous.revision if previous else 0
             if expected_revision != current_revision:
-                raise ValueError("stale Active reference revision")
+                raise StaleActiveRevisionError(
+                    "stale Active reference revision"
+                )
             revision = current_revision + 1
             record = ActivationRecord(revision, candidate_id, activated_at, source)
             reference = ActiveModelReference(

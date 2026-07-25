@@ -17,8 +17,11 @@
 
 ## Current Slice
 
-Phase 5D Train/Model UI/UX is implemented on its dedicated branch and awaits
-Draft PR exact-head independent L4 audit. Phase 5C Training Result & Analysis
+Phase 5D Train/Model UI/UX is implemented on its dedicated Draft PR branch.
+The first independent L4 audit returned `FAIL` at
+`c163da7027cdfdcc1bc8f831c17f6e1285b0d6db` with five UI state/projection
+blockers. Those blockers are repaired on the same branch, and the repaired
+exact head awaits independent L4 re-audit. Phase 5C Training Result & Analysis
 is complete and merged through PR #30 to `main`
 at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
@@ -46,15 +49,19 @@ Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. Phase
 metric-centered UI, provides explicit `이 모델 사용` promotion, supports rollback
 by selecting a previous Candidate, and handles Bootstrap/no-active state
 normally. The UI displays the Phase 5C contract without recalculating metrics or
-eligibility; detailed internal information belongs in an Advanced area. CLI, Campaign,
+eligibility. The audit repair adds safe populated/empty/error table transitions,
+current owner-validated compatibility, target-level comparison fidelity,
+complete persisted Advanced evidence, and structured Korean promotion failure
+guidance; detailed internal information belongs in an Advanced area. CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention remain later slices.
 
 ## Next Action
 
-Publish the Phase 5D branch as an open, unmerged Draft PR and obtain an
-independent L4 audit against its exact head. Do not declare audit PASS or start
-Phase 5E/later work from this implementation worker. Keep CLI, Campaign,
+Keep PR #31 open, Draft, and unmerged and obtain an independent L4 re-audit
+against the repaired exact head. Preserve the first audit `FAIL` as historical
+evidence. Do not declare audit PASS or start Phase 5E/later work from this
+repair worker. Keep CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention deferred.
 

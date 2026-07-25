@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5 lifecycle, result analysis, and model-management UI
-    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B and Phase 5C are independently audited, merged, and complete, providing immutable Candidate publication, revision-guarded Active promotion/rollback, Predict startup resolution, versioned training-result contracts, Candidate-owned JSON/CSV/XLSX analysis, and preserved terminal evidence. Training success never activates a model automatically. Phase 5D is implemented on a dedicated Draft PR branch: one Qt-free model-management service projects lifecycle and Phase 5C data without UI filesystem/JSON/joblib/metric ownership; Train/Model shows Active, Candidate history, dynamic target metrics, fair/unfair/no-baseline and unavailable reasons, Advanced evidence, explicit guarded `이 모델 사용`, and rollback by re-promotion. Corruption, stale revision, non-promotable state, and training conflicts fail closed while preserving Active. Its exact head awaits independent L4 audit; this worker does not declare PASS or merge, and Phase 5E, CLI, Campaign, runtime reload, export, and retention remain later.
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B and Phase 5C are independently audited, merged, and complete, providing immutable Candidate publication, revision-guarded Active promotion/rollback, Predict startup resolution, versioned training-result contracts, Candidate-owned JSON/CSV/XLSX analysis, and preserved terminal evidence. Training success never activates a model automatically. Phase 5D is implemented on a dedicated Draft PR branch: one Qt-free model-management service projects lifecycle and Phase 5C data without UI filesystem/JSON/joblib/metric ownership; Train/Model shows Active, Candidate history, dynamic target metrics, fair/unfair/no-baseline and unavailable reasons, Advanced evidence, explicit guarded `이 모델 사용`, and rollback by re-promotion. Its first L4 audit failed at `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; the five blockers are repaired through safe zero-dimension Qt models, current compatibility from the shared promotion owner, target-level comparison fidelity, complete stored Advanced evidence, and structured Korean rejection guidance. Final promotion revalidates compatibility and revision after inspection, and all rejection states preserve Active. The repaired exact head awaits independent re-audit; this worker does not declare PASS or merge, and Phase 5E, CLI, Campaign, runtime reload, export, and retention remain later.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -617,7 +617,7 @@ entries:
       - rollback by re-promotion
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

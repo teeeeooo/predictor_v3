@@ -1,16 +1,23 @@
 """Qt-free Train model-management projection tests."""
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 from apps.common.model_lifecycle.errors import CandidateCorruptionError
-from apps.common.model_lifecycle.promotion import PromotionResult
-from apps.common.model_lifecycle.promotion import ModelPromotionService
+from apps.common.model_lifecycle.promotion import (
+    CandidateCompatibilityReview,
+    ModelPromotionService,
+    PromotionResult,
+)
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
 from apps.common.model_lifecycle.training_result_contracts import (
     TrainingAnalysisResult,
 )
 from apps.train.application.model_management import ModelManagementService
-from tests.apps.common.model_lifecycle.conftest import publish_candidate
+from tests.apps.common.model_lifecycle.conftest import (
+    incompatible_snapshot,
+    publish_candidate,
+)
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.target_registry.runtime import model_registry_snapshot
 
@@ -106,8 +113,14 @@ class FakeRepository:
 
 
 class FakePromotion:
-    def __init__(self):
+    def __init__(self, compatibility=None):  # noqa: ANN001
         self.calls = []
+        self.compatibility = (
+            compatibility or CandidateCompatibilityReview("compatible")
+        )
+
+    def inspect_compatibility(self, candidate_id):
+        return self.compatibility
 
     def promote(self, candidate_id, *, expected_revision):
         self.calls.append((candidate_id, expected_revision))
@@ -184,6 +197,190 @@ def test_unfair_no_baseline_and_unavailable_values_are_preserved():
         by_id["unfair"].targets[0].unavailable_reason
         == "Evaluation context differs."
     )
+    assert by_id["no-baseline"].targets[0].comparison == "unavailable"
+
+
+def test_target_comparison_never_promotes_global_fair_or_missing_delta():
+    candidate = _candidate("candidate-a", "2026-07-25T00:00:00+00:00")
+    target_unavailable = _analysis(
+        baseline_type="active_candidate",
+        comparable=True,
+        unavailable_reason="",
+        delta=(0.1, -0.2, -0.3),
+    )
+    target_unavailable.targets[0]["baseline_comparison"] = {
+        "comparable": False,
+        "unavailable_reason": "Baseline target is unavailable.",
+    }
+    repository = FakeRepository(
+        (candidate,),
+        analyses={"candidate-a": target_unavailable},
+    )
+    review = ModelManagementService(
+        repository, FakePromotion()
+    ).inspect().candidates[0].targets[0]
+    assert review.comparison == "unavailable"
+    assert review.unavailable_reason == "Baseline target is unavailable."
+
+    missing_delta = _analysis(
+        baseline_type="active_candidate",
+        comparable=True,
+        unavailable_reason="",
+    )
+    review = ModelManagementService(
+        FakeRepository(
+            (candidate,),
+            analyses={"candidate-a": missing_delta},
+        ),
+        FakePromotion(),
+    ).inspect().candidates[0].targets[0]
+    assert review.comparison == "unavailable"
+    assert review.unavailable_reason == "저장된 비교 수치를 사용할 수 없습니다."
+
+    non_numeric = _analysis(
+        baseline_type="active_candidate",
+        comparable=True,
+        unavailable_reason="",
+        metrics=("not-a-number", 1.0, 2.0),
+        delta=(0.1, -0.2, -0.3),
+    )
+    non_numeric.targets[0]["baseline_comparison"][
+        "unavailable_reason"
+    ] = "R² is not numeric."
+    review = ModelManagementService(
+        FakeRepository(
+            (candidate,),
+            analyses={"candidate-a": non_numeric},
+        ),
+        FakePromotion(),
+    ).inspect().candidates[0].targets[0]
+    assert review.comparison == "unavailable"
+    assert review.unavailable_reason == "R² is not numeric."
+
+
+def test_current_compatibility_controls_availability_and_final_race_guard(
+    tmp_path,
+):
+    repository = ModelLifecycleRepository(tmp_path / "lifecycle")
+    registry_snapshot = model_registry_snapshot(bootstrap_manifest())
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    current = {"value": registry_snapshot}
+    service = ModelManagementService(
+        repository,
+        ModelPromotionService(repository, lambda: current["value"]),
+    )
+
+    initial = service.inspect().candidates[0]
+    assert initial.promotion_status == "compatible"
+    assert initial.promotion_eligible is True
+
+    current["value"] = incompatible_snapshot(
+        registry_snapshot, "generation_id", "new-generation"
+    )
+    incompatible = service.inspect().candidates[0]
+    assert incompatible.promotion_status == "incompatible"
+    assert incompatible.promotion_eligible is False
+
+    outcome = service.promote("candidate-a", expected_revision=0)
+    assert outcome.status == "blocked"
+    assert outcome.reason_code == "current_contract_incompatible"
+    assert repository.read_active(optional=True) is None
+
+
+def test_advanced_projection_preserves_all_stored_evidence():
+    candidate = _candidate("candidate-a", "2026-07-25T00:00:00+00:00")
+    analysis = _analysis()
+    analysis.targets[0]["rfecv"] = {
+        "status": "used",
+        "feature_count_before": 3,
+        "feature_count_after": 1,
+        "score_context": "cv-r2",
+        "features": (
+            {
+                "feature": "f1",
+                "selected": True,
+                "rank": 1,
+                "evaluation_score": 0.91,
+            },
+            {
+                "feature": "f2",
+                "selected": False,
+                "rank": 2,
+                "evaluation_score": None,
+            },
+        ),
+    }
+    analysis.targets[0]["feature_importance"] = (
+        {
+            "feature": "f1",
+            "method": "native",
+            "raw_value": 0.75,
+            "normalized_value": 1.0,
+            "rank": 1,
+        },
+    )
+    analysis.targets[0]["optuna"] = {
+        "status": "used",
+        "best_score": 0.88,
+        "selected_parameters": {"max_depth": 0},
+        "trials": (
+            {"trial_number": 2, "status": "complete", "score": 0.88},
+        ),
+    }
+    analysis = replace(
+        analysis,
+        preprocessing={
+            "status": "applied",
+            "steps": (
+                {
+                    "name": "impute",
+                    "status": "applied",
+                    "details": {"fill": 0},
+                },
+            ),
+            "feature_data_quality": (
+                {
+                    "feature": "f1",
+                    "missing_rate": 0.0,
+                    "unique_count": 12,
+                    "variance": 1.25,
+                    "outlier_count": 2,
+                    "unavailable_reason": None,
+                },
+            ),
+        },
+    )
+    candidate_review = ModelManagementService(
+        FakeRepository(
+            (candidate,), analyses={"candidate-a": analysis}
+        ),
+        FakePromotion(),
+    ).inspect().candidates[0]
+    projected = "\n".join(
+        f"{section.title}\n"
+        + "\n".join(f"{name}={value}" for name, value in section.rows)
+        for section in candidate_review.advanced_sections
+    )
+
+    for stored_value in (
+        "feature_count_before=3",
+        "feature_count_after=1",
+        "score_context=cv-r2",
+        "rank=1",
+        "evaluation_score=0.91",
+        "method=native",
+        "raw_value=0.75",
+        "normalized_value=1.0",
+        "best_score=0.88",
+        "max_depth=0",
+        "Trial 2",
+        "missing_rate=0.0",
+        "unique_count=12",
+        "variance=1.25",
+        "outlier_count=2",
+        "unavailable_reason=저장되지 않음",
+    ):
+        assert stored_value in projected
 
 
 def test_legacy_analysis_and_corruption_fail_closed():

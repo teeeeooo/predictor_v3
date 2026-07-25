@@ -14,7 +14,11 @@ complete with no remaining merge blocker. Phase 5C Training Result & Analysis
 is complete and merged through PR #30 to `main` at
 `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5D
-Train/Model UI/UX is the next active phase and has not started.
+Train/Model UI/UX is implemented in open Draft PR #31. Its first independent
+L4 audit returned `FAIL` at
+`c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; the five bounded UI
+state/projection blockers are repaired on the same branch, which awaits
+independent exact-head re-audit.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -208,11 +212,13 @@ Phase 5 retains this primary user flow:
 select training data → train → check progress → review results
 ```
 
-Phase 5D is the next active phase and implementation has not started.
-Train/Model UI/UX improvement remains the primary product goal. The lifecycle
-foundation makes that workflow safe; the headless campaign and agent-assisted
-experiment loop remain important later capabilities and must not delay the UI/UX
-workstream.
+Phase 5D is implemented in open Draft PR #31. Its first independent L4 audit
+failed on five bounded UI state/projection issues; the same branch now repairs
+safe empty/error table transitions, current compatibility status, target-level
+comparison meaning, complete Advanced evidence, and structured Korean
+promotion guidance. The repaired exact head awaits independent re-audit.
+Train/Model UI/UX remains the primary product goal; the headless campaign and
+agent-assisted experiment loop remain later capabilities.
 
 Phase 5B established the audit-frozen default-workspace and legacy-model
 migration contracts. Lifecycle state uses stable workspace identity under the
@@ -227,7 +233,7 @@ The default surface presents the user's next action and outcome, not normal
 technical readiness details. Errors lead with a user-facing explanation and
 resolution action; Diagnostics/logs provide deeper technical context.
 
-Phase 5D must present Candidate and Active state through understandable,
+Phase 5D presents Candidate and Active state through understandable,
 metric-centered UI; provide explicit `이 모델 사용` promotion; support rollback
 by selecting a previous Candidate; and handle Bootstrap/no-active state normally.
 The UI displays the Phase 5C contract and does not recalculate metrics or

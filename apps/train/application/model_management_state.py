@@ -21,3 +21,5 @@ class PromotionOutcome:
     revision: int
     message: str
     snapshot: ModelManagementSnapshot
+    reason_code: str = ""
+    diagnostic_message: str = ""

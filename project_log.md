@@ -29,6 +29,23 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Train/Admin Phase 5D UI state/projection audit repair
+
+### Decision
+
+- Preserve the first independent Phase 5D L4 audit verdict as `FAIL` at
+  `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; do not rewrite the original
+  implementation record.
+- Repair only its five blockers: safe empty/error Qt table transitions, current
+  lifecycle-owner compatibility, target-level comparison fidelity, complete
+  persisted Advanced evidence, and structured Korean promotion rejection
+  guidance.
+- Keep availability inspection and final race validation in the same promotion
+  compatibility owner. UI continues to avoid filesystem, serialization, hash,
+  metric, and eligibility ownership.
+- Keep PR #31 open, Draft, and unmerged for independent exact-head L4 re-audit.
+  Do not declare audit `PASS` or begin Phase 5E and later scope.
+
 ## 2026-07-25 — Train/Admin Phase 5D Candidate/Active UI
 
 ### Decision

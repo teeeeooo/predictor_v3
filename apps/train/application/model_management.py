@@ -14,6 +14,7 @@ from .model_management_models import (
     AdvancedSection,
     CandidateReview,
     TargetMetricReview,
+    build_advanced_sections,
 )
 from .model_management_state import (
     ModelManagementSnapshot,
@@ -92,6 +93,7 @@ class ModelManagementService:
                 snapshot.active_revision,
                 "학습 실행 중에는 사용 모델을 변경할 수 없습니다.",
                 snapshot,
+                reason_code="training_running",
             )
         result = self._promotion.promote(
             candidate_id,
@@ -108,6 +110,7 @@ class ModelManagementService:
                 snapshot.active_revision,
                 "모델 변경 후 Active 상태를 안전하게 다시 읽을 수 없습니다.",
                 snapshot,
+                reason_code="recovery_required",
             )
         return PromotionOutcome(
             result.status,
@@ -115,10 +118,20 @@ class ModelManagementService:
             result.revision,
             result.message,
             snapshot,
+            reason_code=result.reason_code,
+            diagnostic_message=result.message,
         )
 
     def _review(self, snapshot, active_candidate_id: str) -> CandidateReview:  # noqa: ANN001
         manifest = snapshot.manifest
+        compatibility = self._promotion.inspect_compatibility(
+            manifest.candidate_id
+        )
+        promotion_status = (
+            "active"
+            if manifest.candidate_id == active_candidate_id
+            else compatibility.status
+        )
         analysis = self._repository.read_training_analysis(
             manifest.candidate_id
         )
@@ -145,13 +158,16 @@ class ModelManagementService:
                 run_id=manifest.run_id,
                 created_at=manifest.created_at,
                 is_active=manifest.candidate_id == active_candidate_id,
-                promotion_eligible=manifest.promotion_eligible,
+                promotion_eligible=promotion_status == "compatible",
                 blocking_reasons=tuple(reason for reason in reasons if reason),
                 targets=tuple(
                     TargetMetricReview(item.identity, item.ml_name, "unavailable")
                     for item in manifest.targets
                 ),
                 baseline_kind="unavailable",
+                promotion_status=promotion_status,
+                promotion_reason_code=compatibility.reason_code,
+                promotion_diagnostic=compatibility.diagnostic_message,
                 analysis_status="unavailable",
                 analysis_reason=analysis["reason"],
             )
@@ -160,18 +176,21 @@ class ModelManagementService:
             run_id=manifest.run_id,
             created_at=manifest.created_at,
             is_active=manifest.candidate_id == active_candidate_id,
-            promotion_eligible=manifest.promotion_eligible,
+            promotion_eligible=promotion_status == "compatible",
             blocking_reasons=tuple(reason for reason in reasons if reason),
             targets=tuple(
                 _target_review(item, analysis.baseline)
                 for item in analysis.targets
             ),
             baseline_kind=_baseline_kind(analysis.baseline),
+            promotion_status=promotion_status,
+            promotion_reason_code=compatibility.reason_code,
+            promotion_diagnostic=compatibility.diagnostic_message,
             baseline_identity=str(analysis.baseline.get("identity", "")),
             baseline_reason=str(
                 analysis.baseline.get("unavailable_reason", "")
             ),
-            advanced_sections=_advanced_sections(analysis),
+            advanced_sections=build_advanced_sections(analysis),
         )
 
 
@@ -182,9 +201,21 @@ def _target_review(
     metrics = target.get("metrics", {})
     comparison = target.get("baseline_comparison", {})
     delta = comparison.get("delta", {})
+    comparison_kind = _target_comparison_kind(
+        target,
+        metrics,
+        comparison,
+        baseline,
+    )
     reason = str(
         comparison.get("unavailable_reason")
         or baseline.get("unavailable_reason")
+        or (
+            "저장된 비교 수치를 사용할 수 없습니다."
+            if comparison.get("comparable") is True
+            and comparison_kind != "fair"
+            else ""
+        )
         or ""
     )
     return TargetMetricReview(
@@ -194,11 +225,7 @@ def _target_review(
         r2=metrics.get("r2"),
         mae=metrics.get("mae"),
         rmse=metrics.get("rmse"),
-        comparison=(
-            "fair"
-            if comparison.get("comparable") is True
-            else _baseline_kind(baseline)
-        ),
+        comparison=comparison_kind,
         delta_r2=delta.get("r2"),
         delta_mae=delta.get("mae"),
         delta_rmse=delta.get("rmse"),
@@ -211,6 +238,41 @@ def _target_review(
     )
 
 
+def _target_comparison_kind(
+    target: dict[str, Any],
+    metrics: dict[str, Any],
+    comparison: dict[str, Any],
+    baseline: dict[str, Any],
+) -> str:
+    metrics_available = target.get("status") == "complete" and all(
+        _is_numeric(metrics.get(name)) for name in ("r2", "mae", "rmse")
+    )
+    delta = comparison.get("delta")
+    delta_available = isinstance(delta, dict) and all(
+        _is_numeric(delta.get(name)) for name in ("r2", "mae", "rmse")
+    )
+    if (
+        comparison.get("comparable") is True
+        and metrics_available
+        and delta_available
+    ):
+        return "fair"
+    if not metrics_available:
+        return "unavailable"
+    if baseline.get("type") == "none":
+        return "no_baseline"
+    if (
+        baseline.get("type") == "active_candidate"
+        and baseline.get("comparable") is False
+    ):
+        return "unfair"
+    return "unavailable"
+
+
+def _is_numeric(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def _baseline_kind(baseline: dict[str, Any]) -> str:
     if baseline.get("comparable") is True:
         return "fair"
@@ -219,52 +281,3 @@ def _baseline_kind(baseline: dict[str, Any]) -> str:
     if baseline.get("type") == "active_candidate":
         return "unfair"
     return "unavailable"
-
-
-def _advanced_sections(
-    result: TrainingAnalysisResult,
-) -> tuple[AdvancedSection, ...]:
-    rows: list[tuple[str, str]] = []
-    for target in result.targets:
-        target_name = str(target.get("target_ml_name", ""))
-        rfecv = target.get("rfecv", {})
-        rfecv_status = str(rfecv.get("status", "unavailable"))
-        selected = [
-            str(item.get("feature", ""))
-            for item in rfecv.get("features", ())
-            if item.get("selected")
-        ]
-        selected_text = (
-            rfecv_status
-            if rfecv_status in {"unavailable", "failed"}
-            else ", ".join(selected) or "저장된 항목 없음"
-        )
-        rows.extend((
-            (f"{target_name} · RFECV", rfecv_status),
-            (f"{target_name} · 선택 특성", selected_text),
-            (
-                f"{target_name} · Feature importance",
-                ", ".join(
-                    str(item.get("feature", ""))
-                    for item in target.get("feature_importance", ())
-                ) or "저장된 항목 없음",
-            ),
-            (
-                f"{target_name} · Optuna",
-                str(target.get("optuna", {}).get("status", "unavailable")),
-            ),
-        ))
-    rows.extend((
-        ("전처리 상태", str(result.preprocessing.get("status", "unavailable"))),
-        (
-            "데이터 품질",
-            ", ".join(
-                str(item.get("feature", ""))
-                for item in result.preprocessing.get(
-                    "feature_data_quality", ()
-                )
-            ) or "저장된 항목 없음",
-        ),
-        ("Result contract", result.schema_version),
-    ))
-    return (AdvancedSection("학습 상세 정보", tuple(rows)),)

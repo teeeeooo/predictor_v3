@@ -33,8 +33,17 @@ class StaticTableModel(QAbstractTableModel):
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
         if not index.isValid():
             return None
+        row, column = index.row(), index.column()
+        if (
+            row < 0
+            or row >= len(self._rows)
+            or column < 0
+            or column >= len(self._headers)
+            or column >= len(self._rows[row])
+        ):
+            return None
         if role == Qt.DisplayRole:
-            return str(self._rows[index.row()][index.column()])
+            return str(self._rows[row][column])
         if role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
         return None
@@ -48,8 +57,12 @@ class StaticTableModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            return self._headers[section]
-        return section + 1
+            if 0 <= section < len(self._headers):
+                return self._headers[section]
+            return None
+        if 0 <= section < len(self._rows):
+            return section + 1
+        return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
