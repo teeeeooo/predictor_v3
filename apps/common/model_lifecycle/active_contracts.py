@@ -1,5 +1,6 @@
 """Versioned Active reference and controlled resolution payloads."""
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 
 ACTIVE_REFERENCE_SCHEMA_VERSION = "active_model_reference.v1"
@@ -26,9 +27,11 @@ class ActiveModelReference:
 
 
 def active_reference_from_payload(
-    payload: dict[str, object],
+    payload: Mapping[str, object],
 ) -> ActiveModelReference:
     """Deserialize and validate one atomic Active revision/history unit."""
+    if not isinstance(payload, Mapping):
+        raise ValueError("Active reference payload must be an object")
     if payload.get("schema_version") != ACTIVE_REFERENCE_SCHEMA_VERSION:
         raise ValueError("unsupported Active reference schema version")
     history = tuple(

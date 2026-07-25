@@ -397,6 +397,8 @@ def test_active_semantic_corruption_is_invalid_and_never_resolved(
         "top-history-timestamp",
         "marker-identity",
         "same-revision-different-identity",
+        "non-object",
+        "malformed-json",
     ),
 )
 def test_committed_recovery_corruption_preserves_marker_and_backup(
@@ -433,24 +435,66 @@ def test_committed_recovery_corruption_preserves_marker_and_backup(
         active["history"][-1]["activated_at"] = "different"
     elif corruption == "marker-identity":
         marker["intended_candidate_id"] = "candidate-a"
-    else:
+    elif corruption == "same-revision-different-identity":
         active["candidate_id"] = "candidate-a"
         active["history"][-1]["candidate_id"] = "candidate-a"
-    repository.active_reference_path.write_text(
-        json.dumps(active), encoding="utf-8"
-    )
+    if corruption == "non-object":
+        active_content = "[]"
+    elif corruption == "malformed-json":
+        active_content = "{invalid"
+    else:
+        active_content = json.dumps(active)
+    repository.active_reference_path.write_text(active_content, encoding="utf-8")
     repository.active_recovery_path.write_text(
         json.dumps(marker), encoding="utf-8"
     )
     backups = list(repository.root.glob(".active-model-*.backup"))
     assert len(backups) == 1
 
-    with pytest.raises(LifecycleRecoveryRequiredError):
-        repository.recover_active_reference()
+    for _attempt in range(2):
+        with pytest.raises(LifecycleRecoveryRequiredError):
+            repository.recover_active_reference()
+        assert repository.active_recovery_path.is_file()
+        assert backups[0].is_file()
+    assert ActiveModelResolver(repository).resolve().status == "recovery-required"
 
+
+def test_committed_recovery_does_not_hide_programmer_error(
+    tmp_path, registry_snapshot, monkeypatch
+):
+    fail = {"enabled": False}
+
+    def inject(stage):  # noqa: ANN001
+        if fail["enabled"] and stage == "before_active_backup_cleanup":
+            raise OSError(stage)
+
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle", failure_hook=inject
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    fail["enabled"] = True
+    assert service.promote(
+        "candidate-b", expected_revision=1
+    ).status == "recovery-required"
+    fail["enabled"] = False
+    backups = list(repository.root.glob(".active-model-*.backup"))
+    assert len(backups) == 1
+
+    def fail_deserializer(_payload):  # noqa: ANN001
+        raise AttributeError("programmer defect")
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.recovery.active_reference_from_payload",
+        fail_deserializer,
+    )
+
+    with pytest.raises(AttributeError, match="programmer defect"):
+        repository.recover_active_reference()
     assert repository.active_recovery_path.is_file()
     assert backups[0].is_file()
-    assert ActiveModelResolver(repository).resolve().status == "recovery-required"
 
 
 def test_promotion_and_rollback_keep_one_sequential_active_revision_unit(
@@ -501,9 +545,10 @@ def test_bootstrap_resolver_is_controlled_and_candidate_is_not_auto_active(
     assert "No Active model" in resolution.message
 
 
-def test_invalid_active_reference_is_controlled(repository):
+@pytest.mark.parametrize("content", ("{invalid", "[]"))
+def test_invalid_active_reference_is_controlled(repository, content):
     repository.root.mkdir(parents=True)
-    repository.active_reference_path.write_text("{invalid", encoding="utf-8")
+    repository.active_reference_path.write_text(content, encoding="utf-8")
 
     resolution = ActiveModelResolver(repository).resolve()
 

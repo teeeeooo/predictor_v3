@@ -18,13 +18,13 @@
 ## Current Slice
 
 Phase 5B lifecycle foundation remains the current slice. The latest independent
-audit rejected head `7ac586a7610b02cfd1cb4b47d72bec7a70481a23` because an
-Active pointer whose top-level identity or timestamp contradicted its latest
-history could still be read and committed cleanup recovery was bound only to the
-revision number. The single semantic-consistency blocker now has a bounded repair
-and new local exact-source validation. The previous Qt/QProcess, non-Qt CI, and
-resolver exception-boundary repairs remain intact. The Draft PR requires a new
-exact-head independent audit before Phase 5B can close. Phase 5C has not started.
+audit rejected head `e27f924675c7c516ae23a5ec66cee6687c97022e` because committed
+recovery exposed raw parsing or attribute errors when the Active JSON was
+malformed or not an object. The single malformed-Active recovery boundary now
+has a bounded repair and new local exact-source validation. Active semantic
+consistency, Qt/QProcess, non-Qt CI, and narrow resolver exception behavior
+remain intact. The Draft PR requires a new exact-head independent audit before
+Phase 5B can close. Phase 5C has not started.
 The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
@@ -43,9 +43,9 @@ and deterministic Qt application/process cleanup without expanding the Phase
 
 ## Next Action
 
-Commit and push the Active semantic-consistency repair to Draft PR #28, confirm
-the official check, then hand the new exact head to an independent auditor. Do
-not start Phase 5C or call Phase 5B merge-ready before that re-audit.
+Hand the pushed malformed-Active recovery boundary repair on Draft PR #28 to an
+independent exact-head auditor. Do not start Phase 5C or call Phase 5B
+merge-ready before that re-audit.
 
 ## Active Blockers
 

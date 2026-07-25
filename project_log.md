@@ -33,6 +33,13 @@
 
 ### Decision
 
+- Treat the audit of semantic-consistency repair head
+  `e27f924675c7c516ae23a5ec66cee6687c97022e` as another merge-blocking
+  `FAIL`: committed recovery must normalize malformed and non-object Active JSON
+  without deleting marker/backup evidence.
+- Validate the Active payload object boundary before field access and convert
+  only expected read, parse, and contract corruption during committed recovery.
+  Unexpected programmer `AttributeError` remains visible.
 - Treat the independent audit of head
   `7ac586a7610b02cfd1cb4b47d72bec7a70481a23` as a merge-blocking `FAIL`
   because top-level Active state and latest history were not one validated

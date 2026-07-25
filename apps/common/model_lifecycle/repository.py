@@ -198,7 +198,7 @@ class ModelLifecycleRepository:
             return active_reference_from_payload(payload)
         except ActiveReferenceCorruptionError:
             raise
-        except _ARTIFACT_FAILURES as exc:
+        except _ACTIVE_REFERENCE_FAILURES as exc:
             raise ActiveReferenceCorruptionError(
                 f"Active reference is corrupt: {str(exc).splitlines()[0]}"
             ) from exc
@@ -324,4 +324,8 @@ _ARTIFACT_FAILURES = (
     KeyError,
     TypeError,
     ValueError,
+)
+
+_ACTIVE_REFERENCE_FAILURES = tuple(
+    failure for failure in _ARTIFACT_FAILURES if failure is not AttributeError
 )

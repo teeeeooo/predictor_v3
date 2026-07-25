@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -277,10 +278,10 @@ class LifecycleRecovery:
             raise LifecycleRecoveryRequiredError(
                 "Committed Active reference is missing"
             )
-        current = self._filesystem.read_json(self.active_reference_path)
         try:
+            current = self._filesystem.read_json(self.active_reference_path)
             reference = active_reference_from_payload(current)
-        except (KeyError, TypeError, ValueError) as exc:
+        except _EXPECTED_ACTIVE_ARTIFACT_FAILURES as exc:
             raise LifecycleRecoveryRequiredError(
                 "Committed Active reference is semantically corrupt"
             ) from exc
@@ -330,3 +331,15 @@ class LifecycleRecovery:
             self._filesystem.remove_file(path, missing_ok=True)
         except (FileNotFoundError, LifecycleFilesystemError):
             pass
+
+
+_EXPECTED_ACTIVE_ARTIFACT_FAILURES = (
+    LifecycleFilesystemError,
+    json.JSONDecodeError,
+    UnicodeError,
+    OSError,
+    EOFError,
+    KeyError,
+    TypeError,
+    ValueError,
+)
