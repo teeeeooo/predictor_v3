@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from threading import Event, Thread
 
 import pytest
 
 from apps.common.model_lifecycle import ActiveModelResolver, ModelLifecycleRepository
-from apps.predict.application.model_lifecycle import PredictModelLifecycleService
+from apps.common.model_lifecycle.durability_errors import (
+    LifecycleRecoveryRequiredError,
+)
+from apps.predict.application.model_lifecycle import (
+    LoadedModelIdentity,
+    PredictModelLifecycleService,
+)
 from apps.predict.application.runtime_snapshot import (
     compatibility_predict_runtime_snapshot,
 )
@@ -123,7 +130,7 @@ def test_reload_failure_and_corrupt_active_preserve_loaded_service(
     assert lifecycle.loaded.candidate_id == "candidate-a"
     assert lifecycle.loaded.active_revision == 1
     assert lifecycle.status.status == "reload-failed"
-    assert "기존 모델" in outcome.message
+    assert "로드된 모델" in outcome.message
     assert lifecycle.status.diagnostic
 
 
@@ -256,3 +263,171 @@ def test_active_read_failure_keeps_loaded_identity(
     assert status.loaded.candidate_id == "candidate-a"
     assert status.loaded.active_revision == 1
     assert status.diagnostic
+
+
+def test_older_b_failure_cannot_regress_newer_c_reload_state(
+    repository,
+    registry_snapshot,
+):
+    artifacts = {}
+    candidates = {}
+    for name in ("a", "b", "c", "d"):
+        artifact = artifact_for(registry_snapshot)
+        artifact["bundle_marker"] = name.upper()
+        artifacts[name] = artifact
+        candidates[name] = publish_candidate(
+            repository,
+            registry_snapshot,
+            f"candidate-{name}",
+            artifact=artifact,
+        )
+    _activate(repository, "candidate-a", 1)
+    runtime = compatibility_predict_runtime_snapshot()
+    original = _service(str(candidates["a"].model_path), runtime)
+    b_prepared = Event()
+    resume_b = Event()
+
+    def factory(path, snapshot):  # noqa: ANN001
+        service = _service(path, snapshot)
+        if path == str(candidates["b"].model_path):
+            prepare = service.prepare_model
+
+            def wait_after_prepare():
+                prepare()
+                b_prepared.set()
+                assert resume_b.wait(timeout=5)
+
+            service.prepare_model = wait_after_prepare
+        return service
+
+    lifecycle = PredictModelLifecycleService(repository, runtime, factory)
+    lifecycle.initialize_loaded(
+        original,
+        candidate_id="candidate-a",
+        active_revision=1,
+    )
+    installed = [original]
+    _activate(repository, "candidate-b", 2)
+    b_outcomes = []
+    b_thread = Thread(
+        target=lambda: b_outcomes.append(
+            lifecycle.reload(
+                prediction_running=False,
+                swap_service=lambda service: installed.__setitem__(0, service),
+            )
+        )
+    )
+    b_thread.start()
+    assert b_prepared.wait(timeout=5)
+
+    _activate(repository, "candidate-c", 3)
+    c_outcome = lifecycle.reload(
+        prediction_running=False,
+        swap_service=lambda service: installed.__setitem__(0, service),
+    )
+    active_after_c = repository.read_active()
+    resume_b.set()
+    b_thread.join(timeout=5)
+
+    assert not b_thread.is_alive()
+    assert c_outcome.status == "reloaded"
+    assert c_outcome.applied_to_shared_state
+    assert installed[0]._model_data["bundle_marker"] == "C"
+    assert lifecycle.loaded == LoadedModelIdentity(
+        "candidate-c",
+        3,
+        runtime.generation_id,
+    )
+    assert lifecycle.status.status == "current"
+    assert not lifecycle.status.reload_required
+    assert repository.read_active() == active_after_c
+    assert b_outcomes[0].status == "failed"
+    assert b_outcomes[0].reason_code == "stale_active_revision"
+    assert not b_outcomes[0].applied_to_shared_state
+    assert b_outcomes[0].model_status.status == "current"
+
+    before_late_refresh = lifecycle.status
+    assert lifecycle.refresh(
+        operation_id=b_outcomes[0].operation_id
+    ) == before_late_refresh
+    assert installed[0]._load_model_data()["bundle_marker"] == "C"
+
+    _activate(repository, "candidate-d", 4)
+    changed = lifecycle.refresh()
+    assert changed.status == "reload-required"
+    assert changed.reload_required
+
+
+@pytest.mark.parametrize(
+    ("setup", "reason_code"),
+    (
+        ("running", "prediction_running"),
+        ("missing", "missing_active"),
+        ("recovery", "recovery_required"),
+        ("corrupt", "corrupt_active"),
+        ("incompatible", "incompatible_active"),
+        ("preparation", "replacement_preparation_failed"),
+        ("internal", "internal_failure"),
+    ),
+)
+def test_reload_failures_are_structured_and_keep_internal_details_out_of_message(
+    repository,
+    registry_snapshot,
+    monkeypatch,
+    setup,
+    reason_code,
+):
+    candidate = publish_candidate(repository, registry_snapshot, "candidate-a")
+    runtime = compatibility_predict_runtime_snapshot()
+    if setup != "missing":
+        _activate(repository, "candidate-a", 1)
+    original = _service(str(candidate.model_path), runtime)
+    lifecycle = PredictModelLifecycleService(repository, runtime, _service)
+    if setup != "missing":
+        lifecycle.initialize_loaded(
+            original,
+            candidate_id="candidate-a",
+            active_revision=1,
+        )
+    if setup == "corrupt":
+        candidate.model_path.write_bytes(b"secret-corrupt-path")
+    if setup == "incompatible":
+        lifecycle.set_runtime_snapshot(
+            replace(runtime, preprocessing_version="secret-fingerprint-version")
+        )
+    if setup == "preparation":
+        lifecycle._service_factory = lambda *_args: (_ for _ in ()).throw(
+            RuntimeError("secret replacement path")
+        )
+    if setup == "recovery":
+        monkeypatch.setattr(
+            repository,
+            "read_active",
+            lambda *args, **kwargs: (_ for _ in ()).throw(
+                LifecycleRecoveryRequiredError("secret recovery marker")
+            ),
+        )
+    swap_service = (
+        (lambda _service: (_ for _ in ()).throw(
+            RuntimeError("secret swap callback")
+        ))
+        if setup == "internal"
+        else (lambda _service: pytest.fail("must not swap"))
+    )
+
+    outcome = lifecycle.reload(
+        prediction_running=setup == "running",
+        swap_service=swap_service,
+    )
+
+    assert outcome.reason_code == reason_code
+    assert outcome.recommended_action
+    assert outcome.preserved_loaded_model == (setup != "missing")
+    assert outcome.applied_to_shared_state
+    assert lifecycle.status == outcome.model_status
+    assert lifecycle.status.reason_code == reason_code
+    assert "secret" not in outcome.message
+    assert "RuntimeError" not in outcome.message
+    if setup not in {"running", "missing"}:
+        assert outcome.diagnostic
+        assert outcome.diagnostic_traceback

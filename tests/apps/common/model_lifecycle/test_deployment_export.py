@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from types import SimpleNamespace
 
+import pytest
+
+from apps.common.model_lifecycle.durability_errors import (
+    LifecycleRecoveryRequiredError,
+)
 from apps.common.model_lifecycle.deployment_export import DeploymentExportService
 from apps.common.model_lifecycle.promotion import ModelPromotionService
 from tests.apps.common.model_lifecycle.conftest import publish_candidate
@@ -123,7 +129,7 @@ def test_export_prepublication_failure_cleans_staging(
     destination.mkdir()
     service = _service(repository, registry_snapshot)
     monkeypatch.setattr(
-        "apps.common.model_lifecycle.deployment_export._verify_export",
+        "apps.common.model_lifecycle.deployment_export_publication._verify_export",
         lambda *_args: (_ for _ in ()).throw(OSError("verify failed")),
     )
 
@@ -148,7 +154,7 @@ def test_export_postrename_durability_failure_removes_published_directory(
     destination = tmp_path / "exports"
     destination.mkdir()
     service = _service(repository, registry_snapshot)
-    from apps.common.model_lifecycle import deployment_export as module
+    from apps.common.model_lifecycle import deployment_export_publication as module
 
     original = module._fsync_directory
     calls = 0
@@ -170,3 +176,92 @@ def test_export_postrename_durability_failure_removes_published_directory(
     assert outcome.status == "failed"
     assert tuple(destination.iterdir()) == ()
     assert repository.read_active() == active
+
+
+@pytest.mark.parametrize(
+    ("setup", "reason_code"),
+    (
+        ("missing", "missing_active"),
+        ("stale", "stale_active_revision"),
+        ("recovery", "recovery_required"),
+        ("incompatible", "incompatible_active"),
+        ("corrupt", "corrupt_active"),
+        ("partial", "partial_non_promotable_active"),
+        ("conflict", "destination_conflict"),
+        ("filesystem", "publication_filesystem_failure"),
+        ("internal", "internal_failure"),
+    ),
+)
+def test_export_failures_are_structured_and_ui_message_is_redacted(
+    repository,
+    registry_snapshot,
+    tmp_path,
+    monkeypatch,
+    setup,
+    reason_code,
+):
+    candidate = publish_candidate(repository, registry_snapshot, "candidate-a")
+    active = None
+    if setup != "missing":
+        active = _activate(repository, candidate.manifest.candidate_id, 0)
+    destination = tmp_path / "secret-export-location"
+    destination.mkdir()
+    service = _service(repository, registry_snapshot)
+    expected_revision = active.revision if active is not None else 0
+
+    if setup == "stale":
+        expected_revision += 1
+    elif setup == "recovery":
+        monkeypatch.setattr(
+            repository,
+            "read_active",
+            lambda *args, **kwargs: (_ for _ in ()).throw(
+                LifecycleRecoveryRequiredError("secret recovery marker")
+            ),
+        )
+    elif setup == "incompatible":
+        monkeypatch.setattr(
+            service._promotion,
+            "inspect_compatibility",
+            lambda _candidate_id: SimpleNamespace(
+                status="incompatible",
+                diagnostic_message="secret fingerprint",
+            ),
+        )
+    elif setup == "corrupt":
+        candidate.model_path.write_bytes(b"secret corrupt artifact")
+    elif setup == "partial":
+        monkeypatch.setattr(
+            service._promotion,
+            "inspect_compatibility",
+            lambda _candidate_id: SimpleNamespace(
+                status="non-promotable",
+                diagnostic_message="secret partial target",
+            ),
+        )
+    elif setup == "conflict":
+        (destination / f"predictor-v3-candidate-a-r{active.revision}").mkdir()
+    elif setup == "filesystem":
+        destination = tmp_path / "secret-missing-destination"
+    elif setup == "internal":
+        monkeypatch.setattr(
+            service._promotion,
+            "inspect_compatibility",
+            lambda _candidate_id: (_ for _ in ()).throw(
+                TypeError("secret internal identity")
+            ),
+        )
+
+    outcome = service.export_active(
+        destination,
+        expected_revision=expected_revision,
+    )
+
+    assert outcome.status == "failed"
+    assert outcome.reason_code == reason_code
+    assert outcome.preserved_active
+    assert outcome.recommended_action
+    assert "secret" not in outcome.message
+    assert "TypeError" not in outcome.message
+    assert outcome.diagnostic
+    assert outcome.diagnostic_traceback

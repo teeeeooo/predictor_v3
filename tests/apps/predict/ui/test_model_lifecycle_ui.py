@@ -27,13 +27,22 @@ class FakeController:
         self.status = status
         self.is_running = False
         self.reload_calls = 0
+        self.outcome = None
 
     def refresh_model_lifecycle(self):
         return self.status
 
     def reload_active_model(self):
         self.reload_calls += 1
-        return ModelReloadOutcome("failed", self.status, self.status.message)
+        return self.outcome or ModelReloadOutcome(
+            "failed",
+            self.status,
+            self.status.message,
+            operation_id=self.status.operation_id,
+        )
+
+    def is_model_reload_operation_current(self, operation_id):
+        return operation_id == self.status.operation_id
 
 
 def _workspace(status):
@@ -89,3 +98,64 @@ def test_reload_failed_and_running_block_preserve_user_facing_state():
 
     assert workspace.prediction_controller.reload_calls == 1
     assert "현재 예측" in workspace.status_label.text()
+
+
+def test_stale_reload_completion_does_not_replace_newer_ui_state():
+    current = PredictModelLifecycleStatus(
+        "current",
+        LoadedModelIdentity("candidate-c", 3, "generation-1"),
+        "candidate-c",
+        3,
+        "현재 Active 모델을 사용 중입니다.",
+        operation_id=2,
+    )
+    stale_failure = PredictModelLifecycleStatus(
+        "reload-failed",
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-c",
+        3,
+        "secret stale failure",
+        operation_id=1,
+    )
+    workspace = _workspace(current)
+    workspace.prediction_controller.outcome = ModelReloadOutcome(
+        "failed",
+        stale_failure,
+        stale_failure.message,
+        reason_code="stale_active_revision",
+        operation_id=1,
+        applied_to_shared_state=False,
+    )
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.reload_active()
+
+    assert "candidate-c" in workspace.model_badge.text()
+    assert "다시 불러오기 실패" not in workspace.model_badge.text()
+    assert workspace.status_label.text() == current.message
+
+
+def test_unexpected_ui_exception_is_redacted_and_traceback_is_preserved():
+    status = PredictModelLifecycleStatus(
+        "current",
+        LoadedModelIdentity("candidate-a", 1, "generation-1"),
+        "candidate-a",
+        1,
+        operation_id=1,
+    )
+    workspace = _workspace(status)
+    workspace.prediction_controller.reload_active_model = (
+        lambda: (_ for _ in ()).throw(
+            RuntimeError("secret /tmp/model.pkl fingerprint")
+        )
+    )
+    adapter = PredictModelLifecycleUi(workspace)
+
+    adapter.reload_active()
+
+    assert "secret" not in workspace.status_label.text()
+    assert "/tmp" not in workspace.status_label.text()
+    assert "RuntimeError" not in workspace.status_label.text()
+    assert "secret /tmp/model.pkl fingerprint" in (
+        workspace.model_lifecycle_unexpected_traceback
+    )

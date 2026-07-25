@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5 lifecycle, result analysis, and model-management UI
-    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B and Phase 5C are independently audited, merged, and complete. Phase 5D is complete on merged `main` with explicit guarded promotion and rollback by re-promotion. Phase 5E is implemented on a separate unmerged worker branch pending independent L4 audit: Predict records its actually loaded Candidate plus Active revision, observes newer or unavailable Active without hot-swap, permits only explicit idle reload after detached full preparation and a final serialized Active guard, and preserves the prior bundle on every reload failure. Train/Model exports only the guarded current Active through verified staging to a checksum-traceable immutable identity without mutating Candidate, Active, history, or source artifacts. Worker completion is not audit PASS or merge authority. CLI, Campaign, the agent loop, retention, and executable packaging remain later.
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B and Phase 5C are independently audited, merged, and complete. Phase 5D is complete on merged `main` with explicit guarded promotion and rollback by re-promotion. Phase 5E remains on open Draft PR #32. Its first independent L4 audit returned FAIL at `5364ff7a106f27975e649d44a3b0059509dc797e` despite successful validation run `30168662140`: older reload completion ordering and unstructured/raw failure presentation were the two findings. The bounded repair assigns monotonic application-owned reload operation identities, permits only the current operation to install or publish shared status, rejects stale controller/UI completion, and returns structured reload/export reason, preservation, next action, diagnostic, and traceback while default Korean UI hides internal detail. Loaded-model/no-hot-swap, explicit idle reload, failure preservation, Active-only immutable export, checksum, atomic publication, and Phase 5D contracts remain intact. The repaired exact head still requires independent L4 re-audit; worker completion is not PASS or merge authority. CLI, Campaign, the agent loop, retention, and executable packaging remain later.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -618,11 +618,14 @@ entries:
       - explicit Predict reload
       - loaded Active revision
       - failure preservation
+      - reload ordering
+      - structured failure
+      - diagnostics redaction
       - explicit promotion
       - rollback by re-promotion
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-training-running-guidance-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-post-merge-closeout.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-ui-state-projection-audit-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-training-running-guidance-repair.md; result_reports/records/2026-07/2026-07-26-train-admin-phase5d-post-merge-closeout.md; result_reports/records/2026-07/2026-07-26-phase5e-deployment-export-predict-reload.md; result_reports/records/2026-07/2026-07-26-phase5e-reload-ordering-structured-failure-repair.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

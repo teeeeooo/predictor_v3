@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import traceback
+
 
 class PredictModelLifecycleUi:
     """Render lifecycle status and forward the explicit reload command."""
@@ -17,7 +19,7 @@ class PredictModelLifecycleUi:
             return
         self.render(status)
 
-    def render(self, status) -> None:  # noqa: ANN001
+    def render(self, status, *, diagnostics=None) -> None:  # noqa: ANN001
         workspace = self._workspace
         workspace.command_bar.reload_model_button.setVisible(
             status.reload_required
@@ -44,7 +46,7 @@ class PredictModelLifecycleUi:
         else:
             workspace.model_badge.set_status("Active 모델 로드 실패", "error")
         workspace.status_label.setText(status.message)
-        workspace.model_lifecycle_diagnostics = status
+        workspace.model_lifecycle_diagnostics = diagnostics or status
 
     def reload_active(self) -> None:
         workspace = self._workspace
@@ -59,11 +61,16 @@ class PredictModelLifecycleUi:
         workspace.status_label.setText("새 Active 모델을 다시 불러오는 중...")
         try:
             outcome = controller.reload_active_model()
-        except Exception as exc:
+        except Exception:
             workspace.status_label.setText(
-                f"모델 다시 불러오기 오류: {str(exc).splitlines()[0]}"
+                "예상하지 못한 오류로 모델을 다시 불러오지 못했습니다. "
+                "기존 모델은 유지됩니다. 진단 정보를 확인한 뒤 다시 시도하세요."
             )
+            workspace.model_lifecycle_unexpected_traceback = traceback.format_exc()
             button.setEnabled(True)
             return
-        self.render(outcome.model_status)
+        if not controller.is_model_reload_operation_current(outcome.operation_id):
+            self.refresh()
+        elif outcome.applied_to_shared_state:
+            self.render(outcome.model_status, diagnostics=outcome)
         button.setEnabled(not controller.is_running)

@@ -158,6 +158,50 @@ def test_active_export_action_forwards_destination_and_observed_revision(
     ]
 
 
+def test_export_failure_ui_hides_diagnostics_and_retains_structured_outcome(
+    monkeypatch,
+):
+    _app()
+    controller = FakeController(ModelManagementSnapshot(
+        "active",
+        "candidate-a",
+        7,
+        (_candidate("candidate-a", active=True),),
+        "active",
+    ))
+    failure = SimpleNamespace(
+        status="failed",
+        message=(
+            "같은 export가 이미 있습니다. 기존 Active 모델은 유지됩니다. "
+            "다른 위치를 선택하세요."
+        ),
+        path="",
+        reason_code="destination_conflict",
+        diagnostic="FileExistsError: secret /tmp/export candidate-a",
+        diagnostic_traceback="secret traceback",
+    )
+    controller.export_active_model = lambda *_args, **_kwargs: failure
+    notifications = []
+    panel = ModelManagementPanel(
+        controller,
+        notify=lambda title, message, success: notifications.append(
+            (title, message, success)
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.train.ui.model_management_panel.QFileDialog.getExistingDirectory",
+        lambda *_args: "/tmp/exports",
+    )
+
+    panel.export_button.click()
+
+    assert notifications == [
+        ("Deployment export", failure.message, False)
+    ]
+    assert "secret" not in notifications[0][1]
+    assert panel.model_export_diagnostics is failure
+
+
 def test_empty_corrupt_and_candidate_metric_states_are_explicit():
     _app()
     controller = FakeController(ModelManagementSnapshot(

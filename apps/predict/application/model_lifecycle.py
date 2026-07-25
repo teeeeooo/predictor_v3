@@ -2,41 +2,25 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from threading import Lock
+import traceback
 from typing import Callable
 
 from apps.common.model_lifecycle import ActiveModelResolver, ModelLifecycleRepository
 from apps.common.model_lifecycle.errors import StaleActiveRevisionError
+from apps.predict.application.model_lifecycle_models import (
+    LoadedModelIdentity,
+    ModelReloadOutcome,
+    PredictModelLifecycleStatus,
+    observed_model_status,
+    reload_failure_guidance,
+)
+from apps.predict.application.model_reload_preparation import (
+    ReloadPreparationFailure,
+    prepare_model_replacement,
+)
 from apps.predict.application.runtime_snapshot import PredictRuntimeSnapshot
 from apps.predict.ports.prediction_workflow_ports import PredictionServicePort
-
-
-@dataclass(frozen=True)
-class LoadedModelIdentity:
-    candidate_id: str = ""
-    active_revision: int = 0
-    generation_id: str = ""
-
-
-@dataclass(frozen=True)
-class PredictModelLifecycleStatus:
-    status: str
-    loaded: LoadedModelIdentity
-    active_candidate_id: str = ""
-    active_revision: int = 0
-    message: str = ""
-    diagnostic: str = ""
-
-    @property
-    def reload_required(self) -> bool:
-        return self.status in {"reload-required", "reload-failed"}
-
-
-@dataclass(frozen=True)
-class ModelReloadOutcome:
-    status: str
-    model_status: PredictModelLifecycleStatus
-    message: str
 
 
 class PredictModelLifecycleService:
@@ -51,6 +35,9 @@ class PredictModelLifecycleService:
         self._repository = repository
         self._runtime_snapshot = runtime_snapshot
         self._service_factory = service_factory
+        self._operation_lock = Lock()
+        self._next_operation_id = 0
+        self._current_operation_id = 0
         self._loaded = LoadedModelIdentity()
         self._last_status = PredictModelLifecycleStatus(
             "startup-failed",
@@ -65,6 +52,10 @@ class PredictModelLifecycleService:
     @property
     def status(self) -> PredictModelLifecycleStatus:
         return self._last_status
+
+    def is_operation_current(self, operation_id: int) -> bool:
+        with self._operation_lock:
+            return operation_id == self._current_operation_id
 
     def set_runtime_snapshot(self, snapshot: PredictRuntimeSnapshot) -> None:
         self._runtime_snapshot = snapshot
@@ -92,38 +83,21 @@ class PredictModelLifecycleService:
             diagnostic=message,
         )
 
-    def refresh(self) -> PredictModelLifecycleStatus:
+    def refresh(
+        self,
+        *,
+        operation_id: int | None = None,
+    ) -> PredictModelLifecycleStatus:
+        observed = self._observe_status(operation_id=operation_id or 0)
+        return self._publish_status(observed, operation_id=operation_id)
+
+    def _observe_status(self, *, operation_id: int = 0) -> PredictModelLifecycleStatus:
         resolution = ActiveModelResolver(self._repository).resolve()
-        if resolution.status != "resolved":
-            status = "active-unavailable" if self._loaded.candidate_id else "startup-failed"
-            message = (
-                "Active 상태를 확인할 수 없지만 기존에 로드된 모델을 계속 사용합니다."
-                if self._loaded.candidate_id
-                else "사용할 수 있는 Active 모델이 없습니다."
-            )
-            self._last_status = PredictModelLifecycleStatus(
-                status,
-                self._loaded,
-                message=message,
-                diagnostic=resolution.message,
-            )
-            return self._last_status
-        differs = (
-            resolution.candidate_id != self._loaded.candidate_id
-            or resolution.revision != self._loaded.active_revision
-        )
-        self._last_status = PredictModelLifecycleStatus(
-            "reload-required" if differs else "current",
+        return observed_model_status(
+            resolution,
             self._loaded,
-            resolution.candidate_id,
-            resolution.revision,
-            (
-                "새 Active 모델이 있습니다. 현재 모델을 계속 사용 중이며 다시 불러오기가 필요합니다."
-                if differs
-                else "현재 Active 모델을 사용 중입니다."
-            ),
+            operation_id=operation_id,
         )
-        return self._last_status
 
     def reload(
         self,
@@ -131,89 +105,146 @@ class PredictModelLifecycleService:
         prediction_running: bool,
         swap_service: Callable[[PredictionServicePort], None],
     ) -> ModelReloadOutcome:
+        operation_id = self._begin_reload_operation()
         if prediction_running:
-            status = self.refresh()
-            return ModelReloadOutcome(
+            return self._reload_failure(
                 "blocked",
-                status,
-                "예측 실행 중에는 모델을 다시 불러올 수 없습니다.",
+                operation_id,
+                "prediction_running",
+                "Prediction is running.",
             )
         resolution = ActiveModelResolver(self._repository).resolve()
         if resolution.status != "resolved":
             return self._reload_failure(
-                "Active 모델을 안전하게 읽을 수 없어 기존 모델을 계속 사용합니다.",
+                "failed",
+                operation_id,
+                (
+                    "recovery_required"
+                    if resolution.status == "recovery-required"
+                    else "missing_active"
+                    if resolution.status == "missing-active"
+                    else "corrupt_active"
+                ),
                 resolution.message,
+                resolution.diagnostic_traceback,
             )
         try:
-            candidate = self._repository.read_candidate(resolution.candidate_id)
-            self._validate_compatibility(candidate.manifest)
-            prepared = self._service_factory(
-                str(candidate.model_path),
-                self._runtime_snapshot,
+            prepared = prepare_model_replacement(
+                self._repository,
+                candidate_id=resolution.candidate_id,
+                runtime=self._runtime_snapshot,
+                service_factory=self._service_factory,
             )
-            prepared.prepare_model()
             with self._repository.guard_active(
                 resolution.candidate_id,
                 resolution.revision,
             ):
-                swap_service(prepared)
-                self._loaded = LoadedModelIdentity(
-                    resolution.candidate_id,
-                    resolution.revision,
-                    self._runtime_snapshot.generation_id,
-                )
+                with self._operation_lock:
+                    if operation_id != self._current_operation_id:
+                        raise StaleActiveRevisionError(
+                            "reload operation was superseded"
+                        )
+                    swap_service(prepared)
+                    self._loaded = LoadedModelIdentity(
+                        resolution.candidate_id,
+                        resolution.revision,
+                        self._runtime_snapshot.generation_id,
+                    )
         except StaleActiveRevisionError as exc:
             return self._reload_failure(
-                "준비 중 Active 모델이 변경되어 다시 불러오기를 적용하지 않았습니다.",
+                "failed",
+                operation_id,
+                "stale_active_revision",
                 str(exc),
+                traceback.format_exc(),
+            )
+        except ReloadPreparationFailure as exc:
+            return self._reload_failure(
+                "failed",
+                operation_id,
+                exc.reason_code,
+                exc.diagnostic,
+                exc.diagnostic_traceback,
             )
         except Exception as exc:
             return self._reload_failure(
-                "새 모델을 불러오지 못했습니다. 기존 모델을 계속 사용합니다.",
+                "failed",
+                operation_id,
+                "internal_failure",
                 f"{type(exc).__name__}: {str(exc)}",
+                traceback.format_exc(),
             )
-        status = self.refresh()
+        status = self.refresh(operation_id=operation_id)
+        applied = self.is_operation_current(operation_id)
         return ModelReloadOutcome(
             "reloaded",
             status,
             "새 Active 모델을 안전하게 다시 불러왔습니다.",
+            preserved_loaded_model=False,
+            operation_id=operation_id,
+            applied_to_shared_state=applied,
         )
 
-    def _reload_failure(self, message: str, diagnostic: str) -> ModelReloadOutcome:
-        observed = self.refresh()
-        self._last_status = PredictModelLifecycleStatus(
+    def _begin_reload_operation(self) -> int:
+        with self._operation_lock:
+            self._next_operation_id += 1
+            self._current_operation_id = self._next_operation_id
+            return self._current_operation_id
+
+    def _publish_status(
+        self,
+        status: PredictModelLifecycleStatus,
+        *,
+        operation_id: int | None,
+    ) -> PredictModelLifecycleStatus:
+        with self._operation_lock:
+            if (
+                operation_id is not None
+                and operation_id != self._current_operation_id
+            ):
+                return self._last_status
+            self._last_status = status
+            return status
+
+    def _reload_failure(
+        self,
+        outcome_status: str,
+        operation_id: int,
+        reason_code: str,
+        diagnostic: str,
+        diagnostic_traceback: str = "",
+    ) -> ModelReloadOutcome:
+        observed = self._observe_status(operation_id=operation_id)
+        message, action = reload_failure_guidance(
+            reason_code,
+            loaded_model_exists=bool(self._loaded.candidate_id),
+        )
+        failure_status = PredictModelLifecycleStatus(
             "reload-failed" if self._loaded.candidate_id else "startup-failed",
             self._loaded,
             observed.active_candidate_id,
             observed.active_revision,
             message,
             diagnostic,
+            diagnostic_traceback,
+            reason_code,
+            action,
+            operation_id,
         )
-        return ModelReloadOutcome("failed", self._last_status, message)
-
-    def _validate_compatibility(self, manifest) -> None:  # noqa: ANN001
-        runtime = self._runtime_snapshot
-        checks = {
-            "generation": (manifest.definition_generation_id, runtime.generation_id),
-            "registry": (manifest.registry_fingerprint, runtime.target_registry_fingerprint),
-            "feature order": (manifest.ordered_ml_fingerprint, runtime.ordered_ml_fingerprint),
-            "derived semantics": (
-                manifest.derived_semantics_fingerprint,
-                runtime.derived_fingerprint,
-            ),
-            "one-hot": (manifest.one_hot_fingerprint, runtime.one_hot_fingerprint),
-            "preprocessing": (
-                manifest.preprocessing_version,
-                runtime.preprocessing_version,
-            ),
-        }
-        mismatched = tuple(name for name, values in checks.items() if values[0] != values[1])
-        if mismatched:
-            raise ValueError("Active Candidate compatibility differs: " + ", ".join(mismatched))
-        if tuple(item.ml_name for item in manifest.targets) != runtime.active_targets:
-            raise ValueError("Active Candidate production targets are incomplete")
-        ordered = runtime.ordered_input_ml_names
-        for target in manifest.targets:
-            positions = [ordered.index(name) for name in target.feature_names if name in ordered]
-            if len(positions) != len(target.feature_names) or positions != sorted(positions):
-                raise ValueError(f"Active Candidate feature order is incompatible: {target.ml_name}")
+        published = self._publish_status(
+            failure_status,
+            operation_id=operation_id,
+        )
+        applied = published is failure_status
+        return ModelReloadOutcome(
+            outcome_status,
+            published,
+            message,
+            reason_code,
+            preserved_loaded_model=bool(self._loaded.candidate_id),
+            recommended_action=action,
+            diagnostic=diagnostic,
+            diagnostic_traceback=diagnostic_traceback,
+            operation_id=operation_id,
+            applied_to_shared_state=applied,
+        )

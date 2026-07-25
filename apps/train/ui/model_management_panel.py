@@ -332,11 +332,10 @@ class ModelManagementPanel(QFrame):
             destination,
             expected_revision=self._snapshot.active_revision,
         )
+        self.model_export_diagnostics = outcome
         message = outcome.message
         if outcome.status == "exported":
             message = f"{message}\n{outcome.path}"
-        elif outcome.diagnostic:
-            message = f"{message}\n원인: {outcome.diagnostic}"
         self._notify(
             "Deployment export",
             message,

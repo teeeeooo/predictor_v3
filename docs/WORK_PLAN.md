@@ -34,7 +34,14 @@ the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5E Deployment Export and Predict Reload Boundary is implemented on its
-separate worker branch and remains unmerged pending independent L4 audit.
+separate worker branch and remains unmerged. The first independent L4 audit
+returned `FAIL` at exact head
+`5364ff7a106f27975e649d44a3b0059509dc797e`: an older reload failure could
+overwrite a newer successful reload state, and reload/export failures were not
+structured or safely separated from raw diagnostics. The bounded repair adds a
+monotonic application-owned reload operation guard and structured Korean
+failure guidance while retaining raw diagnostics/traceback outside the default
+message.
 Predict now keeps a process-loaded Candidate/revision, observes current Active
 without hot-swap, exposes explicit idle reload, and preserves the prior bundle
 on corruption, incompatibility, recovery, running-state, or Active-race failure.
@@ -46,10 +53,11 @@ later slices.
 
 ## Next Action
 
-Open and preserve the Phase 5E Draft PR at its exact worker head for independent
-L4 audit. Do not merge or declare audit PASS from the worker. Keep Phase 5F and
-later CLI, Campaign, leaderboard, Agent-assisted Experiment Loop, retention,
-and packaging work unstarted.
+Preserve Phase 5E Draft PR #32 at the repaired exact worker head for independent
+L4 re-audit. Keep the first audit `FAIL` and prior successful validation as
+historical evidence. Do not merge or declare audit PASS from the worker. Keep
+Phase 5F and later CLI, Campaign, leaderboard, Agent-assisted Experiment Loop,
+retention, and packaging work unstarted.
 
 ## Active Blockers
 

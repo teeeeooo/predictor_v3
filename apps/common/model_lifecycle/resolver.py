@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import traceback
+
 from .active_contracts import ModelResolution
 from .durability_errors import LifecycleRecoveryRequiredError
 from .errors import ModelLifecycleError
@@ -25,11 +27,13 @@ class ActiveModelResolver:
             return ModelResolution(
                 "recovery-required",
                 message=f"Active model recovery is required: {str(exc).splitlines()[0]}",
+                diagnostic_traceback=traceback.format_exc(),
             )
         except (OSError, ModelLifecycleError) as exc:
             return ModelResolution(
                 "invalid-active",
                 message=f"Active model is unavailable: {str(exc).splitlines()[0]}",
+                diagnostic_traceback=traceback.format_exc(),
             )
         return ModelResolution(
             "resolved",

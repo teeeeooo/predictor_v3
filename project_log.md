@@ -29,6 +29,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Phase 5E first L4 audit repair
+
+### Decision
+
+- Preserve the independent audit verdict as `FAIL` at exact head
+  `5364ff7a106f27975e649d44a3b0059509dc797e`; prior validation run
+  `30168662140` remains successful historical evidence, not audit PASS.
+- Repair only its two findings: prevent an older reload completion from
+  regressing newer installed/status state, and structure reload/export failure
+  reason, preservation, next action, diagnostics, and traceback.
+- Keep ordering protection in the Predict application/controller boundary.
+  UI button state is not the concurrency guard, and stale UI completion is
+  discarded by operation identity.
+- Keep default Korean messages free of raw exception type, internal identity,
+  fingerprint, and filesystem path while retaining those details in diagnostics.
+- Leave Draft PR #32 open and unmerged for exact-head independent L4 re-audit;
+  do not begin Phase 5F or later scope.
+
 ## 2026-07-26 — Phase 5E deployment export and Predict reload boundary
 
 ### Decision

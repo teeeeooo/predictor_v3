@@ -8,6 +8,9 @@ from apps.common.model_lifecycle.deployment_export import (
     DeploymentExportResult,
     DeploymentExportService,
 )
+from apps.common.model_lifecycle.deployment_export_outcomes import (
+    deployment_export_failure,
+)
 from apps.common.model_lifecycle.errors import ModelLifecycleError
 from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
@@ -138,9 +141,8 @@ class ModelManagementService:
         expected_revision: int,
     ) -> DeploymentExportResult:
         if self._training_running():
-            return DeploymentExportResult(
-                "failed",
-                message="학습 실행 중에는 deployment export를 생성할 수 없습니다.",
+            return deployment_export_failure(
+                "training_running",
                 diagnostic="training_running",
             )
         return self._deployment_export.export_active(

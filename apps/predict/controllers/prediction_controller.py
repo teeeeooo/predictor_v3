@@ -80,6 +80,11 @@ class PredictionController:
             swap_service=self._replace_service,
         )
 
+    def is_model_reload_operation_current(self, operation_id: int) -> bool:
+        if self._model_lifecycle is None:
+            return False
+        return self._model_lifecycle.is_operation_current(operation_id)
+
     def runtime_dependencies(
         self,
     ) -> tuple[PredictionServicePort, PredictionRunnerFactory | None]:
