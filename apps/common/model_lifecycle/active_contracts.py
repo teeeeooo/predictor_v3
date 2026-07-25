@@ -34,14 +34,34 @@ def active_reference_from_payload(
         raise ValueError("Active reference payload must be an object")
     if payload.get("schema_version") != ACTIVE_REFERENCE_SCHEMA_VERSION:
         raise ValueError("unsupported Active reference schema version")
-    history = tuple(
-        ActivationRecord(**item) for item in payload["history"]
-    )
+    required_fields = ("candidate_id", "revision", "activated_at", "history")
+    if any(field not in payload for field in required_fields):
+        raise ValueError("Active reference required field is missing")
+    history_payload = payload["history"]
+    if not isinstance(history_payload, (list, tuple)):
+        raise ValueError("Active reference history must be an array")
+    history = []
+    record_fields = ("revision", "candidate_id", "activated_at", "source")
+    for item in history_payload:
+        if (
+            not isinstance(item, Mapping)
+            or len(item) != len(record_fields)
+            or any(field not in item for field in record_fields)
+        ):
+            raise ValueError("Active reference history record is invalid")
+        history.append(
+            ActivationRecord(
+                revision=item["revision"],
+                candidate_id=item["candidate_id"],
+                activated_at=item["activated_at"],
+                source=item["source"],
+            )
+        )
     reference = ActiveModelReference(
         candidate_id=payload["candidate_id"],
         revision=payload["revision"],
         activated_at=payload["activated_at"],
-        history=history,
+        history=tuple(history),
     )
     validate_active_reference(reference)
     return reference

@@ -350,6 +350,7 @@ def test_committed_active_cleanup_failure_reconciles_forward_idempotently(
         "unsafe-history-candidate",
         "empty-history",
         "malformed-history-record",
+        "history-record-not-object",
         "unsupported-schema",
     ),
 )
@@ -379,6 +380,8 @@ def test_active_semantic_corruption_is_invalid_and_never_resolved(
         payload["history"] = []
     elif corruption == "malformed-history-record":
         del payload["history"][-1]["candidate_id"]
+    elif corruption == "history-record-not-object":
+        payload["history"][-1] = []
     else:
         payload["schema_version"] = "active_model_reference.future"
     repository.active_reference_path.write_text(
@@ -459,8 +462,15 @@ def test_committed_recovery_corruption_preserves_marker_and_backup(
     assert ActiveModelResolver(repository).resolve().status == "recovery-required"
 
 
-def test_committed_recovery_does_not_hide_programmer_error(
-    tmp_path, registry_snapshot, monkeypatch
+@pytest.mark.parametrize(
+    "programmer_error",
+    (
+        AttributeError("programmer attribute defect"),
+        TypeError("programmer type defect"),
+    ),
+)
+def test_committed_recovery_does_not_hide_contract_programmer_error(
+    tmp_path, registry_snapshot, monkeypatch, programmer_error
 ):
     fail = {"enabled": False}
 
@@ -482,19 +492,44 @@ def test_committed_recovery_does_not_hide_programmer_error(
     fail["enabled"] = False
     backups = list(repository.root.glob(".active-model-*.backup"))
     assert len(backups) == 1
+    marker_before = repository.active_recovery_path.read_bytes()
+    backup_before = backups[0].read_bytes()
+    active_before = repository.active_reference_path.read_bytes()
 
-    def fail_deserializer(_payload):  # noqa: ANN001
-        raise AttributeError("programmer defect")
+    def fail_validation(_reference):  # noqa: ANN001
+        raise programmer_error
 
     monkeypatch.setattr(
-        "apps.common.model_lifecycle.recovery.active_reference_from_payload",
-        fail_deserializer,
+        "apps.common.model_lifecycle.active_contracts.validate_active_reference",
+        fail_validation,
     )
 
-    with pytest.raises(AttributeError, match="programmer defect"):
+    with pytest.raises(type(programmer_error), match=str(programmer_error)):
         repository.recover_active_reference()
-    assert repository.active_recovery_path.is_file()
-    assert backups[0].is_file()
+    assert repository.active_recovery_path.read_bytes() == marker_before
+    assert backups[0].read_bytes() == backup_before
+    assert repository.active_reference_path.read_bytes() == active_before
+
+
+def test_active_contract_programmer_type_error_propagates_from_read_and_resolver(
+    repository, registry_snapshot, monkeypatch
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+
+    def fail_validation(_reference):  # noqa: ANN001
+        raise TypeError("programmer type defect")
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.active_contracts.validate_active_reference",
+        fail_validation,
+    )
+
+    with pytest.raises(TypeError, match="programmer type defect"):
+        repository.read_active()
+    with pytest.raises(TypeError, match="programmer type defect"):
+        ActiveModelResolver(repository).resolve()
 
 
 def test_promotion_and_rollback_keep_one_sequential_active_revision_unit(

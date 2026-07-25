@@ -33,6 +33,13 @@
 
 ### Decision
 
+- Treat the audit of malformed-Active repair head
+  `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` as another merge-blocking
+  `FAIL`: actual payload shape/type corruption must be distinguished from an
+  unrelated contract implementation `TypeError`.
+- Make the shared contract validate history container and record shape before
+  construction, and remove `TypeError` from repository and committed-recovery
+  artifact catches. Programmer failure preserves committed recovery evidence.
 - Treat the audit of semantic-consistency repair head
   `e27f924675c7c516ae23a5ec66cee6687c97022e` as another merge-blocking
   `FAIL`: committed recovery must normalize malformed and non-object Active JSON

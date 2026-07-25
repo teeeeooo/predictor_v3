@@ -326,6 +326,12 @@ _ARTIFACT_FAILURES = (
     ValueError,
 )
 
-_ACTIVE_REFERENCE_FAILURES = tuple(
-    failure for failure in _ARTIFACT_FAILURES if failure is not AttributeError
+_ACTIVE_REFERENCE_FAILURES = (
+    LifecycleFilesystemError,
+    json.JSONDecodeError,
+    UnicodeError,
+    OSError,
+    EOFError,
+    KeyError,
+    ValueError,
 )

@@ -18,13 +18,14 @@
 ## Current Slice
 
 Phase 5B lifecycle foundation remains the current slice. The latest independent
-audit rejected head `e27f924675c7c516ae23a5ec66cee6687c97022e` because committed
-recovery exposed raw parsing or attribute errors when the Active JSON was
-malformed or not an object. The single malformed-Active recovery boundary now
-has a bounded repair and new local exact-source validation. Active semantic
-consistency, Qt/QProcess, non-Qt CI, and narrow resolver exception behavior
-remain intact. The Draft PR requires a new exact-head independent audit before
-Phase 5B can close. Phase 5C has not started.
+audit rejected head `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` because the
+repository and committed recovery classified unrelated `TypeError` from the
+shared Active contract implementation as artifact corruption. The single
+exception-classification blocker now has a bounded repair and new local
+exact-source validation. Malformed/non-object Active recovery, semantic
+consistency, Qt/QProcess, non-Qt CI, and narrow resolver behavior remain intact.
+The Draft PR requires a new exact-head independent audit before Phase 5B can
+close. Phase 5C has not started.
 The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
@@ -43,8 +44,8 @@ and deterministic Qt application/process cleanup without expanding the Phase
 
 ## Next Action
 
-Hand the pushed malformed-Active recovery boundary repair on Draft PR #28 to an
-independent exact-head auditor. Do not start Phase 5C or call Phase 5B
+Hand the pushed Active contract `TypeError` boundary repair on Draft PR #28 to
+an independent exact-head auditor. Do not start Phase 5C or call Phase 5B
 merge-ready before that re-audit.
 
 ## Active Blockers

@@ -340,6 +340,5 @@ _EXPECTED_ACTIVE_ARTIFACT_FAILURES = (
     OSError,
     EOFError,
     KeyError,
-    TypeError,
     ValueError,
 )
