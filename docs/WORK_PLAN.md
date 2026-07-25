@@ -21,7 +21,11 @@ Phase 5D Train/Model UI/UX is implemented on its dedicated Draft PR branch.
 The first independent L4 audit returned `FAIL` at
 `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db` with five UI state/projection
 blockers. Those blockers are repaired on the same branch, and the repaired
-exact head awaits independent L4 re-audit. Phase 5C Training Result & Analysis
+head `89e20055cc45a5c7fad59aa24a2b9d34c16e4237` received a second independent
+`FAIL`: its sole remaining blocker was incomplete training-running guidance in
+the normal disabled-button QWidget state. That bounded blocker is repaired on
+the same branch, and the new exact head awaits independent L4 re-audit. Phase
+5C Training Result & Analysis
 is complete and merged through PR #30 to `main`
 at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
@@ -52,15 +56,17 @@ normally. The UI displays the Phase 5C contract without recalculating metrics or
 eligibility. The audit repair adds safe populated/empty/error table transitions,
 current owner-validated compatibility, target-level comparison fidelity,
 complete persisted Advanced evidence, and structured Korean promotion failure
-guidance; detailed internal information belongs in an Advanced area. CLI, Campaign,
+guidance. The follow-up repair makes the default training-running state also
+state that Active is maintained and that the user should retry after training;
+detailed internal information belongs in an Advanced area. CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention remain later slices.
 
 ## Next Action
 
 Keep PR #31 open, Draft, and unmerged and obtain an independent L4 re-audit
-against the repaired exact head. Preserve the first audit `FAIL` as historical
-evidence. Do not declare audit PASS or start Phase 5E/later work from this
+against the repaired exact head. Preserve both audit `FAIL` results as
+historical evidence. Do not declare audit PASS or start Phase 5E/later work from this
 repair worker. Keep CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention deferred.

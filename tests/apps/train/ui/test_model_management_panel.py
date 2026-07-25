@@ -296,6 +296,11 @@ def test_promotion_confirmation_uses_selected_and_current_revision():
     assert not panel.promote_button.isHidden()
     panel.set_training_running(True)
     assert not panel.promote_button.isEnabled()
+    assert panel.promotion_message.text() == (
+        "학습 실행 중이라 모델을 변경하지 않았습니다. 기존 사용 모델은 "
+        "유지됩니다. 학습이 끝난 뒤 다시 시도하세요."
+    )
+    assert controller.calls == []
     panel.set_training_running(False)
     panel.promote_button.click()
 

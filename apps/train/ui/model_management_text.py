@@ -62,7 +62,7 @@ def candidate_availability_message(candidate: CandidateReview) -> str:
     )
 
 
-def promotion_failure_message(outcome: PromotionOutcome) -> str:
+def promotion_blocked_message(reason_code: str) -> str:
     return {
         "current_contract_incompatible": (
             "현재 모델 정의와 맞지 않아 변경하지 못했습니다. 기존 사용 모델은 "
@@ -89,7 +89,11 @@ def promotion_failure_message(outcome: PromotionOutcome) -> str:
             "유지됩니다. 학습이 끝난 뒤 다시 시도하세요."
         ),
     }.get(
-        outcome.reason_code,
+        reason_code,
         "모델을 안전하게 변경하지 못했습니다. 기존 사용 모델은 유지됩니다. "
         "진단 로그를 확인한 뒤 새로고침하세요.",
     )
+
+
+def promotion_failure_message(outcome: PromotionOutcome) -> str:
+    return promotion_blocked_message(outcome.reason_code)

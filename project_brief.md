@@ -18,7 +18,10 @@ Train/Model UI/UX is implemented in open Draft PR #31. Its first independent
 L4 audit returned `FAIL` at
 `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; the five bounded UI
 state/projection blockers are repaired on the same branch, which awaits
-independent exact-head re-audit.
+independent exact-head re-audit. The first repaired head
+`89e20055cc45a5c7fad59aa24a2b9d34c16e4237` then received a second `FAIL` for
+one incomplete training-running default-state message; that sole blocker is
+repaired on the same branch for another exact-head re-audit.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -213,10 +216,13 @@ select training data → train → check progress → review results
 ```
 
 Phase 5D is implemented in open Draft PR #31. Its first independent L4 audit
-failed on five bounded UI state/projection issues; the same branch now repairs
+failed on five bounded UI state/projection issues. The first repair corrected
 safe empty/error table transitions, current compatibility status, target-level
 comparison meaning, complete Advanced evidence, and structured Korean
-promotion guidance. The repaired exact head awaits independent re-audit.
+promotion outcomes. The second audit confirmed four blocker areas and found one
+remaining training-running default-state guidance gap. That state now also says
+that Active is maintained and to retry after training completes; the new exact
+head awaits independent re-audit.
 Train/Model UI/UX remains the primary product goal; the headless campaign and
 agent-assisted experiment loop remain later capabilities.
 

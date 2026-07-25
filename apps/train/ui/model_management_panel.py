@@ -31,6 +31,7 @@ from apps.train.ui.model_management_text import (
     candidate_status_text,
     comparison_value,
     display_value,
+    promotion_blocked_message,
     promotion_failure_message,
 )
 
@@ -267,7 +268,7 @@ class ModelManagementPanel(QFrame):
         elif candidate.promotion_status != "compatible":
             message = candidate_availability_message(candidate)
         elif self._training_running:
-            message = "학습 실행 중에는 사용 모델을 변경할 수 없습니다."
+            message = promotion_blocked_message("training_running")
         else:
             message = "확인 후 이 학습 결과를 현재 사용 모델로 변경할 수 있습니다."
         self.promotion_message.setText(message)
