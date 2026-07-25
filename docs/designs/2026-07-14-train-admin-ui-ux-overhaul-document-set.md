@@ -1,15 +1,15 @@
 # Train/Admin UI/UX Overhaul — Design Document Set
 
-Status: active design set; Phase 4 complete; Phase 5A audit PASS; Phase 5B next
-Date: 2026-07-22
+Status: active design set; Phase 4 and Phase 5B complete; Phase 5C next
+Date: 2026-07-25
 
 ## Purpose
 
 This document set records the governing direction, accepted Phase 1–4 work,
 the authoritative Phase 5 Train/Model lifecycle and experiment design, the
 supporting Phase 5 Train/Model UI/UX direction, and the later Predict boundary.
-The Phase 5A architecture audit is complete with `PASS`; Phase 5B is the next
-implementation slice.
+The Phase 5B lifecycle foundation is independently audited, merged, and
+complete; Phase 5C Training Result & Analysis is the next implementation slice.
 
 ## Documents
 
