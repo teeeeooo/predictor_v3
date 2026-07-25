@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from uuid import uuid4
 
+from .active_contracts import active_reference_from_payload
 from .durability_errors import (
     ActiveCommittedCleanupError,
     LifecycleDurabilityError,
@@ -122,6 +123,7 @@ class LifecycleRecovery:
         previous_exists: bool,
         expected_revision: int,
         intended_revision: int,
+        intended_candidate_id: str,
     ) -> None:
         if previous_exists:
             self._filesystem.copy_regular_exclusive(
@@ -133,6 +135,7 @@ class LifecycleRecovery:
                 "backup_name": backup.name if previous_exists else "",
                 "expected_revision": expected_revision,
                 "intended_revision": intended_revision,
+                "intended_candidate_id": intended_candidate_id,
                 "status": "replacing",
             },
         )
@@ -209,6 +212,7 @@ class LifecycleRecovery:
         backup_name = str(payload.get("backup_name", ""))
         expected_revision = payload.get("expected_revision")
         intended_revision = payload.get("intended_revision")
+        intended_candidate_id = payload.get("intended_candidate_id")
         status = payload.get("status")
         if (
             type(expected_revision) is not int
@@ -221,7 +225,18 @@ class LifecycleRecovery:
                 "Active recovery marker is invalid"
             )
         if status == "committed":
-            self._reconcile_committed_active(backup_name, intended_revision)
+            if (
+                not isinstance(intended_candidate_id, str)
+                or not intended_candidate_id
+            ):
+                raise LifecycleRecoveryRequiredError(
+                    "Committed Active recovery marker has no intended identity"
+                )
+            self._reconcile_committed_active(
+                backup_name,
+                intended_revision,
+                intended_candidate_id,
+            )
             return
         if backup_name:
             self._restore_active_backup(backup_name, expected_revision)
@@ -253,20 +268,25 @@ class LifecycleRecovery:
             )
 
     def _reconcile_committed_active(
-        self, backup_name: str, intended_revision: int
+        self,
+        backup_name: str,
+        intended_revision: int,
+        intended_candidate_id: str,
     ) -> None:
         if not self._filesystem.entry_exists(self.active_reference_path):
             raise LifecycleRecoveryRequiredError(
                 "Committed Active reference is missing"
             )
         current = self._filesystem.read_json(self.active_reference_path)
-        history = current.get("history")
+        try:
+            reference = active_reference_from_payload(current)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise LifecycleRecoveryRequiredError(
+                "Committed Active reference is semantically corrupt"
+            ) from exc
         if (
-            current.get("revision") != intended_revision
-            or not isinstance(history, list)
-            or not history
-            or not isinstance(history[-1], dict)
-            or history[-1].get("revision") != intended_revision
+            reference.revision != intended_revision
+            or reference.candidate_id != intended_candidate_id
         ):
             raise LifecycleRecoveryRequiredError(
                 "Committed Active reference does not match recovery marker"

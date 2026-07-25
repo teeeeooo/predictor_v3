@@ -29,6 +29,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5B Active semantic consistency repair
+
+### Decision
+
+- Treat the independent audit of head
+  `7ac586a7610b02cfd1cb4b47d72bec7a70481a23` as a merge-blocking `FAIL`
+  because top-level Active state and latest history were not one validated
+  semantic revision unit.
+- Require append-only revisions from 1, safe Candidate identities, and exact
+  top-level/latest-history identity, revision, and activation-time agreement.
+- Bind committed forward reconciliation to both intended revision and intended
+  Candidate identity. Semantic corruption preserves marker and backup evidence
+  and remains controlled recovery-required.
+- Preserve the passing Qt/QProcess, non-Qt CI, narrow resolver exception,
+  legacy migration, and revision-guard behavior.
+- Keep Phase 5C, merge readiness, and final Phase 5B PASS on hold for a new
+  exact-head re-audit. Windows-native and packaging validation remain unrun.
+
 ## 2026-07-25 — Train/Admin Phase 5B final bounded audit repair
 
 ### Decision

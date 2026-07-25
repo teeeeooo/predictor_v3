@@ -9,9 +9,9 @@ from pathlib import Path
 from uuid import uuid4
 
 from .active_contracts import (
-    ACTIVE_REFERENCE_SCHEMA_VERSION,
     ActivationRecord,
     ActiveModelReference,
+    active_reference_from_payload,
 )
 from .candidate_validation import load_candidate_model, validate_candidate_files
 from .candidate_contracts import (
@@ -195,19 +195,7 @@ class ModelLifecycleRepository:
             raise FileNotFoundError("No Active model has been selected.")
         try:
             payload = self._filesystem.read_json(self.active_reference_path)
-            if payload.get("schema_version") != ACTIVE_REFERENCE_SCHEMA_VERSION:
-                raise ValueError("unsupported Active reference schema version")
-            history = tuple(ActivationRecord(**item) for item in payload["history"])
-            reference = ActiveModelReference(
-                candidate_id=str(payload["candidate_id"]),
-                revision=int(payload["revision"]),
-                activated_at=str(payload["activated_at"]),
-                history=history,
-            )
-            _require_safe_identity(reference.candidate_id)
-            if not history or history[-1].revision != reference.revision:
-                raise ValueError("Active reference history is inconsistent")
-            return reference
+            return active_reference_from_payload(payload)
         except ActiveReferenceCorruptionError:
             raise
         except _ARTIFACT_FAILURES as exc:
@@ -255,6 +243,7 @@ class ModelLifecycleRepository:
                     previous_exists=previous is not None,
                     expected_revision=current_revision,
                     intended_revision=revision,
+                    intended_candidate_id=candidate_id,
                 )
                 try:
                     self._filesystem.replace_file(
