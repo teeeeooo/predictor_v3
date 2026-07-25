@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from uuid import uuid4
 
 from .durability_errors import (
+    ActiveCommittedCleanupError,
     LifecycleDurabilityError,
     LifecycleRecoveryRequiredError,
 )
@@ -164,13 +166,40 @@ class LifecycleRecovery:
         self._filesystem.remove_file(backup, missing_ok=True)
         self._cleanup_marker(self.active_marker)
 
-    def finish_active(self, backup: Path) -> None:
+    def finish_active(
+        self,
+        backup: Path,
+        *,
+        previous_exists: bool,
+        before_backup_cleanup,
+        before_marker_cleanup,
+    ) -> None:  # noqa: ANN001
+        payload = self._filesystem.read_json(self.active_marker)
+        intended_revision = payload.get("intended_revision")
+        if type(intended_revision) is not int or intended_revision < 1:
+            raise LifecycleRecoveryRequiredError(
+                "Active recovery marker is invalid"
+            )
+        committed = dict(payload)
+        committed["status"] = "committed"
         try:
+            self._replace_active_marker(committed)
+        except Exception as exc:
+            self.rollback_active(
+                backup,
+                previous_exists=previous_exists,
+                before_rollback=lambda: None,
+                cause=exc,
+            )
+        try:
+            before_backup_cleanup()
             self._filesystem.remove_file(backup, missing_ok=True)
+            before_marker_cleanup()
             self._cleanup_marker(self.active_marker)
         except Exception as exc:
-            raise LifecycleRecoveryRequiredError(
-                "Active reference committed but recovery cleanup failed"
+            raise ActiveCommittedCleanupError(
+                "Active reference committed but forward cleanup is required",
+                revision=intended_revision,
             ) from exc
 
     def recover_active(self) -> None:
@@ -179,10 +208,21 @@ class LifecycleRecovery:
         payload = self._filesystem.read_json(self.active_marker)
         backup_name = str(payload.get("backup_name", ""))
         expected_revision = payload.get("expected_revision")
-        if type(expected_revision) is not int or expected_revision < 0:
+        intended_revision = payload.get("intended_revision")
+        status = payload.get("status")
+        if (
+            type(expected_revision) is not int
+            or expected_revision < 0
+            or type(intended_revision) is not int
+            or intended_revision != expected_revision + 1
+            or status not in {"replacing", "committed"}
+        ):
             raise LifecycleRecoveryRequiredError(
                 "Active recovery marker is invalid"
             )
+        if status == "committed":
+            self._reconcile_committed_active(backup_name, intended_revision)
+            return
         if backup_name:
             self._restore_active_backup(backup_name, expected_revision)
         elif self._filesystem.entry_exists(self.active_reference_path):
@@ -197,15 +237,7 @@ class LifecycleRecovery:
     def _restore_active_backup(
         self, backup_name: str, expected_revision: int
     ) -> None:
-        if (
-            not backup_name.startswith(".active-model-")
-            or not backup_name.endswith(".backup")
-            or "/" in backup_name
-            or "\\" in backup_name
-        ):
-            raise LifecycleRecoveryRequiredError(
-                "Active recovery backup identity is invalid"
-            )
+        self._require_backup_name(backup_name)
         backup = self.root / backup_name
         if self._filesystem.entry_exists(backup):
             self._filesystem.replace_file(backup, self.active_reference_path)
@@ -218,6 +250,52 @@ class LifecycleRecovery:
         if current.get("revision") != expected_revision:
             raise LifecycleRecoveryRequiredError(
                 "Active recovery backup is missing"
+            )
+
+    def _reconcile_committed_active(
+        self, backup_name: str, intended_revision: int
+    ) -> None:
+        if not self._filesystem.entry_exists(self.active_reference_path):
+            raise LifecycleRecoveryRequiredError(
+                "Committed Active reference is missing"
+            )
+        current = self._filesystem.read_json(self.active_reference_path)
+        history = current.get("history")
+        if (
+            current.get("revision") != intended_revision
+            or not isinstance(history, list)
+            or not history
+            or not isinstance(history[-1], dict)
+            or history[-1].get("revision") != intended_revision
+        ):
+            raise LifecycleRecoveryRequiredError(
+                "Committed Active reference does not match recovery marker"
+            )
+        if backup_name:
+            self._require_backup_name(backup_name)
+            self._filesystem.remove_file(
+                self.root / backup_name, missing_ok=True
+            )
+        self._cleanup_marker(self.active_marker)
+
+    def _replace_active_marker(self, payload: dict[str, object]) -> None:
+        temporary = self.root / f".active-recovery-{uuid4().hex}.tmp"
+        try:
+            self._filesystem.write_json_exclusive(temporary, payload)
+            self._filesystem.replace_file(temporary, self.active_marker)
+        finally:
+            self._remove_owned_file_best_effort(temporary)
+
+    @staticmethod
+    def _require_backup_name(backup_name: str) -> None:
+        if (
+            not backup_name.startswith(".active-model-")
+            or not backup_name.endswith(".backup")
+            or "/" in backup_name
+            or "\\" in backup_name
+        ):
+            raise LifecycleRecoveryRequiredError(
+                "Active recovery backup identity is invalid"
             )
 
     def _cleanup_marker(self, path: Path) -> None:

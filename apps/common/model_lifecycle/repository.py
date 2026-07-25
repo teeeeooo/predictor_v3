@@ -204,6 +204,7 @@ class ModelLifecycleRepository:
                 activated_at=str(payload["activated_at"]),
                 history=history,
             )
+            _require_safe_identity(reference.candidate_id)
             if not history or history[-1].revision != reference.revision:
                 raise ValueError("Active reference history is inconsistent")
             return reference
@@ -275,7 +276,16 @@ class ModelLifecycleRepository:
                 except Exception:
                     self._recovery.abort_active_before_rename(backup)
                     raise
-                self._recovery.finish_active(backup)
+                self._recovery.finish_active(
+                    backup,
+                    previous_exists=previous is not None,
+                    before_backup_cleanup=lambda: self._failure_hook(
+                        "before_active_backup_cleanup"
+                    ),
+                    before_marker_cleanup=lambda: self._failure_hook(
+                        "before_active_marker_cleanup"
+                    ),
+                )
             finally:
                 self._recovery.cleanup_temporary(temporary, backup)
             return reference

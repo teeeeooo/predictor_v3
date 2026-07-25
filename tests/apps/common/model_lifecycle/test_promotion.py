@@ -277,6 +277,67 @@ def test_active_failed_rollback_is_controlled_recovery_required(
     assert not repository.active_recovery_path.exists()
 
 
+@pytest.mark.parametrize(
+    ("failure_stage", "backup_remains"),
+    (
+        ("before_active_backup_cleanup", True),
+        ("before_active_marker_cleanup", False),
+    ),
+)
+def test_committed_active_cleanup_failure_reconciles_forward_idempotently(
+    tmp_path, registry_snapshot, failure_stage, backup_remains
+):
+    fail = {"enabled": False}
+
+    def inject(stage):  # noqa: ANN001
+        if fail["enabled"] and stage == failure_stage:
+            raise OSError(stage)
+
+    repository = ModelLifecycleRepository(
+        tmp_path / "lifecycle", failure_hook=inject
+    )
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    publish_candidate(repository, registry_snapshot, "candidate-b")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    fail["enabled"] = True
+
+    result = service.promote("candidate-b", expected_revision=1)
+
+    assert (result.status, result.candidate_id, result.revision) == (
+        "recovery-required",
+        "candidate-b",
+        2,
+    )
+    marker = json.loads(
+        repository.active_recovery_path.read_text(encoding="utf-8")
+    )
+    assert marker["status"] == "committed"
+    raw = json.loads(repository.active_reference_path.read_text(encoding="utf-8"))
+    assert (raw["candidate_id"], raw["revision"]) == ("candidate-b", 2)
+    assert [item["candidate_id"] for item in raw["history"]] == [
+        "candidate-a",
+        "candidate-b",
+    ]
+    assert bool(list(repository.root.glob(".active-model-*.backup"))) is backup_remains
+    assert ActiveModelResolver(repository).resolve().status == "recovery-required"
+    fail["enabled"] = False
+
+    recovered = repository.recover_active_reference()
+    repeated = repository.recover_active_reference()
+
+    assert recovered is not None
+    assert repeated == recovered
+    assert (recovered.candidate_id, recovered.revision) == ("candidate-b", 2)
+    assert [item.candidate_id for item in recovered.history] == [
+        "candidate-a",
+        "candidate-b",
+    ]
+    assert not repository.active_recovery_path.exists()
+    assert not list(repository.root.glob(".active-model-*.backup"))
+    assert ActiveModelResolver(repository).resolve().revision == 2
+
+
 def test_rollback_revalidates_current_compatibility(repository, registry_snapshot):
     publish_candidate(repository, registry_snapshot, "candidate-a")
     publish_candidate(repository, registry_snapshot, "candidate-b")

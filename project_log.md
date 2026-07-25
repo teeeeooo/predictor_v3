@@ -29,6 +29,24 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5B final bounded audit repair
+
+### Decision
+
+- Treat the audit of second-repair head
+  `f944cbc6d40a36db94a599462bb2cdcc21ce2265` as another merge-blocking
+  `FAIL`; all earlier validation remains historical evidence.
+- Distinguish a durable committed Active revision from an indeterminate
+  replacing revision before cleanup. Forward reconciliation preserves the
+  committed identity, revision, and history and remains idempotent.
+- Limit the shared QApplication fixture to tests that explicitly request it so
+  non-Qt CI does not import PySide6.
+- Convert only expected lifecycle and filesystem failures to controlled Active
+  startup results; unexpected programmer errors propagate.
+- Keep Phase 5C, merge readiness, and final Phase 5B PASS on hold for exact-head
+  re-audit. Parent-root symlink hardening, arbitrary QCore-first widget order,
+  Windows-native validation, and packaging remain outside this repair.
+
 ## 2026-07-23 — Train/Admin Phase 5B second independent-audit repair
 
 ### Decision

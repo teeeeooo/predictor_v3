@@ -166,3 +166,36 @@ def test_new_resolver_observes_active_change_but_loaded_service_keeps_path(
 
     assert resolution.model_path == str(second.model_path)
     assert Path(service._model_file) == first.model_path
+
+
+def test_resolver_controls_missing_active_candidate(repository):
+    repository.replace_active(
+        "missing-candidate",
+        activated_at="2026-01-01T00:00:00+00:00",
+        source="test",
+        expected_revision=0,
+    )
+
+    resolution = ActiveModelResolver(repository).resolve()
+
+    assert resolution.status == "invalid-active"
+    assert "Candidate does not exist" in resolution.message
+
+
+@pytest.mark.parametrize(
+    "programmer_error",
+    (
+        AssertionError("resolver invariant defect"),
+        TypeError("resolver contract defect"),
+    ),
+)
+def test_resolver_does_not_hide_unexpected_programmer_error(
+    repository, monkeypatch, programmer_error
+):
+    def fail_read_active(*, optional):  # noqa: ARG001
+        raise programmer_error
+
+    monkeypatch.setattr(repository, "read_active", fail_read_active)
+
+    with pytest.raises(type(programmer_error), match=str(programmer_error)):
+        ActiveModelResolver(repository).resolve()

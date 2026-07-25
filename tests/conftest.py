@@ -7,7 +7,7 @@ import os
 import pytest
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def qprocess_app():
     """Keep one strong QApplication identity across Core and Widget tests."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .active_contracts import ModelResolution
 from .durability_errors import LifecycleRecoveryRequiredError
+from .errors import ModelLifecycleError
 from .repository import ModelLifecycleRepository
 
 
@@ -25,7 +26,7 @@ class ActiveModelResolver:
                 "recovery-required",
                 message=f"Active model recovery is required: {str(exc).splitlines()[0]}",
             )
-        except Exception as exc:
+        except (OSError, ModelLifecycleError) as exc:
             return ModelResolution(
                 "invalid-active",
                 message=f"Active model is unavailable: {str(exc).splitlines()[0]}",
