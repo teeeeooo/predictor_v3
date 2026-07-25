@@ -11,7 +11,8 @@ Phase 5B head `21b98eb38239e0100be3c3700744c69e2fdc11fe` returned `PASS`.
 PR #28 was squash-merged as
 `eca6addd38745dadca3b0e4f19cc259090d50e23`; the lifecycle foundation is
 complete with no remaining merge blocker. Phase 5C Training Result & Analysis is
-the next active implementation slice.
+implemented on its worker branch and awaits independent L4 audit; Phase 5D has
+not started.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -43,6 +44,10 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
+- Phase 5C adds one Qt-free `training_result.v1` source for Core-owned target
+  metrics and analysis. New manifest v2 Candidates require hash-verified
+  JSON/CSV/XLSX artifacts before publication; non-complete terminal evidence is
+  preserved outside the Candidate namespace and is never promotable.
 - Phase 5 lifecycle state lives below the user-state root under a stable workspace
   identity. A repository absolute path is not permanent identity, and Phase 5B
   supports one default workspace only.

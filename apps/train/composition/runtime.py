@@ -26,6 +26,7 @@ from apps.train.application.runtime_generation import (
 from apps.train.controllers.data_definition_controller import DataDefinitionController
 from apps.train.controllers.data_mapping_controller import DataMappingController
 from apps.train.controllers.train_controller import TrainController
+from apps.train.composition.training_results import build_candidate_publisher
 from apps.train.services.data_definition_service import DataDefinitionService
 from apps.train.services.data_mapping_service import DataMappingService
 from apps.train.ui.shell import TrainShell
@@ -92,6 +93,7 @@ def create_shell(
         execution_factory=QProcessTrainingRunner,
         registry_provider=registry_provider,
         lifecycle_repository=lifecycle_repository,
+        candidate_publisher=build_candidate_publisher(lifecycle_repository),
     )
     return TrainShell(
         train_controller=train_controller,

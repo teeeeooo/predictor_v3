@@ -12,6 +12,7 @@ from PySide6.QtCore import QEventLoop, QTimer
 from apps.common.model_lifecycle import ModelLifecycleRepository
 from apps.train.adapters.qprocess_training_runner import QProcessTrainingRunner
 from apps.train.application.training_lifecycle import TrainingLifecycleService
+from apps.train.composition.training_results import build_candidate_publisher
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 from tests.apps.common.model_lifecycle.conftest import artifact_for, publish_candidate
 from tools.dev.mock_smoke.generators import write_mock_training_data
@@ -62,6 +63,14 @@ def _request(tmp_path, snapshot, candidate_id="candidate-new"):  # noqa: ANN001
     )
 
 
+def _service(repository, **kwargs):  # noqa: ANN001
+    return TrainingLifecycleService(
+        repository=repository,
+        publisher=build_candidate_publisher(repository),
+        **kwargs,
+    )
+
+
 def test_success_publishes_candidate_and_preserves_active(
     tmp_path, registry_snapshot
 ):
@@ -74,10 +83,10 @@ def test_success_publishes_candidate_and_preserves_active(
         expected_revision=0,
     )
     execution = ArtifactExecution(artifact_for(registry_snapshot))
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=execution,
         registry_provider=lambda: registry_snapshot,
-        repository=repository,
     )
     finished = []
 
@@ -99,10 +108,10 @@ def test_publication_failed_rollback_returns_structured_recovery_outcome(
     repository = ModelLifecycleRepository(
         tmp_path / "lifecycle", failure_hook=fail
     )
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=ArtifactExecution(artifact_for(registry_snapshot)),
         registry_provider=lambda: registry_snapshot,
-        repository=repository,
     )
     failed = []
 
@@ -129,10 +138,10 @@ def test_failure_and_cancel_preserve_active_and_publish_nothing(
             source="test",
             expected_revision=0,
         )
-        service = TrainingLifecycleService(
+        service = _service(
+            repository,
             execution=ArtifactExecution(artifact_for(registry_snapshot), terminal),
             registry_provider=lambda: registry_snapshot,
-            repository=repository,
         )
         service.start(_request(tmp_path, registry_snapshot, f"candidate-{terminal}"))
 
@@ -150,10 +159,10 @@ def test_publication_exception_becomes_terminal_error_and_preserves_active(
             if stage == "before_candidate_replace" else None
         ),
     )
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=ArtifactExecution(artifact_for(registry_snapshot)),
         registry_provider=lambda: registry_snapshot,
-        repository=repository,
     )
     failed = []
 
@@ -173,9 +182,9 @@ def test_lifecycle_resource_status_reports_controlled_bootstrap(
 ):
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
     data_path = write_mock_training_data(output_dir=tmp_path, rows=8)
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         registry_provider=lambda: registry_snapshot,
-        repository=repository,
     )
 
     status = service.resource_status(str(data_path))
@@ -194,16 +203,35 @@ def test_shared_application_boundary_has_no_pyside_or_train_only_imports():
     assert "sklearn" not in source
 
 
+def test_training_result_application_uses_ports_not_concrete_file_adapters():
+    publication = Path(
+        "apps/train/application/candidate_publication.py"
+    ).read_text(encoding="utf-8")
+    lifecycle = Path(
+        "apps/train/application/training_lifecycle.py"
+    ).read_text(encoding="utf-8")
+    evidence_port = Path(
+        "apps/train/application/training_results/evidence.py"
+    ).read_text(encoding="utf-8")
+
+    combined = publication + lifecycle + evidence_port
+    assert "apps.train.adapters" not in combined
+    assert "artifact_sha256" not in combined
+    assert "read_text(" not in evidence_port
+    assert "write_text(" not in evidence_port
+    assert ".unlink(" not in evidence_port
+
+
 def test_qprocess_success_publishes_candidate_without_auto_activation(
     tmp_path, registry_snapshot, qprocess_app
 ):
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=QProcessTrainingRunner(
             extra_args=("--dev-fast", "--dev-rows", "8")
         ),
         registry_provider=lambda: registry_snapshot,
-        repository=repository,
     )
     finished = []
     loop = QEventLoop()

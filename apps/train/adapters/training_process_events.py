@@ -41,6 +41,7 @@ def parse_training_event(
             message=str(event.get("message", "")),
             generation_id=str(event.get("generation_id", request.generation_id)),
             registry_fingerprint=str(event.get("registry_fingerprint", request.registry_fingerprint)),
+            evidence_path=str(event.get("evidence_path", "")),
         )
     return "log", TrainingLogEvent(
         run_id=event.get("run_id", request.run_id),

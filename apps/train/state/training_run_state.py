@@ -62,6 +62,7 @@ class TrainingResult:
     registry_fingerprint: str = ""
     candidate_id: str = ""
     publication_outcome: str = ""
+    evidence_path: str = ""
 
 
 @dataclass(frozen=True)

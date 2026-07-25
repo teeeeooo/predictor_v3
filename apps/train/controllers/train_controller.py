@@ -16,6 +16,7 @@ class TrainController:
         execution_factory=None,  # noqa: ANN001
         registry_provider=None,  # noqa: ANN001
         lifecycle_repository=None,  # noqa: ANN001
+        candidate_publisher=None,  # noqa: ANN001
         lifecycle_service: TrainingLifecycleService | None = None,
     ) -> None:
         self._lifecycle = lifecycle_service or TrainingLifecycleService(
@@ -24,6 +25,7 @@ class TrainController:
             execution_factory=execution_factory,
             registry_provider=registry_provider,
             repository=lifecycle_repository,
+            publisher=candidate_publisher,
         )
         self._validation = service or TrainingService()
 

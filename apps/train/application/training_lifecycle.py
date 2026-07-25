@@ -10,10 +10,16 @@ from uuid import uuid4
 
 from apps.common.model_lifecycle.resolver import ActiveModelResolver
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
+from apps.common.model_lifecycle.publication_errors import (
+    CandidatePublicationValidationError,
+)
 from apps.common.model_lifecycle.durability_errors import (
     LifecycleRecoveryRequiredError,
 )
-from apps.train.application.candidate_publication import CandidatePublisher
+from apps.train.application.candidate_publication import (
+    CandidateArtifactGenerationError,
+    CandidatePublicationPort,
+)
 from apps.train.ports.training_execution_port import (
     TrainingExecutionCallbacks,
     TrainingExecutionFactory,
@@ -42,13 +48,14 @@ class TrainingLifecycleService:
         execution_factory: TrainingExecutionFactory | None = None,
         registry_provider: Callable[[], ModelRegistrySnapshot] | None = None,
         repository: ModelLifecycleRepository | None = None,
+        publisher: CandidatePublicationPort | None = None,
     ) -> None:
         self._validation = validation or TrainingService()
         self._execution = execution
         self._execution_factory = execution_factory
         self._registry_provider = registry_provider
         self._repository = repository
-        self._publisher = CandidatePublisher(repository) if repository else None
+        self._publisher = publisher
         self._is_running = False
         self._last_result: TrainingResult | None = None
         self._active_request: TrainingRequest | None = None
@@ -200,13 +207,44 @@ class TrainingLifecycleService:
 
     def _finish(self, terminal: str, result: TrainingResult) -> None:
         request = self._active_request
+        failure_stage = (
+            "training_execution" if terminal != "finished" else ""
+        )
+        failure_reason = result.message if failure_stage else ""
         if terminal == "finished" and request is not None and self._repository is not None:
             try:
                 assert self._publisher is not None and self._staging is not None
                 result = self._publisher.publish(request, result, self._staging)
                 self._staging = None
+            except CandidateArtifactGenerationError as exc:
+                terminal = "failed"
+                failure_stage = "artifact_generation_or_validation"
+                failure_reason = str(exc).splitlines()[0]
+                result = replace(
+                    result,
+                    status="error",
+                    message=(
+                        "Candidate artifact generation failed: "
+                        f"{str(exc).splitlines()[0]}"
+                    ),
+                    candidate_id=request.candidate_id,
+                    publication_outcome="artifact_generation_failed",
+                )
+            except CandidatePublicationValidationError as exc:
+                terminal = "failed"
+                failure_stage = "lifecycle_validation"
+                failure_reason = str(exc).splitlines()[0]
+                result = replace(
+                    result,
+                    status="error",
+                    message=failure_reason,
+                    candidate_id=request.candidate_id,
+                    publication_outcome="failed",
+                )
             except LifecycleRecoveryRequiredError as exc:
                 terminal = "failed"
+                failure_stage = "candidate_publication_durability"
+                failure_reason = str(exc).splitlines()[0]
                 result = replace(
                     result,
                     status="error",
@@ -214,15 +252,42 @@ class TrainingLifecycleService:
                     candidate_id=request.candidate_id,
                     publication_outcome="recovery-required",
                 )
-                self._staging = None
             except Exception as exc:
                 terminal = "failed"
+                failure_stage = "candidate_publication"
+                failure_reason = str(exc).splitlines()[0]
                 result = replace(
                     result,
                     status="error",
                     message=f"Candidate publication failed: {str(exc).splitlines()[0]}",
                     candidate_id=request.candidate_id,
                     publication_outcome="failed",
+                )
+        if (
+            terminal != "finished"
+            and request is not None
+            and self._repository is not None
+            and self._publisher is not None
+            and self._staging is not None
+        ):
+            outcome = _terminal_publication_outcome(terminal, result)
+            try:
+                result = self._publisher.preserve_terminal_evidence(
+                    request,
+                    result,
+                    self._staging,
+                    publication_outcome=outcome,
+                    failure_stage=failure_stage,
+                    failure_reason=failure_reason,
+                )
+                self._staging = None
+            except Exception as evidence_exc:
+                result = replace(
+                    result,
+                    message=(
+                        f"{result.message}; terminal evidence preservation failed: "
+                        f"{str(evidence_exc).splitlines()[0]}"
+                    ).strip("; "),
                 )
         if terminal != "finished":
             self._discard_staging()
@@ -255,6 +320,23 @@ def _error_result(request: TrainingRequest, message: str) -> TrainingResult:
         registry_fingerprint=request.registry_fingerprint,
         candidate_id=request.candidate_id,
     )
+
+
+def _terminal_publication_outcome(
+    terminal: str,
+    result: TrainingResult,
+) -> str:
+    if result.publication_outcome in {
+        "artifact_generation_failed",
+        "recovery-required",
+        "failed",
+    }:
+        return result.publication_outcome
+    if terminal == "cancelled":
+        return "cancelled"
+    if result.status == "partial":
+        return "partial"
+    return "failed"
 
 
 def _notify(callback, payload) -> None:  # noqa: ANN001

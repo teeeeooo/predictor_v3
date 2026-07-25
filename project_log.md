@@ -29,6 +29,81 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5C programmer-error boundary repair
+
+### Decision
+
+- Preserve the third independent Phase 5C L4 re-audit verdict as `FAIL`; its
+  sole blocker is the programmer-error versus persisted-corruption boundary.
+- Normalize malformed persisted Candidate/result analysis data through one
+  explicit artifact-contract error, while allowing unexpected validator,
+  parser, and helper `TypeError`/`AttributeError` to propagate unchanged from
+  Candidate read and publication validation.
+- Promotion must not relabel those programmer defects as blocked Candidate
+  corruption. Existing Active state and failure-evidence cleanup remain
+  unchanged.
+- Keep PR #30 Draft and unmerged and hold Phase 5D and later experiment slices
+  for another independent final exact-head re-audit.
+
+## 2026-07-25 — Train/Admin Phase 5C canonical artifact and failure-evidence repair
+
+### Decision
+
+- Preserve the second independent Phase 5C L4 audit verdict as `FAIL` and
+  repair only its three direct blockers on PR #30.
+- Accept persisted analysis paths only in their canonical POSIX-relative
+  spelling and reject aliases, traversal, outside-namespace paths, non-boolean
+  `required`, invalid categories, and malformed SHA-256 values without
+  coercion.
+- Retain Core training evidence as an optional hash-validated Candidate artifact
+  on success. Artifact, lifecycle-validation, atomic-publication, and durability
+  failures preserve original target status/metrics/reasons plus publication
+  failure stage/reason outside the Candidate namespace.
+- Use a minimal JSON-only terminal fallback when the consolidated writer remains
+  unavailable; do not represent missing CSV/XLSX as completed artifacts.
+- Keep PR #30 Draft and unmerged and hold Phase 5D and later experiment slices
+  for independent final exact-head re-audit.
+
+## 2026-07-25 — Train/Admin Phase 5C result-integrity audit repair
+
+### Decision
+
+- Preserve the first independent Phase 5C L4 audit verdict as `FAIL` and repair
+  only its five merge blockers on the existing Draft PR branch.
+- Make manifest v2 Candidate read and promotion share lifecycle-owned validation
+  of the exact required analysis set, artifact identity/category/required
+  semantics, files, hashes, supported result version, and parsed structured
+  payload. Manifest v1 remains read-only without migration.
+- Require baseline identity/comparability, deltas, unavailable reasons, and
+  target failure reasons to project from one result contract into JSON, CSV,
+  and XLSX.
+- Keep filesystem evidence/report/hash implementations in outbound adapters and
+  inject them at composition. Core retains production preprocessing, target
+  policy, RFECV/Optuna, evaluation, and metric ownership.
+- Hold Phase 5D and every later CLI/Campaign/agent-loop slice until the repaired
+  exact head receives independent L4 re-audit. This worker does not declare
+  audit `PASS` or merge readiness.
+
+## 2026-07-25 — Train/Admin Phase 5C training result and analysis
+
+### Decision
+
+- Establish `training_result.v1` as the Qt-free source for target metrics,
+  fair-baseline comparison, RFECV, target-local XGBoost gain importance,
+  Optuna, preprocessing/data-quality, artifact references, and promotion
+  eligibility snapshots.
+- Require new manifest v2 Candidates to own hash-verified JSON, CSV, and XLSX
+  analysis before immutable publication. Continue read-only support for Phase
+  5B manifest v1 without silent artifact generation or migration.
+- Preserve partial, failed, cancelled, and artifact-generation-failed evidence
+  in an immutable non-Candidate lifecycle namespace. None of these states may
+  change Active or appear promotion-eligible.
+- Keep promotion authority and compatibility revalidation in the existing
+  lifecycle owner. Training completion remains Candidate publication, never
+  activation.
+- Hold Phase 5D Train/Model UI, CLI, Campaign, and the agent loop until an
+  independent L4 audit reviews the exact Phase 5C Draft PR head.
+
 ## 2026-07-25 — Train/Admin Phase 5B post-merge closeout
 
 ### Decision

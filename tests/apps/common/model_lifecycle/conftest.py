@@ -15,6 +15,9 @@ from apps.common.model_lifecycle import (
     ModelLifecycleRepository,
     TargetArtifactContract,
 )
+from apps.common.model_lifecycle.candidate_contracts import (
+    LEGACY_CANDIDATE_SCHEMA_VERSION,
+)
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.target_registry.runtime import model_registry_snapshot
 from tools.dev.mock_smoke.generators import build_mock_prediction_artifact
@@ -75,6 +78,7 @@ def publish_candidate(repository, snapshot, candidate_id, *, artifact=None):  # 
             tuple(artifact["features"][target.ml_name]),
         ) for target in targets),
         promotion_eligible=True,
+        schema_version=LEGACY_CANDIDATE_SCHEMA_VERSION,
     )
     result = CandidateResult(
         manifest.run_id, candidate_id, "complete", "published", True

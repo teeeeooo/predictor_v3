@@ -23,6 +23,7 @@ from .errors import (
     CandidateCorruptionError,
     LifecycleFilesystemError,
 )
+from .publication_errors import CandidatePublicationValidationError
 from .durability_errors import PostRenameDurabilityError
 from .filesystem import LifecycleFilesystem
 from .locking import lifecycle_lock
@@ -37,6 +38,7 @@ class ModelLifecycleRepository:
         self._filesystem = LifecycleFilesystem(root)
         self.root = self._filesystem.root
         self.candidates_path = self.root / "candidates"
+        self.run_evidence_path = self.root / "run_evidence"
         self.staging_path = self.root / ".staging"
         self.active_reference_path = self.root / "active_model.json"
         self.writer_lock_path = self.root / ".lifecycle-write.lock"
@@ -72,7 +74,13 @@ class ModelLifecycleRepository:
         self._filesystem.ensure_directory(self.root)
         self._failure_hook("before_lifecycle_lock")
         with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
-            validate_candidate_files(self._filesystem, stage, manifest)
+            try:
+                validate_candidate_files(self._filesystem, stage, manifest)
+            except _CANDIDATE_VALIDATION_FAILURES as exc:
+                raise CandidatePublicationValidationError(
+                    f"Candidate publication validation failed: "
+                    f"{str(exc).splitlines()[0]}"
+                ) from exc
             self._filesystem.ensure_directory(self.candidates_path)
             final = self.candidates_path / manifest.candidate_id
             self._recovery.require_candidate_clear(manifest.candidate_id)
@@ -151,6 +159,28 @@ class ModelLifecycleRepository:
         stage = self._owned_staging(staging)
         if self._filesystem.is_owned_directory(stage):
             shutil.rmtree(stage)
+
+    def preserve_run_evidence(
+        self,
+        staging: str | Path,
+        run_id: str,
+    ) -> Path:
+        """Atomically preserve non-Candidate terminal evidence as immutable data."""
+        _require_safe_identity(run_id)
+        stage = self._owned_staging(staging)
+        self._filesystem.require_directory(stage)
+        self._filesystem.require_regular_file(stage / "training_result.json")
+        self._filesystem.ensure_directory(self.root)
+        with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
+            self._filesystem.ensure_directory(self.run_evidence_path)
+            final = self.run_evidence_path / run_id
+            if self._filesystem.entry_exists(final):
+                raise FileExistsError(
+                    f"immutable run evidence identity conflict: {run_id}"
+                )
+            self._filesystem.fsync_tree(stage)
+            self._filesystem.publish_directory(stage, final)
+            return final
 
     def inspect_staged_model(self, staging: str | Path) -> tuple[str, object]:
         stage = self._owned_staging(staging)
@@ -320,11 +350,11 @@ _ARTIFACT_FAILURES = (
     OSError,
     EOFError,
     ImportError,
-    AttributeError,
     KeyError,
-    TypeError,
     ValueError,
 )
+
+_CANDIDATE_VALIDATION_FAILURES = _ARTIFACT_FAILURES
 
 _ACTIVE_REFERENCE_FAILURES = (
     LifecycleFilesystemError,

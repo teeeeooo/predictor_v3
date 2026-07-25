@@ -9,6 +9,7 @@ from apps.common.model_lifecycle import (
     LifecycleDurabilityError,
     LifecycleRecoveryRequiredError,
     ModelLifecycleRepository,
+    ModelPromotionService,
 )
 
 from .conftest import artifact_for, publish_candidate
@@ -28,6 +29,96 @@ def test_incomplete_staging_is_not_listed(repository, registry_snapshot):
     repository.create_staging("candidate-incomplete")
 
     assert repository.list_candidates() == ()
+
+
+@pytest.mark.parametrize(
+    ("error_type", "message"),
+    (
+        (TypeError, "candidate validator type defect"),
+        (AttributeError, "candidate validator attribute defect"),
+    ),
+)
+def test_candidate_read_and_promotion_propagate_programmer_errors(
+    repository, registry_snapshot, monkeypatch, error_type, message
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("candidate-a", expected_revision=0).status == "active"
+    active_before = repository.read_active()
+
+    def fail_validation(*_args, **_kwargs):
+        raise error_type(message)
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.repository.validate_candidate_files",
+        fail_validation,
+    )
+
+    with pytest.raises(error_type, match=message):
+        repository.read_candidate("candidate-a")
+    with pytest.raises(error_type, match=message):
+        service.promote(
+            "candidate-a", expected_revision=active_before.revision
+        )
+
+    assert repository.read_active() == active_before
+
+
+@pytest.mark.parametrize(
+    ("error_type", "message"),
+    (
+        (TypeError, "candidate parser type defect"),
+        (AttributeError, "candidate parser attribute defect"),
+    ),
+)
+def test_candidate_read_parser_propagates_programmer_errors(
+    repository, registry_snapshot, monkeypatch, error_type, message
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+
+    def fail_parser(_payload):
+        raise error_type(message)
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.repository.CandidateManifest.from_payload",
+        fail_parser,
+    )
+
+    with pytest.raises(error_type, match=message):
+        repository.read_candidate("candidate-a")
+
+
+@pytest.mark.parametrize(
+    ("error_type", "message"),
+    (
+        (TypeError, "publication validator type defect"),
+        (AttributeError, "publication validator attribute defect"),
+    ),
+)
+def test_candidate_publication_validation_propagates_programmer_errors(
+    repository, registry_snapshot, monkeypatch, error_type, message
+):
+    publish_candidate(repository, registry_snapshot, "active")
+    service = ModelPromotionService(repository, lambda: registry_snapshot)
+    assert service.promote("active", expected_revision=0).status == "active"
+    active_before = repository.read_active()
+
+    def fail_validation(*_args, **_kwargs):
+        raise error_type(message)
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.repository.validate_candidate_files",
+        fail_validation,
+    )
+
+    with pytest.raises(error_type, match=message):
+        publish_candidate(repository, registry_snapshot, "candidate-new")
+
+    assert repository.read_active() == active_before
+    assert not (repository.candidates_path / "candidate-new").exists()
+    for staging in tuple(repository.staging_path.iterdir()):
+        repository.discard_staging(staging)
+    assert not list(repository.staging_path.iterdir())
 
 
 def test_hash_mismatch_and_invalid_model_are_blocked(repository, registry_snapshot):
