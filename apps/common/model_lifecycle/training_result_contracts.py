@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .candidate_contracts import parse_analysis_artifact_descriptor
 
 TRAINING_RESULT_SCHEMA_VERSION = "training_result.v1"
 
@@ -45,10 +46,19 @@ class TrainingAnalysisResult:
         targets = _mapping_array(payload, "targets")
         artifacts = _mapping_array(payload, "artifacts")
         blocking = _mapping_array(payload, "blocking_reasons", default=())
-        artifact_paths = [str(item.get("path", "")) for item in artifacts]
-        artifact_categories = [
-            str(item.get("category", "")) for item in artifacts
-        ]
+        parsed_artifacts = tuple(
+            {
+                "path": path,
+                "category": category,
+                "required": required,
+            }
+            for path, category, required in (
+                parse_analysis_artifact_descriptor(item)
+                for item in artifacts
+            )
+        )
+        artifact_paths = [item["path"] for item in parsed_artifacts]
+        artifact_categories = [item["category"] for item in parsed_artifacts]
         if (
             "" in artifact_paths
             or "" in artifact_categories
@@ -65,7 +75,7 @@ class TrainingAnalysisResult:
             targets=targets,
             baseline=dict(payload["baseline"]),
             preprocessing=dict(payload["preprocessing"]),
-            artifacts=artifacts,
+            artifacts=parsed_artifacts,
             promotion_eligibility=dict(payload["promotion_eligibility"]),
             blocking_reasons=blocking,
             optional_capabilities=dict(optional),

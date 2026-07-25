@@ -22,6 +22,7 @@ from apps.train.application.training_results import (
 from apps.train.application.training_results.evidence import (
     TrainingEvidencePort,
     TrainingResultArtifactPort,
+    TrainingTerminalEvidencePort,
 )
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 from core.data_definition.target_registry.runtime import ModelRegistrySnapshot
@@ -43,6 +44,8 @@ class CandidatePublicationPort(Protocol):
         staging: Path,
         *,
         publication_outcome: str,
+        failure_stage: str = "",
+        failure_reason: str = "",
     ) -> TrainingResult: ...
 
 
@@ -53,11 +56,14 @@ class CandidatePublisher:
         *,
         evidence: TrainingEvidencePort,
         artifacts: TrainingResultArtifactPort,
+        terminal_evidence: TrainingTerminalEvidencePort,
     ) -> None:
         self._repository = repository
         self._result_service = TrainingResultService()
         self._evidence = evidence
         self._artifacts = artifacts
+        self._terminal_evidence = terminal_evidence
+        self._publication_evidence = None
 
     def publish(
         self,
@@ -80,7 +86,8 @@ class CandidatePublisher:
             for identity in snapshot.target_presentation_order
             if identity in by_identity
         )
-        evidence = self._evidence.consume_candidate(staging, targets)
+        evidence = self._evidence.load_candidate(staging, targets)
+        self._publication_evidence = evidence
         if evidence.status != "complete":
             raise ValueError("partial or failed training cannot publish a Candidate")
         baseline, baseline_identity, baseline_reason = (
@@ -97,6 +104,7 @@ class CandidatePublisher:
             baseline_identity=baseline_identity,
             baseline_unavailable_reason=baseline_reason,
             publication_outcome="published",
+            include_core_evidence_artifact=True,
         )
         try:
             artifact_references = self._artifacts.write(staging, analysis)
@@ -142,6 +150,7 @@ class CandidatePublisher:
             blocking_reasons,
         )
         candidate = self._repository.publish(staging, manifest, publication)
+        self._publication_evidence = None
         return replace(
             result,
             model_path=str(candidate.model_path),
@@ -156,6 +165,8 @@ class CandidatePublisher:
         staging: Path,
         *,
         publication_outcome: str,
+        failure_stage: str = "",
+        failure_reason: str = "",
     ) -> TrainingResult:
         snapshot = ModelRegistrySnapshot.from_payload(
             json.loads(request.registry_payload_json)
@@ -167,24 +178,52 @@ class CandidatePublisher:
             for target in group.targets
             if target.identity == identity
         )
-        evidence = self._evidence.consume_terminal(staging, result)
-        analysis = self._result_service.build(
-            run_id=request.run_id,
-            candidate_id=request.candidate_id,
-            evidence=evidence,
-            required_target_identities=tuple(
-                target.identity for target in targets
-            ),
-            publication_outcome=publication_outcome,
+        evidence = (
+            self._publication_evidence
+            or self._evidence.load_terminal(staging, result)
         )
-        self._evidence.remove_model(staging)
-        self._artifacts.write(staging, analysis)
-        evidence_path = self._repository.preserve_run_evidence(
-            staging, request.run_id
-        )
-        return replace(
-            result,
-            candidate_id=request.candidate_id,
-            publication_outcome=publication_outcome,
-            evidence_path=str(evidence_path / "training_result.json"),
-        )
+        preserved = False
+        try:
+            analysis = self._result_service.build(
+                run_id=request.run_id,
+                candidate_id=request.candidate_id,
+                evidence=evidence,
+                required_target_identities=tuple(
+                    target.identity for target in targets
+                ),
+                publication_outcome=publication_outcome,
+                failure_stage=failure_stage,
+                failure_reason=failure_reason,
+            )
+            staging = self._evidence.prepare_terminal(
+                staging, request.candidate_id
+            )
+            try:
+                self._artifacts.write(staging, analysis)
+            except Exception as artifact_exc:
+                staging = self._evidence.prepare_terminal(
+                    staging, request.candidate_id
+                )
+                self._terminal_evidence.write(
+                    staging,
+                    self._result_service.minimal_terminal(
+                        analysis, str(artifact_exc).splitlines()[0]
+                    ),
+                )
+            evidence_path = self._repository.preserve_run_evidence(
+                staging, request.run_id
+            )
+            preserved = True
+            return replace(
+                result,
+                candidate_id=request.candidate_id,
+                publication_outcome=publication_outcome,
+                evidence_path=str(evidence_path / "training_result.json"),
+            )
+        finally:
+            self._publication_evidence = None
+            if not preserved:
+                try:
+                    self._repository.discard_staging(staging)
+                except Exception:
+                    pass

@@ -2,12 +2,32 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 
 CANDIDATE_SCHEMA_VERSION = "model_candidate_manifest.v2"
 LEGACY_CANDIDATE_SCHEMA_VERSION = "model_candidate_manifest.v1"
 RESULT_SCHEMA_VERSION = "model_candidate_result.v1"
 ARTIFACT_FORMAT_VERSION = "multi_target_joblib.v1"
+ANALYSIS_ARTIFACT_CATEGORIES = {
+    "training_result",
+    "target_metrics",
+    "selected_features",
+    "rfecv_ranking",
+    "feature_importance",
+    "optuna_trials",
+    "best_parameters",
+    "preprocessing_summary",
+    "training_report",
+    "core_training_evidence",
+    "shap",
+}
+ROOT_ANALYSIS_ARTIFACTS = {
+    "core_training_evidence.json",
+    "training_result.json",
+    "training_report.xlsx",
+}
+_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True)
@@ -36,11 +56,18 @@ class CandidateArtifactReference:
     def from_payload(
         cls, payload: dict[str, object]
     ) -> "CandidateArtifactReference":
+        path, category, required = parse_analysis_artifact_descriptor(payload)
+        sha256 = payload.get("sha256")
+        if (
+            type(sha256) is not str
+            or _SHA256_PATTERN.fullmatch(sha256) is None
+        ):
+            raise ValueError("Candidate analysis artifact sha256 is invalid")
         return cls(
-            path=str(payload["path"]),
-            sha256=str(payload["sha256"]),
-            category=str(payload["category"]),
-            required=bool(payload.get("required", True)),
+            path=path,
+            sha256=sha256,
+            category=category,
+            required=required,
         )
 
 
@@ -125,3 +152,41 @@ class CandidateResult:
             promotion_eligible=bool(payload["promotion_eligible"]),
             blocking_reasons=tuple(payload.get("blocking_reasons", ())),
         )
+
+
+def parse_analysis_artifact_descriptor(
+    payload: dict[str, object],
+) -> tuple[str, str, bool]:
+    if not isinstance(payload, dict):
+        raise ValueError("Candidate analysis artifact reference must be an object")
+    path = canonical_analysis_artifact_path(payload.get("path"))
+    category = payload.get("category")
+    if (
+        type(category) is not str
+        or not category
+        or category not in ANALYSIS_ARTIFACT_CATEGORIES
+    ):
+        raise ValueError("Candidate analysis artifact category is invalid")
+    required = payload.get("required")
+    if type(required) is not bool:
+        raise ValueError("Candidate analysis artifact required must be a boolean")
+    return path, category, required
+
+
+def canonical_analysis_artifact_path(value: object) -> str:
+    """Accept only the persisted POSIX-relative canonical artifact spelling."""
+    if type(value) is not str or not value or "\\" in value:
+        raise ValueError("Candidate analysis artifact path is invalid")
+    parts = value.split("/")
+    if (
+        value.startswith("/")
+        or any(part in {"", ".", ".."} for part in parts)
+        or value != "/".join(parts)
+    ):
+        raise ValueError("Candidate analysis artifact path is not canonical")
+    if len(parts) == 1:
+        if value not in ROOT_ANALYSIS_ARTIFACTS:
+            raise ValueError("Candidate analysis artifact is outside its namespace")
+    elif parts[0] != "analysis":
+        raise ValueError("Candidate analysis artifact is outside its namespace")
+    return value

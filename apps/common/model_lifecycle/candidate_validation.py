@@ -11,6 +11,7 @@ from .candidate_contracts import (
     CANDIDATE_SCHEMA_VERSION,
     LEGACY_CANDIDATE_SCHEMA_VERSION,
     CandidateManifest,
+    canonical_analysis_artifact_path,
 )
 from .errors import CandidateCorruptionError
 from .filesystem import LifecycleFilesystem
@@ -31,7 +32,10 @@ REQUIRED_ANALYSIS_ARTIFACTS = {
     "analysis/preprocessing_summary.csv": "preprocessing_summary",
     "training_report.xlsx": "training_report",
 }
-OPTIONAL_ANALYSIS_ARTIFACT_CATEGORIES = {"shap"}
+OPTIONAL_ANALYSIS_ARTIFACT_CATEGORIES = {
+    "core_training_evidence",
+    "shap",
+}
 
 
 def validate_candidate_files(
@@ -49,10 +53,8 @@ def validate_candidate_files(
         filesystem.require_regular_file(path / name)
     _validate_analysis_contract(filesystem, path, manifest)
     for artifact in manifest.analysis_artifacts:
-        relative = Path(artifact.path)
-        if relative.is_absolute() or ".." in relative.parts:
-            raise ValueError("Candidate analysis artifact reference is unsafe")
-        artifact_path = path / artifact.path
+        canonical_path = canonical_analysis_artifact_path(artifact.path)
+        artifact_path = path / canonical_path
         if artifact_path.parent != path and path not in artifact_path.parents:
             raise ValueError("Candidate analysis artifact escapes Candidate root")
         filesystem.require_regular_file(artifact_path)
@@ -81,7 +83,7 @@ def _validate_analysis_contract(
     if manifest.analysis_contract_version != TRAINING_RESULT_SCHEMA_VERSION:
         raise ValueError("unsupported Candidate analysis contract version")
     references = manifest.analysis_artifacts
-    paths = [item.path for item in references]
+    paths = [canonical_analysis_artifact_path(item.path) for item in references]
     categories = [item.category for item in references]
     if len(paths) != len(set(paths)) or len(categories) != len(set(categories)):
         raise ValueError("Candidate analysis artifact path or identity is duplicated")
@@ -119,7 +121,7 @@ def _validate_analysis_contract(
         raise ValueError("Candidate analysis manifest/result version mismatch")
     structured = TrainingAnalysisResult.from_payload(structured_payload)
     payload_refs = {
-        (str(item.get("path", "")), str(item.get("category", "")), bool(item.get("required")))
+        (item["path"], item["category"], item["required"])
         for item in structured.artifacts
     }
     manifest_refs = {

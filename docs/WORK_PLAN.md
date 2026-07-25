@@ -18,9 +18,9 @@
 ## Current Slice
 
 Phase 5C Training Result & Analysis is implemented on its worker branch. The
-first independent L4 audit returned `FAIL`; its five bounded merge blockers are
-repaired on the same Draft PR branch, which is now the current exact-head
-re-audit slice. Phase
+first and second independent L4 audits both returned `FAIL`; each audit's
+bounded direct blockers are repaired on the same Draft PR branch, which is now
+the final exact-head re-audit slice. Phase
 5B lifecycle foundation head
 `21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
 #28 was squash-merged to `main` as
@@ -38,10 +38,15 @@ Phase 5C worker connects Core-owned target R², MAE, RMSE, fold stability,
 RFECV, target-local Feature importance, Optuna, preprocessing/data-quality, and
 fair-baseline evidence to `training_result.v1`. New Candidate manifest v2
 publication requires lifecycle-owned schema, required-set, reference, category,
-path, and hash validation of JSON/CSV/XLSX analysis. CSV and XLSX expose the
+canonical path identity, strict JSON field types, and hash validation of
+JSON/CSV/XLSX analysis. CSV and XLSX expose the
 same baseline/delta/unavailable and target-failure decisions as JSON. A bounded
 canonical multi-target regression now runs the production preprocessing,
 target-policy, RFECV/Optuna, evaluation, artifact, and publication path.
+Original Core evidence is retained as an optional hash-validated Candidate
+artifact on success. Publication failures retain its target evidence,
+stage/reason, and a minimal JSON fallback even when the full report writer
+remains unavailable.
 Non-complete terminal evidence stays non-promotable outside the Candidate
 namespace. Phase 5D then
 implements Candidate use and model-management-centered Train/Model UI/UX. CLI,
@@ -50,9 +55,9 @@ Campaign, and the Agent-assisted Experiment Loop remain later slices.
 ## Next Action
 
 Hand the repaired exact Phase 5C Draft PR head, changed scope, and validation
-evidence to an independent L4 re-audit. Preserve the earlier `FAIL` as
-historical evidence, keep the PR Draft, and do not begin Phase 5D, CLI,
-Campaign, or the Agent-assisted Experiment Loop until that re-audit is
+evidence to an independent L4 final re-audit. Preserve both earlier `FAIL`
+verdicts as historical evidence, keep the PR Draft, and do not begin Phase 5D,
+CLI, Campaign, or the Agent-assisted Experiment Loop until that re-audit is
 resolved.
 
 ## Active Blockers

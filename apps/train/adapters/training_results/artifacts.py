@@ -36,7 +36,7 @@ class TrainingResultArtifactWriter:
                 path=str(item["path"]),
                 sha256=artifact_sha256(staging / str(item["path"])),
                 category=str(item["category"]),
-                required=bool(item["required"]),
+                required=item["required"],
             )
             for item in result.artifacts
         )
@@ -88,6 +88,14 @@ class TrainingResultArtifactWriter:
             ]
             if not _workbook_rows_equal(observed_rows, expected_rows):
                 raise ValueError(f"training report XLSX value mismatch: {title}")
+
+
+class MinimalTrainingResultEvidenceWriter:
+    """Persist terminal JSON without depending on CSV/XLSX generation."""
+
+    @staticmethod
+    def write(staging: Path, result: TrainingAnalysisResult) -> None:
+        _write_json(staging / "training_result.json", result.to_payload())
 
 
 def artifact_sha256(path: Path) -> str:

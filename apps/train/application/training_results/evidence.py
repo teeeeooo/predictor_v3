@@ -17,18 +17,24 @@ class TrainingEvidencePort(Protocol):
         self,
     ) -> tuple[TrainingAnalysisResult | None, str, str]: ...
 
-    def consume_candidate(
+    def load_candidate(
         self, staging: Path, targets: tuple[object, ...]
     ) -> CoreTrainingEvidence: ...
 
-    def consume_terminal(
+    def load_terminal(
         self, staging: Path, result: TrainingResult
     ) -> CoreTrainingEvidence: ...
 
-    def remove_model(self, staging: Path) -> None: ...
+    def prepare_terminal(
+        self, staging: Path, candidate_id: str
+    ) -> Path: ...
 
 
 class TrainingResultArtifactPort(Protocol):
     def write(
         self, staging: Path, result: TrainingAnalysisResult
     ) -> tuple[CandidateArtifactReference, ...]: ...
+
+
+class TrainingTerminalEvidencePort(Protocol):
+    def write(self, staging: Path, result: TrainingAnalysisResult) -> None: ...

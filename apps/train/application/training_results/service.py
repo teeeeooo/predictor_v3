@@ -38,6 +38,9 @@ class TrainingResultService:
         baseline_unavailable_reason: str = "",
         contains_unpublished_features: bool = False,
         publication_outcome: str = "pending",
+        failure_stage: str = "",
+        failure_reason: str = "",
+        include_core_evidence_artifact: bool = False,
     ) -> TrainingAnalysisResult:
         targets = tuple(dict(item) for item in evidence.targets)
         target_ids = {
@@ -62,11 +65,23 @@ class TrainingResultService:
                 "code": "unpublished_experimental_features",
                 "reason": "Result uses unpublished experimental Features.",
             })
+        if failure_reason:
+            blocking.append({
+                "code": "candidate_publication_failed",
+                "reason": failure_reason,
+                "stage": failure_stage,
+            })
         status = (
             "valid_completed"
             if evidence.status == "complete" and not missing
             else evidence.status
         )
+        if (
+            publication_outcome
+            in {"failed", "artifact_generation_failed", "recovery-required"}
+            and status == "valid_completed"
+        ):
+            status = "failed"
         comparison = _compare_baseline(
             evidence,
             targets,
@@ -77,7 +92,11 @@ class TrainingResultService:
         eligible = (
             status == "valid_completed"
             and not blocking
-            and publication_outcome not in {"failed", "artifact_generation_failed"}
+            and publication_outcome not in {
+                "failed",
+                "artifact_generation_failed",
+                "recovery-required",
+            }
         )
         return TrainingAnalysisResult(
             run={
@@ -87,7 +106,10 @@ class TrainingResultService:
                 "started_at": evidence.started_at,
                 "finished_at": evidence.finished_at,
                 "duration_seconds": evidence.duration_seconds,
+                "training_status": evidence.status,
                 "publication_outcome": publication_outcome,
+                "failure_stage": failure_stage,
+                "failure_reason": failure_reason,
             },
             training_context={
                 "training_data": {
@@ -102,6 +124,14 @@ class TrainingResultService:
             artifacts=tuple(
                 {"category": _artifact_category(path), "path": path, "required": True}
                 for path in REQUIRED_ARTIFACTS
+            ) + (
+                ({
+                    "category": "core_training_evidence",
+                    "path": "core_training_evidence.json",
+                    "required": False,
+                },)
+                if include_core_evidence_artifact
+                else ()
             ),
             promotion_eligibility={
                 "eligible": eligible,
@@ -127,6 +157,38 @@ class TrainingResultService:
         if outcome != "published":
             eligibility["eligible"] = False
         return replace(result, run=run, promotion_eligibility=eligibility)
+
+    @staticmethod
+    def minimal_terminal(
+        result: TrainingAnalysisResult,
+        artifact_failure_reason: str,
+    ) -> TrainingAnalysisResult:
+        run = {
+            **result.run,
+            "artifact_mode": "minimal_structured_fallback",
+            "terminal_artifact_failure_reason": artifact_failure_reason,
+        }
+        eligibility = {
+            **result.promotion_eligibility,
+            "eligible": False,
+        }
+        return replace(
+            result,
+            run=run,
+            artifacts=({
+                "category": "training_result",
+                "path": "training_result.json",
+                "required": True,
+            },),
+            promotion_eligibility=eligibility,
+            blocking_reasons=(
+                *result.blocking_reasons,
+                {
+                    "code": "terminal_artifact_fallback",
+                    "reason": artifact_failure_reason,
+                },
+            ),
+        )
 
 
 def _compare_baseline(

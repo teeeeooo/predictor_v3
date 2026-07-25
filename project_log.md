@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5C canonical artifact and failure-evidence repair
+
+### Decision
+
+- Preserve the second independent Phase 5C L4 audit verdict as `FAIL` and
+  repair only its three direct blockers on PR #30.
+- Accept persisted analysis paths only in their canonical POSIX-relative
+  spelling and reject aliases, traversal, outside-namespace paths, non-boolean
+  `required`, invalid categories, and malformed SHA-256 values without
+  coercion.
+- Retain Core training evidence as an optional hash-validated Candidate artifact
+  on success. Artifact, lifecycle-validation, atomic-publication, and durability
+  failures preserve original target status/metrics/reasons plus publication
+  failure stage/reason outside the Candidate namespace.
+- Use a minimal JSON-only terminal fallback when the consolidated writer remains
+  unavailable; do not represent missing CSV/XLSX as completed artifacts.
+- Keep PR #30 Draft and unmerged and hold Phase 5D and later experiment slices
+  for independent final exact-head re-audit.
+
 ## 2026-07-25 — Train/Admin Phase 5C result-integrity audit repair
 
 ### Decision

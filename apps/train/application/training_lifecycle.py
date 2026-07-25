@@ -10,6 +10,9 @@ from uuid import uuid4
 
 from apps.common.model_lifecycle.resolver import ActiveModelResolver
 from apps.common.model_lifecycle.repository import ModelLifecycleRepository
+from apps.common.model_lifecycle.publication_errors import (
+    CandidatePublicationValidationError,
+)
 from apps.common.model_lifecycle.durability_errors import (
     LifecycleRecoveryRequiredError,
 )
@@ -204,6 +207,10 @@ class TrainingLifecycleService:
 
     def _finish(self, terminal: str, result: TrainingResult) -> None:
         request = self._active_request
+        failure_stage = (
+            "training_execution" if terminal != "finished" else ""
+        )
+        failure_reason = result.message if failure_stage else ""
         if terminal == "finished" and request is not None and self._repository is not None:
             try:
                 assert self._publisher is not None and self._staging is not None
@@ -211,6 +218,8 @@ class TrainingLifecycleService:
                 self._staging = None
             except CandidateArtifactGenerationError as exc:
                 terminal = "failed"
+                failure_stage = "artifact_generation_or_validation"
+                failure_reason = str(exc).splitlines()[0]
                 result = replace(
                     result,
                     status="error",
@@ -221,8 +230,21 @@ class TrainingLifecycleService:
                     candidate_id=request.candidate_id,
                     publication_outcome="artifact_generation_failed",
                 )
+            except CandidatePublicationValidationError as exc:
+                terminal = "failed"
+                failure_stage = "lifecycle_validation"
+                failure_reason = str(exc).splitlines()[0]
+                result = replace(
+                    result,
+                    status="error",
+                    message=failure_reason,
+                    candidate_id=request.candidate_id,
+                    publication_outcome="failed",
+                )
             except LifecycleRecoveryRequiredError as exc:
                 terminal = "failed"
+                failure_stage = "candidate_publication_durability"
+                failure_reason = str(exc).splitlines()[0]
                 result = replace(
                     result,
                     status="error",
@@ -230,9 +252,10 @@ class TrainingLifecycleService:
                     candidate_id=request.candidate_id,
                     publication_outcome="recovery-required",
                 )
-                self._staging = None
             except Exception as exc:
                 terminal = "failed"
+                failure_stage = "candidate_publication"
+                failure_reason = str(exc).splitlines()[0]
                 result = replace(
                     result,
                     status="error",
@@ -247,26 +270,15 @@ class TrainingLifecycleService:
             and self._publisher is not None
             and self._staging is not None
         ):
-            outcome = (
-                "cancelled"
-                if terminal == "cancelled"
-                else (
-                    "partial"
-                    if result.status == "partial"
-                    else (
-                        "artifact_generation_failed"
-                        if result.publication_outcome
-                        == "artifact_generation_failed"
-                        else "failed"
-                    )
-                )
-            )
+            outcome = _terminal_publication_outcome(terminal, result)
             try:
                 result = self._publisher.preserve_terminal_evidence(
                     request,
                     result,
                     self._staging,
                     publication_outcome=outcome,
+                    failure_stage=failure_stage,
+                    failure_reason=failure_reason,
                 )
                 self._staging = None
             except Exception as evidence_exc:
@@ -308,6 +320,23 @@ def _error_result(request: TrainingRequest, message: str) -> TrainingResult:
         registry_fingerprint=request.registry_fingerprint,
         candidate_id=request.candidate_id,
     )
+
+
+def _terminal_publication_outcome(
+    terminal: str,
+    result: TrainingResult,
+) -> str:
+    if result.publication_outcome in {
+        "artifact_generation_failed",
+        "recovery-required",
+        "failed",
+    }:
+        return result.publication_outcome
+    if terminal == "cancelled":
+        return "cancelled"
+    if result.status == "partial":
+        return "partial"
+    return "failed"
 
 
 def _notify(callback, payload) -> None:  # noqa: ANN001

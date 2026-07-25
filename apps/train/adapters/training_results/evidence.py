@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,7 +38,7 @@ class FilesystemTrainingEvidenceAdapter:
             "",
         )
 
-    def consume_candidate(
+    def load_candidate(
         self, staging: Path, targets: tuple[object, ...]
     ) -> CoreTrainingEvidence:
         path = staging / "core_training_evidence.json"
@@ -45,10 +46,9 @@ class FilesystemTrainingEvidenceAdapter:
             evidence = CoreTrainingEvidence.from_payload(
                 json.loads(path.read_text(encoding="utf-8"))
             )
-            path.unlink()
             return evidence
         now = datetime.now(timezone.utc).isoformat()
-        return CoreTrainingEvidence(
+        evidence = CoreTrainingEvidence(
             started_at=now,
             finished_at=now,
             duration_seconds=0.0,
@@ -66,8 +66,19 @@ class FilesystemTrainingEvidenceAdapter:
             },
             blocking_reasons=("dev_mock_quality_unverified",),
         )
+        path.write_text(
+            json.dumps(
+                evidence.to_payload(),
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return evidence
 
-    def consume_terminal(
+    def load_terminal(
         self, staging: Path, result: TrainingResult
     ) -> CoreTrainingEvidence:
         path = staging / "core_training_evidence.json"
@@ -75,7 +86,6 @@ class FilesystemTrainingEvidenceAdapter:
             evidence = CoreTrainingEvidence.from_payload(
                 json.loads(path.read_text(encoding="utf-8"))
             )
-            path.unlink()
             return (
                 replace(evidence, status=result.status)
                 if result.status and evidence.status != result.status
@@ -103,9 +113,19 @@ class FilesystemTrainingEvidenceAdapter:
             blocking_reasons=(reason,),
         )
 
-    @staticmethod
-    def remove_model(staging: Path) -> None:
+    def prepare_terminal(self, staging: Path, candidate_id: str) -> Path:
+        if not staging.is_dir():
+            staging = self._repository.create_staging(candidate_id)
         (staging / "model.pkl").unlink(missing_ok=True)
+        (staging / "core_training_evidence.json").unlink(missing_ok=True)
+        (staging / "training_result.json").unlink(missing_ok=True)
+        (staging / "training_report.xlsx").unlink(missing_ok=True)
+        (staging / "manifest.json").unlink(missing_ok=True)
+        (staging / "result.json").unlink(missing_ok=True)
+        analysis = staging / "analysis"
+        if analysis.is_dir():
+            shutil.rmtree(analysis)
+        return staging
 
 
 def _dev_target(target) -> dict:  # noqa: ANN001

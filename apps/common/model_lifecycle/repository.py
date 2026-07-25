@@ -23,6 +23,7 @@ from .errors import (
     CandidateCorruptionError,
     LifecycleFilesystemError,
 )
+from .publication_errors import CandidatePublicationValidationError
 from .durability_errors import PostRenameDurabilityError
 from .filesystem import LifecycleFilesystem
 from .locking import lifecycle_lock
@@ -73,7 +74,13 @@ class ModelLifecycleRepository:
         self._filesystem.ensure_directory(self.root)
         self._failure_hook("before_lifecycle_lock")
         with lifecycle_lock(self.writer_lock_path, filesystem=self._filesystem):
-            validate_candidate_files(self._filesystem, stage, manifest)
+            try:
+                validate_candidate_files(self._filesystem, stage, manifest)
+            except _CANDIDATE_VALIDATION_FAILURES as exc:
+                raise CandidatePublicationValidationError(
+                    f"Candidate publication validation failed: "
+                    f"{str(exc).splitlines()[0]}"
+                ) from exc
             self._filesystem.ensure_directory(self.candidates_path)
             final = self.candidates_path / manifest.candidate_id
             self._recovery.require_candidate_clear(manifest.candidate_id)
@@ -347,6 +354,10 @@ _ARTIFACT_FAILURES = (
     KeyError,
     TypeError,
     ValueError,
+)
+
+_CANDIDATE_VALIDATION_FAILURES = tuple(
+    failure for failure in _ARTIFACT_FAILURES if failure is not TypeError
 )
 
 _ACTIVE_REFERENCE_FAILURES = (
