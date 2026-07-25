@@ -10,9 +10,11 @@ scope. Phase 5A architecture audit is complete, and the independent audit of
 Phase 5B head `21b98eb38239e0100be3c3700744c69e2fdc11fe` returned `PASS`.
 PR #28 was squash-merged as
 `eca6addd38745dadca3b0e4f19cc259090d50e23`; the lifecycle foundation is
-complete with no remaining merge blocker. Phase 5C Training Result & Analysis is
-implemented on its worker branch and awaits independent L4 audit; Phase 5D has
-not started.
+complete with no remaining merge blocker. Phase 5C Training Result & Analysis
+is complete and merged through PR #30 to `main` at
+`8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
+returned `PASS`, and required validation run `30157872726` succeeded. Phase 5D
+Train/Model UI/UX is the next active phase and has not started.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -44,10 +46,10 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
 - Train owns run/generation-scoped candidate artifact creation and Phase 5 owns
   explicit validated promotion workflow. Training success does not itself replace
   the active model.
-- Phase 5C adds one Qt-free `training_result.v1` source for Core-owned target
-  metrics and analysis. New manifest v2 Candidates require hash-verified
-  JSON/CSV/XLSX artifacts before publication; non-complete terminal evidence is
-  preserved outside the Candidate namespace and is never promotable.
+- Phase 5C completed one Qt-free versioned training-result contract, Candidate-
+  owned JSON/CSV/XLSX analysis artifacts, production multi-target training
+  integration, lifecycle artifact/version validation, terminal failure evidence
+  preservation, and separate Candidate publication versus Active promotion.
 - Phase 5 lifecycle state lives below the user-state root under a stable workspace
   identity. A repository absolute path is not permanent identity, and Phase 5B
   supports one default workspace only.
@@ -124,6 +126,24 @@ the merged Phase 1–2 Train/Admin work remain the active owner baseline.
   squash-merged to `main` as
   `eca6addd38745dadca3b0e4f19cc259090d50e23`.
 
+### Closed — Train/Admin Phase 5C Training Result & Analysis
+
+Phase 5C is complete and merged through PR #30. The final independent L4 audit
+returned `PASS`, and required validation run `30157872726` succeeded. The
+closeout covers:
+
+- one Qt-free versioned training-result contract;
+- Candidate-owned JSON, CSV, and XLSX analysis artifacts;
+- production multi-target training integration;
+- lifecycle artifact/version validation;
+- terminal failure evidence preservation; and
+- separate Candidate publication and explicit Active promotion.
+
+Earlier failed audits, repairs, and validation entries remain historical
+evidence. `joblib.load()` exception normalization is the intended fail-closed
+behavior at the serialized-model deserialization trust boundary and was not a
+final blocker.
+
 ### Closed — Train/Admin Phase 3 Data Definition UX Overhaul
 
 Phase 3 established the table-first Data Definition inventory, controlled Add/Edit,
@@ -180,7 +200,7 @@ activation, and Predict internal redesign is not part of Phase 4.
 Phase 4 is complete for repository-automated scope. Its owner and compatibility
 boundaries remain the baseline for Phase 5.
 
-### Current Workstream — Train/Admin Phase 5 Train/Model and Shell UX Overhaul
+### Current Workstream — Train/Admin Phase 5D Train/Model UI/UX
 
 Phase 5 retains this primary user flow:
 
@@ -188,7 +208,8 @@ Phase 5 retains this primary user flow:
 select training data → train → check progress → review results
 ```
 
-Train/Model UI/UX improvement is the primary product goal. The lifecycle
+Phase 5D is the next active phase and implementation has not started.
+Train/Model UI/UX improvement remains the primary product goal. The lifecycle
 foundation makes that workflow safe; the headless campaign and agent-assisted
 experiment loop remain important later capabilities and must not delay the UI/UX
 workstream.
@@ -206,15 +227,16 @@ The default surface presents the user's next action and outcome, not normal
 technical readiness details. Errors lead with a user-facing explanation and
 resolution action; Diagnostics/logs provide deeper technical context.
 
-Phase 5C connects successful training runs to Candidate-owned structured results
-and analysis: target-level R², MAE, RMSE, baseline comparison, feature
-importance, duration, promotion eligibility, XLSX reporting, and
-machine-readable CSV/JSON output. GUI and later headless execution must share
-one Qt-free result contract. Phase 5D then implements Candidate use and model
-management in the Train/Model UI; CLI, Campaign, and the Agent-assisted
-Experiment Loop remain later and cannot displace the UI/UX priority. Existing
-Train, ML, persistence, artifact, and public contracts plus the Phase 4 dynamic
-Feature/Target provider remain preserved.
+Phase 5D must present Candidate and Active state through understandable,
+metric-centered UI; provide explicit `이 모델 사용` promotion; support rollback
+by selecting a previous Candidate; and handle Bootstrap/no-active state normally.
+The UI displays the Phase 5C contract and does not recalculate metrics or
+eligibility; detailed internal information belongs in an Advanced area.
+Existing Train, ML, persistence, artifact, and public contracts plus the Phase 4
+dynamic Feature/Target provider remain preserved.
+
+CLI, Campaign, leaderboard, the Agent-assisted Experiment Loop, runtime reload,
+export, and retention remain later steps.
 
 ### Later — Predict UI/UX Overhaul
 

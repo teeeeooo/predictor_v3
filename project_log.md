@@ -29,6 +29,26 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5C post-merge closeout
+
+### Decision
+
+- Record the final independent Phase 5C L4 audit verdict as `PASS`. Required
+  validation run `30157872726` succeeded, and PR #30 was merged to `main` at
+  exact head `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`.
+- Close Phase 5C with the Qt-free versioned training-result contract,
+  Candidate-owned JSON/CSV/XLSX analysis artifacts, production multi-target
+  training integration, lifecycle artifact/version validation, terminal failure
+  evidence preservation, and separate Candidate publication versus Active
+  promotion.
+- Treat `joblib.load()` exception normalization as intentional fail-closed
+  behavior at the serialized-model deserialization trust boundary; it was not a
+  final blocker.
+- Preserve all earlier audit `FAIL`, repair, and validation entries as
+  historical evidence. Open Phase 5D Train/Model UI/UX as the next active but
+  unstarted phase; CLI, Campaign, leaderboard, the Agent-assisted Experiment
+  Loop, runtime reload, export, and retention remain later.
+
 ## 2026-07-25 — Train/Admin Phase 5C programmer-error boundary repair
 
 ### Decision

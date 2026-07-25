@@ -17,12 +17,18 @@
 
 ## Current Slice
 
-Phase 5C Training Result & Analysis is implemented on its worker branch. The
-first, second, and third independent L4 audits returned `FAIL`; the first two
-blocker sets remain repaired, and the third audit's sole programmer-error versus
-persisted-corruption boundary is repaired on the same Draft PR branch. The
-branch remains an exact-head re-audit slice. Phase
-5B lifecycle foundation head
+Phase 5D Train/Model UI/UX is the next active slice and remains unstarted. Phase
+5C Training Result & Analysis is complete and merged through PR #30 to `main`
+at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
+returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
+completed the Qt-free versioned training-result contract, Candidate-owned
+JSON/CSV/XLSX analysis artifacts, production multi-target training integration,
+lifecycle artifact/version validation, terminal failure evidence preservation,
+and separate Candidate publication versus Active promotion. Earlier failed
+audits, repairs, and validation entries remain historical evidence. The
+`joblib.load()` exception normalization is intentional fail-closed behavior at
+the serialized-model deserialization trust boundary and was not a final
+blocker. Phase 5B lifecycle foundation head
 `21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
 #28 was squash-merged to `main` as
 `eca6addd38745dadca3b0e4f19cc259090d50e23`; no Phase 5B merge blocker remains.
@@ -34,37 +40,22 @@ The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
-Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
-Phase 5C worker connects Core-owned target R², MAE, RMSE, fold stability,
-RFECV, target-local Feature importance, Optuna, preprocessing/data-quality, and
-fair-baseline evidence to `training_result.v1`. New Candidate manifest v2
-publication requires lifecycle-owned schema, required-set, reference, category,
-canonical path identity, strict JSON field types, and hash validation of
-JSON/CSV/XLSX analysis. CSV and XLSX expose the
-same baseline/delta/unavailable and target-failure decisions as JSON. A bounded
-canonical multi-target regression now runs the production preprocessing,
-target-policy, RFECV/Optuna, evaluation, artifact, and publication path.
-Original Core evidence is retained as an optional hash-validated Candidate
-artifact on success. Publication failures retain its target evidence,
-stage/reason, and a minimal JSON fallback even when the full report writer
-remains unavailable.
-Persisted malformed Candidate/result data is normalized by explicit contract
-errors, while unexpected validator/parser/helper `TypeError` and
-`AttributeError` propagate without being relabeled as Candidate corruption or
-publication validation failure.
-Non-complete terminal evidence stays non-promotable outside the Candidate
-namespace. Phase 5D then
-implements Candidate use and model-management-centered Train/Model UI/UX. CLI,
-Campaign, and the Agent-assisted Experiment Loop remain later slices.
+Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. Phase
+5D must show Candidate and Active state through understandable, metric-centered
+UI, provide explicit `이 모델 사용` promotion, support rollback by selecting a
+previous Candidate, and handle Bootstrap/no-active state normally. The UI
+displays the Phase 5C contract without recalculating metrics or eligibility;
+detailed internal information belongs in an Advanced area. CLI, Campaign,
+leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
+retention remain later slices.
 
 ## Next Action
 
-Hand the repaired exact Phase 5C Draft PR head, changed scope, and validation
-evidence to an independent L4 final exact-head re-audit focused on the
-programmer-error boundary. Preserve all three earlier `FAIL`
-verdicts as historical evidence, keep the PR Draft, and do not begin Phase 5D,
-CLI, Campaign, or the Agent-assisted Experiment Loop until that re-audit is
-resolved.
+Begin the Phase 5D Train/Model UI/UX implementation slice against the
+authoritative Phase 5 design and the completed Phase 5C contract. Keep Candidate
+publication separate from explicit Active promotion, preserve Bootstrap/no-
+active behavior, and leave CLI, Campaign, leaderboard, the Agent-assisted
+Experiment Loop, runtime reload, export, and retention for later phases.
 
 ## Active Blockers
 
