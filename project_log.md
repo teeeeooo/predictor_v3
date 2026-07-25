@@ -29,6 +29,55 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Train/Admin Phase 5D training-running guidance repair
+
+### Decision
+
+- Preserve the second independent Phase 5D L4 audit verdict as `FAIL` at
+  `89e20055cc45a5c7fad59aa24a2b9d34c16e4237`. The audit confirmed four repair
+  areas and identified one remaining default-state guidance blocker.
+- Reuse the structured training-running promotion guidance in the normal
+  disabled-button QWidget state so it states the problem, Active preservation,
+  and retry-after-training action without issuing a command.
+- Keep PR #31 open, Draft, and unmerged for a new exact-head L4 re-audit. Do
+  not declare audit `PASS` or begin Phase 5E and later scope.
+
+## 2026-07-26 — Train/Admin Phase 5D UI state/projection audit repair
+
+### Decision
+
+- Preserve the first independent Phase 5D L4 audit verdict as `FAIL` at
+  `c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; do not rewrite the original
+  implementation record.
+- Repair only its five blockers: safe empty/error Qt table transitions, current
+  lifecycle-owner compatibility, target-level comparison fidelity, complete
+  persisted Advanced evidence, and structured Korean promotion rejection
+  guidance.
+- Keep availability inspection and final race validation in the same promotion
+  compatibility owner. UI continues to avoid filesystem, serialization, hash,
+  metric, and eligibility ownership.
+- Keep PR #31 open, Draft, and unmerged for independent exact-head L4 re-audit.
+  Do not declare audit `PASS` or begin Phase 5E and later scope.
+
+## 2026-07-25 — Train/Admin Phase 5D Candidate/Active UI
+
+### Decision
+
+- Establish a Qt-free model-management application owner over the existing
+  lifecycle repository, Phase 5C result contract, and Phase 5B promotion owner.
+  UI code does not traverse lifecycle storage, parse JSON, deserialize models,
+  compute metrics/deltas, or write Active state.
+- Present Active, Candidate history, dynamic target metrics, fair/unfair/no-
+  baseline meaning, blocking reasons, and Advanced evidence in the Train/Model
+  surface. Preserve no-auto-active after training.
+- Keep promotion explicit and revision guarded; selecting an older immutable
+  Candidate uses the same promotion owner for rollback. Training, stale
+  revision, corruption, and non-promotable states fail closed without changing
+  Active.
+- Hold audit PASS, merge, Phase 5E, CLI/Campaign, runtime reload, export, and
+  retention for later authority. The Draft PR exact head requires independent
+  L4 audit.
+
 ## 2026-07-25 — Train/Admin Phase 5C post-merge closeout
 
 ### Decision

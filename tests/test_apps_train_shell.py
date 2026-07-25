@@ -28,6 +28,11 @@ from apps.train.ui.data_definition_panel import DataDefinitionPanel
 from apps.train.ui.data_mapping_panel import DataMappingPanel
 from apps.train.ui.shell import TrainShell
 from apps.train.ui.train_model_panel import TrainModelPanel
+from apps.train.application.model_management import (
+    CandidateReview,
+    ModelManagementSnapshot,
+    TargetMetricReview,
+)
 from core.predictor_schema.catalog_v2 import DEFAULT_SCHEMA_PATH
 
 
@@ -108,6 +113,32 @@ class FakeTrainController:
         return True
 
 
+class LifecycleAwareFakeTrainController(FakeTrainController):
+    def __init__(self) -> None:
+        super().__init__()
+        self.snapshot = ModelManagementSnapshot(
+            "active",
+            active_candidate_id="active-existing",
+            active_revision=1,
+            candidates=(_candidate_review("active-existing", active=True),),
+        )
+
+    def inspect_models(self):
+        return self.snapshot
+
+    def start(self, request, **callbacks):
+        self.snapshot = ModelManagementSnapshot(
+            "active",
+            active_candidate_id="active-existing",
+            active_revision=1,
+            candidates=(
+                _candidate_review("candidate-new"),
+                _candidate_review("active-existing", active=True),
+            ),
+        )
+        return super().start(request, **callbacks)
+
+
 @pytest.fixture(autouse=True)
 def _cleanup_qt_widgets():
     yield
@@ -163,7 +194,7 @@ def test_train_model_panel_initial_state_with_and_without_data(tmp_path):
     log = panel.findChild(QTextEdit, "TrainingLog")
     assert log is not None
     assert panel.findChild(QProgressBar) is not None
-    table = panel.findChild(QTableView)
+    table = panel.summary_table
     assert table is not None
     assert table.model().rowCount() == 5
     assert table.model().headerData(1, Qt.Horizontal, Qt.DisplayRole) == "Target"
@@ -178,7 +209,8 @@ def test_train_model_panel_initial_state_with_and_without_data(tmp_path):
     data_path.write_text("x\n1\n", encoding="utf-8")
     panel.set_data_path(str(data_path))
     assert buttons["학습 실행"].isEnabled()
-    assert set(buttons) == {"학습 데이터 선택", "학습 실행", "중지"}
+    assert {"학습 데이터 선택", "학습 실행", "중지"} <= set(buttons)
+    assert {"새로고침", "고급 정보 보기", "이 모델 사용"} <= set(buttons)
 
 
 def test_train_model_panel_start_updates_progress_log_and_summary(tmp_path):
@@ -215,10 +247,30 @@ def test_train_model_panel_cancel_button_calls_controller(tmp_path):
     assert controller.cancel_called
 
 
+def test_training_completion_refreshes_candidate_without_auto_active(tmp_path):
+    _app()
+    controller = LifecycleAwareFakeTrainController()
+    panel = TrainModelPanel(controller=controller)
+    data_path = tmp_path / "train.csv"
+    data_path.write_text("x\n1\n", encoding="utf-8")
+    panel.set_data_path(str(data_path))
+
+    panel.run_button.click()
+
+    assert panel.workflow_tabs.currentWidget() is panel.model_management_panel
+    assert panel.active_model_label.text().endswith("active-existing")
+    assert panel.model_management_panel.candidate_table.model().rowCount() == 2
+    assert (
+        panel.model_management_panel._snapshot.active_candidate_id
+        == "active-existing"
+    )
+
+
 def test_train_ui_widgets_do_not_import_core_execution_foundations():
     sources = (
         Path("apps/train/ui/shell.py"),
         Path("apps/train/ui/train_model_panel.py"),
+        Path("apps/train/ui/model_management_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
     )
     forbidden = (
@@ -239,6 +291,7 @@ def test_train_ui_widgets_do_not_import_core_execution_foundations():
 def test_train_ui_uses_model_views_not_qtablewidget():
     sources = (
         Path("apps/train/ui/train_model_panel.py"),
+        Path("apps/train/ui/model_management_panel.py"),
         Path("apps/train/ui/data_mapping_panel.py"),
     )
 
@@ -251,9 +304,15 @@ def test_train_ui_uses_model_views_not_qtablewidget():
 def test_train_views_delegate_artifact_existence_checks():
     shell_source = Path("apps/train/ui/shell.py").read_text(encoding="utf-8")
     panel_source = Path("apps/train/ui/train_model_panel.py").read_text(encoding="utf-8")
+    management_source = Path(
+        "apps/train/ui/model_management_panel.py"
+    ).read_text(encoding="utf-8")
 
     assert ".exists()" not in shell_source
     assert ".exists()" not in panel_source
+    assert ".exists()" not in management_source
+    assert "json" not in management_source
+    assert "joblib" not in management_source
 
 
 def test_train_shell_uses_public_data_mapping_navigation_only():
@@ -263,3 +322,30 @@ def test_train_shell_uses_public_data_mapping_navigation_only():
     assert "_selected_group_key" not in shell_source
     assert "row_table" not in shell_source
     assert "selectionModel" not in shell_source
+
+
+def _candidate_review(
+    candidate_id: str,
+    *,
+    active: bool = False,
+) -> CandidateReview:
+    return CandidateReview(
+        candidate_id=candidate_id,
+        run_id=f"run-{candidate_id}",
+        created_at="2026-07-25T00:00:00+00:00",
+        is_active=active,
+        promotion_eligible=True,
+        blocking_reasons=(),
+        targets=(
+            TargetMetricReview(
+                "dynamic-target",
+                "Dynamic Target",
+                "complete",
+                r2=0.8,
+                mae=1.2,
+                rmse=2.3,
+                comparison="no_baseline",
+            ),
+        ),
+        baseline_kind="no_baseline",
+    )

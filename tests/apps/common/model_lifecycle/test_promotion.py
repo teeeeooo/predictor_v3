@@ -34,6 +34,7 @@ def test_stale_activation_revision_is_rejected(repository, registry_snapshot):
     result = service.promote("candidate-b", expected_revision=0)
 
     assert result.status == "blocked"
+    assert result.reason_code == "stale_active_revision"
     assert "stale Active reference revision" in result.message
     assert repository.read_active().candidate_id == "candidate-a"
 
@@ -108,7 +109,28 @@ def test_current_compatibility_mismatch_blocks_promotion(
     )
 
     assert result.status == "blocked"
+    assert result.reason_code == "current_contract_incompatible"
     assert message in result.message
+    assert repository.read_active(optional=True) is None
+
+
+def test_read_only_compatibility_review_reuses_final_promotion_decision(
+    repository, registry_snapshot
+):
+    publish_candidate(repository, registry_snapshot, "candidate-a")
+    current = incompatible_snapshot(
+        registry_snapshot, "registry_fingerprint", "changed"
+    )
+    service = ModelPromotionService(repository, lambda: current)
+
+    review = service.inspect_compatibility("candidate-a")
+    result = service.promote("candidate-a", expected_revision=0)
+
+    assert (review.status, review.reason_code) == (
+        "incompatible",
+        "current_contract_incompatible",
+    )
+    assert result.reason_code == review.reason_code
     assert repository.read_active(optional=True) is None
 
 

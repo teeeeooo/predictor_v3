@@ -252,7 +252,7 @@ class TrainShell(QMainWindow):
             (
                 "model",
                 "모델 상태",
-                "model.pkl 로드됨" if model_exists else "model.pkl 없음",
+                "현재 사용 모델 있음" if model_exists else "선택되지 않음",
                 "ready" if model_exists else "missing",
             ),
             ("preprocess", "전처리", "v1.0", "ready"),

@@ -17,8 +17,16 @@
 
 ## Current Slice
 
-Phase 5D Train/Model UI/UX is the next active slice and remains unstarted. Phase
-5C Training Result & Analysis is complete and merged through PR #30 to `main`
+Phase 5D Train/Model UI/UX is implemented on its dedicated Draft PR branch.
+The first independent L4 audit returned `FAIL` at
+`c163da7027cdfdcc1bc8f831c17f6e1285b0d6db` with five UI state/projection
+blockers. Those blockers are repaired on the same branch, and the repaired
+head `89e20055cc45a5c7fad59aa24a2b9d34c16e4237` received a second independent
+`FAIL`: its sole remaining blocker was incomplete training-running guidance in
+the normal disabled-button QWidget state. That bounded blocker is repaired on
+the same branch, and the new exact head awaits independent L4 re-audit. Phase
+5C Training Result & Analysis
+is complete and merged through PR #30 to `main`
 at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
 completed the Qt-free versioned training-result contract, Candidate-owned
@@ -41,21 +49,27 @@ the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. Phase
-5D must show Candidate and Active state through understandable, metric-centered
-UI, provide explicit `이 모델 사용` promotion, support rollback by selecting a
-previous Candidate, and handle Bootstrap/no-active state normally. The UI
-displays the Phase 5C contract without recalculating metrics or eligibility;
+5D now shows Candidate and Active state through an understandable,
+metric-centered UI, provides explicit `이 모델 사용` promotion, supports rollback
+by selecting a previous Candidate, and handles Bootstrap/no-active state
+normally. The UI displays the Phase 5C contract without recalculating metrics or
+eligibility. The audit repair adds safe populated/empty/error table transitions,
+current owner-validated compatibility, target-level comparison fidelity,
+complete persisted Advanced evidence, and structured Korean promotion failure
+guidance. The follow-up repair makes the default training-running state also
+state that Active is maintained and that the user should retry after training;
 detailed internal information belongs in an Advanced area. CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention remain later slices.
 
 ## Next Action
 
-Begin the Phase 5D Train/Model UI/UX implementation slice against the
-authoritative Phase 5 design and the completed Phase 5C contract. Keep Candidate
-publication separate from explicit Active promotion, preserve Bootstrap/no-
-active behavior, and leave CLI, Campaign, leaderboard, the Agent-assisted
-Experiment Loop, runtime reload, export, and retention for later phases.
+Keep PR #31 open, Draft, and unmerged and obtain an independent L4 re-audit
+against the repaired exact head. Preserve both audit `FAIL` results as
+historical evidence. Do not declare audit PASS or start Phase 5E/later work from this
+repair worker. Keep CLI, Campaign,
+leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
+retention deferred.
 
 ## Active Blockers
 

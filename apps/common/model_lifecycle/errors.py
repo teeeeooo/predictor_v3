@@ -17,5 +17,9 @@ class ActiveReferenceCorruptionError(ModelLifecycleError):
     """The Active pointer cannot be read as its versioned contract."""
 
 
+class StaleActiveRevisionError(ModelLifecycleError):
+    """A guarded Active mutation was based on an obsolete revision."""
+
+
 class LegacyArtifactError(ModelLifecycleError):
     """A legacy bundle cannot be imported or compatibility-checked."""
