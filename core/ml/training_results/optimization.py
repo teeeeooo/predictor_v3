@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import optuna
 from sklearn.feature_selection import RFECV
@@ -10,8 +12,42 @@ from sklearn.model_selection import KFold
 from xgboost import XGBRegressor
 
 
-def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
+@dataclass(frozen=True)
+class TrainingOptimizationConfig:
+    """Bounded production configuration with established defaults."""
+
+    cv_folds: int = 5
+    optuna_trials: int = 30
+    n_estimators_min: int = 100
+    n_estimators_max: int = 500
+    n_jobs: int = -1
+    optuna_sampler_seed: int | None = None
+
+    def validate(self) -> None:
+        if self.cv_folds < 2:
+            raise ValueError("training cv_folds must be at least 2")
+        if self.optuna_trials < 1:
+            raise ValueError("training optuna_trials must be positive")
+        if (
+            self.n_estimators_min < 1
+            or self.n_estimators_max < self.n_estimators_min
+        ):
+            raise ValueError("training estimator range is invalid")
+
+
+def optimize_and_train(
+    X,
+    y,
+    mandatory_features,
+    use_rfe,
+    log_callback=None,
+    *,
+    optimization_config: TrainingOptimizationConfig | None = None,
+):
     """Run target-local selection, tuning, evaluation, and final training."""
+    config = optimization_config or TrainingOptimizationConfig()
+    config.validate()
+
     def custom_log(message):
         if log_callback:
             log_callback(message)
@@ -20,15 +56,19 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
 
     original_cols = list(X.columns)
     selected_cols = list(original_cols)
-    rfecv_result = _not_used_rfecv(original_cols)
+    rfecv_result = _not_used_rfecv(original_cols, config.cv_folds)
     if use_rfe:
         custom_log("       🔍 [RFE] 최적의 피처 개수와 조합 탐색 중...")
         rfecv = RFECV(
-            estimator=XGBRegressor(random_state=42, n_jobs=-1),
+            estimator=XGBRegressor(
+                random_state=42,
+                n_jobs=config.n_jobs,
+                n_estimators=config.n_estimators_min,
+            ),
             step=1,
-            cv=5,
+            cv=config.cv_folds,
             scoring="neg_root_mean_squared_error",
-            n_jobs=-1,
+            n_jobs=config.n_jobs,
         )
         rfecv.fit(X, y)
         selected_cols = [
@@ -40,7 +80,7 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
             if feature in X.columns and feature not in selected_cols:
                 selected_cols.append(feature)
         rfecv_result = _used_rfecv(
-            original_cols, selected_cols, rfecv.ranking_
+            original_cols, selected_cols, rfecv.ranking_, config.cv_folds
         )
         custom_log(
             f"       ✅ [RFE 완료] 총 {X.shape[1]}개 중 "
@@ -48,14 +88,16 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
         )
         X = X[selected_cols]
 
-    study = _optimize(X, y, custom_log)
+    study = _optimize(X, y, custom_log, config)
     best_params = {
         **study.best_params,
         "random_state": 42,
-        "n_jobs": -1,
+        "n_jobs": config.n_jobs,
     }
-    folds = _evaluate_folds(X, y, best_params)
-    metrics = summarize_fold_metrics(folds, sample_count=len(y))
+    folds = _evaluate_folds(X, y, best_params, config.cv_folds)
+    metrics = summarize_fold_metrics(
+        folds, sample_count=len(y), cv_folds=config.cv_folds
+    )
     custom_log(
         f"       🏆 [성능 요약] R² Score: {metrics['r2']:.4f} | "
         f"MAE: {metrics['mae']:.4f} | RMSE: {metrics['rmse']:.4f}"
@@ -72,18 +114,18 @@ def optimize_and_train(X, y, mandatory_features, use_rfe, log_callback=None):
         "metrics": metrics,
         "rfecv": rfecv_result,
         "feature_importance": importance,
-        "optuna": _optuna_result(study, best_params),
+        "optuna": _optuna_result(study, best_params, config.cv_folds),
     }
 
 
-def summarize_fold_metrics(folds, *, sample_count):
+def summarize_fold_metrics(folds, *, sample_count, cv_folds: int = 5):
     """Preserve the established mean-of-fold ML evaluation semantics."""
     values = {
         name: [float(item[name]) for item in folds]
         for name in ("r2", "mae", "rmse")
     }
     return {
-        "evaluation_scope": "shuffled_5_fold_cross_validation",
+        "evaluation_scope": f"shuffled_{cv_folds}_fold_cross_validation",
         "sample_count": int(sample_count),
         "fold_count": len(folds),
         "seed": 42,
@@ -105,10 +147,14 @@ def summarize_fold_metrics(folds, *, sample_count):
     }
 
 
-def _optimize(X, y, custom_log):  # noqa: ANN001
+def _optimize(X, y, custom_log, config):  # noqa: ANN001
     def objective(trial):
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 100, 500),
+            "n_estimators": trial.suggest_int(
+                "n_estimators",
+                config.n_estimators_min,
+                config.n_estimators_max,
+            ),
             "max_depth": trial.suggest_int("max_depth", 3, 7),
             "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
             "subsample": trial.suggest_float("subsample", 0.6, 1.0),
@@ -116,10 +162,12 @@ def _optimize(X, y, custom_log):  # noqa: ANN001
                 "colsample_bytree", 0.6, 1.0
             ),
             "random_state": 42,
-            "n_jobs": -1,
+            "n_jobs": config.n_jobs,
         }
         rmses = []
-        splitter = KFold(n_splits=5, shuffle=True, random_state=42)
+        splitter = KFold(
+            n_splits=config.cv_folds, shuffle=True, random_state=42
+        )
         for train_index, validation_index in splitter.split(X):
             model = XGBRegressor(**params)
             model.fit(X.iloc[train_index], y.iloc[train_index])
@@ -130,22 +178,33 @@ def _optimize(X, y, custom_log):  # noqa: ANN001
         return np.mean(rmses)
 
     def callback(study, trial):
-        if trial.number % 5 == 0 or trial.number == 29:
+        if trial.number % 5 == 0 or trial.number == config.optuna_trials - 1:
             custom_log(
-                f"       ⏳ [Optuna] Trial {trial.number + 1}/30 완료 "
+                f"       ⏳ [Optuna] Trial {trial.number + 1}/"
+                f"{config.optuna_trials} 완료 "
                 f"(Best RMSE: {study.best_value:.4f})"
             )
 
-    custom_log("       ⚙️ [Optuna] 하이퍼파라미터 튜닝 시작 (총 30 Trials)...")
+    custom_log(
+        "       ⚙️ [Optuna] 하이퍼파라미터 튜닝 시작 "
+        f"(총 {config.optuna_trials} Trials)..."
+    )
     optuna.logging.set_verbosity(optuna.logging.WARNING)
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=30, callbacks=[callback])
+    study = optuna.create_study(
+        direction="minimize",
+        sampler=(
+            optuna.samplers.TPESampler(seed=config.optuna_sampler_seed)
+            if config.optuna_sampler_seed is not None
+            else None
+        ),
+    )
+    study.optimize(objective, n_trials=config.optuna_trials, callbacks=[callback])
     return study
 
 
-def _evaluate_folds(X, y, parameters):  # noqa: ANN001
+def _evaluate_folds(X, y, parameters, cv_folds):  # noqa: ANN001
     folds = []
-    splitter = KFold(n_splits=5, shuffle=True, random_state=42)
+    splitter = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
     for train_index, validation_index in splitter.split(X):
         model = XGBRegressor(**parameters)
         model.fit(X.iloc[train_index], y.iloc[train_index])
@@ -178,12 +237,12 @@ def _feature_importance(model, selected_cols):  # noqa: ANN001
     return ranking, rows
 
 
-def _optuna_result(study, best_params):  # noqa: ANN001
+def _optuna_result(study, best_params, cv_folds):  # noqa: ANN001
     best_number = study.best_trial.number
     return {
         "status": "used",
         "direction": "minimize",
-        "score_context": "mean 5-fold CV RMSE",
+        "score_context": f"mean {cv_folds}-fold CV RMSE",
         "selected_parameters": dict(best_params),
         "trials": [
             {
@@ -201,10 +260,12 @@ def _optuna_result(study, best_params):  # noqa: ANN001
     }
 
 
-def _not_used_rfecv(features):
+def _not_used_rfecv(features, cv_folds):
     return {
         "status": "not_used",
-        "score_context": "neg_root_mean_squared_error; 5-fold CV",
+        "score_context": (
+            f"neg_root_mean_squared_error; {cv_folds}-fold CV"
+        ),
         "feature_count_before": len(features),
         "feature_count_after": len(features),
         "features": [
@@ -219,10 +280,12 @@ def _not_used_rfecv(features):
     }
 
 
-def _used_rfecv(original, selected, ranking):
+def _used_rfecv(original, selected, ranking, cv_folds):
     return {
         "status": "used",
-        "score_context": "neg_root_mean_squared_error; 5-fold CV",
+        "score_context": (
+            f"neg_root_mean_squared_error; {cv_folds}-fold CV"
+        ),
         "feature_count_before": len(original),
         "feature_count_after": len(selected),
         "features": [

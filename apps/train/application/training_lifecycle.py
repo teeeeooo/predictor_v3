@@ -15,7 +15,7 @@ from apps.common.model_lifecycle.durability_errors import (
 )
 from apps.train.application.candidate_publication import (
     CandidateArtifactGenerationError,
-    CandidatePublisher,
+    CandidatePublicationPort,
 )
 from apps.train.ports.training_execution_port import (
     TrainingExecutionCallbacks,
@@ -45,13 +45,14 @@ class TrainingLifecycleService:
         execution_factory: TrainingExecutionFactory | None = None,
         registry_provider: Callable[[], ModelRegistrySnapshot] | None = None,
         repository: ModelLifecycleRepository | None = None,
+        publisher: CandidatePublicationPort | None = None,
     ) -> None:
         self._validation = validation or TrainingService()
         self._execution = execution
         self._execution_factory = execution_factory
         self._registry_provider = registry_provider
         self._repository = repository
-        self._publisher = CandidatePublisher(repository) if repository else None
+        self._publisher = publisher
         self._is_running = False
         self._last_result: TrainingResult | None = None
         self._active_request: TrainingRequest | None = None

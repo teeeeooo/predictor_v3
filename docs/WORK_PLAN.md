@@ -17,8 +17,10 @@
 
 ## Current Slice
 
-Phase 5C Training Result & Analysis is implemented on its worker branch and is
-the current independent-audit slice. Phase
+Phase 5C Training Result & Analysis is implemented on its worker branch. The
+first independent L4 audit returned `FAIL`; its five bounded merge blockers are
+repaired on the same Draft PR branch, which is now the current exact-head
+re-audit slice. Phase
 5B lifecycle foundation head
 `21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
 #28 was squash-merged to `main` as
@@ -35,16 +37,23 @@ Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
 Phase 5C worker connects Core-owned target R², MAE, RMSE, fold stability,
 RFECV, target-local Feature importance, Optuna, preprocessing/data-quality, and
 fair-baseline evidence to `training_result.v1`. New Candidate manifest v2
-publication requires hash-verified JSON/CSV/XLSX analysis; non-complete terminal
-evidence stays non-promotable outside the Candidate namespace. Phase 5D then
+publication requires lifecycle-owned schema, required-set, reference, category,
+path, and hash validation of JSON/CSV/XLSX analysis. CSV and XLSX expose the
+same baseline/delta/unavailable and target-failure decisions as JSON. A bounded
+canonical multi-target regression now runs the production preprocessing,
+target-policy, RFECV/Optuna, evaluation, artifact, and publication path.
+Non-complete terminal evidence stays non-promotable outside the Candidate
+namespace. Phase 5D then
 implements Candidate use and model-management-centered Train/Model UI/UX. CLI,
 Campaign, and the Agent-assisted Experiment Loop remain later slices.
 
 ## Next Action
 
-Hand the exact Phase 5C Draft PR head, changed scope, and validation evidence to
-an independent L4 Auditor. Keep the PR Draft and do not begin Phase 5D, CLI,
-Campaign, or the Agent-assisted Experiment Loop until that audit is resolved.
+Hand the repaired exact Phase 5C Draft PR head, changed scope, and validation
+evidence to an independent L4 re-audit. Preserve the earlier `FAIL` as
+historical evidence, keep the PR Draft, and do not begin Phase 5D, CLI,
+Campaign, or the Agent-assisted Experiment Loop until that re-audit is
+resolved.
 
 ## Active Blockers
 

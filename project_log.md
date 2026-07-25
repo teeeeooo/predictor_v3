@@ -29,6 +29,26 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5C result-integrity audit repair
+
+### Decision
+
+- Preserve the first independent Phase 5C L4 audit verdict as `FAIL` and repair
+  only its five merge blockers on the existing Draft PR branch.
+- Make manifest v2 Candidate read and promotion share lifecycle-owned validation
+  of the exact required analysis set, artifact identity/category/required
+  semantics, files, hashes, supported result version, and parsed structured
+  payload. Manifest v1 remains read-only without migration.
+- Require baseline identity/comparability, deltas, unavailable reasons, and
+  target failure reasons to project from one result contract into JSON, CSV,
+  and XLSX.
+- Keep filesystem evidence/report/hash implementations in outbound adapters and
+  inject them at composition. Core retains production preprocessing, target
+  policy, RFECV/Optuna, evaluation, and metric ownership.
+- Hold Phase 5D and every later CLI/Campaign/agent-loop slice until the repaired
+  exact head receives independent L4 re-audit. This worker does not declare
+  audit `PASS` or merge readiness.
+
 ## 2026-07-25 — Train/Admin Phase 5C training result and analysis
 
 ### Decision

@@ -24,6 +24,7 @@ from core.ml.preprocessing import (
 from core.ml.training_results import (
     CoreTrainingEvidence,
     CoreTrainingOutput,
+    TrainingOptimizationConfig,
     optimize_and_train,
 )
 
@@ -43,6 +44,7 @@ def train_all_models(
 def train_all_models_with_analysis(
     data_path=None, log_callback=None, model_output_path=None,
     *, registry_snapshot: ModelRegistrySnapshot | None = None,
+    optimization_config: TrainingOptimizationConfig | None = None,
 ):
     if not model_output_path:
         raise ValueError("Training caller must provide a staging model_output_path.")
@@ -120,6 +122,7 @@ def train_all_models_with_analysis(
                         mandatory_features,
                         use_rfe,
                         log_callback=log_callback,
+                        optimization_config=optimization_config,
                     )
                 )
             except Exception as exc:
@@ -164,6 +167,7 @@ def train_all_models_with_analysis(
     status = "complete" if not failed_targets else (
         "partial" if len(failed_targets) < len(target_results) else "failed"
     )
+    resolved_optimization = optimization_config or TrainingOptimizationConfig()
     evidence = CoreTrainingEvidence(
         started_at=started_at,
         finished_at=finished_at,
@@ -171,8 +175,10 @@ def train_all_models_with_analysis(
         training_data_sha256=_sha256_file(Path(file)),
         training_data_rows=len(df),
         evaluation_context={
-            "scope": "shuffled_5_fold_cross_validation",
-            "fold_count": 5,
+            "scope": (
+                f"shuffled_{resolved_optimization.cv_folds}_fold_cross_validation"
+            ),
+            "fold_count": resolved_optimization.cv_folds,
             "seed": 42,
             "splitter": "KFold",
         },
@@ -193,6 +199,11 @@ def train_all_models_with_analysis(
                     raw_df if feature in raw_df.columns else quality_df,
                     feature,
                     target_usage.get(feature, set()),
+                    quality_collection_stage=(
+                        "raw_training_input"
+                        if feature in raw_df.columns
+                        else "post_preprocessing_derived_features"
+                    ),
                 )
                 for feature in snapshot.input_ml_names
                 if feature in raw_df.columns or feature in quality_df.columns
@@ -225,6 +236,8 @@ def _feature_quality(
     frame: pd.DataFrame,
     feature: str,
     target_usage: set[str],
+    *,
+    quality_collection_stage: str,
 ) -> dict:
     series = frame[feature]
     missing_count = int(series.isna().sum())
@@ -247,7 +260,8 @@ def _feature_quality(
         "outlier_method": "iqr_1.5",
         "outlier_count": outlier_count,
         "target_usage": tuple(sorted(target_usage)),
-        "selection_state": "before_target_policy",
+        "quality_collection_stage": quality_collection_stage,
+        "target_usage_stage": "post_target_policy_pre_rfecv",
     }
 
 

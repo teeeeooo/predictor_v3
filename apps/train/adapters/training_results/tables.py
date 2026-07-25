@@ -20,10 +20,30 @@ def result_tables(
     for target in result.targets:
         identity = target.get("target_identity", "")
         metric = target.get("metrics", {})
+        comparison = target.get("baseline_comparison", {})
+        delta = comparison.get("delta", {})
         metrics.append({
             "target_identity": identity,
             "target_ml_name": target.get("target_ml_name", ""),
             "status": target.get("status", ""),
+            "target_blocking_reason": (
+                target.get("blocking_reason")
+                or target.get("failure_reason")
+                or ""
+            ),
+            "baseline_type": result.baseline.get("type", ""),
+            "baseline_identity": result.baseline.get("identity", ""),
+            "baseline_comparable": result.baseline.get("comparable", False),
+            "baseline_unavailable_reason": result.baseline.get(
+                "unavailable_reason", ""
+            ),
+            "comparison_comparable": comparison.get("comparable", False),
+            "delta_r2": delta.get("r2", ""),
+            "delta_mae": delta.get("mae", ""),
+            "delta_rmse": delta.get("rmse", ""),
+            "comparison_unavailable_reason": comparison.get(
+                "unavailable_reason", ""
+            ),
             "evaluation_scope": metric.get("evaluation_scope", ""),
             "sample_count": metric.get("sample_count", ""),
             "r2": metric.get("r2", ""),
@@ -88,6 +108,9 @@ def workbook_tables(
         "baseline_type": result.baseline.get("type", ""),
         "baseline_identity": result.baseline.get("identity", ""),
         "baseline_comparable": result.baseline.get("comparable", False),
+        "baseline_unavailable_reason": result.baseline.get(
+            "unavailable_reason", ""
+        ),
         "blocking_reasons": " | ".join(
             item["reason"] for item in result.blocking_reasons
         ),

@@ -7,9 +7,31 @@ from pathlib import Path
 
 import joblib
 
-from .candidate_contracts import CandidateManifest
+from .candidate_contracts import (
+    CANDIDATE_SCHEMA_VERSION,
+    LEGACY_CANDIDATE_SCHEMA_VERSION,
+    CandidateManifest,
+)
 from .errors import CandidateCorruptionError
 from .filesystem import LifecycleFilesystem
+from .training_result_contracts import (
+    TRAINING_RESULT_SCHEMA_VERSION,
+    TrainingAnalysisResult,
+)
+
+
+REQUIRED_ANALYSIS_ARTIFACTS = {
+    "training_result.json": "training_result",
+    "analysis/target_metrics.csv": "target_metrics",
+    "analysis/selected_features.csv": "selected_features",
+    "analysis/rfecv_ranking.csv": "rfecv_ranking",
+    "analysis/feature_importance.csv": "feature_importance",
+    "analysis/optuna_trials.csv": "optuna_trials",
+    "analysis/best_parameters.csv": "best_parameters",
+    "analysis/preprocessing_summary.csv": "preprocessing_summary",
+    "training_report.xlsx": "training_report",
+}
+OPTIONAL_ANALYSIS_ARTIFACT_CATEGORIES = {"shap"}
 
 
 def validate_candidate_files(
@@ -25,6 +47,7 @@ def validate_candidate_files(
         required.extend(("manifest.json", "result.json"))
     for name in required:
         filesystem.require_regular_file(path / name)
+    _validate_analysis_contract(filesystem, path, manifest)
     for artifact in manifest.analysis_artifacts:
         relative = Path(artifact.path)
         if relative.is_absolute() or ".." in relative.parts:
@@ -38,17 +61,72 @@ def validate_candidate_files(
                 raise ValueError(
                     f"Candidate analysis artifact hash mismatch: {artifact.path}"
                 )
-    if (
-        manifest.schema_version != "model_candidate_manifest.v1"
-        and not manifest.analysis_artifacts
-    ):
-        raise ValueError("Candidate required analysis artifacts are incomplete")
     _model_sha256, payload = load_candidate_model(
         filesystem,
         path / "model.pkl",
         expected_sha256=manifest.model_sha256,
     )
     _validate_model_bundle(payload, manifest)
+
+
+def _validate_analysis_contract(
+    filesystem: LifecycleFilesystem,
+    path: Path,
+    manifest: CandidateManifest,
+) -> None:
+    if manifest.schema_version == LEGACY_CANDIDATE_SCHEMA_VERSION:
+        return
+    if manifest.schema_version != CANDIDATE_SCHEMA_VERSION:
+        raise ValueError("unsupported Candidate manifest schema version")
+    if manifest.analysis_contract_version != TRAINING_RESULT_SCHEMA_VERSION:
+        raise ValueError("unsupported Candidate analysis contract version")
+    references = manifest.analysis_artifacts
+    paths = [item.path for item in references]
+    categories = [item.category for item in references]
+    if len(paths) != len(set(paths)) or len(categories) != len(set(categories)):
+        raise ValueError("Candidate analysis artifact path or identity is duplicated")
+    by_path = {item.path: item for item in references}
+    for required_path, category in REQUIRED_ANALYSIS_ARTIFACTS.items():
+        reference = by_path.get(required_path)
+        if reference is None:
+            raise ValueError(
+                f"Candidate required analysis artifact is missing: {required_path}"
+            )
+        if reference.category != category or not reference.required:
+            raise ValueError(
+                f"Candidate required analysis artifact contract is invalid: {required_path}"
+            )
+    unexpected_required = [
+        item.path for item in references
+        if item.required and item.path not in REQUIRED_ANALYSIS_ARTIFACTS
+    ]
+    if unexpected_required:
+        raise ValueError("Candidate has an unknown required analysis artifact")
+    invalid_optional = [
+        item.path for item in references
+        if item.path not in REQUIRED_ANALYSIS_ARTIFACTS
+        and (
+            item.required
+            or item.category not in OPTIONAL_ANALYSIS_ARTIFACT_CATEGORIES
+        )
+    ]
+    if invalid_optional:
+        raise ValueError("Candidate optional analysis artifact contract is invalid")
+    structured_payload = filesystem.read_json(path / "training_result.json")
+    if not isinstance(structured_payload, dict):
+        raise ValueError("training result payload must be an object")
+    if structured_payload.get("schema_version") != manifest.analysis_contract_version:
+        raise ValueError("Candidate analysis manifest/result version mismatch")
+    structured = TrainingAnalysisResult.from_payload(structured_payload)
+    payload_refs = {
+        (str(item.get("path", "")), str(item.get("category", "")), bool(item.get("required")))
+        for item in structured.artifacts
+    }
+    manifest_refs = {
+        (item.path, item.category, item.required) for item in references
+    }
+    if payload_refs != manifest_refs:
+        raise ValueError("Candidate analysis artifact manifest/result mismatch")
 
 
 def load_candidate_model(

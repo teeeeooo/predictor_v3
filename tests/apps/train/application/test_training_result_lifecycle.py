@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
 import pytest
 
-from apps.common.model_lifecycle import ModelLifecycleRepository
+from apps.common.model_lifecycle import ModelLifecycleRepository, ModelPromotionService
 from apps.common.model_lifecycle.errors import CandidateCorruptionError
 from apps.train.application.training_lifecycle import TrainingLifecycleService
+from apps.train.composition.training_results import build_candidate_publisher
 from apps.train.state.training_run_state import TrainingRequest, TrainingResult
 from core.data_definition.contract import bootstrap_manifest
 from core.data_definition.target_registry.runtime import model_registry_snapshot
@@ -54,6 +56,14 @@ class _ArtifactExecution:
         return None
 
 
+def _service(repository, **kwargs):  # noqa: ANN001
+    return TrainingLifecycleService(
+        repository=repository,
+        publisher=build_candidate_publisher(repository),
+        **kwargs,
+    )
+
+
 def test_cancel_preserves_active_and_structured_evidence_not_candidate(tmp_path):
     snapshot = model_registry_snapshot(bootstrap_manifest())
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
@@ -64,10 +74,10 @@ def test_cancel_preserves_active_and_structured_evidence_not_candidate(tmp_path)
         source="test",
         expected_revision=0,
     )
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=_ArtifactExecution(snapshot, status="cancelled"),
         registry_provider=lambda: snapshot,
-        repository=repository,
     )
     request = TrainingRequest(
         run_id="cancelled-run",
@@ -95,13 +105,13 @@ def test_cancel_preserves_active_and_structured_evidence_not_candidate(tmp_path)
 def test_artifact_failure_never_publishes_incomplete_candidate(tmp_path):
     snapshot = model_registry_snapshot(bootstrap_manifest())
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=_ArtifactExecution(snapshot),
         registry_provider=lambda: snapshot,
-        repository=repository,
     )
     calls = {"count": 0}
-    original = service._publisher._artifact_writer.write
+    original = service._publisher._artifacts.write
 
     def fail_once(staging, result):  # noqa: ANN001
         calls["count"] += 1
@@ -109,7 +119,7 @@ def test_artifact_failure_never_publishes_incomplete_candidate(tmp_path):
             raise OSError("xlsx generation failed")
         original(staging, result)
 
-    service._publisher._artifact_writer.write = fail_once
+    service._publisher._artifacts.write = fail_once
     failed = []
     service.start(
         TrainingRequest(
@@ -132,10 +142,10 @@ def test_artifact_failure_never_publishes_incomplete_candidate(tmp_path):
 def test_complete_candidate_owns_hashed_analysis_artifacts(tmp_path):
     snapshot = model_registry_snapshot(bootstrap_manifest())
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=_ArtifactExecution(snapshot),
         registry_provider=lambda: snapshot,
-        repository=repository,
     )
     service.start(TrainingRequest(
         run_id="complete-run",
@@ -214,10 +224,10 @@ class _PartialExecution(_ArtifactExecution):
 def test_partial_preserves_successful_target_without_candidate(tmp_path):
     snapshot = model_registry_snapshot(bootstrap_manifest())
     repository = ModelLifecycleRepository(tmp_path / "lifecycle")
-    service = TrainingLifecycleService(
+    service = _service(
+        repository,
         execution=_PartialExecution(snapshot),
         registry_provider=lambda: snapshot,
-        repository=repository,
     )
     service.start(TrainingRequest(
         run_id="partial-run",
@@ -236,3 +246,157 @@ def test_partial_preserves_successful_target_without_candidate(tmp_path):
     assert payload["run"]["status"] == "partial"
     assert payload["targets"][0]["status"] == "complete"
     assert payload["promotion_eligibility"]["eligible"] is False
+
+
+def _published_v2_with_active(tmp_path):  # noqa: ANN001
+    snapshot = model_registry_snapshot(bootstrap_manifest())
+    repository = ModelLifecycleRepository(tmp_path / "lifecycle")
+    publish_candidate(repository, snapshot, "active")
+    repository.replace_active(
+        "active",
+        activated_at="2026-07-25T00:00:00+00:00",
+        source="test",
+        expected_revision=0,
+    )
+    service = _service(
+        repository,
+        execution=_ArtifactExecution(snapshot),
+        registry_provider=lambda: snapshot,
+    )
+    service.start(TrainingRequest(
+        run_id="integrity-run",
+        candidate_id="integrity-candidate",
+        data_path=str(write_mock_training_data(output_dir=tmp_path, rows=8)),
+    ))
+    return repository, snapshot, (
+        repository.candidates_path / "integrity-candidate"
+    )
+
+
+def _rewrite_manifest(candidate_path, mutate):  # noqa: ANN001
+    path = candidate_path / "manifest.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    mutate(payload)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _rewrite_result_and_hash(candidate_path, mutate):  # noqa: ANN001
+    result_path = candidate_path / "training_result.json"
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+    mutate(payload)
+    result_path.write_text(json.dumps(payload), encoding="utf-8")
+    sha256 = hashlib.sha256(result_path.read_bytes()).hexdigest()
+    _rewrite_manifest(
+        candidate_path,
+        lambda manifest: next(
+            item for item in manifest["analysis_artifacts"]
+            if item["path"] == "training_result.json"
+        ).update({"sha256": sha256}),
+    )
+
+
+@pytest.mark.parametrize(
+    "corruption",
+    (
+        "missing-reference",
+        "missing-file",
+        "missing-reference-and-file",
+        "hash-mismatch",
+        "duplicate-path",
+        "duplicate-identity",
+        "wrong-category",
+        "wrong-required",
+        "future-version",
+        "version-mismatch",
+        "malformed-result",
+    ),
+)
+def test_v2_analysis_corruption_blocks_read_and_promotion_without_active_change(
+    tmp_path, corruption
+):
+    repository, snapshot, candidate_path = _published_v2_with_active(tmp_path)
+    target_path = "analysis/target_metrics.csv"
+    if corruption in {"missing-reference", "missing-reference-and-file"}:
+        _rewrite_manifest(
+            candidate_path,
+            lambda payload: payload.update({
+                "analysis_artifacts": [
+                    item for item in payload["analysis_artifacts"]
+                    if item["path"] != target_path
+                ]
+            }),
+        )
+    if corruption in {"missing-file", "missing-reference-and-file"}:
+        (candidate_path / target_path).unlink()
+    elif corruption == "hash-mismatch":
+        (candidate_path / target_path).write_text("tampered", encoding="utf-8")
+    elif corruption in {"duplicate-path", "duplicate-identity"}:
+        def duplicate(payload):  # noqa: ANN001
+            copied = dict(payload["analysis_artifacts"][0])
+            if corruption == "duplicate-identity":
+                copied["path"] = "analysis/duplicate.json"
+                (candidate_path / copied["path"]).write_bytes(
+                    (candidate_path / payload["analysis_artifacts"][0]["path"]).read_bytes()
+                )
+            payload["analysis_artifacts"].append(copied)
+        _rewrite_manifest(candidate_path, duplicate)
+    elif corruption in {"wrong-category", "wrong-required"}:
+        def invalidate(payload):  # noqa: ANN001
+            item = next(
+                item for item in payload["analysis_artifacts"]
+                if item["path"] == target_path
+            )
+            item[
+                "category" if corruption == "wrong-category" else "required"
+            ] = "wrong" if corruption == "wrong-category" else False
+        _rewrite_manifest(candidate_path, invalidate)
+    elif corruption == "future-version":
+        _rewrite_result_and_hash(
+            candidate_path,
+            lambda payload: payload.update(
+                {"schema_version": "training_result.v999"}
+            ),
+        )
+        _rewrite_manifest(
+            candidate_path,
+            lambda payload: payload.update(
+                {"analysis_contract_version": "training_result.v999"}
+            ),
+        )
+    elif corruption == "version-mismatch":
+        _rewrite_result_and_hash(
+            candidate_path,
+            lambda payload: payload.update(
+                {"schema_version": "training_result.v999"}
+            ),
+        )
+    elif corruption == "malformed-result":
+        _rewrite_result_and_hash(
+            candidate_path,
+            lambda payload: payload.update({"targets": {}}),
+        )
+
+    before = repository.read_active()
+    with pytest.raises(CandidateCorruptionError):
+        repository.read_candidate("integrity-candidate")
+    promoted = ModelPromotionService(
+        repository, lambda: snapshot
+    ).promote("integrity-candidate", expected_revision=before.revision)
+    after = repository.read_active()
+
+    assert promoted.status == "blocked"
+    assert after == before
+
+
+def test_v2_normal_read_and_v1_legacy_read_remain_supported(tmp_path):
+    repository, _snapshot, _candidate_path = _published_v2_with_active(tmp_path)
+
+    assert repository.read_candidate(
+        "integrity-candidate"
+    ).manifest.analysis_contract_version == "training_result.v1"
+    assert repository.read_candidate("active").manifest.schema_version == (
+        "model_candidate_manifest.v1"
+    )
+    assert not (
+        repository.candidates_path / "active" / "training_result.json"
+    ).exists()

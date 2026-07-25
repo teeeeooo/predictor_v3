@@ -11,6 +11,7 @@ from typing import Any
 
 from openpyxl import Workbook, load_workbook
 
+from apps.common.model_lifecycle.candidate_contracts import CandidateArtifactReference
 from apps.train.application.training_results import TrainingAnalysisResult
 from .tables import result_tables, workbook_tables
 
@@ -18,7 +19,9 @@ from .tables import result_tables, workbook_tables
 class TrainingResultArtifactWriter:
     """Write and verify the required Candidate-owned analysis artifacts."""
 
-    def write(self, staging: Path, result: TrainingAnalysisResult) -> None:
+    def write(
+        self, staging: Path, result: TrainingAnalysisResult
+    ) -> tuple[CandidateArtifactReference, ...]:
         analysis = staging / "analysis"
         analysis.mkdir(exist_ok=True)
         payload = result.to_payload()
@@ -28,6 +31,15 @@ class TrainingResultArtifactWriter:
             _write_csv(analysis / filename, rows)
         _write_workbook(staging / "training_report.xlsx", result, tables)
         self.verify(staging, result)
+        return tuple(
+            CandidateArtifactReference(
+                path=str(item["path"]),
+                sha256=artifact_sha256(staging / str(item["path"])),
+                category=str(item["category"]),
+                required=bool(item["required"]),
+            )
+            for item in result.artifacts
+        )
 
     def verify(self, staging: Path, result: TrainingAnalysisResult) -> None:
         payload = json.loads(
@@ -74,7 +86,7 @@ class TrainingResultArtifactWriter:
                 {key: _cell_value(value) for key, value in row.items()}
                 for row in rows
             ]
-            if observed_rows != expected_rows:
+            if not _workbook_rows_equal(observed_rows, expected_rows):
                 raise ValueError(f"training report XLSX value mismatch: {title}")
 
 
@@ -114,6 +126,27 @@ def _cell_value(value: Any) -> Any:
     if isinstance(value, (dict, list, tuple)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
     return value
+
+
+def _workbook_rows_equal(
+    observed: list[dict[str, Any]],
+    expected: list[dict[str, Any]],
+) -> bool:
+    if len(observed) != len(expected):
+        return False
+    for observed_row, expected_row in zip(observed, expected):
+        if observed_row.keys() != expected_row.keys():
+            return False
+        for key, expected_value in expected_row.items():
+            observed_value = observed_row[key]
+            if isinstance(expected_value, float) and isinstance(
+                observed_value, (int, float)
+            ):
+                if abs(float(observed_value) - expected_value) > 1e-12:
+                    return False
+            elif observed_value != expected_value:
+                return False
+    return True
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

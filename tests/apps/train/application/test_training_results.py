@@ -106,7 +106,8 @@ def _evidence(*targets: dict, status: str = "complete") -> CoreTrainingEvidence:
                 "outlier_method": "iqr_1.5",
                 "outlier_count": 1,
                 "target_usage": ("cooling", "heating"),
-                "selection_state": "before_target_policy",
+                "quality_collection_stage": "raw_training_input",
+                "target_usage_stage": "post_target_policy_pre_rfecv",
             }],
         },
         status=status,
@@ -205,12 +206,109 @@ def test_json_csv_and_xlsx_derive_from_same_contract(tmp_path):
     workbook = load_workbook(tmp_path / "training_report.xlsx", data_only=True)
 
     assert payload["targets"][0]["metrics"]["r2"] == float(metrics[0]["r2"])
-    assert workbook["Target Metrics"]["F2"].value == payload["targets"][0]["metrics"]["r2"]
+    headers = [cell.value for cell in workbook["Target Metrics"][1]]
+    r2_column = headers.index("r2") + 1
+    assert workbook["Target Metrics"].cell(2, r2_column).value == (
+        payload["targets"][0]["metrics"]["r2"]
+    )
     assert workbook.sheetnames == [
         "Summary", "Target Metrics", "Selected Features", "RFECV Ranking",
         "Feature Importance", "Optuna Best Parameters", "Optuna Trials",
         "Preprocessing", "Run Information",
     ]
+
+
+def test_baseline_and_target_decisions_have_json_csv_xlsx_parity(tmp_path):
+    service = TrainingResultService()
+    baseline = service.build(
+        run_id="baseline-run",
+        candidate_id="baseline",
+        evidence=_evidence(_target("cooling"), _target("heating")),
+        required_target_identities=("cooling", "heating"),
+        publication_outcome="published",
+    )
+    failed = {
+        "target_identity": "heating",
+        "target_ml_name": "ml_heating",
+        "status": "failed",
+        "blocking_reason": "fit failed",
+    }
+    cases = {
+        "fair": service.build(
+            run_id="fair",
+            candidate_id="fair",
+            evidence=_evidence(_target("cooling", 0.1), _target("heating")),
+            required_target_identities=("cooling", "heating"),
+            baseline=baseline,
+        ),
+        "unfair": service.build(
+            run_id="unfair",
+            candidate_id="unfair",
+            evidence=replace(
+                _evidence(_target("cooling"), _target("heating")),
+                training_data_sha256="different",
+            ),
+            required_target_identities=("cooling", "heating"),
+            baseline=baseline,
+        ),
+        "bootstrap": service.build(
+            run_id="bootstrap",
+            candidate_id="bootstrap",
+            evidence=_evidence(_target("cooling"), _target("heating")),
+            required_target_identities=("cooling", "heating"),
+        ),
+        "partial": service.build(
+            run_id="partial",
+            candidate_id="partial",
+            evidence=_evidence(_target("cooling"), failed, status="partial"),
+            required_target_identities=("cooling", "heating"),
+        ),
+    }
+    for name, result in cases.items():
+        case_path = tmp_path / name
+        case_path.mkdir()
+        TrainingResultArtifactWriter().write(case_path, result)
+        payload = json.loads((case_path / "training_result.json").read_text())
+        with (case_path / "analysis" / "target_metrics.csv").open(
+            newline="", encoding="utf-8"
+        ) as source:
+            csv_rows = list(csv.DictReader(source))
+        sheet = load_workbook(
+            case_path / "training_report.xlsx", data_only=True
+        )["Target Metrics"]
+        headers = [cell.value for cell in sheet[1]]
+        xlsx_rows = [
+            dict(zip(headers, (cell.value for cell in row)))
+            for row in sheet.iter_rows(min_row=2)
+        ]
+
+        for index, target in enumerate(payload["targets"]):
+            comparison = target["baseline_comparison"]
+            assert csv_rows[index]["baseline_identity"] == payload["baseline"]["identity"]
+            assert csv_rows[index]["baseline_comparable"] == str(
+                payload["baseline"]["comparable"]
+            )
+            assert csv_rows[index]["comparison_comparable"] == str(
+                comparison["comparable"]
+            )
+            assert csv_rows[index]["comparison_unavailable_reason"] == (
+                comparison.get("unavailable_reason", "")
+            )
+            assert csv_rows[index]["target_blocking_reason"] == (
+                target.get("blocking_reason", "")
+            )
+            assert xlsx_rows[index]["baseline_identity"] in {
+                payload["baseline"]["identity"],
+                None,
+            }
+            assert xlsx_rows[index]["comparison_unavailable_reason"] == (
+                comparison.get("unavailable_reason") or None
+            )
+            delta = comparison.get("delta", {})
+            assert csv_rows[index]["delta_r2"] == (
+                str(delta["r2"]) if "r2" in delta else ""
+            )
+            assert xlsx_rows[index]["delta_r2"] == delta.get("r2")
 
 
 def test_legacy_unavailable_and_future_version_rejected():
