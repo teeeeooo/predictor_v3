@@ -350,15 +350,11 @@ _ARTIFACT_FAILURES = (
     OSError,
     EOFError,
     ImportError,
-    AttributeError,
     KeyError,
-    TypeError,
     ValueError,
 )
 
-_CANDIDATE_VALIDATION_FAILURES = tuple(
-    failure for failure in _ARTIFACT_FAILURES if failure is not TypeError
-)
+_CANDIDATE_VALIDATION_FAILURES = _ARTIFACT_FAILURES
 
 _ACTIVE_REFERENCE_FAILURES = (
     LifecycleFilesystemError,

@@ -74,6 +74,8 @@ class ModelPromotionService:
                 candidate_id,
                 message=str(exc).splitlines()[0],
             )
+        except (TypeError, AttributeError):
+            raise
         except Exception as exc:
             return PromotionResult("blocked", candidate_id, message=str(exc).splitlines()[0])
         return PromotionResult("active", candidate_id, reference.revision, "Candidate promoted.")

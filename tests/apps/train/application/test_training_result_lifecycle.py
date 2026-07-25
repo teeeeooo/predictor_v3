@@ -454,6 +454,37 @@ def test_lifecycle_hash_validation_failure_preserves_original_target_evidence(
     assert "hash mismatch" in payload["run"]["failure_reason"]
 
 
+@pytest.mark.parametrize(
+    ("error_type", "message"),
+    (
+        (TypeError, "publication validator type defect"),
+        (AttributeError, "publication validator attribute defect"),
+    ),
+)
+def test_publication_programmer_error_preserves_original_target_evidence(
+    tmp_path, monkeypatch, error_type, message
+):
+    _snapshot, repository, service = _failure_service(tmp_path)
+    before = repository.read_active()
+
+    def fail_validation(*_args, **_kwargs):
+        raise error_type(message)
+
+    monkeypatch.setattr(
+        "apps.common.model_lifecycle.repository.validate_candidate_files",
+        fail_validation,
+    )
+    failed = _start_failure_run(tmp_path, service, "programmer-error")
+    monkeypatch.undo()
+
+    _evidence_path, payload = _assert_preserved_original_evidence(
+        repository, "programmer-error", before
+    )
+    assert failed.publication_outcome == "failed"
+    assert payload["run"]["failure_stage"] == "candidate_publication"
+    assert payload["run"]["failure_reason"] == message
+
+
 def test_post_artifact_publication_failure_preserves_original_target_evidence(
     tmp_path,
 ):

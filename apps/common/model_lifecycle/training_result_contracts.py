@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .candidate_contracts import parse_analysis_artifact_descriptor
+from .candidate_contracts import (
+    CandidateArtifactContractError,
+    parse_analysis_artifact_descriptor,
+)
 
 TRAINING_RESULT_SCHEMA_VERSION = "training_result.v1"
 
@@ -38,9 +41,13 @@ class TrainingAnalysisResult:
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "TrainingAnalysisResult":
         if not isinstance(payload, dict):
-            raise ValueError("training result payload must be an object")
+            raise CandidateArtifactContractError(
+                "training result payload must be an object"
+            )
         if payload.get("schema_version") != TRAINING_RESULT_SCHEMA_VERSION:
-            raise ValueError("unsupported training result schema version")
+            raise CandidateArtifactContractError(
+                "unsupported training result schema version"
+            )
         _require_mapping(payload, "run", "training_context", "baseline")
         _require_mapping(payload, "preprocessing", "promotion_eligibility")
         targets = _mapping_array(payload, "targets")
@@ -65,10 +72,14 @@ class TrainingAnalysisResult:
             or len(artifact_paths) != len(set(artifact_paths))
             or len(artifact_categories) != len(set(artifact_categories))
         ):
-            raise ValueError("training result artifact identity is invalid")
+            raise CandidateArtifactContractError(
+                "training result artifact identity is invalid"
+            )
         optional = payload.get("optional_capabilities", {})
         if not isinstance(optional, dict):
-            raise ValueError("training result optional_capabilities must be an object")
+            raise CandidateArtifactContractError(
+                "training result optional_capabilities must be an object"
+            )
         return cls(
             run=dict(payload["run"]),
             training_context=dict(payload["training_context"]),
@@ -98,7 +109,9 @@ def load_training_analysis_payload(
 def _require_mapping(payload: dict[str, Any], *names: str) -> None:
     for name in names:
         if not isinstance(payload.get(name), dict):
-            raise ValueError(f"training result {name} must be an object")
+            raise CandidateArtifactContractError(
+                f"training result {name} must be an object"
+            )
 
 
 def _mapping_array(
@@ -111,5 +124,7 @@ def _mapping_array(
     if not isinstance(value, (list, tuple)) or any(
         not isinstance(item, dict) for item in value
     ):
-        raise ValueError(f"training result {name} must be an array of objects")
+        raise CandidateArtifactContractError(
+            f"training result {name} must be an array of objects"
+        )
     return tuple(dict(item) for item in value)

@@ -18,9 +18,10 @@
 ## Current Slice
 
 Phase 5C Training Result & Analysis is implemented on its worker branch. The
-first and second independent L4 audits both returned `FAIL`; each audit's
-bounded direct blockers are repaired on the same Draft PR branch, which is now
-the final exact-head re-audit slice. Phase
+first, second, and third independent L4 audits returned `FAIL`; the first two
+blocker sets remain repaired, and the third audit's sole programmer-error versus
+persisted-corruption boundary is repaired on the same Draft PR branch. The
+branch remains an exact-head re-audit slice. Phase
 5B lifecycle foundation head
 `21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
 #28 was squash-merged to `main` as
@@ -47,6 +48,10 @@ Original Core evidence is retained as an optional hash-validated Candidate
 artifact on success. Publication failures retain its target evidence,
 stage/reason, and a minimal JSON fallback even when the full report writer
 remains unavailable.
+Persisted malformed Candidate/result data is normalized by explicit contract
+errors, while unexpected validator/parser/helper `TypeError` and
+`AttributeError` propagate without being relabeled as Candidate corruption or
+publication validation failure.
 Non-complete terminal evidence stays non-promotable outside the Candidate
 namespace. Phase 5D then
 implements Candidate use and model-management-centered Train/Model UI/UX. CLI,
@@ -55,7 +60,8 @@ Campaign, and the Agent-assisted Experiment Loop remain later slices.
 ## Next Action
 
 Hand the repaired exact Phase 5C Draft PR head, changed scope, and validation
-evidence to an independent L4 final re-audit. Preserve both earlier `FAIL`
+evidence to an independent L4 final exact-head re-audit focused on the
+programmer-error boundary. Preserve all three earlier `FAIL`
 verdicts as historical evidence, keep the PR Draft, and do not begin Phase 5D,
 CLI, Campaign, or the Agent-assisted Experiment Loop until that re-audit is
 resolved.
