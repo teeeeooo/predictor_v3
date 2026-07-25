@@ -67,7 +67,7 @@ def main() -> int:
         raise RuntimeError("Data Mapping tab is not the current manager surface")
     status_text = "\n".join(label.text() for label in shell.findChildren(QLabel))
     for expected_text in (
-        "model.pkl 로드됨",
+        "현재 사용 모델 있음",
         "학습 데이터: 확인됨",
         "데이터 매핑: 로드됨",
     ):
@@ -82,7 +82,15 @@ def main() -> int:
             raise RuntimeError(f"Train control is disabled: {text}")
     if train_buttons["중지"].isEnabled():
         raise RuntimeError("Train stop control should be disabled while idle")
-    if set(train_buttons) != {"학습 데이터 선택", "학습 실행", "중지"}:
+    expected_train_controls = {
+        "학습 데이터 선택",
+        "학습 실행",
+        "중지",
+        "새로고침",
+        "고급 정보 보기",
+        "이 모델 사용",
+    }
+    if set(train_buttons) != expected_train_controls:
         raise RuntimeError(f"unexpected Train controls: {sorted(train_buttons)}")
     mapping_buttons = {
         button.text(): button

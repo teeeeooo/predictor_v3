@@ -29,6 +29,25 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5D Candidate/Active UI
+
+### Decision
+
+- Establish a Qt-free model-management application owner over the existing
+  lifecycle repository, Phase 5C result contract, and Phase 5B promotion owner.
+  UI code does not traverse lifecycle storage, parse JSON, deserialize models,
+  compute metrics/deltas, or write Active state.
+- Present Active, Candidate history, dynamic target metrics, fair/unfair/no-
+  baseline meaning, blocking reasons, and Advanced evidence in the Train/Model
+  surface. Preserve no-auto-active after training.
+- Keep promotion explicit and revision guarded; selecting an older immutable
+  Candidate uses the same promotion owner for rollback. Training, stale
+  revision, corruption, and non-promotable states fail closed without changing
+  Active.
+- Hold audit PASS, merge, Phase 5E, CLI/Campaign, runtime reload, export, and
+  retention for later authority. The Draft PR exact head requires independent
+  L4 audit.
+
 ## 2026-07-25 — Train/Admin Phase 5C post-merge closeout
 
 ### Decision

@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QProgressBar,
     QPushButton,
+    QTabWidget,
     QTableView,
     QTextEdit,
     QVBoxLayout,
@@ -28,6 +29,7 @@ from apps.common.ui import style
 from apps.train.controllers.train_controller import TrainController
 from apps.train.state.training_run_state import TrainingLogEvent, TrainingProgress, TrainingRequest, TrainingResult
 from apps.train.ui.models.static_table_model import StaticTableModel
+from apps.train.ui.model_management_panel import ModelManagementPanel
 from core.ml.artifacts import MODEL_FILE, TRAIN_DATA_FILE
 
 
@@ -64,7 +66,10 @@ class TrainModelPanel(QWidget):
         layout.setSpacing(style.spacing("space.sm"))
         layout.addWidget(self._build_command_bar())
 
-        content = QGridLayout()
+        tabs = QTabWidget(self)
+        tabs.setAccessibleName("Train and model workflow")
+        training_page = QWidget(tabs)
+        content = QGridLayout(training_page)
         content.setSpacing(style.spacing("space.sm"))
         content.addWidget(self._build_training_config_panel(), 0, 0, 2, 1)
         content.addWidget(self._build_progress_panel(), 0, 1, 1, 1)
@@ -75,7 +80,15 @@ class TrainModelPanel(QWidget):
         content.setColumnStretch(1, 2)
         content.setColumnStretch(2, 2)
         content.setRowStretch(1, 1)
-        layout.addLayout(content, 1)
+        tabs.addTab(training_page, "학습 진행")
+        self.model_management_panel = ModelManagementPanel(
+            self.training_controller,
+            tabs,
+            on_snapshot_changed=self._model_snapshot_changed,
+        )
+        tabs.addTab(self.model_management_panel, "모델 관리")
+        self.workflow_tabs = tabs
+        layout.addWidget(tabs, 1)
         self._update_control_state()
 
     def _build_command_bar(self) -> QFrame:
@@ -103,6 +116,8 @@ class TrainModelPanel(QWidget):
         ):
             layout.addWidget(button)
         layout.addStretch(1)
+        self.active_model_label = QLabel("현재 사용 모델: 확인 중")
+        layout.addWidget(self.active_model_label)
         return panel
 
     def _build_training_config_panel(self) -> QFrame:
@@ -110,11 +125,8 @@ class TrainModelPanel(QWidget):
         body.addWidget(QLabel("데이터 파일 경로"))
         self.data_path_line = _readonly_line(TRAIN_DATA_FILE)
         body.addWidget(self.data_path_line)
-        body.addWidget(QLabel("model.pkl 저장 위치"))
         self.model_path_line = _readonly_line(MODEL_FILE)
-        body.addWidget(self.model_path_line)
-        body.addWidget(QLabel("preprocess version"))
-        body.addWidget(_readonly_line("v1.0"))
+        self.model_path_line.setVisible(False)
         self.target_count_heading = QLabel(f"모델/타겟 목록 ({len(self.targets)})")
         body.addWidget(self.target_count_heading)
         self.target_list_layout = QVBoxLayout()
@@ -174,17 +186,17 @@ class TrainModelPanel(QWidget):
         return panel
 
     def _build_summary_panel(self) -> QFrame:
-        panel, body = _panel("Training Summary")
+        panel, body = _panel("Target 진행 상태")
         self.summary_table = _summary_table(self.targets)
         body.addWidget(self.summary_table)
         return panel
 
     def _build_log_panel(self) -> QFrame:
-        panel, body = _panel("Training Log")
+        panel, body = _panel("학습 로그")
         log = QTextEdit()
         log.setObjectName("TrainingLog")
         log.setReadOnly(True)
-        log.setPlainText("Training execution ready.")
+        log.setPlainText("학습을 실행할 준비가 되었습니다.")
         self.log = log
         body.addWidget(log)
         return panel
@@ -194,15 +206,15 @@ class TrainModelPanel(QWidget):
         grid = QGridLayout()
         grid.setSpacing(style.spacing("space.sm"))
         values = (
-            ("총 데이터 행 수", "0"), ("특성 수", "0"),
-            ("타겟 수", str(len(self.targets))), ("CV 폴드 수", "5"),
-            ("Optuna Trials", "30"), ("예상 남은 시간", "--:--"),
+            ("완료 Target", "0"),
+            ("전체 Target", str(len(self.targets))),
+            ("예상 남은 시간", "--:--"),
         )
         for index, (label, value) in enumerate(values):
             tile, value_label = _metric_tile_with_value(
                 label, value, "", "neutral"
             )
-            if label == "타겟 수":
+            if label == "전체 Target":
                 self.target_count_metric_value = value_label
             grid.addWidget(tile, index // 3, index % 3)
         body.addLayout(grid)
@@ -299,12 +311,15 @@ class TrainModelPanel(QWidget):
         self.progress_bar.setFormat(f"{progress_value}%")
         if self._on_model_status_changed is not None:
             self._on_model_status_changed()
+        self.model_management_panel.refresh()
+        self.workflow_tabs.setCurrentWidget(self.model_management_panel)
         self._apply_pending_runtime_targets()
 
     def _set_running(self, running: bool) -> None:
         self.run_button.setEnabled(False)
         self.cancel_button.setEnabled(running)
         self.select_button.setEnabled(not running)
+        self.model_management_panel.set_training_running(running)
         if not running:
             self._update_control_state()
 
@@ -365,6 +380,12 @@ class TrainModelPanel(QWidget):
         self.complete_metric_value.setText(str(completed))
         self.running_metric_value.setText(str(running))
         self.waiting_metric_value.setText(str(waiting))
+
+    def _model_snapshot_changed(self, snapshot) -> None:  # noqa: ANN001
+        active = snapshot.active_candidate_id or "선택되지 않음"
+        self.active_model_label.setText(f"현재 사용 모델: {active}")
+        if self._on_model_status_changed is not None:
+            self._on_model_status_changed()
 
 
 def _panel(title: str) -> tuple[QFrame, QVBoxLayout]:

@@ -17,8 +17,9 @@
 
 ## Current Slice
 
-Phase 5D Train/Model UI/UX is the next active slice and remains unstarted. Phase
-5C Training Result & Analysis is complete and merged through PR #30 to `main`
+Phase 5D Train/Model UI/UX is implemented on its dedicated branch and awaits
+Draft PR exact-head independent L4 audit. Phase 5C Training Result & Analysis
+is complete and merged through PR #30 to `main`
 at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
 completed the Qt-free versioned training-result contract, Candidate-owned
@@ -41,21 +42,21 @@ the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. Phase
-5D must show Candidate and Active state through understandable, metric-centered
-UI, provide explicit `이 모델 사용` promotion, support rollback by selecting a
-previous Candidate, and handle Bootstrap/no-active state normally. The UI
-displays the Phase 5C contract without recalculating metrics or eligibility;
-detailed internal information belongs in an Advanced area. CLI, Campaign,
+5D now shows Candidate and Active state through an understandable,
+metric-centered UI, provides explicit `이 모델 사용` promotion, supports rollback
+by selecting a previous Candidate, and handles Bootstrap/no-active state
+normally. The UI displays the Phase 5C contract without recalculating metrics or
+eligibility; detailed internal information belongs in an Advanced area. CLI, Campaign,
 leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
 retention remain later slices.
 
 ## Next Action
 
-Begin the Phase 5D Train/Model UI/UX implementation slice against the
-authoritative Phase 5 design and the completed Phase 5C contract. Keep Candidate
-publication separate from explicit Active promotion, preserve Bootstrap/no-
-active behavior, and leave CLI, Campaign, leaderboard, the Agent-assisted
-Experiment Loop, runtime reload, export, and retention for later phases.
+Publish the Phase 5D branch as an open, unmerged Draft PR and obtain an
+independent L4 audit against its exact head. Do not declare audit PASS or start
+Phase 5E/later work from this implementation worker. Keep CLI, Campaign,
+leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
+retention deferred.
 
 ## Active Blockers
 

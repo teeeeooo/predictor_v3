@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from apps.train.application.training_lifecycle import TrainingLifecycleService
+from apps.train.application.model_management import ModelManagementService
+from apps.common.model_lifecycle.promotion import ModelPromotionService
 from apps.train.services.training_service import TrainingService
 
 
@@ -18,6 +20,7 @@ class TrainController:
         lifecycle_repository=None,  # noqa: ANN001
         candidate_publisher=None,  # noqa: ANN001
         lifecycle_service: TrainingLifecycleService | None = None,
+        model_management_service: ModelManagementService | None = None,
     ) -> None:
         self._lifecycle = lifecycle_service or TrainingLifecycleService(
             validation=service,
@@ -28,6 +31,17 @@ class TrainController:
             publisher=candidate_publisher,
         )
         self._validation = service or TrainingService()
+        self._model_management = model_management_service
+        if (
+            self._model_management is None
+            and lifecycle_repository is not None
+            and registry_provider is not None
+        ):
+            self._model_management = ModelManagementService(
+                lifecycle_repository,
+                ModelPromotionService(lifecycle_repository, registry_provider),
+                training_running=lambda: self._lifecycle.is_running,
+            )
 
     @property
     def _execution(self):  # noqa: ANN202
@@ -60,3 +74,21 @@ class TrainController:
 
     def cancel(self) -> bool:
         return self._lifecycle.cancel()
+
+    def inspect_models(self):  # noqa: ANN201
+        if self._model_management is None:
+            return None
+        return self._model_management.inspect()
+
+    def promote_candidate(
+        self,
+        candidate_id: str,
+        *,
+        expected_revision: int,
+    ):  # noqa: ANN201
+        if self._model_management is None:
+            raise RuntimeError("Model lifecycle management is unavailable.")
+        return self._model_management.promote(
+            candidate_id,
+            expected_revision=expected_revision,
+        )

@@ -577,7 +577,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 4 Unified Feature Manager direction
-    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I completes the Unified Feature Manager for repository-automated scope: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded. The independent audit of Phase 5B returned PASS, PR #28 was squash-merged, and the lifecycle foundation is complete. Phase 5C Training Result & Analysis is complete and merged through PR #30; Phase 5D Train/Model UI/UX is the next active phase and has not started.
+    content: Train/Admin Phases 1–3 remain complete, with Phase 3 preserved as the table-first Data Definition UX foundation merged through PR #16. Phase 4A–4I completes the Unified Feature Manager for repository-automated scope: Data Definition owns canonical Predict/ML Feature lifecycle and independent ordering, Derived expressions, One-hot groups/categories, Target/registry, immutable publication, and runtime generation application. Model-sensitive publications are permitted with explicit retraining evidence; compatible runtime application is distinct from Save. Data Mapping retains concrete mapping.json values and explicit dirty-draft reconciliation; Train owns explicit execution and frozen request snapshots; Predict consumes saved contracts and compatible models with standalone drift checks. Automatic retraining, model promotion, training from Data Definition, and Predict redesign remain excluded from Phase 4. Phase 5B and Phase 5C are complete and merged; Phase 5D Train/Model UI/UX is implemented on a dedicated Draft PR branch and awaits independent L4 audit.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -596,8 +596,8 @@ entries:
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md
 
   - type: decision
-    topic: Train/Admin Phase 5 lifecycle foundation and result-analysis start
-    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. The independent audit of Phase 5B exact head `21b98eb38239e0100be3c3700744c69e2fdc11fe` returned PASS, and PR #28 was squash-merged to `main` as `eca6addd38745dadca3b0e4f19cc259090d50e23`. Phase 5B is complete with immutable Candidate publication, explicit revision-guarded Active promotion and rollback, recovery, and Predict startup resolution. Training success never activates a model automatically. Phase 5C is complete and merged through PR #30 at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit returned PASS and required validation run `30157872726` succeeded. It delivered the Qt-free versioned training-result contract, Candidate-owned JSON/CSV/XLSX analysis artifacts, production multi-target training integration, lifecycle artifact/version validation, terminal failure evidence preservation, and separate Candidate publication versus Active promotion. The earlier FAIL and repair evidence remains historical. `joblib.load()` exception normalization is intentional fail-closed behavior at the serialized-model deserialization trust boundary and was not a final blocker. Phase 5D Train/Model UI/UX is the next active but unstarted phase; CLI, Campaign, leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and retention remain later.
+    topic: Train/Admin Phase 5 lifecycle, result analysis, and model-management UI
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. Phase 5B and Phase 5C are independently audited, merged, and complete, providing immutable Candidate publication, revision-guarded Active promotion/rollback, Predict startup resolution, versioned training-result contracts, Candidate-owned JSON/CSV/XLSX analysis, and preserved terminal evidence. Training success never activates a model automatically. Phase 5D is implemented on a dedicated Draft PR branch: one Qt-free model-management service projects lifecycle and Phase 5C data without UI filesystem/JSON/joblib/metric ownership; Train/Model shows Active, Candidate history, dynamic target metrics, fair/unfair/no-baseline and unavailable reasons, Advanced evidence, explicit guarded `이 모델 사용`, and rollback by re-promotion. Corruption, stale revision, non-promotable state, and training conflicts fail closed while preserving Active. Its exact head awaits independent L4 audit; this worker does not declare PASS or merge, and Phase 5E, CLI, Campaign, runtime reload, export, and retention remain later.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -612,9 +612,12 @@ entries:
       - Training Result
       - analysis artifact
       - Train UI UX
+      - Phase 5D
+      - explicit promotion
+      - rollback by re-promotion
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5c-programmer-error-boundary-repair.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5d-model-management-ui.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

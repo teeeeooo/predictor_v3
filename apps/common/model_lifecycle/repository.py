@@ -29,6 +29,10 @@ from .filesystem import LifecycleFilesystem
 from .locking import lifecycle_lock
 from .recovery import LifecycleRecovery
 from .repository_contracts import CandidateSnapshot
+from .training_result_contracts import (
+    TrainingAnalysisResult,
+    load_training_analysis_payload,
+)
 
 
 class ModelLifecycleRepository:
@@ -216,6 +220,27 @@ class ModelLifecycleRepository:
             ):
                 snapshots.append(self.read_candidate(path.name))
         return tuple(snapshots)
+
+    def read_training_analysis(
+        self,
+        candidate_id: str,
+    ) -> TrainingAnalysisResult | dict[str, str]:
+        """Read one Candidate's supported Phase 5C result without UI file access."""
+        snapshot = self.read_candidate(candidate_id)
+        if not snapshot.manifest.analysis_contract_version:
+            return load_training_analysis_payload(None)
+        try:
+            payload = self._filesystem.read_json(
+                snapshot.path / "training_result.json"
+            )
+            return load_training_analysis_payload(payload)
+        except CandidateCorruptionError:
+            raise
+        except _ARTIFACT_FAILURES as exc:
+            raise CandidateCorruptionError(
+                f"Candidate {candidate_id} training result is corrupt: "
+                f"{str(exc).splitlines()[0]}"
+            ) from exc
 
     def read_active(self, *, optional: bool = False) -> ActiveModelReference | None:
         self._recovery.require_active_clear()

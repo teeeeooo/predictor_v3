@@ -155,8 +155,11 @@ def test_complete_candidate_owns_hashed_analysis_artifacts(tmp_path):
     ))
 
     candidate = repository.read_candidate("complete-candidate")
+    analysis = repository.read_training_analysis("complete-candidate")
 
     assert candidate.manifest.schema_version == "model_candidate_manifest.v2"
+    assert analysis.run["candidate_id"] == "complete-candidate"
+    assert tuple(item["target_identity"] for item in analysis.targets)
     assert len(candidate.manifest.analysis_artifacts) == 10
     assert sum(
         reference.required
