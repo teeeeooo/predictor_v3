@@ -7,6 +7,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
+from apps.train.adapters.qprocess_command import (
+    default_temporary_artifact,
+    training_process_arguments,
+)
+from apps.train.adapters.qprocess_terminal import process_result
 from apps.train.adapters.training_process_events import parse_training_event
 from apps.train.ports.training_execution_port import TrainingExecutionCallbacks
 from apps.train.state.training_run_state import (
@@ -70,13 +75,18 @@ class QProcessTrainingRunner(QObject):
         self._pending_result = None
         self._stdout_buffer = ""
         self._stderr_buffer = ""
-        self._temp_artifact_path = self._default_temp_artifact_path(request)
+        self._temp_artifact_path = default_temporary_artifact(request)
         self._callbacks = callbacks
         self._connect_callbacks(callbacks)
 
         process = QProcess(self)
         process.setProgram(self._python_executable)
-        process.setArguments(self._arguments_for(request))
+        process.setArguments(training_process_arguments(
+            request,
+            self._temp_artifact_path,
+            self._job_module,
+            self._extra_args,
+        ))
         process.readyReadStandardOutput.connect(self._read_stdout)
         process.readyReadStandardError.connect(self._read_stderr)
         process.finished.connect(self._handle_finished)
@@ -88,6 +98,8 @@ class QProcessTrainingRunner(QObject):
         """Terminate and then kill the child process if needed."""
         if not self.is_running or self._process is None:
             return False
+        if self._cancel_requested:
+            return True
         self._cancel_requested = True
         self._process.terminate()
         self._kill_timer = QTimer(self)
@@ -98,6 +110,13 @@ class QProcessTrainingRunner(QObject):
 
     def dispose(self) -> None:
         """Release Qt-owned runner resources after terminal cleanup."""
+        process = self._process
+        if process is not None and process.state() != QProcess.NotRunning:
+            self._terminal_emitted = True
+            process.kill()
+            process.waitForFinished(max(self._terminate_timeout_ms, 1000))
+            self._cleanup_temp_artifact()
+        self._release_process()
         self._stop_kill_timer()
         self.deleteLater()
 
@@ -112,24 +131,6 @@ class QProcessTrainingRunner(QObject):
         self.finished.connect(callbacks.finished)
         self.failed.connect(callbacks.failed)
         self.cancelled.connect(callbacks.cancelled)
-
-    def _arguments_for(self, request: TrainingRequest) -> list[str]:
-        return [
-            "-B",
-            "-m",
-            self._job_module,
-            "--run-id",
-            request.run_id,
-            "--data-path",
-            request.data_path,
-            "--model-output-path",
-            request.model_output_path,
-            "--temp-model-output-path",
-            str(self._temp_artifact_path),
-            *(["--registry-payload-json", request.registry_payload_json]
-              if request.registry_payload_json else []),
-            *self._extra_args,
-        ]
 
     def _read_stdout(self) -> None:
         if self._process is None:
@@ -174,6 +175,9 @@ class QProcessTrainingRunner(QObject):
             self.log_event.emit(payload)
 
     def _handle_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
+        if self._terminal_emitted:
+            self._release_process()
+            return
         self._stop_kill_timer()
         self._read_stdout()
         self._read_stderr()
@@ -182,63 +186,42 @@ class QProcessTrainingRunner(QObject):
             self.log_event.emit(
                 TrainingLogEvent(self._request.run_id, self._stderr_buffer.strip(), "error")
             )
-        if self._pending_result is not None:
-            self._emit_terminal(self._pending_result)
-        elif not self._terminal_emitted and self._request is not None:
-            if self._cancel_requested:
-                self._cleanup_temp_artifact()
-                self.cancelled.emit(
-                    TrainingResult(
-                        run_id=self._request.run_id,
-                        status="cancelled",
-                        model_path=self._request.model_output_path,
-                        message="Training process cancelled.",
-                        generation_id=self._request.generation_id,
-                        registry_fingerprint=self._request.registry_fingerprint,
-                    )
-                )
-            elif exit_code == 0:
-                self.finished.emit(
-                    TrainingResult(
-                        run_id=self._request.run_id,
-                        status="complete",
-                        model_path=self._request.model_output_path,
-                        message="Training process completed.",
-                        generation_id=self._request.generation_id,
-                        registry_fingerprint=self._request.registry_fingerprint,
-                    )
-                )
-            else:
-                self._cleanup_temp_artifact()
-                self.failed.emit(
-                    TrainingResult(
-                        run_id=self._request.run_id,
-                        status="error",
-                        model_path=self._request.model_output_path,
-                        message=f"Training process exited with code {exit_code}.",
-                        generation_id=self._request.generation_id,
-                        registry_fingerprint=self._request.registry_fingerprint,
-                    )
-                )
-        self._process = None
+        if self._request is None:
+            self._release_process()
+            return
+        if self._cancel_requested:
+            result = process_result(self._request, "cancelled", "Training process cancelled.")
+        elif self._pending_result is not None:
+            result = self._pending_result
+        elif exit_code == 0:
+            result = process_result(
+                self._request,
+                "complete", "Training process completed."
+            )
+        else:
+            result = process_result(
+                self._request,
+                "error", f"Training process exited with code {exit_code}."
+            )
+        self._release_process()
+        self._emit_terminal(result)
 
-    def _handle_error(self, _error: QProcess.ProcessError) -> None:
+    def _handle_error(self, error: QProcess.ProcessError) -> None:
         if self._terminal_emitted or self._request is None:
+            return
+        if error != QProcess.FailedToStart:
             return
         if self._process is not None and self._process.state() != QProcess.NotRunning:
             return
-        self._cleanup_temp_artifact()
-        self._terminal_emitted = True
-        self.failed.emit(
-            TrainingResult(
-                run_id=self._request.run_id,
-                status="error",
-                model_path=self._request.model_output_path,
-                message="Training process failed to start.",
-                generation_id=self._request.generation_id,
-                registry_fingerprint=self._request.registry_fingerprint,
+        result = (
+            process_result(self._request, "cancelled", "Training process cancelled.")
+            if self._cancel_requested
+            else process_result(
+                self._request, "error", "Training process failed to start."
             )
         )
+        self._release_process()
+        self._emit_terminal(result)
 
     def _emit_terminal(self, result: TrainingResult) -> None:
         if self._terminal_emitted:
@@ -253,6 +236,12 @@ class QProcessTrainingRunner(QObject):
             self._cleanup_temp_artifact()
             self.failed.emit(result)
 
+    def _release_process(self) -> None:
+        self._stop_kill_timer()
+        process, self._process = self._process, None
+        if process is not None:
+            process.deleteLater()
+
     def _kill_if_running(self) -> None:
         if self._process is not None and self._process.state() != QProcess.NotRunning:
             self._process.kill()
@@ -266,7 +255,3 @@ class QProcessTrainingRunner(QObject):
     def _cleanup_temp_artifact(self) -> None:
         if self._temp_artifact_path is not None:
             self._temp_artifact_path.unlink(missing_ok=True)
-
-    def _default_temp_artifact_path(self, request: TrainingRequest) -> Path:
-        model_path = Path(request.model_output_path)
-        return model_path.with_name(f".{model_path.name}.{request.run_id}.tmp")

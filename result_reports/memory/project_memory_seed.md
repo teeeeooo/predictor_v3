@@ -597,7 +597,7 @@ entries:
 
   - type: decision
     topic: Train/Admin Phase 5A architecture audit and lifecycle start
-    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. The older Phase 5 Train/Model document remains supporting UI/UX guidance and cannot override lifecycle, CLI, campaign, agent-loop, migration, or implementation order. Phase 5B stores lifecycle state below the user-state root under stable workspace identity, never treats the repository absolute path as permanent identity, and supports one default workspace. A legacy `model.pkl` becomes initial Active only after complete compatibility proof; otherwise the original is preserved and the workspace starts Bootstrap / Retraining required. Train/Model UI/UX improvement is the primary Phase 5 product goal; lifecycle is its safety foundation and agent-assisted campaigns remain later.
+    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. Phase 5B remains under independent audit on Draft PR #28. Audit of head `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` found that repository and committed recovery artifact catches also converted unrelated shared-contract `TypeError`. The bounded repair explicitly validates Active history container, record mapping, and required fields before construction, keeps malformed shape/type payloads controlled, and removes `TypeError` from both outer artifact catches. Contract programmer `TypeError`, `AttributeError`, and `AssertionError` propagate; committed recovery evidence remains byte-preserved on programmer failure. Non-object/malformed recovery, append-only Active history, exact top-level/latest identity, revision and timestamp agreement, intended marker binding, descriptor-relative locking, rollback-first indeterminate recovery, mandatory revision guards, fail-closed legacy handling, explicit Qt fixture ownership, narrow resolver errors, and QProcess cleanup remain preserved. Local and remote validation are repair evidence for a new exact-head re-audit, not final approval. Phase 5C has not started; Train/Model UI/UX remains primary and CLI/campaign/agent-loop work stays later.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -612,7 +612,7 @@ entries:
       - Train UI UX
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5b-second-audit-repair.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

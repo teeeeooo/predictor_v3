@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import mean_squared_error, r2_score
 
-from core.ml.artifacts import TRAIN_DATA_FILE, MODEL_FILE, MODEL_DIR
+from core.ml.artifacts import TRAIN_DATA_FILE
 from core.ml.catalog_fingerprint import attach_catalog_fingerprint
 from core.ml.feature_catalog import load_feature_catalog, validate_feature_catalog
 from core.ml.feature_catalog_projection import validate_training_headers
@@ -103,6 +103,9 @@ def train_all_models(
     data_path=None, log_callback=None, model_output_path=None,
     *, registry_snapshot: ModelRegistrySnapshot | None = None,
 ):
+    if not model_output_path:
+        raise ValueError("Training caller must provide a staging model_output_path.")
+
     def custom_log(msg):
         if log_callback: log_callback(msg)
         else: print(msg)
@@ -176,8 +179,8 @@ def train_all_models(
                 "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
-    output_path = model_output_path or MODEL_FILE
-    output_dir = os.path.dirname(output_path) or MODEL_DIR
+    output_path = model_output_path
+    output_dir = os.path.dirname(output_path) or "."
     if not os.path.exists(output_dir): os.makedirs(output_dir)
     joblib.dump(model_data, output_path)
     saved_path = save_train_log_to_excel(all_results_for_excel)

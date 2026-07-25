@@ -11,9 +11,6 @@ import time
 from pathlib import Path
 
 from apps.train.state.training_run_state import TrainingRequest
-from core.ml.artifacts import MODEL_FILE
-
-
 _CANCELLED = False
 
 
@@ -26,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--data-path", required=True)
-    parser.add_argument("--model-output-path", default=MODEL_FILE)
+    parser.add_argument("--model-output-path", required=True)
     parser.add_argument("--temp-model-output-path")
     parser.add_argument("--dev-fast", action="store_true")
     parser.add_argument("--dev-rows", type=int, default=12)

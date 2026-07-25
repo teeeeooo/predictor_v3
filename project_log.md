@@ -29,6 +29,122 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5B Active semantic consistency repair
+
+### Decision
+
+- Treat the audit of malformed-Active repair head
+  `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` as another merge-blocking
+  `FAIL`: actual payload shape/type corruption must be distinguished from an
+  unrelated contract implementation `TypeError`.
+- Make the shared contract validate history container and record shape before
+  construction, and remove `TypeError` from repository and committed-recovery
+  artifact catches. Programmer failure preserves committed recovery evidence.
+- Treat the audit of semantic-consistency repair head
+  `e27f924675c7c516ae23a5ec66cee6687c97022e` as another merge-blocking
+  `FAIL`: committed recovery must normalize malformed and non-object Active JSON
+  without deleting marker/backup evidence.
+- Validate the Active payload object boundary before field access and convert
+  only expected read, parse, and contract corruption during committed recovery.
+  Unexpected programmer `AttributeError` remains visible.
+- Treat the independent audit of head
+  `7ac586a7610b02cfd1cb4b47d72bec7a70481a23` as a merge-blocking `FAIL`
+  because top-level Active state and latest history were not one validated
+  semantic revision unit.
+- Require append-only revisions from 1, safe Candidate identities, and exact
+  top-level/latest-history identity, revision, and activation-time agreement.
+- Bind committed forward reconciliation to both intended revision and intended
+  Candidate identity. Semantic corruption preserves marker and backup evidence
+  and remains controlled recovery-required.
+- Preserve the passing Qt/QProcess, non-Qt CI, narrow resolver exception,
+  legacy migration, and revision-guard behavior.
+- Keep Phase 5C, merge readiness, and final Phase 5B PASS on hold for a new
+  exact-head re-audit. Windows-native and packaging validation remain unrun.
+
+## 2026-07-25 — Train/Admin Phase 5B final bounded audit repair
+
+### Decision
+
+- Treat the audit of second-repair head
+  `f944cbc6d40a36db94a599462bb2cdcc21ce2265` as another merge-blocking
+  `FAIL`; all earlier validation remains historical evidence.
+- Distinguish a durable committed Active revision from an indeterminate
+  replacing revision before cleanup. Forward reconciliation preserves the
+  committed identity, revision, and history and remains idempotent.
+- Limit the shared QApplication fixture to tests that explicitly request it so
+  non-Qt CI does not import PySide6.
+- Convert only expected lifecycle and filesystem failures to controlled Active
+  startup results; unexpected programmer errors propagate.
+- Keep Phase 5C, merge readiness, and final Phase 5B PASS on hold for exact-head
+  re-audit. Parent-root symlink hardening, arbitrary QCore-first widget order,
+  Windows-native validation, and packaging remain outside this repair.
+
+## 2026-07-23 — Train/Admin Phase 5B second independent-audit repair
+
+### Decision
+
+- Treat the independent audit of first-repair head
+  `6fb25e86b1e420f18ff98b60b1dc7ac5acbf8045` as a second merge-blocking
+  `FAIL`; the implementation and first-repair PASS counts are historical only.
+- Anchor POSIX lifecycle lock creation to a validated root descriptor so a root
+  symlink replacement cannot redirect the lock write outside the workspace.
+- Use rollback-first post-rename semantics for Candidate and Active. When
+  rollback cannot be made durable, retain a marker, return
+  `recovery-required`, hide the indeterminate state from normal reads, and
+  require deterministic repository reconciliation.
+- Keep Active pointer and activation history as one atomic revisioned unit;
+  preserve mandatory stale-revision guards on promotion, rollback, bootstrap,
+  and legacy continuity.
+- Keep one QApplication identity across canonical tests and require QProcess
+  timeout cleanup to cancel, reap, and release the runner.
+- Hold Phase 5C, merge readiness, and final Phase 5B PASS until a new exact-head
+  independent audit. Windows-native and packaging validation remain unrun.
+
+## 2026-07-23 — Train/Admin Phase 5B independent-audit repair
+
+### Decision
+
+- Treat the independent audit of PR #28 head
+  `61856fe47dab2ea32aa9315c85c450b5ed5f466a` as a merge-blocking failure
+  that supersedes the earlier local PASS evidence.
+- Keep lifecycle filesystem writes and reads within validated regular objects
+  below the exact workspace root; symlink/path-escape states fail closed without
+  touching external files.
+- Require an explicit current Active revision for promotion, rollback, bootstrap
+  activation, and legacy continuity. No nullable or omitted guard is accepted.
+- Convert known corrupt legacy-import artifacts to structured Bootstrap or
+  Retraining-required outcomes while allowing unexpected programmer errors to
+  remain visible.
+- Arbitrate QProcess terminal signals once, with an accepted user cancellation
+  taking precedence over racing process error/finished signals and genuine launch
+  failures remaining failed.
+- Hold Phase 5C and any merge-ready claim until the repaired exact head receives
+  independent re-audit. Local repair validation is evidence for that audit, not
+  final approval.
+
+## 2026-07-23 — Train/Admin Phase 5B model lifecycle foundation
+
+### Decision
+
+- Replace successful fixed-path model activation with immutable Candidate
+  publication beneath one default user-state workspace; publication never changes
+  Active.
+- Make Active a revision-guarded atomic reference with activation history.
+  Promotion and rollback both revalidate the current Definition/runtime contract,
+  artifact integrity, production Targets, feature order, preprocessing, and
+  prediction smoke before changing the reference.
+- Preserve Bootstrap as normal state. Import legacy `model.pkl` by deterministic
+  hash identity without modifying the original, and create continuity Active only
+  when complete current compatibility is proven.
+- Make Qt-free training lifecycle orchestration the shared application boundary,
+  with TrainController as adapter and QProcess limited to process execution/event
+  transport. Core ML writes only to a caller-provided staging path.
+- Resolve newly composed Predict processes through the lifecycle Active reference.
+  Existing PredictionService instances keep their loaded immutable path; silent
+  hot-swap and reload UI remain later work.
+- Advance the next implementation action to Phase 5C analysis artifacts while
+  preserving Train/Model UI/UX priority over CLI, campaigns, and the agent loop.
+
 ## 2026-07-23 — Train/Admin Phase 5A architecture audit closeout
 
 ### Decision

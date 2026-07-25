@@ -59,6 +59,15 @@ class DevFastTrainingBackend:
                     seed=self.seed,
                     predict_delay_ms=self.predict_delay_ms,
                 )
+                if request.registry_payload_json:
+                    artifact["preprocess_version"] = request.preprocess_version
+                    artifact["training_contract"] = {
+                        "generation_id": request.generation_id,
+                        "registry_fingerprint": request.registry_fingerprint,
+                        "ordered_ml_fingerprint": request.ordered_ml_fingerprint,
+                        "derived_semantics_fingerprint": request.derived_semantics_fingerprint,
+                        "one_hot_fingerprint": request.one_hot_fingerprint,
+                    }
             elif message == "Write model artifact.":
                 model_path = Path(request.model_output_path)
                 model_path.parent.mkdir(parents=True, exist_ok=True)

@@ -8,10 +8,17 @@ from apps.predict.composition import build_predict_workspace_composition
 from apps.predict.application.runtime_generation import StandalonePredictGenerationGuard
 from apps.predict.ui.shell import PredictShell
 from apps.common.runtime_generation.paths import default_generation_root
+from apps.common.model_lifecycle import (
+    ActiveModelResolver,
+    LegacyModelMigrationService,
+    ModelLifecycleRepository,
+    default_model_lifecycle_root,
+)
 from apps.common.runtime_generation.repository import DataDefinitionGenerationRepository
 from apps.predict.application.runtime_generation_participant import PredictRuntimeParticipant
 from apps.predict.application.runtime_snapshot import build_predict_runtime_snapshot
 from core.data_definition.contract import load_manifest
+from core.data_definition.target_registry.runtime import model_registry_snapshot
 from core.ml.artifacts import MODEL_FILE
 from pathlib import Path
 
@@ -22,6 +29,7 @@ DEFAULT_BOOTSTRAP_MANIFEST_PATH = PROJECT_ROOT / "config" / "data_definition" / 
 def create_shell(
     *, generation_root: str | Path | None = None,
     bootstrap_manifest_path: str | Path | None = None,
+    lifecycle_root: str | Path | None = None,
 ) -> PredictShell:
     """Create the minimal Predict shell."""
     repository = DataDefinitionGenerationRepository(
@@ -32,12 +40,25 @@ def create_shell(
     except FileNotFoundError:
         repository.publish(load_manifest(bootstrap_manifest_path or DEFAULT_BOOTSTRAP_MANIFEST_PATH))
         active = repository.read_active()
+    lifecycle_repository = ModelLifecycleRepository(
+        lifecycle_root or default_model_lifecycle_root()
+    )
+    registry_provider = lambda: model_registry_snapshot(active.manifest)
+    migration = LegacyModelMigrationService(
+        lifecycle_repository, registry_provider
+    ).migrate_if_needed(MODEL_FILE)
+    resolution = ActiveModelResolver(lifecycle_repository).resolve()
+    resolved_model_path = (
+        resolution.model_path
+        if resolution.status == "resolved"
+        else str(lifecycle_repository.root / ".missing-active-model.pkl")
+    )
     composition = build_predict_workspace_composition(
         runtime_snapshot=build_predict_runtime_snapshot(active),
-        model_file=MODEL_FILE,
+        model_file=resolved_model_path,
     )
     participant = PredictRuntimeParticipant(
-        active, composition, model_file=MODEL_FILE
+        active, composition, model_file=resolved_model_path
     )
     guard = StandalonePredictGenerationGuard(repository, participant)
     shell = PredictShell(composition=composition)
@@ -57,6 +78,8 @@ def create_shell(
     refresh_generation()
     shell.workspace.show_generation_status()
     shell.generation_guard = guard
+    shell.model_resolution = resolution
+    shell.legacy_migration = migration
     return shell
 
 

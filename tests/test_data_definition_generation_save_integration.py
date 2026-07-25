@@ -36,7 +36,8 @@ def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_pa
     legacy_schema_before = DEFAULT_SCHEMA_PATH.read_bytes()
     root = tmp_path / "production-definition-store"
 
-    shell = create_shell(generation_root=root)
+    lifecycle_root = tmp_path / "model-lifecycle"
+    shell = create_shell(generation_root=root, lifecycle_root=lifecycle_root)
     repository = DataDefinitionGenerationRepository(root)
     initial_generation = repository.active_generation_id()
     initial_registry = shell.train_controller.registry_snapshot()
@@ -75,7 +76,9 @@ def test_production_create_shell_bootstraps_and_publishes_generation_save(tmp_pa
         "Production generation presentation"
     )
     assert DEFAULT_SCHEMA_PATH.read_bytes() == legacy_schema_before
-    restarted_shell = create_shell(generation_root=root)
+    restarted_shell = create_shell(
+        generation_root=root, lifecycle_root=lifecycle_root
+    )
     assert restarted_shell.train_controller.registry_snapshot().generation_id == repository.active_generation_id()
     assert restarted_shell.predict_workspace.generation_id == repository.active_generation_id()
     assert repository.read_active().projections.predict[0].label == (

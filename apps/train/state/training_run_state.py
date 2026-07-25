@@ -25,6 +25,7 @@ class TrainingRequest:
     derived_semantics_fingerprint: str = ""
     one_hot_fingerprint: str = ""
     registry_payload_json: str = ""
+    candidate_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -59,6 +60,8 @@ class TrainingResult:
     message: str = ""
     generation_id: str = ""
     registry_fingerprint: str = ""
+    candidate_id: str = ""
+    publication_outcome: str = ""
 
 
 @dataclass(frozen=True)

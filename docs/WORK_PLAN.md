@@ -17,27 +17,42 @@
 
 ## Current Slice
 
-Phase 5A Architecture Audit is complete with final result `PASS`. The authoritative
-Phase 5 design is
+Phase 5B lifecycle foundation remains the current slice. The latest independent
+audit rejected head `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` because the
+repository and committed recovery classified unrelated `TypeError` from the
+shared Active contract implementation as artifact corruption. The single
+exception-classification blocker now has a bounded repair and new local
+exact-source validation. Malformed/non-object Active recovery, semantic
+consistency, Qt/QProcess, non-Qt CI, and narrow resolver behavior remain intact.
+The Draft PR requires a new exact-head independent audit before Phase 5B can
+close. Phase 5C has not started.
+The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
-lifecycle foundation exists to make that UI safe, while the agent-assisted
-experiment loop is an important later capability and must not delay the UI/UX
-workstream.
+Candidate repository, explicit Active reference, promotion/rollback service,
+Bootstrap state, fail-closed legacy import, shared training application boundary,
+and Predict startup resolver remain the foundation for that UI. The two repairs
+add symlink/path-escape rejection, descriptor-relative root locking,
+rollback/recovery-marked durability outcomes, non-optional revision guards,
+controlled corrupt legacy state, exactly-once QProcess terminal arbitration,
+and deterministic Qt application/process cleanup without expanding the Phase
+5B product scope.
 
 ## Next Action
 
-Implement Phase 5B lifecycle foundation from the authoritative Phase 5 design.
-Start with the minimum safe workspace/candidate/active-model boundary needed by
-the Train/Model UX; do not pull the later campaign or agent loop ahead of the UI
-priority.
+Hand the pushed Active contract `TypeError` boundary repair on Draft PR #28 to
+an independent exact-head auditor. Do not start Phase 5C or call Phase 5B
+merge-ready before that re-audit.
 
 ## Active Blockers
 
+- Phase 5B closure is held for independent exact-head re-audit of Draft PR #28.
+  Local focused, canonical, structure, and change-gate evidence is repair
+  evidence, not independent approval.
 - Model-incompatible Definition generations may publish and cut over, but Predict
   remains blocked with Retraining required until compatibility is proven. No model
   artifact is automatically replaced or promoted.
