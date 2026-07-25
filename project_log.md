@@ -29,6 +29,20 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-26 — Train/Admin Phase 5D post-merge closeout
+
+### Decision
+
+- Preserve both independent Phase 5D audit `FAIL` results and repair records;
+  no independent `PASS` is retroactively declared.
+- Record user acceptance of repaired head
+  `a2ea64464e595d28d58db77a28d31eac60c6a72d` and explicit merge authority.
+- Record PR #31 squash merge to `main` as
+  `78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0` and close Phase 5D.
+- Make Phase 5E the next unstarted slice. Preserve completed promotion and
+  rollback while bounding new work to immutable deployment export and running
+  Predict reload-required/reload-failure behavior.
+
 ## 2026-07-26 — Train/Admin Phase 5D training-running guidance repair
 
 ### Decision

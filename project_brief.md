@@ -14,14 +14,11 @@ complete with no remaining merge blocker. Phase 5C Training Result & Analysis
 is complete and merged through PR #30 to `main` at
 `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
 returned `PASS`, and required validation run `30157872726` succeeded. Phase 5D
-Train/Model UI/UX is implemented in open Draft PR #31. Its first independent
-L4 audit returned `FAIL` at
-`c163da7027cdfdcc1bc8f831c17f6e1285b0d6db`; the five bounded UI
-state/projection blockers are repaired on the same branch, which awaits
-independent exact-head re-audit. The first repaired head
-`89e20055cc45a5c7fad59aa24a2b9d34c16e4237` then received a second `FAIL` for
-one incomplete training-running default-state message; that sole blocker is
-repaired on the same branch for another exact-head re-audit.
+Train/Model UI/UX is complete. The user accepted repaired head
+`a2ea64464e595d28d58db77a28d31eac60c6a72d`, and PR #31 was squash-merged to
+`main` as `78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0`. Both independent audit
+`FAIL` results remain historical evidence; no independent `PASS` is
+retroactively declared. Phase 5E is the next active but unstarted phase.
 
 The authoritative Phase 5 contract is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
@@ -207,7 +204,7 @@ activation, and Predict internal redesign is not part of Phase 4.
 Phase 4 is complete for repository-automated scope. Its owner and compatibility
 boundaries remain the baseline for Phase 5.
 
-### Current Workstream — Train/Admin Phase 5D Train/Model UI/UX
+### Current Workstream — Train/Admin Phase 5E Export and Predict Reload Boundary
 
 Phase 5 retains this primary user flow:
 
@@ -215,16 +212,13 @@ Phase 5 retains this primary user flow:
 select training data → train → check progress → review results
 ```
 
-Phase 5D is implemented in open Draft PR #31. Its first independent L4 audit
-failed on five bounded UI state/projection issues. The first repair corrected
-safe empty/error table transitions, current compatibility status, target-level
-comparison meaning, complete Advanced evidence, and structured Korean
-promotion outcomes. The second audit confirmed four blocker areas and found one
-remaining training-running default-state guidance gap. That state now also says
-that Active is maintained and to retry after training completes; the new exact
-head awaits independent re-audit.
-Train/Model UI/UX remains the primary product goal; the headless campaign and
-agent-assisted experiment loop remain later capabilities.
+Phase 5D is complete on merged `main`. Its Candidate/Active surface preserves
+no-auto-active, explicit revision-guarded promotion, rollback by re-promotion,
+current compatibility, target-level comparison meaning, complete Advanced
+evidence, and fail-closed guidance. Phase 5E is next but has not started. It
+must retain those contracts while adding immutable deployment export and the
+running Predict reload-required/reload-failure boundary. The headless campaign
+and agent-assisted experiment loop remain later capabilities.
 
 Phase 5B established the audit-frozen default-workspace and legacy-model
 migration contracts. Lifecycle state uses stable workspace identity under the

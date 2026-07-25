@@ -17,59 +17,35 @@
 
 ## Current Slice
 
-Phase 5D Train/Model UI/UX is implemented on its dedicated Draft PR branch.
-The first independent L4 audit returned `FAIL` at
-`c163da7027cdfdcc1bc8f831c17f6e1285b0d6db` with five UI state/projection
-blockers. Those blockers are repaired on the same branch, and the repaired
-head `89e20055cc45a5c7fad59aa24a2b9d34c16e4237` received a second independent
-`FAIL`: its sole remaining blocker was incomplete training-running guidance in
-the normal disabled-button QWidget state. That bounded blocker is repaired on
-the same branch, and the new exact head awaits independent L4 re-audit. Phase
-5C Training Result & Analysis
-is complete and merged through PR #30 to `main`
-at `8f74fc613d1ad6f6a1cc2c9d206543198f6d88f8`; its final independent L4 audit
-returned `PASS`, and required validation run `30157872726` succeeded. Phase 5C
-completed the Qt-free versioned training-result contract, Candidate-owned
-JSON/CSV/XLSX analysis artifacts, production multi-target training integration,
-lifecycle artifact/version validation, terminal failure evidence preservation,
-and separate Candidate publication versus Active promotion. Earlier failed
-audits, repairs, and validation entries remain historical evidence. The
-`joblib.load()` exception normalization is intentional fail-closed behavior at
-the serialized-model deserialization trust boundary and was not a final
-blocker. Phase 5B lifecycle foundation head
-`21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
-#28 was squash-merged to `main` as
-`eca6addd38745dadca3b0e4f19cc259090d50e23`; no Phase 5B merge blocker remains.
-Phase 5B establishes immutable Candidate publication, explicit revision-guarded
-Active promotion and rollback, recovery, and Predict startup resolution.
+Phase 5D Train/Model UI/UX is complete and merged. The user accepted repaired
+head `a2ea64464e595d28d58db77a28d31eac60c6a72d` and authorized PR #31 closeout;
+GitHub squash-merged it to `main` as
+`78e9d097693c3e3b8c23d2ed18dd7e68dc1f44b0`. The first and second independent
+audit `FAIL` results remain historical evidence, and no independent `PASS` is
+retroactively declared. Phase 5D now owns the Candidate/Active Train surface,
+dynamic Phase 5C result projection, explicit guarded promotion, rollback by
+re-promotion, Bootstrap, current compatibility, fail-closed corruption, and
+complete Korean rejection guidance. Exact-head validation run `30165774817`
+succeeded. Phase 5B and Phase 5C remain complete and merged foundations.
 The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
 the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
-Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. Phase
-5D now shows Candidate and Active state through an understandable,
-metric-centered UI, provides explicit `이 모델 사용` promotion, supports rollback
-by selecting a previous Candidate, and handles Bootstrap/no-active state
-normally. The UI displays the Phase 5C contract without recalculating metrics or
-eligibility. The audit repair adds safe populated/empty/error table transitions,
-current owner-validated compatibility, target-level comparison fidelity,
-complete persisted Advanced evidence, and structured Korean promotion failure
-guidance. The follow-up repair makes the default training-running state also
-state that Active is maintained and that the user should retry after training;
-detailed internal information belongs in an Advanced area. CLI, Campaign,
-leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
-retention remain later slices.
+Phase 5E Promotion, Rollback, Export, and Predict Reload Boundary is the next
+active but unstarted slice. Phase 5D already completed promotion and rollback;
+Phase 5E must preserve those contracts while adding immutable deployment export
+and an explicit running-Predict reload-required/reload-failure boundary. CLI,
+Campaign, leaderboard, the Agent-assisted Experiment Loop, and retention remain
+later slices.
 
 ## Next Action
 
-Keep PR #31 open, Draft, and unmerged and obtain an independent L4 re-audit
-against the repaired exact head. Preserve both audit `FAIL` results as
-historical evidence. Do not declare audit PASS or start Phase 5E/later work from this
-repair worker. Keep CLI, Campaign,
-leaderboard, the Agent-assisted Experiment Loop, runtime reload, export, and
-retention deferred.
+Prepare the bounded Phase 5E owner/audit slice from merged `main`; do not start
+implementation without a separate Phase 5E task. Preserve Phase 5D lifecycle,
+promotion, rollback, Train, and Predict invariants. Keep CLI, Campaign,
+leaderboard, the Agent-assisted Experiment Loop, and retention deferred.
 
 ## Active Blockers
 
