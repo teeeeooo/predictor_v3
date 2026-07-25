@@ -596,8 +596,8 @@ entries:
     source: docs/designs/2026-07-17-train-admin-phase-4-unified-feature-manager.md; docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md; result_reports/records/2026-07/2026-07-17-train-admin-unified-feature-manager-phase-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md
 
   - type: decision
-    topic: Train/Admin Phase 5A architecture audit and lifecycle start
-    content: Phase 5A is closed with PASS and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` is authoritative. Phase 5B remains under independent audit on Draft PR #28. Audit of head `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` found that repository and committed recovery artifact catches also converted unrelated shared-contract `TypeError`. The bounded repair explicitly validates Active history container, record mapping, and required fields before construction, keeps malformed shape/type payloads controlled, and removes `TypeError` from both outer artifact catches. Contract programmer `TypeError`, `AttributeError`, and `AssertionError` propagate; committed recovery evidence remains byte-preserved on programmer failure. Non-object/malformed recovery, append-only Active history, exact top-level/latest identity, revision and timestamp agreement, intended marker binding, descriptor-relative locking, rollback-first indeterminate recovery, mandatory revision guards, fail-closed legacy handling, explicit Qt fixture ownership, narrow resolver errors, and QProcess cleanup remain preserved. Local and remote validation are repair evidence for a new exact-head re-audit, not final approval. Phase 5C has not started; Train/Model UI/UX remains primary and CLI/campaign/agent-loop work stays later.
+    topic: Train/Admin Phase 5 lifecycle foundation and result-analysis start
+    content: Phase 5A is closed and `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md` remains authoritative. The independent audit of Phase 5B exact head `21b98eb38239e0100be3c3700744c69e2fdc11fe` returned PASS, and PR #28 was squash-merged to `main` as `eca6addd38745dadca3b0e4f19cc259090d50e23`. Phase 5B is complete with immutable Candidate publication, explicit revision-guarded Active promotion and rollback, recovery, and Predict startup resolution. Training success never activates a model automatically. Phase 5C Training Result & Analysis is next: connect successful runs to Candidate-owned target R²/MAE/RMSE, baseline comparison, feature importance, duration, promotion eligibility, XLSX, and machine-readable CSV/JSON through a Qt-free result contract shared by GUI and later headless execution. Phase 5D Candidate/model-management Train/Model UI·UX follows; CLI, Campaign, and the Agent-assisted Experiment Loop remain later. Earlier FAIL, repair, and validation records retain their historical meaning; Windows-native and packaging validation remain unrun.
     keywords:
       - predictor_v3
       - Train/Admin
@@ -609,10 +609,12 @@ entries:
       - legacy model
       - Bootstrap
       - retraining required
+      - Training Result
+      - analysis artifact
       - Train UI UX
       - agent-assisted experiment
     assertionStatus: verified
-    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-23-train-admin-phase5b-second-audit-repair.md; docs/WORK_PLAN.md
+    source: docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md; result_reports/records/2026-07/2026-07-25-train-admin-phase5b-post-merge-closeout.md; docs/WORK_PLAN.md
 
   - type: decision
     topic: Train/Admin Phase 4B canonical persistence foundation

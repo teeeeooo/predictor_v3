@@ -29,6 +29,29 @@
 
 > **Ordering note:** `partNN` 순서는 original `project_log.md` entry order를 보존한다. `project_log.md`는 최신 항목이 위에 오는 reverse chronological order이므로, segment filename의 date range도 reverse chronological일 수 있다. 과거 로그를 찾을 때는 파일명만 보지 말고 `rg -n "^## 2026-" docs/archive/project_log/YYYY-MM/*.md`로 heading을 검색한다.
 
+## 2026-07-25 — Train/Admin Phase 5B post-merge closeout
+
+### Decision
+
+- Record the independent audit result for exact Phase 5B head
+  `21b98eb38239e0100be3c3700744c69e2fdc11fe` as `PASS` evidence supplied to
+  this closeout. PR #28 was squash-merged to `main` as
+  `eca6addd38745dadca3b0e4f19cc259090d50e23`; no Phase 5B merge blocker
+  remains.
+- Close Phase 5B with immutable Candidate publication, explicit
+  revision-guarded Active promotion and rollback, recovery, and Predict startup
+  resolution as the lifecycle foundation. Training success does not imply
+  activation, and Candidate/Active separation remains mandatory.
+- Make Phase 5C Training Result & Analysis the next implementation slice:
+  Candidate-linked metrics and analysis artifacts, human-readable XLSX,
+  machine-readable CSV/JSON, and one Qt-free result contract shared by GUI and
+  later headless execution.
+- Keep Phase 5D Candidate/model-management Train/Model UI·UX next after Phase
+  5C. CLI, Campaign, and the Agent-assisted Experiment Loop remain later.
+- Preserve every earlier audit `FAIL`, repair, and validation entry as
+  historical evidence. Windows-native and packaging validation remain unrun and
+  outside this closeout.
+
 ## 2026-07-25 — Train/Admin Phase 5B Active semantic consistency repair
 
 ### Decision

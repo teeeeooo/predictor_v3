@@ -17,15 +17,13 @@
 
 ## Current Slice
 
-Phase 5B lifecycle foundation remains the current slice. The latest independent
-audit rejected head `af7d789dd8f7e8c8aa9a55825747571cb461c7b2` because the
-repository and committed recovery classified unrelated `TypeError` from the
-shared Active contract implementation as artifact corruption. The single
-exception-classification blocker now has a bounded repair and new local
-exact-source validation. Malformed/non-object Active recovery, semantic
-consistency, Qt/QProcess, non-Qt CI, and narrow resolver behavior remain intact.
-The Draft PR requires a new exact-head independent audit before Phase 5B can
-close. Phase 5C has not started.
+Phase 5C Training Result & Analysis is the current implementation slice. Phase
+5B lifecycle foundation head
+`21b98eb38239e0100be3c3700744c69e2fdc11fe` passed independent audit and PR
+#28 was squash-merged to `main` as
+`eca6addd38745dadca3b0e4f19cc259090d50e23`; no Phase 5B merge blocker remains.
+Phase 5B establishes immutable Candidate publication, explicit revision-guarded
+Active promotion and rollback, recovery, and Predict startup resolution.
 The authoritative Phase 5 design is
 `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`.
 The earlier Phase 5 Train UI document remains supporting UI/UX guidance only;
@@ -33,26 +31,22 @@ the new design governs lifecycle, CLI, campaigns, the agent loop, migration, and
 implementation order.
 
 Phase 5 keeps Train/Model UI/UX improvement as the primary product goal. The
-Candidate repository, explicit Active reference, promotion/rollback service,
-Bootstrap state, fail-closed legacy import, shared training application boundary,
-and Predict startup resolver remain the foundation for that UI. The two repairs
-add symlink/path-escape rejection, descriptor-relative root locking,
-rollback/recovery-marked durability outcomes, non-optional revision guards,
-controlled corrupt legacy state, exactly-once QProcess terminal arbitration,
-and deterministic Qt application/process cleanup without expanding the Phase
-5B product scope.
+Phase 5C slice first connects successful training-run numerical results and
+analysis artifacts to the Candidate lifecycle through a shared Qt-free result
+contract. It structures target-level R², MAE, RMSE, baseline comparison, feature
+importance, duration, and promotion eligibility, with human-readable XLSX and
+machine-readable CSV/JSON analysis. Phase 5D then implements Candidate use and
+model-management-centered Train/Model UI/UX. CLI, Campaign, and the
+Agent-assisted Experiment Loop remain later slices.
 
 ## Next Action
 
-Hand the pushed Active contract `TypeError` boundary repair on Draft PR #28 to
-an independent exact-head auditor. Do not start Phase 5C or call Phase 5B
-merge-ready before that re-audit.
+Hand this docs-only closeout to an independent L1 documentation audit. After the
+closeout PR is accepted, begin Phase 5C from the authoritative result and
+analysis requirements without preselecting new file, class, or schema details.
 
 ## Active Blockers
 
-- Phase 5B closure is held for independent exact-head re-audit of Draft PR #28.
-  Local focused, canonical, structure, and change-gate evidence is repair
-  evidence, not independent approval.
 - Model-incompatible Definition generations may publish and cut over, but Predict
   remains blocked with Retraining required until compatibility is proven. No model
   artifact is automatically replaced or promoted.
@@ -91,9 +85,9 @@ merge-ready before that re-audit.
 - Separate training candidate publication from validated explicit active-model
   promotion, and distinguish TrainShell process-wide cutover from standalone
   Predict cross-process generation detection.
-- Phase 5B must resolve lifecycle state beneath the user-state root through a
-  stable workspace identity. A repository absolute path is not a permanent
-  workspace identity, and Phase 5B supports one default workspace only.
+- Lifecycle state resolves beneath the user-state root through a stable workspace
+  identity. A repository absolute path is not a permanent workspace identity,
+  and the current foundation supports one default workspace only.
 - Import an existing `model.pkl` as the initial Active model only when complete
   compatibility is proven. Otherwise preserve the original artifact and begin in
   Bootstrap / Retraining required state.
@@ -127,6 +121,7 @@ merge-ready before that re-audit.
 - Authoritative Phase 5 design: `docs/designs/2026-07-22-train-model-lifecycle-agent-assisted-experiment-design.md`
 - Supporting Phase 5 UI/UX design: `docs/designs/2026-07-14-train-admin-phase-5-train-model-shell-ux-overhaul.md`
 - Phase 5A decision record: `result_reports/records/2026-07/2026-07-23-train-admin-phase5a-architecture-audit-closeout.md`
+- Phase 5B closeout record: `result_reports/records/2026-07/2026-07-25-train-admin-phase5b-post-merge-closeout.md`
 - Phase 3 foundation design: `docs/designs/2026-07-14-train-admin-phase-3-data-definition-ux-overhaul.md`
 - Arc 15 owner foundation: `docs/designs/2026-07-06-arc15-unified-data-definition-manager-foundation.md`
 - Phase 4A result record: `result_reports/records/2026-07/2026-07-17-train-admin-phase4a-contract-audit-closeout.md`
